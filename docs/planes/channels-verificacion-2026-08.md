@@ -23,6 +23,7 @@
 |---|---|:--:|---|---|
 | **C1** | El contrato del canal y la política de verificación, probadas **sin red** | ✅ | 15 pruebas · 4 mutaciones cazadas: comparar números tal cual, mirar el número antes de la llave, confundir «falta el número» con un rechazo, y confundir «el backend no contesta» con «llave mala» | 2026-08-29 |
 | **C2** | El backend sabe **crear, resolver y consumir** una llave; el servicio sabe preguntárselo | ✅ | `telefono_verification_keys` + 3 rutas · char **318/318** (4 casos nuevos) · unit **704** · channels **34** · **4 mutaciones cazadas**: quitar el filtro del dueño, colapsar «ya usada» con «no existe», que el guard confirme la ruta con un 401, y que pedir otra llave no invalide la anterior · `/api/internal/` da **404 desde fuera** (curl contra el proxy) · **IDOR encontrado y cerrado** al escribir las pruebas | 2026-08-30 |
+| **C2b** | La comparación del número se muda al backend: el servicio **observa**, el backend **dicta** | ✅ | char **321/321** · unit **713** · channels **29** · la regla vieja (últimos 8 dígitos) daba por iguales `+51 99 111 2233` y `+593 99 111 2233` · **3 defectos más** encontrados al construir: el arranque creaba el teléfono del admin **sin país** (inverificable), `numero_completo` componía `+5930990000000`, y un 404 del guard era indistinguible de «llave desconocida» | 2026-08-30 |
 | **C3** | Un número real se verifica **por Telegram**, de punta a punta | ⬜ | | |
 | **C4** | El servicio corre **como contenedor** en la pila, sin que lo alcance el navegador | ⬜ | | |
 | **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ⬜ | | |
@@ -31,7 +32,7 @@
 | **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ⬜ | | |
 | **C9** | 🚧 **El limitador de intentos** | ⬜ | | |
 
-**9 tareas.** `C6` está bloqueada a propósito y no cuenta como pendiente de trabajo.
+**10 tareas.** `C6` está bloqueada a propósito y no cuenta como pendiente de trabajo.
 
 🚧 marca la que **no es sólo de este frente**: el limitador protege también el acceso, el
 registro y `/recover-email`. Hoy **no existe ninguno** — 18 dependencias en el backend,
@@ -40,8 +41,8 @@ ninguna de límite ni de caché, y **no hay Redis en ninguna pila**.
 ### El orden, y por qué
 
 ```
-C1 ──> C2 ─┬─> C3 ──> C4 ──> C8
-           └─> C5 ──> C7
+C1 ──> C2 ──> C2b ─┬─> C3 ──> C4 ──> C8
+                   └─> C5 ──> C7
 C6   (bloqueada)
 C9   (independiente — y hace falta aunque no hubiera canales)
 ```
@@ -108,6 +109,50 @@ contenedor no se puede provocar.
 
 ⚠️ **En dev, `TELEGRAM_BOT_USERNAME` es un MARCADOR**: el bot no existe todavía (lo crea `C3`). Basta
 para que el camino de composición se ejecute; el enlace no lleva a ninguna parte.
+
+### C2b · La comparación se muda al backend
+
+**Lo pidió el dueño el 2026-08-30**, mirando el contrato antes de conectar ningún canal: «el
+servicio le pasa directo al backend un JSON con el número, el hash y el canal; el backend compara».
+
+**Y tenía razón por un motivo que no era de estilo.** El servicio **no sabe de qué país es el número
+guardado**, así que sólo podía comparar la cola —los últimos ocho dígitos—. Medido contra el código
+de entonces:
+
+```
+✔ IGUALES   0991112233     vs  +593 99 111 2233   ← correcto
+✔ IGUALES   +51 991112233  vs  +593 991112233     ← PERÚ dado por ECUADOR
+```
+
+Con eso, cualquiera registraba el número de otra persona y lo verificaba desde una línea propia de
+otro país con la misma cola — que es exactamente lo que la verificación existe para impedir. El
+backend sí sabe el país (`telefonos.pais_id` → `paises.phone_code`) y compara en E.164 exacto.
+
+El principio, que vale para lo que queda del frente: **un subordinado reporta lo que OBSERVÓ, no un
+veredicto.**
+
+Tres cosas más, de propina, porque el diseño nuevo las hace visibles:
+
+- El número **deja de salir del backend**. Antes se lo llevaba quien trajera una llave válida.
+- **Desaparece la carrera** entre comparar y consumir: es una transacción.
+- La sonda se conserva **sólo** porque Telegram la necesita: su bot pide el contacto en un segundo
+  paso, y pedírselo con una llave muerta es hacerle compartir sus datos para nada.
+
+#### ✅ Hecho el 2026-08-30 — y TRES defectos que salieron al construirlo
+
+1. **El arranque creaba el teléfono del administrador SIN país**, o sea imposible de verificar por
+   definición: sin prefijo no hay comparación internacional que valga. Ahora lo hereda de
+   `instituciones`, igual que el documento nacional. **El golden de `auth` se movió, y ese diff es la
+   prueba del arreglo.**
+2. **`numero_completo` componía `+5930990000000`**, conservando el cero nacional detrás del prefijo.
+   Estaba mal en **dos** consultas y no se veía porque el prefijo siempre era nulo.
+3. **Un 404 del guard era indistinguible de «llave desconocida».** Una `INTERNAL_SERVICE_KEY` mal
+   puesta habría hecho que el canal le dijera «tu enlace no vale» a **todo el mundo**, para siempre y
+   sin una pista. Se distinguen por el cuerpo: el endpoint siempre manda `estado`.
+
+⚠️ Y un aviso para quien mida esto: **el `rollback` del camino «número distinto» es un mutante
+equivalente**. En ese punto no se ha escrito nada, así que `commit` y `rollback` hacen lo mismo y
+ninguna prueba puede distinguirlos. Se queda por higiene, no porque esté cubierto.
 
 ### C3 · Telegram, de punta a punta
 

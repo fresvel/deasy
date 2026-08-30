@@ -1,6 +1,6 @@
 import express from "express";
 import { requiereServicioInterno } from "../middlewares/servicioInterno.js";
-import { resolverLlave, consumirLlave } from "../controllers/users/telefono_verificacion_controller.js";
+import { estadoDeLlave, confirmarLlave } from "../controllers/users/telefono_verificacion_controller.js";
 
 // Rutas que SÓLO llaman los microservicios de Deasy, nunca un navegador.
 //
@@ -11,7 +11,10 @@ const router = express.Router();
 
 router.use(requiereServicioInterno);
 
-router.post("/verificacion/resolver", resolverLlave);
-router.post("/verificacion/consumir", consumirLlave);
+// Dos rutas y no tres: la sonda dice si la llave vive, y `confirmar` COMPARA Y CONSUME en una
+// transacción. Antes eran «resolver» (que entregaba el número) y «consumir», con la comparación en
+// medio y en el otro lado de la red — ver C2b.
+router.post("/verificacion/estado", estadoDeLlave);
+router.post("/verificacion/confirmar", confirmarLlave);
 
 export default router;

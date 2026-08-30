@@ -38,51 +38,61 @@ export default class ClienteDeDeasy {
   }
 
   /**
-   * ¿De qué número es esta llave?
+   * ¿Esta llave sigue viva?
    *
-   * Devuelve `{ valida: false, estado }` cuando el backend dice que no vale, con el motivo dentro:
-   * «no existe», «caducó» y «ya se usó» son tres mensajes distintos para el usuario, y sólo los dos
-   * últimos significan «repite sin cambiar nada».
+   * ⚠️ **No pregunta de quién es el número, y ya no lo recibe.** Ése es el cambio de C2b: el número
+   * no sale del backend, y quien compara es quien sabe de qué país es. Aquí sólo se sondea, para no
+   * hacerle a alguien el segundo paso de Telegram —compartir su contacto— con una llave muerta.
    *
    * ⚠️ Si el backend NO CONTESTA, esto LANZA en vez de devolver un rechazo. La diferencia importa:
    * la política distingue «tu llave no vale» de «esto es culpa nuestra», y decirle al usuario lo
    * primero cuando pasa lo segundo le hace reintentar cambiando cosas que están bien.
    */
-  async resolverLlave(llave) {
-    const respuesta = await this.pedir("/internal/verificacion/resolver", { llave });
+  async estadoDeLlave(llave) {
+    const respuesta = await this.pedir("/internal/verificacion/estado", { llave });
 
     if (respuesta.status === 404) {
+      // ⚠️ DOS COSAS DISTINTAS RESPONDEN 404 AQUÍ, y confundirlas sale carísimo: el endpoint cuando
+      // la llave no vale, y el GUARD cuando nuestra clave compartida no es la buena —que contesta
+      // 404 a propósito, para no confirmarle a un desconocido que la ruta existe—.
+      //
+      // Se distinguen por el cuerpo: el endpoint SIEMPRE manda `estado`; el guard, un `message`.
+      // Sin esta distinción, una clave mal puesta en un entorno haría que el canal le dijera «tu
+      // enlace no vale» a TODO EL MUNDO, para siempre y sin una sola pista de por qué.
       const cuerpo = await respuesta.json().catch(() => ({}));
-      return { valida: false, estado: cuerpo.estado ?? "desconocida" };
+      if (!cuerpo?.estado) {
+        throw new Error(
+          "El backend devolvió 404 sin estado: casi seguro que INTERNAL_SERVICE_KEY no coincide."
+        );
+      }
+      return { valida: false, estado: cuerpo.estado };
     }
     if (!respuesta.ok) {
-      throw new Error(`El backend respondió ${respuesta.status} al resolver la llave.`);
+      throw new Error(`El backend respondió ${respuesta.status} al consultar la llave.`);
     }
-
-    const { numero } = await respuesta.json();
-    return { valida: true, numero };
+    return { valida: true };
   }
 
   /**
-   * Consume la llave. El backend marca el canal; aquí sólo se avisa.
+   * Le cuenta al backend LO QUE OBSERVÓ: este número mandó esta llave por este canal.
    *
-   * ⚠️ Un **409** NO es un fallo del sistema, y por eso no lanza: significa que la llave dejó de
-   * valer ENTRE que se resolvió y se confirmó — el usuario pulsó dos veces, o llegaron dos mensajes
-   * casi a la vez. Al usuario hay que decirle «ya se usó, pide otra», no «error interno»: lo primero
-   * le dice qué hacer y lo segundo le hace esperar a que lo arreglemos nosotros.
+   * ⚠️ **No manda un veredicto, manda un hecho.** El transporte prueba de qué número viene el
+   * mensaje; si ese número es el que había que verificar lo decide el backend, que es el único que
+   * sabe el país del número guardado. Antes lo decidía este servicio comparando la cola de ocho
+   * dígitos, y así `+51 99 111 2233` valía por `+593 99 111 2233`.
    *
-   * El resto de códigos SÍ lanzan, por la misma razón que en `resolverLlave`: un backend que no
-   * contesta no debe parecerle al usuario un problema de su llave.
+   * ⚠️ Un **409** no lanza: la llave no valía, o el número no era. Al usuario hay que decirle qué
+   * pasó, no «error interno» — lo primero le dice qué hacer.
    */
-  async confirmarVerificacion({ llave, canal }) {
-    const respuesta = await this.pedir("/internal/verificacion/consumir", { llave, canal });
+  async confirmarVerificacion({ llave, numero, canal }) {
+    const respuesta = await this.pedir("/internal/verificacion/confirmar", { llave, numero, canal });
 
     if (respuesta.status === 409) {
       const cuerpo = await respuesta.json().catch(() => ({}));
-      return { confirmado: false, estado: cuerpo.estado ?? "consumida" };
+      return { confirmado: false, estado: cuerpo.estado ?? "desconocida" };
     }
     if (!respuesta.ok) {
-      throw new Error(`El backend respondió ${respuesta.status} al consumir la llave.`);
+      throw new Error(`El backend respondió ${respuesta.status} al confirmar la llave.`);
     }
     return { confirmado: true };
   }

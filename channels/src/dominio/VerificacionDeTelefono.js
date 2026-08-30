@@ -33,6 +33,9 @@ export const MOTIVOS = Object.freeze({
 // estado no obligue a buscar donde se interpretaba.
 const MOTIVO_POR_ESTADO = Object.freeze({
   desconocida: MOTIVOS.LLAVE_DESCONOCIDA,
+  // Lo dicta el BACKEND desde C2b. Antes se decidía aquí comparando los últimos ocho dígitos, sin
+  // saber el país: `+51 99 111 2233` valía por `+593 99 111 2233`.
+  numero_distinto: MOTIVOS.NUMERO_DISTINTO,
   caducada: MOTIVOS.LLAVE_CADUCADA,
   consumida: MOTIVOS.LLAVE_CONSUMIDA,
 });
@@ -45,18 +48,19 @@ export default class VerificacionDeTelefono {
 
   /**
    * @param {import('./MensajeEntrante.js').default} mensaje
-   * @returns {Promise<{verificado: boolean, motivo?: string, numeroEsperado?: string}>}
+   * @returns {Promise<{verificado: boolean, motivo?: string}>}
    */
   async procesar(mensaje) {
     if (!mensaje?.tieneLlave) {
       return { verificado: false, motivo: MOTIVOS.SIN_LLAVE };
     }
 
-    // Se pregunta ANTES de mirar el número, y el orden importa: si la llave no vale, no hay
-    // con qué comparar. Al revés se compararía contra un número inventado.
-    let peticion;
+    // Se SONDEA antes de nada, y el orden importa: Telegram llega aquí en su primer paso sin
+    // número, y lo siguiente que hace es pedirle el contacto al usuario. Pedírselo con una llave
+    // muerta es hacerle compartir sus datos para nada.
+    let sonda;
     try {
-      peticion = await this.deasy.resolverLlave(mensaje.llave);
+      sonda = await this.deasy.estadoDeLlave(mensaje.llave);
     } catch {
       // Que el backend no conteste NO es culpa del usuario y NO es un rechazo: es un fallo
       // nuestro. Se distingue para que el canal pueda decir «vuelve a intentarlo» en vez de
@@ -64,63 +68,44 @@ export default class VerificacionDeTelefono {
       return { verificado: false, motivo: MOTIVOS.BACKEND_CAIDO };
     }
 
-    if (!peticion?.valida) {
+    if (!sonda?.valida) {
       return {
         verificado: false,
-        motivo: MOTIVO_POR_ESTADO[peticion?.estado] ?? MOTIVOS.LLAVE_DESCONOCIDA,
+        motivo: MOTIVO_POR_ESTADO[sonda?.estado] ?? MOTIVOS.LLAVE_DESCONOCIDA,
       };
     }
 
-    // El canal no pudo probar el número todavía. NO es un rechazo: Telegram llega aquí en
-    // su primer paso, y lo que toca es pedirle el contacto. Por eso se devuelve el número
-    // esperado: el canal lo necesita para comparar cuando lo tenga.
+    // El canal no pudo probar el número todavía. NO es un rechazo: es el primer paso de Telegram, y
+    // lo que toca es pedir el contacto.
+    //
+    // ⚠️ Aquí se devolvía además `numeroEsperado`, «porque el canal lo necesita para comparar
+    // después». No lo necesitaba —ningún canal lo leía— y comparar ya no es cosa suya: se retiró en
+    // C2b junto con el resto de la comparación local.
     if (!mensaje.tieneNumero) {
-      return { verificado: false, motivo: MOTIVOS.FALTA_NUMERO, numeroEsperado: peticion.numero };
+      return { verificado: false, motivo: MOTIVOS.FALTA_NUMERO };
     }
 
-    if (!this.constructor.mismoNumero(mensaje.numeroProbado, peticion.numero)) {
-      return { verificado: false, motivo: MOTIVOS.NUMERO_DISTINTO };
+    // Y aquí se le cuenta al backend LO QUE SE OBSERVÓ, no una conclusión: este número mandó esta
+    // llave por este canal. Si el número es el que había que verificar lo decide él, que es el
+    // único que sabe de qué país es el número guardado.
+    let confirmacion;
+    try {
+      confirmacion = await this.deasy.confirmarVerificacion({
+        llave: mensaje.llave,
+        numero: mensaje.numeroProbado,
+        canal: mensaje.canal,
+      });
+    } catch {
+      return { verificado: false, motivo: MOTIVOS.BACKEND_CAIDO };
     }
 
-    // Se resolvió hace un instante, pero entre aquel instante y éste la llave puede haber dejado de
-    // valer: dos mensajes casi a la vez, o el usuario pulsando dos veces. Quien manda es la
-    // confirmación, no la resolución — y su rechazo se traduce al MISMO motivo que si hubiera
-    // llegado ya usada, porque para el usuario es exactamente lo mismo.
-    const confirmacion = await this.deasy.confirmarVerificacion({
-      llave: mensaje.llave,
-      numero: peticion.numero,
-      canal: mensaje.canal,
-    });
-
-    if (confirmacion?.confirmado === false) {
+    if (!confirmacion?.confirmado) {
       return {
         verificado: false,
-        motivo: MOTIVO_POR_ESTADO[confirmacion.estado] ?? MOTIVOS.LLAVE_CONSUMIDA,
+        motivo: MOTIVO_POR_ESTADO[confirmacion?.estado] ?? MOTIVOS.LLAVE_CONSUMIDA,
       };
     }
 
     return { verificado: true };
-  }
-
-  /**
-   * Dos números son el mismo si lo son marcando.
-   *
-   * `+593 99 111 2233`, `593991112233` y `0991112233` son el mismo teléfono escrito por
-   * tres sitios distintos: el usuario lo teclea en el registro, Telegram lo devuelve con
-   * prefijo internacional y un SMS lo trae en otro formato. Comparar las cadenas tal cual
-   * rechazaría verificaciones legítimas — y el usuario no tendría forma de entender por qué.
-   *
-   * Se comparan sólo los dígitos, y por la DERECHA: es lo que sobrevive a que uno lleve
-   * prefijo de país y el otro un cero nacional.
-   */
-  static mismoNumero(a, b) {
-    const soloDigitos = (n) => String(n ?? "").replace(/\D/g, "");
-    const x = soloDigitos(a);
-    const y = soloDigitos(b);
-    if (!x || !y) return false;
-    // Ocho dígitos es más que cualquier número nacional sin prefijo, y menos que el más
-    // corto del mundo entero: comparar menos abriría la puerta a coincidencias por azar.
-    const largo = Math.min(x.length, y.length, 8);
-    return x.slice(-largo) === y.slice(-largo);
   }
 }

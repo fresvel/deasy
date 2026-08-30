@@ -790,10 +790,23 @@ const guardarCorreoDelAdmin = async (connection, personId, email) => {
 const guardarTelefonoDelAdmin = async (connection, personId, whatsapp) => {
   const numero = String(whatsapp ?? "").replace(/\D/g, "");
   if (!numero) return;
+
+  // ⚠️ EL PAIS SALE DE LA INSTITUCION, y no ponerlo dejaba el telefono INVERIFICABLE. Un numero sin
+  // pais no se puede comparar con lo que llega por un canal —`+51 99 111 2233` y `+593 99 111 2233`
+  // solo se distinguen por el prefijo—, asi que `numerosDeTelefono.js` lo rechaza a proposito. El
+  // arranque creaba justo eso: un telefono que nadie podria verificar nunca. Encontrado el
+  // 2026-08-30 al escribir las pruebas de C2b.
+  //
+  // Es el mismo criterio que el documento nacional: el pais no esta en el codigo, esta en una fila.
+  const institucion = await fetchOne(
+    connection,
+    "SELECT pais_id FROM instituciones WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
+  );
+
   const telefonos = new TelefonoService(connection);
   const telefonoId = await telefonos.guardarPrincipal(
     personId,
-    { tipo: "personal", numero, canales: ["whatsapp"] },
+    { tipo: "personal", numero, pais_id: institucion?.pais_id ?? null, canales: ["whatsapp"] },
     connection
   );
   // El bootstrap da el numero por bueno, igual que daba `verify_whatsapp = 1`.

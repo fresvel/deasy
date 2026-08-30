@@ -1,15 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aFormatoInternacional, canalesConfigurados, hayAlgunCanal } from "./canalesDeVerificacion.js";
-
-test("el cero nacional se cae y el prefijo pierde el `+`", () => {
-  assert.equal(aFormatoInternacional("0991112233", "+593"), "593991112233");
-  assert.equal(aFormatoInternacional("991112233", "593"), "593991112233");
-  // Guardado con el formato local completo: se caen TODOS los ceros iniciales, no uno.
-  assert.equal(aFormatoInternacional("00991112233", "593"), "593991112233");
-  // Y el prefijo escrito como marcación internacional tampoco arrastra su `00`.
-  assert.equal(aFormatoInternacional("0991112233", "00593"), "593991112233");
-});
+import { canalesConfigurados, hayAlgunCanal } from "./canalesDeVerificacion.js";
 
 test("un canal sin configurar NO aparece — ausente no es `null`", () => {
   const solo = canalesConfigurados("LLAVE", { TELEGRAM_BOT_USERNAME: "bot_deasy" });

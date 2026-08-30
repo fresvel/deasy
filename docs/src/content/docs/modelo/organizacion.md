@@ -255,6 +255,16 @@ El sistema compone un enlace con una llave dentro —`t.me/<bot>?start=<llave>`,
 o un número al que mandar un SMS con ese texto—, y espera. Cuando el mensaje llega, el transporte ya
 prueba de qué número viene.
 
+**Quién compara es parte del diseño.** El canal aporta un hecho que su transporte prueba —«este
+número mandó esta llave»— y **el backend dicta el veredicto**, porque es el único que sabe de qué
+país es el número guardado. Hacerlo al revés no es un matiz: comparando sin el país sólo se puede
+mirar la cola del número, y entonces `+51 99 111 2233` y `+593 99 111 2233` son el mismo teléfono.
+Con eso bastaría para registrar el número de otra persona y verificarlo desde una línea propia.
+
+⚠️ **Y de ahí que un teléfono sin país no se pueda verificar.** `telefonos.pais_id` admite nulo, y
+sin prefijo no hay comparación internacional posible. Se avisa al pedir la llave, no al final del
+camino, para que la persona sepa qué arreglar.
+
 De ahí salen tres propiedades que no son casualidad:
 
 - **Ningún canal cuesta por mensaje.** No enviamos nada, así que no existe el ataque de coste que

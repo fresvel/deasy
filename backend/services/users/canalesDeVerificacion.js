@@ -9,19 +9,6 @@
 // ataque de coste — quien paga el SMS es quien lo envía.
 
 /**
- * El prefijo internacional sin `+` y sin el cero nacional: `0991112233` de Ecuador es `593991112233`.
- *
- * ⚠️ El cero se quita SIEMPRE que esté al principio, no sólo uno: hay quien guarda el número con el
- * formato local completo. Y el prefijo se limpia de todo lo que no sea dígito porque en la base
- * conviven `+593`, `593` y `00593`.
- */
-export const aFormatoInternacional = (numero, phoneCode) => {
-  const prefijo = String(phoneCode ?? "").replace(/\D/g, "").replace(/^00/, "");
-  const local = String(numero ?? "").replace(/\D/g, "").replace(/^0+/, "");
-  return `${prefijo}${local}`;
-};
-
-/**
  * Los canales configurados, ya compuestos con la llave.
  *
  * Devuelve SÓLO los que existen. Un canal sin configurar no aparece como `null`: si apareciera, la

@@ -4,13 +4,17 @@
 //
 //  1. `POST /users/me/telefonos/:id/verificacion` — lo llama el navegador. Devuelve los enlaces YA
 //     COMPUESTOS (Telegram, WhatsApp, SMS) para que la pantalla no tenga que saber armarlos.
-//  2. `POST /internal/verificacion/{resolver,consumir}` — lo llama `channels`, nunca un navegador.
+//  2. `POST /internal/verificacion/{estado,confirmar}` — lo llama `channels`, nunca un navegador.
 //
 // Lo que se protege aquí y no protege ninguna otra prueba:
 //
 //  - Que una llave usada diga «consumida» y NO «desconocida». Son mensajes distintos para el
 //    usuario: uno le dice que pida otra, el otro que se ha equivocado de enlace. Colapsarlos es un
 //    cambio silencioso, porque las dos respuestas son 404.
+//  - Que un número de OTRO PAÍS con la misma cola se rechace. Es el motivo de C2b: la comparación
+//    la hacía `channels`, que no sabe el país, y miraba los últimos ocho dígitos — así `+51 99 111
+//    2233` valía por `+593 99 111 2233`, y se podía verificar el número de otro desde el propio.
+//  - Que la sonda NO devuelva el número. Antes lo devolvía a quien trajera una llave válida.
 //  - Que sin la clave compartida el backend responda 404 y no 401: un 401 CONFIRMA que la ruta
 //    existe. Quien no tiene la clave no debe poder distinguir esto de una ruta inventada.
 //  - Que la llave quepa en un enlace de Telegram (<= 64 caracteres, sólo `A-Za-z0-9_-`). Es un
@@ -28,10 +32,10 @@ import { waitForReady } from "../lib/readiness.mjs";
 
 const CLAVE = { "x-deasy-servicio": process.env.INTERNAL_SERVICE_KEY ?? "" };
 
-const resolver = (llave, headers = CLAVE) =>
-  post("/internal/verificacion/resolver", { body: { llave }, headers });
-const consumir = (llave, canal, headers = CLAVE) =>
-  post("/internal/verificacion/consumir", { body: { llave, canal }, headers });
+const estado = (llave, headers = CLAVE) =>
+  post("/internal/verificacion/estado", { body: { llave }, headers });
+const confirmar = (llave, numero, canal, headers = CLAVE) =>
+  post("/internal/verificacion/confirmar", { body: { llave, numero, canal }, headers });
 
 /** Saca la llave del enlace que el backend compone; la llave en crudo no se devuelve nunca. */
 const llaveDelEnlace = (cuerpo) => {
@@ -58,26 +62,69 @@ test("la llave sólo se usa una vez, y la segunda vez el motivo es OTRO", async 
   assert.ok(llave.length <= 64, `la llave mide ${llave.length}; Telegram admite 64`);
   assert.match(llave, /^[A-Za-z0-9_-]+$/, "Telegram sólo acepta A-Za-z0-9_- en el payload de start");
 
-  const viva = await resolver(llave);
+  const viva = await estado(llave);
   assert.equal(viva.status, 200);
-  assert.equal(viva.body.estado, "valida");
-  assert.equal(typeof viva.body.numero, "string");
-  // El número viaja; de quién es, NO. Una llave filtrada no debe servir para saber quién es alguien.
-  assert.equal(viva.body.telefonoId, undefined, "el servicio no necesita saber de quién es");
-  assert.equal(viva.body.person_id, undefined);
+  assert.deepEqual(viva.body, { estado: "valida" }, "la sonda dice si vive y NADA más");
+  // El número no sale del backend. Ni el número, ni de quién es: una llave filtrada no debe servir
+  // para averiguar el teléfono de nadie.
+  assert.equal(viva.body.numero, undefined);
+  assert.equal(viva.body.telefonoId, undefined);
 
-  assert.equal((await consumir(llave, "telegram")).status, 200);
+  const ok = await confirmar(llave, pedida.body.numero, "telegram");
+  assert.equal(ok.status, 200, JSON.stringify(ok.body));
 
-  const repetida = await resolver(llave);
+  const repetida = await estado(llave);
   assert.equal(repetida.status, 404);
   assert.equal(repetida.body.estado, "consumida", "«ya usada» no es «no existe»");
 
-  const otraVez = await consumir(llave, "telegram");
-  assert.equal(otraVez.status, 409, "consumir dos veces es un conflicto, no un éxito silencioso");
+  const otraVez = await confirmar(llave, pedida.body.numero, "telegram");
+  assert.equal(otraVez.status, 409, "confirmar dos veces es un conflicto, no un éxito silencioso");
+  assert.equal(otraVez.body.estado, "consumida");
 
-  const inventada = await resolver("una-llave-que-nadie-emitio");
+  const inventada = await estado("una-llave-que-nadie-emitio");
   assert.equal(inventada.status, 404);
   assert.equal(inventada.body.estado, "desconocida");
+});
+
+// ── EL MOTIVO POR EL QUE EXISTE C2b ─────────────────────────────────────────────────────────────
+//
+// Comparar los últimos ocho dígitos daba por iguales `+51 99 111 2233` y `+593 99 111 2233`. Con
+// eso, cualquiera registraba el número de OTRA persona y lo verificaba desde una línea propia de
+// otro país con la misma cola — que es exactamente lo que la verificación existe para impedir.
+//
+// La comparación se mudó al backend porque es el único que sabe el país del número guardado
+// (`telefonos.pais_id` -> `paises.phone_code`). Aquí se comprueba de punta a punta.
+//
+// ⚠️ Y este caso sólo se puede escribir porque el teléfono sembrado TIENE país. No lo tenía: el
+// arranque lo creaba sin él, y con eso era imposible de verificar por definición. Se arregló en el
+// mismo commit — el país sale de `instituciones`, igual que el del documento nacional.
+test("un número de otro país con la misma cola NO verifica", async () => {
+  const token = await tokenFor("admin");
+  const pedida = await post("/users/me/telefonos/1/verificacion", { token });
+  const llave = llaveDelEnlace(pedida.body);
+
+  const gemelo = pedida.body.numero.replace(/^593/, "51");
+  assert.notEqual(gemelo, pedida.body.numero, "el sosia tiene que ser otro número");
+
+  const impostor = await confirmar(llave, `+${gemelo}`, "telegram");
+  assert.equal(impostor.status, 409, JSON.stringify(impostor.body));
+  assert.equal(impostor.body.estado, "numero_distinto");
+
+  // Y la llave NO se gasta con el intento fallido: quien de verdad tiene el número sigue pudiendo.
+  assert.equal((await estado(llave)).body.estado, "valida");
+  assert.equal((await confirmar(llave, pedida.body.numero, "telegram")).status, 200);
+});
+
+test("el mismo número, escrito como lo entrega cada transporte", async () => {
+  const token = await tokenFor("admin");
+
+  // La internacional es la que dan Telegram, WhatsApp y las pasarelas; la local, un SMS nacional
+  // desde módem propio, que es el único transporte que puede entregar un número sin país.
+  for (const escritura of ["+593 99 000 0000", "593990000000", "0990000000", "990000000"]) {
+    const pedida = await post("/users/me/telefonos/1/verificacion", { token });
+    const r = await confirmar(llaveDelEnlace(pedida.body), escritura, "telegram");
+    assert.equal(r.status, 200, `«${escritura}» debería valer: ${JSON.stringify(r.body)}`);
+  }
 });
 
 test("pedir otra llave invalida la anterior", async () => {
@@ -87,12 +134,12 @@ test("pedir otra llave invalida la anterior", async () => {
   const segunda = llaveDelEnlace((await post("/users/me/telefonos/1/verificacion", { token })).body);
   assert.notEqual(primera, segunda, "cada petición emite una llave nueva");
 
-  const vieja = await resolver(primera);
+  const vieja = await estado(primera);
   assert.equal(vieja.status, 404);
   // Borrada, no marcada: para quien la tenga es indistinguible de no haber existido nunca, que es
   // lo correcto — no llegó a usarse.
   assert.equal(vieja.body.estado, "desconocida");
-  assert.equal((await resolver(segunda)).body.estado, "valida");
+  assert.equal((await estado(segunda)).body.estado, "valida");
 });
 
 // Encontrado AL ESCRIBIR ESTAS PRUEBAS: la ruta vive bajo `/me/`, pero el servicio buscaba el
@@ -109,9 +156,30 @@ test("el teléfono de otra persona responde como si no existiera", async () => {
 });
 
 test("sin la clave compartida, `/internal/` no admite ni que existe", async () => {
-  const sinClave = await resolver("da-igual", {});
+  const sinClave = await estado("da-igual", {});
   assert.equal(sinClave.status, 404, "401 confirmaría la ruta; 404 no dice nada");
 
-  const claveMala = await resolver("da-igual", { "x-deasy-servicio": "no-es-la-clave" });
+  const claveMala = await estado("da-igual", { "x-deasy-servicio": "no-es-la-clave" });
   assert.equal(claveMala.status, 404);
+});
+
+// LA CARRERA, DE VERDAD. Secuencialmente nunca se llega a esta rama: la segunda confirmación ya lee
+// la llave como consumida y se rechaza antes de escribir. Sólo con dos peticiones a la vez importa
+// que el `UPDATE` lleve `consumida_at IS NULL` y que se mire cuántas filas tocó.
+//
+// Y pasa de verdad: el usuario pulsa el enlace dos veces, o el canal reintenta. Sin esta guarda,
+// las dos confirmarían y `telefono_canales` se escribiría dos veces por el mismo suceso.
+test("dos confirmaciones simultáneas: gana UNA, y la otra pierde limpiamente", async () => {
+  const token = await tokenFor("admin");
+  const pedida = await post("/users/me/telefonos/1/verificacion", { token });
+  const llave = llaveDelEnlace(pedida.body);
+
+  const [a, b] = await Promise.all([
+    confirmar(llave, pedida.body.numero, "telegram"),
+    confirmar(llave, pedida.body.numero, "telegram"),
+  ]);
+
+  const codigos = [a.status, b.status].sort();
+  assert.deepEqual(codigos, [200, 409], `salió ${JSON.stringify(codigos)}: ${JSON.stringify([a.body, b.body])}`);
+  assert.equal([a, b].find((r) => r.status === 409).body.estado, "consumida");
 });

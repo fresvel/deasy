@@ -75,11 +75,22 @@ No es un detalle de implementación: **es lo que hace que todo esto sea posible 
 3. El canal recibe algo. El servicio le pregunta al backend por la llave.
 4. **Tres comprobaciones**, y las tres tienen que pasar:
 
-   | | Qué impide |
-   |---|---|
-   | La llave existe, no ha caducado y no se ha usado | Reutilizar una llave vista antes |
-   | El número que llega es **el que se pidió verificar** | Verificar el número de otro |
-   | El remitente es **quien dice ser** (ver cada canal) | Reenviar la tarjeta de contacto ajena |
+   | | Quién la hace | Qué impide |
+   |---|---|---|
+   | La llave existe, no ha caducado y no se ha usado | el backend | Reutilizar una llave vista antes |
+   | El número que llega es **el que se pidió verificar** | **el backend** | Verificar el número de otro |
+   | El remitente es **quien dice ser** (ver cada canal) | el canal | Reenviar la tarjeta de contacto ajena |
+
+   ⚠️ **La segunda cambió de dueño el 2026-08-30 (C2b), y no por gusto.** La hacía el servicio, que
+   **no sabe de qué país es el número guardado** y por eso sólo podía comparar la cola: los últimos
+   ocho dígitos. Con esa regla `+51 99 111 2233` y `+593 99 111 2233` son el mismo teléfono —medido,
+   no supuesto—, así que se podía registrar el número de otra persona y verificarlo desde una línea
+   propia de otro país con la misma cola. El backend sí sabe el país (`telefonos.pais_id` ->
+   `paises.phone_code`) y compara en E.164 exacto.
+
+   El principio que lo ordena, y que vale para el resto del servicio: **un subordinado reporta lo
+   que OBSERVÓ, no un veredicto.** El canal aporta un hecho que su transporte prueba —«este número
+   mandó esta llave»—; concluir es de quien tiene los datos.
 
 5. El servicio se lo cuenta al backend. **El backend** marca el teléfono como verificado.
 
@@ -90,8 +101,12 @@ Tres rutas y una tabla. Las dos internas **no las alcanza un navegador**:
 | Ruta | Quién la llama | Qué hace |
 |---|---|---|
 | `POST /users/me/telefonos/:id/verificacion` | el navegador, con sesión | Emite la llave y devuelve **los enlaces ya compuestos** |
-| `POST /internal/verificacion/resolver` | `channels` | De qué número es esta llave — o por qué no vale |
-| `POST /internal/verificacion/consumir` | `channels` | La gasta y marca el canal |
+| `POST /internal/verificacion/estado` | `channels` | **Sonda**: ¿esta llave sigue viva? Y nada más — **no devuelve el número** |
+| `POST /internal/verificacion/confirmar` | `channels` | «Este número mandó esta llave por este canal». **Compara y consume, en una transacción** |
+
+⚠️ **La sonda existe por Telegram**, y no es un resto del diseño anterior: su bot tiene que **pedir
+el contacto en un segundo paso**, y pedírselo a alguien cuya llave no vale es hacerle compartir sus
+datos para nada. Devuelve el estado y nunca el número.
 
 **Dos capas protegen `/internal/`, y las dos hacen falta.** nginx devuelve **404** para
 `/api/internal/`, porque el proxy publica el backend entero bajo `/api/` — sin esa regla estas rutas
@@ -108,9 +123,24 @@ como `null`. Y con **cero** canales la petición responde **503 sin gastar una l
 dicen cosas distintas: sólo las dos últimas significan «repite sin cambiar nada». Colapsarlas es un
 cambio silencioso, ya que las cuatro respuestas comparten código HTTP.
 
-⚠️ **Un 409 al consumir NO es una avería.** Significa que la llave dejó de valer entre resolver y
-confirmar —dos mensajes casi a la vez, o dos pulsaciones—, y al usuario hay que decirle «pide otra»,
-no «error interno». Es el único código que `ClienteDeDeasy` **no** convierte en excepción.
+⚠️ **Un 409 al confirmar NO es una avería.** Cubre los cuatro rechazos —llave desconocida, caducada,
+consumida y **número distinto**—, y al usuario hay que decirle qué pasó, no «error interno». Es el
+único código que `ClienteDeDeasy` **no** convierte en excepción.
+
+⚠️ **Comparar y consumir van en UNA transacción**, y el `UPDATE` lleva `consumida_at IS NULL` con el
+número de filas comprobado. Sin eso, dos mensajes a la vez confirmarían los dos. Se prueba con dos
+peticiones en paralelo: gana una y la otra pierde limpiamente — **secuencialmente esa rama no se
+alcanza nunca**, porque la segunda ya lee la llave como consumida.
+
+⚠️ **Dos cosas distintas responden 404 a `channels`**: el endpoint cuando la llave no vale, y el
+guard cuando la clave compartida no es la buena —que contesta 404 a propósito—. Se distinguen por el
+cuerpo: el endpoint siempre manda `estado`; el guard, un `message`. **Sin distinguirlas, una clave
+mal puesta le diría «tu enlace no vale» a todo el mundo, para siempre y sin una pista de por qué.**
+
+⚠️ **Un teléfono sin país NO se puede verificar**, y se dice al pedir la llave, no al final del
+camino. `telefonos.pais_id` es nullable y el caso existía de verdad: **el arranque creaba el teléfono
+del administrador sin país**, o sea imposible de verificar por definición. Ahora lo hereda de
+`instituciones`, igual que el documento nacional.
 
 ⚠️ **De la llave se guarda sólo su huella SHA-256**, y eso es deliberado frente a bcrypt: aquí hay
 que **buscar por la llave** que llega, y una huella con sal no se puede buscar. No es una contraseña

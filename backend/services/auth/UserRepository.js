@@ -174,7 +174,14 @@ export default class UserRepository {
     const [tels] = await this.pool.query(
       `SELECT t.person_id, t.id, t.tipo, t.principal, t.numero,
               pa.iso_alpha2 AS pais_iso, pa.phone_code AS prefijo,
-              COALESCE(pa.phone_code, '') || t.numero AS numero_completo
+              -- ⚠️ EL CERO NACIONAL NO VA DETRAS DEL PREFIJO: +593 seguido de 0990000000 da
+              -- +5930990000000, que no es un numero. Se quita al internacionalizar y se
+              -- CONSERVA cuando no hay prefijo, porque entonces la forma local es la correcta.
+              -- No se veia porque hasta el 2026-08-30 el arranque creaba el telefono SIN pais.
+              CASE
+                WHEN COALESCE(pa.phone_code, '') = '' THEN t.numero
+                ELSE pa.phone_code || regexp_replace(t.numero, '^0+', '')
+              END AS numero_completo
          FROM telefonos t
          LEFT JOIN paises pa ON pa.id = t.pais_id
         WHERE t.person_id IN (${ids.map(() => "?").join(", ")}) AND t.is_active = 1
