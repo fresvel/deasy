@@ -1,0 +1,13 @@
+{
+  "name": "channels",
+  "version": "0.1.0",
+  "description": "Pasarela de canales de mensajeria de Deasy. Sostiene conexiones; NO decide.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test src/**/*.test.js"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}
