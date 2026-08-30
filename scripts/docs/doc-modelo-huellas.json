@@ -4,6 +4,7 @@
     "paginas": [
       "backend/auth.md",
       "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "infraestructura/cicd-sonar.md",
       "infraestructura/index.md"
     ]
@@ -29,12 +30,14 @@
     "huella": "a428aecb0100dc47",
     "paginas": [
       "backend/auth.md",
-      "complemento/mapa-completo.md"
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md"
     ]
   },
   "cargos": {
     "huella": "f36bc357bc16f900",
     "paginas": [
+      "complemento/permisos.md",
       "datos/firmas-y-dominios.md",
       "datos/motor-de-procesos.md",
       "modelo/mapa-completo.md",
@@ -130,6 +133,7 @@
       "backend/auth.md",
       "complemento/empleo.md",
       "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "datos/firmas-y-dominios.md"
     ]
   },
@@ -180,6 +184,7 @@
     "huella": "14c587017ec217c9",
     "paginas": [
       "complemento/credenciales.md",
+      "complemento/firma-en-lote.md",
       "datos/firmas-y-dominios.md",
       "datos/index.md",
       "modelo/flujo-de-firma.md",
@@ -201,6 +206,7 @@
   "document_versions": {
     "huella": "7f997ddbf9021e6a",
     "paginas": [
+      "complemento/credenciales.md",
       "datos/firmas-y-dominios.md",
       "datos/index.md",
       "datos/motor-de-procesos.md",
@@ -344,7 +350,8 @@
     "huella": "bb331c1d630dc49a",
     "paginas": [
       "backend/auth.md",
-      "complemento/mapa-completo.md"
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md"
     ]
   },
   "person_certificates": {
@@ -363,8 +370,10 @@
       "complemento/credenciales.md",
       "complemento/empleo.md",
       "complemento/expediente.md",
+      "complemento/firma-en-lote.md",
       "complemento/index.md",
       "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "datos/firmas-y-dominios.md",
       "modelo/cierre.md",
       "modelo/disparo.md",
@@ -386,6 +395,7 @@
     "paginas": [
       "backend/auth.md",
       "complemento/empleo.md",
+      "complemento/permisos.md",
       "datos/firmas-y-dominios.md",
       "modelo/entregable-y-ediciones.md",
       "modelo/mapa-completo.md",
@@ -507,6 +517,7 @@
     "paginas": [
       "complemento/index.md",
       "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "datos/firmas-y-dominios.md",
       "modelo/index.md",
       "modelo/organizacion.md",
@@ -518,13 +529,15 @@
     "huella": "f6bd948b8b9994f5",
     "paginas": [
       "backend/auth.md",
-      "complemento/mapa-completo.md"
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md"
     ]
   },
   "role_assignment_relation_types": {
     "huella": "79676cc6c1db33b8",
     "paginas": [
-      "complemento/mapa-completo.md"
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md"
     ]
   },
   "role_assignments": {
@@ -532,6 +545,7 @@
     "paginas": [
       "backend/auth.md",
       "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "datos/firmas-y-dominios.md",
       "modelo/entregable-y-ediciones.md"
     ]
@@ -540,7 +554,8 @@
     "huella": "46911e0afdcb8f7d",
     "paginas": [
       "backend/auth.md",
-      "complemento/mapa-completo.md"
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md"
     ]
   },
   "roles": {
@@ -550,13 +565,14 @@
       "complemento/empleo.md",
       "complemento/expediente.md",
       "complemento/index.md",
-      "complemento/mapa-completo.md"
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md"
     ]
   },
   "signature_batch_jobs": {
     "huella": "b8b3da8acd08ab19",
     "paginas": [
-      "complemento/index.md",
+      "complemento/firma-en-lote.md",
       "complemento/mapa-completo.md",
       "datos/firmas-y-dominios.md",
       "modelo/lo-que-no-cierra.md",
@@ -608,6 +624,8 @@
   "signature_requests": {
     "huella": "bf10d37164ab4bdd",
     "paginas": [
+      "complemento/credenciales.md",
+      "complemento/firma-en-lote.md",
       "datos/firmas-y-dominios.md",
       "datos/motor-de-procesos.md",
       "modelo/cierre.md",
@@ -619,6 +637,7 @@
   "signature_statuses": {
     "huella": "836a3000aad5dfbd",
     "paginas": [
+      "complemento/credenciales.md",
       "datos/firmas-y-dominios.md",
       "modelo/flujo-de-firma.md",
       "modelo/mapa-completo.md",
@@ -801,6 +820,7 @@
       "complemento/conversacion.md",
       "complemento/empleo.md",
       "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "datos/firmas-y-dominios.md",
       "frontend/composables-y-deuda.md",
       "modelo/disparo.md",

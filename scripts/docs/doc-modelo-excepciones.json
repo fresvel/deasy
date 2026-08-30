@@ -31,6 +31,7 @@
         "backend/auth.md",
         "backend/errores-e-integraciones.md",
         "backend/index.md",
+        "complemento/permisos.md",
         "datos/index.md",
         "modelo/documento.md",
         "modelo/entregable-concreto.md",
@@ -120,9 +121,10 @@
       ]
     },
     "process_definitions": {
-      "motivo": "PROSA · plural del concepto; la tabla es `process_definition_versions`.",
+      "motivo": "RBAC · uno de los 13 RECURSOS de permisos, no una tabla (ver complemento/permisos.md).",
       "paginas": [
-        "backend/auth.md"
+        "backend/auth.md",
+        "complemento/permisos.md"
       ]
     },
     "process_definition_template": {
@@ -132,21 +134,24 @@
       ]
     },
     "fill_flows": {
-      "motivo": "PROSA · la familia `fill_flow_*`, no una tabla.",
+      "motivo": "RBAC · uno de los 13 RECURSOS de permisos, no una tabla (ver complemento/permisos.md).",
       "paginas": [
-        "backend/auth.md"
+        "backend/auth.md",
+        "complemento/permisos.md"
       ]
     },
     "signature_flows": {
-      "motivo": "PROSA · la familia `signature_flow_*`, no una tabla.",
+      "motivo": "RBAC · uno de los 13 RECURSOS de permisos, no una tabla (ver complemento/permisos.md).",
       "paginas": [
-        "backend/auth.md"
+        "backend/auth.md",
+        "complemento/permisos.md"
       ]
     },
     "academic_terms": {
-      "motivo": "PROSA · el concepto; la tabla es `terms`.",
+      "motivo": "RBAC · uno de los 13 RECURSOS de permisos, no una tabla (ver complemento/permisos.md).",
       "paginas": [
-        "backend/auth.md"
+        "backend/auth.md",
+        "complemento/permisos.md"
       ]
     },
     "audit_log": {
@@ -164,7 +169,8 @@
     "process_execution": {
       "motivo": "RBAC · recurso de permisos (`process_execution.create`), no una tabla.",
       "paginas": [
-        "backend/auth.md"
+        "backend/auth.md",
+        "complemento/permisos.md"
       ]
     },
     "en_proceso": {
