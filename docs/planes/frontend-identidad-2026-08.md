@@ -27,7 +27,7 @@
 | **F4a** | Marcar un principal desmarca al anterior, en las CUATRO tablas | ✅ | Trigger `trg_principal_unico_fn` con el ámbito por argumentos (persona / persona+tipo); 2 goldens nuevos, y las 2 mutaciones del esquema cazadas por su prueba | 2026-08-28 |
 | **F4b** | El escaneo del documento se sube y se ve desde la pestaña | ⬜ | | |
 | **F4c** | Los canales de un teléfono se eligen desde el teléfono | ⬜ | | |
-| **F4d** | `verificado`: decidir si se construye el flujo o se deja a mano | ⛔ | **Bloqueada por una decisión del dueño.** `marcarVerificado` existe en los tres servicios y su ÚNICO llamador es el bootstrap: no hay flujo. Ponerlo de sólo lectura lo dejaría inalcanzable para siempre | |
+| **F4d** | `verificado`: decidir si se construye el flujo o se deja a mano | ⛔ | **Lo desbloquea el frente 15** ([`channels-verificacion-2026-08.md`](./channels-verificacion-2026-08.md)), que es el flujo de verificación que faltaba. Antes: bloqueada por una decisión del dueño. `marcarVerificado` existe en los tres servicios y su ÚNICO llamador es el bootstrap: no hay flujo. Ponerlo de sólo lectura lo dejaría inalcanzable para siempre | |
 | **F5** | `/perfil/datos` — el usuario edita sus propios datos personales | ⬜ | | |
 | **F6** | Decisión del dueño sobre la dirección en el registro, y su ejecución | ⬜ | | |
 | **F7** | El panel de la persona: documentos, correos, teléfonos, direcciones y foto en un sitio | ⬜ | | |
