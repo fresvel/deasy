@@ -439,6 +439,27 @@ doble de sitio. En vertical el QR quedaba pequeño y empujado hacia abajo, que e
 que hace falta —es la salida de quien está en el ordenador, y se mira con la cámara en la mano—. Y el
 botón va ahora **pegado a su propia frase**, no separado de ella por el otro texto.
 
+#### Cuarta vuelta: mirar la pantalla de verdad (2026-08-31)
+
+El dueño dijo «se ve horrible, míralo tú mismo». **Y tenía razón en todo.** Abierta en Chrome con una
+sesión real, medida y corregida hasta que estuvo bien:
+
+| Qué estaba mal | Por qué |
+|---|---|
+| El contenedor medía **448 px en una pantalla de 1440** | `AuthLayout size="md"`, que es el ancho de un formulario de una columna. Esta pantalla tiene dos |
+| El selector **se desbordaba** sobre el panel | Consecuencia de lo anterior |
+| El indicador de pasos **se estiraba** de lado a lado | Cada paso llevaba `flex-1`. Un indicador de progreso es una **frase** —«vas por el 3 de 3»— y las frases no se justifican |
+| El logo **no se centraba** con `mx-auto` | `AppLogo` es `inline-flex`, y los márgenes automáticos no centran elementos en línea. Lo que centra es el `text-center` del padre |
+| En **móvil** el QR ocupaba media pantalla | Y ahí no sirve para nada: no puedes escanear tu propia pantalla. Ahora el orden se invierte por tamaño |
+| La columna del selector quedaba **vacía** | Se llenó con lo único que hace falta para elegir, que además faltaba: «los tres prueban lo mismo» |
+
+**Nada de esto lo veía ninguna prueba**, y las 27 puertas del frontend tampoco: todas pasaban con la
+pantalla rota. Lo único que lo encuentra es abrirla.
+
+⚠️ Y una lección de método: **hacía falta una sesión en ese estado exacto** —correo verificado,
+teléfono no— para poder mirar. Se fabrica con un alta por API y un `UPDATE` al correo; sin eso no hay
+forma de llegar a la pantalla.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la

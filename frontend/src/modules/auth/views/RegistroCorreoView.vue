@@ -1,17 +1,20 @@
 <template>
-  <AuthLayout size="md">
-    <AppLogo size="lg" :framed="true" class-name="mb-8 mx-auto" />
-
-    <PasosDelRegistro paso="correo" />
-
-    <div class="mb-8">
-      <h1 class="deasy-title deasy-title--page">Confirma tu correo</h1>
-      <p class="text-muted mt-2.5 font-medium text-sm">
+  <!-- `2xl` y no `md`: con 448 px el indicador de tres pasos PARTÍA EN DOS LÍNEAS, y un indicador
+       de progreso roto en dos es peor que no tenerlo. -->
+  <AuthLayout size="2xl">
+    <!-- ⚠️ EL `text-center` VA AQUÍ, y es lo que centra el logo. `AppLogo` es `inline-flex`, así que
+         un `mx-auto` suyo NO HACE NADA: los márgenes automáticos no centran elementos en línea.
+         Costó una captura darse cuenta. -->
+    <header class="mb-8 text-center">
+      <AppLogo size="lg" :framed="true" class-name="mb-6" />
+      <PasosDelRegistro paso="correo" />
+      <h1 class="deasy-title deasy-title--page mt-6">Confirma tu correo</h1>
+      <p class="text-muted mx-auto mt-2 max-w-lg text-sm font-medium">
         Te hemos enviado un código de 6 cifras a
         <strong class="text-strong">{{ correo || 'tu correo' }}</strong>. Escríbelo aquí para
         continuar.
       </p>
-    </div>
+    </header>
 
     <!-- Si el envío falló, se dice. Antes esto se tragaba en silencio y la persona esperaba un
          correo que nunca salió, sin nada que la sacara de ahí. -->
@@ -19,7 +22,7 @@
       No pudimos enviar el correo. Pulsa «Enviar otro código» para intentarlo de nuevo.
     </p>
 
-    <form class="space-y-6" @submit.prevent="comprobar">
+    <form class="mx-auto max-w-sm space-y-6" @submit.prevent="comprobar">
       <div>
         <label for="codigo-correo" class="deasy-form-label">Código de verificación</label>
         <input
@@ -47,7 +50,7 @@
       </div>
     </form>
 
-    <div class="mt-6 flex justify-end">
+    <div class="mt-8 flex justify-end border-t border-line pt-6">
       <router-link to="/logout" class="deasy-auth-link">Salir</router-link>
     </div>
   </AuthLayout>
