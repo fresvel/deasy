@@ -136,6 +136,33 @@ services:
     volumes:
       - ../signer:/app
 
+  # El microservicio de canales de mensajería. Ver `docs/arquitecturas/microservicio-channels.md`.
+  channels:
+    build:
+      context: ..
+      dockerfile: docker/channels/Dockerfile
+    env_file:
+      - .env.dev
+      - path: .env.dev.runtime
+        required: false
+    environment:
+      # En la red interna, y NO por el proxy: nginx devuelve 404 para `/api/internal/` a propósito.
+      DEASY_API_URL: http://backend:3030/deasy/v1
+    depends_on:
+      - backend
+    # ⚠️ SIN PUERTO PUBLICADO, como el firmador: al navegador no se le ha perdido nada aquí.
+    #
+    # ⚠️ Y UNA SOLA INSTANCIA, que no es una preferencia sino una atadura de los canales:
+    #   · El sondeo de Telegram entrega cada actualización UNA vez. Dos procesos sondeando se roban
+    #     los mensajes entre ellos y el síntoma es intermitente e incomprensible.
+    #   · La sesión de WhatsApp (C5) vive en el proceso que la abrió.
+    # Por eso no se escala con `--scale`, y por eso hace falta UN BOT POR ENTORNO.
+    deploy:
+      replicas: 1
+    volumes:
+      - ../channels:/app
+      - channels_node_modules:/app/node_modules
+
   analytics:
     build:
       context: ..
@@ -155,6 +182,8 @@ volumes:
     name: deasy_${DEASY_STACK:-dev}_minio_data
   backend_node_modules_v2:
     name: deasy_${DEASY_STACK:-dev}_backend_node_modules
+  channels_node_modules:
+    name: deasy_${DEASY_STACK:-dev}_channels_node_modules
   frontend_node_modules:
     name: deasy_${DEASY_STACK:-dev}_frontend_node_modules
   docs_node_modules:
