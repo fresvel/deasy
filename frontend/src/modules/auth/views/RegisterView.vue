@@ -225,7 +225,7 @@
               leave-from-class="translate-y-0 opacity-100"
               leave-to-class="-translate-y-2 opacity-0"
             >
-              <AppAlert class="mt-5 flex" v-if="errorMessage">
+              <AppAlert ref="cajaDeError" class="mt-5 flex" v-if="errorMessage">
                 <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
                 <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
                 <AppCloseButton class="ml-3" label="Cerrar alerta" @click="errorMessage = ''" />
@@ -264,7 +264,7 @@
 
 <script setup>
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
-import { ref, computed, watch, onMounted, useId } from "vue";
+import { ref, computed, watch, onMounted, nextTick, useId } from "vue";
 import { tonoFuerza } from "@/shared/utils/estadoTono.js";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";
@@ -334,6 +334,21 @@ const cargarPaises = async () => {
 
 const errorMessage = ref("");
 const creando = ref(false);
+const cajaDeError = ref(null);
+
+/**
+ * Enseña el error, y se asegura de que SE VEA.
+ *
+ * ⚠️ El dueño reportó «no saltó ningún error en pantalla». Sí saltaba: medido, se pintaba a 1117 px
+ * en una ventana de 900. Este formulario es largo, y un aviso que aparece fuera de la vista es
+ * exactamente igual de útil que no aparecer.
+ */
+const mostrarError = async (texto) => {
+  errorMessage.value = texto;
+  await nextTick();
+  const nodo = cajaDeError.value?.$el ?? cajaDeError.value;
+  nodo?.scrollIntoView?.({ behavior: "smooth", block: "center" });
+};
 const termsAccepted = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
@@ -524,11 +539,11 @@ const createnewUser = async () => {
   errorMessage.value = "";
 
   if (newuser.value.password !== newuser.value.repassword) {
-    errorMessage.value = "Las contraseñas no coinciden.";
+    mostrarError("Las contraseñas no coinciden.");
     return;
   }
   if (!termsAccepted.value) {
-    errorMessage.value = "Debe aceptar los términos y condiciones.";
+    mostrarError("Debe aceptar los términos y condiciones.");
     return;
   }
   validarDocumento();
@@ -537,15 +552,15 @@ const createnewUser = async () => {
     return;
   }
   if (documento.value.tipo !== "documento_nacional" && !documento.value.pais) {
-    errorMessage.value = "Un documento que no es cédula ecuatoriana necesita su país emisor.";
+    mostrarError("Un documento que no es cédula ecuatoriana necesita su país emisor.");
     return;
   }
   if (phoneNumber.value.length !== 10) {
-    errorMessage.value = "El número telefónico debe tener 10 dígitos.";
+    mostrarError("El número telefónico debe tener 10 dígitos.");
     return;
   }
   if (passwordStrengthScore.value < 3) {
-    errorMessage.value = "La contraseña es muy débil. Asegúrate de incluir mayúsculas, minúsculas, números y al menos 8 caracteres.";
+    mostrarError("La contraseña es muy débil. Asegúrate de incluir mayúsculas, minúsculas, números y al menos 8 caracteres.");
     return;
   }
 
@@ -579,7 +594,7 @@ const createnewUser = async () => {
     // Directo al paso 2. Sin modal en medio: no hay nada que anunciar, hay algo que seguir.
     router.push("/registro/correo");
   } catch (error) {
-    errorMessage.value = resolveApiErrorMessage(error, "Error al crear el usuario. Por favor intenta de nuevo.");
+    mostrarError(resolveApiErrorMessage(error, "Error al crear el usuario. Por favor intenta de nuevo."));
   } finally {
     // Se libera SIEMPRE. Sin el `finally`, un fallo dejaria el botón muerto para el resto de la
     // sesión y habría que recargar --que es justo el remedio que este frente lleva días quitando.

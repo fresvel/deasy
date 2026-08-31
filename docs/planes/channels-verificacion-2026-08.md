@@ -646,6 +646,39 @@ comprobación más, era normalizar el dato antes de compararlo — que es lo que
 sesión que responda «ese correo ya existe» deja que cualquiera compruebe si una persona está
 registrada. Queda para después de `C9` (el limitador), que es lo que lo hace defendible.
 
+#### Undécima vuelta: el error invisible y el vigilante que expulsaba (2026-08-31)
+
+**Lo reportado:** con cédula, correo y teléfono duplicados, *«no saltó ningún error en pantalla»* y
+*«después de un rato se fue a la página del login»*.
+
+**1 · El error SÍ saltaba. Se pintaba fuera de la vista.** Medido: a **1117 px en una ventana de
+900**. Este formulario es largo, y un aviso que aparece donde no se ve es exactamente igual de útil
+que no aparecer. Ahora se desplaza solo hasta él.
+
+**2 · El monitor de sesión expulsaba al que NO tenía sesión.** `useSessionMonitor.checkSession`
+hacía, cada 60 segundos:
+
+```js
+if (!token) { clearAuthData(); router.push('/'); }
+```
+
+**«No hay sesión» no es «la sesión caducó».** Ese monitor existe para avisar ANTES de que un token
+expire; decidir quién puede estar en una ruta es del guard del router y del backend. Al hacerlo
+también aquí, cualquiera que se quedara en una pantalla sin sesión salía disparado al acceso **al
+minuto, perdiendo lo escrito**. Ahora simplemente deja de vigilar.
+
+Y de paso, `startMonitoring` **no paraba el intervalo anterior**: `setInterval` devuelve un asa nueva
+y la vieja se perdía sin limpiar, así que navegar entre rutas con sesión acumulaba vigilantes
+huérfanos que `stopMonitoring()` ya no podía apagar.
+
+⚠️ **Honestidad sobre esto:** no conseguí **escenificar** la fuga —mi medición con `pushState` no
+dispara el `watch` del router, así que no prueba nada—. Lo que sí es objetivo: el asa se sobrescribía
+sin limpiar, y el `redirect` era el **único** camino del código que lleva al acceso tras un retardo.
+Quitarlo hace **imposible** el síntoma, venga la fuga de donde venga.
+
+**Comprobado en Chrome:** 75 segundos en el formulario de registro sin sesión → sigue ahí, **con lo
+escrito intacto**. Y con los tres duplicados → se queda en `/register` y el mensaje **se ve**.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la
