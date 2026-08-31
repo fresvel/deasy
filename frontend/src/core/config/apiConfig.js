@@ -141,6 +141,10 @@ export const API_ROUTES = {
   // Público, como la geografía: lo consume el registro.
   SYSTEM_INSTITUCION: `${API_PREFIX}/system/institucion`,
   SYSTEM_GEO_PAISES: `${API_PREFIX}/system/geografia/paises`,
-  SYSTEM_GEO_PROVINCIAS: (paisIso) => `${API_PREFIX}/system/geografia/provincias?pais=${encodeURIComponent(paisIso)}`,
-  SYSTEM_GEO_CIUDADES: (provinciaId) => `${API_PREFIX}/system/geografia/ciudades?provincia_id=${encodeURIComponent(provinciaId)}`
+  // ⚠️ AQUI ESTABAN `SYSTEM_GEO_PROVINCIAS` y `SYSTEM_GEO_CIUDADES`. Se retiraron el 2026-08-31 al
+  // sacar la direccion del registro (F6): eran sus dos unicos consumidores. El admin NO las usa
+  // --pide `provincias` y `ciudades` por el editor generico de tablas.
+  //
+  // Las rutas del backend (`/system/geografia/…`) SE QUEDAN: `/perfil/datos` (F5) va a gestionar
+  // direcciones y las necesita. Lo que sobraba era el atajo del frontend, no el endpoint.
 };

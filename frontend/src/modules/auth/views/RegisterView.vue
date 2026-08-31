@@ -126,110 +126,6 @@
             <section class="deasy-form-section">
               <div class="deasy-form-section__header">
                 <span class="deasy-form-section__icon">
-                  <IconMapPin class="h-5 w-5" />
-                </span>
-                <h2 class="deasy-title deasy-title--block">Dirección de residencia</h2>
-              </div>
-
-              <div class="deasy-form-grid--three">
-                <div>
-                  <label :for="fieldId('pais-residencia')" class="deasy-form-label">País</label>
-                  <select :id="fieldId('pais-residencia')" v-model="direccion.pais" required class="deasy-control">
-                    <option value="" disabled>Selecciona un país</option>
-                    <option v-for="c in paises" :key="c.iso_alpha2" :value="c.iso_alpha2">{{ c.name }}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label :for="fieldId('provincia-residencia')" class="deasy-form-label">Provincia / Estado</label>
-                  <!-- Encadenado: las provincias salen del catálogo del país elegido. Antes era un
-                       texto libre, y por eso `provincia_residencia` guardaba lo que cada quien
-                       escribiera. Si el país no tiene provincias sembradas (hoy solo Ecuador), se
-                       deshabilita en vez de mentir con una lista vacía que parece un fallo. -->
-                  <select :id="fieldId('provincia-residencia')"
-                    v-model="direccion.provincia"
-                    :disabled="!provincias.length"
-                    :required="provincias.length > 0"
-                    class="deasy-control"
-                  >
-                    <option value="" disabled>
-                      {{ provincias.length ? 'Selecciona una provincia' : 'Sin provincias en el catálogo' }}
-                    </option>
-                    <option v-for="p in provincias" :key="p.id" :value="p.name">{{ p.name }}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label :for="fieldId('ciudad-residencia')" class="deasy-form-label">Ciudad</label>
-                  <select :id="fieldId('ciudad-residencia')"
-                    v-model="direccion.ciudad"
-                    :disabled="!ciudades.length"
-                    :required="ciudades.length > 0"
-                    class="deasy-control"
-                  >
-                    <option value="" disabled>
-                      {{ ciudades.length ? 'Selecciona una ciudad' : 'Elige antes la provincia' }}
-                    </option>
-                    <option v-for="c in ciudades" :key="c.id" :value="c.name">{{ c.name }}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label :for="fieldId('calle-primaria')" class="deasy-form-label">Calle primaria</label>
-                  <input :id="fieldId('calle-primaria')"
-                    v-model="direccion.calle_primaria"
-                    type="text"
-                    required
-                    class="deasy-control"
-                    placeholder="Av. Principal"
-                  />
-                </div>
-
-                <div>
-                  <label :for="fieldId('calle-secundaria')" class="deasy-form-label">Calle secundaria</label>
-                  <input :id="fieldId('calle-secundaria')"
-                    v-model="direccion.calle_secundaria"
-                    type="text"
-                    required
-                    class="deasy-control"
-                    placeholder="Intersección"
-                  />
-                </div>
-
-                <div>
-                  <label :for="fieldId('referencia')" class="deasy-form-label">Referencia</label>
-                  <input :id="fieldId('referencia')"
-                    v-model="direccion.referencia"
-                    type="text"
-                    class="deasy-control"
-                    placeholder="Frente al parque"
-                  />
-                </div>
-              </div>
-
-              <div class="deasy-card mt-5 p-4">
-                <div class="mb-3 flex items-center gap-2 text-sm font-semibold text-body">
-                  Ubicación exacta
-                  <span class="group relative inline-flex">
-                    <IconHelp class="h-4 w-4 cursor-help text-info" />
-                    <span class="invisible absolute bottom-full left-1/2 z-(--z-capa-elemento) mb-2 w-64 -translate-x-1/2 rounded-2xl bg-navy p-3 text-xs font-medium leading-relaxed text-white opacity-0 shadow-theme-lg transition-all group-hover:visible group-hover:opacity-100">
-                      Marca tu ubicación exacta para completar la información geográfica de tu registro.
-                    </span>
-                  </span>
-                </div>
-
-                <AppMapPicker
-                  :lat="direccion.latitud"
-                  :lng="direccion.longitud"
-                  required
-                  @update:point="aplicarPunto"
-                />
-              </div>
-            </section>
-
-            <section class="deasy-form-section">
-              <div class="deasy-form-section__header">
-                <span class="deasy-form-section__icon">
                   <IconLock class="h-5 w-5" />
                 </span>
                 <h2 class="deasy-title deasy-title--block">Seguridad</h2>
@@ -369,7 +265,6 @@ import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
-import AppMapPicker from "@/shared/components/inputs/AppMapPicker.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
@@ -387,7 +282,6 @@ import {
   IconX,
   IconArrowRight,
   IconCheck,
-  IconMapPin,
   IconHelp
 } from "@tabler/icons-vue";
 
@@ -403,29 +297,21 @@ const newuser = ref({
   email: ""
 });
 
-// La dirección es UN objeto y viaja como tal. Antes eran seis campos sueltos en `persons`
-// —`pais_residencia`, `provincia_residencia`, `ciudad_residencia`, las dos calles y el código
-// postal— que además convivían con otra columna `direccion` que NO era una dirección: guardaba las
-// COORDENADAS como la cadena "lat, lng". Ahora latitud y longitud son dos columnas numéricas.
+// ⚠️ LA DIRECCIÓN SALIÓ DEL REGISTRO EL 2026-08-31 (F6 del frente 13, decisión del dueño). Ocupaba
+// 8 campos y un mapa --el ~9% del formulario-- y el envío estaba BLOQUEADO sin coordenadas, mientras
+// que el dato no lo consume nadie: `direcciones` se escribe al alta y se lee para pintar la ficha,
+// y ninguna decisión del sistema la usa.
 //
-// `codigo_postal` no sobrevive: nadie lo leía fuera de este formulario.
-const direccion = ref({
-  tipo: "residencia",
-  pais: "EC",
-  provincia: "",
-  ciudad: "",
-  calle_primaria: "",
-  calle_secundaria: "",
-  referencia: "",
-  latitud: null,
-  longitud: null
-});
-
+// El registro pide lo que DEFINE la cuenta: quién eres (documento), cómo te alcanzamos (correo y
+// teléfono, que ahora hay que probar) y cómo entras. La dirección es dato de expediente y su sitio
+// es el perfil. Con el registro en TRES pasos el coste de esa fricción se multiplicó: quien
+// abandonaba ahí ya no llegaba a verificar nada.
+//
+// ⚠️ `AppMapPicker` NO se borra: lo usa `AdminEditorModal`. Lo que sale es su uso aquí.
+//
 // El catálogo ya no es una constante del frontend: se pide a la API, que es donde vive desde que
 // `paises`/`provincias`/`ciudades` existen como tablas.
 const paises = ref([]);
-const provincias = ref([]);
-const ciudades = ref([]);
 
 const cargarPaises = async () => {
   try {
@@ -440,48 +326,6 @@ const cargarPaises = async () => {
     console.error("No se pudo cargar el catálogo de países:", error);
   }
 };
-
-const cargarProvincias = async (paisIso) => {
-  provincias.value = [];
-  ciudades.value = [];
-  if (!paisIso) return;
-  try {
-    provincias.value = await AuthService.listarProvincias(paisIso);
-  } catch (error) {
-    console.error("No se pudieron cargar las provincias:", error);
-  }
-};
-
-const cargarCiudades = async (provinciaNombre) => {
-  ciudades.value = [];
-  if (!provinciaNombre) return;
-  const provincia = provincias.value.find((p) => p.name === provinciaNombre);
-  if (!provincia) return;
-  try {
-    ciudades.value = await AuthService.listarCiudades(provincia.id);
-  } catch (error) {
-    console.error("No se pudieron cargar las ciudades:", error);
-  }
-};
-
-watch(() => direccion.value.pais, async (iso) => {
-  direccion.value.provincia = "";
-  direccion.value.ciudad = "";
-  await cargarProvincias(iso);
-});
-
-watch(() => direccion.value.provincia, async (nombre) => {
-  direccion.value.ciudad = "";
-  await cargarCiudades(nombre);
-});
-
-// Las coordenadas, para el mapa y para el aviso de "falta la ubicación". Antes esto era
-// `newuser.direccion`, una cadena "lat, lng" guardada en una columna llamada `direccion`.
-const coordenadas = computed(() =>
-  direccion.value.latitud !== null && direccion.value.longitud !== null
-    ? `${Number(direccion.value.latitud).toFixed(6)}, ${Number(direccion.value.longitud).toFixed(6)}`
-    : ""
-);
 
 const errorMessage = ref("");
 const termsAccepted = ref(false);
@@ -596,13 +440,6 @@ const CLASE_TEXTO_FUERZA = {
 };
 const tonoFuerzaActual = computed(() => tonoFuerza(passwordStrengthScore.value));
 
-// El mapa vive ahora en `AppMapPicker` (shared/components/inputs). Aquí quedaban 90 líneas —el
-// botón, las etiquetas, la instancia de Leaflet y sus escuchas— que el admin no podía reutilizar.
-const aplicarPunto = ({ lat, lng }) => {
-  direccion.value.latitud = lat;
-  direccion.value.longitud = lng;
-};
-
 
 
 watch(phoneNumber, (value) => {
@@ -655,7 +492,6 @@ const validatePasswordMatch = () => {
 const saveDraft = () => {
   const draft = {
     newuser: newuser.value,
-    direccion: direccion.value,
     telefono: telefono.value,
     documento: documento.value,
     phoneNumber: phoneNumber.value
@@ -664,7 +500,6 @@ const saveDraft = () => {
 };
 
 watch(() => newuser.value, saveDraft, { deep: true });
-watch(() => direccion.value, saveDraft, { deep: true });
 watch(phoneNumber, saveDraft);
 watch(() => telefono.value, saveDraft, { deep: true });
 watch(() => documento.value, saveDraft, { deep: true });
@@ -693,10 +528,6 @@ const createnewUser = async () => {
     errorMessage.value = "El número telefónico debe tener 10 dígitos.";
     return;
   }
-  if (!coordenadas.value) {
-    errorMessage.value = "La ubicación exacta es obligatoria. Da click en 'Seleccionar ubicación en el mapa' para poner un punto que te identifique geográficamente.";
-    return;
-  }
   if (passwordStrengthScore.value < 3) {
     errorMessage.value = "La contraseña es muy débil. Asegúrate de incluir mayúsculas, minúsculas, números y al menos 8 caracteres.";
     return;
@@ -708,7 +539,6 @@ const createnewUser = async () => {
     // distintas y el registro no declara nacionalidad.
     const payload = {
       ...newuser.value,
-      direccion: { ...direccion.value },
       telefono: { ...telefono.value },
       documento: { ...documento.value }
     };
@@ -745,23 +575,15 @@ const volverAlAcceso = () => {
 };
 
 onMounted(async () => {
-  // El catálogo primero: sin países el selector sale vacío y parece roto. Y las provincias del
-  // país que ya viene elegido, porque el `watch` de `direccion.pais` solo dispara al CAMBIARLO.
+  // El catálogo de países hace falta para el DOCUMENTO (su país emisor). Las provincias y las
+  // ciudades ya no: eran de la dirección, que salió del registro el 2026-08-31.
   await cargarPaises();
-  await cargarProvincias(direccion.value.pais);
 
   const draftVal = sessionStorage.getItem("register_draft");
   if (draftVal) {
     try {
       const draft = JSON.parse(draftVal);
       if (draft.newuser) newuser.value = draft.newuser;
-      if (draft.direccion) {
-        direccion.value = { ...direccion.value, ...draft.direccion };
-        // Rehidratar en cascada, y en orden: sin las provincias cargadas, el `select` de provincia
-        // no puede mostrar la que traía el borrador.
-        await cargarProvincias(direccion.value.pais);
-        await cargarCiudades(direccion.value.provincia);
-      }
       if (draft.telefono) telefono.value = { ...telefono.value, ...draft.telefono };
       if (draft.documento) documento.value = { ...documento.value, ...draft.documento };
       if (draft.phoneNumber) phoneNumber.value = draft.phoneNumber;

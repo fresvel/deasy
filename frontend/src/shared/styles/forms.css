@@ -461,10 +461,6 @@
         @apply grid grid-cols-1 gap-4 md:grid-cols-2;
     }
 
-    .deasy-form-grid--three {
-        @apply grid grid-cols-1 gap-4 md:grid-cols-3;
-    }
-
     /* LA ETIQUETA DE CAMPO. Existia desde siempre y se estaba IGNORANDO: habia 52 etiquetas
        escritas a mano en cuatro formas casi iguales —`mb-2 inline-flex … font-semibold`,
        `block … font-medium`, `block … font-semibold`, la misma con el `mb-2` al final— que

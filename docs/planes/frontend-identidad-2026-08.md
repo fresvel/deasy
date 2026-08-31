@@ -29,7 +29,7 @@
 | **F4c** | Los canales de un teléfono se eligen desde el teléfono | ⬜ | | |
 | **F4d** | `verificado`: decidir si se construye el flujo o se deja a mano | ⛔ | **Lo desbloquea el frente 15** ([`channels-verificacion-2026-08.md`](./channels-verificacion-2026-08.md)), que es el flujo de verificación que faltaba. Antes: bloqueada por una decisión del dueño. `marcarVerificado` existe en los tres servicios y su ÚNICO llamador es el bootstrap: no hay flujo. Ponerlo de sólo lectura lo dejaría inalcanzable para siempre | |
 | **F5** | `/perfil/datos` — el usuario edita sus propios datos personales | ⬜ | | |
-| **F6** | Decisión del dueño sobre la dirección en el registro, y su ejecución | ⬜ | | |
+| **F6** | Decisión del dueño sobre la dirección en el registro, y su ejecución | ✅ | **Decidido: se quita.** `RegisterView.vue` de **786 → 608 líneas** · 8 campos y el mapa fuera · el guard que bloqueaba el envío sin coordenadas, fuera · código muerto barrido: `deasy-form-grid--three`, `AuthService.listarProvincias/listarCiudades` y sus dos rutas de `apiConfig` · `AppMapPicker` **intacto** (lo usa `AdminEditorModal`) · frontend **431** y sus 27 puertas · char **327/327** | 2026-08-31 |
 | **F7** | El panel de la persona: documentos, correos, teléfonos, direcciones y foto en un sitio | ⬜ | | |
 
 **18 tareas vivas** (`F3` no cuenta: está revertida). `F1` y `F2` son la base: sin ellas, lo demás se
@@ -238,6 +238,36 @@ cómo te contactamos (correo, teléfono) y tu contraseña.
 **El riesgo de quitarla, dicho:** si nadie la pide después, no se rellena nunca. La contrapartida
 barata es un aviso de «perfil incompleto» tras el primer acceso — lo propongo como opcional, no lo
 doy por hecho.
+
+#### ✅ Decidido y hecho el 2026-08-31
+
+**El dueño decidió quitarla.** Y para entonces había un argumento que no existía cuando se escribió
+esta evaluación: **el registro ya no es un formulario, son tres pasos**. La dirección había pasado de
+ser el campo más caro de una pantalla a ser el campo más caro del **primer paso de tres**, y quien
+abandonaba ahí no llegaba a verificar nada. El coste de esa fricción se multiplicó justo cuando el
+dato seguía sin consumirse.
+
+`RegisterView.vue` pasa de **786 a 608 líneas**. Sale el guard que bloqueaba el envío sin
+coordenadas, y con él el bloque entero: país, provincia, ciudad, dos calles, referencia y el mapa.
+
+**Código muerto barrido en el mismo commit** —lo pidió el dueño, y las puertas ayudaron:
+
+| Qué | Cómo apareció |
+|---|---|
+| `.deasy-form-grid--three` | Lo cazó `css-prune`: su único consumidor era esa sección |
+| `AuthService.listarProvincias` y `listarCiudades` | Cero consumidores al quitar el formulario |
+| `SYSTEM_GEO_PROVINCIAS` y `SYSTEM_GEO_CIUDADES` en `apiConfig` | Ídem |
+| `IconMapPin` | Importado y sin usar |
+
+⚠️ **`AppMapPicker` NO se borra**, y esto lo avisó el dueño antes de que fuera un problema: lo usa
+`AdminEditorModal`. Lo que salió fue **su uso aquí**, no el componente.
+
+⚠️ **Las rutas del backend `/system/geografia/{provincias,ciudades}` se quedan.** `F5`
+(`/perfil/datos`) va a gestionar direcciones y las necesita. Lo que sobraba era el atajo del
+frontend, no el endpoint.
+
+🚧 **Queda pendiente el aviso de «perfil incompleto»**, que es la contrapartida de haberla quitado.
+Va con `F5`, que es donde se rellenará.
 
 ---
 

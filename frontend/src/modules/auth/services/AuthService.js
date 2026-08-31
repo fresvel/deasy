@@ -65,16 +65,6 @@ class AuthService {
     return response.data?.data ?? [];
   }
 
-  async listarProvincias(paisIso) {
-    const response = await axios.get(API_ROUTES.SYSTEM_GEO_PROVINCIAS(paisIso));
-    return response.data?.data ?? [];
-  }
-
-  async listarCiudades(provinciaId) {
-    const response = await axios.get(API_ROUTES.SYSTEM_GEO_CIUDADES(provinciaId));
-    return response.data?.data ?? [];
-  }
-
   async recoverPassword(email) {
     const response = await axios.post(API_ROUTES.USERS_RECOVER_PASSWORD, {
       email,
