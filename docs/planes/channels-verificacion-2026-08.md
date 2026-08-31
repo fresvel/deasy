@@ -296,6 +296,39 @@ backend retransmite, y «quién puede administrar los canales» es **un permiso 
 Guardar la persona → verificar el correo → verificar el teléfono. Y un guardián que mande a
 completar lo que falte.
 
+**Decisión del dueño (2026-08-31): el teléfono es obligatorio DESDE HOY.** No hay datos en
+producción, así que la pregunta de «qué pasa con quien ya está registrado» no existe.
+
+**Y la regla del teléfono:** vale **cualquiera de los tres canales**. Verificar Telegram no verifica
+WhatsApp — cada canal guarda lo suyo en `telefono_canales`, y el teléfono cuenta como verificado si
+tiene **alguno**. Comprobado en vivo antes de construir encima.
+
+#### Las dos precondiciones, cerradas el 2026-08-31
+
+Antes de escribir una línea de la pantalla, dos defectos que habrían hecho inútil la puerta. Los dos
+encontrados con **peticiones reales**, no leyendo código.
+
+**1 · La verificación se podía AUTODECLARAR.** Bastaba con:
+
+```
+POST /users  {"telefono": {"canales": [{"code":"telegram","verificado": true}]}}
+```
+
+y el canal quedaba verificado sin probar nada: `req.body.telefono` llegaba intacto hasta la capa que
+escribe. Una puerta que se abre poniendo `true` en un JSON no es una puerta. Ahora un canal declarado
+**nace sin verificar, siempre**, y sólo escriben `verificado = 1` el servicio de verificación (tras
+probarlo) y el arranque (que no es alcanzable desde ninguna ruta).
+
+**2 · El alta NO era atómica.** La persona se insertaba y sus satélites iban después, cada uno por su
+cuenta — el propio código lo decía en un comentario. Dos peticiones fallidas dejaron **dos personas
+colgadas**. Y lo grave no es la basura: **el teléfono quedaba ocupado**, así que el segundo intento de
+la misma persona fallaba con «ese número ya está registrado por otra persona» — y la otra persona era
+ella misma. Con un registro de tres pasos, quien se equivoca una vez no podría reintentar nunca.
+Ahora todo el alta va en **una transacción**.
+
+Mutaciones: reponer el agujero de `verificado` falla 1 unitaria y 1 de caracterización; cambiar el
+`rollback` por un `commit` falla 1 de caracterización.
+
 ⚠️ **La verificación de correo ya existe y está entera** —tabla propia, código cifrado, diez
 minutos, un solo uso, y su pantalla—. **Lo único que le falta es que `SMTP_*` esté en el
 entorno** y que **alguien la obligue a usarse**: hoy se envía el código y ahí acaba.

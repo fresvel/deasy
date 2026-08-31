@@ -356,29 +356,55 @@ export default class UserRepository {
     const values = columns.map((key) => payload[key]);
     const placeholders = columns.map(() => "?").join(", ");
 
-    const [result] = await this.pool.query(
-      `INSERT INTO persons (${columns.join(", ")}) VALUES (${placeholders})`,
-      values
-    );
+    // ── TODO EL ALTA VA EN UNA TRANSACCION ────────────────────────────────────────────────────
+    //
+    // ⚠️ ANTES NO. La persona se insertaba, y sus satelites --direccion, telefono, correo,
+    // documento-- iban despues, cada uno por su cuenta. El comentario que habia aqui lo decia con
+    // todas las letras: "si viene mal, el servicio lanza con status 400 y la persona ya esta
+    // creada". Comprobado el 2026-08-31 con dos peticiones reales: dejaron DOS personas colgadas,
+    // una con correo y telefono pero sin documento, y otra vacia.
+    //
+    // Con un registro de un solo paso eso era feo. Con el de TRES PASOS (C8) es inaceptable, y por
+    // un motivo concreto que se midio: el telefono queda GUARDADO Y OCUPADO, asi que el segundo
+    // intento de la misma persona falla con "ese numero ya esta registrado por otra persona" --y la
+    // otra persona es ella misma, media hora antes. Quien se equivoca una vez no puede reintentar.
+    //
+    // O entra todo o no entra nada.
+    const conexion = await this.pool.getConnection();
+    let result;
+    try {
+      await conexion.beginTransaction();
 
-    // La direccion va DESPUES, porque necesita el id de la persona. Si viene mal (una provincia que
-    // no esta en el catalogo) el servicio lanza con status 400 y la persona ya esta creada: es lo
-    // mismo que pasaba antes con las siete columnas sueltas, solo que antes se guardaba basura en
-    // silencio en vez de avisar.
-    if (userData.direccion) {
-      await this.direcciones.guardarPrincipal(result.insertId, userData.direccion);
-    }
-    if (userData.telefono) {
-      await this.telefonos.guardarPrincipal(result.insertId, userData.telefono);
-    }
-    if (userData.email) {
-      await this.emails.guardarPrincipal(result.insertId, userData.email);
-    }
-    // El documento de identidad: `documento` es el objeto {tipo, pais, numero}; `cedula` es la
-    // forma corta que sigue aceptandose y significa "cedula ecuatoriana".
-    const documento = userData.documento ?? (userData.cedula ? { tipo: TIPO_NACIONAL, numero: userData.cedula } : null);
-    if (documento) {
-      await this.documentos.guardarPrincipal(result.insertId, documento);
+      [result] = await conexion.query(
+        `INSERT INTO persons (${columns.join(", ")}) VALUES (${placeholders})`,
+        values
+      );
+
+      // Los satelites van DESPUES porque necesitan el id de la persona; ahora, dentro de la misma
+      // transaccion, ese orden ya no deja rastro si algo falla.
+      if (userData.direccion) {
+        await this.direcciones.guardarPrincipal(result.insertId, userData.direccion, conexion);
+      }
+      if (userData.telefono) {
+        await this.telefonos.guardarPrincipal(result.insertId, userData.telefono, conexion);
+      }
+      if (userData.email) {
+        await this.emails.guardarPrincipal(result.insertId, userData.email, conexion);
+      }
+      // El documento de identidad: `documento` es el objeto {tipo, pais, numero}; `cedula` es la
+      // forma corta que sigue aceptandose y significa "documento nacional".
+      const documento = userData.documento ?? (userData.cedula ? { tipo: TIPO_NACIONAL, numero: userData.cedula } : null);
+      if (documento) {
+        await this.documentos.guardarPrincipal(result.insertId, documento, conexion);
+      }
+
+      await conexion.commit();
+    } catch (error) {
+      await conexion.rollback().catch(() => {});
+      throw error;
+    } finally {
+      // Sin esto se agotan las diez conexiones del pool y la aplicacion entera se cuelga esperando.
+      conexion.release();
     }
 
     return {

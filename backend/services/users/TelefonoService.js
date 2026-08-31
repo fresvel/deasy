@@ -181,13 +181,28 @@ export default class TelefonoService {
   // Los canales que se pasan quedan; los que no, se van. Se conserva `verificado` de los que
   // sobreviven: cambiar de opinion sobre si un numero tiene Telegram no invalida que se haya
   // comprobado que tiene WhatsApp.
+  //
+  // ⚠️ DECLARAR UN CANAL NO LO VERIFICA, y hasta el 2026-08-31 SI LO HACIA. Esta funcion leia
+  // `canal.verificado` del objeto que le llegaba, y ese objeto viene del CUERPO DE LA PETICION
+  // (`user_controler.js` -> `req.body.telefono` -> `UserRepository.createUser`). Comprobado con una
+  // peticion real: registrarse mandando
+  //
+  //     "telefono": { "canales": [{ "code": "telegram", "verificado": true }] }
+  //
+  // dejaba el canal verificado SIN PROBAR NADA. Con el telefono obligatorio (C8) eso no es un dato
+  // sucio: es la puerta abierta, porque la condicion para entrar se cumple poniendo `true` en un
+  // JSON.
+  //
+  // Ahora un canal declarado nace SIN VERIFICAR, siempre. Solo escriben `verificado = 1`:
+  //   · `TelefonoVerificacionService.confirmar` — tras probarlo por un canal real.
+  //   · `marcarCanalVerificado` — que usa el arranque para el administrador que el propio
+  //     instalador acaba de crear, y que NO es alcanzable desde ninguna ruta.
   async sincronizarCanales(telefonoId, canales, connection = this.pool) {
     const ids = [];
     for (const canal of canales) {
       const codigo = typeof canal === "string" ? canal : canal?.code ?? canal?.canal;
       const canalId = await this.resolveCanalId(codigo, connection);
       ids.push(canalId);
-      const verificado = typeof canal === "object" && canal?.verificado ? 1 : 0;
       // Existencia y luego INSERT o UPDATE, en vez de un ON DUPLICATE KEY con GREATEST. El
       // adaptador de PostgreSQL solo traduce `= VALUES(col)` a `EXCLUDED.col`
       // (`config/postgres.js:442`), asi que un `VALUES(...)` ANIDADO dentro de una funcion se queda
@@ -198,18 +213,14 @@ export default class TelefonoService {
       );
       if (existente?.length) {
         // Nunca se DESVERIFICA al re-declarar los canales: haber comprobado que el numero tiene
-        // WhatsApp sigue siendo cierto aunque el usuario vuelva a guardar el formulario.
-        if (verificado && !Number(existente[0].verificado)) {
-          await connection.query(
-            "UPDATE telefono_canales SET verificado = 1, verificado_at = CURRENT_TIMESTAMP WHERE id = ?",
-            [Number(existente[0].id)]
-          );
-        }
+        // WhatsApp sigue siendo cierto aunque el usuario vuelva a guardar el formulario. Y tampoco
+        // se ASCIENDE, que es lo que se retiro: guardar el formulario no prueba nada.
       } else {
         await connection.query(
+          // Nace SIN verificar y sin fecha. Verificarlo es otro acto, con su prueba.
           `INSERT INTO telefono_canales (telefono_id, canal_id, verificado, verificado_at)
-           VALUES (?, ?, ?, ${verificado ? "CURRENT_TIMESTAMP" : "NULL"})`,
-          [telefonoId, canalId, verificado]
+           VALUES (?, ?, 0, NULL)`,
+          [telefonoId, canalId]
         );
       }
     }
