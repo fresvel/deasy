@@ -1,96 +1,68 @@
 <template>
-  <!-- `2xl` y no `md`: con 448 px el indicador de tres pasos PARTÍA EN DOS LÍNEAS, y un indicador
-       de progreso roto en dos es peor que no tenerlo. -->
   <AuthLayout size="2xl">
-    <!-- ⚠️ EL `text-center` VA AQUÍ, y es lo que centra el logo. `AppLogo` es `inline-flex`, así que
-         un `mx-auto` suyo NO HACE NADA: los márgenes automáticos no centran elementos en línea.
-         Costó una captura darse cuenta. -->
     <header class="mb-8 text-center">
       <AppLogo size="lg" :framed="true" class-name="mb-6" />
       <PasosDelRegistro paso="correo" />
       <h1 class="deasy-title deasy-title--page mt-6">Confirma tu correo</h1>
-      <p class="text-muted mx-auto mt-2 max-w-lg text-sm font-medium">
-        Te hemos enviado un código de 6 cifras a
-        <strong class="text-strong">{{ correo || 'tu correo' }}</strong>. Escríbelo aquí para
-        continuar.
-      </p>
     </header>
 
-    <!-- Si el envío falló, se dice. Antes esto se tragaba en silencio y la persona esperaba un
-         correo que nunca salió, sin nada que la sacara de ahí. -->
     <p v-if="envioFallido" class="deasy-alert deasy-alert--warning mb-6">
-      No pudimos enviar el correo. Pulsa «Enviar otro código» para intentarlo de nuevo.
+      No pudimos enviar el correo. Pulsa «Enviar otro código».
     </p>
+    <p v-if="error" class="deasy-alert deasy-alert--danger mb-6">{{ error }}</p>
+    <p v-if="aviso" class="deasy-alert deasy-alert--success mb-6">{{ aviso }}</p>
 
-    <form class="mx-auto max-w-sm space-y-6" @submit.prevent="comprobar">
+    <div class="mx-auto max-w-sm space-y-6">
+      <!-- ⚠️ EL CORREO, SIEMPRE VISIBLE Y EDITABLE. Antes había que descubrir un enlace que decía
+           «¿te equivocaste?» para poder cambiarlo. Quien se equivocó no va buscando una confesión:
+           va buscando el campo. Y el botón sólo aparece cuando de verdad hay algo que guardar. -->
       <div>
-        <label for="codigo-correo" class="deasy-form-label">Código de verificación</label>
-        <!-- ⚠️ SOLO DÍGITOS, Y SE LIMPIA AL ESCRIBIR. Reportado por el dueño: con los seis números
-             puestos, «Confirmar correo» seguía deshabilitado hasta recargar. Con `v-model` a pelo,
-             cualquier cosa que el campo aceptara --un espacio del autocompletado, un pegado con
-             espacios de un SMS-- contaba para `length`: se veían seis cifras y el valor tenía siete
-             caracteres. Normalizando en el `input` eso no puede volver a pasar, venga de donde
-             venga el texto. -->
-        <input
-          id="codigo-correo"
-          :value="codigo"
-          class="deasy-control text-center tracking-widest"
-          inputmode="numeric"
-          autocomplete="one-time-code"
-          maxlength="6"
-          placeholder="000000"
-          @input="alEscribirCodigo"
-        />
+        <label for="correo-registro" class="deasy-form-label">Tu correo</label>
+        <div class="flex gap-3">
+          <input
+            id="correo-registro"
+            ref="campoCorreo"
+            v-model="correo"
+            type="email"
+            class="deasy-control"
+            autocomplete="email"
+          />
+          <AppButton v-if="correoCambiado" variant="primary-outline" :disabled="guardando" @click="guardarCorreo">
+            {{ guardando ? 'Guardando…' : 'Guardar' }}
+          </AppButton>
+        </div>
       </div>
 
-      <p v-if="error" class="deasy-alert deasy-alert--danger">{{ error }}</p>
+      <form @submit.prevent="comprobar">
+        <label for="codigo-correo" class="deasy-form-label">Código de 6 cifras</label>
+        <div class="flex gap-3">
+          <input
+            id="codigo-correo"
+            ref="campoCodigo"
+            class="deasy-control text-center tracking-widest"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            placeholder="000000"
+          />
+          <AppButton type="submit" variant="primary-outline" :disabled="comprobando">
+            {{ comprobando ? 'Comprobando…' : 'Confirmar' }}
+          </AppButton>
+        </div>
+      </form>
 
-      <!-- Los dos juntos, en la misma fila: son las dos salidas de esta pantalla --confirmar el
-           código que tienes, o pedir otro-- y separarlas obligaba a buscar la segunda más abajo. -->
-      <div class="flex flex-col gap-3 sm:flex-row">
-        <AppButton type="submit" variant="primary-outline" :disabled="codigo.length !== 6 || comprobando">
-          {{ comprobando ? 'Comprobando…' : 'Confirmar correo' }}
-        </AppButton>
+      <div class="flex items-center justify-between gap-3 border-t border-line pt-6">
         <AppButton variant="neutral-outline" :disabled="reenviando || esperaRestante > 0" @click="reenviar">
           {{ esperaRestante > 0 ? `Enviar otro código (${esperaRestante}s)` : 'Enviar otro código' }}
         </AppButton>
+        <router-link to="/logout" class="deasy-auth-link">Salir</router-link>
       </div>
-    </form>
-
-    <!-- ⚠️ CORREGIR EL CORREO. Sin esto una errata es una CUENTA MUERTA: se exige verificar algo que
-         no se puede recibir, el perfil está detrás de la misma puerta, y la dirección queda ocupada
-         --así que tampoco se puede volver a registrar. -->
-    <div class="mx-auto mt-6 max-w-sm text-center">
-      <AppButton v-if="!cambiando" variant="plain" @click="cambiando = true">
-        ¿Te equivocaste de correo?
-      </AppButton>
-
-      <form v-else class="space-y-3 text-left" @submit.prevent="guardarCorreo">
-        <label for="correo-nuevo" class="deasy-form-label">Tu correo correcto</label>
-        <input
-          id="correo-nuevo"
-          v-model="correoNuevo"
-          type="email"
-          class="deasy-control"
-          placeholder="tu@correo.com"
-        />
-        <div class="flex gap-3">
-          <AppButton type="submit" variant="primary-outline" :disabled="guardando">
-            {{ guardando ? 'Guardando…' : 'Cambiar y enviar código' }}
-          </AppButton>
-          <AppButton variant="danger-outline" @click="cambiando = false">Cancelar</AppButton>
-        </div>
-      </form>
-    </div>
-
-    <div class="mt-8 flex justify-end border-t border-line pt-6">
-      <router-link to="/logout" class="deasy-auth-link">Salir</router-link>
     </div>
   </AuthLayout>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import AuthLayout from "@/layouts/auth/AuthLayout.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
@@ -100,22 +72,26 @@ import VerificacionService from "@/modules/auth/services/VerificacionService";
 import AuthService from "@/modules/auth/services/AuthService";
 
 const router = useRouter();
-const codigo = ref("");
+const correo = ref("");
+const correoGuardado = ref("");
+const campoCodigo = ref(null);
 const error = ref("");
+const aviso = ref("");
 const comprobando = ref(false);
 const reenviando = ref(false);
+const guardando = ref(false);
 const envioFallido = ref(false);
 const esperaRestante = ref(0);
-const cambiando = ref(false);
-const correoNuevo = ref("");
-const guardando = ref(false);
-const correo = ref("");
 let cuentaAtras = null;
 
+const correoCambiado = computed(() => {
+  const escrito = correo.value.trim().toLowerCase();
+  return escrito.length > 0 && escrito !== correoGuardado.value;
+});
+
 onMounted(() => {
-  correo.value = AuthService.getUser()?.email ?? "";
-  // El registro dice si el correo llegó a salir. Sin esto, quien no lo recibió no sabría si es
-  // cuestión de esperar o de pedir otro.
+  correoGuardado.value = (AuthService.getUser()?.email ?? "").toLowerCase();
+  correo.value = correoGuardado.value;
   envioFallido.value = sessionStorage.getItem("registro:correoEnviado") === "false";
 });
 
@@ -130,43 +106,35 @@ const arrancarEspera = (segundos) => {
   }, 1000);
 };
 
-/** Solo dígitos, y como mucho seis. El código lo es; lo demás es ruido de dónde salga el texto. */
-const alEscribirCodigo = (evento) => {
-  const limpio = String(evento.target.value ?? "").replace(/\D/g, "").slice(0, 6);
-  codigo.value = limpio;
-  // El campo se repinta con lo limpio: si no, lo que se ve y lo que vale se separan --y ése era
-  // exactamente el fallo.
-  if (evento.target.value !== limpio) evento.target.value = limpio;
-};
-
-const guardarCorreo = async () => {
-  error.value = "";
-  guardando.value = true;
-  try {
-    const { data } = await VerificacionService.cambiarCorreo(correoNuevo.value.trim());
-    correo.value = data.direccion;
-    // La copia de la sesión también, o la pantalla seguiría enseñando el correo viejo hasta el
-    // siguiente acceso.
-    const usuario = AuthService.getUser();
-    if (usuario) AuthService.setUser({ ...usuario, email: data.direccion });
-    cambiando.value = false;
-    correoNuevo.value = "";
-    codigo.value = "";
-    envioFallido.value = false;
-    arrancarEspera(60);
-  } catch (fallo) {
-    error.value = fallo?.response?.data?.message ?? "No se pudo cambiar el correo.";
-  } finally {
-    guardando.value = false;
-  }
-};
-
+/**
+ * El código se lee DEL CAMPO, no de una variable reactiva.
+ *
+ * ⚠️ **Y EL BOTÓN YA NO SE DESHABILITA.** Reportado dos veces por el dueño: con los seis números
+ * puestos, «Confirmar» seguía deshabilitado hasta recargar. En Chrome no se reproduce ni escribiendo
+ * de verdad, así que el disparador está en su navegador —lo más probable, un valor que Firefox
+ * restaura o autocompleta SIN disparar el evento `input`, con lo que el campo enseña seis cifras y
+ * la variable sigue vacía.
+ *
+ * Perseguir ese disparador es perseguir un navegador. La causa de fondo es otra y es nuestra: **el
+ * único camino para saber qué hay escrito no puede ser un evento**. Ahora se lee el campo al pulsar,
+ * que es cuando importa, y si no vale se dice por qué.
+ *
+ * Un botón deshabilitado sin explicación es además la peor forma de decir «te falta algo»: no dice
+ * qué falta, y quien no lo adivina se queda mirando.
+ */
 const comprobar = async () => {
   error.value = "";
+  aviso.value = "";
+  const codigo = String(campoCodigo.value?.value ?? "").replace(/\D/g, "");
+
+  if (codigo.length !== 6) {
+    error.value = "El código son 6 cifras. Cópialo del correo que te enviamos.";
+    return;
+  }
+
   comprobando.value = true;
   try {
-    await VerificacionService.verificarCorreo(codigo.value.trim());
-    // El siguiente paso lo decide el guardián leyendo el estado del servidor, no esta pantalla.
+    await VerificacionService.verificarCorreo(codigo);
     router.push("/registro/telefono");
   } catch (fallo) {
     error.value = fallo?.response?.data?.message ?? "No se pudo comprobar el código.";
@@ -175,13 +143,36 @@ const comprobar = async () => {
   }
 };
 
+const guardarCorreo = async () => {
+  error.value = "";
+  aviso.value = "";
+  guardando.value = true;
+  try {
+    const { data } = await VerificacionService.cambiarCorreo(correo.value.trim());
+    correoGuardado.value = data.direccion;
+    correo.value = data.direccion;
+    // La copia de la sesión también, o al recargar volvería el correo viejo.
+    const usuario = AuthService.getUser();
+    if (usuario) AuthService.setUser({ ...usuario, email: data.direccion });
+    if (campoCodigo.value) campoCodigo.value.value = "";
+    envioFallido.value = false;
+    aviso.value = `Te hemos enviado un código nuevo a ${data.direccion}.`;
+    arrancarEspera(60);
+  } catch (fallo) {
+    error.value = fallo?.response?.data?.message ?? "No se pudo cambiar el correo.";
+  } finally {
+    guardando.value = false;
+  }
+};
+
 const reenviar = async () => {
   error.value = "";
+  aviso.value = "";
   reenviando.value = true;
   try {
     await VerificacionService.reenviarCodigo();
     envioFallido.value = false;
-    sessionStorage.removeItem("registro:correoEnviado");
+    aviso.value = "Código enviado. Revisa también la carpeta de spam.";
     arrancarEspera(60);
   } catch (fallo) {
     // El 429 trae los segundos que faltan: se respetan en vez de inventarse otro número.

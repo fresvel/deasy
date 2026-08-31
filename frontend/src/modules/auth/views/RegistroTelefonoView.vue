@@ -44,12 +44,34 @@
           </label>
         </div>
 
-        <!-- Esto NO es relleno para tapar el hueco: es lo único que una persona necesita saber para
-             elegir, y el sitio donde lo necesita es aquí, junto a las tres opciones. Sin ello la
-             pregunta «¿cuál elijo?» no tiene respuesta en la pantalla. -->
-        <p class="mt-4 text-xs leading-relaxed text-muted">
-          Los tres prueban lo mismo: que el número es tuyo. Elige el que tengas más a mano.
+        <!-- Lo único que hace falta para elegir, ahí donde se elige. -->
+        <p class="mt-3 text-xs leading-relaxed text-muted">
+          Los tres prueban lo mismo. Elige el que tengas más a mano.
         </p>
+
+        <!-- ⚠️ EL NÚMERO, SIEMPRE VISIBLE Y EDITABLE. Antes había que descubrir un enlace que decía
+             «¿te equivocaste?»; el dueño lo dijo claro: quien se equivocó no va buscando una
+             confesión, va buscando el campo. Y el botón sólo aparece cuando hay algo que guardar. -->
+        <div class="mt-6">
+          <label for="telefono-registro" class="deasy-form-label">Tu número</label>
+          <input
+            id="telefono-registro"
+            v-model="numeroLocal"
+            type="tel"
+            inputmode="tel"
+            class="deasy-control"
+            autocomplete="tel"
+          />
+          <AppButton
+            v-if="numeroCambiado"
+            variant="primary-outline"
+            class-name="mt-3"
+            :disabled="guardando"
+            @click="guardarTelefono"
+          >
+            {{ guardando ? 'Guardando…' : 'Guardar número' }}
+          </AppButton>
+        </div>
       </fieldset>
 
       <div v-if="canalActivo" class="deasy-card p-6 md:col-span-2">
@@ -117,33 +139,6 @@
       </div>
     </div>
 
-    <!-- ⚠️ CORREGIR EL NÚMERO. Sin esto una errata es una CUENTA MUERTA: se exige verificar un
-         número que no es tuyo, el perfil está detrás de la misma puerta, y el número queda ocupado
-         --así que tampoco se puede volver a registrar. -->
-    <div class="mt-6 text-center">
-      <AppButton v-if="!cambiando" variant="plain" @click="cambiando = true">
-        ¿Te equivocaste de número? Es el {{ numero ? '+' + numero : '—' }}
-      </AppButton>
-
-      <form v-else class="mx-auto max-w-sm space-y-3 text-left" @submit.prevent="guardarTelefono">
-        <label for="telefono-nuevo" class="deasy-form-label">Tu número correcto</label>
-        <input
-          id="telefono-nuevo"
-          v-model="numeroNuevo"
-          type="tel"
-          inputmode="tel"
-          class="deasy-control"
-          placeholder="0991112233"
-        />
-        <div class="flex gap-3">
-          <AppButton type="submit" variant="primary-outline" :disabled="guardando">
-            {{ guardando ? 'Guardando…' : 'Cambiar número' }}
-          </AppButton>
-          <AppButton variant="danger-outline" @click="cambiando = false">Cancelar</AppButton>
-        </div>
-      </form>
-    </div>
-
     <div class="mt-8 flex items-center justify-between gap-3 border-t border-line pt-6">
       <AppButton variant="primary-outline" :disabled="comprobando" @click="comprobar">
         {{ comprobando ? 'Comprobando…' : 'Ya lo hice' }}
@@ -183,9 +178,14 @@ const cargando = ref(true);
 const comprobando = ref(false);
 const verManual = ref(false);
 const renovando = ref(false);
-const cambiando = ref(false);
-const numeroNuevo = ref("");
 const guardando = ref(false);
+/** Lo que se ve y se edita: la parte LOCAL, que es como la gente escribe su número. */
+const numeroLocal = ref("");
+const numeroLocalGuardado = ref("");
+const numeroCambiado = computed(() => {
+  const escrito = numeroLocal.value.replace(/\D/g, "");
+  return escrito.length > 0 && escrito !== numeroLocalGuardado.value;
+});
 const expiraEn = ref(null);
 const ahora = ref(Date.now());
 let reloj = null;
@@ -240,12 +240,11 @@ const guardarTelefono = async () => {
     // cambiarlo, es un campo más, no un cambio de este flujo.
     const pais = AuthService.getUser()?.telefonos?.[0]?.pais_id ?? null;
     const { data } = await VerificacionService.cambiarTelefono({
-      numero: numeroNuevo.value.trim(),
+      numero: numeroLocal.value.replace(/\D/g, ""),
       pais_id: pais,
     });
     telefonoId = data.telefonoId ?? telefonoId;
-    cambiando.value = false;
-    numeroNuevo.value = "";
+    numeroLocalGuardado.value = numeroLocal.value.replace(/\D/g, "");
     // Llave nueva de inmediato: la anterior se emitió contra el número viejo y el backend ya la tiró.
     await pedirLlave();
   } catch (fallo) {
@@ -275,6 +274,8 @@ onMounted(async () => {
     return;
   }
   telefonoId = telefono.id;
+  numeroLocal.value = telefono.numero ?? "";
+  numeroLocalGuardado.value = (telefono.numero ?? "").replace(/\D/g, "");
 
   try {
     await pedirLlave();

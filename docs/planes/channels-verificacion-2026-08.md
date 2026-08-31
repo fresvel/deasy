@@ -520,6 +520,33 @@ vieran seis cifras y el valor tuviera siete caracteres.
 `proxy_pass`— cambia cómo nginx reescribe la ruta, y ahí vive la regla que corta `/api/internal/`,
 así que no se toca de pasada.
 
+#### Séptima vuelta: el botón deshabilitado, cazado por la raíz (2026-08-31)
+
+**El dueño reportó dos veces que «Confirmar correo» seguía deshabilitado con las seis cifras
+puestas.** Abierto en Chrome con entrada de teclado real: **no se reproduce**. Ni escribiendo, ni
+pegando, ni con el campo normalizado. El disparador está en su navegador —lo más probable, un valor
+que Firefox restaura o autocompleta **sin disparar el evento `input`**, con lo que el campo enseña
+seis cifras y la variable sigue vacía; recargar limpia el campo, y por eso «funcionaba después».
+
+**Perseguir ese disparador es perseguir un navegador. La causa de fondo es nuestra y es otra:**
+
+> El único camino para saber qué hay escrito no puede ser un evento.
+
+Ahora **el botón no se deshabilita**. Al pulsar se lee el valor **del campo**, se normaliza a dígitos
+y, si no vale, se dice por qué. Un botón deshabilitado sin explicación era además la peor forma de
+decir «te falta algo»: no dice qué falta, y quien no lo adivina se queda mirando.
+
+**Y la UI, simplificada como pidió el dueño** —«en lugar de escribir tanta lata, sólo debería existir
+un campo claro que llame a la acción»—:
+
+| Antes | Ahora |
+|---|---|
+| Un enlace «¿Te equivocaste de correo?» que abría un formulario | **El correo, siempre visible y editable.** «Guardar» aparece sólo cuando cambia |
+| El número no se veía por ninguna parte | **El número, siempre visible y editable**, junto al selector de canal |
+| Párrafos explicando el porqué | Fuera. El porqué vive en el modal de instrucciones |
+
+Quien se equivocó **no va buscando una confesión: va buscando el campo.**
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la
