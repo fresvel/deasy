@@ -453,6 +453,14 @@ describe("logout", () => {
       expect(await goTo("/registro/telefono")).toBe("home");
     });
 
+    // ⚠️ REPORTADO POR EL DUENO: el boton «Salir» de las pantallas de registro no funcionaba. Este
+    // guard corre ANTES del `beforeEnter` de `/logout`, asi que la sesion a medio verificar quedaba
+    // ATRAPADA y la maquina inservible para la siguiente persona que quisiera entrar.
+    it("salir SIEMPRE se puede, aunque falte verificar", async () => {
+      mockEstadoDeVerificacion.mockResolvedValue({ correo: false, telefono: false, completo: false });
+      expect(await goTo("/logout")).toBe("login");
+    });
+
     // Si el servidor no contesta, el guard NO encierra a nadie: la puerta de verdad esta en el
     // backend, asi que dejar pasar aqui no abre nada --y bloquear si dejaria a la gente atrapada en
     // una pantalla de verificacion por un fallo de red.

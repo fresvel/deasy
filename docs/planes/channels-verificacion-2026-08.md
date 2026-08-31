@@ -391,6 +391,36 @@ dice «te queda esto» es la pantalla siguiente, que ya lleva su indicador de tr
 usuario»** aunque el servicio lanzara un 409 con el motivo escrito. La persona veía un error sin
 nada que corregir, y la explicación estaba en el log del servidor.
 
+#### Lo que corrigió el dueño probándolo (2026-08-31, segunda vuelta)
+
+**1 · «Salir» no funcionaba, y dejaba la máquina inservible.** El guard corre **antes** del
+`beforeEnter` de `/logout`, así que redirigía al paso pendiente y la sesión a medio verificar quedaba
+**atrapada** — nadie más podía entrar desde ese equipo. Cualquier puerta que no se pueda abrir desde
+dentro está mal, por buenas que sean sus razones.
+
+**2 · La pantalla del teléfono era vaga.** No dejaba **elegir canal**, no tenía el **QR** que este
+mismo plan prometía en `C3`, y explicaba el **porqué** del diseño en vez del **cómo**. Rehecha:
+
+| | |
+|---|---|
+| Selector | Los tres canales, en orden de recomendación, como **grupo de opciones** (no tres botones: elegir uno de tres es lo que un `radio` significa) |
+| QR | Lo compone el **backend**, igual que los enlaces. Sin él, quien se registra desde el ordenador no tiene salida |
+| Manual | En un modal, **paso a paso y por canal** — el de Telegram tiene un paso que los otros no: pedir el contacto |
+| SMS | Se dice que **lo cobra la operadora** y que los otros dos son gratis, ahí donde se decide |
+
+⚠️ **El enlace de Telegram sí era correcto** (comprobado contra `getMe`). Lo que falla es la entrega
+del navegador a Telegram Desktop, que puede quedarse con la conversación y **perder el
+`?start=<llave>`**. Para eso está el QR — y el bot, cuando alguien llega sin llave, ya no repite «usa
+el enlace»: le dice que escanee el QR o pegue el código.
+
+**3 · Dos ajustes de forma:** el logo centrado y «Enviar otro código» **al lado** de «Confirmar
+correo», que son las dos salidas de esa pantalla.
+
+⚠️ **Y el correo llega a SPAM en Gmail.** Medido: Gmail responde `250 OK` y lo entrega a la carpeta de
+correo no deseado. **Es exactamente lo que este plan advirtió por escrito antes de que pasara**, y no
+se arregla con código: hace falta que el dominio remitente tenga **SPF y DKIM**. Es el argumento
+medido para pedir el SMTP institucional en vez de una cuenta suelta.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la

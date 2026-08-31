@@ -98,7 +98,10 @@ test("los tres pasos, en orden, y la puerta cediendo sólo al final", async () =
   // ── PASO 3 · el teléfono ──────────────────────────────────────────────────────────────────────
   const pedida = await post(`/users/me/telefonos/${telefonoId}/verificacion`, { token });
   assert.equal(pedida.status, 200, JSON.stringify(pedida.body));
-  assert.ok(pedida.body.telegram, "la pantalla recibe el enlace ya compuesto");
+  // La pantalla recibe el enlace Y el código QR ya compuestos: no sabe armar un enlace de Telegram
+  // ni dibujar un QR, y no tiene por qué.
+  assert.ok(pedida.body.canales?.telegram?.enlace, "el enlace, ya compuesto");
+  assert.match(pedida.body.canales.telegram.qr, /^data:image\/png;base64,/, "y su QR");
 
   // Lo confirma el canal, que es quien prueba el número. Aquí se simula esa confirmación.
   await query(

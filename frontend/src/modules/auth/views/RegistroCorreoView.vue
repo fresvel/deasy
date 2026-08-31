@@ -1,6 +1,6 @@
 <template>
   <AuthLayout size="md">
-    <AppLogo size="lg" :framed="true" class-name="mb-8" />
+    <AppLogo size="lg" :framed="true" class-name="mb-8 mx-auto" />
 
     <PasosDelRegistro paso="correo" />
 
@@ -35,15 +35,19 @@
 
       <p v-if="error" class="deasy-alert deasy-alert--danger">{{ error }}</p>
 
-      <AppButton type="submit" variant="primary-outline" :disabled="codigo.length !== 6 || comprobando">
-        {{ comprobando ? 'Comprobando…' : 'Confirmar correo' }}
-      </AppButton>
+      <!-- Los dos juntos, en la misma fila: son las dos salidas de esta pantalla --confirmar el
+           código que tienes, o pedir otro-- y separarlas obligaba a buscar la segunda más abajo. -->
+      <div class="flex flex-col gap-3 sm:flex-row">
+        <AppButton type="submit" variant="primary-outline" :disabled="codigo.length !== 6 || comprobando">
+          {{ comprobando ? 'Comprobando…' : 'Confirmar correo' }}
+        </AppButton>
+        <AppButton variant="neutral-outline" :disabled="reenviando || esperaRestante > 0" @click="reenviar">
+          {{ esperaRestante > 0 ? `Enviar otro código (${esperaRestante}s)` : 'Enviar otro código' }}
+        </AppButton>
+      </div>
     </form>
 
-    <div class="mt-6 flex items-center justify-between">
-      <AppButton variant="neutral-outline" :disabled="reenviando || esperaRestante > 0" @click="reenviar">
-        {{ esperaRestante > 0 ? `Enviar otro código (${esperaRestante}s)` : 'Enviar otro código' }}
-      </AppButton>
+    <div class="mt-6 flex justify-end">
       <router-link to="/logout" class="deasy-auth-link">Salir</router-link>
     </div>
   </AuthLayout>

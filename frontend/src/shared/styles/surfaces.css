@@ -457,4 +457,24 @@
     .deasy-tile--avisa {
         background-color: var(--color-warning-50);
     }
+
+    /* LA TARJETA QUE SE ELIGE. Nace de elegir el canal de verificación del teléfono, donde tres
+       tarjetas son un grupo de opciones y una está seleccionada.
+     *
+     * Va aquí y no como utilidades sueltas en la plantilla porque `check:overrides` tiene razón:
+     * `border-primary` sobre `.deasy-card` es una utilidad disputándole el borde al componente, y
+     * eso deja de pintar en cuanto alguien reordene las capas. Un estado con nombre no. */
+    .deasy-card--elegible {
+        cursor: pointer;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .deasy-card--elegible:hover {
+        border-color: var(--color-line-strong);
+    }
+
+    .deasy-card--elegida {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px var(--color-primary);
+    }
 }

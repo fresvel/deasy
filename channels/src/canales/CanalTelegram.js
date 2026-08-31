@@ -23,9 +23,18 @@ export const TEXTOS = Object.freeze({
     "incluido el país, y vuelve a intentarlo.",
   [MOTIVOS.BACKEND_CAIDO]:
     "Ahora mismo no podemos comprobarlo. No es culpa tuya: inténtalo de nuevo en unos minutos.",
+  // ⚠️ ESTE CASO PASA DE VERDAD, y no es que el usuario se equivoque. Al abrir el enlace desde un
+  // ORDENADOR, el navegador se lo pasa a Telegram Desktop y la aplicación puede quedarse con la
+  // conversación pero PERDER el `?start=<llave>` por el camino. La persona acaba aquí habiendo hecho
+  // todo bien, mirando un chat vacío.
+  //
+  // Por eso el mensaje no la culpa ni repite «usa el enlace»: le da la salida que funciona --el QR,
+  // que es justo para eso-- y le dice que puede pegar el código.
   SIN_LLAVE:
-    "Para verificar tu teléfono, entra desde el enlace que te da Deasy. Este chat por sí solo " +
-    "no puede identificarte.",
+    "Casi. Me falta saber qué teléfono estás verificando.\n\n" +
+    "· Si abriste el enlace desde el ordenador, es posible que Telegram no me haya pasado el " +
+    "código. Vuelve a Deasy y escanea el QR con la cámara del móvil.\n" +
+    "· O pega aquí el código que aparece en la pantalla de Deasy.",
   // ⚠️ EL BOTÓN NO SIEMPRE SE VE, y hay que decir DÓNDE está. Comprobado con un iPhone real el
   // 2026-08-30: el teclado del bot llegó bien —Telegram aceptó tres variantes distintas— pero no se
   // pintó solo; estaba plegado tras el icono de cuadrícula del campo de escribir. La persona hizo

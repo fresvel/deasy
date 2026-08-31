@@ -38,13 +38,19 @@ const estado = (llave, headers = CLAVE) =>
 const confirmar = (llave, numero, canal, headers = CLAVE) =>
   post("/internal/verificacion/confirmar", { body: { llave, numero, canal }, headers });
 
-/** Saca la llave del enlace que el backend compone; la llave en crudo no se devuelve nunca. */
+/**
+ * Saca la llave del enlace que el backend compone; la llave en crudo no se devuelve nunca.
+ *
+ * ⚠️ Los canales viven bajo `canales` y cada uno trae `{ enlace, qr }` desde el 2026-08-31: la
+ * pantalla necesita el QR porque quien se registra desde el ORDENADOR no puede pulsar un enlace que
+ * abre una aplicación de móvil.
+ */
 const llaveDelEnlace = (cuerpo) => {
-  const enlace = cuerpo.telegram ?? cuerpo.whatsapp;
-  assert.ok(enlace, "sin TELEGRAM_BOT_USERNAME ni WHATSAPP_NUMERO no hay de dónde sacar la llave");
-  return cuerpo.telegram
-    ? new URL(enlace).searchParams.get("start")
-    : new URL(enlace).searchParams.get("text");
+  const canales = cuerpo.canales ?? {};
+  const canal = canales.telegram ?? canales.whatsapp;
+  assert.ok(canal?.enlace, "sin TELEGRAM_BOT_USERNAME ni WHATSAPP_NUMERO no hay de dónde sacar la llave");
+  const url = new URL(canal.enlace);
+  return url.searchParams.get("start") ?? url.searchParams.get("text");
 };
 
 before(async () => {

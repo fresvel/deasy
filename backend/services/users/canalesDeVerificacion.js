@@ -4,6 +4,8 @@
 // ni base de datos, y tiene tres consumidores previstos — la petición de verificación, la pestaña de
 // administración (C7) y la pantalla de registro (C8). Es lógica pura y se prueba sin red.
 //
+import QRCode from "qrcode";
+
 // ⚠️ EN TODOS LOS CANALES ESCRIBE EL USUARIO. No mandamos nada: componemos el enlace que abre su
 // aplicación con la llave ya puesta. Por eso ninguno cuesta por mensaje y por eso no existe el
 // ataque de coste — quien paga el SMS es quien lo envía.
@@ -37,3 +39,30 @@ export const canalesConfigurados = (llave, env = process.env) => {
 
 /** ¿Este despliegue puede verificar teléfonos? Con cero canales, la respuesta honesta es que no. */
 export const hayAlgunCanal = (env = process.env) => Object.keys(canalesConfigurados("x", env)).length > 0;
+
+/**
+ * Los canales con su código QR ya dibujado.
+ *
+ * ⚠️ **EL QR NO ES UN ADORNO: es la mitad del canal.** Quien se registra desde el ORDENADOR no puede
+ * pulsar un enlace que abre una aplicación de móvil —o la abre en el ordenador, que es donde no está
+ * su número—. Y quien se registra desde el MÓVIL no puede escanear su propia pantalla. Por eso van
+ * las dos formas, y desde el principio: el enlace para el móvil, el QR para el ordenador.
+ *
+ * Se genera AQUÍ y no en la pantalla por lo mismo que los enlaces: el frontend no tiene por qué
+ * saber qué se codifica en cada canal. Y el SMS no lleva QR — no hay nada que abrir: hay que
+ * escribir un mensaje.
+ */
+export const canalesConQR = async (llave, env = process.env) => {
+  const canales = canalesConfigurados(llave, env);
+  const dibujar = (texto) =>
+    QRCode.toDataURL(texto, { margin: 1, width: 320, errorCorrectionLevel: "M" });
+
+  const salida = {};
+  for (const [nombre, valor] of Object.entries(canales)) {
+    salida[nombre] =
+      nombre === "sms"
+        ? { ...valor, qr: null }
+        : { enlace: valor, qr: await dibujar(valor) };
+  }
+  return salida;
+};

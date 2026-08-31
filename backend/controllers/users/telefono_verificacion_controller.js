@@ -1,5 +1,5 @@
 import TelefonoVerificacionService from "../../services/users/TelefonoVerificacionService.js";
-import { canalesConfigurados, hayAlgunCanal } from "../../services/users/canalesDeVerificacion.js";
+import { canalesConQR, hayAlgunCanal } from "../../services/users/canalesDeVerificacion.js";
 import { aFormatoInternacional } from "../../services/users/numerosDeTelefono.js";
 
 const servicio = new TelefonoVerificacionService();
@@ -27,7 +27,10 @@ export const pedirVerificacionDeTelefono = async (req, res) => {
 
     res.json({
       expira_at,
-      ...canalesConfigurados(llave),
+      // Los canales van bajo su propia llave y no esparcidos en la raiz: la pantalla tiene que poder
+      // recorrerlos para pintar el selector, y con ellos sueltos junto a `expira_at` y `numero` habia
+      // que saberse de memoria cuales eran canales y cuales no.
+      canales: await canalesConQR(llave),
       numero: aFormatoInternacional(telefono.numero, telefono.phone_code),
     });
   } catch (error) {

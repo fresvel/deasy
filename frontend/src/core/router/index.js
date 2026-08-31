@@ -163,7 +163,13 @@ router.beforeEach(async (to) => {
   const pasoPendiente = VerificacionService.primerPasoPendiente(estadoDeVerificacion);
   const RUTA_DEL_PASO = { correo: '/registro/correo', telefono: '/registro/telefono' };
 
-  if (pasoPendiente) {
+  // ⚠️ SALIR NUNCA SE BLOQUEA. Este guard corre ANTES del `beforeEnter` de `/logout`, asi que sin
+  // esta linea la sesion a medio verificar quedaba ATRAPADA: el boton «Salir» redirigia al paso
+  // pendiente y nunca llegaba a cerrarse. Y no es un incordio menor --deja la maquina inservible
+  // para la siguiente persona que quiera entrar, que es justo lo que reporto el dueno.
+  //
+  // Cualquier puerta que no se pueda abrir desde dentro esta mal, por buenas que sean sus razones.
+  if (pasoPendiente && to.path !== '/logout') {
     // Si ya esta en el paso que le toca se le deja; si no, se le lleva.
     return to.meta?.pasoDelRegistro === pasoPendiente ? undefined : RUTA_DEL_PASO[pasoPendiente];
   }
