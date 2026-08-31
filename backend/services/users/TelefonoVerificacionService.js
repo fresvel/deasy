@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { numerosIguales } from "./numerosDeTelefono.js";
+import { numerosIguales, numeroMalGuardado } from "./numerosDeTelefono.js";
 import { getPostgresPool } from "../../config/postgres.js";
 
 // Crear, resolver y consumir la llave con la que alguien demuestra que un número es suyo.
@@ -84,6 +84,17 @@ export default class TelefonoVerificacionService {
     if (!telefonos[0].phone_code) {
       throw errorDeCliente(
         "Ese teléfono no tiene país. Edítalo y elige el país antes de verificarlo."
+      );
+    }
+
+    // ⚠️ Y EL PREFIJO NO VA DENTRO DE `numero`: esa columna guarda la parte local. Guardado dos
+    // veces compone `593593…`, que no es el teléfono de nadie. Se corta aquí por el mismo motivo
+    // que el caso de arriba: dejarlo llegar al final produce un «ese número no es el tuyo» que es
+    // MENTIRA y no le dice a nadie qué arreglar.
+    if (numeroMalGuardado(telefonos[0])) {
+      throw errorDeCliente(
+        "Ese teléfono está guardado con el prefijo del país dentro del número. Edítalo y deja " +
+        "sólo la parte local."
       );
     }
 

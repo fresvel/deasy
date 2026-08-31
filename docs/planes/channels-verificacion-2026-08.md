@@ -309,27 +309,32 @@ tareas `C3`, `C5` y `C6` **no se cierran sin eso**.
 
 ---
 
-## 2b · Cuestión abierta: la rama permisiva de `numerosIguales`
+## 2b · ✅ Cerrada: la rama permisiva de `numerosIguales`
 
-**Sale de una casualidad medida el 2026-08-31.** Un teléfono guardado mal —con el prefijo del país
-*dentro* de `numero`— se verificó igualmente, porque la comparación acepta tres escrituras del número
-que llega y una de ellas es **la parte local a secas**.
+**Salió de una casualidad medida el 2026-08-31**, probando `C3` con un teléfono real. Un teléfono
+guardado mal —con el prefijo del país *dentro* de `numero`— se verificó igualmente, porque la
+comparación aceptaba tres escrituras y una era **la parte local a secas**.
 
-Esa tolerancia existe por el **SMS nacional desde módem propio**, que es el único transporte capaz de
-entregar un número sin país. Y ese transporte es `C6`, que **está bloqueada y sin implementar**.
+Esa tolerancia existía por el **SMS nacional desde módem propio**: `C6`, **bloqueada y sin
+implementar**. Se pagaba permisividad por un canal que no existe, y la factura llegó antes que el
+canal. Y es de la misma familia que el agujero de `C2b`: **en cuanto se compara algo que no lleva
+país, el país deja de pintar nada.**
 
-El problema: la rama es de la misma familia que el agujero que cerró `C2b`. Si `numero` contiene por
-error un número internacional de otro país, alguien con **esa** línea lo verifica — el país deja de
-pintar nada, que es justo lo que `C2b` arregló.
+**Decisión del dueño (2026-08-31): cerrarla.** Ahora se exige E.164 siempre. Telegram, WhatsApp y
+cualquier pasarela entregan el número con su país; si `C6` acaba necesitando la forma local, se
+reinstaura sabiendo el país **por la red del propio módem**, que es donde ese dato sí está.
 
-**Lo que propongo, y no he hecho porque es una decisión, no una corrección:** retirar la rama local y
-exigir E.164 siempre. Telegram, WhatsApp y cualquier pasarela de SMS entregan el número con su país;
-la rama sólo sirve al módem propio, y **estamos pagando permisividad por un canal que no existe**. Si
-`C6` acaba necesitándola, se reinstaura sabiendo el país por la red del propio módem, que es donde
-esa información sí está.
+Y una segunda mitad, porque cerrar la rama sola habría empeorado el mensaje: un registro corrupto
+pasaría a fallar **al final del camino**, diciendo «ese número no es el tuyo» — que es mentira y no
+dice qué arreglar. Ahora `numeroMalGuardado` lo detecta **al pedir la llave**:
 
-⚠️ Comprobado que la verificación real del 2026-08-31 **no dependía de esa rama**: con el número ya
-corregido (9 dígitos locales + `+593`), lo que casó fue la forma internacional.
+> Ese teléfono está guardado con el prefijo del país dentro del número. Edítalo y deja sólo la parte local.
+
+Es la misma lección que el teléfono sin país: **un fallo del dato no se le cuenta a nadie como un
+fallo suyo.**
+
+Mutaciones: reponer la rama local falla 2 unitarias y 1 de caracterización; quitar el detector falla
+1 y 1.
 
 ---
 

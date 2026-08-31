@@ -29,6 +29,7 @@ import assert from "node:assert/strict";
 import { post } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
+import { query } from "../lib/db.mjs";
 
 const CLAVE = { "x-deasy-servicio": process.env.INTERNAL_SERVICE_KEY ?? "" };
 
@@ -118,28 +119,32 @@ test("un número de otro país con la misma cola NO verifica", async () => {
 test("el mismo número, escrito como lo entrega cada transporte", async () => {
   const token = await tokenFor("admin");
 
-  // La internacional es la que dan Telegram, WhatsApp y las pasarelas; la local, un SMS nacional
-  // desde módem propio, que es el único transporte que puede entregar un número sin país.
-  for (const escritura of ["+593 99 000 0000", "593990000000", "0990000000", "990000000"]) {
+  // Telegram, WhatsApp y las pasarelas de SMS dan SIEMPRE la internacional, en una de estas formas.
+  for (const escritura of ["+593 99 000 0000", "593990000000", "00593990000000"]) {
     const pedida = await post("/users/me/telefonos/1/verificacion", { token });
     const r = await confirmar(llaveDelEnlace(pedida.body), escritura, "telegram");
     assert.equal(r.status, 200, `«${escritura}» debería valer: ${JSON.stringify(r.body)}`);
   }
 });
 
-test("pedir otra llave invalida la anterior", async () => {
+// ── LA RAMA QUE SE RETIRÓ EL 2026-08-31 ─────────────────────────────────────────────────────────
+//
+// Se aceptaba la parte LOCAL a secas por el SMS nacional desde módem propio — o sea, por `C6`, que
+// está bloqueada y sin implementar. La factura llegó antes que el canal: probando `C3` con un
+// teléfono real, un número guardado MAL —con el prefijo del país dentro de `numero`— se verificó
+// igualmente, porque su «parte local» casaba con el internacional que llegaba.
+//
+// En cuanto se compara algo que no lleva país, el país deja de pintar nada: es el agujero de `C2b`
+// por otra puerta.
+test("la forma LOCAL ya no verifica: sin país no hay comparación que valga", async () => {
   const token = await tokenFor("admin");
 
-  const primera = llaveDelEnlace((await post("/users/me/telefonos/1/verificacion", { token })).body);
-  const segunda = llaveDelEnlace((await post("/users/me/telefonos/1/verificacion", { token })).body);
-  assert.notEqual(primera, segunda, "cada petición emite una llave nueva");
-
-  const vieja = await estado(primera);
-  assert.equal(vieja.status, 404);
-  // Borrada, no marcada: para quien la tenga es indistinguible de no haber existido nunca, que es
-  // lo correcto — no llegó a usarse.
-  assert.equal(vieja.body.estado, "desconocida");
-  assert.equal((await estado(segunda)).body.estado, "valida");
+  for (const local of ["0990000000", "990000000"]) {
+    const pedida = await post("/users/me/telefonos/1/verificacion", { token });
+    const r = await confirmar(llaveDelEnlace(pedida.body), local, "telegram");
+    assert.equal(r.status, 409, `«${local}» no debería valer: ${JSON.stringify(r.body)}`);
+    assert.equal(r.body.estado, "numero_distinto");
+  }
 });
 
 // Encontrado AL ESCRIBIR ESTAS PRUEBAS: la ruta vive bajo `/me/`, pero el servicio buscaba el
@@ -182,4 +187,33 @@ test("dos confirmaciones simultáneas: gana UNA, y la otra pierde limpiamente", 
   const codigos = [a.status, b.status].sort();
   assert.deepEqual(codigos, [200, 409], `salió ${JSON.stringify(codigos)}: ${JSON.stringify([a.body, b.body])}`);
   assert.equal([a, b].find((r) => r.status === 409).body.estado, "consumida");
+});
+
+// Un teléfono guardado MAL —con el prefijo del país dentro de `numero`, que guarda la parte local—
+// no se puede comparar: compone `593593…`, que no es el teléfono de nadie. Hasta el 2026-08-31
+// verificaba de chiripa por la rama local; al retirarla pasaría a fallar, pero fallaría AL FINAL
+// del camino y diciendo «ese número no es el tuyo» — que es mentira y no dice qué arreglar.
+//
+// Esta prueba fija que se corta AL PEDIR LA LLAVE y que el mensaje dice qué hacer. Es la misma
+// lección que el teléfono sin país: un fallo del dato no se le cuenta a nadie como un fallo suyo.
+test("un teléfono con el prefijo dentro del número se corta al pedir la llave, y lo explica", async () => {
+  const token = await tokenFor("admin");
+
+  // Se fabrica la corrupción: los datos sembrados no la tienen, y sin ella el camino no se ejecuta.
+  const antes = await query("SELECT numero FROM telefonos WHERE id = 1");
+  const original = antes[0].numero;
+  await query(
+    `UPDATE telefonos
+        SET numero = (SELECT replace(phone_code,'+','') FROM paises WHERE id = telefonos.pais_id) || numero
+      WHERE id = 1`
+  );
+
+  try {
+    const r = await post("/users/me/telefonos/1/verificacion", { token });
+    assert.equal(r.status, 400, JSON.stringify(r.body));
+    assert.match(r.body.message, /prefijo del país dentro/);
+    assert.match(r.body.message, /parte local/, "tiene que decir qué arreglar, no sólo que está mal");
+  } finally {
+    await query("UPDATE telefonos SET numero = $1 WHERE id = 1", [original]);
+  }
 });

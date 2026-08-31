@@ -262,8 +262,10 @@ mirar la cola del número, y entonces `+51 99 111 2233` y `+593 99 111 2233` son
 Con eso bastaría para registrar el número de otra persona y verificarlo desde una línea propia.
 
 ⚠️ **Y de ahí que un teléfono sin país no se pueda verificar.** `telefonos.pais_id` admite nulo, y
-sin prefijo no hay comparación internacional posible. Se avisa al pedir la llave, no al final del
-camino, para que la persona sepa qué arreglar.
+sin prefijo no hay comparación internacional posible. Lo mismo vale para un número guardado **con el
+prefijo dentro** de `numero` —esa columna guarda la parte local— porque compone `593593…`, que no es
+el teléfono de nadie. Los dos casos se avisan **al pedir la llave**, no al final del camino: un fallo
+del dato no se le cuenta a nadie como un fallo suyo.
 
 De ahí salen tres propiedades que no son casualidad:
 

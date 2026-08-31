@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aFormatoInternacional, numerosIguales } from "./numerosDeTelefono.js";
+import { aFormatoInternacional, numerosIguales, numeroMalGuardado } from "./numerosDeTelefono.js";
 
 const EC = { numero: "0991112233", phone_code: "+593" };
 
@@ -26,13 +26,39 @@ test("dos países con la misma cola NO son el mismo teléfono", () => {
 });
 
 test("el mismo teléfono, escrito como lo entrega cada transporte", () => {
-  // Telegram, WhatsApp y las pasarelas de SMS dan la internacional.
+  // Telegram, WhatsApp y las pasarelas de SMS dan SIEMPRE la internacional, en una de estas formas.
   assert.equal(numerosIguales(EC, "+593 99 111 2233"), true);
   assert.equal(numerosIguales(EC, "593991112233"), true);
   assert.equal(numerosIguales(EC, "00593991112233"), true);
-  // Un SMS nacional desde módem propio puede traerla local, con cero o sin él.
-  assert.equal(numerosIguales(EC, "0991112233"), true);
-  assert.equal(numerosIguales(EC, "991112233"), true);
+});
+
+// ── LA RAMA QUE SE RETIRÓ EL 2026-08-31, Y POR QUÉ ──────────────────────────────────────────────
+//
+// Se aceptaba la parte local a secas por el SMS nacional desde módem propio — o sea, por `C6`, que
+// está bloqueada y sin implementar. La factura de esa permisividad llegó antes que el canal: un
+// teléfono guardado MAL se verificó igualmente, porque su «parte local» casaba con el internacional
+// que llegaba. En cuanto se compara algo sin país, el país deja de pintar nada, que es exactamente
+// el agujero de `C2b`.
+test("la forma LOCAL ya no vale: sin país no hay comparación que valga", () => {
+  assert.equal(numerosIguales(EC, "0991112233"), false);
+  assert.equal(numerosIguales(EC, "991112233"), false);
+});
+
+// Y el caso real que lo destapó: `numero` guardado CON el prefijo dentro. Antes verificaba de
+// chiripa; ahora se detecta ANTES, porque es corrupción del dato y no un intento fallido — decirle
+// a alguien «ese número no es el tuyo» cuando lo es sería mentira y no le diría qué arreglar.
+test("un teléfono con el prefijo metido dentro se reconoce como MAL GUARDADO", () => {
+  const roto = { numero: "593991112233", phone_code: "+593" };
+  assert.equal(numeroMalGuardado(roto), true);
+  assert.equal(numeroMalGuardado(EC), false);
+  // Y ya no cuela por la puerta de atrás.
+  assert.equal(numerosIguales(roto, "593991112233"), false);
+});
+
+test("sin país o sin número, `numeroMalGuardado` no se inventa un diagnóstico", () => {
+  assert.equal(numeroMalGuardado({ numero: "0991112233", phone_code: null }), false);
+  assert.equal(numeroMalGuardado({ numero: "", phone_code: "+593" }), false);
+  assert.equal(numeroMalGuardado(null), false);
 });
 
 test("un teléfono sin país NO se puede verificar", () => {
