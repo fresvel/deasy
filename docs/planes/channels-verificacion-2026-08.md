@@ -547,6 +547,25 @@ un campo claro que llame a la acción»—:
 
 Quien se equivocó **no va buscando una confesión: va buscando el campo.**
 
+#### Octava vuelta: el dato se ve, se cambia si se pide, y «Salir» es un botón (2026-08-31)
+
+**1 · Cambiar el correo o el número se activa SOLO SI SE PIDE.** El campo abierto de entrada era un
+paso atrás: el 95 % de las veces el dato está bien, y un campo editable invita a tocarlo sin querer
+—y tocarlo cuesta un correo nuevo, otra espera, y en el teléfono tira la llave viva—.
+
+Ahora se **ve** el valor (para poder darse cuenta del error) con un botón **«Cambiar»** al lado. Al
+pulsarlo aparecen el campo, **«Guardar»** —deshabilitado mientras no cambie nada— y **«Cancelar»**.
+
+**2 · «Salir» era un enlace de texto en una fila de botones.** El dueño preguntó si estaba escrito a
+mano saltándose las reglas, y la respuesta honesta es a medias: `deasy-auth-link` **sí** es del
+sistema, pero es para **enlaces de navegación** («¿Olvidaste tu contraseña?»). «Salir» es una
+**acción**, convivía con dos botones haciendo algo comparable, y era lo único que no lo parecía.
+Ahora es `AppButton`.
+
+⚠️ Y «Confirmar» **sigue siempre activo**, a propósito: es lo que arregló el fallo de la séptima
+vuelta. Si el código no vale, lo dice; deshabilitarlo devolvería el botón muerto que no explica
+nada.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la

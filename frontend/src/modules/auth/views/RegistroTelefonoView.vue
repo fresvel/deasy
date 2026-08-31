@@ -49,28 +49,33 @@
           Los tres prueban lo mismo. Elige el que tengas más a mano.
         </p>
 
-        <!-- ⚠️ EL NÚMERO, SIEMPRE VISIBLE Y EDITABLE. Antes había que descubrir un enlace que decía
-             «¿te equivocaste?»; el dueño lo dijo claro: quien se equivocó no va buscando una
-             confesión, va buscando el campo. Y el botón sólo aparece cuando hay algo que guardar. -->
+        <!-- EL NÚMERO: SE VE SIEMPRE, SE EDITA SOLO SI SE PIDE. Mismo criterio que el correo, y por
+             lo mismo: verlo permite darse cuenta del error; abrirlo de entrada invita a tocarlo sin
+             querer, y tocarlo tira la llave viva y obliga a empezar el canal otra vez. -->
         <div class="mt-6">
-          <label for="telefono-registro" class="deasy-form-label">Tu número</label>
-          <input
-            id="telefono-registro"
-            v-model="numeroLocal"
-            type="tel"
-            inputmode="tel"
-            class="deasy-control"
-            autocomplete="tel"
-          />
-          <AppButton
-            v-if="numeroCambiado"
-            variant="primary-outline"
-            class-name="mt-3"
-            :disabled="guardando"
-            @click="guardarTelefono"
-          >
-            {{ guardando ? 'Guardando…' : 'Guardar número' }}
-          </AppButton>
+          <span class="deasy-form-label">Tu número</span>
+
+          <div v-if="!editandoNumero" class="flex items-center justify-between gap-3">
+            <span class="min-w-0 truncate text-sm font-semibold text-strong">{{ numeroLocalGuardado }}</span>
+            <AppButton variant="neutral-outline" @click="empezarACambiar">Cambiar</AppButton>
+          </div>
+
+          <div v-else class="space-y-3">
+            <input
+              id="telefono-registro"
+              v-model="numeroLocal"
+              type="tel"
+              inputmode="tel"
+              class="deasy-control"
+              autocomplete="tel"
+            />
+            <div class="flex gap-3">
+              <AppButton variant="primary-outline" :disabled="guardando || !numeroCambiado" @click="guardarTelefono">
+                {{ guardando ? 'Guardando…' : 'Guardar' }}
+              </AppButton>
+              <AppButton variant="danger-outline" @click="cancelarCambio">Cancelar</AppButton>
+            </div>
+          </div>
         </div>
       </fieldset>
 
@@ -143,7 +148,9 @@
       <AppButton variant="primary-outline" :disabled="comprobando" @click="comprobar">
         {{ comprobando ? 'Comprobando…' : 'Ya lo hice' }}
       </AppButton>
-      <router-link to="/logout" class="deasy-auth-link">Salir</router-link>
+      <!-- ⚠️ «Salir» ES UNA ACCIÓN, no un enlace de navegación. Convivía con dos botones haciendo
+           algo comparable y era lo único que no lo parecía. -->
+      <AppButton variant="neutral-outline" @click="salir">Salir</AppButton>
     </div>
 
     <ManualDeCanal
@@ -179,6 +186,7 @@ const comprobando = ref(false);
 const verManual = ref(false);
 const renovando = ref(false);
 const guardando = ref(false);
+const editandoNumero = ref(false);
 /** Lo que se ve y se edita: la parte LOCAL, que es como la gente escribe su número. */
 const numeroLocal = ref("");
 const numeroLocalGuardado = ref("");
@@ -232,6 +240,19 @@ const pedirLlave = async () => {
   }
 };
 
+const empezarACambiar = () => {
+  numeroLocal.value = numeroLocalGuardado.value;
+  editandoNumero.value = true;
+};
+
+const cancelarCambio = () => {
+  numeroLocal.value = numeroLocalGuardado.value;
+  editandoNumero.value = false;
+  error.value = "";
+};
+
+const salir = () => router.push("/logout");
+
 const guardarTelefono = async () => {
   error.value = "";
   guardando.value = true;
@@ -245,6 +266,7 @@ const guardarTelefono = async () => {
     });
     telefonoId = data.telefonoId ?? telefonoId;
     numeroLocalGuardado.value = numeroLocal.value.replace(/\D/g, "");
+    editandoNumero.value = false;
     // Llave nueva de inmediato: la anterior se emitió contra el número viejo y el backend ya la tiró.
     await pedirLlave();
   } catch (fallo) {

@@ -13,23 +13,30 @@
     <p v-if="aviso" class="deasy-alert deasy-alert--success mb-6">{{ aviso }}</p>
 
     <div class="mx-auto max-w-sm space-y-6">
-      <!-- ⚠️ EL CORREO, SIEMPRE VISIBLE Y EDITABLE. Antes había que descubrir un enlace que decía
-           «¿te equivocaste?» para poder cambiarlo. Quien se equivocó no va buscando una confesión:
-           va buscando el campo. Y el botón sólo aparece cuando de verdad hay algo que guardar. -->
+      <!-- EL CORREO: SE VE SIEMPRE, SE EDITA SOLO SI SE PIDE.
+           Se ve, porque quien se equivocó tiene que poder darse cuenta y saber que puede cambiarlo.
+           No editable de entrada, porque el 95% de las veces está bien y un campo abierto invita a
+           tocarlo sin querer --y tocarlo cuesta un correo nuevo y otra espera. -->
       <div>
-        <label for="correo-registro" class="deasy-form-label">Tu correo</label>
-        <div class="flex gap-3">
+        <span class="deasy-form-label">Tu correo</span>
+
+        <div v-if="!editandoCorreo" class="flex items-center justify-between gap-3">
+          <span class="min-w-0 truncate text-sm font-semibold text-strong">{{ correoGuardado }}</span>
+          <AppButton variant="neutral-outline" @click="empezarACambiar">Cambiar</AppButton>
+        </div>
+
+        <div v-else class="flex gap-3">
           <input
             id="correo-registro"
-            ref="campoCorreo"
             v-model="correo"
             type="email"
             class="deasy-control"
             autocomplete="email"
           />
-          <AppButton v-if="correoCambiado" variant="primary-outline" :disabled="guardando" @click="guardarCorreo">
+          <AppButton variant="primary-outline" :disabled="guardando || !correoCambiado" @click="guardarCorreo">
             {{ guardando ? 'Guardando…' : 'Guardar' }}
           </AppButton>
+          <AppButton variant="danger-outline" @click="cancelarCambio">Cancelar</AppButton>
         </div>
       </div>
 
@@ -55,7 +62,10 @@
         <AppButton variant="neutral-outline" :disabled="reenviando || esperaRestante > 0" @click="reenviar">
           {{ esperaRestante > 0 ? `Enviar otro código (${esperaRestante}s)` : 'Enviar otro código' }}
         </AppButton>
-        <router-link to="/logout" class="deasy-auth-link">Salir</router-link>
+        <!-- ⚠️ «Salir» ES UNA ACCIÓN, no un enlace de navegación. `deasy-auth-link` existe y es del
+             sistema, pero es para «¿Olvidaste tu contraseña?» y similares. Aquí convivía con dos
+             botones haciendo algo comparable, y era lo único que no lo parecía. -->
+        <AppButton variant="neutral-outline" @click="salir">Salir</AppButton>
       </div>
     </div>
   </AuthLayout>
@@ -80,6 +90,7 @@ const aviso = ref("");
 const comprobando = ref(false);
 const reenviando = ref(false);
 const guardando = ref(false);
+const editandoCorreo = ref(false);
 const envioFallido = ref(false);
 const esperaRestante = ref(0);
 let cuentaAtras = null;
@@ -143,6 +154,19 @@ const comprobar = async () => {
   }
 };
 
+const empezarACambiar = () => {
+  correo.value = correoGuardado.value;
+  editandoCorreo.value = true;
+};
+
+const cancelarCambio = () => {
+  correo.value = correoGuardado.value;
+  editandoCorreo.value = false;
+  error.value = "";
+};
+
+const salir = () => router.push("/logout");
+
 const guardarCorreo = async () => {
   error.value = "";
   aviso.value = "";
@@ -156,6 +180,7 @@ const guardarCorreo = async () => {
     if (usuario) AuthService.setUser({ ...usuario, email: data.direccion });
     if (campoCodigo.value) campoCodigo.value.value = "";
     envioFallido.value = false;
+    editandoCorreo.value = false;
     aviso.value = `Te hemos enviado un código nuevo a ${data.direccion}.`;
     arrancarEspera(60);
   } catch (fallo) {
