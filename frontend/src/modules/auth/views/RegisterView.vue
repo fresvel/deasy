@@ -259,7 +259,7 @@
 
 <script setup>
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
-import { ref, computed, watch, onMounted, onUnmounted, useId } from "vue";
+import { ref, computed, watch, onMounted, useId } from "vue";
 import { tonoFuerza } from "@/shared/utils/estadoTono.js";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
 import { useRouter, useRoute } from "vue-router";
@@ -599,10 +599,14 @@ onMounted(async () => {
   }
 });
 
-onUnmounted(() => {
-  if (mapInstance) {
-    mapInstance.remove();
-    mapInstance = null;
-  }
-});
+// ⚠️ AQUI HABIA UN `onUnmounted` QUE DESTRUIA EL MAPA, y `mapInstance` dejo de existir al sacar la
+// direccion del registro (F6). Al salir de esta pantalla lanzaba `ReferenceError`, y ESO ROMPIA LA
+// NAVEGACION ENTERA: el error se tragaba la promesa del router, la pantalla siguiente montaba a
+// medias --el correo no se veia y ningun boton respondia-- y entrar con una cuenta sin verificar se
+// quedaba congelado. Recargar lo arreglaba porque montaba de cero, sin desmontar nada.
+//
+// Tres sintomas que parecian tres fallos distintos, y era este.
+//
+// ⚠️ Y NO LO CAZO NADIE: `check:imports` mira simbolos importados, no variables locales, y la
+// configuracion de eslint no lleva `no-undef`. Queda anotado en el plan.
 </script>

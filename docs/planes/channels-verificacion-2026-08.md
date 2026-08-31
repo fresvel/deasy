@@ -566,6 +566,45 @@ Ahora es `AppButton`.
 vuelta. Si el código no vale, lo dice; deshabilitarlo devolvería el botón muerto que no explica
 nada.
 
+#### Novena vuelta: los TRES síntomas eran UN error (2026-08-31)
+
+El dueño reportó tres cosas que parecían tres fallos distintos:
+
+1. Un error al registrarse que no le dio tiempo a leer, y aun así pasaba al paso siguiente.
+2. En el paso del correo, **no se veía el correo y ningún botón hacía nada**.
+3. Al entrar con una cuenta sin verificar, la pantalla **se congelaba**; recargando, funcionaba.
+
+**Los tres eran esto, en `RegisterView.vue`:**
+
+```js
+onUnmounted(() => {
+  if (mapInstance) { mapInstance.remove(); mapInstance = null; }   // ← mapInstance ya no existe
+});
+```
+
+Al sacar la dirección del registro (`F6`) se borró el mapa y **se dejó el `onUnmounted` que lo
+destruía**. Salir de esa pantalla lanzaba `ReferenceError`, y eso se tragaba la promesa del router:
+la pantalla siguiente montaba a medias —su `onMounted` no llegaba a leer el correo, y sus manejadores
+no quedaban atados—, y una navegación abortada dejaba la aplicación congelada. **Recargar lo
+arreglaba porque monta de cero, sin desmontar nada.**
+
+⚠️ **Y no lo cazó nadie, por un motivo concreto:** `check:imports` mira **símbolos importados**, no
+variables locales; y la configuración de ESLint —`vue/flat/essential` más tres reglas de estilo— **no
+lleva `no-undef`**. Activarla exige la dependencia `globals` y declarar los del navegador, o produce
+cientos de falsos positivos. Queda como tarea aparte, no colada de rodillas aquí.
+
+**Lección de método, que es la que duele:** el turno anterior se dio la limpieza por buena tras un
+barrido de símbolos exportados. Un `grep` de exportaciones no ve una variable local huérfana. **Lo
+que lo habría visto es abrir la pantalla y salir de ella**, que es exactamente lo que no se hizo.
+
+**Comprobado ahora, flujo entero en Chrome sin tocar la base a mano:** registro → el correo se ve →
+«Confirmar» sin código avisa → «Enviar otro» respeta su espera → «Cambiar» abre el campo → verificar
+→ paso del teléfono con su número y su QR → el canal confirma → **salta solo a `/home`**. Cero
+errores de consola en todo el recorrido.
+
+⚠️ Aviso ajeno detectado de paso: `FirmarPdf` (dentro de `HomeView`) no resuelve `AppButton` —
+`[Vue warn]: Failed to resolve component`. Sus botones no se pintan. No es de este frente.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la
