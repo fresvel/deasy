@@ -11,7 +11,7 @@
                 Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
               </p>
             </div>
-            <button type="button" class="deasy-btn deasy-btn--neutral-outline deasy-btn--block lg:w-auto" @click="continuarRegistro">
+            <button type="button" class="deasy-btn deasy-btn--neutral-outline deasy-btn--block lg:w-auto" @click="volverAlAcceso">
               Volver al login
             </button>
           </div>
@@ -337,7 +337,7 @@
             </Transition>
 
             <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-line bg-surface/95 py-4 backdrop-blur sm:flex-row">
-              <AppButton variant="danger-outline" class-name="w-full sm:w-1/2" @click="continuarRegistro">
+              <AppButton variant="danger-outline" class-name="w-full sm:w-1/2" @click="volverAlAcceso">
                 Cancelar
               </AppButton>
               <button type="submit" class="deasy-btn deasy-btn--primary-outline w-full sm:w-1/2">
@@ -351,29 +351,14 @@
     </div>
   </div>
 
-  <AppModalShell
-    controlled
-    :open="showSuccessModal"
-    labelled-by="register-success-modal-title"
-    title="Registro exitoso"
-    size="md"
-    content-class="text-center"
-    body-class="pt-8"
-    footer-class="justify-center"
-    @close="continuarRegistro"
-  >
-    <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--success mx-auto mb-6">
-      <IconCheck class="h-9 w-9 text-success" />
-    </div>
-    <p class="mb-0 text-sm text-muted">
-      Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.
-    </p>
-    <template #footer>
-      <AppButton variant="primary-outline" class-name="w-full" @click="continuarRegistro">
-        Ir al login
-      </AppButton>
-    </template>
-  </AppModalShell>
+  <!-- ⚠️ AQUI HABIA UN MODAL DE «Registro exitoso» que decia «ya puedes iniciar sesion». Se retiro
+       el 2026-08-31 porque MENTIA: desde el registro en tres pasos, enviar el formulario no termina
+       nada --es el paso 1 de 3--. Anunciar el final y ofrecer el acceso dejaba a la persona
+       convencida de que habia acabado, con la cuenta a medias y sin poder entrar a ningun sitio.
+
+       No se sustituye por otro modal: donde se dice «te queda esto» es la pantalla siguiente, que ya
+       lleva su indicador de tres pasos. Un modal en medio solo anade un clic para llegar al mismo
+       sitio. -->
 </template>
 
 <script setup>
@@ -386,7 +371,6 @@ import AuthService from "@/modules/auth/services/AuthService";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppMapPicker from "@/shared/components/inputs/AppMapPicker.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
-import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
@@ -500,7 +484,6 @@ const coordenadas = computed(() =>
 );
 
 const errorMessage = ref("");
-const showSuccessModal = ref(false);
 const termsAccepted = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
@@ -747,18 +730,18 @@ const createnewUser = async () => {
     // dejar a alguien esperando un mensaje que nunca se mando.
     sessionStorage.setItem("registro:correoEnviado", String(alta?.correoEnviado !== false));
     sessionStorage.removeItem("register_draft");
-    showSuccessModal.value = true;
+    // Directo al paso 2. Sin modal en medio: no hay nada que anunciar, hay algo que seguir.
+    router.push("/registro/correo");
   } catch (error) {
     errorMessage.value = resolveApiErrorMessage(error, "Error al crear el usuario. Por favor intenta de nuevo.");
   }
 };
 
-// Ya no lleva al acceso: lleva al SIGUIENTE PASO. Y no se decide aqui cual es --lo decide el
-// guardian preguntandole al servidor--, para que no haya dos sitios que opinen sobre lo mismo.
-const continuarRegistro = () => {
-  showSuccessModal.value = false;
+// El boton de la cabecera y el de cancelar: se abandona el registro y se vuelve al acceso.
+const volverAlAcceso = () => {
+  AuthService.clearSession();
   sessionStorage.removeItem("register_draft");
-  router.push("/registro/correo");
+  router.push("/");
 };
 
 onMounted(async () => {

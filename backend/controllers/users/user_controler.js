@@ -122,10 +122,10 @@ export const createUser = async (req, res) => {
       // obligatorio eso es una cuenta muerta al nacer.
       let correoEnviado = true;
       try {
-      await sendEmailVerification({
-        personId: createdUser.id,
-        email: createdUser.email
-      });
+      // Sin `email`: lo resuelve el propio servicio leyendo el correo principal. Pasarlo desde
+      // aqui era el fallo --`createdUser.email` ya no existe-- y ademas creaba dos sitios que
+      // opinaban sobre a donde se envia.
+      await sendEmailVerification({ personId: createdUser.id });
 
       console.log("Correo de verificación enviado");
     } catch (error) {

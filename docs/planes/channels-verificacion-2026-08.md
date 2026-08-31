@@ -370,6 +370,27 @@ responde por ellos.
 y mentía por omisión: decía «whatsapp» cuando la verificación vale por cualquiera de los tres
 canales.
 
+#### Dos cosas que salieron al probarlo en el navegador (2026-08-31)
+
+**1 · El correo de verificación no se había enviado NUNCA.** El destinatario llegaba como argumento
+desde `createdUser.email` — un campo **que ya no existe**, porque el correo dejó de ser columna de
+`persons` y se mudó a `emails`. Nodemailer respondía «No recipients defined» dentro de un `catch` que
+lo escribía en el log y seguía.
+
+No se notó porque **tampoco había `SMTP_*` configurado**: los dos fallos se tapaban el uno al otro, y
+cada uno explicaba el silencio del otro. Ahora la dirección la lee el propio servicio del correo
+principal, y con eso se cierra la clase entera: el único sitio que sabe a dónde se envía es el que lo
+consulta.
+
+**2 · El modal de «Registro exitoso» mentía, y se retiró.** Decía «ya puedes iniciar sesión» cuando
+enviar el formulario es **el paso 1 de 3**. Dejaba a la persona convencida de que había terminado,
+con la cuenta a medias y sin poder entrar a ningún sitio. No se sustituyó por otro modal: donde se
+dice «te queda esto» es la pantalla siguiente, que ya lleva su indicador de tres pasos.
+
+**Y un tercero, del mismo turno:** una colisión de documento respondía **400 «Error al crear el
+usuario»** aunque el servicio lanzara un 409 con el motivo escrito. La persona veía un error sin
+nada que corregir, y la explicación estaba en el log del servidor.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la
