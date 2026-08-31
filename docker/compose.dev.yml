@@ -136,6 +136,22 @@ services:
     volumes:
       - ../signer:/app
 
+  # El buzón de correo de DESARROLLO. Recibe todo lo que el backend envíe y lo enseña en una web;
+  # no reenvía nada a internet, así que no hay forma de escribirle sin querer a una persona real.
+  #
+  # ⚠️ Existe para que el envío se EJERCITE de verdad. La alternativa cómoda —escribir el código en
+  # el registro del servidor y no enviar— deja sin probar justo el camino que importa, y encima lo
+  # deja sin probar el día que se vuelve obligatorio.
+  mailpit:
+    image: axllent/mailpit:v1.21
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      # Sólo la web. El puerto SMTP (1025) NO se publica: lo usa el backend por la red interna.
+      - "${MAILPIT_PORT:-8025}:8025"
+
   # El microservicio de canales de mensajería. Ver `docs/arquitecturas/microservicio-channels.md`.
   channels:
     build:

@@ -166,6 +166,7 @@ export MINIO_CONSOLE_PORT=$((9001 + OFFSET))
 export SIGNER_PORT=$((4000 + OFFSET))
 export DOCS_PORT=$((4321 + OFFSET))
 export AZIMUTT_PORT=$((4700 + OFFSET))
+export MAILPIT_PORT=$((8025 + OFFSET))
 export RABBITMQ_PORT=$((5672 + OFFSET))
 export RABBITMQ_MGMT_PORT=$((15672 + OFFSET))
 export ORIGIN1="https://localhost:${HTTPS_PORT}"
