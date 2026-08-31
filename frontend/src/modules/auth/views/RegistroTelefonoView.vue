@@ -58,13 +58,30 @@
           <AppButton variant="neutral-soft" @click="verManual = true">Instrucciones</AppButton>
         </div>
 
+        <!-- ⚠️ EL ENLACE Y EL QR CADUCAN A LOS 15 MINUTOS, y hasta ahora no lo decía nadie: quien
+             dejaba la pestaña abierta escaneaba un código muerto y el bot le respondía «caducó» sin
+             que la pantalla hubiera dado el menor aviso. Ahora se ve el tiempo, y cuando se acaba se
+             pide otro con un botón en vez de recargar a ciegas. -->
+        <div
+          v-if="caducado"
+          class="deasy-alert deasy-alert--warning mb-6 flex flex-wrap items-center justify-between gap-3"
+        >
+          <span>Este código caducó. Pide otro para continuar.</span>
+          <AppButton variant="warning-outline" :disabled="renovando" @click="renovar">
+            {{ renovando ? 'Generando…' : 'Generar otro' }}
+          </AppButton>
+        </div>
+        <p v-else-if="minutosRestantes !== null" class="mb-6 text-xs text-muted">
+          Caduca en {{ minutosRestantes }}.
+        </p>
+
         <!-- LAS DOS VÍAS, EN DOS MITADES. No es redundancia: desde el MÓVIL no puedes escanear tu
              propia pantalla, y desde el ORDENADOR el enlace abre la aplicación donde NO está tu
              número.
              ⚠️ Y POR ESO EL ORDEN SE INVIERTE: en móvil manda el BOTÓN --el QR ahí no sirve para
              nada y estaba ocupando media pantalla--; en escritorio manda el QR, que es la única
              salida de quien no tiene Telegram en el ordenador. -->
-        <div v-if="canalActivo.id !== 'sms'" class="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-line">
+        <div v-if="canalActivo.id !== 'sms'" class="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-line" :class="{ 'pointer-events-none opacity-40': caducado }">
           <div class="order-2 text-center sm:order-1">
             <p class="mb-3 text-sm font-semibold text-strong">Desde otro teléfono</p>
             <img
@@ -81,7 +98,7 @@
               :href="canalActivo.enlace"
               target="_blank"
               rel="noopener"
-              class="deasy-btn deasy-btn--primary-outline"
+              class="deasy-btn deasy-btn--md deasy-btn--primary-outline"
             >
               Abrir {{ canalActivo.nombre }}
             </a>
@@ -89,7 +106,7 @@
           </div>
         </div>
 
-        <div v-else class="text-center">
+        <div v-else class="text-center" :class="{ 'pointer-events-none opacity-40': caducado }">
           <p class="mb-3 text-sm text-muted">
             Envía un mensaje de texto al
             <strong class="text-strong">{{ canalActivo.numero }}</strong> con este contenido:
@@ -118,7 +135,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import AuthLayout from "@/layouts/auth/AuthLayout.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
@@ -127,6 +144,7 @@ import PasosDelRegistro from "@/modules/auth/components/PasosDelRegistro.vue";
 import ManualDeCanal from "@/modules/auth/components/ManualDeCanal.vue";
 import VerificacionService from "@/modules/auth/services/VerificacionService";
 import AuthService from "@/modules/auth/services/AuthService";
+import realtimeClient from "@/core/services/realtimeClient";
 import { IconBrandTelegram, IconBrandWhatsapp, IconDeviceMobile } from "@tabler/icons-vue";
 
 const router = useRouter();
@@ -137,6 +155,11 @@ const error = ref("");
 const cargando = ref(true);
 const comprobando = ref(false);
 const verManual = ref(false);
+const renovando = ref(false);
+const expiraEn = ref(null);
+const ahora = ref(Date.now());
+let reloj = null;
+let telefonoId = null;
 
 // El ORDEN es la recomendación, y está razonada: Telegram no cuesta nada y prueba el número con un
 // botón; WhatsApp igual pero depende de una sesión que hay que mantener; el SMS es el único que
@@ -153,6 +176,44 @@ const disponibles = computed(() =>
 const hayCanales = computed(() => disponibles.value.length > 0);
 const canalActivo = computed(() => disponibles.value.find((c) => c.id === elegido.value) ?? null);
 
+// Cuánto le queda al código, y si ya se pasó. Se recalcula sobre `ahora`, que avanza cada segundo:
+// así el aviso aparece SOLO, sin que nadie tenga que recargar para enterarse.
+const caducado = computed(() => expiraEn.value !== null && ahora.value >= expiraEn.value);
+const minutosRestantes = computed(() => {
+  if (expiraEn.value === null || caducado.value) return null;
+  const segundos = Math.ceil((expiraEn.value - ahora.value) / 1000);
+  const m = Math.floor(segundos / 60);
+  return m >= 1 ? `${m} min` : `${segundos} s`;
+});
+
+/** Pide una llave nueva y repinta enlaces y QR. Es lo mismo al entrar y al renovar. */
+const pedirLlave = async () => {
+  const { data } = await VerificacionService.pedirVerificacionDeTelefono(telefonoId);
+  // El backend devuelve los enlaces Y los códigos QR ya compuestos: esta pantalla no sabe armar un
+  // enlace de Telegram ni dibujar un QR, y no tiene por qué.
+  canales.value = data.canales ?? {};
+  numero.value = data.numero;
+  expiraEn.value = data.expira_at ? new Date(data.expira_at).getTime() : null;
+  ahora.value = Date.now();
+  if (!elegido.value || !canales.value[elegido.value]) {
+    // Se preselecciona el primero disponible en orden de recomendación, para que la pantalla no
+    // aparezca vacía esperando un clic. Al RENOVAR se respeta lo que ya había elegido.
+    elegido.value = disponibles.value[0]?.id ?? null;
+  }
+};
+
+const renovar = async () => {
+  error.value = "";
+  renovando.value = true;
+  try {
+    await pedirLlave();
+  } catch (fallo) {
+    error.value = fallo?.response?.data?.message ?? "No se pudo generar otro código.";
+  } finally {
+    renovando.value = false;
+  }
+};
+
 onMounted(async () => {
   const telefono = AuthService.getUser()?.telefonos?.[0];
   if (!telefono?.id) {
@@ -160,21 +221,37 @@ onMounted(async () => {
     cargando.value = false;
     return;
   }
+  telefonoId = telefono.id;
+
   try {
-    // El backend devuelve los enlaces Y los códigos QR ya compuestos: esta pantalla no sabe armar un
-    // enlace de Telegram ni dibujar un QR, y no tiene por qué.
-    const { data } = await VerificacionService.pedirVerificacionDeTelefono(telefono.id);
-    canales.value = data.canales ?? {};
-    numero.value = data.numero;
-    // Se preselecciona el primero disponible en orden de recomendación, para que la pantalla no
-    // aparezca vacía esperando un clic.
-    elegido.value = disponibles.value[0]?.id ?? null;
+    await pedirLlave();
   } catch (fallo) {
     error.value = fallo?.response?.data?.message ?? "No se pudo preparar la verificación.";
   } finally {
     cargando.value = false;
   }
+
+  reloj = setInterval(() => { ahora.value = Date.now(); }, 1000);
+
+  // ⚠️ EL SERVIDOR AVISA, Y ES LO QUE CONVIERTE ESTA PANTALLA EN ALGO USABLE. Quien acaba de
+  // escribirle al bot desde el móvil no tiene por qué volver al ordenador a pulsar un botón para
+  // enterarse de algo que el servidor YA SABE.
+  //
+  // «Ya lo hice» se queda como RESPALDO: si el socket no conecta --red rara, pestaña dormida-- o si
+  // la verificación llegó por otro camino, sigue habiendo forma de continuar. Un aviso que no llega
+  // no puede dejar a nadie encallado.
+  realtimeClient.connect();
+  realtimeClient.on("telefono:verificado", alVerificar);
 });
+
+onUnmounted(() => {
+  clearInterval(reloj);
+  realtimeClient.off("telefono:verificado", alVerificar);
+});
+
+const alVerificar = () => {
+  router.push("/home");
+};
 
 // Quien confirma es el canal, por detrás; aquí sólo se vuelve a preguntar. No se sondea en bucle: la
 // persona sabe cuándo lo ha hecho, y un sondeo constante gasta batería y peticiones para adivinar

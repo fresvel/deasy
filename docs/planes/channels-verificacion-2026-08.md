@@ -460,6 +460,33 @@ pantalla rota. Lo único que lo encuentra es abrirla.
 teléfono no— para poder mirar. Se fabrica con un alta por API y un `UPDATE` al correo; sin eso no hay
 forma de llegar a la pantalla.
 
+#### Quinta vuelta: el servidor avisa, y el código se puede renovar (2026-08-31)
+
+**1 · El botón «Abrir Telegram» tenía `padding: 0`.** Medido: 100 px de texto en 102 px de botón, dos
+de holgura. La causa es exacta y vale para cualquier `<a>` con pinta de botón: **`.deasy-btn` no lleva
+relleno**, lo pone `.deasy-btn--md` (`px-4 py-2`), y `AppButton` la añade sola. Un `<a>` escrito a
+mano, no. Ahora: **16 px a cada lado y 34 de holgura**.
+
+⚠️ Y las puertas no lo cazaron: `check:buttons-g9-g11` mira `<button>`, no un enlace con clases de
+botón. Queda dicho.
+
+**2 · El enlace y el QR caducan a los 15 minutos, y no lo decía nadie.** Quien dejaba la pestaña
+abierta escaneaba un código muerto y el bot le respondía «caducó» sin que la pantalla hubiera avisado.
+Ahora hay cuenta atrás, y al vencer el panel se apaga y aparece **«Generar otro»** — que repite la
+petición conservando el canal elegido.
+
+**3 · El servidor AVISA por tiempo real, y eso cambia la pantalla de sitio.** Al confirmar, el
+controlador emite `telefono:verificado` a la sesión de esa persona por el `RealtimeGateway` que ya
+existía. **Comprobado en vivo: la pantalla saltó sola a `/home`** en cuanto el canal confirmó, sin
+que nadie pulsara nada.
+
+Quien acaba de escribirle al bot desde el móvil no tiene por qué volver al ordenador a pulsar un
+botón para enterarse de algo **que el servidor ya sabe**.
+
+⚠️ **«Ya lo hice» se queda como RESPALDO, no se retira.** Si el socket no conecta —red rara, pestaña
+dormida— o si la verificación llegó por otro camino, tiene que seguir habiendo forma de continuar. Un
+aviso que no llega no puede dejar a nadie encallado.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la

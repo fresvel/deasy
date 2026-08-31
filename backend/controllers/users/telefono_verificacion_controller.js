@@ -1,4 +1,5 @@
 import TelefonoVerificacionService from "../../services/users/TelefonoVerificacionService.js";
+import realtimeGateway from "../../services/realtime/RealtimeGateway.js";
 import { canalesConQR, hayAlgunCanal } from "../../services/users/canalesDeVerificacion.js";
 import { aFormatoInternacional } from "../../services/users/numerosDeTelefono.js";
 
@@ -66,6 +67,16 @@ export const confirmarLlave = async (req, res) => {
       // código para los cuatro motivos mantiene simple al cliente, que los traduce por `estado`.
       return res.status(409).json({ estado: resultado.estado });
     }
+    // ⚠️ SE AVISA A LA SESION POR TIEMPO REAL, y el aviso va DESPUES de responder al canal --su
+    // peticion no depende de que la persona tenga el navegador abierto.
+    //
+    // Sin esto, la pantalla del paso 3 obliga a pulsar «Ya lo hice» para enterarse de algo que el
+    // servidor YA SABE. Ese boton se queda como respaldo --si el socket no conecta, o si la persona
+    // verifico desde otro dispositivo-- pero deja de ser el camino normal.
+    realtimeGateway.emitToUser(resultado.personId, "telefono:verificado", {
+      telefonoId: resultado.telefonoId,
+    });
+
     res.json({ verificado: true });
   } catch (error) {
     res.status(error.status || 500).json({ message: error.message });

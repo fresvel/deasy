@@ -139,7 +139,7 @@ export default class TelefonoVerificacionService {
   /** La fila de la llave con el teléfono al que pertenece, y en qué estado está. Privada. */
   async #buscar(llave, connection) {
     const [filas] = await connection.query(
-      `SELECT k.id, k.telefono_id, k.expira_at, k.consumida_at, t.numero, p.phone_code
+      `SELECT k.id, k.telefono_id, k.expira_at, k.consumida_at, t.numero, t.person_id, p.phone_code
          FROM telefono_verification_keys k
          INNER JOIN telefonos t ON t.id = k.telefono_id
          LEFT JOIN paises p ON p.id = t.pais_id
@@ -239,7 +239,14 @@ export default class TelefonoVerificacionService {
       );
 
       await conexion.commit();
-      return { verificado: true, telefonoId: Number(fila.telefono_id) };
+      // `personId` viaja para que quien llame pueda AVISAR a esa sesion por tiempo real. Sale de la
+      // consulta, no de un argumento: quien confirma es el canal, y el canal no sabe de personas
+      // --y no debe: una llave filtrada no puede servir para averiguar de quien es un numero.
+      return {
+        verificado: true,
+        telefonoId: Number(fila.telefono_id),
+        personId: Number(fila.person_id),
+      };
     } catch (error) {
       await conexion.rollback().catch(() => {});
       throw error;
