@@ -25,7 +25,7 @@
 | **C2** | El backend sabe **crear, resolver y consumir** una llave; el servicio sabe preguntárselo | ✅ | `telefono_verification_keys` + 3 rutas · char **318/318** (4 casos nuevos) · unit **704** · channels **34** · **4 mutaciones cazadas**: quitar el filtro del dueño, colapsar «ya usada» con «no existe», que el guard confirme la ruta con un 401, y que pedir otra llave no invalide la anterior · `/api/internal/` da **404 desde fuera** (curl contra el proxy) · **IDOR encontrado y cerrado** al escribir las pruebas | 2026-08-30 |
 | **C2b** | La comparación del número se muda al backend: el servicio **observa**, el backend **dicta** | ✅ | char **321/321** · unit **713** · channels **29** · la regla vieja (últimos 8 dígitos) daba por iguales `+51 99 111 2233` y `+593 99 111 2233` · **3 defectos más** encontrados al construir: el arranque creaba el teléfono del admin **sin país** (inverificable), `numero_completo` componía `+5930990000000`, y un 404 del guard era indistinguible de «llave desconocida» | 2026-08-30 |
 | **C3** | Un número real se verifica **por Telegram**, de punta a punta | ✅ | **Verificado con un teléfono real** (iPhone y Telegram Desktop) · channels **50** · 4 mutaciones cazadas (aceptar la tarjeta ajena, offset después de tratar, borrar el error del mensaje, «hola» como llave) · rechazos comprobados uno a uno: caducada · ya usada · inventada · contacto reenviado · **llave abierta desde OTRO teléfono** · y medido que un intento de impostor **NO gasta la llave** | 2026-08-31 |
-| **C4** | El servicio corre **como contenedor** en la pila, sin que lo alcance el navegador | ✅ | `docker/channels/Dockerfile` + servicio en `compose.dev.yml` · **0 puertos publicados** y el nombre no resuelve desde el host · apagado limpio en **1,2 s** con SIGTERM (tini como PID 1) · conectado a `@deasy_test_bot` desde dentro de la pila | 2026-08-31 |
+| **C4** | El servicio corre **como contenedor** en la pila, sin que lo alcance el navegador | ✅ | `docker/channels/Dockerfile` + servicio en `compose.dev.yml` · **0 puertos publicados** y el nombre no resuelve desde el host · apagado limpio en **1,2 s** con SIGTERM (tini como PID 1) · conectado a `@deasy_test_bot` desde dentro de la pila · **vuelta completa comprobada con un teléfono real contra el contenedor de la pila** | 2026-08-31 |
 | **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ⬜ | | |
 | **C6** | Un número real se verifica **por SMS entrante** | ⛔ | **Bloqueada por una decisión del dueño**: módem propio o número alquilado | |
 | **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | ⬜ | | |
@@ -248,10 +248,17 @@ El servicio corre en **una** instancia.
 | Apagado | **1,2 s** con `SIGTERM: cerrando canales` — `tini` como PID 1. Sin él, Node como PID 1 ignora la señal y muere de un `SIGKILL` a los diez segundos, con el sondeo a medias |
 | Arranque con la pila | Sí, sin nombrarlo |
 | Conexión | `@deasy_test_bot`, desde dentro de la pila |
+| Verificación real | **Sí**, de punta a punta contra el contenedor de la pila |
 
 **La imagen es `node:25.8.1-slim` y no la del backend**: `channels` no tiene ni una dependencia
 —todo lo que hace es hablar HTTP, y `fetch` viene en Node—, así que no hay nada que compilar. El
 paso de `npm install` se deja puesto para cuando `C5` traiga `whatsapp-web.js`.
+
+⚠️ **Un teléfono de prueba NO SOBREVIVE a `test:char:run`.** Esa tanda resetea la base entera —reset
++ bootstrap + seed—, así que el número que alguien haya puesto para probar vuelve al de la semilla.
+Pasó el 2026-08-31: se dio un enlace apuntando a un número sobrescrito dos minutos antes, y el
+rechazo —correcto— parecía un fallo del canal. **Si se lanza la caracterización entre medias, hay que
+volver a grabar el número antes de emitir la llave.**
 
 ⚠️ **Sólo está en `compose.dev.yml`**, como el sitio de documentación: `qa` y `prod` no lo despliegan
 todavía, y publicar su imagen en GHCR es parte de esa decisión, no de esta tarea.
