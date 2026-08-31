@@ -18,74 +18,83 @@
       Este servidor no tiene ningún canal de verificación configurado. Avisa a quien lo administre.
     </p>
 
-    <!-- EL SELECTOR. Es un GRUPO DE OPCIONES y no tres botones, y esa no es una distinción
-         cosmética: elegir uno de tres es exactamente lo que un `radio` significa. Con botones había
-         que anunciar el estado a mano (`aria-pressed`), las flechas del teclado no funcionaban, y un
-         lector de pantalla no sabía que las tres van juntas. -->
-    <fieldset v-if="hayCanales" class="mb-6">
-      <legend class="deasy-form-label">¿Por dónde quieres verificarlo?</legend>
-      <div class="grid gap-3 sm:grid-cols-3">
-        <label
-          v-for="canal in disponibles"
-          :key="canal.id"
-          class="deasy-card deasy-card--elegible flex flex-col items-center gap-2 p-4 text-center"
-          :class="{ 'deasy-card--elegida': canal.id === elegido }"
-        >
-          <input v-model="elegido" type="radio" name="canal" :value="canal.id" class="sr-only" />
-          <span class="deasy-icon-box deasy-icon-box--md" :class="canal.tono">
-            <component :is="canal.icono" class="h-5 w-5" />
-          </span>
-          <span class="text-sm font-semibold text-strong">{{ canal.nombre }}</span>
-          <span class="text-xs text-muted">{{ canal.nota }}</span>
-        </label>
-      </div>
-    </fieldset>
+    <!-- ⚠️ EL REPARTO ES EN DOS COLUMNAS, y no por gusto: en vertical el QR quedaba pequeño y
+         empujado hacia abajo, que es justo al revés de lo que hace falta. El QR es la salida de
+         quien está en el ordenador --la mitad de los casos-- y tiene que poder escanearse cómodo.
+         El selector es una elección de un momento; el QR se mira con la cámara en la mano. -->
+    <div v-if="hayCanales" class="grid gap-4 md:grid-cols-3 md:items-start">
 
-    <div v-if="canalActivo" class="deasy-card p-5">
-      <div class="mb-4 flex items-start justify-between gap-4">
-        <h2 class="deasy-title deasy-title--section">{{ canalActivo.nombre }}</h2>
-        <AppButton variant="neutral-soft" @click="verManual = true">
-          ¿Cómo se hace?
-        </AppButton>
-      </div>
+      <!-- Es un GRUPO DE OPCIONES y no tres botones: elegir uno de tres es exactamente lo que un
+           `radio` significa, y así funcionan las flechas del teclado y un lector de pantalla sabe
+           que las tres van juntas. -->
+      <fieldset class="md:col-span-1">
+        <legend class="deasy-form-label">¿Por dónde?</legend>
+        <div class="grid gap-2">
+          <label
+            v-for="canal in disponibles"
+            :key="canal.id"
+            class="deasy-card deasy-card--elegible flex items-center gap-3 p-3"
+            :class="{ 'deasy-card--elegida': canal.id === elegido }"
+          >
+            <input v-model="elegido" type="radio" name="canal" :value="canal.id" class="sr-only" />
+            <span class="deasy-icon-box deasy-icon-box--md shrink-0" :class="canal.tono">
+              <component :is="canal.icono" class="h-5 w-5" />
+            </span>
+            <span class="min-w-0 text-left">
+              <span class="block text-sm font-semibold text-strong">{{ canal.nombre }}</span>
+              <span class="block text-xs text-muted">{{ canal.nota }}</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
 
-      <!-- Las dos vías, y no es redundancia: desde el MÓVIL no puedes escanear tu propia pantalla,
-           y desde el ORDENADOR el enlace abre la aplicación donde NO está tu número. -->
-      <template v-if="canalActivo.id !== 'sms'">
-        <div class="flex flex-col items-center gap-4 sm:flex-row sm:items-start">
-          <img
-            v-if="canalActivo.qr"
-            :src="canalActivo.qr"
-            :alt="`Código QR para verificar por ${canalActivo.nombre}`"
-            class="h-40 w-40 shrink-0 rounded-md border border-line bg-white p-1"
-          />
-          <div class="text-sm text-muted">
-            <p class="mb-3">
-              <strong class="text-strong">Desde este mismo dispositivo:</strong> pulsa el botón.
-            </p>
-            <p class="mb-4">
+      <div v-if="canalActivo" class="deasy-card p-4 md:col-span-2">
+        <div class="mb-4 flex items-start justify-between gap-3">
+          <h2 class="deasy-title deasy-title--section">{{ canalActivo.nombre }}</h2>
+          <AppButton variant="neutral-soft" @click="verManual = true">¿Cómo se hace?</AppButton>
+        </div>
+
+        <template v-if="canalActivo.id !== 'sms'">
+          <!-- EL ORDEN LO PIDIÓ EL DUEÑO, y tiene razón: primero el QR, que es lo que ocupa sitio y
+               lo que mira quien está en el ordenador; el botón después, pegado a su propia frase.
+               Antes la frase del botón iba arriba y el botón abajo del todo, separados por el otro
+               texto. -->
+          <div class="flex flex-col items-center gap-4">
+            <img
+              v-if="canalActivo.qr"
+              :src="canalActivo.qr"
+              :alt="`Código QR para verificar por ${canalActivo.nombre}`"
+              class="w-full max-w-xs rounded-md border border-line bg-white p-3"
+            />
+            <p class="text-center text-sm text-muted">
               <strong class="text-strong">Desde otro teléfono:</strong> escanea el código con la
               cámara.
             </p>
-            <a
-              :href="canalActivo.enlace"
-              target="_blank"
-              rel="noopener"
-              class="deasy-btn deasy-btn--primary-outline"
-            >
-              Abrir {{ canalActivo.nombre }}
-            </a>
-          </div>
-        </div>
-      </template>
 
-      <template v-else>
-        <p class="mb-2 text-sm text-muted">
-          Envía un mensaje de texto con este contenido al
-          <strong class="text-strong">{{ canalActivo.numero }}</strong>:
-        </p>
-        <code class="block break-all rounded-md border border-line bg-surface px-3 py-2 font-mono text-xs text-strong">{{ canalActivo.texto }}</code>
-      </template>
+            <div class="w-full border-t border-line pt-4 text-center">
+              <p class="mb-3 text-sm text-muted">
+                <strong class="text-strong">Desde este mismo dispositivo:</strong>
+              </p>
+              <a
+                :href="canalActivo.enlace"
+                target="_blank"
+                rel="noopener"
+                class="deasy-btn deasy-btn--primary-outline"
+              >
+                Abrir {{ canalActivo.nombre }}
+              </a>
+            </div>
+          </div>
+        </template>
+
+        <template v-else>
+          <p class="mb-2 text-sm text-muted">
+            Envía un mensaje de texto con este contenido al
+            <strong class="text-strong">{{ canalActivo.numero }}</strong>:
+          </p>
+          <code class="block break-all rounded-md border border-line bg-surface px-3 py-2 font-mono text-xs text-strong">{{ canalActivo.texto }}</code>
+        </template>
+      </div>
     </div>
 
     <div class="mt-6 flex items-center justify-between gap-3">

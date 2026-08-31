@@ -421,6 +421,24 @@ correo no deseado. **Es exactamente lo que este plan advirtió por escrito antes
 se arregla con código: hace falta que el dominio remitente tenga **SPF y DKIM**. Es el argumento
 medido para pedir el SMTP institucional en vez de una cuenta suelta.
 
+#### Tercera vuelta con el dueño (2026-08-31)
+
+**El bot no respondía a nada, y no era el bot: el servicio llevaba TRECE HORAS muerto.** Un
+`SIGKILL` lo tumbó y `channels` **no tenía política de reinicio** —el único servicio de la pila sin
+ella—. El silencio fue completo: el backend seguía emitiendo llaves, la pantalla seguía pintando el
+QR, y del otro lado no había nadie. Cada pieza funcionando y el conjunto roto.
+
+Ahora lleva `restart: unless-stopped`, como el resto.
+
+⚠️ **Y esto deja al descubierto que no hay forma de saber que un canal se ha caído.** La pestaña de
+administración (`C7`) tiene ahí su primer motivo real: `estado()` existe en el contrato de `Canal`
+desde `C1` y **no lo lee nadie**.
+
+**La pantalla del teléfono, segunda pasada:** el selector a la izquierda y el QR a la derecha con el
+doble de sitio. En vertical el QR quedaba pequeño y empujado hacia abajo, que es justo al revés de lo
+que hace falta —es la salida de quien está en el ordenador, y se mira con la cámara en la mano—. Y el
+botón va ahora **pegado a su propia frase**, no separado de ella por el otro texto.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la

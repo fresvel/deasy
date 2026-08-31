@@ -166,6 +166,13 @@ services:
       DEASY_API_URL: http://backend:3030/deasy/v1
     depends_on:
       - backend
+    # ⚠️ SE LEVANTA SOLO SI SE CAE, como el resto de la pila. Sin esto, el 2026-08-31 el contenedor
+    # murio de un SIGKILL y estuvo TRECE HORAS parado sin que nada lo dijera: el bot dejo de
+    # responder a todo el mundo y no habia error en ninguna parte --el backend seguia emitiendo
+    # llaves tan contento, y la pantalla seguia pintando el QR.
+    #
+    # Es el mismo silencio de siempre: cada pieza funcionando y el conjunto roto.
+    restart: unless-stopped
     # ⚠️ SIN PUERTO PUBLICADO, como el firmador: al navegador no se le ha perdido nada aquí.
     #
     # ⚠️ Y UNA SOLA INSTANCIA, que no es una preferencia sino una atadura de los canales:
