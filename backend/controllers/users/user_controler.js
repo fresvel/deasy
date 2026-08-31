@@ -184,6 +184,18 @@ export const createUser = async (req, res) => {
       return res.status(409).send({ message: "La cédula o el correo ya existen" });
     }
 
+    // ⚠️ SI EL SERVICIO YA DIJO QUE PASA, SE LE HACE CASO. Los servicios lanzan con `status` y con un
+    // mensaje escrito para una persona --«Ese documento de identidad ya esta registrado por otra
+    // persona», «Ese numero de telefono ya esta registrado»--, y hasta el 2026-08-31 este `catch` los
+    // aplastaba todos en un 400 con "Error al crear el usuario", metiendo el motivo en un campo
+    // `error` que la pantalla no enseña.
+    //
+    // El efecto medido: alguien intentaba registrarse, chocaba con una cedula ya usada, y lo unico
+    // que veia era "Error al crear el usuario". Sin nada que corregir y sin saber que corregir.
+    if (error.status) {
+      return res.status(error.status).send({ message: error.message });
+    }
+
     res.status(400).send({
       message: "Error al crear el usuario",
       error: error.message

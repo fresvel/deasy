@@ -119,3 +119,38 @@ test("un alta que falla no deja rastro, y el reintento funciona", async () => {
 
   await limpiar();
 });
+
+// ── EL MOTIVO TIENE QUE LLEGAR A QUIEN SE REGISTRA ──────────────────────────────────────────────
+//
+// Encontrado el 2026-08-31 con un registro real: el servicio lanzaba «Ese documento de identidad ya
+// está registrado por otra persona» con `status: 409`, y este controlador lo aplastaba en un 400 con
+// «Error al crear el usuario», metiendo el motivo en un campo que la pantalla no enseña.
+//
+// Lo que veía la persona era «Error al crear el usuario». Sin nada que corregir y sin saber qué.
+test("una colisión de documento se explica, con su código y su motivo", async () => {
+  // Se ocupa el documento con una persona, y se intenta con otra.
+  const cedula = cedulaValida("171003407");
+  const primero = await post("/users", {
+    body: {
+      first_name: "ColadoRegistro", last_name: "Uno", email: "colisiona.uno@ejemplo.test",
+      password: "Demo1234!", confirm_password: "Demo1234!", cedula,
+      telefono: { tipo: "personal", numero: "987650001", pais_id: 60 },
+    },
+  });
+  assert.equal(primero.status, 200, JSON.stringify(primero.body).slice(0, 200));
+
+  const segundo = await post("/users", {
+    body: {
+      first_name: "ColadoRegistro", last_name: "Dos", email: "colisiona.dos@ejemplo.test",
+      password: "Demo1234!", confirm_password: "Demo1234!", cedula,
+      telefono: { tipo: "personal", numero: "987650002", pais_id: 60 },
+    },
+  });
+
+  assert.equal(segundo.status, 409, "es un conflicto, no un 400 genérico");
+  assert.match(segundo.body.message, /documento de identidad ya está registrado/);
+  // Y NO se filtra el texto interno de PostgreSQL, que expondría el esquema.
+  assert.doesNotMatch(segundo.body.message, /constraint|duplicate key/i);
+
+  await query("DELETE FROM persons WHERE first_name = $1", ["ColadoRegistro"]);
+});
