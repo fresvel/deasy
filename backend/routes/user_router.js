@@ -31,6 +31,7 @@ import {
 import { loginUser } from "../controllers/users/login_user.js";
 import { recuperarCorreo } from "../controllers/users/recuperar_correo_controller.js";
 import { pedirVerificacionDeTelefono } from "../controllers/users/telefono_verificacion_controller.js";
+import { verificarMiCorreo, reenviarMiCodigo } from "../controllers/users/verificacion_registro_controller.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { refreshToken } from "../controllers/users/refresh_token.js";
 import { getUserPhoto, updateUserPhoto } from "../controllers/users/user_photo_controller.js";
@@ -128,6 +129,15 @@ router.post('/recuperar-correo', recuperarCorreo)
 
 // Pedir una llave para verificar UN telefono propio. Devuelve ya compuestos el enlace de
 // Telegram, el de WhatsApp y el texto del SMS: la pantalla no tiene que saber armarlos.
+// ── El registro en tres pasos (C8) ────────────────────────────────────────────────────────────
+//
+// ⚠️ SIEMPRE SOBRE `me`. La ruta anterior (`POST /email/verify`) aceptaba `{ user_id, code }` SIN
+// SESION: cualquiera podia probar codigos contra la cuenta de cualquiera, y de paso averiguar que
+// identificadores existen. Atarlo a la sesion no sustituye al limitador de intentos --eso es C9--
+// pero reduce el blanco de "cualquiera" a "el mio".
+router.post('/me/verificacion/correo', authMiddleware, verificarMiCorreo)
+router.post('/me/verificacion/correo/reenviar', authMiddleware, reenviarMiCodigo)
+
 router.post(
   '/me/telefonos/:id/verificacion',
   authMiddleware,

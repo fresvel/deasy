@@ -3,6 +3,7 @@ import DireccionService from "../users/DireccionService.js";
 import TelefonoService from "../users/TelefonoService.js";
 import EmailService from "../users/EmailService.js";
 import DocumentoIdentidadService, { TIPO_NACIONAL } from "../users/DocumentoIdentidadService.js";
+import { estadoDeVerificacion } from "../users/estadoDeVerificacion.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
@@ -417,7 +418,6 @@ export default class UserRepository {
     // El telefono principal que declara canal WhatsApp. Si no hay ninguno, no hay whatsapp.
     const telefonos = userRow?.telefonos ?? [];
     const telefonoDeCanal = telefonos.find((t) => (t.canales ?? []).some((c) => c.code === "whatsapp"));
-    const canalWhatsapp = (telefonoDeCanal?.canales ?? []).find((c) => c.code === "whatsapp");
 
     if (!userRow) return null;
 
@@ -481,11 +481,13 @@ export default class UserRepository {
       unit_type_name: unitTypeNames[0] ?? "",
       unit_name: unitNames[0] ?? "",
       cargo_name: cargoNames[0] ?? "",
-      verify: {
-        email: Boolean(userRow.email_verificado),
-        // Verificado EN WHATSAPP, que es lo que la bandera vieja no sabia decir.
-        whatsapp: Boolean(canalWhatsapp?.verificado)
-      },
+        // Que le falta para poder usar el sistema. TODO DERIVADO: no hay bandera en `persons` que
+        // pueda acabar contradiciendo a las filas de las que deberia salir.
+        //
+        // ⚠️ SUSTITUYE A `verify: { email, whatsapp }`, retirado el 2026-08-31. Tenia dos
+        // problemas: no lo leia nadie en el frontend, y mentia por omision --decia «whatsapp»
+        // cuando la verificacion del telefono pasó a valer por CUALQUIERA de los tres canales.
+        verificacion: estadoDeVerificacion(userRow),
       createdAt: userRow.created_at ?? userRow.createdAt ?? null,
       updatedAt: userRow.updated_at ?? userRow.updatedAt ?? null
     };

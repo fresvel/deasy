@@ -25,6 +25,12 @@ export const API_ROUTES = {
   USERS_RESET_PASSWORD: `${API_PREFIX}/reset-password/reset`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
   USERS_RECUPERAR_CORREO: `${API_PREFIX}/users/recuperar-correo`,
+  // El registro en tres pasos (C8). Todo sobre `me`: la ruta anterior aceptaba un `user_id` del
+  // cuerpo SIN sesion, asi que cualquiera podia probar codigos contra la cuenta de cualquiera.
+  USERS_ME: `${API_PREFIX}/users/me`,
+  USERS_ME_VERIFICAR_CORREO: `${API_PREFIX}/users/me/verificacion/correo`,
+  USERS_ME_REENVIAR_CODIGO: `${API_PREFIX}/users/me/verificacion/correo/reenviar`,
+  USERS_ME_VERIFICAR_TELEFONO: (telefonoId) => `${API_PREFIX}/users/me/telefonos/${telefonoId}/verificacion`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_REFRESH_TOKEN: `${API_PREFIX}/users/refresh-token`,
   USERS_ME: `${API_PREFIX}/users/me`,

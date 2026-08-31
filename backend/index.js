@@ -26,6 +26,9 @@ import notification_router from "./routes/notification_router.js";
 import system_router from "./routes/system_router.js";
 import reset_password_router from "./routes/reset_password_router.js";
 import email_router from "./routes/email_router.js";
+import { authMiddleware } from "./middlewares/auth.js";
+import { exigeVerificacionCompleta } from "./middlewares/exigeVerificacionCompleta.js";
+import UserRepository from "./services/auth/UserRepository.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -157,7 +160,30 @@ app.use(ROUTES.internal, internalRouter)
 app.use(ROUTES.resetPassword, reset_password_router)
 app.use(ROUTES.email, email_router)
 
-app.use(ROUTES.admin, admin_router)
+// ── LA PUERTA DEL REGISTRO EN TRES PASOS (C8) ────────────────────────────────────────────────
+//
+// ⚠️ EL GUARDIAN DEL ROUTER DE VUE NO ES UNA PUERTA. Decide que pantalla se pinta; quien tenga el
+// token llama aqui directamente y se salta el navegador entero. Este repositorio ya tropezo con eso
+// y lo dejo escrito donde dolio --`user_controler.queries.js:486`--:
+//
+//     «El bloqueo era solo visual: la API los servia igual.»
+//
+// ⚠️ VA DESPUES DE `authMiddleware`, SIEMPRE. Sin `req.user` este middleware no tiene a quien mirar
+// y dejaria pasar todo: seria una puerta pintada. Por eso se monta el par, y no solo la puerta.
+//
+// DONDE SE APLICA: solo en los routers donde la autenticacion ya es obligatoria para TODAS sus
+// rutas. `program`, `units`, `whatsapp` y parte de `tarea` no piden autenticacion NINGUNA hoy
+// --hallazgo del 2026-08-31, anotado en el plan--; cerrarlas es un arreglo aparte y mas grande que
+// este, y colarlo aqui seria cambiar comportamiento dentro de otra tarea.
+//
+// `users` se queda fuera a proposito: ahi viven el alta, el acceso y LOS DOS PASOS DE VERIFICACION,
+// asi que cerrarlo dejaria a la gente sin poder completar lo que se le exige. Y `internal` tampoco,
+// que no la llama un navegador sino `channels`, con su clave compartida.
+const userRepositorySingleton = new UserRepository();
+const soloVerificados = exigeVerificacionCompleta((id) => userRepositorySingleton.findById(id));
+const exigeCuentaCompleta = [authMiddleware, soloVerificados];
+
+app.use(ROUTES.admin, ...exigeCuentaCompleta, admin_router)
 
 app.use(ROUTES.program, program_router)
 app.use(ROUTES.units, unit_router)
@@ -166,12 +192,12 @@ app.use(ROUTES.units, unit_router)
 app.use(ROUTES.tarea, tarea_router)
 
 app.use(ROUTES.whatsapp, whatsapp_router)
-app.use(ROUTES.chat, chat_router)
-app.use(ROUTES.notifications, notification_router)
+app.use(ROUTES.chat, ...exigeCuentaCompleta, chat_router)
+app.use(ROUTES.notifications, ...exigeCuentaCompleta, notification_router)
 
-app.use(ROUTES.dossier, dossier_router)
+app.use(ROUTES.dossier, ...exigeCuentaCompleta, dossier_router)
 
-app.use(ROUTES.sign, sign_router)
+app.use(ROUTES.sign, ...exigeCuentaCompleta, sign_router)
 app.use(ROUTES.system, system_router)
 
 app.use(express.static("public"));

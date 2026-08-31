@@ -11,7 +11,7 @@
                 Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
               </p>
             </div>
-            <button type="button" class="deasy-btn deasy-btn--neutral-outline deasy-btn--block lg:w-auto" @click="goToLogin">
+            <button type="button" class="deasy-btn deasy-btn--neutral-outline deasy-btn--block lg:w-auto" @click="continuarRegistro">
               Volver al login
             </button>
           </div>
@@ -337,7 +337,7 @@
             </Transition>
 
             <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-line bg-surface/95 py-4 backdrop-blur sm:flex-row">
-              <AppButton variant="danger-outline" class-name="w-full sm:w-1/2" @click="goToLogin">
+              <AppButton variant="danger-outline" class-name="w-full sm:w-1/2" @click="continuarRegistro">
                 Cancelar
               </AppButton>
               <button type="submit" class="deasy-btn deasy-btn--primary-outline w-full sm:w-1/2">
@@ -360,7 +360,7 @@
     content-class="text-center"
     body-class="pt-8"
     footer-class="justify-center"
-    @close="goToLogin"
+    @close="continuarRegistro"
   >
     <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--success mx-auto mb-6">
       <IconCheck class="h-9 w-9 text-success" />
@@ -369,7 +369,7 @@
       Tu cuenta ha sido creada correctamente. Ya puedes iniciar sesión en el sistema con tus credenciales.
     </p>
     <template #footer>
-      <AppButton variant="primary-outline" class-name="w-full" @click="goToLogin">
+      <AppButton variant="primary-outline" class-name="w-full" @click="continuarRegistro">
         Ir al login
       </AppButton>
     </template>
@@ -730,7 +730,22 @@ const createnewUser = async () => {
       documento: { ...documento.value }
     };
 
-    await AuthService.register(payload);
+    // ── EL PASO 1 DE TRES ──────────────────────────────────────────────────────────────────────
+    //
+    // El alta ya no termina el registro: lo empieza. Devuelve SESION, y con ella los pasos 2 y 3
+    // saben quien esta verificando. Sin guardarla aqui, el guardian mandaria al acceso y la persona
+    // tendria que entrar a mano para continuar algo que acaba de empezar.
+    //
+    // ⚠️ Que haya sesion NO abre nada: el backend corta todas las rutas protegidas hasta que el
+    // correo Y el telefono esten verificados.
+    const alta = await AuthService.register(payload);
+    if (alta?.token) {
+      AuthService.setToken(alta.token);
+      AuthService.setUser(alta.user);
+    }
+    // Si el correo no llego a salir, la pantalla siguiente lo dice y ofrece reenviar --en vez de
+    // dejar a alguien esperando un mensaje que nunca se mando.
+    sessionStorage.setItem("registro:correoEnviado", String(alta?.correoEnviado !== false));
     sessionStorage.removeItem("register_draft");
     showSuccessModal.value = true;
   } catch (error) {
@@ -738,11 +753,12 @@ const createnewUser = async () => {
   }
 };
 
-const goToLogin = () => {
+// Ya no lleva al acceso: lleva al SIGUIENTE PASO. Y no se decide aqui cual es --lo decide el
+// guardian preguntandole al servidor--, para que no haya dos sitios que opinen sobre lo mismo.
+const continuarRegistro = () => {
   showSuccessModal.value = false;
-  AuthService.clearSession();
   sessionStorage.removeItem("register_draft");
-  router.push("/");
+  router.push("/registro/correo");
 };
 
 onMounted(async () => {

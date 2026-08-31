@@ -86,6 +86,54 @@ el tiempo de respuesta delataría lo que el mensaje calla. Medido: 67 ms contra 
 Quien haya olvidado **las dos cosas** no tiene camino automático: el reinicio de contraseña también
 empieza pidiendo el correo. La pantalla lo dice y remite a una persona.
 
+## El registro en tres pasos
+
+Desde el **2026-08-31**, registrarse no termina al enviar el formulario: son **tres pasos**, y hasta
+que no están los tres la cuenta no abre nada.
+
+```
+1 · Guardar la persona   →   2 · Verificar el correo   →   3 · Verificar el teléfono
+```
+
+**El alta entrega sesión desde el paso 1**, porque los pasos 2 y 3 necesitan saber quién está
+verificando. Que haya sesión **no significa que abra nada**.
+
+### La puerta está en el backend, no en el navegador
+
+`middlewares/exigeVerificacionCompleta.js` corta las rutas protegidas mientras falte algo, y
+responde **403 diciendo qué falta** para que la pantalla lleve al paso correcto sin una segunda
+consulta.
+
+⚠️ **Un guardián del router no es una puerta.** Decide qué pantalla se pinta; quien tenga el token
+llama a la API y se salta el navegador entero. En este sistema ya pasó una vez, y quedó escrito
+donde dolió: *«El bloqueo era solo visual: la API los servía igual»*. El guardián de Vue existe, pero
+como la mitad amable: te lleva al paso que falta en vez de dejarte con un 403 sin explicación.
+
+⚠️ **Va SIEMPRE después de la autenticación.** Sin `req.user` el middleware no tiene a quién mirar y
+dejaría pasar todo: sería una puerta pintada.
+
+### Qué se considera verificado
+
+| | Cuándo está hecho |
+|---|---|
+| **Correo** | La persona tiene **algún** correo verificado |
+| **Teléfono** | La persona tiene **algún** teléfono con **algún canal** verificado |
+
+**Basta cualquiera de los tres canales** —Telegram, WhatsApp o SMS— y verificar uno **no** verifica
+los otros: probar que un número tiene Telegram no prueba que tenga WhatsApp. Lo que los tres prueban
+por igual es que **el número es tuyo**, y eso es lo único que se exige.
+
+⚠️ **Nada de esto se guarda: se deriva.** No hay una columna `verificado` en `persons`, y no la
+habrá. Una bandera almacenada puede acabar contradiciendo a las filas de las que debería salir, y
+entonces hay dos verdades y ninguna forma de saber cuál manda.
+
+### Sin correo saliente no se registra nadie
+
+Si `SMTP_HOST` o `SMTP_FROM` faltan, el registro responde **503 antes de tocar la base**. No es
+prudencia excesiva: con la verificación obligatoria, un despliegue sin correo no produce «un mensaje
+perdido», produce **una persona que no puede avanzar nunca** y que además ocupa su correo y su
+teléfono para siempre.
+
 ## Autorización (RBAC)
 
 RBAC son las siglas de *Role-Based Access Control*, control de acceso basado en roles. El modelo es:

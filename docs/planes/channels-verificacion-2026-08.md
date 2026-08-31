@@ -29,7 +29,7 @@
 | **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ⬜ | | |
 | **C6** | Un número real se verifica **por SMS entrante** | ⛔ | **Bloqueada por una decisión del dueño**: módem propio o número alquilado | |
 | **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | ⬜ | | |
-| **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ⬜ | | |
+| **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ✅ | char **326/326** · unit **735** · frontend **431** y sus 27 puertas · la puerta REAL en el backend (`exigeVerificacionCompleta`) y el guardián del router como mitad amable · **4 defectos cerrados de camino**: la verificación autodeclarable, el alta no atómica, `/email/verify` sin sesión y el envío que fallaba en silencio | 2026-08-31 |
 | **C9** | 🚧 **El limitador de intentos** | ⬜ | | |
 
 **10 tareas.** `C6` está bloqueada a propósito y no cuenta como pendiente de trabajo.
@@ -333,9 +333,54 @@ Mutaciones: reponer el agujero de `verificado` falla 1 unitaria y 1 de caracteri
 minutos, un solo uso, y su pantalla—. **Lo único que le falta es que `SMTP_*` esté en el
 entorno** y que **alguien la obligue a usarse**: hoy se envía el código y ahí acaba.
 
-⚠️ **Y hay que decidir qué pasa con quien ya está registrado** el día que esto sea
-obligatorio: o se le respeta lo que tiene, o se le hace pasar por el circuito. No lo decide
-el código.
+⚠️ ~~**Y hay que decidir qué pasa con quien ya está registrado**~~ — **decidido el 2026-08-31: no
+hay datos en producción, así que la pregunta no existe. El teléfono es obligatorio desde hoy.**
+
+#### ✅ Hecho el 2026-08-31
+
+**La puerta está en el backend**, y el guardián del router es sólo la mitad amable. No es una
+preferencia: quien tenga el token llama a la API y se salta el navegador entero, y este repositorio
+ya tropezó con eso —*«El bloqueo era solo visual: la API los servía igual»*, `user_controler.queries.js:486`—.
+
+| Pieza | Dónde |
+|---|---|
+| Qué le falta a una persona | `services/users/estadoDeVerificacion.js` — **todo derivado, nada guardado** |
+| La puerta | `middlewares/exigeVerificacionCompleta.js`, en 5 routers, **después de `authMiddleware`** |
+| Los pasos 2 y 3 | `POST /users/me/verificacion/correo` y `…/reenviar`; el teléfono ya existía |
+| Las pantallas | `/registro/correo` y `/registro/telefono` + `PasosDelRegistro.vue` |
+
+**Cuatro defectos cerrados de camino**, los cuatro con peticiones reales:
+
+1. **La verificación se podía autodeclarar** (`{"canales":[{"verificado":true}]}`).
+2. **El alta no era atómica**: dejaba personas colgadas y el teléfono ocupado, así que el reintento
+   chocaba consigo mismo.
+3. **`POST /email/verify` aceptaba `{user_id, code}` sin sesión**: cualquiera probaba códigos contra
+   la cuenta de cualquiera. Ahora va sobre `me`.
+4. **El envío de correo fallaba en silencio** (`catch → console.error → seguir`): la persona salía
+   creada, sin correo y sin forma de pedir otro. Ahora el registro responde **503 antes de crear
+   nada** si el servidor no puede enviar, y dice si el envío falló para que la pantalla ofrezca
+   reenviar.
+
+⚠️ **La semilla necesitó teléfono para los tres usuarios.** Gestor y usuario no lo tenían, y con la
+puerta puesta **la fixture entera dejó de servir: 71 casos en rojo**. El arranque los da por
+verificados igual que ya daba por verificados su correo y su documento — los crea el instalador, que
+responde por ellos.
+
+⚠️ **`verify: {email, whatsapp}` se retiró** y el golden de `auth` se movió por eso. No lo leía nadie
+y mentía por omisión: decía «whatsapp» cuando la verificación vale por cualquiera de los tres
+canales.
+
+#### 🚧 Lo que queda abierto de esta tarea
+
+**Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la
+pantalla del paso 3 sabe pedir la verificación pero **no sabe dar de alta un número**. Hoy no muerde
+porque la semilla siempre pone uno, pero un `/setup` a mano sin teléfono produce una instalación
+cuyo administrador no puede entrar. Va con `F5` del frente 13 (`/perfil/datos`), que es donde se
+gestionan los teléfonos.
+
+⚠️ **Y hay cuatro routers SIN autenticación ninguna** —`program`, `units`, `whatsapp` y parte de
+`tarea`—, así que la puerta no se pudo montar ahí. No es de este frente, pero es más grave que lo
+que sí se arregló, y conviene que no se pierda.
 
 ### C9 · 🚧 El limitador de intentos
 

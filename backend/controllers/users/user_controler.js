@@ -3,6 +3,8 @@ import os from "node:os";
 import fs from "fs-extra";
 import { randomUUID } from "node:crypto";
 import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
+import TokenService from "../../services/auth/TokenService.js";
+import { hayCorreoConfigurado, explicacion as explicacionDelCorreo } from "../../services/mail/configuracionDeCorreo.js";
 import UserRepository from "../../services/auth/UserRepository.js";
 import RbacService from "../../services/auth/RbacService.js";
 import { getPostgresPool } from "../../config/postgres.js";
@@ -71,6 +73,18 @@ const sqlAdminService = new SqlAdminService();
 export const createUser = async (req, res) => {
   console.log("Creando usuario");
   try {
+    // ⚠️ SIN CORREO SALIENTE NO SE CREA A NADIE, y se comprueba ANTES de tocar la base. Desde que la
+    // verificacion del correo es obligatoria, un despliegue sin `SMTP_*` no produce "un correo
+    // perdido": produce una persona que NO PUEDE AVANZAR NUNCA y que ademas ocupa su correo y su
+    // telefono para siempre. Mismo criterio que `hayAlgunCanal()` en la verificacion del telefono:
+    // un olvido de despliegue se dice donde se ve, no se le cobra al usuario.
+    if (!hayCorreoConfigurado()) {
+      console.error(`[registro] ${explicacionDelCorreo()}`);
+      return res.status(503).json({
+        message: "El registro no está disponible: este servidor no puede enviar correo.",
+      });
+    }
+
     const token = await generateUniqueToken(); // ← aquí, dentro del try
 
     // ⚠️ ESTA LISTA Y LA DE `updateMyProfile` SE HAN OLVIDADO CUATRO VECES en el desmontaje de
@@ -92,7 +106,10 @@ export const createUser = async (req, res) => {
       // calle_primaria, calle_secundaria, referencia, latitud, longitud }.
       direccion: req.body.direccion,
       status: req.body.status,
-      verify_email: req.body.verify?.email,
+      // ⚠️ Aqui habia `verify_email: req.body.verify?.email`. Era CODIGO MUERTO --se recogia y
+      // `UserRepository` no lo miraba nunca-- pero leia del cuerpo un campo llamado "verificado",
+      // que es exactamente la forma del agujero que se cerro en los canales del telefono. Se
+      // retira para que nadie lo "arregle" conectandolo.
       photo_url: req.body.photoUrl ?? req.body.photo_url ?? null,
       token
     };
@@ -100,7 +117,11 @@ export const createUser = async (req, res) => {
     const createdUser = await userRepository.create(userPayload);
     console.log(`Usuario creado en PostgreSQL con id ${createdUser.id}`);
 
-    try {
+      // ⚠️ SI EL ENVIO FALLA, SE DICE. Antes era `catch -> console.error -> seguir`: la persona
+      // salia creada, sin correo, sin saberlo y sin forma de pedir otro. Con el correo
+      // obligatorio eso es una cuenta muerta al nacer.
+      let correoEnviado = true;
+      try {
       await sendEmailVerification({
         personId: createdUser.id,
         email: createdUser.email
@@ -108,6 +129,7 @@ export const createUser = async (req, res) => {
 
       console.log("Correo de verificación enviado");
     } catch (error) {
+        correoEnviado = false;
       console.error("No se pudo enviar el correo de verificación:", error.message);
     }
 
@@ -127,7 +149,30 @@ export const createUser = async (req, res) => {
       }
     }
 
-    res.json({ result: "ok", user: usuarioPublico });
+    // ── SESION DESDE EL PASO 1 ──────────────────────────────────────────────────────────────────
+    //
+    // El registro de tres pasos necesita saber QUIEN esta verificando en los pasos 2 y 3. Sin esto
+    // haria falta inventar un segundo tipo de credencial, y el sistema tendria dos.
+    //
+    // ⚠️ Que la sesion exista NO significa que abra nada: `exigeVerificacionCompleta` corta todas
+    // las rutas protegidas hasta que el correo Y el telefono esten verificados. Sirve para
+    // completar el registro y para nada mas.
+    const sesion = new TokenService();
+    // ⚠️ `createAccessToken` devuelve `{ token, expiresIn }`, NO una cadena. Anidarlo produce un
+    // `token` que es un objeto, y entonces la cabecera `Bearer [object Object]` da 401 --que se
+    // parece a "no has iniciado sesion" y no a "te lo he devuelto mal".
+    const { token: accessToken, expiresIn } = sesion.createAccessToken(usuarioPublico.id);
+    sesion.attachRefreshToken(usuarioPublico.id, res);
+
+    res.json({
+      result: "ok",
+      user: usuarioPublico,
+      token: accessToken,
+      expiresIn,
+      // Para que la pantalla ofrezca «reenviar» en vez de dejar a alguien esperando un correo que
+      // no llego a salir.
+      correoEnviado,
+    });
   } catch (error) {
     console.log("Error Creating User");
     console.error(error);

@@ -37,6 +37,22 @@ vi.mock("@/modules/auth/views/RecoverPasswordView.vue", () => ({ default: stub("
 vi.mock("@/modules/auth/views/SystemBootstrapView.vue", () => ({ default: stub("SystemBootstrapView") }));
 vi.mock("@/modules/auth/views/TermsView.vue", () => ({ default: stub("TermsView") }));
 vi.mock("@/modules/auth/views/VerifyEmail.vue", () => ({ default: stub("VerifyEmail") }));
+vi.mock("@/modules/auth/views/RegistroCorreoView.vue", () => ({ default: stub("RegistroCorreo") }));
+vi.mock("@/modules/auth/views/RegistroTelefonoView.vue", () => ({ default: stub("RegistroTelefono") }));
+
+// El guard PREGUNTA al servidor en cada navegacion autenticada. Aqui se controla esa respuesta.
+const mockEstadoDeVerificacion = vi.fn();
+vi.mock("@/modules/auth/services/VerificacionService", () => ({
+  default: {
+    estado: (...args) => mockEstadoDeVerificacion(...args),
+    primerPasoPendiente: (estado) => {
+      if (!estado) return null;
+      if (!estado.correo) return "correo";
+      if (!estado.telefono) return "telefono";
+      return null;
+    },
+  },
+}));
 vi.mock("@/modules/home/views/HomeView.vue", () => ({ default: stub("HomeView") }));
 vi.mock("@/modules/firmas/views/SignatureCenterView.vue", () => ({ default: stub("SignatureCenterView") }));
 vi.mock("@/modules/home/views/DocumentCenterView.vue", () => ({ default: stub("DocumentCenterView") }));
@@ -116,6 +132,10 @@ const asAuthenticatedUser = () => {
   // Fiel al original (tokenUtils.js:66): borra el token, y por tanto invalida la sesion. Sin esto el
   // guard seguiria viendo sesion abierta despues de un logout y el test mentiria.
   mockClearAuthData.mockImplementation(() => localStorage.removeItem("token"));
+    // Por defecto, cuenta COMPLETA: los tests que ya existian no tienen que saber del registro en
+    // tres pasos. Y va aqui y no en `beforeEach` porque `clearAllMocks` no borra implementaciones:
+    // sin restaurarlo, el estado del test anterior se filtraria al siguiente.
+    mockEstadoDeVerificacion.mockResolvedValue({ correo: true, telefono: true, completo: true });
 };
 
 beforeEach(async () => {
@@ -395,5 +415,50 @@ describe("logout", () => {
     mockAxiosPost.mockRejectedValue(new Error("500"));
     expect(await goTo("/logout")).toBe("login");
     expect(mockClearAuthData).toHaveBeenCalled();
+  });
+
+  // ── EL REGISTRO EN TRES PASOS (C8) ────────────────────────────────────────────────────────────
+  //
+  // ⚠️ Esto prueba la MITAD AMABLE. La puerta de verdad esta en el backend
+  // (`exigeVerificacionCompleta`): quien tenga el token llama a la API y se salta el navegador
+  // entero. Lo de aqui es que no se coma un 403 sin saber que hacer.
+  describe("el registro en tres pasos", () => {
+    it("sin el correo verificado, cualquier ruta lleva al paso del correo", async () => {
+      mockEstadoDeVerificacion.mockResolvedValue({ correo: false, telefono: false, completo: false });
+      expect(await goTo("/home")).toBe("registro-correo");
+      expect(await goTo("/perfil")).toBe("registro-correo");
+    });
+
+    it("con el correo hecho pero no el telefono, lleva al del telefono", async () => {
+      mockEstadoDeVerificacion.mockResolvedValue({ correo: true, telefono: false, completo: false });
+      expect(await goTo("/home")).toBe("registro-telefono");
+    });
+
+    // Si no, se quedaria dando vueltas: el guard lo mandaria al paso, y el paso volveria a disparar
+    // el guard.
+    it("estando YA en el paso que le toca, se le deja", async () => {
+      mockEstadoDeVerificacion.mockResolvedValue({ correo: false, telefono: false, completo: false });
+      expect(await goTo("/registro/correo")).toBe("registro-correo");
+      mockEstadoDeVerificacion.mockResolvedValue({ correo: true, telefono: false, completo: false });
+      expect(await goTo("/registro/telefono")).toBe("registro-telefono");
+    });
+
+    // Dos pruebas y no una: la segunda navegacion partiria de /home, y redirigir a /home desde
+    // /home es una navegacion duplicada que vue-router aborta --el test mediria eso y no la regla.
+    it("con todo verificado, la pantalla del correo ya no tiene nada que ofrecer", async () => {
+      expect(await goTo("/registro/correo")).toBe("home");
+    });
+
+    it("con todo verificado, la del telefono tampoco", async () => {
+      expect(await goTo("/registro/telefono")).toBe("home");
+    });
+
+    // Si el servidor no contesta, el guard NO encierra a nadie: la puerta de verdad esta en el
+    // backend, asi que dejar pasar aqui no abre nada --y bloquear si dejaria a la gente atrapada en
+    // una pantalla de verificacion por un fallo de red.
+    it("si el servidor no contesta, no encierra a nadie", async () => {
+      mockEstadoDeVerificacion.mockRejectedValue(new Error("sin red"));
+      expect(await goTo("/home")).toBe("home");
+    });
   });
 });

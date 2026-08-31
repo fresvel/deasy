@@ -6,6 +6,9 @@ import RecoverEmail from "@/modules/auth/views/RecoverEmailView.vue";
 import SystemBootstrapView from "@/modules/auth/views/SystemBootstrapView.vue";
 import TermsView from "@/modules/auth/views/TermsView.vue";
 import VerifyEmail from "@/modules/auth/views/VerifyEmail.vue";
+import RegistroCorreo from "@/modules/auth/views/RegistroCorreoView.vue";
+import RegistroTelefono from "@/modules/auth/views/RegistroTelefonoView.vue";
+import VerificacionService from "@/modules/auth/services/VerificacionService";
 import HomeView from "@/modules/home/views/HomeView.vue";
 import SignatureCenterView from "@/modules/firmas/views/SignatureCenterView.vue";
 import DocumentCenterView from "@/modules/home/views/DocumentCenterView.vue";
@@ -64,6 +67,10 @@ const routes = [
   { path: "/admin/:section?/:item?/:table?", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
   { path: "/procesos", name: "process-management", component: ProcessManagementView, meta: { requiresProcessManagementAccess: true, managementSection: "processes" } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
+  // El registro en TRES PASOS (C8). Son rutas de sesion --hacen falta el token que devuelve el
+  // alta-- pero NO exigen la cuenta completa: son justamente lo que la completa.
+  { path: '/registro/correo', name: 'registro-correo', component: RegistroCorreo, meta: { pasoDelRegistro: 'correo' } },
+  { path: '/registro/telefono', name: 'registro-telefono', component: RegistroTelefono, meta: { pasoDelRegistro: 'telefono' } },
   {
     path: "/logout",
     name: "logout",
@@ -129,6 +136,42 @@ router.beforeEach(async (to) => {
 
   // Se mira el meta, no el nombre: con /perfil convertido en layout, sus hijos tienen nombre propio
   // (perfil-formacion...) y una lista de nombres los dejaria pasar. El meta lo heredan del padre.
+  // ── EL REGISTRO EN TRES PASOS ───────────────────────────────────────────────────────────────
+  //
+  // ⚠️ ESTO ES LA MITAD AMABLE, NO LA PUERTA. La puerta esta en el backend
+  // (`exigeVerificacionCompleta`), y tiene que estarlo: quien tenga el token llama a la API y se
+  // salta el navegador entero. Este repositorio ya tropezo con eso --«El bloqueo era solo visual: la
+  // API los servia igual»--. Lo de aqui existe para LLEVAR a la pantalla que falta, en vez de dejar
+  // que alguien se coma un 403 sin saber que hacer.
+  //
+  // Se PREGUNTA al servidor y no se lee la copia guardada al iniciar sesion: el estado cambia por
+  // fuera del navegador --el correo se verifica pulsando un enlace, el telefono lo confirma un
+  // mensaje que llega a `channels`--, y una copia rancia mandaria a verificar lo ya verificado sin
+  // forma de salir del bucle.
+  // Con `try/catch` y no con `.catch()`: asi tambien se sostiene si `estado()` devuelve algo que no
+  // es una promesa. Un guard que revienta deja la navegacion colgada, y el sintoma --una pantalla
+  // en blanco-- no se parece en nada a la causa.
+  let estadoDeVerificacion = null;
+  try {
+    estadoDeVerificacion = await VerificacionService.estado();
+  } catch {
+    // Si el servidor no contesta NO se encierra a nadie: la puerta de verdad esta en el backend,
+    // asi que dejar pasar aqui no abre nada --y bloquear si dejaria a la gente atrapada en una
+    // pantalla de verificacion por un fallo de red.
+    estadoDeVerificacion = null;
+  }
+  const pasoPendiente = VerificacionService.primerPasoPendiente(estadoDeVerificacion);
+  const RUTA_DEL_PASO = { correo: '/registro/correo', telefono: '/registro/telefono' };
+
+  if (pasoPendiente) {
+    // Si ya esta en el paso que le toca se le deja; si no, se le lleva.
+    return to.meta?.pasoDelRegistro === pasoPendiente ? undefined : RUTA_DEL_PASO[pasoPendiente];
+  }
+  // Y al reves: con todo hecho, estas pantallas no tienen nada que ofrecer.
+  if (to.meta?.pasoDelRegistro) {
+    return getDefaultAuthenticatedRoute();
+  }
+
   if (isAdminUser() && to.meta?.blockedForAdmin) {
     return '/admin';
   }
