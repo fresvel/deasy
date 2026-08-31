@@ -93,7 +93,20 @@ for (const [file, source] of sources) {
   const imported = importedNames(source);
   const declared = declaredNames(source);
   // Se quitan las líneas de import para no confundir la declaración con un uso.
-  const body = source.replace(/import\s[^;]+;/g, "");
+  //
+  // ⚠️ Y LOS COMENTARIOS, que hasta el 2026-08-31 SÍ se escaneaban: nombrar `hayAlgunCanal()` en la
+  // prosa de una cabecera contaba como llamarlo, y el detector exigía importarlo. Un falso positivo
+  // en una puerta a techo cero es caro: obliga a reescribir la prosa para contentar al script, que
+  // es exactamente al revés de para lo que está.
+  //
+  // Se quitan los bloques `/* … */` y las líneas que EMPIEZAN por `//`. Deliberadamente NO se toca
+  // un `//` a media línea: ahí vive `https://…` dentro de cadenas, y cortarlo produciría falsos
+  // NEGATIVOS — que en esta puerta son mucho peores que un falso positivo, porque es la única que
+  // caza un `ReferenceError` en una rama que ningún test recorre.
+  const body = source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^[ \t]*\/\/.*$/gm, "")
+    .replace(/import\s[^;]+;/g, "");
   const lines = body.split("\n");
 
   for (const [name, ownerFiles] of owners) {
