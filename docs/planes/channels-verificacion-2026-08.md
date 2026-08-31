@@ -605,6 +605,47 @@ errores de consola en todo el recorrido.
 ⚠️ Aviso ajeno detectado de paso: `FirmarPdf` (dentro de `HomeView`) no resuelve `AppButton` —
 `[Vue warn]: Failed to resolve component`. Sus botones no se pintan. No es de este frente.
 
+#### Décima vuelta: el doble envío, y un teléfono que entraba dos veces (2026-08-31)
+
+**Lo que reportó el dueño:** el primer clic en «Crear cuenta» no hacía nada; el segundo mostraba «el
+teléfono ya está registrado» **y aun así pasaba al paso del correo**.
+
+**Causa: no había ninguna guarda contra el doble envío.** El alta tarda un par de segundos —cifrar la
+contraseña, escribir cinco tablas, mandar un correo— y en ese rato la pantalla no cambiaba **nada**:
+ni el botón se apagaba, ni aparecía un «creando». Quien no ve respuesta vuelve a pulsar.
+
+Entonces la **primera** petición creaba la cuenta y navegaba, y la **segunda** chocaba con la
+unicidad y pintaba el error. Se veía un error **y** se pasaba de fase porque eran dos peticiones
+distintas contando cada una su verdad. **El error no era falso: era de un intento duplicado que nunca
+debió salir.**
+
+Ahora el botón se apaga y dice «Creando cuenta…», y una segunda pulsación no hace nada. Y de paso
+pasa a ser `AppButton`: el `<button>` a mano tampoco llevaba `deasy-btn--md`, o sea que iba **sin
+relleno** — el mismo fallo que ya salió en «Abrir Telegram».
+
+**Y persiguiéndolo salió uno peor: EL MISMO TELÉFONO PODÍA REGISTRARSE DOS VECES.**
+
+```
+Ocupa   987651100     ← el mismo número
+Choca  0987651100     ← y la base lo dejó pasar
+```
+
+`uq_telefonos_numero` es un índice sobre la **cadena cruda**, así que el cero de marcación nacional
+lo convertía en «otro número». Y lo llamativo es que **el resto del código ya daba por hecho la forma
+sin cero al LEER** —`aFormatoInternacional`, `numerosIguales`, el `numero_completo` del SQL—; lo que
+faltaba era **escribirla igual**. Ahora se guarda en su forma canónica y el índice significa lo que
+dice. El golden de `auth` se movió (`0990000000` → `990000000`), y ese diff es la prueba.
+
+⚠️ **Sobre los triggers que propuso el dueño: no hacen falta, y serían MÁS DÉBILES.** La unicidad ya
+la garantizan `uq_emails_direccion` y `uq_telefonos_numero (pais_id, numero)`. Un `BEFORE INSERT` que
+consulte antes de escribir **pierde la carrera**: dos altas simultáneas pasan la comprobación y una
+falla igual en el índice. **El índice único es lo único atómico aquí.** Lo que faltaba no era una
+comprobación más, era normalizar el dato antes de compararlo — que es lo que se acaba de hacer.
+
+⚠️ **Sobre avisar al salir del campo: es mejor UX, y es un ORÁCULO DE ENUMERACIÓN.** Un endpoint sin
+sesión que responda «ese correo ya existe» deja que cualquiera compruebe si una persona está
+registrada. Queda para después de `C9` (el limitador), que es lo que lo hace defendible.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la

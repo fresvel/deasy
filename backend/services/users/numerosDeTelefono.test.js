@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { aFormatoInternacional, numerosIguales, numeroMalGuardado } from "./numerosDeTelefono.js";
+import { aFormatoInternacional, numerosIguales, numeroMalGuardado, parteLocal } from "./numerosDeTelefono.js";
 
 const EC = { numero: "0991112233", phone_code: "+593" };
 
@@ -74,4 +74,26 @@ test("lo vacío y lo ausente se rechazan, no revientan", () => {
   assert.equal(numerosIguales(EC, undefined), false);
   assert.equal(numerosIguales(null, "593991112233"), false);
   assert.equal(numerosIguales({ numero: "", phone_code: "593" }, "593"), false);
+});
+
+// ── EL MISMO TELÉFONO NO PUEDE ENTRAR DOS VECES ─────────────────────────────────────────────────
+//
+// Encontrado el 2026-08-31 registrando por el navegador: `0987651100` y `987651100` quedaron como
+// DOS personas distintas con el mismo número. `uq_telefonos_numero` es un índice sobre la cadena
+// cruda, así que el cero de marcación nacional lo convertía en «otro número».
+//
+// El resto del código ya daba por hecho la forma sin cero al LEER. Lo que faltaba era escribirla
+// igual, y `parteLocal` es esa forma.
+test("la forma canónica quita el cero de marcación, venga como venga", () => {
+  assert.equal(parteLocal("0987651100"), "987651100");
+  assert.equal(parteLocal("987651100"), "987651100");
+  assert.equal(parteLocal("00987651100"), "987651100");
+  assert.equal(parteLocal("098 765 11 00"), "987651100");
+  assert.equal(parteLocal("+593 98 765 1100"), "593987651100", "el prefijo lo separa otro paso");
+});
+
+test("dos escrituras del mismo número dan la MISMA forma canónica", () => {
+  const formas = ["0987651100", "987651100", "098-765-1100", " 0987651100 "];
+  const canonicas = new Set(formas.map(parteLocal));
+  assert.equal(canonicas.size, 1, `el índice único las vería como ${canonicas.size} números`);
 });

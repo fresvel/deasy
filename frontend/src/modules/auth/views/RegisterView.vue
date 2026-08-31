@@ -236,10 +236,15 @@
               <AppButton variant="danger-outline" class-name="w-full sm:w-1/2" @click="volverAlAcceso">
                 Cancelar
               </AppButton>
-              <button type="submit" class="deasy-btn deasy-btn--primary-outline w-full sm:w-1/2">
-                Crear cuenta
-                <IconArrowRight class="h-5 w-5" />
-              </button>
+              <AppButton
+                type="submit"
+                variant="primary-outline"
+                class-name="w-full sm:w-1/2"
+                :disabled="creando"
+              >
+                {{ creando ? 'Creando cuenta…' : 'Crear cuenta' }}
+                <IconArrowRight v-if="!creando" class="h-5 w-5" />
+              </AppButton>
             </div>
           </form>
         </div>
@@ -328,6 +333,7 @@ const cargarPaises = async () => {
 };
 
 const errorMessage = ref("");
+const creando = ref(false);
 const termsAccepted = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
@@ -505,6 +511,16 @@ watch(() => telefono.value, saveDraft, { deep: true });
 watch(() => documento.value, saveDraft, { deep: true });
 
 const createnewUser = async () => {
+  // ⚠️ UNA SOLA VEZ. Sin esta guarda, el alta tarda un par de segundos --hay que cifrar la
+  // contrasena, escribir cinco tablas y mandar un correo-- y en ese rato la pantalla no cambiaba
+  // NADA: ni el boton se apagaba, ni aparecia un «creando». Quien no ve respuesta vuelve a pulsar.
+  //
+  // Y entonces pasaba lo que reporto el dueno: la PRIMERA peticion creaba la cuenta y navegaba; la
+  // SEGUNDA chocaba con la unicidad del telefono y pintaba «ya esta registrado». Se veia un error Y
+  // se pasaba de fase, porque eran dos peticiones distintas contando cada una su verdad. El error
+  // no era falso: era de un intento duplicado que nunca debio salir.
+  if (creando.value) return;
+  creando.value = true;
   errorMessage.value = "";
 
   if (newuser.value.password !== newuser.value.repassword) {
@@ -564,6 +580,10 @@ const createnewUser = async () => {
     router.push("/registro/correo");
   } catch (error) {
     errorMessage.value = resolveApiErrorMessage(error, "Error al crear el usuario. Por favor intenta de nuevo.");
+  } finally {
+    // Se libera SIEMPRE. Sin el `finally`, un fallo dejaria el botón muerto para el resto de la
+    // sesión y habría que recargar --que es justo el remedio que este frente lleva días quitando.
+    creando.value = false;
   }
 };
 

@@ -1,3 +1,4 @@
+import { parteLocal } from "./numerosDeTelefono.js";
 import { getPostgresPool } from "../../config/postgres.js";
 
 // Los telefonos de una persona y los canales de mensajeria de cada telefono.
@@ -128,7 +129,14 @@ export default class TelefonoService {
     this.ensurePool();
     const tipo = this.normalizarTipo(telefono?.tipo);
     const separado = await this.separarPrefijo(telefono?.numero);
-    const numero = separado.numero;
+    // ⚠️ SE GUARDA EN SU FORMA CANONICA: la parte local SIN el cero de marcacion nacional. El indice
+    // `uq_telefonos_numero` es sobre la cadena cruda, asi que sin esto `0987651100` y `987651100`
+    // son dos numeros distintos para la base --y el MISMO telefono se registraba dos veces con dos
+    // personas. Comprobado en el navegador el 2026-08-31.
+    //
+    // El resto del codigo ya daba por hecho esta forma al LEER (`aFormatoInternacional`,
+    // `numerosIguales`, el `numero_completo` del SQL). Lo que faltaba era escribirla igual.
+    const numero = parteLocal(separado.numero);
     if (!numero) {
       throw errorDeCliente("El teléfono necesita un número.");
     }

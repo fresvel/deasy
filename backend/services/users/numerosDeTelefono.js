@@ -24,8 +24,19 @@ export const aFormatoInternacional = (numero, phoneCode) => {
   return `${prefijo}${local}`;
 };
 
-/** La parte local, sin prefijo de país y sin el cero nacional. */
-const parteLocal = (numero) => String(numero ?? "").replace(/\D/g, "").replace(/^0+/, "");
+/**
+ * La parte local, sin prefijo de país y sin el cero nacional.
+ *
+ * ⚠️ **ES LA FORMA EN QUE SE GUARDA, no sólo en la que se compara.** Hasta el 2026-08-31 sólo se
+ * usaba al LEER —`aFormatoInternacional`, `numerosIguales` y el `numero_completo` del SQL— mientras
+ * que al ESCRIBIR se guardaba lo que llegara. Y como `uq_telefonos_numero` es un índice sobre la
+ * cadena cruda, `0987651100` y `987651100` eran dos números distintos para la base: **el mismo
+ * teléfono se registró dos veces** con dos personas, comprobado en el navegador.
+ *
+ * El cero es el prefijo de marcación NACIONAL: no forma parte del número, igual que no forma parte
+ * del E.164. Quitarlo al guardar es lo que hace que el índice único signifique lo que dice.
+ */
+export const parteLocal = (numero) => String(numero ?? "").replace(/\D/g, "").replace(/^0+/, "");
 
 /**
  * ¿Este teléfono está guardado de forma que se pueda comparar?
