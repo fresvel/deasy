@@ -31,7 +31,7 @@ import {
 import { loginUser } from "../controllers/users/login_user.js";
 import { recuperarCorreo } from "../controllers/users/recuperar_correo_controller.js";
 import { pedirVerificacionDeTelefono } from "../controllers/users/telefono_verificacion_controller.js";
-import { verificarMiCorreo, reenviarMiCodigo } from "../controllers/users/verificacion_registro_controller.js";
+import { verificarMiCorreo, reenviarMiCodigo, cambiarMiCorreo, cambiarMiTelefono } from "../controllers/users/verificacion_registro_controller.js";
 import { logoutUser } from "../controllers/users/logout_user.js";
 import { refreshToken } from "../controllers/users/refresh_token.js";
 import { getUserPhoto, updateUserPhoto } from "../controllers/users/user_photo_controller.js";
@@ -137,6 +137,14 @@ router.post('/recuperar-correo', recuperarCorreo)
 // pero reduce el blanco de "cualquiera" a "el mio".
 router.post('/me/verificacion/correo', authMiddleware, verificarMiCorreo)
 router.post('/me/verificacion/correo/reenviar', authMiddleware, reenviarMiCodigo)
+
+// ⚠️ CORREGIR EL DATO QUE SE ESTA VERIFICANDO. Sin estas dos, una errata en el registro es una
+// cuenta MUERTA: el guard exige verificar algo que no se puede recibir, el perfil esta detras de esa
+// misma puerta, y el correo y el telefono quedan OCUPADOS --asi que tampoco se puede volver a
+// registrar. Cambiar el dato mientras se verifica no debilita nada: lo que se exige es PROBAR lo que
+// se declare, no acertar a la primera.
+router.put('/me/verificacion/correo', authMiddleware, cambiarMiCorreo)
+router.put('/me/verificacion/telefono', authMiddleware, cambiarMiTelefono)
 
 router.post(
   '/me/telefonos/:id/verificacion',

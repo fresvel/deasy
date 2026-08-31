@@ -487,6 +487,39 @@ botón para enterarse de algo **que el servidor ya sabe**.
 dormida— o si la verificación llegó por otro camino, tiene que seguir habiendo forma de continuar. Un
 aviso que no llega no puede dejar a nadie encallado.
 
+#### Sexta vuelta: una errata ya no es una cuenta muerta (2026-08-31)
+
+**1 · UNA ERRATA ERA UNA CUENTA MUERTA, y es el peor defecto de todo el frente.** Quien escribía mal
+su correo o su teléfono en el registro quedaba encerrado **para siempre**:
+
+- El guard le exige verificar algo que **no puede recibir**.
+- El perfil, que es donde se cambian esos datos, está detrás de **esa misma puerta**.
+- Su correo y su teléfono quedan **ocupados**, así que tampoco puede volver a registrarse.
+- Y no puede pedir ayuda: no hay a quién escribirle desde dentro.
+
+Ahora las dos pantallas dejan corregir el dato. **Cambiarlo mientras se verifica no debilita nada**:
+lo que la puerta exige es *probar el dato que se declare*, no acertar a la primera.
+
+| | |
+|---|---|
+| `PUT /users/me/verificacion/correo` | Cambia el correo principal, **la verificación vuelve a cero** y sale un código nuevo |
+| `PUT /users/me/verificacion/telefono` | Cambia el número y **tira las llaves vivas** — estaban emitidas contra el número anterior, y un enlace ya repartido no puede seguir sirviendo |
+
+Comprobado en el navegador: correo `repro.registro@` → `repro.corregido@` con un solo correo
+principal y código nuevo; teléfono `…700` → `…234` con un solo teléfono y una sola llave viva.
+
+**2 · «Confirmar correo» se quedaba deshabilitado con las seis cifras puestas**, hasta recargar. No
+conseguí reproducirlo de forma determinista, así que en vez de adivinar el disparador se cerró **la
+clase entera**: el campo ahora normaliza a dígitos en cada pulsación y repinta lo limpio. Cualquier
+cosa que el campo aceptara —un espacio del autocompletado, un pegado desde un SMS— hacía que se
+vieran seis cifras y el valor tuviera siete caracteres.
+
+⚠️ **Y una nota operativa que ya ha mordido tres veces:** al recrear el contenedor del backend,
+**nginx se queda con su IP vieja** y todo responde **502**. No es el backend: se arregla con
+`bash scripts/stack.sh c restart nginx-proxy`. El arreglo de raíz —`resolver` + variable en
+`proxy_pass`— cambia cómo nginx reescribe la ruta, y ahí vive la regla que corta `/api/internal/`,
+así que no se toca de pasada.
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la

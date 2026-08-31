@@ -2,6 +2,8 @@ import { verifyEmailCode } from "../../services/mail/emailVerification.js";
 import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
 import { hayCorreoConfigurado } from "../../services/mail/configuracionDeCorreo.js";
 import { getPostgresPool } from "../../config/postgres.js";
+import EmailService from "../../services/users/EmailService.js";
+import TelefonoService from "../../services/users/TelefonoService.js";
 
 // Los dos pasos del correo dentro del registro obligatorio (C8).
 //
@@ -77,5 +79,77 @@ export const reenviarMiCodigo = async (req, res) => {
   } catch (error) {
     console.error("No se pudo reenviar el código:", error.message);
     return res.status(500).json({ message: "No se pudo enviar el código." });
+  }
+};
+
+// ── CORREGIR EL DATO QUE SE ESTÁ VERIFICANDO ────────────────────────────────────────────────────
+//
+// ⚠️ **SIN ESTO, UNA ERRATA ES UNA CUENTA MUERTA.** Reportado por el dueño: quien escribe mal su
+// correo o su teléfono en el registro queda encerrado para siempre — el guard le exige verificar
+// algo que no puede recibir, no hay pantalla que le deje cambiarlo (el perfil está detrás de la
+// misma puerta), y su correo y su teléfono quedan OCUPADOS, así que tampoco puede volver a
+// registrarse. Ni siquiera puede pedir ayuda: no hay nadie a quien escribirle desde dentro.
+//
+// Cambiar el dato mientras se verifica no debilita nada: lo que la puerta exige es PROBAR el dato
+// que se declare, no que se declare a la primera.
+
+export const cambiarMiCorreo = async (req, res) => {
+  const personId = Number(req.user?.uid);
+  const direccion = String(req.body?.direccion ?? "").trim().toLowerCase();
+
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(direccion)) {
+    return res.status(400).json({ message: "Ese correo no tiene una forma válida." });
+  }
+
+  try {
+    // `guardarPrincipal` ya deja `verificado = 0` cuando la dirección CAMBIA, que es justo lo que
+    // hace falta: un correo nuevo no hereda la verificación del anterior.
+    const emails = new EmailService(getPostgresPool());
+    await emails.guardarPrincipal(personId, { tipo: "personal", direccion });
+
+    // Y se manda el código al nuevo de inmediato: quien acaba de corregirlo está esperándolo.
+    if (hayCorreoConfigurado()) {
+      await sendEmailVerification({ personId }).catch((error) => {
+        console.error("No se pudo enviar el código al correo nuevo:", error.message);
+      });
+    }
+    return res.json({ direccion });
+  } catch (error) {
+    // El servicio lanza con `status` y con un mensaje escrito para una persona --«ese correo ya está
+    // registrado por otra»--, y aplastarlo en un 400 genérico deja a alguien sin saber qué corregir.
+    if (error.status) return res.status(error.status).json({ message: error.message });
+    console.error("No se pudo cambiar el correo:", error.message);
+    return res.status(500).json({ message: "No se pudo cambiar el correo." });
+  }
+};
+
+export const cambiarMiTelefono = async (req, res) => {
+  const personId = Number(req.user?.uid);
+  const { numero, pais_id: paisId, tipo } = req.body ?? {};
+
+  if (!String(numero ?? "").replace(/\D/g, "")) {
+    return res.status(400).json({ message: "Hace falta el número." });
+  }
+
+  try {
+    const telefonos = new TelefonoService(getPostgresPool());
+    const telefonoId = await telefonos.guardarPrincipal(personId, {
+      tipo: tipo || "personal",
+      numero,
+      pais_id: paisId,
+    });
+
+    // ⚠️ LAS LLAVES VIVAS DEL TELÉFONO SE TIRAN. Estaban emitidas contra el número ANTERIOR: dejarlas
+    // vivas significaría que un enlace ya repartido sigue sirviendo para verificar un número que ya
+    // no es el que se declara.
+    await getPostgresPool().query(
+      "DELETE FROM telefono_verification_keys WHERE telefono_id = ? AND consumida_at IS NULL",
+      [telefonoId]
+    );
+    return res.json({ telefonoId });
+  } catch (error) {
+    if (error.status) return res.status(error.status).json({ message: error.message });
+    console.error("No se pudo cambiar el teléfono:", error.message);
+    return res.status(500).json({ message: "No se pudo cambiar el teléfono." });
   }
 };

@@ -117,6 +117,33 @@
       </div>
     </div>
 
+    <!-- ⚠️ CORREGIR EL NÚMERO. Sin esto una errata es una CUENTA MUERTA: se exige verificar un
+         número que no es tuyo, el perfil está detrás de la misma puerta, y el número queda ocupado
+         --así que tampoco se puede volver a registrar. -->
+    <div class="mt-6 text-center">
+      <AppButton v-if="!cambiando" variant="plain" @click="cambiando = true">
+        ¿Te equivocaste de número? Es el {{ numero ? '+' + numero : '—' }}
+      </AppButton>
+
+      <form v-else class="mx-auto max-w-sm space-y-3 text-left" @submit.prevent="guardarTelefono">
+        <label for="telefono-nuevo" class="deasy-form-label">Tu número correcto</label>
+        <input
+          id="telefono-nuevo"
+          v-model="numeroNuevo"
+          type="tel"
+          inputmode="tel"
+          class="deasy-control"
+          placeholder="0991112233"
+        />
+        <div class="flex gap-3">
+          <AppButton type="submit" variant="primary-outline" :disabled="guardando">
+            {{ guardando ? 'Guardando…' : 'Cambiar número' }}
+          </AppButton>
+          <AppButton variant="danger-outline" @click="cambiando = false">Cancelar</AppButton>
+        </div>
+      </form>
+    </div>
+
     <div class="mt-8 flex items-center justify-between gap-3 border-t border-line pt-6">
       <AppButton variant="primary-outline" :disabled="comprobando" @click="comprobar">
         {{ comprobando ? 'Comprobando…' : 'Ya lo hice' }}
@@ -156,6 +183,9 @@ const cargando = ref(true);
 const comprobando = ref(false);
 const verManual = ref(false);
 const renovando = ref(false);
+const cambiando = ref(false);
+const numeroNuevo = ref("");
+const guardando = ref(false);
 const expiraEn = ref(null);
 const ahora = ref(Date.now());
 let reloj = null;
@@ -199,6 +229,29 @@ const pedirLlave = async () => {
     // Se preselecciona el primero disponible en orden de recomendación, para que la pantalla no
     // aparezca vacía esperando un clic. Al RENOVAR se respeta lo que ya había elegido.
     elegido.value = disponibles.value[0]?.id ?? null;
+  }
+};
+
+const guardarTelefono = async () => {
+  error.value = "";
+  guardando.value = true;
+  try {
+    // El país se conserva: se está corrigiendo el número, no mudándose de país. Si algún día hay que
+    // cambiarlo, es un campo más, no un cambio de este flujo.
+    const pais = AuthService.getUser()?.telefonos?.[0]?.pais_id ?? null;
+    const { data } = await VerificacionService.cambiarTelefono({
+      numero: numeroNuevo.value.trim(),
+      pais_id: pais,
+    });
+    telefonoId = data.telefonoId ?? telefonoId;
+    cambiando.value = false;
+    numeroNuevo.value = "";
+    // Llave nueva de inmediato: la anterior se emitió contra el número viejo y el backend ya la tiró.
+    await pedirLlave();
+  } catch (fallo) {
+    error.value = fallo?.response?.data?.message ?? "No se pudo cambiar el número.";
+  } finally {
+    guardando.value = false;
   }
 };
 

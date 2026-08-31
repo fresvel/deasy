@@ -38,6 +38,21 @@ class VerificacionService {
     return httpClient.post(API_ROUTES.USERS_ME_REENVIAR_CODIGO, {});
   }
 
+  /**
+   * Corrige el dato que se está verificando.
+   *
+   * ⚠️ Sin esto, una errata en el registro es una CUENTA MUERTA: el guard exige verificar algo que
+   * no se puede recibir, el perfil está detrás de esa misma puerta, y el correo y el teléfono quedan
+   * ocupados — así que tampoco se puede volver a registrar.
+   */
+  cambiarCorreo(direccion) {
+    return httpClient.put(API_ROUTES.USERS_ME_VERIFICAR_CORREO, { direccion });
+  }
+
+  cambiarTelefono({ numero, pais_id }) {
+    return httpClient.put(API_ROUTES.USERS_ME_VERIFICAR_TELEFONO_DATO, { numero, pais_id });
+  }
+
   /** Pide la llave del teléfono. Devuelve los enlaces YA COMPUESTOS: la pantalla no los arma. */
   pedirVerificacionDeTelefono(telefonoId) {
     return httpClient.post(API_ROUTES.USERS_ME_VERIFICAR_TELEFONO(telefonoId), {});

@@ -30,6 +30,8 @@ export const API_ROUTES = {
   USERS_ME: `${API_PREFIX}/users/me`,
   USERS_ME_VERIFICAR_CORREO: `${API_PREFIX}/users/me/verificacion/correo`,
   USERS_ME_REENVIAR_CODIGO: `${API_PREFIX}/users/me/verificacion/correo/reenviar`,
+  // Corregir el dato que se esta verificando (mismo camino, verbo PUT).
+  USERS_ME_VERIFICAR_TELEFONO_DATO: `${API_PREFIX}/users/me/verificacion/telefono`,
   USERS_ME_VERIFICAR_TELEFONO: (telefonoId) => `${API_PREFIX}/users/me/telefonos/${telefonoId}/verificacion`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_REFRESH_TOKEN: `${API_PREFIX}/users/refresh-token`,

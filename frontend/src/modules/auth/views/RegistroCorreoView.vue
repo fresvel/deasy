@@ -25,14 +25,21 @@
     <form class="mx-auto max-w-sm space-y-6" @submit.prevent="comprobar">
       <div>
         <label for="codigo-correo" class="deasy-form-label">Código de verificación</label>
+        <!-- ⚠️ SOLO DÍGITOS, Y SE LIMPIA AL ESCRIBIR. Reportado por el dueño: con los seis números
+             puestos, «Confirmar correo» seguía deshabilitado hasta recargar. Con `v-model` a pelo,
+             cualquier cosa que el campo aceptara --un espacio del autocompletado, un pegado con
+             espacios de un SMS-- contaba para `length`: se veían seis cifras y el valor tenía siete
+             caracteres. Normalizando en el `input` eso no puede volver a pasar, venga de donde
+             venga el texto. -->
         <input
           id="codigo-correo"
-          v-model="codigo"
+          :value="codigo"
           class="deasy-control text-center tracking-widest"
           inputmode="numeric"
           autocomplete="one-time-code"
           maxlength="6"
           placeholder="000000"
+          @input="alEscribirCodigo"
         />
       </div>
 
@@ -49,6 +56,32 @@
         </AppButton>
       </div>
     </form>
+
+    <!-- ⚠️ CORREGIR EL CORREO. Sin esto una errata es una CUENTA MUERTA: se exige verificar algo que
+         no se puede recibir, el perfil está detrás de la misma puerta, y la dirección queda ocupada
+         --así que tampoco se puede volver a registrar. -->
+    <div class="mx-auto mt-6 max-w-sm text-center">
+      <AppButton v-if="!cambiando" variant="plain" @click="cambiando = true">
+        ¿Te equivocaste de correo?
+      </AppButton>
+
+      <form v-else class="space-y-3 text-left" @submit.prevent="guardarCorreo">
+        <label for="correo-nuevo" class="deasy-form-label">Tu correo correcto</label>
+        <input
+          id="correo-nuevo"
+          v-model="correoNuevo"
+          type="email"
+          class="deasy-control"
+          placeholder="tu@correo.com"
+        />
+        <div class="flex gap-3">
+          <AppButton type="submit" variant="primary-outline" :disabled="guardando">
+            {{ guardando ? 'Guardando…' : 'Cambiar y enviar código' }}
+          </AppButton>
+          <AppButton variant="danger-outline" @click="cambiando = false">Cancelar</AppButton>
+        </div>
+      </form>
+    </div>
 
     <div class="mt-8 flex justify-end border-t border-line pt-6">
       <router-link to="/logout" class="deasy-auth-link">Salir</router-link>
@@ -73,6 +106,9 @@ const comprobando = ref(false);
 const reenviando = ref(false);
 const envioFallido = ref(false);
 const esperaRestante = ref(0);
+const cambiando = ref(false);
+const correoNuevo = ref("");
+const guardando = ref(false);
 const correo = ref("");
 let cuentaAtras = null;
 
@@ -92,6 +128,37 @@ const arrancarEspera = (segundos) => {
     esperaRestante.value -= 1;
     if (esperaRestante.value <= 0) clearInterval(cuentaAtras);
   }, 1000);
+};
+
+/** Solo dígitos, y como mucho seis. El código lo es; lo demás es ruido de dónde salga el texto. */
+const alEscribirCodigo = (evento) => {
+  const limpio = String(evento.target.value ?? "").replace(/\D/g, "").slice(0, 6);
+  codigo.value = limpio;
+  // El campo se repinta con lo limpio: si no, lo que se ve y lo que vale se separan --y ése era
+  // exactamente el fallo.
+  if (evento.target.value !== limpio) evento.target.value = limpio;
+};
+
+const guardarCorreo = async () => {
+  error.value = "";
+  guardando.value = true;
+  try {
+    const { data } = await VerificacionService.cambiarCorreo(correoNuevo.value.trim());
+    correo.value = data.direccion;
+    // La copia de la sesión también, o la pantalla seguiría enseñando el correo viejo hasta el
+    // siguiente acceso.
+    const usuario = AuthService.getUser();
+    if (usuario) AuthService.setUser({ ...usuario, email: data.direccion });
+    cambiando.value = false;
+    correoNuevo.value = "";
+    codigo.value = "";
+    envioFallido.value = false;
+    arrancarEspera(60);
+  } catch (fallo) {
+    error.value = fallo?.response?.data?.message ?? "No se pudo cambiar el correo.";
+  } finally {
+    guardando.value = false;
+  }
 };
 
 const comprobar = async () => {
