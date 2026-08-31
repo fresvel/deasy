@@ -24,7 +24,7 @@
 | **C1** | El contrato del canal y la política de verificación, probadas **sin red** | ✅ | 15 pruebas · 4 mutaciones cazadas: comparar números tal cual, mirar el número antes de la llave, confundir «falta el número» con un rechazo, y confundir «el backend no contesta» con «llave mala» | 2026-08-29 |
 | **C2** | El backend sabe **crear, resolver y consumir** una llave; el servicio sabe preguntárselo | ✅ | `telefono_verification_keys` + 3 rutas · char **318/318** (4 casos nuevos) · unit **704** · channels **34** · **4 mutaciones cazadas**: quitar el filtro del dueño, colapsar «ya usada» con «no existe», que el guard confirme la ruta con un 401, y que pedir otra llave no invalide la anterior · `/api/internal/` da **404 desde fuera** (curl contra el proxy) · **IDOR encontrado y cerrado** al escribir las pruebas | 2026-08-30 |
 | **C2b** | La comparación del número se muda al backend: el servicio **observa**, el backend **dicta** | ✅ | char **321/321** · unit **713** · channels **29** · la regla vieja (últimos 8 dígitos) daba por iguales `+51 99 111 2233` y `+593 99 111 2233` · **3 defectos más** encontrados al construir: el arranque creaba el teléfono del admin **sin país** (inverificable), `numero_completo` componía `+5930990000000`, y un 404 del guard era indistinguible de «llave desconocida» | 2026-08-30 |
-| **C3** | Un número real se verifica **por Telegram**, de punta a punta | ⬜ | | |
+| **C3** | Un número real se verifica **por Telegram**, de punta a punta | ✅ | **Verificado con un teléfono real** (iPhone y Telegram Desktop) · channels **50** · 4 mutaciones cazadas (aceptar la tarjeta ajena, offset después de tratar, borrar el error del mensaje, «hola» como llave) · rechazos comprobados uno a uno: caducada · ya usada · inventada · contacto reenviado · **llave abierta desde OTRO teléfono** · y medido que un intento de impostor **NO gasta la llave** | 2026-08-31 |
 | **C4** | El servicio corre **como contenedor** en la pila, sin que lo alcance el navegador | ⬜ | | |
 | **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ⬜ | | |
 | **C6** | Un número real se verifica **por SMS entrante** | ⛔ | **Bloqueada por una decisión del dueño**: módem propio o número alquilado | |
@@ -202,6 +202,34 @@ Si esa memoria se pierde al reiniciar, el usuario vuelve a escanear — es acept
 **Cómo se comprueba:** un teléfono real queda verificado en la base, y otro distinto se
 rechaza.
 
+#### ✅ Hecho el 2026-08-31 — y lo que enseñó probarlo con un teléfono de verdad
+
+Todo lo de abajo salió de la sesión con el dueño, y **nada de ello lo habrían encontrado las pruebas
+automáticas**: son cosas del cliente de Telegram y de la persona que lo usa.
+
+1. **EL BOTÓN NO SE PINTA SOLO.** Telegram aceptó tres variantes distintas del teclado —con y sin
+   `one_time_keyboard`, con `is_persistent`, como objeto y como cadena JSON— y **ninguna apareció**
+   en un iPhone real. Está plegado tras el icono de cuadrícula (▦) del campo de escribir. El código
+   era correcto; lo que faltaba era **decir dónde mirar**, y sin eso la persona hace todo bien y se
+   queda atascada. Un texto que dice «pulsa el botón de abajo» cuando abajo no hay botón es un
+   defecto del canal aunque el código esté impecable.
+2. **«Adjunta tu contacto con el clip» NO SIRVE**, y se probó: esa opción abre la agenda, y uno no
+   está en su propia agenda. Se ofreció como alternativa, se comprobó que no existía, y se retiró.
+   Mandar a alguien a un sitio vacío es peor que no decir nada.
+3. **Telegram Desktop funciona.** Se verificó desde ahí de punta a punta: llave emitida 04:26:01,
+   consumida 04:26:23.
+
+**Los rechazos, comprobados uno a uno con el bot real:** llave caducada, llave ya usada, llave
+inventada, contacto reenviado de un tercero, y **la llave abierta desde otro teléfono** — que es la
+prueba que sostiene el diseño: el enlace puede circular, pero **sólo lo cierra quien tenga el
+teléfono**. Medido además que **un intento de impostor NO gasta la llave**: la 17 se emitió a las
+04:19:58, aguantó los rechazos y seguía viva cuando su dueño la usó a las 04:22:49.
+
+⚠️ **Un defecto de datos que salió de rebote, y que apunta a algo mayor.** El guion de prueba guardó
+el número **con el prefijo del país dentro** (`numero` = `593…` *y además* `pais_id` = EC), y la
+verificación **pasó igual** — por la rama de `numerosIguales` que acepta la parte local a secas. Es
+decir: un registro mal formado se verificó de chiripa. Está anotado abajo como cuestión abierta.
+
 ### C4 · El contenedor
 
 Servicio en la pila, con su volumen para la sesión y **sin puerto publicado**: igual que el
@@ -278,6 +306,30 @@ node scripts/docs/check-doc-modelo.mjs                    # la doc del modelo
 ⚠️ **Y lo que las pruebas no ven:** que un QR se escanee de verdad, que llegue un mensaje y
 que el teléfono quede verificado. Eso se comprueba **con un teléfono en la mano**, y las
 tareas `C3`, `C5` y `C6` **no se cierran sin eso**.
+
+---
+
+## 2b · Cuestión abierta: la rama permisiva de `numerosIguales`
+
+**Sale de una casualidad medida el 2026-08-31.** Un teléfono guardado mal —con el prefijo del país
+*dentro* de `numero`— se verificó igualmente, porque la comparación acepta tres escrituras del número
+que llega y una de ellas es **la parte local a secas**.
+
+Esa tolerancia existe por el **SMS nacional desde módem propio**, que es el único transporte capaz de
+entregar un número sin país. Y ese transporte es `C6`, que **está bloqueada y sin implementar**.
+
+El problema: la rama es de la misma familia que el agujero que cerró `C2b`. Si `numero` contiene por
+error un número internacional de otro país, alguien con **esa** línea lo verifica — el país deja de
+pintar nada, que es justo lo que `C2b` arregló.
+
+**Lo que propongo, y no he hecho porque es una decisión, no una corrección:** retirar la rama local y
+exigir E.164 siempre. Telegram, WhatsApp y cualquier pasarela de SMS entregan el número con su país;
+la rama sólo sirve al módem propio, y **estamos pagando permisividad por un canal que no existe**. Si
+`C6` acaba necesitándola, se reinstaura sabiendo el país por la red del propio módem, que es donde
+esa información sí está.
+
+⚠️ Comprobado que la verificación real del 2026-08-31 **no dependía de esa rama**: con el número ya
+corregido (9 dígitos locales + `+593`), lo que casó fue la forma internacional.
 
 ---
 

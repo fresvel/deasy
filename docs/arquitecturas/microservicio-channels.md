@@ -154,6 +154,15 @@ no convertir la ruta en un oráculo.
 
 ### Telegram
 
+⚠️ **EL BOTÓN DE CONTACTO NO SE PINTA SOLO**, y hay que decirle a la persona dónde está. Comprobado
+con un iPhone real el 2026-08-30: Telegram aceptó **tres variantes distintas** del teclado y ninguna
+apareció; estaba plegado tras el icono de cuadrícula (▦) del campo de escribir. En escritorio pasa
+lo mismo. El texto del canal lleva esa instrucción, y quitarla vuelve a dejar a la gente atascada
+sin saber por qué.
+
+⚠️ **No ofrezcas «adjunta tu contacto con el clip» como alternativa.** Se probó y NO existe: esa
+opción abre la agenda, y uno no está en su propia agenda.
+
 El QR codifica `t.me/<bot>?start=<llave>`. **Comprobado en la documentación: el parámetro
 admite hasta 64 caracteres, sólo `A-Z a-z 0-9 _ -`** — de sobra para una llave aleatoria.
 
