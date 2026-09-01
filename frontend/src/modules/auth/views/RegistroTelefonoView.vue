@@ -1,29 +1,18 @@
 <template>
-  <!-- ⚠️ `4xl` Y NO `md`. Con `md` (448 px) el contenedor medía menos de un tercio de una pantalla de
-       1440: el selector se desbordaba sobre el panel, «¿Cómo se hace?» partía en dos líneas y el QR
-       --que es la salida de quien está en el ordenador-- quedaba del tamaño de un sello.
-       Esta pantalla tiene DOS columnas; las de un solo formulario siguen en `md`. -->
   <AuthLayout size="4xl" align="start">
     <header class="mb-8 text-center">
-      <AppLogo size="lg" :framed="true" class-name="mx-auto mb-6" />
+      <AppLogo size="lg" :framed="true" class-name="mb-6" />
       <PasosDelRegistro paso="telefono" />
       <h1 class="deasy-title deasy-title--page mt-6">Confirma tu teléfono</h1>
-      <p class="text-muted mx-auto mt-2 max-w-xl text-sm font-medium">
-        Nos escribes tú desde tu número, y con eso queda probado. Elige por dónde.
-      </p>
     </header>
 
-    <p v-if="error" class="deasy-alert deasy-alert--danger mb-6">{{ error }}</p>
-
-    <p v-if="!hayCanales && !cargando" class="deasy-alert deasy-alert--warning mb-6">
+    <AppAlert v-if="error" variant="danger" class="mb-6">{{ error }}</AppAlert>
+    <AppAlert v-if="!hayCanales && !cargando" variant="warning" class="mb-6">
       Este servidor no tiene ningún canal de verificación configurado. Avisa a quien lo administre.
-    </p>
+    </AppAlert>
 
     <div v-if="hayCanales" class="grid gap-6 md:grid-cols-3 md:items-start">
 
-      <!-- Es un GRUPO DE OPCIONES y no tres botones: elegir uno de tres es exactamente lo que un
-           `radio` significa, y así funcionan las flechas del teclado y un lector de pantalla sabe
-           que las tres van juntas. -->
       <fieldset class="md:col-span-1">
         <legend class="deasy-form-label">¿Por dónde?</legend>
         <div class="grid gap-3">
@@ -44,14 +33,7 @@
           </label>
         </div>
 
-        <!-- Lo único que hace falta para elegir, ahí donde se elige. -->
-        <p class="mt-3 text-xs leading-relaxed text-muted">
-          Los tres prueban lo mismo. Elige el que tengas más a mano.
-        </p>
-
-        <!-- EL NÚMERO: SE VE SIEMPRE, SE EDITA SOLO SI SE PIDE. Mismo criterio que el correo, y por
-             lo mismo: verlo permite darse cuenta del error; abrirlo de entrada invita a tocarlo sin
-             querer, y tocarlo tira la llave viva y obliga a empezar el canal otra vez. -->
+        <!-- El número, como el correo en su pantalla: se ve, y se edita sólo si se pide. -->
         <div class="mt-6">
           <span class="deasy-form-label">Tu número</span>
 
@@ -81,34 +63,24 @@
 
       <div v-if="canalActivo" class="deasy-card p-6 md:col-span-2">
         <div class="mb-6 flex items-center justify-between gap-4">
-          <h2 class="deasy-title deasy-title--section">Verificar por {{ canalActivo.nombre }}</h2>
+          <h2 class="deasy-title deasy-title--section">{{ canalActivo.nombre }}</h2>
           <AppButton variant="neutral-soft" @click="verManual = true">Instrucciones</AppButton>
         </div>
 
-        <!-- ⚠️ EL ENLACE Y EL QR CADUCAN A LOS 15 MINUTOS, y hasta ahora no lo decía nadie: quien
-             dejaba la pestaña abierta escaneaba un código muerto y el bot le respondía «caducó» sin
-             que la pantalla hubiera dado el menor aviso. Ahora se ve el tiempo, y cuando se acaba se
-             pide otro con un botón en vez de recargar a ciegas. -->
-        <div
-          v-if="caducado"
-          class="deasy-alert deasy-alert--warning mb-6 flex flex-wrap items-center justify-between gap-3"
-        >
-          <span>Este código caducó. Pide otro para continuar.</span>
+        <AppAlert v-if="caducado" variant="warning" class="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <span>Este código caducó.</span>
           <AppButton variant="warning-outline" :disabled="renovando" @click="renovar">
             {{ renovando ? 'Generando…' : 'Generar otro' }}
           </AppButton>
-        </div>
-        <p v-else-if="minutosRestantes !== null" class="mb-6 text-xs text-muted">
-          Caduca en {{ minutosRestantes }}.
-        </p>
+        </AppAlert>
 
-        <!-- LAS DOS VÍAS, EN DOS MITADES. No es redundancia: desde el MÓVIL no puedes escanear tu
-             propia pantalla, y desde el ORDENADOR el enlace abre la aplicación donde NO está tu
-             número.
-             ⚠️ Y POR ESO EL ORDEN SE INVIERTE: en móvil manda el BOTÓN --el QR ahí no sirve para
-             nada y estaba ocupando media pantalla--; en escritorio manda el QR, que es la única
-             salida de quien no tiene Telegram en el ordenador. -->
-        <div v-if="canalActivo.id !== 'sms'" class="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-line" :class="{ 'pointer-events-none opacity-40': caducado }">
+        <!-- ⚠️ LAS DOS VÍAS, SIN EXPLICARLAS. La rotulación es la explicación: quien está en el
+             ordenador lee «Desde otro teléfono» sobre un QR y ya sabe qué hacer; quien está en el
+             móvil ve un botón. Lo que había debajo de cada una --«Escanéalo con la cámara», «Se
+             abrirá la conversación con nuestro bot»-- decía lo que la imagen ya dice.
+             El resto está en «Instrucciones», para quien lo quiera. -->
+        <div v-if="canalActivo.id !== 'sms'" class="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-line"
+             :class="{ 'pointer-events-none opacity-40': caducado }">
           <div class="order-2 text-center sm:order-1">
             <p class="mb-3 text-sm font-semibold text-strong">Desde otro teléfono</p>
             <img
@@ -116,7 +88,6 @@
               :alt="`Código QR para verificar por ${canalActivo.nombre}`"
               class="mx-auto w-full max-w-64 rounded-md border border-line bg-white p-3"
             />
-            <p class="mt-3 text-xs text-muted">Escanéalo con la cámara.</p>
           </div>
 
           <div class="order-1 flex flex-col items-center justify-center gap-3 text-center sm:order-2 sm:pl-6">
@@ -129,18 +100,19 @@
             >
               Abrir {{ canalActivo.nombre }}
             </a>
-            <p class="text-xs text-muted">Se abrirá la conversación con nuestro bot.</p>
           </div>
         </div>
 
         <div v-else class="text-center" :class="{ 'pointer-events-none opacity-40': caducado }">
           <p class="mb-3 text-sm text-muted">
-            Envía un mensaje de texto al
-            <strong class="text-strong">{{ canalActivo.numero }}</strong> con este contenido:
+            Manda este texto al <strong class="text-strong">{{ canalActivo.numero }}</strong>:
           </p>
           <code class="mx-auto block max-w-md break-all rounded-md border border-line bg-surface px-4 py-3 font-mono text-sm text-strong">{{ canalActivo.texto }}</code>
-          <p class="mt-3 text-xs text-muted">Lo cobra tu operadora. Telegram y WhatsApp son gratis.</p>
         </div>
+
+        <p v-if="!caducado && minutosRestantes" class="mt-6 text-center text-xs text-muted">
+          Caduca en {{ minutosRestantes }}.
+        </p>
       </div>
     </div>
 
@@ -148,8 +120,6 @@
       <AppButton variant="primary-outline" :disabled="comprobando" @click="comprobar">
         {{ comprobando ? 'Comprobando…' : 'Ya lo hice' }}
       </AppButton>
-      <!-- ⚠️ «Salir» ES UNA ACCIÓN, no un enlace de navegación. Convivía con dos botones haciendo
-           algo comparable y era lo único que no lo parecía. -->
       <AppButton variant="neutral-outline" @click="salir">Salir</AppButton>
     </div>
 
@@ -168,6 +138,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import AuthLayout from "@/layouts/auth/AuthLayout.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import PasosDelRegistro from "@/modules/auth/components/PasosDelRegistro.vue";
 import ManualDeCanal from "@/modules/auth/components/ManualDeCanal.vue";

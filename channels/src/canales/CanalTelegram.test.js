@@ -258,3 +258,65 @@ describe("CanalTelegram · el sondeo", () => {
     assert.equal((await canal.estado()).conectado, false);
   });
 });
+
+// ── QUE UN CANAL ROTO NO PASE DESAPERCIBIDO ─────────────────────────────────────────────────────
+//
+// El 2026-08-31 este canal estuvo SEIS HORAS sin poder resolver `api.telegram.org` --el reenviador
+// DNS de la red de Docker se había quedado con el resolvedor de otra red-- y su registro sólo tenía
+// la línea de arranque: desde fuera era indistinguible de uno sano. Lo notó el dueño porque el bot
+// no le contestaba.
+//
+// Un servicio que falla en silencio es peor que uno que se cae: al menos el que se cae se ve.
+describe("CanalTelegram · avisar cuando se rompe", () => {
+  const capturar = () => {
+    const lineas = { error: [], log: [] };
+    const antes = { error: console.error, log: console.log };
+    console.error = (m) => lineas.error.push(String(m));
+    console.log = (m) => lineas.log.push(String(m));
+    return { lineas, restaurar: () => Object.assign(console, antes) };
+  };
+
+  it("avisa UNA vez al empezar a fallar, no en cada reintento", async () => {
+    const telegram = telegramFalso();
+    const canal = new CanalTelegram({ telegram });
+    canal.alRecibir(async () => ({ verificado: true }));
+
+    let vueltas = 0;
+    telegram.actualizaciones = async () => {
+      vueltas += 1;
+      if (vueltas >= 4) canal.corriendo = false;
+      throw new Error("getaddrinfo EAI_AGAIN api.telegram.org");
+    };
+
+    const { lineas, restaurar } = capturar();
+    canal.corriendo = true;
+    await canal.sondear(async () => {});
+    restaurar();
+
+    assert.equal(vueltas, 4, "reintenta");
+    assert.equal(lineas.error.length, 1, `avisó ${lineas.error.length} veces; con 20 por minuto no las lee nadie`);
+    assert.match(lineas.error[0], /EAI_AGAIN/);
+  });
+
+  it("y avisa cuando vuelve, o quien vio el fallo no sabe si se arregló", async () => {
+    const telegram = telegramFalso();
+    const canal = new CanalTelegram({ telegram });
+    canal.alRecibir(async () => ({ verificado: true }));
+
+    let vueltas = 0;
+    telegram.actualizaciones = async () => {
+      vueltas += 1;
+      if (vueltas === 1) throw new Error("ECONNRESET");
+      canal.corriendo = false;
+      return [];
+    };
+
+    const { lineas, restaurar } = capturar();
+    canal.corriendo = true;
+    await canal.sondear(async () => {});
+    restaurar();
+
+    assert.equal(lineas.error.length, 1);
+    assert.ok(lineas.log.some((l) => /vuelve a funcionar/.test(l)), "tiene que decir que volvió");
+  });
+});

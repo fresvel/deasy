@@ -589,7 +589,9 @@ const createnewUser = async () => {
     }
     // Si el correo no llego a salir, la pantalla siguiente lo dice y ofrece reenviar --en vez de
     // dejar a alguien esperando un mensaje que nunca se mando.
-    sessionStorage.setItem("registro:correoEnviado", String(alta?.correoEnviado !== false));
+    //  significa «en camino»: no se guarda nada, y la pantalla siguiente no avisa de un fallo
+      // que quizá no ocurrió.
+      if (alta?.correoEnviado === false) sessionStorage.setItem("registro:correoEnviado", "false");
     sessionStorage.removeItem("register_draft");
     // Directo al paso 2. Sin modal en medio: no hay nada que anunciar, hay algo que seguir.
     router.push("/registro/correo");

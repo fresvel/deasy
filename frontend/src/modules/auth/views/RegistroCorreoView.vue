@@ -6,11 +6,11 @@
       <h1 class="deasy-title deasy-title--page mt-6">Confirma tu correo</h1>
     </header>
 
-    <p v-if="envioFallido" class="deasy-alert deasy-alert--warning mb-6">
+    <AppAlert v-if="envioFallido" variant="warning" class="mb-6">
       No pudimos enviar el correo. Pulsa «Enviar otro código».
-    </p>
-    <p v-if="error" class="deasy-alert deasy-alert--danger mb-6">{{ error }}</p>
-    <p v-if="aviso" class="deasy-alert deasy-alert--success mb-6">{{ aviso }}</p>
+    </AppAlert>
+    <AppAlert v-if="error" variant="danger" class="mb-6">{{ error }}</AppAlert>
+    <AppAlert v-if="aviso" variant="success" class="mb-6">{{ aviso }}</AppAlert>
 
     <div class="mx-auto max-w-sm space-y-6">
       <!-- EL CORREO: SE VE SIEMPRE, SE EDITA SOLO SI SE PIDE.
@@ -76,6 +76,7 @@ import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import AuthLayout from "@/layouts/auth/AuthLayout.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import PasosDelRegistro from "@/modules/auth/components/PasosDelRegistro.vue";
 import VerificacionService from "@/modules/auth/services/VerificacionService";
@@ -103,6 +104,9 @@ const correoCambiado = computed(() => {
 onMounted(() => {
   correoGuardado.value = (AuthService.getUser()?.email ?? "").toLowerCase();
   correo.value = correoGuardado.value;
+  // ⚠️ Sólo avisa si el envío falló DE VERDAD, y eso hoy sólo lo sabe «Enviar otro código»: el del
+  // alta va en camino sin bloquear la respuesta, así que llega como `null` y NO se avisa de nada.
+  // Avisar de un fallo que quizá no ocurrió sería peor que callar.
   envioFallido.value = sessionStorage.getItem("registro:correoEnviado") === "false";
 });
 

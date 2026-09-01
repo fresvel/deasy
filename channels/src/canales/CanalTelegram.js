@@ -153,8 +153,24 @@ export default class CanalTelegram extends Canal {
         // ⚠️ SOLO SE LIMPIA SI NO FALLÓ NADA. Antes se limpiaba siempre, justo después de anotarlo,
         // así que el error de un mensaje se borraba en la misma vuelta y la pantalla de
         // administración no llegaba a verlo NUNCA.
-        if (!falloAlguno) this.ultimoError = null;
+        if (!falloAlguno) {
+          // Y si veníamos de un fallo, se dice que se acabó: sin esto, quien vio el aviso no sabe
+          // nunca si el canal volvió.
+          if (this.ultimoError) {
+            console.log(`[channels] ${this.nombre}: el sondeo vuelve a funcionar`);
+          }
+          this.ultimoError = null;
+        }
       } catch (error) {
+        // ⚠️ SE AVISA LA PRIMERA VEZ, Y AL VOLVER. No en cada reintento --serian veinte lineas por
+        // minuto y nadie las leeria--, pero SI una vez: este canal estuvo SEIS HORAS sin poder
+        // resolver `api.telegram.org` y su registro sólo tenia la linea de arranque, así que desde
+        // fuera era indistinguible de uno sano. El dueño lo notó porque el bot no le contestaba.
+        //
+        // Un servicio que falla en silencio es peor que uno que se cae: al menos el que se cae se ve.
+        if (!this.ultimoError) {
+          console.error(`[channels] ${this.nombre}: el sondeo falla — ${error.message}`);
+        }
         this.ultimoError = error.message;
         await esperar(3000);
       }

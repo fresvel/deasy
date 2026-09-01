@@ -117,21 +117,23 @@ export const createUser = async (req, res) => {
     const createdUser = await userRepository.create(userPayload);
     console.log(`Usuario creado en PostgreSQL con id ${createdUser.id}`);
 
-      // ⚠️ SI EL ENVIO FALLA, SE DICE. Antes era `catch -> console.error -> seguir`: la persona
-      // salia creada, sin correo, sin saberlo y sin forma de pedir otro. Con el correo
-      // obligatorio eso es una cuenta muerta al nacer.
-      let correoEnviado = true;
-      try {
-      // Sin `email`: lo resuelve el propio servicio leyendo el correo principal. Pasarlo desde
-      // aqui era el fallo --`createdUser.email` ya no existe-- y ademas creaba dos sitios que
-      // opinaban sobre a donde se envia.
-      await sendEmailVerification({ personId: createdUser.id });
-
-      console.log("Correo de verificación enviado");
-    } catch (error) {
-        correoEnviado = false;
-      console.error("No se pudo enviar el correo de verificación:", error.message);
-    }
+      // ⚠️ EL CORREO SE MANDA **SIN BLOQUEAR LA RESPUESTA**, y esto no es una optimizacion: es la
+      // causa del fallo que reporto el dueno. Con el envio dentro de la peticion, un alta tardaba
+      // 6,7 SEGUNDOS medidos --conectar con el SMTP, negociar TLS, entregar-- y en ese rato la
+      // pantalla no puede hacer otra cosa que esperar. Quien no ve respuesta vuelve a pulsar, y de
+      // ahi salia el «se creo la cuenta Y me dijo que el telefono ya existe».
+      //
+      // Y puede ser peor que lento: si el servidor de correo no resuelve --`EAI_AGAIN`, visto hoy--
+      // la peticion se queda colgada hasta que venza el tiempo de espera. Un registro no puede
+      // depender de que un tercero conteste.
+      //
+      // ⚠️ LO QUE SE PIERDE, dicho: ya no se puede informar de si el PRIMER envio salio. Lo cubre
+      // «Enviar otro codigo» de la pantalla siguiente, que si es una peticion corta y SI lo dice.
+      // Y el fallo se registra en el log del servidor, que es donde se mira cuando nadie recibe
+      // nada.
+      sendEmailVerification({ personId: createdUser.id })
+        .then(() => console.log("Correo de verificación enviado"))
+        .catch((error) => console.error("No se pudo enviar el correo de verificación:", error.message));
 
     // Se RELEE la persona antes de responder. `create()` devuelve lo que inserto en `persons`, y
     // desde el paso 4 el telefono NO esta ahi: vive en `telefonos` con sus canales. Sin esta
@@ -169,9 +171,11 @@ export const createUser = async (req, res) => {
       user: usuarioPublico,
       token: accessToken,
       expiresIn,
-      // Para que la pantalla ofrezca «reenviar» en vez de dejar a alguien esperando un correo que
-      // no llego a salir.
-      correoEnviado,
+      // ⚠️ `null` significa «va en camino, todavia no se sabe»: el envio ya no bloquea la respuesta.
+      // La pantalla siguiente NO avisa de nada con esto --avisar de un fallo que quiza no ocurrio
+      // seria peor que callar-- y quien no reciba nada tiene «Enviar otro codigo», que si responde
+      // con la verdad porque es una peticion corta.
+      correoEnviado: null,
     });
   } catch (error) {
     console.log("Error Creating User");

@@ -679,6 +679,71 @@ Quitarlo hace **imposible** el síntoma, venga la fuga de donde venga.
 **Comprobado en Chrome:** 75 segundos en el formulario de registro sin sesión → sigue ahí, **con lo
 escrito intacto**. Y con los tres duplicados → se queda en `/register` y el mensaje **se ve**.
 
+#### Duodécima vuelta: el alta deja de tardar 7 segundos, y la pantalla se limpia (2026-08-31)
+
+**1 · EL ALTA TARDABA 6,74 SEGUNDOS, y ésa era la causa real del doble clic.** El envío del correo
+iba **dentro** de la petición: conectar con el SMTP, negociar TLS, entregar. En ese rato la pantalla
+no puede hacer otra cosa que esperar, y quien no ve respuesta vuelve a pulsar.
+
+Sacado fuera: **0,09 s**, setenta veces más rápido. Y puede ser peor que lento — si el servidor de
+correo no resuelve (`EAI_AGAIN`, visto hoy) la petición se queda colgada hasta que venza el tiempo
+de espera. **Un registro no puede depender de que un tercero conteste.**
+
+⚠️ Lo que se pierde, dicho: ya no se informa de si el **primer** envío salió. Lo cubre «Enviar otro
+código», que sí es una petición corta y sí lo dice.
+
+**2 · Los avisos eran `<p class="deasy-alert">` a mano.** Sin `role="alert"` —así que un lector de
+pantalla no los anunciaba— y saltándose `AppAlert`, que es el componente del sistema. Es el mismo
+error que el dueño ya había señalado con «Salir». Cero clases a mano ahora en las dos pantallas.
+
+**3 · La pantalla del teléfono, limpiada** a petición del dueño: fuera cuatro frases que decían lo
+que la propia interfaz ya dice —«Escanéalo con la cámara» bajo un QR, «Se abrirá la conversación con
+nuestro bot» bajo un botón que abre Telegram—. **La rotulación es la explicación**; el resto vive en
+«Instrucciones», para quien lo quiera.
+
+#### La verificación completa en Chrome (2026-08-31)
+
+Recorrido entero con el formulario real, sin tocar la base a mano salvo para sembrar el código:
+
+| Camino | |
+|---|:--:|
+| Cédula duplicada · correo duplicado · teléfono duplicado (con y sin cero) | ✅ mensaje propio y **visible** |
+| Dígito verificador inválido · contraseñas distintas | ✅ |
+| Doble clic en «Crear cuenta» | ✅ **una** sola cuenta |
+| Paso 2: sin código · código incorrecto · reenviar (freno 1/min) · Cambiar · Cancelar | ✅ 6/6 |
+| Paso 3: número visible · QR · cuenta atrás · botón con relleno · «Ya lo hice» sin verificar | ✅ |
+| El canal confirma → salta solo a `/home` | ✅ |
+| Volver a un paso ya cumplido | ✅ redirige a `/home` |
+| Puerta del backend con cuenta a medias | ✅ **403** en las cinco rutas, diciendo qué falta |
+| 75 s en el formulario sin sesión | ✅ sigue ahí, con lo escrito |
+
+Cero errores de consola en todo el recorrido.
+
+#### ⚠️ El DNS de Docker: por qué el bot «deja de funcionar» solo
+
+**No es del bot y no es de persistencia.** El reenviador DNS de la red de Docker **congela los
+resolvedores del host cuando se crea la red**. Al cambiar de red —apagar, suspender, reconectar— los
+contenedores siguen preguntando a un DNS que ya no existe:
+
+```
+El contenedor reenviaba a:  201.159.221.11   ← resolvedor de otra red
+El host usaba:              192.168.1.1
+```
+
+Síntoma: `EAI_AGAIN api.telegram.org` (y `smtp.gmail.com`). **Remedio:**
+
+```bash
+bash scripts/stack.sh c down && bash scripts/stack.sh c up -d
+```
+
+Un `restart` **no vale**: la red no se recrea.
+
+⚠️ **Y el canal estuvo SEIS HORAS roto sin decirlo.** `sondear` guardaba el error en `ultimoError` y
+no lo escribía en ninguna parte, así que su registro era indistinguible del de un canal sano. Ahora
+avisa **una vez** al empezar a fallar —no en cada reintento, que serían veinte líneas por minuto— y
+otra al recuperarse. *Un servicio que falla en silencio es peor que uno que se cae: al menos el que
+se cae se ve.*
+
 #### 🚧 Lo que queda abierto de esta tarea
 
 **Un administrador creado SIN teléfono se queda fuera.** El `/setup` lo acepta como opcional, y la
