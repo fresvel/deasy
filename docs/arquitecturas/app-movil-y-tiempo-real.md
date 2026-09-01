@@ -5,6 +5,19 @@
 > mismos canales para verificarse y que **más adelante será ella misma un canal de verificación**.
 >
 > **Veredicto: es mejor que lo que yo proponía, y cancela parte de mi propio diseño.**
+>
+> ---
+>
+> 🕓 **LA APP NO SE HACE AQUÍ, NI AHORA.** Decisión del dueño (2026-09-01): *«será en un futuro
+> lejano, aún tiene mucho que cocinarse»*. **No es un frente, no tiene tareas y no entra en el plan
+> maestro.**
+>
+> **Lo que SÍ decide este documento hoy** —y es lo que hay que retener— es todo lo que se **deja de
+> hacer**: `C10`, `C11`, el contrato de dos niveles y las dos tablas. Eso es efectivo ya.
+>
+> El resto son **notas para cuando llegue el día**, y valen precisamente porque están escritas antes
+> de que nadie tenga prisa: §4 (el segundo plano no lo resuelve ningún transporte), §5 (el adaptador
+> es la decisión, no el microservicio) y §7 (la app verificaría *sesiones*, no *números*).
 
 ---
 

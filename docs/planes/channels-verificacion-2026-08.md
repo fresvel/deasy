@@ -42,6 +42,12 @@ de quedarse como deuda perpetua.
 - **Pendientes (2):** `C7` (la pestaña de administración) · `C9` (el limitador)
 - **Descartada (1):** `C6`
 
+⚠️ **Y no habrá `C10` ni `C11`.** Llegué a proponerlas —un contrato de dos niveles para que los bots
+sirvieran también para recibir ubicaciones— y **el dueño las cortó el mismo día**: los bots se
+**congelan en verificación**, y esas funciones irán a una **app móvil propia** que no se hace aquí ni
+ahora. El frente 15 **acaba en `C9`**. El porqué, en
+[`arquitecturas/app-movil-y-tiempo-real.md`](../arquitecturas/app-movil-y-tiempo-real.md).
+
 🚧 marca la que **no es sólo de este frente**: el limitador protege también el acceso, el
 registro y `/recover-email`. Hoy **no existe ninguno** — 18 dependencias en el backend,
 ninguna de límite ni de caché, y **no hay Redis en ninguna pila**.
