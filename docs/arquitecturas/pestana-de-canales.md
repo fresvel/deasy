@@ -313,6 +313,148 @@ son tablas: esto es la tercera, no una excepción nueva.
 
 ---
 
+## 6bis · El JSON que viaja, campo por campo
+
+Son **dos saltos y cuatro rutas**. El QR **viaja por su propia ruta**, nunca dentro del estado: así
+no acaba en un registro, en una caché del navegador ni en la respuesta que ve quien sólo tiene
+permiso de lectura.
+
+```
+navegador ─GET /admin/canales──────────▶ backend ─GET /estado───▶ channels
+navegador ─GET /admin/canales/wa/qr────▶ backend ─GET /qr───────▶ channels
+```
+
+### Salto 1 · `channels` → backend · `GET /estado`
+
+```json
+{
+  "servicio": {
+    "arrancado": "2026-09-01T14:44:47.698Z",
+    "reinicios": 0
+  },
+  "canales": [
+    {
+      "nombre": "telegram",
+      "cuenta": "@deasy_test_bot",
+      "salud": "sano",
+      "evidencia": "sondeo",
+      "detalle": "el sondeo responde",
+      "desde": "2026-09-01T14:44:49.102Z",
+      "ultimoError": null,
+      "ultimoMensajeEn": "2026-09-01T15:03:58.689Z",
+      "necesitaVinculacion": false
+    },
+    {
+      "nombre": "whatsapp",
+      "cuenta": "593983069990",
+      "salud": "degradado",
+      "evidencia": "afirmacion",
+      "detalle": "la sesión dice estar lista, pero la plataforma no contesta",
+      "estadoPlataforma": "TIMEOUT",
+      "desde": "2026-09-01T14:44:55.031Z",
+      "ultimoError": "Evaluation failed: page closed",
+      "ultimoMensajeEn": "2026-09-01T15:03:58.689Z",
+      "necesitaVinculacion": false
+    }
+  ]
+}
+```
+
+### Los dos campos que son el diseño entero
+
+**`salud`** — el veredicto. **Nunca un booleano**, porque un booleano fue exactamente lo que mintió:
+
+| Valor | Cuándo |
+|---|---|
+| `sano` | Probado por el nivel 2 o 3 |
+| `degradado` | **El canal dice estar bien pero la comprobación activa no lo confirma**, o arrastra un `ultimoError` |
+| `sin_vincular` | WhatsApp esperando que alguien escanee |
+| `bloqueado` | `TOS_BLOCK` · `CONFLICT` · `DEPRECATED_VERSION` — **merece ser distinto de «caído»**: no se arregla reiniciando |
+| `caido` | Sin arrancar, o `disconnected` |
+| `desconocido` | No se pudo comprobar nada |
+
+**`evidencia`** — **de dónde sale ese veredicto**, y es lo que permite el ámbar:
+
+| Valor | Qué lo respalda |
+|---|---|
+| `sondeo` | El bucle de Telegram funcionó. **El nivel 3: es la recepción misma** |
+| `plataforma` | `getState()` de WhatsApp contestó. Nivel 2 |
+| `afirmacion` | **Sólo la bandera interna del canal.** Nivel 1 — el que mintió |
+
+> ⚠️ **La regla de pintado sale de aquí y no se negocia: con `evidencia: "afirmacion"` la pantalla
+> NUNCA pinta verde.** Ámbar, y dice por qué. Todo lo anterior de esta tarea existe porque una
+> afirmación se pintó como una prueba.
+
+### Los demás campos, y qué defecto cierra cada uno
+
+| Campo | Por qué está |
+|---|---|
+| `desde` | Sin él, «caído» no distingue *un minuto* de *trece horas*. La caída del 2026-08-31 duró trece |
+| `ultimoError` | **Existía y `estado()` lo tapaba** (§4bis). Es el `EAI_AGAIN` que nadie vio en seis horas |
+| `ultimoMensajeEn` | El nivel 4. **Dato, no semáforo**: valioso en un canal con tráfico diario, ruido en uno que pasa días quieto |
+| `estadoPlataforma` | El `WAState` **crudo**. Que la pantalla pueda decir `TOS_BLOCK` con su nombre en vez de traducirlo a un genérico que no ayuda a nadie |
+| `reinicios` | Un canal que se reinicia solo cada pocos minutos está *sano* en cada foto y roto en conjunto |
+| `necesitaVinculacion` | Lo único que autoriza a pedir el QR |
+
+⚠️ **Lo que NO viaja, en ninguno de los dos saltos:** el token del bot, `INTERNAL_SERVICE_KEY`, el
+texto de ningún mensaje, ni el número de nadie que haya escrito. `cuenta` es **nuestra** —el bot y el
+número dedicado—, y ya es pública: va en cada enlace `wa.me` que se le enseña a un usuario.
+
+### Salto 2 · backend → navegador · `GET /admin/canales`
+
+Lo mismo, **más dos cosas que sólo el backend sabe**:
+
+```json
+{
+  "servicio": {
+    "alcanzable": true,
+    "arrancado": "2026-09-01T14:44:47.698Z",
+    "reinicios": 0,
+    "comprobadoEn": "2026-09-01T22:31:05.412Z"
+  },
+  "puedeVerQr": true,
+  "canales": [ … igual que arriba … ]
+}
+```
+
+**Y cuando `channels` no contesta —que es el caso que motivó esta pantalla:**
+
+```json
+{
+  "servicio": {
+    "alcanzable": false,
+    "error": "connect ECONNREFUSED channels:3050",
+    "comprobadoEn": "2026-09-01T22:31:05.412Z"
+  },
+  "puedeVerQr": false,
+  "canales": []
+}
+```
+
+⚠️ **`canales: []` y no `null`, y la respuesta es `200`.** No poder hablar con el servicio **no es
+un error de la pantalla: es el estado del sistema**, y es exactamente lo que se quería saber el día
+que estuvo trece horas muerto. Un `500` lo habría enseñado como «la pantalla falla», que es la
+lectura equivocada.
+
+**`comprobadoEn`** es del backend a propósito: dice **cuándo se preguntó**, no cuándo se generó nada.
+Si por lo que sea la respuesta viniera de una caché, se vería en ese campo.
+
+### Salto 2 · el QR · `GET /admin/canales/whatsapp/qr`
+
+```json
+{ "qr": "data:image/png;base64,iVBORw0KGgo…", "generadoEn": "2026-09-01T22:31:02.006Z" }
+```
+
+| Situación | Respuesta |
+|---|---|
+| Sin `channels.manage` | **`403`** — con `read` se ve el estado, no el QR |
+| `necesitaVinculacion: false` | **`409`**, con motivo. **No hay QR que dar**, y no lo hay para nadie |
+| El canal no está montado | `404` |
+
+⚠️ **`generadoEn`, y no `expiraEn`.** La librería **no dice** cuánto vive un QR: rondan los 20 s pero
+no lo promete nadie. Mandar un `expiraEn` sería inventarse una precisión que no tenemos; con
+`generadoEn` la pantalla enseña *«generado hace 6 s»* y **se renueva sola**, que es verdad y basta.
+
 ## 7 · Lo que este diseño NO hace, y por qué
 
 - **Ningún botón de reiniciar el canal.** Sería un apagado remoto a disposición de quien tenga el
@@ -332,7 +474,12 @@ son tablas: esto es la tercera, no una excepción nueva.
 1bis. **Los cinco niveles de comprobación** (§4bis): comprobación activa con caché de 30 s, tres
    colores, y **decir en pantalla que la recepción de WhatsApp no se puede probar**.
 1ter. **Escuchar `change_state`** (§4ter): detecta el conflicto de sesión, la versión caduca y **el
-   baneo**, que hoy pasan en silencio. Y **si se monta o no un canario**, que cuesta un segundo número.
+   baneo**, que hoy pasan en silencio.
+1quater. **El contrato JSON** (§6bis): `salud` como enumeración en vez de un booleano, `evidencia`
+   para saber qué respalda cada veredicto, y el **QR por su propia ruta**.
+
+⚠️ **El canario queda DESCARTADO por decisión del dueño (2026-09-01).** Telegram se prueba con su
+propio sondeo y WhatsApp con `change_state`; no se monta tráfico automático ni un segundo número.
 2. **Preguntar en vez de guardar** (§4), con sondeo de 5 s.
 3. **Un recurso RBAC nuevo**, `channels`: 13 → 14 recursos, 65 → 70 permisos.
 4. **Sólo lectura**: sin botones de reinicio (§7).
