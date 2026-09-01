@@ -195,6 +195,22 @@ services:
       # ⚠️ LA SESIÓN DE WHATSAPP VIVE AQUÍ. Sin este volumen, cada reinicio pide volver a escanear el
       # QR desde el teléfono dedicado — y eso no es un incordio, es un canal caído hasta que alguien
       # se dé cuenta y lo vincule a mano.
+      #
+      # 🔴 Y AQUÍ HAY DATOS PERSONALES, aunque nadie lo decidiera: esto es un perfil de Chromium con
+      # un WhatsApp Web de verdad dentro. Medido el 2026-09-01 con UN solo teléfono de pruebas: 253 MB,
+      # de los cuales 44 MB son el IndexedDB de web.whatsapp.com, y el número de quien escribió aparece
+      # 25 veces en claro. Los CUERPOS de los mensajes sí están cifrados, pero las claves viven en este
+      # mismo perfil --es lo que permite que la sesión sobreviva al reinicio--, así que eso protege de
+      # un `grep`, no de quien tenga el volumen.
+      #
+      # Consecuencias prácticas: este volumen necesita la misma política que la base (quién accede,
+      # cuánto se guarda, si va a copias). Y si va a copias, excluir `Cache`, `Code Cache` y
+      # `component_crx_cache` --110 MB de los 253, y no hace falta conservar ninguno--.
+      #
+      # ⚠️ NO lo borres «por limpiar»: ahí vive la sesión, y borrarlo deja el canal caído hasta que
+      # alguien escanee un QR con el teléfono en la mano.
+      #
+      # El análisis completo, en docs/arquitecturas/channels-mas-de-una-intencion.md §5.
       - channels_whatsapp:/app/.wwebjs_auth
 
   analytics:
