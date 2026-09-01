@@ -4,7 +4,19 @@
 > verificar un número —recibir una ubicación, ejecutar un comando— **sin** que el diseño se
 > convierta en un cajón de sastre. Y qué **no** hace falta, que resultó ser la mitad.
 >
-> **Estado: PROPUESTA.** Nada de esto está implementado. La decisión es del dueño.
+> ---
+>
+> 🛑 **ESTADO: SUPERADO el 2026-09-01, el mismo día.** El dueño propuso **congelar Telegram y
+> WhatsApp en verificación** y llevar estas funciones a una **app móvil propia**. Es mejor: cancela
+> el contrato de dos niveles, las dos tablas y las tareas `C10`/`C11`, y **deja de hacer crecer la
+> superficie que depende de una librería no oficial** — que hoy mismo cambió bajo nuestros pies
+> (`@lid`).
+>
+> **La evaluación está en [`app-movil-y-tiempo-real.md`](./app-movil-y-tiempo-real.md).**
+>
+> **Este documento se conserva por dos cosas que siguen valiendo**, y no por el diseño:
+> - **§4** — el análisis de por qué un remitente no tiene que ser el titular. Vale igual para la app.
+> - **§5** — el hallazgo de privacidad del perfil de WhatsApp, que **sigue abierto**.
 
 ---
 
