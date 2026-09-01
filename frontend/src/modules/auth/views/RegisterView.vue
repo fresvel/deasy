@@ -1,256 +1,258 @@
 <template>
-  <div class="deasy-auth-page">
-    <div class="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl items-start justify-center py-2 sm:py-6">
-      <div class="deasy-auth-card w-full">
-        <div class="border-b border-line bg-white px-6 py-7 sm:px-9 lg:px-11">
-          <div class="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div class="min-w-0">
-              <AppLogo size="lg" :framed="true" class-name="mb-6" />
-              <h1 class="deasy-title deasy-title--page">Crear cuenta</h1>
-              <p class="deasy-auth-copy max-w-2xl">
-                Completa tus datos para registrarte en DEASY. Mantendremos esta experiencia consistente con tu espacio de trabajo.
-              </p>
+  <!-- ⚠️ EL ANDAMIAJE ES `AuthLayout`, NO UNO A MANO. Aquí se repetían los tres niveles del layout
+       (`deasy-auth-page` > centrado > `deasy-auth-card`) escritos a pelo, que es justo lo que ese
+       componente existe para no duplicar. `align="start"` porque el formulario es alto: centrarlo
+       verticalmente lo empuja fuera de pantalla. -->
+  <AuthLayout size="4xl" align="start">
+    <!-- Mismo encabezado que los pasos 2 y 3, y por el mismo motivo: son la MISMA secuencia. Antes
+         esto era una banda con el título a la izquierda y un botón a la derecha, y no se parecía a
+         las otras dos pantallas en nada.
+
+         ⚠️ Y AQUÍ FALTABA EL INDICADOR DE PASOS. `PasosDelRegistro` ya admitía `paso="datos"` desde
+         que se escribió, pero esta pantalla no lo usaba: quien se registraba veía «1 de 3» a partir
+         del segundo paso y no antes — justo al revés de cuando hace falta, que es al empezar. -->
+    <header class="mb-8 text-center">
+      <AppLogo size="lg" :framed="true" class-name="mb-6" />
+      <PasosDelRegistro paso="datos" />
+      <h1 class="deasy-title deasy-title--page mt-6">Crear cuenta</h1>
+    </header>
+
+    <form @submit.prevent="createnewUser">
+      <section class="deasy-form-section">
+        <div class="deasy-form-section__header">
+          <span class="deasy-form-section__icon">
+            <IconUser class="h-5 w-5" />
+          </span>
+          <h2 class="deasy-title deasy-title--block">Datos personales</h2>
+        </div>
+
+        <div class="deasy-form-grid">
+          <div>
+            <label :for="fieldId('first-name')" class="deasy-form-label">Nombres</label>
+            <input :id="fieldId('first-name')"
+              v-model="newuser.first_name"
+              type="text"
+              required
+              class="deasy-control"
+              placeholder="Nombres completos"
+            />
+          </div>
+
+          <div>
+            <label :for="fieldId('last-name')" class="deasy-form-label">Apellidos</label>
+            <input :id="fieldId('last-name')"
+              v-model="newuser.last_name"
+              type="text"
+              required
+              class="deasy-control"
+              placeholder="Apellidos completos"
+            />
+          </div>
+
+          <div>
+            <label :for="fieldId('documento-tipo')" class="deasy-form-label">Tipo de documento</label>
+            <select :id="fieldId('documento-tipo')" v-model="documento.tipo" required class="deasy-control">
+              <option v-for="t in tiposDocumento" :key="t.code" :value="t.code">{{ t.name }}</option>
+            </select>
+          </div>
+
+          <!-- El país emisor sólo aparece cuando importa: una cédula ecuatoriana ya lo lleva
+               en el tipo, y pedirlo sería ruido. Un pasaporte SÍ lo necesita, porque su
+               número sólo es único dentro del país que lo emite. -->
+          <div v-if="documento.tipo !== 'documento_nacional'">
+            <label :for="fieldId('documento-pais')" class="deasy-form-label">País emisor</label>
+            <select :id="fieldId('documento-pais')" v-model="documento.pais" required class="deasy-control">
+              <option value="" disabled>Selecciona un país</option>
+              <option v-for="c in paises" :key="c.iso_alpha2" :value="c.iso_alpha2">{{ c.name }}</option>
+            </select>
+          </div>
+
+          <div>
+            <label :for="fieldId('cedula')" class="deasy-form-label">{{ etiquetaDocumento }}</label>
+            <input :id="fieldId('cedula')"
+              v-model="documento.numero"
+              type="text"
+              required
+              :maxlength="documento.tipo === 'documento_nacional' && paisInstitucion === 'EC' ? 10 : 20"
+              class="deasy-control"
+              :class="{ 'deasy-control--error': cedulaError }"
+              :placeholder="documento.tipo === 'documento_nacional' && paisInstitucion === 'EC' ? '10 dígitos' : 'Número de documento'"
+            />
+            <span v-if="cedulaError" class="deasy-field-message deasy-field-message--error">{{ cedulaError }}</span>
+          </div>
+
+          <div>
+            <label :for="fieldId('email')" class="deasy-form-label">Correo electrónico</label>
+            <input :id="fieldId('email')"
+              v-model="newuser.email"
+              type="email"
+              required
+              class="deasy-control"
+              placeholder="correo@ejemplo.com"
+            />
+          </div>
+
+          <div class="md:col-span-2">
+            <label :for="fieldId('telefono')" class="deasy-form-label">Número de teléfono</label>
+            <div class="grid grid-cols-[minmax(7rem,0.45fr)_minmax(0,1fr)] gap-2 sm:grid-cols-[minmax(9rem,0.32fr)_minmax(0,1fr)]">
+              <select
+                v-model="telefono.pais"
+                aria-label="País del número de teléfono"
+                class="deasy-control px-3"
+              >
+                <option v-for="c in paises" :key="c.iso_alpha2" :value="c.iso_alpha2">{{ c.name }}</option>
+              </select>
+              <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-3 z-(--z-capa-base) flex items-center text-sm font-semibold text-muted">
+                  {{ phonePrefix }}
+                </span>
+                <input
+                  :id="fieldId('telefono')"
+                  v-model="phoneNumber"
+                  type="tel"
+                  maxlength="10"
+                  class="deasy-control pl-14"
+                  :class="{ 'deasy-control--error': telefonoError }"
+                  placeholder="991234567"
+                />
+              </div>
             </div>
-            <button type="button" class="deasy-btn deasy-btn--neutral-outline deasy-btn--block lg:w-auto" @click="volverAlAcceso">
-              Volver al login
-            </button>
+            <span v-if="telefonoError" class="deasy-field-message deasy-field-message--error">{{ telefonoError }}</span>
           </div>
         </div>
+      </section>
 
-        <div class="bg-surface/60 px-4 py-5 sm:px-6 lg:px-8">
-          <form @submit.prevent="createnewUser" class="mx-auto max-w-4xl">
-            <section class="deasy-form-section">
-              <div class="deasy-form-section__header">
-                <span class="deasy-form-section__icon">
-                  <IconUser class="h-5 w-5" />
-                </span>
-                <h2 class="deasy-title deasy-title--block">Datos personales</h2>
-              </div>
-
-              <div class="deasy-form-grid">
-                <div>
-                  <label :for="fieldId('first-name')" class="deasy-form-label">Nombres</label>
-                  <input :id="fieldId('first-name')"
-                    v-model="newuser.first_name"
-                    type="text"
-                    required
-                    class="deasy-control"
-                    placeholder="Nombres completos"
-                  />
-                </div>
-
-                <div>
-                  <label :for="fieldId('last-name')" class="deasy-form-label">Apellidos</label>
-                  <input :id="fieldId('last-name')"
-                    v-model="newuser.last_name"
-                    type="text"
-                    required
-                    class="deasy-control"
-                    placeholder="Apellidos completos"
-                  />
-                </div>
-
-                <div>
-                  <label :for="fieldId('documento-tipo')" class="deasy-form-label">Tipo de documento</label>
-                  <select :id="fieldId('documento-tipo')" v-model="documento.tipo" required class="deasy-control">
-                    <option v-for="t in tiposDocumento" :key="t.code" :value="t.code">{{ t.name }}</option>
-                  </select>
-                </div>
-
-                <!-- El país emisor sólo aparece cuando importa: una cédula ecuatoriana ya lo lleva
-                     en el tipo, y pedirlo sería ruido. Un pasaporte SÍ lo necesita, porque su
-                     número sólo es único dentro del país que lo emite. -->
-                <div v-if="documento.tipo !== 'documento_nacional'">
-                  <label :for="fieldId('documento-pais')" class="deasy-form-label">País emisor</label>
-                  <select :id="fieldId('documento-pais')" v-model="documento.pais" required class="deasy-control">
-                    <option value="" disabled>Selecciona un país</option>
-                    <option v-for="c in paises" :key="c.iso_alpha2" :value="c.iso_alpha2">{{ c.name }}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label :for="fieldId('cedula')" class="deasy-form-label">{{ etiquetaDocumento }}</label>
-                  <input :id="fieldId('cedula')"
-                    v-model="documento.numero"
-                    type="text"
-                    required
-                    :maxlength="documento.tipo === 'documento_nacional' && paisInstitucion === 'EC' ? 10 : 20"
-                    class="deasy-control"
-                    :class="{ 'deasy-control--error': cedulaError }"
-                    :placeholder="documento.tipo === 'documento_nacional' && paisInstitucion === 'EC' ? '10 dígitos' : 'Número de documento'"
-                  />
-                  <span v-if="cedulaError" class="deasy-field-message deasy-field-message--error">{{ cedulaError }}</span>
-                </div>
-
-                <div>
-                  <label :for="fieldId('email')" class="deasy-form-label">Correo electrónico</label>
-                  <input :id="fieldId('email')"
-                    v-model="newuser.email"
-                    type="email"
-                    required
-                    class="deasy-control"
-                    placeholder="correo@ejemplo.com"
-                  />
-                </div>
-
-                <div class="md:col-span-2">
-                  <label :for="fieldId('telefono')" class="deasy-form-label">Número de teléfono</label>
-                  <div class="grid grid-cols-[minmax(7rem,0.45fr)_minmax(0,1fr)] gap-2 sm:grid-cols-[minmax(9rem,0.32fr)_minmax(0,1fr)]">
-                    <select
-                      v-model="telefono.pais"
-                      aria-label="País del número de teléfono"
-                      class="deasy-control px-3"
-                    >
-                      <option v-for="c in paises" :key="c.iso_alpha2" :value="c.iso_alpha2">{{ c.name }}</option>
-                    </select>
-                    <div class="relative">
-                      <span class="pointer-events-none absolute inset-y-0 left-3 z-(--z-capa-base) flex items-center text-sm font-semibold text-muted">
-                        {{ phonePrefix }}
-                      </span>
-                      <input
-                        :id="fieldId('telefono')"
-                        v-model="phoneNumber"
-                        type="tel"
-                        maxlength="10"
-                        class="deasy-control pl-14"
-                        :class="{ 'deasy-control--error': telefonoError }"
-                        placeholder="991234567"
-                      />
-                    </div>
-                  </div>
-                  <span v-if="telefonoError" class="deasy-field-message deasy-field-message--error">{{ telefonoError }}</span>
-                </div>
-              </div>
-            </section>
-
-            <section class="deasy-form-section">
-              <div class="deasy-form-section__header">
-                <span class="deasy-form-section__icon">
-                  <IconLock class="h-5 w-5" />
-                </span>
-                <h2 class="deasy-title deasy-title--block">Seguridad</h2>
-              </div>
-
-              <div class="deasy-form-grid">
-                <div>
-                  <label :for="fieldId('password')" class="deasy-form-label">Contraseña</label>
-                  <div class="relative">
-                    <input
-                      :id="fieldId('password')"
-                      v-model="newuser.password"
-                      :type="showPassword ? 'text' : 'password'"
-                      required
-                      class="deasy-control pr-11"
-                      placeholder="Ingresa tu contraseña"
-                      @input="validatePassword(newuser.password)"
-                    />
-                    <button
-                      type="button"
-                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
-                      aria-label="Mostrar u ocultar contraseña"
-                      @click="showPassword = !showPassword"
-                    >
-                      <IconEye v-if="!showPassword" class="h-5 w-5" />
-                      <IconEyeOff v-else class="h-5 w-5" />
-                    </button>
-                  </div>
-                  <div v-if="newuser.password" class="mt-2">
-                    <div class="deasy-progress mb-1">
-                      <div
-                        class="deasy-progress__bar"
-                        :class="`deasy-progress__bar--${tonoFuerzaActual}`"
-                        :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"
-                      ></div>
-                    </div>
-                    <p class="text-theme-xs font-medium" :class="CLASE_TEXTO_FUERZA[tonoFuerzaActual]">{{ passwordStrengthText }}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label :for="fieldId('repassword')" class="deasy-form-label">Confirmar contraseña</label>
-                  <div class="relative">
-                    <input
-                      :id="fieldId('repassword')"
-                      v-model="newuser.repassword"
-                      :type="showConfirmPassword ? 'text' : 'password'"
-                      required
-                      class="deasy-control pr-11"
-                      placeholder="Repite tu contraseña"
-                      @input="validatePasswordMatch()"
-                    />
-                    <button
-                      type="button"
-                      class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
-                      aria-label="Mostrar u ocultar confirmación"
-                      @click="showConfirmPassword = !showConfirmPassword"
-                    >
-                      <IconEye v-if="!showConfirmPassword" class="h-5 w-5" />
-                      <IconEyeOff v-else class="h-5 w-5" />
-                    </button>
-                  </div>
-                  <div
-                    v-if="newuser.repassword"
-                    class="mt-1 flex items-center gap-2 text-theme-xs font-medium"
-                    :class="passwordsMatch ? 'text-success' : 'text-danger'"
-                  >
-                    <IconCheck v-if="passwordsMatch" class="h-3.5 w-3.5" />
-                    <IconX v-else class="h-3.5 w-3.5" />
-                    {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <div class="deasy-card mt-5 p-4">
-              <label class="flex items-start gap-3 text-sm font-medium text-icon">
-                <input
-                  v-model="termsAccepted"
-                  type="checkbox"
-                  required
-                  class="mt-0.5 text-info"
-                />
-                <span>
-                  Acepto los
-                  <router-link to="/terminos" class="font-semibold text-info hover:underline">términos y condiciones</router-link>
-                  de la plataforma.
-                </span>
-              </label>
-            </div>
-
-            <Transition
-              enter-active-class="transition duration-300 ease-out"
-              enter-from-class="-translate-y-2 opacity-0"
-              enter-to-class="translate-y-0 opacity-100"
-              leave-active-class="transition duration-200 ease-in"
-              leave-from-class="translate-y-0 opacity-100"
-              leave-to-class="-translate-y-2 opacity-0"
-            >
-              <AppAlert ref="cajaDeError" class="mt-5 flex" v-if="errorMessage">
-                <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
-                <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
-                <AppCloseButton class="ml-3" label="Cerrar alerta" @click="errorMessage = ''" />
-              </AppAlert>
-            </Transition>
-
-            <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-line bg-surface/95 py-4 backdrop-blur sm:flex-row">
-              <AppButton variant="danger-outline" class-name="w-full sm:w-1/2" @click="volverAlAcceso">
-                Cancelar
-              </AppButton>
-              <AppButton
-                type="submit"
-                variant="primary-outline"
-                class-name="w-full sm:w-1/2"
-                :disabled="creando"
-              >
-                {{ creando ? 'Creando cuenta…' : 'Crear cuenta' }}
-                <IconArrowRight v-if="!creando" class="h-5 w-5" />
-              </AppButton>
-            </div>
-          </form>
+      <section class="deasy-form-section">
+        <div class="deasy-form-section__header">
+          <span class="deasy-form-section__icon">
+            <IconLock class="h-5 w-5" />
+          </span>
+          <h2 class="deasy-title deasy-title--block">Seguridad</h2>
         </div>
+
+        <div class="deasy-form-grid">
+          <div>
+            <label :for="fieldId('password')" class="deasy-form-label">Contraseña</label>
+            <div class="relative">
+              <input
+                :id="fieldId('password')"
+                v-model="newuser.password"
+                :type="showPassword ? 'text' : 'password'"
+                required
+                class="deasy-control pr-11"
+                placeholder="Ingresa tu contraseña"
+                @input="validatePassword(newuser.password)"
+              />
+              <button
+                type="button"
+                class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
+                aria-label="Mostrar u ocultar contraseña"
+                @click="showPassword = !showPassword"
+              >
+                <IconEye v-if="!showPassword" class="h-5 w-5" />
+                <IconEyeOff v-else class="h-5 w-5" />
+              </button>
+            </div>
+            <div v-if="newuser.password" class="mt-2">
+              <div class="deasy-progress mb-1">
+                <div
+                  class="deasy-progress__bar"
+                  :class="`deasy-progress__bar--${tonoFuerzaActual}`"
+                  :style="{ width: `${(passwordStrengthScore / 5) * 100}%` }"
+                ></div>
+              </div>
+              <p class="text-theme-xs font-medium" :class="CLASE_TEXTO_FUERZA[tonoFuerzaActual]">{{ passwordStrengthText }}</p>
+            </div>
+          </div>
+
+          <div>
+            <label :for="fieldId('repassword')" class="deasy-form-label">Confirmar contraseña</label>
+            <div class="relative">
+              <input
+                :id="fieldId('repassword')"
+                v-model="newuser.repassword"
+                :type="showConfirmPassword ? 'text' : 'password'"
+                required
+                class="deasy-control pr-11"
+                placeholder="Repite tu contraseña"
+                @input="validatePasswordMatch()"
+              />
+              <button
+                type="button"
+                class="deasy-inline-icon-button absolute inset-y-0 right-2 my-auto"
+                aria-label="Mostrar u ocultar confirmación"
+                @click="showConfirmPassword = !showConfirmPassword"
+              >
+                <IconEye v-if="!showConfirmPassword" class="h-5 w-5" />
+                <IconEyeOff v-else class="h-5 w-5" />
+              </button>
+            </div>
+            <div
+              v-if="newuser.repassword"
+              class="mt-1 flex items-center gap-2 text-theme-xs font-medium"
+              :class="passwordsMatch ? 'text-success' : 'text-danger'"
+            >
+              <IconCheck v-if="passwordsMatch" class="h-3.5 w-3.5" />
+              <IconX v-else class="h-3.5 w-3.5" />
+              {{ passwordsMatch ? 'Las contraseñas coinciden' : 'Las contraseñas no coinciden' }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <div class="deasy-card mt-5 p-4">
+        <label class="flex items-start gap-3 text-sm font-medium text-icon">
+          <input
+            v-model="termsAccepted"
+            type="checkbox"
+            required
+            class="mt-0.5 text-info"
+          />
+          <span>
+            Acepto los
+            <router-link to="/terminos" class="font-semibold text-info hover:underline">términos y condiciones</router-link>
+            de la plataforma.
+          </span>
+        </label>
       </div>
-    </div>
-  </div>
+
+      <Transition
+        enter-active-class="transition duration-300 ease-out"
+        enter-from-class="-translate-y-2 opacity-0"
+        enter-to-class="translate-y-0 opacity-100"
+        leave-active-class="transition duration-200 ease-in"
+        leave-from-class="translate-y-0 opacity-100"
+        leave-to-class="-translate-y-2 opacity-0"
+      >
+        <AppAlert ref="cajaDeError" class="mt-5 flex" v-if="errorMessage">
+          <IconAlertCircle class="mr-3 mt-0.5 h-5 w-5 shrink-0 text-danger" />
+          <div class="flex-1 text-sm font-medium">{{ errorMessage }}</div>
+          <AppCloseButton class="ml-3" label="Cerrar alerta" @click="errorMessage = ''" />
+        </AppAlert>
+      </Transition>
+
+      <!-- ⚠️ «Cancelar» ES NEUTRO, NO ROJO. Aquí era `danger-outline`, y el rojo del sistema es para
+           lo que destruye algo: en esta pantalla no hay todavía nada que destruir --la cuenta aún no
+           existe-- y alarmaba por salir de un formulario vacío. En los pasos 2 y 3 su equivalente
+           («Salir») es neutro; esto era lo único que desentonaba.
+
+           Y NO VAN AL 50 %: repartidos a mitades, cancelar pesaba lo mismo que la acción a la que ha
+           venido la persona. Se separan a los extremos, como en las otras dos pantallas. -->
+      <div class="sticky bottom-0 mt-6 flex flex-col gap-3 border-t border-line bg-surface/95 py-4 backdrop-blur sm:flex-row sm:items-center sm:justify-between">
+        <AppButton variant="neutral-outline" @click="volverAlAcceso">
+          Cancelar
+        </AppButton>
+        <AppButton
+          type="submit"
+          variant="primary-outline"
+          :disabled="creando"
+        >
+          {{ creando ? 'Creando cuenta…' : 'Crear cuenta' }}
+          <IconArrowRight v-if="!creando" class="h-5 w-5" />
+        </AppButton>
+      </div>
+    </form>
+  </AuthLayout>
 
   <!-- ⚠️ AQUI HABIA UN MODAL DE «Registro exitoso» que decia «ya puedes iniciar sesion». Se retiro
        el 2026-08-31 porque MENTIA: desde el registro en tres pasos, enviar el formulario no termina
@@ -271,6 +273,8 @@ import { useRouter, useRoute } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
+import AuthLayout from "@/layouts/auth/AuthLayout.vue";
+import PasosDelRegistro from "@/modules/auth/components/PasosDelRegistro.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
