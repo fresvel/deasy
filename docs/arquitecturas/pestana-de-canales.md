@@ -105,6 +105,76 @@ misma solución, un patrón menos que aprender.
 
 ---
 
+## 4bis · 🔴 Cómo se comprueba que un canal está VIVO — y por qué `estado()` no basta
+
+Pregunta del dueño, y **destapó un defecto en lo que esta pantalla iba a enseñar.**
+
+### El defecto, medido el 2026-09-01
+
+`CanalTelegram` **sabe por dentro** cuándo el sondeo falla: guarda `ultimoError`, avisa la primera
+vez y avisa al recuperarse. Pero `estado()` **no lo enseña**:
+
+```js
+conectado: this.corriendo,   // ← true desde `iniciar()` hasta `detener()`. NO sabe de la red.
+detalle:   this.yo ? `@${this.yo.username}` : (this.ultimoError ?? "sin iniciar"),
+//         └── con `yo` puesto, el error NUNCA se ve
+```
+
+Comprobado con el fallo real de la caída de seis horas:
+
+```
+ultimoError INTERNO  : "EAI_AGAIN api.telegram.org"
+lo que vería el FRONT: {"conectado":true, "detalle":"@deasy_test_bot"}
+```
+
+**Una luz verde sobre un canal muerto.** Es exactamente la forma de las dos caídas que esta tarea
+existe para que no se repitan, y la pantalla las habría pintado en verde.
+
+### Los cinco niveles, y cuál es prueba y cuál no
+
+**«Activo» no es una cosa: son cinco preguntas distintas**, y sólo algunas se pueden contestar.
+
+| | Pregunta | Cómo se contesta | ¿Prueba? |
+|:--:|---|---|---|
+| **0** | ¿Vive el proceso? | El backend alcanza `GET /estado` de `channels` | ✅ **Prueba** |
+| **1** | ¿El canal CREE estar conectado? | La bandera interna | ❌ **Sólo una afirmación** — y miente, arriba está medido |
+| **2** | ¿La plataforma responde AHORA? | **Telegram: `getMe`** · **WhatsApp: `client.getState()`** | ✅ **Prueba** de red y credencial |
+| **3** | ¿PUEDE recibir? | **Telegram: sí** — el sondeo *es* la recepción, así que `ultimoError === null` lo prueba. **WhatsApp: no hay equivalente** | ⚠️ **Asimétrico** |
+| **4** | ¿Está recibiendo DE VERDAD? | «Último mensaje hace X» | ❌ **Indicio, nunca prueba** |
+
+### La asimetría del nivel 3, que hay que decir en la pantalla y no esconder
+
+**Telegram se puede probar entero.** Su bucle pide mensajes cada pocos segundos: si esa llamada
+funciona, **la recepción funciona** — no es una inferencia, es la misma operación.
+
+**WhatsApp no.** Su sesión puede estar `CONNECTED` y aun así no entregarnos un mensaje: la página
+puede quedarse a medias, o cambiar de forma bajo nuestros pies —que es **exactamente lo que pasó hoy
+con `@lid`**—. Lo máximo que se puede afirmar es *«la sesión está viva»*, y la pantalla tiene que
+decir eso y no *«funciona»*.
+
+⚠️ **Prometer un verde que no se puede sostener es peor que admitir el hueco**, porque un verde
+falso es justo lo que hizo que nadie mirara durante trece horas.
+
+### El nivel 4, y por qué se enseña con cuidado
+
+«Último mensaje recibido hace 26 horas» es **valiosísimo** en un canal que normalmente recibe varios
+al día, y **ruido** en uno que pasa días sin tráfico. Se enseña como **dato**, nunca como semáforo:
+el color lo ponen los niveles 0-3, que son los que se pueden probar.
+
+### Lo que hay que cambiar para que esto sea posible
+
+1. **`estado()` deja de esconder el error.** Devuelve `ultimoError` y `desde` **siempre**, no sólo
+   cuando no hay nada mejor que contar. Es un arreglo pequeño y **es la condición para que la
+   pantalla no mienta**.
+2. **Se añade una comprobación ACTIVA**, que es la que distingue «arrancó» de «funciona»:
+   `getMe` en Telegram, `getState()` en WhatsApp.
+3. **Con caché de 30 s.** La pantalla sondea cada 5 s, y preguntar a Telegram doce veces por minuto
+   es maltratar una API que tiene sus propios límites; `getState()` de WhatsApp además cruza
+   Puppeteer y no es gratis. **El estado pasivo se sirve siempre fresco; el activo, cada 30 s.**
+4. **Tres colores, no dos:** verde sólo con nivel 2 (y 3 donde se pueda), **ámbar cuando lo único
+   que hay es la afirmación del canal**, rojo con fallo probado. **Un canal nunca se pinta verde por
+   el nivel 1.**
+
 ## 5 · Qué se ve
 
 ```
@@ -160,6 +230,8 @@ son tablas: esto es la tercera, no una excepción nueva.
 ## 8 · Lo que hay que aprobar
 
 1. **Las cuatro reglas del QR** (§3), en especial que `read` y `manage` sean permisos distintos.
+1bis. **Los cinco niveles de comprobación** (§4bis): comprobación activa con caché de 30 s, tres
+   colores, y **decir en pantalla que la recepción de WhatsApp no se puede probar**.
 2. **Preguntar en vez de guardar** (§4), con sondeo de 5 s.
 3. **Un recurso RBAC nuevo**, `channels`: 13 → 14 recursos, 65 → 70 permisos.
 4. **Sólo lectura**: sin botones de reinicio (§7).
