@@ -175,6 +175,105 @@ el color lo ponen los niveles 0-3, que son los que se pueden probar.
    que hay es la afirmación del canal**, rojo con fallo probado. **Un canal nunca se pinta verde por
    el nivel 1.**
 
+## 4ter · Cómo se prueba cada uno, y la bandera que yo no estaba usando
+
+Tres preguntas del dueño. **Las tres tenían razón en algo**, y una corrige el diseño.
+
+### 4ter.1 · Telegram: el eco YA EXISTE, y es el propio funcionamiento
+
+La explicación anterior era mala. Concretamente:
+
+Un bot de Telegram **no recibe mensajes: los pide**. Cada pocos segundos el servicio llama a
+`getUpdates` y Telegram responde con lo que haya llegado —a menudo, nada—. **Esa llamada es un ida y
+vuelta completo** contra la API oficial, con el token dentro.
+
+**Por eso no hace falta montar un eco: el eco es el bucle.** Si `getUpdates` devuelve, entonces:
+
+- hay **red** hasta `api.telegram.org` (el fallo de las seis horas era DNS: esto lo habría cazado),
+- el **token vale** (uno revocado da 401),
+- **no hay un webhook** robando las actualizaciones (daría 409),
+- y **la ruta por la que llegan los mensajes es exactamente ésa**.
+
+**No es una inferencia sobre la recepción: es la recepción.** Lo único que hay que hacer es
+**enseñar el resultado**, que hoy se guarda en `ultimoError` y `estado()` tapa (§4bis).
+
+`getMe` sirve para el arranque y para dar el `@usuario`, pero **no aporta nada que el bucle no
+pruebe ya**. Se mantiene sólo como comprobación de arranque.
+
+### 4ter.2 · WhatsApp: **SÍ hay una bandera, y es mejor de lo que yo decía**
+
+Pregunta directa del dueño: *«¿estás seguro de que no existe ninguna bandera, un `on error`?»*.
+
+**No hay un evento genérico de error** —comprobados los 31 eventos de la librería, no existe—
+**pero hay algo mejor: `change_state`**, con doce estados explícitos:
+
+| Estado | Qué significa |
+|---|---|
+| `CONNECTED` | La sesión funciona |
+| `OPENING` · `PAIRING` · `UNLAUNCHED` | Arrancando |
+| **`CONFLICT`** | **Otro dispositivo se llevó la sesión.** El canal está muerto y lo dice |
+| **`TOS_BLOCK` · `SMB_TOS_BLOCK`** | **BLOQUEADO POR WHATSAPP.** El baneo, con nombre propio |
+| **`DEPRECATED_VERSION`** | La versión de WhatsApp Web que usa la librería ya no vale — *«WhatsApp cambió bajo nuestros pies»*, señalado |
+| `PROXYBLOCK` · `TIMEOUT` | Red bloqueada o caída |
+| `UNPAIRED` · `UNPAIRED_IDLE` | Sesión perdida |
+
+⚠️ **Y nuestro canal NO escucha `change_state`.** Comprobado: escucha `qr`, `authenticated`,
+`loading_screen`, `ready`, `disconnected`, `auth_failure` y `message`. **Ninguno de los siete cubre
+`CONFLICT`, `TOS_BLOCK` ni `DEPRECATED_VERSION`**, así que hoy los tres pasarían en silencio dejando
+`conectado: true` — la misma mentira que el de Telegram, por otra puerta.
+
+**Esto sube el nivel 3 de WhatsApp de «imposible» a «casi».** No prueba que un mensaje ajeno llegue,
+pero **sí detecta explícitamente los tres modos de muerte que importan**, incluido el baneo, que era
+justo lo que había que adivinar.
+
+### 4ter.3 · El eco: qué probaría, qué no, y el riesgo de baneo
+
+Propuesta del dueño: que el bot **mande o responda mensajes cada cierto tiempo** para comprobar que
+la recepción va.
+
+**En Telegram no hace falta** (§4ter.1). Y además un bot **no puede escribir primero** a quien no lo
+haya iniciado, así que ni siquiera habría a quién.
+
+**En WhatsApp hay dos formas, y no valen lo mismo:**
+
+| | Qué prueba | Riesgo |
+|---|---|---|
+| **Eco a uno mismo** — el número se escribe a su propio chat | Que la página vive y que **el envío** funciona | Bajo: nadie lo recibe, **nadie puede bloquear ni reportar** |
+| **Canario** — un SEGUNDO número escribe al bot cada X | **La recepción de verdad, extremo a extremo** | Bajo, y es la respuesta *dentro de una conversación*, la más segura |
+
+⚠️ **El eco a uno mismo NO habría cazado el fallo de hoy.** Los mensajes propios llegan con
+`fromMe` y por otro camino; el `@lid` sólo aparece en un mensaje **de otra persona**. Un eco que no
+prueba lo que se rompe **es un verde falso más**, y de ésos ya hemos tenido bastantes.
+
+**El canario sí lo habría cazado**, porque es exactamente un desconocido escribiendo.
+
+#### El riesgo de baneo, con lo que se sabe
+
+Lo que dispara los bloqueos de WhatsApp es **el envío masivo, el mensaje no solicitado a quien no te
+tiene, y los bloqueos y denuncias que eso provoca**. Un eco a uno mismo no tiene destinatario que
+pueda denunciar; un canario responde **dentro de una conversación que abrió el otro**.
+
+**El riesgo de fondo no lo pone el eco: lo pone usar una librería no oficial**, y ese riesgo ya está
+asumido y escrito. Lo que sí importa es **la frecuencia**: uno por minuto son 1 440 mensajes
+automáticos al día, un patrón que se ve; **uno cada 30 minutos son 48**, y con `change_state` como
+detector principal, con eso sobra.
+
+⚠️ **Y hay una razón para no tener prisa con el eco:** `TOS_BLOCK` **avisa del baneo directamente**.
+Montar tráfico automático para detectar un problema que la propia plataforma ya nos notifica sería
+pagar riesgo por una información que llega gratis.
+
+### 4ter.4 · Lo que queda, entonces
+
+| | Telegram | WhatsApp |
+|---|---|---|
+| **Nivel 2** — la plataforma responde | ✅ el bucle | ✅ `getState()` + `change_state` |
+| **Nivel 3** — puede recibir | ✅ **probado**: el bucle *es* la recepción | 🟡 **los modos de muerte, detectados** (conflicto, baneo, versión caduca). La entrega de un mensaje ajeno, no |
+| **Cerrar el hueco del todo** | — | **canario**, y cuesta un segundo número |
+
+**Lo que hay que decidir:** si se monta el canario. **No entra en `C7`**: requiere una línea más y es
+una decisión del dueño, no de diseño. Con `change_state` la pantalla ya deja de mentir, que es lo
+que esta tarea tenía que resolver.
+
 ## 5 · Qué se ve
 
 ```
@@ -232,6 +331,8 @@ son tablas: esto es la tercera, no una excepción nueva.
 1. **Las cuatro reglas del QR** (§3), en especial que `read` y `manage` sean permisos distintos.
 1bis. **Los cinco niveles de comprobación** (§4bis): comprobación activa con caché de 30 s, tres
    colores, y **decir en pantalla que la recepción de WhatsApp no se puede probar**.
+1ter. **Escuchar `change_state`** (§4ter): detecta el conflicto de sesión, la versión caduca y **el
+   baneo**, que hoy pasan en silencio. Y **si se monta o no un canario**, que cuesta un segundo número.
 2. **Preguntar en vez de guardar** (§4), con sondeo de 5 s.
 3. **Un recurso RBAC nuevo**, `channels`: 13 → 14 recursos, 65 → 70 permisos.
 4. **Sólo lectura**: sin botones de reinicio (§7).
