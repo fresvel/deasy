@@ -303,6 +303,45 @@ propósito: aquí hace falta **buscar por la llave** que llega, y una huella con
 No es una contraseña —dura quince minutos, se usa una vez y es aleatoria de 256 bits—, así que lo que
 bcrypt protege (adivinar a fuerza bruta un secreto elegido por una persona) no aplica.
 
+## Cuántas veces se puede intentar — `intentos_limitados`
+
+Hay una tabla que no guarda datos de nadie y sin embargo protege a todos: **`intentos_limitados`**
+apunta *qué se intentó* y *contra qué se cuenta*, y nada más.
+
+```
+accion       'login' · 'validar_cedula' · 'registro'…
+sujeto       una IP · un correo+ip · un person_id
+ocurrido_at  cuándo
+```
+
+**Lo que se cuenta importa más que el número**, y ahí hay dos formas clásicas de equivocarse:
+
+- **Sólo por IP** — una institución sale a internet **por NAT**, así que el campus entero comparte
+  una IP pública. «Cinco intentos por IP» deja fuera a toda una facultad al quinto despiste de
+  cualquiera.
+- **Sólo por cuenta** — entonces el limitador **es el arma**: quien sepa tu correo te bloquea
+  fallando adrede.
+
+Por eso el sujeto **se elige por acción**, y en el acceso es el **par correo + IP**: ataca a quien de
+verdad está fallando, sin castigar al vecino de red ni permitir bloquear una cuenta ajena. Y **nunca
+se bloquea**: se responde `429` con `Retry-After` y se olvida, porque un bloqueo persistente es una
+denegación de servicio que se le regala a cualquiera.
+
+Dos detalles que explican la forma de la tabla:
+
+- **`sujeto` es un texto y no una clave ajena.** Lo que se cuenta cambia con la acción, y hay
+  acciones **anónimas** en las que no existe ninguna fila a la que apuntar.
+- **Sólo entra lo que se frena**, y en el acceso **sólo los fallos**. Registrar cada petición
+  doblaría las escrituras del sistema para no usarlas; contar los aciertos castigaría a quien
+  trabaja.
+
+:::caution[Vive en la base, y no es por comodidad]
+Un contador en memoria del proceso **dejaría de proteger en cuanto hubiera dos instancias del
+backend**: cada una contaría su mitad. Hoy hay una sola —y está fijada en el `compose` a propósito,
+porque el tiempo real también lo exige— pero el contador ya está donde tiene que estar para el día
+que deje de serlo.
+:::
+
 **Pedir una llave nueva borra la anterior.** Si pides otra es porque la primera no te sirvió, y dejar
 dos vivas duplica lo que hay que adivinar sin darte nada.
 

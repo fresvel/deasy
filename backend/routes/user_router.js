@@ -58,6 +58,7 @@ import {
   setMyDefaultCertificate,
   uploadMyCertificate
 } from "../controllers/users/user_certificate_controller.js";
+import { limitaIntentos, limitaYCuenta } from "../middlewares/limitaIntentos.js";
 
 const router=new Router();
 
@@ -120,12 +121,12 @@ const uploadAttachment = multer({
   }
 });
 
-router.post('/', validatePassword, createUser)
+router.post('/', limitaYCuenta('registro'), validatePassword, createUser)
 router.get('/', authMiddleware, loadAccessContext, requirePermissions("people.read"), getUsers)
 
 // PÚBLICA, como el login: la usa quien no puede entrar. Pide la contraseña, así que no es un
 // oráculo de existencia — ver `RecuperarCorreoService`.
-router.post('/recuperar-correo', recuperarCorreo)
+router.post('/recuperar-correo', limitaYCuenta('recuperar_correo'), recuperarCorreo)
 
 // Pedir una llave para verificar UN telefono propio. Devuelve ya compuestos el enlace de
 // Telegram y el de WhatsApp: la pantalla no tiene que saber armarlos.
@@ -149,11 +150,19 @@ router.put('/me/verificacion/telefono', authMiddleware, cambiarMiTelefono)
 router.post(
   '/me/telefonos/:id/verificacion',
   authMiddleware,
+  // Autenticada: el sujeto es la PERSONA, no su IP. Cambiar de red no da intentos nuevos.
+  limitaYCuenta('emitir_llave_telefono'),
   loadAccessContext,
   pedirVerificacionDeTelefono
 )
 
-router.post('/login', loginUser)
+// ⚠️ DELANTE DE bcrypt, y ese orden es el punto: la comprobacion de contraseña es cara A PROPOSITO,
+// asi que quien dispara contra el acceso no esta solo probando claves, esta gastando nuestro
+// procesador. Contar despues no lo evita.
+//
+// El sujeto es el PAR correo+ip: por IP sola se caeria toda la facultad tras el NAT al quinto
+// despiste de cualquiera; por cuenta sola, cualquiera bloquearia una cuenta ajena fallando adrede.
+router.post('/login', limitaIntentos('login'), loginUser)
 router.post('/logout', logoutUser)
 router.post('/refresh-token', refreshToken)
 
@@ -383,8 +392,13 @@ router.put(
 
 // ESTA SI lleva `:cedula`, y es la unica que debe: no identifica a una persona, valida UN NUMERO
 // de cedula contra el registro civil. El parametro es el dato, no una llave.
-router.get('/validate/cedula/:cedula', verifyCedulaEc);
-router.get('/validate/whatsapp/:phone', verifyWhatsappEc);
+// ⚠️ EL FRENO VA DELANTE, y aqui no es una precaucion generica: detras hay una llamada a
+// `webservices.ec`, un servicio EXTERNO DE PAGO. Sin esto, cualquiera con un bucle agota la cuota o
+// hace que nos bloqueen -- y el daño NO se ve en nuestra maquina, que es lo que lo hacia facil de no
+// notar. Se cuenta SIEMPRE (`limitaYCuenta`): aqui no hay «acierto» que premiar, la llamada ya costo.
+// Y si la base no contesta, estas dos CIERRAN: sin poder contar, no se llama.
+router.get('/validate/cedula/:cedula', limitaYCuenta('validar_cedula'), verifyCedulaEc);
+router.get('/validate/whatsapp/:phone', limitaYCuenta('validar_whatsapp'), verifyWhatsappEc);
 
 // Va al final a proposito: recoge lo que multer rechaza en CUALQUIERA de las rutas de arriba.
 // La foto de perfil NO pasa por aqui: `PUT /:personId/photo` envuelve su propio multer y ya

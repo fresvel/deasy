@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 78 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 79 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "actions" {
@@ -524,6 +524,19 @@ Table "instituciones" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Note: '''La institución que usa esta instalación, y la primera tabla de CONFIGURACIÓN del sistema: hasta el 2026-08-28 no había ninguna. De su país salen el validador del documento nacional, el nombre local de ese documento («Cédula» en Ecuador, «DNI» en Perú) y el valor que el formulario precarga. Antes eso vivía en el código como un tipo llamado `cedula_ec`.'''
+}
+
+Table "intentos_limitados" {
+  "id" int8 [pk, not null, increment]
+  "accion" varchar(60) [not null]
+  "sujeto" varchar(160) [not null]
+  "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (accion, sujeto, ocurrido_at) [type: btree, name: "idx_intentos_ventana"]
+  }
+
+  Note: '''Lo que se ha intentado y CUENTA para un limite. No es una bitacora general: aqui solo entra lo que se frena, porque registrar cada peticion doblaria las escrituras del sistema para no usarlas. Vive en la base y no en memoria porque un contador en memoria dejaria de proteger en cuanto hubiera dos instancias del backend. `sujeto` es un TEXTO y no una clave ajena a proposito: lo que se cuenta cambia con la accion --una IP, un correo+ip, un person_id-- y hay acciones anonimas en las que no existe ninguna fila a la que apuntar.'''
 }
 
 Table "offers" {

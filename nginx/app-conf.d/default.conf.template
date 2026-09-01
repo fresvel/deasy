@@ -60,6 +60,9 @@ server {
   }
 
   location /api/ {
+    # La red gruesa (ver `nginx.conf`). El limitador de verdad esta en el backend: este solo evita
+    # que una inundacion llegue a convertirse en una consulta a la base por peticion.
+    limit_req zone=api_general burst=60 nodelay;
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;

@@ -159,6 +159,19 @@ Table "emails" {
   }
 }
 
+Table "intentos_limitados" {
+  "id" int8 [pk, not null, increment]
+  "accion" varchar(60) [not null]
+  "sujeto" varchar(160) [not null]
+  "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (accion, sujeto, ocurrido_at) [type: btree, name: "idx_intentos_ventana"]
+  }
+
+  Note: '''Lo que se ha intentado y CUENTA para un limite. No es una bitacora general: aqui solo entra lo que se frena, porque registrar cada peticion doblaria las escrituras del sistema para no usarlas. Vive en la base y no en memoria porque un contador en memoria dejaria de proteger en cuanto hubiera dos instancias del backend. `sujeto` es un TEXTO y no una clave ajena a proposito: lo que se cuenta cambia con la accion --una IP, un correo+ip, un person_id-- y hay acciones anonimas en las que no existe ninguna fila a la que apuntar.'''
+}
+
 Table "password_reset_codes" {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [not null]

@@ -54,7 +54,12 @@ export const reenviarMiCodigo = async (req, res) => {
     const personId = Number(req.user?.uid);
 
     // El freno se calcula sobre la fila que ya existe, no en memoria: en memoria dejaría de
-    // proteger en cuanto hubiera dos instancias, que es justo lo que `C9` tiene que resolver bien.
+    // proteger en cuanto hubiera dos instancias.
+    //
+    // ⚠️ **Y SE QUEDA ASÍ, aunque `C9` ya trajo un limitador general** (`services/limites/`). Se
+    // evaluó migrarlo y **éste es mejor**: cuenta desde el `created_at` del último código ENVIADO,
+    // que es el hecho que se quiere frenar y que ya está guardado. Contarlo aparte crearía dos
+    // fuentes de verdad y costaría una fila por reenvío. El porqué completo, en `limites/reglas.js`.
     const [filas] = await getPostgresPool().query(
       `SELECT c.created_at
          FROM email_verification_codes c

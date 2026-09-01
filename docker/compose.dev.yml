@@ -39,6 +39,21 @@ services:
     volumes:
       - ../backend:/app/backend
       - backend_node_modules_v2:/app/backend/node_modules
+    # ⚠️ UNA SOLA INSTANCIA, y no es una preferencia: HOY el tiempo real la exige.
+    #
+    # Socket.IO guarda las conexiones EN LA MEMORIA DEL PROCESO --un socket es un cable TCP contra
+    # un proceso concreto-- y no hay adaptador. Con dos instancias, quien este conectado a la A no
+    # recibe lo que emite la B: el aviso de «telefono verificado», el chat y las notificaciones se
+    # pierden PARA ALGUNOS usuarios, de forma intermitente y SIN ERROR EN NINGUNA PARTE.
+    #
+    # Estaba en una instancia por DEFECTO, no por decision: nadie lo habia escrito, asi que un
+    # `--scale backend=2` para «tener mas disponibilidad» rompia el tiempo real en silencio. Es el
+    # mismo patron que ya costo caro en `channels`, donde si estaba dicho.
+    #
+    # ⚠️ SE LEVANTA AÑADIENDO EL ADAPTADOR (Redis), NO QUITANDO ESTA LINEA.
+    # Ver docs/arquitecturas/app-movil-y-tiempo-real.md §5.
+    deploy:
+      replicas: 1
 
   frontend:
     build:

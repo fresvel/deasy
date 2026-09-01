@@ -30,16 +30,16 @@
 | ~~**C6**~~ | ~~Un número real se verifica **por SMS entrante**~~ | ❌ | **DESCARTADA POR EL DUEÑO, no aplazada.** El SMS entrante **no prueba el número**: su cabecera de origen la rellena el emisor (`10.1145/3615667` · `10.1145/3696011`). Ver §C6 | 2026-09-01 |
 | **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | ⬜ | | |
 | **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ✅ | char **326/326** · unit **735** · frontend **431** y sus 27 puertas · la puerta REAL en el backend (`exigeVerificacionCompleta`) y el guardián del router como mitad amable · **4 defectos cerrados de camino**: la verificación autodeclarable, el alta no atómica, `/email/verify` sin sesión y el envío que fallaba en silencio | 2026-08-31 |
-| **C9** | 🚧 **El limitador de intentos** | 🟡 **diseñado, sin implementar** | [`arquitecturas/limitador-de-intentos.md`](../arquitecturas/limitador-de-intentos.md) · 2 hallazgos: dos rutas publicas que gastan cuota de un servicio EXTERNO DE PAGO, y que un limite por IP romperia este despliegue (NAT institucional) | |
+| **C9** | 🚧 **El limitador de intentos** | ✅ | **Probado contra el sistema en marcha**: 10 accesos fallidos pasan y el 11 da 429 con `Retry-After`; otra cuenta desde la MISMA ip sigue entrando; 12 accesos correctos seguidos no gastan ni un intento; `validar_cedula` frena en el 11 **antes** de llamar al servicio de pago; con la base caída `validar_cedula` CIERRA y `login` ABRE · unit **754** (+17, 4 mutaciones cazadas) · char **327/327** sin mover un golden | 2026-09-01 |
 
-**9 tareas · 7 cerradas · 2 pendientes.**
+**9 tareas · 8 cerradas · 1 pendiente.**
 
 ⚠️ **El denominador bajó de 10 a 9**, y no por haber terminado nada: `C6` se **descartó** el
 2026-09-01. No es una pausa ni un bloqueo — es una opción muerta, y por eso sale de la cuenta en vez
 de quedarse como deuda perpetua.
 
-- **Cerradas (7):** `C1` · `C2` · `C2b` · `C3` · `C4` · `C5` · `C8`
-- **Pendientes (2):** `C7` (la pestaña de administración) · `C9` (el limitador)
+- **Cerradas (8):** `C1` · `C2` · `C2b` · `C3` · `C4` · `C5` · `C8` · `C9`
+- **Pendiente (1):** `C7` (la pestaña de administración)
 - **Descartada (1):** `C6`
 
 ⚠️ **Y no habrá `C10` ni `C11`.** Llegué a proponerlas —un contrato de dos niveles para que los bots

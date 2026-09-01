@@ -33,7 +33,8 @@
       "telefono_canales",
       "emails",
       "documentos_identidad",
-      "telefono_verification_keys"
+      "telefono_verification_keys",
+      "intentos_limitados"
     ]
   },
   "organizacion": {
