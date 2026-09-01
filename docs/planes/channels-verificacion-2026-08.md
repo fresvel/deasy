@@ -30,7 +30,7 @@
 | ~~**C6**~~ | ~~Un número real se verifica **por SMS entrante**~~ | ❌ | **DESCARTADA POR EL DUEÑO, no aplazada.** El SMS entrante **no prueba el número**: su cabecera de origen la rellena el emisor (`10.1145/3615667` · `10.1145/3696011`). Ver §C6 | 2026-09-01 |
 | **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | ⬜ | | |
 | **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ✅ | char **326/326** · unit **735** · frontend **431** y sus 27 puertas · la puerta REAL en el backend (`exigeVerificacionCompleta`) y el guardián del router como mitad amable · **4 defectos cerrados de camino**: la verificación autodeclarable, el alta no atómica, `/email/verify` sin sesión y el envío que fallaba en silencio | 2026-08-31 |
-| **C9** | 🚧 **El limitador de intentos** | ⬜ | | |
+| **C9** | 🚧 **El limitador de intentos** | 🟡 **diseñado, sin implementar** | [`arquitecturas/limitador-de-intentos.md`](../arquitecturas/limitador-de-intentos.md) · 2 hallazgos: dos rutas publicas que gastan cuota de un servicio EXTERNO DE PAGO, y que un limite por IP romperia este despliegue (NAT institucional) | |
 
 **9 tareas · 7 cerradas · 2 pendientes.**
 
