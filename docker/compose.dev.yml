@@ -173,6 +173,13 @@ services:
     #
     # Es el mismo silencio de siempre: cada pieza funcionando y el conjunto roto.
     restart: unless-stopped
+    # ⚠️ DIEZ SEGUNDOS NO LE BASTAN A CHROMIUM, y diez es lo que da Docker por defecto: manda SIGTERM
+    # y a los 10 s remata con SIGKILL. Cerrar la sesion de WhatsApp Web tarda mas, asi que CADA
+    # reinicio lo mataba a medias y dejaba el perfil sucio. Se veia en dos sitios: el arranque
+    # siguiente decia siempre «el proceso anterior no cerro limpio» --un mensaje pensado para los
+    # apagones, saltando en cada reinicio normal-- y la sesion tenia que resincronizar entera, lo que
+    # el 2026-09-01 dejo el canal MAS DE SEIS MINUTOS sin recibir, dos veces seguidas.
+    stop_grace_period: 60s
     # ⚠️ SIN PUERTO PUBLICADO, como el firmador: al navegador no se le ha perdido nada aquí.
     #
     # ⚠️ Y UNA SOLA INSTANCIA, que no es una preferencia sino una atadura de los canales:
@@ -185,6 +192,10 @@ services:
     volumes:
       - ../channels:/app
       - channels_node_modules:/app/node_modules
+      # ⚠️ LA SESIÓN DE WHATSAPP VIVE AQUÍ. Sin este volumen, cada reinicio pide volver a escanear el
+      # QR desde el teléfono dedicado — y eso no es un incordio, es un canal caído hasta que alguien
+      # se dé cuenta y lo vincule a mano.
+      - channels_whatsapp:/app/.wwebjs_auth
 
   analytics:
     build:
@@ -207,6 +218,8 @@ volumes:
     name: deasy_${DEASY_STACK:-dev}_backend_node_modules
   channels_node_modules:
     name: deasy_${DEASY_STACK:-dev}_channels_node_modules
+  channels_whatsapp:
+    name: deasy_${DEASY_STACK:-dev}_channels_whatsapp
   frontend_node_modules:
     name: deasy_${DEASY_STACK:-dev}_frontend_node_modules
   docs_node_modules:

@@ -23,15 +23,20 @@ export const leerConfiguracion = (env = process.env) => {
   };
 
   const telegram = String(env.TELEGRAM_BOT_TOKEN ?? "").trim();
+  // ⚠️ WhatsApp NO necesita credenciales: la sesion se vincula escaneando un QR desde el telefono.
+  // Lo que se declara es la INTENCION de tenerlo, con el numero dedicado --que ademas es lo que la
+  // pantalla necesita para componer el enlace `wa.me`.
+  const whatsapp = String(env.WHATSAPP_NUMERO ?? "").trim();
 
   if (faltan.length) {
     throw new Error(`Faltan variables de entorno: ${faltan.join(", ")}.`);
   }
-  if (!telegram) {
+  if (!telegram && !whatsapp) {
     throw new Error(
-      "No hay ningún canal configurado (TELEGRAM_BOT_TOKEN). El servicio no tendría nada que hacer."
+      "No hay ningún canal configurado (TELEGRAM_BOT_TOKEN, WHATSAPP_NUMERO). " +
+      "El servicio no tendría nada que hacer."
     );
   }
 
-  return { deasy, telegram };
+  return { deasy, telegram, whatsapp };
 };

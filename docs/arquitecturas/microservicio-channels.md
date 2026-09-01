@@ -184,8 +184,19 @@ pero hay que diseñarlo desde el principio, no parchearlo después.
 Mismo patrón, con un enlace que abre WhatsApp con el mensaje ya escrito hacia el número de
 la institución. El servicio lo recibe por su sesión.
 
-Aquí el número **llega con el mensaje**: no hace falta pedir nada. La tercera comprobación
-se cumple sola.
+⚠️ **«El número llega con el mensaje» ERA verdad y ya no lo es.** Aquí ponía que la tercera
+comprobación se cumplía sola. **Falso desde `@lid`**, el identificador **opaco** al que WhatsApp
+está migrando y con el que llegan hoy los mensajes: del `@lid` **no se deduce el teléfono** — está
+diseñado precisamente para que no se pueda. Medido el 2026-09-01: cinco mensajes reales, los cinco
+con `@lid`, y el canal los descartaba **en silencio**.
+
+Lo que se hace es **preguntarle a WhatsApp** (`getContactLidAndPhone`, que consulta al servidor si
+el mapeo no está en caché) y **rechazar si no responde con un teléfono**. La regla:
+**quedarse sin saber es un resultado legítimo; inventárselo, no.**
+
+Así que hoy **ninguno de los dos canales entrega el número gratis**: Telegram pide un segundo paso,
+WhatsApp pide una resolución. Lo que ambos conservan —y es lo que vale— es que **el número lo afirma
+la plataforma sobre una sesión autenticada**, no quien escribe.
 
 ### SMS entrante
 

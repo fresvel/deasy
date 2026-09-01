@@ -13,7 +13,6 @@ export const PATHS = {
   vacancies: "/vacancies",
   chat: "/chat",
   notifications: "/notifications",
-  whatsapp: "/whatsapp",
   dossier: "/dossier",
   email: "/email",
   resetPassword: "/reset-password",

@@ -26,7 +26,7 @@
 | **C2b** | La comparación del número se muda al backend: el servicio **observa**, el backend **dicta** | ✅ | char **321/321** · unit **713** · channels **29** · la regla vieja (últimos 8 dígitos) daba por iguales `+51 99 111 2233` y `+593 99 111 2233` · **3 defectos más** encontrados al construir: el arranque creaba el teléfono del admin **sin país** (inverificable), `numero_completo` componía `+5930990000000`, y un 404 del guard era indistinguible de «llave desconocida» | 2026-08-30 |
 | **C3** | Un número real se verifica **por Telegram**, de punta a punta | ✅ | **Verificado con un teléfono real** (iPhone y Telegram Desktop) · channels **50** · 4 mutaciones cazadas (aceptar la tarjeta ajena, offset después de tratar, borrar el error del mensaje, «hola» como llave) · rechazos comprobados uno a uno: caducada · ya usada · inventada · contacto reenviado · **llave abierta desde OTRO teléfono** · y medido que un intento de impostor **NO gasta la llave** | 2026-08-31 |
 | **C4** | El servicio corre **como contenedor** en la pila, sin que lo alcance el navegador | ✅ | `docker/channels/Dockerfile` + servicio en `compose.dev.yml` · **0 puertos publicados** y el nombre no resuelve desde el host · apagado limpio en **1,2 s** con SIGTERM (tini como PID 1) · conectado a `@deasy_test_bot` desde dentro de la pila · **vuelta completa comprobada con un teléfono real contra el contenedor de la pila** | 2026-08-31 |
-| **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ⬜ | | |
+| **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ✅ | **Verificado con un teléfono real**: `983200911` quedó verificado el 2026-09-01 a las 15:03:58, llave consumida y **sólo WhatsApp marcado** · channels **83 pruebas** · 4 mutaciones cazadas | 2026-09-01 |
 | **C6** | Un número real se verifica **por SMS entrante** | ⛔ | **Bloqueada por una decisión del dueño**: módem propio o número alquilado | |
 | **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | ⬜ | | |
 | **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ✅ | char **326/326** · unit **735** · frontend **431** y sus 27 puertas · la puerta REAL en el backend (`exigeVerificacionCompleta`) y el guardián del router como mitad amable · **4 defectos cerrados de camino**: la verificación autodeclarable, el alta no atómica, `/email/verify` sin sesión y el envío que fallaba en silencio | 2026-08-31 |
@@ -263,15 +263,66 @@ volver a grabar el número antes de emitir la llave.**
 ⚠️ **Sólo está en `compose.dev.yml`**, como el sitio de documentación: `qa` y `prod` no lo despliegan
 todavía, y publicar su imagen en GHCR es parte de esa decisión, no de esta tarea.
 
-### C5 · WhatsApp, reescrito
+### C5 · WhatsApp, reescrito — ✅ cerrada el 2026-09-01
 
-⚠️ **El código que hay lleva años muerto y tenía errores.** No se recicla: se escribe contra
-la documentación actual de `whatsapp-web.js`, que es lo que quedó pendiente de comprobar.
+⚠️ **El código que había llevaba años muerto y tenía errores.** No se recicló: se escribió de
+cero. Y con él se fueron del backend **464 líneas** —`WhatsAppBot`, su controlador y sus **seis
+rutas SIN AUTENTICACIÓN**, entre ellas un `send-message` que dejaba a cualquiera escribir desde
+el número de la institución—.
 
 ⚠️ **Número dedicado**, ni el principal de la institución ni rotatorio. Su pérdida cuesta
 volver a vincular y avisar, no la identidad. Y **rotar desechables empeora las cosas**: una
 línea nueva se bloquea antes que una con historial, y para el usuario un número que cambia
 cada pocas semanas es indistinguible de una estafa.
+
+#### El hallazgo que casi la hunde: `@lid`
+
+**El plan daba por hecho que en WhatsApp «el número viene con el mensaje».** Hoy ya no: los
+mensajes llegan con `@lid`, el identificador **opaco** al que WhatsApp está migrando, y del que
+**no se puede deducir el teléfono** — está diseñado precisamente para que no se pueda.
+
+El canal aceptaba sólo `@c.us` y **descartaba el resto en silencio**. Costó tres sesiones
+enteras averiguarlo, porque desde fuera «no llega nada» y «llega y lo tiro» **se veían igual**.
+
+Se resuelve preguntándole a WhatsApp (`getContactLidAndPhone`, que consulta al servidor si el
+mapeo no está en caché) y **rechazando si no responde con un teléfono**. La regla que gobierna
+esto y que conviene no olvidar: **quedarse sin saber es un resultado legítimo; inventárselo,
+no.** Deducir el número del `@lid` habría sellado como probado un número que nadie probó.
+
+⚠️ **Esto reordena el mérito de los canales**, y hay que decirlo: hoy **ni Telegram ni WhatsApp
+entregan el número gratis**. Telegram exige un segundo paso (el botón de compartir contacto, con
+`contact.user_id == message.from.id`); WhatsApp exige resolver el `@lid`. Lo que ambos conservan
+es lo que importa: **el número lo afirma la plataforma, sobre una sesión autenticada**, no quien
+escribe.
+
+#### Tres fallos de operación que sólo aparecen con un contenedor de verdad
+
+Ninguno es de la lógica de verificación, y los tres dejaban el canal **mudo sin un solo error**:
+
+| | Qué pasaba | Por qué no se veía |
+|---|---|---|
+| **Candado obsoleto** | Un `SIGKILL` deja `SingletonLock` apuntando a `<host>-<pid>`. El nombre de host cambia con cada contenedor, así que **Chromium nunca lo reconoce como propio y no lo limpia**. Con `restart: unless-stopped` es un **bucle de reinicios** | El fallo es `Code: 21` dentro de Puppeteer, no en el canal |
+| **Diez segundos para cerrar** | `docker` remata con `SIGKILL` a los 10 s por defecto, y cerrar WhatsApp Web tarda más: **cada reinicio mataba a Chromium a medias**, dejaba el perfil sucio y el arranque siguiente pagaba una resincronización — **más de seis minutos sin recibir, dos veces** | El aviso «el proceso anterior no cerró limpio» **salía en todos los reinicios**, y por salir siempre dejó de avisar |
+| **El arranque, mudo** | Entre `initialize()` y `ready` pueden pasar minutos, y el canal no decía nada: «sincronizando» y «colgado» eran indistinguibles | No hay error que registrar: es espera |
+
+Y un cuarto que no es del servicio sino del comprobador: **`scripts/canales.sh` leía todo el
+historial de `docker logs`** y daba por listo un canal por un `sesión lista` de un arranque
+anterior. Se escribió advirtiendo de ese mismo tipo de fallo y lo cometió media hora después.
+Hoy se acota al arranque en curso, y los **sucesos terminales mandan sobre el progreso** —
+WhatsApp emite avisos de sincronización **después** de estar listo.
+
+**La lección, que es la misma de siempre en este repo:** cada pieza funcionando y el conjunto
+roto, sin un solo error en ninguna parte. Lo que lo destapó no fue depurar: fue **dejar de
+descartar en silencio**.
+
+#### Lo que queda abierto de `C5`
+
+- **El cierre todavía no es limpio del todo.** Con `stop_grace_period: 60s` el arranque
+  siguiente va en **7 segundos** (antes, minutos), pero la línea del cronómetro no se imprime y
+  los candados siguen apareciendo. No bloquea; hay que perseguirlo.
+- **El número dedicado estaba registrado como teléfono de una persona.** No rompe nada —el
+  filtro `fromMe` impide que se autoverifique— pero es un buzón de la institución, no de nadie.
+  Hay que liberarlo antes de producción.
 
 ### C6 · ⛔ SMS entrante — bloqueada
 

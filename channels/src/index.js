@@ -2,6 +2,8 @@ import { leerConfiguracion } from "./config.js";
 import ClienteDeDeasy from "./infra/ClienteDeDeasy.js";
 import ClienteDeTelegram from "./infra/ClienteDeTelegram.js";
 import CanalTelegram from "./canales/CanalTelegram.js";
+import CanalWhatsApp from "./canales/CanalWhatsApp.js";
+import { crearClienteDeWhatsApp, dibujarQREnConsola } from "./infra/ClienteDeWhatsApp.js";
 import VerificacionDeTelefono from "./dominio/VerificacionDeTelefono.js";
 
 /**
@@ -17,7 +19,18 @@ const arrancar = async () => {
   const deasy = new ClienteDeDeasy(config.deasy);
   const politica = new VerificacionDeTelefono(deasy);
 
-  const canales = [new CanalTelegram({ telegram: new ClienteDeTelegram({ token: config.telegram }) })];
+  // Cada canal se monta SÓLO si su despliegue lo declara. Un servidor con Telegram y sin WhatsApp es
+  // legítimo --y es el de hoy-- y no debe arrastrar un Chromium arrancado para nada.
+  const canales = [];
+  if (config.telegram) {
+    canales.push(new CanalTelegram({ telegram: new ClienteDeTelegram({ token: config.telegram }) }));
+  }
+  if (config.whatsapp) {
+    canales.push(new CanalWhatsApp({
+      cliente: crearClienteDeWhatsApp(),
+      dibujarQR: dibujarQREnConsola,
+    }));
+  }
 
   for (const canal of canales) {
     // La política es la MISMA para todos: lo que cambia entre canales es cómo prueban el número,

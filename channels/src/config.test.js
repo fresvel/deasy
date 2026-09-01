@@ -27,3 +27,21 @@ test("sin ningún canal no arranca: no tendría nada que hacer", () => {
   assert.throws(() => leerConfiguracion({ ...COMPLETO, INTERNAL_SERVICE_KEY: "   " }),
     /INTERNAL_SERVICE_KEY/);
 });
+
+// Un despliegue con Telegram y sin WhatsApp es legítimo --es el de hoy-- y al revés también. Lo que
+// no vale es ninguno de los dos.
+test("basta con UNO de los canales", () => {
+  const soloWhatsApp = leerConfiguracion({ ...COMPLETO, TELEGRAM_BOT_TOKEN: "", WHATSAPP_NUMERO: "593987650000" });
+  assert.equal(soloWhatsApp.whatsapp, "593987650000");
+  assert.equal(soloWhatsApp.telegram, "");
+
+  const soloTelegram = leerConfiguracion(COMPLETO);
+  assert.equal(soloTelegram.whatsapp, "", "sin número, no se monta WhatsApp");
+});
+
+// ⚠️ WhatsApp NO lleva credenciales en el entorno: la sesión se vincula escaneando un QR. Lo que se
+// declara es la intención de tenerlo.
+test("WhatsApp no pide credenciales, sólo su número", () => {
+  const c = leerConfiguracion({ ...COMPLETO, WHATSAPP_NUMERO: "593987650000" });
+  assert.equal(c.whatsapp, "593987650000");
+});

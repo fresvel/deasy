@@ -169,38 +169,6 @@ describe("CanalTelegram · lo que se le dice al usuario", () => {
   });
 });
 
-describe("CanalTelegram · la llave que viaja en el enlace", () => {
-  // Una llave de verdad: 32 bytes en base64url son 43 caracteres. Las de juguete engañan.
-  const REAL = "n0OYuT8lQxK-2mVzR7pWc1eJdAgHbF5sX4iL9tYoZ3U";
-
-  it("la saca de `/start <llave>` y también de la llave pegada a secas", () => {
-    assert.equal(CanalTelegram.llaveDe(`/start ${REAL}`), REAL);
-    // Quien no puede pulsar el enlace la copia y la pega; rechazárselo sería gratuito.
-    assert.equal(CanalTelegram.llaveDe(`  ${REAL}  `), REAL);
-    assert.equal(CanalTelegram.llaveDe("/start"), null);
-  });
-
-  // ⚠️ CON `/start` NO SE EXIGE LONGITUD: quien llega así viene de un enlace nuestro. A pelo SÍ, y
-  // por un motivo medido: «hola» pasa el alfabeto perfectamente, así que sin el mínimo cada saludo
-  // se convertía en una consulta al backend preguntando por una llave inventada.
-  it("un saludo NO es una llave, aunque sólo tenga letras", () => {
-    assert.equal(CanalTelegram.llaveDe("hola"), null);
-    assert.equal(CanalTelegram.llaveDe("ok"), null);
-    assert.equal(CanalTelegram.llaveDe("test"), null);
-    assert.equal(CanalTelegram.llaveDe("/start hola"), "hola", "con /start no hay ambigüedad");
-  });
-
-  it("lo que no puede ser una llave nuestra se descarta sin preguntar", () => {
-    // El alfabeto lo impone Telegram en el payload de `start`. Consultar por algo que no cabe ahí
-    // sólo produce peticiones inútiles al backend.
-    assert.equal(CanalTelegram.llaveDe("hola qué tal"), null);
-    assert.equal(CanalTelegram.llaveDe("/start con espacios"), null);
-    assert.equal(CanalTelegram.llaveDe("a".repeat(65)), null);
-    assert.equal(CanalTelegram.llaveDe(""), null);
-    assert.equal(CanalTelegram.llaveDe(undefined), null);
-  });
-});
-
 describe("CanalTelegram · el sondeo", () => {
   it("avanza el offset ANTES de tratar, para que un mensaje malo no bloquee la cola", async () => {
     const telegram = telegramFalso();

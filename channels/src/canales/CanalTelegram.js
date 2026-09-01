@@ -2,6 +2,7 @@ import Canal from "../dominio/Canal.js";
 import MensajeEntrante from "../dominio/MensajeEntrante.js";
 import ClienteDeTelegram from "../infra/ClienteDeTelegram.js";
 import { MOTIVOS } from "../dominio/VerificacionDeTelefono.js";
+import { llaveDe } from "../dominio/llave.js";
 
 /**
  * Lo que se le dice al usuario en cada desenlace.
@@ -184,7 +185,7 @@ export default class CanalTelegram extends Canal {
 
     if (mensaje.contact) return this.recibirContacto(mensaje);
 
-    const llave = this.constructor.llaveDe(mensaje.text);
+    const llave = llaveDe(mensaje.text);
     if (!llave) {
       return this.telegram.escribir(mensaje.chat.id, this.textos.SIN_LLAVE);
     }
@@ -252,32 +253,4 @@ export default class CanalTelegram extends Canal {
     return this.textos[resultado?.motivo] ?? this.textos[MOTIVOS.BACKEND_CAIDO];
   }
 
-  /**
-   * La llave que viaja en el enlace profundo.
-   *
-   * Telegram entrega `t.me/<bot>?start=<llave>` como el texto `/start <llave>`. Se acepta también
-   * la llave a secas, porque quien no puede pulsar el enlace la copia y la pega — y rechazársela
-   * por no llevar `/start` delante sería gratuito.
-   */
-  static llaveDe(texto) {
-    const limpio = String(texto ?? "").trim();
-    if (!limpio) return null;
-
-    const conStart = limpio.startsWith("/start");
-    const candidato = conStart ? limpio.slice("/start".length).trim() : limpio;
-
-    // El alfabeto es el que impone Telegram al payload de `start`; cualquier otra cosa no es una
-    // llave nuestra, y tratarla como tal sólo produce consultas inútiles al backend.
-    if (!/^[A-Za-z0-9_-]{1,64}$/.test(candidato)) return null;
-
-    // ⚠️ CON `/start` VALE CUALQUIER LONGITUD: quien llega así viene de un enlace NUESTRO, así que
-    // no hay ambigüedad. A PELO se exige que sea larga, y esto no es un capricho: «hola», «ok» y
-    // «test» pasan el alfabeto perfectamente, y sin este mínimo cada saludo se convertía en una
-    // consulta al backend preguntando por una llave inventada.
-    //
-    // Se acepta la forma a pelo porque quien no puede pulsar el enlace copia y pega, y rechazárselo
-    // sería gratuito. Nuestras llaves son 32 bytes en base64url — 43 caracteres —, así que 20 deja
-    // margen de sobra sin dejar pasar una palabra suelta.
-    return conStart || candidato.length >= 20 ? candidato : null;
-  }
 }

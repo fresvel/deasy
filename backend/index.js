@@ -19,7 +19,6 @@ import sign_router from "./routes/sign_router.js";
 import program_router from "./routes/program_router.js";
 import unit_router from "./routes/unit_router.js";
 import tarea_router from "./routes/tarea_router.js"
-import whatsapp_router from "./routes/whatsapp_router.js"
 import dossier_router from "./routes/dossier_router.js"
 import chat_router from "./routes/chat_router.js";
 import notification_router from "./routes/notification_router.js";
@@ -172,7 +171,7 @@ app.use(ROUTES.email, email_router)
 // y dejaria pasar todo: seria una puerta pintada. Por eso se monta el par, y no solo la puerta.
 //
 // DONDE SE APLICA: solo en los routers donde la autenticacion ya es obligatoria para TODAS sus
-// rutas. `program`, `units`, `whatsapp` y parte de `tarea` no piden autenticacion NINGUNA hoy
+// rutas. `program`, `units` y parte de `tarea` no piden autenticacion NINGUNA hoy
 // --hallazgo del 2026-08-31, anotado en el plan--; cerrarlas es un arreglo aparte y mas grande que
 // este, y colarlo aqui seria cambiar comportamiento dentro de otra tarea.
 //
@@ -191,7 +190,6 @@ app.use(ROUTES.units, unit_router)
 
 app.use(ROUTES.tarea, tarea_router)
 
-app.use(ROUTES.whatsapp, whatsapp_router)
 app.use(ROUTES.chat, ...exigeCuentaCompleta, chat_router)
 app.use(ROUTES.notifications, ...exigeCuentaCompleta, notification_router)
 

@@ -2,7 +2,6 @@ import path from "node:path";
 import os from "node:os";
 import fs from "fs-extra";
 import { randomUUID } from "node:crypto";
-import whatsappBot from "../../services/whatsapp/WhatsAppBot.js";
 import TokenService from "../../services/auth/TokenService.js";
 import { hayCorreoConfigurado, explicacion as explicacionDelCorreo } from "../../services/mail/configuracionDeCorreo.js";
 import UserRepository from "../../services/auth/UserRepository.js";
@@ -141,15 +140,14 @@ export const createUser = async (req, res) => {
     const usuarioCompleto = (await userRepository.findById(createdUser.id)) ?? createdUser;
     const usuarioPublico = userRepository.toPublicUser(usuarioCompleto);
 
-    if (whatsappBot.isReady && usuarioPublico.whatsapp) {
-      try {
-        const userName = `${createdUser.first_name ?? createdUser.nombre} ${createdUser.last_name ?? createdUser.apellido}`.trim();
-        await whatsappBot.sendWelcomeMessage(usuarioPublico.whatsapp, userName);
-        console.log(`Mensaje de bienvenida enviado a ${usuarioPublico.whatsapp}`);
-      } catch (error) {
-        console.log(`No se pudo enviar mensaje de WhatsApp: ${error.message}`);
-      }
-    }
+    // ⚠️ AQUI SE MANDABA UN «WhatsApp de bienvenida» DESDE EL NUMERO DE LA INSTITUCION. Se retiro
+    // con el resto del `WhatsAppBot` (C5, 2026-08-31), y no por limpieza: escribirle a alguien por
+    // iniciativa nuestra es justo lo que este frente decidio NO hacer. El modelo es que escribe el
+    // usuario --por eso ningun canal cuesta por mensaje y por eso no existe el ataque de coste--,
+    // y un numero que envia solo es un numero que WhatsApp acaba bloqueando.
+    //
+    // Ademas nunca llego a dispararse: `isReady` solo era cierto si alguien llamaba a
+    // `POST /whatsapp/initialize`, una ruta sin autenticacion que tampoco deberia existir.
 
     // ── SESION DESDE EL PASO 1 ──────────────────────────────────────────────────────────────────
     //

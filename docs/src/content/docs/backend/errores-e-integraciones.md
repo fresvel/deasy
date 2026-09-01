@@ -72,6 +72,22 @@ La lista canonica esta en `backend/scripts/lib/reset_targets.mjs`.
 
 - **Eventos salientes**: `chat.message.created` y `chat.notification.created`.
 
-### Correo, WhatsApp y servicios ecuatorianos
+### Correo, canales de mensajería y servicios ecuatorianos
 
-`backend/lib/mailer.js` son once líneas de `nodemailer` con el host SMTP **escrito a fuego** en el código. El bot de WhatsApp (`services/whatsapp/WhatsAppBot.js`, 272 líneas) usa `whatsapp-web.js` sobre Puppeteer headless y muestra el QR de vinculación por terminal; se inicializa manualmente y sus seis endpoints **no llevan autenticación**. Y `services/external/webservices_ec.js` válida cédulas y números ecuatorianos contra un servicio externo.
+`backend/lib/mailer.js` lee el host, el puerto y las credenciales SMTP **del entorno**, y sólo
+autentica si hay credenciales; sin configurar, el registro responde 503 diciendo qué falta en vez de
+fallar en silencio.
+
+**El bot de WhatsApp ya no vive aquí.** `services/whatsapp/WhatsAppBot.js` (272 líneas) conducía un
+WhatsApp Web con Puppeteer **dentro del proceso de la API**, se inicializaba a mano y exponía **seis
+rutas sin ninguna autenticación** — entre ellas un `send-message` que permitía a cualquiera enviar un
+WhatsApp **desde el número de la institución**: sin sesión, sin permiso y sin registro de quién. Se
+retiró entero el 2026-09-01 junto con su controlador y su router.
+
+Lo que hace hoy esa función es **`channels`**, un servicio aparte que **sólo recibe**: sostiene las
+sesiones de Telegram y WhatsApp, y el backend le habla por `/internal` con una clave de servicio.
+Escribirle a alguien por iniciativa nuestra **dejó de existir a propósito** — es lo que hace que un
+número acabe bloqueado, y no hace falta: un enlace `wa.me` abre el WhatsApp del propio usuario.
+
+Y `services/external/webservices_ec.js` valida cédulas y números ecuatorianos contra un servicio
+externo.

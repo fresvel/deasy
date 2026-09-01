@@ -27,7 +27,7 @@ El fichero `CLAUDE.md` del repositorio lo dice sin rodeos: **“Los controllers 
 
 - **`routes/`**: 14 ficheros planos (`user_router.js`, `sign_router.js`, `admin_router.js`, `chat_router.js`, `dossier_router.js`, etc.). Todos cuelgan del prefijo `/deasy/v1`.
 
-- **`controllers/`**: 8 subcarpetas por dominio (`users/`, `admin/`, `sign/`, `chat/`, `tareas/`, `system/`, `whatsapp/`, `empresa/`), 27 ficheros en total.
+- **`controllers/`**: 7 subcarpetas por dominio (`users/`, `admin/`, `sign/`, `chat/`, `tareas/`, `system/`, `empresa/`), 27 ficheros en total.
 
 - **`services/`**: **15 subcarpetas, 67 ficheros** (20 787 líneas). Aquí están los dominios reales: `admin/` (con sub-subcarpetas `kernel/`, `crud/`, `templates/`, `processes/`, `org/`, `generation/`), `auth/`, `chat/`, `documents/`, `sign/`, `system/`, `tasks/`, `users/`, `mail/`, `storage/`, `realtime/`, `infrastructure/`, `whatsapp/`, `external/`.
 
@@ -39,13 +39,13 @@ Un detalle de diseno elegante en `services/admin/`: la carpeta `kernel/` **no im
 
 | **Router**                 | **Montaje**       | **Líneas** | **Autenticación**                                        |
 |:---------------------------|:------------------|:-----------|:---------------------------------------------------------|
-| `user_router.js`           | `/users`          | 318        | mixta (login y create son públicos)                      |
+| `user_router.js`           | `/users`          | 394        | mixta (login y create son públicos)                      |
 | `admin_router.js`          | `/admin`          | 32         | `authMiddleware` + `loadAccessContext` a nivel de router |
 | `sql_admin_router.js`      | `/admin/sql`      | 139        | hereda del padre + `requireSqlAdminPermission`           |
 | `sign_router.js`           | `/sign`           | 93         | por ruta                                                 |
 | `dossier_router.js`        | `/dossier`        | 85         | `authMiddleware` + `loadAccessContext`                   |
 | `chat_router.js`           | `/chat`           | 53         | `authMiddleware` (sin RBAC)                              |
-| `whatsapp_router.js`       | `/whatsapp`       | 25         | **ninguna**                                              |
+| `internal_router.js`       | `/internal`       | 20         | `requiereServicioInterno` (clave, **no** sesión)         |
 | `tarea_router.js`          | `/tarea`          | 15         | solo en `/supervised-stuck`                              |
 | `reset_password_router.js` | `/reset-password` | 14         | pública                                                  |
 | `notification_router.js`   | `/notifications`  | 12         | `authMiddleware`                                         |
