@@ -105,6 +105,65 @@ misma solución, un patrón menos que aprender.
 
 ---
 
+## 4alt · `C7A` (preguntar) contra `C7B` (eventos) — la evaluación
+
+Encargo del dueño: comparar el diseño de este documento —**`C7A`**, el backend pregunta— con
+**`C7B`**, donde `channels` mantiene un cliente WebSocket contra el backend y le **avisa** de cada
+cambio.
+
+**Veredicto: gana `C7A`**, y por un argumento que no es de gusto.
+
+### El argumento que decide
+
+> **Quien puede estar muerto no puede ser el responsable de avisar de que lo está.**
+
+`C7B` funciona mientras `channels` esté vivo. Y **el caso que motivó esta tarea es exactamente el
+contrario**: el 2026-08-31 el contenedor murió de un `SIGKILL` y estuvo **trece horas** parado. Un
+`channels` muerto **no manda ningún evento**, y desde el backend **el silencio es indistinguible de
+«no ha cambiado nada»**.
+
+Para tapar eso, `C7B` necesita **añadir un latido periódico** —y el latido es la parte que de verdad
+detecta la caída—. Es decir: `C7B` acaba siendo `C7A` con eventos encima, no una alternativa a él.
+
+Con `C7A`, en cambio, **la ausencia de respuesta ES la respuesta**, y llega sola: el backend
+pregunta y no le contestan.
+
+### Lo demás, punto por punto
+
+| | `C7A` · preguntar | `C7B` · eventos |
+|---|---|---|
+| **Detectar que el servicio murió** | ✅ Preguntar y no obtener respuesta | ❌ **Silencio ≠ novedad.** Necesita un latido aparte |
+| **Estado que envejece** | ✅ **No hay estado guardado**: lo que se ve es de ese instante | ⚠️ El backend guarda lo último que le contaron. **Si se pierde un evento, miente hasta el siguiente** |
+| **Cambios entre dos sondeos** | ⚠️ Un parpadeo `CONNECTED→TIMEOUT→CONNECTED` de 2 s **se pierde** | ✅ Los ve todos |
+| **Coste en reposo** | ✅ **Cero**: sólo se pregunta con la pantalla abierta | ⚠️ Una conexión permanente, viva 24 h para una pantalla que se abre poco |
+| **Piezas nuevas** | 1 endpoint | Cliente WS + reconexión + latido + estado en el backend + orden y duplicados |
+| **Atadura a una instancia** | ✅ Ninguna: pregunta el backend que atienda | ⚠️ El socket vive contra **un** proceso — y acabamos de fijar `replicas: 1` justo por esto |
+| **Historial de caídas** | ❌ No lo da | ✅ Sale casi gratis |
+
+### Lo que `C7B` sí gana, y hay que decirlo
+
+**El historial.** Con eventos, guardar «a las 03:14 pasó a `TIMEOUT`, a las 09:02 volvió» sale casi
+solo, y eso responde a *«¿cuánto llevaba roto?»* — que es una pregunta legítima y que `C7A` no
+contesta.
+
+Pero ese historial **no lo necesita la pantalla**: lo necesita un **vigilante**, que es otra cosa. Y
+un vigilante hecho con eventos hereda el mismo fallo de origen: **no se entera de la muerte que
+importa**.
+
+### ⚠️ Lo que `C7A` NO resuelve, dicho claro
+
+**`C7A` arregla que la pantalla mienta. NO arregla que nadie mire.**
+
+El día de las trece horas, `C7A` habría enseñado el fallo **perfectamente… a quien hubiera abierto la
+pantalla**. Nadie la abrió, porque nadie sospechaba.
+
+Cerrar eso es **otra tarea**: una comprobación **periódica en el backend** —cada pocos minutos, sin
+navegador— que anote los cambios y avise. Y nótese que **también es `C7A` por dentro**: el backend
+pregunta, y si no le contestan, eso es la noticia.
+
+**No se cuela aquí.** `C7` entrega la pantalla; el vigilante es una decisión aparte, y el sitio donde
+proponerla es el plan, no este documento.
+
 ## 4bis · 🔴 Cómo se comprueba que un canal está VIVO — y por qué `estado()` no basta
 
 Pregunta del dueño, y **destapó un defecto en lo que esta pantalla iba a enseñar.**
