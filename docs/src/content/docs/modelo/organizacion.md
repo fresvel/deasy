@@ -233,7 +233,7 @@ erDiagram
     timestamp verificado_at
   }
   canales_mensajeria {
-    varchar code "whatsapp, telegram, sms, signal"
+    varchar code "whatsapp, telegram, signal"
     smallint is_active "signal esta en el catalogo pero apagado: no hay implementacion"
   }
   telefono_verification_keys {
@@ -252,7 +252,7 @@ dice que tenga Telegram. Por eso la bandera vive en `telefono_canales` y no en `
 
 El circuito tiene una regla que lo explica entero: **escribe siempre el usuario, nunca nosotros**.
 El sistema compone un enlace con una llave dentro —`t.me/<bot>?start=<llave>`, `wa.me/<numero>?text=<llave>`,
-o un número al que mandar un SMS con ese texto—, y espera. Cuando el mensaje llega, el transporte ya
+—, y espera. Cuando el mensaje llega, el transporte ya
 prueba de qué número viene.
 
 **Quién compara es parte del diseño.** El canal aporta un hecho que su transporte prueba —«este
@@ -270,11 +270,33 @@ del dato no se le cuenta a nadie como un fallo suyo.
 De ahí salen tres propiedades que no son casualidad:
 
 - **Ningún canal cuesta por mensaje.** No enviamos nada, así que no existe el ataque de coste que
-  sufre cualquier sistema que manda SMS a un número que le dicten.
-- **El SMS es el más limpio de los tres**: el número **viene en la cabecera**, no hay que pedírselo a
-  nadie. Y es el único que funciona sin aplicación, sin datos y en un teléfono básico.
-- **Telegram no da el número.** El bot lo pide con un botón, y hay que exigir que el contacto sea de
-  quien escribe — si no, cualquiera reenvía la tarjeta de otra persona.
+  sufre cualquier sistema que manda un mensaje a un número que le dicten.
+- **Ninguno de los dos regala el número, y es lo que los hace válidos.** Telegram no lo entrega: el
+  bot lo pide con un botón, y hay que exigir que el contacto sea de quien escribe — si no, cualquiera
+  reenvía la tarjeta de otra persona. WhatsApp entrega un identificador de conversación que desde 2026
+  suele ser **opaco** (`@lid`), del que no se deduce el teléfono: hay que preguntárselo a WhatsApp y
+  **rechazar si no contesta con un número**.
+- **Lo que ambos conservan es quién afirma el número: la plataforma, sobre una sesión que ella misma
+  autenticó** — no quien escribe. Ésa es la propiedad que hace válida una verificación entrante.
+
+:::caution[Por qué no hay SMS, y no lo habrá]
+El catálogo tuvo una cuarta fila, `sms`, y **se descartó el 2026-09-01**. La razón es justo la
+propiedad de arriba: **el SMS entrante no la tiene**. Su número de origen lo rellena el emisor y es
+falsificable desde una pasarela SMPP ([10.1145/3615667](https://doi.org/10.1145/3615667)), lo que se
+ha llevado hasta un ataque completo ([10.1145/3696011](https://doi.org/10.1145/3696011)).
+
+Aplicado aquí el ataque es directo **y somos nosotros quienes damos la llave**: alguien registra una
+cuenta declarando el teléfono de otro, recibe una llave válida y la devuelve falsificando el origen.
+No da acceso a ninguna cuenta —hace falta la contraseña— pero **suplanta la identidad en el alta y
+bloquea el número de la víctima**. Y es peor contra un número **extranjero**, que es justo a quien
+este sistema atiende a propósito: la falsificación internacional funcionó en **todas** las operadoras
+del estudio.
+
+Se suma que **en Ecuador no existe alquilar un número que reciba** (Twilio: *"Two-way SMS supported:
+No"*; las operadoras sustituyen el remitente por un número local). Y la alternativa saliente —mandar
+nosotros un código— cuesta por mensaje, abre el fraude de bombeo de SMS y **no aporta nada a quien ya
+puede usar WhatsApp o Telegram**.
+:::
 
 De la llave se guarda **sólo su huella SHA-256**, nunca el texto. Se elige SHA-256 y no bcrypt a
 propósito: aquí hace falta **buscar por la llave** que llega, y una huella con sal no se puede buscar.

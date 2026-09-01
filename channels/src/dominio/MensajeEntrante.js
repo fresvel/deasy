@@ -7,7 +7,7 @@
  */
 export default class MensajeEntrante {
   /**
-   * @param {string} canal          quién lo entrega: `telegram` · `whatsapp` · `sms`
+   * @param {string} canal          quién lo entrega: `telegram` · `whatsapp`
    * @param {string} llave          lo que el usuario trajo, y que el backend tiene que reconocer
    * @param {string|null} numeroProbado  el número, SOLO si el canal pudo probar que es suyo
    * @param {object} contexto       lo que el canal necesite para contestarle (chat, sesión…)

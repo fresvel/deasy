@@ -231,7 +231,7 @@
 <!-- telefono_verification_keys -->
 <g id="telefono_verification_keys" class="node">
 <title>telefono_verification_keys</title>
-<g id="a_telefono_verification_keys"><a xlink:title="telefono_verification_keys&#10;La llave con la que alguien demuestra que un número de teléfono es suyo. La persona la lleva a un canal —un QR de Telegram, un enlace de WhatsApp, un SMS que envía ella— y el microservicio `channels` la trae de vuelta. Se cifra con SHA&#45;256 y no con bcrypt porque hay que BUSCAR por ella: el servicio sólo tiene la llave, y encontrar de qué teléfono es *es* la operación.">
+<g id="a_telefono_verification_keys"><a xlink:title="telefono_verification_keys&#10;La llave con la que alguien demuestra que un número de teléfono es suyo. La persona la lleva a un canal —un QR de Telegram, un enlace de WhatsApp— y el microservicio `channels` la trae de vuelta. Se cifra con SHA&#45;256 y no con bcrypt porque hay que BUSCAR por ella: el servicio sólo tiene la llave, y encontrar de qué teléfono es *es* la operación.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="2563.07" cy="-3878.81" rx="366.06" ry="342.48"/>
 <polygon fill="#1d71b8" stroke="transparent" points="2306.07,-4058.81 2306.07,-4118.81 2820.07,-4118.81 2820.07,-4058.81 2306.07,-4058.81"/>
 <polygon fill="none" stroke="#29235c" points="2306.07,-4058.81 2306.07,-4118.81 2820.07,-4118.81 2820.07,-4058.81 2306.07,-4058.81"/>

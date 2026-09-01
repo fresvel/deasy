@@ -122,9 +122,10 @@ test("los tres pasos, en orden, y la puerta cediendo sólo al final", async () =
   await limpiar();
 });
 
-// LA REGLA DEL DUEÑO: basta CUALQUIERA de los tres canales, y verificar uno no verifica los otros.
-test("cualquiera de los tres canales abre la puerta, y sólo se marca ese", async () => {
-  for (const canal of ["telegram", "whatsapp", "sms"]) {
+// LA REGLA DEL DUEÑO: basta CUALQUIERA de los canales, y verificar uno NO verifica los otros. Eran
+// tres hasta que el SMS se descartó (2026-09-01); la regla no depende de cuántos haya.
+test("cualquiera de los canales abre la puerta, y sólo se marca ese", async () => {
+  for (const canal of ["telegram", "whatsapp"]) {
     await limpiar();
     const alta = await registrar();
     const token = alta.body.token;

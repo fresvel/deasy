@@ -4,8 +4,8 @@ import { getPostgresPool } from "../../config/postgres.js";
 
 // Crear, resolver y consumir la llave con la que alguien demuestra que un número es suyo.
 //
-// La persona la lleva a un canal —un QR de Telegram, un enlace de WhatsApp, un SMS que envía ella—
-// y el microservicio `channels` la trae de vuelta. AQUÍ se decide; el servicio sólo transporta.
+// La persona la lleva a un canal —un QR de Telegram, un enlace de WhatsApp— y el microservicio
+// `channels` la trae de vuelta. AQUÍ se decide; el servicio sólo transporta.
 // Ver `docs/arquitecturas/microservicio-channels.md`.
 
 const errorDeCliente = (mensaje) => {
@@ -174,9 +174,9 @@ export default class TelefonoVerificacionService {
    * `canal_id` es clave ajena al catálogo y no un CHECK aparte — con dos vocabularios habría que
    * escribirlo dos veces y podrían separarse.
    *
-   * ⚠️ El SMS es el caso distinto y es correcto que lo sea: prueba el NÚMERO, no que tenga ninguna
-   * aplicación. Marca su propio canal —un móvil recibe SMS, un fijo no— y deja Telegram y WhatsApp
-   * como estaban.
+   * ⚠️ **Un canal no verifica a otro, y es una decisión del dueño.** Probar que un número tiene
+   * Telegram no prueba que tenga WhatsApp: son cuentas distintas sobre el mismo número, y una puede
+   * estar en un aparato que ya no se tiene. Cada canal marca el suyo.
    *
    * Y de ahí sale la respuesta a «¿está verificado este teléfono?»: lo está si tiene ALGÚN canal
    * verificado. No hay una bandera en `telefonos` que pueda quedarse en desacuerdo con las filas.

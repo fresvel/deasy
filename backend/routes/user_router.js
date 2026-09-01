@@ -128,7 +128,7 @@ router.get('/', authMiddleware, loadAccessContext, requirePermissions("people.re
 router.post('/recuperar-correo', recuperarCorreo)
 
 // Pedir una llave para verificar UN telefono propio. Devuelve ya compuestos el enlace de
-// Telegram, el de WhatsApp y el texto del SMS: la pantalla no tiene que saber armarlos.
+// Telegram y el de WhatsApp: la pantalla no tiene que saber armarlos.
 // ── El registro en tres pasos (C8) ────────────────────────────────────────────────────────────
 //
 // ⚠️ SIEMPRE SOBRE `me`. La ruta anterior (`POST /email/verify`) aceptaba `{ user_id, code }` SIN

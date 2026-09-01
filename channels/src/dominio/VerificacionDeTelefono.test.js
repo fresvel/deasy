@@ -126,7 +126,7 @@ describe("VerificacionDeTelefono · los rechazos, y por qué son distintos entre
   it("un rechazo sin motivo reconocible sigue siendo «ya usada»", async () => {
     const deasy = deasyCon({ confirma: false, motivo: "vete_a_saber" });
     const r = await new VerificacionDeTelefono(deasy)
-      .procesar(mensaje({ canal: "sms", numeroProbado: "593991112233" }));
+      .procesar(mensaje({ canal: "whatsapp", numeroProbado: "593991112233" }));
     assert.equal(r.motivo, MOTIVOS.LLAVE_CONSUMIDA);
   });
 });

@@ -1058,7 +1058,7 @@ Table "telefono_verification_keys" {
     telefono_id [type: btree, name: "idx_tvk_telefono"]
   }
 
-  Note: '''La llave con la que alguien demuestra que un número de teléfono es suyo. La persona la lleva a un canal —un QR de Telegram, un enlace de WhatsApp, un SMS que envía ella— y el microservicio `channels` la trae de vuelta. Se cifra con SHA-256 y no con bcrypt porque hay que BUSCAR por ella: el servicio sólo tiene la llave, y encontrar de qué teléfono es *es* la operación.'''
+  Note: '''La llave con la que alguien demuestra que un número de teléfono es suyo. La persona la lleva a un canal —un QR de Telegram, un enlace de WhatsApp— y el microservicio `channels` la trae de vuelta. Se cifra con SHA-256 y no con bcrypt porque hay que BUSCAR por ella: el servicio sólo tiene la llave, y encontrar de qué teléfono es *es* la operación.'''
 }
 
 Table "telefonos" {

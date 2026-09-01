@@ -43,13 +43,12 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 const props = defineProps({
   open: { type: Boolean, default: false },
   canal: { type: Object, required: true },
-  numero: { type: String, default: "" },
 });
 defineEmits(["close"]);
 
-// Cada canal tiene su baile, y son distintos de verdad: Telegram NO nos da el teléfono y hay que
-// pedirlo con un botón; WhatsApp y el SMS lo traen con el mensaje. Un texto genérico para los tres
-// dejaría al de Telegram atascado justo en el paso que sólo él tiene.
+// Cada canal tiene su baile, y son distintos de verdad: en Telegram hay que pulsar un botón para
+// compartir el número; en WhatsApp basta enviar. Un texto genérico para los dos dejaría al de
+// Telegram atascado justo en el paso que sólo él tiene.
 const PASOS = {
   telegram: [
     'Pulsa <strong class="text-strong">Abrir Telegram</strong>, o escanea el código con la cámara de tu móvil.',
@@ -64,19 +63,10 @@ const PASOS = {
     'Pulsa enviar.',
     'Vuelve aquí y pulsa <strong class="text-strong">«Ya lo hice»</strong>.',
   ],
-  sms: [
-    'Abre la aplicación de mensajes de tu teléfono.',
-    'Escribe un mensaje al número que aparece en pantalla, con <strong class="text-strong">exactamente</strong> el texto que se muestra.',
-    'Envíalo desde el número que registraste. Si lo mandas desde otro, no valdrá.',
-    'Vuelve aquí y pulsa <strong class="text-strong">«Ya lo hice»</strong>.',
-  ],
 };
 
-const pasos = computed(() => {
-  const base = PASOS[props.canal.id] ?? [];
-  if (props.canal.id !== "sms" || !props.numero) return base;
-  // El SMS es el único que puede costar dinero, y hay que decirlo donde se decide: este sistema
-  // atiende a extranjeros a propósito, y desde fuera del país un SMS sale caro.
-  return [...base, 'Ten en cuenta que <strong class="text-strong">lo cobra tu operadora</strong>, y desde fuera del país puede ser caro. Telegram y WhatsApp son gratis.'];
-});
+// ⚠️ NINGÚN CANAL CUESTA DINERO A NADIE, y por eso aquí ya no hay avisos de coste. En los dos
+// escribe el usuario desde su propia aplicación: ni le cobran a él por mensaje ni nos cuesta a
+// nosotros. Era el SMS el que traía esa advertencia, y se descartó el 2026-09-01.
+const pasos = computed(() => PASOS[props.canal.id] ?? []);
 </script>

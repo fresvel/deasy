@@ -1,8 +1,7 @@
 # `channels` — la pasarela de canales de mensajería
 
-> **Qué es.** Un servicio aparte que **sostiene conexiones** con Telegram, WhatsApp y un
-> receptor de SMS, para que una persona pueda **demostrar que un número de teléfono es
-> suyo**.
+> **Qué es.** Un servicio aparte que **sostiene conexiones** con Telegram y WhatsApp, para que
+> una persona pueda **demostrar que un número de teléfono es suyo**.
 >
 > **Qué NO es.** No es «el servicio de verificación». No decide nada, no guarda códigos y
 > no toca la base de Deasy. Esa distinción es de diseño, no de estilo: un servicio que no
@@ -22,9 +21,7 @@ La regla que decide qué vive dónde:
 |---|---|---|
 | Telegram sondeando | una conexión que hay que mantener abierta | **el servicio** |
 | Sesión de WhatsApp | una conexión, con navegador y estado en disco | **el servicio** |
-| Módem o receptor de SMS | una conexión a hardware o a un proveedor | **el servicio** |
 | Correo por SMTP | una llamada que empieza y acaba | el backend *(ya está ahí)* |
-| SMS **saliente** por proveedor | una llamada que empieza y acaba | el backend *(si algún día entra)* |
 
 **Sin esa regla, el servicio se habría comido el correo** —cuya verificación ya funciona en
 el backend, con su tabla, su código cifrado, sus diez minutos y su uso único— y habría
@@ -32,24 +29,30 @@ acabado siendo un segundo backend.
 
 **Y si sólo hubiera Telegram, este servicio no existiría.** Telegram no arrastra navegador
 ni guarda nada: cabría en el backend. Lo que justifica la separación es **el navegador de
-WhatsApp** y **el aparato del SMS**: procesos pesados, con estado en disco y que sólo
-pueden correr en **una** instancia. Meterlos en el backend lo volvería pesado, con estado,
-y lo ataría a una réplica.
+WhatsApp**: un proceso pesado, con estado en disco —una sesión vinculada a un teléfono— y que
+sólo puede correr en **una** instancia. Meterlo en el backend lo volvería pesado, con estado, y
+lo ataría a una réplica. El sondeo de Telegram tiene la misma atadura por otra razón: entrega
+cada actualización **una sola vez**, así que dos procesos sondeando se roban los mensajes.
 
 ---
 
-## 2 · Los tres canales, y para quién es cada uno
+## 2 · Los canales, y para quién es cada uno
 
 | | La mejor opción para | Qué le cuesta al usuario |
 |---|---|---|
 | **Telegram** | Quien tiene móvil con datos y no le importa instalar | nada |
 | **WhatsApp** | Quien ya lo tiene — en Ecuador, casi todo el mundo | nada |
-| **SMS entrante** | Quien no quiere instalar nada, o tiene un **teléfono básico** | un SMS normal |
 
-Se ofrecen **en ese orden**. El tercero existe porque es el único que funciona **sin
-aplicación, sin datos y en cualquier teléfono**.
+Se ofrecen **en ese orden**: Telegram primero porque su sesión no se cae y su API es oficial;
+WhatsApp después porque depende de una sesión vinculada a un teléfono, con una librería que la
+plataforma no autoriza.
 
-### En los tres, el usuario es quien empieza
+⚠️ **Hubo un tercero, el SMS entrante, y se descartó** (§3). Era el único que funcionaba sin
+aplicación y sin datos — eso se pierde, y hay que decirlo: **quien no tenga ninguna de las dos
+aplicaciones no puede verificar su teléfono hoy**. Lo que se gana es no aceptar como prueba algo
+que no lo es.
+
+### En los dos, el usuario es quien empieza
 
 No es un detalle de implementación: **es lo que hace que todo esto sea posible y barato.**
 
@@ -57,11 +60,13 @@ No es un detalle de implementación: **es lo que hace que todo esto sea posible 
   lo inicia el usuario — y la limitación deja de existir.
 - El bombeo de SMS —disparar códigos a números de tarifa premium del atacante para cobrar
   parte de lo que tú pagas— **vive de que TÚ envíes**. Si sólo recibes, **quien lo dispare
-  paga él**. El ataque no se mitiga: no existe.
+  paga él**. El ataque no se mitiga: no existe. Y desde que el SMS quedó descartado
+  (2026-09-01) esto es **permanente**: el OTP saliente era la única variante que lo habría
+  reabierto.
 - Y casi todo lo que los operadores vigilan es **tráfico saliente**. Una SIM que sólo
   recibe se parece a un teléfono, no a una caja SIM.
 
-**Coste por mensaje del sistema: cero, en los tres.**
+**Coste por mensaje del sistema: cero, en los dos.**
 
 ---
 
@@ -198,17 +203,37 @@ Así que hoy **ninguno de los dos canales entrega el número gratis**: Telegram 
 WhatsApp pide una resolución. Lo que ambos conservan —y es lo que vale— es que **el número lo afirma
 la plataforma sobre una sesión autenticada**, no quien escribe.
 
-### SMS entrante
+### ❌ SMS entrante — descartado el 2026-09-01
 
-El usuario manda un SMS con la llave al número publicado.
+⚠️ **Aquí ponía: «Es el más limpio de los tres: el número del remitente viene en la cabecera
+del mensaje… lo prueba el propio transporte». ERA FALSO,** y era el cimiento sobre el que este
+documento lo ponía por encima de los otros dos.
 
-**Es el más limpio de los tres:** el número del remitente **viene en la cabecera del
-mensaje**. No hay que pedir un contacto ni comparar con nada tecleado — **lo prueba el
-propio transporte**.
+**El número de origen de un SMS lo rellena el emisor** y es falsificable desde una pasarela
+SMPP ([`10.1145/3615667`](https://doi.org/10.1145/3615667)): en la demostración se entregaron
+mensajes con origen arbitrario a **cualquier número internacional en TODAS las operadoras
+verificadas**, y de ahí sale un ataque completo
+([`10.1145/3696011`](https://doi.org/10.1145/3696011)). El propio autor advierte que la
+falsificabilidad depende de la red que entrega — es decir, **no es una propiedad del SMS, sino
+de cada operadora**, que es peor: no se puede razonar sobre ella.
 
-⚠️ **Su límite, y hay que decirlo en la pantalla:** un SMS internacional a Ecuador no
-cuesta céntimos, y este sistema **atiende a extranjeros a propósito**. Es justo la
-población para la que este canal es peor — por eso va tercero, no primero.
+**Aplicado aquí el ataque es directo, y la llave la damos nosotros:** alguien declara el
+teléfono de otro al registrarse, recibe una llave válida y la devuelve falsificando el origen.
+Suplanta la identidad en el alta y **bloquea el número de la víctima**. Y es peor contra un
+número **extranjero** —falsificación internacional, la que funcionó en todas las operadoras—,
+que es justo a quien este sistema atiende a propósito.
+
+**Esto invierte el orden de mérito que tenía este documento.** Telegram y WhatsApp entregan el
+número a través de una **sesión autenticada con la plataforma**; el SMS entrante es el único de
+los tres **cuyo número no lo autentica nadie**. Era el último por incómodo, y resultó ser el
+único inaceptable.
+
+Se suman dos razones prácticas: **en Ecuador no existe alquilar un número que reciba** (§7), y
+la alternativa saliente —mandar nosotros el código— cuesta por mensaje, reabre el bombeo de SMS
+y no aporta nada a quien ya puede usar WhatsApp o Telegram.
+
+El análisis completo, con las cifras, en el frente 15 del plan
+([`channels-verificacion-2026-08.md`](../planes/channels-verificacion-2026-08.md), §C6).
 
 ---
 
@@ -269,11 +294,13 @@ Transporte y nada más, como manda la norma de capas del repositorio.
 
 De [`referencia/patrones-diseno.md`](../planes/referencia/patrones-diseno.md) §6, en su orden.
 
-**1 · ¿Es duplicación?** No. Los tres canales no comparten una línea: uno sondea una API,
-otro conduce un navegador, el tercero lee de un puerto.
+**1 · ¿Es duplicación?** No. Los canales no comparten una línea: uno sondea una API oficial,
+otro conduce un navegador.
 
 **2 · ¿Es una cascada de condicionales sobre datos?** No. No es un `switch` sobre un valor:
-son **tres formas de conectarse** que no se parecen en nada.
+son **formas de conectarse que no se parecen en nada**, y sobre todo **formas distintas de
+probar el número** — Telegram lo pide con un botón, WhatsApp lo resuelve desde un identificador
+opaco. Es eso, y no cuántos haya, lo que justifica el polimorfismo.
 
 **3 · ¿Hay un eje real de variación?** **Sí, y es el único del diseño.** El canal se elige
 **en ejecución**, y son tres —con un cuarto posible: la app propia—. Con dos era
@@ -330,9 +357,10 @@ en la red interna.
 **El número de WhatsApp es una línea dedicada**, ni la principal de la institución ni
 rotatoria: su pérdida cuesta volver a vincular y avisar, no la identidad.
 
-**Y el SMS no ata a un aparato.** Existe la misma idea alquilando a un proveedor un número
-que recibe. Detrás **de la misma interfaz**, así que «módem propio o número alquilado» es una
-decisión de **despliegue**, no de diseño.
+⚠️ **Aquí ponía que «el SMS no ata a un aparato» porque se podía alquilar un número que
+recibe. En Ecuador eso NO EXISTE** — Twilio lo dice explícitamente («Two-way SMS supported:
+No») y las operadoras sustituyen el remitente por un número local, lo que rompe cualquier
+respuesta. No había dos caminos: había uno. Es una de las razones del descarte.
 
 ---
 
@@ -360,8 +388,6 @@ límite ni de caché, y **no hay Redis en ninguna pila**. Hace falta aunque no h
 canales: protege el acceso, el registro y `/recover-email`. Y hay que limitar **por número
 de destino**, no sólo por origen, o el sistema sirve para molestar a terceros.
 
-**Si el SMS entrante arranca con módem propio o con número alquilado.**
-
 **Qué pasa con quien ya está registrado** el día que la verificación se vuelva obligatoria:
 o se les respeta lo que tienen, o se les hace pasar por el circuito.
 
@@ -377,8 +403,8 @@ profundo, que el bot **no** recibe el número, que el contacto trae `phone_numbe
 
 - El detalle actual de `whatsapp-web.js` — **su código anterior en este repositorio lleva
   años muerto y tenía errores; se escribe de nuevo**, contra su documentación de hoy.
-- El detalle regulatorio ecuatoriano de recibir SMS en líneas de consumidor. El riesgo es
-  **mucho menor** que enviando, pero eso lo confirma quien conozca la norma local.
+- ~~El detalle regulatorio ecuatoriano de recibir SMS en líneas de consumidor.~~ **Ya no hace
+  falta: el SMS se descartó el 2026-09-01.**
 
 ---
 

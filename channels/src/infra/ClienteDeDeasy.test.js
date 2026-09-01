@@ -102,7 +102,7 @@ describe("ClienteDeDeasy · confirmarVerificacion", () => {
 
   it("un fallo del backend LANZA: nadie debe creer que quedó verificado", async () => {
     const { cliente } = clienteCon(() => respuesta(500, { message: "se cayó" }));
-    await assert.rejects(() => cliente.confirmarVerificacion({ llave: "K1", canal: "sms" }));
+    await assert.rejects(() => cliente.confirmarVerificacion({ llave: "K1", canal: "whatsapp" }));
   });
 
   // El 409 es el ÚNICO código que no lanza: la llave no valía o el número no era. Al usuario le

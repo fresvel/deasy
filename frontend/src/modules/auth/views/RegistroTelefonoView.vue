@@ -79,7 +79,7 @@
              móvil ve un botón. Lo que había debajo de cada una --«Escanéalo con la cámara», «Se
              abrirá la conversación con nuestro bot»-- decía lo que la imagen ya dice.
              El resto está en «Instrucciones», para quien lo quiera. -->
-        <div v-if="canalActivo.id !== 'sms'" class="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-line"
+        <div class="grid gap-6 sm:grid-cols-2 sm:divide-x sm:divide-line"
              :class="{ 'pointer-events-none opacity-40': caducado }">
           <div class="order-2 text-center sm:order-1">
             <p class="mb-3 text-sm font-semibold text-strong">Desde otro teléfono</p>
@@ -103,13 +103,6 @@
           </div>
         </div>
 
-        <div v-else class="text-center" :class="{ 'pointer-events-none opacity-40': caducado }">
-          <p class="mb-3 text-sm text-muted">
-            Manda este texto al <strong class="text-strong">{{ canalActivo.numero }}</strong>:
-          </p>
-          <code class="mx-auto block max-w-md break-all rounded-md border border-line bg-surface px-4 py-3 font-mono text-sm text-strong">{{ canalActivo.texto }}</code>
-        </div>
-
         <p v-if="!caducado && minutosRestantes" class="mt-6 text-center text-xs text-muted">
           Caduca en {{ minutosRestantes }}.
         </p>
@@ -127,7 +120,6 @@
       v-if="canalActivo"
       :open="verManual"
       :canal="canalActivo"
-      :numero="numero"
       @close="verManual = false"
     />
   </AuthLayout>
@@ -145,7 +137,7 @@ import ManualDeCanal from "@/modules/auth/components/ManualDeCanal.vue";
 import VerificacionService from "@/modules/auth/services/VerificacionService";
 import AuthService from "@/modules/auth/services/AuthService";
 import realtimeClient from "@/core/services/realtimeClient";
-import { IconBrandTelegram, IconBrandWhatsapp, IconDeviceMobile } from "@tabler/icons-vue";
+import { IconBrandTelegram, IconBrandWhatsapp } from "@tabler/icons-vue";
 
 const router = useRouter();
 const canales = ref({});
@@ -170,13 +162,12 @@ const ahora = ref(Date.now());
 let reloj = null;
 let telefonoId = null;
 
-// El ORDEN es la recomendación, y está razonada: Telegram no cuesta nada y prueba el número con un
-// botón; WhatsApp igual pero depende de una sesión que hay que mantener; el SMS es el único que
-// funciona sin aplicación y sin datos, y el único que puede costar dinero.
+// El ORDEN es la recomendación, y está razonada: Telegram prueba el número con un botón y su sesión
+// no se cae; WhatsApp depende de una sesión vinculada a un teléfono que hay que mantener vinculado.
+// Los dos son gratis y en los dos escribe el usuario, así que ninguno nos cuesta por mensaje.
 const CATALOGO = [
   { id: "telegram", nombre: "Telegram", nota: "Recomendado · gratis", icono: IconBrandTelegram, tono: "deasy-icon-box--info" },
   { id: "whatsapp", nombre: "WhatsApp", nota: "Gratis con datos", icono: IconBrandWhatsapp, tono: "deasy-icon-box--success" },
-  { id: "sms", nombre: "SMS", nota: "Sin datos · lo cobra tu operadora", icono: IconDeviceMobile, tono: "deasy-icon-box--neutral" },
 ];
 
 const disponibles = computed(() =>

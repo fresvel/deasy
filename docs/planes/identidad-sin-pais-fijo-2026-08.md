@@ -502,24 +502,29 @@ aplicación propia. Hasta entonces, esta dirección no se puede empezar.
 
 Está entero en **[`arquitecturas/microservicio-channels.md`](../arquitecturas/microservicio-channels.md)**
 y no se repite aquí. En una línea: un servicio aparte que **sostiene conexiones** con
-**Telegram, WhatsApp y un receptor de SMS**; el backend sigue decidiendo, y el correo se queda donde
-está.
+**Telegram y WhatsApp**; el backend sigue decidiendo, y el correo se queda donde está.
 
 Tres cosas de ese diseño que cambian lo que esta ficha decía antes:
 
-- **El SMS vuelve, pero al revés.** No lo envía el sistema: **lo envía el usuario**. Con eso el
-  bombeo —el ataque que obligaba a un limitador antes de arrancar— **deja de existir**, porque vive
-  de que seas tú quien paga el envío.
-- **Coste por mensaje: cero, en los tres canales.** Toda la evaluación de tarifas de este documento
-  queda como historia: el usuario siempre empieza la conversación.
+- **El envío desaparece: lo hace el usuario.** Con eso el bombeo —el ataque que obligaba a un
+  limitador antes de arrancar— **deja de existir**, porque vive de que seas tú quien paga el envío.
+
+  ⚠️ **Y el SMS, que este documento evaluaba a fondo, quedó DESCARTADO el 2026-09-01.** No por
+  coste: **el SMS entrante no prueba el número** — su cabecera de origen la rellena el emisor y es
+  falsificable ([`10.1145/3615667`](https://doi.org/10.1145/3615667)). Toda la comparación de tarifas
+  de más arriba queda como historia por partida doble.
+- **Coste por mensaje: cero, en los dos canales.** El usuario siempre empieza la conversación.
 - **Las multisesiones de WhatsApp se descartaron por sobrediseño.** Escribirle a alguien es **un
   enlace** que abre el WhatsApp del propio usuario.
 
 #### Una decisión de arquitectura que cuesta poco ahora y mucho después
 
-El envío, **detrás de una interfaz** con implementaciones intercambiables: un solo punto —«manda este
-código a este número»— y detrás Telegram, SMS o la app propia. Sin eso el canal se mete en los
+La RECEPCIÓN, **detrás de una interfaz** con implementaciones intercambiables: un solo punto —«¿me
+das un número probado?»— y detrás Telegram, WhatsApp o la app propia. Sin eso el canal se mete en los
 controladores y cambiarlo es un refactor.
+
+⚠️ Aquí ponía «el ENVÍO, detrás de una interfaz… manda este código a este número». **El sentido se
+invirtió**: no enviamos nada. Es lo que hace que ningún canal cueste por mensaje.
 
 #### Y una regla del modelo que sale de aquí
 

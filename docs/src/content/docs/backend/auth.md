@@ -119,7 +119,7 @@ dejaría pasar todo: sería una puerta pintada.
 | **Correo** | La persona tiene **algún** correo verificado |
 | **Teléfono** | La persona tiene **algún** teléfono con **algún canal** verificado |
 
-**Basta cualquiera de los tres canales** —Telegram, WhatsApp o SMS— y verificar uno **no** verifica
+**Basta cualquiera de los canales** —hoy Telegram o WhatsApp— y verificar uno **no** verifica
 los otros: probar que un número tiene Telegram no prueba que tenga WhatsApp. Lo que los tres prueban
 por igual es que **el número es tuyo**, y eso es lo único que se exige.
 

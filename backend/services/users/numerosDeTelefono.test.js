@@ -26,7 +26,7 @@ test("dos países con la misma cola NO son el mismo teléfono", () => {
 });
 
 test("el mismo teléfono, escrito como lo entrega cada transporte", () => {
-  // Telegram, WhatsApp y las pasarelas de SMS dan SIEMPRE la internacional, en una de estas formas.
+  // Telegram y WhatsApp dan SIEMPRE la internacional, en una de estas formas.
   assert.equal(numerosIguales(EC, "+593 99 111 2233"), true);
   assert.equal(numerosIguales(EC, "593991112233"), true);
   assert.equal(numerosIguales(EC, "00593991112233"), true);
@@ -34,8 +34,8 @@ test("el mismo teléfono, escrito como lo entrega cada transporte", () => {
 
 // ── LA RAMA QUE SE RETIRÓ EL 2026-08-31, Y POR QUÉ ──────────────────────────────────────────────
 //
-// Se aceptaba la parte local a secas por el SMS nacional desde módem propio — o sea, por `C6`, que
-// está bloqueada y sin implementar. La factura de esa permisividad llegó antes que el canal: un
+// Se aceptaba la parte local a secas por un canal NACIONAL desde módem propio, que nunca existió y
+// que se descartó definitivamente el 2026-09-01. La factura de esa permisividad llegó antes: un
 // teléfono guardado MAL se verificó igualmente, porque su «parte local» casaba con el internacional
 // que llegaba. En cuanto se compara algo sin país, el país deja de pintar nada, que es exactamente
 // el agujero de `C2b`.

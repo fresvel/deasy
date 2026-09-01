@@ -10,8 +10,8 @@
  * @returns {string|null} la llave, o `null` si eso no puede ser una llave nuestra
  *
  * Se acepta con `/start` delante --así la entrega Telegram desde su enlace profundo-- y también a
- * secas, porque quien no puede pulsar el enlace la copia y la pega, y en WhatsApp y en el SMS **no
- * hay `/start` en absoluto**: el texto es la llave.
+ * secas, porque quien no puede pulsar el enlace la copia y la pega, y en WhatsApp **no hay `/start`
+ * en absoluto**: el texto es la llave.
  */
 export const llaveDe = (texto) => {
   const limpio = String(texto ?? "").trim();
@@ -27,8 +27,8 @@ export const llaveDe = (texto) => {
   // ⚠️ CON `/start` VALE CUALQUIER LONGITUD: quien llega así viene de un enlace NUESTRO, así que no
   // hay ambigüedad. A PELO se exige que sea larga, y esto no es un capricho: «hola», «ok» y «test»
   // pasan el alfabeto perfectamente, y sin este mínimo cada saludo se convertía en una consulta al
-  // backend preguntando por una llave inventada. En WhatsApp y en SMS eso sería CADA MENSAJE que
-  // alguien mande al número, que es mucho peor que en Telegram.
+  // backend preguntando por una llave inventada. En WhatsApp eso sería CADA MENSAJE que alguien mande
+  // al número, que es mucho peor que en Telegram --allí sólo se habla con el bot a propósito--.
   //
   // Nuestras llaves son 32 bytes en base64url --43 caracteres--, así que 20 deja margen de sobra sin
   // dejar pasar una palabra suelta.

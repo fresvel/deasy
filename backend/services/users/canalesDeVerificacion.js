@@ -7,8 +7,12 @@
 import QRCode from "qrcode";
 
 // ⚠️ EN TODOS LOS CANALES ESCRIBE EL USUARIO. No mandamos nada: componemos el enlace que abre su
-// aplicación con la llave ya puesta. Por eso ninguno cuesta por mensaje y por eso no existe el
-// ataque de coste — quien paga el SMS es quien lo envía.
+// aplicación con la llave ya puesta.
+//
+// De ahí sale una propiedad que conviene no perder al añadir canales: **paga quien envía, así que
+// no hay ataque de coste**. Nadie puede hacernos gastar pidiendo llaves en bucle, porque emitir una
+// llave no cuesta nada. Es permanente desde que se descartó el SMS (2026-09-01): el OTP saliente era
+// la única variante que lo habría roto, y con él llegaba el fraude de bombeo de SMS.
 
 /**
  * Los canales configurados, ya compuestos con la llave.
@@ -31,9 +35,6 @@ export const canalesConfigurados = (llave, env = process.env) => {
   if (env.WHATSAPP_NUMERO) {
     enlaces.whatsapp = `https://wa.me/${env.WHATSAPP_NUMERO}?text=${encodeURIComponent(llave)}`;
   }
-  if (env.SMS_NUMERO) {
-    enlaces.sms = { numero: env.SMS_NUMERO, texto: llave };
-  }
   return enlaces;
 };
 
@@ -49,8 +50,7 @@ export const hayAlgunCanal = (env = process.env) => Object.keys(canalesConfigura
  * las dos formas, y desde el principio: el enlace para el móvil, el QR para el ordenador.
  *
  * Se genera AQUÍ y no en la pantalla por lo mismo que los enlaces: el frontend no tiene por qué
- * saber qué se codifica en cada canal. Y el SMS no lleva QR — no hay nada que abrir: hay que
- * escribir un mensaje.
+ * saber qué se codifica en cada canal.
  */
 export const canalesConQR = async (llave, env = process.env) => {
   const canales = canalesConfigurados(llave, env);
@@ -58,11 +58,8 @@ export const canalesConQR = async (llave, env = process.env) => {
     QRCode.toDataURL(texto, { margin: 1, width: 320, errorCorrectionLevel: "M" });
 
   const salida = {};
-  for (const [nombre, valor] of Object.entries(canales)) {
-    salida[nombre] =
-      nombre === "sms"
-        ? { ...valor, qr: null }
-        : { enlace: valor, qr: await dibujar(valor) };
+  for (const [nombre, enlace] of Object.entries(canales)) {
+    salida[nombre] = { enlace, qr: await dibujar(enlace) };
   }
   return salida;
 };

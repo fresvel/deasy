@@ -27,12 +27,20 @@
 | **C3** | Un número real se verifica **por Telegram**, de punta a punta | ✅ | **Verificado con un teléfono real** (iPhone y Telegram Desktop) · channels **50** · 4 mutaciones cazadas (aceptar la tarjeta ajena, offset después de tratar, borrar el error del mensaje, «hola» como llave) · rechazos comprobados uno a uno: caducada · ya usada · inventada · contacto reenviado · **llave abierta desde OTRO teléfono** · y medido que un intento de impostor **NO gasta la llave** | 2026-08-31 |
 | **C4** | El servicio corre **como contenedor** en la pila, sin que lo alcance el navegador | ✅ | `docker/channels/Dockerfile` + servicio en `compose.dev.yml` · **0 puertos publicados** y el nombre no resuelve desde el host · apagado limpio en **1,2 s** con SIGTERM (tini como PID 1) · conectado a `@deasy_test_bot` desde dentro de la pila · **vuelta completa comprobada con un teléfono real contra el contenedor de la pila** | 2026-08-31 |
 | **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ✅ | **Verificado con un teléfono real**: `983200911` quedó verificado el 2026-09-01 a las 15:03:58, llave consumida y **sólo WhatsApp marcado** · channels **83 pruebas** · 4 mutaciones cazadas | 2026-09-01 |
-| **C6** | Un número real se verifica **por SMS entrante** | ⛔ | **Bloqueada por una decisión del dueño**: módem propio o número alquilado | |
+| ~~**C6**~~ | ~~Un número real se verifica **por SMS entrante**~~ | ❌ | **DESCARTADA POR EL DUEÑO, no aplazada.** El SMS entrante **no prueba el número**: su cabecera de origen la rellena el emisor (`10.1145/3615667` · `10.1145/3696011`). Ver §C6 | 2026-09-01 |
 | **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | ⬜ | | |
 | **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ✅ | char **326/326** · unit **735** · frontend **431** y sus 27 puertas · la puerta REAL en el backend (`exigeVerificacionCompleta`) y el guardián del router como mitad amable · **4 defectos cerrados de camino**: la verificación autodeclarable, el alta no atómica, `/email/verify` sin sesión y el envío que fallaba en silencio | 2026-08-31 |
 | **C9** | 🚧 **El limitador de intentos** | ⬜ | | |
 
-**10 tareas.** `C6` está bloqueada a propósito y no cuenta como pendiente de trabajo.
+**9 tareas · 7 cerradas · 2 pendientes.**
+
+⚠️ **El denominador bajó de 10 a 9**, y no por haber terminado nada: `C6` se **descartó** el
+2026-09-01. No es una pausa ni un bloqueo — es una opción muerta, y por eso sale de la cuenta en vez
+de quedarse como deuda perpetua.
+
+- **Cerradas (7):** `C1` · `C2` · `C2b` · `C3` · `C4` · `C5` · `C8`
+- **Pendientes (2):** `C7` (la pestaña de administración) · `C9` (el limitador)
+- **Descartada (1):** `C6`
 
 🚧 marca la que **no es sólo de este frente**: el limitador protege también el acceso, el
 registro y `/recover-email`. Hoy **no existe ninguno** — 18 dependencias en el backend,
@@ -43,8 +51,9 @@ ninguna de límite ni de caché, y **no hay Redis en ninguna pila**.
 ```
 C1 ──> C2 ──> C2b ─┬─> C3 ──> C4 ──> C8
                    └─> C5 ──> C7
-C6   (bloqueada)
 C9   (independiente — y hace falta aunque no hubiera canales)
+
+C6   ❌ DESCARTADA — no está en el grafo porque ya no hay nada que desbloquear
 ```
 
 - **`C2` es la costura.** Sin llaves que crear y resolver, un canal no tiene nada que
@@ -324,17 +333,80 @@ descartar en silencio**.
   filtro `fromMe` impide que se autoverifique— pero es un buzón de la institución, no de nadie.
   Hay que liberarlo antes de producción.
 
-### C6 · ⛔ SMS entrante — bloqueada
+### C6 · ❌ SMS entrante — DESCARTADA el 2026-09-01
 
-**Es el más limpio de los tres**: el número **viene en la cabecera del mensaje**, así que lo
-prueba el propio transporte. Y el único que funciona **sin aplicación, sin datos y en un
-teléfono básico**.
+**No es una pausa ni un «bloqueado»: es un descarte definitivo**, decidido por el dueño tras un
+análisis en sesión aparte. Se documenta con su porqué para que nadie lo reproponga dentro de seis
+meses, que es lo que pasa con las opciones que sólo se borran.
 
-**Lo que la bloquea es una decisión, no código:** módem propio o número alquilado a un
-proveedor. Detrás de la misma interfaz, así que es una decisión de **despliegue**.
+⚠️ **Aquí ponía que el SMS «es el más limpio de los tres: el número viene en la cabecera del
+mensaje, así que lo prueba el propio transporte». Esa frase era FALSA**, y era el cimiento sobre el
+que el plan lo colocaba por encima de los otros dos.
 
-⚠️ **Y su límite hay que decirlo en la pantalla:** a quien escribe desde fuera del país le
-cuesta caro, y este sistema **atiende a extranjeros a propósito**. Por eso va tercero.
+#### 1 · El SMS entrante NO prueba el número
+
+El número de origen de un SMS **lo rellena el emisor** y es falsificable desde una pasarela SMPP.
+Tsunoda lo demostró entregando mensajes con origen arbitrario en la red japonesa: **a cualquier
+número internacional lo consiguió en TODAS las operadoras verificadas; a números nacionales, en
+una**. El propio autor advierte que la falsificabilidad *«depende de la tecnología de entrega o de
+las políticas de seguridad de cada operadora»* — o sea, **no es una propiedad del SMS sino de cada
+red**, que es peor: no se puede razonar sobre ella.
+
+- La demostración: [`10.1145/3615667`](https://doi.org/10.1145/3615667)
+- El trabajo que la lleva al ataque completo:
+  [`10.1145/3696011`](https://doi.org/10.1145/3696011) (preprint: [`arXiv:2310.11052`](https://arxiv.org/abs/2310.11052))
+
+**Aplicado a nosotros el ataque es directo, y somos nosotros quienes damos la llave:** alguien
+registra una cuenta declarando el teléfono de otro, el sistema **le entrega una llave válida**, y la
+devuelve por SMS falsificando el origen. `numeroProbado` saldría de una cabecera que rellena el
+emisor. No da acceso a ninguna cuenta —hace falta la contraseña— pero **suplanta la identidad en el
+alta y bloquea el número de la víctima**, que no podrá registrarse.
+
+Y es peor justo donde más duele: contra un número **extranjero** hace falta falsificación
+**internacional**, que funcionó en **todas** las operadoras del estudio. Este sistema atiende a
+extranjeros a propósito.
+
+⚠️ **Esto invierte el orden de mérito que tenía el plan.** Telegram y WhatsApp entregan el número a
+través de una **sesión autenticada con la plataforma**; el SMS entrante es **el único de los tres
+cuyo número no lo autentica nadie**. Era el último por incómodo, y resulta que era el único
+inaceptable.
+
+#### 2 · Alquilar un número que reciba no existe en Ecuador
+
+El plan daba por hecho que la decisión pendiente era «módem propio **o** número alquilado». **La
+segunda mitad no existe.** Twilio, en sus directrices de Ecuador, dice **«Two-way SMS supported:
+No»**, y no hay códigos cortos propios; Aerialink lo confirma por otro lado — **las operadoras
+sustituyen el remitente por un número local**, lo que rompe cualquier respuesta. Ecuador entrega con
+un **código corto compartido de 4 dígitos** y **no admite remitente alfanumérico** (LabsMobile,
+Afilnet).
+
+Así que no había dos caminos: había uno, el módem propio, con todo lo que arrastra.
+
+#### 3 · La alternativa saliente (OTP) tampoco compensa
+
+Existe y **sí prueba posesión** —eso hay que concedérselo—, pero: cuesta entre **$0,042 y $0,339 por
+mensaje** según proveedor (**8× de diferencia**), abre un frente de fraude que hoy no tenemos —el
+*SMS pumping*— y **no aporta nada a quien ya puede usar WhatsApp o Telegram**, que verifica gratis.
+Su único valor sería para quien no tiene ninguna aplicación, y el dueño ha determinado que esa
+población no justifica el coste ni el canal.
+
+#### Lo que ganamos al no adoptarlo, y conviene no perder
+
+**Con verificación entrante paga quien envía, así que no hay ataque de coste.** Nadie puede hacernos
+gastar pidiendo llaves en bucle, porque emitir una llave no cuesta nada. Estaba escrito en
+`canalesDeVerificacion.js` como un contraste con el SMS; **ahora es una propiedad permanente**, y el
+OTP saliente era la única variante que la habría roto.
+
+#### Qué queda del descarte en el código
+
+Nada ejecutable. Lo que queda son **los porqués**, a propósito y en los sitios donde alguien estaría
+a punto de reintroducirlo: `channels/src/dominio/Canal.js` (con los DOI),
+`backend/database/postgres_schema.sql` (junto al catálogo sembrado),
+`backend/services/users/canalesDeVerificacion.js` (la propiedad del coste),
+`backend/services/users/numerosDeTelefono.js` (la regla E.164 pasa a permanente) y los `.env`.
+
+⚠️ **`signal` NO se ha tocado.** Sigue sembrado en `canales_mensajeria` con `is_active = 0` y sin
+implementación. Es el mismo olor —vocabulario sin código— pero **es otra decisión**, y es del dueño.
 
 ### C7 · La pestaña de administración
 
@@ -457,7 +529,6 @@ mismo plan prometía en `C3`, y explicaba el **porqué** del diseño en vez del 
 | Selector | Los tres canales, en orden de recomendación, como **grupo de opciones** (no tres botones: elegir uno de tres es lo que un `radio` significa) |
 | QR | Lo compone el **backend**, igual que los enlaces. Sin él, quien se registra desde el ordenador no tiene salida |
 | Manual | En un modal, **paso a paso y por canal** — el de Telegram tiene un paso que los otros no: pedir el contacto |
-| SMS | Se dice que **lo cobra la operadora** y que los otros dos son gratis, ahí donde se decide |
 
 ⚠️ **El enlace de Telegram sí era correcto** (comprobado contra `getMe`). Lo que falla es la entrega
 del navegador a Telegram Desktop, que puede quedarse con la conversación y **perder el
@@ -832,7 +903,7 @@ node scripts/docs/check-doc-modelo.mjs                    # la doc del modelo
 
 ⚠️ **Y lo que las pruebas no ven:** que un QR se escanee de verdad, que llegue un mensaje y
 que el teléfono quede verificado. Eso se comprueba **con un teléfono en la mano**, y las
-tareas `C3`, `C5` y `C6` **no se cierran sin eso**.
+tareas `C3` y `C5` **no se cerraron sin eso** — y las dos están cerradas así.
 
 ---
 
@@ -842,14 +913,19 @@ tareas `C3`, `C5` y `C6` **no se cierran sin eso**.
 guardado mal —con el prefijo del país *dentro* de `numero`— se verificó igualmente, porque la
 comparación aceptaba tres escrituras y una era **la parte local a secas**.
 
-Esa tolerancia existía por el **SMS nacional desde módem propio**: `C6`, **bloqueada y sin
-implementar**. Se pagaba permisividad por un canal que no existe, y la factura llegó antes que el
+Esa tolerancia existía por el **SMS nacional desde módem propio**: `C6`, entonces bloqueada y sin
+implementar. Se pagaba permisividad por un canal que no existía, y la factura llegó antes que el
 canal. Y es de la misma familia que el agujero de `C2b`: **en cuanto se compara algo que no lleva
 país, el país deja de pintar nada.**
 
-**Decisión del dueño (2026-08-31): cerrarla.** Ahora se exige E.164 siempre. Telegram, WhatsApp y
-cualquier pasarela entregan el número con su país; si `C6` acaba necesitando la forma local, se
-reinstaura sabiendo el país **por la red del propio módem**, que es donde ese dato sí está.
+**Decisión del dueño (2026-08-31): cerrarla.** Ahora se exige E.164 siempre. Telegram y WhatsApp
+entregan el número con su país.
+
+⚠️ **Y desde el 2026-09-01 la regla es PERMANENTE.** Aquí se prometía reinstaurar la forma local «si
+`C6` acababa necesitándola, sabiendo el país por la red del propio módem». **`C6` se descartó**, así
+que esa promesa ya no puede cumplirse y el único motivo que quedaba para aflojar la regla ha muerto.
+Quien vuelva a proponer la forma local tendrá que traer un transporte nuevo **y** el país por otra
+vía.
 
 Y una segunda mitad, porque cerrar la rama sola habría empeorado el mensaje: un registro corrupto
 pasaría a fallar **al final del camino**, diciendo «ese número no es el tuyo» — que es mentira y no

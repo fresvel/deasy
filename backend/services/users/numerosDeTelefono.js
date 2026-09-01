@@ -61,17 +61,22 @@ export const numeroMalGuardado = (guardado) => {
  * @param {string} probado   lo que el transporte asegura que envió el mensaje
  *
  * Se acepta **UNA sola escritura**: la internacional completa — `593991112233`, con `+`, con `00`
- * o a secas. Es la que dan Telegram, WhatsApp y cualquier pasarela de SMS.
+ * o a secas. Es la que dan Telegram y WhatsApp.
  *
  * ⚠️ **HUBO DOS MÁS Y SE RETIRARON EL 2026-08-31** (la parte local con cero y sin él). Existían por
- * el SMS **nacional** desde módem propio, único transporte capaz de entregar un número sin país —
- * es decir, por `C6`, que está **bloqueada y sin implementar**. Se pagaba permisividad por un canal
- * que no existe, y la factura llegó: un teléfono guardado MAL —con el prefijo del país dentro de
- * `numero`— se verificó igualmente, porque su «parte local» casaba con el internacional que llegaba.
+ * un canal **nacional** desde módem propio, único transporte capaz de entregar un número sin país. Se
+ * pagaba permisividad por un canal que no existía, y la factura llegó: un teléfono guardado MAL —con
+ * el prefijo del país dentro de `numero`— se verificó igualmente, porque su «parte local» casaba con
+ * el internacional que llegaba.
  *
  * Es la misma familia que el agujero de `C2b`: en cuanto se compara algo que no lleva país, el país
- * deja de pintar nada. Si `C6` acaba necesitando la forma local, se reinstaura sabiendo el país por
- * la red del propio módem — que es donde ese dato sí está, y no aquí adivinándolo.
+ * deja de pintar nada.
+ *
+ * ⚠️ **Y ESTA REGLA YA ES PERMANENTE.** Aquí se prometía reinstaurar la forma local «si el canal
+ * nacional acababa necesitándola». **Ese canal se descartó el 2026-09-01** —ver el frente 15— y con
+ * él muere el único motivo que quedaba para aflojarla. Los dos canales vivos entregan el número con
+ * su país. Si alguien vuelve a proponer la forma local, que traiga un transporte nuevo Y el país por
+ * otra vía: sin país no hay comparación que valga.
  *
  * ⚠️ Si el teléfono guardado NO tiene país, se RECHAZA. Sin prefijo no hay comparación
  * internacional posible, y la alternativa —comparar sólo la parte local— volvería a dar por bueno

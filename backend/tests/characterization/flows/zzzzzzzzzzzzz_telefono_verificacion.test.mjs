@@ -3,7 +3,7 @@
 // Fija DOS contratos que tienen clientes distintos:
 //
 //  1. `POST /users/me/telefonos/:id/verificacion` — lo llama el navegador. Devuelve los enlaces YA
-//     COMPUESTOS (Telegram, WhatsApp, SMS) para que la pantalla no tenga que saber armarlos.
+//     COMPUESTOS (Telegram, WhatsApp) para que la pantalla no tenga que saber armarlos.
 //  2. `POST /internal/verificacion/{estado,confirmar}` — lo llama `channels`, nunca un navegador.
 //
 // Lo que se protege aquí y no protege ninguna otra prueba:
@@ -125,7 +125,7 @@ test("un número de otro país con la misma cola NO verifica", async () => {
 test("el mismo número, escrito como lo entrega cada transporte", async () => {
   const token = await tokenFor("admin");
 
-  // Telegram, WhatsApp y las pasarelas de SMS dan SIEMPRE la internacional, en una de estas formas.
+  // Telegram y WhatsApp dan SIEMPRE la internacional, en una de estas formas.
   for (const escritura of ["+593 99 000 0000", "593990000000", "00593990000000"]) {
     const pedida = await post("/users/me/telefonos/1/verificacion", { token });
     const r = await confirmar(llaveDelEnlace(pedida.body), escritura, "telegram");
@@ -135,8 +135,8 @@ test("el mismo número, escrito como lo entrega cada transporte", async () => {
 
 // ── LA RAMA QUE SE RETIRÓ EL 2026-08-31 ─────────────────────────────────────────────────────────
 //
-// Se aceptaba la parte LOCAL a secas por el SMS nacional desde módem propio — o sea, por `C6`, que
-// está bloqueada y sin implementar. La factura llegó antes que el canal: probando `C3` con un
+// Se aceptaba la parte LOCAL a secas por un canal NACIONAL desde módem propio, que nunca existió y
+// que se descartó definitivamente el 2026-09-01. La factura llegó antes: probando `C3` con un
 // teléfono real, un número guardado MAL —con el prefijo del país dentro de `numero`— se verificó
 // igualmente, porque su «parte local» casaba con el internacional que llegaba.
 //

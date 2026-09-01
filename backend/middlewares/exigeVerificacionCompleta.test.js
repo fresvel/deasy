@@ -9,7 +9,7 @@ const respuesta = () => {
   return r;
 };
 
-const VERIFICADA = { emails: [{ verificado: 1 }], telefonos: [{ canales: [{ code: "sms", verificado: 1 }] }] };
+const VERIFICADA = { emails: [{ verificado: 1 }], telefonos: [{ canales: [{ code: "whatsapp", verificado: 1 }] }] };
 
 test("con todo verificado, pasa", async () => {
   let siguio = false;

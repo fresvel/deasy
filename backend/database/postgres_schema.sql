@@ -398,14 +398,17 @@ CREATE OR REPLACE TRIGGER trg_canales_mensajeria_set_updated_at BEFORE UPDATE ON
 -- TIENE IMPLEMENTACION. Hasta el 2026-08-29 decia 1, y eso habria ofrecido al usuario un canal que
 -- no funciona.
 --
--- Y `sms` es un canal como los otros: un movil lo tiene y un fijo no. Faltaba, y su ausencia era un
--- hueco del catalogo -- no una razon para llevar los canales de verificacion por otro sitio.
+-- Y `sms` NO ESTA, y no es un olvido: se DESCARTO el 2026-09-01, para siempre. El SMS entrante no
+-- prueba el numero -- la cabecera de origen la rellena el emisor y es falsificable desde una pasarela
+-- SMPP (DOI 10.1145/3615667; el ataque completo, 10.1145/3696011). Y aqui nosotros DAMOS la llave, asi
+-- que el ataque sale gratis: alguien declara el telefono de otro, recibe una llave valida y la
+-- devuelve falsificando el origen. Ademas, en Ecuador no existe alquilar un numero que reciba
+-- (Twilio: "Two-way SMS supported: No"). El porque completo, en el frente 15 del plan.
 INSERT INTO canales_mensajeria (code, name, is_active)
 SELECT v.code, v.name, v.activo
 FROM (VALUES
   ('whatsapp','WhatsApp', 1),
   ('telegram','Telegram', 1),
-  ('sms','SMS', 1),
   ('signal','Signal', 0)
 ) AS v(code, name, activo)
 WHERE NOT EXISTS (SELECT 1 FROM canales_mensajeria c WHERE c.code = v.code);
@@ -429,7 +432,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_telefono_canales ON telefono_canales (telef
 
 -- LA LLAVE CON LA QUE ALGUIEN DEMUESTRA QUE UN NUMERO ES SUYO.
 --
--- La persona la lleva a un canal -- un QR de Telegram, un enlace de WhatsApp, un SMS que envia
+-- La persona la lleva a un canal -- un QR de Telegram, un enlace de WhatsApp -- que envia
 -- ella-- y el microservicio `channels` la trae de vuelta. Aqui se comprueba y se consume.
 -- El diseno completo esta en docs/arquitecturas/microservicio-channels.md.
 --
