@@ -35,7 +35,9 @@
       "documentos_identidad",
       "telefono_verification_keys",
       "intentos_limitados",
-      "canales_bitacora"
+      "canales_bitacora",
+      "documentos_legales",
+      "consentimientos"
     ]
   },
   "organizacion": {

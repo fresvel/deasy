@@ -305,7 +305,7 @@ Esto no lo arregla un commit; lo decide la institución. Se lista para que no se
 
 ## 4 · Lo que propongo hacer, en orden
 
-### A · Hacer DEMOSTRABLE el consentimiento — Art. 5 del Reglamento
+### A · ✅ HECHO (2026-09-02) · Hacer DEMOSTRABLE el consentimiento — Art. 5 del Reglamento
 
 La obligación es literal: *«deberá ser demostrado por el responsable que lo obtiene, cuando así sea
 requerido por la autoridad competente»*. Demostrable significa **cuatro cosas**, y si falta una, no
@@ -360,7 +360,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_consentimiento
 **Y el alta lo exige en el BACKEND.** Hoy la puerta está en el navegador, que es como no tenerla:
 sin las dos filas, no hay cuenta.
 
-### B · Separar los *checks*
+### B · ✅ HECHO (2026-09-02) · Separar los *checks*
 
 Dos casillas, no una: **términos de uso** y **tratamiento de datos personales**. Y el aviso de
 privacidad accesible **en ese momento**, no escondido.
@@ -377,7 +377,7 @@ Es lo que quedó pendiente de la conversación anterior, y ahora tiene un motivo
 en disco: **conservación y minimización**. La decisión es del dueño; lo que no es defendible es «sin
 plazo».
 
-### E · Reescribir el aviso de privacidad
+### E · 🟡 Borrador escrito, PENDIENTE DE REVISIÓN JURÍDICA · Reescribir el aviso de privacidad
 
 Con lo de §1.2. **Esto lo tiene que revisar quien lleve lo jurídico**, y probablemente redactarlo.
 

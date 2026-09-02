@@ -338,6 +338,65 @@ que no.
 ⚠️ **El aviso nunca va por Telegram ni por WhatsApp**, aunque el sistema sepa hablar por ahí: el
 fallo que hay que notificar es justo el que impide notificarlo.
 
+## Lo que se acepta al registrarse — `documentos_legales` y `consentimientos`
+
+Al crear una cuenta hay que aceptar **dos cosas, y por separado**: los **términos de uso** y el
+**tratamiento de datos personales**.
+
+⚠️ **No es una decisión de diseño: lo impone el Art. 8 de la LOPDP**, que exige que el consentimiento
+sea **específico** y que, *«cuando se pretenda fundar el tratamiento […] para una pluralidad de
+finalidades»*, **conste que se otorga para todas ellas**. Una sola casilla para las dos cosas no
+cumple.
+
+Y hay una razón que se ve mejor en el reverso: **los términos son un contrato** (base legal: Art.
+7.5) y **el tratamiento de datos es consentimiento** (Art. 8). El segundo **se puede revocar**; el
+primero no funciona así. Con una casilla única, revocar una revocaría la otra.
+
+### `documentos_legales` — el texto, versión a versión
+
+```
+clase            'terminos_de_uso' · 'tratamiento_de_datos'
+version          'v1'
+texto            el borrador, mientras lo es
+contenido_hash   SHA-256 ← lo que hace demostrable QUÉ decía
+estado           draft · published · retired
+```
+
+**Sólo puede haber una versión publicada por clase**, o «qué aceptó» tendría dos respuestas.
+
+⚠️ **`retired` no es borrar.** Una versión retirada **se conserva para siempre**: hay gente cuya
+prueba de consentimiento apunta a ella.
+
+### `consentimientos` — la prueba
+
+```
+person_id · documento_id · aceptado_at · ip · revocado_at
+```
+
+⚠️ **Hasta el 2026-09-02 esto no existía.** Había una casilla en el formulario que se validaba **en
+el navegador** y moría ahí: no viajaba al servidor y ninguna tabla la recibía. Una validación de
+JavaScript **no prueba nada** — se salta con la consola abierta.
+
+:::caution[Lo que la ley pide, y por qué la huella es la pieza clave]
+El **Art. 5 del Reglamento** dice que el consentimiento *«deberá ser **demostrado** por el
+responsable que lo obtiene, cuando así sea requerido por la autoridad competente»*. Demostrar son
+**cuatro** cosas: **quién**, **a qué**, **cuándo** y **qué decía el texto**.
+
+La cuarta es la que se olvida, y sin ella las otras tres no valen: guardar «aceptó la versión 2» no
+prueba nada si nadie puede demostrar qué decía la versión 2. Por eso se guarda **la huella del
+texto**, y no sólo su número de versión.
+:::
+
+:::note[Y por qué NO hay clave ajena a `persons`]
+Parece un descuido y es deliberado. La **Ley (Art. 18.4)** y el **Reglamento (Art. 11.2)** dicen que
+la eliminación **no procede** cuando los datos son necesarios *«para la formulación, el ejercicio o
+la defensa de reclamaciones»* — y la prueba de que alguien consintió **es exactamente eso**.
+
+Con una clave ajena, borrar a la persona sería imposible o se llevaría la prueba por delante. Sin
+ella, **la fila sobrevive a la persona**, que es lo que la norma permite. Del resto de sus datos no
+se conserva nada por este motivo.
+:::
+
 ## Cuántas veces se puede intentar — `intentos_limitados`
 
 Hay una tabla que no guarda datos de nadie y sin embargo protege a todos: **`intentos_limitados`**

@@ -4,6 +4,7 @@ import TelefonoService from "../users/TelefonoService.js";
 import EmailService from "../users/EmailService.js";
 import DocumentoIdentidadService, { TIPO_NACIONAL } from "../users/DocumentoIdentidadService.js";
 import { estadoDeVerificacion } from "../users/estadoDeVerificacion.js";
+import DocumentosLegales from "../legal/DocumentosLegales.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
@@ -324,6 +325,8 @@ export default class UserRepository {
     return rows;
   }
 
+  documentosLegales = new DocumentosLegales();
+
   async create(userData) {
     this.ensurePool();
 
@@ -397,6 +400,18 @@ export default class UserRepository {
       const documento = userData.documento ?? (userData.cedula ? { tipo: TIPO_NACIONAL, numero: userData.cedula } : null);
       if (documento) {
         await this.documentos.guardarPrincipal(result.insertId, documento, conexion);
+      }
+
+      // ⚠️ EL CONSENTIMIENTO VA AQUI, DENTRO DE LA MISMA TRANSACCION. Una persona creada sin la
+      // constancia de que acepto es exactamente el agujero que esto viene a tapar: el Art. 5 del
+      // Reglamento exige poder DEMOSTRAR el consentimiento, y una fila que se escribe «despues»
+      // puede no escribirse nunca. O entran los dos o no entra ninguno.
+      if (userData.consentimientos?.length) {
+        await this.documentosLegales.registrarAceptacion(conexion, {
+          personId: result.insertId,
+          documentos: userData.consentimientos,
+          ip: userData.ip,
+        });
       }
 
       await conexion.commit();

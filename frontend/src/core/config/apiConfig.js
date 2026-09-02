@@ -85,6 +85,9 @@ export const API_ROUTES = {
   // C7 · el estado de los canales, y el codigo de vinculacion POR SU PROPIA RUTA: quien escanea el
   // QR decide que cuenta de WhatsApp es el canal, asi que no viaja dentro del estado.
   ADMIN_CANALES: `${API_PREFIX}/admin/canales`,
+  // Los textos legales vigentes. PUBLICO: se leen antes de tener cuenta, porque aceptarlos es
+  // requisito para tenerla (LOPDP, Art. 12: la informacion va «en el momento mismo de la recogida»).
+  LEGAL_DOCUMENTOS: `${API_PREFIX}/legal/documentos`,
   ADMIN_CANALES_QR: `${API_PREFIX}/admin/canales/whatsapp/qr`,
   ADMIN_SQL_OPERATION_STATS: `${API_PREFIX}/admin/sql/stats/operation`,
   ADMIN_SQL_UNITS_GRAPH: (relationType = "org") => `${API_PREFIX}/admin/sql/units/graph?relation_type=${encodeURIComponent(relationType)}`,

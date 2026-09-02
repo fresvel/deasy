@@ -3,7 +3,7 @@
 
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { post, get } from "../lib/http.mjs";
+import { post, get, idsDeConsentimiento } from "../lib/http.mjs";
 import { tokenFor } from "../lib/auth.mjs";
 import { snapshotShape } from "../lib/normalize.mjs";
 import { matchSnapshot } from "../lib/snapshot.mjs";

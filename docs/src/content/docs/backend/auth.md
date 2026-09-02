@@ -93,7 +93,29 @@ que no están los tres la cuenta no abre nada.
 
 ```
 1 · Guardar la persona   →   2 · Verificar el correo   →   3 · Verificar el teléfono
+    (y aceptar los dos
+     documentos legales)
 ```
+
+### El paso 1 exige aceptar, y la aceptación **queda registrada**
+
+Desde el **2026-09-02** el alta no se acepta sin el consentimiento, y **se comprueba en el servidor**.
+
+⚠️ **Antes sólo se comprobaba en el navegador.** Había una casilla en el formulario, se validaba con
+JavaScript, y ahí moría: no viajaba en la petición y ninguna tabla la recibía. Es decir, **el sistema
+no podía demostrar que nadie hubiera aceptado nada** — y el Art. 5 del Reglamento de la LOPDP exige
+justamente poder demostrarlo.
+
+Ahora el cuerpo del alta lleva los identificadores de los documentos aceptados, el backend comprueba
+que sean **los vigentes**, y la constancia se escribe **dentro de la misma transacción** que crea a la
+persona: o entran los dos, o no entra ninguno.
+
+**Son dos documentos y dos casillas** —términos de uso y tratamiento de datos— porque el Art. 8 exige
+que el consentimiento sea específico. El detalle del modelo, en
+[`/modelo/organizacion/`](/modelo/organizacion/).
+
+⚠️ **Y la lista de documentos no está escrita en la pantalla:** se dibuja una casilla por cada
+documento publicado, así que publicar uno nuevo **no exige tocar el frontend**.
 
 **El alta entrega sesión desde el paso 1**, porque los pasos 2 y 3 necesitan saber quién está
 verificando. Que haya sesión **no significa que abra nada**.

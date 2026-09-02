@@ -10,7 +10,7 @@
 
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { post } from "../lib/http.mjs";
+import { post, idsDeConsentimiento } from "../lib/http.mjs";
 import { query } from "../lib/db.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
 
@@ -42,6 +42,8 @@ before(async () => {
 test("nadie se declara el teléfono verificado desde el cuerpo de la petición", async () => {
   const alta = await post("/users", {
     body: {
+        // El alta exige consentimiento desde 2026-09-02 (LOPDP, Art. 5 del Reglamento).
+        consentimientos: await idsDeConsentimiento(),
       first_name: "ColadoRegistro",
       last_name: "Prueba",
       email: CORREO,
@@ -88,7 +90,11 @@ test("nadie se declara el teléfono verificado desde el cuerpo de la petición",
 // registrado por otra persona» — y la otra persona es ella misma. Quien se equivoca una vez no
 // puede reintentar.
 test("un alta que falla no deja rastro, y el reintento funciona", async () => {
+  // El alta exige consentimiento desde 2026-09-02 (LOPDP, Art. 5 del Reglamento). Se piden una vez
+  // aquí y no dentro de `cuerpo()`, que no es `async`.
+  const consentimientos = await idsDeConsentimiento();
   const cuerpo = (extra = {}) => ({
+    consentimientos,
     first_name: "ColadoRegistro",
     last_name: "Prueba",
     email: CORREO,
@@ -132,6 +138,8 @@ test("una colisión de documento se explica, con su código y su motivo", async 
   const cedula = cedulaValida("171003407");
   const primero = await post("/users", {
     body: {
+        // El alta exige consentimiento desde 2026-09-02 (LOPDP, Art. 5 del Reglamento).
+        consentimientos: await idsDeConsentimiento(),
       first_name: "ColadoRegistro", last_name: "Uno", email: "colisiona.uno@ejemplo.test",
       password: "Demo1234!", confirm_password: "Demo1234!", cedula,
       telefono: { tipo: "personal", numero: "987650001", pais_id: 60 },
@@ -141,6 +149,8 @@ test("una colisión de documento se explica, con su código y su motivo", async 
 
   const segundo = await post("/users", {
     body: {
+        // El alta exige consentimiento desde 2026-09-02 (LOPDP, Art. 5 del Reglamento).
+        consentimientos: await idsDeConsentimiento(),
       first_name: "ColadoRegistro", last_name: "Dos", email: "colisiona.dos@ejemplo.test",
       password: "Demo1234!", confirm_password: "Demo1234!", cedula,
       telefono: { tipo: "personal", numero: "987650002", pais_id: 60 },

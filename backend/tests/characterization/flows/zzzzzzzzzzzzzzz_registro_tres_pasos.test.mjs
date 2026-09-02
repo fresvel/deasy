@@ -9,7 +9,7 @@
 
 import { test, before } from "node:test";
 import assert from "node:assert/strict";
-import { get, post } from "../lib/http.mjs";
+import { get, post, idsDeConsentimiento } from "../lib/http.mjs";
 import { query } from "../lib/db.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
 
@@ -28,9 +28,11 @@ const NUMERO_LOCAL = "987654399";
 
 const limpiar = () => query("DELETE FROM persons WHERE first_name = $1", [NOMBRE]);
 
-const registrar = () =>
+const registrar = async () =>
   post("/users", {
     body: {
+        // El alta exige consentimiento desde 2026-09-02 (LOPDP, Art. 5 del Reglamento).
+        consentimientos: await idsDeConsentimiento(),
       first_name: NOMBRE,
       last_name: "Registro",
       email: CORREO,

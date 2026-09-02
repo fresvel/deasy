@@ -26,6 +26,7 @@ import chat_router from "./routes/chat_router.js";
 import notification_router from "./routes/notification_router.js";
 import system_router from "./routes/system_router.js";
 import reset_password_router from "./routes/reset_password_router.js";
+import legalRouter from "./routes/legal_router.js";
 import email_router from "./routes/email_router.js";
 import { authMiddleware } from "./middlewares/auth.js";
 import { exigeVerificacionCompleta } from "./middlewares/exigeVerificacionCompleta.js";
@@ -159,6 +160,8 @@ app.use(ROUTES.users, user_router)
 // SOLO microservicios. Lleva su propia guarda; nginx ademas devuelve 404 desde fuera.
 app.use(ROUTES.internal, internalRouter)
 app.use(ROUTES.resetPassword, reset_password_router)
+// PUBLICO a proposito: los textos que hay que aceptar se leen ANTES de tener cuenta.
+app.use(ROUTES.legal, legalRouter)
 app.use(ROUTES.email, email_router)
 
 // ── LA PUERTA DEL REGISTRO EN TRES PASOS (C8) ────────────────────────────────────────────────

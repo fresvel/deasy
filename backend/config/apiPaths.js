@@ -16,6 +16,9 @@ export const PATHS = {
   dossier: "/dossier",
   email: "/email",
   resetPassword: "/reset-password",
+  // Los textos que hay que aceptar. PUBLICO: se leen antes de tener cuenta, porque aceptarlos es
+  // requisito para tenerla.
+  legal: "/legal",
   sign: "/sign",
   system: "/system"
 };

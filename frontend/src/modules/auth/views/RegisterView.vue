@@ -200,20 +200,37 @@
         </div>
       </section>
 
-      <div class="deasy-card mt-5 p-4">
-        <label class="flex items-start gap-3 text-sm font-medium text-icon">
+      <!-- ⚠️ UNA CASILLA POR DOCUMENTO, y no una sola para todo. Lo impone el Art. 8 de la LOPDP:
+           con una PLURALIDAD DE FINALIDADES debe CONSTAR el consentimiento para todas ellas, y ser
+           ESPECIFICO. Ademas los terminos son un CONTRATO y el tratamiento de datos es
+           CONSENTIMIENTO: se pueden revocar por separado, asi que no pueden ir juntos.
+
+           Y la lista NO esta escrita aqui: se dibuja con lo que el backend tenga publicado. -->
+      <div class="deasy-card mt-5 space-y-3 p-4">
+        <label
+          v-for="documento in documentosLegales"
+          :key="documento.id"
+          class="flex items-start gap-3 text-sm font-medium text-icon"
+        >
           <input
-            v-model="termsAccepted"
+            v-model="aceptados"
             type="checkbox"
-            required
+            :value="documento.id"
             class="mt-0.5 text-info"
           />
           <span>
-            Acepto los
-            <router-link to="/terminos" class="font-semibold text-info hover:underline">términos y condiciones</router-link>
-            de la plataforma.
+            Acepto
+            <button
+              type="button"
+              class="deasy-inline-action deasy-inline-action--primary"
+              @click="documentoAbierto = documento"
+            >{{ TITULOS[documento.clase] ?? documento.clase }}</button>
+            <span class="text-muted">({{ documento.version }})</span>
           </span>
         </label>
+        <p v-if="!documentosLegales.length && !cargandoLegales" class="text-sm text-danger">
+          No se pudieron cargar los documentos que hay que aceptar. Recarga la página.
+        </p>
       </div>
 
       <Transition
@@ -262,9 +279,13 @@
        No se sustituye por otro modal: donde se dice «te queda esto» es la pantalla siguiente, que ya
        lleva su indicador de tres pasos. Un modal en medio solo anade un clic para llegar al mismo
        sitio. -->
+
+    <DocumentoLegalModal :documento="documentoAbierto" @close="documentoAbierto = null" />
 </template>
 
 <script setup>
+import DocumentoLegalModal from "../components/DocumentoLegalModal.vue";
+import { obtenerDocumentosLegales, TITULOS } from "../services/documentosLegalesService.js";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted, nextTick, useId } from "vue";
 import { tonoFuerza } from "@/shared/utils/estadoTono.js";
@@ -353,7 +374,13 @@ const mostrarError = async (texto) => {
   const nodo = cajaDeError.value?.$el ?? cajaDeError.value;
   nodo?.scrollIntoView?.({ behavior: "smooth", block: "center" });
 };
-const termsAccepted = ref(false);
+// Los ids de los documentos aceptados. Es una lista y no una bandera porque hay UNA CASILLA POR
+// DOCUMENTO: el Art. 8 de la LOPDP exige que el consentimiento sea especifico y que, con varias
+// finalidades, conste para todas ellas.
+const aceptados = ref([]);
+const documentosLegales = ref([]);
+const cargandoLegales = ref(true);
+const documentoAbierto = ref(null);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 const passwordsMatch = ref(false);
@@ -546,10 +573,15 @@ const createnewUser = async () => {
     mostrarError("Las contraseñas no coinciden.");
     return;
   }
-  if (!termsAccepted.value) {
-    mostrarError("Debe aceptar los términos y condiciones.");
-    return;
-  }
+    // ⚠️ ESTA COMPROBACIÓN ES UNA CORTESÍA, NO LA PUERTA. La de verdad está en el backend, que es
+    // donde tiene que estar: antes SÓLO existía aquí, y una validación de navegador se salta con la
+    // consola abierta — así que el consentimiento no se guardaba en ninguna parte. Aquí se queda
+    // para no mandar una petición que se sabe que va a fallar.
+    const faltan = documentosLegales.value.filter((d) => !aceptados.value.includes(d.id));
+    if (faltan.length) {
+      mostrarError(`Debe aceptar ${faltan.map((d) => TITULOS[d.clase] ?? d.clase).join(" y ")}.`);
+      return;
+    }
   validarDocumento();
   if (!documento.value.numero || cedulaError.value) {
     errorMessage.value = cedulaError.value || "Falta el número de documento.";
@@ -575,7 +607,10 @@ const createnewUser = async () => {
     const payload = {
       ...newuser.value,
       telefono: { ...telefono.value },
-      documento: { ...documento.value }
+      documento: { ...documento.value },
+      // Los documentos aceptados. El backend comprueba que sean los VIGENTES y deja constancia
+      // dentro de la misma transaccion del alta: una persona sin su consentimiento era el agujero.
+      consentimientos: aceptados.value
     };
 
     // ── EL PASO 1 DE TRES ──────────────────────────────────────────────────────────────────────
@@ -635,8 +670,19 @@ onMounted(async () => {
     }
   }
 
-  if (route.query.terms === "accepted") {
-    termsAccepted.value = true;
+  // Los documentos que hay que aceptar los dice el BACKEND: la pantalla no tiene una lista escrita
+  // a mano. Si el día de mañana legal publica uno más, su casilla aparece sola.
+  //
+  // ⚠️ Aquí había una pre-aceptación por parámetro de URL (`?terms=accepted`) que marcaba la
+  // casilla sola. Se retira: el Art. 5 del Reglamento exige «una clara ACCIÓN AFIRMATIVA» y dice
+  // que «el silencio o la inacción, por sí solos, no presumen el consentimiento». Un parámetro en
+  // un enlace no es un acto de la persona.
+  try {
+    documentosLegales.value = await obtenerDocumentosLegales();
+  } catch {
+    documentosLegales.value = [];
+  } finally {
+    cargandoLegales.value = false;
   }
 });
 

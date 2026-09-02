@@ -62,6 +62,9 @@ import {
 } from "../../services/tasks/GeneralTaskService.js";
 import { isUniqueViolation } from "../../errors/sqlErrors.js";
 import { accessSubqueryForTaskItem } from "../../services/documents/DeliverableAccessService.js";
+import DocumentosLegales from "../../services/legal/DocumentosLegales.js";
+
+const documentosLegales = new DocumentosLegales();
 
 
 const userRepository = new UserRepository();
@@ -81,6 +84,23 @@ export const createUser = async (req, res) => {
       console.error(`[registro] ${explicacionDelCorreo()}`);
       return res.status(503).json({
         message: "El registro no está disponible: este servidor no puede enviar correo.",
+      });
+    }
+
+    // ⚠️ SE COMPRUEBA EN EL BACKEND, y esto es el arreglo del hallazgo. Antes la casilla se validaba
+    // EN EL NAVEGADOR (`RegisterView.vue`) y moria ahi: no viajaba, no se guardaba, y una validacion
+    // de JavaScript se salta con la consola abierta. El Art. 5 del Reglamento exige poder DEMOSTRAR
+    // el consentimiento; sin esto no habia nada que enseñar.
+    //
+    // Y se exigen TODAS las clases publicadas, no una: el Art. 8 pide que, con una pluralidad de
+    // finalidades, CONSTE el consentimiento para todas ellas.
+    const aceptacion = await documentosLegales.validarAceptacion(req.body.consentimientos);
+    if (!aceptacion.valida) {
+      return res.status(400).send({
+        message: aceptacion.motivo === "falta_aceptar"
+          ? "Debe aceptar los términos y el tratamiento de datos personales."
+          : "Los documentos aceptados no son los vigentes. Recarga la página e inténtalo de nuevo.",
+        code: 400,
       });
     }
 
@@ -110,6 +130,12 @@ export const createUser = async (req, res) => {
       // que es exactamente la forma del agujero que se cerro en los canales del telefono. Se
       // retira para que nadie lo "arregle" conectandolo.
       photo_url: req.body.photoUrl ?? req.body.photo_url ?? null,
+      // Los documentos que acepto, ya validados arriba. Los escribe `UserRepository` DENTRO de
+      // la transaccion del alta: una persona creada sin su consentimiento es el agujero que se
+      // tapa, y una fila que se escribe «despues» puede no escribirse nunca.
+      consentimientos: aceptacion.documentos,
+      // `req.ip` es la IP real porque `index.js` declara `trust proxy`. Situa el acto y nada mas.
+      ip: req.ip,
       token
     };
 

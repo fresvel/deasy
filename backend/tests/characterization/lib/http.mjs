@@ -81,3 +81,19 @@ export const post = (path, opts) => request("POST", path, opts);
 export const put = (path, opts) => request("PUT", path, opts);
 export const patch = (path, opts) => request("PATCH", path, opts);
 export const del = (path, opts) => request("DELETE", path, opts);
+
+/**
+ * Los identificadores de los documentos legales vigentes.
+ *
+ * ⚠️ **Desde el 2026-09-02 el alta EXIGE consentimiento**, y con razón: el Art. 5 del Reglamento de
+ * la LOPDP obliga a poder demostrarlo, y antes la casilla se validaba en el navegador y no se
+ * guardaba en ninguna parte.
+ *
+ * Se piden al servidor en vez de escribirlos a mano porque **los ids cambian con cada recreación de
+ * la base**, y una constante aquí sería una prueba que falla el martes sin que nadie haya tocado
+ * nada.
+ */
+export const idsDeConsentimiento = async () => {
+  const { body } = await get("/legal/documentos");
+  return (body?.documentos ?? []).map((d) => d.id);
+};
