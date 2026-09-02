@@ -391,3 +391,75 @@ Con lo de §1.2. **Esto lo tiene que revisar quien lleve lo jurídico**, y proba
 - **No apoyar el no repudio en el chat de WhatsApp** (§2).
 - **No usar «consentimiento» como base para lo que es necesario** para el servicio (§3.1): se puede
   retirar, y entonces el sistema no puede operar lo que sí necesita.
+
+---
+
+## 9 · 🔴 Qué hay REALMENTE en el perfil de WhatsApp — la medición que cambia la respuesta
+
+El dueño preguntó, con razón: *«¿qué datos personales estaríamos guardando en contra de la ley, si
+igual son datos que el usuario envió y que autorizaría en nuestros términos? Porque igual ya tenemos
+sus números en nuestra base.»*
+
+**El razonamiento sería correcto si el perfil contuviera lo que él supone. No lo contiene.** Medido
+el 2026-09-02 sobre el volumen de la pila C:
+
+| | |
+|---|---|
+| Teléfonos en **la base de Deasy** | **3** |
+| Verificados por WhatsApp | **3** |
+| **Números distintos en el perfil de WhatsApp** | **220** |
+| **Nombres de perfil (`pushname`)** | **81** |
+
+### Los 217 que sobran no son usuarios nuestros
+
+WhatsApp Web es un **dispositivo vinculado**: al conectarse **se sincroniza la agenda y el historial
+de la cuenta**. Como la línea dedicada tiene una cuenta de WhatsApp con su propia vida, en ese
+volumen hay **contactos y conversaciones que no tienen nada que ver con Deasy**.
+
+> **Y ésa es la diferencia que lo cambia todo:** esas personas **no son usuarias del sistema, no
+> aceptaron nuestros términos y nunca nos dieron su dato.** Nuestro consentimiento no las cubre
+> porque **nunca se lo pedimos**.
+
+⚠️ **Y los 81 `pushname` son peor que los números:** un nombre identifica más que una cifra.
+
+### Entonces sí, ¿qué se estaría infringiendo?
+
+**No es que guardar sea ilegal por sí mismo.** Con base legal, finalidad declarada, plazo, seguridad
+y registro, guardar es perfectamente lícito. Lo que hay hoy incumple **cuatro cosas a la vez**, y la
+primera es la grave:
+
+| | Qué falla hoy |
+|---|---|
+| **Juridicidad y consentimiento** *(Arts. 7 y 8)* | 🔴 **Para 217 personas no hay NINGUNA base legal.** No son usuarias, no consintieron, y no hay contrato ni interés legítimo que lo sostenga |
+| **Minimización** *(Art. 10.f)* | Los 3 que sí son nuestros **ya están en la base**. La copia del perfil no añade nada necesario |
+| **Conservación** *(Art. 10.i)* | Sin plazo. Ninguno |
+| **Seguridad** *(Art. 10.j)* | Un volumen sin control de acceso declarado, fuera del inventario y fuera de las copias |
+
+**El dueño tenía razón en su premisa y le falla el dato:** para *sus* usuarios, el consentimiento
+cubriría la conservación. **Para los otros 217, no hay nada que lo cubra.**
+
+### ¿Hace falta descargarlos para poder recibir?
+
+El dueño recordaba que sin sesión persistente los mensajes no se guardaban. **Es cierto, y es la
+mitad de la respuesta:**
+
+- La **sesión** y el **almacén** son **el mismo perfil de Chromium**. No se puede tener una sin el
+  otro: WhatsApp Web no ofrece un modo «recibe pero no guardes».
+- Sin persistencia no se acumula… **pero entonces hay que reescanear el QR en cada reinicio**, y eso
+  no es un incordio: es el canal caído hasta que alguien lo haga a mano.
+
+**Así que no se puede evitar guardando menos. Se evita teniendo menos que sincronizar.**
+
+### ⚠️ La solución real, y es de operación, no de código
+
+> **Que la cuenta de WhatsApp de la línea dedicada esté LIMPIA: sin agenda y sin historial.**
+
+Si esa cuenta no tiene contactos ni conversaciones previas, **la sincronización no trae nada**, y el
+perfil pasa a contener sólo a quien de verdad escribió a Deasy — que **sí** está cubierto por el
+consentimiento, y para quien la conservación **sí** se puede declarar y justificar.
+
+**Eso reduce el problema de 220 personas a 3**, sin tocar una línea de código y sin renunciar a nada.
+
+⚠️ **Y es exactamente lo que hace falta antes de producción**, donde el número dedicado debería ser
+una línea nueva que nunca ha tenido otra vida.
+
