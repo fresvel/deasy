@@ -394,72 +394,71 @@ Con lo de §1.2. **Esto lo tiene que revisar quien lleve lo jurídico**, y proba
 
 ---
 
-## 9 · 🔴 Qué hay REALMENTE en el perfil de WhatsApp — la medición que cambia la respuesta
+## 9 · Qué se conserva del perfil de WhatsApp, y por qué la regla es del MODELO
 
-El dueño preguntó, con razón: *«¿qué datos personales estaríamos guardando en contra de la ley, si
-igual son datos que el usuario envió y que autorizaría en nuestros términos? Porque igual ya tenemos
-sus números en nuestra base.»*
+⚠️ **La primera versión de esta sección estaba mal razonada**, y el dueño lo señaló: midió el
+perfil de la pila de desarrollo —220 números, 81 nombres— y **sacó de ahí una conclusión jurídica**.
+Ese perfil es la agenda de un teléfono personal usado para probar. **De los datos de prueba no sale
+un juicio sobre el sistema; sale del modelo.**
 
-**El razonamiento sería correcto si el perfil contuviera lo que él supone. No lo contiene.** Medido
-el 2026-09-02 sobre el volumen de la pila C:
+### El modelo, que es lo que hay que razonar
 
-| | |
-|---|---|
-| Teléfonos en **la base de Deasy** | **3** |
-| Verificados por WhatsApp | **3** |
-| **Números distintos en el perfil de WhatsApp** | **220** |
-| **Nombres de perfil (`pushname`)** | **81** |
+**¿Cómo llega alguien a conocer el número dedicado?** Por el registro, y sólo por ahí:
 
-### Los 217 que sobran no son usuarios nuestros
+```
+paso 1 · rellena el formulario  ──▶ ACEPTA LOS TÉRMINOS Y EL TRATAMIENTO DE DATOS
+paso 2 · verifica su correo
+paso 3 · se le enseña el enlace `wa.me` ──▶ AQUÍ, y no antes, aparece el número
+```
 
-WhatsApp Web es un **dispositivo vinculado**: al conectarse **se sincroniza la agenda y el historial
-de la cuenta**. Como la línea dedicada tiene una cuenta de WhatsApp con su propia vida, en ese
-volumen hay **contactos y conversaciones que no tienen nada que ver con Deasy**.
+> **Para cuando alguien puede escribir a ese número, ya aceptó.** No es una suposición optimista: es
+> una propiedad de la secuencia, y `C8` la hace obligatoria — el guardián no deja pasar al paso 3 sin
+> haber pasado el 1.
 
-> **Y ésa es la diferencia que lo cambia todo:** esas personas **no son usuarias del sistema, no
-> aceptaron nuestros términos y nunca nos dieron su dato.** Nuestro consentimiento no las cubre
-> porque **nunca se lo pedimos**.
+**Así que en producción, con una línea dedicada, quien escribe está cubierto por su consentimiento.**
+La conservación se declara en el documento de datos, con su plazo, y es lícita.
 
-⚠️ **Y los 81 `pushname` son peor que los números:** un nombre identifica más que una cifra.
+### El caso que sí queda fuera, y cómo se resuelve
 
-### Entonces sí, ¿qué se estaría infringiendo?
+Alguien puede llegar al número por otra vía: se lo pasaron, lo sacó de una captura, lo encontró
+publicado. **Esa persona no aceptó nada, y su dato no está cubierto.**
 
-**No es que guardar sea ilegal por sí mismo.** Con base legal, finalidad declarada, plazo, seguridad
-y registro, guardar es perfectamente lícito. Lo que hay hoy incumple **cuatro cosas a la vez**, y la
-primera es la grave:
+**La regla que lo resuelve la propuso el dueño, y es del modelo y no del calendario:**
 
-| | Qué falla hoy |
-|---|---|
-| **Juridicidad y consentimiento** *(Arts. 7 y 8)* | 🔴 **Para 217 personas no hay NINGUNA base legal.** No son usuarias, no consintieron, y no hay contrato ni interés legítimo que lo sostenga |
-| **Minimización** *(Art. 10.f)* | Los 3 que sí son nuestros **ya están en la base**. La copia del perfil no añade nada necesario |
-| **Conservación** *(Art. 10.i)* | Sin plazo. Ninguno |
-| **Seguridad** *(Art. 10.j)* | Un volumen sin control de acceso declarado, fuera del inventario y fuera de las copias |
+> **Se conserva la conversación de quien corresponde a una interacción legítima. La de quien no,
+> se borra.**
 
-**El dueño tenía razón en su premisa y le falla el dato:** para *sus* usuarios, el consentimiento
-cubriría la conservación. **Para los otros 217, no hay nada que lo cubra.**
+En la práctica: se recorren las conversaciones y, para cada número, se comprueba si **existe en el
+sistema** —un teléfono registrado o **un sello de verificación**—. Si no aparece, esa conversación no
+tiene base legal y **se borra en la siguiente barrida**.
 
-### ¿Hace falta descargarlos para poder recibir?
+⚠️ **Esto es mejor que un plazo fijo**, que era lo que yo proponía: un plazo borra por igual lo
+justificado y lo que no. La regla del modelo **conserva exactamente lo que tiene base y elimina
+exactamente lo que no la tiene** — que es lo que piden la minimización y la juridicidad.
 
-El dueño recordaba que sin sesión persistente los mensajes no se guardaban. **Es cierto, y es la
-mitad de la respuesta:**
+**Sigue haciendo falta un plazo además** *(Art. 10.i)*, para lo que sí es legítimo: la base legal
+justifica tenerlo, no tenerlo para siempre.
 
-- La **sesión** y el **almacén** son **el mismo perfil de Chromium**. No se puede tener una sin el
-  otro: WhatsApp Web no ofrece un modo «recibe pero no guardes».
-- Sin persistencia no se acumula… **pero entonces hay que reescanear el QR en cada reinicio**, y eso
-  no es un incordio: es el canal caído hasta que alguien lo haga a mano.
+### 🎯 Y aquí el sello encuentra su utilidad de verdad
 
-**Así que no se puede evitar guardando menos. Se evita teniendo menos que sincronizar.**
+El sello de verificación quedó sin su propósito original —no sirve como prueba frente a un tercero—
+pero **el dueño le encontró uno que sí se sostiene**:
 
-### ⚠️ La solución real, y es de operación, no de código
+> **El sello guarda el número y la persona.** Es lo que permite decidir, meses después, si una
+> conversación tiene base legal — incluso si esa persona ya cambió de teléfono y su número actual es
+> otro.
 
-> **Que la cuenta de WhatsApp de la línea dedicada esté LIMPIA: sin agenda y sin historial.**
+Sin ese registro, la barrida no podría distinguir «un número que verificó legítimamente en marzo» de
+«un desconocido», y acabaría borrando lo que debe conservar o conservando lo que debe borrar.
 
-Si esa cuenta no tiene contactos ni conversaciones previas, **la sincronización no trae nada**, y el
-perfil pasa a contener sólo a quien de verdad escribió a Deasy — que **sí** está cubierto por el
-consentimiento, y para quien la conservación **sí** se puede declarar y justificar.
+**Ése es el papel honesto del sello: hacer aplicable la regla de retención.** No es prueba frente a
+un reclamante; es lo que permite cumplir la ley sin borrar a ciegas.
 
-**Eso reduce el problema de 220 personas a 3**, sin tocar una línea de código y sin renunciar a nada.
+### Lo que sigue siendo cierto de la medición
 
-⚠️ **Y es exactamente lo que hace falta antes de producción**, donde el número dedicado debería ser
-una línea nueva que nunca ha tenido otra vida.
+Aunque la conclusión jurídica no salía de ahí, la medición **sí dice algo útil sobre operación**: una
+cuenta de WhatsApp **con vida previa arrastra su agenda al vincularse**. Por eso, antes de producción:
+
+> **La línea dedicada debe ser una cuenta LIMPIA, sin agenda ni historial** — así la sincronización
+> no trae a nadie ajeno y la regla de arriba tiene poco que barrer.
 
