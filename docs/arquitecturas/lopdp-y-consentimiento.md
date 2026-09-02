@@ -8,13 +8,146 @@
 
 ---
 
+## 0 · Las fuentes, verificadas
+
+⚠️ **La primera versión de este documento se escribió DE MEMORIA y el dueño lo señaló.** Esta se
+escribió con el texto delante. Lo que sigue cita artículo por artículo.
+
+| Norma | Identificación | Estado |
+|---|---|---|
+| **LOPDP** | Ley 0 · **Registro Oficial Suplemento 459 · 26-may-2021** | **Vigente** |
+| **Reglamento General** | Decreto **904** · **RO Suplemento 435 · 13-nov-2023** | **Vigente**, «fecha de última modificación: No aplica» |
+
+Complementadas por la **Norma General para el uso de sistemas de inteligencia artificial**
+(Resolución SPDP-SPD-2026-0009-R, 12-feb-2026), que no aplica aquí — este sistema no toma decisiones
+automatizadas sobre personas.
+
+---
+
+## 0bis · LA RESPUESTA A LA PREGUNTA DEL CHECK: **son DOS, y lo dice el Art. 8**
+
+El último inciso del **Art. 8 de la Ley** lo resuelve sin ambigüedad:
+
+> *«Cuando se pretenda fundar el tratamiento de los datos en el consentimiento del afectado para una
+> **pluralidad de finalidades** será preciso que **conste que dicho consentimiento se otorga para
+> todas ellas**.»*
+
+Y el mismo artículo exige que sea **específico**:
+
+> *«2) **Específica**, en cuanto a la determinación concreta de los medios y fines del tratamiento»*
+
+**Un solo check para «términos y condiciones + tratamiento de datos» no cumple**, porque son
+finalidades distintas y de una sola casilla **no consta** que se haya consentido cada una. Y hay una
+razón práctica que lo refuerza: **el consentimiento se puede revocar** (Art. 8 y Art. 6 del
+Reglamento). Con una casilla única, revocar el tratamiento de datos revocaría también la aceptación
+de los términos de uso — que no es consentimiento, es un contrato.
+
+### Pero son dos por un motivo, no tres por costumbre
+
+⚠️ **Los términos de uso NO son consentimiento de datos.** Son la aceptación de un contrato, y su
+base legal es el **Art. 7.5** (ejecución de medidas precontractuales o contractuales), no el
+consentimiento. Se aceptan igual, pero no son lo mismo y por eso no pueden ir juntos.
+
+**Y el tratamiento necesario para operar tampoco es consentimiento.** Crear la cuenta, autenticar y
+verificar el teléfono caben en **Art. 7.5** (ejecución) y **Art. 7.8** (interés legítimo). Pedir
+consentimiento para eso sería un error: se puede revocar, y entonces el sistema no puede hacer lo
+que sí necesita hacer.
+
+**Entonces, ¿qué se consiente de verdad?** Lo que es genuinamente opcional:
+
+| Casilla | Qué es | Base legal |
+|---|---|---|
+| **1 · Términos y condiciones** | Aceptación del contrato | Art. 7.5 — *no es consentimiento de datos* |
+| **2 · Tratamiento de datos personales** | Haber leído y aceptado el aviso de privacidad | Art. 8, informado por Art. 12 |
+| *(en el paso 3, no en el 1)* | **Elegir WhatsApp o Telegram** = enviar su número a un tercero **fuera del país** | Art. 8 + Art. 55-56 |
+
+**Dos casillas en el paso 1. Y la tercera decisión ya existe: es el selector de canal.**
+
+---
+
+## 0ter · ¿Hace falta firmar? **NO, y el Reglamento dice exactamente qué basta**
+
+**Art. 5 del Reglamento**, literal:
+
+> *«El consentimiento del titular deberá reflejar de manera indubitada la aceptación de éste en
+> relación con el tratamiento de sus datos personales a través de **una declaración, pronunciamiento
+> para darse de baja o clara acción afirmativa**. El consentimiento otorgado por el titular deberá
+> ser **demostrado por el responsable que lo obtiene**, cuando así sea requerido por la autoridad
+> competente.»*
+>
+> *«El **silencio o la inacción, por sí solos, no presumen** el consentimiento del titular.»*
+
+**«Clara acción afirmativa» es exactamente marcar una casilla vacía.** No se menciona la firma en
+ninguna parte, ni electrónica ni manuscrita.
+
+⚠️ **Y de ahí sale la obligación que hoy se incumple:** *«deberá ser demostrado por el responsable»*.
+No basta con obtenerlo — hay que **poder probarlo**. Es la misma idea del **Art. 10.k** de la Ley:
+
+> *«**Responsabilidad proactiva y demostrada**.-El responsable del tratamiento de datos personales
+> deberá **acreditar** el haber implementado mecanismos para la protección de datos personales…»*
+
+**Conclusión: dos casillas, ningún documento firmado, ningún cuarto paso en el registro.** Lo que
+falta está entero en el backend.
+
+---
+
+## 0quater · Qué hay que INFORMAR antes de la casilla — Art. 12, los 17 puntos
+
+El **Art. 12 de la Ley** lista **diecisiete** cosas, y cierra con el momento:
+
+> *«En el caso que los datos se obtengan directamente del titular, la información deberá ser
+> comunicada **de forma previa** a este, es decir, **en el momento mismo de la recogida** del dato
+> personal.»*
+
+Y el **Art. 5 del Reglamento** repite el núcleo:
+
+> *«el responsable deberá informar previa y detalladamente **los tipos de tratamiento, finalidades,
+> el tiempo de conservación, las medidas de protección a adoptarse, las consecuencias de su
+> entrega**…»*
+
+De los 17, éstos son los que hoy **no** están en `terms.md` y son ineludibles:
+
+| Art. 12 | Qué falta |
+|---|---|
+| **2** | La **base legal** de cada tratamiento |
+| **4** | El **tiempo de conservación** — hoy no hay ninguno declarado, y menos el del perfil de WhatsApp |
+| **8** | Identidad y contacto del **responsable**: domicilio legal, teléfono y correo |
+| **9** | El **delegado de protección de datos**, si lo hay |
+| **10** | **Las transferencias internacionales**: destinatarios, finalidad y garantías → **Meta y Telegram** |
+| **11** | Consecuencias de entregar los datos **o de negarse** |
+| **13** | Que **se puede revocar** el consentimiento |
+| **14-16** | Los derechos, **cómo** ejercerlos y **dónde reclamar** — ante nosotros y ante la Autoridad |
+
+---
+
+## 0quinquies · Lo que arriesga la institución, con nombre
+
+**Art. 67.2 — infracción LEVE:** *«No implementar protección de datos **desde el diseño y por
+defecto**»*.
+**Art. 67.3 — LEVE:** *«No mantener disponibles políticas de protección de datos personales afines
+al tratamiento»*.
+**Art. 68.1 — GRAVE:** no implementar medidas técnicas y organizativas.
+**Art. 68.3 — GRAVE:** *«Ceder o comunicar datos personales sin cumplir con los requisitos»* — que es
+donde cae una transferencia internacional no informada.
+
+Las multas van del **0,1 % al 0,7 %** del volumen de negocio (leves) y hasta el **1 %** (graves). En
+una institución pública **la responsabilidad recae sobre el servidor público**, no sobre una cifra de
+facturación.
+
+⚠️ **Y hay un dato que cambia la urgencia:** la Superintendencia **ya está operando**, con
+metodología de cálculo de multas publicada (SPDP-SPD-2025-0022-R) y sanciones firmes. Esto dejó de
+ser teórico.
+
+---
+
 ## 0 · La respuesta corta a las tres preguntas del dueño
 
 | Pregunta | Respuesta |
 |---|---|
-| **¿Hace falta firmar un documento?** | **No.** La LOPDP no exige firma para el consentimiento; exige que se pueda **DEMOSTRAR**. Un *check* con su registro basta — y **eso es justo lo que hoy falta** |
-| **¿Basta el check?** | El check sí. **Lo que hay hoy NO**, porque no deja rastro: es sólo una validación de navegador |
-| **¿Un cuarto paso en el registro?** | **No hace falta.** El paso 1 ya tiene el check; lo que falta está en el backend |
+| **¿Hace falta firmar un documento?** | **No.** El Art. 5 del Reglamento admite «una declaración, pronunciamiento para darse de baja o **clara acción afirmativa**» — marcar una casilla vacía lo es |
+| **¿Un check o dos?** | **DOS.** Art. 8: para «una pluralidad de finalidades» debe **constar** el consentimiento **para todas ellas**, y ser **específico** |
+| **¿Basta el check?** | **Sí — «clara acción afirmativa», Art. 5 del Reglamento.** Pero el que hay hoy NO, porque no deja rastro, y el mismo artículo exige poder DEMOSTRARLO |
+| **¿Un cuarto paso en el registro?** | **No.** Ninguna norma pide firma. El paso 1 ya tiene la casilla; lo que falta está en el backend |
 | **¿Por qué el WhatsApp nuestro no da no repudio?** | Matizado abajo — **me pasé al decir que no aporta nada**, pero aporta mucho menos de lo que parece y cuesta caro en LOPDP |
 
 ---
@@ -172,30 +305,60 @@ Esto no lo arregla un commit; lo decide la institución. Se lista para que no se
 
 ## 4 · Lo que propongo hacer, en orden
 
-### A · Guardar el consentimiento (barato, y es el hallazgo grave)
+### A · Hacer DEMOSTRABLE el consentimiento — Art. 5 del Reglamento
+
+La obligación es literal: *«deberá ser demostrado por el responsable que lo obtiene, cuando así sea
+requerido por la autoridad competente»*. Demostrable significa **cuatro cosas**, y si falta una, no
+se demuestra nada:
+
+| Hay que poder decir | Cómo |
+|---|---|
+| **QUIÉN** consintió | `person_id` |
+| **A QUÉ** consintió | `concepto` — cada finalidad por separado (Art. 8) |
+| **CUÁNDO** | `aceptado_at` |
+| **QUÉ DECÍA EL TEXTO** que se le enseñó | **la huella del documento** |
+
+⚠️ **La huella es la pieza que casi todo el mundo olvida, y sin ella lo demás no vale.** Guardar
+«aceptó la versión 2» no demuestra nada si dentro de un año nadie puede probar qué decía la versión
+2 — y el fichero `terms.md` está en el repositorio, donde se edita sin dejar rastro para quien mire
+la base. Con la huella, **si alguien cambia el texto, deja de cuadrar con lo aceptado**, y eso es
+justamente lo que hace la prueba creíble.
 
 ```sql
--- QUE SE ACEPTO, QUIEN, CUANDO Y QUE VERSION. Sin la version no vale de nada: dentro de un año el
--- texto habra cambiado y no se podra decir a que se dijo que si.
+-- LO QUE HACE DEMOSTRABLE EL CONSENTIMIENTO (Art. 5 del Reglamento; Art. 10.k de la Ley).
+--
+-- ⚠️ Hoy NO SE GUARDA NADA: la casilla se valida en el navegador (`RegisterView.vue:550`) y muere
+-- ahi. Una validacion de JavaScript no prueba nada -- se salta con la consola abierta.
 CREATE TABLE IF NOT EXISTS consentimientos (
-  id          bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  person_id   integer NOT NULL REFERENCES persons(id) ON DELETE CASCADE,
-  -- 'terminos_de_uso' · 'tratamiento_de_datos' · 'canal_whatsapp' · 'canal_telegram'
-  concepto    varchar(60) NOT NULL,
-  version     varchar(40) NOT NULL,
-  -- La huella del texto exacto que se le enseño. Si alguien cambia el fichero, deja de cuadrar.
-  texto_hash  char(64) NOT NULL,
-  aceptado_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  -- Se anota, no se publica: es lo que permite situar el acto.
-  ip          varchar(60),
-  CONSTRAINT uq_consentimiento UNIQUE (person_id, concepto, version)
+  id          BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id   INT NOT NULL,
+  -- UNA FILA POR FINALIDAD, no una por registro. El Art. 8 exige que el consentimiento sea
+  -- ESPECIFICO y que, con varias finalidades, CONSTE para todas ellas. Una fila por finalidad es
+  -- literalmente eso: que conste, por separado, cada una.
+  --   'terminos_de_uso' -- contrato (Art. 7.5), NO es consentimiento de datos
+  --   'tratamiento_de_datos'
+  --   'canal_whatsapp' / 'canal_telegram' -- transferencia internacional (Art. 55)
+  concepto    VARCHAR(60) NOT NULL,
+  version     VARCHAR(40) NOT NULL,
+  -- ⚠️ LA HUELLA DEL TEXTO EXACTO. Sin esto se guarda «acepto la version 2» y NO SE PUEDE DEMOSTRAR
+  -- que decia la version 2: el fichero vive en el repositorio y se edita sin dejar rastro aqui.
+  texto_hash  CHAR(64) NOT NULL,
+  aceptado_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Se anota para situar el acto. NO se publica ni se usa para nada mas.
+  ip          VARCHAR(60),
+  -- La revocatoria es un DERECHO (Art. 8 de la Ley, Art. 6 del Reglamento) y necesita sitio donde
+  -- constar. Se marca, NO se borra la fila: el tratamiento anterior a la revocatoria fue licito y
+  -- borrar el rastro destruiria la prueba de que lo fue.
+  revocado_at TIMESTAMP NULL,
+  CONSTRAINT fk_consentimiento_persona FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
 );
+-- Una persona no consiente dos veces la MISMA version de lo MISMO.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_consentimiento
+  ON consentimientos (person_id, concepto, version);
 ```
 
-Y **el alta lo exige en el BACKEND**, no en el navegador: sin consentimiento, no hay cuenta.
-
-⚠️ **La huella del texto es la pieza que lo hace útil.** Sin ella se guarda «aceptó la versión 2»
-y no se puede demostrar qué decía la versión 2.
+**Y el alta lo exige en el BACKEND.** Hoy la puerta está en el navegador, que es como no tenerla:
+sin las dos filas, no hay cuenta.
 
 ### B · Separar los *checks*
 
