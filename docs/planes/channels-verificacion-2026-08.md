@@ -31,14 +31,15 @@
 | **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | ✅ | **Verificado en el navegador**: con la pantalla abierta se paró `channels` y en menos de 5 s dijo «no se puede hablar con el servicio de canales», sin recargar y sin un solo error de consola; al volver a levantarlo se recuperó sola. Telegram en verde con `evidencia: sondeo`; WhatsApp en verde con `plataforma` y **sin prometer que reciba**. RBAC 13 → 14 recursos, 65 → 70 permisos · channels **96** · backend unit **760** · char **327/327** · frontend **460** y las 27 puertas | 2026-09-02 |
 | **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ✅ | char **326/326** · unit **735** · frontend **431** y sus 27 puertas · la puerta REAL en el backend (`exigeVerificacionCompleta`) y el guardián del router como mitad amable · **4 defectos cerrados de camino**: la verificación autodeclarable, el alta no atómica, `/email/verify` sin sesión y el envío que fallaba en silencio | 2026-08-31 |
 | **C9** | 🚧 **El limitador de intentos** | ✅ | **Probado contra el sistema en marcha**: 10 accesos fallidos pasan y el 11 da 429 con `Retry-After`; otra cuenta desde la MISMA ip sigue entrando; 12 accesos correctos seguidos no gastan ni un intento; `validar_cedula` frena en el 11 **antes** de llamar al servicio de pago; con la base caída `validar_cedula` CIERRA y `login` ABRE · unit **754** (+17, 4 mutaciones cazadas) · char **327/327** sin mover un golden | 2026-09-01 |
+| **C10** | **El vigilante**: comprueba los canales aunque nadie mire, guarda el historial de caídas y avisa | ✅ | **Probado contra el sistema en marcha**: se paró `channels` y la caída quedó anotada a los **54 s**; el aviso salió a los **5 minutos exactos**, y tras dos vueltas más seguía habiendo **UNA sola notificación**, no tres; al levantarlo, el tramo se cerró solo. La bitácora contesta «llevaba 9 minutos», que es la pregunta que nadie pudo responder el 2026-08-31 · unit **767** (+7, 3 mutaciones cazadas) | 2026-09-02 |
 
-**9 tareas · 9 cerradas · 0 pendientes.** ✅ **Frente cerrado.**
+**10 tareas · 10 cerradas · 0 pendientes.** ✅ **Frente cerrado.**
 
 ⚠️ **El denominador bajó de 10 a 9**, y no por haber terminado nada: `C6` se **descartó** el
 2026-09-01. No es una pausa ni un bloqueo — es una opción muerta, y por eso sale de la cuenta en vez
 de quedarse como deuda perpetua.
 
-- **Cerradas (9):** `C1` · `C2` · `C2b` · `C3` · `C4` · `C5` · `C7` · `C8` · `C9`
+- **Cerradas (10):** `C1` · `C2` · `C2b` · `C3` · `C4` · `C5` · `C7` · `C8` · `C9` · `C10`
 - **Descartada (1):** `C6`
 
 ⚠️ **Y no habrá `C10` ni `C11`.** Llegué a proponerlas —un contrato de dos niveles para que los bots

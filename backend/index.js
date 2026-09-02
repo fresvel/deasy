@@ -2,6 +2,8 @@ import "dotenv/config"
 import http from "node:http";
 import express from "express";
 import realtimeGateway from "./services/realtime/RealtimeGateway.js";
+import AvisoDeCanalCaido from "./services/canales/AvisoDeCanalCaido.js";
+import VigilanteDeCanales from "./services/canales/VigilanteDeCanales.js";
 import user_router from "./routes/user_router.js";
 import internalRouter from "./routes/internal_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
@@ -271,6 +273,20 @@ const startServer = async () => {
     console.log(`Servidor iniciado en: http://localhost:${PORT}/deasy/v1/`)
     console.log(`WebSocket (Socket.IO) escuchando en: ws://localhost:${PORT}/socket.io`)
   });
+
+  // ⚠️ EL VIGILANTE (C10). La pantalla de canales arregló que el estado mintiera; NO arregló que
+  // nadie mire. El 2026-08-31 el servicio estuvo TRECE HORAS parado y la información habría estado
+  // disponible todo el tiempo — para quien hubiera abierto la pantalla, y nadie la abrió.
+  //
+  // ⚠️ Se arranca DESPUÉS de escuchar, y con su propio umbral de 5 min: durante el arranque todo
+  // parece caído, y sin eso cada despliegue mandaría una alerta.
+  //
+  // ⚠️ Y VIVE EN ESTE PROCESO, que está fijado a UNA instancia (`replicas: 1`, por el tiempo real).
+  // Con dos, las dos vigilarían y cada aviso llegaría por duplicado. Escalar el backend exige
+  // resolver esto ANTES, no después.
+  new VigilanteDeCanales({
+    avisador: new AvisoDeCanalCaido({ realtime: realtimeGateway }),
+  }).iniciar();
 };
 
 startServer();

@@ -303,6 +303,41 @@ propósito: aquí hace falta **buscar por la llave** que llega, y una huella con
 No es una contraseña —dura quince minutos, se usa una vez y es aleatoria de 256 bits—, así que lo que
 bcrypt protege (adivinar a fuerza bruta un secreto elegido por una persona) no aplica.
 
+## Si un canal se cae y nadie mira — `canales_bitacora`
+
+Hay una pantalla que enseña cómo están los canales de mensajería. **Arregló que el estado mintiera;
+no arregló que nadie mire.** El 2026-08-31 el servicio estuvo **trece horas** parado: la información
+habría estado disponible todo ese tiempo, para quien hubiera abierto la pantalla — y nadie la abrió,
+porque nadie sospechaba.
+
+**`canales_bitacora` guarda una fila por CAMBIO de estado**, no por comprobación: se mira cada
+minuto, y anotar cada vuelta serían 1 440 filas al día por canal para decir «sigue bien». Un `hasta`
+nulo significa «sigue así ahora mismo».
+
+```
+canal      'telegram' · 'whatsapp' · 'servicio'
+salud      sano · degradado · «sin vincular» · bloqueado · caido
+desde      cuándo empezó ·  hasta  cuándo dejó de estarlo (nulo = ahora)
+```
+
+⚠️ **`servicio` es un canal más, y es el que importaba aquel día.** Es el propio microservicio: si
+**no contesta**, eso es un estado y hay que poder contarlo. Sin esa fila, un servicio muerto se vería
+como «no ha cambiado nada» — que es exactamente el silencio de las trece horas.
+
+:::tip[Lo que contesta, y la pantalla no]
+**«¿Cuánto llevaba roto?»** La pantalla enseña el ahora; la bitácora, el rato. Es la única pregunta
+que un diseño por eventos habría respondido igual de bien — con la diferencia de que **un proceso
+muerto no puede mandar eventos**, y preguntando su silencio sí queda anotado.
+:::
+
+Y de aquí sale el aviso: cuando un canal lleva **más de cinco minutos** mal, se avisa **una vez** —
+por correo y por notificación— a quien tenga el permiso `channels.read`. Una vez, no una por vuelta:
+un vigilante que avisa de más deja de leerse, y entonces el aviso que importaba se pierde entre los
+que no.
+
+⚠️ **El aviso nunca va por Telegram ni por WhatsApp**, aunque el sistema sepa hablar por ahí: el
+fallo que hay que notificar es justo el que impide notificarlo.
+
 ## Cuántas veces se puede intentar — `intentos_limitados`
 
 Hay una tabla que no guarda datos de nadie y sin embargo protege a todos: **`intentos_limitados`**

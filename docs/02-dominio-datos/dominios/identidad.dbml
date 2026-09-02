@@ -26,6 +26,23 @@ Table "actions" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
+Table "canales_bitacora" {
+  "id" int8 [pk, not null, increment]
+  "canal" varchar(40) [not null]
+  "salud" varchar(20) [not null]
+  "evidencia" varchar(20)
+  "detalle" text
+  "desde" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "hasta" timestamp
+  "avisado_at" timestamp
+
+  Indexes {
+    (canal, desde) [type: btree, name: "idx_canales_bitacora"]
+  }
+
+  Note: '''El historial de como han estado los canales de mensajeria. UNA FILA POR CAMBIO de estado, no por comprobacion: se mira cada minuto y anotar cada vuelta serian 1 440 filas al dia por canal para decir «sigue bien». `hasta` nulo significa «sigue asi ahora mismo». El canal `servicio` es el propio microservicio: si NO CONTESTA, eso es un estado y hay que poder contarlo. Contesta la pregunta que nadie pudo responder el 2026-08-31: ¿cuanto llevaba roto?'''
+}
+
 Table "canales_mensajeria" {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]

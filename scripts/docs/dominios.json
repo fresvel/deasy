@@ -34,7 +34,8 @@
       "emails",
       "documentos_identidad",
       "telefono_verification_keys",
-      "intentos_limitados"
+      "intentos_limitados",
+      "canales_bitacora"
     ]
   },
   "organizacion": {
