@@ -1,5 +1,9 @@
 # La evidencia de una verificación — diseño
 
+> ⚠️ **Este documento llamaba a esto «no repudio». El término era más fuerte de lo que el mecanismo
+> sostiene** — ver §2quater. Lo que se construye es **un registro de auditoría a prueba de
+> manipulación**, que es valioso y no es lo mismo.
+
 > **Estado: PROPUESTA.**
 >
 > Nace de una objeción del dueño: al elegir borrar los mensajes de WhatsApp tras atenderlos, señaló
@@ -133,6 +137,122 @@ sello sobrevive**, y hay que poder explicárselo con ese artículo en la mano.
 
 **Por eso el sello guarda identificadores y no datos:** ni nombre, ni el número de teléfono, ni el
 texto de ningún mensaje. Lo mínimo que sostiene la prueba.
+
+## 2ter · Cómo se calcula la huella, exactamente
+
+```js
+// El sello, con LAS CLAVES EN ORDEN FIJO y sin espacios. No es cosmética: si el orden variara, el
+// MISMO sello daría huellas distintas y la cadena no se podría recomprobar nunca.
+const canonico = JSON.stringify({
+  tipo, ocurrido_at, telefono_id, person_id, canal, llave_hash, numero_afirmado_por, sello_anterior
+});
+const huella = crypto.createHash("sha256").update(canonico, "utf8").digest("hex");
+```
+
+⚠️ **Tres detalles que parecen menores y no lo son:**
+
+1. **Orden fijo de claves.** `JSON.stringify` respeta el orden de inserción, así que se construye el
+   objeto con las claves en un orden literal y **nunca** a partir de otro objeto.
+2. **UTF-8 explícito.** Sin declararlo, un acento podría codificarse distinto en otra plataforma y la
+   huella cambiaría sin que el contenido cambie.
+3. **Sin espacios ni saltos.** Un formateo distinto es un contenido distinto para SHA-256.
+
+**Comprobar la cadena** es recorrer los sellos en orden, recalcular cada huella y verificar que la
+del sello *n* es el `sello_anterior` del *n+1*. Si un solo eslabón no cuadra, **el punto exacto de la
+manipulación queda señalado**.
+
+---
+
+## 2quater · ⚠️ Qué prueba de verdad, y qué NO — la corrección importante
+
+He venido llamando a esto **«no repudio»**, y **el término es más fuerte de lo que el mecanismo
+sostiene**. Al escribir cómo se calcula la huella queda claro por qué, y prefiero corregirlo ahora
+que descubrirlo en un reclamo.
+
+### Lo que SÍ prueba
+
+| | |
+|---|---|
+| **Integridad** | El registro **no se ha alterado** desde que se escribió. Eso es sólido: la cadena lo hace comprobable y el bloqueo impide rehacerla |
+| **Orden** | El sello #3 se escribió después del #2. Anterioridad **relativa**, y es real |
+| **Todo o nada** | No se puede alterar *un* registro discretamente. Habría que rehacer **todos los posteriores**, y el bucket no lo permite |
+
+### Lo que NO prueba, dicho sin adornos
+
+⚠️ **La marca de tiempo la ponemos nosotros.** `ocurrido_at` es un campo que escribe nuestro código.
+El bloqueo garantiza que **no cambió después**; no garantiza que fuera cierto al escribirse. Con
+control total de la infraestructura, una cadena entera se puede fabricar hoy fechada ayer.
+
+**Lo que la cadena hace es convertir una manipulación silenciosa en una manipulación total** — y eso
+es mucho, pero **no es la firma de un tercero**.
+
+### Lo que faltaría para llamarlo no repudio con propiedad
+
+**Un ancla externa**, algo que nosotros no controlemos:
+
+| | |
+|---|---|
+| **Sellado de tiempo cualificado (TSA, RFC 3161)** | Una entidad acreditada firma la huella con su reloj. **Es la respuesta estándar**, y en Ecuador hay entidades de certificación acreditadas |
+| **Publicar la cabeza de la cadena** periódicamente donde no podamos tocarla | Más barato, menos formal |
+| **Firmar el sello con el certificado institucional** | Añade atribución a la institución… que sigue siendo nosotros. **No resuelve el problema de fondo** |
+
+⚠️ **Y ese ancla no está en este diseño.** Se puede añadir después sin rehacer nada —basta sellar la
+cabeza de la cadena cada X— pero **hoy no está, y llamar a esto «no repudio» sin decirlo sería
+prometer de más.**
+
+**El nombre honesto de lo que se construye es: un registro de auditoría a prueba de manipulación.**
+
+---
+
+## 2quinquies · ¿Prueba que fue EL USUARIO, con SU número?
+
+Ésta es la pregunta del dueño, y la respuesta tiene dos partes que conviene no mezclar.
+
+### La cadena de razonamiento que sí se sostiene
+
+1. Generamos una llave **aleatoria de 256 bits** y la enseñamos **sólo a la sesión que la pidió**.
+2. Esa llave volvió **desde un número que la plataforma afirmó** — no que el usuario tecleó.
+3. Por tanto: **quien controlaba ese teléfono en ese momento tenía una llave que sólo esa sesión
+   había visto.**
+
+Eso es evidencia sólida de **posesión del teléfono en ese instante**, y de que **quien lo tenía
+estaba coordinado con quien tenía la sesión abierta**.
+
+### ⚠️ Pero NO prueba quién es la persona
+
+**El sello registra fielmente lo que el sistema observó. No sabe quién estaba al otro lado.**
+
+Si alguien roba el teléfono desbloqueado, hace un **cambio de SIM**, o secuestra una sesión de
+WhatsApp Web, **la verificación sería válida y el sello la registraría como tal**. Sería un registro
+correcto de un hecho fraudulento.
+
+> **No repudio del HECHO ≠ autenticación de la PERSONA.** Confundirlos es lo que hace que un sistema
+> parezca más seguro de lo que es.
+
+### Y esto responde a la pregunta sobre el futuro
+
+El dueño lo planteó bien: *«hoy la contraseña se recupera por correo, ¿y mañana con `channels` o con
+la app propia?»*.
+
+⚠️ **El día que recuperar el acceso pase por un canal, el teléfono se convierte en la llave de la
+cuenta** — y todo lo de arriba deja de ser teórico:
+
+| | |
+|---|---|
+| **Hoy** | El teléfono **sólo verifica** que el número es tuyo. Perderlo no da acceso a nada |
+| **Si mañana recupera contraseñas** | Quien controle el número **entra en la cuenta**. Un cambio de SIM pasa de molestia a **toma de control** |
+
+**Lo que haría falta antes de dar ese paso** —y conviene que esté escrito antes de que alguien lo
+proponga como una mejora de comodidad—:
+
+1. **Un segundo factor que no sea el mismo teléfono.** Si el canal es lo único, el canal es la
+   cuenta.
+2. **Avisar por TODOS los canales cuando se recupera el acceso**, no sólo por el usado. Es barato, y
+   es lo que hace que el titular legítimo **se entere** de un intento ajeno.
+3. **Un plazo antes de que el cambio surta efecto**, con posibilidad de cancelarlo. Convierte un robo
+   instantáneo en uno que hay que sostener en el tiempo.
+4. **Y el sello, que sí sirve aquí**: deja constancia de que la recuperación ocurrió, por dónde y
+   cuándo — para que, cuando alguien reclame, **haya algo que mirar** aunque no pruebe quién fue.
 
 ## 3 · Por qué esto es MEJOR que guardar el chat, punto por punto
 
