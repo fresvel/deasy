@@ -29,7 +29,18 @@ export const RESOURCE_CATALOG = [
   { code: "documents", name: "Documentos", description: "Documentos, versiones y ciclo documental operativo." },
   { code: "fill_flows", name: "Entrega documental", description: "Flujos, pasos, instancias y solicitudes de entrega." },
   { code: "signature_flows", name: "Firmas", description: "Flujos, solicitudes, estados y firmas documentales." },
-  { code: "contracts", name: "Contratacion", description: "Vacantes, postulaciones, ofertas, contratos y origenes." }
+  { code: "contracts", name: "Contratacion", description: "Vacantes, postulaciones, ofertas, contratos y origenes." },
+  // ⚠️ `read` ENSEÑA EL ESTADO; `manage` ENSEÑA EL QR, y no es una gradacion cualquiera: QUIEN ESCANEA
+  // EL QR DECIDE QUE CUENTA DE WHATSAPP ES EL CANAL DE LA INSTITUCION. Es una toma de control de la
+  // identidad del canal, no «ver un dato». Quien vigila no tiene por que poder vincular.
+  //
+  // Lo bueno de que la matriz derive de este catalogo es que el reparto sale solo: AdminSistema
+  // hereda las cinco acciones (ve el QR) y Auditor solo `read` (ve el estado, no el QR).
+  //
+  // `create`, `update` y `delete` existen porque el catalogo da cinco acciones a todo recurso, pero
+  // aqui NO LOS MIRA NADIE: esta pantalla es de solo lectura a proposito. Ver
+  // docs/arquitecturas/pestana-de-canales.md §7.
+  { code: "channels", name: "Canales de mensajeria", description: "Estado de Telegram y WhatsApp, y el codigo de vinculacion." }
 ];
 
 export const ACTION_CATALOG = [
