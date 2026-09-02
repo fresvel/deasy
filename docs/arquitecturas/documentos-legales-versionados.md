@@ -1,0 +1,220 @@
+# Los documentos legales: versionado, huella y prueba — diseño
+
+> **Estado: PROPUESTA.** Nada implementado.
+>
+> Sale de una deducción del dueño: si guardamos la **huella** del texto aceptado, entonces el texto
+> tiene que estar **versionado** — y si está versionado, hay que decidir **dónde vive**.
+
+---
+
+## 1 · Por qué la huella obliga a versionar
+
+El **Art. 5 del Reglamento** exige que el consentimiento *«deberá ser **demostrado** por el
+responsable»*. Demostrar significa poder contestar **cuatro** preguntas, y la cuarta arrastra todo lo
+demás:
+
+| | |
+|---|---|
+| ¿Quién consintió? | `person_id` |
+| ¿A qué? | `concepto` |
+| ¿Cuándo? | `aceptado_at` |
+| **¿Qué decía el texto que le enseñamos?** | **← esto exige conservar ese texto exacto, para siempre** |
+
+Guardar sólo la huella **no basta**: una huella prueba que un texto **no ha cambiado**, pero no
+reconstruye el texto. Si dentro de tres años alguien reclama, hay que poder **enseñar el documento**,
+y que su huella cuadre con la que se guardó.
+
+> **Huella sin archivo es un candado sin puerta.** Hacen falta las dos cosas.
+
+---
+
+## 2 · Dónde vive el texto: las tres opciones
+
+### ❌ Hoy: `frontend/public/terms.md`
+
+Un fichero estático servido por el frontend. **Tres problemas**, y el tercero es el que lo descarta:
+
+1. **Se despliega con la imagen**, así que «qué texto estaba vigente el 14 de marzo» depende de qué
+   etiqueta de imagen corría ese día — un dato que no está en ninguna parte consultable.
+2. **No hay forma de servir una versión antigua.** Si alguien aceptó la v2 y hoy va por la v5, la v2
+   **ya no existe** en ningún sitio al que la aplicación pueda llegar.
+3. **El registro no lo puede leer.** El backend, que es quien tiene que guardar la huella, **no ve
+   ese fichero**: vive en otro contenedor.
+
+⚠️ Y ese tercer punto es el que rompe la cadena entera: **el texto que se le enseña al usuario lo
+sirve el frontend, y la huella la calcularía el backend sobre otra cosa.** Dos fuentes para lo que
+tiene que ser una.
+
+### 🟡 En la base de datos
+
+Simple y consultable. Pero **el texto quedaría exactamente igual de manipulable que la fila que lo
+referencia** — y ésa era la objeción del dueño al hablar de no repudio: *«¿nuestra base, que es
+manipulada por nosotros?»*. Meter la prueba **en el mismo sitio que lo que hay que probar** no añade
+nada.
+
+### ✅ En MinIO, con **versionado y bloqueo de objetos**
+
+Es el patrón que **este repositorio ya usa** para las plantillas —`template_artifacts` guarda
+`storage_version`, `content_hash`, `lifecycle_state` y `parent_version_id`— así que no se inventa un
+segundo mecanismo. Y MinIO añade algo que ni el repositorio ni la base tienen.
+
+---
+
+## 3 · 🔬 Lo que MinIO da, MEDIDO — no supuesto
+
+Comprobado en la pila C el 2026-09-02, sobre un bucket creado con `--with-lock` y retención
+`COMPLIANCE`:
+
+```
+1· sobrescribir el fichero  → la copia PASA, pero crea una versión NUEVA
+2· borrar el fichero        → «borrado» aparente
+3· qué queda de verdad:
+     v3 DEL terminos.md   ← el borrado es un MARCADOR, no una destrucción
+     v2 PUT terminos.md   ← el intento de alterarlo: quedó como versión aparte
+     v1 PUT terminos.md   ← 24 B — EL TEXTO ORIGINAL, INTACTO Y RECUPERABLE
+```
+
+**Ni sobrescribir ni borrar destruye la versión anterior.** Eso es exactamente lo que hace falta:
+
+> **Un archivo del que ni nosotros podemos quitar lo que ya pusimos.** Es la respuesta técnica a la
+> objeción de *«¿y si la prueba la controlamos nosotros?»* — porque en modo `COMPLIANCE` **ni la
+> cuenta raíz** puede borrar antes de que venza la retención.
+
+⚠️ **Y aquí está el hallazgo que hay que decir aparte:** los tres buckets que existen hoy
+—`deasy-documents`, `deasy-templates`, `deasy-users`— están **SIN VERSIONAR**. Medido:
+`is un-versioned`, los tres.
+
+**Eso no es un problema de este frente, pero sí uno del sistema**: hoy sobrescribir el objeto de un
+documento firmado **destruye el anterior sin rastro**. Se registra aquí y se pasa a quien lleve el
+frente documental.
+
+---
+
+## 4 · El diseño
+
+### 4.1 · El bucket
+
+```
+deasy-legal          ← NUEVO, creado --with-lock, retención COMPLIANCE
+  terminos/v1.md
+  terminos/v2.md     ← cada versión es un objeto propio Y una versión de objeto
+  privacidad/v1.md
+```
+
+⚠️ **Bucket aparte y no una carpeta en `deasy-documents`.** El bloqueo de objetos y la retención se
+configuran **por bucket**, y aplicárselos a los documentos de trabajo haría que no se pudiera borrar
+nada nunca — que no es lo que se quiere ahí.
+
+⚠️ **Y `--with-lock` sólo se puede poner AL CREAR el bucket.** No se activa después. Por eso el
+bucket es nuevo, y por eso esto hay que decidirlo antes de la primera versión publicada.
+
+### 4.2 · La tabla del documento
+
+```sql
+-- LOS TEXTOS LEGALES QUE UNA PERSONA ACEPTA, VERSION A VERSION.
+--
+-- Sigue el patron que ya usan las plantillas (`template_artifacts`): version de almacenamiento,
+-- estado de ciclo de vida, huella del contenido y enlace al padre. No se inventa un mecanismo nuevo.
+CREATE TABLE IF NOT EXISTS documentos_legales (
+  id             INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- 'terminos_de_uso' | 'aviso_de_privacidad'
+  clase          VARCHAR(60) NOT NULL,
+  version        VARCHAR(40) NOT NULL,
+  -- Donde vive el texto exacto. El bucket tiene bloqueo de objetos: lo que entra no se puede quitar.
+  bucket         VARCHAR(120) NOT NULL,
+  object_key     VARCHAR(500) NOT NULL,
+  -- ⚠️ La VERSION DE OBJETO de MinIO, no solo la clave. Sin esto, «el objeto terminos/v2.md» es
+  -- ambiguo en cuanto alguien lo sobrescribe: apuntamos a la version concreta, que es inmutable.
+  version_id     VARCHAR(120) NOT NULL,
+  -- SHA-256 del contenido. Lo que hace comprobable que el texto servido es el aceptado.
+  contenido_hash CHAR(64) NOT NULL,
+  -- draft: se puede cambiar. published: ya se puede aceptar. retired: no se ofrece, pero SE
+  -- CONSERVA -- hay gente que acepto esa version y su prueba depende de que siga estando.
+  estado         TEXT CHECK (estado IN ('draft','published','retired')) NOT NULL DEFAULT 'draft',
+  publicado_at   TIMESTAMP NULL,
+  created_at     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_documento_legal ON documentos_legales (clase, version);
+-- Solo UNA version publicada por clase a la vez: si hubiera dos, «que acepto» seria ambiguo.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_documento_legal_vigente
+  ON documentos_legales (clase) WHERE estado = 'published';
+```
+
+⚠️ **`retired` NO es borrar.** Una versión retirada **se conserva para siempre**: hay gente cuya
+prueba de consentimiento apunta a ella. Borrarla destruiría exactamente lo que este diseño existe
+para guardar.
+
+### 4.3 · La tabla del consentimiento
+
+```sql
+CREATE TABLE IF NOT EXISTS consentimientos (
+  id           BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id    INT NOT NULL,
+  -- UNA FILA POR FINALIDAD. El Art. 8 exige que el consentimiento sea ESPECIFICO y que, con varias
+  -- finalidades, CONSTE para todas ellas. Una fila por finalidad es literalmente eso.
+  documento_id INT NOT NULL,
+  aceptado_at  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ip           VARCHAR(60),
+  -- La revocatoria es un derecho (Art. 8 de la Ley, Art. 6 del Reglamento). Se MARCA, no se borra:
+  -- el tratamiento anterior fue licito y borrar el rastro destruiria la prueba de que lo fue.
+  revocado_at  TIMESTAMP NULL,
+  CONSTRAINT fk_consentimiento_persona FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_consentimiento_documento FOREIGN KEY (documento_id) REFERENCES documentos_legales(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_consentimiento ON consentimientos (person_id, documento_id);
+```
+
+⚠️ **Apunta al DOCUMENTO, no a un texto libre.** Así no se puede registrar un consentimiento a una
+versión que no existe, y «qué aceptó» se responde con un `JOIN`, no con una interpretación.
+
+⚠️ **`ON DELETE CASCADE` sobre la persona merece una decisión, y no es obvia:** si se ejerce el
+derecho de eliminación y la persona desaparece, **desaparece también la prueba de que consintió**. Es
+coherente con el derecho, pero conviene que sea deliberado y no un efecto secundario.
+
+---
+
+## 5 · Lo que arregla la cadena rota: **el texto se sirve por el BACKEND**
+
+Hoy el navegador pide `/terms.md` al frontend. **Eso tiene que cambiar**, y es la mitad del valor de
+este diseño:
+
+```
+     HOY                                     PROPUESTO
+navegador ──/terms.md──▶ frontend      navegador ──/legal/terminos──▶ backend ──▶ MinIO
+                                                                        │
+              backend (no lo ve)                            devuelve TEXTO + id + huella
+```
+
+**Y al aceptar, el navegador devuelve el `id` que le dieron.** El backend comprueba que ese
+documento está `published` antes de guardar el consentimiento.
+
+> **Así no hay dos fuentes.** Lo que se le enseñó y lo que se registra **son el mismo objeto**, y la
+> huella lo demuestra. Con el fichero estático, el frontend enseñaba una cosa y el backend habría
+> guardado la huella de otra — y nadie se enteraría hasta que hiciera falta.
+
+---
+
+## 6 · Qué pasa cuando el texto cambia
+
+Es la pregunta que decide si esto sirve de algo en dos años.
+
+1. Se sube una versión **`draft`** y se revisa.
+2. Al publicarla, la anterior pasa a **`retired`** — **y se conserva**.
+3. **Quien ya aceptó NO tiene que volver a aceptar** por defecto: su consentimiento sigue apuntando a
+   la versión que leyó, y eso es exactamente lo correcto.
+4. **Pero si el cambio afecta a las finalidades o a los destinatarios**, hay que volver a pedirlo: el
+   Art. 8 exige que sea **específico** e **informado**, y nadie consintió lo que no leyó.
+
+⚠️ **Ese cuarto punto es una decisión editorial, no técnica**, y por eso el modelo no la automatiza:
+lo que sí da es **la capacidad de saber quién aceptó qué versión**, que es lo que permite tomarla.
+
+---
+
+## 7 · Lo que hay que decidir antes de implementar
+
+| | |
+|---|---|
+| **Bucket con bloqueo, sí o no** | `--with-lock` **sólo se puede poner al crear el bucket**. Con él, ni nosotros podemos borrar; sin él, el archivo vale lo mismo que la base |
+| **Cuánta retención** | En modo `COMPLIANCE` no se puede acortar después. Es una decisión jurídica: ¿cuánto hay que poder probar hacia atrás? |
+| **Qué pasa al eliminar una persona** | ¿Se borra su consentimiento con ella (coherente con el derecho) o se conserva anonimizado (coherente con la prueba)? |
+| **Los tres buckets sin versionar** | Hallazgo aparte, del frente documental: hoy sobrescribir un documento firmado destruye el anterior sin rastro |
