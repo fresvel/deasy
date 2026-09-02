@@ -1,8 +1,12 @@
 # La evidencia de una verificación — diseño
 
-> ⚠️ **Este documento llamaba a esto «no repudio». El término era más fuerte de lo que el mecanismo
-> sostiene** — ver §2quater. Lo que se construye es **un registro de auditoría a prueba de
-> manipulación**, que es valioso y no es lo mismo.
+> 🛑 **CORREGIDO DOS VECES, Y LA SEGUNDA ES DE FONDO.** Este documento llamaba a esto «no repudio».
+> No lo es, y no puede serlo: **nada que construyamos nosotros solos prueba que el usuario actuó**
+> — el sello lo escribimos nosotros, con nuestra llave y nuestro número. **Ver §3, que es el
+> argumento del dueño y desmonta el diseño anterior.**
+>
+> Lo que sí queda: guardar **el identificador que la plataforma le puso al mensaje** (§3ter.A), que
+> es lo único aquí que no podríamos haber inventado.
 
 > **Estado: PROPUESTA.**
 >
@@ -254,20 +258,106 @@ proponga como una mejora de comodidad—:
 4. **Y el sello, que sí sirve aquí**: deja constancia de que la recuperación ocurrió, por dónde y
    cuándo — para que, cuando alguien reclame, **haya algo que mirar** aunque no pruebe quién fue.
 
-## 3 · Por qué esto es MEJOR que guardar el chat, punto por punto
+## 3 · 🛑 El argumento del dueño, y por qué tiene razón
 
-| | El chat de WhatsApp | El sello encadenado en WORM |
+El dueño puso el caso en la mano, y **desmonta el diseño anterior**:
+
+> *«Yo me registré con el número AA y luego borré los mensajes de mi teléfono. Voy a la empresa y
+> digo que yo nunca me registré con ese número, que nunca envié ese mensaje. Tú quieres comprobarlo
+> con tu base, y yo digo: **tú tenías la llave, tú pusiste el número, nada te impedía crear el sello
+> sin mi intervención.** […] Todo este blockchain es inútil porque igual pude estar haciéndolo con
+> mis propias claves de administrador.»*
+
+**Es correcto, y el fallo de mi razonamiento tiene nombre.**
+
+### Yo estaba ordenando las pruebas por el eje equivocado
+
+Comparé el chat y el sello por **durabilidad**, **consultabilidad** y **coste en privacidad**. Por
+esos ejes el sello gana con claridad. **Pero ése no es el eje que decide una disputa.** El eje que
+decide es:
+
+> ### ¿Quién PUDO haber producido esto?
+
+Y ahí el orden se invierte:
+
+| | ¿Lo pudimos fabricar nosotros solos? |
+|---|---|
+| **El sello encadenado en WORM** | **SÍ.** Nosotros generamos la llave, nosotros escribimos el número, nosotros creamos el objeto. La cadena y el bloqueo prueban que **no lo cambiamos después** — no que fuera cierto al escribirlo |
+| **Un mensaje entrante de WhatsApp** | **NO.** Para que exista, **la infraestructura de Meta tuvo que entregarlo**, y eso es un acto de un tercero que no controlamos |
+
+**Ésa es toda la diferencia, y es la que importa.** Una cadena de hashes protege contra *nuestra
+alteración posterior* — un ataque distinto y menor. **No protege contra que nos lo inventáramos desde
+el principio**, que es exactamente lo que el reclamante alegaría.
+
+### Y el valor del chat no está donde yo lo buscaba
+
+Yo decía «es nuestra copia, en nuestro teléfono, alterable». Cierto. **Pero su valor no está en
+nuestra copia**: está en que **el mismo hecho existe en dos sitios que no controlamos** —los
+registros de Meta y el teléfono de la otra persona—. Nuestra copia es **un puntero a la prueba de un
+tercero**, no la prueba.
+
+⚠️ **Y sobre el sellado de tiempo cualificado, el dueño también acierta:** una TSA certifica *cuándo*
+se escribió algo, no *que fuera verdad*. Un sello falso con fecha certificada sigue siendo falso.
+**Es un factor externo sobre el continente, no sobre el contenido.**
+
+---
+
+## 3bis · La conclusión honesta, y es incómoda
+
+> **Nada que construyamos nosotros solos puede probar que el usuario actuó. Por construcción.**
+
+Cualquier registro que produce nuestro sistema es una **afirmación nuestra**. Da igual cómo se
+encadene, dónde se archive o quién le ponga la hora: **el autor sigue siendo el interesado en el
+resultado.**
+
+Para probar un acto del usuario hace falta **algo que sólo el usuario pudiera producir**, y sólo hay
+tres formas:
+
+| | Quién lo produce | ¿Lo tenemos? |
 |---|---|---|
-| ¿Se puede borrar? | **Sí, con dos toques y sin rastro** | **No**, ni con credenciales de raíz, durante 10 años |
-| ¿Se puede alterar? | Sí, y es indetectable | **No sin romper la cadena** |
-| ¿Sobrevive a re-vincular? | ❌ **Se pierde entero** | ✅ |
-| ¿Se puede consultar y exportar? | ❌ | ✅ |
-| ¿Entra en copias? | ❌ | ✅ |
-| ¿Cuánto dato personal guarda? | **El mensaje entero de cada persona** | Identificadores mínimos, sin texto |
-| ¿Tiene plazo? | ❌ ninguno | ✅ 10 años, declarado |
+| **Una firma con una clave que NOSOTROS NUNCA tengamos** | El usuario | ⚠️ **Existe el firmador, pero no se usa para esto** |
+| **Los registros de la plataforma** (Meta, Telegram) | Un tercero | ⚠️ **Existen — pero no guardamos con qué pedirlos** |
+| **La copia del propio reclamante** | La otra parte | Existe, y no depende de nosotros |
 
-> **Se cambia una prueba débil, perecedera y cara en privacidad por una fuerte, duradera y mínima.**
-> Ésa es la respuesta a la objeción, y sin ella borrar los chats sí habría sido un retroceso.
+---
+
+## 3ter · Lo que sale de aquí, y cambia el diseño
+
+### A · Guardar el IDENTIFICADOR DE LA PLATAFORMA — lo único verdaderamente nuevo
+
+Cada mensaje entrante trae **el identificador que le puso la plataforma** (comprobado: la librería lo
+expone en `msg.id`, y Telegram da su `update_id` y `message_id`).
+
+**Ese identificador NO es dato nuestro: es una referencia dentro del sistema de un tercero.**
+
+> **Es lo único de todo este diseño que no podríamos haber inventado**, porque tendría que existir en
+> los servidores de Meta para ser válido. Frente al reclamo del dueño, es lo que convierte
+> *«nosotros decimos que escribiste»* en *«pregúntale a Meta por este mensaje concreto»*.
+
+Ocupa unas decenas de bytes, no contiene el texto, y es **exactamente lo que un requerimiento legal
+necesita** para pedir la corroboración.
+
+⚠️ **Esto no lo tenía el diseño anterior, y es lo que lo salva de ser inútil.**
+
+### B · Reabrir la decisión de borrar los chats
+
+La decisión de borrarlos se tomó con mi comparación errónea encima de la mesa. **Con el eje correcto,
+el chat vale más de lo que dije** — no como prueba en sí, sino como puntero a la de Meta.
+
+**Sigue en pie el argumento contrario** —minimización y conservación, Art. 10— así que **es un
+compromiso real, no una respuesta obvia**, y lo decide el dueño con la comparación bien hecha. Ver §6.
+
+### C · Para lo que de verdad exija no repudio, la firma del usuario
+
+El día que recuperar una contraseña pase por un canal, **ningún registro nuestro bastará**. Lo que
+bastaría es que el usuario **firme el acto con una clave que nosotros nunca tengamos** — y el sistema
+**ya tiene un firmador con certificados**. Está construido para esto y no se está usando aquí.
+
+### D · Y el sello se queda, con su papel REAL
+
+No como prueba frente a un tercero, sino como **auditoría interna**: detectar si alguien de dentro
+manipuló los registros. **Es un control contra el fraude interno, no contra el reclamo del usuario.**
+Sigue mereciendo la pena — con ese nombre y no con otro.
 
 ---
 
@@ -289,3 +379,36 @@ Lo que ahora tenemos es un registro propio **que se puede contrastar con ella** 
 - **No guarda el mensaje.** Ni su texto ni su longitud: el hecho, no el contenido.
 - **No sustituye a `telefono_canales`.** Ésa es la que el sistema consulta para operar; ésta es la
   que se enseña cuando alguien discute.
+
+---
+
+## 6 · La decisión que hay que rehacer: ¿se borran los chats?
+
+Se decidió borrarlos **con mi comparación errónea encima de la mesa**. Rehecha:
+
+| | Borrar tras atender | Conservar N días |
+|---|---|---|
+| **Minimización (Art. 10.f)** | ✅ lo mejor | 🟡 aceptable con plazo declarado |
+| **Conservación (Art. 10.i)** | ✅ plazo mínimo | ✅ plazo declarado |
+| **Puntero a la prueba de un tercero** | ❌ **se pierde** | ✅ mientras dure |
+| **Poder mirar el móvil ante un reclamo** | ❌ | ✅ |
+| **Volumen** | plano | acotado |
+
+⚠️ **Y hay un matiz que quita hierro a la decisión:** con el **identificador de la plataforma
+guardado en la base** (§3ter.A), **el puntero a Meta sobrevive aunque el chat se borre**. El chat
+añade poder verlo con los ojos; el identificador añade poder pedirlo formalmente — **y es el segundo
+el que sirve en una disputa.**
+
+**Dicho de otro modo: si se implementa §3ter.A, borrar los chats deja de costar lo que costaba.**
+
+---
+
+## 7 · Lo que este documento NO puede resolver, y conviene que quede escrito
+
+**La verificación de un teléfono es, por naturaleza, una comprobación de POSESIÓN, no un acto
+firmado.** «Alguien nos escribió desde ese número» no se puede convertir en «esta persona declaró
+algo», por mucha criptografía que se le ponga a nuestro lado del cable.
+
+Quien quiera no repudio de verdad sobre un acto, tiene que hacer que **el usuario firme el acto**.
+Todo lo demás —cadenas, WORM, sellos de tiempo— protege contra **nuestra propia manipulación
+posterior**, que es un riesgo real pero **distinto del que plantea el reclamante**.
