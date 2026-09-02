@@ -10,6 +10,7 @@ import { PAISES, PROVINCIAS_EC, CANTONES_EC } from "../../config/geografiaCatalo
 import TelefonoService from "../users/TelefonoService.js";
 import EmailService from "../users/EmailService.js";
 import DocumentoIdentidadService from "../users/DocumentoIdentidadService.js";
+import DocumentosLegales from "../legal/DocumentosLegales.js";
 import { buildProcessDefinitionVersionName } from "../admin/processes/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
@@ -162,6 +163,37 @@ const upsertPermission = async (connection, { resourceId, actionId, code, descri
   return Number(row.id);
 };
 
+
+// EL ARCHIVO LEGAL, TAMBIEN AQUI — y no solo en el arranque del backend.
+//
+// ⚠️ MEDIDO el 2026-09-02, y por eso existe esta funcion: `test:char:fixture` (y cualquier reset)
+// vacia `documentos_legales` SIN reiniciar el backend, asi que la adopcion del arranque ya paso y no
+// vuelve a pasar. El resultado medido era `GET /legal/documentos` -> `{"documentos":[]}`: nadie
+// tiene nada que aceptar, y `validarAceptacion` pasa EN VACIO porque no hay clases publicadas que
+// exigir. Es exactamente el agujero que este frente vino a cerrar, reabierto por el camino del
+// reset.
+//
+// El sitio correcto es el bootstrap y no un `INSERT` del esquema: la fila necesita el
+// `object_version_id`, que NO EXISTE hasta despues de subir el objeto a MinIO.
+//
+// Best-effort A PROPOSITO: va DESPUES del commit y no tumba un arranque que ya funciono. Un MinIO
+// caido deja el sistema sin textos que aceptar --que se avisa muy alto-- pero no sin instalacion.
+const conectarArchivoLegal = async () => {
+  try {
+    const legales = new DocumentosLegales();
+    await legales.asegurarBuckets();
+    const adoptados = await legales.adoptarDelArchivo();
+    if (adoptados.length) {
+      const detalle = adoptados.map((d) => `${d.clase} ${d.version} [${d.accion}]`).join(", ");
+      console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con MinIO (${detalle})`);
+    }
+    return adoptados;
+  } catch (error) {
+    console.error(`⚠️  ARCHIVO LEGAL NO OPERATIVO tras el bootstrap: ${error.message}`);
+    console.error("⚠️  Sin textos legales publicados NO HAY CONSENTIMIENTO QUE REGISTRAR en el alta.");
+    return [];
+  }
+};
 const seedBaseRbacCatalog = async (connection) => {
   const roleIds = new Map();
   const resourceIds = new Map();
@@ -1058,6 +1090,7 @@ export default class SystemBootstrapService {
       // Catálogos genéricos seleccionados (idempotente).
       const seededCatalog = await seedGenericCatalog(connection, preconfig, roleIds);
       await connection.commit();
+      await conectarArchivoLegal();
 
       return {
         message: "El sistema se inicializo correctamente.",
@@ -1097,6 +1130,7 @@ export default class SystemBootstrapService {
         unitId
       });
       await connection.commit();
+      await conectarArchivoLegal();
       return {
         message: "Administrador recuperado correctamente.",
         admin: {

@@ -45,6 +45,17 @@ services:
     volumes:
       - minio_data:/data
 
+  # Se lanza A MANO, y el perfil es lo que lo hace posible sin que arranque en cada `up`. El
+  # comando esta documentado en `docs/07-despliegue/COMANDOS_PROYECTO.md`:
+  #
+  #   bash scripts/docker-env.sh dev --profile storage-init run --rm minio-bootstrap
+  #   bash scripts/stack.sh c --profile storage-init run --rm minio-bootstrap
+  #
+  # ⚠️ Y por eso mismo NO es la barrera del bucket legal. Como no corre solo, el bucket de
+  # archivo puede acabar creandolo el backend por el camino perezoso (`makeBucket(bucket, "")`,
+  # SIN bloqueo) -- y el bloqueo solo se puede pedir al CREAR el bucket, asi que eso seria
+  # irreversible. Esto lo crea BIEN y se niega si ya existe mal; impedir el camino perezoso es
+  # cosa del arranque del backend.
   minio-bootstrap:
     image: minio/mc:RELEASE.2025-02-21T16-00-46Z
     profiles:
@@ -66,6 +77,10 @@ services:
       MINIO_USERS_PREFIX: ${MINIO_USERS_PREFIX}
       MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
       MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
+      MINIO_LEGAL_BUCKET: ${MINIO_LEGAL_BUCKET}
+      MINIO_LEGAL_DRAFTS_BUCKET: ${MINIO_LEGAL_DRAFTS_BUCKET}
+      MINIO_LEGAL_RETENTION_MODE: ${MINIO_LEGAL_RETENTION_MODE}
+      MINIO_LEGAL_RETENTION_DAYS: ${MINIO_LEGAL_RETENTION_DAYS}
     entrypoint: ["/bin/sh", "/bootstrap.sh"]
     volumes:
       - ./minio/bootstrap.sh:/bootstrap.sh:ro
@@ -103,6 +118,10 @@ services:
       MINIO_USERS_PREFIX: ${MINIO_USERS_PREFIX}
       MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
       MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
+      MINIO_LEGAL_BUCKET: ${MINIO_LEGAL_BUCKET}
+      MINIO_LEGAL_DRAFTS_BUCKET: ${MINIO_LEGAL_DRAFTS_BUCKET}
+      MINIO_LEGAL_RETENTION_MODE: ${MINIO_LEGAL_RETENTION_MODE}
+      MINIO_LEGAL_RETENTION_DAYS: ${MINIO_LEGAL_RETENTION_DAYS}
       RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
       RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
       RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}

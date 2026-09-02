@@ -142,7 +142,6 @@ Table "documentos_legales" {
   "id" int4 [pk, not null, increment]
   "clase" varchar(60) [unique, not null]
   "version" varchar(40) [not null]
-  "texto" text
   "contenido_hash" bpchar(64)
   "bucket" varchar(120)
   "object_key" varchar(500)

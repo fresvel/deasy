@@ -19,6 +19,12 @@
       "modelo/lo-que-no-cierra.md"
     ]
   },
+  "canales_bitacora": {
+    "huella": "8f7b4f65bd2392ea",
+    "paginas": [
+      "modelo/organizacion.md"
+    ]
+  },
   "canales_mensajeria": {
     "huella": "2c034e322bc71770",
     "paginas": [
@@ -102,6 +108,12 @@
     "huella": "c5226895a18d2b79",
     "paginas": [
       "complemento/mapa-completo.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "consentimientos": {
+    "huella": "8d9bd1a36479e5f9",
+    "paginas": [
       "modelo/organizacion.md"
     ]
   },
@@ -240,6 +252,12 @@
       "modelo/organizacion.md"
     ]
   },
+  "documentos_legales": {
+    "huella": "5e17080f126708e9",
+    "paginas": [
+      "modelo/organizacion.md"
+    ]
+  },
   "dossier_items": {
     "huella": "9f0e9265d01fef2d",
     "paginas": [
@@ -318,6 +336,12 @@
       "modelo/organizacion.md"
     ]
   },
+  "intentos_limitados": {
+    "huella": "a05bd61beca54de8",
+    "paginas": [
+      "modelo/organizacion.md"
+    ]
+  },
   "offers": {
     "huella": "f5230af47aca45f8",
     "paginas": [
@@ -366,6 +390,7 @@
     "huella": "18367e6d3b82cb9e",
     "paginas": [
       "backend/acceso-a-datos.md",
+      "backend/auth.md",
       "complemento/conversacion.md",
       "complemento/credenciales.md",
       "complemento/empleo.md",
@@ -702,6 +727,13 @@
   },
   "telefono_canales": {
     "huella": "bdc455024149d6f5",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "telefono_verification_keys": {
+    "huella": "d3f9012fbaa0c291",
     "paginas": [
       "complemento/mapa-completo.md",
       "modelo/organizacion.md"

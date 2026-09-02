@@ -1,6 +1,8 @@
 # Los documentos legales: versionado, huella y prueba — diseño
 
-> **Estado: PROPUESTA.** Nada implementado.
+> **Estado: EN CURSO.** El consentimiento y su registro **están hechos y probados** desde el
+> 2026-09-02 (dos casillas, tabla `consentimientos`, huella del texto). Lo que queda es **dónde
+> vive el texto**: se muda de una columna `TEXT` a MinIO, en dos buckets.
 >
 > Sale de una deducción del dueño: si guardamos la **huella** del texto aceptado, entonces el texto
 > tiene que estar **versionado** — y si está versionado, hay que decidir **dónde vive**.
@@ -90,24 +92,121 @@ frente documental.
 
 ---
 
+---
+
+## 3bis · 🔬 Tres mediciones más (2026-09-02) que **cambiaron** el diseño
+
+### ① Un bucket con bloqueo **sí** admite objetos sin bloquear
+
+Sobre un bucket creado con `--with-lock` pero **sin** retención por defecto:
+
+```
+borrador.md  → 3 guardados = 3 versiones → purga permanente = 0 versiones   ✅ se puede
+publicado.md → retención COMPLIANCE por objeto → borrado RECHAZADO          ✅ protegido
+```
+
+Así que **un solo bucket mixto era técnicamente viable**. Se descartó igualmente, y por §3bis-③.
+
+### ② ⚠️ El WORM protege la **VERSIÓN**, no la **CLAVE**
+
+Es el hallazgo que más manda en el diseño:
+
+```
+publicado.md, con COMPLIANCE a 10 años
+   borrar        → RECHAZADO
+   SOBRESCRIBIR  → PASA
+   mc cat        → «texto FALSIFICADO»
+```
+
+La versión original sobrevive intacta. Pero **quien lea «el objeto que hay en esa clave» recibe la
+falsificación**. La inmutabilidad protege lo que ya se escribió; no impide escribir encima.
+
+> **Regla no negociable: se lee SIEMPRE por `object_version_id`, jamás por clave.**
+
+Por eso esa columna no es un adorno, y por eso hay una prueba que se rompe si alguien lee por clave.
+
+### ③ ⚠️ El bloqueo es de **creación**, e irreversible en los dos sentidos
+
+```
+bucket creado sin --with-lock:
+  mc retention set --default COMPLIANCE  → «does not support locking»
+  y activando antes el versionado        → «does not support locking»
+```
+
+Y aquí está el peligro concreto, porque el código **ya crea buckets solo**:
+
+```js
+// backend/services/admin/kernel/storage.js — ensureMinioBucket
+getMinioClient().makeBucket(bucket, "", ...)   // ← sin bloqueo, para siempre
+```
+
+Si el bucket legal se creara por ese camino quedaría **permanentemente sin bloqueo**, en silencio, y
+aparentaría funcionar durante años. De ahí que crearlo sea **fail-closed**: si existe y no admite
+bloqueo, el arranque **se niega** en vez de continuar.
+
+⚠️ **Y el coste es real, no teórico:** los cinco buckets de estos ensayos —`prueba-lock2`,
+`prueba-worm`, `ensayo-mixto`, `ensayo-mixto2`, `ensayo-defecto`— quedaron **indelebles** en el MinIO
+de la pila C. `mc rb --force` se niega. Sólo salen borrando el volumen.
+
+### ④ ⚠️ **Crear el bucket NO detecta que ya existe sin bloqueo**
+
+Es la trampa más fina de las cuatro, porque la comprobación evidente **es la equivocada**:
+
+```
+mc mb --with-lock --ignore-existing   sobre un bucket que YA existe SIN bloqueo
+  → «Bucket created successfully»     y código de salida 0
+```
+
+Un arranque que compruebe el bloqueo *intentando crear el bucket* daría **verde sobre un archivo
+desprotegido**, en silencio y para siempre.
+
+**Lo que sí lo detecta es PEDIRLE la configuración de bloqueo**, que en un bucket sin él responde
+`does not support locking`. Ésa, y no la creación, es la comprobación del fail-closed.
+
+⚠️ **Y un matiz que refuerza la regla de leer por versión:** un `rm` normal sobre un objeto
+bloqueado **sí funciona** — deja un *delete marker* y el objeto **desaparece del listado**. La
+versión sigue ahí, indestructible, así que la prueba no se pierde; pero **leer por clave puede
+devolver «no existe»**. Leer por `object_version_id` salva también este caso.
+
 ## 4 · El diseño
 
-### 4.1 · El bucket
+### 4.1 · Los DOS buckets
 
 ```
-deasy-legal          ← NUEVO, creado --with-lock, retención COMPLIANCE
-  terminos/v1.md
-  terminos/v2.md     ← cada versión es un objeto propio Y una versión de objeto
-  privacidad/v1.md
+deasy-legal-borradores     versionado, SIN bloqueo         estado draft
+  terminos_de_uso/v2.md    ← cada guardado deja una versión de objeto: ése es
+                             el historial de edición del borrador
+
+deasy-legal                versionado + COMPLIANCE por DEFECTO   published · retired
+  terminos_de_uso/v1.md    ← lo que entra aquí ya no sale
+  tratamiento_de_datos/v1.md
 ```
 
-⚠️ **Bucket aparte y no una carpeta en `deasy-documents`.** El bloqueo de objetos y la retención se
-configuran **por bucket**, y aplicárselos a los documentos de trabajo haría que no se pudiera borrar
-nada nunca — que no es lo que se quiere ahí.
+**Por qué dos y no uno mixto**, que §3bis-① demuestra posible:
 
-⚠️ **Y `--with-lock` sólo se puede poner AL CREAR el bucket.** No se activa después. Por eso el
-bucket es nuevo, y por eso esto hay que decidirlo antes de la primera versión publicada.
+| | Un bucket mixto | **Dos buckets** |
+|---|---|---|
+| Quién aplica la retención | **una línea de código** al publicar | **el bucket, en cada `put`** |
+| Si esa línea falla o se olvida | queda sin proteger y **nadie se entera** | no puede pasar |
+| «¿está todo protegido?» | hay que auditar objeto por objeto | **lo contesta el nombre del bucket** |
+| Un `rb --force` equivocado | se lleva los borradores | **el archivo se niega entero** |
 
+> Cuando el fallo es **irreversible**, la garantía va en la infraestructura, no en una rama del
+> código.
+
+⚠️ **Bucket aparte y no una carpeta en `deasy-documents`.** El bloqueo y la retención se configuran
+**por bucket**: aplicárselos a los documentos de trabajo haría que no se pudiera borrar nada nunca.
+
+**Publicar es copiar los bytes exactos** del borrador al archivo — sin re-serializar, sin deriva de
+codificación —, releer **por `object_version_id`**, comparar la huella, y sólo entonces escribir la
+fila. **Retirar no mueve nada**: cambia `estado` y ya, porque el objeto ya es inmutable.
+
+**Dos ejes de versión, y no se confunden:**
+
+| | Dónde | Qué pregunta contesta |
+|---|---|---|
+| Versión de **objeto** | MinIO | *cómo evolucionó este borrador* — 40 guardados, 40 versiones |
+| Versión de **negocio** (`v1`,`v2`) | la fila | *qué aceptó esta persona* — 40 guardados, **una** fila |
 ### 4.2 · La tabla del documento
 
 ```sql
@@ -298,6 +397,9 @@ lo que sí da es **la capacidad de saber quién aceptó qué versión**, que es 
 | ~~Cuánta retención~~ | ✅ **DECIDIDO: 10 años.** Cubre la prescripción ordinaria del Art. 2415 del Código Civil — **a confirmar por legal** |
 | ~~Qué pasa al eliminar una persona~~ | ✅ **DECIDIDO: se conserva entero.** Ver §8 |
 | ~~Los tres buckets sin versionar~~ | ➡️ **Pasa a un FRENTE PROPIO**: el dueño maneja las versiones por sub-rutas y quiere analizar la migración a fondo. Ver `docs/planes/versionado-de-objetos-2026-09.md` |
+| ~~Un bucket mixto o dos~~ | ✅ **DECIDIDO: DOS.** Con retención por defecto el bucket bloquea **cada `put`** sin que el código pida nada; en uno mixto la protección depende de una línea que se puede olvidar. Ver §3bis-① |
+| ~~Cuánta retención en dev~~ | ✅ **DECIDIDO: por entorno — 1 día en dev, 3650 en producción.** `test:char:run` resetea la base pero **no** MinIO: con 10 años cada corrida dejaría documentos indelebles acumulándose para siempre |
+| ~~Configurable desde `instituciones`~~ | ❌ **DESCARTADO.** COMPLIANCE **no permite acortar**, así que un ajuste que la bajara parecería guardarse y no haría nada — y un mando que miente es peor que ninguno. Es configuración de despliegue; la retención **efectiva se lee del bucket** y se enseña en el admin de **sólo lectura** |
 
 ---
 

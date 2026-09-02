@@ -292,6 +292,42 @@ Inicializar buckets y estructura de MinIO en `dev`:
 bash scripts/docker-env.sh dev --profile storage-init run --rm minio-bootstrap
 ```
 
+En una pila paralela (A, B, C o D), lo mismo pero por `stack.sh`, para que caiga en el MinIO de
+esa pila y no en el de otra:
+
+```bash
+bash scripts/stack.sh c --profile storage-init run --rm minio-bootstrap
+```
+
+### Los dos buckets legales (LOPDP), que no son como los demas
+
+Desde el frente 17 este mismo comando crea tambien los buckets de los textos legales, y **uno de
+ellos se crea de una forma que no se puede deshacer**:
+
+| Bucket | Como se crea | Que guarda |
+|---|---|---|
+| `MINIO_LEGAL_DRAFTS_BUCKET` | versionado, **sin** bloqueo | los borradores, que se corrigen |
+| `MINIO_LEGAL_BUCKET` | versionado + **Object Lock**, con retencion `MINIO_LEGAL_RETENTION_MODE` por defecto de `MINIO_LEGAL_RETENTION_DAYS` dias | lo publicado y lo retirado, que ya no se toca |
+
+Y ademas siembra la version 1 de cada texto desde `docker/minio/import/Legal/<clase>/v1.md`,
+**sin sobrescribir**: lo que ya existe no se vuelve a escribir nunca.
+
+⚠️ **El bloqueo solo se puede pedir AL CREAR el bucket, y es irreversible.** A uno creado sin
+`--with-lock` no se le puede anadir despues, ni activando antes el versionado. Por eso el script
+**falla en vez de continuar** si el bucket de archivo ya existe y no admite bloqueo: continuar
+aparentaria funcionar durante anos. El mensaje de error dice como recrearlo.
+
+⚠️ **Y ojo con la carrera:** este comando se lanza **a mano**, mientras que el backend crea
+buckets al vuelo con `makeBucket(bucket, "")`, **sin** bloqueo. Si en un entorno nuevo el backend
+llega antes al bucket legal, el dano ya no tiene arreglo. En un despliegue nuevo, **corre esto
+antes de levantar el backend**.
+
+⚠️ **La retencion no se configura desde la aplicacion, y `MINIO_LEGAL_RETENTION_DAYS` no tiene
+valor por defecto**: si falta, el script se para. En `dev` y `qa` es **1 dia** porque
+`test:char:run` resetea la base pero **no** MinIO --con los 3650 de produccion, cada corrida
+dejaria documentos indelebles acumulandose para siempre--; en `prod` son **3650** (10 anos).
+Un bloqueo `COMPLIANCE` **no se puede acortar** despues.
+
 Publicar seeds de plantillas en `dev`:
 
 ```bash

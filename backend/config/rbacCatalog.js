@@ -40,7 +40,22 @@ export const RESOURCE_CATALOG = [
   // `create`, `update` y `delete` existen porque el catalogo da cinco acciones a todo recurso, pero
   // aqui NO LOS MIRA NADIE: esta pantalla es de solo lectura a proposito. Ver
   // docs/arquitecturas/pestana-de-canales.md §7.
-  { code: "channels", name: "Canales de mensajeria", description: "Estado de Telegram y WhatsApp, y el codigo de vinculacion." }
+  { code: "channels", name: "Canales de mensajeria", description: "Estado de Telegram y WhatsApp, y el codigo de vinculacion." },
+  // ⚠️ `update` EDITA EL BORRADOR; `manage` PUBLICA Y RETIRA, y la distancia entre las dos es toda
+  // la diferencia entre un texto que se puede corregir y uno que YA NO SE PUEDE TOCAR NUNCA MAS.
+  // Publicar copia el texto a un bucket con retencion COMPLIANCE: a partir de ese clic nadie --ni
+  // quien administra el sistema-- puede borrarlo ni cambiarlo hasta que venza el plazo. Y retirar
+  // decide que texto se le ofrece a quien se registra, que es lo que despues habra que demostrar
+  // ante la autoridad (Art. 5 del Reglamento de la LOPDP).
+  //
+  // Por eso quien redacta no publica: redactar es `update`, comprometer a la institucion es
+  // `manage`. Con una sola accion, corregir una coma y sellar diez años serian el mismo permiso.
+  //
+  // `create` y `delete` existen porque el catalogo da cinco acciones a todo recurso, pero aqui NO
+  // LOS MIRA NADIE: crear un borrador es `update` (es el primer paso de redactar) y BORRAR NO
+  // EXISTE -- un documento legal se retira, jamas se elimina, porque hay gente cuya prueba de
+  // consentimiento apunta a el.
+  { code: "legal_documents", name: "Documentos legales", description: "Terminos de uso y tratamiento de datos: borrador, publicacion y retirada." }
 ];
 
 export const ACTION_CATALOG = [

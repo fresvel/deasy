@@ -111,7 +111,7 @@
           <FirmarPdf />
         </template>
         <template v-else>
-        <div v-if="!selectedTable && !canalesTabActive">
+        <div v-if="!selectedTable && !canalesTabActive && !legalesTabActive">
           <div class="flex flex-col min-h-100">
             <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
                <div class="inline-flex items-center gap-3">
@@ -152,6 +152,17 @@
                         :icon="IconMessage2"
                         show-arrow
                         @click="abrirCanales()"
+                      />
+                      <!-- Los textos legales tampoco son una tabla: viven en MinIO, no en una
+                           columna. Y la tarjeta se esconde sin permiso de lectura, porque quien
+                           administra unidades no tiene por que ver el borrador de un texto legal. -->
+                      <AppNavCard
+                        v-if="selectedSection === 'institucion' && puedeVerLegales"
+                        title="Documentos legales"
+                        description="Términos de uso y tratamiento de datos: redactar, publicar y retirar. Lo publicado es inmutable."
+                        :icon="IconGavel"
+                        show-arrow
+                        @click="abrirLegales()"
                       />
                     <div v-if="traceabilityTables.length" class="col-span-full mt-2">
                       <button
@@ -203,6 +214,14 @@
             </div>
           </div>
 
+          <!-- Misma rama propia, y por el mismo motivo: los textos legales no son una tabla. Su
+               contenido vive en MinIO y su ciclo de vida no lo gobierna ningun CRUD generico. -->
+          <div v-else-if="legalesTabActive" class="w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
+            <div class="deasy-typography w-full h-full relative overflow-y-auto p-6">
+              <DocumentosLegalesPanel @volver="volverDeLegales()" />
+            </div>
+          </div>
+
         <div v-else class="w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
           <div class="deasy-typography w-full h-full relative overflow-y-auto">
              <AdminTableManager
@@ -233,7 +252,7 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
 import { useWorkspaceChrome } from "@/shared/composables/useWorkspaceChrome.js";
 
-import { 
+import {
   IconLock,
   IconCircle,
   IconInfoCircle,
@@ -242,12 +261,18 @@ import {
   IconArrowLeft,
   IconChevronDown,
   IconHome,
+  // ⚠️ `IconMessage2` FALTABA. La tarjeta de canales lo nombra desde que se escribio y nadie lo
+  // importaba: en `<script setup>` eso no es un error, es `undefined`, asi que `AppNavCard` recibia
+  // un icono vacio y la tarjeta salia sin glifo. No lo ve el build ni el lint.
+  IconMessage2,
+  IconGavel,
 } from '@tabler/icons-vue'
 
 import axios from "@/core/services/httpClient";
 import { useRoute, useRouter } from "vue-router";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
 import CanalesPanel from "../components/canales/CanalesPanel.vue";
+import DocumentosLegalesPanel from "../components/legales/DocumentosLegalesPanel.vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
 import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
@@ -259,7 +284,7 @@ import {
   resolveWorkspaceProfileMenuIcon,
   workspaceIconToneClass,
 } from "@/shared/utils/workspaceNavIcons.js";
-import { canReadAdminTable, isTraceabilityTable } from "@/core/utils/accessControl.js";
+import { canAccessResource, canReadAdminTable, isTraceabilityTable } from "@/core/utils/accessControl.js";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const { menuOpen: vmenu, showNotify: vnotify, toggleMenu, closeMenu, toggleNotify, closeNotify, revealSidebarForNav } =
@@ -278,6 +303,10 @@ const PROCESS_GRAPH_TAB_KEY = "__process_graph__";
 // propósito: ese componente ya es un God con dos injertos concentrados, y meterle un tercero que
 // además no tiene nada que ver con ninguna tabla es exactamente lo que el CLAUDE.md pide no hacer.
 const CANALES_SLUG = "canales";
+// Documentos legales: la CUARTA que no es una tabla, y por el mismo motivo que los canales — su
+// contenido no esta en una columna, esta en dos buckets de MinIO, y publicar no es un UPDATE sino
+// un traslado a un archivo que ya no admite escritura.
+const LEGALES_SLUG = "documentos-legales";
 // selectedTable / selectedSection / los cinco item / los dos grafos NO son refs: se DERIVAN de la
 // URL (fase 3.5, cierre). Ver el bloque "Estado derivado de la URL" más abajo.
 const openCategories = ref({});
@@ -474,12 +503,20 @@ const graphTabActive = computed(() => routeTableSlug.value === UNIT_GRAPH_SLUG);
 const processGraphTabActive = computed(() => routeTableSlug.value === PROCESS_GRAPH_SLUG);
 const canalesTabActive = computed(() =>
   selectedSection.value === "institucion" && routeTableSlug.value === CANALES_SLUG);
+const legalesTabActive = computed(() =>
+  selectedSection.value === "institucion" && routeTableSlug.value === LEGALES_SLUG);
+// ⚠️ ESTO SOLO DECIDE QUE SE ENSEÑA. Quien manda es el backend (`legal_documents.*`): esconder la
+// tarjeta evita ofrecer una pantalla que devolveria 403, no protege nada por si mismo.
+const puedeVerLegales = computed(() => canAccessResource("legal_documents", "read", currentUser.value));
 
 // La URL ES el estado de navegación, como en el resto del admin: no hay un `ref` que diga «estoy en
 // canales». Se entra navegando y se sale navegando, así que un enlace directo funciona y recargar
 // deja la pantalla donde estaba.
 const abrirCanales = () => navigateAdmin({ section: "institucion", item: CANALES_SLUG, table: CANALES_SLUG });
 const volverDeCanales = () => navigateAdmin({ section: "institucion" });
+
+const abrirLegales = () => navigateAdmin({ section: "institucion", item: LEGALES_SLUG, table: LEGALES_SLUG });
+const volverDeLegales = () => navigateAdmin({ section: "institucion" });
 
 const selectedTable = computed(() => {
   const tableName = graphTabActive.value

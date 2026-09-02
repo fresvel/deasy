@@ -89,6 +89,20 @@ export const API_ROUTES = {
   // requisito para tenerla (LOPDP, Art. 12: la informacion va «en el momento mismo de la recogida»).
   LEGAL_DOCUMENTOS: `${API_PREFIX}/legal/documentos`,
   ADMIN_CANALES_QR: `${API_PREFIX}/admin/canales/whatsapp/qr`,
+  // ── LOS TEXTOS LEGALES, LADO ADMINISTRACION ────────────────────────────────────────────────
+  // Cuelgan de `/admin` —la misma convencion que los canales— y NO de `/legal`, que es publico a
+  // proposito. Son la misma tabla vista por dos audiencias: el visitante lee lo VIGENTE sin cuenta,
+  // y aqui se redacta, se publica y se retira con sesion y permiso (`legal_documents.*`).
+  ADMIN_LEGAL_DOCUMENTOS: `${API_PREFIX}/admin/legal/documentos`,
+  ADMIN_LEGAL_DOCUMENTO: (documentoId) => `${API_PREFIX}/admin/legal/documentos/${documentoId}`,
+  ADMIN_LEGAL_DOCUMENTO_PUBLICAR: (documentoId) => `${API_PREFIX}/admin/legal/documentos/${documentoId}/publicar`,
+  ADMIN_LEGAL_DOCUMENTO_RETIRAR: (documentoId) => `${API_PREFIX}/admin/legal/documentos/${documentoId}/retirar`,
+  // El historial de VERSIONES DE OBJETO del borrador (cada guardado), no el de estados.
+  ADMIN_LEGAL_DOCUMENTO_HISTORIAL: (documentoId) => `${API_PREFIX}/admin/legal/documentos/${documentoId}/historial`,
+  // ⚠️ SOLO LECTURA, y no hay hermana que escriba: la retencion se configura en la infraestructura.
+  // La pantalla existe para VERIFICARLA. Una ruta de escritura aqui convertiria una garantia en un
+  // ajuste, y con ella se iria el sentido del bucket WORM.
+  ADMIN_LEGAL_ARCHIVO_ESTADO: `${API_PREFIX}/admin/legal/archivo/estado`,
   ADMIN_SQL_OPERATION_STATS: `${API_PREFIX}/admin/sql/stats/operation`,
   ADMIN_SQL_UNITS_GRAPH: (relationType = "org") => `${API_PREFIX}/admin/sql/units/graph?relation_type=${encodeURIComponent(relationType)}`,
   ADMIN_SQL_UNITS_WITH_PARENT: `${API_PREFIX}/admin/sql/units/with-parent`,

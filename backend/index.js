@@ -10,6 +10,7 @@ import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas 
 import cors from "cors"
 import { assertPostgresConnection } from "./config/postgres.js";
 import { publishBaseSeedAssets } from "./services/system/SystemBootstrapService.js";
+import DocumentosLegales from "./services/legal/DocumentosLegales.js";
 import { ensurePostgresSchema } from "./database/postgres_initializer.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
@@ -240,6 +241,43 @@ const publishSeedsOnBoot = async () => {
     "El backend sigue en ejecución; las plantillas nuevas heredarían la semilla anterior.");
 };
 
+// EL ARCHIVO LEGAL, EN CADA ARRANQUE.
+//
+// Dos cosas, y en este orden:
+//
+//   1. `asegurarBuckets()` comprueba que el bucket de archivo TIENE bloqueo de objetos. La
+//      comprobación es pedirle su retención, no crearlo: medido contra MinIO, pedir la creación con
+//      bloqueo sobre un bucket que ya existe sin él responde «created successfully» y no bloquea
+//      nada. Si no lo tiene, esto LANZA — y hace bien: el bloqueo solo se concede al crear el
+//      bucket, así que no hay nada que reparar sobre la marcha, y archivar ahí produciría una
+//      prueba que no lo es.
+//   2. `adoptarDelArchivo()` reconstruye el índice si la tabla está vacía. La semilla del texto
+//      entra por MinIO, y una fila necesita el `object_version_id`, que NO EXISTE hasta después de
+//      subir el objeto: por eso no puede ser un `INSERT` del esquema. Con filas, no toca nada.
+//
+// Best-effort a propósito, igual que la semilla base: un MinIO caído no debe impedir que el backend
+// sirva. Pero se avisa MUY alto, porque mientras esto falle no hay textos que aceptar y el alta de
+// personas se queda sin consentimiento que registrar.
+const prepararArchivoLegal = async () => {
+  try {
+    const legales = new DocumentosLegales();
+    await legales.asegurarBuckets();
+    const adoptados = await legales.adoptarDelArchivo();
+    if (adoptados.length) {
+      // Se distingue INDEXADO (fila nueva, instalación virgen) de SELLADO (fila antigua que se
+      // quedó sin puntero al salir el texto de la base): son dos situaciones muy distintas y quien
+      // lee el arranque necesita saber cuál acaba de ocurrir.
+      const detalle = adoptados.map((d) => `${d.clase} ${d.version} [${d.accion}]`).join(", ");
+      console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con MinIO (${detalle})`);
+      return;
+    }
+    console.log("✅ Archivo legal verificado (bloqueo de objetos activo)");
+  } catch (error) {
+    console.error(`⚠️  ARCHIVO LEGAL NO OPERATIVO: ${error.message}`);
+    console.error("⚠️  Mientras esto falle no hay textos legales que aceptar. El backend sigue en ejecución.");
+  }
+};
+
 const initializeDatabaseWithRetry = async () => {
   const shouldResetSchema = String(process.env.DB_RESET_SCHEMA_ON_START || "0") === "1";
   const maxAttempts = Number(process.env.DB_INIT_MAX_ATTEMPTS || 20);
@@ -251,6 +289,7 @@ const initializeDatabaseWithRetry = async () => {
       await ensurePostgresSchema({ reset: shouldResetSchema });
       console.log("✅ PostgreSQL inicializada correctamente");
       await publishSeedsOnBoot();
+      await prepararArchivoLegal();
       return;
     } catch (error) {
       const isLastAttempt = attempt === maxAttempts;

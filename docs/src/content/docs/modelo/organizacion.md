@@ -352,15 +352,42 @@ Y hay una razón que se ve mejor en el reverso: **los términos son un contrato*
 7.5) y **el tratamiento de datos es consentimiento** (Art. 8). El segundo **se puede revocar**; el
 primero no funciona así. Con una casilla única, revocar una revocaría la otra.
 
-### `documentos_legales` — el texto, versión a versión
+### `documentos_legales` — el índice; el texto vive en MinIO
 
 ```
-clase            'terminos_de_uso' · 'tratamiento_de_datos'
-version          'v1'
-texto            el borrador, mientras lo es
-contenido_hash   SHA-256 ← lo que hace demostrable QUÉ decía
-estado           draft · published · retired
+clase              'terminos_de_uso' · 'tratamiento_de_datos'
+version            'v1'                    ← la versión de NEGOCIO: lo que alguien aceptó
+estado             draft · published · retired
+contenido_hash     SHA-256 ← lo que hace demostrable QUÉ decía
+bucket             dónde vive el texto ahora mismo
+object_key         terminos_de_uso/v1.md
+object_version_id  la VERSIÓN DE OBJETO ← se lee por aquí, nunca por la clave
 ```
+
+⚠️ **La tabla no guarda el texto: lo indexa.** Desde el 2026-09-02 el contenido vive en MinIO, en
+**dos buckets** con propósitos opuestos:
+
+| Bucket | | Qué guarda |
+|---|---|---|
+| `…-legal-borradores` | versionado, **mutable** | los `draft`. Cada guardado deja una versión: ése es el **historial de edición** |
+| `…-legal` | versionado + **bloqueo COMPLIANCE** | los `published` y `retired`. **Lo que entra no sale** — ni con la cuenta raíz |
+
+**Publicar es copiar los bytes exactos** del borrador al archivo, releerlos **por su versión de
+objeto**, comparar la huella y sólo entonces sellar la fila. Si la huella no cuadra, no se publica.
+
+:::caution[Por qué `object_version_id` y no basta la clave]
+El bloqueo de objetos protege **la versión, no el nombre**. Está medido: un objeto bloqueado **se
+puede sobrescribir** —la versión vieja sobrevive intacta, pero quien lea *«el objeto que hay en esa
+clave»* recibe lo nuevo—, y un borrado normal deja un marcador que lo hace **desaparecer del
+listado**.
+
+Por eso el sistema lee **siempre por `object_version_id`**. Sin esa columna, la inmutabilidad del
+archivo no serviría de nada: la prueba seguiría ahí, pero nadie la estaría leyendo.
+:::
+
+⚠️ **Y hay dos ejes de versión que no se confunden**: la versión de **objeto** (MinIO) cuenta *cómo
+evolucionó el borrador* —cuarenta guardados, cuarenta versiones—; la versión de **negocio** (`v1`,
+`v2`) cuenta *qué aceptó esta persona* — cuarenta guardados, **una** fila.
 
 **Sólo puede haber una versión publicada por clase**, o «qué aceptó» tendría dos respuestas.
 
