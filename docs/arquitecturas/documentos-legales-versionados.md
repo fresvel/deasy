@@ -214,7 +214,40 @@ lo que sí da es **la capacidad de saber quién aceptó qué versión**, que es 
 
 | | |
 |---|---|
-| **Bucket con bloqueo, sí o no** | `--with-lock` **sólo se puede poner al crear el bucket**. Con él, ni nosotros podemos borrar; sin él, el archivo vale lo mismo que la base |
-| **Cuánta retención** | En modo `COMPLIANCE` no se puede acortar después. Es una decisión jurídica: ¿cuánto hay que poder probar hacia atrás? |
-| **Qué pasa al eliminar una persona** | ¿Se borra su consentimiento con ella (coherente con el derecho) o se conserva anonimizado (coherente con la prueba)? |
-| **Los tres buckets sin versionar** | Hallazgo aparte, del frente documental: hoy sobrescribir un documento firmado destruye el anterior sin rastro |
+| ~~Bucket con bloqueo~~ | ✅ **DECIDIDO: WORM, modo COMPLIANCE** |
+| ~~Cuánta retención~~ | ✅ **DECIDIDO: 10 años.** Cubre la prescripción ordinaria del Art. 2415 del Código Civil — **a confirmar por legal** |
+| ~~Qué pasa al eliminar una persona~~ | ✅ **DECIDIDO: se conserva entero.** Ver §8 |
+| ~~Los tres buckets sin versionar~~ | ➡️ **Pasa a un FRENTE PROPIO**: el dueño maneja las versiones por sub-rutas y quiere analizar la migración a fondo. Ver `docs/planes/versionado-de-objetos-2026-09.md` |
+
+---
+
+## 8 · ⚠️ Una corrección: yo dije que conservar el consentimiento incumplía el derecho de eliminación. **Estaba mal.**
+
+Al ofrecer las opciones etiqueté «conservar entero» como *«probable incumplimiento»*. **El dueño
+eligió esa opción, y el texto de la norma le da la razón.** Literal:
+
+> **Ley, Art. 18** — *«**No proceden** los derechos de rectificación, actualización, **eliminación**,
+> oposición, anulación y portabilidad, en los siguientes casos: […] **4) Cuando los datos son
+> necesarios para la formulación, ejercicio o defensa de reclamos o recursos**»*
+
+> **Reglamento, Art. 11** — *«La eliminación de datos personales **no aplicará** cuando el
+> tratamiento sea necesario en los siguientes supuestos: […] **2. Para la formulación, el ejercicio o
+> la defensa de reclamaciones**»*
+
+**La prueba de que alguien consintió es exactamente eso**: lo que permite defenderse de un reclamo de
+que nunca consintió. Conservarla no es una excepción que nos inventemos — **es un supuesto expreso**
+en los dos textos.
+
+### Pero con dos condiciones que sí manda la norma
+
+1. **Se conserva SÓLO lo necesario para esa defensa.** El consentimiento —quién, a qué versión,
+   cuándo— sí. **El resto de sus datos, no**: el Art. 18 exceptúa *los datos necesarios*, no la ficha
+   entera de la persona.
+2. **Hay que poder explicarlo.** El Art. 18.5 exige que el responsable **acredite** el motivo al
+   responder la solicitud. No basta con conservar: hay que decir por qué, y ese porqué es este
+   artículo.
+
+⚠️ **Consecuencia técnica concreta:** `consentimientos` **NO puede llevar `ON DELETE CASCADE`** sobre
+`persons`, que es lo que yo había escrito. Si la persona se elimina, la fila del consentimiento tiene
+que **sobrevivir**. Y como una clave ajena impediría borrar a la persona, el enlace se guarda **sin
+constraint**, con el porqué escrito al lado.
