@@ -371,7 +371,7 @@ privacidad accesible **en ese momento**, no escondido.
 
 Una línea en el paso 3, junto al selector: qué se manda, a quién, y que puede elegir el otro.
 
-### D · Ponerle plazo al perfil de WhatsApp
+### D · ✅ HECHO (2026-09-02, cableada y APAGADA) · La barrida de conversaciones
 
 Es lo que quedó pendiente de la conversación anterior, y ahora tiene un motivo que no es el espacio
 en disco: **conservación y minimización**. La decisión es del dueño; lo que no es defendible es «sin
@@ -462,3 +462,57 @@ cuenta de WhatsApp **con vida previa arrastra su agenda al vincularse**. Por eso
 > **La línea dedicada debe ser una cuenta LIMPIA, sin agenda ni historial** — así la sincronización
 > no trae a nadie ajeno y la regla de arriba tiene poco que barrer.
 
+---
+
+## 10 · La barrida, tal como quedó
+
+**La regla es la del modelo, no la del calendario** (§9): se conserva la conversación de quien tuvo
+una interacción legítima; la de quien no, se borra.
+
+### Se contesta con las tablas que YA hay
+
+```sql
+SELECT 1
+  FROM telefonos t
+  INNER JOIN paises p ON p.id = t.pais_id
+  INNER JOIN telefono_verification_keys k
+          ON k.telefono_id = t.id AND k.consumida_at IS NOT NULL
+ WHERE p.phone_code || t.numero = ?
+```
+
+⚠️ **Llegué a proponer una tabla nueva con huellas HMAC del número, y sobraba entera.** El dueño lo
+señaló: `telefono_verification_keys` **no se borra** —los dos `DELETE` que existen sólo tocan las
+llaves NO consumidas— así que la pregunta ya tiene respuesta. Y la huella tampoco aportaba: **el
+número ya está en claro en `telefonos`**, con base legal, así que cifrar una copia del mismo dato es
+ceremonia.
+
+### Quien cambió de teléfono no aparece, y ES LO CORRECTO
+
+`telefonos.numero` se sobrescribe al cambiarlo, así que el número viejo ya no está. Su conversación
+antigua **se borra, y debe borrarse**: la base legal era *«este número interactúa con nosotros»*, y
+ya no lo hace. Su verificación sigue registrada; el chat no aporta nada.
+
+### Las cuatro protecciones, todas contra borrar de más
+
+| | |
+|---|---|
+| **Sin respuesta del backend, no se borra nada** | Devuelve `null`, no un conjunto vacío. Tratarlo como «ninguno verificó» borraría **todas** las conversaciones por un fallo de red |
+| **Una hora de gracia** | Quien manda su llave **ahora mismo** aún no figura como verificado |
+| **Los grupos no se tocan** | Ahí el identificador es el grupo, no una persona |
+| **Un fallo no para las demás** | Cada conversación es independiente |
+
+**Las tres primeras están congeladas en mutaciones, y las tres caen.**
+
+### 🔴 Y viene APAGADA — decisión del dueño
+
+`BARRIDA_CONVERSACIONES` viene vacía y **sólo se enciende con el valor `1`**. Un valor ambiguo
+(`false`, `no`, `true`) **se trata como apagado**: con una operación irreversible, la duda no
+enciende nada.
+
+**Se encenderá en producción, y con una condición:** que la línea dedicada sea **una cuenta limpia**,
+sin agenda ni historial previos. Con una cuenta con vida propia, la primera pasada se llevaría
+conversaciones ajenas al sistema — que es **lo correcto según la regla**, y aun así no es lo que
+nadie espera ver la primera vez.
+
+⚠️ **Y el servicio DICE en el registro que está apagada.** Una protección que nadie sabe si está
+puesta acaba dándose por puesta.

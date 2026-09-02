@@ -38,5 +38,18 @@ export const leerConfiguracion = (env = process.env) => {
     );
   }
 
-  return { deasy, telegram, whatsapp };
+  // ⚠️ LA BARRIDA VIENE APAGADA, y eso es lo correcto por defecto: BORRAR SE SINCRONIZA AL TELEFONO
+  // VINCULADO y es irreversible. Un servicio que llega borrando conversaciones en cuanto arranca es
+  // exactamente lo que no se quiere en una maquina de desarrollo, donde la linea suele ser un
+  // telefono personal con su propia agenda y su propio historial.
+  //
+  // ⚠️ SE ENCIENDE EN PRODUCCION, y con una condicion: que la linea dedicada sea una cuenta LIMPIA,
+  // sin agenda ni historial previos. Con una cuenta con vida propia, la primera pasada se llevaria
+  // conversaciones ajenas al sistema -- que es lo correcto segun la regla, y aun asi no es lo que
+  // nadie espera ver la primera vez.
+  //
+  // Decision del dueño, 2026-09-02.
+  const barrida = String(env.BARRIDA_CONVERSACIONES ?? "").trim() === "1";
+
+  return { deasy, telegram, whatsapp, barrida };
 };

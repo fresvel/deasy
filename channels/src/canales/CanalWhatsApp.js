@@ -223,6 +223,11 @@ export default class CanalWhatsApp extends Canal {
     return { estadoPlataforma: estado };
   }
 
+  /** Lo que la barrida necesita: listar y borrar. No sabe la regla, sólo sabe hacer. */
+  async conversaciones() {
+    return this.cliente.getChats();
+  }
+
   /** El QR, por SU PROPIA vía. Nunca dentro del estado: ver §3 del documento de diseño. */
   codigoDeVinculacion() {
     return this.qr ? { qr: this.qr, generadoEn: this.qrGeneradoEn } : null;

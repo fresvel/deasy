@@ -1,6 +1,6 @@
 import express from "express";
 import { requiereServicioInterno } from "../middlewares/servicioInterno.js";
-import { estadoDeLlave, confirmarLlave } from "../controllers/users/telefono_verificacion_controller.js";
+import { estadoDeLlave, confirmarLlave, numerosVerificados } from "../controllers/users/telefono_verificacion_controller.js";
 
 // Rutas que SÓLO llaman los microservicios de Deasy, nunca un navegador.
 //
@@ -16,5 +16,8 @@ router.use(requiereServicioInterno);
 // medio y en el otro lado de la red — ver C2b.
 router.post("/verificacion/estado", estadoDeLlave);
 router.post("/verificacion/confirmar", confirmarLlave);
+// La barrida de conversaciones: `channels` pregunta cuales de estos numeros verificaron alguna vez,
+// para conservar solo lo que tiene base legal. En LOTE, porque pregunta por todas de una vez.
+router.post("/verificacion/numeros-verificados", numerosVerificados);
 
 export default router;

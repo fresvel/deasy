@@ -45,3 +45,23 @@ test("WhatsApp no pide credenciales, sólo su número", () => {
   const c = leerConfiguracion({ ...COMPLETO, WHATSAPP_NUMERO: "593987650000" });
   assert.equal(c.whatsapp, "593987650000");
 });
+
+// ── LA BARRIDA VIENE APAGADA ────────────────────────────────────────────────────────────────────
+//
+// Borrar una conversación SE SINCRONIZA AL TELÉFONO vinculado y es irreversible. Un servicio que
+// llega borrando en cuanto arranca es lo último que se quiere en una máquina de desarrollo, donde la
+// línea suele ser un teléfono personal con su propia agenda.
+const BASE = { DEASY_API_URL: "http://b", INTERNAL_SERVICE_KEY: "K", WHATSAPP_NUMERO: "593999" };
+
+test("sin declararla, la barrida está apagada", () => {
+  assert.equal(leerConfiguracion(BASE).barrida, false);
+});
+
+test("y no se enciende con cualquier cosa: sólo con «1»", () => {
+  // `BARRIDA_CONVERSACIONES=false` encendería una barrida con un valor que dice lo contrario. Con
+  // una operación irreversible, lo ambiguo se trata como apagado.
+  for (const valor of ["", "0", "false", "no", "true", "si"]) {
+    assert.equal(leerConfiguracion({ ...BASE, BARRIDA_CONVERSACIONES: valor }).barrida, false, valor);
+  }
+  assert.equal(leerConfiguracion({ ...BASE, BARRIDA_CONVERSACIONES: "1" }).barrida, true);
+});

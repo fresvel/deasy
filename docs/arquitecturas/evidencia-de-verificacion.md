@@ -1,17 +1,40 @@
-# La evidencia de una verificación — diseño
+# La evidencia de una verificación — ❌ DESCARTADO
 
-> 🛑 **CORREGIDO DOS VECES, Y LA SEGUNDA ES DE FONDO.** Este documento llamaba a esto «no repudio».
-> No lo es, y no puede serlo: **nada que construyamos nosotros solos prueba que el usuario actuó**
-> — el sello lo escribimos nosotros, con nuestra llave y nuestro número. **Ver §3, que es el
-> argumento del dueño y desmonta el diseño anterior.**
->
-> Lo que sí queda: guardar **el identificador que la plataforma le puso al mensaje** (§3ter.A), que
-> es lo único aquí que no podríamos haber inventado.
+> 🛑 **DESCARTADO POR EL DUEÑO EL 2026-09-02. El sello no se hace.** No es una pausa: es un descarte,
+> y el razonamiento que lo tumba está abajo porque merece conservarse — se llegó a él discutiendo, y
+> sin él alguien lo volverá a proponer.
 
-> **Estado: PROPUESTA.**
->
-> Nace de una objeción del dueño: al elegir borrar los mensajes de WhatsApp tras atenderlos, señaló
-> *«parece que estás olvidando lo de no repudio en este punto»*. **Tenía razón: lo dejé cojo.**
+---
+
+## 0 · Por qué se descarta
+
+El sello llegó a tener **tres propósitos**, y **los tres cayeron, uno por turno**:
+
+| Propósito | Por qué cayó |
+|---|---|
+| **1 · Prueba de no repudio frente a un reclamante** | ❌ **Lo desmontó el dueño:** *«tú tenías la llave, tú pusiste el número, nada te impedía crear el sello sin mi intervención»*. Es correcto — **nada que construyamos nosotros solos prueba que el usuario actuó**. Una cadena de hashes protege contra **nuestra alteración posterior**, no contra que nos lo inventáramos desde el principio |
+| **2 · Hacer aplicable la regla de retención** (guardar número y persona) | ❌ **Innecesario:** `telefono_verification_keys` **no se borra** —los dos `DELETE` que existen sólo tocan las llaves NO consumidas— así que un `JOIN` con `telefonos` contesta *«¿este número verificó alguna vez?»* con lo que **ya hay** |
+| **3 · Auditoría interna** (detectar manipulación desde dentro) | 🟡 Legítimo, **pero no justifica por sí solo** crear un bucket inmutable e irreversible de diez años |
+
+⚠️ **Y hubo un cuarto argumento del dueño que cierra el asunto:** *«la huella de todos modos no nos
+dará no repudio»*. Poner criptografía encima de algo que **por construcción** no puede darlo es coste
+sin beneficio.
+
+## 0bis · Lo que sí queda de todo esto, y merece leerse
+
+Aunque el sello no se haga, la discusión dejó tres cosas que siguen siendo ciertas y que conviene
+tener a mano el día que alguien plantee «vamos a hacer esto a prueba de manipulación»:
+
+1. **El eje que decide una disputa no es la durabilidad ni la consultabilidad: es QUIÉN PUDO
+   PRODUCIRLO** (§3). Por ese eje, un mensaje entrante de WhatsApp vale más que cualquier registro
+   nuestro, porque para existir **tuvo que entregarlo un tercero**.
+2. **No repudio del HECHO no es autenticación de la PERSONA** (§2quinquies). Un teléfono robado o un
+   cambio de SIM producen una verificación válida sobre un hecho fraudulento.
+3. **El día que recuperar la contraseña pase por un canal, el teléfono se convierte en la llave de la
+   cuenta** — y ahí sí hará falta algo más, pero **no un sello: la firma del propio usuario**, con una
+   clave que nosotros nunca tengamos. El sistema ya tiene un firmador con certificados.
+
+---
 
 ---
 

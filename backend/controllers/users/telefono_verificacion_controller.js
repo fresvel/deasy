@@ -82,3 +82,24 @@ export const confirmarLlave = async (req, res) => {
     res.status(error.status || 500).json({ message: error.message });
   }
 };
+
+/**
+ * Cuáles de estos números verificaron alguna vez.
+ *
+ * ⚠️ **Es una consulta EN LOTE a propósito.** La barrida de `channels` pregunta por todas las
+ * conversaciones de una vez: una petición por cada una serían cientos de ida y vuelta para una
+ * respuesta que cabe en una consulta.
+ *
+ * ⚠️ **Y devuelve sólo los que SÍ.** No se devuelve nada sobre los que no --ni quién es, ni si
+ * existe la persona--: quien pregunta sólo necesita saber si conserva o borra. Contestar de más
+ * convertiría esto en un oráculo para averiguar qué números están registrados.
+ */
+export const numerosVerificados = async (req, res) => {
+  try {
+    const verificados = await servicio.cualesVerificaron(req.body?.numeros);
+    return res.json({ verificados: [...verificados] });
+  } catch (error) {
+    console.error("No se pudo comprobar qué números verificaron:", error.message);
+    return res.status(500).json({ message: "No se pudo comprobar." });
+  }
+};

@@ -255,4 +255,44 @@ export default class TelefonoVerificacionService {
       conexion.release();
     }
   }
+
+  /**
+   * ¿Cuáles de estos números verificaron alguna vez?
+   *
+   * ── PARA QUÉ ────────────────────────────────────────────────────────────────────────────────
+   *
+   * Para la barrida de conversaciones de `channels`: se conserva la de quien tuvo una interacción
+   * legítima y se borra la de quien no. Es la regla que evita **dos** incumplimientos a la vez —
+   * conservar datos de alguien que nunca consintió (juridicidad) y guardar más de lo necesario
+   * (minimización).
+   *
+   * ⚠️ **NO HACE FALTA NINGUNA TABLA NUEVA, y llegué a proponer una.** `telefono_verification_keys`
+   * **no se borra**: los dos `DELETE` que existen sólo tocan las llaves NO consumidas, así que una
+   * llave usada se queda para siempre. Con eso y `telefonos` la pregunta ya tiene respuesta.
+   *
+   * ⚠️ **Y quien cambió de teléfono NO aparece, que es lo correcto.** `telefonos.numero` se
+   * sobrescribe al cambiarlo, así que su número viejo ya no está — y su conversación vieja **debe
+   * borrarse**: la base legal era «este número interactúa con nosotros», y ya no lo hace.
+   *
+   * @param {string[]} numeros  en internacional y sólo dígitos, como los entrega un canal
+   * @returns {Promise<Set<string>>} los que sí. Un conjunto, porque quien pregunta sólo mira si está
+   */
+  async cualesVerificaron(numeros) {
+    const limpios = [...new Set((numeros ?? []).map((n) => String(n).replace(/\D/g, "")).filter(Boolean))];
+    if (!limpios.length) return new Set();
+
+    const huecos = limpios.map(() => "?").join(", ");
+    const [filas] = await this.pool.query(
+      // El número se compone igual que en el resto del sistema: prefijo del país + parte local. Se
+      // compara así y no por partes porque lo que llega del canal es UNA cadena internacional.
+      `SELECT DISTINCT regexp_replace(p.phone_code, '\\D', '', 'g') || t.numero AS internacional
+         FROM telefonos t
+         INNER JOIN paises p ON p.id = t.pais_id
+         INNER JOIN telefono_verification_keys k
+                 ON k.telefono_id = t.id AND k.consumida_at IS NOT NULL
+        WHERE regexp_replace(p.phone_code, '\\D', '', 'g') || t.numero IN (${huecos})`,
+      limpios
+    );
+    return new Set((filas ?? []).map((f) => f.internacional));
+  }
 }

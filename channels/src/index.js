@@ -1,4 +1,5 @@
 import { leerConfiguracion } from "./config.js";
+import BarridaDeConversaciones from "./dominio/BarridaDeConversaciones.js";
 import ServidorDeEstado from "./infra/ServidorDeEstado.js";
 import ClienteDeDeasy from "./infra/ClienteDeDeasy.js";
 import ClienteDeTelegram from "./infra/ClienteDeTelegram.js";
@@ -45,6 +46,34 @@ const arrancar = async () => {
   // ⚠️ SE LEVANTA DESPUÉS de montar los canales, no antes: si contestara mientras arrancan, diría
   // «caído» de canales que sólo están abriendo, y un falso rojo gasta la confianza igual que un falso
   // verde.
+  // ⚠️ LA BARRIDA (LOPDP). Se conserva la conversacion de quien tuvo una interaccion legitima y se
+  // borra la de quien no. No es un plazo: un plazo borra por igual lo justificado y lo que no, y
+  // esta regla conserva exactamente lo que tiene base legal.
+  //
+  // ⚠️ SOLO WHATSAPP. Telegram no acumula nada por su cuenta --el sondeo entrega y olvida-- mientras
+  // que WhatsApp Web sincroniza y guarda en el perfil de Chromium. La barrida existe por eso.
+  //
+  // ⚠️ Y CADA SEIS HORAS, no cada minuto: borrar SE SINCRONIZA AL TELEFONO y es irreversible, asi que
+  // no hay ninguna prisa por hacerlo seguido. Lo que importa es que se haga, no que se haga pronto.
+  const whatsapp = canales.find((c) => c.nombre === "whatsapp");
+  if (whatsapp && config.barrida) {
+    const barrida = new BarridaDeConversaciones({
+      cliente: { getChats: () => whatsapp.conversaciones() },
+      deasy,
+    });
+    const cadaSeisHoras = setInterval(() => {
+      barrida.unaPasada().catch((error) => {
+        console.error(`[barrida] la pasada fallo: ${error.message}`);
+      });
+    }, 6 * 60 * 60 * 1000);
+    cadaSeisHoras.unref?.();
+    console.log("[channels] barrida de conversaciones: cada 6 h");
+  } else if (whatsapp) {
+    // Se dice que esta apagada, y no se calla: una proteccion que nadie sabe si esta puesta acaba
+    // dandose por puesta.
+    console.log("[channels] barrida de conversaciones: APAGADA (BARRIDA_CONVERSACIONES != 1)");
+  }
+
   const estado = new ServidorDeEstado({ canales, clave: config.deasy.clave });
   await estado.iniciar();
 

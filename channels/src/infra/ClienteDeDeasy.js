@@ -96,4 +96,22 @@ export default class ClienteDeDeasy {
     }
     return { confirmado: true };
   }
+
+  /**
+   * Cuáles de estos números verificaron alguna vez.
+   *
+   * ⚠️ **Si el backend no contesta, se devuelve `null` y NO un conjunto vacío.** La diferencia es la
+   * que decide si se borra: con un conjunto vacío la barrida creería que **ningún** número tiene base
+   * legal y **borraría todas las conversaciones**. Ante la duda no se borra nada.
+   */
+  async numerosVerificados(numeros) {
+    try {
+      const respuesta = await this.pedir("/internal/verificacion/numeros-verificados", { numeros });
+      if (!respuesta.ok) return null;
+      const cuerpo = await respuesta.json();
+      return new Set(cuerpo?.verificados ?? []);
+    } catch {
+      return null;
+    }
+  }
 }
