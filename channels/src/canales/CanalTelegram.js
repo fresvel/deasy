@@ -1,4 +1,5 @@
 import Canal from "../dominio/Canal.js";
+import { EVIDENCIA, SALUD } from "../dominio/salud.js";
 import MensajeEntrante from "../dominio/MensajeEntrante.js";
 import ClienteDeTelegram from "../infra/ClienteDeTelegram.js";
 import { MOTIVOS } from "../dominio/VerificacionDeTelefono.js";
@@ -95,6 +96,8 @@ export default class CanalTelegram extends Canal {
     this.corriendo = false;
     this.offset = undefined;
     this.ultimoError = null;
+    this.desde = null;
+    this.ultimoMensajeEn = null;
     this.yo = null;
   }
 
@@ -113,6 +116,8 @@ export default class CanalTelegram extends Canal {
     // Sin esto, un webhook olvidado hace que `getUpdates` dé 409 para siempre.
     await this.telegram.olvidarWebhook();
     this.corriendo = true;
+    // Sin esto, «caído» no distingue un minuto de trece horas.
+    this.desde = new Date().toISOString();
     this.bucle = this.sondear();
   }
 
@@ -122,13 +127,46 @@ export default class CanalTelegram extends Canal {
     this.bucle = null;
   }
 
+  /**
+   * ⚠️ **ANTES ESTO MENTÍA, Y ERA EL DEFECTO QUE MÁS CARO SALIÓ.** Devolvía `conectado: this.corriendo`
+   * --true desde `iniciar()` hasta `detener()`, sin saber nada de la red-- y `detalle: @usuario` en
+   * cuanto había `yo`, **tapando `ultimoError`**. Medido: con el sondeo fallando por
+   * `EAI_AGAIN api.telegram.org`, esto devolvía `{conectado: true, detalle: "@deasy_test_bot"}`. Una
+   * luz verde sobre un canal muerto, que es la forma exacta de la caída de seis horas.
+   *
+   * ── POR QUÉ TELEGRAM PUEDE PROBAR SU RECEPCIÓN, Y WHATSAPP NO ─────────────────────────────────
+   *
+   * Un bot de Telegram **no recibe mensajes: los pide**. Cada vuelta del bucle es un ida y vuelta
+   * completo contra `api.telegram.org` con el token dentro. Si esa llamada devuelve, hay red, el
+   * token vale, no hay un webhook robando las actualizaciones **y la ruta por la que llegan los
+   * mensajes es exactamente ésa**. No es una inferencia sobre la recepción: ES la recepción.
+   *
+   * Por eso aquí la evidencia es `SONDEO`, el nivel más alto — y por eso este canal **no necesita
+   * ningún eco añadido**: el eco es el propio funcionamiento.
+   */
   async estado() {
+    const sondeoVivo = this.corriendo && !this.ultimoError;
     return {
-      conectado: this.corriendo,
+      salud: !this.corriendo
+        ? SALUD.CAIDO
+        : this.ultimoError
+          ? SALUD.DEGRADADO
+          : SALUD.SANO,
+      // `SONDEO` sólo si el bucle está DANDO VUELTAS SIN FALLAR. Si falla, lo único que queda es la
+      // bandera, y entonces hay que decirlo para que nadie pinte verde con eso.
+      evidencia: sondeoVivo ? EVIDENCIA.SONDEO : EVIDENCIA.AFIRMACION,
+      cuenta: this.yo ? `@${this.yo.username}` : null,
       // Telegram no se vincula a un teléfono: el bot ES la cuenta. Esto sólo lo necesita WhatsApp.
       necesitaVinculacion: false,
-      qr: null,
-      detalle: this.yo ? `@${this.yo.username}` : (this.ultimoError ?? "sin iniciar"),
+      desde: this.desde ?? null,
+      // ⚠️ SIEMPRE, no sólo cuando no hay nada mejor que contar. Ése era el fallo.
+      ultimoError: this.ultimoError ?? null,
+      ultimoMensajeEn: this.ultimoMensajeEn ?? null,
+      detalle: this.ultimoError
+        ? `el sondeo falla: ${this.ultimoError}`
+        : this.corriendo
+          ? "el sondeo responde"
+          : "sin iniciar",
     };
   }
 
@@ -141,6 +179,9 @@ export default class CanalTelegram extends Canal {
     while (this.corriendo) {
       try {
         const lote = await this.telegram.actualizaciones(this.offset);
+        // El nivel 4: DATO, no semáforo. Vale mucho en un canal con tráfico diario y es ruido
+        // en uno que pasa días quieto, así que lo enseña la pantalla y no decide ningún color.
+        if ((lote ?? []).length) this.ultimoMensajeEn = new Date().toISOString();
         let falloAlguno = false;
         for (const actualizacion of lote ?? []) {
           // Se avanza el offset ANTES de tratar el mensaje: un mensaje que hace fallar el

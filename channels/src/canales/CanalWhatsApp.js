@@ -1,6 +1,7 @@
 import Canal from "../dominio/Canal.js";
 import MensajeEntrante from "../dominio/MensajeEntrante.js";
 import { llaveDe } from "../dominio/llave.js";
+import { ESTADOS_BLOQUEADO, EVIDENCIA, SALUD } from "../dominio/salud.js";
 
 /**
  * WhatsApp.
@@ -30,16 +31,25 @@ export default class CanalWhatsApp extends Canal {
    * @param {object} cliente  el cliente de `whatsapp-web.js`, inyectado para poder probar sin red
    * @param {Function} [dibujarQR]  cómo se enseña el QR de vinculación
    */
-  constructor({ cliente, dibujarQR = () => {} } = {}) {
+  constructor({ cliente, dibujarQR = () => {}, numero = null } = {}) {
     super();
     if (!cliente) throw new Error("CanalWhatsApp necesita un cliente de WhatsApp.");
     this.cliente = cliente;
     this.dibujarQR = dibujarQR;
+    // Es NUESTRO número y ya es público: va en cada enlace `wa.me` que se le enseña a un usuario.
+    this.numero = numero;
     this.manejador = null;
     this.conectado = false;
     this.qr = null;
     this.detalle = "sin iniciar";
     this.iniciado = false;
+    // El `WAState` crudo que diga la plataforma. Crudo A PROPÓSITO: que la pantalla pueda enseñar
+    // `TOS_BLOCK` con su nombre en vez de un genérico que no le dice nada a quien tiene que actuar.
+    this.estadoPlataforma = null;
+    this.desde = null;
+    this.ultimoError = null;
+    this.ultimoMensajeEn = null;
+    this.qrGeneradoEn = null;
   }
 
   get nombre() {
@@ -72,6 +82,7 @@ export default class CanalWhatsApp extends Canal {
     // esto el canal se puede vincular hoy; C7 lo hará civilizado, no posible.
     this.cliente.on("qr", (qr) => {
       this.qr = qr;
+      this.qrGeneradoEn = new Date().toISOString();
       this.conectado = false;
       this.detalle = "esperando que alguien escanee el QR";
       console.log(`[channels] ${this.nombre}: hay que vincular la sesión — escanea este QR:`);
@@ -93,8 +104,11 @@ export default class CanalWhatsApp extends Canal {
 
     this.cliente.on("ready", () => {
       this.qr = null;
+      this.qrGeneradoEn = null;
       this.conectado = true;
-      this.detalle = "vinculado";
+      this.desde = new Date().toISOString();
+      this.ultimoError = null;
+      this.detalle = "sesión vinculada";
       console.log(`[channels] ${this.nombre}: sesión lista`);
     });
 
@@ -103,13 +117,35 @@ export default class CanalWhatsApp extends Canal {
     this.cliente.on("disconnected", (motivo) => {
       this.conectado = false;
       this.detalle = `desvinculado: ${motivo}`;
+      this.ultimoError = String(motivo ?? "");
       console.error(`[channels] ${this.nombre}: sesión perdida — ${motivo}. Hay que volver a vincular.`);
     });
 
     this.cliente.on("auth_failure", (motivo) => {
       this.conectado = false;
       this.detalle = `no se pudo autenticar: ${motivo}`;
+      this.ultimoError = String(motivo ?? "");
       console.error(`[channels] ${this.nombre}: fallo de autenticación — ${motivo}`);
+    });
+
+    // ⚠️ **ESTE ES EL EVENTO QUE FALTABA, y cubre los tres modos de muerte que pasaban en silencio.**
+    // Ninguno de los otros seis los caza: `disconnected` no salta en un CONFLICT, y `auth_failure`
+    // sólo mira el arranque. Sin esto, un canal BANEADO seguía diciendo `conectado: true`.
+    //
+    //   · TOS_BLOCK / SMB_TOS_BLOCK  → WhatsApp nos bloqueó. El baneo, con nombre propio.
+    //   · CONFLICT                   → otro dispositivo se llevó la sesión.
+    //   · DEPRECATED_VERSION         → WhatsApp cambió y la librería se quedó atrás.
+    //
+    // Los tres piden una acción de una persona y NO se arreglan reiniciando, y por eso su veredicto
+    // es `bloqueado` y no `caido`.
+    this.cliente.on("change_state", (estado) => {
+      this.estadoPlataforma = String(estado ?? "");
+      if (ESTADOS_BLOQUEADO.includes(this.estadoPlataforma)) {
+        this.conectado = false;
+        console.error(
+          `[channels] ${this.nombre}: la plataforma dice ${this.estadoPlataforma}. Esto NO se arregla reiniciando.`
+        );
+      }
     });
 
     this.cliente.on("message", (mensaje) => {
@@ -127,14 +163,69 @@ export default class CanalWhatsApp extends Canal {
     await this.cliente.destroy?.().catch?.(() => {});
   }
 
+  /**
+   * ⚠️ **AQUÍ NO SE PUEDE PROBAR LA RECEPCIÓN, y hay que decirlo en vez de disimularlo.** La sesión
+   * puede estar `CONNECTED` y aun así no entregarnos un mensaje: la página puede quedarse a medias,
+   * o cambiar de forma bajo nuestros pies — que es literalmente lo que pasó el 2026-09-01 con `@lid`.
+   *
+   * Lo máximo que se afirma es «la plataforma contesta» (`PLATAFORMA`), nunca «la recepción
+   * funciona». Prometer un verde que no se sostiene es peor que admitir el hueco: un verde falso es
+   * lo que hizo que nadie mirara durante trece horas.
+   *
+   * ⚠️ La comprobación ACTIVA (`getState()`) la pide quien pregunta, no se hace aquí: cruza
+   * Puppeteer y no es gratis, así que se cachea fuera. Ver `ServidorDeEstado`.
+   */
   async estado() {
+    const bloqueado = ESTADOS_BLOQUEADO.includes(this.estadoPlataforma ?? "");
+    const plataformaOk = this.estadoPlataforma === "CONNECTED";
     return {
-      conectado: this.conectado,
+      // ⚠️ **LA PRUEBA GANA A LA AFIRMACIÓN, y en los dos sentidos.** Si la plataforma contesta
+      // `CONNECTED`, no se puede decir «caído» aunque nuestra bandera esté a false --pasó: salía
+      // `caido` con `CONNECTED` al lado--. Y al revés: con la bandera puesta pero sin que la
+      // plataforma lo confirme, lo más que se puede decir es `degradado`.
+      salud: bloqueado
+        ? SALUD.BLOQUEADO
+        : this.qr
+          ? SALUD.SIN_VINCULAR
+          : plataformaOk
+            // La plataforma responde. Sólo es `sano` si ADEMÁS nuestra sesión terminó de abrir: el
+            // arranque puede quedarse en «sincronizando» sin llegar a `ready`, y ahí no se sabe si
+            // recibe. Decir `sano` entonces sería el verde falso de siempre.
+            ? (this.conectado ? SALUD.SANO : SALUD.DEGRADADO)
+            : this.conectado
+              ? SALUD.DEGRADADO
+              : SALUD.CAIDO,
+      // Sólo cuando la PLATAFORMA lo ha confirmado. Con la bandera a secas, `AFIRMACION` — y con eso
+      // la pantalla no puede pintar verde, que es justo lo que se quiere.
+      evidencia: this.estadoPlataforma ? EVIDENCIA.PLATAFORMA : EVIDENCIA.AFIRMACION,
+      cuenta: this.numero ?? null,
       // A diferencia de Telegram, aquí SÍ hay algo que vincular: la sesión cuelga de un teléfono.
       necesitaVinculacion: Boolean(this.qr),
-      qr: this.qr,
+      estadoPlataforma: this.estadoPlataforma ?? null,
+      desde: this.desde ?? null,
+      ultimoError: this.ultimoError ?? null,
+      ultimoMensajeEn: this.ultimoMensajeEn ?? null,
       detalle: this.detalle,
     };
+  }
+
+  /**
+   * La comprobación ACTIVA: se le pregunta A LA PÁGINA, no a nuestra variable.
+   *
+   * ⚠️ Es la diferencia entre «arrancó» y «funciona». `this.conectado` sólo dice que llegó un `ready`
+   * alguna vez; `getState()` cruza hasta WhatsApp Web y responde AHORA. No es gratis --pasa por
+   * Puppeteer--, así que quien la llama la cachea.
+   */
+  async comprobarPlataforma() {
+    const estado = String((await this.cliente.getState?.()) ?? "");
+    if (!estado) return {};
+    this.estadoPlataforma = estado;
+    return { estadoPlataforma: estado };
+  }
+
+  /** El QR, por SU PROPIA vía. Nunca dentro del estado: ver §3 del documento de diseño. */
+  codigoDeVinculacion() {
+    return this.qr ? { qr: this.qr, generadoEn: this.qrGeneradoEn } : null;
   }
 
   /** Trata UN mensaje. Es la unidad que se prueba: sin red y sin navegador. */
@@ -159,6 +250,9 @@ export default class CanalWhatsApp extends Canal {
       );
       return;
     }
+
+    // El nivel 4: dato, no semáforo.
+    this.ultimoMensajeEn = new Date().toISOString();
 
     const llave = llaveDe(mensaje?.body);
     if (!llave) {

@@ -215,15 +215,28 @@ describe("CanalTelegram · el sondeo", () => {
 
     const canal = new CanalTelegram({ telegram });
     canal.alRecibir(async () => ({ verificado: true }));
-    await canal.iniciar();
-    await canal.iniciar();
+    // ⚠️ SE PARA PASE LO QUE PASE. Sin este `finally`, una aserción que falle deja el bucle girando y
+    // la suite entera SE CUELGA en vez de dar un fallo: pasó al cambiar el contrato de `estado()`, y
+    // «se colgó» es mucho más caro de diagnosticar que «falló esta línea».
+    try {
+      await canal.iniciar();
+      await canal.iniciar();
 
-    assert.equal(olvidos, 1, "dos llamadas no abren dos sondeos");
-    assert.deepEqual(await canal.estado(), {
-      conectado: true, necesitaVinculacion: false, qr: null, detalle: "@deasy_test_bot",
-    });
-    await canal.detener();
-    assert.equal((await canal.estado()).conectado, false);
+      assert.equal(olvidos, 1, "dos llamadas no abren dos sondeos");
+
+      const estado = await canal.estado();
+      assert.equal(estado.salud, "sano");
+      assert.equal(estado.evidencia, "sondeo", "el bucle gira sin fallar: eso ES la recepción");
+      assert.equal(estado.cuenta, "@deasy_test_bot");
+      assert.equal(estado.ultimoError, null);
+      assert.ok(estado.desde, "sin `desde`, «caído» no distingue un minuto de trece horas");
+    } finally {
+      await canal.detener();
+    }
+
+    const parado = await canal.estado();
+    assert.equal(parado.salud, "caido");
+    assert.equal(parado.evidencia, "afirmacion", "parado no hay sondeo que respalde nada");
   });
 });
 

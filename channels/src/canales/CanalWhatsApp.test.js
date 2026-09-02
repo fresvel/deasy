@@ -102,14 +102,50 @@ describe("CanalWhatsApp · la sesión", () => {
 
     cliente.emitir("qr", "CODIGO-QR");
     assert.deepEqual(dibujados, ["CODIGO-QR"]);
+
     const esperando = await canal.estado();
+    assert.equal(esperando.salud, "sin_vincular", "esperar a que escaneen NO es un fallo: es una tarea");
     assert.equal(esperando.necesitaVinculacion, true);
-    assert.equal(esperando.qr, "CODIGO-QR");
-    assert.equal(esperando.conectado, false);
+    // ⚠️ EL QR NO VIAJA EN EL ESTADO. Va por su propia vía para que no acabe en un registro, en una
+    // caché del navegador ni en la respuesta de quien sólo tiene permiso de lectura: quien lo escanea
+    // decide QUÉ CUENTA DE WHATSAPP ES el canal de la institución.
+    assert.equal(esperando.qr, undefined);
+    assert.equal(canal.codigoDeVinculacion().qr, "CODIGO-QR");
+    assert.ok(canal.codigoDeVinculacion().generadoEn);
 
     cliente.emitir("ready");
     const listo = await canal.estado();
-    assert.deepEqual(listo, { conectado: true, necesitaVinculacion: false, qr: null, detalle: "vinculado" });
+    assert.equal(listo.necesitaVinculacion, false);
+    assert.equal(canal.codigoDeVinculacion(), null, "vinculado NO hay QR que dar, y no lo hay para nadie");
+    // Sin que la PLATAFORMA lo confirme, lo único que hay es la bandera del canal — y con eso la
+    // pantalla no puede pintar verde. Ésa es la lección de las trece horas.
+    assert.equal(listo.salud, "degradado");
+    assert.equal(listo.evidencia, "afirmacion");
+
+    cliente.emitir("change_state", "CONNECTED");
+    const confirmado = await canal.estado();
+    assert.equal(confirmado.salud, "sano");
+    assert.equal(confirmado.evidencia, "plataforma");
+  });
+
+  it("un estado de BLOQUEO no es «caído»: no se arregla reiniciando", async () => {
+    const cliente = clienteFalso();
+    const canal = new CanalWhatsApp({ cliente });
+    canal.alRecibir(async () => ({ verificado: true }));
+    await canal.iniciar();
+    cliente.emitir("ready");
+
+    const antes = console.error;
+    const dichos = [];
+    console.error = (m) => dichos.push(String(m));
+    // El baneo, con nombre propio. Ninguno de los otros eventos lo caza.
+    cliente.emitir("change_state", "TOS_BLOCK");
+    console.error = antes;
+
+    const estado = await canal.estado();
+    assert.equal(estado.salud, "bloqueado");
+    assert.equal(estado.estadoPlataforma, "TOS_BLOCK", "crudo, para poder decirlo por su nombre");
+    assert.ok(dichos.some((d) => /NO se arregla reiniciando/.test(d)));
   });
 
   // Un canal que se desvincula y no lo dice es el fallo que ya costó seis horas de silencio con
@@ -128,8 +164,9 @@ describe("CanalWhatsApp · la sesión", () => {
     console.error = antes;
 
     const estado = await canal.estado();
-    assert.equal(estado.conectado, false);
+    assert.equal(estado.salud, "caido");
     assert.match(estado.detalle, /desvinculado/);
+    assert.equal(estado.ultimoError, "LOGOUT", "el motivo se guarda: sin él no hay nada que enseñar");
     assert.ok(dichos.some((d) => /sesión perdida/.test(d)), "tiene que decirlo en el registro");
   });
 
@@ -311,5 +348,58 @@ describe("CanalWhatsApp · un @lid se RESUELVE o se rechaza", () => {
     console.log = log;
 
     assert.equal(consultas, 0, "consultar por cada mensaje basura es un ataque de coste");
+  });
+});
+
+describe("CanalWhatsApp · la prueba gana a la afirmación, en los dos sentidos", () => {
+  const conCliente = () => {
+    const oyentes = {};
+    const cliente = {
+      on(evento, fn) { (oyentes[evento] ??= []).push(fn); },
+      emitir(evento, ...args) { (oyentes[evento] ?? []).forEach((fn) => fn(...args)); },
+      async initialize() {},
+      async sendMessage() {},
+      async getState() { return this.estado; },
+      estado: "",
+    };
+    const canal = new CanalWhatsApp({ cliente });
+    canal.alRecibir(async () => ({ verificado: true }));
+    return { cliente, canal };
+  };
+
+  it("con la plataforma CONNECTED no se dice «caído», aunque la bandera esté a false", async () => {
+    // Salió así de verdad el 2026-09-02: `caido` con `CONNECTED` al lado. La bandera sólo se pone en
+    // `ready`, y un arranque puede quedarse en «sincronizando» sin llegar a él.
+    const { cliente, canal } = conCliente();
+    await canal.iniciar();
+    cliente.estado = "CONNECTED";
+    await canal.comprobarPlataforma();
+
+    const estado = await canal.estado();
+    assert.notEqual(estado.salud, "caido");
+    assert.equal(estado.salud, "degradado", "la plataforma responde, pero la sesión no abrió: ni verde ni rojo");
+    assert.equal(estado.evidencia, "plataforma");
+  });
+
+  it("y con la bandera puesta pero SIN confirmar, tampoco se dice «sano»", async () => {
+    const { cliente, canal } = conCliente();
+    await canal.iniciar();
+    cliente.emitir("ready");
+
+    const estado = await canal.estado();
+    assert.equal(estado.salud, "degradado");
+    assert.equal(estado.evidencia, "afirmacion", "con esto la pantalla NO puede pintar verde");
+  });
+
+  it("verde sólo cuando coinciden las dos cosas", async () => {
+    const { cliente, canal } = conCliente();
+    await canal.iniciar();
+    cliente.emitir("ready");
+    cliente.estado = "CONNECTED";
+    await canal.comprobarPlataforma();
+
+    const estado = await canal.estado();
+    assert.equal(estado.salud, "sano");
+    assert.equal(estado.evidencia, "plataforma");
   });
 });
