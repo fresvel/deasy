@@ -53,6 +53,87 @@ comprobarlo.**
 
 ---
 
+## 2bis · DÓNDE se escribe, CUÁNDO y QUIÉN — lo que no quedó claro
+
+### El momento exacto
+
+Hay **un solo punto** en todo el sistema donde una verificación pasa de «alguien mandó algo» a «este
+número queda verificado», y es este:
+
+```
+channels ──▶ POST /internal/verificacion/confirmar
+                    │
+                    └─▶ TelefonoVerificacionService.confirmar()
+                             ├─ comprueba la llave y el número          ← ya existe
+                             ├─ marca `telefono_canales.verificado = 1` ← ya existe
+                             ├─ consume la llave                        ← ya existe
+                             └─ ⬅ AQUÍ SE ESCRIBE EL SELLO             ← lo nuevo
+```
+
+⚠️ **Dentro de la MISMA transacción que ya existe.** Si el sello se escribiera después, un fallo
+entre medias dejaría un teléfono verificado **sin prueba de por qué** — que es justo el agujero que
+esto viene a tapar.
+
+⚠️ **Y si el sello no se puede escribir, la verificación NO se confirma.** Es la decisión incómoda
+pero correcta: una verificación sin prueba es exactamente lo que no queremos tener. Mejor pedirle a
+la persona que lo intente otra vez que sellar a medias.
+
+### Dónde queda
+
+**Un objeto por verificación**, en el mismo bucket con bloqueo que los documentos legales:
+
+```
+deasy-legal/
+  terminos/v1.md                        ← los documentos
+  privacidad/v1.md
+  sellos/2026/09/02/telefono-16-1543.json   ← un sello por verificación
+```
+
+**Y su ruta lleva la fecha** a propósito: sin eso, «dame todo lo de septiembre» sería recorrer el
+bucket entero, y con diez años de retención eso deja de ser viable pronto.
+
+### La cadena, con un ejemplo
+
+Cada sello incluye **la huella del anterior**. Eso es lo que convierte un montón de ficheros sueltos
+en algo que se puede comprobar:
+
+```
+sello #1   { …, "sello_anterior": null       }  → su SHA-256 es  a91c…
+sello #2   { …, "sello_anterior": "a91c…"    }  → su SHA-256 es  4f02…
+sello #3   { …, "sello_anterior": "4f02…"    }  → su SHA-256 es  b7d5…
+```
+
+**Si alguien altera el sello #2, su huella deja de ser `4f02…`** — y entonces el `sello_anterior` del
+#3 ya no cuadra. **Y del #4, y de todos los siguientes.**
+
+> Para falsificar **uno** habría que rehacer **todos los posteriores**… y no se puede, porque en el
+> bucket con bloqueo **los anteriores no se pueden sobrescribir**. Ésa es toda la idea: no es que sea
+> difícil, es que el almacén no lo permite.
+
+⚠️ **La cabeza de la cadena vive en la base** (la huella del último sello). Y esa fila **sí** se
+puede tocar — pero tocarla no sirve de nada: los sellos archivados siguen apuntándose entre ellos, y
+recalcular la cadena entera desde el bucket **delata la manipulación**.
+
+### Quién lo escribe, y quién no
+
+| | |
+|---|---|
+| **Lo escribe** | El backend, automáticamente, dentro de la transacción de confirmación |
+| **Nadie lo edita** | No hay pantalla, no hay endpoint de escritura. **Sólo se crean, nunca se modifican** |
+| **Se leen** | Para responder a un reclamo, y para comprobar la cadena |
+
+### ⚠️ Y una consecuencia que hay que aceptar antes de aprobar
+
+**Un sello contiene `person_id` y `telefono_id`, y no se puede borrar durante 10 años.**
+
+Es defendible por el **Art. 18.4** de la Ley y el **Art. 11.2** del Reglamento —*«para la formulación,
+el ejercicio o la defensa de reclamaciones»*— que es la misma base con la que se conserva el
+consentimiento. Pero conviene decirlo claro: **si alguien pide la eliminación de sus datos, este
+sello sobrevive**, y hay que poder explicárselo con ese artículo en la mano.
+
+**Por eso el sello guarda identificadores y no datos:** ni nombre, ni el número de teléfono, ni el
+texto de ningún mensaje. Lo mínimo que sostiene la prueba.
+
 ## 3 · Por qué esto es MEJOR que guardar el chat, punto por punto
 
 | | El chat de WhatsApp | El sello encadenado en WORM |

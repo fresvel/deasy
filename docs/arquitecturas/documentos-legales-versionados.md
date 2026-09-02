@@ -194,6 +194,86 @@ documento está `published` antes de guardar el consentimiento.
 
 ---
 
+## 5bis · Cómo llega el texto a MinIO — la mitad que faltaba
+
+Pregunta del dueño, y era un hueco de verdad: había diseñado **dónde vive** el texto y **no cómo
+entra**, quién lo edita ni con qué estados.
+
+### ⚠️ El problema que lo ordena todo: **en WORM, un error tipográfico es para siempre**
+
+Si el borrador se escribiera directamente en el bucket con bloqueo, **una errata quedaría archivada
+diez años** y no habría forma de quitarla. Sólo se podría publicar otra versión encima… y la errata
+seguiría ahí, recuperable, para siempre.
+
+**De ahí sale la regla que estructura el flujo:**
+
+> **El borrador NO vive en el archivo inmutable. Publicar es lo que lo mete dentro.**
+
+### Los estados, que son los mismos que ya usan las plantillas
+
+`template_artifacts` ya tiene exactamente esto —`draft` · `published` · `retired`, con rutas
+`/version`, `/publish` y `/retire`— así que **no se inventa un ciclo nuevo**:
+
+| Estado | Dónde vive el texto | Qué se puede hacer |
+|---|---|---|
+| **`draft`** | En la **base** (columna de texto) | **Editarlo cuantas veces haga falta.** Corregir, revisar con legal, rehacerlo entero |
+| **`published`** | **En el bucket WORM** — se copia al publicar | **Nada.** Es inmutable, y su huella queda fijada |
+| **`retired`** | Sigue en el bucket WORM | Nada. **Se conserva**: hay gente cuya prueba apunta a él |
+
+⚠️ **El borrador en la base y no en MinIO es deliberado**: mientras se revisa con legal es un
+documento vivo que va a cambiar diez veces. Meterlo en un almacén inmutable en esa fase sería
+guardar diez versiones basura para siempre.
+
+### El flujo, de principio a fin
+
+```
+1 · legal entrega el texto
+        │
+2 · alguien con permiso lo pega o sube  ──▶  fila `draft`, texto EN LA BASE
+        │                                     (se puede corregir sin límite)
+3 · se revisa: se ve exactamente como lo verá el usuario
+        │
+4 · PUBLICAR  ──┬─▶ se calcula el SHA-256 del texto
+                ├─▶ se escribe el objeto en `deasy-legal` (WORM, 10 años)
+                ├─▶ se guardan bucket, clave, `version_id` y la huella
+                ├─▶ la versión anterior pasa a `retired`
+                └─▶ ⚠️ IRREVERSIBLE
+        │
+5 · a partir de aquí, el registro sirve ESE objeto y nadie más lo toca
+```
+
+### Desde dónde se edita
+
+**Una pestaña del admin**, con el patrón que ya existe para el organigrama, el mapa de procesos y los
+canales: una pestaña que no es una tabla.
+
+⚠️ **Y con dos protecciones que el ciclo de las plantillas no necesita**, porque aquí publicar es
+irreversible:
+
+1. **Confirmación explícita**, diciendo qué va a pasar: *«esto se archivará durante 10 años y no se
+   podrá borrar»*. No un botón «Publicar» a secas.
+2. **Vista previa obligatoria** antes de habilitar el botón: lo que se archiva es lo que se enseñó,
+   y quien publica tiene que haberlo visto **renderizado**, no en crudo.
+
+### Quién puede hacerlo
+
+Un recurso RBAC propio, `legal_documents`, con la misma separación que se usó en `channels`:
+
+| | |
+|---|---|
+| **`legal_documents.read`** | Ver los documentos y sus versiones |
+| **`legal_documents.update`** | Crear y editar **borradores** |
+| **`legal_documents.manage`** | **Publicar** — la acción irreversible |
+
+⚠️ **Editar un borrador y publicarlo son permisos distintos a propósito**, por lo mismo que en
+`channels`: quien redacta no tiene por qué poder archivar algo para diez años.
+
+### ¿Y el fichero de hoy?
+
+`frontend/public/terms.md` **se borra** cuando la versión 1 esté publicada. Dejarlo sería tener dos
+textos con la misma pinta y sin forma de saber cuál rige — que es exactamente el problema que este
+diseño resuelve.
+
 ## 6 · Qué pasa cuando el texto cambia
 
 Es la pregunta que decide si esto sirve de algo en dos años.

@@ -1,4 +1,6 @@
-# ⚠️ BORRADOR — Aviso de Privacidad y Tratamiento de Datos Personales
+# ⚠️ BORRADOR — Tratamiento de Datos Personales
+
+*(también llamado «aviso de privacidad»)*
 
 > **ESTE DOCUMENTO NO ESTÁ APROBADO Y NO DEBE PUBLICARSE.**
 >

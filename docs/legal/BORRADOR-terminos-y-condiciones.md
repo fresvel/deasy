@@ -56,8 +56,8 @@ custodia de tu certificado y de su clave es tuya, y su uso indebido puede tener 
 
 ## 5 · Tus datos personales
 
-**El tratamiento de tus datos personales se rige por el Aviso de Privacidad**, que es un documento
-**separado** y que se acepta **por separado**.
+**El tratamiento de tus datos personales se rige por el documento de Tratamiento de Datos
+Personales**, que es **separado** y se acepta **por separado**.
 
 ⚠️ **Aceptar estos términos NO es aceptar el tratamiento de tus datos**, ni al revés. Son dos
 decisiones distintas y puedes revocar la segunda sin dejar de estar sujeto a la primera.
@@ -69,8 +69,8 @@ decisiones distintas y puedes revocar la segunda sin dejar de estar sujeto a la 
 ⟦institución⟧ puede suspender o cancelar el acceso cuando termine la relación institucional, cuando
 se incumplan estos términos, o cuando lo exija una autoridad competente.
 
-**La cancelación del acceso no implica por sí sola la eliminación de tus datos**: eso se rige por el
-Aviso de Privacidad y por la normativa de archivo aplicable ⟦legal: confirmar⟧.
+**La cancelación del acceso no implica por sí sola la eliminación de tus datos**: eso se rige por el documento de
+Tratamiento de Datos Personales y por la normativa de archivo aplicable ⟦legal: confirmar⟧.
 
 ---
 
