@@ -27,16 +27,28 @@ se encarga un trigger.
 `resources` y `actions` son dos catálogos gemelos —`id · code · name · description · is_active ·
 created_at · updated_at`, idénticos— y su producto cartesiano es `permissions`.
 
-Medido en la base sembrada: **13 recursos × 5 acciones = 65 permisos**, exactamente. No hay ni uno de
+Medido en la base sembrada: **14 recursos × 5 acciones = 70 permisos**, exactamente. No hay ni uno de
 más ni uno de menos: la siembra genera la matriz completa.
 
-Los 13 recursos son `account` · `dossier` · `security` · `people` · `units` · `academic_terms` ·
+Los 14 recursos son `account` · `dossier` · `security` · `people` · `units` · `academic_terms` ·
 `process_definitions` · `process_execution` · `templates` · `documents` · `fill_flows` ·
-`signature_flows` · `contracts`. Las 5 acciones, `read` · `create` · `update` · `delete` · `manage`.
+`signature_flows` · `contracts` · `channels`. Las 5 acciones, `read` · `create` · `update` ·
+`delete` · `manage`.
+
+:::caution[Un recurso donde `read` y `manage` NO son una gradación]
+En **`channels`** la diferencia entre los dos no es «ver menos» o «ver más»: `read` enseña si los
+canales están vivos, y **`manage` enseña el código de vinculación de WhatsApp**. Quien escanea ese
+código decide **qué cuenta de WhatsApp *es* el canal de la institución** — a partir de ahí las
+verificaciones de teléfono del sistema pasan por un WhatsApp que eligió quien escaneó.
+
+Es una toma de control de la identidad del canal, no «un dato de administración». Por eso quien
+vigila (`Auditor`, que tiene `read` de todo) **no puede vincular**, y pedir el código queda
+registrado con quién lo pidió.
+:::
 
 **`manage` no es una acción más: es el comodín.** Quien tiene `X.manage` pasa cualquier comprobación
 sobre `X`, porque el chequeo (`hasPermissionOrManage`) mira primero el permiso exacto y después el
-`manage` del mismo recurso. Por eso `AdminSistema` tiene los 65 y no hace falta enumerarle nada.
+`manage` del mismo recurso. Por eso `AdminSistema` tiene los 70 y no hace falta enumerarle nada.
 
 :::note[Una unicidad declarada dos veces]
 `permissions` lleva **dos** índices únicos: `uq_permissions_resource_action` sobre

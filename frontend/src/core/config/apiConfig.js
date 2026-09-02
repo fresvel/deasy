@@ -82,6 +82,10 @@ export const API_ROUTES = {
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,
+  // C7 · el estado de los canales, y el codigo de vinculacion POR SU PROPIA RUTA: quien escanea el
+  // QR decide que cuenta de WhatsApp es el canal, asi que no viaja dentro del estado.
+  ADMIN_CANALES: `${API_PREFIX}/admin/canales`,
+  ADMIN_CANALES_QR: `${API_PREFIX}/admin/canales/whatsapp/qr`,
   ADMIN_SQL_OPERATION_STATS: `${API_PREFIX}/admin/sql/stats/operation`,
   ADMIN_SQL_UNITS_GRAPH: (relationType = "org") => `${API_PREFIX}/admin/sql/units/graph?relation_type=${encodeURIComponent(relationType)}`,
   ADMIN_SQL_UNITS_WITH_PARENT: `${API_PREFIX}/admin/sql/units/with-parent`,

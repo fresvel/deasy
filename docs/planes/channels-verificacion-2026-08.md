@@ -28,18 +28,17 @@
 | **C4** | El servicio corre **como contenedor** en la pila, sin que lo alcance el navegador | ✅ | `docker/channels/Dockerfile` + servicio en `compose.dev.yml` · **0 puertos publicados** y el nombre no resuelve desde el host · apagado limpio en **1,2 s** con SIGTERM (tini como PID 1) · conectado a `@deasy_test_bot` desde dentro de la pila · **vuelta completa comprobada con un teléfono real contra el contenedor de la pila** | 2026-08-31 |
 | **C5** | Un número real se verifica **por WhatsApp** — con el canal **reescrito de cero** | ✅ | **Verificado con un teléfono real**: `983200911` quedó verificado el 2026-09-01 a las 15:03:58, llave consumida y **sólo WhatsApp marcado** · channels **83 pruebas** · 4 mutaciones cazadas | 2026-09-01 |
 | ~~**C6**~~ | ~~Un número real se verifica **por SMS entrante**~~ | ❌ | **DESCARTADA POR EL DUEÑO, no aplazada.** El SMS entrante **no prueba el número**: su cabecera de origen la rellena el emisor (`10.1145/3615667` · `10.1145/3696011`). Ver §C6 | 2026-09-01 |
-| **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | 🟡 **diseñada, sin implementar** | [`arquitecturas/pestana-de-canales.md`](../arquitecturas/pestana-de-canales.md) · el QR es una CREDENCIAL: quien lo escanea decide qué cuenta de WhatsApp es el canal, así que ver el estado y ver el QR son permisos distintos | |
+| **C7** | La pestaña de administración: estado de los canales y **el QR de WhatsApp** | ✅ | **Verificado en el navegador**: con la pantalla abierta se paró `channels` y en menos de 5 s dijo «no se puede hablar con el servicio de canales», sin recargar y sin un solo error de consola; al volver a levantarlo se recuperó sola. Telegram en verde con `evidencia: sondeo`; WhatsApp en verde con `plataforma` y **sin prometer que reciba**. RBAC 13 → 14 recursos, 65 → 70 permisos · channels **96** · backend unit **760** · char **327/327** · frontend **460** y las 27 puertas | 2026-09-02 |
 | **C8** | El registro es **una secuencia de tres pasos**, y el router manda a completar lo que falte | ✅ | char **326/326** · unit **735** · frontend **431** y sus 27 puertas · la puerta REAL en el backend (`exigeVerificacionCompleta`) y el guardián del router como mitad amable · **4 defectos cerrados de camino**: la verificación autodeclarable, el alta no atómica, `/email/verify` sin sesión y el envío que fallaba en silencio | 2026-08-31 |
 | **C9** | 🚧 **El limitador de intentos** | ✅ | **Probado contra el sistema en marcha**: 10 accesos fallidos pasan y el 11 da 429 con `Retry-After`; otra cuenta desde la MISMA ip sigue entrando; 12 accesos correctos seguidos no gastan ni un intento; `validar_cedula` frena en el 11 **antes** de llamar al servicio de pago; con la base caída `validar_cedula` CIERRA y `login` ABRE · unit **754** (+17, 4 mutaciones cazadas) · char **327/327** sin mover un golden | 2026-09-01 |
 
-**9 tareas · 8 cerradas · 1 pendiente.**
+**9 tareas · 9 cerradas · 0 pendientes.** ✅ **Frente cerrado.**
 
 ⚠️ **El denominador bajó de 10 a 9**, y no por haber terminado nada: `C6` se **descartó** el
 2026-09-01. No es una pausa ni un bloqueo — es una opción muerta, y por eso sale de la cuenta en vez
 de quedarse como deuda perpetua.
 
-- **Cerradas (8):** `C1` · `C2` · `C2b` · `C3` · `C4` · `C5` · `C8` · `C9`
-- **Pendiente (1):** `C7` (la pestaña de administración)
+- **Cerradas (9):** `C1` · `C2` · `C2b` · `C3` · `C4` · `C5` · `C7` · `C8` · `C9`
 - **Descartada (1):** `C6`
 
 ⚠️ **Y no habrá `C10` ni `C11`.** Llegué a proponerlas —un contrato de dos niveles para que los bots

@@ -27,7 +27,7 @@ El fichero `CLAUDE.md` del repositorio lo dice sin rodeos: **“Los controllers 
 
 - **`routes/`**: 14 ficheros planos (`user_router.js`, `sign_router.js`, `admin_router.js`, `chat_router.js`, `dossier_router.js`, etc.). Todos cuelgan del prefijo `/deasy/v1`.
 
-- **`controllers/`**: 7 subcarpetas por dominio (`users/`, `admin/`, `sign/`, `chat/`, `tareas/`, `system/`, `empresa/`), 27 ficheros en total.
+- **`controllers/`**: 8 subcarpetas por dominio (`users/`, `admin/`, `sign/`, `chat/`, `tareas/`, `system/`, `canales/`, `empresa/`), 27 ficheros en total.
 
 - **`services/`**: **15 subcarpetas, 67 ficheros** (20 787 líneas). Aquí están los dominios reales: `admin/` (con sub-subcarpetas `kernel/`, `crud/`, `templates/`, `processes/`, `org/`, `generation/`), `auth/`, `chat/`, `documents/`, `sign/`, `system/`, `tasks/`, `users/`, `mail/`, `storage/`, `realtime/`, `infrastructure/`, `whatsapp/`, `external/`.
 

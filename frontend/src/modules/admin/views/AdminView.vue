@@ -111,7 +111,7 @@
           <FirmarPdf />
         </template>
         <template v-else>
-        <div v-if="!selectedTable">
+        <div v-if="!selectedTable && !canalesTabActive">
           <div class="flex flex-col min-h-100">
             <div v-if="loadingMeta" class="flex-1 flex items-center justify-center">
                <div class="inline-flex items-center gap-3">
@@ -143,6 +143,16 @@
                       show-arrow
                       @click="openItem(item)"
                     />
+                      <!-- Los canales NO son una tabla ni cuelgan de ninguna: su tarjeta va aqui,
+                           en la portada de Institucion, junto a las que si lo son. -->
+                      <AppNavCard
+                        v-if="selectedSection === 'institucion'"
+                        title="Canales de mensajería"
+                        description="Por dónde puede alguien demostrar que un teléfono es suyo. Estado de Telegram y WhatsApp."
+                        :icon="IconMessage2"
+                        show-arrow
+                        @click="abrirCanales()"
+                      />
                     <div v-if="traceabilityTables.length" class="col-span-full mt-2">
                       <button
                         type="button"
@@ -184,6 +194,14 @@
             </template>
           </div>
         </div>
+
+          <!-- ⚠️ RAMA PROPIA, no un modo de `AdminTableManager`: esta pantalla no habla de ninguna
+               tabla, y ese componente ya carga con dos injertos concentrados. -->
+          <div v-else-if="canalesTabActive" class="w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
+            <div class="deasy-typography w-full h-full relative overflow-y-auto p-6">
+              <CanalesPanel @volver="volverDeCanales()" />
+            </div>
+          </div>
 
         <div v-else class="w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
           <div class="deasy-typography w-full h-full relative overflow-y-auto">
@@ -229,6 +247,7 @@ import {
 import axios from "@/core/services/httpClient";
 import { useRoute, useRouter } from "vue-router";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
+import CanalesPanel from "../components/canales/CanalesPanel.vue";
 import AppWorkspaceShell from "@/layouts/workspace/AppWorkspaceShell.vue";
 import WorkspaceChatLauncher from "@/shared/components/widgets/WorkspaceChatLauncher.vue";
 import AdminTableManager from "@/modules/admin/components/tables/AdminTableManager.vue";
@@ -254,6 +273,11 @@ const pendingTableFilters = ref(null);
 const ORG_GRAPH_TAB_KEY = "__unit_graph__";
 // Mapa de procesos como pestaña hermana de las tablas de Procesos (no una tabla real).
 const PROCESS_GRAPH_TAB_KEY = "__process_graph__";
+// Canales de mensajería: la TERCERA pestaña que no es una tabla, y la primera que no cuelga de
+// ninguna. Se pinta AQUÍ y no dentro de `AdminTableManager` --donde viven los dos grafos-- a
+// propósito: ese componente ya es un God con dos injertos concentrados, y meterle un tercero que
+// además no tiene nada que ver con ninguna tabla es exactamente lo que el CLAUDE.md pide no hacer.
+const CANALES_SLUG = "canales";
 // selectedTable / selectedSection / los cinco item / los dos grafos NO son refs: se DERIVAN de la
 // URL (fase 3.5, cierre). Ver el bloque "Estado derivado de la URL" más abajo.
 const openCategories = ref({});
@@ -448,6 +472,14 @@ const resolveItemByTable = (tableName) => {
 const routeTableSlug = computed(() => route.params.table || "");
 const graphTabActive = computed(() => routeTableSlug.value === UNIT_GRAPH_SLUG);
 const processGraphTabActive = computed(() => routeTableSlug.value === PROCESS_GRAPH_SLUG);
+const canalesTabActive = computed(() =>
+  selectedSection.value === "institucion" && routeTableSlug.value === CANALES_SLUG);
+
+// La URL ES el estado de navegación, como en el resto del admin: no hay un `ref` que diga «estoy en
+// canales». Se entra navegando y se sale navegando, así que un enlace directo funciona y recargar
+// deja la pantalla donde estaba.
+const abrirCanales = () => navigateAdmin({ section: "institucion", item: CANALES_SLUG, table: CANALES_SLUG });
+const volverDeCanales = () => navigateAdmin({ section: "institucion" });
 
 const selectedTable = computed(() => {
   const tableName = graphTabActive.value
