@@ -26,7 +26,11 @@ Los textos para el área jurídica, en [`../legal/`](../legal/).
 | **L9** | La **semilla v1**, por el patrón `/import` que ya existe | ✅ | **Los OBJETOS ya están** en `docker/minio/import/Legal/`, subidos y verificados: las huellas del texto **sobreviven al viaje por MinIO** y cuadran con las que declaraba el SQL (`5e9e846e…` y `9a6773a5…`). Segunda corrida: `0 B transferred`, no sobrescribe. Comprobado además que los borradores de `docs/legal/` **NO son** el texto sembrado — son otros, y menos mal que se miró. **Y la fila la crea `adoptarDelArchivo()`**, que no puede ser un `INSERT` estático porque el `object_version_id` no existe hasta después de subir. Hace **dos** cosas: tabla vacía → indexa; filas legadas sin puntero → **las sella, y SÓLO si la huella cuadra**. Verificado en vivo: las 2 filas de la pila C quedaron selladas con su versión real **sin que la huella cambiara**, lo que prueba que el texto archivado es el mismo que aceptaron los consentimientos existentes | 2026-09-02 |
 | **L10** | **Limpieza integral** de código muerto | ✅ | **Inventario hecho** (2026-09-02): [`inventario-codigo-muerto-2026-09.md`](./inventario-codigo-muerto-2026-09.md) · **EJECUTADA**: 6 ficheros, la ruta `/terminos`, 5 símbolos, la cadena entera de `immediate-boss` y **dos comandos documentados que nunca existieron** · `char 330/330` **sin mover un golden**, que es la prueba de que estaba muerto · y el hallazgo de fondo: **el lint del frontend no cargaba `eslint:recommended`**, así que `no-undef` y `no-unused-vars` **nunca estuvieron activas** — al encenderlas, **1 defecto vivo** y **71 declaraciones muertas**. Detalle en [`inventario-codigo-muerto-2026-09.md`](./inventario-codigo-muerto-2026-09.md) §5 y §6 | 2026-09-03 |
 
-**9 tareas vivas · 8 cerradas · 1 pendiente** (`L10`, la limpieza).
+**9 tareas vivas · 9 cerradas · 0 pendientes.** ✅ **Frente cerrado el 2026-09-03.**
+
+⏳ **Lo único que sigue abierto NO es trabajo nuestro**: que el área legal de la institución revise
+los dos borradores y rellene sus `⟦corchetes⟧`. El mecanismo está entero y probado; lo que falta es
+el texto definitivo, que se publica **desde la pestaña de administración** sin tocar código.
 
 ⚠️ **El denominador subió de 4 a 9 el 2026-09-02**, y no por descubrir trabajo nuevo: lo que era
 *«falta el archivo inmutable»* —una casilla— resultó ser **seis tareas** al medir cómo se comporta de
