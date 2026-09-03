@@ -545,12 +545,6 @@ const resolveFieldPage = (field) => {
   }
   return Number(field.pageValue || field.page || 1);
 };
-const describeFieldPage = (field) => {
-  if (field.pageReference === "end") {
-    return `${field.pageOffset === 0 ? "última" : `${field.pageOffset + 1} desde fin`}`;
-  }
-  return String(field.pageValue || field.page || 1);
-};
 const currentPageFields = computed(() =>
   currentModeFields.value.filter((field) => resolveFieldPage(field) === currentPage.value)
 );
@@ -746,7 +740,7 @@ const getDisplayScale = () => {
 const toPdfUnits = (cssValue) => (cssValue * getDisplayScale()) / pdfScale;
 const toCssUnits = (pdfValue) => (pdfValue * pdfScale) / getDisplayScale();
 
-const updateSharedSelection = (left, top, right, bottom, rectHeight) => {
+const updateSharedSelection = (left, top, right, bottom) => {
   lastSelection.value = {
     page: currentPage.value,
     x1: toPdfUnits(left),
@@ -833,7 +827,7 @@ const handlePointerDown = (event) => {
     const height = toCssUnits(FIELD_HEIGHT);
     const left = Math.min(Math.max(currentX - width / 2, 0), rect.width - width);
     const top = Math.min(Math.max(currentY - height / 2, 0), rect.height - height);
-    updateSharedSelection(left, top, left + width, top + height, rect.height);
+    updateSharedSelection(left, top, left + width, top + height);
     appendField(lastSelection.value);
     activeSelectionBox.value = null;
     return;
@@ -896,7 +890,7 @@ const handlePointerMove = (event) => {
       height: `${Math.max(0, bottom - top)}px`,
       position: "absolute"
     };
-    updateSharedSelection(left, top, right, bottom, rect.height);
+    updateSharedSelection(left, top, right, bottom);
   }
 };
 

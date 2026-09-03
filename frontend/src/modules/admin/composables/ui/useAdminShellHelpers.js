@@ -13,7 +13,6 @@ export function useAdminShellHelpers({
   isForeignKeyField,
   fetchFkLabel,
   getFkCachedLabel,
-  fetchRows,
   selectedRow,
   ensureDeleteInstance,
   getDeleteInstance,

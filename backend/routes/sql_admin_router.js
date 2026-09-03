@@ -27,7 +27,6 @@ import {
   handoverTaskItem,
   listTaskItemHandovers,
   listStuckTaskItems,
-  getImmediateBoss,
   getProcessDefinitionSeriesScope,
   getUnitGraph,
   createUnitWithParent,
@@ -100,7 +99,6 @@ router.post("/task-items/:id/handover", requireSqlAdminPermission({ resource: "t
 // Leer el historial pide `read`, no `update`: consultar por qué cambió un responsable no debería
 // exigir permiso para cambiarlo. Mismo criterio que `/task-items/stuck`, justo arriba.
 router.get("/task-items/:id/handovers", requireSqlAdminPermission({ resource: "templates", action: "read" }), listTaskItemHandovers);
-router.get("/positions/:id/immediate-boss", requireSqlAdminPermission({ resource: "templates", action: "read" }), getImmediateBoss);
 router.get("/process_definitions/:id/series-scope", requireSqlAdminPermission({ resource: "templates", action: "read" }), getProcessDefinitionSeriesScope);
 // Edición de código LaTeX: descarga/re-subida del contrato. SOLO AdminSistema (es código ejecutable).
 router.get("/template_artifacts/:id/source", requireAnyRole(["AdminSistema"]), downloadTemplateArtifactSource);

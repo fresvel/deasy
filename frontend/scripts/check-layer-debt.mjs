@@ -46,7 +46,7 @@
  * que verse en la misma pantalla del editor, no a 250 lineas. La distancia es lo que convierte un
  * conflicto deliberado en uno accidental.
  */
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join, relative } from "node:path";
 
 const RAIZ = new URL("..", import.meta.url).pathname;
@@ -165,7 +165,7 @@ for (const f of ficheros(ESTILOS)) {
             porClave.get(clave).push({ sel: r.sel, linea: r.linea, prop: p });
         }
     }
-    for (const [clave, lista] of porClave) {
+    for (const lista of porClave.values()) {
         if (lista.length < 2) continue;
         lista.sort((a, b) => a.linea - b.linea);
         for (let k = 1; k < lista.length; k++) {

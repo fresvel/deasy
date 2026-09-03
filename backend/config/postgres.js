@@ -520,7 +520,6 @@ const wrappedPool = pool
   : null;
 
 export const getPostgresPool = () => wrappedPool;
-export const getPostgresDatabaseName = () => databaseName;
 
 export const assertPostgresConnection = async () => {
   if (!wrappedPool) {

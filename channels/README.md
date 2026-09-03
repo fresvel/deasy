@@ -1,8 +1,11 @@
 # `channels`
 
-La pasarela de canales de mensajería de Deasy: **sostiene conexiones** con Telegram,
-WhatsApp y un receptor de SMS para que una persona pueda demostrar que un número de
-teléfono es suyo.
+La pasarela de canales de mensajería de Deasy: **sostiene conexiones** con Telegram y
+WhatsApp para que una persona pueda demostrar que un número de teléfono es suyo.
+
+⚠️ Aquí decía «y un receptor de SMS». **El SMS se descartó el 2026-09-01**, y no por esfuerzo: un
+SMS entrante **no prueba el número**, porque su cabecera de origen la rellena el emisor. El motivo
+completo, con sus citas, está en `docs/planes/channels-verificacion-2026-08.md` §C6.
 
 **El diseño completo, con sus porqués, está en
 [`docs/arquitecturas/microservicio-channels.md`](../docs/arquitecturas/microservicio-channels.md).**

@@ -3,7 +3,6 @@ import { API_ROUTES } from "@/core/config/apiConfig";
 
 export function useAdminFkCrud({
   fkTable,
-  fkFilters,
   fkCreateFields,
   fkCreateForm,
   fkCreateError,
@@ -18,7 +17,6 @@ export function useAdminFkCrud({
   applyFkSelection,
   fetchFkRows,
   openRecordViewer,
-  ensureFkInstance,
   getFkInstance,
   ensureFkFilterInstance,
   getFkFilterInstance,

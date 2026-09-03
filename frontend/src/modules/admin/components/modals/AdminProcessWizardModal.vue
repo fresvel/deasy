@@ -202,11 +202,6 @@ const modalTitle = computed(() =>
   props.definitionContext?.id ? "Configuración de proceso" : "Configurar nuevo proceso"
 );
 const showContextSummary = computed(() => Boolean(props.definitionContext?.id && props.currentStep !== "definition"));
-const definitionIntroText = computed(() =>
-  props.definitionContext?.id
-    ? "Revisa la configuración base y navega por paquetes, reglas, disparadores y activación."
-    : "Define el proceso y su primera versión. Después agregarás paquetes, reglas y disparadores antes de activarla."
-);
 const definitionNameLabel = computed(() =>
   props.definitionNamePreview || props.definitionContext?.name || "Pendiente"
 );

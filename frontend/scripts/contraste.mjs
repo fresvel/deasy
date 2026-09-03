@@ -285,7 +285,7 @@ if (process.argv.includes("--gate")) {
 
 if (process.argv.includes("--tabla")) {
   console.log("TOKEN            HOY    MIN  ESTADO  FAMILIA      PASO QUE NO EMPEORA");
-  for (const [nombre, [valor, fondo, min, rol]] of Object.entries(HOY)) {
+  for (const [nombre, [valor, fondo, min]] of Object.entries(HOY)) {
     const antes = contraste(valor, fondo);
     const ok = antes >= min ? "  ok " : "FALLA";
     const familia = FAMILIA[nombre];

@@ -470,51 +470,6 @@ export default class TaskAssignmentService {
   }
 
 
-  // F-C (jefe inmediato): sube por la jerarquía de unidades (relación, org por defecto) y devuelve el ocupante
-  // vigente del PUESTO CABEZA más cercano que no sea la propia persona. Sirve para SUGERIR destino del traspaso.
-  async resolveImmediateBoss({ positionId = null, unitId = null, relationCode = "org" } = {}, connection = this.pool) {
-    let startUnit = normalizeNumericId(unitId);
-    let selfPersonId = null;
-    const posId = normalizeNumericId(positionId);
-    if (posId && !startUnit) {
-      const [pr] = await connection.query(
-        `SELECT up.unit_id, pa.person_id
-           FROM unit_positions up
-           LEFT JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1
-          WHERE up.id = ? LIMIT 1`,
-        [posId]
-      );
-      startUnit = pr?.[0]?.unit_id ? Number(pr[0].unit_id) : null;
-      selfPersonId = pr?.[0]?.person_id ? Number(pr[0].person_id) : null;
-    }
-    if (!startUnit) return { boss_person_id: null };
-    const [rel] = await connection.query("SELECT id FROM relation_unit_types WHERE code = ? LIMIT 1", [relationCode || "org"]);
-    const relId = rel?.[0]?.id ? Number(rel[0].id) : null;
-    if (!relId) return { boss_person_id: null };
-    const [rows] = await connection.query(
-      `WITH RECURSIVE chain AS (
-         SELECT ? AS unit_id, 0 AS depth
-         UNION ALL
-         SELECT ur.parent_unit_id, c.depth + 1
-           FROM unit_relations ur INNER JOIN chain c ON c.unit_id = ur.child_unit_id
-          WHERE ur.relation_type_id = ?
-       )
-       SELECT pa.person_id, head.unit_id, c.depth
-         FROM chain c
-         INNER JOIN unit_positions head ON head.unit_id = c.unit_id AND head.is_unit_head = 1 AND head.is_active = 1
-         INNER JOIN position_assignments pa ON pa.position_id = head.id AND pa.is_current = 1 AND pa.person_id IS NOT NULL
-        WHERE (? IS NULL OR pa.person_id <> ?)
-        ORDER BY c.depth ASC
-        LIMIT 1`,
-      [startUnit, relId, selfPersonId, selfPersonId]
-    );
-    const r = rows?.[0];
-    return r
-      ? { boss_person_id: Number(r.person_id), unit_id: Number(r.unit_id), depth: Number(r.depth) }
-      : { boss_person_id: null };
-  }
-
-
   // F-C (scope por jefe): para el usuario/persona dado, resuelve las unidades que ENCABEZA (is_unit_head con
   // ocupación vigente) + sus descendientes orgánicos, y devuelve los task_items ABIERTOS ATASCADOS ahí: sin
   // persona (huérfanos) o cuyo asignado ya NO ocupa el puesto responsable (titular que se fue). `is_supervisor`

@@ -44,7 +44,7 @@
 
 <script setup>
 import AppTag from "@/shared/components/data/AppTag.vue";
-import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
+import { tonoCicloVida } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import { IconChevronRight, IconFilePlus, IconGitBranch, IconPlus } from "@tabler/icons-vue";

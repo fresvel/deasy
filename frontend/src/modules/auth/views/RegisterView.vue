@@ -290,13 +290,12 @@ import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted, nextTick, useId } from "vue";
 import { tonoFuerza } from "@/shared/utils/estadoTono.js";
 import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
-import { useRouter, useRoute } from "vue-router";
+import { useRouter } from "vue-router";
 import AuthService from "@/modules/auth/services/AuthService";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppLogo from "@/shared/components/layout/AppLogo.vue";
 import AuthLayout from "@/layouts/auth/AuthLayout.vue";
 import PasosDelRegistro from "@/modules/auth/components/PasosDelRegistro.vue";
-import AppTag from "@/shared/components/data/AppTag.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 // Enlaza cada <label for> con su control. useId() da un prefijo distinto por
@@ -311,13 +310,11 @@ import {
   IconAlertCircle,
   IconX,
   IconArrowRight,
-  IconCheck,
-  IconHelp
+  IconCheck
 } from "@tabler/icons-vue";
 
 
 const router = useRouter();
-const route = useRoute();
 
 const newuser = ref({
   password: "",

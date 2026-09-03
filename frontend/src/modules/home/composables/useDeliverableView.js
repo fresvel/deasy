@@ -29,9 +29,7 @@ import { tonoFlujo, tonoAcceso } from '@/shared/utils/estadoTono.js';
 // (con el riesgo de olvidar uno). En vez de eso el composable RECIBE esos refs (patrón admin) y
 // devuelve las funciones con su firma INTACTA: ningún call site se toca.
 export function useDeliverableView({
-  currentUser,
   currentUserId,
-  deliverableWorkspaceState,
   selectedProcessContext,
   selectedProcessPanel,
   startedDeliverableIds,

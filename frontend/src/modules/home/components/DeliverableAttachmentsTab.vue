@@ -68,7 +68,7 @@ import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 // De las 4 pestañas del modal es la de frontera más limpia (7 deps). formatAttachmentSize se
 // importa del módulo de helpers, no se recibe.
 import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
-import { IconUpload, IconDownload, IconFileDescription, IconX } from '@tabler/icons-vue';
+import { IconUpload, IconDownload, IconFileDescription } from '@tabler/icons-vue';
 import { formatAttachmentSize } from '@/modules/home/views/homeView.helpers.js';
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 

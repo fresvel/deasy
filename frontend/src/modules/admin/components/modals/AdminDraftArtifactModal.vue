@@ -1145,7 +1145,6 @@ const loadProcessScope = async (definitionId) => {
 };
 watch(() => props.draftArtifactForm.process_definition_id, (id) => { loadProcessScope(id); }, { immediate: true });
 const processHasRules = computed(() => Boolean(processScope.value?.has_rules));
-const processSupportsContext = computed(() => Boolean(processScope.value?.supports_context));
 // Precarga los cargos resolubles de los pasos por cargo (al abrir/editar o cuando llega el alcance). Va aquí
 // para que processHasRules ya esté declarado al ejecutarse de inmediato.
 watch([fillSteps, processHasRules], ensureResolvableCargosLoaded, { immediate: true });

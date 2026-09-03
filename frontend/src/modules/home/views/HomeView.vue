@@ -3120,7 +3120,6 @@ const {
   selectedProcessKey,
   selectedProcessPanel,
   selectedProcessPanels,
-  loadProcessPanelsForProcesses,
   loadSelectedProcessPanel,
   loadSelectedProcessPanels,
   refreshActiveProcessPanel,
@@ -3141,25 +3140,18 @@ const {
 
 const {
   canApproveFillRequestForPayload,
-  canPreviewInline,
   canRejectFillRequestForPayload,
   canReturnFillRequestForPayload,
   canStartDeliverableAction,
   capitalize,
   currentUserCanOperateFillStep,
-  currentUserCanOperateSignatureStep,
-  getCurrentFillStepCandidates,
   getCurrentFillWorkflowRequest,
   getCurrentSignatureRequestsFromSubject,
   getCurrentSignatureStepOrder,
-  getCurrentSignatureStepOrderFromSubject,
-  getCurrentSignatureWorkflowRequest,
-  getDeliverableAccessSource,
   getDeliverableActionFilterState,
   getDeliverableCardState,
   getDeliverableCurrentResponsibility,
   getDeliverableDateRangeLabel,
-  getDeliverableDocumentTagVariant,
   getDeliverableDueState,
   getDeliverableHeaderActionTone,
   getDeliverableParticipationFlags,
@@ -3176,11 +3168,7 @@ const {
   getFileNameFromPath,
   getFillApproveActionLabelForPayload,
   getFillRequestId,
-  getFillResponsibleName,
-  getSignatureRequestAssignedSummary,
-  getSignatureResponsibleName,
   getSignatureStepAssignedSummary,
-  getSignatureStepsFromSubject,
   getUploadActionLabel,
   hasDeliverableBeenStarted,
   hasFillWorkflowActivity,
@@ -3190,7 +3178,6 @@ const {
   isFillRequestActionableByCurrentUser,
   isPdfWorkingFile,
   isReviewFillRequestForPayload,
-  isSignaturePhaseDocumentStatus,
   resolveUnitNameById,
   shouldShowManageFill,
   shouldShowResetWorkflow,
@@ -3233,7 +3220,6 @@ const {
   removeFirmaStep,
   removeSignerFromStep,
   primaryRecipientFromFlow,
-  loadFlowCatalog,
   resetFlowBuilder,
 } = useFlowBuilder({ clearRecipientSearch, currentUserId, processPanelService });
 // Firmas y centro documental ya tienen ruta y vista propias, asi que HomeView solo sirve /home: se acabo
@@ -5028,7 +5014,6 @@ const resolveDeliverableObservation = async (observation) => {
 };
 
 const openDeliverableWorkspaceModal = async (payload) => {
-  const canManageFill = shouldShowManageFill(payload);
   const canReviewSignatureFlow = shouldShowSignatureFlow(payload);
 
   loadFillWorkflowState(payload);

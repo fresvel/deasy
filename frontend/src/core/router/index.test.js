@@ -35,7 +35,6 @@ vi.mock("@/modules/auth/views/LoginView.vue", () => ({ default: stub("LoginView"
 vi.mock("@/modules/auth/views/RegisterView.vue", () => ({ default: stub("RegisterView") }));
 vi.mock("@/modules/auth/views/RecoverPasswordView.vue", () => ({ default: stub("RecoverPasswordView") }));
 vi.mock("@/modules/auth/views/SystemBootstrapView.vue", () => ({ default: stub("SystemBootstrapView") }));
-vi.mock("@/modules/auth/views/TermsView.vue", () => ({ default: stub("TermsView") }));
 vi.mock("@/modules/auth/views/VerifyEmail.vue", () => ({ default: stub("VerifyEmail") }));
 vi.mock("@/modules/auth/views/RegistroCorreoView.vue", () => ({ default: stub("RegistroCorreo") }));
 vi.mock("@/modules/auth/views/RegistroTelefonoView.vue", () => ({ default: stub("RegistroTelefono") }));
@@ -144,7 +143,13 @@ beforeEach(async () => {
   asAuthenticatedUser();
   // Se aparca en una ruta publica y sin redirecciones: navegar al mismo sitio no vuelve a disparar el
   // guard (vue-router aborta la navegacion duplicada), asi que el punto de partida no puede ser /home.
-  await goTo("/terminos");
+  //
+  // ⚠️ ERA `/terminos`, que se retiro el 2026-09-03 con la vista que servia. Se eligio
+  // `/recover-password` y no otra por descarte MEDIDO: de las publicas que quedan, `/` y `/setup`
+  // REDIRIGEN con sesion valida --el guard manda a la ruta por defecto--, y `/register` se navega en
+  // el primer `goTo` del test de rutas publicas, que quedaria como navegacion duplicada. A
+  // `/recover-password` solo se llega DESPUES de `/register`, asi que nunca es duplicada.
+  await goTo("/recover-password");
   vi.clearAllMocks();
   asAuthenticatedUser();
 });
@@ -160,7 +165,6 @@ describe("tabla de rutas", () => {
     ["/register", "register", "RegisterView"],
     ["/recover-password", "recover-password", "RecoverPasswordView"],
     ["/setup", "system-bootstrap", "SystemBootstrapView"],
-    ["/terminos", "terminos", "TermsView"],
     ["/admin", "admin", "AdminView"],
     ["/procesos", "process-management", "ProcessManagementView"],
     ["/verify-email", "verify-email", "VerifyEmail"]
@@ -295,7 +299,6 @@ describe("guard: sesion", () => {
     localStorage.clear();
     expect(await goTo("/register")).toBe("register");
     expect(await goTo("/recover-password")).toBe("recover-password");
-    expect(await goTo("/terminos")).toBe("terminos");
   });
 
   it("con sesion valida, el login redirige al destino por defecto", async () => {

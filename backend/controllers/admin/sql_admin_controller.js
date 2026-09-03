@@ -415,18 +415,6 @@ export const listStuckTaskItems = async (req, res) => {
   }
 };
 
-// F-C jefe inmediato: ocupante del puesto cabeza más cercano subiendo por la jerarquía de unidades. Sugiere destino.
-export const getImmediateBoss = async (req, res) => {
-  try {
-    const result = await service.resolveImmediateBoss({
-      positionId: req.params.id,
-      relationCode: req.query.relation_code || "org"
-    });
-    res.json(result);
-  } catch (error) {
-    res.status(error.statusCode || 400).json({ message: error.message });
-  }
-};
 
 // Cargo/tipo de unidad que la serie del proceso fija. Lo consume el panel de reglas para precargar y
 // bloquear el cargo (la serie ya decide el cargo; la regla solo añade alcance y entrega).

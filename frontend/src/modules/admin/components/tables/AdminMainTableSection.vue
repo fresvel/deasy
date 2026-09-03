@@ -429,23 +429,7 @@ const isRowEditable = (row) =>
 const isRowDeletable = (row) =>
   !isProcessDefinitionVersionsTable.value || String(row?.status || "").toLowerCase() === "draft";
 
-const searchColumnClass = computed(() => (
-  props.isPositionFilterTable ? "lg:col-span-3" :
-    props.isProcessDefinitionFilterTable ? "md:col-span-6 lg:col-span-2" :
-      props.isProcessTargetRuleFilterTable ? "md:col-span-6 lg:col-span-3" :
-        // template_artifacts: con filtros ocultos imita a la tabla de seeds (search ancho); al
-        // expandir el filtro de etapa se estrecha para dar espacio.
-        props.isTemplateArtifactsTable ? (showAdvancedFilters.value ? "md:col-span-6 lg:col-span-3" : "md:col-span-6") :
-          "md:col-span-6"
-));
 
-const actionColumnClass = computed(() => (
-  props.isPositionFilterTable ? "lg:col-span-2 lg:justify-self-end" :
-    props.isProcessDefinitionFilterTable ? "lg:col-span-3 lg:justify-self-end" :
-      props.isProcessTargetRuleFilterTable ? "lg:col-span-3 lg:justify-self-end" :
-        props.isTemplateArtifactsTable ? (showAdvancedFilters.value ? "md:col-span-12 md:justify-self-end lg:col-span-6 lg:justify-self-end" : "md:col-span-6 md:justify-self-end") :
-          "md:col-span-6 md:justify-self-end"
-));
 const hasExpandableFilters = computed(() =>
   props.isPositionFilterTable ||
   props.isProcessDefinitionFilterTable ||

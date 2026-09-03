@@ -222,7 +222,6 @@ import { computed, ref } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
   IconFileDescription,
-  IconInbox,
   IconPlus,
   IconSettings
 } from "@tabler/icons-vue";

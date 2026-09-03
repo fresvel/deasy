@@ -2,7 +2,6 @@ import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
 export function useAdminSearchFilters({
-  props,
   formData,
   fkDisplay,
   fkTable,
@@ -27,7 +26,6 @@ export function useAdminSearchFilters({
   getUnitPositionSearchInstance,
   isUnitPositionsTable,
   isPositionAssignmentsTable,
-  isPositionFilterTable,
   fetchRows,
   loadVacantPositions,
   loadUnassignedTemplateArtifacts,

@@ -1,4 +1,3 @@
-import { useRouter } from 'vue-router';
 import { isTokenExpired } from '@/core/utils/tokenUtils';
 
 /**
@@ -6,7 +5,6 @@ import { isTokenExpired } from '@/core/utils/tokenUtils';
  * Detecta cuando el token está por expirar y muestra un modal
  */
 export function useSessionMonitor(sessionModalRef) {
-  const router = useRouter();
   let checkInterval = null;
   let warningShown = false;
 

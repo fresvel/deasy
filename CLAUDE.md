@@ -334,7 +334,7 @@ la bitácora y la auditoría, en **`docs/planes/sistema-diseno-componentes/`**. 
 
 ```bash
 bash scripts/docker-env.sh dev up -d docs                        # levanta el sitio -> http://localhost:4321
-bash scripts/docker-env.sh dev exec -T docs pnpm run build       # 24 paginas de contenido (el build dice 25: suma el 404)
+bash scripts/docker-env.sh dev exec -T docs pnpm run build       # 51 paginas de contenido (el build dice 52: suma el 404)
 bash scripts/docker-env.sh dev exec docs pnpm add <paquete>      # dependencias: DENTRO del contenedor
 ```
 

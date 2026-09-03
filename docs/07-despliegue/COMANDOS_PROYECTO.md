@@ -328,23 +328,14 @@ valor por defecto**: si falta, el script se para. En `dev` y `qa` es **1 dia** p
 dejaria documentos indelebles acumulandose para siempre--; en `prod` son **3650** (10 anos).
 Un bloqueo `COMPLIANCE` **no se puede acortar** despues.
 
-Publicar seeds de plantillas en `dev`:
+⚠️ **AQUI HABIA DOS COMANDOS QUE NO EXISTEN**, y estuvieron documentados meses:
+`minio-publish-seeds` (perfil `storage-publish-seeds`) y `minio-publish` (perfil
+`storage-publish`). Comprobado el 2026-09-03: **ni los servicios, ni los perfiles, ni las carpetas
+que decian leer** (`tools/templates/seeds/` y `tools/templates/dist/Plantillas`) estan en el
+repositorio. Quien los copiara se llevaba un error desconcertante.
 
-```bash
-bash scripts/docker-env.sh dev --profile storage-publish-seeds run --rm --no-deps minio-publish-seeds
-```
-
-Publicar plantillas generadas en `dev`:
-
-```bash
-bash scripts/docker-env.sh dev --profile storage-publish run --rm --no-deps minio-publish
-```
-
-El comando `storage-publish-seeds` toma los archivos desde
-`tools/templates/seeds/` y los sube al bucket configurado en
-`MINIO_TEMPLATES_BUCKET`, bajo el prefijo `MINIO_TEMPLATES_SEEDS_PREFIX`.
-El comando `storage-publish` toma archivos desde `tools/templates/dist/Plantillas`;
-si esa carpeta no existe o esta vacia, primero hay que generar las plantillas.
+Los seeds de plantillas entran hoy por el **mismo camino que todo lo demas**: se ponen en
+`docker/minio/import/Seeds/` y los sube `bootstrap.sh` con el perfil `storage-init` de arriba.
 
 ## Comandos por ambiente
 

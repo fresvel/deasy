@@ -411,43 +411,6 @@ export const normalizeSignatureSteps = (
     .sort((left, right) => left.stepOrder - right.stepOrder);
 };
 
-export const collectSignatureWorkflowNormalizationIssues = (
-  workflow = {},
-  { cargoCodeMap = new Map(), unitTypeNameMap = new Map() } = {}
-) => {
-  const rawSteps = Array.isArray(workflow?.steps) ? workflow.steps : [];
-  const issues = [];
-  for (const [index, step] of rawSteps.entries()) {
-    if (!step || typeof step !== "object") {
-      continue;
-    }
-
-    const stepOrder = Number(step.order) || index + 1;
-    const stepCode = String(step.code || "").trim() || `step_${stepOrder}`;
-
-    // Misma lectura que normalizeSignatureSteps: firmantes en `signers[]` (o el `resolver` único legacy).
-    const rawSigners = Array.isArray(step.signers) && step.signers.length
-      ? step.signers
-      : (step.resolver ? [step.resolver] : []);
-    const declaredSigners = rawSigners.filter((s) => s && typeof s === "object");
-    if (!declaredSigners.length) {
-      continue; // sin firmantes declarados: no es un problema de resolución de cargo
-    }
-
-    // Un firmante por-cargo sin cargo resoluble (ni cargo_id ni cargo_code) lo descarta el normalizador. Solo es
-    // un error si el paso se queda SIN ningún firmante válido (otros tipos —task_assignee, etc.— no necesitan cargo).
-    const validSigners = declaredSigners
-      .map((signer) => normalizeSignatureSigner(signer, { cargoCodeMap, unitTypeNameMap }))
-      .filter((signer) => signer.resolverType !== "cargo_in_scope" || signer.requiredCargoId);
-    if (!validSigners.length) {
-      const badCargos = declaredSigners
-        .map((signer) => String(signer.cargo_code || signer.required_cargo_code || signer.cargo_id || "").trim())
-        .filter(Boolean);
-      issues.push(`Paso ${stepOrder} (${stepCode}): cargo no resuelto (${badCargos.join(", ") || "vacío"}).`);
-    }
-  }
-  return issues;
-};
 
 // Resuelve un cargo del paso (por id o por código/alias) contra el catálogo, para validar referencias.
 export const resolveStepCargoId = (resolver = {}, fallbackCode = "", cargoCodeMap = new Map()) => {

@@ -274,14 +274,14 @@ coherente con el derecho, pero conviene que sea deliberado y no un efecto secund
 
 ## 5 · Lo que arregla la cadena rota: **el texto se sirve por el BACKEND**
 
-Hoy el navegador pide `/terms.md` al frontend. **Eso tiene que cambiar**, y es la mitad del valor de
+✅ **HECHO el 2026-09-03.** El navegador pedía `/terms.md` al frontend, y era la mitad del valor de
 este diseño:
 
 ```
-     HOY                                     PROPUESTO
-navegador ──/terms.md──▶ frontend      navegador ──/legal/terminos──▶ backend ──▶ MinIO
-                                                                        │
-              backend (no lo ve)                            devuelve TEXTO + id + huella
+     ANTES                                    AHORA
+navegador ──/terms.md──▶ frontend      navegador ──/legal/documentos──▶ backend ──▶ MinIO
+                                                                          │
+              backend (no lo veía)                          devuelve TEXTO + id + huella
 ```
 
 **Y al aceptar, el navegador devuelve el `id` que le dieron.** El backend comprueba que ese
@@ -367,11 +367,15 @@ Un recurso RBAC propio, `legal_documents`, con la misma separación que se usó 
 ⚠️ **Editar un borrador y publicarlo son permisos distintos a propósito**, por lo mismo que en
 `channels`: quien redacta no tiene por qué poder archivar algo para diez años.
 
-### ¿Y el fichero de hoy?
+### ¿Y el fichero de antes?
 
-`frontend/public/terms.md` **se borra** cuando la versión 1 esté publicada. Dejarlo sería tener dos
-textos con la misma pinta y sin forma de saber cuál rige — que es exactamente el problema que este
-diseño resuelve.
+✅ **Borrado el 2026-09-03**, junto con `TermsView.vue` y la ruta `/terminos` que lo servía. Dejarlo
+habría sido tener dos textos con la misma pinta y sin forma de saber cuál rige — exactamente el
+problema que este diseño resuelve.
+
+⚠️ **La ruta llevaba sin un solo enlace entrante desde que el registro pasó a usar el modal.** Lo
+único que la mencionaba era su propio test, así que no la echó de menos nadie — y aun así seguía
+alcanzable tecleando la URL, sirviendo un texto que ya no era el vigente.
 
 ## 6 · Qué pasa cuando el texto cambia
 

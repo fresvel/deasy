@@ -175,58 +175,7 @@ const goBackFromProfileHome = () => {
         investigacion: 0
     });
 
-    const buildPerfilMenu = () => ([
-        {
-            label: 'Inicio',
-            key: null,
-            icon: 'user',
-            active: true,
-        },
-        {
-            label: 'Formación',
-            key: 'formacion',
-            icon: 'certificate',
-            active: false,
-        },
-        {
-            label: 'Experiencia',
-            key: 'experiencia',
-            icon: 'check-double',
-            active: false,
-        },
-        {
-            label: 'Referencias',
-            key: 'referencias',
-            icon: 'id-card',
-            active: false,
-        },
-        {
-            label: 'Capacitación',
-            key: 'capacitacion',
-            icon: 'square-check',
-            active: false,
-        },
-        {
-            label: 'Certificación',
-            key: 'certificacion',
-            icon: 'check-circle',
-            active: false,
-        },
-        {
-            label: 'Investigación',
-            key: 'investigacion',
-            icon: 'certificate',
-            active: false,
-        },
-        {
-            label: 'Certificados de firma',
-            key: null,
-            icon: 'id-card',
-            active: false,
-        }
-    ]);
 
-    const mainmenu=ref(buildPerfilMenu())
     
     
     const loadDossierCounts = async () => {
@@ -303,7 +252,6 @@ const profileContextSubtitle = computed(() =>
   activeSection.value ? '' : 'Vista general de tu perfil académico y profesional'
 );
 
-    const process= ref("Inicio")
 
     let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true;
 
@@ -316,7 +264,6 @@ const profileContextSubtitle = computed(() =>
         }
     };
 
-    const area= ref("Perfil")
     const showDossierMenu = ref(true);
     
     

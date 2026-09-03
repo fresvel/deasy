@@ -55,19 +55,6 @@ const ADMIN_TABLE_RESOURCE_MAP = {
 
 const DEFAULT_ADMIN_RESOURCE = "process_definitions";
 const SYSTEM_ADMIN_ROLES = ["AdminSistema"];
-const MANAGEMENT_RESOURCES = [
-  "security",
-  "people",
-  "units",
-  "academic_terms",
-  "process_definitions",
-  "process_execution",
-  "templates",
-  "fill_flows",
-  "signature_flows",
-  "contracts"
-];
-
 export const getStoredUser = () => {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem("user");
@@ -164,23 +151,6 @@ export const canAccessAdmin = (user = getStoredUser()) =>
   ["security"].some((resource) =>
     canAccessResource(resource, "read", user)
   );
-
-export const canAccessManagement = (user = getStoredUser()) =>
-  hasAnyRole([
-    "AdminSistema",
-    "GestorSeguridad",
-    "GestorTalentoHumano",
-    "GestorUnidades",
-    "GestorAcademico",
-    "GestorProcesos",
-    "GestorPlantillas",
-    "GestorEjecucionProcesos",
-    "GestorDocumental",
-    "GestorFirmas",
-    "GestorContratacion",
-    "Auditor"
-  ], user) ||
-  MANAGEMENT_RESOURCES.some((resource) => canAccessResource(resource, "read", user));
 
 export const canAccessProcessManagement = (user = getStoredUser()) =>
   hasAnyRole([

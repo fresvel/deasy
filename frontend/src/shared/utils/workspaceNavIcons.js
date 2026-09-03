@@ -5,13 +5,11 @@ import {
   IconCertificate,
   IconChecklist,
   IconFileDescription,
-  IconGlobe,
   IconHome,
   IconInbox,
   IconInfoCircle,
   IconLink,
   IconLock,
-  IconMapPins,
   IconMicroscope,
   IconSchool,
   IconSearch,
@@ -55,13 +53,6 @@ export const resolveWorkspaceSectionIcon = (name = '') => {
   return createIconMeta(IconChecklist, 'sky');
 };
 
-export const resolveWorkspaceCargoIcon = (name = '') => {
-  const normalized = String(name).toLowerCase();
-  if (normalized.includes('docen')) return createIconMeta(IconSchool, 'sky');
-  if (normalized.includes('coord')) return createIconMeta(IconBuildingMonument, 'sky');
-  if (normalized.includes('admin')) return createIconMeta(IconLock, 'slate');
-  return createIconMeta(IconChecklist, 'sky');
-};
 
 export const resolveWorkspaceProcessIcon = (process = {}) => {
   const normalized = String(process?.name || '').toLowerCase();
@@ -77,15 +68,6 @@ export const resolveWorkspaceProcessIcon = (process = {}) => {
   return createIconMeta(IconChecklist, 'sky');
 };
 
-export const resolveWorkspaceUnitGroupIcon = (group = {}) => {
-  const label = `${group?.label ?? ''} ${group?.name ?? ''}`.toLowerCase();
-  if (label.includes('consol')) return createIconMeta(IconChecklist, 'sky');
-  if (label.includes('univers')) return createIconMeta(IconGlobe, 'sky');
-  if (label.includes('facult')) return createIconMeta(IconMapPins, 'sky');
-  if (label.includes('carrera')) return createIconMeta(IconSchool, 'sky');
-  if (label.includes('depart')) return createIconMeta(IconBuildingMonument, 'sky');
-  return createIconMeta(IconBuildingMonument, 'sky');
-};
 
 export const resolveWorkspaceProfileMenuIcon = (iconName = '', label = '') => {
   const normalizedIcon = String(iconName).toLowerCase();

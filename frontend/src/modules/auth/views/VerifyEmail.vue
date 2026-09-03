@@ -33,7 +33,7 @@
           class="flex-1 w-full min-w-0 h-12 sm:h-14 text-center text-lg sm:text-2xl font-bold text-strong border outline-none transition-all"
           v-model="code[index]"
           @input="onInput(index, $event)"
-          @keydown.backspace="onBackspace(index, $event)"
+          @keydown.backspace="onBackspace(index)"
           @paste.prevent="onPaste"
         />
       </div>
@@ -107,7 +107,7 @@ const onInput = async (index, event) => {
   }
 }
 
-const onBackspace = async (index, event) => {
+const onBackspace = async (index) => {
   if (!code.value[index] && index > 0) {
     const prevInput = inputs.value[index - 1]
     if (prevInput) {

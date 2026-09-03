@@ -25,7 +25,6 @@ import { join } from "node:path";
 const SRC = process.argv[2] ?? "src";
 const TECHO = 0;   /* trinquete: G3 quedo limpio el 2026-08-15 y de ahi no sube */
 
-const VOID = new Set(["input", "img", "br", "hr", "meta", "link", "source", "area", "col"]);
 const PULSABLE = /^(button|AppButton|AdminButton|AppCloseButton|AppDeleteButton)$/;
 
 /* Lo que hace desaparecer al contenedor */

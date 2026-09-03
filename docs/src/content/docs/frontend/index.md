@@ -100,7 +100,9 @@ Porque vue-router **hereda el `meta` a las rutas hijas**. `/perfil` tiene ocho h
 
 :::
 
-Las rutas públicas son `/`, `/register`, `/recover-password`, `/terminos` y `/setup`. La ruta `/logout` no tiene componente: solo un `beforeEnter` que llama al backend, limpia y devuelve `/`.
+Las rutas públicas son `/`, `/register`, `/recover-password` y `/setup`. La ruta `/logout` no tiene componente: solo un `beforeEnter` que llama al backend, limpia y devuelve `/`.
+
+⚠️ **`/terminos` estuvo en esta lista y se retiró el 2026-09-03**, con la vista que servía. Leía un `public/terms.md` estático que el backend no podía ver, así que **el texto que se enseñaba y la huella que se guardaba venían de sitios distintos**. Hoy los textos legales los sirve el backend desde MinIO y se aceptan en el propio registro, cada uno con su casilla.
 
 :::note[Coste a tener en cuenta]
 

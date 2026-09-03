@@ -4,7 +4,6 @@ import Register from "@/modules/auth/views/RegisterView.vue";
 import RecoverPassword from "@/modules/auth/views/RecoverPasswordView.vue";
 import RecoverEmail from "@/modules/auth/views/RecoverEmailView.vue";
 import SystemBootstrapView from "@/modules/auth/views/SystemBootstrapView.vue";
-import TermsView from "@/modules/auth/views/TermsView.vue";
 import VerifyEmail from "@/modules/auth/views/VerifyEmail.vue";
 import RegistroCorreo from "@/modules/auth/views/RegistroCorreoView.vue";
 import RegistroTelefono from "@/modules/auth/views/RegistroTelefonoView.vue";
@@ -63,7 +62,6 @@ const routes = [
   // «Olvidé mi correo», que NO es «olvidé mi contraseña»: pide el documento y la contraseña.
   { path: "/recover-email", name: "recover-email", component: RecoverEmail },
   { path: "/setup", name: "system-bootstrap", component: SystemBootstrapView },
-  { path: "/terminos", name: "terminos", component: TermsView },
   { path: "/admin/:section?/:item?/:table?", name: "admin", component: AdminView, meta: { requiresAdminAccess: true } },
   { path: "/procesos", name: "process-management", component: ProcessManagementView, meta: { requiresProcessManagementAccess: true, managementSection: "processes" } },
   { path: '/verify-email', name: 'verify-email', component: VerifyEmail },
@@ -93,7 +91,7 @@ const router = createRouter({
 
 router.beforeEach(async (to) => {
   const token = localStorage.getItem('token');
-  const publicRoutes = ['/', '/register', '/recover-password', '/terminos', '/setup'];
+  const publicRoutes = ['/', '/register', '/recover-password', '/setup'];
   let bootstrapStatus = null;
 
   try {

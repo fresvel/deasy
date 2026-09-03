@@ -32,7 +32,6 @@ export function useProcessDefinitionManager({
   definitionArtifactsPromptContext,
   processDefinitionChecklistLoading,
   processDefinitionChecklist,
-  definitionTriggerRequiresTermType,
   canManageDefinitionRules,
   canManageDefinitionTriggers,
   canManageDefinitionArtifacts,

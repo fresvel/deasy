@@ -1463,15 +1463,6 @@ const fkCreateForm = ref({});
 const fkCreateError = ref("");
 const fkCreateLoading = ref(false);
 const fkProcessDefinitionProcessOptions = ref([]);
-const fkProcessDefinitionSeriesOptions = computed(() =>
-  Array.from(
-    new Set(
-      (fkRows.value || [])
-        .map((row) => (row?.variation_key ? String(row.variation_key).trim() : ""))
-        .filter(Boolean)
-    )
-  ).sort((left, right) => left.localeCompare(right, "es"))
-);
 const fkPositionFilters = ref({
   unit_type_id: "",
   unit_id: "",
@@ -2123,15 +2114,6 @@ const mainSectionVisible = computed(() =>
 );
 
 const tableHeaderTitle = computed(() => props.table?.label || "Administracion SQL");
-const tableHeaderSubtitle = computed(() => {
-  if (!props.table) {
-    return "Gestiona registros en la base de datos.";
-  }
-  if (isPersonTable.value) {
-    return `Gestiona registros en ${props.table.table} y sus asignaciones relacionadas.`;
-  }
-  return `Gestiona registros en ${props.table.table}.`;
-});
 const personAssignmentName = computed(() => {
   if (!personAssignmentContext.value) {
     return "";
@@ -2161,47 +2143,6 @@ const recordViewerDisplayRows = computed(() =>
     label: field.label || field.name
   }))
 );
-const tableHeaderIcon = computed(() => {
-  const tableName = props.table?.table || "";
-  if (
-    [
-      "processes",
-      "process_definition_versions",
-      "process_target_rules",
-      "tasks",
-      "task_item_tenures",
-      "template_artifacts",
-      "process_definition_templates"
-    ].includes(tableName)
-  ) {
-    return "check-double";
-  }
-  if (["persons", "unit_positions", "position_assignments"].includes(tableName)) {
-    return "user";
-  }
-  if (["roles", "permissions", "role_permissions", "role_assignments"].includes(tableName)) {
-    return "lock";
-  }
-  if (["vacancies", "aplications", "offers", "contracts", "vacancy_visibility"].includes(tableName)) {
-    return "id-card";
-  }
-  if (
-    [
-      "documents",
-      "document_versions",
-      "document_signatures",
-      "signature_statuses",
-      "signature_request_statuses",
-      "signature_flow_templates",
-      "signature_flow_steps",
-      "signature_flow_instances",
-      "signature_requests"
-    ].includes(tableName)
-  ) {
-    return "certificate";
-  }
-  return "info-circle";
-});
 
 const allTablesMap = computed(() =>
   Object.fromEntries(props.allTables.map((table) => [table.table, table]))
@@ -2215,7 +2156,6 @@ const formatDateTimeHour = (value) => adminPresentationService.formatDateTimeHou
 const formatPositionType = (value) => adminPresentationService.formatPositionType(value);
 const formatSelectOptionLabel = (field, value) => adminPresentationService.formatSelectOptionLabel(field, value);
 const hasSelectOptionLabels = (fieldName) => adminPresentationService.hasSelectOptionLabels(fieldName);
-const prettifyFormatName = (value) => adminPresentationService.prettifyFormatName(value);
 const getFileNameFromObjectKey = (value) => adminPresentationService.getFileNameFromObjectKey(value);
 const normalizeAvailableFormats = (value) => adminPresentationService.normalizeAvailableFormats(value);
 const getAvailableFormatSections = (value) => adminPresentationService.getAvailableFormatSections(value);
@@ -3131,13 +3071,19 @@ const handleUploadTemplateSource = async (file) => {
   }
 };
 
+/* Las instancias de `Modal` son `let` PRIVADOS de `useAdminModalRegistry`: desde aquí sólo se
+   llega por sus captadores, ya destructurados arriba. Hasta el 2026-09-03 estas dos funciones
+   nombraban la variable del registro (`definitionArtifactsPromptInstance`,
+   `processDefinitionActivationInstance`) y lanzaban `ReferenceError` al llamarlas — el `?.` no
+   protege de un identificador no declarado, sólo `typeof` lo hace. Lo cubre
+   `AdminTableManager.test.js`. */
 const hideDefinitionArtifactsPromptModal = () => {
-  definitionArtifactsPromptInstance?.hide();
+  getDefinitionArtifactsPromptInstance()?.hide();
   definitionArtifactsPromptContext.value = null;
 };
 
 const hideProcessDefinitionActivationModal = () => {
-  processDefinitionActivationInstance?.hide();
+  getProcessDefinitionActivationInstance()?.hide();
 };
 
 const {
@@ -3148,9 +3094,7 @@ const {
   resetPersonContractForm,
   clearPersonContractPosition,
   resetPersonAssignments,
-  prefetchPersonCargoUnitLabels,
   formatPersonCargoUnit,
-  loadPersonAssignments,
   openPersonAssignments,
   openPersonCargoFkSearch,
   openPersonRoleFkSearch,
@@ -3215,7 +3159,6 @@ const {
   handleDefinitionRuleScopeChange,
   handleDefinitionRuleRecipientPolicyChange,
   refreshProcessDefinitionChecklist,
-  loadDefinitionRules,
   openDefinitionRulesManager,
   closeDefinitionRulesManager,
   acceptDefinitionRulesManager,
@@ -3228,7 +3171,6 @@ const {
   startDefinitionRuleEdit,
   submitDefinitionRule,
   deleteDefinitionRule,
-  loadDefinitionTriggers,
   openDefinitionTriggersManager,
   closeDefinitionTriggersManager,
   acceptDefinitionTriggersManager,
@@ -3318,7 +3260,6 @@ const {
 });
 
 const {
-  fetchUnitPositionsForCurrentFilters,
   loadVacantPositions,
   loadUnassignedTemplateArtifacts,
   fetchRows
@@ -3363,10 +3304,8 @@ const {
 const {
   loadProcessDefinitionActivationDetail,
   openProcessDefinitionActivationModal,
-  closeProcessDefinitionActivationModal,
   openProcessDefinitionActivationForRow,
   cancelProcessDefinitionActivation,
-  openDefinitionEditorFromActivation,
   handleProcessDefinitionActivationPrimaryAction,
   confirmProcessDefinitionActivation,
   cancelProcessDefinitionEdit,
@@ -4246,7 +4185,6 @@ const {
   applyDocumentFilter,
   clearDocumentFilter,
   clearDocumentTaskFilter,
-  refreshUnitPositionScope,
   handleUnitPositionTypeChange,
   handleUnitPositionUnitChange,
   handleUnitPositionCargoChange,

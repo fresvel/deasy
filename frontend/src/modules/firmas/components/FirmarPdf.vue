@@ -947,7 +947,7 @@ import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
   import axios from '@/core/services/httpClient';
   import { pdfjsLib } from '@/core/utils/pdfjsSetup';
   import { Modal } from '@/shared/utils/modalController';
-  import { IconArrowLeft, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconListCheck, IconInbox } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconListCheck, IconInbox } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/core/config/apiConfig';
   import AppTag from '@/shared/components/data/AppTag.vue';
   import AppDataTable from '@/shared/components/data/AppDataTable.vue';
@@ -1059,7 +1059,7 @@ const fieldId = (name) => `${uid}-${name}`;
   const colPdf=ref(null)
   let pdfDoc = null;
   let renderTask = null;
-  const pdfViewer=ref(null), pdfCanvas=ref(null), coordinatesDisplay=ref(null);
+  const pdfViewer=ref(null), pdfCanvas=ref(null);
   const currentPage = ref(1);
   const pageInput = ref(1);
   const totalPages = ref(0);
@@ -1132,8 +1132,6 @@ const fieldId = (name) => `${uid}-${name}`;
   const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
   let isDragging = false;
-  let startX = 0;
-  let startY = 0;
   let activeBox = null;
   const pendingDeleteFieldId = ref(null);
   const availableCertificates = ref([]);
@@ -1791,14 +1789,6 @@ const fieldId = (name) => `${uid}-${name}`;
       }
     };
 
-    const openMultiSigner = () => {
-      resetToStart();
-      multiSignerSeedFiles.value = [];
-      multiSignerSeedDocuments.value = [];
-      allowManualMultiSignerUpload.value = true;
-      enableMultiSignerDocumentFilters.value = false;
-      workspaceMode.value = 'multi';
-    };
 
     const closeMultiSigner = () => {
       if (props.multiOnly) {
@@ -1883,7 +1873,7 @@ const fieldId = (name) => `${uid}-${name}`;
         }
         const data = await response.json();
         userResults.value = Array.isArray(data) ? data : [];
-      } catch (error) {
+      } catch {
         userSearchError.value = 'No se pudo cargar la lista de usuarios.';
         userResults.value = [];
       } finally {

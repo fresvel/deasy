@@ -657,16 +657,6 @@ const handleHeroBack = () => {
   router.push('/home');
 };
 
-const groupIconMap = {
-  institucion: "map-marked-alt",
-  procesos: "check-double",
-  tareas: "square-check",
-  documentos: "file",
-  usuarios: "user",
-  contratos: "id-card",
-  seguridad: "lock",
-  otros: "circle"
-};
 
 
 const resolveIconMeta = (iconName, label = "") => {

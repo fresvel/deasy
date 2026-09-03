@@ -296,7 +296,7 @@ import {
   IconX
 } from '@tabler/icons-vue';
 
-const props = defineProps({
+defineProps({
   currentPersonId: {
     type: [Number, String],
     default: null

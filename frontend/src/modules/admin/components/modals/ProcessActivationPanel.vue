@@ -196,5 +196,4 @@ const requirements = computed(() => [
   { key: "artifacts", label: "Plantilla vinculada", done: props.hasActiveArtifacts }
 ]);
 const completedRequirements = computed(() => requirements.value.filter((r) => r.done).length);
-const allRequirementsMet = computed(() => completedRequirements.value === requirements.value.length);
 </script>

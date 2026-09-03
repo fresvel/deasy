@@ -578,13 +578,21 @@ Tres cosas que hay que saber y no son evidentes:
    `overflow-x-auto` heredado basta. Los dos problemas se parecen y no tienen nada que ver; subir el
    número no arregla el segundo.
 
-⚠️ **CORRECCIÓN (2026-08-24): el gate `check:z-index` NO EXISTE.** Se documentó aquí y en el
-`CLAUDE.md` raíz como si estuviera activo, y no está en `frontend/package.json`. La regla es
-correcta y sigue vigente; lo que falta es el gate que la sostenga. Lo que SÍ existen son 17 gates
-del frontend, listados con `pnpm run`. El texto original decía: el gate lo sostiene con tres
-señales a techo cero — utilidad numérica en plantilla,
-`z-index` literal en el CSS propio y `zIndex` literal en JavaScript — y una única excepción
-declarada, que es el fichero que reparte (ver §6.2).
+⚠️⚠️ **LA «CORRECCIÓN» QUE HABÍA AQUÍ ERA FALSA, y estuvo diez días.** Decía, con fecha del
+2026-08-24, que *«el gate `check:z-index` NO EXISTE»*. **Existe**: es
+`frontend/scripts/check-z-index.mjs` y corre dentro de `pnpm run lint`. Comprobado el 2026-08-26 y
+**vuelto a comprobar el 2026-09-03**, donde la salida del lint imprime literalmente
+`check:z-index OK — ninguna altura sin nombre (S1 0/0 · S2 0/0 · S3 0/0)`.
+
+**Cómo se equivocó la auditoría, que es lo que hay que aprender**: buscó **el alias de npm** en
+`package.json` en vez de **el fichero**. Y no lo tiene — se ejecuta desde la cadena de `lint`, así
+que `pnpm run check:z-index` no existe pero **el gate sí**. Confundir *«no hay atajo»* con *«no hay
+puerta»* es un error de método, no de dato: **se comprueba con `ls`, no con `grep` en el
+`package.json`**.
+
+El gate lo sostiene con tres señales a techo cero — utilidad numérica en plantilla, `z-index`
+literal en el CSS propio y `zIndex` literal en JavaScript — y una única excepción declarada, que es
+el fichero que reparte (ver §6.2).
 
 ### 5.6 Densidad: cuidado con las tablas
 
@@ -706,10 +714,31 @@ bash scripts/stack.sh b exec -T frontend node scripts/contraste.mjs --tabla
 bash scripts/stack.sh b exec -T frontend node scripts/contraste.mjs muted=gray-600 primary=brand-500
 ```
 
-**`lint` CONSTRUYE y encadena los siete gates y stylelint desde el 2026-08-14**: `build` →
-`eslint` → `check:no-dark` → `check:orphan-classes` → `check:no-arbitrary` → `check:color-theme` →
-`check:css-prune` → `check:contraste` → `lint:css`. Son **7,3 s** en total. Cada uno sigue siendo
-llamable por separado para depurar.
+**`lint` CONSTRUYE y encadena los gates y stylelint desde el 2026-08-14**: `build` → `eslint` →
+`check:no-dark` → `check:orphan-classes` → … → `check:contraste` → `lint:css`. **Son 27 eslabones
+el 2026-09-03** (este texto decía «los siete», de cuando lo eran). Cada uno sigue siendo llamable
+por separado para depurar — salvo `check:z-index`, que no tiene alias propio y sólo corre desde la
+cadena.
+
+⚠️ **Y el primer eslabón, `eslint`, estuvo AÑOS medio ciego.** `eslint.config.cjs` **nunca cargó
+`eslint:recommended`**: sólo `vue/flat/essential` y cuatro reglas propias, así que **ni `no-undef` ni
+`no-unused-vars` estaban activas**. Se activaron el **2026-09-03**, y lo que salió al encenderlas
+mide el hueco:
+
+| | |
+|---|---|
+| `no-undef` | **2 reales** — y uno era un **defecto vivo**: «Gestionar reglas» y «Gestionar plantilla vinculada» desde el modal de activación lanzaban `ReferenceError` |
+| `no-unused-vars` | **71**, entre ellas 60 líneas de restos de la época FontAwesome y cuatro funciones de una capacidad que nunca se cableó |
+
+**Lo que costó no tenerlas**, y es el argumento de que no vuelvan a apagarse: el `IconMessage2` de
+`AdminView.vue` se usaba **sin importar**, y en `<script setup>` eso no es un error de compilación
+—es `undefined`—, así que la tarjeta salía sin icono y **no lo vio ni el build, ni el lint, ni
+ninguna de las otras 26 puertas**. Lo encontró una persona mirando la pantalla.
+
+⚠️ **`no-undef` necesita `globals`** (paquete `globals`, `globals.browser`) o da falsos positivos con
+`window`, `HTMLElement`, `URLSearchParams`… Hay **tres bloques** en la config: el base, uno de
+`globals.node` para `scripts/**`, y uno de `globals.vitest` **sólo** para `**/*.test.{js,mjs}` — a
+propósito separado, para que el resto de `src/` no pueda nombrar `vi`.
 
 ⚠️ **Construye a propósito, y no es un rodeo: `check:orphan-classes` mide contra el CSS CONSTRUIDO.**
 Es el único sitio donde consta qué existe de verdad — Tailwind no tiene un catálogo fijo de
