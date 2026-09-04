@@ -399,7 +399,7 @@ erDiagram
     int campo_nacional_id FK "NOT NULL"
     text nivel "CHECK · AQUI vive el nivel"
     text origen "CHECK · catalogo_nacional | registro_local"
-    varchar nombre "unico por (pais, nombre)"
+    varchar nombre "unico por (pais, nombre, NIVEL)"
     varchar nombre_norm
     smallint is_active
     date vigente_hasta "nulable"
@@ -523,7 +523,7 @@ Para calibrar: la geografía ya sembrada son **477 filas** y la CINE-F **220**; 
 | | Por qué no |
 |---|---|
 | **`carreras` con dos claves ajenas** (`campo_nacional_id` **o** `campo_detallado_id`, con `CHECK`) | Dependencia transitiva y bifurcación en toda consulta |
-| **Anclar a la CINE-F y usar lo nacional como consulta** (tabla de alias, resuelta con `LEFT JOIN`) | **Pierde resolución, y está medido**: la lista nacional es más fina —383 campos detallados del CES frente a 150 de la norma—, así que varios nacionales caen en el mismo código y la carrera ya no sabe cuál era |
+| **Anclar a la CINE-F y usar lo nacional como consulta** (tabla de alias, resuelta con `LEFT JOIN`) | **Pierde resolución, y está medido**: la lista nacional es más fina —cientos de campos detallados del CES frente a **150** de la norma; el recuento exacto es trabajo de la extracción del anexo—, así que varios nacionales caen en el mismo código y la carrera ya no sabe cuál era |
 | **`campos_detallados` + una tabla de qué países lo usan** | Sólo valdría si la lista nacional fuera un **subconjunto** de la norma, y no lo es: renombra, fusiona y **añade códigos propios** |
 | **Una tabla que declare si un país usa lo nacional o la CINE-F** | La granularidad está mal: la cobertura de una taxonomía nacional es **parcial y por campo**, no por país. Además el hecho ya es derivable de `origen`, y no evita las dos claves ajenas |
 | **Una equivalencia en tabla aparte** en vez de la columna | Una columna `NOT NULL` garantiza «exactamente una»; una tabla no impide **cero** filas, y forzarlo pide índice único **y** trigger |
@@ -547,8 +547,15 @@ Hoy eso es gratis; el día que el sistema tenga datos reales, no.
 
 ⚠️ **Y un dato que esta página NO puede respaldar**: el plan del frente afirma que los diez campos
 amplios del CES son las etiquetas españolas de la norma. **No se ha podido reproducir** con la fuente
-disponible —el OCR parte los nombres largos en dos filas—, así que en el nivel amplio la coincidencia
-está **sin verificar**. En el específico sí: 20 casan literalmente.
+disponible —la extracción por bandas parte los nombres largos que ocupan dos filas de celda—, así que
+en el nivel amplio la coincidencia está **sin verificar**. En el específico sí: 20 casan literalmente.
+
+⚠️ **Y que nadie repita el error de atribuirlo al OCR.** El anexo del CES **no es un escaneo**: es un
+PDF nacido digital (Word 2010) con capa de texto íntegra, y sus tablas se extraen limpias. Lo que
+rompe los datos son las **celdas fusionadas** —un campo amplio que abarca ocho filas aparece una vez y
+un extractor por bandas lo pierde en las otras siete—. La consecuencia práctica: **los datos son
+recuperables**, y cualquier cifra de esta página sacada de una extracción por bandas hay que
+rehacerla con extracción por geometría de celda.
 
 ### Qué se le ofrece a quien rellena
 
@@ -631,15 +638,30 @@ carrera**, no de la titulación.
 Son cosas distintas: la **carrera** es lo que una universidad ofrece; la **titulación** es lo que
 queda impreso en el diploma. Y la relación **no es 1:1**, aunque casi lo parezca.
 
-Medido sobre las **617** filas de oferta de la fuente del CES: **608** carreras dan una sola
-titulación, **7** dan dos y **2** dan tres. Los dos casos limpios —el resto están dañados en el
-origen— son `PEDAGOGÍA DE LAS CIENCIAS EXPERIMENTALES` (*Lic. en Pedagogía de la Química y Biología*
-· *Lic. en Pedagogía de la Informática*) e `HIDROLOGÍA` (*Ingeniero/a Hidrólogo/a* · *Ingeniero/a en
-Ciencias del Agua*).
+Medido sobre la capa de texto del anexo del CES, **por nivel**:
 
-Un 1,5 % de excepciones **no justificaría dos tablas por sí solo**. Lo que sí lo justifica es dónde
-cuelga cada cosa: la clasificación y el nivel son de la **carrera**, y colapsarlas obligaría a
-repetir tres columnas en cada titulación hermana —y a que un día discreparan—.
+| Nivel | Carreras | Con **más de una** titulación |
+|---|---:|---:|
+| Especialización | 286 | 14 · **5 %** |
+| Maestría | 266 | **41 · 15 %** |
+
+Una de cada siete carreras de maestría otorga varias titulaciones. `PEDAGOGÍA DE LA LENGUA Y LA
+LITERATURA` da cuatro; `EDUCACIÓN` llega a cinco menciones.
+
+**Eso ya no es una excepción, es la norma en un nivel entero**, y por sí solo justifica las dos
+tablas. Se suma lo de siempre: la clasificación y el nivel son de la **carrera**, y colapsarlas
+obligaría a repetir tres columnas en cada titulación hermana.
+
+#### La clave única de `carreras` lleva el nivel, y no es cosmético
+
+**109 de 443 nombres de carrera existen en más de un nivel.** `EDUCACIÓN` es a la vez programa de
+especialización y de maestría; `EDUCACIÓN INICIAL`, `EDUCACIÓN BÁSICA` y `PEDAGOGÍA DE LA LENGUA Y LA
+LITERATURA`, igual.
+
+⚠️ Por eso la unicidad es **`(pais_id, nombre, nivel)`** y no `(pais_id, nombre)`. Con la clave corta,
+sembrar el catálogo del CES **falla**: la segunda `EDUCACIÓN` choca con la primera. Y es también la
+prueba de que el nivel está bien puesto en `carreras` — es lo que distingue dos ofertas que comparten
+nombre.
 
 **Y el país está en `carreras`, no en `titulaciones`.** Ahí sería redundante: se llega por
 `carrera_id`. Una columna copiada que nadie sincroniza es el problema que ya tiene
@@ -677,9 +699,32 @@ Sin puerta, el catálogo se llena de `Ingeniería de Software`, `Ingenieria en S
 puerta **deja de ser opcional**. La unicidad exacta por `(pais_id, nombre)` no basta: **son tres
 cadenas distintas**.
 
-⚠️ **La distancia de Hamming no sirve aquí**: exige cadenas de la **misma longitud**, porque compara
-posición a posición. `Ingeniería Civil` e `Ingenieria Civil` ya tienen longitudes distintas, e
-`Ing. Civil` no se puede ni comparar.
+#### Hamming no sirve, y está medido sobre el catálogo real
+
+Se evaluó la distancia de Hamming y **falla por los dos lados**. Sobre las **863** titulaciones
+distintas del anexo del CES, hay **726 pares** con similitud de trigramas ≥ 0,60:
+
+| | |
+|---|---:|
+| Pares parecidos encontrados | **726** |
+| Que Hamming **no puede ni comparar** (longitudes distintas) | **636 · 87 %** |
+
+Y los que sí puede comparar son **los equivocados**:
+
+| Par real del catálogo | Trigramas | Hamming | Veredicto |
+|---|---:|---:|---|
+| `Ingeniero/a Marítimo` · `Ingeniero/a Marítimo/a` | **1,00** | *no computa* | duplicado real, **invisible** para Hamming |
+| `Magíster Derecho Procesal…` · `Magíster en Derecho Procesal…` | 0,89 | *no computa* | duplicado real, **invisible** |
+| `Especialista en Nefrología Pediátrica` · `Especialista en Neurología Pediátrica` | 0,85 | **1** | **especialidades distintas** — Hamming las daría por iguales |
+
+Hamming exige cadenas de la **misma longitud** porque compara posición a posición: se le escapa toda
+inserción o borrado —una tilde, un `/a`, un `en`— que es justo como se producen los duplicados, y a
+cambio marca como casi idénticas dos palabras que sólo difieren en una letra y significan cosas
+distintas.
+
+⚠️ **Y el catálogo oficial ya viene con duplicados dentro**: `Especialista en ...... (especificar la
+mención)` aparece dos veces, una con un paréntesis de más. Así que el cotejo no es sólo una puerta
+para las altas de usuario — **hace falta ya, para sembrar**.
 
 Lo que sí, y las tres vienen en `postgres:17`:
 

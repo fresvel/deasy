@@ -809,6 +809,10 @@ vocabularios de ocho filas o menos. Es el mismo trato que recibe la geografía.
 -- CES) y no tienen equivalente internacional. Con pais_id, si la institucion es ecuatoriana se
 -- ofrecen las titulaciones del Ecuador, y mañana entra el catalogo de otro pais sin rediseñar nada.
 --
+-- OJO: NO ES UN ESCANEO. El anexo del CES es un PDF nacido digital (Word 2010) con capa de
+-- texto integra y tablas que se extraen limpias; lo que rompe los datos son las CELDAS FUSIONADAS y
+-- un extractor por bandas. Los datos SON recuperables con extraccion por geometria de celda.
+--
 -- LOS DATOS NO SALEN DEL FICHERO QUE HAY. campos_titulos.json tiene 38 campos amplios y el CINE-F
 -- TIENE DIEZ: los nombres que ocupaban dos lineas en la tabla del PDF de origen se partieron en
 -- filas separadas. La causa esta en el origen — la resolucion RPC-SO-27-No.289-2014 del CES, 79
