@@ -781,14 +781,83 @@ Lo que cuesta, medido sobre las **863** titulaciones del anexo del CES:
 `Ingeniero/a Marítimo`— y **ni un falso positivo**. La siembra tiene que resolver esos dos casos en
 vez de cargarlos en silencio, que es justo lo que se busca.
 
-**Capa 3 · el cotejo por trigramas**, para lo que la normalización no alcanza: abreviaturas
-(`Ing. Civil` frente a `Ingeniería Civil`), palabras reordenadas, erratas y sinónimos. Esta capa
-**avisa, no impide** —`Ingeniería Civil` e `Ingeniería Vial` se parecen y son distintas—, así que
-devuelve candidatos y **decide una persona**. Va en el servicio antes de insertar, no en un `CHECK`
-ni en un trigger, que no pueden preguntar.
+**Capa 3 · el cotejo difuso**, para lo que la normalización no alcanza: **erratas** (`Ingeneiría`),
+**artículos** de más o de menos, abreviaturas (`Ing. Civil` frente a `Ingeniería Civil`), palabras
+reordenadas.
 
-⚠️ `pg_trgm` sería **la primera extensión del proyecto**: hoy `postgres_schema.sql` no declara
-ninguna. Comprobado que está disponible y que el rol de la aplicación puede crearla.
+Aquí no vale razonar: se midió. Se generaron erratas realistas sobre 300 titulaciones del anexo y se
+comparó cada una con su original, con el algoritmo de `pg_trgm` reproducido fielmente —minúsculas,
+separación por palabras, dos espacios delante y uno detrás de cada una—.
+
+| Tipo de error del usuario | Similitud mediana | La peor |
+|---|---:|---:|
+| Sin tildes | **1,00** | 1,00 |
+| Artículo añadido (`de`, `en`) | 0,93 | 0,87 |
+| Artículo quitado | 0,93 | 0,84 |
+| Letra doblada | 0,92 | 0,73 |
+| Letra omitida | 0,88 | 0,55 |
+| **Transposición** — `Ingeneiría` | **0,81** | **0,38** |
+
+**Los artículos no son el problema**: al partir por palabras, meter o quitar un `de` apenas mueve la
+similitud (0,93). **El problema es la transposición**, que es justo el ejemplo — dos letras
+intercambiadas destruyen cuatro trigramas y hunden el parecido hasta 0,38.
+
+#### El umbral, y por qué solo no basta
+
+Barrido sobre los **371 953** pares de titulaciones **realmente distintas** del catálogo:
+
+| Umbral | Erratas cazadas | Falsas alarmas por alta |
+|---:|---:|---:|
+| 0,90 | 67 % | 0,00 |
+| 0,85 | 83 % | 0,02 |
+| 0,80 | 93 % | 0,06 |
+| **0,75** | **97 %** | **0,14** |
+| 0,70 | 99 % | 0,29 |
+| 0,60 | 99 % | 0,88 |
+
+Bajar el umbral para cazar el 3 % que falta **multiplica el ruido por seis**, y un cotejo que enseña
+candidatos absurdos se ignora — que es como se cuela el duplicado.
+
+#### La segunda medida cierra el hueco exactamente donde está
+
+Las **41 erratas** que se escapan a 0,75 tienen todas **distancia de edición 1 o 2**:
+
+| Similitud | Levenshtein | Par |
+|---:|---:|---|
+| 0,62 | **2** | `Médico/a General` · `Médico/a Genreal` |
+| 0,74 | **2** | `Especialista en Hematología` · `Especialitsa en Hematología` |
+| 0,71 | **2** | `Magíster en Matemática` · `Magíster en Mateámtica` |
+
+No es casualidad: **una transposición arrasa los trigramas y deja la distancia de edición en 2**. Las
+dos medidas son fuertes justo donde la otra es débil.
+
+```
+avisar  SI  similarity(a, b) >= 0.75   O   levenshtein(a, b) <= 2
+```
+
+| | |
+|---|---:|
+| Erratas cazadas | **100 %** |
+| Falsas alarmas por alta | **0,15** |
+
+Cerrar el hueco entero cuesta **una falsa alarma más por cada cien altas**. Una de cada siete altas
+enseña un candidato de sobra, y ninguna errata pasa.
+
+⚠️ **Y esto sí necesita `fuzzystrmatch`**, que antes figuraba aquí como opcional para desempatar. Es
+la mitad de la regla.
+
+⚠️ **La generación de candidatos va aparte del filtro.** El índice GIN de `pg_trgm` sirve para no
+comparar contra todo, pero **la puerta tiene que estar en 0,30**: a 0,40 se pierde una errata de
+1 571, y la peor transposición medida baja a 0,38. A la escala de hoy —**863 titulaciones por
+país**— el barrido exhaustivo son 863 comparaciones y el índice ni hace falta; es para cuando crezca.
+
+**Esta capa avisa, no impide**, y tiene que ser así: `Ingeniería Civil` e `Ingeniería Vial` están a
+distancia de edición 4 y son carreras distintas. Devuelve candidatos y **decide una persona**. Va en
+el servicio antes de insertar, no en un `CHECK` ni en un trigger, que no pueden preguntar.
+
+⚠️ `pg_trgm` y `fuzzystrmatch` serían **las primeras extensiones del proyecto**: hoy
+`postgres_schema.sql` no declara ninguna. Comprobado que están disponibles y que el rol de la
+aplicación puede crearlas.
 
 ## 5 · Dónde está el detalle
 
