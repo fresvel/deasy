@@ -565,7 +565,13 @@ CREATE TABLE IF NOT EXISTS expediente_titulos (
     CHECK (modalidad IN ('presencial','semipresencial','virtual','hibrido')),
   -- EL NUMERO DE REGISTRO ante la autoridad de educacion superior (en Ecuador, la SENESCYT). Texto,
   -- porque su formato lo fija cada pais. Es de ESTA persona.
-  sreg VARCHAR(60) NULL,
+  --
+  -- LA CLAVE DEL JSON SE LLAMABA sreg, y se renombra al pasar a columna. Cuatro letras que no
+  -- significan nada para quien lee el esquema, y el mismo motivo por el que modalidad dejo de
+  -- llamarse tipo. Se elige numero_registro y no registro_senescyt porque el modelo no nombra a
+  -- Ecuador en ninguna parte -- cual es la autoridad lo decide instituciones.pais_id--, y encaja con
+  -- el numero a secas de documentos_identidad.
+  numero_registro VARCHAR(60) NULL,
   CONSTRAINT fk_expediente_titulos_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE,
   CONSTRAINT fk_expediente_titulos_titulacion FOREIGN KEY (titulacion_id) REFERENCES titulaciones(id),
   CONSTRAINT fk_expediente_titulos_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
@@ -792,38 +798,44 @@ CREATE INDEX IF NOT EXISTS idx_dossier_exp_funciones_nombre ON expediente_experi
 
 ### 8.4 · El catálogo académico
 
-Cinco tablas encadenadas. **Las tres de arriba son la norma internacional CINE-F (ISCED-F) de la
-UNESCO y NO llevan país**; las dos de abajo las fija cada país y **sí lo llevan**.
+**Seis tablas y dos extensiones.** Las tres primeras son la norma internacional **CINE-F (ISCED-F)** de
+la UNESCO y **no llevan país**; las tres últimas son el **único catálogo nacional** que existe: el del
+país donde funciona la institución que instala Deasy (`instituciones.pais_id`).
 
-⚠️ **Estas tablas van ANTES que `expediente_titulos` en `postgres_schema.sql`**, y sus datos los siembra
-el bootstrap, no este fichero: son cientos de filas y aquí sólo hay cuatro `INSERT`, todos de
-vocabularios de ocho filas o menos. Es el mismo trato que recibe la geografía.
+⚠️ **Estas tablas van ANTES que `expediente_titulos` en `postgres_schema.sql`**, y sus datos los
+siembra el bootstrap: son cientos de filas. Es el mismo trato que recibe la geografía.
 
 ```sql
--- ── CATALOGO ACADEMICO: CINE-F ───────────────────────────────────────────────────────────────────
--- Campo amplio -> especifico -> detallado -> carrera -> titulacion.
+-- ── EXTENSIONES ──────────────────────────────────────────────────────────────────────────────────
+-- Las PRIMERAS del proyecto: hasta aqui postgres_schema.sql no declaraba ninguna. Comprobado que
+-- estan disponibles en postgres:17 y que el rol de la aplicacion puede crearlas.
 --
--- POR QUE LAS TRES DE ARRIBA NO LLEVAN PAIS. Son la Clasificacion Internacional Normalizada de la
--- Educacion por campos (CINE-F / ISCED-F) de la UNESCO: codigos estables y comparables entre
--- paises. Es exactamente lo que le sirve a una universidad que homologa titulos extranjeros —
+-- Las dos son la regla del cotejo de duplicados, y NINGUNA sobra: se midio sobre las 863
+-- titulaciones del anexo del CES generando erratas realistas, y los trigramas solos a umbral 0,75
+-- cazan el 97 %. Las 41 que se escapan son TRANSPOSICIONES -- Ingeneiria por Ingenieria-- que
+-- arrasan los trigramas y dejan la distancia de edicion en 2. Con las dos, el 100 %, y el coste es
+-- una falsa alarma mas por cada cien altas.
+--
+-- unaccent NO hace falta: la forma canonica se calcula con translate(), que si es IMMUTABLE y por
+-- tanto vale en una columna generada.
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE EXTENSION IF NOT EXISTS fuzzystrmatch;
+
+
+-- ── LA NORMA INTERNACIONAL: CINE-F ───────────────────────────────────────────────────────────────
+-- Campo amplio -> especifico -> detallado. 12 + 58 + 150 = 220 filas.
+--
+-- POR QUE NO LLEVAN PAIS. Existen para que un titulo frances y uno ecuatoriano se puedan comparar;
 -- ponerles pais las volveria incomparables, que es lo contrario de para lo que existen.
 --
--- POR QUE LAS DOS DE ABAJO SI. Las carreras y las titulaciones las fija cada pais (en Ecuador, el
--- CES) y no tienen equivalente internacional. Con pais_id, si la institucion es ecuatoriana se
--- ofrecen las titulaciones del Ecuador, y mañana entra el catalogo de otro pais sin rediseñar nada.
---
--- OJO: NO ES UN ESCANEO. El anexo del CES es un PDF nacido digital (Word 2010) con capa de
--- texto integra y tablas que se extraen limpias; lo que rompe los datos son las CELDAS FUSIONADAS y
--- un extractor por bandas. Los datos SON recuperables con extraccion por geometria de celda.
---
--- LOS DATOS NO SALEN DEL FICHERO QUE HAY. campos_titulos.json tiene 38 campos amplios y el CINE-F
--- TIENE DIEZ: los nombres que ocupaban dos lineas en la tabla del PDF de origen se partieron en
--- filas separadas. La causa esta en el origen — la resolucion RPC-SO-27-No.289-2014 del CES, 79
--- paginas, es un escaneo con OCR malo—, y por eso la tarea E1 va antes que esta.
+-- Y TRAEN COMODIN PARA TODO, en el nivel detallado, que es donde hace falta: 10 codigos xx10 (sin
+-- mayor definicion), 10 xx19 (no contemplado en la clasificacion), 10 xx88 (interdisciplinarios) y
+-- el 9999 (campo desconocido). Por eso NO EXISTE el titulo imposible de clasificar, y por eso se
+-- pudo retirar titulacion_libre de expediente_titulos.
 CREATE TABLE IF NOT EXISTS campos_amplios (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  -- Codigo CINE-F de dos digitos, con su cero a la izquierda: por eso VARCHAR y no INT. "06" no es
-  -- el numero seis.
+  -- Codigo CINE-F de dos digitos, con su cero a la izquierda: por eso VARCHAR y no INT. El 06 no es
+  -- el numero seis, y perder el cero rompe el codigo.
   codigo VARCHAR(2) NOT NULL UNIQUE,
   nombre VARCHAR(180) NOT NULL,
   is_active SMALLINT NOT NULL DEFAULT 1,
@@ -838,7 +850,7 @@ CREATE TABLE IF NOT EXISTS campos_especificos (
   campo_amplio_id INT NOT NULL,
   -- Tres digitos, y los dos primeros son los del campo amplio. La jerarquia esta EN EL CODIGO, pero
   -- la clave ajena se declara igual: un codigo que se explica solo sigue sin impedir que alguien
-  -- cuelgue "031" de otro campo amplio.
+  -- cuelgue el 031 de otro campo amplio.
   codigo VARCHAR(3) NOT NULL UNIQUE,
   nombre VARCHAR(180) NOT NULL,
   is_active SMALLINT NOT NULL DEFAULT 1,
@@ -864,45 +876,179 @@ CREATE INDEX IF NOT EXISTS idx_campos_detallados_especifico ON campos_detallados
 CREATE OR REPLACE TRIGGER trg_campos_detallados_set_updated_at BEFORE UPDATE ON campos_detallados FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
--- LA CARRERA: la oferta academica tal como la aprueba la autoridad de cada pais.
+-- ── EL CATALOGO NACIONAL ─────────────────────────────────────────────────────────────────────────
+-- LOS CAMPOS DEL PAIS. En Ecuador, los del CES.
+--
+-- ES LA UNICA TABLA QUE APUNTA A campos_detallados, y ese anclaje es lo que sostiene el modelo: hace
+-- que las carreras clasificadas con el catalogo nacional y las de un pais sin catalogo acaben en el
+-- MISMO eje, asi que un informe puede agregar por codigo internacional sin distinguir. Hubo un
+-- diseño con TRES tablas apuntando aqui -- desde el asiento, desde la carrera y desde el campo
+-- nacional-- y era una dependencia transitiva: dos sitios donde discrepar.
+--
+-- SE DESCARTO una tabla de equivalencias N:M con una columna grado (exacta / contenida / amplia /
+-- sin_equivalente), porque la norma YA codifica el grado en el propio codigo y a nivel detallado:
+-- aterrizar en 0613 es equivalencia exacta, en 0610 es que el nacional es mas ancho, y en 0619 es
+-- que el nacional tiene algo que la norma no. Una columna grado repetiria en dato lo que el codigo
+-- ya dice, con el riesgo de que discrepen.
+CREATE TABLE IF NOT EXISTS campos_nacionales (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  -- EL ANCLAJE A LA NORMA. NOT NULL a proposito: los comodines garantizan que siempre hay donde
+  -- aterrizar, y el 9999 (campo desconocido) es el valor honesto mientras nadie lo mapee. Con una
+  -- columna nula, subir a la norma podria fallar justo cuando hace falta.
+  campo_detallado_id INT NOT NULL,
+  -- COMO LLEGO LA TAXONOMIA. OJO: este eje NO ES el mismo que el origen de carreras y titulaciones.
+  -- Aqui se distingue si el pais publico su propia lista o si adopto la internacional; alli, si la
+  -- fila la sembro el catalogo oficial o la creo un usuario. Confundirlos seria marcar como
+  -- "creado por un usuario" un campo que es la norma de la UNESCO.
+  origen TEXT NOT NULL CHECK (origen IN ('autoridad_nacional','cine_f')),
+  codigo VARCHAR(10) NOT NULL,
+  nombre VARCHAR(180) NOT NULL,
+  -- LA FORMA CANONICA, generada y por tanto imposible de derivar: no hay INSERT capaz de olvidarse
+  -- de ponerla. Minusculas, sin tildes, sin puntuacion, espacios colapsados y LAS FORMAS DE GENERO
+  -- PLEGADAS, que es lo que ni la unicidad exacta ni quitar tildes juntan.
+  --
+  -- Se usa translate() y NO unaccent(): una columna generada exige expresion IMMUTABLE y unaccent no
+  -- lo es, porque depende de un diccionario que puede cambiar.
+  nombre_norm VARCHAR(180) GENERATED ALWAYS AS (
+    btrim(regexp_replace(regexp_replace(regexp_replace(
+      translate(lower(nombre), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun'),
+      '([a-z])[[:space:]]*/[[:space:]]*a([^a-z]|$)', '\1\2', 'g'),
+      '\([[:space:]]*a[[:space:]]*\)', '', 'g'),
+      '[^a-z0-9]+', ' ', 'g'))
+  ) STORED,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  -- CUANDO DEJO DE OFRECERSE, que is_active no dice. La regla es RETIRAR Y CREAR, NUNCA RENOMBRAR:
+  -- el asiento lee el nombre por la clave ajena y no lo copia, asi que editar el nombre cambiaria en
+  -- silencio el titulo de todo el que lo tenga -- y el regulador registro la denominacion vigente
+  -- ENTONCES.
+  vigente_hasta DATE NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_campos_nacionales_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
+  CONSTRAINT fk_campos_nacionales_detallado FOREIGN KEY (campo_detallado_id) REFERENCES campos_detallados(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_campos_nacionales ON campos_nacionales (pais_id, codigo);
+CREATE INDEX IF NOT EXISTS idx_campos_nacionales_detallado ON campos_nacionales (campo_detallado_id);
+CREATE INDEX IF NOT EXISTS idx_campos_nacionales_trgm ON campos_nacionales USING GIN (nombre_norm gin_trgm_ops);
+CREATE OR REPLACE TRIGGER trg_campos_nacionales_set_updated_at BEFORE UPDATE ON campos_nacionales FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- LA CARRERA: la oferta academica tal como la aprueba la autoridad del pais.
 CREATE TABLE IF NOT EXISTS carreras (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
-  -- El enganche con la norma internacional. NULO se admite porque la fuente ecuatoriana puede no
-  -- traer el campo detallado de todas: es preferible una carrera sin clasificar a no tenerla.
-  campo_detallado_id INT NULL,
+  -- EL UNICO CAMINO de la carrera a su campo. La norma internacional se deduce subiendo por
+  -- campos_nacionales.campo_detallado_id, asi que aqui no hay una segunda clave ajena ni un CHECK
+  -- de exclusion. Si el pais no publico taxonomia propia, campos_nacionales se siembra desde la
+  -- CINE-F con origen = 'cine_f' -- 150 filas-- y esta columna sigue apuntando a un solo sitio.
+  campo_nacional_id INT NOT NULL,
+  -- EL NIVEL, y vive AQUI y no en el asiento porque es propiedad de la OFERTA y no de quien la
+  -- curso: una maestria es una maestria lo escriba quien lo escriba. Esta medido en la fuente del
+  -- CES, que trae oferta_tipo a la altura de la carrera.
+  --
+  -- Son NUEVE y no ocho: las dos listas del frontend suman ocho y NINGUNA incluye especializacion,
+  -- que en el anexo del CES es el tipo de oferta mas numeroso (286 carreras).
+  nivel TEXT NOT NULL CHECK (nivel IN (
+    'tecnico','tecnologo','grado','especializacion','maestria','maestria_tecnologica',
+    'diplomado','doctorado','posdoctorado'
+  )),
+  -- COMO LLEGO LA FILA. Distinto del origen de campos_nacionales: aqui se distingue lo que sembro
+  -- el catalogo oficial de lo que creo un usuario al registrar un titulo que faltaba. Es lo que
+  -- sustituye a la retirada titulacion_libre, y dice lo mismo mejor -- porque es consultable,
+  -- revisable y reutilizable por la siguiente persona con el mismo titulo.
+  origen TEXT NOT NULL DEFAULT 'registro_local' CHECK (origen IN ('catalogo_nacional','registro_local')),
   nombre VARCHAR(250) NOT NULL,
+  nombre_norm VARCHAR(250) GENERATED ALWAYS AS (
+    btrim(regexp_replace(regexp_replace(regexp_replace(
+      translate(lower(nombre), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun'),
+      '([a-z])[[:space:]]*/[[:space:]]*a([^a-z]|$)', '\1\2', 'g'),
+      '\([[:space:]]*a[[:space:]]*\)', '', 'g'),
+      '[^a-z0-9]+', ' ', 'g'))
+  ) STORED,
   is_active SMALLINT NOT NULL DEFAULT 1,
+  vigente_hasta DATE NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_carreras_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
-  CONSTRAINT fk_carreras_campo FOREIGN KEY (campo_detallado_id) REFERENCES campos_detallados(id)
+  CONSTRAINT fk_carreras_campo FOREIGN KEY (campo_nacional_id) REFERENCES campos_nacionales(id)
 );
--- La unicidad de una carrera es (pais, nombre), NUNCA el nombre: dos paises pueden llamar igual a
--- carreras distintas, y es el mismo criterio con el que ciudades se hace unica por (provincia,
--- nombre) porque hay un canton Bolivar en Carchi y otro en Manabi.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_carreras_pais_nombre ON carreras (pais_id, nombre);
-CREATE INDEX IF NOT EXISTS idx_carreras_campo ON carreras (campo_detallado_id);
+-- LA UNICIDAD LLEVA EL NIVEL, y no es cosmetico: 109 de 443 nombres de carrera del anexo del CES
+-- existen en MAS DE UN NIVEL -- EDUCACION es a la vez programa de especializacion y de maestria, y
+-- lo mismo EDUCACION INICIAL, EDUCACION BASICA y PEDAGOGIA DE LA LENGUA Y LA LITERATURA--. Con la
+-- clave corta, sembrar el catalogo FALLA en la segunda fila.
+--
+-- Y va sobre nombre_norm y no sobre nombre: es lo que convierte el aviso del cotejo en
+-- imposibilidad. Comprobado contra PostgreSQL 17 -- insertar Ingeniero/a Maritimo y despues
+-- Ingeniero/a Maritimo/a devuelve duplicate key value violates unique constraint. Coste medido
+-- sobre las 863 titulaciones del anexo: DOS conflictos en todo el catalogo oficial, y plegar el
+-- genero añade exactamente uno, sin ni un falso positivo.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_carreras_pais_nivel_nombre ON carreras (pais_id, nivel, nombre_norm);
+CREATE INDEX IF NOT EXISTS idx_carreras_campo ON carreras (campo_nacional_id);
+CREATE INDEX IF NOT EXISTS idx_carreras_trgm ON carreras USING GIN (nombre_norm gin_trgm_ops);
 CREATE OR REPLACE TRIGGER trg_carreras_set_updated_at BEFORE UPDATE ON carreras FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 -- LA TITULACION: el nombre exacto que aparece impreso en el diploma. No es lo mismo que la carrera
--- —una carrera puede otorgar mas de una— y es lo que el titular escribe en su expediente.
+-- y NO es 1:1 con ella: medido sobre el anexo del CES, 41 de 266 carreras de maestria (15 %) y 14 de
+-- 286 de especializacion otorgan varias. Una de cada siete maestrias.
+--
+-- NO LLEVA pais_id: se llega por carrera_id. Una columna copiada que nadie sincroniza es el problema
+-- que ya tiene task_items.assigned_person_id, que necesita un trigger para no mentir.
 CREATE TABLE IF NOT EXISTS titulaciones (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  pais_id INT NOT NULL,
   carrera_id INT NOT NULL,
+  origen TEXT NOT NULL DEFAULT 'registro_local' CHECK (origen IN ('catalogo_nacional','registro_local')),
   nombre VARCHAR(250) NOT NULL,
+  nombre_norm VARCHAR(250) GENERATED ALWAYS AS (
+    btrim(regexp_replace(regexp_replace(regexp_replace(
+      translate(lower(nombre), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun'),
+      '([a-z])[[:space:]]*/[[:space:]]*a([^a-z]|$)', '\1\2', 'g'),
+      '\([[:space:]]*a[[:space:]]*\)', '', 'g'),
+      '[^a-z0-9]+', ' ', 'g'))
+  ) STORED,
   is_active SMALLINT NOT NULL DEFAULT 1,
+  vigente_hasta DATE NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_titulaciones_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
   CONSTRAINT fk_titulaciones_carrera FOREIGN KEY (carrera_id) REFERENCES carreras(id)
 );
-CREATE UNIQUE INDEX IF NOT EXISTS uq_titulaciones_pais_nombre ON titulaciones (pais_id, nombre);
-CREATE INDEX IF NOT EXISTS idx_titulaciones_carrera ON titulaciones (carrera_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_titulaciones_carrera_nombre ON titulaciones (carrera_id, nombre_norm);
+CREATE INDEX IF NOT EXISTS idx_titulaciones_trgm ON titulaciones USING GIN (nombre_norm gin_trgm_ops);
 CREATE OR REPLACE TRIGGER trg_titulaciones_set_updated_at BEFORE UPDATE ON titulaciones FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 ```
+
+#### El cotejo de duplicados: la regla, y por qué NO va en el esquema
+
+Las capas 1 y 2 son la columna generada y el índice único de arriba. La **capa 3 avisa y no impide**
+—`Ingeniería Civil` e `Ingeniería Vial` están a distancia de edición 4 y son carreras distintas—, así
+que vive en el servicio, antes de insertar. No en un `CHECK` ni en un trigger, que no pueden preguntar.
+
+```sql
+-- Candidatos: la puerta va en 0,30 y NO en 0,40. A 0,40 se pierde una errata de 1 571, porque la
+-- peor transposicion medida baja a 0,38.
+SELECT t.id, t.nombre,
+       similarity(t.nombre_norm, $1) AS sim,
+       levenshtein(t.nombre_norm, $1) AS dist
+  FROM titulaciones t
+  INNER JOIN carreras c ON c.id = t.carrera_id
+ WHERE c.pais_id = $2
+   AND t.is_active = 1
+   AND similarity(t.nombre_norm, $1) >= 0.30
+ ORDER BY sim DESC;
+-- Se le enseña al usuario lo que cumpla:  sim >= 0.75  OR  dist <= 2
+```
+
+A la escala de hoy —**863 titulaciones por país**— el barrido exhaustivo son 863 comparaciones y el
+índice GIN ni hace falta; está puesto para cuando crezca.
+
+#### Lo que la siembra tiene que resolver
+
+| | |
+|---|---|
+| Colisiones en el catálogo oficial bajo la forma canónica | **2** — el índice único las rechaza, y hay que decidir cuál vale |
+| Carreras cuyo nombre existe en más de un nivel | **109 de 443** — por eso la clave lleva `nivel` |
+| Campos nacionales sin mapear a la norma | aterrizan en `9999`, y el sembrador debe **contar cuántos** |
 
 ### 8.5 · La vista `expediente_investigacion`
 

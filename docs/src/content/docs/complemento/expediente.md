@@ -75,7 +75,7 @@ erDiagram
     varchar ies "la universidad que lo emitio"
     int pais_id FK "antes la cadena Ecuador"
     text modalidad "la clave se llamaba tipo"
-    varchar sreg "el registro nacional"
+    varchar numero_registro "la clave JSON se llamaba sreg"
   }
 ```
 
@@ -444,7 +444,7 @@ erDiagram
     varchar ies "la universidad que lo emitio"
     int pais_id FK "donde se emitio · solo dato"
     text modalidad "CHECK · cuatro valores"
-    varchar sreg "el registro nacional de ESTA persona"
+    varchar numero_registro "el registro nacional de ESTA persona"
   }
 ```
 
