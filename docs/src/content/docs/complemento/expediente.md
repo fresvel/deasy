@@ -83,13 +83,18 @@ incluyen**, así que un `Gestor*` sin `Usuario` recibe un 403 al abrir su propia
 
 ## El diagrama
 
+:::note[Este diagrama es el de HOY, no el del diseño]
+Dibuja lo que hay **en la base ahora mismo**, con `dossiers` y su `data JSONB`. El modelo al que va
+—sin `dossiers`, y con una tabla por sección— está en la **sección 5**, más abajo.
+:::
+
 ```mermaid
 erDiagram
   persons ||--|| dossiers : "uno por persona, ON DELETE CASCADE"
   dossiers ||--o{ dossier_items : "sus asientos"
 
   dossiers {
-    bigint id PK
+    bigint id PK "SE RETIRA - ver la seccion 5"
     int person_id FK "UNICO: uq_dossiers_person. La UNICA FK en cascada del complemento"
     timestamp created_at
     timestamp updated_at

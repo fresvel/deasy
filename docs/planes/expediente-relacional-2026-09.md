@@ -286,6 +286,79 @@ CONSTRAINT chk_titulacion CHECK (titulacion_id IS NOT NULL OR titulacion_libre I
 
 Así el catálogo es **preferente pero no obligatorio**, y un título extranjero no se degrada a «NR».
 
+### 3.5 · La divergencia CES/CINE-F: catálogo internacional + catálogo nacional + equivalencias
+
+**Decisión del dueño, 2026-09-04.** Se evaluaron tres salidas y gana la que permite llegar a la norma
+internacional sin forzar los catálogos nacionales.
+
+#### Lo medido, que es lo que obliga a decidir
+
+| Nivel | ¿Coinciden CES y CINE-F? |
+|---|---|
+| Campo amplio | ✅ **Idénticos**: los diez nombres del CES son literalmente las etiquetas españolas del CINE-F, y su código `01`–`10` **es** el código CINE de dos dígitos |
+| Campo específico | 🟡 **20 de 21**; sólo falla `Humanidades` (el CINE dice `Humanidades (excepto idiomas)`) |
+| Campo detallado | ❌ **Diverge**: el CES fusiona (`Diseño` vs `0212 Diseño de moda, interiores e industrial`), renombra (`Filosofía` vs `0223 Filosofía y ética`) y **añade códigos propios** (`81`, `82`: «Estudios de género») |
+
+Y un detalle técnico que lo agrava: **el Anexo del CES no lleva el código CINE de 3 ni 4 dígitos**.
+Sus columnas de específico y detallado se numeran **ordinalmente dentro del padre** (`1`, `2`, `3`… /
+`A`, `B`, `C`…), así que el enlace hay que construirlo **por nombre**.
+
+#### La norma YA trae los «desconocidos», y por campo amplio
+
+Esto no había que inventarlo. De los 150 detallados del CINE-F, **70 son comodines de la propia
+norma**, en tres familias:
+
+| Familia | n | Para qué |
+|---|---:|---|
+| `xx10 · sin mayor definición` | 41 | Se sabe el campo pero no se puede afinar |
+| **`xx19 · no contemplado en la clasificación`** | **35** | **Existe en el catálogo nacional y NO en el CINE-F** |
+| `xx88 · interdisciplinarios` | 21 | Cruza varios campos |
+
+Más `99 / 999 / 9999 Campo desconocido`, en los tres niveles.
+
+⚠️ **La familia `xx19` es exactamente el caso que había que resolver, y es mejor que un «desconocido»
+global**: `Estudios de género` del CES no cae en un agujero negro, cae en
+`0319 Ciencias sociales y del comportamiento no contempladas en la clasificación` — se conserva el
+campo amplio y el específico, y sólo se pierde el detalle. La norma ya pensó en esto.
+
+#### El diseño: tres piezas
+
+```
+campos_amplios · campos_especificos · campos_detallados     ← CINE-F puro. SIN pais_id
+        ▲                                                     norma internacional, 220 filas
+        │  campo_equivalencias  (N:M, con grado)
+        │
+campos_nacionales  (CON pais_id)  ──→  carreras  ──→  titulaciones
+        Ecuador hoy; otro país mañana, sin rediseñar nada
+```
+
+**Por qué N:M y no una simple clave ajena.** Porque las dos direcciones ocurren, y el dueño lo
+anticipó: `0212 Diseño de moda, interiores e industrial` del CINE puede corresponder a **tres**
+campos nacionales distintos (N:1), y un campo nacional amplio puede abarcar **dos** del CINE (1:N).
+Una columna no lo expresa; una tabla de equivalencias sí.
+
+**Y lleva el grado, porque no todas las equivalencias son iguales**: `exacta` (mismo concepto,
+distinto nombre), `contenida` (el nacional es más estrecho), `amplia` (es más ancho), `sin_equivalente`
+(cae en el `xx19` de su campo amplio). Sin ese grado, un informe que agregue por campo CINE trataría
+igual una correspondencia perfecta y una aproximación.
+
+#### Lo que se gana
+
+- **Se llega al CINE-F**, que es lo que permite comparar con cualquier país y homologar un título
+  extranjero.
+- **Ningún catálogo nacional se fuerza**: el CES entra tal como el CES lo publica, con sus códigos
+  `81` y `82` incluidos.
+- **Otro país entra sin rediseñar**: es una fila más de `pais_id` en `campos_nacionales` y sus
+  equivalencias.
+- La equivalencia es **dato, no código**: corregir un mapeo es un `UPDATE`, no un despliegue.
+
+#### Lo que cuesta, dicho
+
+Construir las equivalencias de los ~627 detallados del CES **es trabajo manual**, y no todo se puede
+automatizar: por nombre casan los dos primeros niveles, el tercero no. Se puede hacer por partes —
+sembrar primero lo que casa por nombre, y dejar el resto en `sin_equivalente` hasta que alguien lo
+revise—, pero no sale gratis. **Es el precio de no fingir una equivalencia que no existe.**
+
 ---
 
 ## 4 · Lo que se gana, y es lo que motivó el frente
@@ -332,7 +405,7 @@ propósito. Y en el navegador: `/perfil` como **gestor** o **usuario** —el adm
 
 | | |
 |---|---|
-| **⚠️ El CES DIVERGE del CINE-F en el nivel detallado** | Medido: coinciden en campo amplio (los diez nombres del CES son literalmente las etiquetas españolas del CINE-F) y en 20 de 21 específicos, pero en **detallado el CES fusiona, renombra y AÑADE códigos propios** (`81`, `82`, p. ej. «Estudios de género»). Si se siembra el CINE-F puro como capa 3, **algunos detallados del CES se quedan sin padre**. Dos salidas: (a) el detallado del CES como capa 3 con `pais_id`, y el CINE-F puro como capa 3 internacional; (b) el CINE-F puro y la equivalencia en una tabla de correspondencia. **Decisión del dueño** |
+| ~~**El CES diverge del CINE-F en el nivel detallado**~~ **DECIDIDO** (§3.5) | Medido: coinciden en campo amplio (los diez nombres del CES son literalmente las etiquetas españolas del CINE-F) y en 20 de 21 específicos, pero en **detallado el CES fusiona, renombra y AÑADE códigos propios** (`81`, `82`, p. ej. «Estudios de género»). Si se siembra el CINE-F puro como capa 3, **algunos detallados del CES se quedan sin padre**. Dos salidas: (a) el detallado del CES como capa 3 con `pais_id`, y el CINE-F puro como capa 3 internacional; (b) el CINE-F puro y la equivalencia en una tabla de correspondencia. **Decisión del dueño** |
 | **El Anexo II 2023, ¿sigue vigente?** | Firmado en abril de 2023. Existe referencia a `RPC-SO-03-No.047-2024` («Refórmese el Reglamento de armonización…») que **no se pudo leer**: vLex la tiene tras muro de pago y la Gaceta del CES exige sesión. Puede haber altas posteriores |
 | **El extractor del Anexo** | El texto es limpio y se puede extraer, pero el recuento preliminar da 7–12 campos amplios por sección donde deberían ser 10: hay ruido de pies de página y celdas fusionadas. Necesita extracción **por geometría de celda**, no por bandas. Es trabajo de `E2` |
 | **`titulaciones.carrera_id` se declaró `NOT NULL`** | Si la fuente trae titulaciones sin carrera, hay que aflojarlo **ANTES** de sembrar: el esquema no tiene `ALTER` |
