@@ -1,6 +1,6 @@
 # Frente 18 · El expediente sale del JSON y entra en la base
 
-> **Qué es.** `dossier_items.data` es un `JSONB` con diez formas distintas dentro. Este frente lo
+> **Qué es.** `expediente_asientos.data` es un `JSONB` con diez formas distintas dentro. Este frente lo
 > convierte en tablas: una por sección, con claves ajenas a los catálogos que ya existen.
 >
 > **Quién decide.** El dueño. Las decisiones ya tomadas están en §2 y **no se vuelven a discutir**;
@@ -15,7 +15,7 @@
 | **E0** | Este plan, con las decisiones de diseño tomadas y medidas | 🟡 | | |
 | **E1** | El catálogo CINE-F: fuente limpia localizada y evaluada, no el PDF escaneado | ✅ | `cine-f-2013-es.csv`, 220 filas, jerarquía cerrada sin huérfanos, doblemente validada. Mitad B: Anexo II 2023 del CES, PDF digital | 2026-09-04 |
 | **E2** | Las tablas del catálogo académico, sembradas por el bootstrap | ⬜ | | |
-| **E3** | El esquema del expediente: espina + 10 subtipos + la hija del 1:N | ⬜ | | |
+| **E3** | El esquema del expediente: espina + 10 subtipos + la hija del 1:N, y **`dossiers` retirada** | ⬜ | | |
 | **E4** | `dossierStore` deja de hablar JSON y habla SQL | ⬜ | | |
 | **E5** | `url_documento` pasa a `documento_ref` con la convención `minio://` | ⬜ | | |
 | **E6** | La vista de investigación (`UNION ALL` de las cinco) | ⬜ | | |
@@ -48,7 +48,7 @@ a tocar el formulario **igual que obligaría a tocar una tabla**.
 | **Texto libre donde hay catálogo** | `pais: "Ecuador"` cuando `paises` tiene 232 filas con su ISO; `ies: "PUCESE"` cuando existe `units` |
 | **Cero integridad** | Ni `NOT NULL`, ni `CHECK`, ni clave ajena. La única garantía del expediente es que hay uno por persona |
 | **No se puede preguntar nada** | **Ninguna consulta entra en el JSON**: se lee el árbol entero y se filtra en JavaScript |
-| **No se puede corregir** | `dossier_items` no tiene `updated_at`. Corregir un asiento es **borrarlo y volver a ponerlo** |
+| **No se puede corregir** | `expediente_asientos` no tiene `updated_at`. Corregir un asiento es **borrarlo y volver a ponerlo** |
 | **Datos de terceros en un blob** | `referencias` guarda nombre, correo y teléfono **de otra persona** |
 
 ### Dos defectos que el JSONB llevaba escondiendo
@@ -96,20 +96,19 @@ agrupó por cómo se pintan, no por cómo son.
 
 ### 2.2 · Espina + subtipos, no diez tablas sueltas
 
-⚠️ **`dossier_items` es una fila POR ASIENTO, no por expediente.** Medido: `dossiers` tiene 1 fila y
-`dossier_items` tiene 3 —un título, una experiencia, un artículo—. `dossier_id` es la clave **ajena**
-que dice de quién es; la primaria es `id`. **La granularidad del respaldo documental es por título,
-por certificación**, y se conserva entera.
+⚠️ **`expediente_asientos` es una fila POR ASIENTO, no por persona.** Medido antes de decidirlo:
+`dossiers` tenía 1 fila y `dossier_items` 3 —un título, una experiencia, un artículo—. **La
+granularidad del respaldo documental es por título, por certificación**, y se conserva entera.
 
 ```
-dossiers (1 por persona)
-   └── dossier_items                    ← 1 POR ASIENTO. Aquí viven section, el respaldo y las fechas
-        ├─ id=1  section=titulos      → dossier_titulos      (id=1)   PK = FK, ON DELETE CASCADE
-        ├─ id=2  section=experiencia  → dossier_experiencia  (id=2)   └── dossier_experiencia_funciones
-        └─ id=3  section=articulos    → dossier_articulos    (id=3)
+persons
+   └── expediente_asientos              ← 1 POR ASIENTO. Aquí viven section, el respaldo y las fechas
+        ├─ id=1  section=titulos      → expediente_titulos      (id=1)   PK = FK, ON DELETE CASCADE
+        ├─ id=2  section=experiencia  → expediente_experiencia  (id=2)   └── ..._funciones
+        └─ id=3  section=articulos    → expediente_articulos    (id=3)
 ```
 
-Cada tabla de sección tiene **`id` = clave primaria = clave ajena** a `dossier_items.id`: un asiento
+Cada tabla de sección tiene **`id` = clave primaria = clave ajena** a `expediente_asientos.id`: un asiento
 y su detalle son la misma fila partida en dos tablas.
 
 **Es el patrón que el esquema YA usa**: `contract_origins` con discriminador `origin_type` y sus dos
@@ -156,6 +155,44 @@ handler autenticado.
 
 Con sus columnas propias (nombre, cargo, institución, correo, teléfono). Los datos del tercero quedan
 **localizables y borrables**, que es lo que la LOPDP del frente 17 pide y un blob no permite.
+
+### 2.7 · `dossiers` se retira: era una cáscara 1:1 sin columnas propias
+
+**Decisión del dueño, 2026-09-04.** La tabla no tenía ni una columna con contenido:
+
+```sql
+CREATE TABLE dossiers (
+  id         BIGINT PRIMARY KEY,   -- sintético
+  person_id  INT NOT NULL,         -- UNIQUE (uq_dossiers_person) → 1:1 con la persona
+  created_at, updated_at
+);
+```
+
+Es **exactamente** el criterio con el que murió `documents`, y el `CLAUDE.md` de la raíz lo dice con
+estas palabras: *«Tres tablas murieron y no vuelven: … y `documents` (una cáscara 1:1 sobre
+`task_items` sin ni una columna propia)»*. `dossiers` es la misma figura sobre `persons` — y ya
+había perdido su única columna con contenido cuando `TD7-c5` retiró `cedula` porque *«no era
+redundante: era una copia que MENTÍA»*.
+
+Se midieron las tres consecuencias posibles antes de decidir, y ninguna se sostiene:
+
+| Lo que podría perderse | Medido |
+|---|---|
+| Las fechas propias del expediente | **Nadie las lee**: cero referencias a `dossier.created_at` / `updated_at` |
+| El id del expediente en el contrato HTTP | Sale como `_id` (herencia de Mongo), pero **el frontend no lo usa**: cero referencias |
+| Algo que apunte a `dossiers` | **Sólo `dossier_items.dossier_id`.** Ninguna otra clave ajena en el esquema |
+
+**Lo único que sí desaparece, y hay que decirlo:** el expediente vacío deja de ser un estado. Hoy
+`getOrCreateDossier` crea la cabecera aunque no haya un solo asiento, así que se puede distinguir
+«abrió su expediente y no metió nada» de «nunca lo abrió». No se encontró nada que use esa
+distinción, pero es la única pérdida real.
+
+**Y el nombre cambia con la tabla**: `dossier_items` → **`expediente_asientos`**, y las diez de
+sección a `expediente_*`. Mantener `dossier_*` colgando de `persons` habría dejado el nombre de una
+tabla que ya no existe.
+
+Alcance medido: **tres ficheros** nombran `dossiers` (`dossierStore.js`, `dossier_controler.js` y el
+sembrado de caracterización). Y sale gratis: `E4` ya reescribe `dossierStore` entero.
 
 ---
 
@@ -257,7 +294,7 @@ Así el catálogo es **preferente pero no obligatorio**, y un título extranjero
 - `ies` puede apuntar a `units` cuando es interna.
 - `campo_amplio` deja de ser texto y pasa al catálogo CINE-F.
 - Las fechas dejan de ser cadenas.
-- `dossier_items` **recupera `updated_at`**: corregir un asiento deja de ser borrarlo.
+- `expediente_asientos` **recupera `updated_at`**: corregir un asiento deja de ser borrarlo.
 - La unión de las cinco secciones de investigación baja de JavaScript
   (`rowsFor: (records, tab) => records?.[tab] ?? []`) a **una vista SQL**.
 - El JSONB desaparece **entero**: no queda cola variable que lo justifique.
@@ -312,19 +349,19 @@ propósito. Y en el navegador: `/perfil` como **gestor** o **usuario** —el adm
 
 ⚠️ **El orden de este apartado NO es el orden del fichero.** Aquí se lee primero la espina porque es
 lo que explica el modelo; en `postgres_schema.sql` **el catálogo académico (§8.4) va antes**, porque
-`dossier_titulos.titulacion_id` y `.campo_amplio_id` no pueden referenciar tablas que aún no existen
+`expediente_titulos.titulacion_id` y `.campo_amplio_id` no pueden referenciar tablas que aún no existen
 y este esquema **no tiene ni un `ALTER`** con el que arreglarlo después.
 
 Los idiomas que se respetan, por si se compara con el resto del fichero: **no hay `BOOLEAN`** (todo
 es `SMALLINT NOT NULL DEFAULT 1/0`), los dominios cerrados son `TEXT ... CHECK (col IN (...))` y
 **no hay `CREATE TYPE`**, y toda tabla con `updated_at` lleva su trigger `set_updated_at()`.
 
-### 8.1 · La espina: `dossier_items`
+### 8.1 · La espina: `expediente_asientos`
 
 ```sql
 -- ── EL EXPEDIENTE: LA ESPINA ─────────────────────────────────────────────────────────────────────
 -- Una fila POR ASIENTO, no por expediente: un titulo, una experiencia, un articulo. De quien es lo
--- dice dossier_id; la primaria es id.
+-- dice person_id; la primaria es id.
 --
 -- Aqui vive lo que TIENEN LOS DIEZ: de que seccion es, su respaldo escaneado, su estado de revision
 -- y sus fechas. El detalle vive en la tabla de su seccion, con id = PK = FK a esta.
@@ -337,15 +374,15 @@ es `SMALLINT NOT NULL DEFAULT 1/0`), los dominios cerrados son `TEXT ... CHECK (
 -- Es el patron que el esquema YA usa en contract_origins -> contract_origin_recruitment /
 -- contract_origin_renewal: discriminador arriba, PK = FK abajo, ON DELETE CASCADE. Deja de ser el
 -- unico caso de herencia table-per-subtype del esquema.
-CREATE TABLE IF NOT EXISTS dossier_items (
+CREATE TABLE IF NOT EXISTS expediente_asientos (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  dossier_id BIGINT NOT NULL,
+  person_id INT NOT NULL,
   -- EL DISCRIMINADOR: en cual de las diez tablas esta el resto de la fila.
   --
   -- Hasta ahora estos diez valores NO eran un CHECK: vivian en la constante SECTIONS de
   -- backend/services/users/dossierStore.js. Un section = 'titulso' entraba sin protesta y dejaba el
   -- asiento huerfano, sin detalle y sin nadie que lo notara. Con el CHECK, ademas, la clave ajena
-  -- del subtipo es exigible: un asiento de seccion titulos SOLO puede tener fila en dossier_titulos.
+  -- del subtipo es exigible: un asiento de seccion titulos SOLO puede tener fila en expediente_titulos.
   section TEXT NOT NULL CHECK (section IN (
     'titulos','experiencia','referencias','formacion','certificaciones',
     'articulos','libros','ponencias','tesis','proyectos'
@@ -383,10 +420,10 @@ CREATE TABLE IF NOT EXISTS dossier_items (
   -- lo que se iba tambien su respaldo escaneado y su fecha de alta. Un expediente academico es una
   -- entidad con estado que se corrige durante años, no un registro historico inmutable.
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_dossier_items_dossier FOREIGN KEY (dossier_id) REFERENCES dossiers(id) ON DELETE CASCADE
+  CONSTRAINT fk_expediente_asientos_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_dossier_items ON dossier_items (dossier_id, section, id);
-CREATE OR REPLACE TRIGGER trg_dossier_items_set_updated_at BEFORE UPDATE ON dossier_items FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+CREATE INDEX IF NOT EXISTS idx_expediente_asientos ON expediente_asientos (person_id, section, id);
+CREATE OR REPLACE TRIGGER trg_dossier_items_set_updated_at BEFORE UPDATE ON expediente_asientos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 ```
 
 **Lo que desaparece de esta tabla:** `data JSONB NOT NULL DEFAULT '{}'` y `url_documento TEXT NOT
@@ -395,14 +432,14 @@ NULL DEFAULT ''`. No queda cola variable que justifique el JSONB, así que se va
 ### 8.2 · Las diez tablas de sección
 
 Todas comparten la misma cabecera —`id BIGINT NOT NULL PRIMARY KEY` que es a la vez clave ajena a
-`dossier_items(id)` con `ON DELETE CASCADE`— y **ninguna repite `created_at`, `updated_at`,
+`expediente_asientos(id)` con `ON DELETE CASCADE`— y **ninguna repite `created_at`, `updated_at`,
 `section` ni el respaldo**: eso está en la espina y borrar el asiento se lleva el detalle.
 
 ```sql
 -- ── 1/10 · TITULOS ───────────────────────────────────────────────────────────────────────────────
 -- La seccion que mas gana con el cambio: de sus siete claves JSON, TRES eran texto libre donde ya
 -- habia catalogo (pais, titulo, campo_amplio) y una era un vocabulario cerrado sin ninguna defensa.
-CREATE TABLE IF NOT EXISTS dossier_titulos (
+CREATE TABLE IF NOT EXISTS expediente_titulos (
   id BIGINT NOT NULL PRIMARY KEY,
   -- LA TITULACION, con la valvula de escape decidida en la seccion 3.4 de este plan.
   --
@@ -444,7 +481,7 @@ CREATE TABLE IF NOT EXISTS dossier_titulos (
   -- EL CAMPO AMPLIO CINE-F. Nulo mientras no se conozca: hoy es texto libre y la mitad de los
   -- asientos de semilla lo traen vacio.
   campo_amplio_id INT NULL,
-  CONSTRAINT fk_dossier_titulos_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE,
+  CONSTRAINT fk_dossier_titulos_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE,
   CONSTRAINT fk_dossier_titulos_titulacion FOREIGN KEY (titulacion_id) REFERENCES titulaciones(id),
   CONSTRAINT fk_dossier_titulos_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
   CONSTRAINT fk_dossier_titulos_campo FOREIGN KEY (campo_amplio_id) REFERENCES campos_amplios(id),
@@ -452,16 +489,16 @@ CREATE TABLE IF NOT EXISTS dossier_titulos (
   -- que entran titulos sin nombre de ninguna clase.
   CONSTRAINT chk_dossier_titulos_titulacion CHECK (titulacion_id IS NOT NULL OR titulacion_libre IS NOT NULL)
 );
-CREATE INDEX IF NOT EXISTS idx_dossier_titulos_titulacion ON dossier_titulos (titulacion_id);
-CREATE INDEX IF NOT EXISTS idx_dossier_titulos_pais ON dossier_titulos (pais_id);
-CREATE INDEX IF NOT EXISTS idx_dossier_titulos_campo ON dossier_titulos (campo_amplio_id);
+CREATE INDEX IF NOT EXISTS idx_dossier_titulos_titulacion ON expediente_titulos (titulacion_id);
+CREATE INDEX IF NOT EXISTS idx_dossier_titulos_pais ON expediente_titulos (pais_id);
+CREATE INDEX IF NOT EXISTS idx_dossier_titulos_campo ON expediente_titulos (campo_amplio_id);
 
 
 -- ── 2/10 · FORMACION CONTINUA ────────────────────────────────────────────────────────────────────
 -- Cursos y eventos de capacitacion. El formulario que la alimenta se llama AgregarCapacitacion.vue
 -- y la seccion se llama "formacion": se conserva el nombre de la seccion, que es el que viaja en
 -- section y en la ruta del frontend.
-CREATE TABLE IF NOT EXISTS dossier_formacion (
+CREATE TABLE IF NOT EXISTS expediente_formacion (
   id BIGINT NOT NULL PRIMARY KEY,
   tema VARCHAR(250) NOT NULL,
   institucion VARCHAR(200) NOT NULL,
@@ -477,19 +514,19 @@ CREATE TABLE IF NOT EXISTS dossier_formacion (
   fecha_fin DATE NULL,
   -- Horas de duracion. INT y no texto: es lo que se suma para acreditar formacion continua.
   horas INT NULL CHECK (horas IS NULL OR horas >= 0),
-  CONSTRAINT fk_dossier_formacion_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE,
+  CONSTRAINT fk_dossier_formacion_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE,
   CONSTRAINT fk_dossier_formacion_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
   -- Un curso no puede acabar antes de empezar. Es el tipo de invariante que el JSONB no podia ni
   -- enunciar.
   CONSTRAINT chk_dossier_formacion_fechas CHECK (fecha_fin IS NULL OR fecha_fin >= fecha_inicio)
 );
-CREATE INDEX IF NOT EXISTS idx_dossier_formacion_pais ON dossier_formacion (pais_id);
+CREATE INDEX IF NOT EXISTS idx_dossier_formacion_pais ON expediente_formacion (pais_id);
 
 
 -- ── 3/10 · EXPERIENCIA ───────────────────────────────────────────────────────────────────────────
 -- La UNICA de las diez secciones con un valor no escalar, y es lo que decidio que ninguna es
 -- inviable: funcion_catedra era un array y pasa a tabla hija (mas abajo).
-CREATE TABLE IF NOT EXISTS dossier_experiencia (
+CREATE TABLE IF NOT EXISTS expediente_experiencia (
   id BIGINT NOT NULL PRIMARY KEY,
   tipo TEXT NOT NULL DEFAULT 'docencia' CHECK (tipo IN ('docencia','profesional')),
   institucion VARCHAR(200) NOT NULL,
@@ -499,7 +536,7 @@ CREATE TABLE IF NOT EXISTS dossier_experiencia (
   -- NULA significa "sigue en el puesto", que es la lectura habitual de un fin abierto en este
   -- esquema (position_assignments y contracts hacen lo mismo).
   fecha_fin DATE NULL,
-  CONSTRAINT fk_dossier_experiencia_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE,
+  CONSTRAINT fk_dossier_experiencia_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE,
   CONSTRAINT chk_dossier_experiencia_fechas CHECK (fecha_fin IS NULL OR fecha_fin >= fecha_inicio)
 );
 
@@ -509,7 +546,7 @@ CREATE TABLE IF NOT EXISTS dossier_experiencia (
 -- correo y telefono de alguien que NO es el titular del expediente y que nunca acepto nada aqui.
 -- En un blob JSON esos datos no son localizables ni borrables uno a uno; en columnas si, que es lo
 -- que el frente 17 (LOPDP) necesita poder hacer.
-CREATE TABLE IF NOT EXISTS dossier_referencias (
+CREATE TABLE IF NOT EXISTS expediente_referencias (
   id BIGINT NOT NULL PRIMARY KEY,
   nombre VARCHAR(180) NOT NULL,
   tipo TEXT NOT NULL DEFAULT 'laboral' CHECK (tipo IN ('laboral','personal','familiar')),
@@ -522,12 +559,12 @@ CREATE TABLE IF NOT EXISTS dossier_referencias (
   institucion VARCHAR(200) NULL,
   email VARCHAR(180) NULL,
   telefono VARCHAR(40) NULL,
-  CONSTRAINT fk_dossier_referencias_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE
+  CONSTRAINT fk_dossier_referencias_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE
 );
 
 
 -- ── 5/10 · CERTIFICACIONES ───────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS dossier_certificaciones (
+CREATE TABLE IF NOT EXISTS expediente_certificaciones (
   id BIGINT NOT NULL PRIMARY KEY,
   titulo VARCHAR(250) NOT NULL,
   institucion VARCHAR(200) NOT NULL,
@@ -535,7 +572,7 @@ CREATE TABLE IF NOT EXISTS dossier_certificaciones (
   descripcion TEXT NULL,
   fecha DATE NULL,
   horas INT NULL CHECK (horas IS NULL OR horas >= 0),
-  CONSTRAINT fk_dossier_certificaciones_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE
+  CONSTRAINT fk_dossier_certificaciones_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE
 );
 
 
@@ -544,7 +581,7 @@ CREATE TABLE IF NOT EXISTS dossier_certificaciones (
 -- agrupo mal: NO SON POLIMORFICAS. AgregarInvestigacion.vue tiene cinco bloques hermanos bajo
 -- v-if="form.tipoProduccion === ...", cada uno con su lista de campos cerrada y casi disjunta. Lo
 -- polimorfico es el formulario, no los datos. Se agruparon por como se pintan, no por como son.
-CREATE TABLE IF NOT EXISTS dossier_articulos (
+CREATE TABLE IF NOT EXISTS expediente_articulos (
   id BIGINT NOT NULL PRIMARY KEY,
   titulo VARCHAR(300) NOT NULL,
   revista VARCHAR(250) NOT NULL,
@@ -558,13 +595,13 @@ CREATE TABLE IF NOT EXISTS dossier_articulos (
   estado TEXT NOT NULL DEFAULT 'aceptado' CHECK (estado IN ('aceptado','publicado')),
   rol TEXT NOT NULL DEFAULT 'autor' CHECK (rol IN ('autor','coautor','revisor')),
   fecha DATE NULL,
-  CONSTRAINT fk_dossier_articulos_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE
+  CONSTRAINT fk_dossier_articulos_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE
 );
-CREATE INDEX IF NOT EXISTS idx_dossier_articulos_doi ON dossier_articulos (doi);
+CREATE INDEX IF NOT EXISTS idx_dossier_articulos_doi ON expediente_articulos (doi);
 
 
 -- ── 7/10 · LIBROS Y CAPITULOS ────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS dossier_libros (
+CREATE TABLE IF NOT EXISTS expediente_libros (
   id BIGINT NOT NULL PRIMARY KEY,
   titulo VARCHAR(300) NOT NULL,
   editorial VARCHAR(200) NOT NULL,
@@ -582,43 +619,43 @@ CREATE TABLE IF NOT EXISTS dossier_libros (
   -- enviar (AgregarInvestigacion.vue:455). Mapea bien y no es un fallo, pero como nombre de columna
   -- seria inaceptable — y la traduccion desaparece con el JSON.
   anio SMALLINT NULL CHECK (anio IS NULL OR anio BETWEEN 1900 AND 2200),
-  CONSTRAINT fk_dossier_libros_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE
+  CONSTRAINT fk_dossier_libros_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE
 );
 
 
 -- ── 8/10 · PONENCIAS ─────────────────────────────────────────────────────────────────────────────
 -- La seccion mas pequeña de las diez: tres campos.
-CREATE TABLE IF NOT EXISTS dossier_ponencias (
+CREATE TABLE IF NOT EXISTS expediente_ponencias (
   id BIGINT NOT NULL PRIMARY KEY,
   titulo VARCHAR(300) NOT NULL,
   evento VARCHAR(250) NOT NULL,
   anio SMALLINT NULL CHECK (anio IS NULL OR anio BETWEEN 1900 AND 2200),
-  CONSTRAINT fk_dossier_ponencias_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE
+  CONSTRAINT fk_dossier_ponencias_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE
 );
 
 
 -- ── 9/10 · TESIS DIRIGIDAS ───────────────────────────────────────────────────────────────────────
 -- Tesis en las que la persona participo COMO ASESOR O REVISOR, no la suya: la suya es un titulo.
 -- Por eso rol no tiene valor "autor" y nivel es el nivel del programa, no el de quien lo dirige.
-CREATE TABLE IF NOT EXISTS dossier_tesis (
+CREATE TABLE IF NOT EXISTS expediente_tesis (
   id BIGINT NOT NULL PRIMARY KEY,
   tema VARCHAR(300) NOT NULL,
   ies VARCHAR(200) NOT NULL,
   programa VARCHAR(200) NULL,
-  -- Mismo vocabulario que dossier_titulos.nivel, y el mismo CHECK a proposito: es el mismo eje.
-  -- Que las dos listas del frontend no coincidan (ver dossier_titulos.nivel) es el defecto, no la
+  -- Mismo vocabulario que expediente_titulos.nivel, y el mismo CHECK a proposito: es el mismo eje.
+  -- Que las dos listas del frontend no coincidan (ver expediente_titulos.nivel) es el defecto, no la
   -- coincidencia.
   nivel TEXT NOT NULL DEFAULT 'grado' CHECK (nivel IN (
     'tecnico','tecnologo','grado','maestria','maestria_tecnologica','diplomado','doctorado','posdoctorado'
   )),
   rol TEXT NOT NULL DEFAULT 'asesor' CHECK (rol IN ('asesor','revisor')),
   anio SMALLINT NULL CHECK (anio IS NULL OR anio BETWEEN 1900 AND 2200),
-  CONSTRAINT fk_dossier_tesis_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE
+  CONSTRAINT fk_dossier_tesis_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE
 );
 
 
 -- ── 10/10 · PROYECTOS ────────────────────────────────────────────────────────────────────────────
-CREATE TABLE IF NOT EXISTS dossier_proyectos (
+CREATE TABLE IF NOT EXISTS expediente_proyectos (
   id BIGINT NOT NULL PRIMARY KEY,
   tema VARCHAR(300) NOT NULL,
   institucion VARCHAR(200) NOT NULL,
@@ -634,12 +671,12 @@ CREATE TABLE IF NOT EXISTS dossier_proyectos (
   -- NUMERIC y NUNCA float: es dinero. El JSON lo guardaba como numero de JavaScript, que es un
   -- doble binario y no representa exactamente ni 0,1.
   presupuesto NUMERIC(14,2) NULL CHECK (presupuesto IS NULL OR presupuesto >= 0),
-  CONSTRAINT fk_dossier_proyectos_item FOREIGN KEY (id) REFERENCES dossier_items(id) ON DELETE CASCADE,
+  CONSTRAINT fk_dossier_proyectos_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE,
   CONSTRAINT chk_dossier_proyectos_fechas CHECK (fin IS NULL OR inicio IS NULL OR fin >= inicio)
 );
 ```
 
-### 8.3 · La hija del 1:N: `dossier_experiencia_funciones`
+### 8.3 · La hija del 1:N: `expediente_experiencia_funciones`
 
 ```sql
 -- ── LAS CATEDRAS Y FUNCIONES DE UNA EXPERIENCIA ──────────────────────────────────────────────────
@@ -652,21 +689,21 @@ CREATE TABLE IF NOT EXISTS dossier_proyectos (
 --
 -- Y ojo: el esquema tiene CERO columnas de tipo array. Meter el primero aqui, para el unico caso
 -- que hay, seria estrenar un idioma nuevo para no escribir seis lineas.
-CREATE TABLE IF NOT EXISTS dossier_experiencia_funciones (
+CREATE TABLE IF NOT EXISTS expediente_experiencia_funciones (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   experiencia_id BIGINT NOT NULL,
   nombre VARCHAR(200) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_dossier_exp_funciones_exp FOREIGN KEY (experiencia_id) REFERENCES dossier_experiencia(id) ON DELETE CASCADE
+  CONSTRAINT fk_dossier_exp_funciones_exp FOREIGN KEY (experiencia_id) REFERENCES expediente_experiencia(id) ON DELETE CASCADE
 );
 -- La misma catedra no se repite dentro de la misma experiencia. Hoy si puede: partir por comas un
 -- texto escrito a mano produce duplicados con solo teclear una coma de mas.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_dossier_exp_funciones ON dossier_experiencia_funciones (experiencia_id, nombre);
-CREATE INDEX IF NOT EXISTS idx_dossier_exp_funciones_nombre ON dossier_experiencia_funciones (nombre);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_dossier_exp_funciones ON expediente_experiencia_funciones (experiencia_id, nombre);
+CREATE INDEX IF NOT EXISTS idx_dossier_exp_funciones_nombre ON expediente_experiencia_funciones (nombre);
 ```
 
-⚠️ **La cascada aquí tiene dos aristas**: `dossier_items` → `dossier_experiencia` →
-`dossier_experiencia_funciones`. Es la misma profundidad máxima que ya tiene el esquema (`tasks` →
+⚠️ **La cascada aquí tiene dos aristas**: `expediente_asientos` → `expediente_experiencia` →
+`expediente_experiencia_funciones`. Es la misma profundidad máxima que ya tiene el esquema (`tasks` →
 `task_items` → flujos), así que no estrena nada.
 
 ### 8.4 · El catálogo académico
@@ -674,7 +711,7 @@ CREATE INDEX IF NOT EXISTS idx_dossier_exp_funciones_nombre ON dossier_experienc
 Cinco tablas encadenadas. **Las tres de arriba son la norma internacional CINE-F (ISCED-F) de la
 UNESCO y NO llevan país**; las dos de abajo las fija cada país y **sí lo llevan**.
 
-⚠️ **Estas tablas van ANTES que `dossier_titulos` en `postgres_schema.sql`**, y sus datos los siembra
+⚠️ **Estas tablas van ANTES que `expediente_titulos` en `postgres_schema.sql`**, y sus datos los siembra
 el bootstrap, no este fichero: son cientos de filas y aquí sólo hay cuatro `INSERT`, todos de
 vocabularios de ocho filas o menos. Es el mismo trato que recibe la geografía.
 
@@ -779,7 +816,7 @@ CREATE INDEX IF NOT EXISTS idx_titulaciones_carrera ON titulaciones (carrera_id)
 CREATE OR REPLACE TRIGGER trg_titulaciones_set_updated_at BEFORE UPDATE ON titulaciones FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 ```
 
-### 8.5 · La vista `dossier_investigacion`
+### 8.5 · La vista `expediente_investigacion`
 
 ```sql
 -- ── LA PESTAÑA DE INVESTIGACION, EN SQL ──────────────────────────────────────────────────────────
@@ -794,43 +831,43 @@ CREATE OR REPLACE TRIGGER trg_titulaciones_set_updated_at BEFORE UPDATE ON titul
 --
 -- Es de SOLO LECTURA a proposito. Se podria hacer escribible con triggers INSTEAD OF, y seria un
 -- error: dejaria dos caminos para insertar lo mismo y el segundo se saltaria los CHECK de la tabla.
-CREATE OR REPLACE VIEW dossier_investigacion AS
-  SELECT i.id, i.dossier_id, i.section AS tipo_produccion, i.estado_revision,
+CREATE OR REPLACE VIEW expediente_investigacion AS
+  SELECT i.id, i.person_id, i.section AS tipo_produccion, i.estado_revision,
          i.documento_ref, i.created_at,
          a.titulo,
          EXTRACT(YEAR FROM a.fecha)::SMALLINT AS anio,
          a.revista AS entidad,
          a.rol
-    FROM dossier_items i
-    JOIN dossier_articulos a ON a.id = i.id
+    FROM expediente_asientos i
+    JOIN expediente_articulos a ON a.id = i.id
   UNION ALL
-  SELECT i.id, i.dossier_id, i.section, i.estado_revision,
+  SELECT i.id, i.person_id, i.section, i.estado_revision,
          i.documento_ref, i.created_at,
          l.titulo, l.anio, l.editorial, NULL
-    FROM dossier_items i
-    JOIN dossier_libros l ON l.id = i.id
+    FROM expediente_asientos i
+    JOIN expediente_libros l ON l.id = i.id
   UNION ALL
-  SELECT i.id, i.dossier_id, i.section, i.estado_revision,
+  SELECT i.id, i.person_id, i.section, i.estado_revision,
          i.documento_ref, i.created_at,
          p.titulo, p.anio, p.evento, NULL
-    FROM dossier_items i
-    JOIN dossier_ponencias p ON p.id = i.id
+    FROM expediente_asientos i
+    JOIN expediente_ponencias p ON p.id = i.id
   UNION ALL
   -- En tesis y proyectos lo que hace de titulo es el tema: no tienen columna titulo, y forzarles una
   -- para que la vista quede simetrica seria doblar el modelo por comodidad de una consulta.
-  SELECT i.id, i.dossier_id, i.section, i.estado_revision,
+  SELECT i.id, i.person_id, i.section, i.estado_revision,
          i.documento_ref, i.created_at,
          t.tema, t.anio, t.ies, t.rol
-    FROM dossier_items i
-    JOIN dossier_tesis t ON t.id = i.id
+    FROM expediente_asientos i
+    JOIN expediente_tesis t ON t.id = i.id
   UNION ALL
-  SELECT i.id, i.dossier_id, i.section, i.estado_revision,
+  SELECT i.id, i.person_id, i.section, i.estado_revision,
          i.documento_ref, i.created_at,
          y.tema,
          EXTRACT(YEAR FROM y.inicio)::SMALLINT,
          y.institucion, NULL
-    FROM dossier_items i
-    JOIN dossier_proyectos y ON y.id = i.id;
+    FROM expediente_asientos i
+    JOIN expediente_proyectos y ON y.id = i.id;
 ```
 
 ⚠️ **`entidad` es una columna de conveniencia y no debe usarse para nada más que pintar la tabla.**
@@ -851,7 +888,7 @@ por ella sería contar revistas y editoriales juntas.
 | Triggers `set_updated_at()` | 6 |
 | Columnas JSONB que quedan en el expediente | **0** |
 
-**`dossiers` no cambia.** `dossier_items` se reescribe: pierde `data` y `url_documento`, gana
+**`dossiers` se RETIRA** (ver §2.7). `expediente_asientos` se reescribe: pierde `data` y `url_documento`, gana
 `estado_revision`, `documento_ref`, `documento_subido_at`, `updated_at`, el `CHECK` de `section` y su
 trigger.
 
@@ -862,7 +899,7 @@ dueño todavía**, y cualquiera de las tres puede revertirse sin tocar el resto.
 
 | | Qué se hizo | Por qué, y qué se pierde si se revierte |
 |---|---|---|
-| **`sera` → `estado_revision` en la espina** | Columna nueva en `dossier_items`, con `CHECK` de cuatro valores | No estaba en las listas de §2.1 porque **no es de una sección: es de las diez**. Lo escriben los seis formularios, lo pinta la primera columna de las seis tablas y lo interpreta `dossierStatus.js`. Si no se recoge, al morir el JSONB el dato se pierde y la insignia se queda en «pendiente» para siempre |
+| **`sera` → `estado_revision` en la espina** | Columna nueva en `expediente_asientos`, con `CHECK` de cuatro valores | No estaba en las listas de §2.1 porque **no es de una sección: es de las diez**. Lo escriben los seis formularios, lo pinta la primera columna de las seis tablas y lo interpreta `dossierStatus.js`. Si no se recoge, al morir el JSONB el dato se pierde y la insignia se queda en «pendiente» para siempre |
 | **`titulos.tipo` → `modalidad`** | Renombrada | La clave se llamaba `tipo` y el formulario la etiquetaba «Modalidad». `tipo` ya significa otra cosa en seis de las diez secciones |
 | **Vocabularios en minúscula y sin tildes** | `nivel`, `modalidad`, `rol`, `estado`, `tipo` | El esquema no usa tildes en sus literales. La etiqueta con tildes es del frontend. **Obliga a que `E8` traduzca al migrar**, y ése es el coste |
 

@@ -136,7 +136,7 @@ gratis ahora y deja de serlo en cuanto el sistema entre en uso.
 
 ### 5.1 · La espina, y el asiento partido en dos
 
-`dossier_items` deja de guardar `data` y pasa a ser **la espina**: lo que tienen los diez asientos
+`expediente_asientos` deja de guardar `data` y pasa a ser **la espina**: lo que tienen los diez asientos
 —de qué sección son, su respaldo escaneado, su estado de revisión y sus fechas—. El detalle va a una
 tabla por sección, cuya **clave primaria ES la clave ajena** al asiento, con `ON DELETE CASCADE`: un
 asiento y su detalle son la misma fila partida en dos tablas. Es el patrón que el esquema ya usa en
@@ -144,12 +144,12 @@ asiento y su detalle son la misma fila partida en dos tablas. Es el patrón que 
 
 ```mermaid
 erDiagram
-  dossiers ||--o{ dossier_items : "sus asientos"
-  dossier_items ||--o| dossier_titulos : "section = titulos"
+  dossiers ||--o{ expediente_asientos : "sus asientos"
+  expediente_asientos ||--o| expediente_titulos : "section = titulos"
 
-  dossier_items {
+  expediente_asientos {
     bigint id PK
-    bigint dossier_id FK
+    bigint person_id FK
     text section "CHECK de los DIEZ valores"
     text estado_revision "hoy es sera, en el JSON"
     varchar documento_ref "minio://, ya no una URL"
@@ -158,7 +158,7 @@ erDiagram
     timestamp updated_at "NUEVA: corregir deja de ser borrar"
   }
 
-  dossier_titulos {
+  expediente_titulos {
     bigint id PK "PK = FK al asiento"
     int titulacion_id FK "NULA si no esta en catalogo"
     varchar titulacion_libre "el nombre tal cual"
@@ -189,18 +189,18 @@ datos?»* no se puede hacer sin leer todos los expedientes enteros.
 
 ```mermaid
 erDiagram
-  dossier_items ||--o| dossier_formacion : "section = formacion"
-  dossier_items ||--o| dossier_experiencia : "section = experiencia"
-  dossier_items ||--o| dossier_referencias : "section = referencias"
-  dossier_items ||--o| dossier_certificaciones : "section = certificaciones"
-  dossier_experiencia ||--o{ dossier_experiencia_funciones : "sus catedras"
+  expediente_asientos ||--o| expediente_formacion : "section = formacion"
+  expediente_asientos ||--o| expediente_experiencia : "section = experiencia"
+  expediente_asientos ||--o| expediente_referencias : "section = referencias"
+  expediente_asientos ||--o| expediente_certificaciones : "section = certificaciones"
+  expediente_experiencia ||--o{ expediente_experiencia_funciones : "sus catedras"
 
-  dossier_items {
+  expediente_asientos {
     bigint id PK
     text section
   }
 
-  dossier_formacion {
+  expediente_formacion {
     bigint id PK
     varchar tema
     varchar institucion
@@ -212,7 +212,7 @@ erDiagram
     int horas
   }
 
-  dossier_experiencia {
+  expediente_experiencia {
     bigint id PK
     text tipo
     varchar institucion
@@ -221,14 +221,14 @@ erDiagram
     date fecha_fin
   }
 
-  dossier_experiencia_funciones {
+  expediente_experiencia_funciones {
     bigint id PK
     bigint experiencia_id FK
     varchar nombre
     timestamp created_at
   }
 
-  dossier_referencias {
+  expediente_referencias {
     bigint id PK
     varchar nombre
     text tipo
@@ -238,7 +238,7 @@ erDiagram
     varchar telefono
   }
 
-  dossier_certificaciones {
+  expediente_certificaciones {
     bigint id PK
     varchar titulo
     varchar institucion
@@ -249,7 +249,7 @@ erDiagram
   }
 ```
 
-`dossier_referencias` es la que más cambia de significado sin cambiar de forma: **son datos de un
+`expediente_referencias` es la que más cambia de significado sin cambiar de forma: **son datos de un
 tercero** que nunca aceptó nada aquí, y en columnas se pueden localizar y borrar uno a uno. De paso
 corrige una errata que nadie había visto: la clave JSON se llama `institution`, en inglés, rodeada de
 nueve claves en español. Las fechas dejan de ser cadenas —ordenar por fecha era ordenar texto— y
@@ -264,18 +264,18 @@ las agrupó por cómo se pintan, no por cómo son.
 
 ```mermaid
 erDiagram
-  dossier_items ||--o| dossier_articulos : "section = articulos"
-  dossier_items ||--o| dossier_libros : "section = libros"
-  dossier_items ||--o| dossier_ponencias : "section = ponencias"
-  dossier_items ||--o| dossier_tesis : "section = tesis"
-  dossier_items ||--o| dossier_proyectos : "section = proyectos"
+  expediente_asientos ||--o| expediente_articulos : "section = articulos"
+  expediente_asientos ||--o| expediente_libros : "section = libros"
+  expediente_asientos ||--o| expediente_ponencias : "section = ponencias"
+  expediente_asientos ||--o| expediente_tesis : "section = tesis"
+  expediente_asientos ||--o| expediente_proyectos : "section = proyectos"
 
-  dossier_items {
+  expediente_asientos {
     bigint id PK
     text section
   }
 
-  dossier_articulos {
+  expediente_articulos {
     bigint id PK
     varchar titulo
     varchar revista
@@ -288,7 +288,7 @@ erDiagram
     date fecha
   }
 
-  dossier_libros {
+  expediente_libros {
     bigint id PK
     varchar titulo
     varchar editorial
@@ -298,14 +298,14 @@ erDiagram
     smallint anio "era año"
   }
 
-  dossier_ponencias {
+  expediente_ponencias {
     bigint id PK
     varchar titulo
     varchar evento
     smallint anio
   }
 
-  dossier_tesis {
+  expediente_tesis {
     bigint id PK
     varchar tema
     varchar ies
@@ -315,7 +315,7 @@ erDiagram
     smallint anio
   }
 
-  dossier_proyectos {
+  expediente_proyectos {
     bigint id PK
     varchar tema
     varchar institucion
@@ -328,7 +328,7 @@ erDiagram
   }
 ```
 
-Lo que sí las une es una **vista**, `dossier_investigacion`, con el `UNION ALL` de las cinco: la
+Lo que sí las une es una **vista**, `expediente_investigacion`, con el `UNION ALL` de las cinco: la
 pestaña de investigación deja de armarse en JavaScript. Y es de sólo lectura a propósito — hacerla
 escribible con triggers `INSTEAD OF` daría un segundo camino de inserción que se saltaría los
 `CHECK`. De los tipos, dos importan: `presupuesto` es `NUMERIC` y nunca coma flotante, porque es
@@ -389,7 +389,7 @@ erDiagram
   }
 ```
 
-El enganche desde el expediente **no es obligatorio**: `dossier_titulos` admite `titulacion_id` nula
+El enganche desde el expediente **no es obligatorio**: `expediente_titulos` admite `titulacion_id` nula
 más el nombre en texto libre, con un `CHECK` que exige una de las dos. La alternativa evaluada —una
 fila «NR / No registra» en el catálogo— satisface la clave ajena **y pierde el nombre real**: un
 `Diplôme d'Ingénieur` francés se degradaría a «NR». Así el catálogo es preferente pero no obligatorio.
