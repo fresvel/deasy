@@ -1,0 +1,221 @@
+codigo,nivel,padre,nombre_es,nombre_en
+00,amplio,,Programas y certificaciones genéricos,Generic programmes and qualifications
+000,especifico,00,Programas y certificaciones genéricos sin mayor definición,Generic programmes and qualifications not further defined
+0000,detallado,000,Programas y certificaciones genéricos sin mayor definición,Generic programmes and qualifications not further defined
+001,especifico,00,Programas y certificaciones básicos,Basic programmes and qualifications
+0011,detallado,001,Programas y certificaciones básicos,Basic programmes and qualifications
+002,especifico,00,Alfabetización y aritmética elemental,Literacy and numeracy
+0021,detallado,002,Alfabetización y aritmética elemental,Literacy and numeracy
+003,especifico,00,Competencias personales y desarrollo,Personal skills and development
+0031,detallado,003,Competencias personales y desarrollo,Personal skills and development
+009,especifico,00,Programas y certificaciones genéricos no contemplados en la clasificación,Generic programmes and qualifications not elsewhere classified
+0099,detallado,009,Programas y certificaciones genéricos no contemplados en la clasificación,Generic programmes and qualifications not elsewhere classified
+01,amplio,,Educación,Education
+011,especifico,01,Educación,Education
+0110,detallado,011,Educación sin mayor definición,Education not further defined
+0111,detallado,011,Ciencias de la educación,Education science
+0112,detallado,011,Formación para docentes de educación preprimaria,Training for pre-school teachers
+0113,detallado,011,Formación para docentes sin asignatura de especialización,Teacher training without subject specialisation
+0114,detallado,011,Formación para docentes con asignatura de especialización,Teacher training with subject specialisation
+0119,detallado,011,Educación no contemplada en la clasificación,Education not elsewhere classified
+018,especifico,01,Programas y certificaciones interdisciplinarios relacionados con la educación,Inter-disciplinary programmes and qualifications involving education
+0188,detallado,018,Programas y certificaciones interdisciplinarios relacionados con la educación,Inter-disciplinary programmes and qualifications involving education
+02,amplio,,Artes y humanidades,Arts and humanities
+020,especifico,02,Artes y humanidades sin mayor definición,Arts and humanities not further defined
+0200,detallado,020,Artes y humanidades sin mayor definición,Arts and humanities not further defined
+021,especifico,02,Artes,Arts
+0210,detallado,021,Artes sin mayor definición,Arts not further defined
+0211,detallado,021,Técnicas audiovisuales y producción para medios de comunicación,Audio-visual techniques and media production
+0212,detallado,021,"Diseño industrial, de modas e interiores","Fashion, interior and industrial design"
+0213,detallado,021,Bellas artes,Fine arts
+0214,detallado,021,Artesanías,Handicrafts
+0215,detallado,021,Música y artes escénicas,Music and performing arts
+0219,detallado,021,Artes no contempladas en la clasificación,Arts not elsewhere classified
+022,especifico,02,Humanidades (excepto idiomas),Humanities (except languages)
+0220,detallado,022,Humanidades (excepto idiomas) sin mayor definición,Humanities (except languages) not further defined
+0221,detallado,022,Religión y teología,Religion and theology
+0222,detallado,022,Historia y arqueología,History and archaeology
+0223,detallado,022,Filosofía y ética,Philosophy and ethics
+0228,detallado,022,Programas y certificaciones interdisciplinarios relacionados con las humanidades,Inter-disciplinary programmes and qualifications involving humanities
+0229,detallado,022,Humanidades (excepto idiomas) no contemplados en la clasificación,Humanities (except languages) not elsewhere classified
+023,especifico,02,Idiomas,Languages
+0230,detallado,023,Idiomas sin mayor definición,Languages not further defined
+0231,detallado,023,Adquisición del lenguaje,Language acquisition
+0232,detallado,023,Literatura y lingüística,Literature and linguistics
+0239,detallado,023,Idiomas no contemplados en la clasificación,Languages not elsewhere classified
+028,especifico,02,Programas y certificaciones interdisciplinarios relacionados con las artes y las humanidades,Inter-disciplinary programmes and qualifications involving arts and humanities
+0288,detallado,028,Programas y certificaciones interdisciplinarios relacionados con las artes y las humanidades,Inter-disciplinary programmes and qualifications involving arts and humanities
+029,especifico,02,Artes y humanidades sin mayor definición,Arts and humanities not elsewhere classified
+0299,detallado,029,Artes y humanidades sin mayor definición,Arts and humanities not elsewhere classified
+03,amplio,,"Ciencias sociales, periodismo e información","Social sciences, journalism and information"
+030,especifico,03,"Ciencias sociales, periodismo e información sin mayor definición","Social sciences, journalism and information not further defined"
+0300,detallado,030,"Ciencias sociales, periodismo e información sin mayor definición","Social sciences, journalism and information not further defined"
+031,especifico,03,Ciencias sociales y del comportamiento,Social and behavioural sciences
+0310,detallado,031,Ciencias sociales y del comportamiento sin mayor definición,Social and behavioural sciences not further defined
+0311,detallado,031,Economía,Economics
+0312,detallado,031,Ciencias políticas y educación cívica,Political sciences and civics
+0313,detallado,031,Psicología,Psychology
+0314,detallado,031,Sociología y estudios culturales,Sociology and cultural studies
+0319,detallado,031,Ciencias sociales y del comportamiento no contempladas en la clasificación,Social and behavioural sciences not elsewhere classified
+032,especifico,03,Periodismo e información,Journalism and information
+0320,detallado,032,Periodismo e información sin mayor definición,Journalism and information not further defined
+0321,detallado,032,Periodismo y reportajes,Journalism and reporting
+0322,detallado,032,"Bibliotecología, información y archivología","Library, information and archival studies"
+0329,detallado,032,Periodismo e información no contemplados en la clasificación,Journalism and information not elsewhere classified
+038,especifico,03,"Programas y certificaciones interdisciplinarios relacionados con las ciencias sociales, el periodismo y la información","Inter-disciplinary programmes and qualifications involving social sciences, journalism and information"
+0388,detallado,038,"Programas y certificaciones interdisciplinarios relacionados con las ciencias sociales, el periodismo y la información","Inter-disciplinary programmes and qualifications involving social sciences, journalism and information"
+039,especifico,03,"Ciencias sociales, periodismo e información no contemplados en la clasificación","Social sciences, journalism and information not elsewhere classified"
+0399,detallado,039,"Ciencias sociales, periodismo e información no contemplados en la clasificación","Social sciences, journalism and information not elsewhere classified"
+04,amplio,,Administración de empresas y derecho,"Business, administration and law"
+040,especifico,04,Administración de empresas y derecho sin mayor definición,"Business, administration and law not further defined"
+0400,detallado,040,Administración de empresas y derecho sin mayor definición,"Business, administration and law not further defined"
+041,especifico,04,Educación comercial y administración,Business and administration
+0410,detallado,041,Educación comercial y administración sin mayor definición,Business and administration not further defined
+0411,detallado,041,Contabilidad e impuestos,Accounting and taxation
+0412,detallado,041,"Gestión financiera, administración bancaria y seguros","Finance, banking and insurance"
+0413,detallado,041,Gestión y administración,Management and administration
+0414,detallado,041,Mercadotecnia y publicidad,Marketing and advertising
+0415,detallado,041,Secretariado y trabajo de oficina,Secretarial and office work
+0416,detallado,041,Ventas al por mayor y al por menor,Wholesale and retail sales
+0417,detallado,041,Competencias laborales,Work skills
+0419,detallado,041,Educación comercial y administración no contempladas en la clasificación,Business and administration not elsewhere classified
+042,especifico,04,Derecho,Law
+0421,detallado,042,Derecho,Law
+048,especifico,04,Programas y certificaciones interdisciplinarios relacionados con la administración de empresas y el derecho,"Inter-disciplinary programmes and qualifications involving business, administration and law"
+0488,detallado,048,Programas y certificaciones interdisciplinarios relacionados con la administración de empresas y el derecho,"Inter-disciplinary programmes and qualifications involving business, administration and law"
+049,especifico,04,Administración de empresas y derecho no contemplados en la clasificación,"Business, administration and law not elsewhere classified"
+0499,detallado,049,Administración de empresas y derecho no contemplados en la clasificación,"Business, administration and law not elsewhere classified"
+05,amplio,,"Ciencias naturales, matemáticas y estadística","Natural sciences, mathematics and statistics"
+050,especifico,05,"Ciencias naturales, matemáticas y estadística sin mayor definición","Natural sciences, mathematics and statistics not further defined"
+0500,detallado,050,"Ciencias naturales, matemáticas y estadística sin mayor definición","Natural sciences, mathematics and statistics not further defined"
+051,especifico,05,Ciencias biológicas y afines,Biological and related sciences
+0510,detallado,051,Ciencias biológicas y afines sin mayor definición,Biological and related sciences not further defined
+0511,detallado,051,Biología,Biology
+0512,detallado,051,Bioquímica,Biochemistry
+0519,detallado,051,Ciencias biológicas y afines no contempladas en la clasificación,Biological and related sciences not elsewhere classified
+052,especifico,05,Medio ambiente,Environment
+0520,detallado,052,Medio ambiente sin mayor definición,Environment not further defined
+0521,detallado,052,Ciencias del medio ambiente,Environmental sciences
+0522,detallado,052,Medio ambientes naturales y vida silvestre,Natural environments and wildlife
+0529,detallado,052,Medio ambiente no contemplado en la clasificación,Environment not elsewhere classified
+053,especifico,05,Ciencias físicas,Physical sciences
+0530,detallado,053,Ciencias físicas sin mayor definición,Physical sciences not further defined
+0531,detallado,053,Química,Chemistry
+0532,detallado,053,Ciencias de la tierra,Earth sciences
+0533,detallado,053,Física,Physics
+0539,detallado,053,Ciencias físicas no contempladas en la clasificación,Physical sciences not elsewhere classified
+054,especifico,05,Matemáticas y estadística,Mathematics and statistics
+0540,detallado,054,Matemáticas y estadística sin mayor definición,Mathematics and statistics not further defined
+0541,detallado,054,Matemáticas,Mathematics
+0542,detallado,054,Estadística,Statistics
+058,especifico,05,"Programas y certificaciones interdisciplinarios relacionados con las ciencias naturales, matemáticas y estadística","Inter-disciplinary programmes and qualifications involving natural sciences, mathematics and statistics"
+0588,detallado,058,"Programas y certificaciones interdisciplinarios relacionados con las ciencias naturales, matemáticas y estadística","Inter-disciplinary programmes and qualifications involving natural sciences, mathematics and statistics"
+059,especifico,05,"Ciencias naturales, matemáticas y estadística no contempladas en la clasificación","Natural sciences, mathematics and statistics not elsewhere classified"
+0599,detallado,059,"Ciencias naturales, matemáticas y estadística no contempladas en la clasificación","Natural sciences, mathematics and statistics not elsewhere classified"
+06,amplio,,Tecnologías de la información y la comunicación (TIC),Information and Communication Technologies (ICTs)
+061,especifico,06,Tecnologías de la información y la comunicación (TIC),Information and Communication Technologies (ICTs)
+0610,detallado,061,Tecnologías de la información y la comunicación (TIC) sin mayor definición,Information and Communication Technologies (ICTs) not further defined
+0611,detallado,061,Uso de computadores,Computer use
+0612,detallado,061,Diseño y administración de redes y bases de datos,Database and network design and administration
+0613,detallado,061,Desarrollo y análisis de software y aplicaciones,Software and applications development and analysis
+0619,detallado,061,Tecnologías de la información y la comunicación (TIC) no contempladas en la clasificación,Information and communication technologies not elsewhere classified
+068,especifico,06,Programas y certificaciones interdisciplinarios relacionados con las tecnologías de la información y la comunicación,Inter-disciplinary programmes and qualifications involving Information and Communication Technologies (ICTs)
+0688,detallado,068,Programas y certificaciones interdisciplinarios relacionados con las tecnologías de la información y la comunicación,Inter-disciplinary programmes and qualifications involving Information and Communication Technologies (ICTs)
+07,amplio,,"Ingeniería, industria y construcción","Engineering, manufacturing and construction"
+070,especifico,07,"Ingeniería, industria y construcción sin mayor definición","Engineering, manufacturing and construction not further defined"
+0700,detallado,070,"Ingeniería, industria y construcción sin mayor definición","Engineering, manufacturing and construction not further defined"
+071,especifico,07,Ingeniería y profesiones afines,Engineering and engineering trades
+0710,detallado,071,Ingeniería y profesiones afines sin mayor definición,Engineering and engineering trades not further defined
+0711,detallado,071,Ingeniería y procesos químicos,Chemical engineering and processes
+0712,detallado,071,Tecnología de protección del medio ambiente,Environmental protection technology
+0713,detallado,071,Electricidad y energía,Electricity and energy
+0714,detallado,071,Electrónica y automatización,Electronics and automation
+0715,detallado,071,Mecánica y profesiones afines a la metalistería,Mechanics and metal trades
+0716,detallado,071,"Vehículos, barcos y aeronaves motorizadas","Motor vehicles, ships and aircraft"
+0719,detallado,071,Ingeniería y profesiones afines no contempladas en la clasificación,Engineering and engineering trades not elsewhere classified
+072,especifico,07,Industria y producción,Manufacturing and processing
+0720,detallado,072,Industria y producción sin mayor definición,Manufacturing and processing not further defined
+0721,detallado,072,Procesamiento de alimentos,Food processing
+0722,detallado,072,"Materiales (vidrio, papel, plástico y madera)","Materials (glass, paper, plastic and wood)"
+0723,detallado,072,"Productos textiles (ropa, calzado y artículos de cuero)","Textiles (clothes, footwear and leather)"
+0724,detallado,072,Minería y extracción,Mining and extraction
+0729,detallado,072,Industria y producción no contemplada en la clasificación,Manufacturing and processing not elsewhere classified
+073,especifico,07,Arquitectura y construcción,Architecture and construction
+0730,detallado,073,Arquitectura y construcción sin mayor definición,Architecture and construction not further defined
+0731,detallado,073,Arquitectura y urbanismo,Architecture and town planning
+0732,detallado,073,Construcción e ingeniería civil,Building and civil engineering
+078,especifico,07,"Programas y certificaciones interdisciplinarios relacionados con la ingeniería, la industria y la construcción","Inter-disciplinary programmes and qualifications involving engineering, manufacturing and construction"
+0788,detallado,078,"Programas y certificaciones interdisciplinarios relacionados con la ingeniería, la industria y la construcción","Inter-disciplinary programmes and qualifications involving engineering, manufacturing and construction"
+079,especifico,07,"Ingeniería, industria y construcción no contempladas en la clasificación","Engineering, manufacturing and construction not elsewhere classified"
+0799,detallado,079,"Ingeniería, industria y construcción no contempladas en la clasificación","Engineering, manufacturing and construction not elsewhere classified"
+08,amplio,,"Agricultura, silvicultura, pesca y veterinaria","Agriculture, forestry, fisheries and veterinary"
+080,especifico,08,"Agricultura, silvicultura, pesca y veterinaria sin mayor definición","Agriculture, forestry, fisheries and veterinary not further defined"
+0800,detallado,080,"Agricultura, silvicultura, pesca y veterinaria sin mayor definición","Agriculture, forestry, fisheries and veterinary not further defined"
+081,especifico,08,Agricultura,Agriculture
+0810,detallado,081,Agricultura sin mayor definición,Agriculture not further defined
+0811,detallado,081,Producción agrícola y ganadera,Crop and livestock production
+0812,detallado,081,Horticultura,Horticulture
+0819,detallado,081,Agricultura no contemplada en la clasificación,Agriculture not elsewhere classified
+082,especifico,08,Silvicultura,Forestry
+0821,detallado,082,Silvicultura,Forestry
+083,especifico,08,Pesca,Fisheries
+0831,detallado,083,Pesca,Fisheries
+084,especifico,08,Veterinaria,Veterinary
+0841,detallado,084,Veterinaria,Veterinary
+088,especifico,08,"Programas y certificaciones interdisciplinarios relacionados con la agricultura, la silvicultura, la pesca y la veterinaria","Inter-disciplinary programmes and qualifications involving agriculture, forestry, fisheries and veterinary"
+0888,detallado,088,"Programas y certificaciones interdisciplinarios relacionados con la agricultura, la silvicultura, la pesca y la veterinaria","Inter-disciplinary programmes and qualifications involving agriculture, forestry, fisheries and veterinary"
+089,especifico,08,"Agricultura, silvicultura, pesca y veterinaria no contempladas en la clasificación","Agriculture, forestry, fisheries and veterinary not elsewhere classified"
+0899,detallado,089,"Agricultura, silvicultura, pesca y veterinaria no contempladas en la clasificación","Agriculture, forestry, fisheries and veterinary not elsewhere classified"
+09,amplio,,Salud y bienestar,Health and welfare
+090,especifico,09,Salud y bienestar sin mayor definición,Health and welfare not further defined
+0900,detallado,090,Salud y bienestar sin mayor definición,Health and welfare not further defined
+091,especifico,09,Salud,Health
+0910,detallado,091,Salud sin mayor definición,Health not further defined
+0911,detallado,091,Odontología,Dental studies
+0912,detallado,091,Medicina,Medicine
+0913,detallado,091,Enfermería y partería,Nursing and midwifery
+0914,detallado,091,Tecnología de diagnóstico y tratamiento médico,Medical diagnostic and treatment technology
+0915,detallado,091,Terapia y rehabilitación,Therapy and rehabilitation
+0916,detallado,091,Farmacia,Pharmacy
+0917,detallado,091,Medicina y terapia tradicional y complementaria,Traditional and complementary medicine and therapy
+0919,detallado,091,Salud no contemplada en la clasificación,Health not elsewhere classified
+092,especifico,09,Bienestar,Welfare
+0920,detallado,092,Bienestar sin mayor definición,Welfare not further defined
+0921,detallado,092,Asistencia a adultos mayores y discapacitados,Care of the elderly and of disabled adults
+0922,detallado,092,Asistencia a la infancia y servicios para jóvenes,Child care and youth services
+0923,detallado,092,Trabajo social y orientación,Social work and counselling
+0929,detallado,092,Bienestar no contemplado en la clasificación,Welfare not elsewhere classified
+098,especifico,09,Programas y certificaciones interdisciplinarios relacionados con la salud y el bienestar,Inter-disciplinary programmes and qualifications involving health and welfare
+0988,detallado,098,Programas y certificaciones interdisciplinarios relacionados con la salud y el bienestar,Inter-disciplinary programmes and qualifications involving health and welfare
+099,especifico,09,Salud y bienestar no contemplados en la clasificación,Health and welfare not elsewhere classified
+0999,detallado,099,Salud y bienestar no contemplados en la clasificación,Health and welfare not elsewhere classified
+10,amplio,,Servicios,Services
+100,especifico,10,Servicios sin mayor definición,Services not further defined
+1000,detallado,100,Servicios sin mayor definición,Services not further defined
+101,especifico,10,Servicios personales,Personal services
+1010,detallado,101,Servicios personales sin mayor definición,Personal services not further defined
+1011,detallado,101,Servicios domésticos,Domestic services
+1012,detallado,101,Peluquería y tratamientos de belleza,Hair and beauty services
+1013,detallado,101,"Hotelería, restaurantes y servicios de banquetes","Hotel, restaurants and catering"
+1014,detallado,101,Deportes,Sports
+1015,detallado,101,"Viajes, turismo y actividades recreativas","Travel, tourism and leisure"
+1019,detallado,101,Servicios personales no contemplados en la clasificación,Personal services not elsewhere classified
+102,especifico,10,Servicios de higiene y salud ocupacional,Hygiene and occupational health services
+1020,detallado,102,Servicios de higiene y salud ocupacional sin mayor definición,Hygiene and occupational health services not further defined
+1021,detallado,102,Saneamiento de la comunidad,Community sanitation
+1022,detallado,102,Salud y protección laboral,Occupational health and safety
+1029,detallado,102,Servicios de higiene y salud ocupacional no contemplados en la clasificación,Hygiene and occupational health services not elsewhere classified
+103,especifico,10,Servicios de seguridad,Security services
+1030,detallado,103,Servicios de seguridad sin mayor definición,Security services not further defined
+1031,detallado,103,Educación militar y de defensa,Military and defence
+1032,detallado,103,Protección de las personas y de la propiedad,Protection of persons and property
+1039,detallado,103,Servicios de seguridad no contemplados en la clasificación,Security services not elsewhere classified
+104,especifico,10,Servicios de transporte,Transport services
+1041,detallado,104,Servicios de transporte,Transport services
+108,especifico,10,Programas y certificaciones interdisciplinarios relacionados con los servicios,Inter-disciplinary programmes and qualifications involving services
+1088,detallado,108,Programas y certificaciones interdisciplinarios relacionados con los servicios,Inter-disciplinary programmes and qualifications involving services
+109,especifico,10,Servicios no contemplados en la clasificación,Services not elsewhere classified
+1099,detallado,109,Servicios no contemplados en la clasificación,Services not elsewhere classified
+99,amplio,,Campo desconocido,Field unknown
+999,especifico,99,Campo desconocido,Field unknown
+9999,detallado,999,Campo desconocido,Field unknown

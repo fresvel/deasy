@@ -108,3 +108,295 @@ erDiagram
 La ausencia de `updated_at` en `dossier_items` no es un descuido: es **la marca de una tabla de sólo
 añadir**. En Deasy, la tabla que lleva `updated_at` tiene además un trigger `set_updated_at()` que lo
 mantiene; la que no lo lleva está diciendo que sus filas no se tocan una vez escritas.
+:::caution[El diseño al que va: el frente 18 — TODAVÍA NO ESTÁ EN LA BASE]
+Todo lo que hay **encima** de este aviso describe el sistema **tal como funciona hoy**: dos tablas y
+un `data JSONB`. Lo que sigue es un **diseño en documentación, aún sin implementar**. Mientras esta
+sección exista sin su cambio de esquema, lo cierto es lo de arriba.
+:::
+
+## 5 · A dónde va: el expediente sale del JSON y entra en la base
+
+El argumento con el que la sección 2 defiende el JSONB —*«son datos que rellena el propio usuario y
+cuya forma cambia cada curso»*— **se midió contra el código el 2026-09-04 y es falso**. Las diez
+formas están fijadas a mano en los formularios de Vue, con `v-model` literales: `AgregarTitulo` tiene
+nueve. Añadir un campo obliga hoy a tocar el formulario **exactamente igual que obligaría a tocar una
+tabla**. Se está pagando el precio del JSONB —cero integridad, ninguna consulta que entre en el
+dato— sin cobrar su beneficio, que es evolucionar sin migración.
+
+Y el precio se cobra en sitios concretos. `pais` es la cadena `"Ecuador"` mientras la tabla `paises`
+tiene **232 filas con su ISO**. Ninguna consulta entra en el JSON: se lee el árbol entero y se filtra
+en JavaScript. Los datos de **terceros** —nombre, correo y teléfono de quien da una referencia— viven
+en un blob del que no se pueden localizar ni borrar uno a uno, que es justo lo que la LOPDP pide
+poder hacer. Y el blob llevaba escondidos dos defectos que una columna habría cazado al escribirla:
+la sección de libros guarda **`isnn`** donde la de artículos guarda `issn` —el mismo identificador,
+dos nombres, y la errata visible en pantalla—, y hay una clave llamada literalmente **`año`**, con
+`ñ`. El diseño son **17 tablas nuevas, 121 columnas y 22 claves ajenas**, con **28 restricciones
+`CHECK`** donde hoy hay **cero**. Y sólo hay **3 asientos** en la base, todos de semilla: migrar es
+gratis ahora y deja de serlo en cuanto el sistema entre en uso.
+
+### 5.1 · La espina, y el asiento partido en dos
+
+`dossier_items` deja de guardar `data` y pasa a ser **la espina**: lo que tienen los diez asientos
+—de qué sección son, su respaldo escaneado, su estado de revisión y sus fechas—. El detalle va a una
+tabla por sección, cuya **clave primaria ES la clave ajena** al asiento, con `ON DELETE CASCADE`: un
+asiento y su detalle son la misma fila partida en dos tablas. Es el patrón que el esquema ya usa en
+`contract_origins`, que deja así de ser su único caso.
+
+```mermaid
+erDiagram
+  dossiers ||--o{ dossier_items : "sus asientos"
+  dossier_items ||--o| dossier_titulos : "section = titulos"
+
+  dossier_items {
+    bigint id PK
+    bigint dossier_id FK
+    text section "CHECK de los DIEZ valores"
+    text estado_revision "hoy es sera, en el JSON"
+    varchar documento_ref "minio://, ya no una URL"
+    timestamp documento_subido_at
+    timestamp created_at
+    timestamp updated_at "NUEVA: corregir deja de ser borrar"
+  }
+
+  dossier_titulos {
+    bigint id PK "PK = FK al asiento"
+    int titulacion_id FK "NULA si no esta en catalogo"
+    varchar titulacion_libre "el nombre tal cual"
+    varchar ies
+    int pais_id FK "antes la cadena Ecuador"
+    text nivel "CHECK de ocho"
+    text modalidad "la clave se llamaba tipo"
+    varchar sreg
+    int campo_amplio_id FK "CINE-F"
+  }
+```
+
+Tres cosas que ese diagrama decide y no se ven a simple vista. **`section` pasa a ser un `CHECK`**:
+hoy los diez valores viven en la constante `SECTIONS` de `dossierStore.js`, así que un
+`section = 'titulso'` entra sin protesta y deja el asiento huérfano. **`documento_ref` sustituye a
+`url_documento`**, que guardaba una URL completa con `MINIO_PUBLIC_ENDPOINT` dentro: mover la pila
+invalidaba todas las filas. Es el mismo antipatrón que el frente 14 ya corrigió en
+`documentos_identidad.escaneo_ref` — y el comentario de aquella columna cita precisamente a ésta como
+el ejemplo a no repetir. Y **`updated_at` cambia la naturaleza de la tabla**: deja de ser de sólo
+añadir, así que corregir una tilde de un título ya no obliga a borrar el asiento con su respaldo.
+
+### 5.2 · El resto del currículo
+
+Cuatro secciones más, y **la única tabla hija de todo el modelo**: `funcion_catedra` es hoy un array
+dentro del JSON, construido partiendo un textarea por comas. No es un obstáculo para salir del
+JSONB — es la mejora más directa del frente, porque hoy la pregunta *«¿quién ha dado Bases de
+datos?»* no se puede hacer sin leer todos los expedientes enteros.
+
+```mermaid
+erDiagram
+  dossier_items ||--o| dossier_formacion : "section = formacion"
+  dossier_items ||--o| dossier_experiencia : "section = experiencia"
+  dossier_items ||--o| dossier_referencias : "section = referencias"
+  dossier_items ||--o| dossier_certificaciones : "section = certificaciones"
+  dossier_experiencia ||--o{ dossier_experiencia_funciones : "sus catedras"
+
+  dossier_items {
+    bigint id PK
+    text section
+  }
+
+  dossier_formacion {
+    bigint id PK
+    varchar tema
+    varchar institucion
+    int pais_id FK
+    text tipo
+    text rol
+    date fecha_inicio
+    date fecha_fin
+    int horas
+  }
+
+  dossier_experiencia {
+    bigint id PK
+    text tipo
+    varchar institucion
+    text modalidad
+    date fecha_inicio
+    date fecha_fin
+  }
+
+  dossier_experiencia_funciones {
+    bigint id PK
+    bigint experiencia_id FK
+    varchar nombre
+    timestamp created_at
+  }
+
+  dossier_referencias {
+    bigint id PK
+    varchar nombre
+    text tipo
+    varchar cargo_parentesco
+    varchar institucion
+    varchar email
+    varchar telefono
+  }
+
+  dossier_certificaciones {
+    bigint id PK
+    varchar titulo
+    varchar institucion
+    text tipo
+    text descripcion
+    date fecha
+    int horas
+  }
+```
+
+`dossier_referencias` es la que más cambia de significado sin cambiar de forma: **son datos de un
+tercero** que nunca aceptó nada aquí, y en columnas se pueden localizar y borrar uno a uno. De paso
+corrige una errata que nadie había visto: la clave JSON se llama `institution`, en inglés, rodeada de
+nueve claves en español. Las fechas dejan de ser cadenas —ordenar por fecha era ordenar texto— y
+`tipo`, `rol` y `modalidad` pasan a tener `CHECK`.
+
+### 5.3 · Las cinco de producción académica
+
+**No son polimórficas**, aunque la sección 2 de esta página las agrupe. `AgregarInvestigacion.vue`
+tiene cinco bloques hermanos bajo `v-if="form.tipoProduccion === ..."`, cada uno con su lista de
+campos **cerrada y casi disjunta**: lo polimórfico es el formulario, no los datos. La documentación
+las agrupó por cómo se pintan, no por cómo son.
+
+```mermaid
+erDiagram
+  dossier_items ||--o| dossier_articulos : "section = articulos"
+  dossier_items ||--o| dossier_libros : "section = libros"
+  dossier_items ||--o| dossier_ponencias : "section = ponencias"
+  dossier_items ||--o| dossier_tesis : "section = tesis"
+  dossier_items ||--o| dossier_proyectos : "section = proyectos"
+
+  dossier_items {
+    bigint id PK
+    text section
+  }
+
+  dossier_articulos {
+    bigint id PK
+    varchar titulo
+    varchar revista
+    varchar base_indexada
+    varchar doi
+    varchar issn
+    numeric sjr
+    text estado
+    text rol
+    date fecha
+  }
+
+  dossier_libros {
+    bigint id PK
+    varchar titulo
+    varchar editorial
+    text tipo
+    varchar isbn
+    varchar issn "era isnn"
+    smallint anio "era año"
+  }
+
+  dossier_ponencias {
+    bigint id PK
+    varchar titulo
+    varchar evento
+    smallint anio
+  }
+
+  dossier_tesis {
+    bigint id PK
+    varchar tema
+    varchar ies
+    varchar programa
+    text nivel
+    text rol
+    smallint anio
+  }
+
+  dossier_proyectos {
+    bigint id PK
+    varchar tema
+    varchar institucion
+    text tipo
+    varchar programa_group
+    date inicio
+    date fin
+    numeric avance
+    numeric presupuesto
+  }
+```
+
+Lo que sí las une es una **vista**, `dossier_investigacion`, con el `UNION ALL` de las cinco: la
+pestaña de investigación deja de armarse en JavaScript. Y es de sólo lectura a propósito — hacerla
+escribible con triggers `INSTEAD OF` daría un segundo camino de inserción que se saltaría los
+`CHECK`. De los tipos, dos importan: `presupuesto` es `NUMERIC` y nunca coma flotante, porque es
+dinero; y `avance` lleva un `CHECK` entre 0 y 100, que el JSON no tenía — aceptaba 350 sin inmutarse.
+
+### 5.4 · El catálogo académico
+
+Cinco tablas encadenadas. **Las tres de arriba son la norma internacional CINE-F (ISCED-F) de la
+UNESCO y no llevan país** —ponérselo las volvería incomparables, que es lo contrario de para lo que
+existen—; **las dos de abajo sí**, porque las fija cada país y no tienen equivalente internacional.
+
+```mermaid
+erDiagram
+  campos_amplios ||--o{ campos_especificos : "de dos digitos a tres"
+  campos_especificos ||--o{ campos_detallados : "de tres digitos a cuatro"
+  campos_detallados ||--o{ carreras : "clasifica"
+  carreras ||--o{ titulaciones : "otorga"
+  paises ||--o{ carreras : "las fija cada pais"
+  paises ||--o{ titulaciones : "las fija cada pais"
+
+  campos_amplios {
+    int id PK
+    varchar codigo "dos digitos, con su cero"
+    varchar nombre
+    smallint is_active
+  }
+
+  campos_especificos {
+    int id PK
+    int campo_amplio_id FK
+    varchar codigo "tres digitos"
+    varchar nombre
+    smallint is_active
+  }
+
+  campos_detallados {
+    int id PK
+    int campo_especifico_id FK
+    varchar codigo "cuatro digitos"
+    varchar nombre
+    smallint is_active
+  }
+
+  carreras {
+    int id PK
+    int pais_id FK
+    int campo_detallado_id FK
+    varchar nombre "UNICO por pais, no a secas"
+    smallint is_active
+  }
+
+  titulaciones {
+    int id PK
+    int pais_id FK
+    int carrera_id FK
+    varchar nombre "lo que dice el diploma"
+    smallint is_active
+  }
+```
+
+El enganche desde el expediente **no es obligatorio**: `dossier_titulos` admite `titulacion_id` nula
+más el nombre en texto libre, con un `CHECK` que exige una de las dos. La alternativa evaluada —una
+fila «NR / No registra» en el catálogo— satisface la clave ajena **y pierde el nombre real**: un
+`Diplôme d'Ingénieur` francés se degradaría a «NR». Así el catálogo es preferente pero no obligatorio.
+
+### 5.5 · Dónde está el detalle
+
+El plan completo del frente —las decisiones con sus mediciones, el DDL comentado entero y las nueve
+tareas con su control de ejecución— vive en el repositorio, en
+`docs/planes/expediente-relacional-2026-09.md`. **No se publica aquí** porque es material de trabajo:
+esta página describe el sistema, no el camino para llegar a él.

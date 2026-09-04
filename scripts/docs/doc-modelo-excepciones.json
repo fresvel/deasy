@@ -5,7 +5,9 @@
     "de excepciones sin razones se convierte en el sitio donde se calla el gate en vez de arreglar",
     "la pagina. Anadir uno tiene que costar explicarlo.",
     "",
-    "Clasificados el 2026-08-29, la unica vez que hay que hacerlo entero."
+    "Clasificados el 2026-08-29, la unica vez que hay que hacerlo entero.",
+    "",
+    "Bloque del FRENTE 18 (2026-09-04): 31 nombres de un DISENO que aun no existe en la base. Son distintos de los demas -- aquellos son menciones historicas, estos son futuras -- y por eso llevan la misma frase de retirada: se borran de aqui en el mismo commit que los cree."
   ],
   "nombres": {
     "academic_terms": {
@@ -31,6 +33,60 @@
       "motivo": "PROSA · el concepto de bitacora; hoy no hay tabla con ese nombre.",
       "paginas": [
         "datos/firmas-y-dominios.md"
+      ]
+    },
+    "base_indexada": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "campo_amplio_id": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "campo_detallado_id": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "campo_especifico_id": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "campos_amplios": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "campos_detallados": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "campos_especificos": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "cargo_parentesco": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "carrera_id": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
       ]
     },
     "cedula_ec": {
@@ -91,6 +147,18 @@
         "datos/index.md"
       ]
     },
+    "documento_ref": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "documento_subido_at": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "documents": {
       "motivo": "MEMORIA · cascara 1:1 sobre task_items, sin una sola columna propia.",
       "paginas": [
@@ -109,6 +177,78 @@
         "testing.md"
       ]
     },
+    "dossier_articulos": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_certificaciones": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_experiencia": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_experiencia_funciones": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_formacion": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_investigacion": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_libros": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_ponencias": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_proyectos": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_referencias": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_tesis": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "dossier_titulos": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "en_proceso": {
       "motivo": "VALOR de dominio citado en prosa, fuera de un CHECK del esquema.",
       "paginas": [
@@ -119,6 +259,30 @@
       "motivo": "FICHERO `.env_model`, escrito sin el punto.",
       "paginas": [
         "confusiones.md"
+      ]
+    },
+    "estado_revision": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "experiencia_id": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "fecha_fin": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "fecha_inicio": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
       ]
     },
     "field_refs": {
@@ -144,6 +308,12 @@
       "motivo": "EJEMPLO de identificador de campo en una plantilla.",
       "paginas": [
         "modelo/flujo-de-firma.md"
+      ]
+    },
+    "funcion_catedra": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
       ]
     },
     "has_assignees": {
@@ -250,6 +420,12 @@
       "motivo": "PARAMETRO de una ruta del admin, no una columna.",
       "paginas": [
         "datos/motor-de-procesos.md"
+      ]
+    },
+    "programa_group": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
       ]
     },
     "proxy_pass": {
@@ -400,6 +576,18 @@
     "tipos_documento": {
       "motivo": "MEMORIA · catalogo de tres filas retirado el 2026-08-29; hoy es un CHECK.",
       "paginas": []
+    },
+    "titulacion_id": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "titulacion_libre": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
     },
     "verify_email": {
       "motivo": "MEMORIA · bandera de `persons` retirada al salir los correos a su propia tabla. Las dos paginas la citan EN PASADO, para contar por que ya no vale ('antes la verificacion era una bandera de la persona'). Salto al chequeo A el 2026-09-03, al borrar el controlador muerto `backend/controllers/users/verify_email.js`: el gate cuenta los NOMBRES DE FICHERO del repo como cosas que existen, asi que el nombre se sostenia por el fichero y no por el esquema.",
