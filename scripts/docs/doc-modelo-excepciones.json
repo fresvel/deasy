@@ -101,6 +101,12 @@
         "complemento/expediente.md"
       ]
     },
+    "carreras_de_grado": {
+      "motivo": "FUENTE EXTERNA · nombre de campo del fichero del CES (campos_titulos.json, el anexo de nomenclatura de titulos), NO del esquema de Deasy. Se cita para justificar por que el nivel vive en carreras y no en el asiento: la fuente trae oferta_tipo a la altura de la carrera. NO lleva fecha de retirada -- nunca va a existir como tabla ni columna aqui.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "cedula_ec": {
       "motivo": "MEMORIA · asi se llamaba el tipo nacional hasta el 2026-08-29, con Ecuador dentro del vocabulario.",
       "paginas": [
@@ -380,6 +386,12 @@
         "infraestructura/index.md"
       ]
     },
+    "oferta_tipo": {
+      "motivo": "FUENTE EXTERNA · nombre de campo del fichero del CES (campos_titulos.json, el anexo de nomenclatura de titulos), NO del esquema de Deasy. Se cita para justificar por que el nivel vive en carreras y no en el asiento: la fuente trae oferta_tipo a la altura de la carrera. NO lleva fecha de retirada -- nunca va a existir como tabla ni columna aqui.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "other_certs": {
       "motivo": "OPCION del signer (pyhanko).",
       "paginas": [
@@ -442,6 +454,18 @@
     },
     "programa_group": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "programas_especializacion": {
+      "motivo": "FUENTE EXTERNA · nombre de campo del fichero del CES (campos_titulos.json, el anexo de nomenclatura de titulos), NO del esquema de Deasy. Se cita para justificar por que el nivel vive en carreras y no en el asiento: la fuente trae oferta_tipo a la altura de la carrera. NO lleva fecha de retirada -- nunca va a existir como tabla ni columna aqui.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "programas_maestria": {
+      "motivo": "FUENTE EXTERNA · nombre de campo del fichero del CES (campos_titulos.json, el anexo de nomenclatura de titulos), NO del esquema de Deasy. Se cita para justificar por que el nivel vive en carreras y no en el asiento: la fuente trae oferta_tipo a la altura de la carrera. NO lleva fecha de retirada -- nunca va a existir como tabla ni columna aqui.",
       "paginas": [
         "complemento/expediente.md"
       ]

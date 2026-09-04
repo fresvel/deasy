@@ -257,16 +257,17 @@ país las volvería incomparables, que es lo contrario de para lo que existen.
 **El eje de la oferta sí lo lleva**, porque lo fija cada país y no tiene equivalente internacional:
 `campos_nacionales` (en Ecuador, los del CES), `carreras` y `titulaciones`.
 
-### Las tablas y sus líneas
+### Nivel conceptual: las tablas y sus líneas
 
-Sin columnas, para que se vean las líneas. Las columnas están debajo.
+Sin columnas, para que se vean las líneas. Es un diagrama entidad-relación en notación **pata de
+gallo** (*crow's foot*): el extremo con tres patas es el «muchos», la barra doble es el «uno
+obligatorio» y el círculo es el «cero» —es decir, la clave ajena admite nulo—.
 
 ```mermaid
 erDiagram
   paises ||--o{ instituciones : "el pais de quien licencia Deasy"
   paises ||--o{ campos_nacionales : "de que pais es"
   paises ||--o{ carreras : "de que pais es"
-  paises ||--o{ titulaciones : "de que pais es"
   paises ||--o{ expediente_titulos : "DONDE SE EMITIO"
 
   campos_amplios ||--o{ campos_especificos : "2 digitos a 3"
@@ -281,7 +282,7 @@ erDiagram
   campos_amplios |o--o{ expediente_titulos : "la valvula"
 ```
 
-**Trece líneas, una por clave ajena.** Nulable quiere decir que el enganche es opcional:
+**Doce líneas, una por clave ajena.** Nulable quiere decir que el enganche es opcional:
 
 | # | Desde | Hacia | Nulable | Para qué |
 |---|---|---|:--:|---|
@@ -292,46 +293,176 @@ erDiagram
 | 5 | **`carreras.campo_detallado_id`** | `campos_detallados` | **sí** | **El puente al CINE-F** |
 | 6 | **`carreras.campo_nacional_id`** | `campos_nacionales` | **sí** | **El puente al catálogo del país** |
 | 7 | `carreras.pais_id` | `paises` | no | De qué país es la carrera |
-| 8 | `titulaciones.carrera_id` | `carreras` | no | Qué carrera la otorga |
-| 9 | `titulaciones.pais_id` | `paises` | no | De qué país es la titulación |
-| 10 | `expediente_titulos.id` | `expediente_asientos` | no | El subtipo · `PK = FK`, `ON DELETE CASCADE` |
-| 11 | `expediente_titulos.titulacion_id` | `titulaciones` | **sí** | Lo elegido en el desplegable |
-| 12 | `expediente_titulos.pais_id` | `paises` | no | Dónde se emitió el diploma |
-| 13 | `expediente_titulos.campo_amplio_id` | `campos_amplios` | **sí** | Clasificar sin titulación |
+| 8 | `titulaciones.carrera_id` | `carreras` | no | Qué carrera la otorga — **y de ahí sale su país** |
+| 9 | `expediente_titulos.id` | `expediente_asientos` | no | El subtipo · `PK = FK`, `ON DELETE CASCADE` |
+| 10 | `expediente_titulos.titulacion_id` | `titulaciones` | **sí** | Lo elegido en el desplegable |
+| 11 | `expediente_titulos.pais_id` | `paises` | no | Dónde se emitió el diploma |
+| 12 | `expediente_titulos.campo_amplio_id` | `campos_amplios` | **sí** | Clasificar sin titulación |
 
 Tres cosas que el dibujo dice y conviene leer despacio.
 
 **De `instituciones` sale UNA sola línea, y va a `paises`.** No hay ninguna hacia el catálogo, y no
-es un olvido: la institución no se relaciona con las carreras, **las filtra** (siguiente apartado). Es
-lo mismo que ya hace con los documentos de identidad, donde su `pais_id` decide cuál es el documento
-nacional sin que exista clave ajena entre ambos.
+es un olvido: la institución no se relaciona con las carreras, **las filtra**. Es lo mismo que ya hace
+con los documentos de identidad, donde su `pais_id` decide cuál es el documento nacional sin que
+exista clave ajena entre ambos.
 
 **`carreras` tiene DOS punteros de campo —las líneas 5 y 6— y ahí está la equivalencia.**
 `campo_detallado_id` da el código internacional y `campo_nacional_id` el del país, en la misma fila.
 No hace falta una tabla de correspondencias entre los dos árboles: la carrera **es** la
-correspondencia, un hecho concreto cada vez en lugar de un mapeo declarado en abstracto. Y si un
-campo del CES abarca tres del CINE-F, eso aparece solo — son tres carreras, cada una con el suyo.
+correspondencia, un hecho concreto cada vez en lugar de un mapeo declarado en abstracto.
 
-**La línea 12 no elige nada.** `expediente_titulos.pais_id` es dato: dónde se emitió el diploma. Quien
+**La línea 11 no elige nada.** `expediente_titulos.pais_id` es dato: dónde se emitió el diploma. Quien
 elige el catálogo es la línea 1, que está al otro lado del dibujo.
 
-### Las columnas
+### Nivel lógico: el catálogo con sus columnas
 
-`id` es siempre la primaria, y toda tabla lleva `is_active`, `created_at` y `updated_at` con su
-trigger. Lo que sigue es lo propio de cada una.
+```mermaid
+erDiagram
+  paises ||--o{ campos_nacionales : ""
+  paises ||--o{ carreras : ""
+  campos_amplios ||--o{ campos_especificos : ""
+  campos_especificos ||--o{ campos_detallados : ""
+  campos_detallados |o--o{ carreras : ""
+  campos_nacionales |o--o{ carreras : ""
+  carreras ||--o{ titulaciones : ""
 
-| Tabla | Columnas propias |
-|---|---|
-| `campos_amplios` | `codigo` VARCHAR(2) `'06'` · `nombre` |
-| `campos_especificos` | `campo_amplio_id` · `codigo` VARCHAR(3) `'061'` · `nombre` |
-| `campos_detallados` | `campo_especifico_id` · `codigo` VARCHAR(4) `'0613'` · `nombre` |
-| `campos_nacionales` | `pais_id` · `codigo` `'81'` (el del CES, no el del CINE-F) · `nombre` |
-| `carreras` | `pais_id` · `campo_detallado_id` · `campo_nacional_id` · `nombre` — único por `(pais_id, nombre)`, **no a secas** |
-| `titulaciones` | `pais_id` · `carrera_id` · `nombre` (lo que dice el diploma) |
-| `expediente_titulos` | `titulacion_id` · `titulacion_libre` · `ies` · `pais_id` · `nivel` `CHECK` de ocho · `modalidad` `CHECK` de cuatro · `sreg` · `campo_amplio_id` |
+  paises {
+    int id PK
+    char iso_alpha2 "EC"
+    varchar name "Ecuador"
+  }
+
+  campos_amplios {
+    int id PK
+    varchar codigo "06 · VARCHAR, no INT"
+    varchar nombre
+    smallint is_active
+  }
+
+  campos_especificos {
+    int id PK
+    int campo_amplio_id FK
+    varchar codigo "061"
+    varchar nombre
+    smallint is_active
+  }
+
+  campos_detallados {
+    int id PK
+    int campo_especifico_id FK
+    varchar codigo "0613"
+    varchar nombre
+    smallint is_active
+  }
+
+  campos_nacionales {
+    int id PK
+    int pais_id FK
+    varchar codigo "el del CES"
+    varchar nombre
+    smallint is_active
+  }
+
+  carreras {
+    int id PK
+    int pais_id FK
+    int campo_detallado_id FK "nulable · CINE-F"
+    int campo_nacional_id FK "nulable · del pais"
+    text nivel "CHECK · AQUI vive el nivel"
+    varchar nombre "unico por (pais, nombre)"
+    smallint is_active
+  }
+
+  titulaciones {
+    int id PK
+    int carrera_id FK "y de aqui su pais"
+    varchar nombre "lo que dice el diploma"
+    smallint is_active
+  }
+```
 
 Los códigos son `VARCHAR` y no `INT` a propósito: `'06'` no es el número seis, y perder el cero a la
-izquierda rompe el código.
+izquierda rompe el código. Todas llevan además `created_at` y `updated_at` con su trigger.
+
+### Nivel lógico: el enganche con el expediente
+
+```mermaid
+erDiagram
+  expediente_asientos ||--|| expediente_titulos : "PK = FK, ON DELETE CASCADE"
+  titulaciones |o--o{ expediente_titulos : "nulable"
+  campos_amplios |o--o{ expediente_titulos : "nulable"
+  paises ||--o{ expediente_titulos : "donde se emitio"
+
+  expediente_asientos {
+    bigint id PK
+    bigint person_id FK
+    text section "CHECK · titulos"
+    varchar url_documento "el respaldo escaneado"
+    text estado_revision
+  }
+
+  expediente_titulos {
+    bigint id PK "y FK al asiento"
+    int titulacion_id FK "nulable · del catalogo"
+    varchar titulacion_libre "nulable · el nombre real"
+    text nivel "nulable · SOLO si no hay titulacion"
+    varchar ies "la universidad que lo emitio"
+    int pais_id FK "donde se emitio"
+    text modalidad "CHECK · cuatro valores"
+    varchar sreg "el registro nacional"
+    int campo_amplio_id FK "nulable · la valvula"
+  }
+```
+
+### Por qué el nivel vive en `carreras` y no en el asiento
+
+**Porque el nivel es una propiedad de la oferta, no de quien la cursó.** Una `Maestría en Educación`
+es una maestría lo escriba quien lo escriba; si el nivel viviera en `expediente_titulos`, la persona
+podría declararla como grado y nada lo impediría.
+
+Está **medido** en la fuente del CES: sus filas de oferta traen `oferta_tipo`
+—`carreras_de_grado` · `programas_maestria` · `programas_especializacion`— **a la altura de la
+carrera**, no de la titulación.
+
+Por eso el nivel está en los dos sitios, pero **nunca a la vez**, con el mismo `CHECK` de exclusión
+que ya usan `titulacion_id` y `titulacion_libre`:
+
+| Caso | `titulacion_id` | `expediente_titulos.nivel` | De dónde sale el nivel |
+|---|---|---|---|
+| Título del catálogo | la fila elegida | **`NULL`** | `carreras.nivel` |
+| Título extranjero o no catalogado | `NULL` | **obligatorio** | lo declara quien lo registra |
+
+⚠️ El vocabulario del `CHECK` tiene que crecer: las dos listas del frontend suman ocho niveles y
+**ninguna incluye `especializacion`**, que en la fuente del CES es el tipo de oferta más numeroso.
+
+### Por qué `carreras` y `titulaciones` son dos tablas
+
+Son cosas distintas: la **carrera** es lo que una universidad ofrece; la **titulación** es lo que
+queda impreso en el diploma. Y la relación **no es 1:1**, aunque casi lo parezca.
+
+Medido sobre las **617** filas de oferta de la fuente del CES:
+
+| Titulaciones por carrera | Carreras |
+|---|---:|
+| 1 | 608 |
+| 2 | 7 |
+| 3 | 2 |
+
+Los dos casos limpios —el resto están dañados en el origen— son:
+
+- **`PEDAGOGÍA DE LAS CIENCIAS EXPERIMENTALES`** → *Licenciado/a en Pedagogía de la Química y
+  Biología* · *Licenciado/a en Pedagogía de la Informática*
+- **`HIDROLOGÍA`** → *Ingeniero/a Hidrólogo/a* · *Ingeniero/a en Ciencias del Agua*
+
+Un 1,5 % de excepciones **no justificaría dos tablas por sí solo**. Lo que sí lo justifica es dónde
+cuelga cada cosa: la clasificación (líneas 5 y 6) y el nivel son de la **carrera**, y colapsarlas
+obligaría a repetir tres columnas en cada titulación hermana —y a que un día discreparan—. Además
+`titulaciones` es lo único a lo que apunta el expediente, y `carreras` es lo que un día apuntará la
+oferta de la propia institución.
+
+**Y el país está en `carreras` solamente.** En `titulaciones` sería redundante: se llega a él por
+`carrera_id`. Una columna copiada que nadie sincroniza es exactamente el problema que ya tiene
+`task_items.assigned_person_id`, que necesita un trigger para no mentir.
 
 ### Qué catálogo se le ofrece a quien rellena
 
@@ -340,18 +471,19 @@ flowchart TB
   I["instituciones.pais_id"] --> Q{"hay titulaciones<br/>sembradas de ese pais?"}
   Q -->|si| A["desplegable del catalogo<br/><b>titulacion_id</b>"]
   Q -->|no| B["se escribe a mano<br/><b>titulacion_libre</b>"]
-  A --> C["el campo CINE-F se deduce<br/>subiendo por la carrera"]
-  B --> D["<b>campo_amplio_id</b> se elige a mano<br/>el eje internacional esta siempre"]
+  A --> C["nivel y campo CINE-F<br/>salen de la carrera"]
+  B --> D["<b>nivel</b> y <b>campo_amplio_id</b> a mano<br/>el eje internacional esta siempre"]
 ```
 
 Una sola regla, en un solo sitio, y **no es una relación del modelo sino un filtro de la consulta**:
 
 ```sql
-SELECT t.id, t.nombre
+SELECT t.id, t.nombre, c.nivel
   FROM titulaciones t
- WHERE t.pais_id = (SELECT pais_id FROM instituciones LIMIT 1)
-   AND t.is_active = 1
- ORDER BY t.nombre;
+  JOIN carreras c ON c.id = t.carrera_id
+ WHERE c.pais_id = (SELECT pais_id FROM instituciones LIMIT 1)
+   AND t.is_active = 1 AND c.is_active = 1
+ ORDER BY c.nivel, t.nombre;
 ```
 
 PUCESE es Ecuador, así que se ofrecen las titulaciones del CES —**y para todos los títulos, se hayan
