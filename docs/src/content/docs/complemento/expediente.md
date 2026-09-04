@@ -1,127 +1,33 @@
 ---
 title: "El expediente: qué ha hecho antes cada persona"
-description: "Dos tablas y un JSONB donde antes había MongoDB. Diez secciones académicas, un expediente por persona impuesto por índice, y cada asiento con su documento de respaldo como columna, no como clave del JSON."
+description: "El modelo aprobado del frente 18: diecisiete tablas y una vista donde hoy hay dos tablas y un JSONB. Una espina con una fila por asiento, diez tablas de sección cuya clave primaria es la ajena, y el catálogo académico CINE-F."
 sidebar:
   label: "4 · El expediente"
   order: 4
 ---
 
 El **expediente** —el *dossier*— es el historial académico y profesional de una persona: sus títulos,
-su experiencia, sus publicaciones. Son **dos tablas y diez columnas**, la familia más pequeña del
-complemento, y la que más historia tiene detrás: hasta la migración **esto era MongoDB**.
+su experiencia, sus publicaciones.
 
-## 1 · Un expediente por persona, y lo impone la base
+:::caution[Esta página describe el modelo APROBADO, que todavía NO está en la base]
+El diseño de abajo es el del **frente 18**, aprobado por el dueño y **pendiente de implementar**:
+**diecisiete tablas y una vista** donde hoy hay dos y un `JSONB`. El plan, con su DDL completo y su control de
+ejecución, es [`expediente-relacional-2026-09.md`](https://github.com/fresvel/deasy/blob/develop/docs/planes/expediente-relacional-2026-09.md).
 
-`dossiers` no guarda casi nada: es la cabecera que existe para colgar de ella los asientos. Lo único
-que aporta es una garantía, `uq_dossiers_person` sobre `person_id`: **nadie tiene dos expedientes**.
-
-Y su clave ajena a `persons` lleva **`ON DELETE CASCADE`**, cosa que hay que leer en contexto: de las
-**once** claves ajenas que el chat y el expediente tienen hacia el núcleo, **ésta es la única** con
-cascada; las otras diez llevan la política por defecto. Es deliberado y dice algo del modelo: el
-expediente **no tiene sentido sin su persona**, mientras que un mensaje de chat sí sobrevive como
-parte de una conversación en la que participaron otros.
-
-## 2 · El asiento, y por qué es JSONB
-
-`dossier_items` es cada entrada del expediente: un título, un congreso, una referencia.
-
-**`section` decide qué forma tiene `data`.** Las diez secciones no comparten estructura —un título
-tiene institución y año; una ponencia tiene congreso, ciudad y fecha— y por eso el contenido va en
-`data JSONB` en vez de en columnas. Modelarlas como diez tablas habría sido lo ortodoxo y también lo
-peor: son datos que rellena el propio usuario y cuya forma cambia cada curso.
-
-Las diez secciones **no son un `CHECK`**: viven en `SECTIONS`, dentro de
-`backend/services/users/dossierStore.js`.
-
-```
-titulos · experiencia · referencias · formacion · certificaciones
-articulos · libros · ponencias · tesis · proyectos
-```
-
-Las cinco últimas están además agrupadas como `INVESTIGACION_SECTIONS`, que es lo que da la pestaña
-de investigación del perfil. En el frontend, cada sección tiene su ruta bajo `/perfil`.
-
-**`url_documento`, en cambio, SÍ es columna** — y esa asimetría es la decisión de diseño de la tabla.
-Todos los asientos tienen respaldo documental, y se consulta siempre: algo que existe en el 100 % de
-las filas y se lee en el 100 % de las consultas no se esconde dentro de un blob, porque entonces no
-se puede indexar ni exigir con un `NOT NULL`. Lo variable va al JSON; lo invariable, a la columna.
-
-## 3 · Aquí había MongoDB, y se nota
-
-Las dos «colecciones» que había se migraron a tablas con `data JSONB`, y **las colecciones de
-entonces son hoy valores de la columna `section`**. La migración conservó a propósito dos cosas que
-hoy parecen rarezas:
-
-- **Los identificadores se exponen como texto**, para preservar el contrato que tenía Mongo y no
-  romper al cliente que ya existía.
-- **Los valores por defecto de cada sección replican exactamente** los del antiguo esquema de
-  Mongoose. `titulos`, por ejemplo, nace con `pais: "Ecuador"` y `sera: "Enviado"`.
-
-`dossier_items` es además una tabla **de sólo añadir**: no tiene `updated_at`, que es la señal por la
-que se distingue un registro histórico de una entidad con estado. Corregir un asiento es borrarlo y
-poner otro.
-
-## 4 · Lo que cambió con la identidad
-
-El expediente **enlaza por `person_id`**, y eso es nuevo. Antes de que `persons`
-[repartiera su identidad](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima), el expediente
-se ataba a **la cédula**, y esa columna ya no existe: la cédula vive en `documentos_identidad` con su
-tipo y su país emisor.
-
-La consecuencia práctica no es de fontanería: **un extranjero con pasaporte tiene hoy expediente
-igual que cualquiera**, cosa que antes no era posible porque no había dónde ponerle la cédula.
-
-:::note[Quién puede leerlo, y el IDOR que lo cerró]
-El acceso al expediente es lo que motivó `requireDossierAccess`, y detrás hay un **IDOR real y
-cerrado**: el guard miraba *la tarea* en vez de *el entregable*, y un docente podía descargar el
-documento de otro. El detalle, en [Autenticación y autorización](/backend/auth/).
-
-Consecuencia que muerde al probar: **toda persona necesita el rol base `Usuario`** para ver su propio
-expediente — es el rol que otorga `dossier: read, create, update`. Los roles de gestión **no lo
-incluyen**, así que un `Gestor*` sin `Usuario` recibe un 403 al abrir su propia ficha.
+**Lo que hay en la base HOY** —dos tablas, `dossiers` y `dossier_items`, con el contenido dentro de
+un `JSONB`— está al final, en [«De dónde viene»](#de-dónde-viene-el-modelo-que-se-retira). Se
+conserva porque es lo que el sistema contiene mientras el frente no se ejecute.
 :::
 
-## El diagrama
+## El modelo
 
-:::note[Este diagrama es el de HOY, no el del diseño]
-Dibuja lo que hay **en la base ahora mismo**, con `dossiers` y su `data JSONB`. El modelo al que va
-—sin `dossiers`, y con una tabla por sección— está en la **sección 5**, más abajo.
-:::
+Son **diecisiete tablas y una vista**: la espina, con una fila por asiento; **diez de sección** que
+cuelgan de ella con su clave primaria siendo a la vez la ajena; la **hija** del uno-a-muchos de las
+cátedras; y **cinco** del catálogo académico. El `JSONB` desaparece entero, y la tabla `dossiers`
+también: era una cáscara 1:1 sobre `persons` sin ni una columna propia.
 
-```mermaid
-erDiagram
-  persons ||--|| dossiers : "uno por persona, ON DELETE CASCADE"
-  dossiers ||--o{ dossier_items : "sus asientos"
 
-  dossiers {
-    bigint id PK "SE RETIRA - ver la seccion 5"
-    int person_id FK "UNICO: uq_dossiers_person. La UNICA FK en cascada del complemento"
-    timestamp created_at
-    timestamp updated_at
-  }
-
-  dossier_items {
-    bigint id PK
-    bigint dossier_id FK
-    varchar section "cual de las DIEZ. Sin CHECK: vive en dossierStore.js"
-    jsonb data "forma VARIABLE segun la seccion"
-    text url_documento "COLUMNA, no clave del JSON: existe siempre"
-    timestamp created_at
-  }
-```
-
-La ausencia de `updated_at` en `dossier_items` no es un descuido: es **la marca de una tabla de sólo
-añadir**. En Deasy, la tabla que lleva `updated_at` tiene además un trigger `set_updated_at()` que lo
-mantiene; la que no lo lleva está diciendo que sus filas no se tocan una vez escritas.
-:::caution[El diseño al que va: el frente 18 — TODAVÍA NO ESTÁ EN LA BASE]
-Todo lo que hay **encima** de este aviso describe el sistema **tal como funciona hoy**: dos tablas y
-un `data JSONB`. Lo que sigue es un **diseño en documentación, aún sin implementar**. Mientras esta
-sección exista sin su cambio de esquema, lo cierto es lo de arriba.
-:::
-
-## 5 · A dónde va: el expediente sale del JSON y entra en la base
-
-El argumento con el que la sección 2 defiende el JSONB —*«son datos que rellena el propio usuario y
+El argumento con el que el modelo de hoy defiende el JSONB —*«son datos que rellena el propio usuario y
 cuya forma cambia cada curso»*— **se midió contra el código el 2026-09-04 y es falso**. Las diez
 formas están fijadas a mano en los formularios de Vue, con `v-model` literales: `AgregarTitulo` tiene
 nueve. Añadir un campo obliga hoy a tocar el formulario **exactamente igual que obligaría a tocar una
@@ -135,11 +41,11 @@ en un blob del que no se pueden localizar ni borrar uno a uno, que es justo lo q
 poder hacer. Y el blob llevaba escondidos dos defectos que una columna habría cazado al escribirla:
 la sección de libros guarda **`isnn`** donde la de artículos guarda `issn` —el mismo identificador,
 dos nombres, y la errata visible en pantalla—, y hay una clave llamada literalmente **`año`**, con
-`ñ`. El diseño son **17 tablas nuevas, 121 columnas y 22 claves ajenas**, con **28 restricciones
+`ñ`. El diseño son **17 tablas y una vista, 121 columnas y 22 claves ajenas**, con **28 restricciones
 `CHECK`** donde hoy hay **cero**. Y sólo hay **3 asientos** en la base, todos de semilla: migrar es
 gratis ahora y deja de serlo en cuanto el sistema entre en uso.
 
-### 5.1 · La espina, y el asiento partido en dos
+## 1 · La espina, y el asiento partido en dos
 
 `expediente_asientos` deja de guardar `data` y pasa a ser **la espina**: lo que tienen los diez asientos
 —de qué sección son, su respaldo escaneado, su estado de revisión y sus fechas—. El detalle va a una
@@ -185,7 +91,7 @@ invalidaba todas las filas. Es el mismo antipatrón que el frente 14 ya corrigi�
 el ejemplo a no repetir. Y **`updated_at` cambia la naturaleza de la tabla**: deja de ser de sólo
 añadir, así que corregir una tilde de un título ya no obliga a borrar el asiento con su respaldo.
 
-### 5.2 · El resto del currículo
+## 2 · El resto del currículo
 
 Cuatro secciones más, y **la única tabla hija de todo el modelo**: `funcion_catedra` es hoy un array
 dentro del JSON, construido partiendo un textarea por comas. No es un obstáculo para salir del
@@ -260,7 +166,7 @@ corrige una errata que nadie había visto: la clave JSON se llama `institution`,
 nueve claves en español. Las fechas dejan de ser cadenas —ordenar por fecha era ordenar texto— y
 `tipo`, `rol` y `modalidad` pasan a tener `CHECK`.
 
-### 5.3 · Las cinco de producción académica
+## 3 · Las cinco de producción académica
 
 **No son polimórficas**, aunque la sección 2 de esta página las agrupe. `AgregarInvestigacion.vue`
 tiene cinco bloques hermanos bajo `v-if="form.tipoProduccion === ..."`, cada uno con su lista de
@@ -339,7 +245,7 @@ escribible con triggers `INSTEAD OF` daría un segundo camino de inserción que 
 `CHECK`. De los tipos, dos importan: `presupuesto` es `NUMERIC` y nunca coma flotante, porque es
 dinero; y `avance` lleva un `CHECK` entre 0 y 100, que el JSON no tenía — aceptaba 350 sin inmutarse.
 
-### 5.4 · El catálogo académico
+## 4 · El catálogo académico
 
 Cinco tablas encadenadas. **Las tres de arriba son la norma internacional CINE-F (ISCED-F) de la
 UNESCO y no llevan país** —ponérselo las volvería incomparables, que es lo contrario de para lo que
@@ -399,9 +305,135 @@ más el nombre en texto libre, con un `CHECK` que exige una de las dos. La alter
 fila «NR / No registra» en el catálogo— satisface la clave ajena **y pierde el nombre real**: un
 `Diplôme d'Ingénieur` francés se degradaría a «NR». Así el catálogo es preferente pero no obligatorio.
 
-### 5.5 · Dónde está el detalle
+## 5 · Dónde está el detalle
 
 El plan completo del frente —las decisiones con sus mediciones, el DDL comentado entero y las nueve
 tareas con su control de ejecución— vive en el repositorio, en
 `docs/planes/expediente-relacional-2026-09.md`. **No se publica aquí** porque es material de trabajo:
 esta página describe el sistema, no el camino para llegar a él.
+
+---
+
+## De dónde viene: el modelo que se retira
+
+Lo que hay **en la base ahora mismo**, y por qué se cambia. Se conserva porque es lo que el sistema
+contiene mientras el frente 18 no se ejecute, y porque explica de dónde salen varias rarezas del
+modelo nuevo.
+
+### El expediente era una cabecera propia
+
+`dossiers` no guarda casi nada: es la cabecera que existe para colgar de ella los asientos. Lo único
+que aporta es una garantía, `uq_dossiers_person` sobre `person_id`: **nadie tiene dos expedientes**.
+
+Y su clave ajena a `persons` lleva **`ON DELETE CASCADE`**, cosa que hay que leer en contexto: de las
+**once** claves ajenas que el chat y el expediente tienen hacia el núcleo, **ésta es la única** con
+cascada; las otras diez llevan la política por defecto. Es deliberado y dice algo del modelo: el
+expediente **no tiene sentido sin su persona**, mientras que un mensaje de chat sí sobrevive como
+parte de una conversación en la que participaron otros.
+
+### El asiento y su `data JSONB`
+
+`dossier_items` es cada entrada del expediente: un título, un congreso, una referencia.
+
+**`section` decide qué forma tiene `data`.** Las diez secciones no comparten estructura —un título
+tiene institución y año; una ponencia tiene congreso, ciudad y fecha— y por eso el contenido va en
+`data JSONB` en vez de en columnas. Modelarlas como diez tablas habría sido lo ortodoxo y también lo
+peor: son datos que rellena el propio usuario y cuya forma cambia cada curso.
+
+:::danger[Ese último argumento se midió y es FALSO]
+«La forma cambia cada curso» **no se sostiene**. Medido contra el código el 2026-09-04: las formas
+están **fijadas a mano en los formularios de Vue**, con `v-model` literales — `AgregarTitulo` tiene
+nueve. Añadir un campo obliga a tocar el formulario igual que obligaría a tocar una tabla.
+
+Es decir: **se paga el precio del JSONB sin cobrar su beneficio**. Ésa es la razón de que el modelo
+se retire, y el detalle está en la [sección 5](#5--a-dónde-va-el-expediente-sale-del-json-y-entra-en-la-base).
+:::
+
+Las diez secciones **no son un `CHECK`**: viven en `SECTIONS`, dentro de
+`backend/services/users/dossierStore.js`.
+
+```
+titulos · experiencia · referencias · formacion · certificaciones
+articulos · libros · ponencias · tesis · proyectos
+```
+
+Las cinco últimas están además agrupadas como `INVESTIGACION_SECTIONS`, que es lo que da la pestaña
+de investigación del perfil. En el frontend, cada sección tiene su ruta bajo `/perfil`.
+
+**`url_documento`, en cambio, SÍ es columna** — y esa asimetría es la decisión de diseño de la tabla.
+Todos los asientos tienen respaldo documental, y se consulta siempre: algo que existe en el 100 % de
+las filas y se lee en el 100 % de las consultas no se esconde dentro de un blob, porque entonces no
+se puede indexar ni exigir con un `NOT NULL`. Lo variable va al JSON; lo invariable, a la columna.
+
+⚠️ **El principio es correcto; lo que guarda la columna, no.** `url_documento` almacena una **URL
+completa** construida con `MINIO_PUBLIC_ENDPOINT`, así que el endpoint del entorno queda **dentro del
+dato**: mover la pila o cambiar de dominio invalida todas las filas. Es el mismo antipatrón que el
+frente 14 ya corrigió en `documentos_identidad`, y el modelo nuevo lo unifica en `documento_ref` con
+la convención `minio://<bucket>/<objeto>`.
+
+### Aquí había MongoDB, y se nota
+
+Las dos «colecciones» que había se migraron a tablas con `data JSONB`, y **las colecciones de
+entonces son hoy valores de la columna `section`**. La migración conservó a propósito dos cosas que
+hoy parecen rarezas:
+
+- **Los identificadores se exponen como texto**, para preservar el contrato que tenía Mongo y no
+  romper al cliente que ya existía.
+- **Los valores por defecto de cada sección replican exactamente** los del antiguo esquema de
+  Mongoose. `titulos`, por ejemplo, nace con `pais: "Ecuador"` y `sera: "Enviado"`.
+
+`dossier_items` es además una tabla **de sólo añadir**: no tiene `updated_at`, que es la señal por la
+que se distingue un registro histórico de una entidad con estado. Corregir un asiento es borrarlo y
+poner otro.
+
+### Lo que ya había cambiado con la identidad
+
+El expediente **enlaza por `person_id`**, y eso es nuevo. Antes de que `persons`
+[repartiera su identidad](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima), el expediente
+se ataba a **la cédula**, y esa columna ya no existe: la cédula vive en `documentos_identidad` con su
+tipo y su país emisor.
+
+La consecuencia práctica no es de fontanería: **un extranjero con pasaporte tiene hoy expediente
+igual que cualquiera**, cosa que antes no era posible porque no había dónde ponerle la cédula.
+
+:::note[Quién puede leerlo, y el IDOR que lo cerró]
+El acceso al expediente es lo que motivó `requireDossierAccess`, y detrás hay un **IDOR real y
+cerrado**: el guard miraba *la tarea* en vez de *el entregable*, y un docente podía descargar el
+documento de otro. El detalle, en [Autenticación y autorización](/backend/auth/).
+
+Consecuencia que muerde al probar: **toda persona necesita el rol base `Usuario`** para ver su propio
+expediente — es el rol que otorga `dossier: read, create, update`. Los roles de gestión **no lo
+incluyen**, así que un `Gestor*` sin `Usuario` recibe un 403 al abrir su propia ficha.
+:::
+
+### El diagrama del modelo que se retira
+
+```mermaid
+erDiagram
+  persons ||--|| dossiers : "uno por persona, ON DELETE CASCADE"
+  dossiers ||--o{ dossier_items : "sus asientos"
+
+  dossiers {
+    bigint id PK
+    int person_id FK "UNICO: uq_dossiers_person. La UNICA FK en cascada del complemento"
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  dossier_items {
+    bigint id PK
+    bigint dossier_id FK
+    varchar section "cual de las DIEZ. Sin CHECK: vive en dossierStore.js"
+    jsonb data "forma VARIABLE segun la seccion"
+    text url_documento "COLUMNA, no clave del JSON: existe siempre"
+    timestamp created_at
+  }
+```
+
+La ausencia de `updated_at` en `dossier_items` no es un descuido: es **la marca de una tabla de sólo
+añadir**. En Deasy, la tabla que lleva `updated_at` tiene además un trigger `set_updated_at()` que lo
+mantiene; la que no lo lleva está diciendo que sus filas no se tocan una vez escritas.
+
+⚠️ **Y ésa es justamente una de las cosas que el modelo nuevo cambia**: hoy corregir un asiento es
+borrarlo y volver a ponerlo. `expediente_asientos` recupera `updated_at` con su trigger.
+
