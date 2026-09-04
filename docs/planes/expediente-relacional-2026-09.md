@@ -321,6 +321,14 @@ global**: `Estudios de género` del CES no cae en un agujero negro, cae en
 `0319 Ciencias sociales y del comportamiento no contempladas en la clasificación` — se conserva el
 campo amplio y el específico, y sólo se pierde el detalle. La norma ya pensó en esto.
 
+> ⚠️ **SUPERADO el 2026-09-04.** Lo que sigue en este apartado —la tabla `campo_equivalencias`
+> N:M con su columna `grado`, y `pais_id` en las tres capas de la CINE-F— **ya no es el diseño**.
+> Se descartó al aclararse que **hay un solo catálogo nacional: el del país donde funciona la
+> institución que instala Deasy** (`instituciones.pais_id`), y que el anclaje a la norma es una
+> clave ajena 1:N en `campos_nacionales`, porque los comodines `xx10`/`xx19` de la propia CINE-F
+> ya codifican el grado de la equivalencia. El diseño vigente está en
+> `docs/src/content/docs/complemento/expediente.md` §4; §8 de este plan se reescribe con él.
+
 #### El diseño: tres piezas
 
 ```

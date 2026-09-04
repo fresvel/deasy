@@ -386,6 +386,12 @@
         "infraestructura/index.md"
       ]
     },
+    "nombre_norm": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "oferta_tipo": {
       "motivo": "FUENTE EXTERNA · nombre de campo del fichero del CES (campos_titulos.json, el anexo de nomenclatura de titulos), NO del esquema de Deasy. Se cita para justificar por que el nivel vive en carreras y no en el asiento: la fuente trae oferta_tipo a la altura de la carrera. NO lleva fecha de retirada -- nunca va a existir como tabla ni columna aqui.",
       "paginas": [
@@ -408,6 +414,12 @@
       "motivo": "HERRAMIENTA de PostgreSQL.",
       "paginas": [
         "infraestructura/index.md"
+      ]
+    },
+    "pg_trgm": {
+      "motivo": "EXTENSION de PostgreSQL, no una tabla ni una columna. Propuesta en el apartado del cotejo de duplicados; hoy postgres_schema.sql no declara ninguna extension. SE RETIRA DE ESTA LISTA cuando el esquema la declare.",
+      "paginas": [
+        "complemento/expediente.md"
       ]
     },
     "plan_data": {
@@ -530,6 +542,12 @@
       "paginas": [
         "backend/auth.md",
         "complemento/permisos.md"
+      ]
+    },
+    "sin_equivalente": {
+      "motivo": "DESCARTADO · valor de la columna grado de la tabla de equivalencias N:M que se EVALUO Y SE DESCARTO (seccion 4 de la pagina, apartado del anclaje). Se cita para explicar por que no existe. NO lleva fecha de retirada: no va a existir nunca.",
+      "paginas": [
+        "complemento/expediente.md"
       ]
     },
     "stamp_png": {
