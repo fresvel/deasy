@@ -144,7 +144,7 @@ asiento y su detalle son la misma fila partida en dos tablas. Es el patrón que 
 
 ```mermaid
 erDiagram
-  dossiers ||--o{ expediente_asientos : "sus asientos"
+  persons ||--o{ expediente_asientos : "sus asientos, ON DELETE CASCADE"
   expediente_asientos ||--o| expediente_titulos : "section = titulos"
 
   expediente_asientos {
