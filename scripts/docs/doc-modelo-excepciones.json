@@ -692,6 +692,12 @@
         "modelo/organizacion.md"
       ]
     },
+    "vigente_hasta": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "workflow_dispatch": {
       "motivo": "EVENTO de GitHub Actions.",
       "paginas": [

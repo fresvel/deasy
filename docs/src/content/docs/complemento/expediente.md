@@ -390,6 +390,7 @@ erDiagram
     varchar nombre
     varchar nombre_norm "sin tildes, minusculas · para el cotejo"
     smallint is_active
+    date vigente_hasta "nulable · cuando dejo de ofrecerse"
   }
 
   carreras {
@@ -401,6 +402,7 @@ erDiagram
     varchar nombre "unico por (pais, nombre)"
     varchar nombre_norm
     smallint is_active
+    date vigente_hasta "nulable"
   }
 
   titulaciones {
@@ -410,6 +412,7 @@ erDiagram
     varchar nombre "lo que dice el diploma"
     varchar nombre_norm
     smallint is_active
+    date vigente_hasta "nulable"
   }
 ```
 
@@ -490,21 +493,62 @@ Si el país donde funciona la institución no ha publicado su propia lista de ca
 se siembra **desde la CINE-F**: 150 filas, una por campo detallado, cada una anclada a la suya y
 marcada `origen = 'cine_f'`.
 
-**Y eso no es un parche: es lo que de verdad pasa.** Ecuador es el ejemplo — el CES **adoptó** la
-CINE-F 2013, y por eso sus diez campos amplios son literalmente las etiquetas españolas de la norma.
-Un país que no publica taxonomía propia usa la internacional, y ésa **es** su taxonomía nacional por
-adopción. La tabla no miente.
+**Y eso no es un parche: es adopción.** El CES **adoptó** la CINE-F 2013 — de los campos específicos
+de su anexo, **20 casan literalmente** con los de la norma. Un país que no publica taxonomía propia
+usa la internacional, y ésa **es** su taxonomía nacional por adopción. La tabla no miente.
 
-Las tres alternativas evaluadas, y por qué pierden:
+#### El impacto, medido
+
+| | |
+|---|---:|
+| `campos_detallados` | **150** |
+| `paises` sembrados | **232** |
+| Techo aritmético · 150 × 232 | **34 800** |
+
+Ese techo supone que los 232 países tengan institución **y** que ninguno tenga taxonomía propia. La
+escalera real es otra:
+
+| Escenario | Filas espejo |
+|---|---:|
+| **Hoy** — una institución, Ecuador, con su propia lista | **0** |
+| Una institución en un país sin taxonomía | 150 |
+| Diez instituciones así | 1 500 |
+| Techo aritmético | 34 800 |
+
+Para calibrar: la geografía ya sembrada son **477 filas** y la CINE-F **220**; la base entera pesa
+**18 MB**.
+
+#### Las alternativas evaluadas, y por qué pierden
 
 | | Por qué no |
 |---|---|
-| **`carreras` con dos claves ajenas** (`campo_nacional_id` **o** `campo_detallado_id`, con `CHECK`) | Dependencia transitiva y bifurcación en toda consulta. Es el diseño que esta sección acaba de retirar |
-| **Una tabla `campos` con `padre_id` y un nivel** | Una jerarquía autorreferente necesita un guardián de nivel (clave ajena compuesta o trigger) para que un nacional no cuelgue de un amplio. Y el criterio del repo es explícito: aquí la complejidad **se cura con tablas, no con jerarquías** |
+| **`carreras` con dos claves ajenas** (`campo_nacional_id` **o** `campo_detallado_id`, con `CHECK`) | Dependencia transitiva y bifurcación en toda consulta |
+| **Anclar a la CINE-F y usar lo nacional como consulta** (tabla de alias, resuelta con `LEFT JOIN`) | **Pierde resolución, y está medido**: la lista nacional es más fina —383 campos detallados del CES frente a 150 de la norma—, así que varios nacionales caen en el mismo código y la carrera ya no sabe cuál era |
+| **`campos_detallados` + una tabla de qué países lo usan** | Sólo valdría si la lista nacional fuera un **subconjunto** de la norma, y no lo es: renombra, fusiona y **añade códigos propios** |
+| **Una tabla que declare si un país usa lo nacional o la CINE-F** | La granularidad está mal: la cobertura de una taxonomía nacional es **parcial y por campo**, no por país. Además el hecho ya es derivable de `origen`, y no evita las dos claves ajenas |
+| **Una equivalencia en tabla aparte** en vez de la columna | Una columna `NOT NULL` garantiza «exactamente una»; una tabla no impide **cero** filas, y forzarlo pide índice único **y** trigger |
+| **Una tabla `campos` con `padre_id` y un nivel** | Una jerarquía autorreferente necesita un guardián de nivel (clave ajena compuesta o trigger). Y el criterio del repo es explícito: la complejidad **se cura con tablas, no con jerarquías** |
 | **Una vista que una lo nacional con lo detallado** | No se puede declarar una clave ajena contra una vista |
 
-Lo que sí cuesta, dicho: **150 filas duplicadas por país sin taxonomía propia**, y re-sembrarlas si la
-UNESCO revisa la CINE-F. A cambio, una sola clave ajena, ninguna nulable y ninguna consulta con `if`.
+Lo que sí cuesta, dicho: **150 filas por país sin taxonomía propia**, y re-sembrarlas si la UNESCO
+revisa la CINE-F. A cambio, una sola clave ajena, ninguna nulable y ninguna consulta con `if`.
+
+#### Un límite conocido: los niveles superiores
+
+`campos_nacionales` es **plano** y ancla en el detallado, así que los niveles amplio y específico
+nacionales se **deducen subiendo** por la CINE-F. Eso es correcto **mientras el país adopte los dos
+niveles de arriba**, que es lo que hace Ecuador.
+
+⚠️ **Si un país divergiera en el nivel amplio, este modelo lo encajaría en un campo que no reconoce
+como suyo.** La salida serían tres tablas nacionales simétricas a las tres de la norma —+2 tablas y
+una siembra de tres niveles—, y no se hace ahora por una razón concreta: **no hay datos en
+producción**, y este esquema no tiene ni un `ALTER`, así que añadir tablas obliga a recrear la base.
+Hoy eso es gratis; el día que el sistema tenga datos reales, no.
+
+⚠️ **Y un dato que esta página NO puede respaldar**: el plan del frente afirma que los diez campos
+amplios del CES son las etiquetas españolas de la norma. **No se ha podido reproducir** con la fuente
+disponible —el OCR parte los nombres largos en dos filas—, así que en el nivel amplio la coincidencia
+está **sin verificar**. En el específico sí: 20 casan literalmente.
 
 ### Qué se le ofrece a quien rellena
 
@@ -524,16 +568,50 @@ primera en silencio.
 ```sql
 SELECT t.id, t.nombre, c.nivel
   FROM titulaciones t
-  INNER JOIN carreras c ON c.id = t.carrera_id
+  INNER JOIN carreras c           ON c.id  = t.carrera_id
+  INNER JOIN campos_nacionales cn ON cn.id = c.campo_nacional_id
+  INNER JOIN campos_detallados cd ON cd.id = cn.campo_detallado_id
  WHERE c.pais_id = $1              -- el de InstitucionService.paisActual()
    AND t.is_active = 1 AND c.is_active = 1
+   AND cn.is_active = 1 AND cd.is_active = 1
  ORDER BY c.nivel, t.nombre;
 ```
+
+⚠️ **Los cuatro `is_active` no son celo.** `is_active` es una **convención de filtro, no una
+restricción**, y no se propaga: retirar un campo nacional deja activas las carreras que cuelgan de él
+y nadie se entera. Si la consulta no filtra en los cuatro niveles, el desplegable ofrece titulaciones
+clasificadas con un campo retirado.
 
 ⚠️ **`pais_id` en `campos_nacionales` y `carreras` no es un selector, es la costura del
 multi-inquilino** — la misma que `InstitucionService` ya documenta en su cabecera. Hoy sólo hay una
 institución y por tanto un solo país sembrado; la columna existe para que el día que haya varias, la
 resolución siga entrando por un único sitio.
+
+### La variación del catálogo: qué cubre `is_active` y qué no
+
+Un catálogo académico cambia — el CES reforma su nomenclatura, la UNESCO revisa la CINE-F. Tres
+cosas, y la última es la que muerde.
+
+**Borrar no es opción, y ya está impedido.** Ninguna clave ajena del catálogo lleva
+`ON DELETE CASCADE`, así que PostgreSQL **rechaza** borrar una titulación que algún expediente
+referencia. El retiro es `is_active = 0`: la fila se queda, el histórico sigue entero, deja de
+aparecer en el desplegable.
+
+**`is_active` no se propaga**, y por eso hay que filtrarlo en los cuatro niveles — está justo arriba.
+
+**Y lo que `is_active` NO cubre es el renombrado.** `expediente_titulos` no copia el nombre: lo lee
+por la clave ajena, que es lo correcto. Pero significa que **editar `titulaciones.nombre` cambia en
+silencio el nombre del título de todo el que lo tenga** — y eso importa, porque el regulador registró
+la denominación **vigente entonces**.
+
+La regla es **retirar y crear, nunca renombrar**, y `vigente_hasta DATE NULL` la sostiene: dice
+**cuándo** dejó de ofrecerse, que es justo lo que `is_active` no dice.
+
+| | Coste | Qué da |
+|---|---|---|
+| Sólo la norma escrita | 0 | Se incumple el día que alguien corrija una tilde |
+| **`is_active` + `vigente_hasta`** | 3 columnas | El retiro, y **cuándo** ocurrió |
+| Versionar el catálogo, como `process_definition_versions` | Alto | Sobra: ahí una corrida se ancla a la versión vigente al dispararse, y **un título no se ejecuta** |
 
 ### Por qué el nivel vive en `carreras` y no en el asiento
 
