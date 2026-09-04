@@ -59,6 +59,12 @@
         "complemento/expediente.md"
       ]
     },
+    "campo_nacional_id": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "campos_amplios": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
@@ -72,6 +78,12 @@
       ]
     },
     "campos_especificos": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
+    "campos_nacionales": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
         "complemento/expediente.md"
@@ -177,6 +189,24 @@
         "testing.md"
       ]
     },
+    "en_proceso": {
+      "motivo": "VALOR de dominio citado en prosa, fuera de un CHECK del esquema.",
+      "paginas": [
+        "modelo/vocabularios-de-estado.md"
+      ]
+    },
+    "env_model": {
+      "motivo": "FICHERO `.env_model`, escrito sin el punto.",
+      "paginas": [
+        "confusiones.md"
+      ]
+    },
+    "estado_revision": {
+      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "expediente_articulos": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
@@ -250,24 +280,6 @@
       ]
     },
     "expediente_titulos": {
-      "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
-      "paginas": [
-        "complemento/expediente.md"
-      ]
-    },
-    "en_proceso": {
-      "motivo": "VALOR de dominio citado en prosa, fuera de un CHECK del esquema.",
-      "paginas": [
-        "modelo/vocabularios-de-estado.md"
-      ]
-    },
-    "env_model": {
-      "motivo": "FICHERO `.env_model`, escrito sin el punto.",
-      "paginas": [
-        "confusiones.md"
-      ]
-    },
-    "estado_revision": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
         "complemento/expediente.md"
