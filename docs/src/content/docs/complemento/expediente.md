@@ -248,19 +248,14 @@ dinero; y `avance` lleva un `CHECK` entre 0 y 100, que el JSON no tenía — ace
 ## 4 · El catálogo académico
 
 **Hay UN catálogo nacional: el del país donde funciona la institución que instala Deasy.** Lo dice
-`instituciones.pais_id`, y no hay otro. Un título extranjero se registra en **ese** catálogo si está,
-y si no, a mano — pero siempre en la nomenclatura del país donde se registra, porque es con la que la
-institución le rinde cuentas a su regulador.
+`instituciones.pais_id`, y no hay otro. Un título extranjero se registra en **ese** catálogo, porque
+es con esa nomenclatura con la que la institución le rinde cuentas a su regulador.
 
-Encima de él está la **CINE-F (ISCED-F)** de la UNESCO —`campos_amplios`, `campos_especificos`,
+Encima está la **CINE-F (ISCED-F)** de la UNESCO —`campos_amplios`, `campos_especificos`,
 `campos_detallados`, **220 filas** (12 · 58 · 150)—, que es internacional y **no lleva país**.
 
-Todo título que entra, venga de donde venga, responde a dos preguntas:
-
-| Pregunta | Sí | No |
-|---|---|---|
-| ¿Está en el catálogo nacional? | `titulacion_id` | `titulacion_libre`, texto |
-| ¿Hay `campos_nacionales` sembrados? | `campo_nacional_id` | `campo_detallado_id`, la CINE-F |
+**Todo título del expediente sale del catálogo. No hay texto libre**, y eso es una decisión, no un
+descuido: está justificada más abajo.
 
 :::caution[Lo que `expediente_titulos.pais_id` NO es]
 Es **sólo dato**: dónde se emitió el diploma. **No elige catálogo.** Deasy no guarda el catálogo de
@@ -271,8 +266,14 @@ ecuatoriana se clasifica con la nomenclatura ecuatoriana.
 ### Nivel conceptual: las tablas y sus líneas
 
 Sin columnas, para que se vean las líneas. Es un diagrama entidad-relación en notación **pata de
-gallo** (*crow's foot*): el extremo de tres patas es el «muchos», la barra doble el «uno
-obligatorio», y el círculo el «cero» —es decir, la clave ajena admite nulo—.
+gallo** (*crow's foot*):
+
+| Extremo | Se lee |
+|---|---|
+| `‖` barra doble | **exactamente uno** |
+| `o‖` círculo y barra | **cero o uno** |
+| `o<` círculo y tres patas | **cero o muchos** |
+| `‖<` barra y tres patas | uno o muchos |
 
 ```mermaid
 erDiagram
@@ -283,36 +284,31 @@ erDiagram
 
   campos_amplios ||--o{ campos_especificos : "2 digitos a 3"
   campos_especificos ||--o{ campos_detallados : "3 digitos a 4"
-  campos_detallados |o--o{ campos_nacionales : "el anclaje a la norma"
+  campos_detallados ||--o{ campos_nacionales : "el anclaje a la norma"
 
-  campos_nacionales |o--o{ carreras : "clasifica"
-  campos_detallados |o--o{ carreras : "si no hay catalogo nacional"
+  campos_nacionales ||--o{ carreras : "clasifica"
   carreras ||--o{ titulaciones : "la otorga"
 
-  expediente_asientos ||--|| expediente_titulos : "PK = FK"
-  titulaciones |o--o{ expediente_titulos : "si esta en el catalogo"
-  campos_nacionales |o--o{ expediente_titulos : "si no lo esta"
-  campos_detallados |o--o{ expediente_titulos : "si no lo esta ni hay catalogo"
+  expediente_asientos ||--o| expediente_titulos : "el SUBTIPO · PK = FK"
+  titulaciones ||--o{ expediente_titulos : "lo que dice el diploma"
 ```
 
-**Catorce líneas, una por clave ajena.**
+**Once claves ajenas, y ninguna nulable.** Ésa es la propiedad que hace legible el modelo: no hay
+ninguna consulta que tenga que preguntar «¿y si esto viene vacío?».
 
-| # | Desde | Hacia | Nulable | Para qué |
-|---|---|---|:--:|---|
-| 1 | `instituciones.pais_id` | `paises` | no | **Ya existe.** El país donde funciona la empresa |
-| 2 | `campos_especificos.campo_amplio_id` | `campos_amplios` | no | La jerarquía CINE-F |
-| 3 | `campos_detallados.campo_especifico_id` | `campos_especificos` | no | La jerarquía CINE-F |
-| 4 | `campos_nacionales.pais_id` | `paises` | no | De qué país es el catálogo |
-| 5 | **`campos_nacionales.campo_detallado_id`** | `campos_detallados` | **sí** | **El anclaje a la norma** |
-| 6 | `carreras.pais_id` | `paises` | no | De qué país es el catálogo |
-| 7 | `carreras.campo_nacional_id` | `campos_nacionales` | **sí** | Su campo, si hay catálogo |
-| 8 | `carreras.campo_detallado_id` | `campos_detallados` | **sí** | Su campo, si no lo hay |
-| 9 | `titulaciones.carrera_id` | `carreras` | no | Qué carrera la otorga — **y de ahí su país** |
-| 10 | `expediente_titulos.id` | `expediente_asientos` | no | El subtipo · `PK = FK`, `ON DELETE CASCADE` |
-| 11 | `expediente_titulos.titulacion_id` | `titulaciones` | **sí** | Lo elegido del catálogo |
-| 12 | `expediente_titulos.pais_id` | `paises` | no | Dónde se emitió · **sólo dato** |
-| 13 | `expediente_titulos.campo_nacional_id` | `campos_nacionales` | **sí** | Su campo, cuando no hay titulación |
-| 14 | `expediente_titulos.campo_detallado_id` | `campos_detallados` | **sí** | Ídem, sin catálogo nacional |
+| # | Desde | Hacia | Para qué |
+|---|---|---|---|
+| 1 | `instituciones.pais_id` | `paises` | **Ya existe.** El país donde funciona la empresa |
+| 2 | `campos_especificos.campo_amplio_id` | `campos_amplios` | La jerarquía CINE-F |
+| 3 | `campos_detallados.campo_especifico_id` | `campos_especificos` | La jerarquía CINE-F |
+| 4 | `campos_nacionales.pais_id` | `paises` | De qué país es el catálogo |
+| 5 | **`campos_nacionales.campo_detallado_id`** | `campos_detallados` | **El único anclaje a la norma** |
+| 6 | `carreras.pais_id` | `paises` | De qué país es el catálogo |
+| 7 | **`carreras.campo_nacional_id`** | `campos_nacionales` | **El único camino de la carrera al campo** |
+| 8 | `titulaciones.carrera_id` | `carreras` | Qué carrera la otorga — **y de ahí su país** |
+| 9 | `expediente_titulos.id` | `expediente_asientos` | El subtipo · `PK = FK`, `ON DELETE CASCADE` |
+| 10 | `expediente_titulos.titulacion_id` | `titulaciones` | Lo que dice el diploma |
+| 11 | `expediente_titulos.pais_id` | `paises` | Dónde se emitió · **sólo dato** |
 
 Tres cosas que el dibujo dice y conviene leer despacio.
 
@@ -321,13 +317,28 @@ es un olvido: la institución no se relaciona con las carreras, **nombra el paí
 que hay**. Es lo mismo que ya hace con los documentos de identidad, donde su `pais_id` decide cuál es
 el documento nacional sin que exista clave ajena entre ambos.
 
-**La línea 5 es la que sostiene todo lo demás.** Ancla el catálogo nacional a la norma internacional,
-y es lo que hace que los dos caminos de la segunda pregunta **acaben en el mismo sitio**: un informe
-puede agregar por código CINE-F tanto los títulos clasificados con el campo del CES como los que
-cayeron directo a la norma. Sin ella son dos ejes que no se suman.
+**Sólo una tabla apunta a `campos_detallados`, y es la línea 5.** Hubo un diseño con tres —desde el
+asiento, desde la carrera y desde el campo nacional— y era redundante: si el campo nacional ya ancla
+a la norma, todo lo que cuelga de él llega por ahí. Repetirlo era una dependencia transitiva, que es
+la forma técnica de decir «dos sitios donde discrepar».
 
-**La línea 12 no elige nada.** Es el error que estuvo cuatro veces en esta página: `pais_id` en el
+**La línea 11 no elige nada.** Es el error que estuvo cuatro veces en esta página: `pais_id` en el
 asiento es dónde se emitió el diploma, y de ahí no cuelga ningún catálogo.
+
+### Por qué el asiento y su título son 1 a 0..1, y no 1 a muchos
+
+Es la pregunta correcta, porque en el dibujo se parecen. **`expediente_titulos` no es una colección
+hija: es un SUBTIPO.** Su clave primaria **es** la ajena —`id BIGINT PRIMARY KEY` que además
+referencia `expediente_asientos(id)`—, y una primaria es única por definición: **no caben dos filas
+con el mismo `id`**. Para que fuera 1:N habría que darle una primaria propia, y entonces un asiento
+sería dos títulos, que contradice lo que un asiento significa.
+
+El **`0..1`** es porque un asiento de sección `experiencia` **no tiene** fila aquí. Cada asiento tiene
+exactamente una de las diez tablas de sección, la que le marque su `section`.
+
+Los uno-a-muchos de verdad, en este mismo dibujo, son otros: **una persona tiene muchos asientos**,
+**una carrera otorga varias titulaciones** y **una titulación aparece en el expediente de muchas
+personas**.
 
 ### Nivel lógico: el catálogo con sus columnas
 
@@ -337,9 +348,8 @@ erDiagram
   paises ||--o{ carreras : ""
   campos_amplios ||--o{ campos_especificos : ""
   campos_especificos ||--o{ campos_detallados : ""
-  campos_detallados |o--o{ campos_nacionales : ""
-  campos_nacionales |o--o{ carreras : ""
-  campos_detallados |o--o{ carreras : ""
+  campos_detallados ||--o{ campos_nacionales : ""
+  campos_nacionales ||--o{ carreras : ""
   carreras ||--o{ titulaciones : ""
 
   paises {
@@ -374,8 +384,9 @@ erDiagram
   campos_nacionales {
     int id PK
     int pais_id FK
-    int campo_detallado_id FK "nulable · el anclaje"
-    varchar codigo "el del CES"
+    int campo_detallado_id FK "NOT NULL · 9999 si no se sabe"
+    text origen "CHECK · autoridad_nacional | cine_f"
+    varchar codigo
     varchar nombre
     varchar nombre_norm "sin tildes, minusculas · para el cotejo"
     smallint is_active
@@ -384,19 +395,20 @@ erDiagram
   carreras {
     int id PK
     int pais_id FK
-    int campo_nacional_id FK "nulable"
-    int campo_detallado_id FK "nulable · CHECK: una de las dos"
+    int campo_nacional_id FK "NOT NULL"
     text nivel "CHECK · AQUI vive el nivel"
+    text origen "CHECK · catalogo_nacional | registro_local"
     varchar nombre "unico por (pais, nombre)"
-    varchar nombre_norm "para el cotejo de duplicados"
+    varchar nombre_norm
     smallint is_active
   }
 
   titulaciones {
     int id PK
     int carrera_id FK "y de aqui su pais"
+    text origen "CHECK · catalogo_nacional | registro_local"
     varchar nombre "lo que dice el diploma"
-    varchar nombre_norm "para el cotejo de duplicados"
+    varchar nombre_norm
     smallint is_active
   }
 ```
@@ -408,10 +420,8 @@ izquierda rompe el código. Todas llevan además `created_at` y `updated_at` con
 
 ```mermaid
 erDiagram
-  expediente_asientos ||--|| expediente_titulos : "PK = FK, ON DELETE CASCADE"
-  titulaciones |o--o{ expediente_titulos : "nulable"
-  campos_nacionales |o--o{ expediente_titulos : "nulable"
-  campos_detallados |o--o{ expediente_titulos : "nulable"
+  expediente_asientos ||--o| expediente_titulos : "PK = FK, ON DELETE CASCADE"
+  titulaciones ||--o{ expediente_titulos : ""
   paises ||--o{ expediente_titulos : "donde se emitio"
 
   expediente_asientos {
@@ -424,28 +434,106 @@ erDiagram
 
   expediente_titulos {
     bigint id PK "y FK al asiento"
-    int titulacion_id FK "nulable · del catalogo"
-    varchar titulacion_libre "nulable · el nombre real"
-    text nivel "nulable · SOLO sin titulacion"
-    int campo_nacional_id FK "nulable · SOLO sin titulacion"
-    int campo_detallado_id FK "nulable · SOLO sin titulacion"
+    int titulacion_id FK "NOT NULL · de aqui salen nombre, carrera, nivel y campo"
     varchar ies "la universidad que lo emitio"
     int pais_id FK "donde se emitio · solo dato"
     text modalidad "CHECK · cuatro valores"
-    varchar sreg "el registro nacional"
+    varchar sreg "el registro nacional de ESTA persona"
   }
 ```
 
-**Las cinco columnas nulables son un solo interruptor**, no cinco decisiones:
+**Seis columnas, y las cinco que no son la clave son de ESTA persona**, no de la titulación: en qué
+universidad la cursó, dónde se emitió el diploma, en qué modalidad y con qué número de registro. Todo
+lo que es de la titulación —su nombre, su carrera, su nivel, su campo— se lee por la línea 10 y **no
+se copia**.
 
-| | `titulacion_id` | `titulacion_libre` | `nivel` · campos |
-|---|---|---|---|
-| **Está en el catálogo** | la fila elegida | `NULL` | `NULL` — salen de la carrera |
-| **No está** | `NULL` | obligatorio | obligatorios |
+### Por qué no hay `titulacion_libre`
 
-Y el camino preferente cuando no está **no es el texto libre: es darla de alta en el catálogo** —para
-eso está el cotejo de duplicados del último apartado—. El texto libre queda para lo que no puede
-entrar: títulos retirados de la nomenclatura vigente, o anteriores a que existiera.
+Hubo una columna de texto libre para el título que no estuviera en el catálogo, y **se retira**. El
+argumento que la sostenía era que una fila «NR / No registra» perdería el nombre real —un
+`Diplôme d'Ingénieur` degradado a «NR»—. Es cierto, y aun así la conclusión era la equivocada.
+
+**Lo primero: no existe el título imposible de clasificar.** La CINE-F trae comodines, y en el nivel
+detallado, que es donde hacen falta:
+
+| Comodín | Cuántos | Para qué |
+|---|---:|---|
+| `xx10` *sin mayor definición* | 10 | Se sabe el campo, no el detalle |
+| `xx19` *no contemplado* | 10 | Existe en lo nacional y no en la norma |
+| `xx88` *interdisciplinarios* | 10 | Cruza varios campos |
+| **`9999 Campo desconocido`** | 1 | No se sabe nada |
+
+**Y lo segundo: el nombre no necesitaba una columna paralela, necesitaba una fila.** Un nombre en
+texto libre no se puede cotejar, ni agregar, ni deduplicar — es un segundo almacén del mismo hecho,
+invisible para toda consulta que mire el catálogo.
+
+Así que el título que no está **se da de alta**, pasa por el cotejo de duplicados y queda marcado con
+`origen = 'registro_local'`. Eso dice mejor que el texto libre lo que el texto libre pretendía decir
+—«esto no vino del catálogo oficial»— y encima es consultable, revisable por el admin y reutilizable
+por la siguiente persona con el mismo título.
+
+### Los DOS ejes de `origen`, que no son el mismo
+
+Hay dos columnas llamadas `origen` y **significan cosas distintas**. Confundirlas sería el error fácil:
+
+| Tabla | Qué distingue | Valores |
+|---|---|---|
+| `campos_nacionales` | Cómo llegó la **taxonomía** | `autoridad_nacional` · `cine_f` |
+| `carreras` · `titulaciones` | Cómo llegó **la fila** | `catalogo_nacional` · `registro_local` |
+
+Un campo adoptado de la norma internacional **no es** «creado por un usuario», y una carrera que
+registró un usuario **no es** «la norma internacional». Son ejes ortogonales.
+
+### Qué pasa en un país sin taxonomía nacional
+
+Si el país donde funciona la institución no ha publicado su propia lista de campos, `campos_nacionales`
+se siembra **desde la CINE-F**: 150 filas, una por campo detallado, cada una anclada a la suya y
+marcada `origen = 'cine_f'`.
+
+**Y eso no es un parche: es lo que de verdad pasa.** Ecuador es el ejemplo — el CES **adoptó** la
+CINE-F 2013, y por eso sus diez campos amplios son literalmente las etiquetas españolas de la norma.
+Un país que no publica taxonomía propia usa la internacional, y ésa **es** su taxonomía nacional por
+adopción. La tabla no miente.
+
+Las tres alternativas evaluadas, y por qué pierden:
+
+| | Por qué no |
+|---|---|
+| **`carreras` con dos claves ajenas** (`campo_nacional_id` **o** `campo_detallado_id`, con `CHECK`) | Dependencia transitiva y bifurcación en toda consulta. Es el diseño que esta sección acaba de retirar |
+| **Una tabla `campos` con `padre_id` y un nivel** | Una jerarquía autorreferente necesita un guardián de nivel (clave ajena compuesta o trigger) para que un nacional no cuelgue de un amplio. Y el criterio del repo es explícito: aquí la complejidad **se cura con tablas, no con jerarquías** |
+| **Una vista que una lo nacional con lo detallado** | No se puede declarar una clave ajena contra una vista |
+
+Lo que sí cuesta, dicho: **150 filas duplicadas por país sin taxonomía propia**, y re-sembrarlas si la
+UNESCO revisa la CINE-F. A cambio, una sola clave ajena, ninguna nulable y ninguna consulta con `if`.
+
+### Qué se le ofrece a quien rellena
+
+```mermaid
+flowchart TB
+  I["InstitucionService.paisActual()"] --> C["EL catalogo nacional<br/>carreras + titulaciones de ese pais"]
+  C --> Q{"la titulacion<br/>esta en el?"}
+  Q -->|si| A["<b>titulacion_id</b><br/>nombre, carrera, nivel y campo salen de ahi"]
+  Q -->|no| D["cotejo de duplicados<br/>y alta con origen = registro_local"]
+  D --> A
+```
+
+El país no se resuelve con una subconsulta suelta: **sale de `InstitucionService.paisActual()`**, que
+ya existe y **falla ruidosamente si hay cero o más de una institución activa** en vez de elegir la
+primera en silencio.
+
+```sql
+SELECT t.id, t.nombre, c.nivel
+  FROM titulaciones t
+  INNER JOIN carreras c ON c.id = t.carrera_id
+ WHERE c.pais_id = $1              -- el de InstitucionService.paisActual()
+   AND t.is_active = 1 AND c.is_active = 1
+ ORDER BY c.nivel, t.nombre;
+```
+
+⚠️ **`pais_id` en `campos_nacionales` y `carreras` no es un selector, es la costura del
+multi-inquilino** — la misma que `InstitucionService` ya documenta en su cabecera. Hoy sólo hay una
+institución y por tanto un solo país sembrado; la columna existe para que el día que haya varias, la
+resolución siga entrando por un único sitio.
 
 ### Por qué el nivel vive en `carreras` y no en el asiento
 
@@ -494,7 +582,7 @@ código**, y a nivel detallado, que es donde hace falta.
 | `0613` | equivalencia **exacta** |
 | `0610` *sin mayor definición* | mismo campo específico, el nacional es **más ancho** |
 | `0619` *no contemplado* | el nacional tiene algo que la norma **no** |
-| `NULL` | todavía **nadie lo ha mapeado** |
+| `9999` *campo desconocido* | todavía **nadie lo ha mapeado** |
 
 Una columna `grado` repetiría en dato lo que el código ya dice, con el riesgo de que discrepen. Y la
 tabla N:M costaba construir a mano las correspondencias de los **522** campos detallados de la
@@ -504,42 +592,12 @@ También se descartó una **clave ajena polimórfica** —apuntar a amplio, espe
 encaje—: obliga a tres columnas excluyentes o a un par `tipo`+`id` sin integridad referencial, y los
 comodines lo resuelven sin nada de eso.
 
-### Qué se le ofrece a quien rellena
-
-```mermaid
-flowchart TB
-  I["InstitucionService.paisActual()"] --> C["EL catalogo nacional<br/>carreras + titulaciones de ese pais"]
-  C --> Q{"la titulacion<br/>esta en el?"}
-  Q -->|si| A["<b>titulacion_id</b><br/>nivel y campo salen de la carrera"]
-  Q -->|no| N{"se puede dar<br/>de alta?"}
-  N -->|si| D["cotejo de duplicados<br/>y alta en el catalogo"]
-  N -->|no| L["<b>titulacion_libre</b> + nivel<br/>+ campo nacional o CINE-F"]
-  D --> A
-```
-
-El país no se resuelve con una subconsulta suelta: **sale de `InstitucionService.paisActual()`**, que
-ya existe y **falla ruidosamente si hay cero o más de una institución activa** en vez de elegir la
-primera en silencio.
-
-```sql
-SELECT t.id, t.nombre, c.nivel
-  FROM titulaciones t
-  INNER JOIN carreras c ON c.id = t.carrera_id
- WHERE c.pais_id = $1              -- el de InstitucionService.paisActual()
-   AND t.is_active = 1 AND c.is_active = 1
- ORDER BY c.nivel, t.nombre;
-```
-
-⚠️ **`pais_id` en `campos_nacionales` y `carreras` no es un selector, es la costura del
-multi-inquilino** — la misma que `InstitucionService` ya documenta en su cabecera. Hoy sólo hay una
-institución y por tanto un solo país sembrado; la columna existe para que el día que haya varias, la
-resolución siga entrando por un único sitio.
-
 ### El cotejo de duplicados
 
 Sin puerta, el catálogo se llena de `Ingeniería de Software`, `Ingenieria en Software` e
-`ING. SOFTWARE`. La unicidad exacta por `(pais_id, nombre)` no lo evita: **son tres cadenas
-distintas**.
+`ING. SOFTWARE` — y ahora que las altas locales son el único camino para un título que falta, la
+puerta **deja de ser opcional**. La unicidad exacta por `(pais_id, nombre)` no basta: **son tres
+cadenas distintas**.
 
 ⚠️ **La distancia de Hamming no sirve aquí**: exige cadenas de la **misma longitud**, porque compara
 posición a posición. `Ingeniería Civil` e `Ingenieria Civil` ya tienen longitudes distintas, e

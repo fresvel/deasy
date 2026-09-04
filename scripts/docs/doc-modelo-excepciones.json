@@ -35,6 +35,12 @@
         "datos/firmas-y-dominios.md"
       ]
     },
+    "autoridad_nacional": {
+      "motivo": "FRENTE 18 · VALOR del CHECK de origen en campos_nacionales, del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "base_indexada": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
@@ -107,10 +113,22 @@
         "complemento/expediente.md"
       ]
     },
+    "catalogo_nacional": {
+      "motivo": "FRENTE 18 · VALOR del CHECK de origen en carreras y titulaciones, del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "cedula_ec": {
       "motivo": "MEMORIA · asi se llamaba el tipo nacional hasta el 2026-08-29, con Ecuador dentro del vocabulario.",
       "paginas": [
         "modelo/organizacion.md"
+      ]
+    },
+    "cine_f": {
+      "motivo": "FRENTE 18 · VALOR del CHECK de origen en campos_nacionales, del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
       ]
     },
     "comments_thread_ref": {
@@ -404,6 +422,12 @@
         "signer.md"
       ]
     },
+    "padre_id": {
+      "motivo": "DESCARTADO · columna de la alternativa de tabla unica autorreferente para el catalogo de campos, que se EVALUO Y SE DESCARTO (seccion 4, apartado del pais sin taxonomia nacional). Se cita para explicar por que no existe; el criterio esta en docs/planes/referencia/patrones-diseno.md. NO lleva fecha de retirada: no va a existir nunca.",
+      "paginas": [
+        "complemento/expediente.md"
+      ]
+    },
     "pg_index": {
       "motivo": "CATALOGO de PostgreSQL.",
       "paginas": [
@@ -517,6 +541,12 @@
       "motivo": "FUNCION del signer.",
       "paginas": [
         "signer.md"
+      ]
+    },
+    "registro_local": {
+      "motivo": "FRENTE 18 · VALOR del CHECK de origen en carreras y titulaciones, del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
+      "paginas": [
+        "complemento/expediente.md"
       ]
     },
     "required_min": {
