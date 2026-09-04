@@ -12,9 +12,9 @@
 
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
-| **E0** | Este plan, con las decisiones de diseño tomadas y medidas | 🟡 | | |
-| **E1** | El catálogo CINE-F: fuente limpia localizada y evaluada, no el PDF escaneado | ✅ | `cine-f-2013-es.csv`, 220 filas, jerarquía cerrada sin huérfanos, doblemente validada. Mitad B: Anexo II 2023 del CES, PDF digital | 2026-09-04 |
-| **E2** | Las tablas del catálogo académico, sembradas por el bootstrap | ⬜ | | |
+| **E0** | Este plan, con las decisiones de diseño tomadas y medidas | ✅ | §8 completo (19 tablas · 142 col · 24 FK · 28 `CHECK`, contadas del DDL) y la página publicada en `/complemento/expediente/`. Revisado por el dueño en siete vueltas, con sus descartes y mediciones en §7 y §8.7 | 2026-09-04 |
+| **E1** | El catálogo CINE-F y el nacional: fuentes localizadas y evaluadas | ✅ | `cine-f-2013-es.csv`, 220 filas, jerarquía cerrada sin huérfanos, doblemente validada. Y el anexo del CES: **no era un escaneo** (`pdfinfo` → Word 2010), la capa de texto está íntegra y las tablas se extraen limpias — lo que rompía los datos eran las celdas fusionadas | 2026-09-04 |
+| **E2** | Las **siete** tablas del catálogo académico, sembradas por el bootstrap | ⬜ | Pendiente: el extractor por geometría de celda, y resolver las **2** colisiones de la forma canónica | |
 | **E3** | El esquema del expediente: espina + 10 subtipos + la hija del 1:N, y **`dossiers` retirada** | ⬜ | | |
 | **E4** | `dossierStore` deja de hablar JSON y habla SQL | ⬜ | | |
 | **E5** | `url_documento` pasa a `documento_ref` con la convención `minio://` | ⬜ | | |
@@ -417,12 +417,21 @@ propósito. Y en el navegador: `/perfil` como **gestor** o **usuario** —el adm
 
 ## 7 · Lo que sigue abierto
 
+**Tres cerradas el 2026-09-04**, con lo que las cerró:
+
+| Cerrada | Cómo |
+|---|---|
+| ~~**El CES diverge del CINE-F en el nivel detallado**~~ | El anclaje 1:N en `campos_nacionales.campo_detallado_id`, porque los comodines `xx10`/`xx19`/`9999` de la norma **ya codifican el grado** de la equivalencia. Muere la tabla N:M (§8.4) |
+| ~~**El extractor del Anexo**~~ | **La fuente NO es un escaneo**: `pdfinfo` dice Word 2010, la capa de texto está íntegra y las tablas se extraen limpias. Lo que rompía los datos son las **celdas fusionadas** con un extractor por bandas, no el OCR |
+| ~~**`titulaciones.carrera_id` se declaró `NOT NULL`**~~ | La extracción da la estructura anidada `carrera → titulaciones`: **no hay ni una titulación suelta**. Se queda `NOT NULL` |
+
+**Y las que siguen abiertas:**
+
 | | |
 |---|---|
-| ~~**El CES diverge del CINE-F en el nivel detallado**~~ **DECIDIDO** (§3.5) | Medido: coinciden en campo amplio (los diez nombres del CES son literalmente las etiquetas españolas del CINE-F) y en 20 de 21 específicos, pero en **detallado el CES fusiona, renombra y AÑADE códigos propios** (`81`, `82`, p. ej. «Estudios de género»). Si se siembra el CINE-F puro como capa 3, **algunos detallados del CES se quedan sin padre**. Dos salidas: (a) el detallado del CES como capa 3 con `pais_id`, y el CINE-F puro como capa 3 internacional; (b) el CINE-F puro y la equivalencia en una tabla de correspondencia. **Decisión del dueño** |
 | **El Anexo II 2023, ¿sigue vigente?** | Firmado en abril de 2023. Existe referencia a `RPC-SO-03-No.047-2024` («Refórmese el Reglamento de armonización…») que **no se pudo leer**: vLex la tiene tras muro de pago y la Gaceta del CES exige sesión. Puede haber altas posteriores |
-| **El extractor del Anexo** | El texto es limpio y se puede extraer, pero el recuento preliminar da 7–12 campos amplios por sección donde deberían ser 10: hay ruido de pies de página y celdas fusionadas. Necesita extracción **por geometría de celda**, no por bandas. Es trabajo de `E2` |
-| **`titulaciones.carrera_id` se declaró `NOT NULL`** | Si la fuente trae titulaciones sin carrera, hay que aflojarlo **ANTES** de sembrar: el esquema no tiene `ALTER` |
+| **Los niveles superiores del catálogo nacional** | `campos_nacionales` es plano y ancla en el detallado, así que los niveles amplio y específico **se deducen** subiendo por la CINE-F. Correcto mientras el país adopte los dos de arriba —Ecuador lo hace, y en el nivel específico está medido: 20 casan literalmente—. Si alguno divergiera arriba, la salida son tres tablas nacionales simétricas |
+| **Quién puede dar de alta en el catálogo** | Al retirarse `titulacion_libre`, el título que falta **se crea**. Y el catálogo oficial **ya trae duplicados** —`Especialista en …… (especificar la mención)` aparece dos veces, una con un paréntesis de más—, así que el cotejo hace falta para sembrar y no sólo para las altas de usuario. Falta decidir si un usuario cualquiera crea, o propone y un gestor aprueba |
 | **Generar el CV** | Anotado como consecuencia deseable, sin decidir si entra en este frente |
 | **`ies` → `units`** | Sólo vale para instituciones internas; falta decidir qué se hace con las externas |
 
@@ -1158,14 +1167,19 @@ por ella sería contar revistas y editoriales juntas.
 
 | | |
 |---|---:|
-| Tablas nuevas | **17** (1 espina + 10 secciones + 1 hija + 5 catálogo) |
+| Tablas nuevas | **19** (1 espina + 10 secciones + 1 hija + **7** catálogo) |
 | Vistas nuevas | 1 |
-| Columnas en total | **121** |
-| Claves ajenas nuevas | **22** |
-| Índices declarados | 14 |
+| Columnas en total | **142** — 3 de ellas **generadas** (`nombre_norm`) |
+| Claves ajenas nuevas | **24** |
+| Índices declarados | 18 — 3 de ellos **GIN** para el cotejo |
 | Restricciones `CHECK` | **28** — hoy hay **0** en el expediente |
-| Triggers `set_updated_at()` | 6 |
+| Triggers `set_updated_at()` | 8 |
+| Extensiones de PostgreSQL | **2** — las primeras del proyecto |
 | Columnas JSONB que quedan en el expediente | **0** |
+
+Las siete del catálogo son las tres de la CINE-F (`campos_amplios` · `campos_especificos` ·
+`campos_detallados`), `campos_nacionales`, `niveles_academicos`, `carreras` y `titulaciones`.
+**Contado del propio DDL de esta sección, no estimado.**
 
 **`dossiers` se RETIRA** (ver §2.7). `expediente_asientos` se reescribe: pierde `data` y `url_documento`, gana
 `estado_revision`, `documento_ref`, `documento_subido_at`, `updated_at`, el `CHECK` de `section` y su
@@ -1173,15 +1187,31 @@ trigger.
 
 ### 8.7 · Lo que este diseño decidió y el plan no decía
 
-Tres cosas que hubo que resolver al escribir el DDL. **Se listan aparte porque no son decisiones del
-dueño todavía**, y cualquiera de las tres puede revertirse sin tocar el resto.
+Decisiones que hubo que tomar al escribir el DDL. **Las de esta primera tabla ya están aprobadas**;
+las de la segunda las tomé yo y cualquiera puede revertirse sin tocar el resto.
 
-| | Qué se hizo | Por qué, y qué se pierde si se revierte |
-|---|---|---|
-| **`sera` → `estado_revision` en la espina** | Columna nueva en `expediente_asientos`, con `CHECK` de cuatro valores | No estaba en las listas de §2.1 porque **no es de una sección: es de las diez**. Lo escriben los seis formularios, lo pinta la primera columna de las seis tablas y lo interpreta `dossierStatus.js`. Si no se recoge, al morir el JSONB el dato se pierde y la insignia se queda en «pendiente» para siempre |
-| **`titulos.tipo` → `modalidad`** | Renombrada | La clave se llamaba `tipo` y el formulario la etiquetaba «Modalidad». `tipo` ya significa otra cosa en seis de las diez secciones |
-| **Vocabularios en minúscula y sin tildes** | `nivel`, `modalidad`, `rol`, `estado`, `tipo` | El esquema no usa tildes en sus literales. La etiqueta con tildes es del frontend. **Obliga a que `E8` traduzca al migrar**, y ése es el coste |
+| Aprobado | Qué se hizo |
+|---|---|
+| **`sera` → `estado_revision`** | Columna nueva en la espina, con `CHECK` de cuatro valores. No estaba en las listas de §2.1 porque **no es de una sección: es de las diez**. Si no se recoge, al morir el `JSONB` la insignia se queda en «pendiente» para siempre |
+| **`tipo` → `modalidad`, `ambito`, `vinculo`, `alcance`, `pieza`, `linea`** | Siete columnas se llamaban `tipo` y significaban siete cosas. Renombradas por lo que cada una es; **ya no queda ninguna** |
+| **`sreg` → `numero_registro`** | Cuatro letras que no significan nada para quien lee el esquema |
+| **`nivel` pasa a catálogo** | `niveles_academicos`. Estaba duplicado en dos `CHECK` que ya habían derivado, y hay que **ordenarlo** — cosa que un `CHECK` no puede hacer |
+| **`titulacion_libre` se retira** | El título que falta se da de alta con `origen = 'registro_local'` |
 
-Y una que **queda abierta y afecta a `E1`**: `titulaciones.carrera_id` se declara `NOT NULL`. Si la
-fuente ecuatoriana que se localice en `E1` trae titulaciones sin carrera asociada, hay que aflojarlo
-a `NULL` **antes** de sembrar — y en este esquema, sin `ALTER`, aflojarlo después no es gratis.
+| Decidido sin preguntar | Por qué, y qué se pierde si se revierte |
+|---|---|
+| **`pais_id` se queda** en `campos_nacionales` y `carreras` | Es la costura del multi-inquilino que `InstitucionService` ya documenta. Quitarlo es una línea, pero deja el catálogo como lo único que no puede ir a varias instituciones |
+| **`origen` son DOS ejes distintos** | `campos_nacionales.origen` dice cómo llegó la *taxonomía*; el de `carreras`/`titulaciones`, cómo llegó *la fila*. Unificarlos marcaría como «creado por un usuario» un campo que es la norma de la UNESCO |
+| **`vigente_hasta`** en las tres del catálogo nacional | `is_active` no dice **cuándo**, y la regla es retirar y crear, nunca renombrar |
+| **`nombre_norm` con `translate()` y no `unaccent()`** | Una columna generada exige expresión `IMMUTABLE`, y `unaccent()` no lo es. Efecto secundario: la extensión `unaccent` no hace falta |
+| **Umbrales del cotejo: `sim >= 0,75` o `lev <= 2`** | Medido sobre 863 titulaciones reales: 100 % de erratas cazadas con 0,15 falsas alarmas por alta. Subir el umbral pierde transposiciones; bajarlo multiplica el ruido |
+| **Vocabularios en minúscula y sin tildes** | El esquema no usa tildes en sus literales; la etiqueta con tildes es del frontend. **Obliga a que `E8` traduzca al migrar**, y ése es el coste |
+
+#### Una pregunta que estaba abierta y ya se puede cerrar
+
+`titulaciones.carrera_id` se declaró `NOT NULL`, con la duda de si la fuente traería titulaciones sin
+carrera —y sin `ALTER`, aflojarlo después no es gratis—.
+
+**Ya no es duda.** La extracción de la capa de texto del anexo del CES da la estructura anidada
+`carrera → titulaciones`: **no hay ni una titulación que no cuelgue de una carrera**. El `NOT NULL`
+se queda.

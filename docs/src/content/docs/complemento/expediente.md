@@ -41,7 +41,7 @@ en un blob del que no se pueden localizar ni borrar uno a uno, que es justo lo q
 poder hacer. Y el blob llevaba escondidos dos defectos que una columna habría cazado al escribirla:
 la sección de libros guarda **`isnn`** donde la de artículos guarda `issn` —el mismo identificador,
 dos nombres, y la errata visible en pantalla—, y hay una clave llamada literalmente **`año`**, con
-`ñ`. El diseño son **17 tablas y una vista, 121 columnas y 22 claves ajenas**, con **28 restricciones
+`ñ`. El diseño son **19 tablas y una vista, 142 columnas y 24 claves ajenas**, con **28 restricciones
 `CHECK`** donde hoy hay **cero**. Y sólo hay **3 asientos** en la base, todos de semilla: migrar es
 gratis ahora y deja de serlo en cuanto el sistema entre en uso.
 
