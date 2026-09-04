@@ -71,14 +71,11 @@ erDiagram
 
   expediente_titulos {
     bigint id PK "PK = FK al asiento"
-    int titulacion_id FK "NULA si no esta en catalogo"
-    varchar titulacion_libre "el nombre tal cual"
-    varchar ies
+    int titulacion_id FK "NOT NULL · el catalogo, seccion 4"
+    varchar ies "la universidad que lo emitio"
     int pais_id FK "antes la cadena Ecuador"
-    text nivel "CHECK de ocho"
     text modalidad "la clave se llamaba tipo"
-    varchar sreg
-    int campo_amplio_id FK "CINE-F"
+    varchar sreg "el registro nacional"
   }
 ```
 
@@ -100,6 +97,7 @@ datos?»* no se puede hacer sin leer todos los expedientes enteros.
 
 ```mermaid
 erDiagram
+  %% parcial: de expediente_asientos solo se dibujan id y section, para ver el reparto
   expediente_asientos ||--o| expediente_formacion : "section = formacion"
   expediente_asientos ||--o| expediente_experiencia : "section = experiencia"
   expediente_asientos ||--o| expediente_referencias : "section = referencias"
@@ -175,6 +173,7 @@ las agrupó por cómo se pintan, no por cómo son.
 
 ```mermaid
 erDiagram
+  %% parcial: de expediente_asientos solo se dibujan id y section, para ver el reparto
   expediente_asientos ||--o| expediente_articulos : "section = articulos"
   expediente_asientos ||--o| expediente_libros : "section = libros"
   expediente_asientos ||--o| expediente_ponencias : "section = ponencias"
@@ -354,8 +353,9 @@ erDiagram
 
   paises {
     int id PK
-    char iso_alpha2 "EC"
-    varchar name "Ecuador"
+    char iso_alpha2 "ISO-3166, derivado del CLDR"
+    varchar name
+    varchar phone_code "prefijo telefonico"
   }
 
   campos_amplios {
@@ -431,8 +431,11 @@ erDiagram
     bigint id PK
     bigint person_id FK
     text section "CHECK · titulos"
-    varchar url_documento "el respaldo escaneado"
+    varchar documento_ref "minio:// · el respaldo escaneado"
+    timestamp documento_subido_at
     text estado_revision
+    timestamp created_at
+    timestamp updated_at
   }
 
   expediente_titulos {

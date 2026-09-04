@@ -492,6 +492,7 @@ erDiagram
     smallint principal_flag "generada, una por persona y tipo"
   }
   paises {
+    int id PK
     char iso_alpha2 "ISO-3166, derivado del CLDR"
     varchar name
     varchar phone_code "prefijo telefonico"

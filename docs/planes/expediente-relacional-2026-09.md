@@ -276,15 +276,21 @@ dos formas:
 | Fila «NR / No registra» en el catálogo | La clave ajena queda satisfecha **y el nombre real se pierde** |
 | **Clave ajena NULA + texto libre** | Se guarda el nombre tal cual, y se sabe que no viene del catálogo |
 
-Gana la segunda, con un `CHECK` que exige una de las dos:
+Ganó la segunda, con un `CHECK` que exigía una de las dos.
 
-```sql
-titulacion_id     INT NULL REFERENCES titulaciones(id),
-titulacion_libre  VARCHAR(200) NULL,
-CONSTRAINT chk_titulacion CHECK (titulacion_id IS NOT NULL OR titulacion_libre IS NOT NULL)
-```
-
-Así el catálogo es **preferente pero no obligatorio**, y un título extranjero no se degrada a «NR».
+> ⚠️ **SUPERADO el 2026-09-04, y la conclusión era la equivocada.** El razonamiento de la tabla es
+> correcto —una fila «NR» pierde el nombre real— pero la salida no era una columna de texto:
+>
+> 1. **No existe el título imposible de clasificar.** La CINE-F trae comodines **en el nivel
+>    detallado**: 10 `xx10` *sin mayor definición*, 10 `xx19` *no contemplado*, 10 `xx88`
+>    *interdisciplinarios* y el `9999 Campo desconocido`.
+> 2. **El nombre no necesitaba una columna paralela, necesitaba una FILA.** En texto libre no se
+>    puede cotejar, ni agregar, ni deduplicar: es un segundo almacén del mismo hecho, invisible para
+>    toda consulta que mire el catálogo.
+>
+> Así que `titulacion_libre` **se retira** y `titulacion_id` pasa a `NOT NULL`. El título que falta
+> **se da de alta** con `origen = 'registro_local'`, pasando por el cotejo de duplicados. Diseño
+> vigente en `docs/src/content/docs/complemento/expediente.md` §4.
 
 ### 3.5 · La divergencia CES/CINE-F: catálogo internacional + catálogo nacional + equivalencias
 
@@ -424,6 +430,16 @@ propósito. Y en el navegador: `/perfil` como **gestor** o **usuario** —el adm
 
 ## 8 · El esquema, completo
 
+> ⚠️ **PARTES DE ESTA SECCION ESTAN SUPERADAS desde el 2026-09-04.** El diseño vigente del
+> **catalogo academico** (8.4) y de `expediente_titulos` se acordo despues de escribir esto y vive en
+> `docs/src/content/docs/complemento/expediente.md` §4. Lo que cambio: **un solo catalogo nacional**
+> (el del pais de `instituciones.pais_id`), el anclaje a la norma como columna 1:N en
+> `campos_nacionales.campo_detallado_id`, `campos_nacionales` como tabla nueva, el **nivel en
+> `carreras`** con la unicidad en `(pais_id, nivel, nombre_norm)`, `origen` en tres tablas,
+> `vigente_hasta`, `nombre_norm` como columna GENERADA y el cotejo de duplicados en tres capas.
+> **El bloque de `expediente_titulos` de abajo YA esta reescrito; el 8.4 todavia NO.**
+
+
 > **Esto es el DDL de diseño de `E3` (y de `E2`, `E5` y `E6`), para aprobar antes de tocar
 > `backend/database/postgres_schema.sql`.** Todavía **no** está en el esquema: mientras esta sección
 > exista sin su commit de implementación, la base sigue con `data JSONB`.
@@ -519,60 +535,47 @@ Todas comparten la misma cabecera —`id BIGINT NOT NULL PRIMARY KEY` que es a l
 ```sql
 -- ── 1/10 · TITULOS ───────────────────────────────────────────────────────────────────────────────
 -- La seccion que mas gana con el cambio: de sus siete claves JSON, TRES eran texto libre donde ya
--- habia catalogo (pais, titulo, campo_amplio) y una era un vocabulario cerrado sin ninguna defensa.
+-- habia catalogo (pais, titulo, campo) y una era un vocabulario cerrado sin ninguna defensa.
+--
+-- SEIS COLUMNAS, y las cinco que no son la clave son de ESTA PERSONA, no de la titulacion: en que
+-- universidad la curso, donde se emitio el diploma, en que modalidad y con que numero de registro.
+-- El nombre, la carrera, el nivel y el campo se LEEN por titulacion_id y no se copian.
 CREATE TABLE IF NOT EXISTS expediente_titulos (
   id BIGINT NOT NULL PRIMARY KEY,
-  -- LA TITULACION, con la valvula de escape decidida en la seccion 3.4 de este plan.
-  --
-  -- El catalogo es PREFERENTE PERO NO OBLIGATORIO. La alternativa —una fila "NR / No registra" en
-  -- titulaciones— satisface la clave ajena Y PIERDE EL NOMBRE REAL: un Diplome d'Ingenieur frances
-  -- se degradaria a "NR". Con clave ajena nula mas texto libre se guarda el nombre tal cual y ademas
-  -- SE SABE que no viene del catalogo, que es informacion que la fila "NR" tampoco da.
-  titulacion_id INT NULL,
-  titulacion_libre VARCHAR(200) NULL,
+  -- LA TITULACION, y es OBLIGATORIA. Hubo aqui una columna titulacion_libre para el titulo que no
+  -- estuviera en el catalogo, y se retiro: la CINE-F tiene comodin para todo (10 `xx10` sin mayor
+  -- definicion, 10 `xx19` no contemplado, 10 `xx88` interdisciplinarios y el 9999 desconocido), asi
+  -- que no existe el titulo imposible de clasificar. Y el nombre real no necesitaba una columna
+  -- paralela sino una FILA: en texto libre no se puede cotejar, ni agregar, ni deduplicar. El titulo
+  -- que falta se da de alta con origen = 'registro_local', pasando por el cotejo de duplicados.
+  titulacion_id INT NOT NULL,
   -- LA INSTITUCION QUE LO EMITE. Sigue siendo texto: enlazarla a units solo valdria para las
-  -- internas, y el 100 % de los titulos de una universidad son de OTRAS universidades. Que se hace
-  -- con las externas esta abierto en la seccion 7 de este plan; hasta que se decida, texto.
+  -- internas, y el 100 % de los titulos de una universidad son de OTRAS universidades.
   ies VARCHAR(200) NOT NULL,
+  -- DONDE SE EMITIO EL DIPLOMA. Es SOLO DATO: no elige catalogo. Deasy guarda el catalogo del pais
+  -- donde funciona la institucion (instituciones.pais_id) y ningun otro, asi que un doctorado de
+  -- Lyon en una universidad ecuatoriana se clasifica con la nomenclatura ecuatoriana.
   pais_id INT NOT NULL,
-  -- EL NIVEL. Vocabulario CERRADO y por eso CHECK y no tabla: el criterio del esquema —el mismo que
-  -- documentos_identidad.tipo escribe en su comentario— es que un vocabulario fijo sobre el que el
-  -- codigo se ramifica va en CHECK, y este se ramifica: TitulosSection.vue filtra sus subpestañas
-  -- con nivel === 'Grado' y nivel === 'Tecnico' || 'Tecnologo'.
-  --
-  -- Se guardan en minuscula y sin tildes. Los formularios enseñan "Maestria Tecnologica" con sus
-  -- tildes; eso es etiqueta, no dato, y traducirla es del frontend.
-  --
-  -- OJO AL MIGRAR (E8): hay DOS listas de niveles en el codigo y NO coinciden. AgregarTitulo.vue
-  -- tiene ocho y AgregarInvestigacion.vue tiene siete — le falta la maestria tecnologica—, pese a
-  -- que ambas describen el mismo eje. El CHECK unifica en los ocho, y esa union es justamente el
-  -- tipo de defecto que una columna caza y una clave JSON no.
-  nivel TEXT NOT NULL CHECK (nivel IN (
-    'tecnico','tecnologo','grado','maestria','maestria_tecnologica','diplomado','doctorado','posdoctorado'
-  )),
   -- LA MODALIDAD DE ESTUDIO. En el JSON esta clave se llama "tipo" y el formulario la etiqueta
   -- "Modalidad" (AgregarTitulo.vue:62): el nombre de la clave y el de la cosa no coincidian. Se
   -- renombra al pasar a columna, porque "tipo" a secas ya significa otra cosa en seis de las diez
-  -- secciones y tener el mismo nombre para ejes distintos es como se llega a un modelo ilegible.
+  -- secciones. Es de la persona y no de la titulacion: la misma carrera se cursa presencial o
+  -- virtual.
   modalidad TEXT NOT NULL DEFAULT 'presencial'
     CHECK (modalidad IN ('presencial','semipresencial','virtual','hibrido')),
   -- EL NUMERO DE REGISTRO ante la autoridad de educacion superior (en Ecuador, la SENESCYT). Texto,
-  -- porque su formato lo fija cada pais y aqui el catalogo ya es internacional.
+  -- porque su formato lo fija cada pais. Es de ESTA persona.
   sreg VARCHAR(60) NULL,
-  -- EL CAMPO AMPLIO CINE-F. Nulo mientras no se conozca: hoy es texto libre y la mitad de los
-  -- asientos de semilla lo traen vacio.
-  campo_amplio_id INT NULL,
-  CONSTRAINT fk_dossier_titulos_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE,
-  CONSTRAINT fk_dossier_titulos_titulacion FOREIGN KEY (titulacion_id) REFERENCES titulaciones(id),
-  CONSTRAINT fk_dossier_titulos_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
-  CONSTRAINT fk_dossier_titulos_campo FOREIGN KEY (campo_amplio_id) REFERENCES campos_amplios(id),
-  -- Una de las dos, y al menos una: sin esto la valvula de escape se convierte en un agujero por el
-  -- que entran titulos sin nombre de ninguna clase.
-  CONSTRAINT chk_dossier_titulos_titulacion CHECK (titulacion_id IS NOT NULL OR titulacion_libre IS NOT NULL)
+  CONSTRAINT fk_expediente_titulos_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_expediente_titulos_titulacion FOREIGN KEY (titulacion_id) REFERENCES titulaciones(id),
+  CONSTRAINT fk_expediente_titulos_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
 );
-CREATE INDEX IF NOT EXISTS idx_dossier_titulos_titulacion ON expediente_titulos (titulacion_id);
-CREATE INDEX IF NOT EXISTS idx_dossier_titulos_pais ON expediente_titulos (pais_id);
-CREATE INDEX IF NOT EXISTS idx_dossier_titulos_campo ON expediente_titulos (campo_amplio_id);
+CREATE INDEX IF NOT EXISTS idx_expediente_titulos_titulacion ON expediente_titulos (titulacion_id);
+CREATE INDEX IF NOT EXISTS idx_expediente_titulos_pais ON expediente_titulos (pais_id);
+
+-- NOTA: el NIVEL ya no vive aqui. Es propiedad de la OFERTA y no de quien la curso -- una maestria
+-- es una maestria lo escriba quien lo escriba--, y esta medido en la fuente del CES, que trae
+-- oferta_tipo a la altura de la carrera. Vive en carreras.nivel; ver la seccion 8.4.
 
 
 -- ── 2/10 · FORMACION CONTINUA ────────────────────────────────────────────────────────────────────

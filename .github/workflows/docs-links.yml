@@ -91,6 +91,13 @@ jobs:
       - name: Comprobar que la doc describe el modelo real
         run: node scripts/docs/check-doc-modelo.mjs
 
+      # Que una misma tabla dibujada en varios erDiagram no se contradiga. El gate de arriba
+      # NO lo caza: para el, un nombre que sigue existiendo en el esquema es correcto aunque
+      # el diagrama que lo usa sea el diseño anterior. Asi convivieron dos `expediente_titulos`
+      # -- nueve columnas en uno, seis en otro-- en la MISMA pagina, hasta que lo vio el dueño.
+      - name: Comprobar que los diagramas no se contradicen
+        run: node scripts/docs/check-diagramas-coherentes.mjs
+
   # ── No bloqueante: URLs externas ────────────────────────────────────────────────────────
   enlaces-externos:
     if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
