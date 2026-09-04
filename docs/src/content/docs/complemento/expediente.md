@@ -388,7 +388,7 @@ erDiagram
     text origen "CHECK · autoridad_nacional | cine_f"
     varchar codigo
     varchar nombre
-    varchar nombre_norm "sin tildes, minusculas · para el cotejo"
+    varchar nombre_norm "GENERATED STORED · la forma canonica"
     smallint is_active
     date vigente_hasta "nulable · cuando dejo de ofrecerse"
   }
@@ -399,8 +399,8 @@ erDiagram
     int campo_nacional_id FK "NOT NULL"
     text nivel "CHECK · AQUI vive el nivel"
     text origen "CHECK · catalogo_nacional | registro_local"
-    varchar nombre "unico por (pais, nombre, NIVEL)"
-    varchar nombre_norm
+    varchar nombre "unico por (pais, nivel, nombre_norm)"
+    varchar nombre_norm "GENERATED STORED"
     smallint is_active
     date vigente_hasta "nulable"
   }
@@ -410,7 +410,7 @@ erDiagram
     int carrera_id FK "y de aqui su pais"
     text origen "CHECK · catalogo_nacional | registro_local"
     varchar nombre "lo que dice el diploma"
-    varchar nombre_norm
+    varchar nombre_norm "GENERATED STORED · unico por carrera"
     smallint is_active
     date vigente_hasta "nulable"
   }
@@ -734,16 +734,61 @@ Lo que sí, y las tres vienen en `postgres:17`:
 | **`unaccent`** | Quitar tildes antes de comparar. Imprescindible en español | — |
 | `fuzzystrmatch` | `levenshtein()`, distancia de edición, para desempatar los finalistas | no tiene |
 
-De ahí sale la columna `nombre_norm` de las tres tablas del catálogo: el nombre en minúsculas y sin
-tildes, **materializado y con índice GIN**, porque un índice sobre `unaccent(lower(nombre))` exige
-que la función sea `IMMUTABLE` y `unaccent` no lo es.
+#### Las tres capas, y qué caza cada una
 
-**Avisa, no impide.** `Ingeniería Civil` e `Ingeniería Vial` se parecen y son distintas, así que el
-cotejo devuelve los candidatos y **decide una persona**. Va en el servicio, antes de insertar — no en
-un `CHECK` ni en un trigger, que no pueden preguntar.
+Una sola herramienta no basta, y el `/a` lo demuestra: `Ingeniero/a Marítimo` e
+`Ingeniero/a Marítimo/a` son el mismo título, y **ni la unicidad exacta ni quitar tildes los juntan**.
 
-⚠️ Serían **las primeras extensiones del proyecto**: hoy `postgres_schema.sql` no declara ninguna.
-Comprobado que las tres están disponibles y que el rol de la aplicación puede crearlas.
+**Capa 1 · la forma canónica, `nombre_norm`.** Minúsculas, sin tildes, sin puntuación, espacios
+colapsados **y las formas de género plegadas** (`/a`, `o/a`, `(a)`). Determinista, sin criterio.
+
+Y no es una columna que rellene el servicio: es **`GENERATED ALWAYS ... STORED`**, así que **no puede
+derivar** — no hay ningún `INSERT` capaz de olvidarse de ponerla.
+
+```sql
+nombre_norm VARCHAR(250) GENERATED ALWAYS AS (
+  btrim(regexp_replace(regexp_replace(regexp_replace(
+    translate(lower(nombre), 'áéíóúüñÁÉÍÓÚÜÑ', 'aeiouunaeiouun'),
+    '([a-z])[[:space:]]*/[[:space:]]*a([^a-z]|$)', '\1\2', 'g'),   -- maritimo/a  -> maritimo
+    '\([[:space:]]*a[[:space:]]*\)', '', 'g'),                     -- licenciado(a) -> licenciado
+    '[^a-z0-9]+', ' ', 'g'))
+) STORED
+```
+
+⚠️ **Se usa `translate()` y no `unaccent()`, y no es capricho**: una columna generada exige una
+expresión `IMMUTABLE`, y `unaccent()` **no lo es** —depende de un diccionario que puede cambiar—.
+`translate()` sí. Efecto secundario que conviene: **la extensión `unaccent` deja de hacer falta**.
+
+**Capa 2 · el índice único sobre la forma canónica**, que convierte el aviso en imposibilidad:
+
+| Tabla | Único por |
+|---|---|
+| `carreras` | `(pais_id, nivel, nombre_norm)` |
+| `titulaciones` | `(carrera_id, nombre_norm)` |
+
+Comprobado contra PostgreSQL 17: insertar `Ingeniero/a Marítimo` y después `Ingeniero/a Marítimo/a`
+devuelve `duplicate key value violates unique constraint`. **Lo impide el motor, no el código.**
+
+Lo que cuesta, medido sobre las **863** titulaciones del anexo del CES:
+
+| Normalización | Colisiones | Filas implicadas |
+|---|---:|---:|
+| Sin normalizar | 0 | 0 |
+| Minúsculas, sin tildes, sin puntuación | 1 | 2 |
+| **+ género plegado** | **2** | **4** |
+
+**Dos conflictos en todo el catálogo oficial.** Plegar el género añade exactamente uno —el
+`Ingeniero/a Marítimo`— y **ni un falso positivo**. La siembra tiene que resolver esos dos casos en
+vez de cargarlos en silencio, que es justo lo que se busca.
+
+**Capa 3 · el cotejo por trigramas**, para lo que la normalización no alcanza: abreviaturas
+(`Ing. Civil` frente a `Ingeniería Civil`), palabras reordenadas, erratas y sinónimos. Esta capa
+**avisa, no impide** —`Ingeniería Civil` e `Ingeniería Vial` se parecen y son distintas—, así que
+devuelve candidatos y **decide una persona**. Va en el servicio antes de insertar, no en un `CHECK`
+ni en un trigger, que no pueden preguntar.
+
+⚠️ `pg_trgm` sería **la primera extensión del proyecto**: hoy `postgres_schema.sql` no declara
+ninguna. Comprobado que está disponible y que el rol de la aplicación puede crearla.
 
 ## 5 · Dónde está el detalle
 
