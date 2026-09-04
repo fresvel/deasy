@@ -1,6 +1,6 @@
 ---
 title: "El expediente: qué ha hecho antes cada persona"
-description: "El modelo aprobado del frente 18: diecinueve tablas y una vista donde hoy hay dos tablas y un JSONB. Una espina con una fila por asiento, diez tablas de sección cuya clave primaria es la ajena, y el catálogo académico CINE-F."
+description: "El modelo propuesto del frente 18, EN REVISION: diecinueve tablas y una vista donde hoy hay dos tablas y un JSONB. Una espina con una fila por asiento, diez tablas de sección cuya clave primaria es la ajena, y el catálogo académico CINE-F."
 sidebar:
   label: "4 · El expediente"
   order: 4
@@ -10,7 +10,7 @@ El **expediente** —el *dossier*— es el historial académico y profesional de
 su experiencia, sus publicaciones.
 
 :::caution[Esta página describe el modelo APROBADO, que todavía NO está en la base]
-El diseño de abajo es el del **frente 18**, aprobado por el dueño y **pendiente de implementar**:
+El diseño de abajo es el del **frente 18**. **Está EN REVISIÓN y no aprobado**, y por tanto sin implementar:
 **diecinueve tablas y una vista** donde hoy hay dos y un `JSONB`. El plan, con su DDL completo y su control de
 ejecución, es [`expediente-relacional-2026-09.md`](https://github.com/fresvel/deasy/blob/develop/docs/planes/expediente-relacional-2026-09.md).
 

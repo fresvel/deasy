@@ -12,7 +12,7 @@
 
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
-| **E0** | Este plan, con las decisiones de diseño tomadas y medidas | ✅ | §8 completo (19 tablas · 142 col · 24 FK · 28 `CHECK`, contadas del DDL) y la página publicada en `/complemento/expediente/`. Revisado por el dueño en siete vueltas, con sus descartes y mediciones en §7 y §8.7 | 2026-09-04 |
+| **E0** | Este plan, con las decisiones de diseño tomadas y medidas | 🟡 | **El dueño está revisando y NO lo ha aprobado.** Escrito: §8 completo (19 tablas · 142 col · 24 FK · 28 `CHECK`, contadas del DDL) y publicado en `/complemento/expediente/`; los descartes y sus mediciones, en §7 y §8.7. **Cierra el día que el dueño lo apruebe, no antes** | |
 | **E1** | El catálogo CINE-F y el nacional: fuentes localizadas y evaluadas | ✅ | `cine-f-2013-es.csv`, 220 filas, jerarquía cerrada sin huérfanos, doblemente validada. Y el anexo del CES: **no era un escaneo** (`pdfinfo` → Word 2010), la capa de texto está íntegra y las tablas se extraen limpias — lo que rompía los datos eran las celdas fusionadas | 2026-09-04 |
 | **E2** | Las **siete** tablas del catálogo académico, sembradas por el bootstrap | ⬜ | Pendiente: el extractor por geometría de celda, y resolver las **2** colisiones de la forma canónica | |
 | **E3** | El esquema del expediente: espina + 10 subtipos + la hija del 1:N, y **`dossiers` retirada** | ⬜ | | |
@@ -1187,10 +1187,12 @@ trigger.
 
 ### 8.7 · Lo que este diseño decidió y el plan no decía
 
-Decisiones que hubo que tomar al escribir el DDL. **Las de esta primera tabla ya están aprobadas**;
-las de la segunda las tomé yo y cualquiera puede revertirse sin tocar el resto.
+Decisiones que hubo que tomar al escribir el DDL. **Nada de esto está aprobado todavía** — el plan
+entero está en revisión. La diferencia entre las dos tablas es de dónde salió cada decisión: las
+primeras se acordaron contigo durante la revisión; las segundas las tomé yo, y cualquiera puede
+revertirse sin tocar el resto.
 
-| Aprobado | Qué se hizo |
+| Acordado en la revisión | Qué se hizo |
 |---|---|
 | **`sera` → `estado_revision`** | Columna nueva en la espina, con `CHECK` de cuatro valores. No estaba en las listas de §2.1 porque **no es de una sección: es de las diez**. Si no se recoge, al morir el `JSONB` la insignia se queda en «pendiente» para siempre |
 | **`tipo` → `modalidad`, `ambito`, `vinculo`, `alcance`, `pieza`, `linea`** | Siete columnas se llamaban `tipo` y significaban siete cosas. Renombradas por lo que cada una es; **ya no queda ninguna** |
