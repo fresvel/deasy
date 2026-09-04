@@ -1,6 +1,6 @@
 ---
 title: "El expediente: qué ha hecho antes cada persona"
-description: "El modelo aprobado del frente 18: dieciocho tablas y una vista donde hoy hay dos tablas y un JSONB. Una espina con una fila por asiento, diez tablas de sección cuya clave primaria es la ajena, y el catálogo académico CINE-F."
+description: "El modelo aprobado del frente 18: diecinueve tablas y una vista donde hoy hay dos tablas y un JSONB. Una espina con una fila por asiento, diez tablas de sección cuya clave primaria es la ajena, y el catálogo académico CINE-F."
 sidebar:
   label: "4 · El expediente"
   order: 4
@@ -11,7 +11,7 @@ su experiencia, sus publicaciones.
 
 :::caution[Esta página describe el modelo APROBADO, que todavía NO está en la base]
 El diseño de abajo es el del **frente 18**, aprobado por el dueño y **pendiente de implementar**:
-**dieciocho tablas y una vista** donde hoy hay dos y un `JSONB`. El plan, con su DDL completo y su control de
+**diecinueve tablas y una vista** donde hoy hay dos y un `JSONB`. El plan, con su DDL completo y su control de
 ejecución, es [`expediente-relacional-2026-09.md`](https://github.com/fresvel/deasy/blob/develop/docs/planes/expediente-relacional-2026-09.md).
 
 **Lo que hay en la base HOY** —dos tablas, `dossiers` y `dossier_items`, con el contenido dentro de
@@ -21,9 +21,9 @@ conserva porque es lo que el sistema contiene mientras el frente no se ejecute.
 
 ## El modelo
 
-Son **dieciocho tablas y una vista**: la espina, con una fila por asiento; **diez de sección** que
+Son **diecinueve tablas y una vista**: la espina, con una fila por asiento; **diez de sección** que
 cuelgan de ella con su clave primaria siendo a la vez la ajena; la **hija** del uno-a-muchos de las
-cátedras; y **seis** del catálogo académico. El `JSONB` desaparece entero, y la tabla `dossiers`
+cátedras; y **siete** del catálogo académico. El `JSONB` desaparece entero, y la tabla `dossiers`
 también: era una cáscara 1:1 sobre `persons` sin ni una columna propia.
 
 
@@ -61,8 +61,8 @@ erDiagram
   expediente_asientos {
     bigint id PK
     bigint person_id FK
-    text section "CHECK de los DIEZ valores"
-    text estado_revision "hoy es sera, en el JSON"
+    text section "CHECK · 10"
+    text estado_revision "CHECK · 4"
     varchar documento_ref "minio://, ya no una URL"
     timestamp documento_subido_at
     timestamp created_at
@@ -114,8 +114,8 @@ erDiagram
     varchar tema
     varchar institucion
     int pais_id FK
-    text tipo
-    text rol
+    text ambito "CHECK"
+    text rol "CHECK"
     date fecha_inicio
     date fecha_fin
     int horas
@@ -123,9 +123,9 @@ erDiagram
 
   expediente_experiencia {
     bigint id PK
-    text tipo
+    text ambito "CHECK"
     varchar institucion
-    text modalidad
+    text modalidad "CHECK"
     date fecha_inicio
     date fecha_fin
   }
@@ -140,7 +140,7 @@ erDiagram
   expediente_referencias {
     bigint id PK
     varchar nombre
-    text tipo
+    text vinculo "CHECK"
     varchar cargo_parentesco
     varchar institucion
     varchar email
@@ -151,7 +151,7 @@ erDiagram
     bigint id PK
     varchar titulo
     varchar institucion
-    text tipo
+    text alcance "CHECK"
     text descripcion
     date fecha
     int horas
@@ -202,7 +202,7 @@ erDiagram
     bigint id PK
     varchar titulo
     varchar editorial
-    text tipo
+    text pieza
     varchar isbn
     varchar issn "era isnn"
     smallint anio "era año"
@@ -220,7 +220,7 @@ erDiagram
     varchar tema
     varchar ies
     varchar programa
-    text nivel
+    int nivel_id FK "catalogo"
     text rol
     smallint anio
   }
@@ -229,7 +229,7 @@ erDiagram
     bigint id PK
     varchar tema
     varchar institucion
-    text tipo
+    text linea
     varchar programa_group
     date inicio
     date fin
@@ -286,13 +286,15 @@ erDiagram
   campos_detallados ||--o{ campos_nacionales : "el anclaje a la norma"
 
   campos_nacionales ||--o{ carreras : "clasifica"
+  niveles_academicos ||--o{ carreras : "de que nivel es"
+  niveles_academicos ||--o{ expediente_tesis : "el nivel de la tesis dirigida"
   carreras ||--o{ titulaciones : "la otorga"
 
   expediente_asientos ||--o| expediente_titulos : "el SUBTIPO · PK = FK"
   titulaciones ||--o{ expediente_titulos : "lo que dice el diploma"
 ```
 
-**Once claves ajenas, y ninguna nulable.** Ésa es la propiedad que hace legible el modelo: no hay
+**Trece claves ajenas, y ninguna nulable.** Ésa es la propiedad que hace legible el modelo: no hay
 ninguna consulta que tenga que preguntar «¿y si esto viene vacío?».
 
 | # | Desde | Hacia | Para qué |
@@ -304,10 +306,12 @@ ninguna consulta que tenga que preguntar «¿y si esto viene vacío?».
 | 5 | **`campos_nacionales.campo_detallado_id`** | `campos_detallados` | **El único anclaje a la norma** |
 | 6 | `carreras.pais_id` | `paises` | De qué país es el catálogo |
 | 7 | **`carreras.campo_nacional_id`** | `campos_nacionales` | **El único camino de la carrera al campo** |
-| 8 | `titulaciones.carrera_id` | `carreras` | Qué carrera la otorga — **y de ahí su país** |
-| 9 | `expediente_titulos.id` | `expediente_asientos` | El subtipo · `PK = FK`, `ON DELETE CASCADE` |
-| 10 | `expediente_titulos.titulacion_id` | `titulaciones` | Lo que dice el diploma |
-| 11 | `expediente_titulos.pais_id` | `paises` | Dónde se emitió · **sólo dato** |
+| 8 | **`carreras.nivel_id`** | `niveles_academicos` | **El nivel, y su orden académico** |
+| 9 | `titulaciones.carrera_id` | `carreras` | Qué carrera la otorga — **y de ahí su país** |
+| 10 | `expediente_titulos.id` | `expediente_asientos` | El subtipo · `PK = FK`, `ON DELETE CASCADE` |
+| 11 | `expediente_titulos.titulacion_id` | `titulaciones` | Lo que dice el diploma |
+| 12 | `expediente_titulos.pais_id` | `paises` | Dónde se emitió · **sólo dato** |
+| 13 | `expediente_tesis.nivel_id` | `niveles_academicos` | El nivel de la tesis dirigida — **la misma lista** |
 
 Tres cosas que el dibujo dice y conviene leer despacio.
 
@@ -321,7 +325,7 @@ asiento, desde la carrera y desde el campo nacional— y era redundante: si el c
 a la norma, todo lo que cuelga de él llega por ahí. Repetirlo era una dependencia transitiva, que es
 la forma técnica de decir «dos sitios donde discrepar».
 
-**La línea 11 no elige nada.** Es el error que estuvo cuatro veces en esta página: `pais_id` en el
+**La línea 12 no elige nada.** Es el error que estuvo cuatro veces en esta página: `pais_id` en el
 asiento es dónde se emitió el diploma, y de ahí no cuelga ningún catálogo.
 
 ### Por qué el asiento y su título son 1 a 0..1, y no 1 a muchos
@@ -349,6 +353,7 @@ erDiagram
   campos_especificos ||--o{ campos_detallados : ""
   campos_detallados ||--o{ campos_nacionales : ""
   campos_nacionales ||--o{ carreras : ""
+  niveles_academicos ||--o{ carreras : ""
   carreras ||--o{ titulaciones : ""
 
   paises {
@@ -385,7 +390,7 @@ erDiagram
     int id PK
     int pais_id FK
     int campo_detallado_id FK "NOT NULL · 9999 si no se sabe"
-    text origen "CHECK · autoridad_nacional | cine_f"
+    text origen "CHECK · 2"
     varchar codigo
     varchar nombre
     varchar nombre_norm "GENERATED STORED · la forma canonica"
@@ -393,13 +398,21 @@ erDiagram
     date vigente_hasta "nulable · cuando dejo de ofrecerse"
   }
 
+  niveles_academicos {
+    int id PK
+    varchar code "tecnico ... posdoctorado"
+    varchar name
+    smallint orden "de menor a mayor · lo que el texto no puede"
+    smallint is_active
+  }
+
   carreras {
     int id PK
     int pais_id FK
     int campo_nacional_id FK "NOT NULL"
-    text nivel "CHECK · AQUI vive el nivel"
-    text origen "CHECK · catalogo_nacional | registro_local"
-    varchar nombre "unico por (pais, nivel, nombre_norm)"
+    int nivel_id FK "catalogo · AQUI vive el nivel"
+    text origen "CHECK · 2"
+    varchar nombre "unico por (pais, nivel_id, nombre_norm)"
     varchar nombre_norm "GENERATED STORED"
     smallint is_active
     date vigente_hasta "nulable"
@@ -408,7 +421,7 @@ erDiagram
   titulaciones {
     int id PK
     int carrera_id FK "y de aqui su pais"
-    text origen "CHECK · catalogo_nacional | registro_local"
+    text origen "CHECK · 2"
     varchar nombre "lo que dice el diploma"
     varchar nombre_norm "GENERATED STORED · unico por carrera"
     smallint is_active
@@ -430,10 +443,10 @@ erDiagram
   expediente_asientos {
     bigint id PK
     bigint person_id FK
-    text section "CHECK · titulos"
+    text section "CHECK · 10"
     varchar documento_ref "minio:// · el respaldo escaneado"
     timestamp documento_subido_at
-    text estado_revision
+    text estado_revision "CHECK · 4"
     timestamp created_at
     timestamp updated_at
   }
@@ -443,7 +456,7 @@ erDiagram
     int titulacion_id FK "NOT NULL · de aqui salen nombre, carrera, nivel y campo"
     varchar ies "la universidad que lo emitio"
     int pais_id FK "donde se emitio · solo dato"
-    text modalidad "CHECK · cuatro valores"
+    text modalidad "CHECK · 4"
     varchar numero_registro "el registro nacional de ESTA persona"
   }
 ```
@@ -576,18 +589,19 @@ ya existe y **falla ruidosamente si hay cero o más de una institución activa**
 primera en silencio.
 
 ```sql
-SELECT t.id, t.nombre, c.nivel
+SELECT t.id, t.nombre, n.name AS nivel
   FROM titulaciones t
-  INNER JOIN carreras c           ON c.id  = t.carrera_id
-  INNER JOIN campos_nacionales cn ON cn.id = c.campo_nacional_id
-  INNER JOIN campos_detallados cd ON cd.id = cn.campo_detallado_id
+  INNER JOIN carreras c            ON c.id  = t.carrera_id
+  INNER JOIN niveles_academicos n  ON n.id  = c.nivel_id
+  INNER JOIN campos_nacionales cn  ON cn.id = c.campo_nacional_id
+  INNER JOIN campos_detallados cd  ON cd.id = cn.campo_detallado_id
  WHERE c.pais_id = $1              -- el de InstitucionService.paisActual()
    AND t.is_active = 1 AND c.is_active = 1
-   AND cn.is_active = 1 AND cd.is_active = 1
- ORDER BY c.nivel, t.nombre;
+   AND cn.is_active = 1 AND cd.is_active = 1 AND n.is_active = 1
+ ORDER BY n.orden, t.nombre;       -- orden ACADEMICO, no alfabetico
 ```
 
-⚠️ **Los cuatro `is_active` no son celo.** `is_active` es una **convención de filtro, no una
+⚠️ **Los cinco `is_active` no son celo.** `is_active` es una **convención de filtro, no una
 restricción**, y no se propaga: retirar un campo nacional deja activas las carreras que cuelgan de él
 y nadie se entera. Si la consulta no filtra en los cuatro niveles, el desplegable ofrece titulaciones
 clasificadas con un campo retirado.
@@ -633,8 +647,12 @@ Está **medido** en la fuente del CES: sus filas de oferta traen `oferta_tipo`
 —`carreras_de_grado` · `programas_maestria` · `programas_especializacion`— **a la altura de la
 carrera**, no de la titulación.
 
-⚠️ El vocabulario del `CHECK` tiene que crecer: las dos listas del frontend suman ocho niveles y
-**ninguna incluye `especializacion`**, que en la fuente del CES es el tipo de oferta más numeroso.
+**Y no es un `CHECK`, es un catálogo** — el único de este frente. Dos motivos medidos: el vocabulario
+**estaba duplicado y ya había derivado** (nueve valores en `carreras`, ocho en `expediente_tesis`, sin
+`especializacion`), y sobre todo **hay que ordenarlo**: con una columna de texto el `ORDER BY` del
+desplegable sale alfabético —`diplomado`, `doctorado`, `especializacion`, `grado`, `maestria`…—, que
+no es el orden académico de nada. La columna `orden` lo arregla, y una columna de ordenación es
+justamente lo que un `CHECK` no puede llevar.
 
 ### Por qué `carreras` y `titulaciones` son dos tablas
 
@@ -766,7 +784,7 @@ expresión `IMMUTABLE`, y `unaccent()` **no lo es** —depende de un diccionario
 
 | Tabla | Único por |
 |---|---|
-| `carreras` | `(pais_id, nivel, nombre_norm)` |
+| `carreras` | `(pais_id, nivel_id, nombre_norm)` |
 | `titulaciones` | `(carrera_id, nombre_norm)` |
 
 Comprobado contra PostgreSQL 17: insertar `Ingeniero/a Marítimo` y después `Ingeniero/a Marítimo/a`
@@ -861,6 +879,73 @@ el servicio antes de insertar, no en un `CHECK` ni en un trigger, que no pueden 
 ⚠️ `pg_trgm` y `fuzzystrmatch` serían **las primeras extensiones del proyecto**: hoy
 `postgres_schema.sql` no declara ninguna. Comprobado que están disponibles y que el rol de la
 aplicación puede crearlas.
+
+## 4bis · Los vocabularios cerrados, todos juntos
+
+Los diagramas marcan `CHECK` pero no caben los valores. Aquí están los **veinte**, en un solo sitio —
+que es exactamente el punto: cuando la misma lista vive en dos declaraciones, deriva.
+
+| Columna | Valores | |
+|---|---|---|
+| `expediente_asientos.section` | `titulos` · `experiencia` · `referencias` · `formacion` · `certificaciones` · `articulos` · `libros` · `ponencias` · `tesis` · `proyectos` | 10 |
+| `expediente_asientos.estado_revision` | `enviado` · `revisado` · `aprobado` · `rechazado` | 4 |
+| `expediente_titulos.modalidad` | `presencial` · `semipresencial` · `virtual` · `hibrido` | 4 |
+| `expediente_experiencia.modalidad` | *la misma lista* | 4 |
+| `expediente_formacion.ambito` | `docente` · `profesional` | 2 |
+| `expediente_experiencia.ambito` | *la misma lista* | 2 |
+| `expediente_formacion.rol` | `asistencia` · `instructor` · `aprobacion` | 3 |
+| `expediente_articulos.rol` | `autor` · `coautor` · `revisor` | 3 |
+| `expediente_tesis.rol` | `asesor` · `revisor` | 2 |
+| `expediente_referencias.vinculo` | `laboral` · `personal` · `familiar` | 3 |
+| `expediente_certificaciones.alcance` | `nacional` · `internacional` | 2 |
+| `expediente_articulos.estado` | `aceptado` · `publicado` | 2 |
+| `expediente_libros.pieza` | `libro` · `capitulo` | 2 |
+| `expediente_proyectos.linea` | `investigacion` · `vinculacion` | 2 |
+| `campos_nacionales.origen` | `autoridad_nacional` · `cine_f` | 2 |
+| `carreras.origen` · `titulaciones.origen` | `catalogo_nacional` · `registro_local` | 2 |
+
+Y **uno solo es catálogo**: `niveles_academicos`, con nueve filas —`tecnico` · `tecnologo` ·
+`grado` · `especializacion` · `diplomado` · `maestria` · `maestria_tecnologica` · `doctorado` ·
+`posdoctorado`— al que apuntan `carreras.nivel_id` y `expediente_tesis.nivel_id`.
+
+### Qué se arregló al hacer esta tabla
+
+Ponerlos en una sola lista destapó tres defectos que ninguna revisión por página habría visto:
+
+**1 · `nivel` había derivado.** Vivía en dos `CHECK`: nueve valores en `carreras` y **ocho** en
+`expediente_tesis`, sin `especializacion`. Es el mismo defecto que esta página denuncia en las dos
+listas del frontend, reproducido dentro del propio diseño. Por eso pasó a catálogo.
+
+**2 · El mismo concepto con dos nombres.** `expediente_formacion` decía `docente` donde
+`expediente_experiencia` decía `docencia`, en tablas hermanas y para el mismo eje.
+
+**3 · `tipo` significaba SEIS cosas.** Era ámbito, vínculo, alcance, pieza y línea a la vez, en seis
+tablas. El comentario que justificó renombrar `tipo`→`modalidad` en los títulos decía que *«tener el
+mismo nombre para ejes distintos es como se llega a un modelo ilegible»* — y luego quedaban seis.
+Renombrados por lo que cada uno es.
+
+`rol` **se queda con su nombre** aunque aparezca tres veces con listas distintas: en las tres
+significa lo mismo —qué papel jugó la persona— y sólo cambian los papeles posibles. No es el caso de
+`tipo`.
+
+### Por qué sólo `nivel` pasó a catálogo
+
+El criterio del esquema es que **un vocabulario fijo sobre el que el código se ramifica va en
+`CHECK`**, y lo escribe el comentario de `documentos_identidad.tipo`. Los diecinueve restantes cumplen
+las tres condiciones para quedarse: **los fija el dominio y no la institución**, **no necesitan
+atributos por fila** más allá de la etiqueta —que es del frontend— y **ninguna otra tabla los
+referencia**.
+
+`nivel` fallaba dos de las tres:
+
+| | |
+|---|---|
+| **Estaba duplicado, y ya había derivado** | Dos `CHECK` con la misma lista es lo que se rompe |
+| **Hay que ORDENARLO, y el texto no ordena** | `ORDER BY nivel` sale alfabético —`diplomado`, `doctorado`, `especializacion`, `grado`, `maestria`…— que no es el orden académico de nada. La columna `orden` lo arregla, y **una columna de ordenación es justo lo que un `CHECK` no puede llevar** |
+
+Su forma es la de los catálogos que ya existen —`signature_statuses`, `term_types`,
+`canales_mensajeria`—: `code` + `name` + `is_active`. Lo único que añade es `orden`, y ése es el
+segundo motivo.
 
 ## 5 · Dónde está el detalle
 

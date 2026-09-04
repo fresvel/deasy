@@ -435,7 +435,8 @@ propósito. Y en el navegador: `/perfil` como **gestor** o **usuario** —el adm
 > `docs/src/content/docs/complemento/expediente.md` §4. Lo que cambio: **un solo catalogo nacional**
 > (el del pais de `instituciones.pais_id`), el anclaje a la norma como columna 1:N en
 > `campos_nacionales.campo_detallado_id`, `campos_nacionales` como tabla nueva, el **nivel en
-> `carreras`** con la unicidad en `(pais_id, nivel, nombre_norm)`, `origen` en tres tablas,
+> `carreras`** (hoy `nivel_id`, al catálogo `niveles_academicos`) con la unicidad en
+> `(pais_id, nivel_id, nombre_norm)`, `origen` en tres tablas,
 > `vigente_hasta`, `nombre_norm` como columna GENERADA y el cotejo de duplicados en tres capas.
 > **El bloque de `expediente_titulos` de abajo YA esta reescrito; el 8.4 todavia NO.**
 
@@ -581,7 +582,7 @@ CREATE INDEX IF NOT EXISTS idx_expediente_titulos_pais ON expediente_titulos (pa
 
 -- NOTA: el NIVEL ya no vive aqui. Es propiedad de la OFERTA y no de quien la curso -- una maestria
 -- es una maestria lo escriba quien lo escriba--, y esta medido en la fuente del CES, que trae
--- oferta_tipo a la altura de la carrera. Vive en carreras.nivel; ver la seccion 8.4.
+-- oferta_tipo a la altura de la carrera. Vive en carreras.nivel_id; ver la seccion 8.4.
 
 
 -- ── 2/10 · FORMACION CONTINUA ────────────────────────────────────────────────────────────────────
@@ -593,7 +594,9 @@ CREATE TABLE IF NOT EXISTS expediente_formacion (
   tema VARCHAR(250) NOT NULL,
   institucion VARCHAR(200) NOT NULL,
   pais_id INT NOT NULL,
-  tipo TEXT NOT NULL DEFAULT 'docente' CHECK (tipo IN ('docente','profesional')),
+  -- EL AMBITO. Se llamaba tipo, y se renombra por el mismo motivo que modalidad: tipo a secas
+  -- significaba SEIS cosas distintas en seis tablas de esta seccion.
+  ambito TEXT NOT NULL DEFAULT 'docente' CHECK (ambito IN ('docente','profesional')),
   -- EN CALIDAD DE QUE se asistio. No es lo mismo haber dictado un curso que haberlo aprobado, y hoy
   -- las tres cosas caen en la misma lista sin que nada distinga una de otra al consultar.
   rol TEXT NOT NULL DEFAULT 'asistencia' CHECK (rol IN ('asistencia','instructor','aprobacion')),
@@ -618,7 +621,10 @@ CREATE INDEX IF NOT EXISTS idx_dossier_formacion_pais ON expediente_formacion (p
 -- inviable: funcion_catedra era un array y pasa a tabla hija (mas abajo).
 CREATE TABLE IF NOT EXISTS expediente_experiencia (
   id BIGINT NOT NULL PRIMARY KEY,
-  tipo TEXT NOT NULL DEFAULT 'docencia' CHECK (tipo IN ('docencia','profesional')),
+  -- EL AMBITO, el mismo eje que expediente_formacion.ambito y con EL MISMO vocabulario. Decia
+  -- 'docencia' donde la otra dice 'docente': el mismo concepto escrito de dos formas en tablas
+  -- hermanas. Se unifica en 'docente'.
+  ambito TEXT NOT NULL DEFAULT 'docente' CHECK (ambito IN ('docente','profesional')),
   institucion VARCHAR(200) NOT NULL,
   modalidad TEXT NOT NULL DEFAULT 'presencial'
     CHECK (modalidad IN ('presencial','semipresencial','virtual','hibrido')),
@@ -639,7 +645,8 @@ CREATE TABLE IF NOT EXISTS expediente_experiencia (
 CREATE TABLE IF NOT EXISTS expediente_referencias (
   id BIGINT NOT NULL PRIMARY KEY,
   nombre VARCHAR(180) NOT NULL,
-  tipo TEXT NOT NULL DEFAULT 'laboral' CHECK (tipo IN ('laboral','personal','familiar')),
+  -- EL VINCULO con quien da la referencia. Se llamaba tipo.
+  vinculo TEXT NOT NULL DEFAULT 'laboral' CHECK (vinculo IN ('laboral','personal','familiar')),
   -- UNA SOLA COLUMNA PARA DOS COSAS, y se conserva a proposito: si la referencia es laboral, el
   -- cargo; si es personal o familiar, el parentesco. Partirla en dos daria una columna siempre nula
   -- segun el tipo. El nombre compuesto es feo y es honesto.
@@ -658,7 +665,8 @@ CREATE TABLE IF NOT EXISTS expediente_certificaciones (
   id BIGINT NOT NULL PRIMARY KEY,
   titulo VARCHAR(250) NOT NULL,
   institucion VARCHAR(200) NOT NULL,
-  tipo TEXT NOT NULL DEFAULT 'nacional' CHECK (tipo IN ('nacional','internacional')),
+  -- EL ALCANCE de la certificacion. Se llamaba tipo.
+  alcance TEXT NOT NULL DEFAULT 'nacional' CHECK (alcance IN ('nacional','internacional')),
   descripcion TEXT NULL,
   fecha DATE NULL,
   horas INT NULL CHECK (horas IS NULL OR horas >= 0),
@@ -695,7 +703,8 @@ CREATE TABLE IF NOT EXISTS expediente_libros (
   id BIGINT NOT NULL PRIMARY KEY,
   titulo VARCHAR(300) NOT NULL,
   editorial VARCHAR(200) NOT NULL,
-  tipo TEXT NOT NULL DEFAULT 'libro' CHECK (tipo IN ('libro','capitulo')),
+  -- QUE PIEZA es: el libro entero o un capitulo. Se llamaba tipo.
+  pieza TEXT NOT NULL DEFAULT 'libro' CHECK (pieza IN ('libro','capitulo')),
   isbn VARCHAR(20) NULL,
   -- ERRATA CORREGIDA, y es el defecto que mas tiempo llevaba escondido. La clave JSON se llama
   -- "isnn" —ene ene— y asi sale la etiqueta en el formulario y en la cabecera de la tabla, mientras
@@ -732,15 +741,15 @@ CREATE TABLE IF NOT EXISTS expediente_tesis (
   tema VARCHAR(300) NOT NULL,
   ies VARCHAR(200) NOT NULL,
   programa VARCHAR(200) NULL,
-  -- Mismo vocabulario que expediente_titulos.nivel, y el mismo CHECK a proposito: es el mismo eje.
-  -- Que las dos listas del frontend no coincidan (ver expediente_titulos.nivel) es el defecto, no la
-  -- coincidencia.
-  nivel TEXT NOT NULL DEFAULT 'grado' CHECK (nivel IN (
-    'tecnico','tecnologo','grado','maestria','maestria_tecnologica','diplomado','doctorado','posdoctorado'
-  )),
+  -- EL NIVEL de la tesis dirigida, del catalogo niveles_academicos (ver 8.4). Era un CHECK con
+  -- OCHO valores mientras carreras.nivel tenia NUEVE -- le faltaba especializacion--, que es
+  -- exactamente el defecto que este mismo plan denuncia en las dos listas del frontend. Duplicar el
+  -- vocabulario es lo que lo rompio; por eso ahora hay una sola fuente.
+  nivel_id INT NOT NULL,
   rol TEXT NOT NULL DEFAULT 'asesor' CHECK (rol IN ('asesor','revisor')),
   anio SMALLINT NULL CHECK (anio IS NULL OR anio BETWEEN 1900 AND 2200),
-  CONSTRAINT fk_dossier_tesis_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE
+  CONSTRAINT fk_expediente_tesis_item FOREIGN KEY (id) REFERENCES expediente_asientos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_expediente_tesis_nivel FOREIGN KEY (nivel_id) REFERENCES niveles_academicos(id)
 );
 
 
@@ -749,7 +758,8 @@ CREATE TABLE IF NOT EXISTS expediente_proyectos (
   id BIGINT NOT NULL PRIMARY KEY,
   tema VARCHAR(300) NOT NULL,
   institucion VARCHAR(200) NOT NULL,
-  tipo TEXT NOT NULL DEFAULT 'investigacion' CHECK (tipo IN ('investigacion','vinculacion')),
+  -- LA LINEA del proyecto. Se llamaba tipo.
+  linea TEXT NOT NULL DEFAULT 'investigacion' CHECK (linea IN ('investigacion','vinculacion')),
   -- El programa o grupo de investigacion al que pertenece. La clave JSON se llama "programa_group",
   -- mitad en español y mitad en ingles; se conserva el nombre porque partirlo o traducirlo a medias
   -- seria peor, pero queda anotado como lo que es.
@@ -934,6 +944,41 @@ CREATE INDEX IF NOT EXISTS idx_campos_nacionales_trgm ON campos_nacionales USING
 CREATE OR REPLACE TRIGGER trg_campos_nacionales_set_updated_at BEFORE UPDATE ON campos_nacionales FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
+-- ── EL NIVEL ACADEMICO: catalogo, y no un CHECK ──────────────────────────────────────────────────
+-- Es el UNICO vocabulario de este frente que se pasa a tabla, y por dos motivos medidos.
+--
+-- 1 · ESTABA DUPLICADO Y YA HABIA DERIVADO. La lista vivia en dos CHECK -- carreras.nivel con NUEVE
+--     valores y expediente_tesis.nivel con OCHO, sin especializacion--, que es el mismo defecto que
+--     este plan denuncia en las dos listas del frontend. Duplicar un vocabulario es lo que lo rompe.
+--
+-- 2 · HAY QUE ORDENARLO, Y EL TEXTO NO ORDENA. El desplegable de titulaciones agrupa por nivel, y
+--     con una columna de texto el ORDER BY sale alfabetico: diplomado, doctorado, especializacion,
+--     grado, maestria... que no es el orden academico de nada. La columna orden lo arregla, y una
+--     columna de ordenacion es justamente lo que un CHECK no puede llevar.
+--
+-- POR QUE LOS DEMAS NO PASAN A TABLA. El criterio del esquema es que un vocabulario fijo sobre el
+-- que el codigo se ramifica va en CHECK. section, modalidad, ambito, vinculo, alcance, pieza, linea,
+-- rol, estado, estado_revision y origen cumplen las tres condiciones para quedarse: los fija el
+-- dominio y no la institucion, no necesitan atributos por fila mas alla de la etiqueta -- que es del
+-- frontend-- y ninguna otra tabla los referencia.
+--
+-- La forma es la de los catalogos que ya existen (signature_statuses, term_types, canales_mensajeria):
+-- code + name + is_active. La columna orden es lo unico que se añade, y es el motivo 2.
+CREATE TABLE IF NOT EXISTS niveles_academicos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(80) NOT NULL,
+  -- De menor a mayor. Lo siembra el bootstrap: tecnico 10, tecnologo 20, grado 30,
+  -- especializacion 40, diplomado 45, maestria 50, maestria_tecnologica 55, doctorado 60,
+  -- posdoctorado 70. Con huecos de diez, para poder intercalar sin renumerar.
+  orden SMALLINT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_niveles_academicos_set_updated_at BEFORE UPDATE ON niveles_academicos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
 -- LA CARRERA: la oferta academica tal como la aprueba la autoridad del pais.
 CREATE TABLE IF NOT EXISTS carreras (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -947,12 +992,10 @@ CREATE TABLE IF NOT EXISTS carreras (
   -- curso: una maestria es una maestria lo escriba quien lo escriba. Esta medido en la fuente del
   -- CES, que trae oferta_tipo a la altura de la carrera.
   --
-  -- Son NUEVE y no ocho: las dos listas del frontend suman ocho y NINGUNA incluye especializacion,
-  -- que en el anexo del CES es el tipo de oferta mas numeroso (286 carreras).
-  nivel TEXT NOT NULL CHECK (nivel IN (
-    'tecnico','tecnologo','grado','especializacion','maestria','maestria_tecnologica',
-    'diplomado','doctorado','posdoctorado'
-  )),
+  -- Del catalogo niveles_academicos, que ademas ORDENA. Con nivel como texto, el ORDER BY del
+  -- desplegable salia alfabetico -- diplomado, doctorado, especializacion, grado...-- y eso no es
+  -- el orden academico de nada.
+  nivel_id INT NOT NULL,
   -- COMO LLEGO LA FILA. Distinto del origen de campos_nacionales: aqui se distingue lo que sembro
   -- el catalogo oficial de lo que creo un usuario al registrar un titulo que faltaba. Es lo que
   -- sustituye a la retirada titulacion_libre, y dice lo mismo mejor -- porque es consultable,
@@ -971,7 +1014,8 @@ CREATE TABLE IF NOT EXISTS carreras (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_carreras_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
-  CONSTRAINT fk_carreras_campo FOREIGN KEY (campo_nacional_id) REFERENCES campos_nacionales(id)
+  CONSTRAINT fk_carreras_campo FOREIGN KEY (campo_nacional_id) REFERENCES campos_nacionales(id),
+  CONSTRAINT fk_carreras_nivel FOREIGN KEY (nivel_id) REFERENCES niveles_academicos(id)
 );
 -- LA UNICIDAD LLEVA EL NIVEL, y no es cosmetico: 109 de 443 nombres de carrera del anexo del CES
 -- existen en MAS DE UN NIVEL -- EDUCACION es a la vez programa de especializacion y de maestria, y
@@ -983,8 +1027,9 @@ CREATE TABLE IF NOT EXISTS carreras (
 -- Ingeniero/a Maritimo/a devuelve duplicate key value violates unique constraint. Coste medido
 -- sobre las 863 titulaciones del anexo: DOS conflictos en todo el catalogo oficial, y plegar el
 -- genero añade exactamente uno, sin ni un falso positivo.
-CREATE UNIQUE INDEX IF NOT EXISTS uq_carreras_pais_nivel_nombre ON carreras (pais_id, nivel, nombre_norm);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_carreras_pais_nivel_nombre ON carreras (pais_id, nivel_id, nombre_norm);
 CREATE INDEX IF NOT EXISTS idx_carreras_campo ON carreras (campo_nacional_id);
+CREATE INDEX IF NOT EXISTS idx_carreras_nivel ON carreras (nivel_id);
 CREATE INDEX IF NOT EXISTS idx_carreras_trgm ON carreras USING GIN (nombre_norm gin_trgm_ops);
 CREATE OR REPLACE TRIGGER trg_carreras_set_updated_at BEFORE UPDATE ON carreras FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
