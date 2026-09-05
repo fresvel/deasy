@@ -20,7 +20,7 @@
 | **E5** | `url_documento` pasa a `documento_ref` con la convención `minio://` | ⬜ | | |
 | **E6** | La vista de investigación (`UNION ALL` de las cinco) | ⬜ | | |
 | **E7** | El frontend: los seis formularios contra el modelo nuevo | ⬜ | | |
-| **E8** | Migración de los datos existentes, con su script | ⬜ | | |
+| **E8** | La semilla del expediente, **recreada** contra el modelo nuevo | ⬜ | **No es una migración**: los 3 asientos que hay son de semilla y se reescriben con datos inventados. Decidido por el dueño el 2026-09-05 | |
 | **E9** | Muere la lista de países duplicada del frontend (§9) | ⬜ | Decidido por el dueño el 2026-09-05. Va **después de E7** | |
 
 **10 tareas.** `E1` es la primera porque condiciona `E2` y `E3`: sin saber qué catálogo entra, no se
@@ -396,8 +396,10 @@ revise—, pero no sale gratis. **Es el precio de no fingir una equivalencia que
 | Ficheros que tocan el expediente | **49** |
 | Asientos en la base | **3** (todos de semilla) |
 
-⚠️ **Migrar los datos es gratis AHORA y no lo será después.** Es la única ventaja de tiempo que tiene
-este frente, y se pierde en cuanto el sistema entre en uso.
+⚠️ **No hay nada que migrar: se RECREA.** Los 3 asientos son de semilla y se reescriben contra el
+modelo nuevo con datos inventados. Por eso columnas nuevas como `fecha_grado` pueden nacer `NOT NULL`
+—no hay filas viejas a las que aflojarles nada—. Y por eso este frente es barato **ahora**: la
+ventaja se pierde en cuanto el sistema entre en uso.
 
 ---
 
@@ -574,12 +576,10 @@ CREATE TABLE IF NOT EXISTS expediente_titulos (
   -- virtual.
   modalidad TEXT NOT NULL DEFAULT 'presencial'
     CHECK (modalidad IN ('presencial','semipresencial','virtual','hibrido')),
-  -- LA FECHA DE GRADO: la que lleva impresa el diploma. NULA a proposito, y no por dejadez -- el
-  -- JSONB de hoy NO tiene esta clave, asi que E8 no puede inventarsela para los asientos que migre.
-  -- Es ademas el idioma del esquema para las fechas que pueden no saberse: documentos_identidad usa
-  -- emitido_el DATE NULL por lo mismo. Si se quiere obligatoria, hay que decidir que se hace con lo
-  -- migrado ANTES de sembrar: sin ALTER, apretarlo despues no es gratis.
-  fecha_grado DATE NULL,
+  -- LA FECHA DE GRADO: la que lleva impresa el diploma. NOT NULL, y se puede porque NO HAY DATOS
+  -- QUE MIGRAR: los tres asientos de la base son de semilla y la semilla SE RECREA con el valor
+  -- inventado. La duda de si aflojarla para lo migrado no existe -- no se migra nada.
+  fecha_grado DATE NOT NULL,
   -- EL NUMERO DE REGISTRO ante la autoridad de educacion superior (en Ecuador, la SENESCYT). Texto,
   -- porque su formato lo fija cada pais. Es de ESTA persona.
   --
