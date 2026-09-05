@@ -21,8 +21,9 @@
 | **E6** | La vista de investigación (`UNION ALL` de las cinco) | ⬜ | | |
 | **E7** | El frontend: los seis formularios contra el modelo nuevo | ⬜ | | |
 | **E8** | Migración de los datos existentes, con su script | ⬜ | | |
+| **E9** | Muere la lista de países duplicada del frontend (§9) | ⬜ | Decidido por el dueño el 2026-09-05. Va **después de E7** | |
 
-**9 tareas.** `E1` es la primera porque condiciona `E2` y `E3`: sin saber qué catálogo entra, no se
+**10 tareas.** `E1` es la primera porque condiciona `E2` y `E3`: sin saber qué catálogo entra, no se
 puede fijar la clave ajena de `titulos`.
 
 ---
@@ -1217,3 +1218,55 @@ carrera —y sin `ALTER`, aflojarlo después no es gratis—.
 **Ya no es duda.** La extracción de la capa de texto del anexo del CES da la estructura anidada
 `carrera → titulaciones`: **no hay ni una titulación que no cuelgue de una carrera**. El `NOT NULL`
 se queda.
+
+---
+
+## 9 · La lista de países duplicada — E9
+
+**Decisión del dueño (2026-09-05): al cerrar el diseño se borra `frontend/src/core/constants/countries.js`
+y se revisa que no quede código muerto.**
+
+Salió al preguntar qué significaba el comentario `antes la cadena Ecuador` en `expediente_titulos.pais_id`.
+Significa que hoy el país de un título se guarda como **texto**: `"pais": "Ecuador"` en el `JSONB`.
+Pero al comprobarlo apareció algo más grande que un tipo de dato.
+
+### Hay DOS listas de países, con las mismas 232 filas
+
+| | Filas | Trae | Quién la usa |
+|---|---:|---|---|
+| Tabla `paises` (frente 14) | **232** | `iso_alpha2` · `name` · `name_en` · `phone_code` | El registro, el admin, `documentos_identidad`, `direcciones` |
+| `frontend/src/core/constants/countries.js` | **232** | `name` · `es_name` · `phone_code` — **sin ISO** | Dos formularios del expediente |
+
+El desplegable «País de emisión» de `AgregarTitulo.vue:48` es un `s-select` alimentado por la lista
+del frontend, **no por la tabla**. Guarda el nombre elegido, y **nada garantiza que ese nombre exista
+en `paises`**.
+
+### El sustituto ya existe, y la migración está a medias
+
+`SYSTEM_GEO_PAISES` (`/system/geografia/paises`) es público a propósito, y su comentario en
+`apiConfig.js:161` ya dice que **sustituye a `countries.js`**. Lo mismo en `AuthService.js:61`. El
+registro y el admin ya leen de ahí; los dos formularios del expediente se quedaron atrás.
+
+### Tres de los cuatro exports YA están muertos
+
+| Export | Consumidores fuera del propio fichero |
+|---|---:|
+| `escountries` | **2** — `AgregarTitulo.vue`, `AgregarCapacitacion.vue` |
+| `encountries` | **0** |
+| `getPhoneCodeByCountry` | **0** |
+| `countries` | **0** |
+
+⚠️ Y `encountries` **no es lo que su nombre dice**: `countries.map(c => c.es_name)` — la lista
+«inglesa» es la española, idéntica a `escountries`. Un defecto que lleva ahí desde que se escribió y
+que nadie ha notado porque **no la usa nadie**.
+
+### Qué entrega E9
+
+1. `AgregarTitulo.vue` y `AgregarCapacitacion.vue` piden los países a `SYSTEM_GEO_PAISES` y mandan
+   **el `id`**, no el nombre.
+2. Se borra `frontend/src/core/constants/countries.js` **entero** — las 245 líneas.
+3. Se comprueba que no queda nada colgando: `pnpm run lint` y una búsqueda de los cuatro símbolos.
+
+⚠️ **Va DESPUÉS de `E7`**, no antes: mientras los formularios sigan mandando el nombre, borrar la
+lista los deja sin desplegable.
+
