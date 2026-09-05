@@ -574,6 +574,12 @@ CREATE TABLE IF NOT EXISTS expediente_titulos (
   -- virtual.
   modalidad TEXT NOT NULL DEFAULT 'presencial'
     CHECK (modalidad IN ('presencial','semipresencial','virtual','hibrido')),
+  -- LA FECHA DE GRADO: la que lleva impresa el diploma. NULA a proposito, y no por dejadez -- el
+  -- JSONB de hoy NO tiene esta clave, asi que E8 no puede inventarsela para los asientos que migre.
+  -- Es ademas el idioma del esquema para las fechas que pueden no saberse: documentos_identidad usa
+  -- emitido_el DATE NULL por lo mismo. Si se quiere obligatoria, hay que decidir que se hace con lo
+  -- migrado ANTES de sembrar: sin ALTER, apretarlo despues no es gratis.
+  fecha_grado DATE NULL,
   -- EL NUMERO DE REGISTRO ante la autoridad de educacion superior (en Ecuador, la SENESCYT). Texto,
   -- porque su formato lo fija cada pais. Es de ESTA persona.
   --
@@ -1170,7 +1176,7 @@ por ella sería contar revistas y editoriales juntas.
 |---|---:|
 | Tablas nuevas | **19** (1 espina + 10 secciones + 1 hija + **7** catálogo) |
 | Vistas nuevas | 1 |
-| Columnas en total | **142** — 3 de ellas **generadas** (`nombre_norm`) |
+| Columnas en total | **143** — 3 de ellas **generadas** (`nombre_norm`) |
 | Claves ajenas nuevas | **24** |
 | Índices declarados | 18 — 3 de ellos **GIN** para el cotejo |
 | Restricciones `CHECK` | **28** — hoy hay **0** en el expediente |

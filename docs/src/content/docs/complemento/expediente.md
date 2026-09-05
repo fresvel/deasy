@@ -41,7 +41,7 @@ en un blob del que no se pueden localizar ni borrar uno a uno, que es justo lo q
 poder hacer. Y el blob llevaba escondidos dos defectos que una columna habría cazado al escribirla:
 la sección de libros guarda **`isnn`** donde la de artículos guarda `issn` —el mismo identificador,
 dos nombres, y la errata visible en pantalla—, y hay una clave llamada literalmente **`año`**, con
-`ñ`. El diseño son **19 tablas y una vista, 142 columnas y 24 claves ajenas**, con **28 restricciones
+`ñ`. El diseño son **19 tablas y una vista, 143 columnas y 24 claves ajenas**, con **28 restricciones
 `CHECK`** donde hoy hay **cero**. Y sólo hay **3 asientos** en la base, todos de semilla: migrar es
 gratis ahora y deja de serlo en cuanto el sistema entre en uso.
 
@@ -75,6 +75,7 @@ erDiagram
     varchar ies "la universidad que lo emitio"
     int pais_id FK "antes la cadena Ecuador"
     text modalidad "la clave se llamaba tipo"
+    date fecha_grado "la del diploma"
     varchar numero_registro "la clave JSON se llamaba sreg"
   }
 ```
@@ -94,6 +95,16 @@ Cuatro secciones más, y **la única tabla hija de todo el modelo**: `funcion_ca
 dentro del JSON, construido partiendo un textarea por comas. No es un obstáculo para salir del
 JSONB — es la mejora más directa del frente, porque hoy la pregunta *«¿quién ha dado Bases de
 datos?»* no se puede hacer sin leer todos los expedientes enteros.
+
+**Los `CHECK` de estas cuatro**, que el diagrama marca pero no cabe deletrear:
+
+| Columna | Valores |
+|---|---|
+| `expediente_formacion.ambito` · `expediente_experiencia.ambito` | `docente` · `profesional` |
+| `expediente_formacion.rol` | `asistencia` · `instructor` · `aprobacion` |
+| `expediente_experiencia.modalidad` | `presencial` · `semipresencial` · `virtual` · `hibrido` |
+| `expediente_referencias.vinculo` | `laboral` · `personal` · `familiar` |
+| `expediente_certificaciones.alcance` | `nacional` · `internacional` |
 
 ```mermaid
 erDiagram
@@ -170,6 +181,20 @@ nueve claves en español. Las fechas dejan de ser cadenas —ordenar por fecha e
 tiene cinco bloques hermanos bajo `v-if="form.tipoProduccion === ..."`, cada uno con su lista de
 campos **cerrada y casi disjunta**: lo polimórfico es el formulario, no los datos. La documentación
 las agrupó por cómo se pintan, no por cómo son.
+
+**Los `CHECK` de estas cinco.** El diagrama no los marca —anotarlos lo hacía ilegible, se midió— así
+que van aquí:
+
+| Columna | Valores |
+|---|---|
+| `expediente_articulos.estado` | `aceptado` · `publicado` |
+| `expediente_articulos.rol` | `autor` · `coautor` · `revisor` |
+| `expediente_libros.pieza` | `libro` · `capitulo` |
+| `expediente_tesis.rol` | `asesor` · `revisor` |
+| `expediente_proyectos.linea` | `investigacion` · `vinculacion` |
+
+Y `expediente_tesis.nivel_id` **no es un `CHECK`**: apunta al catálogo `niveles_academicos`, el mismo
+que usa `carreras`.
 
 ```mermaid
 erDiagram
@@ -457,13 +482,14 @@ erDiagram
     varchar ies "la universidad que lo emitio"
     int pais_id FK "donde se emitio · solo dato"
     text modalidad "CHECK · 4"
+    date fecha_grado "cuando se graduo"
     varchar numero_registro "el registro nacional de ESTA persona"
   }
 ```
 
-**Seis columnas, y las cinco que no son la clave son de ESTA persona**, no de la titulación: en qué
-universidad la cursó, dónde se emitió el diploma, en qué modalidad y con qué número de registro. Todo
-lo que es de la titulación —su nombre, su carrera, su nivel, su campo— se lee por la línea 10 y **no
+**Siete columnas, y las seis que no son la clave son de ESTA persona**, no de la titulación: en qué
+universidad la cursó, dónde y cuándo se emitió el diploma, en qué modalidad y con qué número de
+registro. Todo lo que es de la titulación —su nombre, su carrera, su nivel, su campo— se lee por la línea 10 y **no
 se copia**.
 
 ### Por qué no hay `titulacion_libre`
