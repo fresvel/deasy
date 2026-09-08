@@ -17,7 +17,7 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 | **P6** | `cuentas_bancarias` | ⬜ | | |
 | **P7** | `cargas_familiares` **con su escaneo obligatorio**, y los contactos de emergencia sobre `expediente_referencias` | ⬜ | Depende del frente 18. Necesita **P10** | |
 | **P8** | El recurso RBAC de los datos sensibles, y su bitácora | ⬜ | | |
-| **P9** | El frontend: `/perfil/datos` y las pestañas de administración | ⬜ | | |
+| **P9** | El frontend: `/perfil/datos` y las pestañas de administración | ⬜ | ⚠️ El formulario de dirección debe dejar **hueco al prellenado** por geocodificación (frente 21, `M5`): hacerlo sin preverlo obliga a rehacerlo | |
 | **P10** | Los **cinco catálogos de vocabulario**, sembrados | ✅ | **28 filas** para Ecuador (2+5+8+6+7), cada lista con su fuente en el código. Entra además `instituciones.campo_sexo_genero`. Categoría propia «Datos personales» bajo Usuarios — **no en «Otros»**. 330/330 char, 819+491 unitarios, los 3 `check:` y los 4 gates de doc en verde | 2026-09-08 |
 | **P11** | La **nacionalidad sale de `persons`** y pasa a tabla: una persona puede tener varias | ⬜ | Hueco detectado por el dueño al cerrar P2. Va **después de P9** | |
 

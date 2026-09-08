@@ -60,6 +60,11 @@
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+// Las tres imagenes del marcador, EMPAQUETADAS. El `?url` le dice a Vite que las copie al build y
+// devuelva su ruta; sin el, el import daria el modulo y no la URL.
+import iconoRetinaUrl from "leaflet/dist/images/marker-icon-2x.png?url";
+import iconoUrl from "leaflet/dist/images/marker-icon.png?url";
+import sombraUrl from "leaflet/dist/images/marker-shadow.png?url";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { IconMap, IconCheck, IconAlertCircle } from "@tabler/icons-vue";
@@ -77,11 +82,22 @@ const emit = defineEmits(["update:point"]);
 
 // Quito el parche de iconos de Leaflet, que resuelve las imágenes por una ruta relativa que Vite
 // no empaqueta. Se hace una vez por módulo, no una vez por instancia.
+//
+// ⚠️ AQUI HABIA TRES URLs A cdnjs.cloudflare.com, y traian DOS problemas:
+//
+//   1. El marcador se descargaba de un TERCERO en tiempo de ejecución. Sin internet, tras un
+//      cortafuegos o si cdnjs cae, el mapa se abría SIN MARCADOR. Y cada persona que abría el
+//      modal le pegaba a Cloudflare con su IP, que en un formulario de datos personales no es
+//      un detalle: es un tratamiento de datos que nadie declaró.
+//   2. Apuntaban a la version 1.7.1 y la instalada es la 1.9.4. Nadie lo noto porque las imagenes
+//      no han cambiado, pero era un desajuste esperando a morder.
+//
+// Las tres vienen dentro del paquete `leaflet`. Se importan y Vite las empaqueta.
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png"
+  iconRetinaUrl: iconoRetinaUrl,
+  iconUrl: iconoUrl,
+  shadowUrl: sombraUrl
 });
 
 const CENTRO_POR_DEFECTO = [-0.1807, -78.4678];
