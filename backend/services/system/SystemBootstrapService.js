@@ -244,6 +244,58 @@ const seedBaseRbacCatalog = async (connection) => {
   return roleIds;
 };
 
+// LOS CINCO VOCABULARIOS DE LA PERSONA, para Ecuador. Cada lista con su fuente, porque el dia que
+// alguien quiera cambiar un valor tiene que saber a quien le esta llevando la contraria:
+//
+//   generos                       Ley Organica de Gestion de la Identidad y Datos Civiles (2016)
+//   estados_civiles               Registro Civil
+//   autoidentificaciones_etnicas  INEC, pregunta 11 del censo
+//   tipos_discapacidad            Ministerio de Salud Publica
+//   parentescos                   IESS (conyuge, conviviente, hijos) + SRI (padres deducibles)
+//
+// Van aqui y no en `postgres_schema.sql` con los otros INSERT de vocabulario, aunque cumplan el
+// tamaño: necesitan el `id` de Ecuador, y `paises` lo siembra esta misma funcion.
+const VOCABULARIOS_PERSONA_EC = {
+  generos: [
+    { code: "masculino", name: "Masculino", orden: 10 },
+    { code: "femenino", name: "Femenino", orden: 20 }
+  ],
+  estados_civiles: [
+    { code: "soltero", name: "Soltero/a", orden: 10 },
+    { code: "union_de_hecho", name: "Unión de hecho", orden: 20 },
+    { code: "casado", name: "Casado/a", orden: 30 },
+    { code: "divorciado", name: "Divorciado/a", orden: 40 },
+    { code: "viudo", name: "Viudo/a", orden: 50 }
+  ],
+  autoidentificaciones_etnicas: [
+    { code: "indigena", name: "Indígena", orden: 10 },
+    { code: "afroecuatoriano", name: "Afroecuatoriano/a", orden: 20 },
+    { code: "negro", name: "Negro/a", orden: 30 },
+    { code: "mulato", name: "Mulato/a", orden: 40 },
+    { code: "montubio", name: "Montubio/a", orden: 50 },
+    { code: "mestizo", name: "Mestizo/a", orden: 60 },
+    { code: "blanco", name: "Blanco/a", orden: 70 },
+    { code: "otro", name: "Otro", orden: 80 }
+  ],
+  tipos_discapacidad: [
+    { code: "fisica", name: "Física", orden: 10 },
+    { code: "intelectual", name: "Intelectual", orden: 20 },
+    { code: "visual", name: "Visual", orden: 30 },
+    { code: "auditiva", name: "Auditiva", orden: 40 },
+    { code: "psicosocial", name: "Psicosocial", orden: 50 },
+    { code: "lenguaje", name: "Lenguaje", orden: 60 }
+  ],
+  parentescos: [
+    { code: "conyuge", name: "Cónyuge", orden: 10 },
+    { code: "conviviente", name: "Conviviente en unión de hecho", orden: 20 },
+    { code: "hijo", name: "Hijo/a", orden: 30 },
+    { code: "padre", name: "Padre", orden: 40 },
+    { code: "madre", name: "Madre", orden: 50 },
+    { code: "hermano", name: "Hermano/a", orden: 60 },
+    { code: "otro", name: "Otro", orden: 70 }
+  ]
+};
+
 // LA CLASE DE UNA PARROQUIA, para Ecuador. Son tres filas y no salen del fichero del INEC: salen de
 // su CODIFICACION -- 50 es la cabecera cantonal, por debajo urbanas y por encima rurales--, asi que
 // las decide este proyecto y no la fuente.
@@ -371,6 +423,22 @@ const seedGeographyCatalog = async (connection) => {
     [ecuadorId]
   );
   const cantonPorDpa = new Map((cantonRows ?? []).map((row) => [String(row.dpa_code), Number(row.id)]));
+
+  // Los cinco vocabularios de la persona. Comparten forma con clases_parroquia, asi que comparten
+  // bucle: la tabla es la clave del objeto y el cuerpo es identico.
+  for (const [tabla, filas] of Object.entries(VOCABULARIOS_PERSONA_EC)) {
+    for (const fila of filas) {
+      await connection.query(
+        `INSERT INTO ${tabla} (pais_id, code, name, orden, is_active)
+         VALUES (?, ?, ?, ?, 1)
+         ON DUPLICATE KEY UPDATE
+           name = VALUES(name),
+           orden = VALUES(orden),
+           is_active = 1`,
+        [ecuadorId, fila.code, fila.name, fila.orden]
+      );
+    }
+  }
 
   for (const parroquia of PARROQUIAS_EC) {
     const cantonId = cantonPorDpa.get(parroquia.canton_dpa);

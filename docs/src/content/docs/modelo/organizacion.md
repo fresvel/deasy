@@ -539,6 +539,36 @@ erDiagram
   }
 ```
 
+### Los vocabularios de la persona
+
+Cinco catálogos con la misma forma —`pais_id`, `code`, `name`, `orden`— que describen **cómo se
+declara una persona**: `generos`, `estados_civiles`, `autoidentificaciones_etnicas`,
+`tipos_discapacidad` y `parentescos`.
+
+**Van a tabla y no a `CHECK` por una regla, no por gusto**: lo que define una **autoridad nacional**
+va a catálogo con `pais_id`; lo universal se queda en `CHECK`. Un `CHECK` es global por definición y
+no puede tener un valor para Ecuador y otro para Colombia.
+
+Por eso el **tipo de sangre** no está aquí —ocho valores de biología, iguales en todas partes— y el
+**sexo** tampoco: es el dato administrativo del documento.
+
+| Catálogo | Filas | Quién lo define |
+|---|---:|---|
+| `generos` | 2 | Ley Orgánica de Gestión de la Identidad (2016) |
+| `estados_civiles` | 5 | Registro Civil — incluye la **unión de hecho** |
+| `autoidentificaciones_etnicas` | 8 | INEC, pregunta 11 del censo |
+| `tipos_discapacidad` | 6 | Ministerio de Salud Pública |
+| `parentescos` | 7 | IESS y SRI |
+
+⚠️ **El género tiene dos valores y no es simplificación nuestra.** La ley de 2016 permite
+**sustituir** el campo «sexo» por «género» en la cédula, **una sola vez y sólo entre masculino y
+femenino**. La cédula lleva **uno u otro**, nunca los dos.
+
+Y de ahí sale una columna en `instituciones`: **`campo_sexo_genero`** (`sexo` · `genero` · `ambos`)
+decide qué pide esta instalación. Preguntar por los dos a todo el mundo es pedir un dato que su
+documento no tiene — y en otros países hay documentos con marcador no binario, o sin campo ninguno.
+Es la misma costura que `pais_id`: lo decide la institución, no el código.
+
 :::note[De dónde salen esas filas]
 
 **232 países**, del CLDR que ya trae Node, con su ISO-3166 derivado por nombre. **24 provincias, 222

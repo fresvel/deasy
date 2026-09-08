@@ -131,6 +131,11 @@ export const FK_TABLE_MAP = {
   canton_id: "cantones",
   parroquia_id: "parroquias",
   clase_id: "clases_parroquia",
+  genero_id: "generos",
+  estado_civil_id: "estados_civiles",
+  autoidentificacion_etnica_id: "autoidentificaciones_etnicas",
+  tipo_discapacidad_id: "tipos_discapacidad",
+  parentesco_id: "parentescos",
   canal_id: "canales_mensajeria",
   telefono_id: "telefonos",
   // La nacionalidad es una columna REAL de `persons`. Sin esta entrada el formulario pide un NÚMERO

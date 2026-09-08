@@ -1,6 +1,6 @@
 ---
 title: "El complemento: lo que la cadena da por supuesto"
-description: "Las 47 tablas que no están en la cadena proceso → documento: quién eres, qué puedes hacer, a quién se contrata, cómo se habla y qué expediente tienes. 38 + 40 = 78, el esquema entero."
+description: "Las 52 tablas que no están en la cadena proceso → documento: quién eres, qué puedes hacer, a quién se contrata, cómo se habla y qué expediente tienes. 38 + 40 = 78, el esquema entero."
 sidebar:
   label: "Cómo leer esto"
   order: 0
@@ -10,11 +10,11 @@ sidebar:
 proceso» a «este documento existe y lo firmaron estas personas». Son **38 tablas** y se leen en
 orden, porque cada eslabón necesita el anterior.
 
-Esta sección es **el resto**: las **47 tablas** que la cadena da por supuestas. No forman una cadena
+Esta sección es **el resto**: las **52 tablas** que la cadena da por supuestas. No forman una cadena
 —son familias independientes que cuelgan casi todas de `persons`— y por eso no se leen en orden: se
 entra por la que te interese.
 
-38 + 47 = **85**. Entre las dos secciones está el esquema entero, y eso se puede comprobar, que es
+38 + 52 = **90**. Entre las dos secciones está el esquema entero, y eso se puede comprobar, que es
 justo la gracia de decirlo.
 
 ## Por qué esto no es «lo secundario»
@@ -39,7 +39,7 @@ Duplicar una cifra garantiza que en dos semanas haya dos versiones distintas de 
 
 | Familia | Tablas | Dónde se lee |
 |---|:--:|---|
-| **Quién eres** — el documento, los correos, los teléfonos, las direcciones y el catálogo geográfico | 13 | [La organización](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima) |
+| **Quién eres** — el documento, los correos, los teléfonos, las direcciones y el catálogo geográfico | 18 | [La organización](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima) |
 | **Que eres tú quien firma** — el certificado y los códigos | 3 | [Credenciales](/complemento/credenciales/) |
 | **A quién se contrata** — vacante → postulación → oferta → contrato | 8 | [Empleo y contratación](/complemento/empleo/) |
 | **Cómo se habla** — conversaciones, mensajes y avisos | 6 | [La conversación](/complemento/conversacion/) |
@@ -64,7 +64,7 @@ recreada, no del fichero de esquema y no de otra página.
 | Columnas de esas 40 | **307** |
 | Claves foráneas declaradas en ellas | **66** — 39 entre ellas y **27 hacia la cadena** |
 | Tablas de la cadena | **38** |
-| Tablas del esquema entero | **85** |
+| Tablas del esquema entero | **90** |
 | Claves foráneas del esquema entero | **164** |
 | Restricciones `CHECK` del esquema entero | **36** |
 

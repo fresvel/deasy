@@ -37,7 +37,12 @@
       "intentos_limitados",
       "canales_bitacora",
       "documentos_legales",
-      "consentimientos"
+      "consentimientos",
+      "generos",
+      "estados_civiles",
+      "autoidentificaciones_etnicas",
+      "tipos_discapacidad",
+      "parentescos"
     ]
   },
   "organizacion": {

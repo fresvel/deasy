@@ -58,6 +58,9 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "nombre", label: "Nombre", type: "text", required: true },
       { name: "pais_id", label: "Pais", type: "number", required: true },
+      // QUE PIDE ESTA INSTITUCION: el sexo, el genero, o los dos. Surte efecto en P2, cuando
+      // `persons` gane esas columnas. Ver el comentario de la columna en el esquema.
+      { name: "campo_sexo_genero", label: "Pide sexo/genero", type: "select", options: ["sexo", "genero", "ambos"], defaultValue: "ambos" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
@@ -136,6 +139,91 @@ export const SQL_TABLES = [
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "dpa_code"]
+  },
+  {
+    table: "generos",
+    label: "Generos",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "estados_civiles",
+    label: "Estados civiles",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "autoidentificaciones_etnicas",
+    label: "Autoidentificacion etnica",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "tipos_discapacidad",
+    label: "Tipos de discapacidad",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "parentescos",
+    label: "Parentescos",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
   },
   {
     table: "clases_parroquia",

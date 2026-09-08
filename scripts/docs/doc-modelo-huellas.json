@@ -19,6 +19,12 @@
       "modelo/lo-que-no-cierra.md"
     ]
   },
+  "autoidentificaciones_etnicas": {
+    "huella": "401054bd83c03c45",
+    "paginas": [
+      "modelo/organizacion.md"
+    ]
+  },
   "canales_bitacora": {
     "huella": "8f7b4f65bd2392ea",
     "paginas": [
@@ -303,6 +309,12 @@
       "modelo/organizacion.md"
     ]
   },
+  "estados_civiles": {
+    "huella": "fcc617dff13cf279",
+    "paginas": [
+      "modelo/organizacion.md"
+    ]
+  },
   "fill_flow_steps": {
     "huella": "cd72d6d969a23ef3",
     "paginas": [
@@ -337,8 +349,14 @@
       "referencia/campos-proceso-documento.md"
     ]
   },
+  "generos": {
+    "huella": "775c1b43bc42cc02",
+    "paginas": [
+      "modelo/organizacion.md"
+    ]
+  },
   "instituciones": {
-    "huella": "6797c43766515c12",
+    "huella": "dd803f496c74503d",
     "paginas": [
       "complemento/expediente.md",
       "complemento/mapa-completo.md",
@@ -376,6 +394,12 @@
       "modelo/mapa-completo.md",
       "modelo/organizacion.md",
       "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "parentescos": {
+    "huella": "e6c18c9760cd47a5",
+    "paginas": [
+      "modelo/organizacion.md"
     ]
   },
   "parroquias": {
@@ -831,6 +855,12 @@
       "modelo/siembra.md",
       "panorama.md",
       "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "tipos_discapacidad": {
+    "huella": "bddf9858f96acd0c",
+    "paginas": [
+      "modelo/organizacion.md"
     ]
   },
   "unit_positions": {

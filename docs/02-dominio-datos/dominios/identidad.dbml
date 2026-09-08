@@ -26,6 +26,21 @@ Table "actions" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
+Table "autoidentificaciones_etnicas" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(100) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_autoidentificaciones_etnicas"]
+  }
+}
+
 Table "canales_bitacora" {
   "id" int8 [pk, not null, increment]
   "canal" varchar(40) [not null]
@@ -211,6 +226,36 @@ Table "emails" {
   }
 }
 
+Table "estados_civiles" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_estados_civiles"]
+  }
+}
+
+Table "generos" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_generos"]
+  }
+}
+
 Table "intentos_limitados" {
   "id" int8 [pk, not null, increment]
   "accion" varchar(60) [not null]
@@ -222,6 +267,21 @@ Table "intentos_limitados" {
   }
 
   Note: '''Lo que se ha intentado y CUENTA para un limite. No es una bitacora general: aqui solo entra lo que se frena, porque registrar cada peticion doblaria las escrituras del sistema para no usarlas. Vive en la base y no en memoria porque un contador en memoria dejaria de proteger en cuanto hubiera dos instancias del backend. `sujeto` es un TEXTO y no una clave ajena a proposito: lo que se cuenta cambia con la accion --una IP, un correo+ip, un person_id-- y hay acciones anonimas en las que no existe ninguna fila a la que apuntar.'''
+}
+
+Table "parentescos" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_parentescos"]
+  }
 }
 
 Table "password_reset_codes" {
@@ -400,6 +460,21 @@ Table "telefonos" {
   }
 }
 
+Table "tipos_discapacidad" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_tipos_discapacidad"]
+  }
+}
+
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
 Ref "fk_consentimiento_documento":"documentos_legales"."id" <? "consentimientos"."documento_id"
@@ -426,6 +501,7 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> aplications   [empleo]
+//   paises -> autoidentificaciones_etnicas   [organizacion]
 //   persons -> chat_conversations   [chat]
 //   persons -> chat_messages   [chat]
 //   persons -> chat_notifications   [chat]
@@ -442,9 +518,12 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 //   persons -> document_workflow_observations   [tareas]
 //   persons -> document_workflow_observations   [tareas]
 //   paises -> documentos_identidad   [organizacion]
+//   paises -> estados_civiles   [organizacion]
 //   cargos -> fill_flow_steps   [plantillas]
 //   persons -> fill_flow_steps   [plantillas]
 //   persons -> fill_requests   [plantillas]
+//   paises -> generos   [organizacion]
+//   paises -> parentescos   [organizacion]
 //   paises -> persons   [organizacion]
 //   persons -> position_assignments   [organizacion]
 //   cargos -> process_definition_series   [procesos]
@@ -460,6 +539,7 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 //   persons -> task_items   [tareas]
 //   persons -> task_items   [tareas]
 //   paises -> telefonos   [organizacion]
+//   paises -> tipos_discapacidad   [organizacion]
 //   cargos -> unit_positions   [organizacion]
 //   roles -> vacancy_visibility   [empleo]
 //   persons -> signature_batch_jobs   [firmas]

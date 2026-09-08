@@ -104,7 +104,7 @@ firma añade el `slot` y el `approval_mode`, y sus estados son **tablas de catá
 de entrega no hay equivalentes.
 
 **Lo que el mapa no dibuja** es todo lo que queda fuera de la cadena documental: la rama de vacantes y
-contratación, el chat, los expedientes, el RBAC y —desde el 2026-08-27— las **trece tablas de la
+contratación, el chat, los expedientes, el RBAC y —desde el 2026-08-27— las **dieciocho tablas de la
 identidad de la persona**: sus documentos, correos, teléfonos y direcciones, más el catálogo
 geográfico que las sostiene —que desde el 2026-09-08 baja hasta la **parroquia**. Están explicadas en [La organización](/modelo/organizacion/), que es
 donde se cuenta quién existe.
@@ -113,4 +113,4 @@ No entran aquí a propósito: el mapa dibuja **la cadena**, y la cadena necesita
 persona*, no de cuántas formas se la puede contactar. Lo único que la cadena gana de ellas es una
 arista: `persons` apunta a `paises` para su nacionalidad.
 
-El esquema completo tiene 85 tablas; estas 38 son las que van del proceso al documento firmado.
+El esquema completo tiene 90 tablas; estas 38 son las que van del proceso al documento firmado.

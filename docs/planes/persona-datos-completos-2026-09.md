@@ -18,9 +18,9 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 | **P7** | `cargas_familiares` **con su escaneo obligatorio**, y los contactos de emergencia sobre `expediente_referencias` | ⬜ | Depende del frente 18. Necesita **P10** | |
 | **P8** | El recurso RBAC de los datos sensibles, y su bitácora | ⬜ | | |
 | **P9** | El frontend: `/perfil/datos` y las pestañas de administración | ⬜ | | |
-| **P10** | Los **cinco catálogos de vocabulario**, sembrados: `generos`, `estados_civiles`, `autoidentificaciones_etnicas`, `tipos_discapacidad`, `parentescos` | ⬜ | Sale de la decisión de §6. **P2, P5 y P7 dependen de él** | |
+| **P10** | Los **cinco catálogos de vocabulario**, sembrados | ✅ | **28 filas** para Ecuador (2+5+8+6+7), cada lista con su fuente en el código. Entra además `instituciones.campo_sexo_genero`. Categoría propia «Datos personales» bajo Usuarios — **no en «Otros»**. 330/330 char, 819+491 unitarios, los 3 `check:` y los 4 gates de doc en verde | 2026-09-08 |
 
-**11 tareas · 2 cerradas.**
+**11 tareas · 3 cerradas.**
 
 ⚠️ **El identificador no es el orden.** `P10` nació al cerrar P0 y **va tercero**, no último: los
 cinco catálogos los necesitan P2, P5 y P7. El orden de ejecución es:

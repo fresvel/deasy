@@ -1,13 +1,13 @@
 ---
 title: "El mapa del complemento, de un vistazo"
-description: "Las 47 tablas que no están en la cadena proceso → documento, en tres diagramas: lo que una persona es, lo que la organización hace con ella, y lo que se dice por el camino."
+description: "Las 52 tablas que no están en la cadena proceso → documento, en tres diagramas: lo que una persona es, lo que la organización hace con ella, y lo que se dice por el camino."
 sidebar:
   label: "Mapa del complemento"
   order: 15
 ---
 
-Las **47 tablas** que la cadena da por supuestas, sin sus campos, para ver la forma. Con las
-[38 de la cadena](/modelo/mapa-completo/) suman las **85** del esquema: entre los dos mapas no queda
+Las **52 tablas** que la cadena da por supuestas, sin sus campos, para ver la forma. Con las
+[38 de la cadena](/modelo/mapa-completo/) suman las **90** del esquema: entre los dos mapas no queda
 ninguna fuera.
 
 `persons` aparece en los tres dibujos porque es de quien cuelga casi todo, pero **es de la cadena**,
@@ -152,7 +152,7 @@ que hace que versionar un proceso no parta su conversación en dos, y está cont
 | Claves foráneas declaradas en ellas | **66** — 39 entre ellas, **27** hacia la cadena |
 | Restricciones `CHECK` | **11** |
 | Tablas de la cadena | **38** |
-| **Total del esquema** | **85** |
+| **Total del esquema** | **90** |
 
 Medidas contra el catálogo de PostgreSQL de una base recién recreada, no contra el fichero de
 esquema. La razón está en [cómo leer esto](/complemento/).

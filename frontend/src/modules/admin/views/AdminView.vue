@@ -346,6 +346,7 @@ const CATEGORIA_UI = {
   Geografia:  { label: "Geografía", icon: "map-marked-alt", description: "Países, provincias, cantones y parroquias." },
   Calendario: { label: "Periodos", icon: "square-check", description: "Tipos de periodo y periodos académicos." },
   Personas:   { label: "Personas", icon: "user", description: "Personas y sus documentos, correos, teléfonos y direcciones." },
+  VocabularioPersona: { label: "Datos personales", icon: "user", description: "Género, estado civil, autoidentificación étnica, discapacidad y parentesco." },
   Procesos:   { label: "Procesos", icon: "check-double", description: "Procesos y sus configuraciones versionadas." },
   Plantillas: { label: "Entregables", icon: "file", description: "Semillas, plantillas y su vínculo con cada configuración." },
   Tareas:     { label: "Tareas", icon: "square-check", description: "Corridas, tareas y los entregables instanciados." },
@@ -368,7 +369,7 @@ const GROUP_DEFS = [
   { key: "procesos",    label: "Procesos",    main: ["Procesos", "Plantillas"], support: [] },
   { key: "tareas",      label: "Tareas",      main: ["Tareas"], support: [] },
   { key: "documentos",  label: "Documentos",  main: ["Documentos"], support: ["Entrega", "Firmas"] },
-  { key: "usuarios",    label: "Usuarios",    main: ["Personas"], support: [] },
+  { key: "usuarios",    label: "Usuarios",    main: ["Personas", "VocabularioPersona"], support: [] },
   { key: "contratos",   label: "Contratos",   main: ["Contratos"], support: [] },
   { key: "seguridad",   label: "Seguridad",   main: ["Seguridad"], support: [] }
 ];
