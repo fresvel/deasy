@@ -8,18 +8,30 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
-| **P0** | Este plan, con el terreno medido y las decisiones que faltan | 🟡 | Medido el 2026-09-05: la fuente del INEC, el RBAC real y la cadena geográfica. **Pendiente de aprobación** | |
+| **P0** | Este plan, con el terreno medido y **las siete decisiones tomadas** | ✅ | Terreno medido el 2026-09-05 (la fuente del INEC, el RBAC real, la cadena geográfica). Las decisiones, aprobadas una a una por el dueño y escritas en §6 con su criterio | 2026-09-08 |
 | **P1** | `parroquias`: la capa que falta en la geografía, sembrada | ⬜ | | |
-| **P2** | Lo que sí es de `persons`: nacimiento, género, autoidentificación, estado civil | ⬜ | | |
+| **P2** | Lo que sí es de `persons`: nacimiento, **sexo**, género, autoidentificación, estado civil | ⬜ | Necesita **P10** | |
 | **P3** | `direcciones` gana sector y barrio | ⬜ | | |
 | **P4** | `documentos_identidad` gana el tipo de visa | ⬜ | | |
-| **P5** | La **salud**: discapacidad, enfermedades catastróficas, alergias, tipo de sangre | ⛔ | Bloqueada por **P8** | |
+| **P5** | La **salud**: discapacidad, enfermedades catastróficas, alergias, tipo de sangre | ⛔ | Bloqueada por **P8**. Necesita **P10** | |
 | **P6** | `cuentas_bancarias` | ⬜ | | |
-| **P7** | `cargas_familiares`, y los contactos de emergencia sobre `expediente_referencias` | ⬜ | Depende del frente 18 | |
+| **P7** | `cargas_familiares` **con su escaneo obligatorio**, y los contactos de emergencia sobre `expediente_referencias` | ⬜ | Depende del frente 18. Necesita **P10** | |
 | **P8** | El recurso RBAC de los datos sensibles, y su bitácora | ⬜ | | |
 | **P9** | El frontend: `/perfil/datos` y las pestañas de administración | ⬜ | | |
+| **P10** | Los **cinco catálogos de vocabulario**, sembrados: `generos`, `estados_civiles`, `autoidentificaciones_etnicas`, `tipos_discapacidad`, `parentescos` | ⬜ | Sale de la decisión de §6. **P2, P5 y P7 dependen de él** | |
 
-**10 tareas.** `P1` va primera —`P2` la necesita— y `P8` va **antes** que `P5`.
+**11 tareas · 1 cerrada.**
+
+⚠️ **El identificador no es el orden.** `P10` nació al cerrar P0 y **va tercero**, no último: los
+cinco catálogos los necesitan P2, P5 y P7. El orden de ejecución es:
+
+```
+P1 (geografía)  →  P10 (catálogos)  →  P2 · P3 · P4 · P6  →  P8 (RBAC)  →  P5 (salud)  →  P7  →  P9
+```
+
+`P8` va **antes** que `P5` a propósito: recoger un dato de salud antes de decidir quién lo ve es crear
+el problema y documentarlo a la vez. Y `P7` espera al frente 18, porque `expediente_referencias`
+todavía no existe.
 
 ---
 
@@ -104,34 +116,77 @@ problema y documentarlo a la vez.
 
 ## 4 · El reparto
 
-| Dato pedido | Dónde va | Nota |
+| Dato pedido | Dónde va | Forma |
 |---|---|---|
-| Fecha de nacimiento | `persons` | |
-| **Provincia · cantón · parroquia de nacimiento** | `persons`, tres claves ajenas | Necesita `P1` |
-| Género | `persons` | `CHECK` |
-| Autoidentificación étnica | `persons` | `CHECK` con la lista del INEC |
-| Estado civil | `persons` | `CHECK` |
-| Tipo de sangre | **`persona_salud`** | Es dato de salud |
-| Discapacidad, tipo y porcentaje | **`persona_salud`** | `AUDITIVA · FÍSICA · INTELECTUAL · LENGUAJE · VISUAL` |
+| Fecha de nacimiento | `persons` | `DATE` |
+| **Provincia · cantón · parroquia de nacimiento** | `persons` | Tres claves ajenas · necesita `P1` |
+| **Sexo** | `persons` | **`CHECK`** |
+| **Género** | `persons` | **FK a `generos`** |
+| Autoidentificación étnica | `persons` | FK a `autoidentificaciones_etnicas` |
+| Estado civil | `persons` | FK a `estados_civiles` |
+| Tipo de sangre | **`persona_salud`** | `CHECK` · 8 valores |
+| Discapacidad, tipo, porcentaje y carné | **`persona_salud`** | FK a `tipos_discapacidad` |
 | Enfermedades catastróficas | **`persona_salud`** | |
 | Alergias | **`persona_salud`** | |
 | Tipo de visa | `documentos_identidad` | Es atributo del documento, no de la persona |
 | Sector y barrio | `direcciones` | Dos columnas |
-| Cuentas bancarias | **`cuentas_bancarias`** | Varias por persona |
-| Cargas familiares | **`cargas_familiares`** | Con documento propio, fecha de nacimiento y parentesco |
+| Cuentas bancarias | **`cuentas_bancarias`** | N por persona, con `principal_flag` |
+| Cargas familiares | **`cargas_familiares`** | Documento propio **con escaneo obligatorio** |
 | Contactos de emergencia | **`expediente_referencias`** | Ver §5 |
 
-### Las tres tablas nuevas
+### Las nueve tablas nuevas
 
 ```
+parroquias                        P1 · 1 314 filas del INEC
+generos                           ┐
+estados_civiles                   │  P10 · los cinco catalogos de vocabulario,
+autoidentificaciones_etnicas      │  todos con pais_id, code, name, orden, is_active
+tipos_discapacidad                │
+parentescos                       ┘
 persona_salud       1:1 con persons · PK = FK, el patrón de subtipo del frente 18
 cuentas_bancarias   N · banco, tipo, número, titular, principal_flag generada
-cargas_familiares   N · nombres, documento, fecha de nacimiento, parentesco
+cargas_familiares   N · nombres, fecha de nacimiento, parentesco y su documento escaneado
 ```
 
 `persona_salud` reutiliza el idioma que el frente 18 ya fijó: **clave primaria que es a la vez la
 ajena**, con `ON DELETE CASCADE`. `cuentas_bancarias` reutiliza el `principal_flag` generado con
 índice único parcial que `direcciones` ya usa.
+
+#### `cargas_familiares`, con el diseño aprobado
+
+```sql
+CREATE TABLE IF NOT EXISTS cargas_familiares (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  nombres VARCHAR(180) NOT NULL,
+  fecha_nacimiento DATE NOT NULL,
+  parentesco_id INT NOT NULL,
+  -- EL DOCUMENTO, embebido. Una carga tiene UNO, no varios: es 1:1 y por eso va en columnas.
+  documento_tipo TEXT NOT NULL CHECK (documento_tipo IN
+    ('documento_nacional','documento_extranjero','pasaporte')),
+  -- POR QUE LLEVA PAIS: "documento_nacional" no dice DE QUE PAIS. Lo dice esta columna, y cual es
+  -- "el nacional" lo dice instituciones.pais_id. Es la misma frase que ya esta en
+  -- documentos_identidad, y es lo que quito "cedula ecuatoriana" del modelo en el frente 14. El
+  -- caso concreto: el hijo de un docente extranjero tiene documento extranjero.
+  documento_pais_id INT NOT NULL,
+  documento_numero VARCHAR(40) NOT NULL,
+  -- LA EVIDENCIA, y va NOT NULL -- mas fuerte que en documentos_identidad, donde es nulable.
+  -- Decision del dueño: el escaneo es evidencia de realidad y sin el no se registra la carga.
+  -- Misma convencion `minio://<bucket>/<objeto>`, nunca una URL con el endpoint del entorno dentro.
+  -- La ruta cuelga del arbol que ya existe: users/<person_id>/cargas/<carga_id>.pdf, por los IDS y
+  -- no por el numero, que cambia al renovar el documento.
+  escaneo_ref VARCHAR(255) NOT NULL,
+  escaneo_subido_at TIMESTAMP NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_cargas_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_cargas_parentesco FOREIGN KEY (parentesco_id) REFERENCES parentescos(id),
+  CONSTRAINT fk_cargas_pais FOREIGN KEY (documento_pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_cargas_documento
+  ON cargas_familiares (documento_tipo, documento_pais_id, documento_numero);
+```
 
 ## 5 · Los contactos de emergencia van en `expediente_referencias`
 
@@ -148,16 +203,109 @@ referencias profesionales. Un contacto de emergencia suele ser familiar, así qu
 ⚠️ **Dependencia real con el frente 18:** `expediente_referencias` **todavía no existe**, es diseño
 sin implementar. `P7` no puede cerrarse antes que `E3`.
 
-## 6 · Lo que hay que decidir antes de escribir DDL
+## 6 · Las decisiones, tomadas
 
-| | |
-|---|---|
-| **Los cinco vocabularios nuevos** | Género, estado civil, autoidentificación étnica, tipo de discapacidad, tipo de sangre. ¿`CHECK` o catálogo? El criterio del repo dice `CHECK`; el género puede necesitar revisarse más a menudo de lo que un `CHECK` permite |
-| **La autoidentificación étnica** | La lista del INEC es la referencia en Ecuador, pero **el modelo ya no fija Ecuador**: cuál se usa lo decidiría `instituciones.pais_id`, como el documento nacional |
-| **El documento de una carga familiar** | Texto propio, o fila en `documentos_identidad` — lo que daría validación de dígito verificador y escaneo gratis, pero obliga a que esa tabla admita a alguien que **no es una `person`** |
-| **¿La cuenta bancaria es de la persona o del contrato?** | Si el pago cuelga de un contrato, quizá la cuenta también |
-| **`ciudades` → `cantones`** | Renombrar ahora, o convivir con el desajuste |
-| **Quién ve la salud** | La propuesta es `AdminSistema` + `GestorTalentoHumano`. Es decisión del dueño |
+**Cerradas por el dueño el 2026-09-08.** Cada una con lo que se decidió y el criterio que la sostiene.
+
+### La regla que ordena los vocabularios
+
+Salió de decidir el tipo de discapacidad, y vale para los seis:
+
+> **Lo que define una autoridad NACIONAL va a catálogo con `pais_id`. Lo universal se queda en `CHECK`.**
+
+Es un cuarto motivo que no estaba en el criterio del repo —que hablaba de ordenación, atributos por
+fila y referencias de otras tablas—: **un `CHECK` es global por definición y no puede tener un valor
+para Ecuador y otro para Colombia.** Es la misma tensión que el frente 18 resolvió con
+`campos_nacionales`.
+
+| Vocabulario | Quién lo define | Decisión |
+|---|---|---|
+| **Tipo de sangre** | Biología · 8 valores | **`CHECK`** |
+| **Sexo** | El dato administrativo del documento | **`CHECK`** |
+| **Género** | Revisable, y por eso va aparte del sexo | **Catálogo** |
+| **Estado civil** | El registro civil de cada país | **Catálogo** |
+| **Autoidentificación étnica** | El instituto estadístico de cada país | **Catálogo** |
+| **Tipo de discapacidad** | El CONADIS en Ecuador | **Catálogo** |
+| **Parentesco** | El IESS y el código laboral de cada país | **Catálogo** |
+
+**Cinco catálogos**, todos con la misma forma —`pais_id`, `code`, `name`, `orden`, `is_active`— y en
+**tablas separadas**, no en una genérica con columna `eje`: es lo que hace el repo, donde
+`signature_statuses` y `signature_request_statuses` son idénticas en forma y viven aparte.
+
+### Sexo Y género, los dos
+
+- **`persons.sexo`** — `CHECK`. El dato administrativo, el que va en la cédula.
+- **`persons.genero_id`** — catálogo. La identidad autodeclarada.
+
+No son lo mismo y no se guardan igual. El propio registro civil ecuatoriano los distingue desde 2016.
+
+### La autoidentificación étnica: 8 valores del INEC
+
+`indígena` · `afroecuatoriano` · `negro` · `mulato` · `montubio` · `mestizo` · `blanco` · `otro`.
+
+**Va a catálogo y no a `CHECK` por dos hechos**: «montubio» se incorporó en **2010** —la lista
+cambia— y **ningún otro país la usa**.
+
+### El tipo de discapacidad: SEIS, no cinco
+
+`fisica` · `intelectual` · `visual` · `auditiva` · `lenguaje` · **`psicosocial`**.
+
+El sexto es el que maneja el CONADIS y faltaba en la lista de partida. **Añadir un valor a un `CHECK`
+después obliga a recrear la base**, y por eso se decide antes de escribir el DDL — aunque aquí acabe
+siendo catálogo.
+
+### La cuenta bancaria es de la PERSONA
+
+`contracts` ya existe con `person_id`, así que colgarla del contrato era posible. Se descarta porque
+**una persona conserva su cuenta entre contratos**, y aquí las renovaciones son el caso normal:
+colgarla del contrato obligaría a recapturarla en cada una.
+
+Lleva `principal_flag` generado, el idioma que ya usan `direcciones` y `documentos_identidad`. Si
+algún día un contrato concreto necesita otra cuenta, se añade `contracts.cuenta_bancaria_id` nulable.
+**Ese orden es reversible; el contrario no.**
+
+### El documento de una carga familiar: columnas propias, con escaneo obligatorio
+
+Reutilizar `documentos_identidad` **no es viable**, y está medido:
+
+```sql
+person_id INT NOT NULL,
+CONSTRAINT fk_documentos_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+```
+
+Una carga familiar no puede ser una `person`: `password_hash` y `token` son `NOT NULL`, así que habría
+que inventarle credenciales — y aparecería en el listado de personas, en el RBAC y en los desplegables
+de asignación. La alternativa —aflojar `person_id` y añadir `carga_familiar_id`, las dos nulables con
+un `CHECK`— es **el patrón que el frente 18 acaba de retirar**.
+
+**El escaneo va `NOT NULL`**, que es más fuerte que en `documentos_identidad`: por decisión del dueño
+es **evidencia de realidad**, y sin él no se registra la carga.
+
+**Y el validador del dígito verificador se reutiliza tal cual**: vive en un servicio, no en una
+restricción de tabla.
+
+### Quién ve la salud: `Auditor` NO
+
+El patrón de referencia es `dossier` —`Usuario` lee y edita lo suyo, `Auditor` lee, `AdminSistema`
+todo—, y se copia **con una diferencia deliberada**:
+
+| Rol | `dossier` hoy | Salud |
+|---|---|---|
+| `Usuario` (lo suyo) | `read create update` | `read create update` |
+| `GestorTalentoHumano` | — | `read` |
+| `AdminSistema` | todo | todo |
+| **`Auditor`** | `read` | **nada** |
+
+`Auditor` existe para consultar sin escribir, y hoy lee `people` y `dossier`. **Una discapacidad no es
+información de auditoría.**
+
+### `ciudades` → `cantones`
+
+Se renombra. La tabla nunca guardó ciudades: guarda el cantón.
+
+⚠️ **Con una objeción anotada**: «cantón» es la nomenclatura de **Ecuador** —en España es municipio,
+en Francia commune—, y el modelo lleva dos frentes quitando «Ecuador» de los nombres. La **etiqueta
+que ve el usuario** debe salir de `instituciones.pais_id`, no del nombre de la tabla.
 
 ## 7 · Alcance y verificación
 
