@@ -110,6 +110,8 @@ Table "direcciones" {
   "pais_id" int4
   "provincia_id" int4
   "canton_id" int4
+  "sector" varchar(180)
+  "barrio" varchar(180)
   "calle_primaria" varchar(180)
   "calle_secundaria" varchar(180)
   "referencia" varchar(255)

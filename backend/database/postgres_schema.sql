@@ -567,6 +567,14 @@ CREATE TABLE IF NOT EXISTS direcciones (
   pais_id INT NULL,
   provincia_id INT NULL,
   canton_id INT NULL,
+  -- SECTOR Y BARRIO. Texto y no catalogo, y esta vez la regla del frente 20 dice justo eso: no los
+  -- fija ninguna autoridad nacional -- no hay un clasificador del INEC de barrios-- y los nombra la
+  -- gente. Un catalogo aqui seria una lista abierta que nadie mantiene.
+  --
+  -- Van ANTES de las calles porque es el orden en que se dicta una direccion en Ecuador: primero
+  -- donde queda, despues la calle.
+  sector VARCHAR(180) NULL,
+  barrio VARCHAR(180) NULL,
   calle_primaria VARCHAR(180) NULL,
   calle_secundaria VARCHAR(180) NULL,
   referencia VARCHAR(255) NULL,

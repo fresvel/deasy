@@ -496,6 +496,8 @@ erDiagram
     int person_id FK
     text tipo "residencia, trabajo"
     int canton_id FK
+    varchar sector
+    varchar barrio
     varchar calle_primaria
     varchar calle_secundaria
     varchar referencia
@@ -538,6 +540,10 @@ erDiagram
     varchar plural "Cantones"
   }
 ```
+
+La dirección lleva además **sector** y **barrio**, en texto y no en catálogo: no los fija ninguna
+autoridad —no hay un clasificador del INEC de barrios— y los nombra la gente. Un catálogo ahí sería
+una lista abierta que nadie mantiene.
 
 ### Lo que la persona declara de sí misma
 

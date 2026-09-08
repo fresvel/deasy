@@ -84,3 +84,25 @@ describe("isPairedAway", () => {
     expect(isPairedAway({ name: "latitud", type: "geopoint" })).toBe(false);
   });
 });
+
+// El punto en la LISTA, no en el formulario.
+//
+// POR QUE EXISTE. `pairedWith` se filtraba solo en `editableFields`, asi que la lista pintaba DOS
+// columnas para un unico punto -- y la primera con la etiqueta del control de mapa--: la cabecera
+// decia «Ubicacion · Longitud» mientras debajo salian latitud y longitud. Lo vio el dueño.
+describe("un geopoint ocupa UNA columna en la lista, no dos", () => {
+  const CAMPOS_DIRECCION = [
+    { name: "calle_primaria", label: "Calle primaria", type: "text" },
+    { name: "latitud", label: "Ubicacion", type: "geopoint", pair: { lat: "latitud", lng: "longitud" } },
+    { name: "longitud", label: "Longitud", type: "number", pairedWith: "latitud" }
+  ];
+
+  it("la longitud NO se pinta por su cuenta", () => {
+    const columnas = CAMPOS_DIRECCION.filter((campo) => !isPairedAway(campo)).map((c) => c.name);
+    expect(columnas).toEqual(["calle_primaria", "latitud"]);
+  });
+
+  it("y la latitud si, porque es la que lleva el par", () => {
+    expect(isPairedAway(CAMPOS_DIRECCION[1])).toBe(false);
+  });
+});

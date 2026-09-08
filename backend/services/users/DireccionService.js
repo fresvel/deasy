@@ -106,6 +106,8 @@ export default class DireccionService {
       paisId,
       provinciaId,
       cantonId,
+      esVacio(direccion?.sector) ? null : String(direccion.sector).trim(),
+      esVacio(direccion?.barrio) ? null : String(direccion.barrio).trim(),
       esVacio(direccion?.calle_primaria) ? null : String(direccion.calle_primaria).trim(),
       esVacio(direccion?.calle_secundaria) ? null : String(direccion.calle_secundaria).trim(),
       esVacio(direccion?.referencia) ? null : String(direccion.referencia).trim(),
@@ -122,6 +124,7 @@ export default class DireccionService {
       await connection.query(
         `UPDATE direcciones
             SET pais_id = ?, provincia_id = ?, canton_id = ?,
+                sector = ?, barrio = ?,
                 calle_primaria = ?, calle_secundaria = ?, referencia = ?,
                 latitud = ?, longitud = ?
           WHERE id = ?`,
@@ -133,8 +136,8 @@ export default class DireccionService {
     const [resultado] = await connection.query(
       `INSERT INTO direcciones
          (person_id, tipo, pais_id, provincia_id, canton_id,
-          calle_primaria, calle_secundaria, referencia, latitud, longitud, principal)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+          sector, barrio, calle_primaria, calle_secundaria, referencia, latitud, longitud, principal)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [personId, tipo, ...campos]
     );
     return resultado?.insertId ?? null;
@@ -149,6 +152,7 @@ export default class DireccionService {
               d.pais_id, pa.iso_alpha2 AS pais_iso, pa.name AS pais,
               d.provincia_id, pr.name AS provincia,
               d.canton_id, ca.name AS canton,
+              d.sector, d.barrio,
               d.calle_primaria, d.calle_secundaria, d.referencia,
               d.latitud, d.longitud
          FROM direcciones d

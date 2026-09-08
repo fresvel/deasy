@@ -1637,8 +1637,12 @@ const tableListFields = computed(() => {
   // Hoy las TRES virtuales del modelo son calculadas y las tres se ven. Si algún día vuelve una
   // virtual que sólo exista en el formulario, no basta con volver a poner este filtro: hará falta
   // distinguirlas, porque son dos cosas distintas con el mismo nombre.
+  // ⚠️ Y `pairedWith` TAMBIÉN va aquí, no sólo en el formulario. Sin este filtro la lista pintaba
+  // DOS columnas para un solo punto, y la primera con la etiqueta del control de mapa: la cabecera
+  // decía «Ubicacion · Longitud» mientras debajo salían la latitud y la longitud. Lo vio el dueño.
+  // El formulario ya lo filtraba desde el principio (`editableFields`); la lista no.
   const fields = props.table.fields.filter((field) =>
-    !(isPersonTable.value && field.name === "password_hash")
+    !(isPersonTable.value && field.name === "password_hash") && !isPairedAway(field)
   );
   let normalizedFields = fields;
   if (props.table.table === "process_definition_versions") {

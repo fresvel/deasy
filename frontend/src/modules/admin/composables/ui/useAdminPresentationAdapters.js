@@ -94,6 +94,15 @@ export function useAdminPresentationAdapters({
   };
 
   const formatValueForTable = (tableMeta, value, field, row = null) => {
+    // UN PUNTO NO SON DOS NÚMEROS, y la lista tiene que decir lo mismo que el formulario. Va ANTES
+    // del corte por vacío porque el punto se pinta si tiene las DOS coordenadas, y `value` sólo
+    // trae una: con una nula y la otra no, aquí salía "—" y parecía que no había nada guardado.
+    if (field?.type === "geopoint") {
+      const lat = row?.[field?.pair?.lat ?? "latitud"];
+      const lng = row?.[field?.pair?.lng ?? "longitud"];
+      const vacio = (v) => v === null || v === undefined || v === "";
+      return vacio(lat) || vacio(lng) ? "—" : `${lat}, ${lng}`;
+    }
     if (value === null || value === undefined || value === "") {
       if (!["__plaza", "__position_type", "__process_name", "__definition_series", "__definition_version", "__definition_status"].includes(field?.name)) {
         return "—";

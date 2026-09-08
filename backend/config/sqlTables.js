@@ -754,6 +754,8 @@ export const SQL_TABLES = [
       // teclear «port» aunque el país fuera España, y también «Portovelo», que es de El Oro.
       { name: "provincia_id", label: "Provincia", type: "number", filterBy: { pais_id: "pais_id" }, showWhen: { field: "pais_id", isSet: true } },
       { name: "canton_id", label: "Cantón", type: "number", filterBy: { provincia_id: "provincia_id" }, showWhen: { field: "provincia_id", isSet: true } },
+      { name: "sector", label: "Sector", type: "text" },
+      { name: "barrio", label: "Barrio", type: "text" },
       { name: "calle_primaria", label: "Calle primaria", type: "text" },
       { name: "calle_secundaria", label: "Calle secundaria", type: "text" },
       { name: "referencia", label: "Referencia", type: "text" },
@@ -768,7 +770,7 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["calle_primaria", "referencia"]
+    searchFields: ["calle_primaria", "referencia", "sector", "barrio"]
   },
   {
     table: "telefonos",

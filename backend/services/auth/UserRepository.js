@@ -155,6 +155,7 @@ export default class UserRepository {
       `SELECT d.person_id, d.id, d.tipo, d.principal,
               pa.iso_alpha2 AS pais_iso, pa.name AS pais,
               pr.name AS provincia, ca.name AS canton,
+              d.sector, d.barrio,
               d.calle_primaria, d.calle_secundaria, d.referencia, d.latitud, d.longitud
          FROM direcciones d
          LEFT JOIN paises pa ON pa.id = d.pais_id
