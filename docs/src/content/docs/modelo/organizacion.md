@@ -539,6 +539,31 @@ erDiagram
   }
 ```
 
+### Lo que la persona declara de sí misma
+
+`persons` pasa de **11 columnas a 17**. Todas las nuevas son **nulables** a propósito: el registro
+público pide lo mínimo y esto se completa después en el perfil; obligatorias, romperían el alta.
+
+**Tres cosas que no se ven a simple vista.**
+
+**`nacionalidad_pais_id` y `nacimiento_pais_id` no son lo mismo**, aunque los dos apunten a `paises`:
+quien nace en Colombia puede ser ecuatoriano por naturalización. La primera ya existía —y nació justo
+de deshacer una confusión parecida entre dos campos que se llamaban «país»—, así que la distinción
+queda escrita en el esquema para no volver a tropezar.
+
+**Del lugar de nacimiento se guarda sólo el cantón, y la provincia se deduce.** Guardar los dos sería
+una redundancia que puede discrepar; guardar sólo la hoja lo hace **imposible** — es la clave ajena
+la que garantiza que el cantón pertenece a su provincia. Y **la parroquia no se guarda**: su nombre
+no es único ni dentro de su propio cantón, así que como dato de nacimiento no distingue.
+
+Quien nació fuera lleva `nacimiento_pais_id` y el cantón **nulo**, porque sólo Ecuador tiene cantones
+sembrados. ⚠️ Que el cantón pertenezca al país declarado **no lo puede comprobar un `CHECK`** —haría
+falta un `JOIN`—: lo valida el servicio, en el único sitio por el que pasan todas las escrituras.
+
+**`sexo` y `genero` no comparten vocabulario, y es correcto.** La cédula rotula el sexo
+`HOMBRE/MUJER` y el género —cuando se sustituye— `MASCULINO/FEMENINO`. Son dos campos legales
+distintos, no dos nombres del mismo.
+
 ### Los vocabularios de la persona
 
 Cinco catálogos con la misma forma —`pais_id`, `code`, `name`, `orden`— que describen **cómo se
@@ -687,7 +712,14 @@ erDiagram
     int id PK
     varchar first_name
     varchar last_name
-    int nacionalidad_pais_id FK "de que pais es, no donde vive"
+    int nacionalidad_pais_id FK "de que pais ES, no donde nacio"
+    date fecha_nacimiento
+    int nacimiento_pais_id FK "DONDE nacio"
+    int nacimiento_canton_id FK "la provincia se DEDUCE de el"
+    text sexo "CHECK · hombre | mujer"
+    int genero_id FK
+    int estado_civil_id FK
+    int autoidentificacion_etnica_id FK
     varchar password_hash
     text status "Inactivo, Activo, Verificado, Reportado"
     text photo_url

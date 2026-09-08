@@ -370,6 +370,39 @@ CREATE TABLE IF NOT EXISTS persons (
   -- escribe el registro y lo que su formulario etiqueta simplemente "Pais". Dos campos que se
   -- llamaban pais, y el que veia /admin estaba vacio en las 43 filas de la semilla.
   nacionalidad_pais_id INT NULL,
+
+  -- ── LO QUE LA PERSONA DECLARA DE SI MISMA ──────────────────────────────────────────────────────
+  -- Todo NULABLE, y no por dejadez: el registro publico pide lo minimo y esto se completa despues
+  -- en el perfil. Ponerlas obligatorias romperia el alta.
+  fecha_nacimiento DATE NULL,
+
+  -- DONDE NACIO, y NO es `nacionalidad_pais_id`: quien nace en Colombia puede ser ecuatoriano por
+  -- naturalizacion. Ese campo ya nacio de deshacer una confusion parecida entre `pais` y
+  -- `pais_residencia`, asi que conviene decirlo aqui y no volver a tropezar.
+  nacimiento_pais_id INT NULL,
+  -- EL CANTON, Y LA PROVINCIA SE DEDUCE DE EL (cantones.provincia_id). Guardar los dos seria una
+  -- redundancia que puede discrepar; guardar solo la hoja lo hace IMPOSIBLE, y es la clave ajena la
+  -- que garantiza que el canton pertenece a su provincia. La parroquia NO se guarda: su nombre no es
+  -- unico ni dentro de su propio canton -- 33 casos--, asi que como dato de nacimiento no distingue.
+  --
+  -- NULO cuando se nacio fuera: solo Ecuador tiene cantones sembrados. Con el pais basta.
+  -- Que el canton pertenezca al pais declarado NO lo puede comprobar un CHECK (haria falta un JOIN):
+  -- lo valida el servicio, reutilizando la resolucion por niveles de DireccionService.
+  nacimiento_canton_id INT NULL,
+
+  -- EL SEXO, dato administrativo del documento. CHECK y no catalogo porque es universal.
+  --
+  -- OJO: el vocabulario NO es el mismo que el de `generos`, y no es un descuido. La cedula
+  -- ecuatoriana rotula el sexo HOMBRE/MUJER y el genero -- cuando se sustituye-- MASCULINO/FEMENINO.
+  -- Son dos campos legales distintos, no dos nombres del mismo.
+  sexo TEXT NULL CHECK (sexo IN ('hombre','mujer')),
+  -- EL GENERO, autodeclarado. Que se pida uno, otro o los dos lo decide
+  -- `instituciones.campo_sexo_genero`.
+  genero_id INT NULL,
+
+  estado_civil_id INT NULL,
+  autoidentificacion_etnica_id INT NULL,
+
   password_hash VARCHAR(255) NOT NULL,
   status TEXT CHECK (status IN ('Inactivo','Activo','Verificado','Reportado')) DEFAULT 'Inactivo',
   photo_url TEXT DEFAULT NULL,
@@ -377,9 +410,15 @@ CREATE TABLE IF NOT EXISTS persons (
   token VARCHAR(10) NOT NULL UNIQUE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_persons_nacionalidad FOREIGN KEY (nacionalidad_pais_id) REFERENCES paises(id)
+  CONSTRAINT fk_persons_nacionalidad FOREIGN KEY (nacionalidad_pais_id) REFERENCES paises(id),
+  CONSTRAINT fk_persons_nacimiento_pais FOREIGN KEY (nacimiento_pais_id) REFERENCES paises(id),
+  CONSTRAINT fk_persons_nacimiento_canton FOREIGN KEY (nacimiento_canton_id) REFERENCES cantones(id),
+  CONSTRAINT fk_persons_genero FOREIGN KEY (genero_id) REFERENCES generos(id),
+  CONSTRAINT fk_persons_estado_civil FOREIGN KEY (estado_civil_id) REFERENCES estados_civiles(id),
+  CONSTRAINT fk_persons_etnia FOREIGN KEY (autoidentificacion_etnica_id) REFERENCES autoidentificaciones_etnicas(id)
 );
 CREATE INDEX IF NOT EXISTS idx_persons_nacionalidad ON persons (nacionalidad_pais_id);
+CREATE INDEX IF NOT EXISTS idx_persons_nacimiento_canton ON persons (nacimiento_canton_id);
 CREATE OR REPLACE TRIGGER trg_persons_set_updated_at BEFORE UPDATE ON persons FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 

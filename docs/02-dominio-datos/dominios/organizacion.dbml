@@ -234,6 +234,8 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 //   units -> fill_flow_steps   [plantillas]
 //   paises -> generos   [identidad]
 //   paises -> parentescos   [identidad]
+//   cantones -> persons   [identidad]
+//   paises -> persons   [identidad]
 //   paises -> persons   [identidad]
 //   persons -> position_assignments   [identidad]
 //   unit_types -> process_definition_series   [procesos]

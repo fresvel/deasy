@@ -692,6 +692,15 @@ export const SQL_TABLES = [
       { name: "first_name", label: "Nombre", type: "text", required: true },
       { name: "last_name", label: "Apellido", type: "text", required: true },
       { name: "nacionalidad_pais_id", label: "Nacionalidad", type: "number" },
+      // Los datos personales del frente 20 (P2). `nacimiento_canton_id` se acota por
+      // `nacimiento_pais_id`: el editor vacia el hijo cuando cambia el padre.
+      { name: "fecha_nacimiento", label: "Fecha de nacimiento", type: "date" },
+      { name: "nacimiento_pais_id", label: "Pais de nacimiento", type: "number" },
+      { name: "nacimiento_canton_id", label: "Canton de nacimiento", type: "number", filterBy: { pais_id: "nacimiento_pais_id" }, showWhen: { field: "nacimiento_pais_id" } },
+      { name: "sexo", label: "Sexo", type: "select", options: ["hombre", "mujer"] },
+      { name: "genero_id", label: "Genero", type: "number" },
+      { name: "estado_civil_id", label: "Estado civil", type: "number" },
+      { name: "autoidentificacion_etnica_id", label: "Autoidentificacion etnica", type: "number" },
 
 
       // ⚠️ AQUÍ HUBO SEIS CAMPOS VIRTUALES —documento, correo y teléfono— y se retiraron el

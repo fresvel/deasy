@@ -9,7 +9,7 @@ Esta página **no se escribe: se genera.** Los diagramas salen de
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **90 tablas y 174 relaciones**. Repartidas en ocho dominios porque un diagrama de 78 tablas
+Son **90 tablas y 179 relaciones**. Repartidas en ocho dominios porque un diagrama de 78 tablas
 impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]

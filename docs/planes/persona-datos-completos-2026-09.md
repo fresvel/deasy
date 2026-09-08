@@ -10,7 +10,7 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 |---|---|:--:|---|---|
 | **P0** | Este plan, con el terreno medido y **las siete decisiones tomadas** | ✅ | Terreno medido el 2026-09-05 (la fuente del INEC, el RBAC real, la cadena geográfica). Las decisiones, aprobadas una a una por el dueño y escritas en §6 con su criterio | 2026-09-08 |
 | **P1** | `parroquias` sembrada, `ciudades` → `cantones`, y las etiquetas por país | ✅ | **222 cantones · 1 314 parroquias · 3 clases · 3 etiquetas** en la base tras `test:char:run`. 330/330 char, 819 unit backend, 491 front, los 3 `check:` y los 3 gates de doc en verde. Verificado en `/admin/institucion/geografia/parroquias`. **Recupera `2302 La Concordia`**, que faltaba por un fallo del extractor | 2026-09-08 |
-| **P2** | Lo que sí es de `persons`: nacimiento, **sexo**, género, autoidentificación, estado civil | ⬜ | Necesita **P10** | |
+| **P2** | Lo que sí es de `persons`: nacimiento, **sexo**, género, autoidentificación, estado civil | ✅ | **11 → 17 columnas**, 5 claves ajenas nuevas. Verificado por `PATCH /users/me`: los seis valores llegan a la base y la provincia se deduce del cantón; y «nací en Colombia, cantón de Esmeraldas» devuelve **400** sin tocar la fila. Prueba nueva que **lee el esquema** y caza una columna olvidada en la lista blanca, con mutación comprobada. 330/330 char (1 golden movido, 7 líneas, sólo las columnas nuevas) | 2026-09-08 |
 | **P3** | `direcciones` gana sector y barrio | ⬜ | | |
 | **P4** | `documentos_identidad` gana el tipo de visa | ⬜ | | |
 | **P5** | La **salud**: discapacidad, enfermedades catastróficas, alergias, tipo de sangre | ⛔ | Bloqueada por **P8**. Necesita **P10** | |
@@ -20,7 +20,7 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 | **P9** | El frontend: `/perfil/datos` y las pestañas de administración | ⬜ | | |
 | **P10** | Los **cinco catálogos de vocabulario**, sembrados | ✅ | **28 filas** para Ecuador (2+5+8+6+7), cada lista con su fuente en el código. Entra además `instituciones.campo_sexo_genero`. Categoría propia «Datos personales» bajo Usuarios — **no en «Otros»**. 330/330 char, 819+491 unitarios, los 3 `check:` y los 4 gates de doc en verde | 2026-09-08 |
 
-**11 tareas · 3 cerradas.**
+**11 tareas · 4 cerradas.**
 
 ⚠️ **El identificador no es el orden.** `P10` nació al cerrar P0 y **va tercero**, no último: los
 cinco catálogos los necesitan P2, P5 y P7. El orden de ejecución es:

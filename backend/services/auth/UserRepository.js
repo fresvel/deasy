@@ -576,6 +576,14 @@ export default class UserRepository {
     }
     delete payload.nacionalidad_nombre;
 
+    // EL CANTON DE NACIMIENTO TIENE QUE SER DE SU PAIS. No lo puede comprobar un CHECK -- haria
+    // falta un JOIN--, y la clave ajena sola solo garantiza que el canton EXISTE, no que sea del
+    // pais declarado. Sin esto se podria guardar "naci en Colombia, canton Esmeraldas".
+    //
+    // Se valida aqui, en el unico sitio por el que pasan todas las escrituras, por el mismo motivo
+    // que la nacionalidad: parchear cada llamador es exactamente como se olvida uno.
+    await this.validarCantonDeNacimiento(payload, userId);
+
     const fields = [];
     const values = [];
 
@@ -622,7 +630,44 @@ export default class UserRepository {
     return this.toPublicUser(updated);
   }
 
+  // Comprueba que `nacimiento_canton_id` cuelgue de `nacimiento_pais_id`. Si el UPDATE trae solo uno
+  // de los dos, el otro se lee de la fila: cambiar el pais sin tocar el canton tiene que fallar
+  // igual, o la incoherencia entra por la puerta de atras.
+  async validarCantonDeNacimiento(payload, userId) {
+    const traeCanton = payload.nacimiento_canton_id !== undefined;
+    const traePais = payload.nacimiento_pais_id !== undefined;
+    if (!traeCanton && !traePais) return;
+
+    const actual = (traeCanton && traePais) ? null : await this.findById(userId);
+    const cantonId = traeCanton ? payload.nacimiento_canton_id : actual?.nacimiento_canton_id;
+    const paisId = traePais ? payload.nacimiento_pais_id : actual?.nacimiento_pais_id;
+    if (cantonId === null || cantonId === undefined || cantonId === "") return;
+
+    const [filas] = await this.pool.query(
+      `SELECT p.pais_id
+         FROM cantones c
+         INNER JOIN provincias p ON p.id = c.provincia_id
+        WHERE c.id = ?
+        LIMIT 1`,
+      [Number(cantonId)]
+    );
+    if (!filas?.length) {
+      const error = new Error("El cantón de nacimiento no está en el catálogo.");
+      error.status = 400;
+      throw error;
+    }
+    if (paisId !== null && paisId !== undefined && Number(filas[0].pais_id) !== Number(paisId)) {
+      const error = new Error("El cantón de nacimiento no pertenece al país de nacimiento declarado.");
+      error.status = 400;
+      throw error;
+    }
+  }
+
   async updateMe(userId, data) {
+    // ⚠️ ESTA ES LA UNICA LISTA, y por eso duele olvidarse de ella: un campo que no este aqui se
+    // descarta EN SILENCIO y la respuesta sale 200 sin haber guardado nada. Paso CINCO veces antes
+    // de que `updateMyProfile` dejara de componer su propia lista y delegara aqui.
+    // `UserRepository.datosPersonales.test.js` la compara con las columnas del esquema.
     const allowedFields = [
       "first_name",
       "last_name",
@@ -631,7 +676,15 @@ export default class UserRepository {
       "nacionalidad_pais_id",
       "direccion",
       "telefono",
-      "documento"
+      "documento",
+      // Los datos personales del frente 20 (P2). Van por el mismo camino que todo lo demas.
+      "fecha_nacimiento",
+      "nacimiento_pais_id",
+      "nacimiento_canton_id",
+      "sexo",
+      "genero_id",
+      "estado_civil_id",
+      "autoidentificacion_etnica_id"
     ];
 
     const filtered = {};
