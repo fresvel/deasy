@@ -28,6 +28,14 @@
   "canales_mensajeria": {
     "huella": "2c034e322bc71770",
     "paginas": [
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "cantones": {
+    "huella": "acc24b5dcfc5ed0e",
+    "paginas": [
       "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
@@ -104,10 +112,9 @@
       "referencia/modelo-datos.md"
     ]
   },
-  "ciudades": {
-    "huella": "c5226895a18d2b79",
+  "clases_parroquia": {
+    "huella": "f617eb4bc78f9ec6",
     "paginas": [
-      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
@@ -135,6 +142,7 @@
     "huella": "1e10a3f9a39f4b91",
     "paginas": [
       "complemento/empleo.md",
+      "complemento/expediente.md",
       "complemento/mapa-completo.md",
       "datos/firmas-y-dominios.md"
     ]
@@ -164,7 +172,7 @@
     ]
   },
   "direcciones": {
-    "huella": "0e4751f0eb4ab6a0",
+    "huella": "e54038161dccc41d",
     "paginas": [
       "backend/acceso-a-datos.md",
       "complemento/index.md",
@@ -332,12 +340,19 @@
   "instituciones": {
     "huella": "6797c43766515c12",
     "paginas": [
+      "complemento/expediente.md",
       "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
   "intentos_limitados": {
     "huella": "a05bd61beca54de8",
+    "paginas": [
+      "modelo/organizacion.md"
+    ]
+  },
+  "nomenclatura_territorial": {
+    "huella": "8fd3f31d2ccf2213",
     "paginas": [
       "modelo/organizacion.md"
     ]
@@ -355,11 +370,19 @@
   "paises": {
     "huella": "041ed8209cbf6d2a",
     "paginas": [
+      "complemento/expediente.md",
       "complemento/mapa-completo.md",
       "modelo/index.md",
       "modelo/mapa-completo.md",
       "modelo/organizacion.md",
       "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "parroquias": {
+    "huella": "f8a47149d5d9cec3",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "modelo/organizacion.md"
     ]
   },
   "password_reset_codes": {
@@ -472,6 +495,7 @@
     "paginas": [
       "arquitectura-y-patrones.md",
       "complemento/conversacion.md",
+      "complemento/expediente.md",
       "complemento/mapa-completo.md",
       "datos/firmas-y-dominios.md",
       "datos/index.md",
@@ -663,6 +687,7 @@
     "huella": "836a3000aad5dfbd",
     "paginas": [
       "complemento/credenciales.md",
+      "complemento/expediente.md",
       "datos/firmas-y-dominios.md",
       "modelo/flujo-de-firma.md",
       "modelo/mapa-completo.md",
@@ -688,6 +713,7 @@
   "task_items": {
     "huella": "a6d8f1fb367cb2f4",
     "paginas": [
+      "complemento/expediente.md",
       "confusiones.md",
       "datos/firmas-y-dominios.md",
       "datos/index.md",
@@ -789,6 +815,7 @@
   "term_types": {
     "huella": "e2d989f2787caddc",
     "paginas": [
+      "complemento/expediente.md",
       "modelo/mapa-completo.md",
       "modelo/proceso.md",
       "referencia/campos-proceso-documento.md"
@@ -797,6 +824,7 @@
   "terms": {
     "huella": "a141545e7a9ab0f1",
     "paginas": [
+      "frontend/index.md",
       "modelo/disparo.md",
       "modelo/mapa-completo.md",
       "modelo/proceso.md",

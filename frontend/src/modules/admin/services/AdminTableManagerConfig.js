@@ -128,7 +128,9 @@ export const FK_TABLE_MAP = {
   // `pais_id: 60` en vez de "Ecuador".
   pais_id: "paises",
   provincia_id: "provincias",
-  ciudad_id: "ciudades",
+  canton_id: "cantones",
+  parroquia_id: "parroquias",
+  clase_id: "clases_parroquia",
   canal_id: "canales_mensajeria",
   telefono_id: "telefonos",
   // La nacionalidad es una columna REAL de `persons`. Sin esta entrada el formulario pide un NÚMERO

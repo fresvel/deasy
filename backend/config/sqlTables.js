@@ -28,7 +28,7 @@ import {
 //   filterBy: { <parámetro>: <campo del formulario> }
 //     Acota el catálogo de una columna ajena por el valor de OTRA columna del mismo formulario. Se
 //     traduce a `filter_<parámetro>` en la consulta, que el CRUD ya entendía. Y cuando el campo
-//     padre cambia, el editor VACÍA al hijo: sin eso se queda una ciudad que ya no pertenece a la
+//     padre cambia, el editor VACÍA al hijo: sin eso se queda un cantón que ya no pertenece a la
 //     provincia elegida, y nadie lo ve hasta que revienta la clave ajena.
 //
 //   showWhen: { field: <campo>, isSet | equals | anyOf | not }
@@ -103,8 +103,8 @@ export const SQL_TABLES = [
     searchFields: ["name", "dpa_code"]
   },
   {
-    table: "ciudades",
-    label: "Ciudades",
+    table: "cantones",
+    label: "Cantones",
     category: "Geografia",
     primaryKeys: ["id"],
     fields: [
@@ -117,6 +117,59 @@ export const SQL_TABLES = [
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "dpa_code"]
+  },
+  {
+    table: "parroquias",
+    label: "Parroquias",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      // `filterBy` acota el desplegable al cantón elegido: son 1 314 y ofrecerlas todas no sirve.
+      // Es el mismo mecanismo que `canton_id` usa sobre la provincia.
+      { name: "canton_id", label: "Cantón", type: "number", required: true },
+      { name: "dpa_code", label: "Codigo DPA", type: "text" },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "clase_id", label: "Clase", type: "number" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name", "dpa_code"]
+  },
+  {
+    table: "clases_parroquia",
+    label: "Clases de parroquia",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "País", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "nomenclatura_territorial",
+    label: "Nomenclatura territorial",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "País", type: "number", required: true },
+      { name: "nivel", label: "Nivel", type: "number", required: true },
+      { name: "singular", label: "Singular", type: "text", required: true },
+      { name: "plural", label: "Plural", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["singular", "plural"]
   },
   {
     table: "unit_types",
@@ -603,7 +656,7 @@ export const SQL_TABLES = [
       // enseña el de abajo hasta que hay por dónde empezar: sin esto «Portoviejo» aparecía al
       // teclear «port» aunque el país fuera España, y también «Portovelo», que es de El Oro.
       { name: "provincia_id", label: "Provincia", type: "number", filterBy: { pais_id: "pais_id" }, showWhen: { field: "pais_id", isSet: true } },
-      { name: "ciudad_id", label: "Ciudad", type: "number", filterBy: { provincia_id: "provincia_id" }, showWhen: { field: "provincia_id", isSet: true } },
+      { name: "canton_id", label: "Cantón", type: "number", filterBy: { provincia_id: "provincia_id" }, showWhen: { field: "provincia_id", isSet: true } },
       { name: "calle_primaria", label: "Calle primaria", type: "text" },
       { name: "calle_secundaria", label: "Calle secundaria", type: "text" },
       { name: "referencia", label: "Referencia", type: "text" },

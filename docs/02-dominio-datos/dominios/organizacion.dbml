@@ -13,10 +13,10 @@
 
 Project organizacion {
   database_type: 'PostgreSQL'
-  Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → ciudad.'''
+  Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → cantón → parroquia.'''
 }
 
-Table "ciudades" {
+Table "cantones" {
   "id" int4 [pk, not null, increment]
   "provincia_id" int4 [not null]
   "dpa_code" varchar(4)
@@ -26,8 +26,23 @@ Table "ciudades" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (provincia_id, name) [type: btree, unique, name: "uq_ciudades_provincia_name"]
-    provincia_id [type: btree, name: "idx_ciudades_provincia"]
+    (provincia_id, name) [type: btree, unique, name: "uq_cantones_provincia_name"]
+    provincia_id [type: btree, name: "idx_cantones_provincia"]
+  }
+}
+
+Table "clases_parroquia" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_clases_parroquia"]
   }
 }
 
@@ -42,6 +57,21 @@ Table "instituciones" {
   Note: '''La institución que usa esta instalación, y la primera tabla de CONFIGURACIÓN del sistema: hasta el 2026-08-28 no había ninguna. De su país salen el validador del documento nacional, el nombre local de ese documento («Cédula» en Ecuador, «DNI» en Perú) y el valor que el formulario precarga. Antes eso vivía en el código como un tipo llamado `cedula_ec`.'''
 }
 
+Table "nomenclatura_territorial" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "nivel" int2 [not null, check: `(nivel >= 1) AND (nivel <= 3)`]
+  "singular" varchar(60) [not null]
+  "plural" varchar(60) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, nivel) [type: btree, unique, name: "uq_nomenclatura_pais_nivel"]
+  }
+}
+
 Table "paises" {
   "id" int4 [pk, not null, increment]
   "iso_alpha2" bpchar(2) [unique, not null]
@@ -51,6 +81,24 @@ Table "paises" {
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "parroquias" {
+  "id" int4 [pk, not null, increment]
+  "canton_id" int4 [not null]
+  "dpa_code" varchar(6)
+  "name" varchar(160) [not null]
+  "clase_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (canton_id, dpa_code) [type: btree, unique, name: "uq_parroquias_canton_dpa"]
+    canton_id [type: btree, name: "idx_parroquias_canton"]
+    (canton_id, name) [type: btree, name: "idx_parroquias_canton_name"]
+    clase_id [type: btree, name: "idx_parroquias_clase"]
+  }
 }
 
 Table "position_assignments" {
@@ -156,8 +204,12 @@ Table "units" {
   }
 }
 
-Ref "fk_ciudades_provincia":"provincias"."id" <? "ciudades"."provincia_id"
+Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
+Ref "fk_clases_parroquia_pais":"paises"."id" <? "clases_parroquia"."pais_id"
 Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
+Ref "fk_nomenclatura_pais":"paises"."id" <? "nomenclatura_territorial"."pais_id"
+Ref "fk_parroquias_canton":"cantones"."id" <? "parroquias"."canton_id"
+Ref "fk_parroquias_clase":"clases_parroquia"."id" ?<? "parroquias"."clase_id"
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
@@ -169,7 +221,7 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   units -> chat_conversations   [chat]
 //   unit_positions -> contracts   [empleo]
-//   ciudades -> direcciones   [identidad]
+//   cantones -> direcciones   [identidad]
 //   paises -> direcciones   [identidad]
 //   provincias -> direcciones   [identidad]
 //   paises -> documentos_identidad   [identidad]

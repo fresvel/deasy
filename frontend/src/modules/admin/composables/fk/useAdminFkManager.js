@@ -32,7 +32,7 @@ export function useAdminFkManager({ formData, fkDisplay, formFields, resolveFkTa
         if (!tableName) {
           return [];
         }
-        // `filterBy` acota el catálogo por otro campo del formulario: las ciudades de la provincia
+        // `filterBy` acota el catálogo por otro campo del formulario: los cantones de la provincia
         // elegida, no las de todo el mundo. Se lee EN CADA BÚSQUEDA y no al construir el proveedor,
         // porque el padre cambia mientras el formulario está abierto.
         const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE(tableName), {
@@ -52,7 +52,7 @@ export function useAdminFkManager({ formData, fkDisplay, formFields, resolveFkTa
   // etiqueta, que es lo que se lee. Elegir una opción escribe las dos; vaciar el campo borra las dos.
   // Cambiar un campo padre invalida a sus hijos. Sin esto se elige Ecuador → Manabí → Portoviejo,
   // se cambia el país a España, y Portoviejo se queda puesto: el formulario enseña algo coherente y
-  // manda una ciudad que no pertenece a nada.
+  // manda un cantón que no pertenece a nada.
   const vaciarDependientes = (fieldName, valores, etiquetas) => {
     for (const hijo of dependentFieldNames(fieldName, formFields?.value ?? [])) {
       valores[hijo] = "";

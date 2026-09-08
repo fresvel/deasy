@@ -154,12 +154,12 @@ export default class UserRepository {
     const [filas] = await this.pool.query(
       `SELECT d.person_id, d.id, d.tipo, d.principal,
               pa.iso_alpha2 AS pais_iso, pa.name AS pais,
-              pr.name AS provincia, ci.name AS ciudad,
+              pr.name AS provincia, ca.name AS canton,
               d.calle_primaria, d.calle_secundaria, d.referencia, d.latitud, d.longitud
          FROM direcciones d
          LEFT JOIN paises pa ON pa.id = d.pais_id
          LEFT JOIN provincias pr ON pr.id = d.provincia_id
-         LEFT JOIN ciudades ci ON ci.id = d.ciudad_id
+         LEFT JOIN cantones ca ON ca.id = d.canton_id
         WHERE d.person_id IN (${ids.map(() => "?").join(", ")}) AND d.is_active = 1
         ORDER BY d.principal DESC, d.id ASC`,
       ids

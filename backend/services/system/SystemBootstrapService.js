@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { getPostgresPool } from "../../config/postgres.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
-import { PAISES, PROVINCIAS_EC, CANTONES_EC } from "../../config/geografiaCatalog.js";
+import { PAISES, PROVINCIAS_EC, CANTONES_EC, PARROQUIAS_EC } from "../../config/geografiaCatalog.js";
 import TelefonoService from "../users/TelefonoService.js";
 import EmailService from "../users/EmailService.js";
 import DocumentoIdentidadService from "../users/DocumentoIdentidadService.js";
@@ -244,17 +244,41 @@ const seedBaseRbacCatalog = async (connection) => {
   return roleIds;
 };
 
-// La geografia: pais -> provincia -> ciudad. Va aqui y no en
+// LA CLASE DE UNA PARROQUIA, para Ecuador. Son tres filas y no salen del fichero del INEC: salen de
+// su CODIFICACION -- 50 es la cabecera cantonal, por debajo urbanas y por encima rurales--, asi que
+// las decide este proyecto y no la fuente.
+//
+// Y no van en `postgres_schema.sql` con los otros cuatro INSERT de vocabulario, aunque cumplan el
+// tamaño: necesitan el `id` de Ecuador, y `paises` lo siembra esta misma funcion.
+const CLASES_PARROQUIA_EC = [
+  { code: "cabecera", name: "Cabecera cantonal", orden: 10 },
+  { code: "urbana", name: "Urbana", orden: 20 },
+  { code: "rural", name: "Rural", orden: 30 }
+];
+
+// COMO SE LLAMA CADA NIVEL EN ECUADOR. Lo consume el formulario para rotular sus desplegables, en
+// vez de escribir "Canton" a fuego: en España el nivel 2 se llama provincia y el 1 comunidad
+// autonoma, asi que el nombre de la tabla no puede servir de etiqueta.
+const NOMENCLATURA_EC = [
+  { nivel: 1, singular: "Provincia", plural: "Provincias" },
+  { nivel: 2, singular: "Cantón", plural: "Cantones" },
+  { nivel: 3, singular: "Parroquia", plural: "Parroquias" }
+];
+
+// La geografia: pais -> provincia -> canton -> parroquia. Va aqui y no en
 // `postgres_schema.sql` porque ahi solo hay cuatro INSERT, todos vocabularios de ocho filas o menos
-// de los que depende el codigo; esto son 477 filas. Es la misma decision, y el mismo sitio, que el
+// de los que depende el codigo; esto son 1 792 filas. Es la misma decision, y el mismo sitio, que el
 // catalogo base de RBAC de arriba.
 //
 // Va en el arranque OBLIGATORIO, no en "usar datos de ejemplo": sin paises el formulario de registro
 // no puede pedir una direccion.
 //
-// Idempotente por `ON DUPLICATE KEY UPDATE` sobre la clave natural de cada tabla, que para las
-// ciudades es (provincia, nombre) y NUNCA el nombre: en Ecuador hay un canton "Bolivar" en Carchi y
+// Idempotente por `ON DUPLICATE KEY UPDATE` sobre la clave natural de cada tabla, que para los
+// cantones es (provincia, nombre) y NUNCA el nombre: en Ecuador hay un canton "Bolivar" en Carchi y
 // otro en Manabi, y un "Olmedo" en Loja y otro en Manabi.
+//
+// La de una parroquia NO es (canton, nombre) sino (canton, dpa_code): su nombre no es unico ni
+// dentro de su propio canton -- son 33 casos, y con la clave por nombre el UPSERT las perdia.
 const seedGeographyCatalog = async (connection) => {
   for (const pais of PAISES) {
     await connection.query(
@@ -286,8 +310,8 @@ const seedGeographyCatalog = async (connection) => {
     );
   }
 
-  // Un solo SELECT para el mapa de provincias: 221 consultas sueltas dentro del bucle de cantones
-  // seria el mismo trabajo hecho 221 veces.
+  // Un solo SELECT para el mapa de provincias: 222 consultas sueltas dentro del bucle de cantones
+  // seria el mismo trabajo hecho 222 veces. Lo mismo con el de cantones para las 1 314 parroquias.
   const [provinciaRows] = await connection.query(
     "SELECT id, dpa_code FROM provincias WHERE pais_id = ?",
     [ecuadorId]
@@ -298,7 +322,7 @@ const seedGeographyCatalog = async (connection) => {
     const provinciaId = provinciaPorDpa.get(canton.provincia_dpa);
     if (!provinciaId) continue;
     await connection.query(
-      `INSERT INTO ciudades (provincia_id, dpa_code, name, is_active)
+      `INSERT INTO cantones (provincia_id, dpa_code, name, is_active)
        VALUES (?, ?, ?, 1)
        ON DUPLICATE KEY UPDATE
          dpa_code = VALUES(dpa_code),
@@ -307,6 +331,60 @@ const seedGeographyCatalog = async (connection) => {
     );
   }
 
+  // Las clases de parroquia y la nomenclatura van ANTES que las parroquias: la primera porque
+  // `parroquias.clase_id` la referencia; la segunda porque es del mismo pais y se siembra a la vez.
+  for (const clase of CLASES_PARROQUIA_EC) {
+    await connection.query(
+      `INSERT INTO clases_parroquia (pais_id, code, name, orden, is_active)
+       VALUES (?, ?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         orden = VALUES(orden),
+         is_active = 1`,
+      [ecuadorId, clase.code, clase.name, clase.orden]
+    );
+  }
+
+  for (const fila of NOMENCLATURA_EC) {
+    await connection.query(
+      `INSERT INTO nomenclatura_territorial (pais_id, nivel, singular, plural, is_active)
+       VALUES (?, ?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         singular = VALUES(singular),
+         plural = VALUES(plural),
+         is_active = 1`,
+      [ecuadorId, fila.nivel, fila.singular, fila.plural]
+    );
+  }
+
+  const [claseRows] = await connection.query(
+    "SELECT id, code FROM clases_parroquia WHERE pais_id = ?",
+    [ecuadorId]
+  );
+  const clasePorCode = new Map((claseRows ?? []).map((row) => [String(row.code), Number(row.id)]));
+
+  const [cantonRows] = await connection.query(
+    `SELECT c.id, c.dpa_code
+       FROM cantones c
+       INNER JOIN provincias p ON p.id = c.provincia_id
+      WHERE p.pais_id = ?`,
+    [ecuadorId]
+  );
+  const cantonPorDpa = new Map((cantonRows ?? []).map((row) => [String(row.dpa_code), Number(row.id)]));
+
+  for (const parroquia of PARROQUIAS_EC) {
+    const cantonId = cantonPorDpa.get(parroquia.canton_dpa);
+    if (!cantonId) continue;
+    await connection.query(
+      `INSERT INTO parroquias (canton_id, dpa_code, name, clase_id, is_active)
+       VALUES (?, ?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         clase_id = VALUES(clase_id),
+         is_active = 1`,
+      [cantonId, parroquia.dpa, parroquia.nombre, clasePorCode.get(parroquia.clase) ?? null]
+    );
+  }
 };
 
 // La institución de esta instalación. Se siembra ANTES que nada porque de su país sale el validador

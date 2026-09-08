@@ -96,9 +96,18 @@ problema concreto que la columna no podía:
 | `canales_mensajeria` + `telefono_canales` | Qué canales tiene cada número, y **cuál está verificado** | La bandera vieja no decía verificado **en qué**: no distinguía «este número existe» de «este número tiene WhatsApp» |
 | `direcciones` | La dirección, con su tipo y sus coordenadas | Había **dos modelos** que no se hablaban: `direccion` (texto libre, lo que veía `/admin`) y las seis `*_residencia`/`calle_*` que escribía el registro |
 
-Y por debajo, un **catálogo geográfico encadenado**: `paises` → `provincias` → `ciudades`. Los países
-salen del CLDR que trae Node, con su código ISO-3166; las provincias y los cantones, del
+Y por debajo, un **catálogo geográfico encadenado**: `paises` → `provincias` → `cantones` →
+`parroquias`. Los países salen del CLDR que trae Node, con su código ISO-3166; el resto, del
 **Clasificador Geográfico Estadístico del INEC**.
+
+⚠️ **La tabla `cantones` se llamó `ciudades` hasta el 2026-09-08**, y era un nombre falso: nunca
+guardó ciudades. La cabecera cantonal —que sí es la ciudad homónima— tiene ahora fila propia en
+`parroquias`.
+
+Y **ningún nombre geográfico es universal**: en Suiza un cantón es el nivel de **arriba**, y en
+Francia una subdivisión electoral. `provincias` tiene el mismo problema —es el nivel 1 en Ecuador y
+el 2 en España—. Por eso la **etiqueta que ve el usuario** no sale del nombre de la tabla, sino de
+**`nomenclatura_territorial`** según `instituciones.pais_id`.
 
 ### El país no está en el código: está en una fila
 
@@ -475,15 +484,18 @@ revisar lo que hizo; «caducó» y «ya la usaste» le dicen que repita **sin ca
 ```mermaid
 erDiagram
   paises ||--o{ provincias : "se divide en"
-  provincias ||--o{ ciudades : "se divide en"
-  ciudades ||--o{ direcciones : "ciudad"
+  provincias ||--o{ cantones : "se divide en"
+  cantones ||--o{ parroquias : "se divide en"
+  clases_parroquia |o--o{ parroquias : "cabecera, urbana o rural"
+  paises ||--o{ nomenclatura_territorial : "como se llama cada nivel"
+  cantones ||--o{ direcciones : "canton"
   persons ||--o{ direcciones : "vive o trabaja en"
   paises ||--o{ persons : "nacionalidad"
 
   direcciones {
     int person_id FK
     text tipo "residencia, trabajo"
-    int ciudad_id FK
+    int canton_id FK
     varchar calle_primaria
     varchar calle_secundaria
     varchar referencia
@@ -502,25 +514,53 @@ erDiagram
     varchar dpa_code "codigo oficial del INEC"
     varchar name
   }
-  ciudades {
+  cantones {
     int provincia_id FK
-    varchar dpa_code
-    varchar name "en Ecuador, el CANTON"
+    varchar dpa_code "4 digitos"
+    varchar name
+  }
+  parroquias {
+    int canton_id FK
+    varchar dpa_code "6 digitos · SU IDENTIDAD, no el nombre"
+    varchar name
+    int clase_id FK "nulable"
+  }
+  clases_parroquia {
+    int pais_id FK
+    varchar code "cabecera | urbana | rural"
+    varchar name
+    smallint orden
+  }
+  nomenclatura_territorial {
+    int pais_id FK
+    smallint nivel "1, 2 o 3"
+    varchar singular "Canton"
+    varchar plural "Cantones"
   }
 ```
 
 :::note[De dónde salen esas filas]
 
-**232 países**, del CLDR que ya trae Node, con su ISO-3166 derivado por nombre. **24 provincias y 221
-cantones**, del *Clasificador Geográfico Estadístico 2025* del INEC.
+**232 países**, del CLDR que ya trae Node, con su ISO-3166 derivado por nombre. **24 provincias, 222
+cantones y 1 314 parroquias**, del *Clasificador Geográfico Estadístico 2025* del INEC.
 
-Y una trampa que costó encontrar: ese fichero trae **231** cantones, no 221. Los diez de más llevan
-asterisco y son **históricos** —Santa Elena, Santo Domingo, La Concordia y los de Orellana aparecen
-dos veces, en su provincia vieja y en la nueva—. Sin filtrarlos, el catálogo saldría con duplicados
-que parecen legítimos.
+Y **tres** trampas que costó encontrar, todas en el mismo fichero:
 
-Ojo también: **el nombre de una ciudad sólo es único dentro de su provincia**. Hay un cantón «Bolívar»
-en Carchi y otro en Manabí, y un «Olmedo» en Loja y otro en Manabí, y ninguno lleva asterisco.
+**Un asterisco marca lo histórico.** Santa Elena, Santo Domingo, La Concordia y los de Orellana
+aparecen dos veces, en su provincia vieja y en la nueva.
+
+**Dos asteriscos NO son un asterisco.** `**` es una llamada a pie de página y la jurisdicción **sigue
+vigente**. El único caso es `**CANTÓN LA CONCORDIA`, cuya nota cita el decreto que lo creó en 2013.
+Hasta el 2026-09-08 el extractor hacía `startswith("*")` y **La Concordia no estaba en el catálogo**,
+con sus cuatro parroquias huérfanas. El invariante decía 221 y **consagraba el fallo**: son 222.
+
+**La provincia 90 no es una provincia.** El fichero cierra con «90 ZONAS EN ESTUDIO», territorios en
+disputa sin provincia ni cantón. Se excluye entera.
+
+Y sobre los nombres: **el de un cantón sólo es único dentro de su provincia** —hay un «Bolívar» en
+Carchi y otro en Manabí—, y **el de una parroquia no es único ni dentro de su propio cantón**: la
+cabecera de Azogues se llama «Azogues» y también una parroquia urbana de dentro. Son **33** casos, y
+por eso la identidad de una parroquia es su **código DPA**.
 
 :::
 

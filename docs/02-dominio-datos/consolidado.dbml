@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 82 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 85 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "actions" {
@@ -68,6 +68,21 @@ Table "canales_mensajeria" {
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "cantones" {
+  "id" int4 [pk, not null, increment]
+  "provincia_id" int4 [not null]
+  "dpa_code" varchar(4)
+  "name" varchar(140) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (provincia_id, name) [type: btree, unique, name: "uq_cantones_provincia_name"]
+    provincia_id [type: btree, name: "idx_cantones_provincia"]
+  }
 }
 
 Table "cargo_role_map" {
@@ -187,18 +202,18 @@ Table "chat_notifications" {
   }
 }
 
-Table "ciudades" {
+Table "clases_parroquia" {
   "id" int4 [pk, not null, increment]
-  "provincia_id" int4 [not null]
-  "dpa_code" varchar(4)
-  "name" varchar(140) [not null]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (provincia_id, name) [type: btree, unique, name: "uq_ciudades_provincia_name"]
-    provincia_id [type: btree, name: "idx_ciudades_provincia"]
+    (pais_id, code) [type: btree, unique, name: "uq_clases_parroquia"]
   }
 }
 
@@ -284,7 +299,7 @@ Table "direcciones" {
   "tipo" text [not null, check: `tipo = ANY (ARRAY['residencia'::text, 'trabajo'::text])`]
   "pais_id" int4
   "provincia_id" int4
-  "ciudad_id" int4
+  "canton_id" int4
   "calle_primaria" varchar(180)
   "calle_secundaria" varchar(180)
   "referencia" varchar(255)
@@ -591,6 +606,21 @@ Table "intentos_limitados" {
   Note: '''Lo que se ha intentado y CUENTA para un limite. No es una bitacora general: aqui solo entra lo que se frena, porque registrar cada peticion doblaria las escrituras del sistema para no usarlas. Vive en la base y no en memoria porque un contador en memoria dejaria de proteger en cuanto hubiera dos instancias del backend. `sujeto` es un TEXTO y no una clave ajena a proposito: lo que se cuenta cambia con la accion --una IP, un correo+ip, un person_id-- y hay acciones anonimas en las que no existe ninguna fila a la que apuntar.'''
 }
 
+Table "nomenclatura_territorial" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "nivel" int2 [not null, check: `(nivel >= 1) AND (nivel <= 3)`]
+  "singular" varchar(60) [not null]
+  "plural" varchar(60) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, nivel) [type: btree, unique, name: "uq_nomenclatura_pais_nivel"]
+  }
+}
+
 Table "offers" {
   "id" int4 [pk, not null, increment]
   "application_id" int4 [not null]
@@ -617,6 +647,24 @@ Table "paises" {
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "parroquias" {
+  "id" int4 [pk, not null, increment]
+  "canton_id" int4 [not null]
+  "dpa_code" varchar(6)
+  "name" varchar(160) [not null]
+  "clase_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (canton_id, dpa_code) [type: btree, unique, name: "uq_parroquias_canton_dpa"]
+    canton_id [type: btree, name: "idx_parroquias_canton"]
+    (canton_id, name) [type: btree, name: "idx_parroquias_canton_name"]
+    clase_id [type: btree, name: "idx_parroquias_clase"]
+  }
 }
 
 Table "password_reset_codes" {
@@ -1319,6 +1367,7 @@ Table "vacancy_visibility" {
 
 Ref "fk_applications_person":"persons"."id" <? "aplications"."person_id"
 Ref "fk_applications_vacancy":"vacancies"."id" <? "aplications"."vacancy_id"
+Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
 Ref "fk_chat_participants_conversation":"chat_conversations"."id" <? "chat_conversation_participants"."conversation_id" [delete: cascade]
@@ -1338,7 +1387,7 @@ Ref "fk_chat_messages_sender":"persons"."id" <? "chat_messages"."sender_person_i
 Ref "fk_chat_notif_conversation":"chat_conversations"."id" ?<? "chat_notifications"."conversation_id" [delete: cascade]
 Ref "fk_chat_notif_message":"chat_messages"."id" ?<? "chat_notifications"."message_id" [delete: cascade]
 Ref "fk_chat_notif_recipient":"persons"."id" <? "chat_notifications"."recipient_person_id"
-Ref "fk_ciudades_provincia":"provincias"."id" <? "ciudades"."provincia_id"
+Ref "fk_clases_parroquia_pais":"paises"."id" <? "clases_parroquia"."pais_id"
 Ref "fk_consentimiento_documento":"documentos_legales"."id" <? "consentimientos"."documento_id"
 Ref "fk_contract_origin_recruitment_contract":"contract_origins"."contract_id" <? "contract_origin_recruitment"."contract_id" [delete: cascade]
 Ref "fk_contract_origin_recruitment_offer":"offers"."id" <? "contract_origin_recruitment"."offer_id"
@@ -1351,7 +1400,7 @@ Ref "fk_contracts_position":"unit_positions"."id" <? "contracts"."position_id"
 Ref "fk_deliverables_owner_person":"persons"."id" ?<? "deliverables"."owner_person_id"
 Ref "fk_deliverables_owner_process":"processes"."id" ?<? "deliverables"."owner_process_id"
 Ref "fk_deliverables_seed":"template_seeds"."id" ?<? "deliverables"."template_seed_id"
-Ref "fk_direcciones_ciudad":"ciudades"."id" ?<? "direcciones"."ciudad_id"
+Ref "fk_direcciones_canton":"cantones"."id" ?<? "direcciones"."canton_id"
 Ref "fk_direcciones_pais":"paises"."id" ?<? "direcciones"."pais_id"
 Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete: cascade]
 Ref "fk_direcciones_provincia":"provincias"."id" ?<? "direcciones"."provincia_id"
@@ -1393,7 +1442,10 @@ Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."d
 Ref "fk_fill_requests_person":"persons"."id" ?<? "fill_requests"."assigned_person_id"
 Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
 Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
+Ref "fk_nomenclatura_pais":"paises"."id" <? "nomenclatura_territorial"."pais_id"
 Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
+Ref "fk_parroquias_canton":"cantones"."id" <? "parroquias"."canton_id"
+Ref "fk_parroquias_clase":"clases_parroquia"."id" ?<? "parroquias"."clase_id"
 Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_id" [delete: cascade]
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
 Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"

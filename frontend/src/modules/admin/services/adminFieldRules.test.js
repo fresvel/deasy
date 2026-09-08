@@ -4,7 +4,7 @@ import { isFieldVisible, buildFilterParams, dependentFieldNames, isPairedAway } 
 const CAMPOS = [
   { name: "pais_id" },
   { name: "provincia_id", filterBy: { pais_id: "pais_id" }, showWhen: { field: "pais_id", isSet: true } },
-  { name: "ciudad_id", filterBy: { provincia_id: "provincia_id" }, showWhen: { field: "provincia_id", isSet: true } }
+  { name: "canton_id", filterBy: { provincia_id: "provincia_id" }, showWhen: { field: "provincia_id", isSet: true } }
 ];
 
 describe("isFieldVisible", () => {
@@ -51,7 +51,7 @@ describe("buildFilterParams", () => {
     expect(buildFilterParams(CAMPOS[2], { provincia_id: 13 })).toEqual({ filter_provincia_id: 13 });
   });
 
-  // Mandar `filter_provincia_id=` pediría «las ciudades de la provincia ''», que son TODAS: el
+  // Mandar `filter_provincia_id=` pediría «los cantones de la provincia ''», que son TODAS: el
   // desplegable parecería filtrado y no lo estaría.
   it("un padre sin valor no manda el parámetro", () => {
     expect(buildFilterParams(CAMPOS[2], {})).toEqual({});
@@ -65,16 +65,16 @@ describe("buildFilterParams", () => {
 
 describe("dependentFieldNames", () => {
   // Sin la cascada: Ecuador → Manabí → Portoviejo, cambias a España, y Portoviejo se queda.
-  it("cambiar el país invalida provincia Y ciudad", () => {
-    expect(dependentFieldNames("pais_id", CAMPOS)).toEqual(["provincia_id", "ciudad_id"]);
+  it("cambiar el país invalida provincia Y cantón", () => {
+    expect(dependentFieldNames("pais_id", CAMPOS)).toEqual(["provincia_id", "canton_id"]);
   });
 
-  it("cambiar la provincia invalida sólo la ciudad", () => {
-    expect(dependentFieldNames("provincia_id", CAMPOS)).toEqual(["ciudad_id"]);
+  it("cambiar la provincia invalida sólo el cantón", () => {
+    expect(dependentFieldNames("provincia_id", CAMPOS)).toEqual(["canton_id"]);
   });
 
   it("una hoja no arrastra nada", () => {
-    expect(dependentFieldNames("ciudad_id", CAMPOS)).toEqual([]);
+    expect(dependentFieldNames("canton_id", CAMPOS)).toEqual([]);
   });
 });
 

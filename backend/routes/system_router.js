@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { getBootstrapStatus, initializeBootstrap } from "../controllers/system/bootstrap_controller.js";
-import { listarPaises, listarProvincias, listarCiudades } from "../controllers/system/geografia_controller.js";
+import { listarPaises, listarProvincias, listarCantones, listarParroquias, nomenclaturaTerritorial } from "../controllers/system/geografia_controller.js";
 import { getInstitucionPublica } from "../controllers/system/institucion_controller.js";
 
 const router = Router();
@@ -16,6 +16,8 @@ router.get("/institucion", getInstitucionPublica);
 
 router.get("/geografia/paises", listarPaises);
 router.get("/geografia/provincias", listarProvincias);
-router.get("/geografia/ciudades", listarCiudades);
+router.get("/geografia/cantones", listarCantones);
+router.get("/geografia/parroquias", listarParroquias);
+router.get("/geografia/nomenclatura", nomenclaturaTerritorial);
 
 export default router;

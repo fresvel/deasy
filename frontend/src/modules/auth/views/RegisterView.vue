@@ -337,7 +337,7 @@ const newuser = ref({
 // ⚠️ `AppMapPicker` NO se borra: lo usa `AdminEditorModal`. Lo que sale es su uso aquí.
 //
 // El catálogo ya no es una constante del frontend: se pide a la API, que es donde vive desde que
-// `paises`/`provincias`/`ciudades` existen como tablas.
+// `paises`/`provincias`/`cantones` existen como tablas.
 const paises = ref([]);
 
 const cargarPaises = async () => {
@@ -649,7 +649,7 @@ const volverAlAcceso = () => {
 
 onMounted(async () => {
   // El catálogo de países hace falta para el DOCUMENTO (su país emisor). Las provincias y las
-  // ciudades ya no: eran de la dirección, que salió del registro el 2026-08-31.
+  // cantones ya no: eran de la dirección, que salió del registro el 2026-08-31.
   await cargarPaises();
 
   const draftVal = sessionStorage.getItem("register_draft");

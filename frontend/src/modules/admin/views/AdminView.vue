@@ -343,7 +343,7 @@ const userFullName = computed(() => {
 // Cómo se enseña cada categoría. La clave es EXACTAMENTE el valor de `category` del backend.
 const CATEGORIA_UI = {
   Estructura: { label: "Unidades y cargos", icon: "id-card", description: "Unidades, sus relaciones, cargos, puestos y ocupaciones." },
-  Geografia:  { label: "Geografía", icon: "map-marked-alt", description: "Países, provincias y ciudades." },
+  Geografia:  { label: "Geografía", icon: "map-marked-alt", description: "Países, provincias, cantones y parroquias." },
   Calendario: { label: "Periodos", icon: "square-check", description: "Tipos de periodo y periodos académicos." },
   Personas:   { label: "Personas", icon: "user", description: "Personas y sus documentos, correos, teléfonos y direcciones." },
   Procesos:   { label: "Procesos", icon: "check-double", description: "Procesos y sus configuraciones versionadas." },

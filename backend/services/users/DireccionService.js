@@ -33,12 +33,12 @@ export default class DireccionService {
     }
   }
 
-  // El pais entra por codigo ISO ("EC") o por id; la provincia y la ciudad, por nombre o por id.
+  // El pais entra por codigo ISO ("EC") o por id; la provincia y el canton, por nombre o por id.
   // Por NOMBRE y no solo por id porque el formulario de registro enseña nombres, y porque el nombre
-  // de una ciudad solo es unico DENTRO de su provincia: en Ecuador hay un canton "Bolivar" en Carchi
+  // de un canton solo es unico DENTRO de su provincia: en Ecuador hay un canton "Bolivar" en Carchi
   // y otro en Manabi, y un "Olmedo" en Loja y otro en Manabi. Por eso cada nivel se resuelve
   // ACOTADO por el de arriba, nunca suelto.
-  async resolveUbicacion({ pais, pais_id: paisIdDirecto, provincia, provincia_id: provinciaIdDirecto, ciudad, ciudad_id: ciudadIdDirecto } = {}) {
+  async resolveUbicacion({ pais, pais_id: paisIdDirecto, provincia, provincia_id: provinciaIdDirecto, canton, canton_id: cantonIdDirecto } = {}) {
     this.ensurePool();
 
     let paisId = esVacio(paisIdDirecto) ? null : Number(paisIdDirecto);
@@ -69,22 +69,22 @@ export default class DireccionService {
       provinciaId = Number(filas[0].id);
     }
 
-    let ciudadId = esVacio(ciudadIdDirecto) ? null : Number(ciudadIdDirecto);
-    if (ciudadId === null && !esVacio(ciudad)) {
+    let cantonId = esVacio(cantonIdDirecto) ? null : Number(cantonIdDirecto);
+    if (cantonId === null && !esVacio(canton)) {
       if (provinciaId === null) {
-        throw errorDeCliente("Para resolver la ciudad hace falta la provincia.");
+        throw errorDeCliente("Para resolver el cantón hace falta la provincia.");
       }
       const [filas] = await this.pool.query(
-        "SELECT id FROM ciudades WHERE provincia_id = ? AND name = ? LIMIT 1",
-        [provinciaId, String(ciudad).trim()]
+        "SELECT id FROM cantones WHERE provincia_id = ? AND name = ? LIMIT 1",
+        [provinciaId, String(canton).trim()]
       );
       if (!filas?.length) {
-        throw errorDeCliente(`La ciudad '${String(ciudad).trim()}' no está en el catálogo de esa provincia.`);
+        throw errorDeCliente(`El cantón '${String(canton).trim()}' no está en el catálogo de esa provincia.`);
       }
-      ciudadId = Number(filas[0].id);
+      cantonId = Number(filas[0].id);
     }
 
-    return { paisId, provinciaId, ciudadId };
+    return { paisId, provinciaId, cantonId };
   }
 
   normalizarTipo(tipo) {
@@ -100,12 +100,12 @@ export default class DireccionService {
   async guardarPrincipal(personId, direccion, connection = this.pool) {
     this.ensurePool();
     const tipo = this.normalizarTipo(direccion?.tipo);
-    const { paisId, provinciaId, ciudadId } = await this.resolveUbicacion(direccion ?? {});
+    const { paisId, provinciaId, cantonId } = await this.resolveUbicacion(direccion ?? {});
 
     const campos = [
       paisId,
       provinciaId,
-      ciudadId,
+      cantonId,
       esVacio(direccion?.calle_primaria) ? null : String(direccion.calle_primaria).trim(),
       esVacio(direccion?.calle_secundaria) ? null : String(direccion.calle_secundaria).trim(),
       esVacio(direccion?.referencia) ? null : String(direccion.referencia).trim(),
@@ -121,7 +121,7 @@ export default class DireccionService {
     if (existentes?.length) {
       await connection.query(
         `UPDATE direcciones
-            SET pais_id = ?, provincia_id = ?, ciudad_id = ?,
+            SET pais_id = ?, provincia_id = ?, canton_id = ?,
                 calle_primaria = ?, calle_secundaria = ?, referencia = ?,
                 latitud = ?, longitud = ?
           WHERE id = ?`,
@@ -132,7 +132,7 @@ export default class DireccionService {
 
     const [resultado] = await connection.query(
       `INSERT INTO direcciones
-         (person_id, tipo, pais_id, provincia_id, ciudad_id,
+         (person_id, tipo, pais_id, provincia_id, canton_id,
           calle_primaria, calle_secundaria, referencia, latitud, longitud, principal)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
       [personId, tipo, ...campos]
@@ -148,13 +148,13 @@ export default class DireccionService {
       `SELECT d.id, d.tipo, d.principal,
               d.pais_id, pa.iso_alpha2 AS pais_iso, pa.name AS pais,
               d.provincia_id, pr.name AS provincia,
-              d.ciudad_id, ci.name AS ciudad,
+              d.canton_id, ca.name AS canton,
               d.calle_primaria, d.calle_secundaria, d.referencia,
               d.latitud, d.longitud
          FROM direcciones d
          LEFT JOIN paises pa ON pa.id = d.pais_id
          LEFT JOIN provincias pr ON pr.id = d.provincia_id
-         LEFT JOIN ciudades ci ON ci.id = d.ciudad_id
+         LEFT JOIN cantones ca ON ca.id = d.canton_id
         WHERE d.person_id = ? AND d.is_active = 1
         ORDER BY d.principal DESC, d.id ASC`,
       [personId]

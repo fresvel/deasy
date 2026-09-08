@@ -14,8 +14,9 @@
 //               que el CLDR moderno no usa.
 //
 //   provincias  del Clasificador Geografico Estadistico del INEC. Ver
-//   cantones    `extraer_dpa.py`, que documenta la fuente, la forma y la trampa de las
-//               jurisdicciones historicas.
+//   cantones    `extraer_dpa.py`, que documenta la fuente, la forma y las TRES trampas:
+//   parroquias  las historicas de UN asterisco, las de DOS que NO lo son, y la provincia
+//               90 "Zonas en estudio", que no es una provincia.
 
 import { readFileSync, writeFileSync } from "node:fs";
 
@@ -92,11 +93,16 @@ const filas = (xs) => xs.map((x) => `  ${j(x)},`).join("\n");
 const salida = `// GENERADO por backend/scripts/geografia/gen_catalogo.mjs — NO editar a mano.
 //
 // Paises: ${paises.length} (ISO-3166 alfa-2 derivado del CLDR de Node; ${paises.filter((p) => !p.activo).length} inactivo por
-// codigo retirado). Provincias: ${dpa.provincias.length}. Cantones: ${dpa.cantones.length}. Los dos ultimos, del
-// Clasificador Geografico Estadistico 2025 del INEC.
+// codigo retirado). Provincias: ${dpa.provincias.length}. Cantones: ${dpa.cantones.length}. Parroquias: ${dpa.parroquias.length}.
+// Los tres ultimos, del Clasificador Geografico Estadistico 2025 del INEC.
 //
 // La unicidad de un canton es (provincia, nombre), NUNCA el nombre: "Bolivar" y "Olmedo"
-// existen en dos provincias distintas cada uno.
+// existen en dos provincias distintas cada uno. Y la de una parroquia NO ES el nombre ni
+// dentro de su canton -- la cabecera de Azogues se llama "Azogues" y una parroquia urbana
+// de dentro tambien, son 33 casos--: su identidad es el codigo DPA.
+//
+// La CLASE de una parroquia sale de su codigo: 50 es la cabecera cantonal, por debajo
+// urbanas y por encima rurales. Cada canton tiene exactamente una cabecera.
 
 export const PAISES = [
 ${filas(paises)}
@@ -110,7 +116,11 @@ export const CANTONES_EC = [
 ${filas(dpa.cantones)}
 ];
 
+export const PARROQUIAS_EC = [
+${filas(dpa.parroquias)}
+];
+
 `;
 
 writeFileSync(`${RAIZ}backend/config/geografiaCatalog.js`, salida);
-console.log(`✓ paises ${paises.length} · provincias ${dpa.provincias.length} · cantones ${dpa.cantones.length}`);
+console.log(`✓ paises ${paises.length} · provincias ${dpa.provincias.length} · cantones ${dpa.cantones.length} · parroquias ${dpa.parroquias.length}`);

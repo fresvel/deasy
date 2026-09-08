@@ -9,7 +9,7 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
 | **P0** | Este plan, con el terreno medido y **las siete decisiones tomadas** | ✅ | Terreno medido el 2026-09-05 (la fuente del INEC, el RBAC real, la cadena geográfica). Las decisiones, aprobadas una a una por el dueño y escritas en §6 con su criterio | 2026-09-08 |
-| **P1** | `parroquias`: la capa que falta en la geografía, sembrada | ⬜ | | |
+| **P1** | `parroquias` sembrada, `ciudades` → `cantones`, y las etiquetas por país | ✅ | **222 cantones · 1 314 parroquias · 3 clases · 3 etiquetas** en la base tras `test:char:run`. 330/330 char, 819 unit backend, 491 front, los 3 `check:` y los 3 gates de doc en verde. Verificado en `/admin/institucion/geografia/parroquias`. **Recupera `2302 La Concordia`**, que faltaba por un fallo del extractor | 2026-09-08 |
 | **P2** | Lo que sí es de `persons`: nacimiento, **sexo**, género, autoidentificación, estado civil | ⬜ | Necesita **P10** | |
 | **P3** | `direcciones` gana sector y barrio | ⬜ | | |
 | **P4** | `documentos_identidad` gana el tipo de visa | ⬜ | | |
@@ -20,7 +20,7 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 | **P9** | El frontend: `/perfil/datos` y las pestañas de administración | ⬜ | | |
 | **P10** | Los **cinco catálogos de vocabulario**, sembrados: `generos`, `estados_civiles`, `autoidentificaciones_etnicas`, `tipos_discapacidad`, `parentescos` | ⬜ | Sale de la decisión de §6. **P2, P5 y P7 dependen de él** | |
 
-**11 tareas · 1 cerrada.**
+**11 tareas · 2 cerradas.**
 
 ⚠️ **El identificador no es el orden.** `P10` nació al cerrar P0 y **va tercero**, no último: los
 cinco catálogos los necesitan P2, P5 y P7. El orden de ejecución es:

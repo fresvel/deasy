@@ -509,7 +509,7 @@
 <text text-anchor="start" x="2026.8" y="-2385.01" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int4</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1611.37,-2303.81 1611.37,-2363.81 2089.37,-2363.81 2089.37,-2303.81 1611.37,-2303.81"/>
 <polygon fill="none" stroke="#29235c" points="1611.37,-2303.81 1611.37,-2363.81 2089.37,-2363.81 2089.37,-2303.81 1611.37,-2303.81"/>
-<text text-anchor="start" x="1622.37" y="-2324.01" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">ciudad_id &#160;&#160;&#160;</text>
+<text text-anchor="start" x="1622.37" y="-2324.01" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">canton_id &#160;&#160;&#160;</text>
 <text text-anchor="start" x="2026.8" y="-2325.01" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int4</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="1611.37,-2243.81 1611.37,-2303.81 2089.37,-2303.81 2089.37,-2243.81 1611.37,-2243.81"/>
 <polygon fill="none" stroke="#29235c" points="1611.37,-2243.81 1611.37,-2303.81 2089.37,-2303.81 2089.37,-2243.81 1611.37,-2243.81"/>

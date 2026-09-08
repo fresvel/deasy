@@ -1,13 +1,13 @@
 ---
 title: "El mapa del complemento, de un vistazo"
-description: "Las 40 tablas que no están en la cadena proceso → documento, en tres diagramas: lo que una persona es, lo que la organización hace con ella, y lo que se dice por el camino."
+description: "Las 47 tablas que no están en la cadena proceso → documento, en tres diagramas: lo que una persona es, lo que la organización hace con ella, y lo que se dice por el camino."
 sidebar:
   label: "Mapa del complemento"
   order: 15
 ---
 
-Las **40 tablas** que la cadena da por supuestas, sin sus campos, para ver la forma. Con las
-[38 de la cadena](/modelo/mapa-completo/) suman las **78** del esquema: entre los dos mapas no queda
+Las **47 tablas** que la cadena da por supuestas, sin sus campos, para ver la forma. Con las
+[38 de la cadena](/modelo/mapa-completo/) suman las **85** del esquema: entre los dos mapas no queda
 ninguna fuera.
 
 `persons` aparece en los tres dibujos porque es de quien cuelga casi todo, pero **es de la cadena**,
@@ -31,9 +31,10 @@ flowchart TB
   subgraph QUIEN["Quién eres"]
     direction TB
     PA["paises"] --> PV["provincias"]
-    PV --> CI["ciudades"]
+    PV --> CA["cantones"]
+    CA --> PQ["parroquias"]
     DI["documentos_identidad"]
-    CI --> DIR["direcciones"]
+    CA --> DIR["direcciones"]
     CM["canales_mensajeria"] --> TC["telefono_canales"]
     TE["telefonos"] --> TC
     TE --> TVK["telefono_verification_keys"]
@@ -65,7 +66,7 @@ flowchart TB
 
 Dos detalles que el dibujo enseña y conviene no pasar por alto: **`email_verification_codes` cuelga
 del correo, no de la persona** —por eso se puede tener verificado el institucional y no el
-personal—, y el **catálogo geográfico** (`paises` → `provincias` → `ciudades`) sirve a la vez a las
+personal—, y el **catálogo geográfico** (`paises` → `provincias` → `cantones` → `parroquias`) sirve a la vez a las
 direcciones, a los documentos de identidad y a los teléfonos.
 
 Se cuentan en [La organización](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima) y en
@@ -151,7 +152,7 @@ que hace que versionar un proceso no parta su conversación en dos, y está cont
 | Claves foráneas declaradas en ellas | **66** — 39 entre ellas, **27** hacia la cadena |
 | Restricciones `CHECK` | **11** |
 | Tablas de la cadena | **38** |
-| **Total del esquema** | **78** |
+| **Total del esquema** | **85** |
 
 Medidas contra el catálogo de PostgreSQL de una base recién recreada, no contra el fichero de
 esquema. La razón está en [cómo leer esto](/complemento/).

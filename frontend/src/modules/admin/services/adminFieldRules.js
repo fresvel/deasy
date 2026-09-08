@@ -46,7 +46,7 @@ export const isFieldVisible = (field, formData = {}) => {
 /**
  * Los parámetros `filter_*` que acotan el catálogo de una columna ajena.
  *
- * Un padre sin valor NO manda el parámetro: mandarlo vacío pediría «las ciudades de la provincia
+ * Un padre sin valor NO manda el parámetro: mandarlo vacío pediría «los cantones de la provincia
  * ''», que son todas, y daría la ilusión de estar filtrando.
  */
 export const buildFilterParams = (field, formData = {}) => {
@@ -64,8 +64,8 @@ export const buildFilterParams = (field, formData = {}) => {
  * Los campos que dependen de `fieldName` y hay que VACIAR cuando cambia.
  *
  * Es la mitad que se olvida: sin esto se elige Ecuador → Manabí → Portoviejo, se cambia el país a
- * España, y Portoviejo se queda puesto. El formulario enseña algo coherente y manda una ciudad que
- * no pertenece a nada. Vacía en cascada, porque cambiar el país invalida provincia Y ciudad.
+ * España, y Portoviejo se queda puesto. El formulario enseña algo coherente y manda un cantón que
+ * no pertenece a nada. Vacía en cascada, porque cambiar el país invalida provincia Y cantón.
  */
 export const dependentFieldNames = (fieldName, fields = []) => {
   const directos = fields

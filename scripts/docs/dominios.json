@@ -42,7 +42,7 @@
   },
   "organizacion": {
     "titulo": "Unidades, puestos y ocupación",
-    "descripcion": "El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → ciudad.",
+    "descripcion": "El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → cantón → parroquia.",
     "tablas": [
       "instituciones",
       "units",
@@ -53,7 +53,10 @@
       "position_assignments",
       "paises",
       "provincias",
-      "ciudades"
+      "cantones",
+      "parroquias",
+      "clases_parroquia",
+      "nomenclatura_territorial"
     ]
   },
   "procesos": {

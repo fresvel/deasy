@@ -159,14 +159,14 @@ export const API_ROUTES = {
   SYSTEM_BOOTSTRAP_INITIALIZE: `${API_PREFIX}/system/bootstrap/initialize`,
   // El catálogo geográfico es PÚBLICO: lo consume el formulario de registro, que por definición
   // usa quien todavía no tiene cuenta. Sustituye a `core/constants/countries.js`, que era una copia
-  // en el frontend y no tenía ni provincias ni ciudades.
+  // en el frontend y no tenía ni provincias ni cantones.
   // La institución de este despliegue: su país y cómo llama ese país al documento de identidad.
   // Público, como la geografía: lo consume el registro.
   SYSTEM_INSTITUCION: `${API_PREFIX}/system/institucion`,
   SYSTEM_GEO_PAISES: `${API_PREFIX}/system/geografia/paises`,
   // ⚠️ AQUI ESTABAN `SYSTEM_GEO_PROVINCIAS` y `SYSTEM_GEO_CIUDADES`. Se retiraron el 2026-08-31 al
   // sacar la direccion del registro (F6): eran sus dos unicos consumidores. El admin NO las usa
-  // --pide `provincias` y `ciudades` por el editor generico de tablas.
+  // --pide `provincias`, `cantones` y `parroquias` por el editor generico de tablas.
   //
   // Las rutas del backend (`/system/geografia/…`) SE QUEDAN: `/perfil/datos` (F5) va a gestionar
   // direcciones y las necesita. Lo que sobraba era el atajo del frontend, no el endpoint.
