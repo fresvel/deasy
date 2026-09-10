@@ -29,6 +29,26 @@ export const getStoredUser = () => {
   }
 };
 
+// Guarda el usuario de la sesion en `localStorage` SIN `datos_personales`.
+//
+// `GET /users/me` y `PATCH /users/me` le devuelven al titular sus datos personales, y entre ellos
+// el genero y la autoidentificacion etnica, que la LOPDP (Art. 4) cuenta como SENSIBLES. Sirven
+// para pintar y editar el perfil EN ESA PANTALLA; no para quedarse en el navegador sin fecha de
+// caducidad, al alcance de cualquier script de la pagina y de quien use el equipo despues.
+//
+// Lo que se lee de aqui --roles, permisos, nombre, foto-- no los necesita. Quien quiera los datos
+// personales los pide a `/users/me`, que es la unica fuente.
+//
+// `globalThis` y no `window`: es el mismo objeto en el navegador, y en las pruebas (entorno node, con
+// un `localStorage` de mentira) `window` no existe y la escritura se perderia en silencio.
+export const storeUser = (user) => {
+  const almacen = globalThis.localStorage;
+  if (!almacen || !user) return;
+  // eslint-disable-next-line no-unused-vars
+  const { datos_personales, ...guardable } = user;
+  almacen.setItem("user", JSON.stringify(guardable));
+};
+
 const normalizeList = (values = []) =>
   Array.isArray(values)
     ? values.map((value) => String(value || "").trim()).filter(Boolean)

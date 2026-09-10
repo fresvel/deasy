@@ -7,7 +7,7 @@
 //
 // Todas las funciones aceptan `user` por parámetro, así que se prueban sin localStorage.
 
-import { describe, test, expect, beforeEach } from 'vitest'
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
 
 import {
   getUserRoles,
@@ -23,6 +23,7 @@ import {
   canReadAdminTable,
   canCreateAdminTable,
   isAdminUser,
+  storeUser,
 } from '@/core/utils/accessControl.js'
 
 // --- getUserRoles: fusiona tres fuentes y deduplica -------------------------
@@ -178,5 +179,42 @@ describe('isAdminUser', () => {
   test('es true solo con el rol AdminSistema', () => {
     expect(isAdminUser({ access: { roleNames: ['AdminSistema'] } })).toBe(true)
     expect(isAdminUser({ access: { roleNames: ['GestorProcesos'] } })).toBe(false)
+  })
+})
+
+// --- storeUser: lo sensible no se queda en el navegador ----------------------
+//
+// `/users/me` le devuelve al titular sus datos personales, con el genero y la etnia (LOPDP, Art. 4).
+// Tres pantallas guardan esa respuesta en `localStorage`: si `storeUser` los dejara pasar, quedarian
+// en el navegador sin caducidad. El entorno es node, asi que el almacen es de mentira.
+describe('storeUser', () => {
+  const almacen = new Map()
+  beforeEach(() => {
+    almacen.clear()
+    vi.stubGlobal('localStorage', {
+      getItem: (k) => (almacen.has(k) ? almacen.get(k) : null),
+      setItem: (k, v) => almacen.set(k, String(v)),
+    })
+  })
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  test('guarda el usuario SIN datos_personales y conserva lo demas', () => {
+    storeUser({
+      id: 7,
+      first_name: 'Ana',
+      roles: ['Usuario'],
+      datos_personales: { genero_id: 2, autoidentificacion_etnica_id: 5, fecha_nacimiento: '1990-05-14' },
+    })
+    const crudo = almacen.get('user')
+    expect(crudo).not.toContain('datos_personales')
+    expect(crudo).not.toContain('genero_id')
+    expect(JSON.parse(crudo)).toEqual({ id: 7, first_name: 'Ana', roles: ['Usuario'] })
+  })
+
+  test('sin usuario no escribe nada', () => {
+    storeUser(null)
+    expect(almacen.has('user')).toBe(false)
   })
 })

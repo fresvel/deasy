@@ -175,6 +175,12 @@
         "modelo/flujo-de-entrega.md"
       ]
     },
+    "datos_personales": {
+      "motivo": "CLAVE de la respuesta de GET y PATCH /users/me (UserRepository.perfilDelTitular), no una tabla ni una columna: el objeto con los datos personales que solo se le devuelven al titular.",
+      "paginas": [
+        "modelo/organizacion.md"
+      ]
+    },
     "default_server": {
       "motivo": "DIRECTIVA de nginx.",
       "paginas": [
@@ -432,6 +438,12 @@
       "paginas": [
         "datos/modos-y-plantillas.md",
         "modelo/flujo-de-entrega.md"
+      ]
+    },
+    "nacimiento_provincia_id": {
+      "motivo": "CLAVE de la respuesta de /users/me, DEDUCIDA de cantones.provincia_id. NO es columna a proposito: persons guarda solo nacimiento_canton_id, y la pagina lo explica.",
+      "paginas": [
+        "modelo/organizacion.md"
       ]
     },
     "nivel_id": {

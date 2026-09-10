@@ -1,5 +1,6 @@
 import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
+import { storeUser } from "@/core/utils/accessControl.js";
 
 class AuthService {
   constructor() {
@@ -108,8 +109,9 @@ class AuthService {
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
+  // Pasa por `storeUser`, que deja fuera `datos_personales`: lo sensible no se guarda en el navegador.
   setUser(user) {
-    localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+    storeUser(user);
   }
 
   getUser() {

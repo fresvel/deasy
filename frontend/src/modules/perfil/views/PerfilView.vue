@@ -107,6 +107,8 @@ import {
   invalidateUserPhoto,
   resolveUserPhotoUrl
 } from '@/core/services/userPhotoService.js';
+// El usuario se guarda sin `datos_personales`: lo sensible no se queda en el navegador.
+import { storeUser } from '@/core/utils/accessControl.js';
 
 const router = useRouter();
     const route = useRoute();
@@ -159,7 +161,7 @@ const goBackFromProfileHome = () => {
                 };
                 currentUser.value = mergedUser;
                 userPhoto.value = await resolveUserPhotoUrl(mergedUser);
-                localStorage.setItem('user', JSON.stringify(mergedUser));
+                storeUser(mergedUser);
             }
         } catch (error) {
             console.error('Error al refrescar perfil del usuario:', error);
@@ -293,7 +295,7 @@ const profileContextSubtitle = computed(() =>
                 invalidateUserPhoto(currentUser.value.id ?? currentUser.value._id);
                 userPhoto.value = await resolveUserPhotoUrl(currentUser.value);
             }
-            localStorage.setItem('user', JSON.stringify(currentUser.value));
+            storeUser(currentUser.value);
         } catch (error) {
             console.error('Error al actualizar la foto de perfil:', error);
         }
