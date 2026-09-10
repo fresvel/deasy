@@ -223,3 +223,63 @@ describe("la visa no puede ser el documento principal", () => {
     ]);
   });
 });
+
+// EL ESCANEO DEJA RASTRO. El PDF del documento lo pueden subir y bajar el titular, AdminSistema y
+// Talento Humano (lo fija la ruta). Toda subida queda en la bitacora EN SU TRANSACCION, y toda bajada
+// de un TERCERO queda antes de entregarse; la del propio titular, no.
+describe("el escaneo deja rastro", () => {
+  const poolCon = ({ fallaSi = null } = {}) => {
+    const consultas = [];
+    const ejecutar = async (sql, params) => {
+      consultas.push({ sql, params });
+      if (fallaSi && fallaSi.test(sql)) throw new Error("bitacora caida");
+      return [[]];
+    };
+    return {
+      consultas,
+      pool: {
+        query: ejecutar,
+        getConnection: async () => ({
+          query: ejecutar,
+          beginTransaction: async () => { consultas.push({ sql: "BEGIN" }); },
+          commit: async () => { consultas.push({ sql: "COMMIT" }); },
+          rollback: async () => { consultas.push({ sql: "ROLLBACK" }); },
+          release: () => {}
+        })
+      }
+    };
+  };
+  const DOCUMENTO = { id: 5, person_id: 9 };
+
+  it("subirlo: el cambio y su entrada van en UNA transaccion", async () => {
+    const { pool, consultas } = poolCon();
+    await new DocumentoIdentidadService(pool).registrarEscaneoConRastro({
+      documento: DOCUMENTO, referencia: "minio://documentos/9/5.pdf", actorId: 1
+    });
+    const orden = consultas
+      .map((c) => c.sql.match(/^(BEGIN|COMMIT|ROLLBACK)$|(UPDATE documentos_identidad SET escaneo_ref)|(INSERT INTO accesos_sensibles)/))
+      .filter(Boolean)
+      .map((m) => m[1] ?? m[2] ?? m[3]);
+    assert.deepEqual(orden, ["BEGIN", "UPDATE documentos_identidad SET escaneo_ref", "INSERT INTO accesos_sensibles", "COMMIT"]);
+  });
+
+  it("si la bitacora falla, el escaneo NO queda registrado", async () => {
+    const { pool, consultas } = poolCon({ fallaSi: /INSERT INTO accesos_sensibles/ });
+    await assert.rejects(
+      () => new DocumentoIdentidadService(pool).registrarEscaneoConRastro({
+        documento: DOCUMENTO, referencia: "minio://documentos/9/5.pdf", actorId: 1
+      }),
+      /bitacora caida/
+    );
+    assert.deepEqual(consultas.map((c) => c.sql).filter((sql) => /^(BEGIN|COMMIT|ROLLBACK)$/.test(sql)), ["BEGIN", "ROLLBACK"]);
+  });
+
+  it("bajarlo: un tercero queda apuntado; el titular bajando lo suyo, no", async () => {
+    const { pool, consultas } = poolCon();
+    const servicio = new DocumentoIdentidadService(pool);
+    await servicio.registrarLecturaDeEscaneo({ documento: DOCUMENTO, actorId: 9 });
+    assert.equal(consultas.length, 0, "el titular no es un tercero");
+    await servicio.registrarLecturaDeEscaneo({ documento: DOCUMENTO, actorId: 1, ip: "10.0.0.2" });
+    assert.deepEqual(consultas[0].params, [9, 1, "datos_sensibles", "documentos_identidad", 5, "read", null, "10.0.0.2"]);
+  });
+});

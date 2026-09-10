@@ -1017,7 +1017,8 @@ export const updateMyProfile = async (req, res) => {
     // La cuarta vez se escribio un aviso justo aqui pidiendo mantener las dos listas a la vez. NO
     // SIRVIO: la quinta ocurrio con el aviso delante. Asi que ya no hay dos listas. `updateMe` es
     // la unica, y este handler solo transporta.
-    const updatedUser = await userRepository.updateMe(userId, req.body ?? {});
+    // La IP viaja para la bitacora: un cambio de documento, genero o etnia queda apuntado.
+    const updatedUser = await userRepository.updateMe(userId, req.body ?? {}, { ip: req.ip ?? null });
     const access = await rbacService.getUserAccess(userId);
 
     res.json({

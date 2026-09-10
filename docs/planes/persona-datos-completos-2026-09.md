@@ -16,7 +16,7 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 | **P5** | La **salud**: discapacidad, enfermedades catastróficas, alergias, tipo de sangre | ⬜ | **Desbloqueada el 2026-09-10**: P8 y P10 cerradas. Nace bajo `datos_sensibles` —su tabla tiene que entrar en `TABLE_RESOURCE_MAP` y llevar `person_id`, o `rbacCatalog.test.js` se pone rojo— | |
 | **P6** | `cuentas_bancarias` | ⬜ | | |
 | **P7** | `cargas_familiares` **con su escaneo obligatorio**, y los contactos de emergencia sobre `expediente_referencias` | ⬜ | Depende del frente 18. Necesita **P10** | |
-| **P8** | El recurso RBAC de los datos sensibles, y su bitácora | ✅ | **19 tablas sin recurso, cerradas**: caían a `process_definitions` y `GestorProcesos` editaba cédulas (`PUT` de cuerpo vacío: 400 antes, **403** después). **4 recursos** → 19 × 5 = **95 permisos**, 266 asignaciones: `datos_sensibles` y `datos_pago` fuera de `Auditor` y de `Usuario`; `catalogos`; `bitacora_sensible`. **`accesos_sensibles`** sólo admite altas (verificado: `UPDATE` y `DELETE` en psql → excepción; `POST` como admin → 403). **Género y etnia** salen de `persons`. El frontend deja su copia del mapa y lo lee de `meta`. Verificado en vivo con roles temporales: `Auditor` 403 en lo sensible y 200 en la bitácora; Talento Humano lee (200, 5 entradas) y no escribe (403); una lectura de 43 filas del admin deja 42 entradas, sin la suya. 330/330 char (3 goldens: −2 columnas, +20 permisos × 2) · 494 front · 3 `check:` y 4 gates de doc | 2026-09-10 |
+| **P8** | El recurso RBAC de los datos sensibles, y su bitácora | ✅ | **19 tablas sin recurso, cerradas**: caían a `process_definitions` y `GestorProcesos` editaba cédulas (`PUT` de cuerpo vacío: 400 antes, **403** después). **4 recursos** → 19 × 5 = **95 permisos**, 266 asignaciones: `datos_sensibles` y `datos_pago` fuera de `Auditor` y de `Usuario`; `catalogos`; `bitacora_sensible`. **`accesos_sensibles`** sólo admite altas (verificado: `UPDATE` y `DELETE` en psql → excepción; `POST` como admin → 403). **Género y etnia** salen de `persons`. El frontend deja su copia del mapa y lo lee de `meta`. Verificado en vivo con roles temporales: `Auditor` 403 en lo sensible y 200 en la bitácora; Talento Humano lee (200, 5 entradas) y no escribe (403); una lectura de 43 filas del admin deja 42 entradas, sin la suya. 330/330 char (3 goldens: −2 columnas, +20 permisos × 2) · 494 front · 3 `check:` y 4 gates de doc · **Huecos cerrados el mismo día** (ver §6 · P8): resiembra aditiva al arrancar, escritura sensible y su entrada en UNA transacción —también por el perfil, el registro y el escaneo—, el titular lee sus datos por `/users/me`, y las once tablas del mapa dibujadas. 886 unit backend · 330/330 char · 496 front | 2026-09-10 |
 | **P9** | El frontend: `/perfil/datos` y las pestañas de administración | ⬜ | ⚠️ El formulario de dirección debe dejar **hueco al prellenado** por geocodificación (frente 21, `M5`): hacerlo sin preverlo obliga a rehacerlo | |
 | **P10** | Los **cinco catálogos de vocabulario**, sembrados | ✅ | **28 filas** para Ecuador (2+5+8+6+7), cada lista con su fuente en el código. Entra además `instituciones.campo_sexo_genero`. Categoría propia «Datos personales» bajo Usuarios — **no en «Otros»**. 330/330 char, 819+491 unitarios, los 3 `check:` y los 4 gates de doc en verde | 2026-09-08 |
 | **P11** | La **nacionalidad sale de `persons`** y pasa a tabla: una persona puede tener varias | ⬜ | Hueco detectado por el dueño al cerrar P2. Va **después de P9** | |
@@ -340,7 +340,23 @@ El diseño se aprobó con las cuatro recomendaciones, después de medir tres cos
 
 Las dos copias de la Ley traen **dos redacciones** de la definición de datos sensibles; una añade «datos relativos a las personas apátridas y refugiados que requieren protección internacional». Las dos incluyen la condición migratoria.
 
-**Lo que P8 deja escrito para después:** una base ya instalada no recibe los permisos nuevos sin resembrar (`POST /system/bootstrap/initialize` o `recover:admin`), y con la tabla cerrada por defecto sus catálogos quedarían cerrados para todos menos `AdminSistema`. El titular **escribe** su género y su etnia por `PATCH /users/me`; **leerlos** por `/users/me` es de P9, que compone el perfil entero.
+### P8 · Lo que quedó abierto, y cómo se cerró el mismo día
+
+Al entregar P8 quedaron cinco huecos anotados en vez de cerrados. El dueño pidió cerrarlos, con subagentes en worktree y pila propios (B, D y el sitio de la C), fundidos después en esta rama.
+
+| Hueco | Cómo se cerró | Evidencia |
+|---|---|---|
+| Una base ya instalada no recibía los permisos nuevos | `sincronizarCatalogoRbac.js` al arrancar: **solo añade** y **solo concede lo que acaba de crear**, en una transacción. Un permiso quitado a mano no vuelve | Borrados 4 recursos, 20 permisos y 34 concesiones, más `people.read` de `GestorFirmas`: vuelven los 4/20/34 y el quitado no; segundo arranque, idéntico |
+| Una escritura sensible podía quedar sin rastro | `SqlAdminService` acepta una `transaccion` que envuelve sus hooks; la entrada va con la escritura. **Destapó un defecto de P8**: el titular se buscaba en el cuerpo de la petición, no en la fila | Con un trigger que tumba la bitácora: PUT, POST y DELETE dan 400 y la base no cambia |
+| …y fuera de `/admin` no se apuntaba nada | Perfil (`PATCH /users/me`), alta del registro y escaneo —subida, y bajada por un tercero— apuntan en la misma transacción. La semilla del sistema no | En vivo: #13–#17 con actor y campos correctos; bitácora caída → PATCH 500 y el género no cambia. 6 altas de registro de la suite, con actor = titular. Mutación del apunte del registro: 2 de 3 pruebas en rojo |
+| El titular no podía leer sus datos | `datos_personales` en `GET` y `PATCH /users/me`, por una consulta propia; **no** por `findById`, ni en el login, ni en listados. El frontend no los guarda en `localStorage` | Login, `GET /users` y `/admin/sql/persons`: 0 coincidencias |
+| Once tablas sin dibujar, y diagramas sin medir | Dibujadas con sus claves ajenas reales (93 de 93); el diagrama de la persona, que medía **11,5 px**, partido en dos | Letra efectiva a 1905 px: mapa 13,9 · 16 · 14 · 16; `organizacion.md` 14,3 · 13,1 · 16 · 12,9 |
+
+**Pendiente, y no por olvido:**
+
+- **Talento Humano puede subir o reemplazar el escaneo del documento de otra persona**, y P8 decidió que lo sensible lo escriben el titular y `AdminSistema`. No se cambió porque puede ser un flujo deliberado de digitalización: **decisión del dueño**.
+- Las **etiquetas de relación** de dos `erDiagram` de `organizacion.md` quedan en 11,4 y 11,3 px efectivos (la regla mide el texto de los nodos).
+- Las medidas son a una ventana de 1905 px; en una más estrecha la letra baja.
 
 ## 6bis · P11 · La nacionalidad sale de `persons`
 

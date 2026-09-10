@@ -46,7 +46,12 @@ export const subirEscaneoDocumento = async (req, res) => {
     });
     // El anterior se borra DESPUES de dejar registrado el nuevo, y sin bloquear: perder el objeto
     // viejo es menos grave que dejar el registro apuntando a algo que ya no esta.
-    const anterior = await documentos.registrarEscaneo(documento.id, reference);
+    const anterior = await documentos.registrarEscaneoConRastro({
+      documento,
+      referencia: reference,
+      actorId: req.auth?.userId ?? req.user?.uid,
+      ip: req.ip ?? null
+    });
     if (anterior && anterior !== reference) {
       await removeEscaneo(anterior);
     }
@@ -68,6 +73,14 @@ export const descargarEscaneoDocumento = async (req, res) => {
     const { documento, error, message } = await resolverDocumento(req.params?.personId);
     if (error) return res.status(error).json({ message });
 
+    // Si lo baja un tercero, queda apuntado ANTES de abrirlo: si la bitacora falla, no sale nada.
+    if (documento.escaneo_ref) {
+      await documentos.registrarLecturaDeEscaneo({
+        documento,
+        actorId: req.auth?.userId ?? req.user?.uid,
+        ip: req.ip ?? null
+      });
+    }
     const abierto = await openEscaneo(documento.escaneo_ref);
     if (!abierto) {
       return res.status(404).json({ message: "Este documento no tiene un escaneo subido." });

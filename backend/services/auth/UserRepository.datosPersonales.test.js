@@ -86,14 +86,32 @@ test("las columnas de `persona_autoidentificacion` pasan la lista blanca", async
   assert.deepEqual(columnas.filter((c) => !pasan.has(c)), []);
 });
 
-test("el genero y la etnia se guardan en su tabla, nunca en `persons`", async () => {
+// Un pool falso CON transacciones: `getConnection` devuelve una conexion que apunta en la misma lista
+// que el pool y marca el principio, la confirmacion y la vuelta atras. Lo sensible del perfil se
+// escribe en transaccion desde que va con su entrada en la bitacora.
+const poolConTransacciones = ({ fallaSi = null } = {}) => {
   const consultas = [];
-  const repo = new UserRepository({
-    query: async (sql, params) => {
-      consultas.push({ sql, params });
-      return [[]];
-    }
-  });
+  const ejecutar = async (sql, params) => {
+    consultas.push({ sql, params });
+    if (fallaSi && fallaSi.test(sql)) throw new Error("bitacora caida");
+    return [[]];
+  };
+  const pool = {
+    query: ejecutar,
+    getConnection: async () => ({
+      query: ejecutar,
+      beginTransaction: async () => { consultas.push({ sql: "BEGIN" }); },
+      commit: async () => { consultas.push({ sql: "COMMIT" }); },
+      rollback: async () => { consultas.push({ sql: "ROLLBACK" }); },
+      release: () => {}
+    })
+  };
+  return { pool, consultas };
+};
+
+test("el genero y la etnia se guardan en su tabla, nunca en `persons`", async () => {
+  const { pool, consultas } = poolConTransacciones();
+  const repo = new UserRepository(pool);
   await repo.updateMe(7, { first_name: "Ana", genero_id: 2, autoidentificacion_etnica_id: "" });
 
   const updatePersons = consultas.find((c) => /UPDATE persons/.test(c.sql));
@@ -230,4 +248,37 @@ test("updateMe le devuelve al titular sus datos personales tras guardar", async 
   const actualizado = await repo.updateMe(7, { genero_id: 2 });
   assert.equal(actualizado.first_name, "Ana");
   assert.deepEqual(actualizado.datos_personales, DATOS_EN_BASE);
+});
+
+// ── LA ESCRITURA DEL TITULAR DEJA RASTRO ─────────────────────────────────────────────────────────
+//
+// El perfil era el unico camino que escribia lo sensible sin apuntarlo: solo lo hacia el editor de
+// /admin, aunque el esquema prometia «toda escritura». Lo que el titular LEE de si mismo no se apunta;
+// lo que CAMBIA, si -- es un hecho que hay que poder reconstruir.
+
+test("lo sensible del perfil y su entrada en la bitacora van en UNA transaccion", async () => {
+  const { pool, consultas } = poolConTransacciones();
+  const repo = new UserRepository(pool);
+  await repo.updateMe(7, { genero_id: 2 }, { ip: "10.0.0.9" });
+
+  const orden = consultas
+    .map((c) => c.sql.match(/^(BEGIN|COMMIT|ROLLBACK)$|INSERT INTO (persona_autoidentificacion|accesos_sensibles)/))
+    .filter(Boolean)
+    .map((m) => m[1] ?? m[2]);
+  assert.deepEqual(orden, ["BEGIN", "persona_autoidentificacion", "accesos_sensibles", "COMMIT"]);
+
+  const entrada = consultas.find((c) => /INSERT INTO accesos_sensibles/.test(c.sql));
+  assert.deepEqual(
+    entrada.params,
+    [7, 7, "datos_sensibles", "persona_autoidentificacion", 7, "create", JSON.stringify({ campos: ["genero_id"] }), "10.0.0.9"],
+    "titular y actor son la misma persona, y de los campos va el NOMBRE, no el valor"
+  );
+});
+
+test("si la bitacora falla, el cambio sensible del perfil NO se confirma", async () => {
+  const { pool, consultas } = poolConTransacciones({ fallaSi: /INSERT INTO accesos_sensibles/ });
+  const repo = new UserRepository(pool);
+  await assert.rejects(() => repo.updateMe(7, { genero_id: 2 }), /bitacora caida/);
+  const marcas = consultas.map((c) => c.sql).filter((sql) => /^(BEGIN|COMMIT|ROLLBACK)$/.test(sql));
+  assert.deepEqual(marcas, ["BEGIN", "ROLLBACK"]);
 });

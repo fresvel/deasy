@@ -172,6 +172,15 @@ Las tres reglas:
 qué tabla y registro, con qué acción y cuándo. **Lo que el titular lee de sí mismo no se apunta**: la
 pregunta que responde es *quién vio lo de esta persona*. Una página de 50 filas son hasta 50 entradas.
 
+**Por dónde entra una escritura, y todas quedan:** el editor de `/admin`; el perfil del titular
+(`PATCH /users/me`: su documento, su género y su etnia); el alta del registro; y el escaneo del
+documento, que también pueden subir o bajar `AdminSistema` y `GestorTalentoHumano`. En los cuatro la
+entrada va en la misma transacción que el cambio. Lo que el titular **cambia** de sí mismo sí se apunta
+—a diferencia de lo que lee—: un cambio es un hecho que hay que poder reconstruir, y en el desvío de
+nómina quien cambia la cuenta entra con las credenciales del titular. Hasta el 2026-09-10 sólo apuntaba
+el editor de `/admin`, aunque el esquema prometía «toda escritura». **No se apunta la semilla del
+sistema** —el bootstrap y los datos de ejemplo—: ahí no escribe ninguna persona.
+
 - **Sólo admite altas.** Un trigger rechaza `UPDATE` y `DELETE`, y el editor rechaza el alta a mano
   con un 403, también a `AdminSistema`: una entrada fabricada tendría aspecto de verdadera.
 - **Sin claves ajenas**, como `consentimientos`: la evidencia tiene que sobrevivir a la persona.

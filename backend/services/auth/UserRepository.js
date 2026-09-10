@@ -5,6 +5,8 @@ import EmailService from "../users/EmailService.js";
 import DocumentoIdentidadService, { TIPO_NACIONAL } from "../users/DocumentoIdentidadService.js";
 import { estadoDeVerificacion } from "../users/estadoDeVerificacion.js";
 import DocumentosLegales from "../legal/DocumentosLegales.js";
+import AccesosSensiblesService from "./AccesosSensiblesService.js";
+import { resolveTableResource } from "../../config/rbacPolicy.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
@@ -45,6 +47,7 @@ export default class UserRepository {
     this.telefonos = new TelefonoService(pool);
     this.emails = new EmailService(pool);
     this.documentos = new DocumentoIdentidadService(pool);
+    this.bitacora = new AccesosSensiblesService(pool);
   }
 
   ensurePool() {
@@ -430,7 +433,18 @@ export default class UserRepository {
       // forma corta que sigue aceptandose y significa "documento nacional".
       const documento = userData.documento ?? (userData.cedula ? { tipo: TIPO_NACIONAL, numero: userData.cedula } : null);
       if (documento) {
-        await this.documentos.guardarPrincipal(result.insertId, documento, conexion);
+        const documentoId = await this.documentos.guardarPrincipal(result.insertId, documento, conexion);
+        // Y su entrada en la bitacora, en ESTA MISMA transaccion: el alta de un documento es una
+        // escritura sobre un dato sensible. Quien la hace es la propia persona que se registra.
+        await this.bitacora.registrarEscritura({
+          actorId: result.insertId,
+          ip: userData.ip ?? null,
+          recurso: resolveTableResource("documentos_identidad"),
+          tabla: "documentos_identidad",
+          accion: "create",
+          fila: { id: documentoId, person_id: result.insertId },
+          campos: Object.keys(documento)
+        }, conexion);
       }
 
       // ⚠️ EL CONSENTIMIENTO VA AQUI, DENTRO DE LA MISMA TRANSACCION. Una persona creada sin la
@@ -618,7 +632,7 @@ export default class UserRepository {
     return this.toPublicUser(updated);
   }
 
-  async update(userId, data) {
+  async update(userId, data, { ip = null } = {}) {
     this.ensurePool();
 
     // La nacionalidad se traduce AQUI, en el unico sitio por el que pasan todas las escrituras, y no
@@ -684,8 +698,7 @@ export default class UserRepository {
         if (direccion) await this.direcciones.guardarPrincipal(userId, direccion);
         if (telefono) await this.telefonos.guardarPrincipal(userId, telefono);
         if (email) await this.emails.guardarPrincipal(userId, email);
-        if (documento) await this.documentos.guardarPrincipal(userId, documento);
-        if (autoidentificacion) await this.guardarAutoidentificacion(userId, autoidentificacion);
+        await this.guardarSensiblesDelTitular(userId, { documento, autoidentificacion }, { ip });
         return this.toPublicUser(await this.findById(userId));
       }
       return null;
@@ -707,12 +720,7 @@ export default class UserRepository {
     if (email) {
       await this.emails.guardarPrincipal(userId, email);
     }
-    if (documento) {
-      await this.documentos.guardarPrincipal(userId, documento);
-    }
-    if (autoidentificacion) {
-      await this.guardarAutoidentificacion(userId, autoidentificacion);
-    }
+    await this.guardarSensiblesDelTitular(userId, { documento, autoidentificacion }, { ip });
 
     const updated = await this.findById(userId);
 
@@ -722,16 +730,69 @@ export default class UserRepository {
   // Guarda el genero y la etnia en su tabla. Upsert por `person_id`, que es la clave primaria: la fila
   // nace la primera vez que la persona declara algo. Las columnas salen de CAMPOS_AUTOIDENTIFICACION,
   // nunca del cuerpo de la peticion.
-  async guardarAutoidentificacion(personId, datos) {
+  async guardarAutoidentificacion(personId, datos, ejecutor = this.pool) {
     this.ensurePool();
     const columnas = CAMPOS_AUTOIDENTIFICACION.filter((campo) => Object.hasOwn(datos, campo));
     if (!columnas.length) return;
-    await this.pool.query(
+    await ejecutor.query(
       `INSERT INTO persona_autoidentificacion (person_id, ${columnas.join(", ")})
        VALUES (?, ${columnas.map(() => "?").join(", ")})
        ON CONFLICT (person_id) DO UPDATE SET ${columnas.map((c) => `${c} = EXCLUDED.${c}`).join(", ")}`,
       [personId, ...columnas.map((c) => datos[c])]
     );
+  }
+
+  // LO SENSIBLE QUE EL TITULAR CAMBIA DESDE SU PERFIL -- su documento, su genero y su etnia--, con su
+  // entrada en la bitacora EN LA MISMA TRANSACCION.
+  //
+  // El editor de /admin ya lo hacia; este camino no, y el esquema promete «toda escritura». Aqui el
+  // actor ES el titular: no es un tercero, pero un cambio de su documento es un hecho que hay que poder
+  // reconstruir -- y en P6, con las cuentas bancarias, sera EL rastro del desvio de nomina, donde quien
+  // cambia la cuenta entra con las credenciales del titular.
+  //
+  // O se confirman el cambio y su entrada, o ninguno: si la bitacora falla, el PATCH falla entero.
+  async guardarSensiblesDelTitular(userId, { documento = null, autoidentificacion = null } = {}, { ip = null } = {}) {
+    if (!documento && !autoidentificacion) return;
+    this.ensurePool();
+    const conexion = await this.pool.getConnection();
+    try {
+      await conexion.beginTransaction();
+      if (documento) {
+        const previo = await this.documentos.principalDe(userId, conexion);
+        const documentoId = await this.documentos.guardarPrincipal(userId, documento, conexion);
+        await this.bitacora.registrarEscritura({
+          actorId: userId,
+          ip,
+          recurso: resolveTableResource("documentos_identidad"),
+          tabla: "documentos_identidad",
+          accion: previo ? "update" : "create",
+          fila: { id: documentoId, person_id: userId },
+          campos: Object.keys(typeof documento === "object" ? documento : { numero: documento })
+        }, conexion);
+      }
+      if (autoidentificacion) {
+        const [existentes] = await conexion.query(
+          "SELECT person_id FROM persona_autoidentificacion WHERE person_id = ? LIMIT 1",
+          [userId]
+        );
+        await this.guardarAutoidentificacion(userId, autoidentificacion, conexion);
+        await this.bitacora.registrarEscritura({
+          actorId: userId,
+          ip,
+          recurso: resolveTableResource("persona_autoidentificacion"),
+          tabla: "persona_autoidentificacion",
+          accion: existentes?.length ? "update" : "create",
+          fila: { person_id: userId },
+          campos: Object.keys(autoidentificacion)
+        }, conexion);
+      }
+      await conexion.commit();
+    } catch (error) {
+      await conexion.rollback().catch(() => {});
+      throw error;
+    } finally {
+      conexion.release?.();
+    }
   }
 
   // Comprueba que `nacimiento_canton_id` cuelgue de `nacimiento_pais_id`. Si el UPDATE trae solo uno
@@ -767,7 +828,7 @@ export default class UserRepository {
     }
   }
 
-  async updateMe(userId, data) {
+  async updateMe(userId, data, contexto = {}) {
     // ⚠️ ESTA ES LA UNICA LISTA, y por eso duele olvidarse de ella: un campo que no este aqui se
     // descarta EN SILENCIO y la respuesta sale 200 sin haber guardado nada. Paso CINCO veces antes
     // de que `updateMyProfile` dejara de componer su propia lista y delegara aqui.
@@ -795,7 +856,7 @@ export default class UserRepository {
       }
     });
 
-    const actualizado = await this.update(userId, filtered);
+    const actualizado = await this.update(userId, filtered, contexto);
     // `update` devuelve el usuario publico, que es el de todos los caminos. Al titular, y solo aqui,
     // se le suman sus datos personales: la respuesta del PATCH es lo que el formulario vuelve a pintar.
     if (!actualizado) return actualizado;

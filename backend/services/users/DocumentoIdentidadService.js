@@ -1,5 +1,7 @@
 import { getPostgresPool } from "../../config/postgres.js";
 import InstitucionService from "../system/InstitucionService.js";
+import AccesosSensiblesService from "../auth/AccesosSensiblesService.js";
+import { resolveTableResource } from "../../config/rbacPolicy.js";
 import { validadorPara, cedulaEcuatorianaValida, nombreDeTipo } from "./documentosPorPais.js";
 
 // Los documentos de identidad de una persona. Sustituye a `persons.cedula`.
@@ -291,6 +293,53 @@ export default class DocumentoIdentidadService {
       [Number(documentoId)]
     );
     return filas?.[0] ?? null;
+  }
+
+  // La bitacora se crea al primer uso y con el mismo pool: las pruebas construyen este servicio con
+  // un pool falso, y crearla en el constructor les obligaria a todas a saber de ella.
+  get bitacora() {
+    this._bitacora ??= new AccesosSensiblesService(this.pool);
+    return this._bitacora;
+  }
+
+  // EL ESCANEO, con su entrada en la bitacora EN LA MISMA TRANSACCION. Lo sube el titular o -- porque la
+  // ruta lo admite-- AdminSistema o GestorTalentoHumano; en los dos casos es una escritura sobre un dato
+  // sensible y queda apuntada. Devuelve la referencia anterior, como `registrarEscaneo`.
+  async registrarEscaneoConRastro({ documento, referencia, actorId, ip = null }) {
+    this.ensurePool();
+    const conexion = await this.pool.getConnection();
+    try {
+      await conexion.beginTransaction();
+      const anterior = await this.registrarEscaneo(documento.id, referencia, conexion);
+      await this.bitacora.registrarEscritura({
+        actorId,
+        ip,
+        recurso: resolveTableResource("documentos_identidad"),
+        tabla: "documentos_identidad",
+        accion: "update",
+        fila: { id: documento.id, person_id: documento.person_id },
+        campos: ["escaneo_ref"]
+      }, conexion);
+      await conexion.commit();
+      return anterior;
+    } catch (error) {
+      await conexion.rollback().catch(() => {});
+      throw error;
+    } finally {
+      conexion.release?.();
+    }
+  }
+
+  // Quien DESCARGA el escaneo de otra persona queda apuntado ANTES de recibirlo: si la bitacora falla,
+  // no se entrega. Lo que el titular baja de si mismo no se apunta, porque no es un tercero.
+  registrarLecturaDeEscaneo({ documento, actorId, ip = null }) {
+    return this.bitacora.registrarLectura({
+      actorId,
+      ip,
+      recurso: resolveTableResource("documentos_identidad"),
+      tabla: "documentos_identidad",
+      filas: [{ id: documento.id, person_id: documento.person_id }]
+    });
   }
 
   async principalDe(personId, connection = this.pool) {

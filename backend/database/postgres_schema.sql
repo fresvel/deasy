@@ -966,6 +966,11 @@ CREATE INDEX IF NOT EXISTS idx_consentimiento_persona ON consentimientos (person
 -- QUE SE APUNTA: cada lectura hecha por alguien que NO es el titular, y toda escritura. Una pagina de
 -- 50 filas son hasta 50 entradas: es el coste de poder responder «quien vio lo de esta persona».
 --
+-- POR DONDE ENTRA una escritura, y las cuatro quedan, con su entrada EN LA MISMA TRANSACCION: el editor
+-- de /admin, el perfil del titular (PATCH /users/me: su documento, su genero y su etnia), el alta del
+-- registro y el escaneo del documento, que tambien pueden subir o bajar AdminSistema y Talento Humano.
+-- NO se apunta la semilla del sistema -- el bootstrap y los datos de ejemplo--: ahi no escribe una persona.
+--
 -- ⚠️ SOLO ADMITE ALTAS. El trigger de abajo rechaza UPDATE y DELETE, y el editor de /admin rechaza
 -- el alta a mano (hook en tableHooks.js): una bitacora que se puede corregir no prueba nada.
 CREATE TABLE IF NOT EXISTS accesos_sensibles (

@@ -44,7 +44,6 @@ export const getStoredUser = () => {
 export const storeUser = (user) => {
   const almacen = globalThis.localStorage;
   if (!almacen || !user) return;
-  // eslint-disable-next-line no-unused-vars
   const { datos_personales, ...guardable } = user;
   almacen.setItem("user", JSON.stringify(guardable));
 };
