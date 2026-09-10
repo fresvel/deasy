@@ -171,7 +171,7 @@ flowchart TD
     CRM["cargo_role_map"] --> POSA
 ```
 
-Trece recursos (`account`, `dossier`, `security`, `people`, `units`, `academic_terms`, `process_definitions`, `process_execution`, `templates`, `documents`, `fill_flows`, `signature_flows`, `contracts`) por cinco acciones (`read`, `create`, `update`, `delete`, `manage`) dan **70 permisos**. Y hay **13 roles**.
+Diecinueve recursos (`account`, `dossier`, `security`, `people`, `units`, `academic_terms`, `process_definitions`, `process_execution`, `templates`, `documents`, `fill_flows`, `signature_flows`, `contracts`, `channels`, `legal_documents`, `datos_sensibles`, `datos_pago`, `catalogos`, `bitacora_sensible`) por cinco acciones (`read`, `create`, `update`, `delete`, `manage`) dan **95 permisos**, y hay **13 roles** — medido en la base sembrada el 2026-09-10. Aquí ponía «trece recursos» y «70 permisos», que ni siquiera cuadraban entre sí: trece por cinco son 65.
 
 Dos sutilezas importantes:
 
@@ -190,7 +190,7 @@ Los middlewares están en `backend/middlewares/rbac.js`:
 | `requireCedulaAccess({...})`      | Igual, comparando por **número de documento**. Sólo lo usa el expediente                        |
 | `requirePersonAccess({...})`      | Igual, comparando por **id de persona**. La foto y el escaneo entran por aquí                   |
 | `requireDossierAccess(action)`    | Azucar sintáctico sobre el anterior con `resource: "dossier"`                                    |
-| `requireSqlAdminPermission(...)`  | Deduce el recurso desde `req.params.table` y la acción desde el método HTTP                      |
+| `requireSqlAdminPermission(...)`  | Deduce el recurso desde `req.params.table` y la acción desde el método HTTP. **Una tabla del editor sin recurso queda cerrada** |
 
 :::caution[Por que existe requireDossierAccess]
 
@@ -198,10 +198,22 @@ Por un **IDOR** real y cerrado. IDOR (*Insecure Direct Object Reference*) es el 
 
 :::
 
-El catalogo canonico esta en `backend/config/rbacCatalog.js` (229 líneas) y es también la **fuente de siembra**: `SystemBootstrapService.js` lo importa para poblar roles y permisos, borrando y reescribiendo `role_permissions`. O sea que **el catálogo del código es la fuente de verdad**, no la base.
+:::danger[Una tabla sin recurso NO cae a ningún permiso por defecto]
+
+Hasta el 2026-09-10, `resolveTableResource` devolvía `process_definitions` para toda tabla que no estuviera en `TABLE_RESOURCE_MAP`. Diecinueve tablas —`documentos_identidad`, `emails`, `telefonos`, `direcciones` y todos los catálogos— quedaron así bajo el permiso de **procesos**: `GestorProcesos` podía editar cédulas, y `GestorTalentoHumano`, que gestiona personas, ni siquiera podía leerlas. Se midió con un `PUT` de cuerpo vacío, que responde 400 si la petición pasó el guard y 403 si no.
+
+Ahora una tabla sin recurso **resuelve a `null` y se niega**, y `config/rbacCatalog.test.js` exige que toda tabla de `sqlTables.js` tenga el suyo. El frontend ya no lleva su propia copia del mapa: `/admin/sql/meta` devuelve cada tabla con su `resource`, y sólo las que quien pregunta puede leer.
+
+:::
+
+**Dos recursos son sensibles** —`datos_sensibles` y `datos_pago`, con `sensible: true` en el catálogo— y tienen reglas propias: `Auditor` no los recibe, `Usuario` tampoco, y cada lectura ajena y cada escritura queda en `accesos_sensibles`. Quién los lee y cómo es el rastro, en [Permisos](/complemento/permisos/).
+
+El catalogo canonico esta en `backend/config/rbacCatalog.js` (335 líneas) y es también la **fuente de siembra**: `SystemBootstrapService.js` lo importa para poblar roles y permisos, borrando y reescribiendo `role_permissions`. O sea que **el catálogo del código es la fuente de verdad**, no la base.
 
 :::caution[Pero NO se resiembra en cada arranque]
 Aquí ponía «en cada arranque», y es falso: `backend/index.js` solo importa `publishBaseSeedAssets`, no `initializeSystem`. La resiembra ocurre **únicamente** desde `POST /system/bootstrap/initialize` —que responde `409` si el sistema ya está instalado— y desde `npm run recover:admin`.
 
 **Consecuencia práctica:** editar `rbacCatalog.js` y reiniciar el backend **no propaga nada**. Los permisos nuevos no llegan a la base hasta que se reinstala o se recupera el admin.
+
+Y con la tabla cerrada por defecto esto muerde más: en una base ya instalada, las tablas que protegen los cuatro recursos del 2026-09-10 (`datos_sensibles`, `datos_pago`, `catalogos`, `bitacora_sensible`) **quedan cerradas para todos menos `AdminSistema`** hasta que se resiembre.
 :::

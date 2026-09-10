@@ -33,6 +33,8 @@
       "telefono_canales",
       "emails",
       "documentos_identidad",
+      "persona_autoidentificacion",
+      "accesos_sensibles",
       "telefono_verification_keys",
       "intentos_limitados",
       "canales_bitacora",

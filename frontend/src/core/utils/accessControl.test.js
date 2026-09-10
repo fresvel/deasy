@@ -7,7 +7,7 @@
 //
 // Todas las funciones aceptan `user` por parámetro, así que se prueban sin localStorage.
 
-import { describe, test, expect } from 'vitest'
+import { describe, test, expect, beforeEach } from 'vitest'
 
 import {
   getUserRoles,
@@ -18,6 +18,7 @@ import {
   canReadResource,
   canWriteResource,
   isTraceabilityTable,
+  registrarRecursosDeTablas,
   resolveAdminTableResource,
   canReadAdminTable,
   canCreateAdminTable,
@@ -125,16 +126,30 @@ describe('hasAnyRole', () => {
 // --- Mapa de tablas admin -> recurso ----------------------------------------
 
 describe('resolveAdminTableResource', () => {
-  test('mapea tablas conocidas a su recurso', () => {
+  beforeEach(() => registrarRecursosDeTablas([]))
+
+  test('usa el recurso que el backend manda en meta', () => {
+    registrarRecursosDeTablas([
+      { table: 'cargos', resource: 'people' },
+      { table: 'documentos_identidad', resource: 'datos_sensibles' }
+    ])
     expect(resolveAdminTableResource('cargos')).toBe('people')
-    expect(resolveAdminTableResource('roles')).toBe('security')
-    expect(resolveAdminTableResource('template_artifacts')).toBe('templates')
-    expect(resolveAdminTableResource('units')).toBe('units')
+    expect(resolveAdminTableResource('documentos_identidad')).toBe('datos_sensibles')
   })
 
-  test('cae al recurso por defecto para una tabla desconocida', () => {
-    expect(resolveAdminTableResource('tabla_inventada')).toBe('process_definitions')
-    expect(resolveAdminTableResource('')).toBe('process_definitions')
+  // Aqui caia a `process_definitions`, y asi diecinueve tablas —cedulas incluidas— quedaron bajo el
+  // permiso de procesos (frente 20, P8). Una tabla que `meta` no trae no tiene recurso.
+  test('una tabla sin recurso NO cae a ningun recurso por defecto, ni para AdminSistema', () => {
+    expect(resolveAdminTableResource('tabla_inventada')).toBeNull()
+    expect(resolveAdminTableResource('')).toBeNull()
+    expect(canReadAdminTable('tabla_inventada', { access: { roleNames: ['AdminSistema'] } })).toBe(false)
+  })
+
+  test('registrar de nuevo sustituye lo anterior', () => {
+    registrarRecursosDeTablas([{ table: 'cargos', resource: 'people' }])
+    registrarRecursosDeTablas([{ table: 'roles', resource: 'security' }])
+    expect(resolveAdminTableResource('cargos')).toBeNull()
+    expect(resolveAdminTableResource('roles')).toBe('security')
   })
 })
 
@@ -148,6 +163,7 @@ describe('isTraceabilityTable', () => {
 
 describe('canReadAdminTable / canCreateAdminTable', () => {
   test('resuelven el recurso de la tabla y aplican la acción', () => {
+    registrarRecursosDeTablas([{ table: 'cargos', resource: 'people' }])
     // cargos -> people. Un permiso people.read permite leer, no crear.
     const reader = { permissions: ['people.read'] }
     expect(canReadAdminTable('cargos', reader)).toBe(true)

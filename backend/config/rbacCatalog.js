@@ -55,8 +55,37 @@ export const RESOURCE_CATALOG = [
   // LOS MIRA NADIE: crear un borrador es `update` (es el primer paso de redactar) y BORRAR NO
   // EXISTE -- un documento legal se retira, jamas se elimina, porque hay gente cuya prueba de
   // consentimiento apunta a el.
-  { code: "legal_documents", name: "Documentos legales", description: "Terminos de uso y tratamiento de datos: borrador, publicacion y retirada." }
+  { code: "legal_documents", name: "Documentos legales", description: "Terminos de uso y tratamiento de datos: borrador, publicacion y retirada." },
+  // ⚠️ LOS DOS RECURSOS SENSIBLES (frente 20, P8), marcados con `sensible: true`. La marca NO es
+  // decorativa: `READ_ALL_RESOURCES` -- la matriz de Auditor-- se calcula EXCLUYENDOLOS. Antes se
+  // calculaba sobre el catalogo entero, y eso queria decir que añadir un recurso le daba a Auditor
+  // lectura SIN QUE NADIE LO DECIDIERA. Una discapacidad no es informacion de auditoria.
+  //
+  // Y NINGUNO de los dos se le da a `Usuario`, aunque el titular si lee y edita lo suyo: el editor de
+  // /admin no mira de quien es la fila, asi que `datos_sensibles.read` en Usuario seria leer los de
+  // TODOS. Lo propio va por /users/me, que ya comprueba que eres tu.
+  {
+    code: "datos_sensibles",
+    name: "Datos sensibles",
+    description: "Categorias especiales de la LOPDP (Art. 25): etnia, identidad de genero, condicion migratoria, salud, cargas familiares.",
+    sensible: true
+  },
+  // Lo peligroso de una cuenta bancaria no es que se LEA sino que se CAMBIE: es el blanco del desvio
+  // de nomina (IC3, I-091818-PSA, que nombra a la educacion entre los sectores mas afectados). La LOPDP
+  // no la cuenta como dato sensible, y aun asi va aparte y fuera de Auditor por ese motivo.
+  { code: "datos_pago", name: "Datos de pago", description: "Cuentas bancarias para pagos.", sensible: true },
+  // Geografia del INEC, vocabularios de persona, categorias de visa, la institucion. Hasta P8 no tenian
+  // recurso y caian al de procesos, asi que GestorProcesos podia EDITAR la division politica del pais.
+  // Los leen todos los gestores -- rellenan desplegables--; los escribe solo quien tiene `manage`.
+  { code: "catalogos", name: "Catalogos", description: "Geografia, vocabularios de persona, categorias de visa y la institucion." },
+  // Leer la bitacora es de quien vigila, y NO es leer el dato: Auditor ve QUIEN accedio a lo de
+  // alguien, no lo que vio.
+  { code: "bitacora_sensible", name: "Bitacora de accesos", description: "Quien leyo o cambio datos sensibles y de pago, y cuando." }
 ];
+
+export const SENSITIVE_RESOURCES = RESOURCE_CATALOG
+  .filter((resource) => resource.sensible)
+  .map((resource) => resource.code);
 
 export const ACTION_CATALOG = [
   { code: "read", name: "Leer", description: "Consultar registros." },
@@ -70,20 +99,30 @@ const MANAGE_ALL_RESOURCES = Object.fromEntries(
   RESOURCE_CATALOG.map((resource) => [resource.code, ["read", "create", "update", "delete", "manage"]])
 );
 
+// ⚠️ «TODO» MENOS LO SENSIBLE. Ver `sensible: true` en el catalogo: sin este filtro, cada recurso
+// nuevo le daba a Auditor lectura sobre el por construccion.
 const READ_ALL_RESOURCES = Object.fromEntries(
-  RESOURCE_CATALOG.map((resource) => [resource.code, ["read"]])
+  RESOURCE_CATALOG
+    .filter((resource) => !resource.sensible)
+    .map((resource) => [resource.code, ["read"]])
 );
 
 export const ROLE_PERMISSION_MATRIX = {
   AdminSistema: MANAGE_ALL_RESOURCES,
   GestorSeguridad: {
     account: ["read", "update"],
+    catalogos: ["read"],
     security: ["read", "create", "update", "delete", "manage"],
     people: ["read"],
     units: ["read"]
   },
   GestorTalentoHumano: {
     account: ["read", "update"],
+    catalogos: ["read"],
+    // Lee lo sensible y lo de pago, y NO lo escribe: lo escribe el titular desde su perfil, y en
+    // /admin solo AdminSistema. Decision del dueño, 2026-09-10.
+    datos_sensibles: ["read"],
+    datos_pago: ["read"],
     people: ["read", "create", "update", "delete", "manage"],
     units: ["read"],
     contracts: ["read"],
@@ -91,6 +130,7 @@ export const ROLE_PERMISSION_MATRIX = {
   },
   GestorUnidades: {
     account: ["read", "update"],
+    catalogos: ["read"],
     units: ["read", "create", "update", "delete", "manage"],
     people: ["read"],
     academic_terms: ["read"],
@@ -98,6 +138,7 @@ export const ROLE_PERMISSION_MATRIX = {
   },
   GestorAcademico: {
     account: ["read", "update"],
+    catalogos: ["read"],
     academic_terms: ["read", "create", "update", "delete", "manage"],
     units: ["read"],
     process_definitions: ["read"],
@@ -105,6 +146,7 @@ export const ROLE_PERMISSION_MATRIX = {
   },
   GestorProcesos: {
     account: ["read", "update"],
+    catalogos: ["read"],
     units: ["read"],
     people: ["read"],
     academic_terms: ["read"],
@@ -117,6 +159,7 @@ export const ROLE_PERMISSION_MATRIX = {
   },
   GestorPlantillas: {
     account: ["read", "update"],
+    catalogos: ["read"],
     templates: ["read", "create", "update", "delete", "manage"],
     process_definitions: ["read"],
     documents: ["read"],
@@ -125,6 +168,7 @@ export const ROLE_PERMISSION_MATRIX = {
   },
   GestorEjecucionProcesos: {
     account: ["read", "update"],
+    catalogos: ["read"],
     people: ["read"],
     units: ["read"],
     academic_terms: ["read"],
@@ -137,6 +181,7 @@ export const ROLE_PERMISSION_MATRIX = {
   },
   GestorDocumental: {
     account: ["read", "update"],
+    catalogos: ["read"],
     documents: ["read", "create", "update", "delete", "manage"],
     fill_flows: ["read", "create", "update", "delete", "manage"],
     templates: ["read"],
@@ -146,6 +191,7 @@ export const ROLE_PERMISSION_MATRIX = {
   },
   GestorFirmas: {
     account: ["read", "update"],
+    catalogos: ["read"],
     signature_flows: ["read", "create", "update", "delete", "manage"],
     documents: ["read", "update"],
     fill_flows: ["read"],
@@ -153,6 +199,7 @@ export const ROLE_PERMISSION_MATRIX = {
   },
   GestorContratacion: {
     account: ["read", "update"],
+    catalogos: ["read"],
     contracts: ["read", "create", "update", "delete", "manage"],
     people: ["read"],
     units: ["read"]
@@ -249,7 +296,40 @@ export const TABLE_RESOURCE_MAP = {
   unit_types: "units",
   units: "units",
   vacancies: "contracts",
-  vacancy_visibility: "contracts"
-};
+  vacancy_visibility: "contracts",
 
-export const DEFAULT_ADMIN_TABLE_RESOURCE = "process_definitions";
+  // ── Frente 20, P8. HASTA AQUI NO HABIA ENTRADA para estas diecinueve tablas, y una tabla sin
+  // entrada caia a `process_definitions` en silencio: GestorProcesos editaba cedulas (medido con un
+  // PUT de cuerpo vacio: 400 «Falta la llave primaria», o sea, habia pasado el guard). Ahora una tabla
+  // sin entrada queda CERRADA, y `rbacCatalog.test.js` exige que toda tabla de sqlTables.js tenga la
+  // suya.
+  //
+  // Catalogos: se leen para rellenar desplegables; los escribe quien tiene `catalogos.manage`.
+  autoidentificaciones_etnicas: "catalogos",
+  canales_mensajeria: "catalogos",
+  cantones: "catalogos",
+  categorias_visa: "catalogos",
+  clases_parroquia: "catalogos",
+  estados_civiles: "catalogos",
+  generos: "catalogos",
+  instituciones: "catalogos",
+  nomenclatura_territorial: "catalogos",
+  paises: "catalogos",
+  parentescos: "catalogos",
+  parroquias: "catalogos",
+  provincias: "catalogos",
+  tipos_discapacidad: "catalogos",
+  // Los satelites de la persona: la misma proteccion que `persons`.
+  direcciones: "people",
+  emails: "people",
+  telefono_canales: "people",
+  telefonos: "people",
+  // Sensibles (LOPDP, Art. 25). `documentos_identidad` ENTERA, cedulas incluidas: la visa trae la
+  // condicion migratoria -- con categorias como «Solicitante de proteccion internacional»-- y el
+  // editor no separa filas por tipo. Por su descripcion, ningun rol aparte de Talento Humano y
+  // AdminSistema necesita hojear cedulas en /admin. Decision del dueño, 2026-09-10.
+  documentos_identidad: "datos_sensibles",
+  persona_autoidentificacion: "datos_sensibles",
+  // La bitacora: la leen Auditor y AdminSistema, y nadie la escribe desde /admin (hook en tableHooks).
+  accesos_sensibles: "bitacora_sensible"
+};

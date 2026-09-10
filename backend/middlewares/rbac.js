@@ -5,6 +5,7 @@ import {
   OPERATIVE_WRITE_ROLES,
   resolveTableResource
 } from "../config/rbacPolicy.js";
+import { SQL_TABLE_MAP } from "../config/sqlTables.js";
 
 const rbacService = new RbacService();
 
@@ -199,7 +200,23 @@ export const requireSqlAdminPermission = (options = {}) => async (req, res, next
     const resource = options.resource || resolveTableResource(tableName);
     const action = options.action || actionForHttpMethod(req.method);
 
+    if (!resource) {
+      // Una tabla que el editor NO SIRVE sigue su camino, y el servicio responde 400 «Tabla no
+      // soportada»: es la verdad y no expone nada, porque no hay filas detras. Lo que se CIERRA es una
+      // tabla que el editor SI sirve y a la que nadie dio recurso -- antes caia a
+      // `process_definitions`; ver `resolveTableResource`--.
+      if (!Object.hasOwn(SQL_TABLE_MAP, tableName)) {
+        next();
+        return;
+      }
+      deny(res, `La tabla ${tableName} no tiene recurso asignado y queda cerrada.`);
+      return;
+    }
+
     if (can(context.access, resource, action)) {
+      // El recurso viaja con la peticion: el controlador lo necesita para saber si el acceso va a la
+      // bitacora, y recalcularlo alli seria una segunda fuente de verdad.
+      req.recursoRbac = resource;
       next();
       return;
     }

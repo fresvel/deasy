@@ -59,6 +59,13 @@
         "complemento/expediente.md"
       ]
     },
+    "bitacora_sensible": {
+      "motivo": "RBAC · recurso de permisos (`bitacora_sensible.read`) que protege la tabla `accesos_sensibles`; no es una tabla.",
+      "paginas": [
+        "backend/auth.md",
+        "complemento/permisos.md"
+      ]
+    },
     "campo_amplio_id": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
@@ -395,6 +402,13 @@
         "datos/modos-y-plantillas.md"
       ]
     },
+    "legal_documents": {
+      "motivo": "RBAC · recurso de permisos (`legal_documents.manage` publica y retira), no una tabla: las tablas son `documentos_legales` y `consentimientos`.",
+      "paginas": [
+        "backend/auth.md",
+        "complemento/permisos.md"
+      ]
+    },
     "linea": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
@@ -523,7 +537,7 @@
       ]
     },
     "process_definitions": {
-      "motivo": "RBAC · uno de los 13 RECURSOS de permisos, no una tabla (ver complemento/permisos.md).",
+      "motivo": "RBAC · uno de los 19 RECURSOS de permisos, no una tabla (ver complemento/permisos.md). Decia «13»: eran 15 antes del 2026-09-10 y el frente 20 anadio cuatro.",
       "paginas": [
         "backend/auth.md",
         "complemento/permisos.md"

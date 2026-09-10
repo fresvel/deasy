@@ -1,4 +1,12 @@
 {
+  "accesos_sensibles": {
+    "huella": "8e6a59e9f9b629ca",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md"
+    ]
+  },
   "actions": {
     "huella": "b4d77c7f3319504f",
     "paginas": [
@@ -22,12 +30,14 @@
   "autoidentificaciones_etnicas": {
     "huella": "401054bd83c03c45",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
   "canales_bitacora": {
     "huella": "8f7b4f65bd2392ea",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
@@ -128,12 +138,15 @@
   "clases_parroquia": {
     "huella": "f617eb4bc78f9ec6",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
   "consentimientos": {
     "huella": "8d9bd1a36479e5f9",
     "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "modelo/organizacion.md"
     ]
   },
@@ -188,6 +201,7 @@
     "huella": "f2ddc8d066296be7",
     "paginas": [
       "backend/acceso-a-datos.md",
+      "backend/auth.md",
       "complemento/index.md",
       "complemento/mapa-completo.md",
       "modelo/mapa-completo.md",
@@ -267,8 +281,10 @@
   "documentos_identidad": {
     "huella": "40ca8816f2d185b5",
     "paginas": [
+      "backend/auth.md",
       "complemento/expediente.md",
       "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "datos/firmas-y-dominios.md",
       "modelo/organizacion.md"
     ]
@@ -276,6 +292,7 @@
   "documentos_legales": {
     "huella": "5e17080f126708e9",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
@@ -310,6 +327,7 @@
   "emails": {
     "huella": "ba9f16dff71233d1",
     "paginas": [
+      "backend/auth.md",
       "complemento/credenciales.md",
       "complemento/mapa-completo.md",
       "datos/firmas-y-dominios.md",
@@ -319,6 +337,7 @@
   "estados_civiles": {
     "huella": "fcc617dff13cf279",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
@@ -359,6 +378,7 @@
   "generos": {
     "huella": "775c1b43bc42cc02",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
@@ -367,18 +387,21 @@
     "paginas": [
       "complemento/expediente.md",
       "complemento/mapa-completo.md",
+      "complemento/permisos.md",
       "modelo/organizacion.md"
     ]
   },
   "intentos_limitados": {
     "huella": "a05bd61beca54de8",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
   "nomenclatura_territorial": {
     "huella": "8fd3f31d2ccf2213",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
@@ -406,6 +429,7 @@
   "parentescos": {
     "huella": "e6c18c9760cd47a5",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },
@@ -440,8 +464,16 @@
       "datos/firmas-y-dominios.md"
     ]
   },
+  "persona_autoidentificacion": {
+    "huella": "d9169b35f1b2dc2c",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/permisos.md",
+      "modelo/organizacion.md"
+    ]
+  },
   "persons": {
-    "huella": "06549decf56be03b",
+    "huella": "8dba2e2897226513",
     "paginas": [
       "backend/acceso-a-datos.md",
       "backend/auth.md",
@@ -646,7 +678,8 @@
       "complemento/expediente.md",
       "complemento/index.md",
       "complemento/mapa-completo.md",
-      "complemento/permisos.md"
+      "complemento/permisos.md",
+      "modelo/organizacion.md"
     ]
   },
   "signature_batch_jobs": {
@@ -799,6 +832,7 @@
   "telefonos": {
     "huella": "1b780e004e822387",
     "paginas": [
+      "backend/auth.md",
       "complemento/mapa-completo.md",
       "datos/firmas-y-dominios.md",
       "modelo/organizacion.md"
@@ -867,6 +901,7 @@
   "tipos_discapacidad": {
     "huella": "bddf9858f96acd0c",
     "paginas": [
+      "complemento/mapa-completo.md",
       "modelo/organizacion.md"
     ]
   },

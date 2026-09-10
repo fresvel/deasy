@@ -284,7 +284,7 @@ import {
   resolveWorkspaceProfileMenuIcon,
   workspaceIconToneClass,
 } from "@/shared/utils/workspaceNavIcons.js";
-import { canAccessResource, canReadAdminTable, isTraceabilityTable } from "@/core/utils/accessControl.js";
+import { canAccessResource, canReadAdminTable, isTraceabilityTable, registrarRecursosDeTablas } from "@/core/utils/accessControl.js";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const { menuOpen: vmenu, showNotify: vnotify, toggleMenu, closeMenu, toggleNotify, closeNotify, revealSidebarForNav } =
@@ -345,7 +345,7 @@ const CATEGORIA_UI = {
   Estructura: { label: "Unidades y cargos", icon: "id-card", description: "Unidades, sus relaciones, cargos, puestos y ocupaciones." },
   Geografia:  { label: "Geografía", icon: "map-marked-alt", description: "Países, provincias, cantones y parroquias." },
   Calendario: { label: "Periodos", icon: "square-check", description: "Tipos de periodo y periodos académicos." },
-  Personas:   { label: "Personas", icon: "user", description: "Personas y sus documentos, correos, teléfonos y direcciones." },
+  Personas:   { label: "Personas", icon: "user", description: "Personas y sus documentos, correos, teléfonos, direcciones y autoidentificación." },
   VocabularioPersona: { label: "Datos personales", icon: "user", description: "Género, estado civil, autoidentificación étnica, discapacidad y parentesco." },
   Procesos:   { label: "Procesos", icon: "check-double", description: "Procesos y sus configuraciones versionadas." },
   Plantillas: { label: "Entregables", icon: "file", description: "Semillas, plantillas y su vínculo con cada configuración." },
@@ -353,7 +353,7 @@ const CATEGORIA_UI = {
   Documentos: { label: "Documentos", icon: "file", description: "Rondas del documento, sus correcciones y sus firmas." },
   Entrega:    { label: "Entrega", icon: "file", description: "Flujos de llenado y sus solicitudes." },
   Firmas:     { label: "Firmas", icon: "certificate", description: "Flujos de firma, sus instancias y sus solicitudes." },
-  Seguridad:  { label: "Roles y permisos", icon: "lock", description: "Roles, permisos y sus asignaciones." },
+  Seguridad:  { label: "Roles y permisos", icon: "lock", description: "Roles, permisos, sus asignaciones y la bitácora de accesos a datos sensibles." },
   Contratos:  { label: "Vacantes y contratos", icon: "certificate", description: "Vacantes, su visibilidad y los contratos." }
 };
 
@@ -852,7 +852,11 @@ const fetchMeta = async () => {
   metaError.value = "";
   try {
     const response = await axios.get(API_ROUTES.ADMIN_SQL_META);
-    tables.value = response.data?.tables || [];
+    const lista = response.data?.tables || [];
+    // ANTES de asignar `tables`: los `computed` que filtran por permiso se recalculan al cambiar
+    // `tables`, y tienen que encontrar ya el recurso de cada tabla. Ver `registrarRecursosDeTablas`.
+    registrarRecursosDeTablas(lista);
+    tables.value = lista;
     groupedTables.value.forEach((group) => {
       if (openCategories.value[group.label] === undefined) {
         openCategories.value[group.label] = false;

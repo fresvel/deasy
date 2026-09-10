@@ -27,12 +27,13 @@ se encarga un trigger.
 `resources` y `actions` son dos catálogos gemelos —`id · code · name · description · is_active ·
 created_at · updated_at`, idénticos— y su producto cartesiano es `permissions`.
 
-Medido en la base sembrada: **14 recursos × 5 acciones = 70 permisos**, exactamente. No hay ni uno de
+Medido en la base sembrada el 2026-09-10: **19 recursos × 5 acciones = 95 permisos**, exactamente. No hay ni uno de
 más ni uno de menos: la siembra genera la matriz completa.
 
-Los 14 recursos son `account` · `dossier` · `security` · `people` · `units` · `academic_terms` ·
+Los 19 recursos son `account` · `dossier` · `security` · `people` · `units` · `academic_terms` ·
 `process_definitions` · `process_execution` · `templates` · `documents` · `fill_flows` ·
-`signature_flows` · `contracts` · `channels`. Las 5 acciones, `read` · `create` · `update` ·
+`signature_flows` · `contracts` · `channels` · `legal_documents` · `datos_sensibles` · `datos_pago` ·
+`catalogos` · `bitacora_sensible` —los cuatro últimos, del 2026-09-10; ver [§5](#5--lo-sensible-quién-lo-ve-y-quién-lo-vio)—. Las 5 acciones, `read` · `create` · `update` ·
 `delete` · `manage`.
 
 :::caution[Un recurso donde `read` y `manage` NO son una gradación]
@@ -42,13 +43,13 @@ código decide **qué cuenta de WhatsApp *es* el canal de la institución** — 
 verificaciones de teléfono del sistema pasan por un WhatsApp que eligió quien escaneó.
 
 Es una toma de control de la identidad del canal, no «un dato de administración». Por eso quien
-vigila (`Auditor`, que tiene `read` de todo) **no puede vincular**, y pedir el código queda
+vigila (`Auditor`, que tiene `read` de todo menos lo sensible) **no puede vincular**, y pedir el código queda
 registrado con quién lo pidió.
 :::
 
 **`manage` no es una acción más: es el comodín.** Quien tiene `X.manage` pasa cualquier comprobación
 sobre `X`, porque el chequeo (`hasPermissionOrManage`) mira primero el permiso exacto y después el
-`manage` del mismo recurso. Por eso `AdminSistema` tiene los 70 y no hace falta enumerarle nada.
+`manage` del mismo recurso. Por eso `AdminSistema` tiene los 95 y no hace falta enumerarle nada.
 
 :::note[Una unicidad declarada dos veces]
 `permissions` lleva **dos** índices únicos: `uq_permissions_resource_action` sobre
@@ -67,22 +68,21 @@ misma regla se declara por dos caminos.
 `description`, `is_active`— y ni siquiera lleva `created_at`.
 
 `role_permissions` es la tabla-join, con `uq_role_permissions (role_id, permission_id)`. En la base
-sembrada son **220 filas** repartidas en 13 roles:
+sembrada son **266 filas** repartidas en 13 roles (medido el 2026-09-10):
 
 | Rol | Permisos | Rol | Permisos |
 |---|:--:|---|:--:|
-| `AdminSistema` | **65** | `Auditor` | 13 |
-| `GestorProcesos` | 21 | `GestorPlantillas` | 11 |
-| `GestorEjecucionProcesos` | 21 | `GestorFirmas` | 11 |
-| `GestorDocumental` | 16 | `GestorAcademico` · `GestorTalentoHumano` · `GestorUnidades` | 10 |
-| `Usuario` | 14 | `GestorSeguridad` · `GestorContratacion` | 9 |
+| `AdminSistema` | **95** | `GestorTalentoHumano` | 13 |
+| `GestorProcesos` · `GestorEjecucionProcesos` | 22 | `GestorFirmas` · `GestorPlantillas` | 12 |
+| `Auditor` · `GestorDocumental` | 17 | `GestorAcademico` · `GestorUnidades` | 11 |
+| `Usuario` | 14 | `GestorSeguridad` · `GestorContratacion` | 10 |
 
 Dos lecturas que importan para revisar el modelo:
 
 - **`Usuario` tiene 14 permisos, y no es el rol vacío.** Es el rol **base**: da `dossier` de lectura,
   creación y actualización, más lo operativo de Home, tareas, documentos y firmas propios. Toda
   persona lo necesita — un `Gestor*` **sin** `Usuario` recibe un 403 al abrir su propia ficha.
-- **`GestorContratacion` tiene 9 permisos sobre `contracts`, y ese dominio no está implementado.** Es
+- **`GestorContratacion` tiene 10 permisos —5 sobre `contracts`—, y ese dominio no está implementado.** Es
   la otra cara del aviso de [Empleo y contratación](/complemento/empleo/): el permiso existe, la
   pantalla no.
 
@@ -131,6 +131,62 @@ Que viva en la base y no en JavaScript es a propósito: hay cinco caminos que in
 parchear los cinco es exactamente como se pierde uno.
 
 ---
+
+## 5 · Lo sensible: quién lo ve y quién lo vio
+
+Cuatro de los diecinueve recursos entraron juntos el 2026-09-10, y dos llevan `sensible: true` en el
+catálogo. La marca no es decorativa: cambia tres reglas.
+
+| Recurso | Qué protege | Leen | Escriben |
+|---|---|---|---|
+| **`datos_sensibles`** | `documentos_identidad` (entera) y `persona_autoidentificacion`; después, la salud y las cargas familiares | `AdminSistema` · `GestorTalentoHumano` | `AdminSistema` |
+| **`datos_pago`** | Las cuentas bancarias | `AdminSistema` · `GestorTalentoHumano` | `AdminSistema` |
+| `catalogos` | Geografía, vocabularios de persona, categorías de visa e `instituciones` | Todos los roles menos `Usuario` | `AdminSistema` |
+| `bitacora_sensible` | `accesos_sensibles` | `AdminSistema` · `Auditor` | Nadie desde `/admin` |
+
+**Por qué son sensibles.** La LOPDP nombra literalmente, en su Art. 4, «etnia, identidad de género,
+identidad cultural, […] condición migratoria, orientación sexual, salud», y el Art. 25 hace
+**categorías especiales** de los datos sensibles, los de niñas, niños y adolescentes, los de salud y
+los de discapacidad. La visa trae la condición migratoria —el catálogo incluye «Solicitante de
+protección internacional»—, y por eso `documentos_identidad` va **entera**: el editor no separa filas
+por tipo, y ningún rol aparte de Talento Humano y `AdminSistema` necesita hojear cédulas en `/admin`.
+
+**La cuenta bancaria no es un dato sensible para la ley, y aun así va aparte.** Lo peligroso no es que
+se lea sino que se **cambie**: es el blanco del desvío de nómina, y el aviso I-091818-PSA del IC3 (FBI)
+nombra a la educación entre los sectores más afectados. En ese fraude el atacante ya tiene la
+contraseña —y oculta los avisos del correo—, así que el control que funciona es una confirmación
+humana: una cuenta nueva o cambiada queda pendiente hasta que la confirme Talento Humano.
+
+Las tres reglas:
+
+1. **`Auditor` no los lee.** Su matriz se calcula como «todo en lectura», y ahora es *todo menos lo
+   sensible*. Antes cada recurso nuevo le daba lectura por construcción, sin que nadie lo decidiera.
+2. **`Usuario` no los tiene, aunque el titular sí ve y edita lo suyo.** El editor de `/admin` no mira
+   de quién es la fila: `datos_sensibles.read` en `Usuario` sería leer los de todos. Lo propio va por
+   `/users/me`, que ya comprueba que eres tú.
+3. **Cada lectura ajena y cada escritura queda en `accesos_sensibles`.**
+
+### La bitácora
+
+`accesos_sensibles` apunta quién (`actor_person_id`) accedió a lo de quién (`titular_person_id`), en
+qué tabla y registro, con qué acción y cuándo. **Lo que el titular lee de sí mismo no se apunta**: la
+pregunta que responde es *quién vio lo de esta persona*. Una página de 50 filas son hasta 50 entradas.
+
+- **Sólo admite altas.** Un trigger rechaza `UPDATE` y `DELETE`, y el editor rechaza el alta a mano
+  con un 403, también a `AdminSistema`: una entrada fabricada tendría aspecto de verdadera.
+- **Sin claves ajenas**, como `consentimientos`: la evidencia tiene que sobrevivir a la persona.
+- **De una escritura guarda los nombres de los campos, nunca los valores.** Copiar ahí la discapacidad
+  de alguien haría de la bitácora otra copia del dato, y esta la lee `Auditor`.
+- **Una lectura se apunta antes de devolver las filas**: si la bitácora falla, no sale nada. Una
+  escritura se apunta después de hacerse —antes no hay fila—, así que un fallo ahí deja el cambio hecho.
+
+:::caution[No la exige la ley con ese nombre]
+El «registro de actividades de tratamiento» del Art. 38 del Reglamento es **otra cosa**: el inventario
+de fines, destinatarios y plazos. La bitácora es una medida técnica que se apoya en el **Art. 41.4** de
+la Ley, que manda considerar el *«acceso no autorizado o exceso de autorización»*. Sin rastro, un
+exceso de autorización no se puede ni detectar — y al construirla apareció uno: diecinueve tablas sin
+recurso que caían al permiso de procesos. Está contado en [Autenticación](/backend/auth/).
+:::
 
 ## Dos cosas que el modelo dice y el código no hace
 

@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
+import SqlAdminConBitacora from "../../services/admin/SqlAdminConBitacora.js";
+import { tablasLegibles } from "../../services/admin/tablasLegibles.js";
 import { parseAvailableFormats } from "../../services/admin/templates/artifacts.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import {
@@ -13,10 +15,20 @@ import {
 } from "../../utils/templateArchive.js";
 
 const service = new SqlAdminService();
+// Las cuatro operaciones del editor generico pasan por aqui para que la bitacora de accesos
+// sensibles vea cada lectura y cada escritura. Ver SqlAdminConBitacora.
+const editor = new SqlAdminConBitacora(service);
+
+// Quien accede, con que recurso -- lo deja `requireSqlAdminPermission`-- y desde donde.
+const contextoDeAcceso = (req) => ({
+  actorId: Number(req.auth?.userId),
+  recurso: req.recursoRbac ?? null,
+  ip: req.ip ?? null
+});
 
 export const getSqlMeta = (req, res) => {
   try {
-    const tables = service.getMeta();
+    const tables = tablasLegibles(service.getMeta(), req.auth?.access);
     res.json({ tables });
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });
@@ -561,14 +573,14 @@ export const listSqlRows = async (req, res) => {
         .filter(([key, value]) => key.startsWith("filter_") && value !== undefined && value !== "")
         .map(([key, value]) => [key.replace("filter_", ""), value])
     );
-    const rows = await service.list(table, {
+    const rows = await editor.list(table, {
       q: req.query.q,
       limit: req.query.limit,
       offset: req.query.offset,
       orderBy: req.query.orderBy,
       order: req.query.order,
       filters
-    });
+    }, contextoDeAcceso(req));
     res.json(rows);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -578,7 +590,7 @@ export const listSqlRows = async (req, res) => {
 export const createSqlRow = async (req, res) => {
   try {
     const { table } = req.params;
-    const created = await service.create(table, req.body ?? {});
+    const created = await editor.create(table, req.body ?? {}, contextoDeAcceso(req));
     res.json(created);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -590,7 +602,7 @@ export const updateSqlRow = async (req, res) => {
     const { table } = req.params;
     const keys = req.body?.keys ?? req.body ?? {};
     const data = req.body?.data ?? req.body ?? {};
-    const updated = await service.update(table, keys, data);
+    const updated = await editor.update(table, keys, data, contextoDeAcceso(req));
     res.json(updated);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -601,7 +613,7 @@ export const deleteSqlRow = async (req, res) => {
   try {
     const { table } = req.params;
     const keys = req.body?.keys ?? req.body ?? {};
-    const deleted = await service.remove(table, keys);
+    const deleted = await editor.remove(table, keys, contextoDeAcceso(req));
     res.json({ deleted });
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });

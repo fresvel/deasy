@@ -10,18 +10,18 @@ teléfonos, direcciones— y la dejó en **once columnas**.
 |---|---|:--:|---|---|
 | **P0** | Este plan, con el terreno medido y **las siete decisiones tomadas** | ✅ | Terreno medido el 2026-09-05 (la fuente del INEC, el RBAC real, la cadena geográfica). Las decisiones, aprobadas una a una por el dueño y escritas en §6 con su criterio | 2026-09-08 |
 | **P1** | `parroquias` sembrada, `ciudades` → `cantones`, y las etiquetas por país | ✅ | **222 cantones · 1 314 parroquias · 3 clases · 3 etiquetas** en la base tras `test:char:run`. 330/330 char, 819 unit backend, 491 front, los 3 `check:` y los 3 gates de doc en verde. Verificado en `/admin/institucion/geografia/parroquias`. **Recupera `2302 La Concordia`**, que faltaba por un fallo del extractor | 2026-09-08 |
-| **P2** | Lo que sí es de `persons`: nacimiento, **sexo**, género, autoidentificación, estado civil | ✅ | **11 → 17 columnas**, 5 claves ajenas nuevas. Verificado por `PATCH /users/me`: los seis valores llegan a la base y la provincia se deduce del cantón; y «nací en Colombia, cantón de Esmeraldas» devuelve **400** sin tocar la fila. Prueba nueva que **lee el esquema** y caza una columna olvidada en la lista blanca, con mutación comprobada. 330/330 char (1 golden movido, 7 líneas, sólo las columnas nuevas) | 2026-09-08 |
+| **P2** | Lo que sí es de `persons`: nacimiento, **sexo**, género, autoidentificación, estado civil | ✅ | **11 → 17 columnas**, 5 claves ajenas nuevas. Verificado por `PATCH /users/me`: los seis valores llegan a la base y la provincia se deduce del cantón; y «nací en Colombia, cantón de Esmeraldas» devuelve **400** sin tocar la fila. Prueba nueva que **lee el esquema** y caza una columna olvidada en la lista blanca, con mutación comprobada. 330/330 char (1 golden movido, 7 líneas, sólo las columnas nuevas). ⚠️ **P8 (2026-09-10) sacó el género y la etnia a `persona_autoidentificacion`**: son datos sensibles (LOPDP, Art. 4) y `persons` la leen nueve roles. `persons` queda en 15 columnas | 2026-09-08 |
 | **P3** | `direcciones` gana sector y barrio | ✅ | Texto y no catálogo: no los fija ninguna autoridad. Verificado escribiendo una dirección real por `PATCH /users/me` y leyéndola en la base. Se aprovechó para arreglar un defecto que vio el dueño: la lista encabezaba «Ubicacion · Longitud» para un solo punto | 2026-09-08 |
 | **P4** | `documentos_identidad` gana el tipo de visa | ✅ | **91 tablas** (`categorias_visa`, 13 filas de la LOMH agrupadas 3/9/1 por `condicion`), `'visa'` en el `CHECK`, `categoria_visa_id` con `chk_documentos_categoria_visa`. Verificado en el navegador: la categoría se despliega en `/admin/usuarios/personas/documentos_identidad` y la pestaña propia lista las 13. **Tres defectos cazados y cerrados**, ninguno visible por el 200 de un `INSERT`: (a) el validador aplicaba la regla de la cédula a la visa; (b) un `ReferenceError` de un `const` que desapareció al meterla **tumbaba hasta el login**, y sobrevivió a las dos suites porque `nombreDeTipo` no tenía ni un test; (c) el peor — `guardarPrincipal` reescribe la fila principal en su sitio, así que un `PATCH /users/me` con `tipo: visa` **convertía en visa la cédula de la persona**. Cerrado en el modelo con `TIPOS_QUE_ACREDITAN_IDENTIDAD`, no con un parche por sitio. 828 unit backend · 330/330 char (1 golden, 6 líneas, sólo las 3 columnas nuevas) · 493 front · los 3 `check:` y los 4 gates de doc en verde | 2026-09-09 |
 | **P5** | La **salud**: discapacidad, enfermedades catastróficas, alergias, tipo de sangre | ⛔ | Bloqueada por **P8**. Necesita **P10** | |
 | **P6** | `cuentas_bancarias` | ⬜ | | |
 | **P7** | `cargas_familiares` **con su escaneo obligatorio**, y los contactos de emergencia sobre `expediente_referencias` | ⬜ | Depende del frente 18. Necesita **P10** | |
-| **P8** | El recurso RBAC de los datos sensibles, y su bitácora | ⬜ | | |
+| **P8** | El recurso RBAC de los datos sensibles, y su bitácora | ✅ | **19 tablas sin recurso, cerradas**: caían a `process_definitions` y `GestorProcesos` editaba cédulas (`PUT` de cuerpo vacío: 400 antes, **403** después). **4 recursos** → 19 × 5 = **95 permisos**, 266 asignaciones: `datos_sensibles` y `datos_pago` fuera de `Auditor` y de `Usuario`; `catalogos`; `bitacora_sensible`. **`accesos_sensibles`** sólo admite altas (verificado: `UPDATE` y `DELETE` en psql → excepción; `POST` como admin → 403). **Género y etnia** salen de `persons`. El frontend deja su copia del mapa y lo lee de `meta`. Verificado en vivo con roles temporales: `Auditor` 403 en lo sensible y 200 en la bitácora; Talento Humano lee (200, 5 entradas) y no escribe (403); una lectura de 43 filas del admin deja 42 entradas, sin la suya. 330/330 char (3 goldens: −2 columnas, +20 permisos × 2) · 494 front · 3 `check:` y 4 gates de doc | 2026-09-10 |
 | **P9** | El frontend: `/perfil/datos` y las pestañas de administración | ⬜ | ⚠️ El formulario de dirección debe dejar **hueco al prellenado** por geocodificación (frente 21, `M5`): hacerlo sin preverlo obliga a rehacerlo | |
 | **P10** | Los **cinco catálogos de vocabulario**, sembrados | ✅ | **28 filas** para Ecuador (2+5+8+6+7), cada lista con su fuente en el código. Entra además `instituciones.campo_sexo_genero`. Categoría propia «Datos personales» bajo Usuarios — **no en «Otros»**. 330/330 char, 819+491 unitarios, los 3 `check:` y los 4 gates de doc en verde | 2026-09-08 |
 | **P11** | La **nacionalidad sale de `persons`** y pasa a tabla: una persona puede tener varias | ⬜ | Hueco detectado por el dueño al cerrar P2. Va **después de P9** | |
 
-**12 tareas · 6 cerradas.**
+**12 tareas · 7 cerradas.**
 
 ⚠️ **El identificador no es el orden.** `P10` nació al cerrar P0 y **va tercero**, no último: los
 cinco catálogos los necesitan P2, P5 y P7. El orden de ejecución es:
@@ -107,7 +107,7 @@ escribir. Por eso:
 | **Tabla aparte, no columnas en `persons`** | Para que el permiso se dé sobre la tabla, no sobre la persona entera |
 | **Recurso RBAC propio** (el 16.º) | Leer el nombre de alguien no puede autorizar a leer su discapacidad |
 | **Quién lo ve, decidido y escrito** | Propuesta: sólo `AdminSistema` y `GestorTalentoHumano` |
-| **Bitácora de acceso** | Aquí deja de ser opcional |
+| **Bitácora de acceso** | Una medida técnica que elegimos, **no** una obligación con ese nombre — ver §6 · P8 |
 
 **Se apoya en lo que el frente 17 ya dejó hecho** —consentimiento demostrable, documentos legales
 versionados y una pestaña de administración con RBAC—, así que `P8` no parte de cero.
@@ -122,8 +122,8 @@ problema y documentarlo a la vez.
 | Fecha de nacimiento | `persons` | `DATE` |
 | **Provincia · cantón · parroquia de nacimiento** | `persons` | Tres claves ajenas · necesita `P1` |
 | **Sexo** | `persons` | **`CHECK`** |
-| **Género** | `persons` | **FK a `generos`** |
-| Autoidentificación étnica | `persons` | FK a `autoidentificaciones_etnicas` |
+| **Género** | **`persona_autoidentificacion`** (P8) | **FK a `generos`** |
+| Autoidentificación étnica | **`persona_autoidentificacion`** (P8) | FK a `autoidentificaciones_etnicas` |
 | Estado civil | `persons` | FK a `estados_civiles` |
 | Tipo de sangre | **`persona_salud`** | `CHECK` · 8 valores |
 | Discapacidad, tipo, porcentaje y carné | **`persona_salud`** | FK a `tipos_discapacidad` |
@@ -236,7 +236,7 @@ para Ecuador y otro para Colombia.** Es la misma tensión que el frente 18 resol
 ### Sexo Y género, los dos
 
 - **`persons.sexo`** — `CHECK`. El dato administrativo, el que va en la cédula.
-- **`persons.genero_id`** — catálogo. La identidad autodeclarada.
+- **`persona_autoidentificacion.genero_id`** — catálogo. La identidad autodeclarada. Estuvo en `persons` hasta P8, que la sacó por dato sensible.
 
 No son lo mismo y no se guardan igual. El propio registro civil ecuatoriano los distingue desde 2016.
 
@@ -307,6 +307,40 @@ Se renombra. La tabla nunca guardó ciudades: guarda el cantón.
 ⚠️ **Con una objeción anotada**: «cantón» es la nomenclatura de **Ecuador** —en España es municipio,
 en Francia commune—, y el modelo lleva dos frentes quitando «Ecuador» de los nombres. La **etiqueta
 que ve el usuario** debe salir de `instituciones.pais_id`, no del nombre de la tabla.
+
+### P8 · Lo sensible, decidido el 2026-09-10
+
+El diseño se aprobó con las cuatro recomendaciones, después de medir tres cosas que lo cambiaron.
+
+**Lo que se midió antes de diseñar:**
+
+| Hallazgo | Evidencia |
+|---|---|
+| **19 tablas del editor sin recurso** caían a `process_definitions` | `GestorProcesos` · `PUT documentos_identidad {}` → **400** «Falta la llave primaria»: había pasado el guard. `PUT persons {}` → 403. 9 de las 19 eran de este frente (P1, P10, P4) |
+| La matriz de `Auditor` se derivaba del catálogo **entero** | `Auditor: READ_ALL_RESOURCES`: un recurso nuevo le daba lectura sin decidirlo |
+| **Datos sensibles ya expuestos** | Etnia y género (P2) en `persons`, que leen 9 roles; la categoría de visa (P4) —«Solicitante de protección internacional»— la leían 8 |
+| El plan decía que la bitácora «deja de ser opcional» | El Art. 38 del Reglamento es el **registro de actividades de tratamiento**, no un registro de accesos. La bitácora se apoya en el Art. 41.4 de la Ley |
+
+**Las cuatro decisiones:**
+
+1. **Tres clases de dato y el reparto de las 19 tablas**: sensible (`datos_sensibles`), pago (`datos_pago`), identificación (`people`) y `catalogos`.
+2. **Etnia e identidad de género salen de `persons`** a `persona_autoidentificacion`. Reabre P2.
+3. **`documentos_identidad` entera es sensible**, cédulas incluidas, en vez de sacar la visa a tabla propia (que habría revertido P4).
+4. **Una cuenta bancaria nueva o cambiada queda pendiente hasta que la confirme Talento Humano.** Se construye en **P6**. El motivo: en el desvío de nómina (IC3, I-091818-PSA, que nombra a la educación entre los sectores más afectados) el atacante ya tiene la contraseña y oculta los avisos del correo, así que ni la re-autenticación ni el aviso bastan.
+
+**Las cuentas bancarias NO son datos sensibles para la LOPDP**: no están en la lista del Art. 4 ni son «crediticios» (Art. 4 y 28: comportamiento económico para analizar la capacidad financiera). Van aparte por integridad, no por confidencialidad. **Las cargas familiares SÍ**: Art. 25.b, datos de niñas, niños y adolescentes.
+
+**Fuentes verificadas, con su huella:**
+
+| Documento | Origen | sha256 |
+|---|---|---|
+| LOPDP (R.O. Suplemento 459, 26-may-2021) | consejodecomunicacion.gob.ec | `57370709bc4d282549f5a4fecf399bb3b2d5ef1cefbe1189067c7c11f678475a` |
+| LOPDP, segunda copia oficial | finanzaspopulares.gob.ec | `220d49f9e6cd420e9820ea47522a9f7e4890fbd6c607f522dc4f17bc5a5dcb5d` |
+| Reglamento General de la LOPDP | cosede.gob.ec | `11c3152691befe0dc0d61f5d16e931c6487be3cfcdfc9abfac35a33c7ebe0d47` |
+
+Las dos copias de la Ley traen **dos redacciones** de la definición de datos sensibles; una añade «datos relativos a las personas apátridas y refugiados que requieren protección internacional». Las dos incluyen la condición migratoria.
+
+**Lo que P8 deja escrito para después:** una base ya instalada no recibe los permisos nuevos sin resembrar (`POST /system/bootstrap/initialize` o `recover:admin`), y con la tabla cerrada por defecto sus catálogos quedarían cerrados para todos menos `AdminSistema`. El titular **escribe** su género y su etnia por `PATCH /users/me`; **leerlos** por `/users/me` es de P9, que compone el perfil entero.
 
 ## 6bis · P11 · La nacionalidad sale de `persons`
 

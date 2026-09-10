@@ -75,7 +75,9 @@ const normalizeValue = (field, value) => {
 };
 
 const getConfig = (tableName) => {
-  const config = SQL_TABLE_MAP[tableName];
+  // `Object.hasOwn`: con `SQL_TABLE_MAP[nombre]` a secas, «constructor» devolvia la funcion del
+  // prototipo, no lanzaba, y la peticion moria mas adelante con un TypeError.
+  const config = Object.hasOwn(SQL_TABLE_MAP, tableName) ? SQL_TABLE_MAP[tableName] : null;
   if (!config) {
     throw new Error(`Tabla no soportada: ${tableName}`);
   }

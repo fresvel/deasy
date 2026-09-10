@@ -93,8 +93,9 @@ CREATE TABLE IF NOT EXISTS instituciones (
   -- Y en otros paises la cosa cambia -- hay documentos con marcador no binario y otros sin campo
   -- ninguno--, asi que es la misma costura que `pais_id`: lo decide la institucion, no el codigo.
   --
-  -- Surte efecto en P2, que es cuando `persons` gana `sexo` y `genero_id`. Las dos columnas seran
-  -- NULABLES para que cualquiera de las tres politicas sea consistente.
+  -- Gobierna `persons.sexo` y `persona_autoidentificacion.genero_id` -- el genero salio de `persons`
+  -- en P8 por ser dato sensible--. Los dos son NULABLES para que cualquiera de las tres politicas
+  -- sea consistente.
   campo_sexo_genero TEXT NOT NULL DEFAULT 'ambos'
     CHECK (campo_sexo_genero IN ('sexo','genero','ambos')),
   is_active SMALLINT NOT NULL DEFAULT 1,
@@ -421,12 +422,15 @@ CREATE TABLE IF NOT EXISTS persons (
   -- ecuatoriana rotula el sexo HOMBRE/MUJER y el genero -- cuando se sustituye-- MASCULINO/FEMENINO.
   -- Son dos campos legales distintos, no dos nombres del mismo.
   sexo TEXT NULL CHECK (sexo IN ('hombre','mujer')),
-  -- EL GENERO, autodeclarado. Que se pida uno, otro o los dos lo decide
-  -- `instituciones.campo_sexo_genero`.
-  genero_id INT NULL,
 
+  -- ⚠️ EL GENERO Y LA AUTOIDENTIFICACION ETNICA YA NO ESTAN AQUI. Entraron en P2 (2026-09-08) y
+  -- salieron en P8 (2026-09-10), y no por gusto: la LOPDP los nombra entre los datos SENSIBLES
+  -- (Art. 4: «etnia, identidad de genero») y `persons` la leen NUEVE roles por `people.read`, entre
+  -- ellos GestorFirmas, cuyo trabajo es un flujo de firma. Leer el nombre de alguien autorizaba a
+  -- leer su etnia. Viven en `persona_autoidentificacion`, con su propio recurso.
+  --
+  -- `sexo` y el estado civil NO estan en esa lista, y por eso se quedan.
   estado_civil_id INT NULL,
-  autoidentificacion_etnica_id INT NULL,
 
   password_hash VARCHAR(255) NOT NULL,
   status TEXT CHECK (status IN ('Inactivo','Activo','Verificado','Reportado')) DEFAULT 'Inactivo',
@@ -438,13 +442,34 @@ CREATE TABLE IF NOT EXISTS persons (
   CONSTRAINT fk_persons_nacionalidad FOREIGN KEY (nacionalidad_pais_id) REFERENCES paises(id),
   CONSTRAINT fk_persons_nacimiento_pais FOREIGN KEY (nacimiento_pais_id) REFERENCES paises(id),
   CONSTRAINT fk_persons_nacimiento_canton FOREIGN KEY (nacimiento_canton_id) REFERENCES cantones(id),
-  CONSTRAINT fk_persons_genero FOREIGN KEY (genero_id) REFERENCES generos(id),
-  CONSTRAINT fk_persons_estado_civil FOREIGN KEY (estado_civil_id) REFERENCES estados_civiles(id),
-  CONSTRAINT fk_persons_etnia FOREIGN KEY (autoidentificacion_etnica_id) REFERENCES autoidentificaciones_etnicas(id)
+  CONSTRAINT fk_persons_estado_civil FOREIGN KEY (estado_civil_id) REFERENCES estados_civiles(id)
 );
 CREATE INDEX IF NOT EXISTS idx_persons_nacionalidad ON persons (nacionalidad_pais_id);
 CREATE INDEX IF NOT EXISTS idx_persons_nacimiento_canton ON persons (nacimiento_canton_id);
 CREATE OR REPLACE TRIGGER trg_persons_set_updated_at BEFORE UPDATE ON persons FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ── LA AUTOIDENTIFICACION: EL GENERO Y LA ETNIA ────────────────────────────────────────────────
+-- Datos SENSIBLES segun la LOPDP (Art. 4) y por tanto categoria especial (Art. 25.a). Una fila por
+-- persona: la clave primaria ES la ajena, el idioma de subtipo que fijo el frente 18.
+--
+-- POR QUE UNA TABLA Y NO DOS COLUMNAS DE `persons`: el permiso se da sobre una TABLA. El editor de
+-- /admin no sabe ocultar columnas segun el rol, y enseñarle seria coser un caso especial en su
+-- camino generico. Aparte, la protegen su recurso -- `datos_sensibles`, que leen el titular por su
+-- perfil, GestorTalentoHumano y AdminSistema, y Auditor NO-- y la bitacora `accesos_sensibles`.
+--
+-- Todo NULABLE: se declara en el perfil, no en el alta, y que se pregunte el genero lo decide
+-- `instituciones.campo_sexo_genero`.
+CREATE TABLE IF NOT EXISTS persona_autoidentificacion (
+  person_id INT PRIMARY KEY,
+  genero_id INT NULL,
+  autoidentificacion_etnica_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_autoidentificacion_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_autoidentificacion_genero FOREIGN KEY (genero_id) REFERENCES generos(id),
+  CONSTRAINT fk_autoidentificacion_etnia FOREIGN KEY (autoidentificacion_etnica_id) REFERENCES autoidentificaciones_etnicas(id)
+);
+CREATE OR REPLACE TRIGGER trg_persona_autoidentificacion_set_updated_at BEFORE UPDATE ON persona_autoidentificacion FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 -- ── CORREOS ──────────────────────────────────────────────────────────────────────────────────────
@@ -928,6 +953,47 @@ CREATE TABLE IF NOT EXISTS consentimientos (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_consentimiento ON consentimientos (person_id, documento_id);
 CREATE INDEX IF NOT EXISTS idx_consentimiento_persona ON consentimientos (person_id);
+
+-- LA BITACORA DE ACCESOS A DATOS SENSIBLES Y DE PAGO (frente 20, P8).
+--
+-- ⚠️ NO LA EXIGE LA LEY CON ESE NOMBRE, y conviene no venderla asi. El «registro de actividades de
+-- tratamiento» del Art. 38 del Reglamento es OTRA COSA: el inventario de fines, destinatarios y
+-- plazos. Esta tabla es una medida tecnica que elegimos, apoyada en el Art. 41.4 de la Ley, que
+-- manda considerar el «acceso no autorizado o exceso de autorizacion». Sin rastro, un exceso de
+-- autorizacion no se puede ni detectar -- y P8 encontro uno: diecinueve tablas que caian al permiso
+-- de procesos sin que nadie lo supiera.
+--
+-- QUE SE APUNTA: cada lectura hecha por alguien que NO es el titular, y toda escritura. Una pagina de
+-- 50 filas son hasta 50 entradas: es el coste de poder responder «quien vio lo de esta persona».
+--
+-- ⚠️ SOLO ADMITE ALTAS. El trigger de abajo rechaza UPDATE y DELETE, y el editor de /admin rechaza
+-- el alta a mano (hook en tableHooks.js): una bitacora que se puede corregir no prueba nada.
+CREATE TABLE IF NOT EXISTS accesos_sensibles (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- ⚠️ SIN CLAVES AJENAS, por el mismo motivo que `consentimientos`: la evidencia tiene que
+  -- sobrevivir a la persona. Con una FK, borrarla seria imposible o se llevaria el rastro.
+  titular_person_id INT NOT NULL,
+  actor_person_id INT NOT NULL,
+  recurso TEXT NOT NULL CHECK (recurso IN ('datos_sensibles','datos_pago')),
+  tabla VARCHAR(60) NOT NULL,
+  registro_id BIGINT NULL,
+  accion TEXT NOT NULL CHECK (accion IN ('read','create','update','delete')),
+  -- En una escritura, QUE campos cambiaron: los NOMBRES, nunca los valores. Copiar aqui la
+  -- discapacidad de alguien convertiria la bitacora en otra copia del dato que protege -- y esta la
+  -- lee Auditor--. En `datos_pago` (P6) llevara el numero de cuenta anterior y el nuevo, ENMASCARADOS.
+  detalle JSONB NULL,
+  ip VARCHAR(60) NULL,
+  ocurrido_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_accesos_sensibles_titular ON accesos_sensibles (titular_person_id, ocurrido_at);
+CREATE INDEX IF NOT EXISTS idx_accesos_sensibles_actor ON accesos_sensibles (actor_person_id, ocurrido_at);
+
+CREATE OR REPLACE FUNCTION rechazar_modificacion_de_bitacora() RETURNS trigger AS $$
+BEGIN
+  RAISE EXCEPTION 'La bitacora de accesos solo admite altas: % no esta permitido.', TG_OP;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE TRIGGER trg_accesos_sensibles_solo_altas BEFORE UPDATE OR DELETE ON accesos_sensibles FOR EACH ROW EXECUTE FUNCTION rechazar_modificacion_de_bitacora();
 
 -- ⚠️ LA VERSION 1 DE CADA TEXTO YA NO SE SIEMBRA AQUI, Y NO ES UNA PREFERENCIA DE ESTILO: DESDE QUE
 -- EL TEXTO VIVE EN MinIO, UN `INSERT` NO PUEDE SEMBRARLO. SQL no sabe escribir en un bucket, y una

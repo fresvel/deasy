@@ -726,9 +726,7 @@ export const SQL_TABLES = [
       { name: "nacimiento_pais_id", label: "Pais de nacimiento", type: "number" },
       { name: "nacimiento_canton_id", label: "Canton de nacimiento", type: "number", filterBy: { pais_id: "nacimiento_pais_id" }, showWhen: { field: "nacimiento_pais_id" } },
       { name: "sexo", label: "Sexo", type: "select", options: ["hombre", "mujer"] },
-      { name: "genero_id", label: "Genero", type: "number" },
       { name: "estado_civil_id", label: "Estado civil", type: "number" },
-      { name: "autoidentificacion_etnica_id", label: "Autoidentificacion etnica", type: "number" },
 
 
       // ⚠️ AQUÍ HUBO SEIS CAMPOS VIRTUALES —documento, correo y teléfono— y se retiraron el
@@ -915,6 +913,43 @@ export const SQL_TABLES = [
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["numero"]
+  },
+  // El genero y la etnia, fuera de `persons` desde P8: la LOPDP (Art. 4) los cuenta entre los datos
+  // sensibles, y `persons` la leen nueve roles. Una fila por persona, con `person_id` de clave.
+  {
+    table: "persona_autoidentificacion",
+    label: "Autoidentificacion",
+    category: "Personas",
+    primaryKeys: ["person_id"],
+    fields: [
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "genero_id", label: "Genero", type: "number" },
+      { name: "autoidentificacion_etnica_id", label: "Autoidentificacion etnica", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // La bitacora de accesos sensibles. TODO de solo lectura, y el hook de tableHooks.js rechaza el alta:
+  // aqui solo se CONSULTA quien leyo o cambio lo de quien.
+  {
+    table: "accesos_sensibles",
+    label: "Bitacora de accesos",
+    category: "Seguridad",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "ocurrido_at", label: "Cuando", type: "datetime", readOnly: true },
+      { name: "titular_person_id", label: "Titular", type: "number", readOnly: true },
+      { name: "actor_person_id", label: "Quien accedio", type: "number", readOnly: true },
+      { name: "recurso", label: "Recurso", type: "text", readOnly: true },
+      { name: "tabla", label: "Tabla", type: "text", readOnly: true },
+      { name: "registro_id", label: "Registro", type: "number", readOnly: true },
+      { name: "accion", label: "Accion", type: "text", readOnly: true },
+      { name: "detalle", label: "Detalle", type: "textarea", readOnly: true },
+      { name: "ip", label: "IP", type: "text", readOnly: true }
+    ],
+    searchFields: ["tabla", "recurso", "accion"]
   },
   {
     table: "roles",

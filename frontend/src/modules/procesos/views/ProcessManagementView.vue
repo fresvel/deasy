@@ -209,7 +209,8 @@ import {
   canCreateAdminTable,
   canReadAdminTable,
   getStoredUser,
-  isTraceabilityTable
+  isTraceabilityTable,
+  registrarRecursosDeTablas
 } from "@/core/utils/accessControl.js";
 import {
   resolveWorkspaceAdminGroupIcon,
@@ -461,7 +462,11 @@ const fetchMeta = async () => {
   metaError.value = "";
   try {
     const response = await axios.get(API_ROUTES.ADMIN_SQL_META);
-    tables.value = response.data?.tables || [];
+    const lista = response.data?.tables || [];
+    // ANTES de asignar `tables`: el filtro por permiso tiene que encontrar ya el recurso de cada
+    // tabla. Ver `registrarRecursosDeTablas`.
+    registrarRecursosDeTablas(lista);
+    tables.value = lista;
   } catch (error) {
     metaError.value = error?.response?.data?.message || "No se pudo cargar el catálogo.";
   } finally {

@@ -1,59 +1,22 @@
-const ADMIN_TABLE_RESOURCE_MAP = {
-  actions: "security",
-  aplications: "contracts",
-  cargo_role_map: "security",
-  cargos: "people",
-  contract_origin_recruitment: "contracts",
-  contract_origin_renewal: "contracts",
-  contract_origins: "contracts",
-  contracts: "contracts",
-  document_fill_flows: "fill_flows",
-  document_signatures: "signature_flows",
-  document_versions: "documents",
-  document_version_uploads: "documents",
-  fill_flow_steps: "fill_flows",
-  fill_flow_templates: "fill_flows",
-  fill_requests: "fill_flows",
-  offers: "contracts",
-  permissions: "security",
-  person_certificates: "signature_flows",
-  persons: "people",
-  position_assignments: "people",
-  process_definition_series: "process_definitions",
-  process_definition_templates: "templates",
-  process_definition_period_types: "process_definitions",
-  process_definition_versions: "process_definitions",
-  process_runs: "process_execution",
-  process_target_rules: "process_definitions",
-  processes: "process_definitions",
-  relation_unit_types: "units",
-  resources: "security",
-  role_assignment_relation_types: "security",
-  role_assignments: "security",
-  role_permissions: "security",
-  roles: "security",
-  signature_flow_instances: "signature_flows",
-  signature_flow_steps: "signature_flows",
-  signature_flow_templates: "signature_flows",
-  signature_request_statuses: "signature_flows",
-  signature_requests: "signature_flows",
-  signature_statuses: "signature_flows",
-  task_item_tenures: "process_execution",
-  task_items: "process_execution",
-  tasks: "process_execution",
-  template_artifacts: "templates",
-  template_seeds: "templates",
-  term_types: "academic_terms",
-  terms: "academic_terms",
-  unit_positions: "people",
-  unit_relations: "units",
-  unit_types: "units",
-  units: "units",
-  vacancies: "contracts",
-  vacancy_visibility: "contracts"
+// El recurso que protege cada tabla del editor de /admin LO DICE EL BACKEND, en `/admin/sql/meta`.
+//
+// ⚠️ AQUI HABIA UNA COPIA A MANO DE LAS 53 ENTRADAS del mapa del backend, sin ninguna prueba que las
+// comparara -- el contenedor del backend ni siquiera ve este codigo--, y con un valor por defecto,
+// `process_definitions`. Las dos cosas se retiraron en el frente 20 (P8), cuando se midio que ese
+// defecto habia dejado diecinueve tablas, cedulas incluidas, bajo el permiso de procesos. Ahora cada
+// vista que carga `meta` registra lo que dice el backend, y una tabla sin registrar NO se puede leer
+// ni escribir: se esconde, que es lo mismo que respondera el backend.
+const recursosDeTabla = new Map();
+
+export const registrarRecursosDeTablas = (tablas = []) => {
+  recursosDeTabla.clear();
+  for (const tabla of tablas) {
+    if (tabla?.table && tabla?.resource) {
+      recursosDeTabla.set(String(tabla.table), String(tabla.resource));
+    }
+  }
 };
 
-const DEFAULT_ADMIN_RESOURCE = "process_definitions";
 const SYSTEM_ADMIN_ROLES = ["AdminSistema"];
 export const getStoredUser = () => {
   if (typeof window === "undefined") return null;
@@ -125,14 +88,16 @@ export const TRACEABILITY_TABLES = new Set([
   "fill_requests",
   "signature_flow_instances",
   "signature_requests",
-  "document_signatures"
+  "document_signatures",
+  // La bitacora de accesos sensibles: la escribe el sistema, nunca una persona desde /admin.
+  "accesos_sensibles"
 ]);
 
 export const isTraceabilityTable = (tableName) =>
   TRACEABILITY_TABLES.has(String(tableName || "").trim());
 
 export const resolveAdminTableResource = (tableName = "") =>
-  ADMIN_TABLE_RESOURCE_MAP[String(tableName || "").trim()] || DEFAULT_ADMIN_RESOURCE;
+  recursosDeTabla.get(String(tableName || "").trim()) ?? null;
 
 export const canReadAdminTable = (tableName, user = getStoredUser()) =>
   canAccessResource(resolveAdminTableResource(tableName), "read", user);

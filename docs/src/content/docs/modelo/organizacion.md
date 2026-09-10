@@ -224,7 +224,7 @@ Van **tres**, y no es capricho: en uno solo median 2966 px de ancho y salían a 
 efectiva, por debajo del listón de legibilidad del sitio. Partidos por lo que uno busca —quién eres,
 cómo se te localiza y dónde vives— se leen, y además se corresponden con las tres preguntas.
 
-**Quién eres.** El documento, con su clase y su país emisor:
+**Quién eres.** El documento, con su clase y su país emisor, y lo que la persona declara de sí misma y la ley protege:
 
 ```mermaid
 erDiagram
@@ -233,7 +233,13 @@ erDiagram
   categorias_visa ||--o{ documentos_identidad : "que clase de visa"
   paises ||--o{ categorias_visa : "que autoridad las define"
   instituciones ||--|| paises : "de que pais es este despliegue"
+  persons ||--o| persona_autoidentificacion : "declara"
 
+  persona_autoidentificacion {
+    int person_id PK "y FK · una fila por persona"
+    int genero_id FK "SENSIBLE · LOPDP Art. 4"
+    int autoidentificacion_etnica_id FK "SENSIBLE · LOPDP Art. 4"
+  }
   documentos_identidad {
     int person_id FK
     text tipo "CHECK: nacional, extranjero, pasaporte, visa"
@@ -594,7 +600,7 @@ una lista abierta que nadie mantiene.
 
 ### Lo que la persona declara de sí misma
 
-`persons` pasa de **11 columnas a 17**. Todas las nuevas son **nulables** a propósito: el registro
+`persons` pasó de **11 columnas a 17**, y se quedó en **15** cuando el género y la etnia salieron a su propia tabla (ver más abajo). Todas las nuevas son **nulables** a propósito: el registro
 público pide lo mínimo y esto se completa después en el perfil; obligatorias, romperían el alta.
 
 **Tres cosas que no se ven a simple vista.**
@@ -616,6 +622,18 @@ falta un `JOIN`—: lo valida el servicio, en el único sitio por el que pasan t
 **`sexo` y `genero` no comparten vocabulario, y es correcto.** La cédula rotula el sexo
 `HOMBRE/MUJER` y el género —cuando se sustituye— `MASCULINO/FEMENINO`. Son dos campos legales
 distintos, no dos nombres del mismo.
+
+:::caution[El género y la etnia no están en `persons`]
+Entraron como columnas el 2026-09-08 y salieron dos días después a **`persona_autoidentificacion`**,
+una fila por persona con `person_id` de clave. No es cosmética: la LOPDP (Art. 4) los nombra entre los
+**datos sensibles** —«etnia, identidad de género»—, y `persons` la leen nueve roles por `people.read`,
+entre ellos `GestorFirmas`. Leer el nombre de alguien autorizaba a leer su etnia.
+
+El permiso se da sobre una **tabla**, no sobre una columna —el editor de `/admin` no sabe ocultar
+columnas por rol—, así que la tabla aparte es lo que permite protegerlos con su propio recurso,
+`datos_sensibles`. `sexo` y el estado civil **no** están en la lista de la ley, y se quedan en
+`persons`. Quién lee lo sensible y cómo queda el rastro, en [Permisos](/complemento/permisos/).
+:::
 
 ### Los vocabularios de la persona
 
@@ -770,9 +788,7 @@ erDiagram
     int nacimiento_pais_id FK "DONDE nacio"
     int nacimiento_canton_id FK "la provincia se DEDUCE de el"
     text sexo "CHECK · hombre | mujer"
-    int genero_id FK
     int estado_civil_id FK
-    int autoidentificacion_etnica_id FK
     varchar password_hash
     text status "Inactivo, Activo, Verificado, Reportado"
     text photo_url

@@ -325,13 +325,11 @@
     "isArray": true,
     "count": 43,
     "itemKeys": [
-      "autoidentificacion_etnica_id",
       "created_at",
       "datos_faltantes",
       "estado_civil_id",
       "fecha_nacimiento",
       "first_name",
-      "genero_id",
       "id",
       "is_active",
       "last_name",

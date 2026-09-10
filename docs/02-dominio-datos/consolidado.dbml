@@ -13,7 +13,27 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 91 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 93 tablas. El color de cabecera indica el dominio.'''
+}
+
+Table "accesos_sensibles" {
+  "id" int8 [pk, not null, increment]
+  "titular_person_id" int4 [not null]
+  "actor_person_id" int4 [not null]
+  "recurso" text [not null, check: `recurso = ANY (ARRAY['datos_sensibles'::text, 'datos_pago'::text])`]
+  "tabla" varchar(60) [not null]
+  "registro_id" int8
+  "accion" text [not null, check: `accion = ANY (ARRAY['read'::text, 'create'::text, 'update'::text, 'delete'::text])`]
+  "detalle" jsonb [note: '''En una escritura, los NOMBRES de los campos cambiados, nunca sus valores: copiar aquí el dato haría de la bitácora otra copia de lo que protege, y la lee Auditor.''']
+  "ip" varchar(60)
+  "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (actor_person_id, ocurrido_at) [type: btree, name: "idx_accesos_sensibles_actor"]
+    (titular_person_id, ocurrido_at) [type: btree, name: "idx_accesos_sensibles_titular"]
+  }
+
+  Note: '''La bitácora de accesos a datos sensibles y de pago: cada lectura ajena y cada escritura. Sólo altas (trigger contra UPDATE y DELETE; hook contra el alta desde /admin). Sin claves ajenas, como `consentimientos`: la evidencia sobrevive a la persona. NO es el «registro de actividades» del Art. 38 del Reglamento; se apoya en el Art. 41.4 de la Ley.'''
 }
 
 Table "actions" {
@@ -797,6 +817,16 @@ Table "person_certificates" {
   }
 }
 
+Table "persona_autoidentificacion" {
+  "person_id" int4 [pk, not null]
+  "genero_id" int4
+  "autoidentificacion_etnica_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''El género y la autoidentificación étnica, una fila por persona. Estaban en `persons` y salieron en P8 (2026-09-10): la LOPDP (Art. 4) los nombra entre los datos sensibles, y `persons` la leen nueve roles. El permiso se da sobre una tabla, no sobre una columna; protegida por `datos_sensibles`.'''
+}
+
 Table "persons" {
   "id" int4 [pk, not null, increment]
   "first_name" varchar(120) [not null]
@@ -806,9 +836,7 @@ Table "persons" {
   "nacimiento_pais_id" int4
   "nacimiento_canton_id" int4
   "sexo" text [check: `sexo = ANY (ARRAY['hombre'::text, 'mujer'::text])`]
-  "genero_id" int4
   "estado_civil_id" int4
-  "autoidentificacion_etnica_id" int4
   "password_hash" varchar(255) [not null]
   "status" text [check: `status = ANY (ARRAY['Inactivo'::text, 'Activo'::text, 'Verificado'::text, 'Reportado'::text])`, default: 'Inactivo']
   "photo_url" text
@@ -1561,9 +1589,10 @@ Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
 Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"
 Ref "fk_person_certificates_person":"persons"."id" <? "person_certificates"."person_id" [delete: cascade]
+Ref "fk_autoidentificacion_etnia":"autoidentificaciones_etnicas"."id" ?<? "persona_autoidentificacion"."autoidentificacion_etnica_id"
+Ref "fk_autoidentificacion_genero":"generos"."id" ?<? "persona_autoidentificacion"."genero_id"
+Ref "fk_autoidentificacion_person":"persons"."id" <? "persona_autoidentificacion"."person_id" [delete: cascade]
 Ref "fk_persons_estado_civil":"estados_civiles"."id" ?<? "persons"."estado_civil_id"
-Ref "fk_persons_etnia":"autoidentificaciones_etnicas"."id" ?<? "persons"."autoidentificacion_etnica_id"
-Ref "fk_persons_genero":"generos"."id" ?<? "persons"."genero_id"
 Ref "fk_persons_nacimiento_canton":"cantones"."id" ?<? "persons"."nacimiento_canton_id"
 Ref "fk_persons_nacimiento_pais":"paises"."id" ?<? "persons"."nacimiento_pais_id"
 Ref "fk_persons_nacionalidad":"paises"."id" ?<? "persons"."nacionalidad_pais_id"

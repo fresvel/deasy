@@ -46,7 +46,7 @@ import bcrypt from "bcrypt";
 import crypto from "node:crypto";
 import { assertPasswordPolicy } from "../../../utils/passwordPolicy.js";
 import { isUniqueViolation, violatedConstraint } from "../../../errors/sqlErrors.js";
-import { conflict } from "../../../errors/HttpError.js";
+import { conflict, forbidden } from "../../../errors/HttpError.js";
 import {
   hydrateTaskFromDefinition,
   ensureProcessRun,
@@ -208,6 +208,18 @@ const mapOneActivePerSeries = (error) => {
 // -------------------------------------------------------------------------------------------
 
 export const TABLE_HOOKS = {
+  // ⚠️ LA BITACORA NO SE ESCRIBE DESDE /admin -- ni AdminSistema, que tiene `manage` de todo--. Una
+  // entrada dada de alta a mano es una entrada FALSA con aspecto de verdadera. Las altas las hace
+  // `AccesosSensiblesService`; modificar y borrar los rechaza ademas el trigger del esquema.
+  accesos_sensibles: {
+    async beforeCreate() {
+      throw forbidden("La bitacora de accesos no admite altas desde el editor.");
+    },
+    async beforeUpdate() {
+      throw forbidden("La bitacora de accesos no se modifica.");
+    }
+  },
+
   persons: {
     // Graft de SEGURIDAD: la contraseña nunca se guarda en claro y cada persona tiene un token
     // único. `sanitizePersonRow` (en el motor) se encarga de que el hash no salga en la respuesta.

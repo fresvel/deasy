@@ -20,13 +20,15 @@ const ESQUEMA = new URL("../../database/postgres_schema.sql", import.meta.url);
 // Las columnas de `persons` que describen a la persona y las edita ella. Se excluye la fontaneria
 // -- clave, token, estado, foto, marcas de tiempo-- que NO entra por el perfil.
 const NO_EDITABLES = new Set([
-  "id", "password_hash", "status", "photo_url", "is_active", "token", "created_at", "updated_at"
+  "id", "person_id", "password_hash", "status", "photo_url", "is_active", "token", "created_at", "updated_at"
 ]);
 
-const columnasDePersons = () => {
+const columnasDePersons = () => columnasDe("persons");
+
+function columnasDe(tabla) {
   const sql = readFileSync(ESQUEMA, "utf8");
-  const inicio = sql.indexOf("CREATE TABLE IF NOT EXISTS persons (");
-  assert.notEqual(inicio, -1, "no se encontro la tabla persons en el esquema");
+  const inicio = sql.indexOf(`CREATE TABLE IF NOT EXISTS ${tabla} (`);
+  assert.notEqual(inicio, -1, `no se encontro la tabla ${tabla} en el esquema`);
   const cuerpo = sql.slice(inicio, sql.indexOf("\n);", inicio));
   return cuerpo
     .split("\n")
@@ -36,7 +38,7 @@ const columnasDePersons = () => {
     .filter(Boolean)
     .map((coincidencia) => coincidencia[1])
     .filter((columna) => !NO_EDITABLES.has(columna));
-};
+}
 
 // `allowedFields` es local a `updateMe`, asi que se sonsaca observando que deja pasar: se le da un
 // objeto con TODAS las columnas y se mira cual llega a `update`.
@@ -51,7 +53,12 @@ const camposQuePasan = async (columnas) => {
 
 test("toda columna editable de `persons` esta en la lista blanca de updateMe", async () => {
   const columnas = columnasDePersons();
-  assert.ok(columnas.length >= 10, `se esperaban al menos 10 columnas, hubo ${columnas.length}`);
+  // Comprueba que el analizador del esquema ENCUENTRA columnas, y no con un numero: aqui ponia «al
+  // menos 10», y se rompio en P8 al salir el genero y la etnia de `persons`, sin que el analizador
+  // tuviera nada que ver. Se pregunta por columnas que tienen que estar.
+  for (const conocida of ["first_name", "last_name", "fecha_nacimiento", "estado_civil_id"]) {
+    assert.ok(columnas.includes(conocida), `el analizador no encontro ${conocida} en persons`);
+  }
   const pasan = new Set(await camposQuePasan(columnas));
   const olvidadas = columnas.filter((c) => !pasan.has(c));
   assert.deepEqual(
@@ -65,4 +72,34 @@ test("un campo que no es columna de `persons` NO pasa la lista blanca", async ()
   assert.ok(pasan.has("first_name"), "first_name deberia pasar");
   assert.ok(!pasan.has("columna_inventada"), "un campo inventado no deberia pasar");
   assert.ok(!pasan.has("is_active"), "is_active no lo edita la persona");
+});
+
+// P8 saco el genero y la etnia de `persons` a `persona_autoidentificacion`: son datos sensibles
+// (LOPDP, Art. 4) y `persons` la leen nueve roles. La persona los sigue declarando desde su perfil,
+// asi que tienen que pasar la lista blanca -- y NO acabar en el UPDATE de `persons`, donde ya no
+// existen y PostgreSQL responderia 42703 en tiempo de llamada--.
+test("las columnas de `persona_autoidentificacion` pasan la lista blanca", async () => {
+  const columnas = columnasDe("persona_autoidentificacion");
+  assert.deepEqual([...columnas].sort(), ["autoidentificacion_etnica_id", "genero_id"]);
+  const pasan = new Set(await camposQuePasan(columnas));
+  assert.deepEqual(columnas.filter((c) => !pasan.has(c)), []);
+});
+
+test("el genero y la etnia se guardan en su tabla, nunca en `persons`", async () => {
+  const consultas = [];
+  const repo = new UserRepository({
+    query: async (sql, params) => {
+      consultas.push({ sql, params });
+      return [[]];
+    }
+  });
+  await repo.updateMe(7, { first_name: "Ana", genero_id: 2, autoidentificacion_etnica_id: "" });
+
+  const updatePersons = consultas.find((c) => /UPDATE persons/.test(c.sql));
+  assert.ok(updatePersons, "first_name tenia que actualizar persons");
+  assert.doesNotMatch(updatePersons.sql, /genero_id|autoidentificacion_etnica_id/);
+
+  const upsert = consultas.find((c) => /INSERT INTO persona_autoidentificacion/.test(c.sql));
+  assert.ok(upsert, "tenia que guardar la autoidentificacion en su tabla");
+  assert.deepEqual(upsert.params, [7, 2, null], "la cadena vacia se guarda como NULL");
 });

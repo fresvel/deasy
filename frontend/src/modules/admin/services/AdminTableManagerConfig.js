@@ -158,6 +158,9 @@ export const FK_TABLE_MAP = {
   owner_person_id: "persons",
   created_by_user_id: "persons",
   person_id: "persons",
+  // La bitacora de accesos sensibles: de quien es el dato y quien accedio.
+  titular_person_id: "persons",
+  actor_person_id: "persons",
   responsible_position_id: "unit_positions",
   role_id: "roles",
   permission_id: "permissions",

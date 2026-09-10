@@ -8,6 +8,23 @@ import DocumentosLegales from "../legal/DocumentosLegales.js";
 
 const DEFAULT_STATUS = "Inactivo";
 
+// Las columnas de `persona_autoidentificacion` que declara la propia persona desde su perfil. Hasta P8
+// eran columnas de `persons`; salieron por ser datos sensibles (LOPDP, Art. 4).
+export const CAMPOS_AUTOIDENTIFICACION = ["genero_id", "autoidentificacion_etnica_id"];
+
+// Saca del payload los campos de autoidentificacion y los devuelve aparte, o NULL si no venia
+// ninguno. Una cadena vacia es «lo quito» y se guarda como NULL: tal cual, la clave ajena la rechazaria.
+const apartarAutoidentificacion = (payload) => {
+  const datos = {};
+  for (const campo of CAMPOS_AUTOIDENTIFICACION) {
+    if (payload[campo] !== undefined) {
+      datos[campo] = payload[campo] === "" ? null : payload[campo];
+    }
+    delete payload[campo];
+  }
+  return Object.keys(datos).length ? datos : null;
+};
+
 export default class UserRepository {
   constructor(pool = getPostgresPool()) {
     this.pool = pool;
@@ -569,6 +586,10 @@ export default class UserRepository {
     delete payload.emails;
     delete payload.email_verificado;
     delete payload.email_id;
+    // LA AUTOIDENTIFICACION NO ES DE `persons` DESDE P8. Se aparta ANTES de componer el UPDATE -- o
+    // PostgreSQL responde 42703 en tiempo de llamada, que es como se rompieron `nacionalidad` y
+    // `direccion`-- y se guarda en su tabla al final.
+    const autoidentificacion = apartarAutoidentificacion(payload);
 
     if (payload.nacionalidad !== undefined) {
       const resuelto = await this.resolveNacionalidadPaisId(payload);
@@ -596,11 +617,12 @@ export default class UserRepository {
     });
 
     if (!fields.length) {
-      if (direccion || telefono || email || documento) {
+      if (direccion || telefono || email || documento || autoidentificacion) {
         if (direccion) await this.direcciones.guardarPrincipal(userId, direccion);
         if (telefono) await this.telefonos.guardarPrincipal(userId, telefono);
         if (email) await this.emails.guardarPrincipal(userId, email);
         if (documento) await this.documentos.guardarPrincipal(userId, documento);
+        if (autoidentificacion) await this.guardarAutoidentificacion(userId, autoidentificacion);
         return this.toPublicUser(await this.findById(userId));
       }
       return null;
@@ -625,10 +647,28 @@ export default class UserRepository {
     if (documento) {
       await this.documentos.guardarPrincipal(userId, documento);
     }
+    if (autoidentificacion) {
+      await this.guardarAutoidentificacion(userId, autoidentificacion);
+    }
 
     const updated = await this.findById(userId);
 
     return this.toPublicUser(updated);
+  }
+
+  // Guarda el genero y la etnia en su tabla. Upsert por `person_id`, que es la clave primaria: la fila
+  // nace la primera vez que la persona declara algo. Las columnas salen de CAMPOS_AUTOIDENTIFICACION,
+  // nunca del cuerpo de la peticion.
+  async guardarAutoidentificacion(personId, datos) {
+    this.ensurePool();
+    const columnas = CAMPOS_AUTOIDENTIFICACION.filter((campo) => Object.hasOwn(datos, campo));
+    if (!columnas.length) return;
+    await this.pool.query(
+      `INSERT INTO persona_autoidentificacion (person_id, ${columnas.join(", ")})
+       VALUES (?, ${columnas.map(() => "?").join(", ")})
+       ON CONFLICT (person_id) DO UPDATE SET ${columnas.map((c) => `${c} = EXCLUDED.${c}`).join(", ")}`,
+      [personId, ...columnas.map((c) => datos[c])]
+    );
   }
 
   // Comprueba que `nacimiento_canton_id` cuelgue de `nacimiento_pais_id`. Si el UPDATE trae solo uno
@@ -683,8 +723,10 @@ export default class UserRepository {
       "nacimiento_pais_id",
       "nacimiento_canton_id",
       "sexo",
-      "genero_id",
       "estado_civil_id",
+      // Estos dos NO son columnas de `persons` desde P8: `update` los aparta y los guarda en
+      // `persona_autoidentificacion`. Entran por aqui igual, porque los declara la propia persona.
+      "genero_id",
       "autoidentificacion_etnica_id"
     ];
 
