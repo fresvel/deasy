@@ -6,6 +6,12 @@ sidebar:
   order: 15
 ---
 
+:::tip[Con todos sus campos]
+Las mismas tablas y los mismos grupos, con **todas sus columnas y claves ajenas**, en
+[El mapa completo, con todos sus campos](/modelo/mapa-con-campos/). Esa página se genera desde el esquema, así que
+no se queda atrás; la agrupación la toma de este mapa.
+:::
+
 La cadena entera sin los campos, para ver la forma. Son **38 tablas** repartidas en seis grupos: la
 organización (que no es parte de la cadena pero la sostiene), lo que se declara, lo que ocurre, los dos
 flujos y las observaciones.

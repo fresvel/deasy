@@ -1,16 +1,18 @@
 ---
 title: Modelo de datos
-description: Las 90 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
+description: Las 93 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
 sidebar:
   order: 1
 ---
 
-Esta página **no se escribe: se genera.** Los diagramas salen de
+**Los diagramas y las cifras de esta página se generan; el texto se escribe a mano.** Aquí ponía
+«no se escribe: se genera», y las cifras llevaban tiempo desfasadas precisamente porque nadie las
+generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los diagramas salen de
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **90 tablas y 179 relaciones**. Repartidas en ocho dominios porque un diagrama de 78 tablas
-impresiona y no se lee.
+Son **<!-- gen:total-tablas -->93<!-- /gen --> tablas y <!-- gen:total-relaciones -->182<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+de <!-- gen:total-tablas -->93<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
 Cada dominio muestra **solo las relaciones internas**. Las que salen hacia otros dominios están
@@ -18,68 +20,99 @@ listadas como comentario al final de su fichero `.dbml` — si no, cada dominio 
 que es justo lo que no es.
 :::
 
+:::caution[A ancho de columna no se leen enteros]
+Son **imágenes**, no diagramas del sitio, así que el visor con zoom no las alcanza: se encogen al
+ancho de la columna, y la de plantillas se queda en torno a 9 px de letra. Cada una lleva debajo su
+enlace para abrirla a tamaño real.
+
+Para leer las tablas **con todos sus campos, agrupadas como en los mapas y con zoom**, están
+[el mapa completo con todos sus campos](/modelo/mapa-con-campos/) y
+[el del complemento](/complemento/mapa-con-campos/), que se generan del mismo esquema.
+:::
+
 ## Identidad, personas y RBAC
 
 Quién es cada quien y qué puede hacer. `persons` es la identidad única del sistema; el expediente
-(dossier) cuelga de ella. **15 tablas.**
+(dossier) cuelga de ella. **<!-- gen:tablas-dominio:identidad -->34<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de identidad](/diagramas/identidad.svg)
+
+[Abrir a tamaño real](/diagramas/identidad.svg)
 
 ## Unidades, puestos y ocupación
 
 El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa.
-**6 tablas.**
+**<!-- gen:tablas-dominio:organizacion -->13<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de organización](/diagramas/organizacion.svg)
+
+[Abrir a tamaño real](/diagramas/organizacion.svg)
 
 ## Motor de procesos
 
 Serie → regla → flujo. La **serie** nombra el proceso, la **regla** reparte su alcance y el
-**flujo** reparte los pasos. `process_runs` es cada lanzamiento. **9 tablas.**
+**flujo** reparte los pasos. `process_runs` es cada lanzamiento. **<!-- gen:tablas-dominio:procesos -->9<!-- /gen --> tablas.**
 
 ![Diagrama del motor de procesos](/diagramas/procesos.svg)
+
+[Abrir a tamaño real](/diagramas/procesos.svg)
 
 ## Plantillas y entregables
 
 El modelo «libro y ediciones»: `deliverables` porta la identidad estable y `template_artifacts`
-las versiones. Aquí vive también la autoría del flujo de llenado. **7 tablas.**
+las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:tablas-dominio:plantillas -->8<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de plantillas](/diagramas/plantillas.svg)
+
+[Abrir a tamaño real](/diagramas/plantillas.svg)
 
 ## Tareas, entregables instanciados y documentos
 
 Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos
-producidos. Es el dominio con más relaciones hacia fuera — 34 — porque es donde converge todo.
-**9 tablas.**
+producidos. Es donde converge todo: tiene **<!-- gen:relaciones-fuera:tareas -->28<!-- /gen --> relaciones con otros dominios**.
+**<!-- gen:tablas-dominio:tareas -->8<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de tareas](/diagramas/tareas.svg)
+
+[Abrir a tamaño real](/diagramas/tareas.svg)
 
 ## Firma electrónica
 
 Plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio
-`signer` por RabbitMQ. **7 tablas.**
+`signer` por RabbitMQ. **<!-- gen:tablas-dominio:firmas -->7<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de firmas](/diagramas/firmas.svg)
 
+[Abrir a tamaño real](/diagramas/firmas.svg)
+
 ## Chat y notificaciones
 
-Mensajería en tiempo real sobre Socket.IO. **6 tablas.**
+Mensajería en tiempo real sobre Socket.IO. **<!-- gen:tablas-dominio:chat -->6<!-- /gen --> tablas.**
 
-:::caution[Este dominio no tiene ni una clave ajena hacia fuera]
-No es que esté aislado por diseño: `chat_conversation_participants.person_id`,
-`chat_messages.sender_person_id` y `chat_notifications.recipient_person_id` **referencian personas
-sin ninguna restricción que lo garantice**. Nada impide un participante huérfano. Lo mismo pasa con
-`dossiers.person_id`. Salió al dibujar los diagramas y está anotado como pendiente del plan de datos.
+:::note[El chat SÍ tiene claves ajenas hacia fuera]
+Aquí ponía que no tenía ninguna: que `chat_conversation_participants.person_id`,
+`chat_messages.sender_person_id` y `chat_notifications.recipient_person_id` referenciaban personas
+sin restricción, y que lo mismo pasaba con `dossiers.person_id`. **Dejó de ser verdad con TD7-c3**
+(2026-08-24), que les puso clave ajena. Hoy el chat tiene
+**<!-- gen:relaciones-fuera:chat -->10<!-- /gen --> relaciones con otros dominios** —hacia `persons`, `units`,
+`processes` y `process_definition_versions`—, y `dossiers.person_id` también tiene la suya.
+
+Lo único que sigue sin restricción, a propósito, es `chat_conversations.last_message_id`: con clave
+ajena habría un ciclo entre la conversación y su último mensaje.
 :::
 
 ![Diagrama del dominio de chat](/diagramas/chat.svg)
 
+[Abrir a tamaño real](/diagramas/chat.svg)
+
 ## Vacantes, postulaciones y contratos
 
 El ciclo de contratación: vacante, postulación, oferta y contrato, con el origen del contrato
-desglosado. **8 tablas.**
+desglosado. **<!-- gen:tablas-dominio:empleo -->8<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de empleo](/diagramas/empleo.svg)
+
+[Abrir a tamaño real](/diagramas/empleo.svg)
 
 ## Explorar el modelo de forma interactiva
 

@@ -6,6 +6,12 @@ sidebar:
   order: 15
 ---
 
+:::tip[Con todos sus campos]
+Las mismas tablas y los mismos grupos, con **todas sus columnas y claves ajenas**, en
+[El mapa del complemento, con todos sus campos](/complemento/mapa-con-campos/). Esa página se genera desde el esquema, así que
+no se queda atrás; la agrupación la toma de este mapa.
+:::
+
 Las **55 tablas** que la cadena da por supuestas, sin sus campos, para ver la forma. Con las
 [38 de la cadena](/modelo/mapa-completo/) suman las **93** del esquema, y entre los dos mapas no
 queda ninguna fuera.

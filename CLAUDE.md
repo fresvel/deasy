@@ -383,6 +383,13 @@ son ARTEFACTOS.** Editarlos a mano no sirve de nada: la siguiente regeneración 
 `.github/workflows/docs-dbml.yml` lo detecta. Antes decían "generado por introspección" y **no
 había generador**: se generó una vez en julio y se mantuvo a mano hasta que derivó.
 
+⚠️ **Tres páginas del sitio también son artefacto** desde el 2026-09-10: `complemento/mapa-con-campos.md`
+y `modelo/mapa-con-campos.md` (los dos mapas con todas sus columnas y claves ajenas) y las cifras entre
+marcas `<!-- gen:… -->` de `referencia/modelo-datos.md`. Las escribe `scripts/docs/gen-mapa-campos.mjs`
+dentro de `gen-dbml.sh`, y su `--check` las compara. **La agrupación sale de los dos mapas escritos a
+mano** (`complemento/mapa-completo.md` y `modelo/mapa-completo.md`): si añades una tabla al esquema,
+dibújala en uno de los dos, dentro de su subgrupo, o el generador falla a propósito.
+
 **Si cambias `postgres_schema.sql`, regenera en el mismo commit.** Si añades una tabla, además
 tienes que darle dominio en `scripts/docs/dominios.json` — el generador falla a propósito si una
 tabla no está en ninguno o está en dos, para que no se quede fuera de los diagramas en silencio.

@@ -372,6 +372,7 @@ personas**.
 
 ```mermaid
 erDiagram
+  %% parcial: estas columnas son las que explican esto; todas estan en el mapa con campos
   paises ||--o{ campos_nacionales : ""
   paises ||--o{ carreras : ""
   campos_amplios ||--o{ campos_especificos : ""

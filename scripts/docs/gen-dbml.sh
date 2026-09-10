@@ -40,6 +40,13 @@ OUT_DIR="$ROOT_DIR/docs/02-dominio-datos"
 # El .dbml (la fuente legible, que dbdiagram.io abre) se queda junto al modelo.
 SVG_DIR="$ROOT_DIR/docs/public/diagramas"
 SCHEMA="$ROOT_DIR/backend/database/postgres_schema.sql"
+# Las paginas del sitio que tambien son artefacto: las escribe gen-mapa-campos.mjs (los dos mapas con
+# todos sus campos, y las cifras entre marcas de modelo-datos.md). Entran en el --check.
+GENERADAS=(
+  "$ROOT_DIR/docs/src/content/docs/complemento/mapa-con-campos.md"
+  "$ROOT_DIR/docs/src/content/docs/modelo/mapa-con-campos.md"
+  "$ROOT_DIR/docs/src/content/docs/referencia/modelo-datos.md"
+)
 
 NODE_IMAGE="node:25.8.1"
 PG_IMAGE="postgres:17"
@@ -103,6 +110,11 @@ docker run --rm \
     /tmp/w/raw.dbml /tmp/w/generadas.txt \
     /out/anotaciones.json /scripts/dominios.json /out
 
+echo "▸ Generando los mapas con todos sus campos y las cifras del modelo"
+# Lee el DBML recien producido y los dos mapas escritos a mano (de ellos sale la agrupacion). Falla si
+# una tabla del esquema no esta dibujada en ninguno de los dos mapas.
+docker run --rm -v "$ROOT_DIR:/repo" -w /repo "$NODE_IMAGE" node scripts/docs/gen-mapa-campos.mjs
+
 echo "▸ Renderizando los diagramas"
 # `db2dbml` marca el lado nullable con `?` (`<?`, `?<?`), que dbml-renderer todavia no
 # entiende: falla con 'Expected "\"" ... but "?" found'. Se normaliza SOLO en la copia que
@@ -132,7 +144,10 @@ docker run --rm -v "$TMP/render:/in" -v "$SVG_DIR:/out" "$NODE_IMAGE" sh -c '
 # root y el dueño del repo no puede ni borrarlo. Se devuelve la propiedad al usuario que
 # lanzo el script.
 docker run --rm -v "$ROOT_DIR:/repo" "$PG_IMAGE" \
-  chown -R "$(id -u):$(id -g)" /repo/docs/02-dominio-datos /repo/docs/public/diagramas
+  chown -R "$(id -u):$(id -g)" /repo/docs/02-dominio-datos /repo/docs/public/diagramas \
+    /repo/docs/src/content/docs/complemento/mapa-con-campos.md \
+    /repo/docs/src/content/docs/modelo/mapa-con-campos.md \
+    /repo/docs/src/content/docs/referencia/modelo-datos.md
 
 n_svg=$(find "$SVG_DIR" -name "*.svg" | wc -l)
 n_dbml=$(find "$OUT_DIR/dominios" -name "*.dbml" | wc -l)
@@ -141,7 +156,8 @@ n_dbml=$(find "$OUT_DIR/dominios" -name "*.dbml" | wc -l)
 echo "  diagramas renderizados: $n_svg"
 
 if [ "$MODO_CHECK" = "1" ]; then
-  if ! git -C "$ROOT_DIR" diff --quiet -- "$OUT_DIR" "$SVG_DIR"; then
+  nuevas_sin_commit=$(git -C "$ROOT_DIR" ls-files --others --exclude-standard -- "${GENERADAS[@]}")
+  if [ -n "$nuevas_sin_commit" ] || ! git -C "$ROOT_DIR" diff --quiet -- "$OUT_DIR" "$SVG_DIR" "${GENERADAS[@]}"; then
     cat >&2 <<EOF
 
 ✖ El modelo de datos publicado NO coincide con el esquema.
@@ -153,11 +169,13 @@ if [ "$MODO_CHECK" = "1" ]; then
 
       bash scripts/docs/gen-dbml.sh
 
-  ...y se commitea lo que cambie en docs/02-dominio-datos/.
+  ...y se commitea lo que cambie en docs/02-dominio-datos/, docs/public/diagramas/ y las
+  paginas generadas del sitio (los dos mapa-con-campos.md y las cifras de modelo-datos.md).
 
   Diferencias:
 EOF
-    git -C "$ROOT_DIR" diff --stat -- "$OUT_DIR" "$SVG_DIR" >&2
+    git -C "$ROOT_DIR" diff --stat -- "$OUT_DIR" "$SVG_DIR" "${GENERADAS[@]}" >&2
+    [ -n "$nuevas_sin_commit" ] && echo "  Sin commitear: $nuevas_sin_commit" >&2
     exit 1
   fi
   echo "✓ El modelo publicado coincide con el esquema."

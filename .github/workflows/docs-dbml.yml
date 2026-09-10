@@ -23,6 +23,9 @@ on:
       - 'backend/database/postgres_schema.sql'
       - 'docs/02-dominio-datos/**'
       - 'docs/public/diagramas/**'
+      - 'docs/src/content/docs/complemento/mapa-*.md'
+      - 'docs/src/content/docs/modelo/mapa-*.md'
+      - 'docs/src/content/docs/referencia/modelo-datos.md'
       - 'scripts/docs/**'
       - '.github/workflows/docs-dbml.yml'
   push:
@@ -31,6 +34,9 @@ on:
       - 'backend/database/postgres_schema.sql'
       - 'docs/02-dominio-datos/**'
       - 'docs/public/diagramas/**'
+      - 'docs/src/content/docs/complemento/mapa-*.md'
+      - 'docs/src/content/docs/modelo/mapa-*.md'
+      - 'docs/src/content/docs/referencia/modelo-datos.md'
       - 'scripts/docs/**'
       - '.github/workflows/docs-dbml.yml'
   workflow_dispatch:

@@ -1,0 +1,172 @@
+{
+  "_leeme": [
+    "La disposicion de cada diagrama de las paginas mapa-con-campos: cuantas tablas por diagrama y en que",
+    "direccion. NO se deduce: se MIDE en el sitio y se apunta aqui con la letra efectiva que dio cada trozo.",
+    "La lee scripts/docs/gen-mapa-campos.mjs. Un grupo que no este aqui va de arriba abajo en trozos de 8.",
+    "El generador FALLA si este fichero nombra un grupo que ya no existe (se renombro o movio en el mapa).",
+    "Para volver a medir: PRUEBA_DISPOSICION=1 node scripts/docs/gen-mapa-campos.mjs (ver el generador)."
+  ],
+  "medido": {
+    "fecha": "2026-09-10",
+    "ventana_px": 1905,
+    "columna_px": 1317,
+    "metodo": "letra de nodo computada × (ancho renderizado del svg ÷ ancho de su viewBox), con el visor en reposo",
+    "minimo_px": 12
+  },
+  "grupos": {
+    "complemento/mapa-con-campos.md › 1 · Lo que una persona es › Cómo se te localiza": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "complemento/mapa-con-campos.md › 1 · Lo que una persona es › Fuera de los subgrupos": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "complemento/mapa-con-campos.md › 1 · Lo que una persona es › Lo que decide el país": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB",
+        "LR"
+      ],
+      "letraEfectiva": [
+        16,
+        16
+      ]
+    },
+    "complemento/mapa-con-campos.md › 1 · Lo que una persona es › Lo que sobrevive a la persona": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "complemento/mapa-con-campos.md › 1 · Lo que una persona es › Que eres tú quien firma": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "complemento/mapa-con-campos.md › 1 · Lo que una persona es › Qué has hecho antes": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "complemento/mapa-con-campos.md › 2 · Lo que la organización hace con ella › A quién se contrata": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "complemento/mapa-con-campos.md › 2 · Lo que la organización hace con ella › Qué puedes hacer": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        14.95
+      ]
+    },
+    "complemento/mapa-con-campos.md › 3 · Lo que se dice por el camino › Cómo se habla": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "complemento/mapa-con-campos.md › 3 · Lo que se dice por el camino › Fuera de los subgrupos": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "modelo/mapa-con-campos.md › — › Flujo de entrega": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        13.27
+      ]
+    },
+    "modelo/mapa-con-campos.md › — › Flujo de firma": {
+      "maxTablas": 6,
+      "direcciones": [
+        "TB",
+        "TB"
+      ],
+      "letraEfectiva": [
+        12.22,
+        16
+      ]
+    },
+    "modelo/mapa-con-campos.md › — › Fuera de los subgrupos": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        16
+      ]
+    },
+    "modelo/mapa-con-campos.md › — › La organización": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB"
+      ],
+      "letraEfectiva": [
+        14.87
+      ]
+    },
+    "modelo/mapa-con-campos.md › — › Lo que ocurre": {
+      "maxTablas": 3,
+      "direcciones": [
+        "TB",
+        "TB",
+        "TB"
+      ],
+      "letraEfectiva": [
+        16,
+        13.84,
+        16
+      ]
+    },
+    "modelo/mapa-con-campos.md › — › Lo que se declara": {
+      "maxTablas": 8,
+      "direcciones": [
+        "TB",
+        "TB"
+      ],
+      "letraEfectiva": [
+        16,
+        16
+      ]
+    }
+  }
+}

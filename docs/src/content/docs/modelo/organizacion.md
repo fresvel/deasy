@@ -228,6 +228,7 @@ cómo se te localiza y dónde vives— se leen, y además se corresponden con la
 
 ```mermaid
 erDiagram
+  %% parcial: estas columnas son las que explican esto; todas estan en el mapa con campos
   persons ||--o{ documentos_identidad : "se identifica con"
   paises ||--o{ documentos_identidad : "quien lo emitio"
   categorias_visa ||--o{ documentos_identidad : "que clase de visa"
@@ -272,6 +273,7 @@ config:
     nodePlacementStrategy: SIMPLE
 ---
 erDiagram
+  %% parcial: estas columnas son las que explican esto; todas estan en el mapa con campos
   persons ||--o{ emails : "recibe en"
   persons ||--o{ telefonos : "se le llama a"
   telefonos ||--o{ telefono_canales : "esta en"
@@ -541,6 +543,7 @@ revisar lo que hizo; «caducó» y «ya la usaste» le dicen que repita **sin ca
 
 ```mermaid
 erDiagram
+  %% parcial: estas columnas son las que explican esto; todas estan en el mapa con campos
   paises ||--o{ provincias : "se divide en"
   provincias ||--o{ cantones : "se divide en"
   cantones ||--o{ parroquias : "se divide en"
@@ -758,6 +761,7 @@ erDiagram
     varchar name "Facultad, Carrera, Direccion"
     smallint is_active
     timestamp created_at
+    timestamp updated_at
   }
   units {
     int id PK
@@ -777,6 +781,7 @@ erDiagram
     smallint is_inheritance_allowed "si hereda permisos hacia abajo"
     smallint is_active
     timestamp created_at
+    timestamp updated_at
   }
   unit_relations {
     int id PK
@@ -784,6 +789,7 @@ erDiagram
     int parent_unit_id FK
     int child_unit_id FK
     timestamp created_at
+    timestamp updated_at
   }
   cargos {
     int id PK
