@@ -136,6 +136,7 @@ export const FK_TABLE_MAP = {
   autoidentificacion_etnica_id: "autoidentificaciones_etnicas",
   tipo_discapacidad_id: "tipos_discapacidad",
   parentesco_id: "parentescos",
+  categoria_visa_id: "categorias_visa",
   nacimiento_pais_id: "paises",
   nacimiento_canton_id: "cantones",
   nacionalidad_pais_id: "paises",

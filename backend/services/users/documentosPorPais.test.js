@@ -1,6 +1,12 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { validadorPara, nombreLocal, etiquetaNacional, POR_PAIS } from "./documentosPorPais.js";
+import {
+  validadorPara,
+  nombreLocal,
+  etiquetaNacional,
+  nombreDeTipo,
+  POR_PAIS,
+} from "./documentosPorPais.js";
 
 describe("validadorPara", () => {
   it("una cédula ecuatoriana se valida con el dígito verificador", () => {
@@ -55,5 +61,27 @@ describe("el registro", () => {
   it("tiene tantas entradas como reglas conocidas, no como países", () => {
     assert.equal(Object.keys(POR_PAIS).length, 1);
     assert.deepEqual(Object.keys(POR_PAIS), ["EC"]);
+  });
+});
+
+// Esta funcion no tenia ni un test, y por eso un `ReferenceError` suyo -- una constante que
+// desaparecio al meter la visa -- sobrevivio a los 821 unitarios y a los 330 de caracterizacion, y
+// tumbaba HASTA EL LOGIN, porque el mismo modulo lo carga el camino de autenticacion.
+describe("nombreDeTipo", () => {
+  it("el nacional lleva el nombre del país; los demás, el suyo", () => {
+    assert.equal(nombreDeTipo("documento_nacional", "EC", "Ecuador"), "Cédula (Ecuador)");
+    assert.equal(nombreDeTipo("pasaporte", "ES", "España"), "Pasaporte (España)");
+    assert.equal(nombreDeTipo("documento_extranjero", "PE", "Perú"), "Documento extranjero (Perú)");
+  });
+
+  // La visa entra en el frente 20 (P4). Con el ternario de antes se enseñaba «Documento
+  // extranjero», que es justo lo que NO es: no acredita identidad, acredita permanencia.
+  it("la visa se llama visa, no «documento extranjero»", () => {
+    assert.equal(nombreDeTipo("visa", "EC", "Ecuador"), "Visa (Ecuador)");
+    assert.equal(nombreDeTipo("visa", "EC", null), "Visa");
+  });
+
+  it("un tipo desconocido no revienta", () => {
+    assert.equal(nombreDeTipo(null, "EC", "Ecuador"), "Documento extranjero (Ecuador)");
   });
 });

@@ -54,6 +54,12 @@ const sql = readFileSync(ESQUEMA, 'utf8');
 const tablas = new Set([...sql.matchAll(/CREATE TABLE IF NOT EXISTS (\w+)/g)].map((m) => m[1]));
 const vistas = new Set([...sql.matchAll(/CREATE (?:OR REPLACE )?VIEW (\w+)/g)].map((m) => m[1]));
 const indices = new Set([...sql.matchAll(/CREATE (?:UNIQUE )?INDEX IF NOT EXISTS (\w+)/g)].map((m) => m[1]));
+// Y las RESTRICCIONES CON NOMBRE (`CONSTRAINT chk_… CHECK (…)`, las claves ajenas), que hasta el
+// 2026-09-09 no se leian: solo entraban los indices. Los `uq_*` pasaban porque son `CREATE INDEX`;
+// el primer `chk_*` que una pagina nombro —`chk_documentos_categoria_visa`— salio "sin clasificar",
+// y la salida correcta NO era una excepcion: la restriccion existe y la pagina acierta. Era la
+// puerta la que no sabia mirar ahi.
+const restricciones = new Set([...sql.matchAll(/\bCONSTRAINT (\w+)/g)].map((m) => m[1]));
 const triggers = new Set([
   ...[...sql.matchAll(/CREATE OR REPLACE TRIGGER (\w+)/g)].map((m) => m[1]),
   ...[...sql.matchAll(/CREATE OR REPLACE FUNCTION (\w+)/g)].map((m) => m[1]),
@@ -91,7 +97,7 @@ for (const sub of ['backend', 'frontend/src', 'scripts', 'signer', 'docker']) {
 }
 
 const EXISTE = new Set([
-  ...tablas, ...vistas, ...indices, ...triggers, ...columnas, ...valores, ...ficheros,
+  ...tablas, ...vistas, ...indices, ...restricciones, ...triggers, ...columnas, ...valores, ...ficheros,
 ]);
 
 // ── Lo que las paginas NOMBRAN ───────────────────────────────────────────────────────────────

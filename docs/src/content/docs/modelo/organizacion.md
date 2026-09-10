@@ -127,10 +127,44 @@ multi-inquilino, y `InstitucionService.actual()` **falla si hay cero o más de u
 en silencio — elegir «la primera» ante dos daría un país equivocado, y con él un validador
 equivocado, sin que nadie entendiera por qué se rechaza un número.
 
-**Las tres clases de documento son un `CHECK`**, como en `emails`, `telefonos` y `direcciones`:
-`documento_nacional` · `documento_extranjero` · `pasaporte`. Son fijas, el código se ramifica con
-ellas, y **un cuarto valor no debe poder crearse** porque nadie sabría qué hacer con él. Antes eran un
-catálogo de tres filas con clave ajena: la única del grupo que lo hacía así.
+**Las clases de documento son un `CHECK`**, como en `emails`, `telefonos` y `direcciones`:
+`documento_nacional` · `documento_extranjero` · `pasaporte` · `visa`. Son fijas y el código se
+ramifica con ellas. Antes eran un catálogo de tres filas con clave ajena: la única del grupo que lo
+hacía así.
+
+:::caution[El cuarto valor entró, y costó lo que esta página avisaba que costaría]
+
+Aquí ponía que **«un cuarto valor no debe poder crearse porque nadie sabría qué hacer con él»**. La
+`visa` entró el **2026-09-09**, y la frase resultó ser una predicción exacta: **dos** sitios del
+código no supieron qué hacer con ella, y los dos por la misma premisa tácita —*todo lo que no es un
+pasaporte es el documento de identidad nacional de algún país*—.
+
+1. El **validador** le aplicó la regla de la cédula, y rechazaba visas ecuatorianas válidas con «la
+   cédula ecuatoriana tiene exactamente 10 dígitos».
+2. Peor: `guardarPrincipal` **reescribe la fila principal en su sitio**, así que un `PATCH
+   /users/me` con `tipo: visa` no añadía una visa — **convertía en visa la cédula de la persona**, y
+   su documento de identidad desaparecía sin dejar rastro.
+
+Lo que cierra el hueco no es un parche en cada sitio, es una **línea explícita en el modelo**: de las
+cuatro clases, **tres acreditan identidad y una acredita permanencia**. La visa dice *que puedes
+estar aquí*, no *quién eres*, y quien la tiene se identifica con su pasaporte. Por eso **la visa no
+puede ser el documento principal**, y el servicio la rechaza ahí con un 400 que explica el motivo.
+
+Si algún día entra un quinto valor, esta es la pregunta que hay que responder antes: *¿acredita
+identidad, o acredita otra cosa?*
+
+:::
+
+**La visa lleva su categoría, y esa sí es un catálogo.** `categorias_visa` tiene `pais_id` porque
+las categorías las define **una autoridad nacional**: un `CHECK` es global por definición y no puede
+valer una cosa en Ecuador y otra en Colombia. Las 13 filas sembradas son las de la **Ley Orgánica de
+Movilidad Humana**, agrupadas por `condicion` en visitante temporal (3), residente temporal (9) y
+residente permanente (1).
+
+La columna `documentos_identidad.categoria_visa_id` es nulable, y `chk_documentos_categoria_visa`
+garantiza que **sólo la visa la lleve**: en una cédula o un pasaporte tiene que ser `NULL`. Sin la
+categoría la fila no dice nada útil — «Visa (Ecuador)» no distingue a un residente permanente de un
+turista.
 
 **El validador y el nombre local se resuelven POR PAÍS**, en un registro de código
 (`documentosPorPais.js`). No hay una entrada por país del mundo: hay **una por país con regla**, y las
@@ -142,6 +176,10 @@ un despliegue peruano la misma pantalla dice «DNI (Perú)» sin tocar una líne
 Mande el país lo que mande. Los números de pasaporte no llevan dígito verificador público —los que
 hay viven en la MRZ, no en el número—, y aplicarles el validador del país rechazaría pasaportes
 ecuatorianos perfectamente válidos por no tener diez dígitos.
+
+**Y la visa, igual**: su número lo pone la autoridad migratoria con su propio formato, y no es una
+cédula. Los dos caen al genérico —de 5 a 20 caracteres `[A-Z0-9]`—. El que **sí** pasa por el
+validador del país es `documento_extranjero`, porque ése es el documento nacional de otro país.
 
 :::
 
@@ -192,17 +230,26 @@ cómo se te localiza y dónde vives— se leen, y además se corresponden con la
 erDiagram
   persons ||--o{ documentos_identidad : "se identifica con"
   paises ||--o{ documentos_identidad : "quien lo emitio"
+  categorias_visa ||--o{ documentos_identidad : "que clase de visa"
+  paises ||--o{ categorias_visa : "que autoridad las define"
   instituciones ||--|| paises : "de que pais es este despliegue"
 
   documentos_identidad {
     int person_id FK
-    text tipo "CHECK: nacional, extranjero, pasaporte"
+    text tipo "CHECK: nacional, extranjero, pasaporte, visa"
     int pais_id FK "OBLIGATORIO. Al nacional se lo pone un trigger"
+    int categoria_visa_id FK "nulable · SOLO si tipo = visa"
     varchar numero "mayusculas, sin separadores"
     smallint verificado
-    smallint principal_flag "generada, uno solo por persona"
+    smallint principal_flag "generada, uno solo por persona. La visa NO puede serlo"
     varchar escaneo_ref "minio del PDF escaneado"
     timestamp escaneo_subido_at
+  }
+  categorias_visa {
+    int pais_id FK "la definen autoridades NACIONALES"
+    varchar code
+    varchar name
+    varchar condicion "visitante temporal · residente temporal · residente permanente"
   }
   instituciones {
     varchar nombre

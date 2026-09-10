@@ -13,6 +13,7 @@
 //      estaban antes, y por eso derivaron.
 //   3. Las anotaciones semánticas de `docs/02-dominio-datos/anotaciones.json`.
 //   4. El troceo por dominios.
+//   5. Quita los CHECK de tabla del bloque `Indexes`. Ver abajo.
 //
 // Falla —a propósito, y ruidosamente— si:
 //   · una tabla del esquema no está en ningún dominio, o está en dos;
@@ -24,7 +25,24 @@ import { join } from 'node:path';
 
 const [rawPath, generatedColsPath, anotacionesPath, dominiosPath, outDir] = process.argv.slice(2);
 
-const raw = readFileSync(rawPath, 'utf8');
+// LOS CHECK DE TABLA NO CABEN EN DBML. `db2dbml` los emite igual, en un bloque `Checks { ... }`
+// con la expresion entre acentos graves:
+//
+//     Checks {
+//       `(categoria_visa_id IS NULL) OR (tipo = 'visa'::text)` [name: 'chk_...']
+//     }
+//
+// `dbml-renderer` no conoce ese bloque y se cae al leerlo. Se quita ENTERO, no solo su contenido:
+// un `Checks { }` vacio tampoco se parsea, y ese fue el primer intento.
+//
+// No se pierde documentacion: el CHECK vive en el esquema, con su comentario al lado.
+//
+// Hasta el 2026-09-09 no habia ni un CHECK de TABLA -- todos los del esquema son de COLUMNA, y esos
+// db2dbml los pone en la propia columna sin romper nada--. El primero tumbo los ocho diagramas.
+const reBloqueChecks = /^[ \t]*Checks\s*\{[\s\S]*?^[ \t]*\}[ \t]*\n/gm;
+const sinChecksDeTabla = (texto) => texto.replace(reBloqueChecks, '').replace(/\n{3,}/g, '\n\n');
+
+const raw = sinChecksDeTabla(readFileSync(rawPath, 'utf8'));
 const generadas = readFileSync(generatedColsPath, 'utf8').split('\n').map(s => s.trim()).filter(Boolean);
 const anotaciones = JSON.parse(readFileSync(anotacionesPath, 'utf8'));
 const dominios = JSON.parse(readFileSync(dominiosPath, 'utf8'));

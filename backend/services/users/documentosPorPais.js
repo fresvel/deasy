@@ -62,7 +62,19 @@ export const POR_PAIS = {
   EC: { nombre: "Cédula", validador: cedulaEcuatoriana },
 };
 
-const PASAPORTE = "pasaporte";
+// LOS TIPOS QUE NO LLEVAN EL VALIDADOR DEL PAIS.
+//
+// El validador de `POR_PAIS` es el del DOCUMENTO NACIONAL de ese pais -- en Ecuador, el digito
+// verificador de la cedula--. Aplicarselo a otra cosa la rechaza por no parecerse a una cedula.
+//
+// ⚠️ Y esta lista es una PREMISA, no un detalle: el codigo daba por hecho que todo lo que no fuera
+// pasaporte era un documento de identidad nacional. Al entrar `visa` (frente 20, P4) esa premisa
+// dejo de ser cierta y una visa ecuatoriana valida se rechazaba con "La cedula ecuatoriana tiene
+// exactamente 10 digitos". Si algun dia entra un quinto tipo, hay que volver a mirar aqui.
+//
+// `documento_extranjero` NO esta y no debe estar: ese SI es el documento nacional de otro pais, y
+// si algun dia se siembra su validador, tiene que aplicarsele.
+const SIN_VALIDADOR_DE_PAIS = new Set(["pasaporte", "visa"]);
 
 /**
  * El validador que le toca a un documento.
@@ -71,9 +83,12 @@ const PASAPORTE = "pasaporte";
  * llevan dígito verificador público — los que hay viven en la MRZ, no en el número. Aplicarle el
  * validador del país rechazaría pasaportes ecuatorianos perfectamente válidos por no tener diez
  * dígitos.
+ *
+ * LA VISA, IGUAL: su número lo pone la autoridad migratoria con su propio formato, y no es una
+ * cédula. Ver `SIN_VALIDADOR_DE_PAIS`.
  */
 export const validadorPara = ({ tipoCode, paisIso } = {}) => {
-  if (String(tipoCode ?? "").toLowerCase() === PASAPORTE) {
+  if (SIN_VALIDADOR_DE_PAIS.has(String(tipoCode ?? "").toLowerCase())) {
     return alfanumerico;
   }
   const iso = String(paisIso ?? "").trim().toUpperCase();
@@ -95,10 +110,19 @@ export const nombreLocal = (paisIso) => {
 export const etiquetaNacional = (paisIso, paisNombre) =>
   paisNombre ? `${nombreLocal(paisIso)} (${paisNombre})` : nombreLocal(paisIso);
 
+// Como se llama cada clase que NO es el documento nacional. Es una tabla y no una cadena de
+// ternarios a proposito: al entrar `visa` (frente 20, P4) el ternario de antes la habria enseniado
+// como «Documento extranjero», que es justo lo que no es.
+const NOMBRE_DE_CLASE = {
+  pasaporte: "Pasaporte",
+  visa: "Visa",
+  documento_extranjero: "Documento extranjero",
+};
+
 /**
- * Cómo se le enseña al usuario cualquiera de las tres clases de documento.
+ * Cómo se le enseña al usuario cualquiera de las clases de documento.
  *
- * El nacional lleva el nombre que ese país le da; los otros dos llevan el suyo, con el país emisor
+ * El nacional lleva el nombre que ese país le da; los demás llevan el suyo, con el país emisor
  * entre paréntesis cuando se conoce — «Pasaporte (España)» dice más que «Pasaporte».
  */
 export const nombreDeTipo = (tipo, paisIso, paisNombre) => {
@@ -106,6 +130,6 @@ export const nombreDeTipo = (tipo, paisIso, paisNombre) => {
   if (clase === "documento_nacional") {
     return etiquetaNacional(paisIso, paisNombre);
   }
-  const base = clase === PASAPORTE ? "Pasaporte" : "Documento extranjero";
+  const base = NOMBRE_DE_CLASE[clase] ?? "Documento extranjero";
   return paisNombre ? `${base} (${paisNombre})` : base;
 };

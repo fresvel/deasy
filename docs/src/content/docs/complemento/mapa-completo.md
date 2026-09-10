@@ -23,7 +23,7 @@ debajo de los 12 px que este sitio se fija como mínimo. Se probaron `LR`, `dagr
 
 ## 1 · Lo que una persona *es*
 
-Dieciséis tablas, y todas cuelgan de `persons`. Hasta el 2026-08-27 la mayoría eran **columnas** suyas.
+Dieciocho tablas, y todas cuelgan de `persons`. Hasta el 2026-08-27 la mayoría eran **columnas** suyas.
 
 ```mermaid
 flowchart TB
@@ -34,6 +34,7 @@ flowchart TB
     PV --> CA["cantones"]
     CA --> PQ["parroquias"]
     DI["documentos_identidad"]
+    CV["categorias_visa"] --> DI
     CA --> DIR["direcciones"]
     CM["canales_mensajeria"] --> TC["telefono_canales"]
     TE["telefonos"] --> TC
@@ -41,6 +42,7 @@ flowchart TB
     CM --> TVK
     EM["emails"]
     PA --> DI
+    PA --> CV
     PA --> TE
     PA --> IN["instituciones"]
   end
@@ -68,6 +70,10 @@ Dos detalles que el dibujo enseña y conviene no pasar por alto: **`email_verifi
 del correo, no de la persona** —por eso se puede tener verificado el institucional y no el
 personal—, y el **catálogo geográfico** (`paises` → `provincias` → `cantones` → `parroquias`) sirve a la vez a las
 direcciones, a los documentos de identidad y a los teléfonos.
+
+Y **`categorias_visa` cuelga del país, no del sistema**: las categorías las define una autoridad
+nacional, así que un `CHECK` —que es global por definición— no habría podido valer a la vez para
+Ecuador y para Colombia.
 
 Se cuentan en [La organización](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima) y en
 [Credenciales](/complemento/credenciales/) y [El expediente](/complemento/expediente/).

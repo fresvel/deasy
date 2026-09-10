@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 90 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 91 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "actions" {
@@ -118,6 +118,24 @@ Table "cargos" {
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "categorias_visa" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(60) [not null]
+  "name" varchar(120) [not null]
+  "condicion" varchar(60)
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_categorias_visa"]
+  }
+
+  Note: '''Las categorías de visa que reconoce UN país, con `pais_id`. No es un CHECK justamente por eso: un CHECK es global por definición y no puede valer una cosa en Ecuador y otra en Colombia. Las 13 filas sembradas son las de la Ley Orgánica de Movilidad Humana, agrupadas por `condicion` (visitante temporal, residente temporal, residente permanente).'''
 }
 
 Table "chat_conversation_participants" {
@@ -444,7 +462,8 @@ Table "document_workflow_observations" {
 Table "documentos_identidad" {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
-  "tipo" text [not null, check: `tipo = ANY (ARRAY['documento_nacional'::text, 'documento_extranjero'::text, 'pasaporte'::text])`]
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['documento_nacional'::text, 'documento_extranjero'::text, 'pasaporte'::text, 'visa'::text])`]
+  "categoria_visa_id" int4 [note: '''SOLO la lleva la visa, y `chk_documentos_categoria_visa` lo garantiza: en un pasaporte o una cédula tiene que ser NULL. Sin ella la fila no dice nada útil — «Visa (Ecuador)» no distingue a un residente permanente de un turista.''']
   "pais_id" int4 [not null]
   "numero" varchar(40) [not null]
   "verificado" int2 [not null, default: 0]
@@ -453,7 +472,7 @@ Table "documentos_identidad" {
   "expira_el" date
   "escaneo_ref" varchar(255)
   "escaneo_subido_at" timestamp
-  "principal" int2 [not null, default: 0]
+  "principal" int2 [not null, default: 0, note: '''El documento POR EL QUE SE IDENTIFICA la persona, uno por persona (índice único parcial sobre `principal_flag`). ⚠️ No todo lo que vive en esta tabla puede serlo: la VISA no acredita identidad sino permanencia, y quien la tiene se identifica con su pasaporte. El servicio la rechaza como principal, porque `guardarPrincipal` reescribe esta fila en su sitio y dejarla pasar borraba el documento de identidad de la persona.''']
   "principal_flag" int2 [note: "columna generada (STORED)"]
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
@@ -1457,6 +1476,7 @@ Ref "fk_autoidentificaciones_etnicas_pais":"paises"."id" <? "autoidentificacione
 Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
+Ref "fk_categorias_visa_pais":"paises"."id" <? "categorias_visa"."pais_id"
 Ref "fk_chat_participants_conversation":"chat_conversations"."id" <? "chat_conversation_participants"."conversation_id" [delete: cascade]
 Ref "fk_chat_participants_person":"persons"."id" <? "chat_conversation_participants"."person_id"
 Ref "fk_chat_conv_created_by":"persons"."id" <? "chat_conversations"."created_by"
@@ -1509,6 +1529,7 @@ Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_work
 Ref "fk_document_workflow_observations_resolver":"persons"."id" ?<? "document_workflow_observations"."resolved_by_person_id"
 Ref "fk_document_workflow_observations_signature_request":"signature_requests"."id" ?<? "document_workflow_observations"."signature_request_id"
 Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
+Ref "fk_documentos_categoria_visa":"categorias_visa"."id" ?<? "documentos_identidad"."categoria_visa_id"
 Ref "fk_documentos_pais":"paises"."id" <? "documentos_identidad"."pais_id"
 Ref "fk_documentos_person":"persons"."id" <? "documentos_identidad"."person_id" [delete: cascade]
 Ref "fk_dossier_items_dossier":"dossiers"."id" <? "dossier_items"."dossier_id" [delete: cascade]

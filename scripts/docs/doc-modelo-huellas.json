@@ -67,6 +67,13 @@
       "referencia/campos-proceso-documento.md"
     ]
   },
+  "categorias_visa": {
+    "huella": "1e3040a7e3bb96c6",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "modelo/organizacion.md"
+    ]
+  },
   "chat_conversation_participants": {
     "huella": "944588962ee2fb08",
     "paginas": [
@@ -258,7 +265,7 @@
     ]
   },
   "documentos_identidad": {
-    "huella": "220993950a54b72f",
+    "huella": "40ca8816f2d185b5",
     "paginas": [
       "complemento/expediente.md",
       "complemento/mapa-completo.md",

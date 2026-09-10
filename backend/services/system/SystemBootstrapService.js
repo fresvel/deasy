@@ -285,6 +285,26 @@ const VOCABULARIOS_PERSONA_EC = {
     { code: "psicosocial", name: "Psicosocial", orden: 50 },
     { code: "lenguaje", name: "Lenguaje", orden: 60 }
   ],
+  // Las categorias de la Ley Organica de Movilidad Humana, agrupadas por condicion migratoria.
+  //
+  // ⚠️ La lista sale del articulado y el reglamento la ha tocado desde 2017: conviene contrastarla
+  // con la Cancilleria antes de darla por buena. El DISEÑO no depende de ella -- es un catalogo y se
+  // edita en /admin--, pero la semilla si.
+  categorias_visa: [
+    { code: "transeunte", name: "Transeúnte", condicion: "Visitante temporal", orden: 10 },
+    { code: "turista", name: "Turista", condicion: "Visitante temporal", orden: 20 },
+    { code: "solicitante_proteccion_internacional", name: "Solicitante de protección internacional", condicion: "Visitante temporal", orden: 30 },
+    { code: "inversionista", name: "Inversionista", condicion: "Residente temporal", orden: 40 },
+    { code: "rentista", name: "Rentista", condicion: "Residente temporal", orden: 50 },
+    { code: "estatuto_migratorio_andino", name: "Estatuto Migratorio Andino", condicion: "Residente temporal", orden: 60 },
+    { code: "mercosur", name: "Acuerdo MERCOSUR", condicion: "Residente temporal", orden: 70 },
+    { code: "cientifico_investigador_academico", name: "Científico, investigador o académico", condicion: "Residente temporal", orden: 80 },
+    { code: "estudiante", name: "Estudiante", condicion: "Residente temporal", orden: 90 },
+    { code: "convenio", name: "Convenio", condicion: "Residente temporal", orden: 100 },
+    { code: "proteccion_asilo", name: "Protección o asilo", condicion: "Residente temporal", orden: 110 },
+    { code: "excepcion", name: "Excepción", condicion: "Residente temporal", orden: 120 },
+    { code: "residente_permanente", name: "Residente permanente", condicion: "Residente permanente", orden: 130 }
+  ],
   parentescos: [
     { code: "conyuge", name: "Cónyuge", orden: 10 },
     { code: "conviviente", name: "Conviviente en unión de hecho", orden: 20 },
@@ -428,6 +448,21 @@ const seedGeographyCatalog = async (connection) => {
   // bucle: la tabla es la clave del objeto y el cuerpo es identico.
   for (const [tabla, filas] of Object.entries(VOCABULARIOS_PERSONA_EC)) {
     for (const fila of filas) {
+      // `categorias_visa` lleva una columna mas -- la condicion migratoria-- y por eso sale del
+      // bucle comun en vez de ensuciarlo con un caso especial.
+      if (tabla === "categorias_visa") {
+        await connection.query(
+          `INSERT INTO categorias_visa (pais_id, code, name, condicion, orden, is_active)
+           VALUES (?, ?, ?, ?, ?, 1)
+           ON DUPLICATE KEY UPDATE
+             name = VALUES(name),
+             condicion = VALUES(condicion),
+             orden = VALUES(orden),
+             is_active = 1`,
+          [ecuadorId, fila.code, fila.name, fila.condicion, fila.orden]
+        );
+        continue;
+      }
       await connection.query(
         `INSERT INTO ${tabla} (pais_id, code, name, orden, is_active)
          VALUES (?, ?, ?, ?, 1)

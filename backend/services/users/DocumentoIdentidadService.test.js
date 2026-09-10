@@ -6,8 +6,14 @@
 
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
+import { validadorPara } from "./documentosPorPais.js";
 
-import DocumentoIdentidadService, { cedulaEcuatorianaValida, normalizarNumero } from "./DocumentoIdentidadService.js";
+import DocumentoIdentidadService, {
+  cedulaEcuatorianaValida,
+  normalizarNumero,
+  TIPOS_DOCUMENTO,
+  TIPOS_QUE_ACREDITAN_IDENTIDAD,
+} from "./DocumentoIdentidadService.js";
 
 describe("cedulaEcuatorianaValida", () => {
   it("acepta cédulas reales de distintas provincias", () => {
@@ -157,5 +163,63 @@ describe("DocumentoIdentidadService · validación por tipo", () => {
         return true;
       }
     );
+  });
+});
+
+// LA VISA NO ES UNA CEDULA, y el validador daba por hecho que si.
+//
+// POR QUE EXISTE. `validadorPara` eximia SOLO al pasaporte, con el razonamiento correcto -- un
+// numero de pasaporte no lleva digito verificador--. Pero eso dejaba una premisa tacita: que todo lo
+// demas era el documento nacional de su pais. Al entrar `visa` (frente 20, P4) la premisa dejo de
+// ser cierta, y una visa ecuatoriana valida se rechazaba con "La cedula ecuatoriana tiene
+// exactamente 10 digitos". Lo cazo probar por el camino real de la aplicacion, no un INSERT.
+describe("la visa y el validador del pais", () => {
+  // El generico admite [A-Z0-9] de 5 a 20, sin guiones -- el mismo que ya se aplica al pasaporte.
+  const NUMERO_DE_VISA = "V2026000042";
+
+  it("una visa NO pasa por el validador de cedula", () => {
+    assert.equal(validadorPara({ tipoCode: "visa", paisIso: "EC" })(NUMERO_DE_VISA), null);
+  });
+
+  it("pero el documento_extranjero SI, porque ese es el nacional de otro pais", () => {
+    assert.notEqual(validadorPara({ tipoCode: "documento_extranjero", paisIso: "EC" })(NUMERO_DE_VISA), null);
+  });
+});
+
+// Y LA VISA TAMPOCO ES EL DOCUMENTO PRINCIPAL. Es la otra mitad de la misma premisa, y la mas cara:
+// `guardarPrincipal` REESCRIBE la fila principal en su sitio, asi que dejar entrar una visa por ahi
+// no anadia una visa — CONVERTIA en visa el documento de identidad de la persona, que desaparecia.
+// Medido contra la base de dev el 2026-09-09: el gestor perdio su cedula con un solo PATCH.
+describe("la visa no puede ser el documento principal", () => {
+  it("se rechaza con 400, y el mensaje dice POR QUE", async () => {
+    const { servicio, consultas } = servicioCon({ pais: [ECUADOR], institucion: INSTITUCION_EC });
+    await assert.rejects(
+      () => servicio.guardarPrincipal(1, { tipo: "visa", pais: "EC", numero: "V2026000042" }),
+      (error) => {
+        assert.match(error.message, /no acredita identidad/);
+        assert.equal(error.status, 400);
+        return true;
+      }
+    );
+    // Lo que de verdad importa: que no haya llegado a TOCAR la fila que ya estaba.
+    assert.ok(
+      !consultas.some((c) => /UPDATE documentos_identidad/i.test(c.sql)),
+      "no puede haber reescrito el documento principal existente"
+    );
+    assert.ok(
+      !consultas.some((c) => /INSERT INTO documentos_identidad/i.test(c.sql)),
+      "ni haber insertado nada"
+    );
+  });
+
+  it("los otros tres SI pueden serlo", async () => {
+    for (const tipo of TIPOS_QUE_ACREDITAN_IDENTIDAD) {
+      assert.ok(TIPOS_DOCUMENTO.includes(tipo), `${tipo} tiene que seguir siendo un tipo valido`);
+    }
+    assert.deepEqual(TIPOS_QUE_ACREDITAN_IDENTIDAD, [
+      "documento_nacional",
+      "documento_extranjero",
+      "pasaporte",
+    ]);
   });
 });

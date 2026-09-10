@@ -140,6 +140,34 @@ export const SQL_TABLES = [
     ],
     searchFields: ["name", "dpa_code"]
   },
+  // Las categorias de visa de UN pais. Tiene `pais_id` por la misma regla que sus hermanas de abajo:
+  // lo que define una autoridad NACIONAL va a catalogo, porque un CHECK es global por definicion y
+  // no puede valer una cosa en Ecuador y otra en Colombia. Lo que anade sobre ellas es `condicion`,
+  // que agrupa las 13 de la Ley Organica de Movilidad Humana en visitante temporal, residente
+  // temporal y residente permanente.
+  //
+  // ⚠️ Sin esta entrada la tabla NO EXISTE para /admin, y el sintoma no es que falte una pestaña:
+  // es que el desplegable de `documentos_identidad.categoria_visa_id` contesta 400 "Tabla no
+  // soportada". El mapa de claves ajenas del frontend no basta -- apunta a una tabla que el backend
+  // tiene que servir.
+  {
+    table: "categorias_visa",
+    label: "Categorias de visa",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "condicion", label: "Condicion", type: "text" },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name", "condicion"]
+  },
   {
     table: "generos",
     label: "Generos",
@@ -848,16 +876,20 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "person_id", label: "Persona", type: "number", required: true },
-      // Las tres clases, como en `emails`/`telefonos`/`direcciones`: un `select` cerrado y no una
-      // clave ajena a un catalogo de tres filas.
+      // Las cuatro clases, como en `emails`/`telefonos`/`direcciones`: un `select` cerrado y no una
+      // clave ajena a un catalogo de cuatro filas. La VISA no es un documento de identidad -- no dice
+      // quien eres, dice que se te permite estar-- pero necesita lo mismo que las otras tres, y como
+      // FILA PROPIA: un pasaporte caduca en 2030 y su visa en 2027.
       {
         name: "tipo",
         label: "Tipo",
         type: "select",
-        options: ["documento_nacional", "documento_extranjero", "pasaporte"],
+        options: ["documento_nacional", "documento_extranjero", "pasaporte", "visa"],
         defaultValue: "documento_nacional",
         required: true
       },
+      // Solo para las visas, y el CHECK del esquema lo garantiza.
+      { name: "categoria_visa_id", label: "Categoria de visa", type: "number", showWhen: { field: "tipo", equals: "visa" } },
       // El país emisor se pregunta para todo MENOS el nacional, que lo hereda de la institución.
       // Preguntarlo ahí invitaría a poner otro y a romper la unicidad (tipo, país, número).
       // ⚠️ NO lleva `required`, aunque en la base sea NOT NULL, y no es un descuido.

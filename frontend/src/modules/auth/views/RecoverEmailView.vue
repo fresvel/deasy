@@ -100,6 +100,10 @@ const correoEncontrado = ref('');
 
 // El nombre del documento nacional sale de la institución: en un despliegue peruano dice «DNI (Perú)»
 // sin tocar código.
+// ⚠️ AQUI VAN TRES Y NO LAS CUATRO CLASES, y no es un olvido: `documentos_identidad.tipo` admite
+// tambien `visa`, pero una visa NO ACREDITA IDENTIDAD -- acredita permanencia --, asi que no sirve
+// para recuperar el correo. Quien tiene visa se identifica con su pasaporte. Si alguna vez ves que
+// `sqlTables.js` lista cuatro y esto tres, esa es la razon: no las "cuadres".
 const tiposDocumento = computed(() => [
   { code: 'documento_nacional', name: institucion.value?.documento_nacional?.etiqueta ?? 'Documento nacional' },
   { code: 'pasaporte', name: 'Pasaporte' },

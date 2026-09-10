@@ -42,7 +42,8 @@
       "estados_civiles",
       "autoidentificaciones_etnicas",
       "tipos_discapacidad",
-      "parentescos"
+      "parentescos",
+      "categorias_visa"
     ]
   },
   "organizacion": {

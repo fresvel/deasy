@@ -221,6 +221,7 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   paises -> autoidentificaciones_etnicas   [identidad]
+//   paises -> categorias_visa   [identidad]
 //   units -> chat_conversations   [chat]
 //   unit_positions -> contracts   [empleo]
 //   cantones -> direcciones   [identidad]

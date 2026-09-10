@@ -408,6 +408,10 @@ const documento = ref({ tipo: "documento_nacional", pais: "", numero: "" });
 const institucion = ref(null);
 const paisInstitucion = computed(() => institucion.value?.pais?.iso ?? "");
 
+// ⚠️ AQUI VAN TRES Y NO LAS CUATRO CLASES, y no es un olvido: `documentos_identidad.tipo` admite
+// tambien `visa`, pero una visa NO ACREDITA IDENTIDAD -- acredita permanencia --, asi que no sirve
+// para registrarse. Quien tiene visa se identifica con su pasaporte. Si alguna vez ves que
+// `sqlTables.js` lista cuatro y esto tres, esa es la razon: no las "cuadres".
 const tiposDocumento = computed(() => [
   { code: "documento_nacional", name: institucion.value?.documento_nacional?.etiqueta ?? "Documento nacional" },
   { code: "pasaporte", name: "Pasaporte" },

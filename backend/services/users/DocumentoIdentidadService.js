@@ -27,14 +27,26 @@ const errorDeConflicto = (mensaje) => {
   return error;
 };
 
-// Las TRES clases de documento. Son las mismas en cualquier pais: `documento_nacional` no dice de
-// cual, eso lo dice `pais_id`, y de quien es "el nacional" lo dice `instituciones.pais_id`.
+// Las clases de documento. Son las mismas en cualquier pais: `documento_nacional` no dice de cual,
+// eso lo dice `pais_id`, y de quien es "el nacional" lo dice `instituciones.pais_id`.
 //
 // Hasta el 2026-08-29 esto era una tabla de tres filas con clave ajena, y la nacional se llamaba
 // `cedula_ec` — Ecuador metido en el vocabulario del sistema. Ahora es un CHECK, como en las tres
 // tablas hermanas (`emails`, `telefonos`, `direcciones`).
 export const TIPO_NACIONAL = "documento_nacional";
-export const TIPOS_DOCUMENTO = [TIPO_NACIONAL, "documento_extranjero", "pasaporte"];
+export const TIPO_VISA = "visa";
+export const TIPOS_DOCUMENTO = [TIPO_NACIONAL, "documento_extranjero", "pasaporte", TIPO_VISA];
+
+// ⚠️ NO TODO LO QUE VIVE EN ESTA TABLA ACREDITA IDENTIDAD, y esa es la linea que la visa trajo
+// (frente 20, P4). Los otros tres dicen QUIEN ERES; la visa dice QUE PUEDES ESTAR AQUI, y la lleva
+// quien ademas tiene un pasaporte. Por eso la visa NO PUEDE SER EL PRINCIPAL: el principal es "el
+// documento por el que se te identifica", y una persona con visa se identifica con su pasaporte.
+//
+// Esto no es una sutileza de vocabulario, es un agujero medido: `guardarPrincipal` reescribe la
+// fila principal EN SU SITIO, asi que un PATCH /users/me con tipo `visa` no anadia una visa —
+// CONVERTIA la cedula de la persona en una visa y su documento de identidad desaparecia. Le paso al
+// gestor de la base de dev el 2026-09-09.
+export const TIPOS_QUE_ACREDITAN_IDENTIDAD = TIPOS_DOCUMENTO.filter((t) => t !== TIPO_VISA);
 
 const esVacio = (valor) => valor === undefined || valor === null || String(valor).trim() === "";
 
@@ -178,6 +190,15 @@ export default class DocumentoIdentidadService {
     this.ensurePool();
     const datos = typeof documento === "string" ? { numero: documento } : (documento ?? {});
     const tipo = this.normalizarTipo(datos.tipo ?? TIPO_NACIONAL);
+    // El principal se REESCRIBE en su sitio, asi que dejar pasar aqui un tipo que no acredita
+    // identidad no anade nada: borra el documento que la persona ya tenia. Ver
+    // `TIPOS_QUE_ACREDITAN_IDENTIDAD`.
+    if (!TIPOS_QUE_ACREDITAN_IDENTIDAD.includes(tipo)) {
+      throw errorDeCliente(
+        `Un documento de tipo '${tipo}' no puede ser el documento principal: no acredita identidad. ` +
+          "Se registra aparte, sin sustituir al documento con el que la persona se identifica."
+      );
+    }
     const numero = normalizarNumero(datos.numero);
     if (!numero) {
       throw errorDeCliente("El documento de identidad necesita un número.");
@@ -292,9 +313,14 @@ export default class DocumentoIdentidadService {
               d.verificado, d.verificado_at, d.emitido_el, d.expira_el,
               -- La referencia minio:// NO sale al cliente: es interna y no le sirve a nadie fuera
               -- del backend. Lo que necesita quien pinta la pantalla es si HAY escaneo.
-              (d.escaneo_ref IS NOT NULL) AS tiene_escaneo, d.escaneo_subido_at
+              (d.escaneo_ref IS NOT NULL) AS tiene_escaneo, d.escaneo_subido_at,
+              -- La categoria SOLO la lleva la visa, y sin ella la visa no dice nada: "Visa
+              -- (Ecuador)" no distingue a un residente permanente de un turista. El JOIN es LEFT
+              -- porque los otros tres tipos no la tienen -- lo garantiza chk_documentos_categoria_visa.
+              d.categoria_visa_id, cv.name AS categoria_visa, cv.condicion AS categoria_visa_condicion
          FROM documentos_identidad d
          LEFT JOIN paises pa ON pa.id = d.pais_id
+         LEFT JOIN categorias_visa cv ON cv.id = d.categoria_visa_id
         WHERE d.person_id = ? AND d.is_active = 1
         ORDER BY d.principal DESC, d.id ASC`,
       [personId]
