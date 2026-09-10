@@ -1,106 +1,152 @@
 ---
 title: "El mapa del complemento, de un vistazo"
-description: "Las 55 tablas que no están en la cadena proceso → documento, 44 de ellas en tres diagramas: lo que una persona es, lo que la organización hace con ella, y lo que se dice por el camino."
+description: "Las 55 tablas que no están en la cadena proceso → documento, en cuatro diagramas: lo que una persona es, lo que la organización hace con ella, y lo que se dice por el camino."
 sidebar:
   label: "Mapa del complemento"
   order: 15
 ---
 
 Las **55 tablas** que la cadena da por supuestas, sin sus campos, para ver la forma. Con las
-[38 de la cadena](/modelo/mapa-completo/) suman las **93** del esquema.
+[38 de la cadena](/modelo/mapa-completo/) suman las **93** del esquema, y entre los dos mapas no
+queda ninguna fuera.
 
-:::caution[Once de ellas no están dibujadas]
-Aquí ponía «entre los dos mapas no queda ninguna fuera», y dejó de ser verdad cuando se añadieron
-tablas sin pasar por este mapa. Recontado el 2026-09-10 contra el esquema, faltan siete catálogos de
-la persona —`generos`, `estados_civiles`, `autoidentificaciones_etnicas`, `tipos_discapacidad`,
-`parentescos`, `clases_parroquia` y `nomenclatura_territorial`— y cuatro tablas más:
-`consentimientos`, `documentos_legales`, `canales_bitacora` e `intentos_limitados`.
-
-Añadirlas no es sólo escribir once nodos: estos diagramas están medidos para no bajar de 12 px de
-letra (ver la nota de abajo), y hay que volver a medirlos.
+:::note[Recontado contra el esquema, no a ojo]
+Aquí ya ponía «no queda ninguna fuera», y dejó de ser verdad cuando se añadieron tablas sin pasar
+por este mapa: el 2026-09-10 faltaban **once** —siete catálogos de la persona, más
+`consentimientos`, `documentos_legales`, `canales_bitacora` e `intentos_limitados`—. Se dibujaron
+ese mismo día, y el recuento se rehízo con un script que cruza los nombres de los bloques mermaid de
+los dos mapas con los `CREATE TABLE` de `postgres_schema.sql`: **93 de 93**. De paso destapó una
+doble cuenta: `relation_unit_types` estaba dibujada en dos diagramas y contada en los dos.
 :::
 
-`persons` aparece en los tres dibujos porque es de quien cuelga casi todo, pero **es de la cadena**,
-no del complemento: por eso va con otra forma y no cuenta en las 55.
+`persons` aparece en los cuatro dibujos porque es de quien cuelga casi todo, pero **es de la cadena**,
+no del complemento: por eso va con otra forma y no cuenta en las 55. Lo mismo `paises` en el segundo
+dibujo: va con esa forma porque ya está contada en el primero.
 
-:::note[Por qué son TRES diagramas y no uno]
-No es estética. Las seis familias son **independientes entre sí** —no hay ninguna arista que vaya de
-una a otra—, y ningún motor de trazado puede apilar seis bloques que no se tocan: los pone en fila.
-Medido: el mapa entero sale a **3460 px de ancho**, o sea letra de **6,1 px** en la columna, por
-debajo de los 12 px que este sitio se fija como mínimo. Se probaron `LR`, `dagre` y tres afinados de
-`elk`; el mejor se quedó en 10,5. Partido en tres, los tres pasan: **16 · 14 · 16 px**.
+:::note[Por qué son CUATRO diagramas y no uno]
+No es estética. En el dibujo, la persona, la organización y la conversación **no se tocan más que
+por `persons`**, y ningún motor de trazado puede apilar bloques que no se tocan: los pone en fila.
+Medido el 2026-09-10 con las 55 tablas: el mapa entero en un solo `flowchart` sale a **5295 px de
+ancho**, o sea letra de **4,0 px** en la columna de 1317 px, muy por debajo de los 12 px que este
+sitio se fija como mínimo.
+
+Hasta ese día eran tres. Con las once que faltaban, el de la persona no cabía de ninguna forma: en
+`TB` ya estaba en 11,5 px antes de añadirlas, y en `LR` con las 31 se quedó en 8,9. Partido en dos
+—lo que decide el país y lo que la persona tiene— y medidos los cuatro en esa columna, los cuatro
+pasan: **13,9 · 16 · 14 · 16 px**. Es la vista normal de la página, sin el zoom del visor.
 :::
 
 ## 1 · Lo que una persona *es*
 
-Veinte tablas, y todas cuelgan de `persons`. Hasta el 2026-08-27 la mayoría eran **columnas** suyas.
+Treinta y una tablas, en dos dibujos: dieciséis en el primero y quince en el segundo. Hasta el
+2026-08-27 muchas de ellas eran **columnas** de `persons`.
+
+**Lo que decide el país**, y lo que la persona es con ello:
 
 ```mermaid
-flowchart TB
+flowchart LR
   P(["persons · de la cadena"])
-  subgraph QUIEN["Quién eres"]
-    direction TB
+  subgraph PAIS["Lo que decide el país"]
     PA["paises"] --> PV["provincias"]
     PV --> CA["cantones"]
     CA --> PQ["parroquias"]
-    DI["documentos_identidad"]
-    PAI["persona_autoidentificacion"]
-    CV["categorias_visa"] --> DI
-    CA --> DIR["direcciones"]
-    CM["canales_mensajeria"] --> TC["telefono_canales"]
-    TE["telefonos"] --> TC
+    PA --> CP["clases_parroquia"]
+    CP --> PQ
+    PA --> NT["nomenclatura_territorial"]
+    PA --> CV["categorias_visa"]
+    PA --> IN["instituciones"]
+    PA --> GE["generos"]
+    PA --> EC["estados_civiles"]
+    PA --> AE["autoidentificaciones_etnicas"]
+    PA --> TD["tipos_discapacidad"]
+    PA --> PAR["parentescos"]
+  end
+  DI["documentos_identidad"]
+  PAI["persona_autoidentificacion"]
+  DIR["direcciones"]
+  PA --> DI
+  CV --> DI
+  GE --> PAI
+  AE --> PAI
+  CA --> DIR
+  EC --> P
+  P --> DI
+  P --> PAI
+  P --> DIR
+```
+
+**Cómo se te encuentra, cómo se te cree y qué queda de ti:**
+
+```mermaid
+flowchart LR
+  P(["persons · de la cadena"])
+  PA(["paises · en el dibujo anterior"])
+  subgraph LOC["Cómo se te localiza"]
+    EM["emails"]
+    TE["telefonos"] --> TC["telefono_canales"]
+    CM["canales_mensajeria"] --> TC
     TE --> TVK["telefono_verification_keys"]
     CM --> TVK
-    EM["emails"]
-    PA --> DI
-    PA --> CV
-    PA --> TE
-    PA --> IN["instituciones"]
+    CB["canales_bitacora"]
   end
   subgraph CRED["Que eres tú quien firma"]
-    direction TB
     PC["person_certificates"]
     EVC["email_verification_codes"]
     PRC["password_reset_codes"]
+    IL["intentos_limitados"]
   end
-  subgraph RASTRO["Quién vio lo tuyo"]
-    direction TB
+  subgraph PRUEBA["Lo que sobrevive a la persona"]
+    DL["documentos_legales"] --> CO["consentimientos"]
     BIT["accesos_sensibles"]
   end
   subgraph EXP["Qué has hecho antes"]
-    direction TB
     DO["dossiers"] --> DIT["dossier_items"]
   end
-  P --> DI
-  P --> PAI
-  P -.-> BIT
+  PA --> TE
   P --> EM
   P --> TE
-  P --> DIR
   P --> PC
   P --> PRC
   P --> DO
+  P -.-> BIT
+  P -.-> CO
   EM --> EVC
 ```
 
-Dos detalles que el dibujo enseña y conviene no pasar por alto: **`email_verification_codes` cuelga
+Dos detalles que los dibujos enseñan y conviene no pasar por alto: **`email_verification_codes` cuelga
 del correo, no de la persona** —por eso se puede tener verificado el institucional y no el
 personal—, y el **catálogo geográfico** (`paises` → `provincias` → `cantones` → `parroquias`) sirve a la vez a las
 direcciones, a los documentos de identidad y a los teléfonos.
 
-**`accesos_sensibles` va con línea de puntos, y es a propósito**: no lleva clave ajena a `persons`, como
-`consentimientos`, porque la evidencia de quién vio lo de alguien tiene que sobrevivir a esa persona.
-
 Y **`categorias_visa` cuelga del país, no del sistema**: las categorías las define una autoridad
 nacional, así que un `CHECK` —que es global por definición— no habría podido valer a la vez para
-Ecuador y para Colombia.
+Ecuador y para Colombia. Por la misma regla cuelgan de `paises` los **cinco vocabularios de la
+persona** —`generos`, `estados_civiles`, `autoidentificaciones_etnicas`, `tipos_discapacidad` y
+`parentescos`—, `clases_parroquia` (cabecera, urbana o rural, que apunta `parroquias`) y
+`nomenclatura_territorial`, que dice cómo se llama cada nivel en ese país.
 
-Se cuentan en [La organización](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima) y en
-[Credenciales](/complemento/credenciales/) y [El expediente](/complemento/expediente/).
+De los cinco vocabularios, **sólo tres tienen una flecha de salida**: a `estados_civiles` la apunta
+`persons` —por eso esa flecha llega a la cadena—, y a `generos` y `autoidentificaciones_etnicas`,
+`persona_autoidentificacion`. **A `tipos_discapacidad` y `parentescos` no los apunta ninguna clave
+ajena del esquema**, y el dibujo no se la inventa.
+
+**`accesos_sensibles` y `consentimientos` van con línea de puntos, y es a propósito**: ninguna de las
+dos lleva clave ajena a `persons`, porque la evidencia —de quién vio lo de alguien, de qué aceptó—
+tiene que sobrevivir a esa persona. La única clave ajena de `consentimientos` es la que la ata a
+`documentos_legales`: qué texto, en qué versión, se aceptó.
+
+**`canales_bitacora` e `intentos_limitados` van sin ninguna línea**, y tampoco es descuido: no tienen
+ni una clave ajena. La bitácora anota cada canal por el nombre con que lo devuelve el servicio de
+canales —incluido `servicio`, el propio servicio, que no es una fila de `canales_mensajeria`—, y el
+sujeto de un intento es, según la acción, una IP, un correo con IP o un `person_id`.
+
+Se cuentan en [La organización](/modelo/organizacion/#la-persona-ya-no-lo-lleva-todo-encima) —que
+también explica los vocabularios, lo que se acepta al registrarse, la bitácora de canales y los
+intentos— y en [Credenciales](/complemento/credenciales/) y [El expediente](/complemento/expediente/).
 
 ## 2 · Lo que la organización *hace* con ella
 
-Diecisiete tablas: el permiso que la habilita y el contrato que la sienta.
+Dieciséis tablas: el permiso que la habilita y el contrato que la sienta.
 
 ```mermaid
 flowchart TB
@@ -125,7 +171,6 @@ flowchart TB
     CO --> CRN["contract_origin_renewal"]
     OF -.-> CRE
   end
-  RUT["relation_unit_types"]
   P --> RA
   P --> AP
   P --> CT
@@ -173,12 +218,12 @@ que hace que versionar un proceso no parta su conversación en dos, y está cont
 
 | | |
 |---|---|
-| Tablas del complemento | **40** |
-| Columnas | **307** |
-| Claves foráneas declaradas en ellas | **66** — 39 entre ellas, **27** hacia la cadena |
-| Restricciones `CHECK` | **11** |
+| Tablas del complemento | **55** |
+| Columnas | **426** |
+| Claves foráneas declaradas en ellas | **81** — 53 entre ellas, **28** hacia la cadena |
+| Restricciones `CHECK` | **18** |
 | Tablas de la cadena | **38** |
-| **Total del esquema** | **90** |
+| **Total del esquema** | **93** |
 
-Medidas contra el catálogo de PostgreSQL de una base recién recreada, no contra el fichero de
-esquema. La razón está en [cómo leer esto](/complemento/).
+Medidas el 2026-09-10 contra el catálogo de PostgreSQL de una base recién recreada desde el esquema,
+no contra el fichero. La razón está en [cómo leer esto](/complemento/).

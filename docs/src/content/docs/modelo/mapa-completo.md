@@ -113,4 +113,4 @@ No entran aquí a propósito: el mapa dibuja **la cadena**, y la cadena necesita
 persona*, no de cuántas formas se la puede contactar. Lo único que la cadena gana de ellas es una
 arista: `persons` apunta a `paises` para su nacionalidad.
 
-El esquema completo tiene 90 tablas; estas 38 son las que van del proceso al documento firmado.
+El esquema completo tiene 93 tablas; estas 38 son las que van del proceso al documento firmado.
