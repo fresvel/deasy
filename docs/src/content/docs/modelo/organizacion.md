@@ -266,6 +266,11 @@ erDiagram
 **Cómo se te localiza.** Los correos y los teléfonos, cada canal con su propia verificación:
 
 ```mermaid
+---
+config:
+  elk:
+    nodePlacementStrategy: SIMPLE
+---
 erDiagram
   persons ||--o{ emails : "recibe en"
   persons ||--o{ telefonos : "se le llama a"
@@ -296,7 +301,7 @@ erDiagram
   }
   canales_mensajeria {
     varchar code "whatsapp, telegram, signal"
-    smallint is_active "signal esta en el catalogo pero apagado: no hay implementacion"
+    smallint is_active "signal apagado: sin implementacion"
   }
   telefono_verification_keys {
     int telefono_id FK

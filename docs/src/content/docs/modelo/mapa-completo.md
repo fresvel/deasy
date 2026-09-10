@@ -103,14 +103,18 @@ firma añade el `slot` y el `approval_mode`, y sus estados son **tablas de catá
 — por eso `signature_request_statuses` y `signature_statuses` aparecen aquí como tablas y en el flujo
 de entrega no hay equivalentes.
 
-**Lo que el mapa no dibuja** es todo lo que queda fuera de la cadena documental: la rama de vacantes y
-contratación, el chat, los expedientes, el RBAC y —desde el 2026-08-27— las **dieciocho tablas de la
-identidad de la persona**: sus documentos, correos, teléfonos y direcciones, más el catálogo
-geográfico que las sostiene —que desde el 2026-09-08 baja hasta la **parroquia**. Están explicadas en [La organización](/modelo/organizacion/), que es
-donde se cuenta quién existe.
+**Lo que el mapa no dibuja** son las otras **55 tablas** del esquema, y están todas en el
+[mapa del complemento](/complemento/mapa-completo/): la rama de vacantes y contratación (8), el RBAC
+(8), el chat (6), dos sueltas —`relation_unit_types` y `signature_batch_jobs`— y **31 de la
+persona** fuera de `persons`. Entre esas 31 están sus documentos, correos, teléfonos y direcciones,
+sus credenciales y su expediente, lo que declara de sí misma y lo que acepta, y los catálogos que
+las sostienen: el geográfico —que desde el 2026-09-08 baja hasta la **parroquia**— y los vocabularios
+que define cada país. Lo de la persona está explicado en [La organización](/modelo/organizacion/),
+que es donde se cuenta quién existe.
 
 No entran aquí a propósito: el mapa dibuja **la cadena**, y la cadena necesita saber *que hay una
-persona*, no de cuántas formas se la puede contactar. Lo único que la cadena gana de ellas es una
-arista: `persons` apunta a `paises` para su nacionalidad.
+persona*, no de cuántas formas se la puede contactar. Lo que la cadena gana de ellas son **cuatro
+claves ajenas, y todas salen de `persons`**: dos a `paises` —nacionalidad y país de
+nacimiento—, una a `cantones` —el de nacimiento— y una a `estados_civiles`.
 
 El esquema completo tiene 93 tablas; estas 38 son las que van del proceso al documento firmado.
