@@ -949,6 +949,7 @@ import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
   import { Modal } from '@/shared/utils/modalController';
   import { IconArrowLeft, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconListCheck, IconInbox } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/core/config/apiConfig';
+  import { storeUser } from '@/core/utils/accessControl.js';
   import AppTag from '@/shared/components/data/AppTag.vue';
   import AppDataTable from '@/shared/components/data/AppDataTable.vue';
   import AppCounterNavigator from '@/shared/components/widgets/AppCounterNavigator.vue';
@@ -2326,7 +2327,8 @@ const fieldId = (name) => `${uid}-${name}`;
           throw new Error(data?.message || 'No se pudo refrescar el perfil del usuario.');
         }
         currentUser.value = data.user;
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Sin `datos_personales`: `/users/me` los trae y lo sensible no se guarda en el navegador.
+        storeUser(data.user);
         if (!stampText.value && currentUser.value) {
           stampText.value = `${currentUser.value.first_name ?? ''} ${currentUser.value.last_name ?? ''}`.trim();
         }

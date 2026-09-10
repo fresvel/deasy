@@ -1049,7 +1049,12 @@ export const getMyProfile = async (req, res) => {
   try {
     const userId = req.user.uid;
 
-    const user = await userRepository.findById(userId);
+    // El perfil DEL TITULAR, con sus datos personales. No es `toPublicUser(findById)` a secas: `findById`
+    // lo comparten el chat, el tiempo real y la firma, y `toPublicUser` el login y el listado de
+    // personas, y el genero y la etnia no deben viajar por ahi. Por que, en
+    // `UserRepository.datosPersonalesDe`.
+    const access = await rbacService.getUserAccess(userId);
+    const user = await userRepository.perfilDelTitular(userId, access);
 
     if (!user) {
       return res.status(404).json({
@@ -1057,11 +1062,9 @@ export const getMyProfile = async (req, res) => {
       });
     }
 
-    const access = await rbacService.getUserAccess(userId);
-
     res.json({
       result: "ok",
-      user: userRepository.toPublicUser(user, access)
+      user
     });
   } catch (error) {
     console.error(error);

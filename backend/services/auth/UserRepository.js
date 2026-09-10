@@ -12,6 +12,19 @@ const DEFAULT_STATUS = "Inactivo";
 // eran columnas de `persons`; salieron por ser datos sensibles (LOPDP, Art. 4).
 export const CAMPOS_AUTOIDENTIFICACION = ["genero_id", "autoidentificacion_etnica_id"];
 
+// LOS DATOS PERSONALES, con LAS MISMAS CLAVES al escribir (`updateMe`) y al leer (`datosPersonalesDe`),
+// para que el formulario del perfil lea exactamente lo que escribe. Una sola lista: dos acabarian
+// discrepando, que es como se perdieron en silencio la nacionalidad, el correo y el documento.
+export const CAMPOS_DATOS_PERSONALES = [
+  "fecha_nacimiento",
+  "nacimiento_pais_id",
+  "nacimiento_canton_id",
+  "sexo",
+  "estado_civil_id",
+  // Los dos sensibles, que viven en `persona_autoidentificacion` desde P8.
+  ...CAMPOS_AUTOIDENTIFICACION
+];
+
 // Saca del payload los campos de autoidentificacion y los devuelve aparte, o NULL si no venia
 // ninguno. Una cadena vacia es «lo quito» y se guarda como NULL: tal cual, la clave ajena la rechazaria.
 const apartarAutoidentificacion = (payload) => {
@@ -535,6 +548,56 @@ export default class UserRepository {
     return publicUser;
   }
 
+  // LOS DATOS PERSONALES DE UNA PERSONA, para dárselos A ELLA MISMA. Solo los llaman los dos manejadores
+  // de /users/me (`perfilDelTitular` y `updateMe`); nadie mas deberia.
+  //
+  // ⚠️ NO VAN EN `findById` NI EN `toPublicUser`, y es deliberado. `findById` lo usan el chat, el
+  // tiempo real, la firma, el flujo de llenado y la puerta de verificacion; `toPublicUser` compone
+  // el login y el listado de personas. Meter aqui el genero y la etnia --datos SENSIBLES, LOPDP
+  // Art. 4-- los pondria en todos esos caminos, que no los necesitan (minimizacion, Art. 39).
+  //
+  // No se apunta en `accesos_sensibles`: la bitacora responde a «quien vio lo de esta persona», y el
+  // titular no es un tercero. Es la misma regla que `entradasDeLectura`.
+  //
+  // `fecha_nacimiento` sale como AAAA-MM-DD, que es lo que se escribe: el DATE crudo llega al JSON
+  // como marca de tiempo con zona, y un formulario lo pintaria un dia antes o despues.
+  // `nacimiento_provincia_id` no se guarda: se DEDUCE del canton, y el PATCH la ignora.
+  async datosPersonalesDe(personId) {
+    this.ensurePool();
+
+    const [filas] = await this.pool.query(
+      `SELECT to_char(p.fecha_nacimiento, 'YYYY-MM-DD') AS fecha_nacimiento,
+              p.nacimiento_pais_id, p.nacimiento_canton_id, ca.provincia_id AS nacimiento_provincia_id,
+              p.sexo, p.estado_civil_id,
+              aut.genero_id, aut.autoidentificacion_etnica_id
+         FROM persons p
+         LEFT JOIN cantones ca ON ca.id = p.nacimiento_canton_id
+         LEFT JOIN persona_autoidentificacion aut ON aut.person_id = p.id
+        WHERE p.id = ?
+        LIMIT 1`,
+      [personId]
+    );
+
+    const fila = filas?.[0];
+    if (!fila) return null;
+    const datos = Object.fromEntries(CAMPOS_DATOS_PERSONALES.map((campo) => [campo, fila[campo] ?? null]));
+    datos.nacimiento_provincia_id = fila.nacimiento_provincia_id ?? null;
+    return datos;
+  }
+
+  // Lo que GET /users/me le devuelve al titular: el usuario publico --el mismo que ven los demas
+  // caminos-- MAS sus datos personales, en un objeto aparte. Aparte y no sueltos entre los demas
+  // campos, para que se vea de un vistazo que son solo suyos y una prueba pueda afirmar que NO estan
+  // donde no deben.
+  async perfilDelTitular(personId, access = null) {
+    const [fila, datosPersonales] = await Promise.all([
+      this.findById(personId),
+      this.datosPersonalesDe(personId)
+    ]);
+    if (!fila) return null;
+    return { ...this.toPublicUser(fila, access), datos_personales: datosPersonales };
+  }
+
   // Por ID y no por numero de documento: era una subconsulta a `documentos_identidad` para llegar a
   // la persona que ya venia identificada en la ruta, y ataba la foto a un dato que cambia.
   async updatePhotoByPersonId(personId, photoUrl) {
@@ -718,16 +781,10 @@ export default class UserRepository {
       "direccion",
       "telefono",
       "documento",
-      // Los datos personales del frente 20 (P2). Van por el mismo camino que todo lo demas.
-      "fecha_nacimiento",
-      "nacimiento_pais_id",
-      "nacimiento_canton_id",
-      "sexo",
-      "estado_civil_id",
-      // Estos dos NO son columnas de `persons` desde P8: `update` los aparta y los guarda en
-      // `persona_autoidentificacion`. Entran por aqui igual, porque los declara la propia persona.
-      "genero_id",
-      "autoidentificacion_etnica_id"
+      // Los datos personales del frente 20 (P2). Van por el mismo camino que todo lo demas, y con la
+      // MISMA lista con la que el titular los lee. Dos de ellos NO son columnas de `persons` desde
+      // P8: `update` los aparta y los guarda en `persona_autoidentificacion`.
+      ...CAMPOS_DATOS_PERSONALES
     ];
 
     const filtered = {};
@@ -738,6 +795,10 @@ export default class UserRepository {
       }
     });
 
-    return this.update(userId, filtered);
+    const actualizado = await this.update(userId, filtered);
+    // `update` devuelve el usuario publico, que es el de todos los caminos. Al titular, y solo aqui,
+    // se le suman sus datos personales: la respuesta del PATCH es lo que el formulario vuelve a pintar.
+    if (!actualizado) return actualizado;
+    return { ...actualizado, datos_personales: await this.datosPersonalesDe(userId) };
   }
 }

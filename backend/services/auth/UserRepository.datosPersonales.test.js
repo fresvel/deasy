@@ -13,7 +13,8 @@ import { readFileSync } from "node:fs";
 import { strict as assert } from "node:assert";
 import test from "node:test";
 
-import UserRepository from "./UserRepository.js";
+import UserRepository, { CAMPOS_AUTOIDENTIFICACION, CAMPOS_DATOS_PERSONALES } from "./UserRepository.js";
+import AuthService from "./AuthService.js";
 
 const ESQUEMA = new URL("../../database/postgres_schema.sql", import.meta.url);
 
@@ -102,4 +103,131 @@ test("el genero y la etnia se guardan en su tabla, nunca en `persons`", async ()
   const upsert = consultas.find((c) => /INSERT INTO persona_autoidentificacion/.test(c.sql));
   assert.ok(upsert, "tenia que guardar la autoidentificacion en su tabla");
   assert.deepEqual(upsert.params, [7, 2, null], "la cadena vacia se guarda como NULL");
+});
+
+// ── LA LECTURA: el titular ve sus datos personales, y SOLO el ────────────────────────────────────
+//
+// El titular los escribia por PATCH /users/me y no los podia leer. Se leen por una consulta propia
+// que solo llaman los dos manejadores de /users/me, y NO por `findById` ni por `toPublicUser`: esa
+// pareja la comparten el login, el listado de personas, el chat, el tiempo real y la firma, y el genero
+// y la etnia (LOPDP, Art. 4) no deben viajar por ninguno de esos caminos.
+
+const CLAVES_QUE_NO_SALEN = [...CAMPOS_DATOS_PERSONALES, "nacimiento_provincia_id", "datos_personales"];
+
+// Lo que devolveria la consulta de `datosPersonalesDe`.
+const DATOS_EN_BASE = {
+  fecha_nacimiento: "1990-05-14",
+  nacimiento_pais_id: 1,
+  nacimiento_canton_id: 80,
+  nacimiento_provincia_id: 8,
+  sexo: "mujer",
+  estado_civil_id: 2,
+  genero_id: 2,
+  autoidentificacion_etnica_id: 5
+};
+
+// Una fila de `persons` en el PEOR caso: como si alguien hubiera colgado de ella los siete campos.
+// `toPublicUser` tiene que ignorarlos igual.
+const FILA_PERSONA = {
+  id: 7, first_name: "Ana", last_name: "Paz", token: "abc1234567", status: "Activo",
+  ...DATOS_EN_BASE
+};
+
+const repoDePrueba = () => {
+  const consultas = [];
+  const repo = new UserRepository({
+    query: async (sql, params) => {
+      consultas.push({ sql, params });
+      if (/persona_autoidentificacion/.test(sql)) return [[{ ...DATOS_EN_BASE }]];
+      if (/FROM persons p/.test(sql)) return [[{ ...FILA_PERSONA }]];
+      return [[]];
+    }
+  });
+  // Los satelites (direcciones, telefonos...) no son lo que se prueba aqui.
+  const vacio = { listarPorPersona: async () => [] };
+  repo.direcciones = vacio;
+  repo.telefonos = vacio;
+  repo.emails = vacio;
+  repo.documentos = vacio;
+  return { repo, consultas };
+};
+
+const assertSinDatosPersonales = (usuario, donde) => {
+  for (const clave of CLAVES_QUE_NO_SALEN) {
+    assert.ok(!Object.hasOwn(usuario, clave), `${donde} NO puede llevar ${clave}`);
+  }
+};
+
+test("las claves que lee el titular son las que acepta el PATCH, sensibles incluidas", async () => {
+  for (const sensible of CAMPOS_AUTOIDENTIFICACION) {
+    assert.ok(CAMPOS_DATOS_PERSONALES.includes(sensible), `falta ${sensible} en la lectura`);
+  }
+  const pasan = new Set(await camposQuePasan(CAMPOS_DATOS_PERSONALES));
+  assert.deepEqual(CAMPOS_DATOS_PERSONALES.filter((c) => !pasan.has(c)), []);
+});
+
+test("toPublicUser NO saca ningun dato personal, aunque la fila los traiga", () => {
+  const { repo } = repoDePrueba();
+  const publico = repo.toPublicUser({ ...FILA_PERSONA }, { roleNames: [], permissions: [] });
+  assert.equal(publico.first_name, "Ana");
+  assertSinDatosPersonales(publico, "toPublicUser");
+});
+
+test("findById y findByEmail NO leen persona_autoidentificacion", async () => {
+  const { repo, consultas } = repoDePrueba();
+  const porId = await repo.findById(7);
+  const porCorreo = await repo.findByEmail("ana@example.org");
+  assert.ok(porId && porCorreo, "las dos lecturas tenian que encontrar a la persona");
+  for (const { sql } of consultas) {
+    assert.doesNotMatch(sql, /persona_autoidentificacion/, "la lectura compartida no toca lo sensible");
+  }
+  assert.ok(!Object.hasOwn(porId, "datos_personales"));
+  assertSinDatosPersonales(repo.toPublicUser(porId), "toPublicUser(findById)");
+});
+
+test("el login no devuelve datos personales", async () => {
+  const { repo } = repoDePrueba();
+  const auth = new AuthService({
+    userRepository: repo,
+    passwordService: { verifyPassword: async () => true },
+    tokenService: { attachRefreshToken: () => {}, createAccessToken: () => ({ token: "t", expiresIn: 60 }) },
+    rbacService: { getUserAccess: async () => ({ roleNames: [], permissions: [] }) }
+  });
+  const { user } = await auth.login({ email: "ana@example.org", password: "x" }, {});
+  assert.equal(user.first_name, "Ana");
+  assertSinDatosPersonales(user, "la respuesta del login");
+});
+
+test("perfilDelTitular SI devuelve datos_personales, con las claves del PATCH y sin apuntarse en la bitacora", async () => {
+  const { repo, consultas } = repoDePrueba();
+  const perfil = await repo.perfilDelTitular(7, { roleNames: ["Usuario"], permissions: [] });
+
+  assert.equal(perfil.first_name, "Ana");
+  assert.deepEqual(perfil.roles, ["Usuario"], "el acceso se sigue componiendo como siempre");
+  assert.deepEqual(
+    Object.keys(perfil.datos_personales).sort(),
+    [...CAMPOS_DATOS_PERSONALES, "nacimiento_provincia_id"].sort()
+  );
+  assert.deepEqual(perfil.datos_personales, DATOS_EN_BASE);
+  // Los datos van SOLO en su objeto: fuera de el, el usuario es el publico de siempre.
+  for (const clave of CAMPOS_DATOS_PERSONALES) {
+    assert.ok(!Object.hasOwn(perfil, clave), `${clave} no puede ir suelto en el usuario`);
+  }
+
+  const sensible = consultas.find((c) => /persona_autoidentificacion/.test(c.sql));
+  assert.deepEqual(sensible.params, [7], "se leen los del titular, y de nadie mas");
+  assert.ok(!consultas.some((c) => /accesos_sensibles/.test(c.sql)), "el titular no es un tercero");
+});
+
+test("perfilDelTitular de una persona que no existe devuelve null", async () => {
+  const repo = new UserRepository({ query: async () => [[]] });
+  assert.equal(await repo.perfilDelTitular(999), null);
+});
+
+test("updateMe le devuelve al titular sus datos personales tras guardar", async () => {
+  const { repo } = repoDePrueba();
+  repo.update = async () => ({ id: 7, first_name: "Ana" });
+  const actualizado = await repo.updateMe(7, { genero_id: 2 });
+  assert.equal(actualizado.first_name, "Ana");
+  assert.deepEqual(actualizado.datos_personales, DATOS_EN_BASE);
 });

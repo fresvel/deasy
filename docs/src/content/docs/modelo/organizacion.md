@@ -640,6 +640,41 @@ columnas por rol—, así que la tabla aparte es lo que permite protegerlos con 
 `persons`. Quién lee lo sensible y cómo queda el rastro, en [Permisos](/complemento/permisos/).
 :::
 
+### Lo que el titular lee de sí mismo
+
+La persona **escribe** los siete campos —los cinco de `persons` y los dos de
+`persona_autoidentificacion`— por `PATCH /users/me`, y **los lee por `GET /users/me`**: los dos
+devuelven un objeto **`datos_personales`** con **las mismas claves que acepta el `PATCH`**, para que
+el formulario lea y escriba lo mismo.
+
+| Clave | De dónde sale |
+|---|---|
+| `fecha_nacimiento` | `persons`, como `AAAA-MM-DD` —la forma que se escribe, no una marca de tiempo con zona— |
+| `nacimiento_pais_id` · `nacimiento_canton_id` · `sexo` · `estado_civil_id` | `persons` |
+| `nacimiento_provincia_id` | **Deducida** de `cantones.provincia_id`. Sólo se lee: el `PATCH` la ignora |
+| `genero_id` · `autoidentificacion_etnica_id` | `persona_autoidentificacion` |
+
+**Va en un objeto aparte, y no suelto entre los demás campos del usuario**, porque el resto de ese
+objeto se compone igual para quien no es el titular. Aparte, se ve de un vistazo qué es sólo del
+titular, y una prueba puede afirmar que **no aparece** donde no debe.
+
+**No viaja por `findById`.** Esa lectura la usan el chat, el tiempo real, la firma, el flujo de
+llenado y la puerta de verificación: meter ahí el género y la etnia los pondría en cada uno de esos
+caminos, que no los necesitan. Los lee **una consulta propia**, y sólo la llaman los dos manejadores
+de `/users/me`.
+
+**Tampoco va en la respuesta del login**, ni en los listados de personas (`GET /users`): el login
+abre sesión y no necesita saber nada de eso. Es la **minimización** de la LOPDP (Art. 39): por
+defecto, sólo lo necesario.
+
+**Y esa lectura no deja rastro en `accesos_sensibles`.** La bitácora responde a «quién vio lo de esta
+persona», y la persona no es un tercero —la misma regla que ya aplica el editor de `/admin`—.
+
+⚠️ **El navegador no los guarda.** La respuesta de `/users/me` se copiaba entera en `localStorage`,
+así que el género y la etnia se habrían quedado ahí sin caducidad. `storeUser`
+(`frontend/src/core/utils/accessControl.js`) guarda el usuario **sin `datos_personales`**: se piden a
+`/users/me` cada vez.
+
 ### Los vocabularios de la persona
 
 Cinco catálogos con la misma forma —`pais_id`, `code`, `name`, `orden`— que describen **cómo se
