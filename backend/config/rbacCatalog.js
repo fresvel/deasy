@@ -95,6 +95,23 @@ export const ACTION_CATALOG = [
   { code: "manage", name: "Administrar", description: "Administracion completa del modulo." }
 ];
 
+export const permissionCode = (resourceCode, actionCode) => `${resourceCode}.${actionCode}`;
+
+// Los permisos que salen del catalogo: cada recurso por cada accion, con su codigo y su descripcion.
+//
+// Vive aqui, y no dentro de quien siembra, porque ahora siembran DOS: el bootstrap
+// (`seedBaseRbacCatalog`, que reescribe) y la sincronizacion del arranque (`sincronizarCatalogoRbac`,
+// que solo añade). Si cada uno compusiera el codigo y la descripcion a su manera, el mismo permiso
+// saldria distinto segun el camino por el que hubiera llegado a la base.
+export const PERMISSION_CATALOG = RESOURCE_CATALOG.flatMap((resource) =>
+  ACTION_CATALOG.map((action) => ({
+    code: permissionCode(resource.code, action.code),
+    resourceCode: resource.code,
+    actionCode: action.code,
+    description: `${action.name} ${resource.name}`.trim()
+  }))
+);
+
 const MANAGE_ALL_RESOURCES = Object.fromEntries(
   RESOURCE_CATALOG.map((resource) => [resource.code, ["read", "create", "update", "delete", "manage"]])
 );

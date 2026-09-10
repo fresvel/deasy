@@ -10,6 +10,7 @@ import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas 
 import cors from "cors"
 import { assertPostgresConnection } from "./config/postgres.js";
 import { publishBaseSeedAssets } from "./services/system/SystemBootstrapService.js";
+import { sincronizarCatalogoRbac } from "./services/system/sincronizarCatalogoRbac.js";
 import DocumentosLegales from "./services/legal/DocumentosLegales.js";
 import { ensurePostgresSchema } from "./database/postgres_initializer.js";
 import cookieParser from "cookie-parser"
@@ -278,6 +279,43 @@ const prepararArchivoLegal = async () => {
   }
 };
 
+// LOS PERMISOS NUEVOS DEL CODIGO, EN CADA ARRANQUE (frente 20, P8).
+//
+// Sin esto, un recurso añadido a `rbacCatalog.js` no llegaba nunca a una base ya instalada, y como una
+// tabla sin permiso queda CERRADA, sus tablas se quedaban inaccesibles para todos menos AdminSistema.
+// Que añade, que concede y por que no toca lo demas: `services/system/sincronizarCatalogoRbac.js`.
+//
+// Best-effort A PROPOSITO, y aqui no es comodidad sino que el fallo es SEGURO: si no sincroniza, lo
+// nuevo sigue cerrado -- nadie ve de mas--, y la transaccion garantiza que no queda a medias. Tumbar el
+// backend por eso dejaria sin servicio TODO (acceso, firmas, tareas) por unos permisos de menos.
+//
+// ⚠️ NUNCA LANZA, y tiene que seguir asi: se llama dentro del `try` de los reintentos, y un error que
+// escapara repetiria veinte veces la inicializacion del esquema y se saltaria la semilla y el archivo
+// legal. Va DESPUES del esquema porque necesita las tablas, y antes de lo demas porque no depende de
+// MinIO.
+const sincronizarPermisosAlArrancar = async () => {
+  try {
+    const resultado = await sincronizarCatalogoRbac();
+    if (!resultado.instalado) {
+      console.log("ℹ️  Catalogo RBAC: el sistema no esta instalado; lo siembra el bootstrap.");
+      return;
+    }
+    if (!resultado.recursos.length && !resultado.acciones.length && !resultado.permisos.length) {
+      console.log("✅ Catalogo RBAC al dia");
+      return;
+    }
+    console.log(
+      `✅ Catalogo RBAC sincronizado: ${resultado.recursos.length} recurso(s), ${resultado.acciones.length} accion(es), ` +
+      `${resultado.permisos.length} permiso(s) y ${resultado.concesiones} concesion(es) nuevos ` +
+      `(recursos: ${resultado.recursos.join(", ") || "ninguno"})`
+    );
+  } catch (error) {
+    console.error(`⚠️  CATALOGO RBAC SIN SINCRONIZAR: ${error.message}`);
+    console.error("⚠️  Los permisos nuevos del codigo no estan en la base y sus tablas siguen CERRADAS. " +
+      "No se aplico nada a medias; se reintenta en el proximo arranque. El backend sigue en ejecucion.");
+  }
+};
+
 const initializeDatabaseWithRetry = async () => {
   const shouldResetSchema = String(process.env.DB_RESET_SCHEMA_ON_START || "0") === "1";
   const maxAttempts = Number(process.env.DB_INIT_MAX_ATTEMPTS || 20);
@@ -288,6 +326,7 @@ const initializeDatabaseWithRetry = async () => {
       await assertPostgresConnection(); // PostgreSQL vía el adaptador
       await ensurePostgresSchema({ reset: shouldResetSchema });
       console.log("✅ PostgreSQL inicializada correctamente");
+      await sincronizarPermisosAlArrancar();
       await publishSeedsOnBoot();
       await prepararArchivoLegal();
       return;

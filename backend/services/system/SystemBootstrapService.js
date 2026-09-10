@@ -15,9 +15,11 @@ import { buildProcessDefinitionVersionName } from "../admin/processes/processDef
 import {
   ACTION_CATALOG,
   ADMIN_ROLE_NAME,
+  PERMISSION_CATALOG,
   RESOURCE_CATALOG,
   ROLE_CATALOG,
-  ROLE_PERMISSION_MATRIX
+  ROLE_PERMISSION_MATRIX,
+  permissionCode
 } from "../../config/rbacCatalog.js";
 import {
   replaceSchemaFieldsForArtifact,
@@ -212,17 +214,14 @@ const seedBaseRbacCatalog = async (connection) => {
     actionIds.set(action.code, await upsertAction(connection, action));
   }
 
-  for (const resource of RESOURCE_CATALOG) {
-    for (const action of ACTION_CATALOG) {
-      const permissionCode = `${resource.code}.${action.code}`;
-      const permissionId = await upsertPermission(connection, {
-        resourceId: resourceIds.get(resource.code),
-        actionId: actionIds.get(action.code),
-        code: permissionCode,
-        description: `${action.name} ${resource.name}`.trim()
-      });
-      permissionIds.set(permissionCode, permissionId);
-    }
+  for (const permission of PERMISSION_CATALOG) {
+    const permissionId = await upsertPermission(connection, {
+      resourceId: resourceIds.get(permission.resourceCode),
+      actionId: actionIds.get(permission.actionCode),
+      code: permission.code,
+      description: permission.description
+    });
+    permissionIds.set(permission.code, permissionId);
   }
 
   for (const [roleName, resourceMatrix] of Object.entries(ROLE_PERMISSION_MATRIX)) {
@@ -231,7 +230,7 @@ const seedBaseRbacCatalog = async (connection) => {
     await connection.query("DELETE FROM role_permissions WHERE role_id = ?", [roleId]);
     for (const [resourceCode, actionCodes] of Object.entries(resourceMatrix)) {
       for (const actionCode of actionCodes) {
-        const permissionId = permissionIds.get(`${resourceCode}.${actionCode}`);
+        const permissionId = permissionIds.get(permissionCode(resourceCode, actionCode));
         if (!permissionId) continue;
         await connection.query(
           "INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)",
