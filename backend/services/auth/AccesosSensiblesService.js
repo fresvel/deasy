@@ -60,7 +60,10 @@ export default class AccesosSensiblesService {
 
   // Una sola sentencia por peticion, con tantas filas como entradas: una pagina de 50 son 50 filas,
   // no 50 viajes a la base.
-  async registrar(entradas, { actorId, recurso, tabla, ip = null }) {
+  //
+  // `ejecutor`: por defecto el pool; en una escritura, la CONEXION DE SU TRANSACCION, para que el
+  // cambio y su entrada se confirmen juntos o no se confirme ninguno.
+  async registrar(entradas, { actorId, recurso, tabla, ip = null }, ejecutor = this.pool) {
     if (!entradas.length) return 0;
     const huecos = [];
     const valores = [];
@@ -77,7 +80,7 @@ export default class AccesosSensiblesService {
         ip
       );
     }
-    await this.pool.query(
+    await ejecutor.query(
       `INSERT INTO accesos_sensibles
          (titular_person_id, actor_person_id, recurso, tabla, registro_id, accion, detalle, ip)
        VALUES ${huecos.join(", ")}`,
@@ -90,7 +93,7 @@ export default class AccesosSensiblesService {
     return this.registrar(entradasDeLectura(contexto), contexto);
   }
 
-  registrarEscritura(contexto) {
-    return this.registrar(entradasDeEscritura(contexto), contexto);
+  registrarEscritura(contexto, ejecutor = this.pool) {
+    return this.registrar(entradasDeEscritura(contexto), contexto, ejecutor);
   }
 }

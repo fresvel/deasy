@@ -87,6 +87,30 @@ export async function runInTransaction(pool, ctx, { before, after }, execute) {
 }
 
 /**
+ * Los hooks `*Tx` de la tabla con los de quien llama ALREDEDOR, en la misma transacción: `antes` corre
+ * antes que el `before` de la tabla, y `despues` después de su `after`. Sin `extra`, devuelve los de la
+ * tabla tal cual, así que para quien no lo pasa no cambia nada.
+ *
+ * Existe por la bitácora de accesos sensibles (`SqlAdminConBitacora`): la entrada de una escritura
+ * tiene que confirmarse —o deshacerse— con la escritura, y eso sólo es verdad si va en su transacción.
+ */
+export function envolverEnTransaccion({ before, after } = {}, extra = null) {
+  if (!extra) {
+    return { before, after };
+  }
+  return {
+    before: async (ctx) => {
+      if (extra.antes) await extra.antes(ctx);
+      if (before) await before(ctx);
+    },
+    after: async (ctx) => {
+      if (after) await after(ctx);
+      if (extra.despues) await extra.despues(ctx);
+    }
+  };
+}
+
+/**
  * INSERT genérico. Recalcula columnas/valores desde `ctx.payload` en el momento de escribir porque
  * un `beforeInsertTx` puede haberlo mutado (p. ej. `tasks`, que resuelve su `process_run_id` dentro
  * de la transacción). Para las tablas que no lo mutan el resultado es idéntico.

@@ -177,8 +177,13 @@ pregunta que responde es *quién vio lo de esta persona*. Una página de 50 fila
 - **Sin claves ajenas**, como `consentimientos`: la evidencia tiene que sobrevivir a la persona.
 - **De una escritura guarda los nombres de los campos, nunca los valores.** Copiar ahí la discapacidad
   de alguien haría de la bitácora otra copia del dato, y esta la lee `Auditor`.
-- **Una lectura se apunta antes de devolver las filas**: si la bitácora falla, no sale nada. Una
-  escritura se apunta después de hacerse —antes no hay fila—, así que un fallo ahí deja el cambio hecho.
+- **Una lectura se apunta antes de devolver las filas**: si la bitácora falla, no sale nada.
+- **Una escritura se apunta dentro de su propia transacción**: si la entrada no se puede escribir, el
+  cambio se deshace. No queda ninguna escritura confirmada sobre una tabla sensible sin su entrada.
+  Hasta el 2026-09-10 se apuntaba *después* de confirmar, y el hueco no era teórico: cambiar sólo la
+  fecha de emisión de una cédula quedaba guardado, respondía 400 y no dejaba entrada, porque el titular
+  se buscaba en el cuerpo de la petición y no en la fila. Ahora sale de la fila de la base; al borrar,
+  se lee con `FOR UPDATE` antes del `DELETE`, en la misma transacción.
 
 :::caution[No la exige la ley con ese nombre]
 El «registro de actividades de tratamiento» del Art. 38 del Reglamento es **otra cosa**: el inventario

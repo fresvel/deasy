@@ -208,12 +208,35 @@ Ahora una tabla sin recurso **resuelve a `null` y se niega**, y `config/rbacCata
 
 **Dos recursos son sensibles** —`datos_sensibles` y `datos_pago`, con `sensible: true` en el catálogo— y tienen reglas propias: `Auditor` no los recibe, `Usuario` tampoco, y cada lectura ajena y cada escritura queda en `accesos_sensibles`. Quién los lee y cómo es el rastro, en [Permisos](/complemento/permisos/).
 
-El catalogo canonico esta en `backend/config/rbacCatalog.js` (335 líneas) y es también la **fuente de siembra**: `SystemBootstrapService.js` lo importa para poblar roles y permisos, borrando y reescribiendo `role_permissions`. O sea que **el catálogo del código es la fuente de verdad**, no la base.
+El catalogo canonico esta en `backend/config/rbacCatalog.js` (352 líneas) y es la **fuente de verdad**, no la base. Llega a la base por dos caminos, y no hacen lo mismo:
 
-:::caution[Pero NO se resiembra en cada arranque]
-Aquí ponía «en cada arranque», y es falso: `backend/index.js` solo importa `publishBaseSeedAssets`, no `initializeSystem`. La resiembra ocurre **únicamente** desde `POST /system/bootstrap/initialize` —que responde `409` si el sistema ya está instalado— y desde `npm run recover:admin`.
+| Camino | Cuándo | Qué hace con lo que ya hay |
+|---|---|---|
+| `seedBaseRbacCatalog` (`SystemBootstrapService.js`) | `POST /system/bootstrap/initialize` —`409` si ya está instalado— y `npm run recover:admin` | **Reescribe**: borra y vuelve a escribir `role_permissions` de cada rol, y reactiva y renombra recursos, acciones y permisos |
+| `sincronizarCatalogoRbac` (`services/system/sincronizarCatalogoRbac.js`) | **Cada arranque del backend** | **Sólo añade**, y sólo concede lo que acaba de crear |
 
-**Consecuencia práctica:** editar `rbacCatalog.js` y reiniciar el backend **no propaga nada**. Los permisos nuevos no llegan a la base hasta que se reinstala o se recupera el admin.
+Los dos sacan el código y la descripción de cada permiso de la misma lista, `PERMISSION_CATALOG`, así que un permiso llegado al arrancar es idéntico al sembrado al instalar.
 
-Y con la tabla cerrada por defecto esto muerde más: en una base ya instalada, las tablas que protegen los cuatro recursos del 2026-09-10 (`datos_sensibles`, `datos_pago`, `catalogos`, `bitacora_sensible`) **quedan cerradas para todos menos `AdminSistema`** hasta que se resiembre.
+:::caution[Al arrancar sólo se AÑADE — y sólo se concede lo recién creado]
+Aquí ponía «NO se resiembra en cada arranque», y hasta el 2026-09-10 era verdad: el catálogo sólo llegaba a la base al instalar o al recuperar el admin. En una base ya instalada, los cuatro recursos de ese día (`datos_sensibles`, `datos_pago`, `catalogos`, `bitacora_sensible`) no llegaban nunca, y como una tabla sin permiso queda cerrada, sus tablas se quedaban **inaccesibles para todos menos `AdminSistema`**.
+
+Ahora cada arranque, en **una sola transacción**:
+
+1. Inserta los recursos, acciones y permisos del catálogo que falten (`ON CONFLICT DO NOTHING`). **No actualiza ni borra nada**: un permiso desactivado sigue desactivado y un nombre cambiado a mano se queda.
+2. Concede según `ROLE_PERMISSION_MATRIX` **sólo los permisos que acaba de crear**. Un permiso que ya existía no se vuelve a conceder: si un rol no lo tiene, es que alguien se lo quitó.
+3. Si no hay roles, no hace nada: una base virgen la siembra el bootstrap.
+
+La transacción no es un adorno. Sin ella, un fallo entre crear un permiso y concederlo lo dejaría creado y sin conceder **para siempre**, porque en el arranque siguiente ya «existiría» y la regla 2 lo daría por quitado a mano.
+
+**Si falla, el backend arranca igual** y lo dice en el log (`CATALOGO RBAC SIN SINCRONIZAR`). Es a propósito, porque el fallo cae del lado seguro: lo nuevo sigue cerrado y nadie ve de más. Si todo va bien, el log dice `Catalogo RBAC al dia` o `Catalogo RBAC sincronizado: …`.
+
+Medido en una base con los cuatro recursos borrados a mano: al reiniciar volvieron 4 recursos, 20 permisos y 34 concesiones, las mismas que siembra el bootstrap. Un permiso preexistente quitado a un rol (`people.read` de `GestorFirmas`) no volvió, y un segundo reinicio no cambió nada.
+
+**Lo que el arranque NO propaga**, y sigue siendo del bootstrap o de `recover:admin`:
+
+- dar o quitar a un rol un permiso **que ya existe** (cambiar la matriz de un recurso viejo);
+- renombrar o redescribir recursos, acciones y permisos;
+- crear un **rol** nuevo: sus concesiones se saltan mientras el rol no exista.
+
+Y hay un caso que no puede distinguir: un permiso **borrado** de `permissions` —no quitado a un rol, borrado— es igual que uno que nunca existió, así que vuelve con sus concesiones.
 :::

@@ -28,6 +28,7 @@ import {
   getTableHooks,
   runInTransaction,
   insertPayload,
+  envolverEnTransaccion,
 } from "./crud/tableHooks.js";
 import { translateConstraintError } from "../../errors/sqlErrors.js";
 
@@ -654,7 +655,10 @@ export default class SqlAdminService {
   unassignUnitPosition(...args) { return this.orgStructure.unassignUnitPosition(...args); }
   createUnitWithParent(...args) { return this.orgStructure.createUnitWithParent(...args); }
 
-  async create(tableName, data) {
+  // `transaccion` ({ antes, despues }): trabajo de quien llama que tiene que confirmarse con la
+  // escritura, o deshacerse con ella. Si llega, la escritura va en transaccion aunque la tabla no la
+  // pida. Hoy lo usa solo la bitacora de accesos sensibles (SqlAdminConBitacora).
+  async create(tableName, data, { transaccion = null } = {}) {
     this.ensurePool();
     const config = getConfig(tableName);
     const payload = pickPayload(config.fields, data);
@@ -703,11 +707,11 @@ export default class SqlAdminService {
     const placeholders = columns.map(() => "?").join(", ");
     let result;
     try {
-      if (hooks.beforeInsertTx || hooks.afterInsertTx) {
+      if (hooks.beforeInsertTx || hooks.afterInsertTx || transaccion) {
         result = await runInTransaction(
           this.pool,
           ctx,
-          { before: hooks.beforeInsertTx, after: hooks.afterInsertTx },
+          envolverEnTransaccion({ before: hooks.beforeInsertTx, after: hooks.afterInsertTx }, transaccion),
           (connection) => insertPayload(connection, ctx)
         );
       } else {
@@ -741,7 +745,7 @@ export default class SqlAdminService {
     return sanitizePersonRow(tableName, created);
   }
 
-  async update(tableName, keys, data) {
+  async update(tableName, keys, data, { transaccion = null } = {}) {
     this.ensurePool();
     const config = getConfig(tableName);
 
@@ -799,13 +803,21 @@ export default class SqlAdminService {
       : Boolean(hooks.beforeUpdateTx || hooks.afterUpdateTx);
 
     try {
-      if (needsUpdateTx) {
+      if (needsUpdateTx || transaccion) {
+        // Si la transaccion la trae SOLO `transaccion`, la tabla no la pedia: sus hooks *Tx siguen sin
+        // correr y su `afterUpdate` corre despues del commit, igual que en el camino llano.
         await runInTransaction(
           this.pool,
           ctx,
-          { before: hooks.beforeUpdateTx, after: hooks.afterUpdateTx },
+          envolverEnTransaccion(
+            needsUpdateTx ? { before: hooks.beforeUpdateTx, after: hooks.afterUpdateTx } : {},
+            transaccion
+          ),
           runUpdate
         );
+        if (!needsUpdateTx && hooks.afterUpdate) {
+          await hooks.afterUpdate(ctx);
+        }
       } else {
         await runUpdate(this.pool);
         if (hooks.afterUpdate) {
@@ -880,7 +892,7 @@ export default class SqlAdminService {
   listSupervisorStuckTaskItems(...args) { return this.taskAssignment.listSupervisorStuckTaskItems(...args); }
   assertSupervisesTaskItem(...args) { return this.taskAssignment.assertSupervisesTaskItem(...args); }
 
-  async remove(tableName, keys) {
+  async remove(tableName, keys, { transaccion = null } = {}) {
     this.ensurePool();
     const config = getConfig(tableName);
     const keyPayload = pickPayload(config.fields, keys, { includeReadOnly: true });
@@ -908,11 +920,11 @@ export default class SqlAdminService {
     const runDelete = (executor) => executor.query(`DELETE FROM ${tableName} WHERE ${where}`, params);
 
     try {
-      if (hooks.beforeRemoveTx || hooks.afterRemoveTx) {
+      if (hooks.beforeRemoveTx || hooks.afterRemoveTx || transaccion) {
         await runInTransaction(
           this.pool,
           ctx,
-          { before: hooks.beforeRemoveTx, after: hooks.afterRemoveTx },
+          envolverEnTransaccion({ before: hooks.beforeRemoveTx, after: hooks.afterRemoveTx }, transaccion),
           runDelete
         );
       } else {
