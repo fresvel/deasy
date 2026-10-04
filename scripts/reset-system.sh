@@ -25,8 +25,8 @@ Regresa el sistema al estado base (instalación virgen) para arrancar el bootstr
   - PostgreSQL: dropea todas las tablas y recrea el schema vacío (incluye dossier, chat, etc.)
   - MinIO:   vacía todos los buckets gestionados por la app
 
-Tras el wipe reinicia los servicios de app (backend, signer) para que
-reconecten en limpio; el backend detecta la instalación virgen y la UI pide crear el primer
+Tras el wipe RECREA los servicios de app (backend, signer) para que reconecten en limpio y
+relean su entorno; el backend detecta la instalación virgen y la UI pide crear el primer
 administrador.
 
 Flags de wipe (se traducen a los objetivos de reset.mjs):
@@ -34,8 +34,9 @@ Flags de wipe (se traducen a los objetivos de reset.mjs):
   --keep-minio     conserva los buckets de MinIO
 
 Flags de servicios:
-  --rebuild        reconstruye las imágenes y recrea los servicios (en vez de solo reiniciar);
-                   úsalo en qa/prod o cuando cambien dependencias/imagen.
+  --rebuild        reconstruye TAMBIÉN las imágenes; úsalo cuando cambien dependencias o el
+                   Dockerfile. Sin este flag los servicios ya se recrean (no se reinician: un
+                   reinicio no relee env_file y deja variables viejas dentro).
   --no-restart     no toca los servicios (tendrás que reiniciar el backend a mano).
 
 Ejemplos:
@@ -113,8 +114,19 @@ recycle_app_services() {
     echo "→ Reconstruyendo y recreando: ${selected[*]}"
     bash "$DOCKER_ENV_SCRIPT" "$ENVIRONMENT" up -d --build --force-recreate --no-deps "${selected[@]}"
   else
-    echo "→ Reiniciando: ${selected[*]}"
-    bash "$DOCKER_ENV_SCRIPT" "$ENVIRONMENT" restart "${selected[@]}"
+    # ⚠️ `up -d --force-recreate` y NO `restart`, y cuesta una corrida entera de tests saberlo.
+    #
+    # `docker compose restart` reinicia el proceso DENTRO del contenedor existente: no vuelve a
+    # leer `env_file`, así que el contenedor se queda con las variables que tenía el día que se
+    # creó. Medido el 2026-10-04 en dev: `TELEGRAM_BOT_USERNAME` ya tenía valor en
+    # `docker/.env.dev` y el backend lo veía VACÍO, así que `hayAlgunCanal()` respondía que no y
+    # 13 tests de caracterización fallaban con un 503 que no tenía nada que ver con el código.
+    #
+    # Y `--force-recreate` no es opcional: un `up -d` a secas es un NO-OP si la configuración no
+    # cambió, y entonces el backend no se recicla — que es justo para lo que se le llama aquí, para
+    # que re-corra la inicialización del esquema y entre en modo bootstrap.
+    echo "→ Recreando: ${selected[*]}"
+    bash "$DOCKER_ENV_SCRIPT" "$ENVIRONMENT" up -d --force-recreate --no-deps "${selected[@]}"
   fi
 }
 
