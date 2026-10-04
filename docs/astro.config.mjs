@@ -109,6 +109,9 @@ export default defineConfig({
 				// y en la raiz habria chocado con `index.mdx`, la portada del sitio. Por eso es
 				// el unico que ademas cambia de nombre: `por-donde-empezar`.
 				{ slug: 'por-donde-empezar' },
+				// Va SEGUNDA y no en una carpeta: es el orden de lectura del modelo entero, y la unica
+				// agrupacion de las tablas que se puede recorrer sin topar con una dependencia circular.
+				{ slug: 'orden-de-lectura' },
 				{ slug: 'panorama' },
 				{ slug: 'arquitectura-y-patrones' },
 				{ label: 'El modelo, de punta a punta', autogenerate: { directory: 'modelo' } },

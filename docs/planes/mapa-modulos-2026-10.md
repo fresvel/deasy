@@ -263,6 +263,39 @@ confianza falsa.
 | **F4.2** | Los 13 subgrupos dibujados declaran lo mismo, y las 6 tablas sueltas quedan declaradas | comprobación **E**; grupos + sueltas = 93 = las tablas del esquema; dos roturas provocadas y cazadas | 2026-10-04 |
 | **F5.1** | La verificación por canal y las llaves pendientes se invalidan al cambiar el número, en los tres caminos | sonda antes/después sobre la pila B (arriba) + 4 tests nuevos en `TelefonoService.test.js`; 890 unitarios en verde | 2026-10-04 |
 
+## Lo que de verdad hacía falta, y no era nada de esto
+
+El 2026-10-04, al enseñar el avance, el dueño respondió que seguía sin entender el sistema y que el
+día había sido una pérdida de tiempo. Tenía razón, y la medición lo confirma. Añadí una pregunta que
+no me había hecho —**¿se puede leer el sistema en algún orden?**— y salió esto:
+
+| Agrupación | Grupos | Relaciones dentro | ¿Se puede leer en orden? |
+|---|---|---|---|
+| Los 8 dominios de la documentación (ya existían) | 8 | **50 %** | **NO** — 4 parejas mutuas |
+| Los 18 grupos de permisos | 18 | 44 % | **NO** — 2 parejas |
+| **Los 15 módulos de este frente** | 15 | **37 %** | **NO** — 1 pareja |
+| **Las 8 capas** | 8 | 43 % | **SÍ** |
+
+Tres conclusiones, y dos son contra mí:
+
+1. **Los 15 módulos son la peor de las cuatro agrupaciones**, y encima tienen un bucle
+   (`declaracion_plantillas` ↔ `declaracion_procesos`), así que no tienen ni la propiedad que
+   justificaba inventarlos.
+2. **Todas las agrupaciones por tema tienen bucles.** Ésa es la razón medible de que el sistema no se
+   pueda entender leyéndolo: no falta documentación, falta un **orden** posible.
+3. **Lo único que da un orden son las capas**, que es lo que este frente produjo casi de rebote y
+   luego dejó de mencionar.
+
+De ahí sale **[`orden-de-lectura.md`](../src/content/docs/orden-de-lectura.md)**: las 93 tablas en sus
+8 niveles, en lenguaje llano, leíble de arriba abajo sin que nada se mencione antes de explicarse. Es
+el entregable que este frente debió producir en la primera sesión.
+
+⚠️ **Y una propuesta retirada:** llegué a proponer los **grupos de permisos** como fuente única,
+apoyándome en que «algo real depende de ellos». El dueño lo tumbó con el dato que yo no tenía: **los
+roles y permisos los generó un agente y nunca se auditaron.** Un permiso equivocado que nadie ha
+pisado está igual de podrido que un diagrama equivocado. **La auditoría del RBAC queda abierta como
+trabajo propio** —19 recursos, 95 permisos, 13 roles— y es más grave que todo lo de este frente.
+
 ## Lo que queda
 
 **F5 · Las cinco tablas con dos escritores.** Cada una con su motivo en `dominios.json`. La de
