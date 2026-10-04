@@ -4,6 +4,8 @@
 //   A · COBERTURA       cada tabla del esquema está en exactamente un módulo
 //   B · ORDEN DE CAPAS  ninguna clave ajena apunta a una capa SUPERIOR
 //   C · PROPIEDAD       cada tabla la escribe un solo módulo de código
+//   D · RECURSOS RBAC   ningún recurso de permiso crece hacia un módulo sin declararlo
+//   E · MAPAS DIBUJADOS ningún subgrupo de los mapas crece hacia un módulo sin declararlo
 //
 // Por qué las tres y no una: A caza la tabla nueva que se queda fuera del mapa (ya lo hacía el
 // post-procesado del DBML, aquí se adelanta y se dice mejor). B caza que el modelo se enrede: el
@@ -18,7 +20,8 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join, relative, sep, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { leerMapa, tablasDelEsquema, clavesAjenas, RUTA_MAPA } from "./lib/mapa.mjs";
+import { leerMapa, tablasDelEsquema, clavesAjenas, subgruposDibujados, RUTA_MAPA } from "./lib/mapa.mjs";
+import { SQL_TABLES } from "../../backend/config/sqlTables.js";
 
 const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const ESQUEMA = join(RAIZ, "backend", "database", "postgres_schema.sql");
@@ -107,11 +110,143 @@ for (const tabla of tablas) {
   );
 }
 
+// ── D · Los recursos de permiso ───────────────────────────────────────────────────────────────
+// Un recurso RBAC no agrupa como un módulo, y no tiene por qué: agrupa por QUIÉN PUEDE ACTUAR, no
+// por qué depende de qué. Se midió que juntan lo mismo en un 28 %. Lo que no vale es que un recurso
+// se extienda a un módulo nuevo sin que nadie lo decida — eso es dar permiso sobre una parte del
+// sistema que no se pensó, y no rompe nada visible.
+const crudo = JSON.parse(readFileSync(RUTA_MAPA, "utf8"));
+const declaradoRbac = crudo._recursos_rbac ?? {};
+const motivosRbac = declaradoRbac._motivos ?? {};
+
+const fuente = readFileSync(join(RAIZ, "backend", "config", "rbacCatalog.js"), "utf8");
+const bloqueMapa = fuente.match(/TABLE_RESOURCE_MAP\s*=\s*\{([\s\S]*?)\n\};/);
+const recursoDe = new Map();
+if (!bloqueMapa) {
+  fallos.push("D · no encuentro TABLE_RESOURCE_MAP en backend/config/rbacCatalog.js");
+} else {
+  for (const linea of bloqueMapa[1].matchAll(/^\s*([a-z_]+)\s*:\s*"([a-z_]+)"/gm)) {
+    recursoDe.set(linea[1], linea[2]);
+  }
+}
+
+// Una tabla que el editor genérico expone y que no tiene recurso queda DENEGADA para todo el mundo
+// --el camino es fail-closed a propósito--, y eso se descubre cuando alguien no puede editarla.
+const expuestas = SQL_TABLES.map((t) => t.table);
+for (const tabla of expuestas) {
+  if (!recursoDe.has(tabla)) {
+    fallos.push(
+      `D · '${tabla}' está en sqlTables.js (la expone /admin) y no tiene recurso en TABLE_RESOURCE_MAP: ` +
+        "quedaría denegada para todo el mundo, en silencio"
+    );
+  }
+}
+for (const tabla of recursoDe.keys()) {
+  if (!tablas.includes(tabla)) {
+    fallos.push(`D · TABLE_RESOURCE_MAP nombra '${tabla}' y no existe en el esquema`);
+  }
+}
+
+const modulosPorRecurso = new Map();
+for (const [tabla, recurso] of recursoDe) {
+  if (!mapa.moduloDe.has(tabla)) continue;
+  if (!modulosPorRecurso.has(recurso)) modulosPorRecurso.set(recurso, new Set());
+  modulosPorRecurso.get(recurso).add(mapa.moduloDe.get(tabla));
+}
+for (const [recurso, modulos] of modulosPorRecurso) {
+  const declarados = declaradoRbac[recurso];
+  if (!Array.isArray(declarados)) {
+    fallos.push(
+      `D · el recurso '${recurso}' no está declarado en _recursos_rbac. Abarca ${[...modulos].sort().join(" · ")}`
+    );
+    continue;
+  }
+  const esperados = new Set(declarados);
+  for (const m of modulos) {
+    if (!esperados.has(m)) {
+      fallos.push(
+        `D · el recurso '${recurso}' ha crecido al módulo '${m}' y no estaba declarado. ` +
+          "O la tabla tiene el recurso equivocado, o el recurso abarca más de lo que se pensó"
+      );
+    }
+  }
+  for (const m of esperados) {
+    if (!modulos.has(m)) avisos.push(`D · '${recurso}' ya no abarca '${m}': quita el módulo de su lista`);
+  }
+  if (modulos.size > 1 && !motivosRbac[recurso]) {
+    fallos.push(`D · '${recurso}' abarca ${modulos.size} módulos y no tiene motivo en _recursos_rbac._motivos`);
+  }
+}
+
+// ── E · Los subgrupos de los mapas dibujados ──────────────────────────────────────────────────
+// Lo mismo por el otro lado. Un subgrupo agrupa por NARRATIVA --«Cómo se te localiza»-- para que el
+// dibujo se pueda leer sin conocer el sistema, así que tampoco coincide con los módulos (27 %). Una
+// tabla caída en la caja narrativa equivocada no rompe nada y nadie se entera nunca.
+const declaradoDibujo = crudo._subgrupos_dibujados ?? {};
+const motivosDibujo = declaradoDibujo._motivos ?? {};
+const sueltasDeclaradas = new Set(declaradoDibujo._sueltas ?? []);
+const dibujados = subgruposDibujados(join(RAIZ, "docs", "src", "content", "docs"), tablas);
+
+const vistas = new Set();
+const sueltasVistas = new Set();
+for (const [clave, mapaDibujado] of Object.entries(dibujados)) {
+  const esperadoDelMapa = declaradoDibujo[clave] ?? {};
+  for (const t of mapaDibujado.sueltas) {
+    vistas.add(t);
+    sueltasVistas.add(t);
+    if (!sueltasDeclaradas.has(t)) {
+      fallos.push(
+        `E · '${t}' está dibujada en ${clave} FUERA de todo subgrupo y no está en _sueltas. ` +
+          "O le falta su subgrupo, o es una suelta a conciencia y hay que declararla"
+      );
+    }
+  }
+  for (const [id, grupo] of mapaDibujado.grupos) {
+    grupo.tablas.forEach((t) => vistas.add(t));
+    const declarados = esperadoDelMapa[id];
+    const modulos = new Set(grupo.tablas.map((t) => mapa.moduloDe.get(t)).filter(Boolean));
+    if (!Array.isArray(declarados)) {
+      fallos.push(
+        `E · el subgrupo '${id}' («${grupo.titulo}») del mapa ${clave} no está declarado en ` +
+          `_subgrupos_dibujados.${clave}. Abarca ${[...modulos].sort().join(" · ")}`
+      );
+      continue;
+    }
+    const esperados = new Set(declarados);
+    for (const m of modulos) {
+      if (!esperados.has(m)) {
+        fallos.push(
+          `E · el subgrupo '${id}' («${grupo.titulo}») ha crecido al módulo '${m}' y no estaba declarado`
+        );
+      }
+    }
+    for (const m of esperados) {
+      if (!modulos.has(m)) avisos.push(`E · el subgrupo '${id}' ya no abarca '${m}': quítalo de su lista`);
+    }
+    if (modulos.size > 1 && !motivosDibujo[id]) {
+      fallos.push(`E · '${id}' abarca ${modulos.size} módulos y no tiene motivo en _subgrupos_dibujados._motivos`);
+    }
+  }
+}
+for (const t of sueltasDeclaradas) {
+  if (!sueltasVistas.has(t)) avisos.push(`E · '${t}' ya no está suelta: quítala de _sueltas`);
+}
+// Y la red que impide que ESTE lector se separe del que compone las páginas: si los dos no leen la
+// misma gramática de mermaid, la suma deja de dar las tablas del esquema.
+if (vistas.size !== tablas.length) {
+  fallos.push(
+    `E · los dos mapas dibujan ${vistas.size} tablas y el esquema tiene ${tablas.length}. ` +
+      "Falta dibujar alguna, o el lector de mermaid se ha quedado atrás"
+  );
+}
+
 // ── Veredicto ─────────────────────────────────────────────────────────────────────────────────
 const anchos = (n) => String(n).padStart(3);
 console.log(`Mapa de módulos: ${mapa.modulos.size} módulos · ${Object.keys(mapa.dominios).length} dominios · ${tablas.length} tablas`);
 console.log(`Claves ajenas:   ${anchos(bajan)} bajan de capa · ${anchos(iguales)} en su capa · ${anchos(fks.length - bajan - iguales)} suben`);
 console.log(`Deuda declarada: ${Object.keys(deuda).length} tablas con más de un escritor`);
+console.log(`Recursos RBAC:   ${modulosPorRecurso.size} recursos sobre ${recursoDe.size} tablas · ${expuestas.length} expuestas por /admin`);
+console.log(`Mapas dibujados: ${Object.values(dibujados).reduce((a, m) => a + m.grupos.size, 0)} subgrupos · ${sueltasVistas.size} tablas sueltas declaradas`);
 
 for (const a of avisos) console.log(`\n  ⚠ ${a}`);
 

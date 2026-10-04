@@ -148,7 +148,27 @@ capa 0 (los catálogos: género, estado civil, parentesco…), la 1 (la persona)
 eso era el diagrama más difícil de leer: no es un tema, son tres.
 
 El reparto completo —qué tabla está en qué módulo y en qué capa— vive en `scripts/docs/dominios.json`,
-que es la **fuente única**: de ahí salen los diagramas, estas cifras y las dos comprobaciones.
+que es la **fuente única**: de ahí salen los diagramas, estas cifras y las comprobaciones.
+
+### Y los permisos agrupan de otra manera, a propósito
+
+Las tablas se agrupan **tres** veces en este sistema y las tres agrupaciones son distintas:
+
+| Agrupación | Responde a | Dónde se ve |
+|---|---|---|
+| **módulo y capa** | ¿qué depende de qué? | esta página |
+| **recurso de permiso** | ¿quién puede actuar sobre esto? | [Qué puedes hacer](/complemento/permisos/) |
+| **subgrupo del mapa** | ¿cómo se cuenta esto a alguien que no lo conoce? | los dos mapas completos |
+
+Medido: el recurso de permiso y el subgrupo dibujado coinciden con los módulos en un **28 %** y un
+**27 %**. **No es un descuadre que haya que arreglar**: el recurso `catalogos` junta a propósito las
+listas cerradas de la persona y las del territorio, porque administrarlas es un solo trabajo; y el
+subgrupo «Cómo se te localiza» junta el correo, el teléfono, el canal y la llave de verificación
+—tres capas distintas— porque es una sola frase.
+
+Lo que sí está vigilado es que ninguna de las tres crezca sin que alguien lo decida: cada recurso y
+cada subgrupo **declara los módulos que abarca, con su motivo**, y una tabla que caiga en el recurso
+o en la caja equivocada pone CI en rojo. Antes no rompía nada y no se enteraba nadie.
 
 ## Explorar el modelo de forma interactiva
 

@@ -411,8 +411,23 @@ Son **93 tablas en 15 módulos**, y cada módulo declara dos cosas:
 transversales declarados por nombre (el bootstrap y el editor genérico de `/admin`).
 
 ```bash
-node scripts/docs/check-mapa-modulos.mjs    # cobertura + capas + propiedad de escritura
+node scripts/docs/check-mapa-modulos.mjs    # cinco comprobaciones
 ```
+
+| | Qué caza |
+|---|---|
+| **A** | una tabla del esquema sin módulo, o en dos |
+| **B** | una clave ajena que **sube** de capa |
+| **C** | una tabla que escriben **dos** sitios, siendo nueva |
+| **D** | un **recurso RBAC** que crece hacia un módulo sin declararlo — y una tabla expuesta por `/admin` sin recurso, que quedaría **denegada en silencio** |
+| **E** | un **subgrupo de los mapas dibujados** que crece hacia un módulo sin declararlo, o una tabla dibujada **fuera de todo subgrupo** sin declararla |
+
+⚠️ **D y E no exigen que los tres caminos agrupen igual, y es importante.** Se midió: el recurso RBAC
+y el mapa dibujado juntan lo mismo que los módulos en un **28 %** y un **27 %**, y eso **no es
+deriva** — un recurso agrupa por *quién puede actuar*, un subgrupo por *narrativa*, un módulo por
+*qué depende de qué*. Son tres preguntas distintas. Lo que las puertas vigilan es que **ninguno crezca
+hacia un módulo nuevo sin que alguien lo decida**, con el motivo escrito en `dominios.json`
+(`_recursos_rbac` y `_subgrupos_dibujados`). Si no puedes escribir el motivo, el reparto está mal.
 
 Corre en CI en **dos** sitios y no por duplicar: `docs-dbml.yml` caza los cambios de esquema y de
 mapa, y `backend-checks` de `cd-multienv.yml` caza los de **código** — un segundo escritor aparece

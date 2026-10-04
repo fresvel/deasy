@@ -101,3 +101,53 @@ export function clavesAjenas(rutaEsquema) {
   }
   return fks;
 }
+
+/**
+ * Los subgrupos de los dos mapas escritos a mano, por su IDENTIFICADOR de mermaid.
+ *
+ * Devuelve, por mapa: `grupos` (id -> {titulo, tablas}) y `sueltas` (las dibujadas FUERA de todo
+ * subgrupo, que son correctas: cada una se cuenta en el otro mapa o en su propia página).
+ *
+ * ⚠️ Solo cuenta un nodo cuya etiqueta ES el nombre de una tabla, con CORCHETES: `P["persons"]` es
+ * una declaración, y `P(["persons · de la cadena anterior"])` es una REFERENCIA a otro dibujo. Es la
+ * misma regla que aplica `gen-mapa-campos.mjs`, que tiene su propio recorrido porque además compone
+ * las secciones y el orden de la página; éste solo contesta «¿en qué subgrupo está esta tabla?».
+ * Que los dos sigan de acuerdo lo garantiza que la suma de grupos y sueltas tiene que dar las
+ * tablas del esquema, y eso lo comprueba `check-mapa-modulos.mjs`.
+ */
+export function subgruposDibujados(rutaDocs, tablasValidas) {
+  const valida = new Set(tablasValidas);
+  const MAPAS = {
+    complemento: "complemento/mapa-completo.md",
+    modelo: "modelo/mapa-completo.md",
+  };
+  const salida = {};
+  for (const [clave, relativa] of Object.entries(MAPAS)) {
+    const texto = readFileSync(join(rutaDocs, relativa), "utf8");
+    const grupos = new Map();
+    const sueltas = [];
+    let actual = null;
+    let profundidad = 0;
+    for (const linea of texto.split("\n")) {
+      const cabecera = linea.match(/^\s*subgraph\s+(\w+)\s*\["([^"]+)"\]/);
+      if (cabecera) {
+        profundidad += 1;
+        actual = cabecera[1];
+        if (!grupos.has(actual)) grupos.set(actual, { titulo: cabecera[2], tablas: [] });
+        continue;
+      }
+      if (/^\s*end\s*$/.test(linea)) {
+        profundidad = Math.max(0, profundidad - 1);
+        if (profundidad === 0) actual = null;
+        continue;
+      }
+      for (const nodo of linea.matchAll(/[A-Za-z][A-Za-z0-9_]*\["([a-z0-9_]+)"\]/g)) {
+        if (!valida.has(nodo[1])) continue;
+        if (actual) grupos.get(actual).tablas.push(nodo[1]);
+        else sueltas.push(nodo[1]);
+      }
+    }
+    salida[clave] = { grupos, sueltas };
+  }
+  return salida;
+}

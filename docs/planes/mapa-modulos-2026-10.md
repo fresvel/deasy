@@ -6,14 +6,14 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **8 de 15**
+## Estado general — **10 de 15**
 
 | Fase | Tareas | Estado |
 |---|---|---|
 | **F1** · Escribir el mapa | F1.1 ✅ · F1.2 ✅ · F1.3 ✅ | ✅ **3 de 3** |
 | **F2** · La puerta de las capas | F2.1 ✅ · F2.2 ✅ | ✅ **2 de 2** |
 | **F3** · La puerta de propiedad | F3.1 ✅ · F3.2 ✅ | ✅ **2 de 2** |
-| **F4** · Cuadrar los otros tres caminos | F4.1 ⬜ · F4.2 ⬜ | ⬜ **0 de 2** |
+| **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ⬜ · F5.6 ⬜ | 🟡 **1 de 6** |
 
 ## F5 · Cerrar la deuda de escritura — 1 de 6
@@ -187,6 +187,67 @@ exactamente como se olvida uno»*. Y es lo que `EmailService` ya hacía con la d
 Se marca `verificado = 0`, **no se borra** la fila del canal: declarar un canal nunca fue
 verificarlo, así que la declaración sigue siendo verdad; lo que deja de serlo es la prueba.
 
+## F4 · Cuadrar los otros tres caminos — qué resultó, y no era lo que esperaba
+
+**Fui a buscar deriva y encontré tres ejes legítimos.** Probé las tres reglas candidatas y las tres
+fallan a lo ancho:
+
+| Regla candidata | Recurso RBAC | Subgrupo dibujado |
+|---|---|---|
+| un grupo cabe dentro de **un** módulo | falla en **7 de 14** | falla en **8 de 13** |
+| un grupo no mezcla **capas** | falla en **5 de 14** | falla |
+| un módulo no está **partido** entre grupos | falla en **6 de 14** | falla |
+
+Si tres reglas razonables fallan todas, la hipótesis era mala. Y lo era: **las tres agrupaciones
+contestan preguntas distintas**, y las tres hacen falta.
+
+| Agrupación | Pregunta |
+|---|---|
+| **módulo y capa** | ¿qué depende de qué? |
+| **recurso de permiso** | ¿quién puede actuar sobre esto? |
+| **subgrupo del mapa** | ¿cómo se le cuenta esto a alguien que no lo conoce? |
+
+Dos ejemplos de por qué forzarlas a coincidir sería un error:
+
+- El recurso **`catalogos`** junta las listas cerradas de la persona (`generos`, `parentescos`…) con
+  las del territorio (`cantones`, `instituciones`…), de **dos módulos**. Correcto: administrar
+  catálogos es un solo trabajo, y partir el permiso en dos no serviría a nadie.
+- El subgrupo **«Cómo se te localiza»** junta el correo y el teléfono (capa 1), el canal por el que se
+  escribe (capa 0) y la llave con que se prueba el número (capa 3). **Tres capas, una sola frase** — y
+  la frase es lo que hace legible el dibujo.
+
+### Entonces, ¿qué se vigila?
+
+**Que ninguna de las tres crezca sin que alguien lo decida.** Cada recurso y cada subgrupo declara en
+`dominios.json` los módulos que abarca; los que abarcan varios llevan **el motivo escrito**. La puerta
+falla si aparece un módulo no declarado — y si no puedes escribir el motivo, el reparto está mal.
+
+Más dos huecos que se cerraron por el camino:
+
+**La red del `/admin`.** Una tabla que `sqlTables.js` expone y que no tiene recurso en
+`TABLE_RESOURCE_MAP` queda **denegada para todo el mundo**, porque el camino es *fail-closed* a
+propósito, y eso se descubre cuando alguien no puede editar algo. Medido: **0 de 65**, así que hoy está
+bien — y a partir de ahora no se puede romper en silencio.
+
+**Las seis tablas dibujadas fuera de todo subgrupo.** Están así a conciencia —cada una se cuenta en el
+otro mapa o en su propia página— y lo explicaba la prosa, pero nada lo sostenía. Ahora están declaradas
+en `_sueltas`: una séptima pone CI en rojo.
+
+### La puerta se provocó, no se dio por buena
+
+Una puerta que nace verde no prueba nada hasta que se rompe a mano. Tres roturas, las tres cazadas:
+
+| Rotura | Lo que dijo |
+|---|---|
+| `tasks` con el recurso `people` | *el recurso 'people' ha crecido al módulo 'ejecucion' y no estaba declarado* |
+| `chat_messages` dentro de «Lo que decide el país» | *el subgrupo 'PAIS' ha crecido al módulo 'chat' y no estaba declarado* |
+| `task_item_tenures` dibujada suelta | *está dibujada en modelo FUERA de todo subgrupo y no está en `_sueltas`* |
+
+⚠️ **La tercera no saltó al primer intento, y la culpa era de la prueba**: inyecté el nodo buscando
+`DWO["document_workflow_observations"]` y en el fichero se llama `OBS`, así que no inyecté nada. Queda
+escrito porque una puerta «probada» con una rotura que nunca ocurrió es peor que una sin probar: da
+confianza falsa.
+
 ## Control de ejecución
 
 | Tarea | Qué entrega | Evidencia | Fecha |
@@ -198,13 +259,11 @@ verificarlo, así que la declaración sigue siendo verdad; lo que deja de serlo 
 | **F2.2** | En CI, en los **dos** sitios que hacen falta | `docs-dbml.yml` (esquema y mapa) y `backend-checks` de `cd-multienv.yml` (código) | 2026-10-04 |
 | **F3.1** | La regla de propiedad, con los dos transversales declarados por nombre | la puerta lista las 5 tablas de deuda y pasa | 2026-10-04 |
 | **F3.2** | `_deuda_escritura` con el motivo de cada una y la instrucción de cerrarla quitando líneas | 5 entradas, cada una con fichero y línea | 2026-10-04 |
+| **F4.1** | Los 14 recursos RBAC declaran los módulos que abarcan, con motivo los 7 que abarcan varios; y toda tabla expuesta por `/admin` tiene recurso | comprobación **D**; 0 de 65 expuestas sin recurso; rotura provocada y cazada | 2026-10-04 |
+| **F4.2** | Los 13 subgrupos dibujados declaran lo mismo, y las 6 tablas sueltas quedan declaradas | comprobación **E**; grupos + sueltas = 93 = las tablas del esquema; dos roturas provocadas y cazadas | 2026-10-04 |
 | **F5.1** | La verificación por canal y las llaves pendientes se invalidan al cambiar el número, en los tres caminos | sonda antes/después sobre la pila B (arriba) + 4 tests nuevos en `TelefonoService.test.js`; 890 unitarios en verde | 2026-10-04 |
 
 ## Lo que queda
-
-**F4 · Cuadrar los otros tres caminos.** Que `TABLE_RESOURCE_MAP` y los dos `mapa-completo.md` se
-comprueben **contra** el mapa en vez de inventar su propia agrupación. Es lo que convierte cuatro
-caminos en uno; hoy el mapa manda pero los otros tres no lo saben.
 
 **F5 · Las cinco tablas con dos escritores.** Cada una con su motivo en `dominios.json`. La de
 `emails` es el caso gemelo del teléfono —el **mismo** `UPDATE` en dos ficheros— y debería ir primera.
