@@ -133,7 +133,14 @@ const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const ESQUEMA = path.resolve(AQUI, "../../database/postgres_schema.sql");
 
 test("la lista del esquema y la de JavaScript son la MISMA", () => {
-  const sql = fs.readFileSync(ESQUEMA, "utf8");
+  
+// ⚠️ SE QUITA EL ESQUEMA DEL NOMBRE AL LEER. Desde el 2026-10-04 cada tabla vive en el esquema de su
+// tema, asi que el fichero dice 'CREATE TABLE IF NOT EXISTS plantillas.template_artifacts'. Estas
+// pruebas van sobre LA FORMA de la tabla --sus columnas, sus CHECK, sus claves-- y no sobre donde
+// vive; normalizar aqui, una vez, evita tocar los once sitios que la buscan por su nombre. Que cada
+// tabla este en el esquema de su tema lo comprueba 'scripts/docs/check-mapa-tablas.mjs'.
+const sinEsquema = (texto) => texto.replace(/CREATE TABLE IF NOT EXISTS \w+\./g, "CREATE TABLE IF NOT EXISTS ");
+const sql = sinEsquema(fs.readFileSync(ESQUEMA, "utf8"));
   const apariciones = [...sql.matchAll(/ti\.document_status IN \(([^)]*)\)/g)];
   assert.ok(apariciones.length >= 3, `el predicado debe estar en los tres triggers de relevo, y hay ${apariciones.length}`);
 

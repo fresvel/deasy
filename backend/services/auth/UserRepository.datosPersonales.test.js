@@ -27,7 +27,14 @@ const NO_EDITABLES = new Set([
 const columnasDePersons = () => columnasDe("persons");
 
 function columnasDe(tabla) {
-  const sql = readFileSync(ESQUEMA, "utf8");
+  
+// ⚠️ SE QUITA EL ESQUEMA DEL NOMBRE AL LEER. Desde el 2026-10-04 cada tabla vive en el esquema de su
+// tema, asi que el fichero dice 'CREATE TABLE IF NOT EXISTS plantillas.template_artifacts'. Estas
+// pruebas van sobre LA FORMA de la tabla --sus columnas, sus CHECK, sus claves-- y no sobre donde
+// vive; normalizar aqui, una vez, evita tocar los once sitios que la buscan por su nombre. Que cada
+// tabla este en el esquema de su tema lo comprueba 'scripts/docs/check-mapa-tablas.mjs'.
+const sinEsquema = (texto) => texto.replace(/CREATE TABLE IF NOT EXISTS \w+\./g, "CREATE TABLE IF NOT EXISTS ");
+const sql = sinEsquema(readFileSync(ESQUEMA, "utf8"));
   const inicio = sql.indexOf(`CREATE TABLE IF NOT EXISTS ${tabla} (`);
   assert.notEqual(inicio, -1, `no se encontro la tabla ${tabla} en el esquema`);
   const cuerpo = sql.slice(inicio, sql.indexOf("\n);", inicio));

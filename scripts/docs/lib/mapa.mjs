@@ -61,10 +61,26 @@ export function leerMapa(ruta = RUTA_MAPA) {
   };
 }
 
-/** Las tablas del esquema, en el orden en que el esquema las declara. */
+/**
+ * Las tablas del esquema, en el orden en que el esquema las declara.
+ *
+ * ⚠️ SE SALTAN LAS LÍNEAS DE COMENTARIO, y no es una precaución teórica: la cabecera del esquema
+ * explica la trampa del 'IF NOT EXISTS' citando un 'CREATE TABLE IF NOT EXISTS firmas.x', y sin
+ * este filtro aparecía una tabla fantasma llamada 'x' --94 en vez de 93-- que la puerta reclamaba
+ * como tabla sin tema. Citar una sentencia dentro de un comentario es lo natural al explicar SQL,
+ * así que esto muerde de nuevo en cuanto alguien documente algo bien.
+ */
 export function tablasDelEsquema(rutaEsquema) {
-  const sql = readFileSync(rutaEsquema, "utf8");
+  const sql = sinComentarios(readFileSync(rutaEsquema, "utf8"));
   return [...sql.matchAll(/CREATE TABLE IF NOT EXISTS\s+(?:\w+\.)?(\w+)/gi)].map((m) => m[1]);
+}
+
+/** Quita las líneas que son sólo comentario `--`. No toca un `--` al final de una línea de SQL. */
+export function sinComentarios(sql) {
+  return sql
+    .split("\n")
+    .filter((linea) => !/^\s*--/.test(linea))
+    .join("\n");
 }
 
 /**
@@ -76,7 +92,7 @@ export function tablasDelEsquema(rutaEsquema) {
  * distinto en cada forma. El `(?:\w+\.)?` admite que la tabla vaya cualificada con su esquema.
  */
 export function clavesAjenas(rutaEsquema) {
-  const sql = readFileSync(rutaEsquema, "utf8");
+  const sql = sinComentarios(readFileSync(rutaEsquema, "utf8"));
   const existentes = new Set(tablasDelEsquema(rutaEsquema));
   const fks = [];
   for (const bloque of sql.split(/CREATE TABLE IF NOT EXISTS\s+/i).slice(1)) {

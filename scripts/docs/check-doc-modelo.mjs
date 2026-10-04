@@ -49,7 +49,34 @@ const HUELLAS = new URL('./doc-modelo-huellas.json', import.meta.url).pathname;
 const actualizar = process.argv.includes('--update');
 
 // ── Lo que EXISTE, leido del esquema ─────────────────────────────────────────────────────────
-const sql = readFileSync(ESQUEMA, 'utf8');
+// ⚠️ EL FICHERO SE NORMALIZA AL LEERLO, por dos motivos distintos y los dos medidos el 2026-10-04,
+// cuando las tablas se repartieron en un esquema de PostgreSQL por tema.
+//
+//   1. Se quita el esquema del nombre ('plantillas.template_artifacts' -> 'template_artifacts').
+//      Sin esto, esta puerta no reconocia NI UNA tabla y declaraba muertos los 67 nombres que el
+//      sitio cita. Y, mas fino: la HUELLA de cada tabla se calcula sobre su definicion, asi que el
+//      prefijo habria movido las 93 huellas y la puerta habria pedido revisar 93 paginas por un
+//      cambio que no toca ni una columna. Normalizando, las huellas no se mueven --y que no se
+//      muevan es la PRUEBA de que el reparto en esquemas es una reubicacion pura.
+//
+//   2. Se tiran las lineas de comentario. La cabecera del esquema explica la trampa del
+//      'IF NOT EXISTS' citando un 'CREATE TABLE IF NOT EXISTS firmas.x', y sin el filtro aparecia
+//      una tabla fantasma llamada 'x' que ninguna pagina documentaba. Citar una sentencia dentro de
+//      un comentario es lo natural al explicar SQL.
+// El texto TAL CUAL, para los valores entre comillas: un `'validar_cedula'` dentro de un comentario
+// es vocabulario documentado de verdad --la columna `intentos_limitados.accion` lo admite y su
+// catalogo vive en el codigo, no en un CHECK--. Filtrarlo dejaba al sitio citando un nombre que la
+// puerta ya no reconocia.
+const sqlCrudo = readFileSync(ESQUEMA, 'utf8');
+
+const sql = sqlCrudo
+  .split('\n')
+  .filter((linea) => !/^\s*--/.test(linea))
+  .join('\n')
+  .replace(/CREATE TABLE IF NOT EXISTS \w+\./g, 'CREATE TABLE IF NOT EXISTS ')
+  .replace(/CREATE (OR REPLACE )?VIEW \w+\./g, 'CREATE $1VIEW ')
+  .replace(/DROP VIEW IF EXISTS \w+\./g, 'DROP VIEW IF EXISTS ')
+  .replace(/CREATE OR REPLACE FUNCTION \w+\./g, 'CREATE OR REPLACE FUNCTION ');
 
 const tablas = new Set([...sql.matchAll(/CREATE TABLE IF NOT EXISTS (\w+)/g)].map((m) => m[1]));
 const vistas = new Set([...sql.matchAll(/CREATE (?:OR REPLACE )?VIEW (\w+)/g)].map((m) => m[1]));
@@ -75,7 +102,7 @@ for (const linea of sql.split('\n')) {
   if (m) columnas.add(m[1]);
 }
 // Los valores de los CHECK y de los INSERT del esquema: `documento_nacional`, `unit_exact`...
-const valores = new Set([...sql.matchAll(/'([a-z][a-z0-9_]{3,})'/g)].map((m) => m[1]));
+const valores = new Set([...sqlCrudo.matchAll(/'([a-z][a-z0-9_]{3,})'/g)].map((m) => m[1]));
 
 // Y los NOMBRES DE FICHERO del repositorio, que la doc cita constantemente —`user_router`,
 // `postgres_schema`— y que no son objetos de base. Sin esto el chequeo A nace con 123 falsos

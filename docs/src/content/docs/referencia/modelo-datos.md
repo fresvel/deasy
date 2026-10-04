@@ -150,6 +150,48 @@ eso era el diagrama más difícil de leer: no es un tema, son tres.
 El reparto completo —qué tabla está en qué módulo y en qué capa— vive en `scripts/docs/dominios.json`,
 que es la **fuente única**: de ahí salen los diagramas, estas cifras y las comprobaciones.
 
+## El tema no es una etiqueta: es una carpeta dentro de la base
+
+Desde el **2026-10-04**, cada tabla vive en un **esquema de PostgreSQL** con el nombre de su tema. Un
+esquema es, literalmente, una carpeta dentro de la base de datos:
+
+| | |
+|---|---|
+| `identidad.persons` | la persona |
+| `organizacion.units` | las unidades |
+| `firmas.signature_requests` | las peticiones de firma |
+| `plantillas.template_artifacts` | las ediciones de una plantilla |
+
+Son ocho —uno por tema— y en `public` no queda ninguna tabla: solo las doce funciones que usan los
+disparadores.
+
+**Y las consultas del sistema no cambiaron.** Las 555 siguen escribiendo `signature_requests` sin
+decir de qué tema es, porque la conexión declara los ocho esquemas y PostgreSQL resuelve el nombre
+igual que antes. Lo que se gana es otra cosa:
+
+- una consulta **puede** decir de qué tema es, cuando eso ayude a leerla;
+- `pg_dump -n firmas` saca **un tema entero**, para inspeccionarlo o copiarlo aparte;
+- y, lo que más vale: **el tema de una tabla dejó de ser una afirmación en un fichero.** Antes un
+  JSON decía «`signature_requests` es de firmas» y había que creérselo. Ahora lo dice la propia base
+  de datos, y si alguien crea una tabla en el esquema equivocado, falla una puerta de CI.
+
+:::note[Lo que esto NO resuelve]
+Separar en esquemas **no sirve para separar instituciones**. Una conversación entre personas de dos
+empresas distintas no tendría dónde vivir, y un directorio de funcionarios públicos pasaría a ser una
+consulta sobre N esquemas que no se puede indexar. La pertenencia a una institución se resuelve por
+el organigrama, no partiendo la base.
+:::
+
+:::caution[Para quien tenga una base anterior]
+`postgres_schema.sql` describe la forma y **no pone al día una base vieja** — es una decisión
+deliberada, y hay un test que la vigila. Sobre una base anterior a los esquemas,
+`CREATE TABLE IF NOT EXISTS firmas.x` **no ve** la `public.x` que ya existe: crearía una tabla nueva
+y **vacía**, dejando la vieja con todos los datos donde estaba, **en silencio**.
+
+Así que una base de antes se **resetea**, o se reubica con `scripts/migrar-a-esquemas.sql` antes de
+arrancar. Ese script mueve cada tabla a su esquema y **no toca ni una fila**.
+:::
+
 ### Y los permisos agrupan de otra manera, a propósito
 
 Las tablas se agrupan **tres** veces en este sistema y las tres agrupaciones son distintas:

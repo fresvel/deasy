@@ -1,25 +1,59 @@
--- Schema PostgreSQL de deasy.
--- Generado mecánicamente + triggers de negocio portados a mano al final.
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+-- LOS OCHO ESQUEMAS: UNO POR TEMA
 --
--- ⚠️ ESTE FICHERO **DESCRIBE LA FORMA**. NO CONVERGE UNA BASE ANTERIOR HACIA ELLA.
+-- Un esquema de PostgreSQL es una carpeta dentro de la base. Con esto, el tema de una tabla deja de
+-- ser una afirmacion en un fichero y pasa a ser DONDE ESTA LA TABLA: que
+-- 'signature_requests' es de firmas lo dice la propia base de datos.
 --
--- Cada columna, cada CHECK y cada clave se declara **UNA sola vez**, dentro de su `CREATE TABLE`.
--- Una base cuya forma no coincida NO se pone al dia sola: SE RECREA (`node scripts/reset.mjs db`,
--- que hace `DROP SCHEMA public CASCADE` y reaplica esto).
+-- LAS 555 CONSULTAS DEL BACKEND NO CAMBIAN. El search_path de abajo hace que PostgreSQL resuelva
+-- los nombres sin cualificar igual que antes. Lo que cambia es que AHORA SE PUEDE cualificar, y que
+-- 'pg_dump -n firmas' saca un tema entero.
 --
--- POR QUE (TD7-s, 2026-08-24, decision del dueno). Hasta hoy el fichero hacia DOS trabajos
--- mezclados —describir la forma y converger la anterior—, con 20 operaciones de migracion en 11
--- sentencias (6 ALTER, 2 UPDATE, 3 bloques DO). Las 20 eran no-op sobre una base recien creada, y
--- el precio de tenerlas era que la MISMA columna se declaraba dos veces: `persons.token` decia
--- `VARCHAR(10) NOT NULL UNIQUE` en su tabla y `VARCHAR(10) NULL` en su ALTER. Dos formas para una
--- columna es exactamente lo que un fichero llamado "fuente de verdad" no puede permitirse.
+-- Y POR ESO SOLO HAY QUE CUALIFICAR LOS 'CREATE TABLE'. Un CREATE sin cualificar crearia la tabla
+-- en el PRIMER esquema del search_path, que seria el equivocado. Todo lo demas --los REFERENCES,
+-- los 163 indices, los 55 disparadores, los INSERT-- se resuelve por el search_path y se queda
+-- exactamente como estaba.
 --
--- QUE SIGNIFICA EN LA PRACTICA. En dev no cambia nada: `test:char:run` ya resetea en cada corrida.
--- En qa, un cambio de esquema exige recrear la base. Es aceptable MIENTRAS no haya una base
--- declarada como validada; cuando la haya, esta decision se revisa (y entonces el sitio de las
--- migraciones sera un mecanismo propio, no comentarios sueltos entre tablas).
+-- ⚠️ POR QUE HAY 'ALTER TABLE ... SET SCHEMA', CUANDO ESTE FICHERO NO TENIA NI UN ALTER.
+-- 'CREATE TABLE IF NOT EXISTS firmas.x' NO VE una 'public.x' que ya exista: crearia una tabla nueva
+-- y VACIA en 'firmas' y dejaria la vieja, con todos los datos, en 'public'. En silencio, y el
+-- sistema arrancaria como si la base estuviera recien instalada. Estas lineas mueven lo que ya
+-- hubiera: son idempotentes ('IF EXISTS' no falla si no esta) y NO TOCAN NI UNA FILA, porque
+-- 'SET SCHEMA' solo cambia donde vive la tabla. En una base nueva no hacen nada.
+--
+-- Los indices y los disparadores se mueven CON su tabla; no hay que decirles nada.
+--
+-- ⚠️ Las funciones van en 'public' explicitamente. Sin el 'public.' se crearian en el primer
+-- esquema del search_path, y en una base que ya existe quedarian DUPLICADAS con las de 'public'.
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
 
-CREATE OR REPLACE FUNCTION set_updated_at() RETURNS trigger AS $$
+CREATE SCHEMA IF NOT EXISTS identidad;
+CREATE SCHEMA IF NOT EXISTS organizacion;
+CREATE SCHEMA IF NOT EXISTS procesos;
+CREATE SCHEMA IF NOT EXISTS plantillas;
+CREATE SCHEMA IF NOT EXISTS tareas;
+CREATE SCHEMA IF NOT EXISTS firmas;
+CREATE SCHEMA IF NOT EXISTS chat;
+CREATE SCHEMA IF NOT EXISTS empleo;
+
+SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public;
+
+-- ⚠️ AQUI NO HAY NINGUNA REUBICACION, Y ES EL CONTRATO DE ESTE FICHERO (TD7-s, decision del
+-- dueño): describe LA FORMA y nada mas. Una base con forma vieja no se pone al dia sola; se
+-- recrea. Lo vigila 'postgres_schema.test.js', que falla si aparece un ALTER TABLE, un ALTER
+-- COLUMN, un UPDATE de relleno o un bloque DO.
+--
+-- Y hace falta saberlo, porque el reparto en esquemas tiene una trampa: sobre una base que ya
+-- existe, 'CREATE TABLE IF NOT EXISTS firmas.x' NO VE la 'public.x' que ya esta. Crearia una tabla
+-- nueva y VACIA en 'firmas' y dejaria la vieja, con todos los datos, en 'public'. En silencio.
+--
+-- Asi que una base anterior a los esquemas se RESETEA ('scripts/reset-system.sh'), o se reubica a
+-- mano con 'scripts/migrar-a-esquemas.sql' antes de arrancar.
+
+CREATE OR REPLACE FUNCTION public.set_updated_at() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
@@ -53,7 +87,7 @@ $$ LANGUAGE plpgsql;
 -- eso la ETIQUETA que ve el usuario NO sale del nombre de la tabla: sale de `nomenclatura_territorial`
 -- segun `instituciones.pais_id`. El nombre de la tabla es interfaz de programador; la etiqueta, del
 -- usuario.
-CREATE TABLE IF NOT EXISTS paises (
+CREATE TABLE IF NOT EXISTS organizacion.paises (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   iso_alpha2 CHAR(2) NOT NULL UNIQUE,
   name VARCHAR(120) NOT NULL,
@@ -79,7 +113,7 @@ CREATE OR REPLACE TRIGGER trg_paises_set_updated_at BEFORE UPDATE ON paises FOR 
 -- Quien resuelve "cual es la mia" es `InstitucionService.actual()`, que FALLA si hay cero o mas de
 -- una en vez de elegir en silencio. Ese metodo es la costura por donde entraria la resolucion del
 -- inquilino el dia que haya varias.
-CREATE TABLE IF NOT EXISTS instituciones (
+CREATE TABLE IF NOT EXISTS organizacion.instituciones (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   nombre VARCHAR(180) NOT NULL,
   pais_id INT NOT NULL REFERENCES paises(id),
@@ -106,7 +140,7 @@ CREATE OR REPLACE TRIGGER trg_instituciones_set_updated_at BEFORE UPDATE ON inst
 
 
 
-CREATE TABLE IF NOT EXISTS provincias (
+CREATE TABLE IF NOT EXISTS organizacion.provincias (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   dpa_code VARCHAR(2) NULL,
@@ -121,7 +155,7 @@ CREATE INDEX IF NOT EXISTS idx_provincias_pais ON provincias (pais_id);
 CREATE OR REPLACE TRIGGER trg_provincias_set_updated_at BEFORE UPDATE ON provincias FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS cantones (
+CREATE TABLE IF NOT EXISTS organizacion.cantones (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   provincia_id INT NOT NULL,
   -- Codigo DPA del INEC: 4 digitos, los dos primeros los de la provincia.
@@ -141,7 +175,7 @@ CREATE OR REPLACE TRIGGER trg_cantones_set_updated_at BEFORE UPDATE ON cantones 
 -- codificacion del INEC, no una clasificacion universal -- muchos paises no tienen parroquias, y los
 -- que las tienen no las clasifican asi--. La regla del modelo es que lo que define una autoridad
 -- NACIONAL va a catalogo con pais_id y solo lo universal se queda en CHECK.
-CREATE TABLE IF NOT EXISTS clases_parroquia (
+CREATE TABLE IF NOT EXISTS organizacion.clases_parroquia (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   code VARCHAR(40) NOT NULL,
@@ -158,7 +192,7 @@ CREATE OR REPLACE TRIGGER trg_clases_parroquia_set_updated_at BEFORE UPDATE ON c
 
 -- LA PARROQUIA: el nivel que faltaba, y sin el no hay lugar de nacimiento completo -- que es como lo
 -- pide una cedula ecuatoriana.
-CREATE TABLE IF NOT EXISTS parroquias (
+CREATE TABLE IF NOT EXISTS organizacion.parroquias (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   canton_id INT NOT NULL,
   -- Codigo DPA del INEC: 6 digitos, los cuatro primeros los del canton.
@@ -211,7 +245,7 @@ CREATE OR REPLACE TRIGGER trg_parroquias_set_updated_at BEFORE UPDATE ON parroqu
 -- Identidad (2016) dice que la sustitucion de "sexo" por "genero" en la cedula solo admite masculino
 -- o femenino. Va a catalogo y no a CHECK porque OTRO pais puede tener mas -- hay documentos con
 -- marcador no binario-- y porque la lista se revisa mas a menudo de lo que un CHECK permite.
-CREATE TABLE IF NOT EXISTS generos (
+CREATE TABLE IF NOT EXISTS identidad.generos (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   code VARCHAR(40) NOT NULL,
@@ -229,7 +263,7 @@ CREATE OR REPLACE TRIGGER trg_generos_set_updated_at BEFORE UPDATE ON generos FO
 -- EL ESTADO CIVIL.
 -- Lo fija el Registro Civil de cada pais, y la lista ecuatoriana incluye la UNION DE HECHO, que en
 -- otros ordenamientos no existe o se llama de otra forma. Ese es exactamente el motivo de catalogo.
-CREATE TABLE IF NOT EXISTS estados_civiles (
+CREATE TABLE IF NOT EXISTS identidad.estados_civiles (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   code VARCHAR(40) NOT NULL,
@@ -248,7 +282,7 @@ CREATE OR REPLACE TRIGGER trg_estados_civiles_set_updated_at BEFORE UPDATE ON es
 -- Las ocho del censo del INEC. Va a catalogo por dos hechos medibles: la lista CAMBIA -- "montubio"
 -- se incorporo en 2010-- y NINGUN otro pais la usa. Un CHECK con estos ocho valores seria una
 -- afirmacion sobre el mundo entero que solo vale para Ecuador.
-CREATE TABLE IF NOT EXISTS autoidentificaciones_etnicas (
+CREATE TABLE IF NOT EXISTS identidad.autoidentificaciones_etnicas (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   code VARCHAR(40) NOT NULL,
@@ -270,7 +304,7 @@ CREATE OR REPLACE TRIGGER trg_autoidentificaciones_etnicas_set_updated_at BEFORE
 -- OJO PARA P5: si una persona tiene varias, la cedula ecuatoriana muestra solo la PREDOMINANTE, asi
 -- que una sola clave ajena en `persona_salud` es correcto y no una tabla puente. El porcentaje y el
 -- carne son de esa tarea, no de aqui.
-CREATE TABLE IF NOT EXISTS tipos_discapacidad (
+CREATE TABLE IF NOT EXISTS identidad.tipos_discapacidad (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   code VARCHAR(40) NOT NULL,
@@ -291,7 +325,7 @@ CREATE OR REPLACE TRIGGER trg_tipos_discapacidad_set_updated_at BEFORE UPDATE ON
 --
 -- OJO PARA P7: una carga con discapacidad reconocida NO tiene limite de edad. Esa regla es de la
 -- tarea, no del catalogo.
-CREATE TABLE IF NOT EXISTS parentescos (
+CREATE TABLE IF NOT EXISTS identidad.parentescos (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   code VARCHAR(40) NOT NULL,
@@ -315,7 +349,7 @@ CREATE OR REPLACE TRIGGER trg_parentescos_set_updated_at BEFORE UPDATE ON parent
 -- `condicion` es TEXTO Y NO UN CHECK a proposito. La ley ecuatoriana agrupa sus categorias en tres
 -- condiciones (visitante temporal, residente temporal, residente permanente), pero esos nombres son
 -- DE ESA LEY: como la fila ya esta acotada por pais_id, un CHECK global seria falso para otro pais.
-CREATE TABLE IF NOT EXISTS categorias_visa (
+CREATE TABLE IF NOT EXISTS identidad.categorias_visa (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   code VARCHAR(60) NOT NULL,
@@ -337,7 +371,7 @@ CREATE OR REPLACE TRIGGER trg_categorias_visa_set_updated_at BEFORE UPDATE ON ca
 --
 -- Lo resuelve InstitucionService.paisActual(), igual que el documento nacional: el formulario pide
 -- las etiquetas una vez y rotula sus tres desplegables.
-CREATE TABLE IF NOT EXISTS nomenclatura_territorial (
+CREATE TABLE IF NOT EXISTS organizacion.nomenclatura_territorial (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   pais_id INT NOT NULL,
   -- 1 = provincias · 2 = cantones · 3 = parroquias.
@@ -363,7 +397,7 @@ CREATE OR REPLACE TRIGGER trg_nomenclatura_set_updated_at BEFORE UPDATE ON nomen
 --
 -- Lo que esto NO da: dice cuando, no QUIEN ni QUE cambio. Si hace falta auditoria real del
 -- organigrama, eso es una tabla de historia, no una columna.
-CREATE TABLE IF NOT EXISTS unit_types (
+CREATE TABLE IF NOT EXISTS organizacion.unit_types (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   name VARCHAR(120) NOT NULL,
   is_active SMALLINT NOT NULL DEFAULT 1,
@@ -373,7 +407,7 @@ CREATE TABLE IF NOT EXISTS unit_types (
 CREATE OR REPLACE TRIGGER trg_unit_types_set_updated_at BEFORE UPDATE ON unit_types FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS units (
+CREATE TABLE IF NOT EXISTS organizacion.units (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   name VARCHAR(180) NOT NULL,
   label VARCHAR(75) NULL,
@@ -388,7 +422,7 @@ CREATE INDEX IF NOT EXISTS idx_units_unit_type ON units (unit_type_id);
 CREATE OR REPLACE TRIGGER trg_units_set_updated_at BEFORE UPDATE ON units FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS persons (
+CREATE TABLE IF NOT EXISTS identidad.persons (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   first_name VARCHAR(120) NOT NULL,
   last_name VARCHAR(120) NOT NULL,
@@ -459,7 +493,7 @@ CREATE OR REPLACE TRIGGER trg_persons_set_updated_at BEFORE UPDATE ON persons FO
 --
 -- Todo NULABLE: se declara en el perfil, no en el alta, y que se pregunte el genero lo decide
 -- `instituciones.campo_sexo_genero`.
-CREATE TABLE IF NOT EXISTS persona_autoidentificacion (
+CREATE TABLE IF NOT EXISTS identidad.persona_autoidentificacion (
   person_id INT PRIMARY KEY,
   genero_id INT NULL,
   autoidentificacion_etnica_id INT NULL,
@@ -491,7 +525,7 @@ CREATE OR REPLACE TRIGGER trg_persona_autoidentificacion_set_updated_at BEFORE U
 --
 -- La verificacion vive AQUI (`verificado`), no en `persons`. `verify_email` era una bandera de la
 -- persona teniendo un solo correo; con varios, verificar "a la persona" no significa nada.
-CREATE TABLE IF NOT EXISTS emails (
+CREATE TABLE IF NOT EXISTS identidad.emails (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   tipo TEXT NOT NULL CHECK (tipo IN ('personal','institucional')),
@@ -535,7 +569,7 @@ CREATE OR REPLACE TRIGGER trg_emails_set_updated_at BEFORE UPDATE ON emails FOR 
 -- contra el registro civil, no "a la persona".
 
 
-CREATE TABLE IF NOT EXISTS documentos_identidad (
+CREATE TABLE IF NOT EXISTS identidad.documentos_identidad (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   -- LAS CUATRO CLASES, y son las mismas en cualquier pais.
@@ -641,7 +675,7 @@ CREATE OR REPLACE TRIGGER trg_documentos_set_updated_at BEFORE UPDATE ON documen
 -- El pais, la provincia y el canton son CLAVES AJENAS al catalogo, no texto. Nulas para que una
 -- direccion del extranjero pueda dar pais sin que existan sus provincias en el catalogo, que solo
 -- tiene sembrado Ecuador.
-CREATE TABLE IF NOT EXISTS direcciones (
+CREATE TABLE IF NOT EXISTS identidad.direcciones (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   tipo TEXT NOT NULL CHECK (tipo IN ('residencia','trabajo')),
@@ -698,7 +732,7 @@ CREATE OR REPLACE TRIGGER trg_direcciones_set_updated_at BEFORE UPDATE ON direcc
 -- NO HAY COLUMNA DE OPERADORA, y es una decision del dueno del 2026-08-27 tras plantearse: con
 -- portabilidad numerica la operadora de un numero cambia sin que nadie avise, asi que guardarla es
 -- tener un campo que se pudre solo. Si alguna vez hace falta, se consulta al usarla.
-CREATE TABLE IF NOT EXISTS telefonos (
+CREATE TABLE IF NOT EXISTS identidad.telefonos (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   tipo TEXT NOT NULL CHECK (tipo IN ('personal','trabajo')),
@@ -722,7 +756,7 @@ CREATE OR REPLACE TRIGGER trg_telefonos_set_updated_at BEFORE UPDATE ON telefono
 -- ("whatsapp, telegram, signal... se irian creando"), y en este esquema un CHECK nuevo NO se aplica
 -- a una base que ya existe: no queda ni un ALTER TABLE desde TD7-s, asi que ampliar el vocabulario
 -- obligaria a recrear. Una fila, en cambio, se inserta.
-CREATE TABLE IF NOT EXISTS canales_mensajeria (
+CREATE TABLE IF NOT EXISTS identidad.canales_mensajeria (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(40) NOT NULL UNIQUE,
   name VARCHAR(80) NOT NULL,
@@ -758,7 +792,7 @@ WHERE NOT EXISTS (SELECT 1 FROM canales_mensajeria c WHERE c.code = v.code);
 
 -- La verificacion es POR CANAL, que es lo que el modelo viejo no podia decir: `verify_whatsapp` era
 -- una bandera suelta que no distinguia "este numero existe" de "este numero tiene WhatsApp".
-CREATE TABLE IF NOT EXISTS telefono_canales (
+CREATE TABLE IF NOT EXISTS identidad.telefono_canales (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   telefono_id INT NOT NULL,
   canal_id INT NOT NULL,
@@ -796,7 +830,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_telefono_canales ON telefono_canales (telef
 -- `canal_id` es CLAVE AJENA al catalogo y no un CHECK. Se penso al reves y estaba mal: verificar
 -- por Telegram demuestra que el numero es suyo Y que tiene Telegram, que es exactamente el hecho
 -- que `telefono_canales` guarda. Con un CHECK aparte habria dos vocabularios para un solo suceso.
-CREATE TABLE IF NOT EXISTS telefono_verification_keys (
+CREATE TABLE IF NOT EXISTS identidad.telefono_verification_keys (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   telefono_id INT NOT NULL,
   llave_hash CHAR(64) NOT NULL,
@@ -830,7 +864,7 @@ CREATE INDEX IF NOT EXISTS idx_tvk_expira ON telefono_verification_keys (expira_
 -- apuntar. Atarlo al modelo dejaria fuera justo los casos que mas hay que frenar.
 --
 -- El porque de cada regla, en docs/arquitecturas/limitador-de-intentos.md.
-CREATE TABLE IF NOT EXISTS intentos_limitados (
+CREATE TABLE IF NOT EXISTS identidad.intentos_limitados (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   -- Que se intento: 'login', 'validar_cedula', 'registro'... El catalogo vive en el codigo
   -- (`REGLAS`), no aqui: una accion sin regla no se cuenta, asi que una fila huerfana no hace daño.
@@ -856,7 +890,7 @@ CREATE INDEX IF NOT EXISTS idx_intentos_ventana
 --
 -- Contesta «¿cuanto llevaba roto?», que es la pregunta que nadie pudo responder el 2026-08-31,
 -- cuando el servicio estuvo TRECE HORAS parado sin que nada lo dijera.
-CREATE TABLE IF NOT EXISTS canales_bitacora (
+CREATE TABLE IF NOT EXISTS identidad.canales_bitacora (
   id        BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   -- 'telegram' | 'whatsapp' | 'servicio'. «servicio» es el propio channels: si NO CONTESTA, eso es
   -- un estado y hay que poder contarlo -- es el unico que importaba el dia de las trece horas.
@@ -889,7 +923,7 @@ CREATE INDEX IF NOT EXISTS idx_canales_bitacora ON canales_bitacora (canal, desd
 -- edicion--; lo publicado se copia a uno con retencion COMPLIANCE. Con un solo bucket bloqueado,
 -- cada pulsacion de «guardar» seria inmutable diez años. Publicar es lo que mueve el texto de un
 -- bucket al otro, y es IRREVERSIBLE.
-CREATE TABLE IF NOT EXISTS documentos_legales (
+CREATE TABLE IF NOT EXISTS identidad.documentos_legales (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   -- 'terminos_de_uso' | 'tratamiento_de_datos'. Son DOS documentos y DOS casillas porque el Art. 8
   -- de la LOPDP exige que el consentimiento sea ESPECIFICO y que, con varias finalidades, CONSTE
@@ -933,7 +967,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_documento_legal_vigente
 -- que lo obtiene, cuando asi sea requerido por la autoridad competente». Y el Art. 10.k de la Ley
 -- exige ACREDITAR. Demostrable son cuatro cosas: quien, a que, cuando, y QUE DECIA EL TEXTO -- esa
 -- ultima la aporta `documentos_legales.contenido_hash`.
-CREATE TABLE IF NOT EXISTS consentimientos (
+CREATE TABLE IF NOT EXISTS identidad.consentimientos (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   -- ⚠️ SIN CLAVE AJENA, Y ES DELIBERADO. La Ley (Art. 18.4) y el Reglamento (Art. 11.2) dicen que la
   -- eliminacion NO PROCEDE cuando los datos son necesarios «para la formulacion, el ejercicio o la
@@ -973,7 +1007,7 @@ CREATE INDEX IF NOT EXISTS idx_consentimiento_persona ON consentimientos (person
 --
 -- ⚠️ SOLO ADMITE ALTAS. El trigger de abajo rechaza UPDATE y DELETE, y el editor de /admin rechaza
 -- el alta a mano (hook en tableHooks.js): una bitacora que se puede corregir no prueba nada.
-CREATE TABLE IF NOT EXISTS accesos_sensibles (
+CREATE TABLE IF NOT EXISTS identidad.accesos_sensibles (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   -- ⚠️ SIN CLAVES AJENAS, por el mismo motivo que `consentimientos`: la evidencia tiene que
   -- sobrevivir a la persona. Con una FK, borrarla seria imposible o se llevaria el rastro.
@@ -993,7 +1027,10 @@ CREATE TABLE IF NOT EXISTS accesos_sensibles (
 CREATE INDEX IF NOT EXISTS idx_accesos_sensibles_titular ON accesos_sensibles (titular_person_id, ocurrido_at);
 CREATE INDEX IF NOT EXISTS idx_accesos_sensibles_actor ON accesos_sensibles (actor_person_id, ocurrido_at);
 
-CREATE OR REPLACE FUNCTION rechazar_modificacion_de_bitacora() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.rechazar_modificacion_de_bitacora() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   RAISE EXCEPTION 'La bitacora de accesos solo admite altas: % no esta permitido.', TG_OP;
 END;
@@ -1014,7 +1051,7 @@ CREATE OR REPLACE TRIGGER trg_telefono_canales_set_updated_at BEFORE UPDATE ON t
 
 
 
-CREATE TABLE IF NOT EXISTS person_certificates (
+CREATE TABLE IF NOT EXISTS identidad.person_certificates (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   label VARCHAR(180) NOT NULL,
@@ -1031,7 +1068,7 @@ CREATE INDEX IF NOT EXISTS idx_person_certificates_default ON person_certificate
 CREATE OR REPLACE TRIGGER trg_person_certificates_set_updated_at BEFORE UPDATE ON person_certificates FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS relation_unit_types (
+CREATE TABLE IF NOT EXISTS organizacion.relation_unit_types (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(40) NOT NULL UNIQUE,
   name VARCHAR(40) NOT NULL,
@@ -1057,7 +1094,7 @@ WHERE NOT EXISTS (
   WHERE code = 'org'
 );
 
-CREATE TABLE IF NOT EXISTS unit_relations (
+CREATE TABLE IF NOT EXISTS organizacion.unit_relations (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   relation_type_id INT NOT NULL,
   parent_unit_id INT NOT NULL,
@@ -1075,7 +1112,7 @@ CREATE INDEX IF NOT EXISTS idx_unit_relations_child ON unit_relations (child_uni
 CREATE OR REPLACE TRIGGER trg_unit_relations_set_updated_at BEFORE UPDATE ON unit_relations FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS cargos (
+CREATE TABLE IF NOT EXISTS identidad.cargos (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(120) NOT NULL UNIQUE,
   name VARCHAR(120) NOT NULL UNIQUE,
@@ -1087,7 +1124,7 @@ CREATE TABLE IF NOT EXISTS cargos (
 CREATE OR REPLACE TRIGGER trg_cargos_set_updated_at BEFORE UPDATE ON cargos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS unit_positions (
+CREATE TABLE IF NOT EXISTS organizacion.unit_positions (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   unit_id INT NOT NULL,
   slot_no INT NOT NULL,
@@ -1109,7 +1146,7 @@ CREATE INDEX IF NOT EXISTS idx_positions_unit_cargo_active ON unit_positions (un
 CREATE OR REPLACE TRIGGER trg_unit_positions_set_updated_at BEFORE UPDATE ON unit_positions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS position_assignments (
+CREATE TABLE IF NOT EXISTS organizacion.position_assignments (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   position_id INT NOT NULL,
   person_id INT NOT NULL,
@@ -1127,7 +1164,7 @@ CREATE INDEX IF NOT EXISTS idx_assignments_person_current ON position_assignment
 CREATE OR REPLACE TRIGGER trg_position_assignments_set_updated_at BEFORE UPDATE ON position_assignments FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS vacancies (
+CREATE TABLE IF NOT EXISTS empleo.vacancies (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   title VARCHAR(180) NOT NULL,
   category VARCHAR(120) NULL,
@@ -1148,7 +1185,7 @@ CREATE INDEX IF NOT EXISTS idx_vacancies_position_status ON vacancies (position_
 CREATE OR REPLACE TRIGGER trg_vacancies_set_updated_at BEFORE UPDATE ON vacancies FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS aplications (
+CREATE TABLE IF NOT EXISTS empleo.aplications (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   vacancy_id INT NOT NULL,
@@ -1167,7 +1204,7 @@ CREATE INDEX IF NOT EXISTS idx_applications_person_time ON aplications (person_i
 CREATE OR REPLACE TRIGGER trg_aplications_set_updated_at BEFORE UPDATE ON aplications FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS offers (
+CREATE TABLE IF NOT EXISTS empleo.offers (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   application_id INT NOT NULL,
   status TEXT CHECK (status IN ('enviada','aceptada','rechazada','retractada','expirada')) NOT NULL DEFAULT 'enviada',
@@ -1183,7 +1220,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_one_active_offer_per_application ON offers 
 CREATE INDEX IF NOT EXISTS idx_offers_application_status ON offers (application_id, status);
 
 
-CREATE TABLE IF NOT EXISTS contracts (
+CREATE TABLE IF NOT EXISTS empleo.contracts (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   position_id INT NOT NULL,
@@ -1202,7 +1239,7 @@ CREATE INDEX IF NOT EXISTS idx_contracts_position_status ON contracts (position_
 CREATE OR REPLACE TRIGGER trg_contracts_set_updated_at BEFORE UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS roles (
+CREATE TABLE IF NOT EXISTS identidad.roles (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   name VARCHAR(120) NOT NULL UNIQUE,
   description VARCHAR(255) NULL,
@@ -1210,7 +1247,7 @@ CREATE TABLE IF NOT EXISTS roles (
 );
 
 
-CREATE TABLE IF NOT EXISTS vacancy_visibility (
+CREATE TABLE IF NOT EXISTS empleo.vacancy_visibility (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   vacancy_id INT NOT NULL,
   unit_id INT NULL,
@@ -1225,7 +1262,7 @@ CREATE INDEX IF NOT EXISTS idx_vacancy_visibility_unit ON vacancy_visibility (un
 CREATE INDEX IF NOT EXISTS idx_vacancy_visibility_role ON vacancy_visibility (role_id);
 
 
-CREATE TABLE IF NOT EXISTS resources (
+CREATE TABLE IF NOT EXISTS identidad.resources (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(80) NOT NULL UNIQUE,
   name VARCHAR(120) NOT NULL,
@@ -1237,7 +1274,7 @@ CREATE TABLE IF NOT EXISTS resources (
 CREATE OR REPLACE TRIGGER trg_resources_set_updated_at BEFORE UPDATE ON resources FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS actions (
+CREATE TABLE IF NOT EXISTS identidad.actions (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(40) NOT NULL UNIQUE,
   name VARCHAR(120) NOT NULL,
@@ -1249,7 +1286,7 @@ CREATE TABLE IF NOT EXISTS actions (
 CREATE OR REPLACE TRIGGER trg_actions_set_updated_at BEFORE UPDATE ON actions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS permissions (
+CREATE TABLE IF NOT EXISTS identidad.permissions (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   resource_id INT NOT NULL,
   action_id INT NOT NULL,
@@ -1268,7 +1305,7 @@ CREATE INDEX IF NOT EXISTS idx_permissions_action ON permissions (action_id);
 CREATE OR REPLACE TRIGGER trg_permissions_set_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS role_permissions (
+CREATE TABLE IF NOT EXISTS identidad.role_permissions (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   role_id INT NOT NULL,
   permission_id INT NOT NULL,
@@ -1278,7 +1315,7 @@ CREATE TABLE IF NOT EXISTS role_permissions (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_role_permissions ON role_permissions (role_id, permission_id);
 
 
-CREATE TABLE IF NOT EXISTS role_assignments (
+CREATE TABLE IF NOT EXISTS identidad.role_assignments (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   role_id INT NOT NULL,
   unit_id INT NOT NULL,
@@ -1303,7 +1340,7 @@ CREATE INDEX IF NOT EXISTS idx_role_assignments_person ON role_assignments (pers
 CREATE INDEX IF NOT EXISTS idx_role_assignments_unit ON role_assignments (unit_id);
 
 
-CREATE TABLE IF NOT EXISTS role_assignment_relation_types (
+CREATE TABLE IF NOT EXISTS identidad.role_assignment_relation_types (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   relation_type_id INT NOT NULL,
   role_assignment_id INT NOT NULL,
@@ -1313,7 +1350,7 @@ CREATE TABLE IF NOT EXISTS role_assignment_relation_types (
 CREATE INDEX IF NOT EXISTS idx_role_assignment_relation_types ON role_assignment_relation_types (role_assignment_id, relation_type_id);
 
 
-CREATE TABLE IF NOT EXISTS cargo_role_map (
+CREATE TABLE IF NOT EXISTS identidad.cargo_role_map (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   role_id INT NOT NULL,
   cargo_id INT NOT NULL,
@@ -1323,7 +1360,7 @@ CREATE TABLE IF NOT EXISTS cargo_role_map (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_cargo_role_map ON cargo_role_map (cargo_id, role_id);
 
 
-CREATE TABLE IF NOT EXISTS contract_origins (
+CREATE TABLE IF NOT EXISTS empleo.contract_origins (
   contract_id INT NOT NULL PRIMARY KEY,
   origin_type TEXT CHECK (origin_type IN ('recruitment','renewal')) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1331,7 +1368,7 @@ CREATE TABLE IF NOT EXISTS contract_origins (
 );
 
 
-CREATE TABLE IF NOT EXISTS contract_origin_recruitment (
+CREATE TABLE IF NOT EXISTS empleo.contract_origin_recruitment (
   contract_id INT NOT NULL PRIMARY KEY,
   offer_id INT NOT NULL UNIQUE,
   vacancy_id INT NOT NULL UNIQUE,
@@ -1342,7 +1379,7 @@ CREATE TABLE IF NOT EXISTS contract_origin_recruitment (
 );
 
 
-CREATE TABLE IF NOT EXISTS contract_origin_renewal (
+CREATE TABLE IF NOT EXISTS empleo.contract_origin_renewal (
   contract_id INT NOT NULL PRIMARY KEY,
   renewed_from_contract_id INT NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -1353,7 +1390,7 @@ CREATE INDEX IF NOT EXISTS idx_renewed_from_contract ON contract_origin_renewal 
 
 
 -- Procesos, tareas y documentos
-CREATE TABLE IF NOT EXISTS processes (
+CREATE TABLE IF NOT EXISTS procesos.processes (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   name VARCHAR(180) NOT NULL,
   slug VARCHAR(180) NOT NULL UNIQUE,
@@ -1364,7 +1401,7 @@ CREATE TABLE IF NOT EXISTS processes (
 );
 
 
-CREATE TABLE IF NOT EXISTS process_definition_series (
+CREATE TABLE IF NOT EXISTS procesos.process_definition_series (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   source_type TEXT CHECK (source_type IN ('unit_type', 'cargo', 'default')) NOT NULL DEFAULT 'default',
   unit_type_id INT NULL,
@@ -1379,7 +1416,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_series_code ON process_d
 CREATE INDEX IF NOT EXISTS idx_process_definition_series_state ON process_definition_series (is_active);
 
 
-CREATE TABLE IF NOT EXISTS process_definition_versions (
+CREATE TABLE IF NOT EXISTS procesos.process_definition_versions (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_id INT NOT NULL,
   series_id INT NOT NULL,
@@ -1400,7 +1437,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_one_active_series ON pro
 CREATE INDEX IF NOT EXISTS idx_process_definition_versions_status ON process_definition_versions (process_id, variation_key, status, effective_from);
 
 
-CREATE TABLE IF NOT EXISTS process_target_rules (
+CREATE TABLE IF NOT EXISTS procesos.process_target_rules (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_definition_id INT NOT NULL,
   unit_scope_type TEXT CHECK (unit_scope_type IN ('unit_exact', 'unit_subtree', 'unit_type', 'all_units')) NOT NULL DEFAULT 'unit_exact',
@@ -1424,7 +1461,7 @@ CREATE INDEX IF NOT EXISTS idx_process_target_rules_definition ON process_target
 CREATE INDEX IF NOT EXISTS idx_process_target_rules_scope ON process_target_rules (unit_scope_type, unit_id, unit_type_id);
 
 
-CREATE TABLE IF NOT EXISTS template_seeds (
+CREATE TABLE IF NOT EXISTS plantillas.template_seeds (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   seed_code VARCHAR(180) NOT NULL,
   display_name VARCHAR(180) NOT NULL,
@@ -1441,7 +1478,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_template_seeds_code ON template_seeds (seed
 -- ENTREGABLE (el "libro"): identidad + DUEÑO. Un entregable pertenece a UNA línea = (proceso, variación).
 -- Sus VERSIONES viven en template_artifacts (template_artifacts.deliverable_id -> deliverables.id).
 -- template_scope ('official'|'ad_hoc') es un atributo del entregable (permisos/edición), NO afecta la pertenencia.
-CREATE TABLE IF NOT EXISTS deliverables (
+CREATE TABLE IF NOT EXISTS plantillas.deliverables (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(180) NOT NULL,
   display_name VARCHAR(180) NOT NULL,
@@ -1463,7 +1500,7 @@ CREATE INDEX IF NOT EXISTS idx_deliverables_owner ON deliverables (owner_process
 -- template_artifacts = una EDICIÓN/versión de un entregable. La identidad (código, nombre, descripción),
 -- el dueño (proceso, variación), el scope (official/ad_hoc), la semilla y la persona propietaria viven en
 -- `deliverables` (modelo "libro/ediciones"); esta tabla solo guarda el estado/almacenamiento de la versión.
-CREATE TABLE IF NOT EXISTS template_artifacts (
+CREATE TABLE IF NOT EXISTS plantillas.template_artifacts (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   deliverable_id INT NOT NULL,
   storage_version VARCHAR(20) NOT NULL,
@@ -1539,7 +1576,7 @@ CREATE INDEX IF NOT EXISTS idx_template_artifacts_deliverable ON template_artifa
 -- mientras que un campo tiene exactamente uno y no significa nada sin su edicion (composicion).
 -- Ademas conserva el comportamiento observable de `DELETE /admin/sql/template_artifacts`, que con
 -- NO ACTION pasaria a responder 409 en una plantilla `routed` con campos y sin flujo.
-CREATE TABLE IF NOT EXISTS template_artifact_fields (
+CREATE TABLE IF NOT EXISTS plantillas.template_artifact_fields (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   template_artifact_id INT NOT NULL,
   -- El orden AUTORADO, 1..N. No se deriva de nada: es el indice del array del formulario.
@@ -1566,7 +1603,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_template_artifact_fields_key ON template_ar
 CREATE INDEX IF NOT EXISTS idx_template_artifact_fields_order ON template_artifact_fields (template_artifact_id, field_order);
 
 
-CREATE TABLE IF NOT EXISTS process_definition_templates (
+CREATE TABLE IF NOT EXISTS procesos.process_definition_templates (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_definition_id INT NOT NULL,
   template_artifact_id INT NOT NULL,
@@ -1579,7 +1616,7 @@ CREATE TABLE IF NOT EXISTS process_definition_templates (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_templates ON process_definition_templates (process_definition_id, template_artifact_id);
 
 
-CREATE TABLE IF NOT EXISTS term_types (
+CREATE TABLE IF NOT EXISTS procesos.term_types (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(40) NOT NULL UNIQUE,
   name VARCHAR(80) NOT NULL UNIQUE,
@@ -1607,7 +1644,7 @@ ON CONFLICT (id) DO UPDATE SET
 -- Tipos de periodo en que corre una configuracion de proceso (M:N). Reemplaza a la antigua
 -- process_definition_triggers: ya no hay "modo de disparo"; un proceso simplemente se vincula
 -- a uno o varios term_types (incluido el sentinela 'Permanente') en los que puede lanzarse.
-CREATE TABLE IF NOT EXISTS process_definition_period_types (
+CREATE TABLE IF NOT EXISTS procesos.process_definition_period_types (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_definition_id INT NOT NULL,
   term_type_id INT NOT NULL,
@@ -1621,7 +1658,7 @@ CREATE INDEX IF NOT EXISTS idx_process_definition_period_types_lookup ON process
 CREATE INDEX IF NOT EXISTS idx_process_definition_period_types_term_type ON process_definition_period_types (term_type_id);
 
 
-CREATE TABLE IF NOT EXISTS terms (
+CREATE TABLE IF NOT EXISTS procesos.terms (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   name VARCHAR(60) NOT NULL UNIQUE,
   term_type_id INT NOT NULL,
@@ -1633,7 +1670,7 @@ CREATE TABLE IF NOT EXISTS terms (
 CREATE INDEX IF NOT EXISTS idx_terms_term_type ON terms (term_type_id);
 
 
-CREATE TABLE IF NOT EXISTS process_runs (
+CREATE TABLE IF NOT EXISTS tareas.process_runs (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_definition_id INT NOT NULL,
   term_id INT NULL,
@@ -1654,7 +1691,7 @@ CREATE INDEX IF NOT EXISTS idx_process_runs_term ON process_runs (term_id);
 CREATE OR REPLACE TRIGGER trg_process_runs_set_updated_at BEFORE UPDATE ON process_runs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS tasks (
+CREATE TABLE IF NOT EXISTS tareas.tasks (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_definition_id INT NOT NULL,
   process_run_id INT NULL,
@@ -1691,7 +1728,7 @@ CREATE INDEX IF NOT EXISTS idx_tasks_process_run ON tasks (process_run_id);
 CREATE INDEX IF NOT EXISTS idx_tasks_scope_unit ON tasks (scope_unit_id);
 
 
-CREATE TABLE IF NOT EXISTS task_items (
+CREATE TABLE IF NOT EXISTS tareas.task_items (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   task_id INT NOT NULL,
   process_definition_template_id INT NULL,
@@ -1799,7 +1836,7 @@ CREATE INDEX IF NOT EXISTS idx_task_items_user_started ON task_items (user_start
 -- pero los periodos responden directas las preguntas que hace este sistema — y sobre todo dejan
 -- que «un solo responsable vigente» sea un INDICE y no una convencion que el codigo cumple si no
 -- se equivoca.
-CREATE TABLE IF NOT EXISTS task_item_tenures (
+CREATE TABLE IF NOT EXISTS tareas.task_item_tenures (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   task_item_id INT NOT NULL,
 
@@ -1895,7 +1932,7 @@ CREATE INDEX IF NOT EXISTS idx_task_item_tenures_position ON task_item_tenures (
 --
 -- Y OJO ANTES DE HACERLO: `render_engine` es justo donde escribiria el generador de codigo base del
 -- §0.4. Puede que lo que le falte no sea una retirada, sino su primer productor.
-CREATE TABLE IF NOT EXISTS document_versions (
+CREATE TABLE IF NOT EXISTS tareas.document_versions (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   -- CUELGA DEL ENTREGABLE, no de un documento. Hasta el 2026-08-23 habia una tabla `documents` en
   -- medio, en relacion 1:1 estricta con `task_items` —un solo INSERT en todo el backend y siempre
@@ -1953,7 +1990,7 @@ CREATE INDEX IF NOT EXISTS idx_document_versions_item ON document_versions (task
 -- es un agujero abierto y documentado: ningun CHECK lo cubre, la copia de versionado lo propaga
 -- verbatim, y hay dos ramas de codigo que no se pueden borrar porque un paso legado podria traer un
 -- valor retirado por ahi. Consultarlo obliga a buscar cadenas de texto dentro del JSON.
-CREATE TABLE IF NOT EXISTS document_version_uploads (
+CREATE TABLE IF NOT EXISTS tareas.document_version_uploads (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   document_version_id INT NOT NULL,
   -- 1, 2, 3... dentro de la ronda. Es el segundo digito de la etiqueta.
@@ -1975,7 +2012,7 @@ CREATE INDEX IF NOT EXISTS idx_document_versions_artifact ON document_versions (
 
 -- Anexos heterogéneos de un entregable: archivos auxiliares (evidencias, soportes)
 -- adicionales al documento principal de una versión documental.
-CREATE TABLE IF NOT EXISTS document_attachments (
+CREATE TABLE IF NOT EXISTS tareas.document_attachments (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   document_version_id INT NOT NULL,
   kind TEXT CHECK (kind IN ('annex', 'evidence', 'source', 'other')) NOT NULL DEFAULT 'annex',
@@ -1994,7 +2031,7 @@ CREATE INDEX IF NOT EXISTS idx_document_attachments_version ON document_attachme
 CREATE INDEX IF NOT EXISTS idx_document_attachments_uploader ON document_attachments (uploaded_by_person_id);
 
 
-CREATE TABLE IF NOT EXISTS signature_statuses (
+CREATE TABLE IF NOT EXISTS firmas.signature_statuses (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(40) NOT NULL UNIQUE,
   name VARCHAR(80) NOT NULL,
@@ -2004,7 +2041,7 @@ CREATE TABLE IF NOT EXISTS signature_statuses (
 );
 
 
-CREATE TABLE IF NOT EXISTS signature_request_statuses (
+CREATE TABLE IF NOT EXISTS firmas.signature_request_statuses (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   code VARCHAR(40) NOT NULL UNIQUE,
   name VARCHAR(80) NOT NULL,
@@ -2050,7 +2087,7 @@ ON CONFLICT (code) DO UPDATE SET
 -- Los tres NO son excluyentes y por eso aqui no hay ningun CHECK: las filas de runtime llevan HOY
 -- los dos primeros a la vez (`generation/documents.js:248`), porque `task_item_id` discrimina al
 -- productor pero el vinculo sigue siendo su contexto.
-CREATE TABLE IF NOT EXISTS fill_flow_templates (
+CREATE TABLE IF NOT EXISTS plantillas.fill_flow_templates (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_definition_template_id INT NULL,
   task_item_id INT NULL,
@@ -2085,7 +2122,7 @@ CREATE INDEX IF NOT EXISTS idx_fill_flow_templates_artifact ON fill_flow_templat
 -- todavia: es el mismo cajon vacio que abrio el sub-paso 1 en las cabeceras.
 --
 -- NO se anaden `slot` ni `field_refs`, y no es olvido: ver la nota de mas abajo.
-CREATE TABLE IF NOT EXISTS fill_flow_steps (
+CREATE TABLE IF NOT EXISTS plantillas.fill_flow_steps (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   fill_flow_template_id INT NOT NULL,
   step_order INT NOT NULL,
@@ -2148,7 +2185,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_fill_flow_steps ON fill_flow_steps (fill_fl
 --                 Es el gemelo de `anchor_refs` en el lado de entrega: contrato sin productor ni
 --                 consumidor. Modelarlo seria modelar el fosil, no lo que el formulario autora.
 
-CREATE TABLE IF NOT EXISTS document_fill_flows (
+CREATE TABLE IF NOT EXISTS plantillas.document_fill_flows (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   fill_flow_template_id INT NOT NULL,
   document_version_id INT NOT NULL,
@@ -2163,7 +2200,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_document_fill_flows_document ON document_fi
 CREATE OR REPLACE TRIGGER trg_document_fill_flows_set_updated_at BEFORE UPDATE ON document_fill_flows FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
-CREATE TABLE IF NOT EXISTS fill_requests (
+CREATE TABLE IF NOT EXISTS plantillas.fill_requests (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   document_fill_flow_id INT NOT NULL,
   fill_flow_step_id INT NOT NULL,
@@ -2194,7 +2231,7 @@ CREATE INDEX IF NOT EXISTS idx_fill_requests_step ON fill_requests (document_fil
 
 -- Mismos tres portadores que `fill_flow_templates` (ver la nota alli): vinculo, task_item de runtime
 -- y -- nuevo, y todavia vacio -- el entregable que autora el flujo.
-CREATE TABLE IF NOT EXISTS signature_flow_templates (
+CREATE TABLE IF NOT EXISTS firmas.signature_flow_templates (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_definition_template_id INT NULL,
   task_item_id INT NULL,
@@ -2218,7 +2255,7 @@ CREATE INDEX IF NOT EXISTS idx_signature_flow_templates_artifact ON signature_fl
 
 
 
-CREATE TABLE IF NOT EXISTS signature_flow_steps (
+CREATE TABLE IF NOT EXISTS firmas.signature_flow_steps (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   template_id INT NOT NULL,
   step_order INT NOT NULL,
@@ -2305,7 +2342,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_signature_flow_steps_slot
 -- `signature_flow_steps`, con nombre explicito (`chk_*`).
 
 
-CREATE TABLE IF NOT EXISTS signature_flow_instances (
+CREATE TABLE IF NOT EXISTS firmas.signature_flow_instances (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   template_id INT NOT NULL,
   document_version_id INT NOT NULL,
@@ -2318,7 +2355,7 @@ CREATE TABLE IF NOT EXISTS signature_flow_instances (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_signature_flow_instances_document ON signature_flow_instances (document_version_id);
 
 
-CREATE TABLE IF NOT EXISTS signature_requests (
+CREATE TABLE IF NOT EXISTS firmas.signature_requests (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   instance_id INT NOT NULL,
   step_id INT NOT NULL,
@@ -2337,7 +2374,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_signature_requests ON signature_requests (i
 CREATE INDEX IF NOT EXISTS idx_signature_requests_step ON signature_requests (instance_id, step_id);
 
 
-CREATE TABLE IF NOT EXISTS document_workflow_observations (
+CREATE TABLE IF NOT EXISTS tareas.document_workflow_observations (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   task_item_id INT NOT NULL,
   document_version_id INT NOT NULL,
@@ -2369,7 +2406,7 @@ CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_signature_request 
 CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_author ON document_workflow_observations (author_person_id);
 
 
-CREATE TABLE IF NOT EXISTS document_signatures (
+CREATE TABLE IF NOT EXISTS tareas.document_signatures (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   signature_request_id INT NULL,
   document_version_id INT NOT NULL,
@@ -2386,8 +2423,8 @@ CREATE TABLE IF NOT EXISTS document_signatures (
 );
 
 
-DROP VIEW IF EXISTS unit_org_levels;
-CREATE VIEW unit_org_levels AS
+DROP VIEW IF EXISTS organizacion.unit_org_levels;
+CREATE VIEW organizacion.unit_org_levels AS
 WITH RECURSIVE org_tree AS (
   SELECT
     u.id AS unit_id,
@@ -2428,7 +2465,7 @@ FROM org_tree;
 
 -- Estado de los jobs de firma masiva (POST /sign/batch/start). Persistido para sobrevivir reinicios del
 -- backend (antes vivía en un Map en memoria). `results` guarda el detalle por archivo como JSON.
-CREATE TABLE IF NOT EXISTS signature_batch_jobs (
+CREATE TABLE IF NOT EXISTS firmas.signature_batch_jobs (
   job_id CHAR(36) PRIMARY KEY,
   -- Es `persons.id` (sale de `req.user.uid`). Era BIGINT contra un INT, asi que la FK no se podia
   -- poner (TD7-d, 2026-08-24). El nombre `user_id` SI se queda: asoma como `userId` en el contrato
@@ -2452,7 +2489,7 @@ CREATE OR REPLACE TRIGGER trg_signature_batch_jobs_set_updated_at BEFORE UPDATE 
 -- Tablas de códigos de auth. Índices renombrados con prefijo (en PG el nombre es global).
 -- El codigo apunta al CORREO, no a la persona: desde que hay varios, verificar "a la persona"
 -- no dice cual de ellos.
-CREATE TABLE IF NOT EXISTS email_verification_codes (
+CREATE TABLE IF NOT EXISTS identidad.email_verification_codes (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   email_id INT NOT NULL,
   code_hash VARCHAR(255) NOT NULL,
@@ -2463,7 +2500,7 @@ CREATE TABLE IF NOT EXISTS email_verification_codes (
 CREATE INDEX IF NOT EXISTS idx_evc_email_id ON email_verification_codes (email_id);
 CREATE INDEX IF NOT EXISTS idx_evc_expires_at ON email_verification_codes (expires_at);
 
-CREATE TABLE IF NOT EXISTS password_reset_codes (
+CREATE TABLE IF NOT EXISTS identidad.password_reset_codes (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   person_id INT NOT NULL,
   code_hash VARCHAR(255) NOT NULL,
@@ -2487,7 +2524,7 @@ CREATE INDEX IF NOT EXISTS idx_prc_expires_at ON password_reset_codes (expires_a
 -- se quedó sin las suyas por descuido y no por criterio, y estuvo así hasta `TD7-c2` (2026-08-24).
 -- El precio de la decisión de afuera está medido y escrito en `docs/planes/plan_data/censo-fks-ausentes.md`.
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS chat_conversations (
+CREATE TABLE IF NOT EXISTS chat.chat_conversations (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   type TEXT NOT NULL CHECK (type IN ('direct','group','thread','process_thread','unit')),
   title TEXT,
@@ -2525,7 +2562,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_conversations_stable_key ON chat_conve
 CREATE INDEX IF NOT EXISTS idx_chat_conversations_process ON chat_conversations (type, process_id);
 CREATE OR REPLACE TRIGGER trg_chat_conversations_set_updated_at BEFORE UPDATE ON chat_conversations FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
-CREATE TABLE IF NOT EXISTS chat_conversation_participants (
+CREATE TABLE IF NOT EXISTS chat.chat_conversation_participants (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   conversation_id BIGINT NOT NULL,
   person_id INT NOT NULL,
@@ -2538,7 +2575,7 @@ CREATE TABLE IF NOT EXISTS chat_conversation_participants (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_participant ON chat_conversation_participants (conversation_id, person_id);
 CREATE INDEX IF NOT EXISTS idx_chat_participant_person ON chat_conversation_participants (person_id, conversation_id);
 
-CREATE TABLE IF NOT EXISTS chat_messages (
+CREATE TABLE IF NOT EXISTS chat.chat_messages (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   conversation_id BIGINT NOT NULL,
   sender_person_id INT NOT NULL,
@@ -2558,7 +2595,7 @@ CREATE TABLE IF NOT EXISTS chat_messages (
 CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages (conversation_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_chat_messages_sender ON chat_messages (sender_person_id, created_at);
 
-CREATE TABLE IF NOT EXISTS chat_message_attachments (
+CREATE TABLE IF NOT EXISTS chat.chat_message_attachments (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   message_id BIGINT NOT NULL,
   sort_order INT NOT NULL DEFAULT 0,
@@ -2570,7 +2607,7 @@ CREATE TABLE IF NOT EXISTS chat_message_attachments (
 );
 CREATE INDEX IF NOT EXISTS idx_chat_attachments_message ON chat_message_attachments (message_id, sort_order);
 
-CREATE TABLE IF NOT EXISTS chat_message_reads (
+CREATE TABLE IF NOT EXISTS chat.chat_message_reads (
   message_id BIGINT NOT NULL,
   person_id INT NOT NULL,
   read_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -2579,7 +2616,7 @@ CREATE TABLE IF NOT EXISTS chat_message_reads (
   CONSTRAINT fk_chat_reads_person FOREIGN KEY (person_id) REFERENCES persons(id)
 );
 
-CREATE TABLE IF NOT EXISTS chat_notifications (
+CREATE TABLE IF NOT EXISTS chat.chat_notifications (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   recipient_person_id INT NOT NULL,
   type VARCHAR(80) NOT NULL,
@@ -2638,7 +2675,7 @@ CREATE INDEX IF NOT EXISTS idx_chat_notif_recipient_read ON chat_notifications (
 -- varios, y por eso allí la política es no dejar borrar.
 
 -- ============================================================================
-CREATE TABLE IF NOT EXISTS dossiers (
+CREATE TABLE IF NOT EXISTS identidad.dossiers (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   -- SIN `cedula` (`TD7-c5`, 2026-08-24). Guardaba una COPIA de `persons.cedula` que se escribia una
   -- sola vez al crear el expediente y no se actualizaba NUNCA — cero `UPDATE dossiers` en todo el
@@ -2658,7 +2695,7 @@ CREATE TABLE IF NOT EXISTS dossiers (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_dossiers_person ON dossiers (person_id);
 CREATE OR REPLACE TRIGGER trg_dossiers_set_updated_at BEFORE UPDATE ON dossiers FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
-CREATE TABLE IF NOT EXISTS dossier_items (
+CREATE TABLE IF NOT EXISTS identidad.dossier_items (
   id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   dossier_id BIGINT NOT NULL,
   section VARCHAR(20) NOT NULL,
@@ -2677,7 +2714,10 @@ CREATE INDEX IF NOT EXISTS idx_dossier_items ON dossier_items (dossier_id, secti
 -- ============================================================================
 
 -- 1) Guard de activación: exige >=1 regla activa y >=1 tipo de periodo activo.
-CREATE OR REPLACE FUNCTION trg_pdv_before_update_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_pdv_before_update_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 DECLARE
   active_rule_count int := 0;
   active_period_type_count int := 0;
@@ -2716,7 +2756,10 @@ FOR EACH ROW EXECUTE FUNCTION trg_pdv_before_update_fn();
 -- LA TENENCIA SE ABRE SOLA. Hay CINCO caminos que insertan en `task_items` (dos del lanzamiento
 -- automatico, dos de la tarea ad-hoc y las replicas), y parchear los cinco es exactamente como se
 -- perdio antes: uno se olvida. Aqui no puede olvidarse ninguno.
-CREATE OR REPLACE FUNCTION trg_task_items_after_insert_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_task_items_after_insert_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
   VALUES (NEW.id, NEW.assigned_person_id, NEW.responsible_position_id, 'original', 'Reparto inicial', 0);
@@ -2738,7 +2781,10 @@ FOR EACH ROW EXECUTE FUNCTION trg_task_items_after_insert_fn();
 --
 -- Es el mismo patron que `position_assignments.is_current` + `uq_position_current` un piso mas
 -- abajo, no una invencion.
-CREATE OR REPLACE FUNCTION trg_task_item_tenures_sync_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_task_item_tenures_sync_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   -- Solo manda la tenencia ABIERTA. Al cerrar una no se toca nada: lo pone la siguiente, y entre
   -- las dos no hay hueco porque van en la misma transaccion.
@@ -2822,7 +2868,10 @@ FOR EACH ROW EXECUTE FUNCTION trg_task_item_tenures_sync_fn();
 -- ⚠️ Y NO REASIGNA NADA. El modelo no dice que sustituye a un puesto desactivado —no hay «se
 -- fusiono con» ni «sus funciones pasan a»—, asi que elegir sucesor seria adivinar. Lo decide una
 -- persona, desde el panel de supervision.
-CREATE OR REPLACE FUNCTION trg_unit_positions_after_update_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_unit_positions_after_update_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   IF OLD.is_active = 1 AND NEW.is_active = 0 THEN
     UPDATE task_item_tenures t
@@ -2852,7 +2901,10 @@ AFTER UPDATE ON unit_positions
 FOR EACH ROW EXECUTE FUNCTION trg_unit_positions_after_update_fn();
 
 
-CREATE OR REPLACE FUNCTION trg_position_assignments_after_insert_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_position_assignments_after_insert_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   IF NEW.is_current = 1 THEN
     INSERT INTO role_assignments
@@ -2901,7 +2953,10 @@ AFTER INSERT ON position_assignments
 FOR EACH ROW EXECUTE FUNCTION trg_position_assignments_after_insert_fn();
 
 -- 3) Cambio de ocupación: revoca derivados / reasigna o vacía task_items abiertos.
-CREATE OR REPLACE FUNCTION trg_position_assignments_after_update_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_position_assignments_after_update_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   IF OLD.is_current = 1 AND NEW.is_current = 0 THEN
     UPDATE role_assignments
@@ -2963,7 +3018,10 @@ AFTER UPDATE ON position_assignments
 FOR EACH ROW EXECUTE FUNCTION trg_position_assignments_after_update_fn();
 
 -- 4) Persona inactivada: cierra sus asignaciones de puesto y de rol.
-CREATE OR REPLACE FUNCTION trg_persons_after_update_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_persons_after_update_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   IF OLD.is_active = 1 AND NEW.is_active = 0 THEN
     UPDATE position_assignments
@@ -2986,7 +3044,10 @@ AFTER UPDATE ON persons
 FOR EACH ROW EXECUTE FUNCTION trg_persons_after_update_fn();
 
 -- 5) Unidad inactivada: revoca roles y cancela vacantes abiertas.
-CREATE OR REPLACE FUNCTION trg_units_after_update_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_units_after_update_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   IF OLD.is_active = 1 AND NEW.is_active = 0 THEN
     UPDATE role_assignments
@@ -3037,7 +3098,10 @@ FOR EACH ROW EXECUTE FUNCTION trg_units_after_update_fn();
 --
 -- No hay recursion infinita aunque el UPDATE vuelva a disparar este mismo trigger: las filas que
 -- toca quedan con principal = 0 y la primera guarda las devuelve intactas.
-CREATE OR REPLACE FUNCTION trg_principal_unico_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_principal_unico_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 DECLARE
   filtro text := '';
   i int;
@@ -3090,7 +3154,10 @@ FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id', 'tipo');
 -- del dato, asi que lo cumple todo el que escriba. Y va BEFORE porque PostgreSQL evalua el NOT NULL
 -- sobre la fila YA modificada por los triggers BEFORE -- si fuera AFTER, la insercion habria muerto
 -- antes de llegar aqui.
-CREATE OR REPLACE FUNCTION trg_documentos_pais_nacional_fn() RETURNS trigger AS $$
+CREATE OR REPLACE FUNCTION public.trg_documentos_pais_nacional_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
 BEGIN
   IF NEW.tipo = 'documento_nacional' AND NEW.pais_id IS NULL THEN
     SELECT i.pais_id INTO NEW.pais_id

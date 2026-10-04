@@ -91,7 +91,7 @@ echo "▸ Introspeccionando"
 docker exec "$PG" psql -U postgres -d deasy -tAc \
   "select table_name||'.'||column_name
      from information_schema.columns
-    where table_schema='public' and is_generated='ALWAYS'
+    where table_schema not in ('pg_catalog','information_schema') and is_generated='ALWAYS'
     order by 1" > "$TMP/generadas.txt"
 
 docker run --rm --network "$NET" -v "$TMP:/tmp/w" "$NODE_IMAGE" sh -c \

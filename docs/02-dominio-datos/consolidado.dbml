@@ -1500,28 +1500,31 @@ Table "vacancy_visibility" {
 
 Ref "fk_applications_person":"persons"."id" <? "aplications"."person_id"
 Ref "fk_applications_vacancy":"vacancies"."id" <? "aplications"."vacancy_id"
+Ref "fk_autoidentificacion_etnia":"autoidentificaciones_etnicas"."id" ?<? "persona_autoidentificacion"."autoidentificacion_etnica_id"
+Ref "fk_autoidentificacion_genero":"generos"."id" ?<? "persona_autoidentificacion"."genero_id"
+Ref "fk_autoidentificacion_person":"persons"."id" <? "persona_autoidentificacion"."person_id" [delete: cascade]
 Ref "fk_autoidentificaciones_etnicas_pais":"paises"."id" <? "autoidentificaciones_etnicas"."pais_id"
 Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
 Ref "fk_categorias_visa_pais":"paises"."id" <? "categorias_visa"."pais_id"
-Ref "fk_chat_participants_conversation":"chat_conversations"."id" <? "chat_conversation_participants"."conversation_id" [delete: cascade]
-Ref "fk_chat_participants_person":"persons"."id" <? "chat_conversation_participants"."person_id"
+Ref "fk_chat_attachments_message":"chat_messages"."id" <? "chat_message_attachments"."message_id" [delete: cascade]
 Ref "fk_chat_conv_created_by":"persons"."id" <? "chat_conversations"."created_by"
 Ref "fk_chat_conv_process":"processes"."id" ?<? "chat_conversations"."process_id"
 Ref "fk_chat_conv_scope_current_definition":"process_definition_versions"."id" ?<? "chat_conversations"."scope_current_definition_id"
 Ref "fk_chat_conv_scope_origin_definition":"process_definition_versions"."id" ?<? "chat_conversations"."scope_origin_definition_id"
 Ref "fk_chat_conv_scope_process":"processes"."id" ?<? "chat_conversations"."scope_process_id"
 Ref "fk_chat_conv_scope_unit":"units"."id" ?<? "chat_conversations"."scope_unit_id"
-Ref "fk_chat_attachments_message":"chat_messages"."id" <? "chat_message_attachments"."message_id" [delete: cascade]
-Ref "fk_chat_reads_message":"chat_messages"."id" <? "chat_message_reads"."message_id" [delete: cascade]
-Ref "fk_chat_reads_person":"persons"."id" <? "chat_message_reads"."person_id"
 Ref "fk_chat_messages_conversation":"chat_conversations"."id" <? "chat_messages"."conversation_id" [delete: cascade]
 Ref "fk_chat_messages_reply":"chat_messages"."id" ?<? "chat_messages"."reply_to_message_id" [delete: set null]
 Ref "fk_chat_messages_sender":"persons"."id" <? "chat_messages"."sender_person_id"
 Ref "fk_chat_notif_conversation":"chat_conversations"."id" ?<? "chat_notifications"."conversation_id" [delete: cascade]
 Ref "fk_chat_notif_message":"chat_messages"."id" ?<? "chat_notifications"."message_id" [delete: cascade]
 Ref "fk_chat_notif_recipient":"persons"."id" <? "chat_notifications"."recipient_person_id"
+Ref "fk_chat_participants_conversation":"chat_conversations"."id" <? "chat_conversation_participants"."conversation_id" [delete: cascade]
+Ref "fk_chat_participants_person":"persons"."id" <? "chat_conversation_participants"."person_id"
+Ref "fk_chat_reads_message":"chat_messages"."id" <? "chat_message_reads"."message_id" [delete: cascade]
+Ref "fk_chat_reads_person":"persons"."id" <? "chat_message_reads"."person_id"
 Ref "fk_clases_parroquia_pais":"paises"."id" <? "clases_parroquia"."pais_id"
 Ref "fk_consentimiento_documento":"documentos_legales"."id" <? "consentimientos"."documento_id"
 Ref "fk_contract_origin_recruitment_contract":"contract_origins"."contract_id" <? "contract_origin_recruitment"."contract_id" [delete: cascade]
@@ -1570,8 +1573,8 @@ Ref "fk_fill_flow_steps_person":"persons"."id" ?<? "fill_flow_steps"."assigned_p
 Ref "fk_fill_flow_steps_position":"unit_positions"."id" ?<? "fill_flow_steps"."position_id"
 Ref "fk_fill_flow_steps_relation_type":"relation_unit_types"."id" ?<? "fill_flow_steps"."relation_type_id"
 Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps"."fill_flow_template_id"
-Ref "fk_fill_flow_steps_unit":"units"."id" ?<? "fill_flow_steps"."unit_id"
 Ref "fk_fill_flow_steps_unit_type":"unit_types"."id" ?<? "fill_flow_steps"."unit_type_id"
+Ref "fk_fill_flow_steps_unit":"units"."id" ?<? "fill_flow_steps"."unit_id"
 Ref "fk_fill_flow_templates_artifact":"template_artifacts"."id" ?<? "fill_flow_templates"."template_artifact_id"
 Ref "fk_fill_flow_templates_definition_template":"process_definition_templates"."id" ?<? "fill_flow_templates"."process_definition_template_id"
 Ref "fk_fill_flow_templates_task_item":"task_items"."id" ?<? "fill_flow_templates"."task_item_id" [delete: cascade]
@@ -1579,7 +1582,6 @@ Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."d
 Ref "fk_fill_requests_person":"persons"."id" ?<? "fill_requests"."assigned_person_id"
 Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
 Ref "fk_generos_pais":"paises"."id" <? "generos"."pais_id"
-Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
 Ref "fk_nomenclatura_pais":"paises"."id" <? "nomenclatura_territorial"."pais_id"
 Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
 Ref "fk_parentescos_pais":"paises"."id" <? "parentescos"."pais_id"
@@ -1589,9 +1591,6 @@ Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
 Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"
 Ref "fk_person_certificates_person":"persons"."id" <? "person_certificates"."person_id" [delete: cascade]
-Ref "fk_autoidentificacion_etnia":"autoidentificaciones_etnicas"."id" ?<? "persona_autoidentificacion"."autoidentificacion_etnica_id"
-Ref "fk_autoidentificacion_genero":"generos"."id" ?<? "persona_autoidentificacion"."genero_id"
-Ref "fk_autoidentificacion_person":"persons"."id" <? "persona_autoidentificacion"."person_id" [delete: cascade]
 Ref "fk_persons_estado_civil":"estados_civiles"."id" ?<? "persons"."estado_civil_id"
 Ref "fk_persons_nacimiento_canton":"cantones"."id" ?<? "persons"."nacimiento_canton_id"
 Ref "fk_persons_nacimiento_pais":"paises"."id" ?<? "persons"."nacimiento_pais_id"
@@ -1613,8 +1612,8 @@ Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
 Ref "fk_process_target_rules_cargo":"cargos"."id" ?<? "process_target_rules"."cargo_id"
 Ref "fk_process_target_rules_definition":"process_definition_versions"."id" <? "process_target_rules"."process_definition_id" [delete: cascade]
 Ref "fk_process_target_rules_position":"unit_positions"."id" ?<? "process_target_rules"."position_id"
-Ref "fk_process_target_rules_unit":"units"."id" ?<? "process_target_rules"."unit_id"
 Ref "fk_process_target_rules_unit_type":"unit_types"."id" ?<? "process_target_rules"."unit_type_id"
+Ref "fk_process_target_rules_unit":"units"."id" ?<? "process_target_rules"."unit_id"
 Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_role_assignment_relation_types_relation_type":"relation_unit_types"."id" <? "role_assignment_relation_types"."relation_type_id"
@@ -1625,7 +1624,6 @@ Ref "fk_role_assignments_role":"roles"."id" <? "role_assignments"."role_id"
 Ref "fk_role_assignments_unit":"units"."id" <? "role_assignments"."unit_id"
 Ref "fk_role_permissions_permission":"permissions"."id" <? "role_permissions"."permission_id"
 Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
-Ref "signature_batch_jobs_user_id_fkey":"persons"."id" ?<? "signature_batch_jobs"."user_id"
 Ref "fk_signature_flow_instances_document":"document_versions"."id" <? "signature_flow_instances"."document_version_id"
 Ref "fk_signature_flow_instances_status":"signature_request_statuses"."id" <? "signature_flow_instances"."status_id"
 Ref "fk_signature_flow_instances_template":"signature_flow_templates"."id" <? "signature_flow_instances"."template_id"
@@ -1633,8 +1631,8 @@ Ref "fk_signature_flow_steps_cargo":"cargos"."id" ?<? "signature_flow_steps"."re
 Ref "fk_signature_flow_steps_person":"persons"."id" ?<? "signature_flow_steps"."assigned_person_id"
 Ref "fk_signature_flow_steps_position":"unit_positions"."id" ?<? "signature_flow_steps"."position_id"
 Ref "fk_signature_flow_steps_template":"signature_flow_templates"."id" <? "signature_flow_steps"."template_id"
-Ref "fk_signature_flow_steps_unit":"units"."id" ?<? "signature_flow_steps"."unit_id"
 Ref "fk_signature_flow_steps_unit_type":"unit_types"."id" ?<? "signature_flow_steps"."unit_type_id"
+Ref "fk_signature_flow_steps_unit":"units"."id" ?<? "signature_flow_steps"."unit_id"
 Ref "fk_signature_flow_templates_artifact":"template_artifacts"."id" ?<? "signature_flow_templates"."template_artifact_id"
 Ref "fk_signature_flow_templates_definition_template":"process_definition_templates"."id" ?<? "signature_flow_templates"."process_definition_template_id"
 Ref "fk_signature_flow_templates_task_item":"task_items"."id" ?<? "signature_flow_templates"."task_item_id" [delete: cascade]
@@ -1645,7 +1643,6 @@ Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_reque
 Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
 Ref "fk_task_item_tenures_person":"persons"."id" ?<? "task_item_tenures"."person_id"
 Ref "fk_task_item_tenures_position":"unit_positions"."id" ?<? "task_item_tenures"."position_id"
-Ref "task_item_tenures_performed_by_person_id_fkey":"persons"."id" ?<? "task_item_tenures"."performed_by_person_id"
 Ref "fk_task_items_assigned_person":"persons"."id" ?<? "task_items"."assigned_person_id"
 Ref "fk_task_items_created_by":"persons"."id" ?<? "task_items"."created_by_person_id"
 Ref "fk_task_items_origin_unit":"units"."id" ?<? "task_items"."origin_unit_id"
@@ -1661,8 +1658,6 @@ Ref "fk_tasks_scope_unit":"units"."id" <? "tasks"."scope_unit_id"
 Ref "fk_tasks_term":"terms"."id" <? "tasks"."term_id"
 Ref "fk_telefono_canales_canal":"canales_mensajeria"."id" <? "telefono_canales"."canal_id"
 Ref "fk_telefono_canales_telefono":"telefonos"."id" <? "telefono_canales"."telefono_id" [delete: cascade]
-Ref "fk_tvk_canal":"canales_mensajeria"."id" ?<? "telefono_verification_keys"."canal_id"
-Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono_id" [delete: cascade]
 Ref "fk_telefonos_pais":"paises"."id" ?<? "telefonos"."pais_id"
 Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cascade]
 Ref "fk_template_artifact_fields_artifact":"template_artifacts"."id" <? "template_artifact_fields"."template_artifact_id" [delete: cascade]
@@ -1670,6 +1665,8 @@ Ref "fk_template_artifacts_deliverable":"deliverables"."id" <? "template_artifac
 Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artifacts"."parent_version_id"
 Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
 Ref "fk_tipos_discapacidad_pais":"paises"."id" <? "tipos_discapacidad"."pais_id"
+Ref "fk_tvk_canal":"canales_mensajeria"."id" ?<? "telefono_verification_keys"."canal_id"
+Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono_id" [delete: cascade]
 Ref "fk_unit_positions_cargo":"cargos"."id" <? "unit_positions"."cargo_id"
 Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
 Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"
@@ -1680,3 +1677,6 @@ Ref "fk_vacancies_position":"unit_positions"."id" <? "vacancies"."position_id"
 Ref "fk_vacancy_visibility_role":"roles"."id" ?<? "vacancy_visibility"."role_id"
 Ref "fk_vacancy_visibility_unit":"units"."id" ?<? "vacancy_visibility"."unit_id"
 Ref "fk_vacancy_visibility_vacancy":"vacancies"."id" <? "vacancy_visibility"."vacancy_id"
+Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
+Ref "signature_batch_jobs_user_id_fkey":"persons"."id" ?<? "signature_batch_jobs"."user_id"
+Ref "task_item_tenures_performed_by_person_id_fkey":"persons"."id" ?<? "task_item_tenures"."performed_by_person_id"

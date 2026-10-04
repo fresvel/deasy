@@ -122,7 +122,7 @@ erDiagram
 <details>
 <summary>Llegan 15 claves ajenas desde otros diagramas</summary>
 
-`autoidentificaciones_etnicas.pais_id` → `paises` · `direcciones.canton_id` → `cantones` · `direcciones.pais_id` → `paises` · `direcciones.provincia_id` → `provincias` · `documentos_identidad.categoria_visa_id` → `categorias_visa` · `documentos_identidad.pais_id` → `paises` · `estados_civiles.pais_id` → `paises` · `generos.pais_id` → `paises` · `instituciones.pais_id` → `paises` · `parentescos.pais_id` → `paises` · `persons.nacimiento_canton_id` → `cantones` · `persons.nacimiento_pais_id` → `paises` · `persons.nacionalidad_pais_id` → `paises` · `telefonos.pais_id` → `paises` · `tipos_discapacidad.pais_id` → `paises`
+`autoidentificaciones_etnicas.pais_id` → `paises` · `direcciones.canton_id` → `cantones` · `direcciones.pais_id` → `paises` · `direcciones.provincia_id` → `provincias` · `documentos_identidad.categoria_visa_id` → `categorias_visa` · `documentos_identidad.pais_id` → `paises` · `estados_civiles.pais_id` → `paises` · `generos.pais_id` → `paises` · `parentescos.pais_id` → `paises` · `persons.nacimiento_canton_id` → `cantones` · `persons.nacimiento_pais_id` → `paises` · `persons.nacionalidad_pais_id` → `paises` · `telefonos.pais_id` → `paises` · `tipos_discapacidad.pais_id` → `paises` · `instituciones.pais_id` → `paises`
 
 </details>
 
@@ -196,9 +196,9 @@ erDiagram
   paises ||--o{ autoidentificaciones_etnicas : "pais_id"
   paises ||--o{ estados_civiles : "pais_id"
   paises ||--o{ generos : "pais_id"
-  paises ||--o{ instituciones : "pais_id"
   paises ||--o{ parentescos : "pais_id"
   paises ||--o{ tipos_discapacidad : "pais_id"
+  paises ||--o{ instituciones : "pais_id"
 ```
 
 <details>
@@ -261,6 +261,9 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
+  autoidentificaciones_etnicas |o--o{ persona_autoidentificacion : "autoidentificacion_etnica_id"
+  generos |o--o{ persona_autoidentificacion : "genero_id"
+  persons ||--o| persona_autoidentificacion : "person_id"
   cantones |o--o{ direcciones : "canton_id"
   paises |o--o{ direcciones : "pais_id"
   persons ||--o{ direcciones : "person_id"
@@ -268,9 +271,6 @@ erDiagram
   categorias_visa |o--o{ documentos_identidad : "categoria_visa_id"
   paises ||--o{ documentos_identidad : "pais_id"
   persons ||--o{ documentos_identidad : "person_id"
-  autoidentificaciones_etnicas |o--o{ persona_autoidentificacion : "autoidentificacion_etnica_id"
-  generos |o--o{ persona_autoidentificacion : "genero_id"
-  persons ||--o| persona_autoidentificacion : "person_id"
 ```
 
 ### Cómo se te localiza
@@ -344,10 +344,10 @@ erDiagram
   persons ||--o{ emails : "person_id"
   canales_mensajeria ||--o{ telefono_canales : "canal_id"
   telefonos ||--o{ telefono_canales : "telefono_id"
-  canales_mensajeria |o--o{ telefono_verification_keys : "canal_id"
-  telefonos ||--o{ telefono_verification_keys : "telefono_id"
   paises |o--o{ telefonos : "pais_id"
   persons ||--o{ telefonos : "person_id"
+  canales_mensajeria |o--o{ telefono_verification_keys : "canal_id"
+  telefonos ||--o{ telefono_verification_keys : "telefono_id"
 ```
 
 <details>
@@ -731,23 +731,23 @@ erDiagram
     timestamp read_at
     timestamp created_at
   }
-  chat_conversations ||--o{ chat_conversation_participants : "conversation_id"
-  persons ||--o{ chat_conversation_participants : "person_id"
+  chat_messages ||--o{ chat_message_attachments : "message_id"
   persons ||--o{ chat_conversations : "created_by"
   processes |o--o{ chat_conversations : "process_id"
   process_definition_versions |o--o{ chat_conversations : "scope_current_definition_id"
   process_definition_versions |o--o{ chat_conversations : "scope_origin_definition_id"
   processes |o--o{ chat_conversations : "scope_process_id"
   units |o--o{ chat_conversations : "scope_unit_id"
-  chat_messages ||--o{ chat_message_attachments : "message_id"
-  chat_messages ||--o{ chat_message_reads : "message_id"
-  persons ||--o{ chat_message_reads : "person_id"
   chat_conversations ||--o{ chat_messages : "conversation_id"
   chat_messages |o--o{ chat_messages : "reply_to_message_id"
   persons ||--o{ chat_messages : "sender_person_id"
   chat_conversations |o--o{ chat_notifications : "conversation_id"
   chat_messages |o--o{ chat_notifications : "message_id"
   persons ||--o{ chat_notifications : "recipient_person_id"
+  chat_conversations ||--o{ chat_conversation_participants : "conversation_id"
+  persons ||--o{ chat_conversation_participants : "person_id"
+  chat_messages ||--o{ chat_message_reads : "message_id"
+  persons ||--o{ chat_message_reads : "person_id"
 ```
 
 ### Fuera de los subgrupos

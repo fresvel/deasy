@@ -32,6 +32,35 @@ if (missingEnvVars.length) {
 
 const databaseName = process.env.POSTGRES_DB;
 
+// ⚠️ EL search_path, Y ES LO QUE HACE QUE LAS 555 CONSULTAS NO CAMBIEN.
+//
+// Desde el 2026-10-04 las tablas no viven en `public`: cada una vive en el esquema de su TEMA
+// (`firmas.signature_requests`, `identidad.persons`). Con esta lista, PostgreSQL resuelve los
+// nombres sin cualificar igual que antes, así que ninguna consulta del repositorio se tocó.
+//
+// Va en `options`, que el servidor aplica a CADA conexión del pool, y no con un `SET` después de
+// conectar: un `SET` habría que repetirlo en cada reconexión y en cada cliente nuevo que el pool
+// crea, y el día que se olvide una, las consultas fallan con «relation does not exist» sólo en esa
+// conexión — un fallo intermitente, que es el peor que hay.
+//
+// `public` va al final y no sobra: ahí viven las 12 funciones de los disparadores.
+//
+// ⚠️ ESTA LISTA ESTÁ DUPLICADA en el `SET search_path` de `database/postgres_schema.sql`, y no hay
+// forma de que una la lea de la otra --una es JavaScript y la otra es SQL que se aplica solo--. Lo
+// que sí hay es una prueba que las compara: `postgres.searchPath.test.js`. Es el mismo trato que
+// `DOCUMENT_RELAYABLE_STATUSES`, duplicada en JS y en los triggers y vigilada igual.
+export const ESQUEMAS = [
+  "identidad",
+  "organizacion",
+  "procesos",
+  "plantillas",
+  "tareas",
+  "firmas",
+  "chat",
+  "empleo",
+  "public",
+];
+
 const pool = missingEnvVars.length
   ? null
   : new Pool({
@@ -41,6 +70,7 @@ const pool = missingEnvVars.length
       password: process.env.POSTGRES_PASSWORD,
       database: databaseName,
       max: Number(process.env.POSTGRES_CONNECTION_LIMIT || 10),
+      options: `-c search_path=${ESQUEMAS.join(",")}`,
     });
 
 // --- Escáner de SQL ------------------------------------------------------------

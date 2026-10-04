@@ -456,6 +456,45 @@ Lo único que se escribe a mano es **`docs/02-dominio-datos/anotaciones.json`**:
 una tabla o una columna. Se inyecta como nota en el DBML, y el generador falla si nombras algo que
 no existe.
 
+### Las tablas viven en OCHO esquemas de PostgreSQL, uno por tema
+
+Desde el **2026-10-04** no hay nada en `public` salvo las 12 funciones de los disparadores. Una tabla
+vive en el esquema de su tema: `identidad.persons`, `firmas.signature_requests`,
+`plantillas.template_artifacts`. El tema dejó de ser una afirmación en un fichero y pasó a ser
+**dónde está la tabla**.
+
+**Y las consultas NO cambiaron: son las mismas 555.** El `search_path` hace que PostgreSQL resuelva
+`signature_requests` sin cualificar, igual que antes. Lo que cambia es que **ahora se puede**
+cualificar, y que `pg_dump -n firmas` saca un tema entero.
+
+| | |
+|---|---|
+| Si **añades una tabla** | cualifícala con su tema: `CREATE TABLE IF NOT EXISTS firmas.lo_que_sea (`. Sin el prefijo se crearía en `identidad`, que es el primero del `search_path`. Lo caza `check-mapa-tablas.mjs` (comprobación **A-bis**) |
+| Si **añades un tema** | va en **tres** sitios: el `SET search_path` del esquema, `ESQUEMAS` en `config/postgres.js`, y el mapa. Los compara `config/postgres.searchPath.test.js` |
+
+⚠️ **La lista de esquemas está en TRES pools distintos** y no hay forma de que uno lea del otro: el
+de la aplicación (`config/postgres.js`), el del inicializador (que importa `ESQUEMAS`) y **el del
+harness de caracterización** (`tests/characterization/lib/db.mjs`, que también lo importa). Al
+repartir el esquema, olvidar el tercero costó **169 de 338 pruebas en rojo** con
+`relation "template_artifacts" does not exist`.
+
+⚠️ **`postgres_schema.sql` NO reubica una base anterior**, y es el contrato `TD7-s`: describe la
+forma y nada más. Una base de antes de los esquemas **se resetea** (`scripts/reset-system.sh dev`) o
+se reubica a mano con **`scripts/migrar-a-esquemas.sql`** *antes* de arrancar. Si no se hace ninguna
+de las dos, `CREATE TABLE IF NOT EXISTS firmas.x` **no ve** la `public.x` que ya existe: crea una
+tabla nueva y **vacía** en `firmas` y deja la vieja, con todos los datos, en `public`. En silencio, y
+el sistema arranca como si la instalación fuera nueva.
+
+⚠️ **Cuatro programas normalizan el nombre al leer el esquema**, y conviene saberlo antes de
+«arreglarlo»: `postprocess-dbml.mjs` (quita el esquema para que el modelo publicado salga idéntico),
+`check-doc-modelo.mjs`, `postgres_schema.test.js` y los otros dos tests que leen el fichero. Van
+sobre la **forma** de la tabla, no sobre dónde vive; dónde vive lo comprueba la puerta.
+
+**Por qué el esquema se puede partir por nivel y no por tema.** Cuatro parejas de temas se necesitan
+mutuamente (identidad↔organización, plantillas↔procesos, plantillas↔tareas, firmas↔tareas), así que
+**no hay ningún orden en el que aplicar un tema tras otro**: para crear una tabla con clave ajena, la
+tabla a la que apunta tiene que existir ya. Por nivel sí, porque ninguna relación sube.
+
 ### Azimutt — el explorador interactivo (perfil `explorer`)
 
 **Aquí van las credenciales de conexión a propósito: `CLAUDE.md` NO se publica.** El sitio de

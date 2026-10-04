@@ -502,6 +502,12 @@
         "complemento/expediente.md"
       ]
     },
+    "pg_dump": {
+      "motivo": "HERRAMIENTA de PostgreSQL ('pg_dump -n firmas' saca un esquema entero), no un objeto del modelo. Mismo caso que 'allow_fetching', que es una opcion de pyhanko.",
+      "paginas": [
+        "referencia/modelo-datos.md"
+      ]
+    },
     "pg_index": {
       "motivo": "CATALOGO de PostgreSQL.",
       "paginas": [

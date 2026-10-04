@@ -6,7 +6,7 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **10 de 15**
+## Estado general — **14 de 20**
 
 | Fase | Tareas | Estado |
 |---|---|---|
@@ -15,6 +15,79 @@ incompatibles.**
 | **F3** · La puerta de propiedad | F3.1 ✅ · F3.2 ✅ | ✅ **2 de 2** |
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ⬜ · F5.6 ⬜ | 🟡 **1 de 6** |
+| **F6** · El tema, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⬜ | 🟡 **4 de 5** |
+
+## F6 · El tema, dentro de la base — 4 de 5
+
+| Tarea | Qué entrega | Estado |
+|---|---|:--:|
+| **F6.1** | Las 93 tablas en **8 esquemas de PostgreSQL**, uno por tema | ✅ |
+| **F6.2** | El `search_path` en los **tres** pools que se conectan, con prueba que los compara | ✅ |
+| **F6.3** | Los cuatro programas que parsean el esquema, al día | ✅ |
+| **F6.4** | `scripts/migrar-a-esquemas.sql` para una base anterior | ✅ |
+| **F6.5** | Partir el fichero de 3.108 líneas en **15** (carpeta = tema, nombre = nivel) | ⬜ |
+
+### Por qué los esquemas, y no es cosmética
+
+El tema era **una afirmación en un fichero JSON**: decía que `signature_requests` es de firmas y
+había que creérselo. Ahora **lo dice la base de datos**, y si alguien crea una tabla en el esquema
+equivocado falla una puerta de CI. Es la diferencia entre documentar y constatar.
+
+**Y las 555 consultas no se tocaron.** El `search_path` resuelve los nombres sin cualificar igual que
+antes. Lo que se gana: una consulta *puede* decir de qué tema es, y `pg_dump -n firmas` saca un tema
+entero.
+
+### Lo que lo demuestra
+
+Dos PostgreSQL desechables, el esquema viejo en uno y el nuevo en el otro, comparados objeto por
+objeto:
+
+| | Actual | Nuevo |
+|---|---|---|
+| tablas · columnas | 93 · 803 | **93 · 803** |
+| claves ajenas · únicas · `CHECK` | 182 · 65 · 46 | **182 · 65 · 46** |
+| índices · disparadores · funciones · vistas | 358 · 55 · 12 · 1 | **358 · 55 · 12 · 1** |
+
+Todo idéntico; lo único que cambia es dónde vive cada tabla. Y la prueba más fina: **las 93 huellas
+de `check-doc-modelo` no se movieron**, porque se calculan sobre la forma de la tabla. Una huella
+quieta es la constatación de que esto es una reubicación pura.
+
+### Las cuatro trampas, todas medidas
+
+**1 · El harness tenía su propio pool.** `tests/characterization/lib/db.mjs` abre el suyo y no hereda
+nada del de la aplicación. Sin el `search_path` ahí: **169 de 338 pruebas en rojo** con
+`relation "template_artifacts" does not exist`. Ahora importa `ESQUEMAS` en vez de copiarlo — es el
+tercer pool del repositorio y una copia más habría sido una copia más que quedarse atrás.
+
+**2 · El contrato del fichero tenía razón y yo no.** Metí 94 `ALTER TABLE ... SET SCHEMA` para
+reubicar una base anterior, y el test `postgres_schema.test.js` las rechazó: el contrato `TD7-s` dice
+que el fichero **describe la forma y no converge una base vieja**. Salieron del esquema a
+`scripts/migrar-a-esquemas.sql`. El test que me paró es de agosto y es del dueño.
+
+**3 · `CREATE TABLE IF NOT EXISTS firmas.x` no ve `public.x`.** Sobre una base anterior crearía una
+tabla **vacía** en `firmas` y dejaría la vieja con todos los datos en `public`, **en silencio**, y el
+sistema arrancaría como si la instalación fuera nueva. De ahí que la migración exista y que el aviso
+esté escrito en tres sitios.
+
+**4 · Un `CREATE TABLE` dentro de un comentario cuenta como tabla.** La cabecera nueva explica la
+trampa anterior citando `CREATE TABLE IF NOT EXISTS firmas.x`, y dos programas se creyeron que
+existía una tabla llamada `x` —94 en vez de 93—. Citar una sentencia al explicar SQL es lo natural,
+así que ahora los dos saltan las líneas de comentario.
+
+### Y una mejora que salió de rebote
+
+Las relaciones del modelo generado **se emiten ordenadas**. El orden de `db2dbml` es un accidente de
+cómo PostgreSQL recorre el catálogo, y al repartir las tablas cambió entero: mismas 182 relaciones,
+otro orden, y un diff de 198 líneas que no decía nada. Un artefacto generado tiene que salir igual si
+la entrada es igual.
+
+### F6.5 · lo que falta, y por qué se puede
+
+Partir el fichero **por tema a secas es imposible**: cuatro parejas de temas se necesitan mutuamente
+(identidad↔organización, plantillas↔procesos, plantillas↔tareas, firmas↔tareas), y para crear una
+tabla con clave ajena la tabla a la que apunta tiene que existir ya. **Por nivel sí**, porque ninguna
+relación sube. Así que: **carpeta = tema, nombre de fichero = nivel**, y salen **15 ficheros** — uno
+por cada celda llena de la matriz tema×nivel. El árbol de carpetas *es* el mapa.
 
 ## F5 · Cerrar la deuda de escritura — 1 de 6
 

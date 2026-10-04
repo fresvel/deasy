@@ -133,7 +133,7 @@ erDiagram
 <details>
 <summary>Llegan 58 claves ajenas desde otros diagramas</summary>
 
-`aplications.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `chat_conversation_participants.person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_message_reads.person_id` → `persons` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `deliverables.owner_person_id` → `persons` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `fill_flow_steps.cargo_id` → `cargos` · `fill_flow_steps.assigned_person_id` → `persons` · `fill_flow_steps.position_id` → `unit_positions` · `fill_flow_steps.unit_id` → `units` · `fill_flow_steps.unit_type_id` → `unit_types` · `fill_requests.assigned_person_id` → `persons` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `process_definition_series.cargo_id` → `cargos` · `process_definition_series.unit_type_id` → `unit_types` · `process_runs.created_by_user_id` → `persons` · `process_target_rules.cargo_id` → `cargos` · `process_target_rules.position_id` → `unit_positions` · `process_target_rules.unit_id` → `units` · `process_target_rules.unit_type_id` → `unit_types` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `signature_flow_steps.required_cargo_id` → `cargos` · `signature_flow_steps.assigned_person_id` → `persons` · `signature_flow_steps.position_id` → `unit_positions` · `signature_flow_steps.unit_id` → `units` · `signature_flow_steps.unit_type_id` → `unit_types` · `signature_requests.assigned_person_id` → `persons` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_item_tenures.performed_by_person_id` → `persons` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units`
+`aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `deliverables.owner_person_id` → `persons` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `fill_flow_steps.cargo_id` → `cargos` · `fill_flow_steps.assigned_person_id` → `persons` · `fill_flow_steps.position_id` → `unit_positions` · `fill_flow_steps.unit_type_id` → `unit_types` · `fill_flow_steps.unit_id` → `units` · `fill_requests.assigned_person_id` → `persons` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `process_definition_series.cargo_id` → `cargos` · `process_definition_series.unit_type_id` → `unit_types` · `process_runs.created_by_user_id` → `persons` · `process_target_rules.cargo_id` → `cargos` · `process_target_rules.position_id` → `unit_positions` · `process_target_rules.unit_type_id` → `unit_types` · `process_target_rules.unit_id` → `units` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `signature_flow_steps.required_cargo_id` → `cargos` · `signature_flow_steps.assigned_person_id` → `persons` · `signature_flow_steps.position_id` → `unit_positions` · `signature_flow_steps.unit_type_id` → `unit_types` · `signature_flow_steps.unit_id` → `units` · `signature_requests.assigned_person_id` → `persons` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
 
 </details>
 
@@ -215,8 +215,8 @@ erDiagram
   cargos |o--o{ process_target_rules : "cargo_id"
   process_definition_versions ||--o{ process_target_rules : "process_definition_id"
   unit_positions |o--o{ process_target_rules : "position_id"
-  units |o--o{ process_target_rules : "unit_id"
   unit_types |o--o{ process_target_rules : "unit_type_id"
+  units |o--o{ process_target_rules : "unit_id"
   processes |o--o{ processes : "parent_id"
 ```
 
@@ -429,7 +429,6 @@ erDiagram
   task_items ||--o{ task_item_tenures : "task_item_id"
   persons |o--o{ task_item_tenures : "person_id"
   unit_positions |o--o{ task_item_tenures : "position_id"
-  persons |o--o{ task_item_tenures : "performed_by_person_id"
   persons |o--o{ task_items : "assigned_person_id"
   persons |o--o{ task_items : "created_by_person_id"
   units |o--o{ task_items : "origin_unit_id"
@@ -439,6 +438,7 @@ erDiagram
   units |o--o{ task_items : "target_unit_id"
   tasks ||--o{ task_items : "task_id"
   template_artifacts ||--o{ task_items : "template_artifact_id"
+  persons |o--o{ task_item_tenures : "performed_by_person_id"
 ```
 
 <details>
@@ -549,8 +549,8 @@ erDiagram
   unit_positions |o--o{ fill_flow_steps : "position_id"
   relation_unit_types |o--o{ fill_flow_steps : "relation_type_id"
   fill_flow_templates ||--o{ fill_flow_steps : "fill_flow_template_id"
-  units |o--o{ fill_flow_steps : "unit_id"
   unit_types |o--o{ fill_flow_steps : "unit_type_id"
+  units |o--o{ fill_flow_steps : "unit_id"
   template_artifacts |o--o{ fill_flow_templates : "template_artifact_id"
   process_definition_templates |o--o{ fill_flow_templates : "process_definition_template_id"
   task_items |o--o{ fill_flow_templates : "task_item_id"
@@ -631,8 +631,8 @@ erDiagram
   persons |o--o{ signature_flow_steps : "assigned_person_id"
   unit_positions |o--o{ signature_flow_steps : "position_id"
   signature_flow_templates ||--o{ signature_flow_steps : "template_id"
-  units |o--o{ signature_flow_steps : "unit_id"
   unit_types |o--o{ signature_flow_steps : "unit_type_id"
+  units |o--o{ signature_flow_steps : "unit_id"
   template_artifacts |o--o{ signature_flow_templates : "template_artifact_id"
   process_definition_templates |o--o{ signature_flow_templates : "process_definition_template_id"
   task_items |o--o{ signature_flow_templates : "task_item_id"

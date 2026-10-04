@@ -107,6 +107,39 @@ for (const tabla of tablas) {
   );
 }
 
+// ── A-bis · Los esquemas de la base son los temas ──────────────────────────────────────────────
+// Desde el 2026-10-04 cada tema es un esquema de PostgreSQL, así que el `SET search_path` del
+// fichero del esquema tiene que listar exactamente estos ocho temas, más `public` al final (donde
+// viven las 12 funciones de los disparadores).
+//
+// Si se separan, el fallo no se ve al arrancar: las consultas de un tema entero empiezan a
+// responder «relation does not exist» mientras el resto funciona. La otra mitad de esta vigilancia
+// --que el pool del backend use la misma lista-- está en `backend/config/postgres.searchPath.test.js`,
+// que sí puede leer los dos ficheros que compara.
+const sqlEsquema = readFileSync(ESQUEMA, "utf8");
+const lineaRuta = sqlEsquema.match(/^SET search_path = (.+);$/m);
+if (!lineaRuta) {
+  fallos.push("A-bis · postgres_schema.sql no lleva un 'SET search_path = ...;' en una línea");
+} else {
+  const declarados = lineaRuta[1].split(",").map((x) => x.trim());
+  const temas = Object.keys(mapa.temas);
+  const esperado = [...temas, "public"];
+  if (declarados.join(",") !== esperado.join(",")) {
+    fallos.push(
+      `A-bis · el search_path del esquema no coincide con los temas del mapa.\n       esquema: ${declarados.join(", ")}\n       mapa:    ${esperado.join(", ")}`
+    );
+  }
+  for (const tabla of tablas) {
+    const tema = mapa.temaDe.get(tabla);
+    if (!tema) continue;
+    if (!new RegExp(`CREATE TABLE IF NOT EXISTS ${tema}\\.${tabla}\\b`).test(sqlEsquema)) {
+      fallos.push(
+        `A-bis · el mapa dice que '${tabla}' es de '${tema}' y el esquema no la crea en ese esquema de la base`
+      );
+    }
+  }
+}
+
 // ── Veredicto ─────────────────────────────────────────────────────────────────────────────────
 const n = (x) => String(x).padStart(3);
 console.log(`Mapa de tablas:  ${Object.keys(mapa.temas).length} temas · 8 niveles · ${tablas.length} tablas`);

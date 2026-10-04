@@ -32,6 +32,10 @@
 // define el modo, y no hay respuesta HTTP que la diga. El endpoint devuelve ids y nada más.
 
 import pg from "pg";
+// La MISMA lista de esquemas que usa el pool de la aplicacion, importada y no copiada: este pool es
+// el tercero que se conecta a la base --aplicacion, inicializador y este-- y una copia mas seria
+// una copia mas que quedarse atras.
+import { ESQUEMAS } from "../../../config/postgres.js";
 
 const { Pool } = pg;
 
@@ -54,6 +58,10 @@ function getPool() {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
     max: 2,
+    // ⚠️ SIN ESTO, 169 DE 338 PRUEBAS FALLAN con «relation "template_artifacts" does not exist».
+    // Las tablas viven en el esquema de su tema desde el 2026-10-04, y este pool es propio: no
+    // hereda nada del de la aplicacion. Medido el 2026-10-04 al repartir el esquema.
+    options: `-c search_path=${ESQUEMAS.join(",")}`,
   });
   return pool;
 }

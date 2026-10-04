@@ -43,7 +43,28 @@ const [rawPath, generatedColsPath, anotacionesPath, dominiosPath, outDir] = proc
 const reBloqueChecks = /^[ \t]*Checks\s*\{[\s\S]*?^[ \t]*\}[ \t]*\n/gm;
 const sinChecksDeTabla = (texto) => texto.replace(reBloqueChecks, '').replace(/\n{3,}/g, '\n\n');
 
-const raw = sinChecksDeTabla(readFileSync(rawPath, 'utf8'));
+// ── 0. Quitar la cualificacion de esquema ──────────────────────────────────────────────────
+// Desde el 2026-10-04 cada tabla vive en el esquema de su tema, y db2dbml lo refleja:
+//
+//   Table "firmas"."signature_requests" { ... }
+//   Ref "fk":"tareas"."task_items"."id" ?<? "firmas"."signature_requests"."task_item_id"
+//
+// Se normaliza AQUI, de una vez, y no en los cuatro sitios que parsean DBML --dos regex en este
+// fichero y dos en gen-mapa-campos.mjs--. Asi el modelo publicado sale IDENTICO al de antes de los
+// esquemas, que es la prueba de que el cambio no se ve desde la documentacion.
+//
+// No se pierde nada: que cada tabla este en el esquema de su tema lo comprueba
+// check-mapa-tablas.mjs leyendo postgres_schema.sql, que es donde esta escrito.
+//
+// ⚠️ El orden de los dos reemplazos NO es indiferente. La forma de tres partes es la de un Ref
+// (esquema.tabla.columna) y la de dos la de un Table; si se hiciera primero la de dos, se comeria
+// el 'esquema.tabla' de un Ref y dejaria la columna colgando.
+const sinEsquemas = (texto) =>
+  texto
+    .replace(/"(\w+)"\."(\w+)"\."(\w+)"/g, '"$2"."$3"')
+    .replace(/^Table\s+"(\w+)"\."(\w+)"/gm, 'Table "$2"');
+
+const raw = sinEsquemas(sinChecksDeTabla(readFileSync(rawPath, 'utf8')));
 const generadas = readFileSync(generatedColsPath, 'utf8').split('\n').map(s => s.trim()).filter(Boolean);
 const anotaciones = JSON.parse(readFileSync(anotacionesPath, 'utf8'));
 // El mapa se lee por su biblioteca y no con un JSON.parse suelto: desde el 2026-10-04 'dominios.json'
@@ -201,12 +222,20 @@ for (const t of tablas.keys()) {
   if (!asignadas.has(t)) fallos.push(`La tabla '${t}' no está en ningún dominio. Añádela a scripts/docs/dominios.json`);
 }
 
+// ⚠️ LAS RELACIONES SE EMITEN ORDENADAS, y no en el orden en que llegan.
+//
+// El orden de db2dbml es un accidente de como PostgreSQL recorre el catalogo, y cambio entero el
+// 2026-10-04 al repartir las tablas en ocho esquemas: mismas 182 relaciones, otro orden, y un diff
+// de 198 lineas que no decia nada. Un artefacto generado tiene que salir igual si la entrada es
+// igual, o su gate de deriva avisa de cambios que no existen.
+const refsOrdenadas = [...refs].sort((a, b) => a.texto.localeCompare(b.texto));
+
 // ── Consolidado ────────────────────────────────────────────────────────────────────────────
 const nombresOrdenados = [...tablas.keys()].sort();
 let consolidado = CABECERA(`Diagramas por dominio: docs/02-dominio-datos/dominios/`);
 consolidado += `Project deasy {\n  database_type: 'PostgreSQL'\n  Note: '''Modelo de datos de Deasy. ${tablas.size} tablas. El color de cabecera indica el dominio.'''\n}\n\n`;
 consolidado += nombresOrdenados.map(bloqueTabla).join('\n');
-consolidado += '\n' + refs.map(r => r.texto).join('\n') + '\n';
+consolidado += '\n' + refsOrdenadas.map(r => r.texto).join('\n') + '\n';
 
 if (fallos.length) {
   console.error('\n✖ El post-procesado del DBML falló:\n');
