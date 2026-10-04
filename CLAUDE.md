@@ -392,62 +392,62 @@ dibújala en uno de los dos, dentro de su subgrupo, o el generador falla a prop�
 
 **Si cambias `postgres_schema.sql`, regenera en el mismo commit.**
 
-### El mapa de módulos — `scripts/docs/dominios.json` es la FUENTE ÚNICA
+### El mapa de las tablas — `scripts/docs/dominios.json` es la FUENTE ÚNICA
 
-Desde el **2026-10-04** ese fichero no reparte diagramas: contesta **«¿a qué parte del sistema
-pertenece esta tabla?»**, que antes tenía **cuatro** respuestas distintas y en desacuerdo —el dominio,
-la carpeta de `services` que la escribe, el recurso de `TABLE_RESOURCE_MAP` y el subgrupo de los
-`mapa-completo.md`—. Medido: coincidían entre el **20 % y el 35 %**.
+Cada tabla aparece **una vez**, dentro de su **tema**, y su valor es su **nivel**. Dos ejes, un sitio:
 
-Son **93 tablas en 15 módulos**, y cada módulo declara dos cosas:
+| | | |
+|---|---|---|
+| **tema** | de qué trata | 8, los de siempre. De aquí salen los 8 diagramas, y es **donde debería vivir su código** |
+| **nivel** | de qué depende | 0 (abajo) a 7 (arriba). De aquí sale el **orden de lectura** |
 
-| | |
-|---|---|
-| **dominio** | el diagrama donde se dibuja. Siguen siendo **8**, y un dominio es la unión de sus módulos |
-| **capa** | su sitio en el orden de dependencia, de **0** (catálogos y territorio) a **7** (chat y empleo) |
-
-**La regla de las capas: una clave ajena solo apunta a su capa o a una INFERIOR.** Hoy: 103 bajan,
-79 se quedan, **0 suben**. Y **la de propiedad: una tabla la escribe un módulo**, con dos escritores
+**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: 103 bajan,
+79 se quedan, **0 suben**. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
 transversales declarados por nombre (el bootstrap y el editor genérico de `/admin`).
 
 ```bash
-node scripts/docs/check-mapa-modulos.mjs    # cinco comprobaciones
+node scripts/docs/check-mapa-tablas.mjs    # tres comprobaciones
 ```
 
 | | Qué caza |
 |---|---|
-| **A** | una tabla del esquema sin módulo, o en dos |
-| **B** | una clave ajena que **sube** de capa |
+| **A** | una tabla del esquema sin tema, o en dos |
+| **B** | una clave ajena que **sube** de nivel |
 | **C** | una tabla que escriben **dos** sitios, siendo nueva |
-| **D** | un **recurso RBAC** que crece hacia un módulo sin declararlo — y una tabla expuesta por `/admin` sin recurso, que quedaría **denegada en silencio** |
-| **E** | un **subgrupo de los mapas dibujados** que crece hacia un módulo sin declararlo, o una tabla dibujada **fuera de todo subgrupo** sin declararla |
-
-⚠️ **D y E no exigen que los tres caminos agrupen igual, y es importante.** Se midió: el recurso RBAC
-y el mapa dibujado juntan lo mismo que los módulos en un **28 %** y un **27 %**, y eso **no es
-deriva** — un recurso agrupa por *quién puede actuar*, un subgrupo por *narrativa*, un módulo por
-*qué depende de qué*. Son tres preguntas distintas. Lo que las puertas vigilan es que **ninguno crezca
-hacia un módulo nuevo sin que alguien lo decida**, con el motivo escrito en `dominios.json`
-(`_recursos_rbac` y `_subgrupos_dibujados`). Si no puedes escribir el motivo, el reparto está mal.
 
 Corre en CI en **dos** sitios y no por duplicar: `docs-dbml.yml` caza los cambios de esquema y de
 mapa, y `backend-checks` de `cd-multienv.yml` caza los de **código** — un segundo escritor aparece
 al tocar el backend, no al tocar el esquema.
 
+⚠️ **Aquí hubo un TERCER EJE —15 «módulos»— y se retiró el 2026-10-04, el mismo día.** Perdió en
+tres mediciones a la vez: juntaba peor las relaciones (**37 % contra 50 %** de los temas), tenía una
+dependencia circular, y **cuatro de los quince no eran dueños de ni un fichero de código** —habrían
+sido carpetas vacías—. Cortaba por dentro de una función: el recorrido de llenado es parte de las
+plantillas tanto en el código como en la pantalla. **No lo vuelvas a introducir.**
+
+⚠️ **Y había dos declaraciones más que también se fueron** (`_recursos_rbac`, `_subgrupos_dibujados`,
+con sus comprobaciones D y E): escribían las **diferencias** entre este mapa, el reparto de permisos
+y los subgrupos de los mapas dibujados, y fallaban si cambiaban. **Documentaban el desorden y lo
+protegían.** Están en el historial de git si alguna vez hacen falta.
+
 Tres cosas que cuestan si se ignoran:
 
-1. **Si añades una tabla, dale módulo** (no «dominio»): va dentro de `modulos.<nombre>.tablas`. El
-   generador y la puerta fallan a propósito si está en ninguno o en dos.
-2. **La capa no es decorativa.** Si la tabla nueva obliga a una clave ajena que sube, **no está en la
-   capa que crees** o la relación va al revés. Las dos cosas son hallazgos, no estorbos: así se
-   descubrió que **el acceso va ENCIMA de la organización** (un rol se asigna dentro de una unidad) y
-   que tres tablas con nombre de catálogo —`role_assignment_relation_types`,
+1. **Si añades una tabla, ponla en un tema con su nivel**: `"<tema>": { "tablas": { "<tabla>": <nivel> } }`.
+   El generador y la puerta fallan a propósito si está en ninguno o en dos.
+2. **El nivel no es decorativo.** Si la tabla nueva obliga a una clave ajena que sube, **no está en el
+   nivel que crees** o la relación va al revés. Las dos cosas son hallazgos: así se descubrió que
+   **el acceso va ENCIMA de la organización** (un rol se asigna dentro de una unidad) y que tres
+   tablas con nombre de catálogo —`role_assignment_relation_types`,
    `process_definition_period_types`, `contract_origins`— son tablas de relación de su dueño.
 3. **`_deuda_escritura` lleva el motivo de cada tabla con dos escritores, y se cierra quitando
    líneas.** Añadir una para callar la puerta es exactamente lo que no hay que hacer. Eran 6; la de
    `telefono_verification_keys` se cerró el mismo día.
 
-⚠️ **El dominio `identidad` no es un tema, son tres módulos apilados** (catálogos en capa 0, la
-persona en la 1, el acceso en la 3). Sus 34 tablas no se entendían por eso.
+**El tema NO es el esqueleto, y hay que saber por qué:** 29 de las 93 tablas se relacionan con 3
+temas o más (`units` con los ocho, `persons` con siete). Por eso el tema **no da un orden de
+lectura** —cuatro parejas de temas se apuntan mutuamente— y por eso existe el nivel. Y por eso
+**el tema `identidad` ocupa tres niveles** (catálogos, la persona, el acceso): sus 34 tablas no son
+un tema, son tres cosas apiladas.
 
 Si añades una tabla, el generador falla a propósito si no tiene módulo, para que no se quede fuera de
 los diagramas en silencio.

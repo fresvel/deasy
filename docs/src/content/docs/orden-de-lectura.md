@@ -311,5 +311,5 @@ medias. No están de más: están pendientes.
 | | | **93** |
 
 El reparto vive en `scripts/docs/dominios.json` y lo comprueba
-`node scripts/docs/check-mapa-modulos.mjs`: si alguien añade una tabla y no le pone nivel, o crea una
+`node scripts/docs/check-mapa-tablas.mjs`: si alguien añade una tabla y no le pone nivel, o crea una
 relación que **sube** de nivel, falla.

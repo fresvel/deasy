@@ -135,7 +135,7 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **capa**
 
 **La regla es una sola: una clave ajena puede apuntar a su propia capa o a una inferior, nunca a una
 superior.** Medido sobre las <!-- gen:total-relaciones -->182<!-- /gen --> relaciones del esquema: 103 bajan de capa, 79 se quedan
-en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-modulos.mjs`.
+en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
 Dos cosas que las capas enseñan y que ningún diagrama por dominio decía:
 

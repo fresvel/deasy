@@ -1,0 +1,124 @@
+#!/usr/bin/env node
+// La puerta del mapa de las tablas. Tres comprobaciones, y cada una caza algo distinto.
+//
+//   A · COBERTURA   cada tabla del esquema está en exactamente un tema, con su nivel
+//   B · NIVEL       ninguna clave ajena apunta a un nivel SUPERIOR
+//   C · PROPIEDAD   cada tabla la escribe un solo sitio del código
+//
+// Por qué las tres: A caza la tabla nueva que se queda fuera del mapa. B caza que el modelo se
+// enrede — el día que una tabla de abajo apunte a una de arriba, el orden de lectura deja de
+// existir y nadie se entera porque PostgreSQL no tiene opinión. C caza la escritura duplicada,
+// que es donde dos sitios aplican la misma regla y uno se queda atrás.
+//
+// ⚠️ ESTA PUERTA TUVO CINCO COMPROBACIONES. Las dos que faltan (D, los recursos de permiso, y E,
+// los subgrupos de los mapas dibujados) se retiraron el 2026-10-04, el mismo día que se pusieron.
+// Lo que hacían era declarar las DIFERENCIAS entre esta clasificación y las otras dos, y fallar si
+// cambiaban: documentaban el desorden y lo protegían. Si alguna vez se echan de menos, están en el
+// historial de git en el commit que las creó.
+//
+// ⚠️ C NACE CON DEUDA DECLARADA, y a propósito. Son los casos que ya existían al poner la puerta,
+// cada uno con su motivo en `_deuda_escritura`. Falla con cualquiera NUEVO; cerrar los declarados
+// se hace quitándolos de la lista, nunca ampliándola para callarla.
+
+import { readFileSync, readdirSync } from "node:fs";
+import { join, relative, sep, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { leerMapa, tablasDelEsquema, clavesAjenas, RUTA_MAPA } from "./lib/mapa.mjs";
+
+const RAIZ = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const ESQUEMA = join(RAIZ, "backend", "database", "postgres_schema.sql");
+
+const mapa = leerMapa();
+const tablas = tablasDelEsquema(ESQUEMA);
+const fallos = [...mapa.fallos];
+const avisos = [];
+
+// ── A · Cobertura ─────────────────────────────────────────────────────────────────────────────
+for (const tabla of tablas) {
+  if (!mapa.temaDe.has(tabla)) {
+    fallos.push(`A · la tabla '${tabla}' no está en ningún tema. Añádela a scripts/docs/dominios.json`);
+  }
+}
+for (const tabla of mapa.temaDe.keys()) {
+  if (!tablas.includes(tabla)) {
+    fallos.push(`A · el mapa nombra '${tabla}' (tema '${mapa.temaDe.get(tabla)}') y no existe en el esquema`);
+  }
+}
+
+// ── B · El nivel ──────────────────────────────────────────────────────────────────────────────
+const fks = clavesAjenas(ESQUEMA);
+let bajan = 0;
+let iguales = 0;
+for (const { origen, columna, destino } of fks) {
+  const a = mapa.nivelDe.get(origen);
+  const b = mapa.nivelDe.get(destino);
+  if (a === undefined || b === undefined) continue;
+  if (b < a) bajan++;
+  else if (b === a) iguales++;
+  else {
+    fallos.push(
+      `B · ${origen}.${columna} → ${destino} sube del nivel ${a} al ${b}. ` +
+        `O la tabla está en el nivel equivocado, o la relación va al revés`
+    );
+  }
+}
+
+// ── C · Propiedad de escritura ────────────────────────────────────────────────────────────────
+// El «sitio» de un fichero son sus dos primeras componentes bajo `backend/` (`services/users`,
+// `controllers/users`), que es lo más fino que hoy distingue de verdad. Lo que importa aquí es que
+// haya UN escritor, no en qué carpeta vive: el día que el código se reparta por temas, esto pasa a
+// comprobar que el escritor es el tema dueño.
+const deuda = Object.fromEntries(
+  Object.entries(JSON.parse(readFileSync(RUTA_MAPA, "utf8"))._deuda_escritura ?? {}).filter(
+    ([clave]) => !clave.startsWith("_")
+  )
+);
+
+function ficheros(dir, acc = []) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (["node_modules", ".git", "tests"].includes(e.name)) continue;
+    const p = join(dir, e.name);
+    if (e.isDirectory()) ficheros(p, acc);
+    else if (/\.m?js$/.test(e.name) && !/\.test\.m?js$/.test(e.name)) acc.push(p);
+  }
+  return acc;
+}
+
+const sitioDe = (p) => {
+  const partes = relative(join(RAIZ, "backend"), p).split(sep);
+  return partes[0] === "services" || partes[0] === "controllers" ? partes.slice(0, 2).join("/") : partes[0];
+};
+
+const contenidos = ficheros(join(RAIZ, "backend")).map((p) => [sitioDe(p), readFileSync(p, "utf8")]);
+const transversales = new Set(mapa.transversales);
+
+for (const tabla of tablas) {
+  const escribe = new RegExp(`(INSERT\\s+INTO|UPDATE|DELETE\\s+FROM)\\s+(?:\\w+\\.)?${tabla}\\b`, "i");
+  const sitios = new Set();
+  for (const [s, c] of contenidos) if (escribe.test(c) && !transversales.has(s)) sitios.add(s);
+  if (sitios.size <= 1) {
+    if (deuda[tabla]) avisos.push(`C · '${tabla}' ya solo tiene un escritor: quita su línea de _deuda_escritura`);
+    continue;
+  }
+  if (deuda[tabla]) continue;
+  fallos.push(
+    `C · '${tabla}' la escriben ${sitios.size} sitios: ${[...sitios].sort().join(" · ")}. ` +
+      `Una tabla tiene un tema dueño; el invariante va donde no se pueda esquivar, no en cada llamador`
+  );
+}
+
+// ── Veredicto ─────────────────────────────────────────────────────────────────────────────────
+const n = (x) => String(x).padStart(3);
+console.log(`Mapa de tablas:  ${Object.keys(mapa.temas).length} temas · 8 niveles · ${tablas.length} tablas`);
+console.log(`Claves ajenas:   ${n(bajan)} bajan de nivel · ${n(iguales)} en su nivel · ${n(fks.length - bajan - iguales)} suben`);
+console.log(`Deuda declarada: ${Object.keys(deuda).length} tablas con más de un escritor`);
+
+for (const a of avisos) console.log(`\n  ⚠ ${a}`);
+
+if (fallos.length) {
+  console.error(`\n✖ ${fallos.length} fallo(s):\n`);
+  for (const f of fallos) console.error(`   · ${f}`);
+  console.error("");
+  process.exit(1);
+}
+console.log("\n✔ El mapa cuadra con el esquema y con el código.");

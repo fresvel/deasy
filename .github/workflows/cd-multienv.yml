@@ -179,7 +179,7 @@ jobs:
       # aparece en un cambio de backend, no en uno del esquema. La deuda que ya existía está
       # declarada en scripts/docs/dominios.json con su motivo; la puerta falla con cualquiera nueva.
       - name: Check module map
-        run: node scripts/docs/check-mapa-modulos.mjs
+        run: node scripts/docs/check-mapa-tablas.mjs
       - name: Backend unit tests
         working-directory: backend
         run: npm run test:unit

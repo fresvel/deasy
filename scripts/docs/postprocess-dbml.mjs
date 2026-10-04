@@ -50,7 +50,9 @@ const anotaciones = JSON.parse(readFileSync(anotacionesPath, 'utf8'));
 // tiene tres niveles --tabla -> modulo -> {dominio, capa}-- y las 'tablas' de un dominio son DERIVADAS,
 // la union de las de sus modulos. Dos parsers del mismo fichero es como uno se queda atras.
 const mapa = leerMapa(dominiosPath);
-const dominios = mapa.dominios;
+// 'temas' desde el 2026-10-04: el fichero reparte por TEMA (de que trata) y cada tabla lleva
+// ademas su NIVEL (de que depende). El eslabon intermedio --el «modulo»-- se retiro.
+const temas = mapa.temas;
 
 const fallos = [...mapa.fallos];
 
@@ -178,7 +180,7 @@ const CABECERA = (extra) => `// ================================================
 const bloqueTabla = (nombre) => {
   const t = tablas.get(nombre);
   const dom = asignadas.get(nombre);
-  const color = dom ? dominios[dom]?.color : null;
+  const color = dom ? temas[dom]?.color : null;
   const attr = color ? ` [headercolor: ${color}]` : '';
   return `Table "${nombre}"${attr} {\n${t.cuerpo.replace(/\s*$/, '')}\n}\n`;
 };
@@ -187,7 +189,7 @@ const bloqueTabla = (nombre) => {
 // Va ANTES de construir el consolidado: `bloqueTabla` necesita saber a qué dominio pertenece
 // cada tabla para pintarle su color. Al revés el consolidado salía sin colorear, en silencio.
 const asignadas = new Map();
-for (const [clave, dom] of Object.entries(dominios)) {
+for (const [clave, dom] of Object.entries(temas)) {
   if (clave.startsWith('_')) continue;
   for (const t of dom.tablas) {
     if (asignadas.has(t)) fallos.push(`La tabla '${t}' está en dos dominios: '${asignadas.get(t)}' y '${clave}'`);
@@ -218,7 +220,7 @@ if (existsSync(domDir)) rmSync(domDir, { recursive: true });
 mkdirSync(domDir, { recursive: true });
 
 const resumen = [];
-for (const [clave, dom] of Object.entries(dominios)) {
+for (const [clave, dom] of Object.entries(temas)) {
   if (clave.startsWith('_')) continue;
   const suyas = new Set(dom.tablas);
   const internos = refs.filter(r => suyas.has(r.origen) && suyas.has(r.destino));

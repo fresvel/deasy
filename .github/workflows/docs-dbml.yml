@@ -56,7 +56,7 @@ jobs:
       # Antes de regenerar: que el mapa cuadre. Si una tabla no tiene módulo, el post-procesado
       # falla igual, pero con un mensaje peor; y la regla de las capas no la mira nadie más.
       - name: Comprobar el mapa de módulos
-        run: node scripts/docs/check-mapa-modulos.mjs
+        run: node scripts/docs/check-mapa-tablas.mjs
 
       - name: Regenerar el modelo y comprobar que no hay deriva
         run: bash scripts/docs/gen-dbml.sh --check
