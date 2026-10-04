@@ -144,13 +144,9 @@ export const cambiarMiTelefono = async (req, res) => {
       pais_id: paisId,
     });
 
-    // ⚠️ LAS LLAVES VIVAS DEL TELÉFONO SE TIRAN. Estaban emitidas contra el número ANTERIOR: dejarlas
-    // vivas significaría que un enlace ya repartido sigue sirviendo para verificar un número que ya
-    // no es el que se declara.
-    await getPostgresPool().query(
-      "DELETE FROM telefono_verification_keys WHERE telefono_id = ? AND consumida_at IS NULL",
-      [telefonoId]
-    );
+    // Las llaves vivas y la verificación por canal las invalida `guardarPrincipal` cuando el número
+    // cambia de verdad. Aquí no se repite: estaba escrito en este controller y NO en los otros dos
+    // caminos que cambian un número, así que el comportamiento dependía de por qué pantalla entraras.
     return res.json({ telefonoId });
   } catch (error) {
     if (error.status) return res.status(error.status).json({ message: error.message });

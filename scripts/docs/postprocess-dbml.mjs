@@ -22,6 +22,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
+import { leerMapa } from './lib/mapa.mjs';
 
 const [rawPath, generatedColsPath, anotacionesPath, dominiosPath, outDir] = process.argv.slice(2);
 
@@ -45,9 +46,13 @@ const sinChecksDeTabla = (texto) => texto.replace(reBloqueChecks, '').replace(/\
 const raw = sinChecksDeTabla(readFileSync(rawPath, 'utf8'));
 const generadas = readFileSync(generatedColsPath, 'utf8').split('\n').map(s => s.trim()).filter(Boolean);
 const anotaciones = JSON.parse(readFileSync(anotacionesPath, 'utf8'));
-const dominios = JSON.parse(readFileSync(dominiosPath, 'utf8'));
+// El mapa se lee por su biblioteca y no con un JSON.parse suelto: desde el 2026-10-04 'dominios.json'
+// tiene tres niveles --tabla -> modulo -> {dominio, capa}-- y las 'tablas' de un dominio son DERIVADAS,
+// la union de las de sus modulos. Dos parsers del mismo fichero es como uno se queda atras.
+const mapa = leerMapa(dominiosPath);
+const dominios = mapa.dominios;
 
-const fallos = [];
+const fallos = [...mapa.fallos];
 
 // ── Trocear el crudo en bloques ────────────────────────────────────────────────────────────
 // db2dbml emite `Table "x" { ... }` y `Ref "nombre":"a"."c" > "b"."d"`. Se parsea por bloques

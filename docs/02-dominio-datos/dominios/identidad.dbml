@@ -592,7 +592,7 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 //   paises -> persons   [organizacion]
 //   persons -> position_assignments   [organizacion]
 //   cargos -> process_definition_series   [procesos]
-//   persons -> process_runs   [procesos]
+//   persons -> process_runs   [tareas]
 //   cargos -> process_target_rules   [procesos]
 //   relation_unit_types -> role_assignment_relation_types   [organizacion]
 //   position_assignments -> role_assignments   [organizacion]

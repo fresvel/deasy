@@ -109,6 +109,26 @@ Francia una subdivisión electoral. `provincias` tiene el mismo problema —es e
 el 2 en España—. Por eso la **etiqueta que ve el usuario** no sale del nombre de la tabla, sino de
 **`nomenclatura_territorial`** según `instituciones.pais_id`.
 
+### Cambiar el número tira lo que se había probado del anterior
+
+Verificar un teléfono no es marcar una casilla: es **un canal demostrando que ese número le escribió**.
+Y esa demostración habla de **un número**, no de una fila.
+
+Cuando alguien corrige su teléfono, la fila se **reutiliza** —mismo `telefonos.id`, número nuevo—, así
+que todo lo que colgaba de ella pasaría a hablar de un número que nadie ha probado. Por eso, cuando el
+número o su país cambian de verdad:
+
+- **los canales se desverifican** (`telefono_canales.verificado` vuelve a 0) — la *declaración* de que
+  ese número tiene WhatsApp sigue en pie, porque declarar nunca fue verificar; lo que deja de ser
+  cierto es la prueba;
+- **las llaves pendientes se tiran** (`telefono_verification_keys`) — se emitieron contra el número
+  anterior.
+
+Es lo mismo que ya hacía `emails` al cambiar la dirección, y desde el **2026-10-04** lo hace el propio
+guardado del teléfono. Antes lo hacía **una** de las tres pantallas que pueden cambiar un número, así
+que el resultado dependía de por dónde hubieras entrado: corregir el número desde el perfil dejaba los
+canales marcados como verificados. Medido antes y después del arreglo.
+
 ### El país no está en el código: está en una fila
 
 Hasta el **2026-08-29**, el documento nacional se llamaba `cedula_ec` y su validador colgaba del tipo.

@@ -161,17 +161,47 @@ export default class TelefonoService {
     }
 
     const [existentes] = await connection.query(
-      "SELECT id FROM telefonos WHERE person_id = ? AND tipo = ? AND principal = 1 LIMIT 1",
+      "SELECT id, numero, pais_id FROM telefonos WHERE person_id = ? AND tipo = ? AND principal = 1 LIMIT 1",
       [personId, tipo]
     );
 
     let telefonoId;
     if (existentes?.length) {
       telefonoId = Number(existentes[0].id);
+      // ⚠️ CAMBIAR EL NÚMERO TIRA LO QUE SE HABÍA PROBADO DEL ANTERIOR, y se hace AQUÍ.
+      //
+      // La fila se reutiliza --mismo id, número nuevo--, así que todo lo que colgaba de ella pasa a
+      // hablar de un número que nadie ha probado: los canales seguían marcados verificados y las
+      // llaves pendientes seguían vivas. Medido el 2026-10-04 sobre la pila B: tras cambiar el
+      // número, telegram y whatsapp seguían en verificado = 1. El número nuevo respondía
+      // "verificado" sin que se hubiera demostrado nada, y "esta verificado" es justamente "tiene
+      // algun canal verificado".
+      //
+      // Va en el servicio y no en el llamador porque son TRES los caminos que cambian un número
+      // --este servicio lo llaman el controller de verificación, UserRepository.updateUser y el
+      // bootstrap-- y sólo el primero se acordaba de invalidar. Es el mismo motivo que ya está
+      // escrito en UserRepository.updateUser sobre el cantón de nacimiento: parchear cada llamador
+      // es exactamente como se olvida uno. Y es lo que EmailService ya hacía con la dirección.
+      //
+      // Se marca verificado = 0, no se borra la fila del canal: DECLARAR un canal no es VERIFICARLO,
+      // y la declaración sigue siendo verdad. Lo que deja de serlo es la prueba.
+      const cambiaNumero =
+        String(existentes[0].numero ?? "") !== String(numero) ||
+        Number(existentes[0].pais_id ?? 0) !== Number(paisId ?? 0);
       await connection.query(
         "UPDATE telefonos SET pais_id = ?, numero = ? WHERE id = ?",
         [paisId, numero, telefonoId]
       );
+      if (cambiaNumero) {
+        await connection.query(
+          "UPDATE telefono_canales SET verificado = 0, verificado_at = NULL WHERE telefono_id = ?",
+          [telefonoId]
+        );
+        await connection.query(
+          "DELETE FROM telefono_verification_keys WHERE telefono_id = ? AND consumida_at IS NULL",
+          [telefonoId]
+        );
+      }
     } else {
       const [resultado] = await connection.query(
         "INSERT INTO telefonos (person_id, tipo, pais_id, numero, principal) VALUES (?, ?, ?, ?, 1)",

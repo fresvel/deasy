@@ -53,5 +53,10 @@ jobs:
       # El script se levanta su propio PostgreSQL con `docker run`, así que aquí no hace falta
       # ningún `services:`. Es a propósito: el generador tiene que funcionar igual en la máquina
       # de quien desarrolla que en el runner, sin depender de una pila de dev.
+      # Antes de regenerar: que el mapa cuadre. Si una tabla no tiene módulo, el post-procesado
+      # falla igual, pero con un mensaje peor; y la regla de las capas no la mira nadie más.
+      - name: Comprobar el mapa de módulos
+        run: node scripts/docs/check-mapa-modulos.mjs
+
       - name: Regenerar el modelo y comprobar que no hay deriva
         run: bash scripts/docs/gen-dbml.sh --check

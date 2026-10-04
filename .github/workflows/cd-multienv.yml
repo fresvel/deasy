@@ -173,6 +173,13 @@ jobs:
       - name: Check SQL aliases
         working-directory: backend
         run: npm run check:sql-aliases
+      # El mapa de módulos: que cada tabla del esquema esté en un módulo, que ninguna clave ajena
+      # apunte a una capa superior, y que no haya una tabla NUEVA escrita desde dos sitios. Va aquí
+      # —y no solo en docs-dbml— porque la tercera comprobación mira el CÓDIGO: un segundo escritor
+      # aparece en un cambio de backend, no en uno del esquema. La deuda que ya existía está
+      # declarada en scripts/docs/dominios.json con su motivo; la puerta falla con cualquiera nueva.
+      - name: Check module map
+        run: node scripts/docs/check-mapa-modulos.mjs
       - name: Backend unit tests
         working-directory: backend
         run: npm run test:unit

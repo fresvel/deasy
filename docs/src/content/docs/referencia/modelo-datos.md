@@ -51,7 +51,9 @@ El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y q
 ## Motor de procesos
 
 Serie → regla → flujo. La **serie** nombra el proceso, la **regla** reparte su alcance y el
-**flujo** reparte los pasos. `process_runs` es cada lanzamiento. **<!-- gen:tablas-dominio:procesos -->9<!-- /gen --> tablas.**
+**flujo** reparte los pasos. Todo esto es **declaración**: nada ha ocurrido todavía. El lanzamiento
+(`process_runs`) se dibuja desde el 2026-10-04 en el dominio de tareas, que es donde ocurren las
+cosas. **<!-- gen:tablas-dominio:procesos -->8<!-- /gen --> tablas.**
 
 ![Diagrama del motor de procesos](/diagramas/procesos.svg)
 
@@ -68,9 +70,10 @@ las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:
 
 ## Tareas, entregables instanciados y documentos
 
-Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos
-producidos. Es donde converge todo: tiene **<!-- gen:relaciones-fuera:tareas -->28<!-- /gen --> relaciones con otros dominios**.
-**<!-- gen:tablas-dominio:tareas -->8<!-- /gen --> tablas.**
+Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables
+(`task_items`) y los documentos producidos. Es donde converge todo: tiene
+**<!-- gen:relaciones-fuera:tareas -->30<!-- /gen --> relaciones con otros dominios**.
+**<!-- gen:tablas-dominio:tareas -->9<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de tareas](/diagramas/tareas.svg)
 
@@ -113,6 +116,39 @@ desglosado. **<!-- gen:tablas-dominio:empleo -->8<!-- /gen --> tablas.**
 ![Diagrama del dominio de empleo](/diagramas/empleo.svg)
 
 [Abrir a tamaño real](/diagramas/empleo.svg)
+
+## Las ocho capas: qué puede depender de qué
+
+Los ocho dominios agrupan por **tema**, para que un diagrama se pueda leer. No dicen **qué rompe
+qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **capa**, de 0 abajo a 7 arriba:
+
+| Capa | Qué vive aquí |
+|---|---|
+| **0 · catálogos y territorio** | Lo que no cambia y de lo que depende todo el mundo: la cadena país → provincia → cantón → parroquia, la institución y las listas cerradas |
+| **1 · identidad** | La persona y lo que es suyo: documento, domicilio, teléfonos, correos, expediente |
+| **2 · organización** | El organigrama: unidades, puestos y quién los ocupa |
+| **3 · acceso** | Roles, permisos y credenciales |
+| **4 · declaración** | Lo que alguien declara que debe ocurrir: procesos, reglas, periodos, plantillas |
+| **5 · ejecución** | Lo que ocurre: la corrida, las tareas, los entregables y sus documentos |
+| **6 · flujos** | Entrega y firma, con su rastro |
+| **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
+
+**La regla es una sola: una clave ajena puede apuntar a su propia capa o a una inferior, nunca a una
+superior.** Medido sobre las <!-- gen:total-relaciones -->182<!-- /gen --> relaciones del esquema: 103 bajan de capa, 79 se quedan
+en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-modulos.mjs`.
+
+Dos cosas que las capas enseñan y que ningún diagrama por dominio decía:
+
+**El acceso va ENCIMA de la organización, no al lado.** Un rol se asigna *dentro de* una unidad
+(`role_assignments.unit_id`, `role_assignments.derived_from_assignment_id`). Así que quien cambia el
+organigrama puede romper los permisos de alguien; al contrario no pasa nunca.
+
+**El dominio de identidad son en realidad tres cosas apiladas.** Sus 34 tablas se reparten entre la
+capa 0 (los catálogos: género, estado civil, parentesco…), la 1 (la persona) y la 3 (el acceso). Por
+eso era el diagrama más difícil de leer: no es un tema, son tres.
+
+El reparto completo —qué tabla está en qué módulo y en qué capa— vive en `scripts/docs/dominios.json`,
+que es la **fuente única**: de ahí salen los diagramas, estas cifras y las dos comprobaciones.
 
 ## Explorar el modelo de forma interactiva
 

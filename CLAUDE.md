@@ -334,7 +334,7 @@ la bitácora y la auditoría, en **`docs/planes/sistema-diseno-componentes/`**. 
 
 ```bash
 bash scripts/docker-env.sh dev up -d docs                        # levanta el sitio -> http://localhost:4321
-bash scripts/docker-env.sh dev exec -T docs pnpm run build       # 51 paginas de contenido (el build dice 52: suma el 404)
+bash scripts/docker-env.sh dev exec -T docs pnpm run build       # 53 paginas de contenido (el build dice 54: suma el 404)
 bash scripts/docker-env.sh dev exec docs pnpm add <paquete>      # dependencias: DENTRO del contenedor
 ```
 
@@ -390,9 +390,52 @@ dentro de `gen-dbml.sh`, y su `--check` las compara. **La agrupación sale de lo
 mano** (`complemento/mapa-completo.md` y `modelo/mapa-completo.md`): si añades una tabla al esquema,
 dibújala en uno de los dos, dentro de su subgrupo, o el generador falla a propósito.
 
-**Si cambias `postgres_schema.sql`, regenera en el mismo commit.** Si añades una tabla, además
-tienes que darle dominio en `scripts/docs/dominios.json` — el generador falla a propósito si una
-tabla no está en ninguno o está en dos, para que no se quede fuera de los diagramas en silencio.
+**Si cambias `postgres_schema.sql`, regenera en el mismo commit.**
+
+### El mapa de módulos — `scripts/docs/dominios.json` es la FUENTE ÚNICA
+
+Desde el **2026-10-04** ese fichero no reparte diagramas: contesta **«¿a qué parte del sistema
+pertenece esta tabla?»**, que antes tenía **cuatro** respuestas distintas y en desacuerdo —el dominio,
+la carpeta de `services` que la escribe, el recurso de `TABLE_RESOURCE_MAP` y el subgrupo de los
+`mapa-completo.md`—. Medido: coincidían entre el **20 % y el 35 %**.
+
+Son **93 tablas en 15 módulos**, y cada módulo declara dos cosas:
+
+| | |
+|---|---|
+| **dominio** | el diagrama donde se dibuja. Siguen siendo **8**, y un dominio es la unión de sus módulos |
+| **capa** | su sitio en el orden de dependencia, de **0** (catálogos y territorio) a **7** (chat y empleo) |
+
+**La regla de las capas: una clave ajena solo apunta a su capa o a una INFERIOR.** Hoy: 103 bajan,
+79 se quedan, **0 suben**. Y **la de propiedad: una tabla la escribe un módulo**, con dos escritores
+transversales declarados por nombre (el bootstrap y el editor genérico de `/admin`).
+
+```bash
+node scripts/docs/check-mapa-modulos.mjs    # cobertura + capas + propiedad de escritura
+```
+
+Corre en CI en **dos** sitios y no por duplicar: `docs-dbml.yml` caza los cambios de esquema y de
+mapa, y `backend-checks` de `cd-multienv.yml` caza los de **código** — un segundo escritor aparece
+al tocar el backend, no al tocar el esquema.
+
+Tres cosas que cuestan si se ignoran:
+
+1. **Si añades una tabla, dale módulo** (no «dominio»): va dentro de `modulos.<nombre>.tablas`. El
+   generador y la puerta fallan a propósito si está en ninguno o en dos.
+2. **La capa no es decorativa.** Si la tabla nueva obliga a una clave ajena que sube, **no está en la
+   capa que crees** o la relación va al revés. Las dos cosas son hallazgos, no estorbos: así se
+   descubrió que **el acceso va ENCIMA de la organización** (un rol se asigna dentro de una unidad) y
+   que tres tablas con nombre de catálogo —`role_assignment_relation_types`,
+   `process_definition_period_types`, `contract_origins`— son tablas de relación de su dueño.
+3. **`_deuda_escritura` lleva el motivo de cada tabla con dos escritores, y se cierra quitando
+   líneas.** Añadir una para callar la puerta es exactamente lo que no hay que hacer. Eran 6; la de
+   `telefono_verification_keys` se cerró el mismo día.
+
+⚠️ **El dominio `identidad` no es un tema, son tres módulos apilados** (catálogos en capa 0, la
+persona en la 1, el acceso en la 3). Sus 34 tablas no se entendían por eso.
+
+Si añades una tabla, el generador falla a propósito si no tiene módulo, para que no se quede fuera de
+los diagramas en silencio.
 
 Lo único que se escribe a mano es **`docs/02-dominio-datos/anotaciones.json`**: qué *significa*
 una tabla o una columna. Se inyecta como nota en el DBML, y el generador falla si nombras algo que

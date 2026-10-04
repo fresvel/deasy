@@ -13,7 +13,7 @@
 
 Project tareas {
   database_type: 'PostgreSQL'
-  Note: '''Tareas, entregables instanciados y documentos — Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos producidos.'''
+  Note: '''Tareas, entregables instanciados y documentos — Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables (`task_items`) y los documentos producidos.'''
 }
 
 Table "document_attachments" {
@@ -113,6 +113,24 @@ Table "document_workflow_observations" {
   }
 }
 
+Table "process_runs" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_id" int4
+  "run_mode" text [not null, check: `run_mode = ANY (ARRAY['automatic'::text, 'manual'::text])`, default: 'manual']
+  "source_run_id" int4
+  "created_by_user_id" int4
+  "reason" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'active'::text, 'completed'::text, 'cancelled'::text])`, default: 'active']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, status) [type: btree, name: "idx_process_runs_definition"]
+    term_id [type: btree, name: "idx_process_runs_term"]
+  }
+}
+
 Table "task_item_tenures" {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [not null]
@@ -199,9 +217,11 @@ Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_
 Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: cascade]
 Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
 Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
+Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
 Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
 Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
 Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
+Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> document_attachments   [identidad]
@@ -216,6 +236,9 @@ Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade
 //   persons -> document_workflow_observations   [identidad]
 //   signature_requests -> document_workflow_observations   [firmas]
 //   task_items -> fill_flow_templates   [plantillas]
+//   persons -> process_runs   [identidad]
+//   process_definition_versions -> process_runs   [procesos]
+//   terms -> process_runs   [procesos]
 //   document_versions -> signature_flow_instances   [firmas]
 //   task_items -> signature_flow_templates   [firmas]
 //   persons -> task_item_tenures   [identidad]
@@ -228,7 +251,6 @@ Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade
 //   units -> task_items   [organizacion]
 //   template_artifacts -> task_items   [plantillas]
 //   process_definition_versions -> tasks   [procesos]
-//   process_runs -> tasks   [procesos]
 //   units -> tasks   [organizacion]
 //   terms -> tasks   [procesos]
 //   persons -> task_item_tenures   [identidad]

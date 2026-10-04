@@ -1,152 +1,321 @@
 {
   "_readme": [
-    "Reparto de las tablas en diagramas por dominio.",
+    "EL MAPA DE MÓDULOS. Fuente única de «¿a qué parte del sistema pertenece esta tabla?».",
     "",
-    "Por qué no hay UN diagrama: un ERD de 67 tablas impresiona y no se lee. Ocho de 2 a 15",
-    "tablas se consultan de verdad.",
+    "Antes aquí solo había el reparto en diagramas. Había además otras tres clasificaciones vivas",
+    "—la carpeta de `backend/services` que escribe la tabla, el recurso RBAC de",
+    "`TABLE_RESOURCE_MAP` y los subgrupos de los dos `mapa-completo.md`— y se medió que coinciden",
+    "entre un 20 % y un 35 %: cuatro respuestas distintas a la misma pregunta. Esta es la que manda.",
     "",
-    "El generador FALLA si una tabla del esquema no aparece en ningún dominio, o si aparece",
-    "en dos. Así una tabla nueva no se queda fuera de los diagramas en silencio."
+    "Cada tabla está en exactamente UN módulo, y cada módulo declara DOS cosas:",
+    "",
+    "  dominio  el diagrama en el que se dibuja. Son 8 y no uno porque un ERD de 93 tablas",
+    "           impresiona y no se lee. Un dominio es la unión de sus módulos.",
+    "  capa     su sitio en el orden de dependencia, de 0 (abajo) a 7 (arriba).",
+    "",
+    "LA REGLA DE LAS CAPAS: una clave ajena solo puede apuntar a su propia capa o a una INFERIOR.",
+    "Medido el 2026-10-04 sobre las 182 claves ajenas del esquema: 103 bajan, 79 se quedan en su",
+    "capa, 0 suben. La puerta nace en verde, que es el momento barato de ponerla.",
+    "",
+    "Lo vigila `scripts/docs/check-mapa-modulos.mjs`, que falla si una tabla del esquema no está en",
+    "ningún módulo, si está en dos, si un módulo no declara capa, o si una clave ajena sube.",
+    "",
+    "POR QUÉ LAS CAPAS NO SON LOS DOMINIOS. Son dos preguntas distintas: el dominio agrupa por",
+    "tema (para poder leer un diagrama) y la capa ordena por dependencia (para poder razonar sobre",
+    "qué rompe qué). Cruzarlas enseña lo que ningún diagrama decía: el dominio `identidad` son en",
+    "realidad TRES cosas apiladas —los catálogos de los que depende todo el mundo, la persona, y el",
+    "acceso—, y por eso sus 34 tablas no se entendían. No es un dominio: son tres módulos."
   ],
+
+  "_capas": {
+    "0": "Catálogos y territorio. Lo que no cambia y de lo que depende todo el mundo.",
+    "1": "Identidad. La persona y lo que ES suyo: documentos, domicilio, teléfonos, correos.",
+    "2": "Organización. El organigrama: unidades, puestos y quién los ocupa.",
+    "3": "Acceso. Roles, permisos y credenciales. VA ENCIMA de la organización, y no al revés: un rol se asigna DENTRO de una unidad (`role_assignments.unit_id`, `role_assignments.derived_from_assignment_id`). Quien toque unidades puede romper permisos; nunca lo contrario.",
+    "4": "Declaración. Lo que alguien declara que debe ocurrir: procesos, reglas, periodos y plantillas.",
+    "5": "Ejecución. Lo que ocurre: la corrida, las tareas, los entregables y sus documentos.",
+    "6": "Flujos. Entrega y firma, con su rastro.",
+    "7": "Encima. Lo que se apoya en todo lo anterior y de lo que nada depende: conversación y empleo."
+  },
+
+  "_escritores_transversales": {
+    "_nota": "Dos piezas escriben tablas de CUALQUIER módulo, y es su trabajo. Están nombradas aquí para que la puerta de propiedad de escritura no las cuente como infracción. Añadir una tercera es una decisión, no un trámite.",
+    "services/system": "El bootstrap. Siembra la instalación entera, así que escribe 32 tablas de 8 módulos.",
+    "services/admin": "El editor genérico de `/admin`. Su contrato ES ser genérico: escribe cualquier tabla registrada en `sqlTables.js`."
+  },
+
+  "_deuda_escritura": {
+    "_nota": [
+      "Tablas que hoy escriben DOS sitios distintos. La puerta 'check-mapa-modulos.mjs' las deja pasar",
+      "porque ya existían cuando se puso, y FALLA con cualquiera nueva. Se cierran quitando su línea de",
+      "aquí --la puerta avisa cuando una ya sobra--, nunca añadiendo una para callarla.",
+      "",
+      "Eran SEIS el 2026-10-04. La de 'telefono_verification_keys' se cerró ese mismo día: el controller",
+      "de verificación invalidaba las llaves y la verificación por canal al cambiar el número, y los otros",
+      "dos caminos que cambian un número no lo hacían. Ahora lo hace 'TelefonoService.guardarPrincipal',",
+      "por donde pasan los tres. El antes/después está medido en 'TelefonoService.test.js'.",
+      "",
+      "Lo que está mal en cada una NO es la carpeta: es que la misma regla se aplica en dos sitios y uno",
+      "se queda atrás. El arreglo es llevar el invariante a donde no se pueda esquivar."
+    ],
+    "persons": "services/auth la escribe en UserRepository y services/mail en reset_password.js:121, las dos con 'UPDATE persons SET password_hash'. Cambiar la contraseña es una regla sola escrita dos veces.",
+    "emails": "services/users (EmailService:148) y services/mail (emailVerification.js:58) ejecutan el MISMO 'UPDATE emails SET verificado = 1'. Es el caso gemelo del teléfono y se cierra igual.",
+    "task_items": "services/tasks lo INSERTA al crear una tarea general y services/documents lo toca en el camino del documento. Son dos dueños de la misma identidad (tarea, plantilla, puesto).",
+    "document_versions": "controllers/users/user_controler.js:727 hace un UPDATE que corresponde a services/documents. Un controller es transporte no por norma, sino porque la regla queda fuera del sitio por donde pasan los demás caminos.",
+    "chat_notifications": "services/chat las crea en el camino normal y services/canales en AvisoDeCanalCaido.js:95. Aquí puede que la respuesta sea un módulo de avisos, no mover el aviso al chat."
+  },
+
   "identidad": {
     "titulo": "Identidad, personas y RBAC",
     "descripcion": "Quién es cada quien y qué puede hacer. `persons` es la identidad única del sistema; el expediente (dossier) cuelga de ella.",
-    "tablas": [
-      "persons",
-      "person_certificates",
-      "dossiers",
-      "dossier_items",
-      "roles",
-      "permissions",
-      "role_permissions",
-      "role_assignments",
-      "role_assignment_relation_types",
-      "actions",
-      "resources",
-      "cargos",
-      "cargo_role_map",
-      "email_verification_codes",
-      "password_reset_codes",
-      "direcciones",
-      "telefonos",
-      "canales_mensajeria",
-      "telefono_canales",
-      "emails",
-      "documentos_identidad",
-      "persona_autoidentificacion",
-      "accesos_sensibles",
-      "telefono_verification_keys",
-      "intentos_limitados",
-      "canales_bitacora",
-      "documentos_legales",
-      "consentimientos",
-      "generos",
-      "estados_civiles",
-      "autoidentificaciones_etnicas",
-      "tipos_discapacidad",
-      "parentescos",
-      "categorias_visa"
-    ]
+    "modulos": {
+      "cat_identidad": {
+        "capa": 0,
+        "titulo": "Catálogos de la persona y del RBAC",
+        "descripcion": "Listas cerradas que la persona y los permisos consumen. `cargos` es el catálogo de denominaciones de puesto; `actions` y `resources` son el vocabulario con el que se nombran los permisos.",
+        "tablas": [
+          "generos",
+          "estados_civiles",
+          "autoidentificaciones_etnicas",
+          "tipos_discapacidad",
+          "parentescos",
+          "categorias_visa",
+          "canales_mensajeria",
+          "actions",
+          "resources",
+          "cargos"
+        ]
+      },
+      "identidad": {
+        "capa": 1,
+        "titulo": "La persona",
+        "descripcion": "Lo que ES de la persona y la acompaña: su documento, dónde vive, por dónde se la localiza, qué declara de sí misma y su expediente.",
+        "tablas": [
+          "persons",
+          "documentos_identidad",
+          "persona_autoidentificacion",
+          "direcciones",
+          "telefonos",
+          "telefono_canales",
+          "emails",
+          "person_certificates",
+          "documentos_legales",
+          "consentimientos",
+          "accesos_sensibles",
+          "dossiers",
+          "dossier_items"
+        ]
+      },
+      "acceso": {
+        "capa": 3,
+        "titulo": "Acceso: roles, permisos y credenciales",
+        "descripcion": "Qué puede hacer cada quien, y las piezas de un intento de entrar: códigos de verificación, de reinicio y los límites de intentos.",
+        "tablas": [
+          "roles",
+          "permissions",
+          "role_permissions",
+          "role_assignments",
+          "role_assignment_relation_types",
+          "cargo_role_map",
+          "email_verification_codes",
+          "password_reset_codes",
+          "telefono_verification_keys",
+          "intentos_limitados",
+          "canales_bitacora"
+        ]
+      }
+    }
   },
+
   "organizacion": {
     "titulo": "Unidades, puestos y ocupación",
     "descripcion": "El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → cantón → parroquia.",
-    "tablas": [
-      "instituciones",
-      "units",
-      "unit_types",
-      "unit_relations",
-      "relation_unit_types",
-      "unit_positions",
-      "position_assignments",
-      "paises",
-      "provincias",
-      "cantones",
-      "parroquias",
-      "clases_parroquia",
-      "nomenclatura_territorial"
-    ]
+    "modulos": {
+      "cat_territorio": {
+        "capa": 0,
+        "titulo": "Territorio e institución",
+        "descripcion": "La cadena geográfica y la institución que la usa para decidir cuál es el documento nacional. `unit_types` y `relation_unit_types` son los vocabularios del organigrama.",
+        "tablas": [
+          "paises",
+          "provincias",
+          "cantones",
+          "parroquias",
+          "clases_parroquia",
+          "nomenclatura_territorial",
+          "instituciones",
+          "unit_types",
+          "relation_unit_types"
+        ]
+      },
+      "organizacion": {
+        "capa": 2,
+        "titulo": "El organigrama",
+        "descripcion": "Unidades, sus relaciones, los puestos que tienen y quién los ocupa en cada periodo.",
+        "tablas": [
+          "units",
+          "unit_relations",
+          "unit_positions",
+          "position_assignments"
+        ]
+      }
+    }
   },
+
   "procesos": {
     "titulo": "Motor de procesos",
-    "descripcion": "Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. `process_runs` es cada lanzamiento.",
-    "tablas": [
-      "processes",
-      "process_definition_versions",
-      "process_definition_series",
-      "process_definition_templates",
-      "process_definition_period_types",
-      "process_target_rules",
-      "process_runs",
-      "terms",
-      "term_types"
-    ]
+    "descripcion": "Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. El lanzamiento (`process_runs`) ya no se dibuja aquí: es ejecución y vive en el diagrama de tareas.",
+    "modulos": {
+      "cat_procesos": {
+        "capa": 0,
+        "titulo": "Catálogo de tipos de periodo",
+        "descripcion": "Una sola tabla, y se queda en este dominio a propósito: es el catálogo de `terms`, y llevárselo a otro diagrama separaría el catálogo de la tabla a la que sirve. Que un módulo tenga una tabla no es un defecto; es la descripción honesta.",
+        "tablas": [
+          "term_types"
+        ]
+      },
+      "declaracion_procesos": {
+        "capa": 4,
+        "titulo": "Lo que se declara: procesos y periodos",
+        "descripcion": "La definición versionada del proceso, a quién alcanza, con qué plantillas y en qué periodos. Nada de esto ha ocurrido todavía.",
+        "tablas": [
+          "processes",
+          "process_definition_series",
+          "process_definition_versions",
+          "process_definition_templates",
+          "process_definition_period_types",
+          "process_target_rules",
+          "terms"
+        ]
+      }
+    }
   },
+
   "plantillas": {
     "titulo": "Plantillas y entregables",
     "descripcion": "El modelo 'libro y ediciones': `deliverables` porta la identidad y `template_artifacts` las versiones. Aquí vive también la autoría del flujo de llenado.",
-    "tablas": [
-      "deliverables",
-      "template_artifacts",
-      "template_artifact_fields",
-      "template_seeds",
-      "fill_flow_templates",
-      "fill_flow_steps",
-      "fill_requests",
-      "document_fill_flows"
-    ]
+    "modulos": {
+      "declaracion_plantillas": {
+        "capa": 4,
+        "titulo": "Lo que se declara: plantillas",
+        "descripcion": "El entregable como obra (`deliverables`) y sus ediciones (`template_artifacts`), con los campos que la plantilla pide.",
+        "tablas": [
+          "deliverables",
+          "template_artifacts",
+          "template_artifact_fields",
+          "template_seeds"
+        ]
+      },
+      "flujo_entrega": {
+        "capa": 6,
+        "titulo": "Flujo de entrega",
+        "descripcion": "Quién llena qué y en qué orden: la plantilla del flujo, sus pasos, la instancia sobre una versión del documento y las peticiones de llenado.",
+        "tablas": [
+          "fill_flow_templates",
+          "fill_flow_steps",
+          "document_fill_flows",
+          "fill_requests"
+        ]
+      }
+    }
   },
+
   "tareas": {
     "titulo": "Tareas, entregables instanciados y documentos",
-    "descripcion": "Lo que se genera al lanzar un proceso: tareas, sus entregables (`task_items`) y los documentos producidos.",
-    "tablas": [
-      "tasks",
-      "task_items",
-      "task_item_tenures",
-      "document_versions",
-      "document_version_uploads",
-      "document_attachments",
-      "document_signatures",
-      "document_workflow_observations"
-    ]
+    "descripcion": "Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables (`task_items`) y los documentos producidos.",
+    "modulos": {
+      "ejecucion": {
+        "capa": 5,
+        "titulo": "Lo que ocurre",
+        "descripcion": "La corrida y lo que cuelga de ella. `process_runs` se dibuja aquí desde el 2026-10-04: estaba en el dominio `procesos`, que es la DECLARACIÓN, y un lanzamiento es ejecución — `tasks.process_run_id` apunta a él, no al revés.",
+        "tablas": [
+          "process_runs",
+          "tasks",
+          "task_items",
+          "task_item_tenures",
+          "document_versions",
+          "document_version_uploads",
+          "document_attachments"
+        ]
+      },
+      "flujo_rastro": {
+        "capa": 6,
+        "titulo": "Rastro del flujo sobre el documento",
+        "descripcion": "Lo que el paso de un flujo deja escrito sobre un documento: la firma puesta y la observación que devuelve el documento a su autor.",
+        "tablas": [
+          "document_signatures",
+          "document_workflow_observations"
+        ]
+      }
+    }
   },
+
   "firmas": {
     "titulo": "Firma electrónica",
     "descripcion": "El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.",
-    "tablas": [
-      "signature_flow_templates",
-      "signature_flow_steps",
-      "signature_flow_instances",
-      "signature_requests",
-      "signature_request_statuses",
-      "signature_statuses",
-      "signature_batch_jobs"
-    ]
+    "modulos": {
+      "cat_firmas": {
+        "capa": 0,
+        "titulo": "Catálogos de estado de firma",
+        "descripcion": "Los dos vocabularios de estado. Están en capa 0 porque nadie los escribe en caliente: se siembran y se leen.",
+        "tablas": [
+          "signature_statuses",
+          "signature_request_statuses"
+        ]
+      },
+      "flujo_firma": {
+        "capa": 6,
+        "titulo": "Flujo de firma",
+        "descripcion": "Quién firma qué y en qué orden, la instancia sobre una versión del documento, las peticiones y los lotes que se mandan al `signer`.",
+        "tablas": [
+          "signature_flow_templates",
+          "signature_flow_steps",
+          "signature_flow_instances",
+          "signature_requests",
+          "signature_batch_jobs"
+        ]
+      }
+    }
   },
+
   "chat": {
     "titulo": "Chat y notificaciones",
     "descripcion": "Mensajería en tiempo real sobre Socket.IO (EMQX/MQTT retirados). Conversaciones directas, de grupo y de hilo ligado a proceso.",
-    "tablas": [
-      "chat_conversations",
-      "chat_conversation_participants",
-      "chat_messages",
-      "chat_message_attachments",
-      "chat_message_reads",
-      "chat_notifications"
-    ]
+    "modulos": {
+      "chat": {
+        "capa": 7,
+        "titulo": "Conversación",
+        "descripcion": "Se apoya en la persona, en la organización y en los procesos —un hilo puede estar ligado a un proceso— y nada depende de ella.",
+        "tablas": [
+          "chat_conversations",
+          "chat_conversation_participants",
+          "chat_messages",
+          "chat_message_attachments",
+          "chat_message_reads",
+          "chat_notifications"
+        ]
+      }
+    }
   },
+
   "empleo": {
     "titulo": "Vacantes, postulaciones y contratos",
     "descripcion": "El ciclo de contratación: vacante, postulación, oferta y contrato, con el origen del contrato desglosado.",
-    "tablas": [
-      "vacancies",
-      "vacancy_visibility",
-      "aplications",
-      "offers",
-      "contracts",
-      "contract_origins",
-      "contract_origin_recruitment",
-      "contract_origin_renewal"
-    ]
+    "modulos": {
+      "empleo": {
+        "capa": 7,
+        "titulo": "Contratación",
+        "descripcion": "⚠️ Las ocho tablas están en el esquema y NINGUNA aparece en una línea de código (medido el 2026-10-04). Es modelo declarado sin implementar, no código muerto.",
+        "tablas": [
+          "vacancies",
+          "vacancy_visibility",
+          "aplications",
+          "offers",
+          "contracts",
+          "contract_origins",
+          "contract_origin_recruitment",
+          "contract_origin_renewal"
+        ]
+      }
+    }
   }
 }
