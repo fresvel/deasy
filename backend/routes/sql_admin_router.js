@@ -77,9 +77,13 @@ const draftArtifactUpload = multer({
 
 router.get("/meta", requireAnyRole(MANAGEMENT_ROLES), getSqlMeta);
 router.get("/stats/operation", requireAnyRole(MANAGEMENT_ROLES), getOperationStats);
-router.post("/template_seeds/sync", requireSqlAdminPermission({ resource: "templates", action: "update" }), syncTemplateSeeds);
-router.get("/template_seeds/:id/preview", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateSeedPreview);
-router.get("/template_seeds/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateSeedArchive);
+// Las tres rutas del CATALOGO DE GENERADORES. Llevaban `/template_seeds/` hasta el frente 23 (F3.1):
+// el segmento es el nombre de la tabla —el CRUD generico sirve `/admin/sql/:table` con el mismo
+// nombre—, asi que renombrar la tabla y dejar la ruta vieja habria dejado el nombre muerto en el
+// espacio de URLs y dos nombres para la misma cosa.
+router.post("/generadores_de_documento/sync", requireSqlAdminPermission({ resource: "templates", action: "update" }), syncTemplateSeeds);
+router.get("/generadores_de_documento/:id/preview", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateSeedPreview);
+router.get("/generadores_de_documento/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateSeedArchive);
 router.get("/template_artifacts/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateArtifactArchive);
 router.get("/template_artifacts/:id/schema", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSchema);
 router.patch("/template_artifacts/:id/active", requireSqlAdminPermission({ resource: "templates", action: "update" }), setTemplateArtifactActive);

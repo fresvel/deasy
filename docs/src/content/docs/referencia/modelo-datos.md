@@ -1,6 +1,6 @@
 ---
 title: Modelo de datos
-description: Las 93 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
+description: Las 92 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
 sidebar:
   order: 1
 ---
@@ -11,8 +11,8 @@ generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **<!-- gen:total-tablas -->93<!-- /gen --> tablas y <!-- gen:total-relaciones -->180<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
-de <!-- gen:total-tablas -->93<!-- /gen --> tablas impresiona y no se lee.
+Son **<!-- gen:total-tablas -->92<!-- /gen --> tablas y <!-- gen:total-relaciones -->179<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+de <!-- gen:total-tablas -->92<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
 Cada dominio muestra **solo las relaciones internas**. Las que salen hacia otros dominios están
@@ -62,7 +62,7 @@ cosas. **<!-- gen:tablas-dominio:procesos -->8<!-- /gen --> tablas.**
 ## Plantillas y entregables
 
 El modelo «libro y ediciones»: `deliverables` porta la identidad estable y `template_artifacts`
-las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:tablas-dominio:plantillas -->8<!-- /gen --> tablas.**
+las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:tablas-dominio:plantillas -->7<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de plantillas](/diagramas/plantillas.svg)
 
@@ -134,7 +134,7 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **capa**
 | **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
 
 **La regla es una sola: una clave ajena puede apuntar a su propia capa o a una inferior, nunca a una
-superior.** Medido sobre las <!-- gen:total-relaciones -->180<!-- /gen --> relaciones del esquema: 103 bajan de capa, 79 se quedan
+superior.** Medido sobre las <!-- gen:total-relaciones -->179<!-- /gen --> relaciones del esquema: 103 bajan de capa, 79 se quedan
 en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
 Dos cosas que las capas enseñan y que ningún diagrama por dominio decía:

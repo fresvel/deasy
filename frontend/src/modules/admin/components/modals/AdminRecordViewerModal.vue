@@ -232,7 +232,7 @@ import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
-const ARCHIVE_DOWNLOADABLE_TABLES = new Set(["template_artifacts", "template_seeds"]);
+const ARCHIVE_DOWNLOADABLE_TABLES = new Set(["template_artifacts", "generadores_de_documento"]);
 const MAX_RELATED_FIELDS = 6;
 const RELATED_FIELD_PRIORITY = {
   process_definition_versions: ["series_id", "definition_version", "name", "status", "effective_from"],

@@ -25,9 +25,11 @@ sola transacción**: si algo falla, no queda medio sembrado.
    criterio por el que ese proceso se reparte: por tipo de unidad, por cargo, o general.
 3. **Le da una configuración activa** (`process_definition_versions`, versión `1.0.0`, con
    `status = 'active'`), que es la versión concreta de sus reglas.
-4. **Publica una semilla** (`template_seeds`): el paquete base del que nacen las plantillas, con su
-   contrato de campos y su maqueta. En el mismo paso, los campos que declara el `schema.json` del seed
-   se vuelcan a `template_artifact_fields` — antes vivían solo como fichero en MinIO.
+4. **Registra el primer generador del catálogo** (`generadores_de_documento`, de `tipo = 'latex'`):
+   el paquete base del que nacen las plantillas, con su maqueta y su contrato de campos. Es la
+   «semilla» de siempre; lo que cambió en el frente 23 es que ya no es *el* mecanismo sino *uno* de
+   los generadores posibles. Los campos que declara su `schema.json` **se quedan en el fichero**: la
+   tabla que los reflejaba se retiró por no tener ningún consumidor.
 5. **Crea el entregable y su primera edición publicada** (`deliverables` + `template_artifacts` con
    `lifecycle_state = 'published'`). Aquí aparece la distinción que gobierna todo lo documental: el
    entregable es el *título del libro*, la edición es *una impresión concreta* de ese libro. A

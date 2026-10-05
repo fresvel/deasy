@@ -115,7 +115,7 @@ export const FK_TABLE_MAP = {
   process_definition_template_id: "process_definition_templates",
   fill_flow_template_id: "fill_flow_templates",
   fill_flow_step_id: "fill_flow_steps",
-  template_seed_id: "template_seeds",
+  generador_id: "generadores_de_documento",
   term_type_id: "term_types",
   term_id: "terms",
   task_id: "tasks",

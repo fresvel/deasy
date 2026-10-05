@@ -139,12 +139,11 @@
   },
   "plantillas": {
     "titulo": "Plantillas y entregables",
-    "descripcion": "El modelo 'libro y ediciones': `deliverables` porta la identidad y `template_artifacts` las versiones. Aquí vive también la autoría del flujo de llenado.",
+    "descripcion": "El modelo 'libro y ediciones': `deliverables` porta la identidad y `template_artifacts` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.",
     "tablas": {
       "deliverables": 4,
-      "template_artifact_fields": 4,
+      "generadores_de_documento": 4,
       "template_artifacts": 4,
-      "template_seeds": 4,
       "document_fill_flows": 6,
       "fill_flow_steps": 6,
       "fill_flow_templates": 6,

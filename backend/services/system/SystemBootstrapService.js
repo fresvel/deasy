@@ -21,10 +21,6 @@ import {
   ROLE_PERMISSION_MATRIX,
   permissionCode
 } from "../../config/rbacCatalog.js";
-import {
-  replaceSchemaFieldsForArtifact,
-  schemaFieldListFromJsonSchema
-} from "../admin/templates/schemaFieldRows.js";
 
 const BOOTSTRAP_UNIT_TYPE_NAME = "Sistema";
 const BOOTSTRAP_UNIT_NAME = "Raiz del sistema";
@@ -561,7 +557,7 @@ const ensureBootstrapUnit = async (connection) => {
 // Proceso por defecto 'default': paraguas de tareas libres / no clasificadas.
 // Su plantilla base NACE DE UN SEED real (contrato latex/jinja2 + schema), empaquetado dentro del backend
 // en services/system/seeds/informe-general. El bootstrap lo publica a MinIO (catálogo Seeds/ + artifact
-// instanciado System/) y registra la fila template_seeds + template_artifacts. El flujo de entrega queda
+// instanciado System/) y registra la fila generadores_de_documento + template_artifacts. El flujo de entrega queda
 // simple (1 paso: el dueño llena) y la firma ad-hoc, para ser robusto en instalación virgen.
 const DEFAULT_PROCESS_SLUG = "default";
 const DEFAULT_PROCESS_NAME = "Proceso por defecto";
@@ -786,27 +782,31 @@ export const ensureDefaultProcess = async (connection) => {
   }
   const definitionId = Number(definition.id);
 
-  // 4. seed base (catálogo). El template nace de este seed (contrato latex/jinja2 + schema).
+  // 4. EL PRIMER GENERADOR DEL CATALOGO (frente 23, F3.1). Esta fila era «la semilla» —el paquete
+  //    latex/jinja2 que se copia— y sigue siendo exactamente eso; lo que cambio es que ahora es UNO
+  //    de los generadores posibles y no EL mecanismo. `tipo = 'latex'` y `source_path` apuntando al
+  //    catalogo de MinIO; `destino` queda NULL porque un generador latex no llama a nadie.
   let seedRow = await fetchOne(
     connection,
-    "SELECT id FROM template_seeds WHERE seed_code = ? LIMIT 1",
+    "SELECT id FROM generadores_de_documento WHERE code = ? LIMIT 1",
     [BASE_SEED_CODE]
   );
   if (!seedRow) {
     const [r] = await connection.query(
-      `INSERT INTO template_seeds
-        (seed_code, display_name, description, seed_type, source_path, preview_path, is_active)
-       VALUES (?, ?, ?, ?, ?, NULL, 1)`,
-      [BASE_SEED_CODE, BASE_SEED_DISPLAY, "Seed base del sistema (informe general).", BASE_SEED_TYPE, SEEDS_CATALOG_PREFIX]
+      `INSERT INTO generadores_de_documento
+        (code, nombre, description, tipo, destino, source_path, preview_path, is_active)
+       VALUES (?, ?, ?, ?, NULL, ?, NULL, 1)`,
+      [BASE_SEED_CODE, BASE_SEED_DISPLAY, "Generador base del sistema (informe general, LaTeX).", BASE_SEED_TYPE, SEEDS_CATALOG_PREFIX]
     );
     seedRow = { id: r.insertId };
   }
-  const templateSeedId = Number(seedRow.id);
+  const generadorId = Number(seedRow.id);
 
-  // 5. entregable base (deliverable) + su versión publicada. Modelo libro/ediciones: identidad, scope
-  //    y semilla viven en `deliverables`; la versión solo guarda el storage MinIO. A QUE LINEA SIRVE
-  //    no se guarda aquí desde el 2026-10-04 (frente 23, F1.2): lo dice su vínculo en
-  //    `process_definition_templates`, que es único por versión de plantilla.
+  // 5. entregable base (deliverable) + su versión publicada. Modelo libro/ediciones: la identidad y el
+  //    scope viven en `deliverables`; la versión guarda el storage MinIO y QUIÉN la produce
+  //    (`generador_id`). A QUE LINEA SIRVE no se guarda en ninguna de las dos desde el 2026-10-04
+  //    (frente 23): lo dice su vínculo en `process_definition_templates`, y lo impone el disparador
+  //    `trg_pdt_linea_unica`.
   let deliverable = await fetchOne(
     connection,
     "SELECT id FROM deliverables WHERE code = ? LIMIT 1",
@@ -815,13 +815,12 @@ export const ensureDefaultProcess = async (connection) => {
   if (!deliverable) {
     const [r] = await connection.query(
       `INSERT INTO deliverables
-        (code, display_name, description, template_scope, template_seed_id, owner_person_id)
-       VALUES (?, ?, ?, 'official', ?, NULL)`,
+        (code, display_name, description, template_scope, owner_person_id)
+       VALUES (?, ?, ?, 'official', NULL)`,
       [
         DEFAULT_TEMPLATE_CODE,
         BASE_SEED_DISPLAY,
         "Plantilla base del proceso por defecto, instanciada del seed informe-general.",
-        templateSeedId,
       ]
     );
     deliverable = { id: r.insertId };
@@ -838,49 +837,24 @@ export const ensureDefaultProcess = async (connection) => {
     const [r] = await connection.query(
       `INSERT INTO template_artifacts
         (deliverable_id, storage_version, lifecycle_state, base_object_prefix,
-         available_formats, schema_object_key, is_active)
+         available_formats, generador_id, is_active)
        VALUES (?, '1.0.0', 'published', ?, ?, ?, 1)`,
       [
         deliverableId,
         DEFAULT_TEMPLATE_PREFIX,
         JSON.stringify(availableFormats),
-        `${DEFAULT_TEMPLATE_PREFIX}schema.json`,
+        generadorId,
       ]
     );
     artifact = { id: r.insertId };
   }
   const artifactId = Number(artifact.id);
 
-  // 4bis. LOS CAMPOS DEL SEED, A LA BASE (sub-paso S6 del §0.4 del plan maestro).
-  //
-  //       El `INSERT` de arriba guarda el PUNTERO al `schema.json` y nada mas, así que los 18 campos
-  //       que el seed base declara —incluidos los tres `signatures.*.token` que el generador tendra
-  //       que colocar— vivian SOLO como fichero de MinIO. Es la misma forma del `BASE_META_YAML` que
-  //       costo el frente 0: contenido del modelo que entra por un literal y se auto-replica al
-  //       versionar por copia binaria.
-  //
-  //       SOLO SI NO HAY NINGUNA FILA, no `if (!artifact)`. Dos motivos: cubre las bases creadas
-  //       ANTES de este commit (el artifact ya existe y sus campos no), y no pisa lo que el admin
-  //       haya autorado despues desde la web — el mismo criterio con el que `publishBaseSeedAssets`
-  //       respeta un `main.tex.j2` ya editado.
-  //
-  //       El seed se lee del disco, NO de MinIO: es la misma fuente que `publishBaseSeedAssets`
-  //       acaba de publicar unas lineas mas abajo, y leerlo de MinIO ataria el bootstrap de la base
-  //       al orden de publicacion. Un seed ausente o ilegible PROPAGA, igual que el fallo de
-  //       publicacion: dejar la tabla vacia en silencio es justo lo que este sub-paso viene a quitar.
-  const yaTieneCampos = await fetchOne(
-    connection,
-    "SELECT 1 AS hay FROM template_artifact_fields WHERE template_artifact_id = ? LIMIT 1",
-    [artifactId]
-  );
-  if (!yaTieneCampos) {
-    const seedSchemaPath = path.join(BASE_SEED_DIR, "schema.json");
-    const seedSchema = JSON.parse(await fs.promises.readFile(seedSchemaPath, "utf8"));
-    await replaceSchemaFieldsForArtifact(connection, {
-      artifactId,
-      fields: schemaFieldListFromJsonSchema(seedSchema),
-    });
-  }
+  // AQUI SE VOLCABAN LOS 18 CAMPOS del `schema.json` del seed a `template_artifact_fields`
+  //       (sub-paso S6 del §0.4). Se fue con la tabla (frente 23, F4.1): su unico lector en todo el
+  //       sistema era el codigo que la copiaba a la version siguiente. Los 18 campos siguen donde
+  //       siempre estuvieron de verdad —el `schema.json` que `publishBaseSeedAssets` sube unas lineas
+  //       mas abajo—, y de ahi los lee el editor de `/admin`.
 
   // 5bis. publica en MinIO el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado.
   //       Idempotente; si la publicación falla (MinIO caído, seed no empaquetado) se PROPAGA el error para

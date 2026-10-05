@@ -6,14 +6,19 @@ hay una masa de puro enredo que necesita aclararse y simplificarse a un modelo c
 Este plan **no se ejecuta hasta que el dueño lo apruebe**. Lo que sigue es lo medido, los dos errores
 que cometí por el camino, y la propuesta.
 
-## Estado general — **5 de 9**
+## Estado general — **9 de 9**
 
 | Fase | Tareas | Estado |
 |---|---|---|
 | **F1** · La regla de pertenencia, en la base | F1.1 ✅ · F1.2 ✅ · F1.3 ✅ | ✅ **3 de 3** |
 | **F2** · Las tres copias del lado entregado | F2.1 ✅ · F2.2 ✅ | ✅ **2 de 2** |
-| **F3** · La semilla pasa a ser catálogo de generadores | F3.1 ⬜ · F3.2 ⬜ | ⬜ **0 de 2** |
-| **F4** · Los campos que nadie consume | F4.1 ⬜ · F4.2 ⬜ | ⬜ **0 de 2** |
+| **F3** · La semilla pasa a ser catálogo de generadores | F3.1 ✅ · F3.2 ✅ | ✅ **2 de 2** |
+| **F4** · Los campos que nadie consume | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
+
+**Las cuatro fases se ejecutaron el 2026-10-04**, en dos ramas paralelas: F3 y F4 por un lado —no
+tocan el eje de la pertenencia— y F1 y F2 por el otro. La integración de las dos se hizo a mano:
+once ficheros en conflicto, y en tres de ellos **la resolución correcta no era ninguna de las dos
+ramas** sino la suma de los dos borrados.
 
 ✅ **F1.1 se cerró con un DISPARADOR, no con un índice** (decisión del dueño del 2026-10-04, después
 de que el índice del plan se probara y rompiera el clon). La sección siguiente guarda la medición,
@@ -263,7 +268,13 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
 
   generadores_de_documento               processes
   code · nombre · tipo · destino              ▲
-  «QUIÉN produce el PDF»                      │ (derivado por el vínculo)
+  source_path · preview_path                  │ (derivado por el vínculo)
+  «QUIÉN produce el PDF»                      │
+        │                                     │
+        │                               deliverables
+        │                               code · display_name · description
+        │                               owner_person_id · template_scope
+        │                               (las 3 columnas de dueño: FUERA) ──┘
         │                                     │
         │ generador_id                        │
         ▼                                     │
@@ -279,10 +290,12 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
   lifecycle_state                     item_mode · sort_order            rompe el clon
   base_object_prefix
   content_hash
-  (schema_object_key: FUERA)
+  generador_id                   ← NUEVA. Era deliverables.template_seed_id
+  (schema_object_key: FUERA)     ← derivable de base_object_prefix
 
   (template_artifact_fields: FUERA)
   (template_seeds: pasa a ser generadores_de_documento)
+  (deliverables.template_seed_id: FUERA — se movió a la edición, no se duplicó)
 ```
 
 ### El lado entregado
@@ -379,22 +392,60 @@ se irán programando desde los Word.
 
 | Tarea | Qué entrega |
 |---|---|
-| **F3.1** | `template_seeds` → `generadores_de_documento`: `code`, `nombre`, `tipo`, destino (cola/endpoint), `is_active` |
-| **F3.2** | `template_artifacts.generador_id` apunta ahí. Sustituye a `render_engine`, que hoy es texto libre que nadie rellena |
+| **F3.1** | ✅ `template_seeds` → `generadores_de_documento`: `code`, `nombre`, `tipo` (`latex`\|`servicio`, con CHECK), `destino`, `source_path`, `preview_path`, `description`, `is_active` |
+| **F3.2** | ✅ `template_artifacts.generador_id` apunta ahí, y **sustituye a `deliverables.template_seed_id`**, que se retira |
+
+⚠️ **AQUÍ DECÍA QUE `generador_id` SUSTITUÍA A `render_engine`, Y ERA FALSO.** Corregido al
+ejecutar, el 2026-10-04. `render_engine` **no está en `template_artifacts`**: está en
+`document_versions`, y significa otra cosa — *con qué motor se renderizó ESTA ronda*, que es un hecho
+de la ejecución y no una declaración de la plantilla. Son dos columnas distintas en dos tablas
+distintas, y **`render_engine` NO se toca: queda fuera de este frente.** Lo fija una prueba en
+`backend/database/postgres_schema.test.js` para que la confusión no vuelva por inercia.
+
+⚠️ **Y el diagrama de ANTES/DESPUÉS de más arriba se contradecía con esta tabla**: dibujaba
+`generador_id` colgando de `deliverables` (donde estaba `template_seed_id`) mientras el texto lo
+ponía en `template_artifacts`. Se resolvió **a favor del texto**, con un argumento y no por
+desempate: `sqlTables.js` ya listaba «Semilla» como campo de `template_artifacts` y
+`SqlAdminService` lo traía por JOIN desde `deliverables` — o sea que la fachada del admin ya decía
+que el sitio del dato era la edición. **Es un MOVIMIENTO, no una suma**: la columna vieja se retira
+en el mismo commit, para no dejar dos punteros al mismo catálogo.
 
 ⚠️ **La semilla LaTeX no se borra**: sigue siendo un generador válido, el primero del catálogo. Lo que
 cambia es que deja de ser **el** mecanismo para ser **uno**.
+
+**Qué se conservó de la semilla, y por qué** (ejecutado el 2026-10-04):
+
+| Columna | Por qué se queda |
+|---|---|
+| `source_path` | Es el prefijo de MinIO del proyecto LaTeX, y `_materializeDraftFormats` lo necesita para copiar `src/`, `defaults.yaml` y `render/` al crear una plantilla. Sin él no se puede crear ninguna. **Pasa a NULL**: un generador `servicio` no copia paquete |
+| `preview_path` | Lo rellena el descubrimiento (`syncTemplateSeeds`) y lo sirven las rutas de vista previa y descarga. Tiene productor y lector |
+| `description` | Se edita y se lista en `/admin`. Conserva su nombre a propósito: se renombra lo que **cambia de significado** (`seed_code`, `display_name`, `seed_type`), no lo que sigue queriendo decir lo mismo |
+
+Y `destino` es NULL por el mismo motivo por el que `source_path` lo es: son **las dos mitades
+excluyentes** del catálogo. Un `latex` trae paquete y no llama a nadie; un `servicio` tiene cola o
+endpoint y no trae paquete. Se guarda como **texto libre** y no como dos columnas porque hoy no hay
+ni un consumidor, y partirla antes de saber cómo se invoca sería inventar la forma del contrato por
+adelantado.
 
 ### F4 · Los campos que nadie consume — 0 de 2
 
 | Tarea | Qué entrega |
 |---|---|
-| **F4.1** | Fuera `template_artifact_fields` (18 filas por plantilla que solo se copian a sí mismas) y `schemaFieldRows.js` |
-| **F4.2** | Fuera `template_artifacts.schema_object_key`, que apunta al `schema.json` copiado |
+| **F4.1** | ✅ Fuera `template_artifact_fields` (18 filas por plantilla que solo se copian a sí mismas) y `schemaFieldRows.js` |
+| **F4.2** | ✅ Fuera `template_artifacts.schema_object_key`, que apunta al `schema.json` copiado |
+
+El `schema.json` de MinIO **sigue existiendo** y el editor de `/admin` lo sigue leyendo y
+escribiendo: lo que se fue es su REFLEJO en la base. Y la clave del fichero se **deriva** de
+`base_object_prefix` (`schemaObjectKeyForPrefix`, en `services/admin/templates/artifacts.js`), que es
+exactamente lo que los dos productores de la columna escribían.
 
 ⚠️ **El día que un generador tenga que decirle a la web qué preguntar, ese contrato tendrá que vivir
 en algún sitio.** Quitar la tabla ahora es correcto —no está haciendo ese trabajo—; volver a
-necesitarlo será **otro diseño**, no esta tabla resucitada.
+necesitarlo será **otro diseño**, no esta tabla resucitada. El argumento de por qué no es la misma
+tabla, escrito en el esquema donde ella estaba: **el modelo cambió debajo**. Ahora el productor es
+`generadores_de_documento`, no una semilla que se copia, así que el contrato cuelga del **generador**
+—uno por servicio, estable— y no de **cada edición de cada plantilla**, que es exactamente la copia
+que no pagaba nada.
 
 ---
 
@@ -469,3 +520,26 @@ que nadie provoca no es una protección sino una intención.
 | `admin_crud :: list_task_items` | `itemKeys` pierde `template_artifact_id` | el CRUD genérico proyecta las columnas de `sqlTables.js`, y esa columna ya no está |
 | `execution :: sql_task_items` | idéntico al anterior | el mismo contrato, medido sobre datos poblados |
 | `artifact_draft :: reintento_tras_fallo` | `deliverable_owner` pierde `owner_process_id: 1` y `owner_variation_key: "general"`, gana `template_scope: "official"` y `tiene_vinculo: "1"` | las dos columnas no existen. La prueba vigila que un reintento tras una creación fallida **no reutilice una fila sin pertenencia**, y esa pregunta se contesta ahora por el vínculo — en 0/1 y no con un id, para no atar el golden a una secuencia |
+
+| **F3.1** | `template_seeds` → `generadores_de_documento`, con `tipo` bajo `CHECK` y `destino`. La semilla LaTeX queda como su primera fila, sembrada por el bootstrap | `postgres_schema.sql`; 4 pruebas nuevas en `postgres_schema.test.js`; `validation.js` pasa a exigir identidad siempre y paquete sólo al tipo `latex`; **las 3 rutas del catálogo renombradas** (`/admin/sql/generadores_de_documento/{sync,:id/preview,:id/download}`) con su frontend; golden `admin_crud :: list_generadores_de_documento` capturado y `list_template_seeds` retirado | 2026-10-04 |
+| **F3.2** | `template_artifacts.generador_id` con su FK, **movida** desde `deliverables.template_seed_id` | `postgres_schema.sql`; `sqlTables.js` (de campo de fachada a columna física) y `SqlAdminService` (fuera del `TA_DELIV_COLS`); el generador se **hereda** al versionar y al bifurcar; goldens `artifact_draft` y `user_workspace :: panel_usuario` movidos | 2026-10-04 |
+| **F4.1** | Fuera `template_artifact_fields`, `schemaFieldRows.js` (+ su test) y la suite `zzzzzzzz_schema_fields_db` (+ su golden) | 3 lectores resueltos: `templateArtifact.js` (copia al versionar), `templateLifecycle.js` (escritura doble + copia al bifurcar) y `SystemBootstrapService.js` (volcado de los 18 campos del seed). **Epitafio en el esquema** con el por qué y dónde vivirá el contrato el día que haga falta; 8 pruebas de la tabla sustituidas por 3 en negativo | 2026-10-04 |
+| **F4.2** | Fuera `template_artifacts.schema_object_key` | `schemaObjectKeyForPrefix` en `artifacts.js` deriva la clave del prefijo; `getTemplateArtifactSchema` la usa; los 4 `INSERT`/`UPDATE` que la escribían dejan de hacerlo | 2026-10-04 |
+
+**Verificación de F3+F4** (pila C, 2026-10-04): `test:unit` 879/879 · `test:char:run` 320/320 ·
+`check:imports` OK (167 ficheros) · `check:sql-comments` OK (272 ficheros) · `check:sql-aliases` OK
+(548 consultas) · `check-mapa-tablas` OK (92 tablas) · `check-doc-modelo` OK (92 tablas, 837 nombres)
+· `check-enlaces-internos` OK (0 roto / 54 páginas) · `check-diagramas-coherentes` OK (94 tablas).
+
+**Goldens que se movieron, y por qué** — ninguno por sorpresa, los cuatro son la forma de la fila:
+
+| Golden | Qué cambió |
+|---|---|
+| `admin_crud :: list_template_artifacts` | `itemKeys`: entra `generador_id`, salen `schema_object_key` y `template_seed_id` |
+| `admin_crud :: list_generadores_de_documento` | Golden NUEVO (y se borra `list_template_seeds`): la tabla cambió de nombre y de columnas |
+| `artifact_draft` (3 casos) | La respuesta del borrador devuelve `generador_id` en vez de `template_seed_id`, y ya no devuelve `schema_object_key`. **El `content_hash` NO se movió**, que es la prueba de que el paquete de MinIO es idéntico |
+| `user_workspace :: panel_usuario` | El panel servía `tar_dl.template_seed_id`; ahora sirve `tar.generador_id` |
+
+**Lo que NO se tocó, a propósito:** `document_versions.render_engine` (otra tabla, otro significado
+— ver el aviso de F3.2), el `schema.json` de MinIO y su editor de `/admin`, y todo el eje de la
+pertenencia que F1/F2 esperan.

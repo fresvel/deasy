@@ -856,7 +856,7 @@ const addSiblingTemplate = (tpl) => {
   const proc = rawProcessById(cfg.process_id);
   emit("add-template", { definition: { ...cfg, process_name: proc?.name } });
 };
-// Entregable: crear uno nuevo a partir del actual (clona nombre/semilla/campos/flujos en modo creación).
+// Entregable: crear uno nuevo a partir del actual (clona nombre/generador/campos/flujos en modo creación).
 const cloneTemplate = (tpl) => {
   if (!tpl?.template_artifact_id) return;
   closeDetail();

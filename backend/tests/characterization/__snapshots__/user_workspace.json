@@ -797,6 +797,7 @@
                 }
               ],
               "end_date": "<normalized>",
+              "generador_id": "<normalized>",
               "id": "<normalized>",
               "item_mode": "routed",
               "origin_kind": "user_added",
@@ -816,7 +817,6 @@
               "task_id": "<normalized>",
               "template_artifact_id": "<normalized>",
               "template_artifact_name": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
-              "template_seed_id": "<normalized>",
               "title": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
               "total_fill_count": 1,
               "unit_label": "Carrera de Tecnologías de la Información",

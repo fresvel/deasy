@@ -25,7 +25,7 @@ No hay `ALTER TABLE` evolutivo, y es deliberado desde el 2026-08-24. Antes los h
 | **Corrida (run)**    | El acto de *lanzar* la configuración en un periodo. Genera las tareas.                                                                                    | `process_runs`                             |
 | **Tarea**            | La instancia del proceso para un ámbito concreto (una unidad, un periodo). Es el contenedor.                                                              | `tasks`                                    |
 | **Entregable**       | Cada documento concreto a producir dentro de la tarea, con responsable, vencimiento y estado.                                                             | `task_items`                               |
-| **Plantilla**        | El *molde* del documento: schema de campos + cuerpo (Jinja2/LaTeX u ofimatico) + formatos, versionado y almacenado en MinIO. **Son tres tablas, no una**: ver abajo. | `deliverables` + `template_artifacts` + `process_definition_templates` |
+| **Plantilla**        | El *molde* del documento: su `schema.json` de campos + cuerpo (Jinja2/LaTeX u ofimatico) + formatos, versionado y almacenado en MinIO. **Son tres tablas, no una**: ver abajo. | `deliverables` + `template_artifacts` + `process_definition_templates` |
 | **Flujo de entrega** | Cadena de pasos “quien llena y aprueba el documento antes de firmarlo”.                                                                                   | `fill_flow_*` / `fill_requests`            |
 | **Firma**            | Firma electronica PAdES sobre el PDF, con certificado `.p12` del firmante.                                                                                | `signature_flow_*` / `document_signatures` |
 | **Dossier**          | El **expediente o CV personal** (titulos, experiencia, publicaciones). *No* es el expediente de un proceso.                                               | `dossiers` + `dossier_items`               |
@@ -41,9 +41,9 @@ Esta es la confusion que mas tiempo cuesta en este repositorio, y **no es sinoni
 | `process_definition_template` | El **vinculo** entre una configuracion de proceso y una edicion. **Aqui vive `item_mode`**: por eso la misma plantilla puede emitirse de tres maneras segun a que proceso este enlazada. | `process_definition_templates` |
 | `task_item` | La **instancia con dueno**: lo que una persona concreta tiene que entregar. Es la tarjeta que el usuario ve en su Home. | `task_items` |
 
-Y un quinto eslabon antes de todos, la `template_seed`: la plantilla de fabrica de la que nace el entregable. La cadena completa, de molde a documento firmado:
+Y un quinto eslabon al lado de la edicion, el **generador** (`generadores_de_documento`): **quien produce el PDF**. Lo declara `template_artifacts.generador_id`, y de `tipo = 'latex'` es tambien la plantilla de fabrica cuyo paquete se copia al crear el entregable. Se llamaba `template_seed` y era *el* mecanismo; desde el frente 23 es *uno* de los generadores posibles. La cadena completa, de molde a documento firmado:
 
-`seed` → `deliverable` → `template_artifact` → (vinculo) → `task_item` → `document_version` → `document_version_upload`
+`deliverable` → `template_artifact` (← `generador`) → (vinculo) → `task_item` → `document_version` → `document_version_upload`
 
 :::caution[Y “documento” tampoco es lo que parece]
 

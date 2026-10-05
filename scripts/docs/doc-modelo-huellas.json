@@ -71,7 +71,8 @@
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
-      "orden-de-lectura.md"
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
     ]
   },
   "cargo_role_map": {
@@ -241,7 +242,7 @@
     ]
   },
   "deliverables": {
-    "huella": "684abc78688d6822",
+    "huella": "e71c4f1baa778a5b",
     "paginas": [
       "confusiones.md",
       "datos/index.md",
@@ -432,7 +433,8 @@
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
-      "orden-de-lectura.md"
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
     ]
   },
   "fill_flow_steps": {
@@ -472,6 +474,19 @@
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "generadores_de_documento": {
+    "huella": "82d7b52a4bef2c3c",
+    "paginas": [
+      "datos/index.md",
+      "datos/modos-y-plantillas.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/siembra.md",
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md"
     ]
@@ -886,6 +901,7 @@
       "datos/firmas-y-dominios.md",
       "datos/modos-y-plantillas.md",
       "modelo/documento.md",
+      "modelo/entregable-y-ediciones.md",
       "modelo/flujo-de-firma.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
@@ -1040,19 +1056,8 @@
       "orden-de-lectura.md"
     ]
   },
-  "template_artifact_fields": {
-    "huella": "acaed1294b0d5e94",
-    "paginas": [
-      "modelo/entregable-y-ediciones.md",
-      "modelo/mapa-completo.md",
-      "modelo/mapa-con-campos.md",
-      "modelo/siembra.md",
-      "orden-de-lectura.md",
-      "referencia/campos-proceso-documento.md"
-    ]
-  },
   "template_artifacts": {
-    "huella": "2b40760118360400",
+    "huella": "0a5f1983ffef6a87",
     "paginas": [
       "arquitectura-y-patrones.md",
       "confusiones.md",
@@ -1070,18 +1075,6 @@
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md",
       "referencia/modelo-datos.md"
-    ]
-  },
-  "template_seeds": {
-    "huella": "8d0dd98163869a17",
-    "paginas": [
-      "datos/modos-y-plantillas.md",
-      "modelo/entregable-y-ediciones.md",
-      "modelo/mapa-completo.md",
-      "modelo/mapa-con-campos.md",
-      "modelo/siembra.md",
-      "orden-de-lectura.md",
-      "referencia/campos-proceso-documento.md"
     ]
   },
   "term_types": {

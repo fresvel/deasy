@@ -204,7 +204,7 @@ const LIST_TABLES = [
   "cargos", "unit_positions", "position_assignments", "term_types", "terms",
   "processes", "process_definition_series", "process_definition_versions",
   "process_target_rules", "process_definition_templates",
-  "template_seeds", "template_artifacts",
+  "generadores_de_documento", "template_artifacts",
   "tasks", "task_items", "task_item_tenures", "document_versions",
   "roles", "permissions", "role_permissions", "cargo_role_map",
 ];

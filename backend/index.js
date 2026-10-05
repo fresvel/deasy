@@ -218,7 +218,7 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // corre desde `POST /system/bootstrap/initialize` — y ese endpoint **se niega con 409 en cuanto la
 // instalación deja de ser virgen**. Así que en un entorno ya bootstrapeado NO HABÍA NINGÚN CAMINO
 // que llevara una semilla actualizada a MinIO: ni reiniciar, ni desplegar (`apply-env.sh` solo hace
-// `pull` + `up -d`), ni el `POST /template_seeds/sync`, que va en la dirección contraria (lee de
+// `pull` + `up -d`), ni el `POST /generadores_de_documento/sync`, que va en la dirección contraria (lee de
 // MinIO y escribe en Postgres, así que con el catálogo viejo solo consolida lo viejo).
 //
 // Y no era latente: crear una plantilla desde una semilla **descarga de MinIO**

@@ -12,7 +12,7 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
 3.  **`amqplib` esta en `package.json` pero no se importa en ningun sitio.** Es una dependencia muerta: la integración real con RabbitMQ es por su API HTTP de gestion.
 
-4.  **`sqlTables.js` declara campos de `template_artifacts` que ya no son columnas de esa tabla** (`template_code`, `display_name`, `description`, `template_scope`, `template_seed_id`, `owner_person_id`). **No es un bug**: `SqlAdminService` los rutea por JOIN a `deliverables`, exponiendolos con los mismos nombres (`d.code AS template_code`). Es una fachada deliberada.
+4.  **`sqlTables.js` declara campos de `template_artifacts` que ya no son columnas de esa tabla** (`template_code`, `display_name`, `description`, `template_scope`, `owner_person_id`). **No es un bug**: `SqlAdminService` los rutea por JOIN a `deliverables`, exponiendolos con los mismos nombres (`d.code AS template_code`). Es una fachada deliberada. Ojo: **`generador_id` ya NO es parte de esa fachada** — estaba en la lista hasta el frente 23 y hoy es columna física de `template_artifacts`, que era el sitio al que la fachada apuntaba.
 
 5.  **“Entregable” significa dos cosas** según el contexto: `task_items` (la instancia) y `deliverables` (la identidad de la plantilla).
 

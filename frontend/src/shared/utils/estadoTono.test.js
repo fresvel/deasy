@@ -420,7 +420,7 @@ describe("los 32 booleanos del esquema, cada uno con su eje", () => {
     "unit_types.is_active", "relation_unit_types.is_active", "units.is_active",
     "processes.is_active", "process_definition_series.is_active", "process_target_rules.is_active",
     "term_types.is_active", "terms.is_active", "process_definition_period_types.is_active",
-    "template_seeds.is_active", "template_artifacts.is_active", "persons.is_active",
+    "generadores_de_documento.is_active", "template_artifacts.is_active", "persons.is_active",
     "roles.is_active", "cargos.is_active", "unit_positions.is_active",
     "fill_flow_templates.is_active", "signature_statuses.is_active",
     "signature_request_statuses.is_active", "signature_flow_templates.is_active",

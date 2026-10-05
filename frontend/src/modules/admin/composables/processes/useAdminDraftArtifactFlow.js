@@ -33,7 +33,7 @@ export function useAdminDraftArtifactFlow({
       pptx: ""
     };
     draftArtifactForm.value = {
-      template_seed_id: "",
+      generador_id: "",
       display_name: "",
       description: "",
       process_definition_id: "",
@@ -68,10 +68,10 @@ export function useAdminDraftArtifactFlow({
 
   const loadDraftArtifactSeedOptions = async () => {
     try {
-      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("template_seeds"), {
+      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("generadores_de_documento"), {
         params: {
           filter_is_active: 1,
-          orderBy: "display_name",
+          orderBy: "nombre",
           order: "asc",
           limit: 500
         }
@@ -97,7 +97,7 @@ export function useAdminDraftArtifactFlow({
     if (row) {
       const availableFormats = normalizeAvailableFormats(row.available_formats) || {};
       draftArtifactForm.value = {
-        template_seed_id: row.template_seed_id ? String(row.template_seed_id) : "",
+        generador_id: row.generador_id ? String(row.generador_id) : "",
         display_name: row.display_name ? String(row.display_name) : "",
         description: row.description ? String(row.description) : "",
         storage_version: row.storage_version ? String(row.storage_version) : "",
@@ -130,7 +130,7 @@ export function useAdminDraftArtifactFlow({
       // Crear A PARTIR DE otra plantilla: modo creación (editId vacío) con datos del origen precargados.
       // No copia los documentos de referencia (binarios en MinIO): el autor los vuelve a adjuntar.
       draftArtifactForm.value = {
-        template_seed_id: cloneFrom.template_seed_id ? String(cloneFrom.template_seed_id) : "",
+        generador_id: cloneFrom.generador_id ? String(cloneFrom.generador_id) : "",
         display_name: cloneFrom.display_name ? `${cloneFrom.display_name} (copia)` : "",
         description: cloneFrom.description ? String(cloneFrom.description) : "",
         process_definition_id: preselectDefinitionId ? String(preselectDefinitionId) : "",
@@ -152,7 +152,7 @@ export function useAdminDraftArtifactFlow({
       }
     } else {
       draftArtifactForm.value = {
-        template_seed_id: "",
+        generador_id: "",
         display_name: "",
         description: "",
         // Preselecciona la configuración de origen cuando la plantilla se crea desde la edición de una config
@@ -208,7 +208,7 @@ export function useAdminDraftArtifactFlow({
         throw new Error("No se pudo inferir la cedula del usuario logueado.");
       }
       const form = new FormData();
-      form.append("template_seed_id", draftArtifactForm.value.template_seed_id || "");
+      form.append("generador_id", draftArtifactForm.value.generador_id || "");
       form.append("owner_cedula", ownerCedula);
       if (ownerPersonId) {
         form.append("owner_person_id", ownerPersonId);

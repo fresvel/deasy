@@ -348,7 +348,7 @@ const CATEGORIA_UI = {
   Personas:   { label: "Personas", icon: "user", description: "Personas y sus documentos, correos, teléfonos, direcciones y autoidentificación." },
   VocabularioPersona: { label: "Datos personales", icon: "user", description: "Género, estado civil, autoidentificación étnica, discapacidad y parentesco." },
   Procesos:   { label: "Procesos", icon: "check-double", description: "Procesos y sus configuraciones versionadas." },
-  Plantillas: { label: "Entregables", icon: "file", description: "Semillas, plantillas y su vínculo con cada configuración." },
+  Plantillas: { label: "Entregables", icon: "file", description: "Generadores, plantillas y su vínculo con cada configuración." },
   Tareas:     { label: "Tareas", icon: "square-check", description: "Corridas, tareas y los entregables instanciados." },
   Documentos: { label: "Documentos", icon: "file", description: "Rondas del documento, sus correcciones y sus firmas." },
   Entrega:    { label: "Entrega", icon: "file", description: "Flujos de llenado y sus solicitudes." },
@@ -390,7 +390,7 @@ const SECTION_SLUG_BY_KEY = Object.fromEntries(GROUP_DEFS.map((group) => [group.
 const SECTION_KEY_BY_SLUG = Object.fromEntries(GROUP_DEFS.map((group) => [slugifySection(group.label), group.key]));
 
 const TABLE_TAB_LABEL_OVERRIDES = {
-  template_seeds: "Semillas",
+  generadores_de_documento: "Generadores",
   template_artifacts: "Plantillas",
   process_definition_templates: "Procesos asignados"
 };

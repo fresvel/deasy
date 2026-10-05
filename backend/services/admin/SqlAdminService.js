@@ -266,9 +266,12 @@ export default class SqlAdminService {
       display_name: "d.display_name",
       description: "d.description",
       template_scope: "d.template_scope",
-      template_seed_id: "d.template_seed_id",
       owner_person_id: "d.owner_person_id"
     };
+    // `template_seed_id` estaba en esa lista y ya no: desde el frente 23 (F3.2) quien produce el PDF
+    // es `template_artifacts.generador_id`, columna FISICA de esta tabla. La fachada que lo traia por
+    // JOIN desde `deliverables` deja de hacer falta — era justo la pista de que el dato estaba en la
+    // tabla equivocada.
     const qualifyField = (field) => {
       if (tableName === "template_artifacts" && TA_DELIV_COLS[field]) return TA_DELIV_COLS[field];
       return columnPrefix ? `${columnPrefix}${field}` : field;
@@ -414,10 +417,10 @@ export default class SqlAdminService {
     if (tableName === "template_artifacts" && keys?.id !== undefined) {
       const [rows] = await this.pool.query(
         `SELECT ta.id, ta.storage_version, ta.lifecycle_state, ta.is_active, ta.base_object_prefix,
-                ta.available_formats, ta.schema_object_key, ta.content_hash,
+                ta.available_formats, ta.generador_id, ta.content_hash,
                 ta.parent_version_id, ta.deliverable_id, ta.created_at,
                 d.code AS template_code, d.display_name, d.description, d.template_scope,
-                d.template_seed_id, d.owner_person_id
+                d.owner_person_id
            FROM template_artifacts ta
            LEFT JOIN deliverables d ON d.id = ta.deliverable_id
           WHERE ta.id = ? LIMIT 1`,

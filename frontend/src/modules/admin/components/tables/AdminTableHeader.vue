@@ -19,13 +19,13 @@
           <font-awesome-icon icon="backward" />
         </AdminButton>
         <AdminButton
-          v-if="isTemplateSeedsTable && canUpdate"
+          v-if="isGeneradoresTable && canUpdate"
           variant="neutral-outline"
           :disabled="!table || loading"
           @click="$emit('sync-template-seeds')"
         >
           <font-awesome-icon icon="rotate-right" class="mr-2" />
-          Sincronizar seeds
+          Sincronizar generadores
         </AdminButton>
         <AdminButton
           v-if="canCreate"
@@ -66,7 +66,7 @@ defineProps({
     type: Boolean,
     default: false
   },
-  isTemplateSeedsTable: {
+  isGeneradoresTable: {
     type: Boolean,
     default: false
   },

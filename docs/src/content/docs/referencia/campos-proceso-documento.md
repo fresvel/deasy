@@ -1,6 +1,6 @@
 ---
 title: "Campos de la cadena proceso → documento"
-description: "Las 39 tablas del recorrido, con todas sus columnas, tipos, referencias y valores admitidos. Generada del catálogo de PostgreSQL."
+description: "Las 38 tablas del recorrido, con todas sus columnas, tipos, referencias y valores admitidos. Generada del catálogo de PostgreSQL."
 sidebar:
   order: 20
 ---
@@ -22,7 +22,7 @@ y esta página saldría mintiendo. `npm run test:char:run` la recrea.
 
 :::
 
-Son **39 tablas**. El recorrido narrado, con sus diagramas, está en
+Son **38 tablas**. El recorrido narrado, con sus diagramas, está en
 [Del proceso al documento firmado](/modelo/). Esta página es el
 detalle: **cada columna de cada tabla**, en el orden de la cadena y no en orden alfabético.
 
@@ -115,6 +115,11 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `first_name` | varchar(120) | sí | — | — |
 | `last_name` | varchar(120) | sí | — | — |
 | `nacionalidad_pais_id` | int | no | `paises.id` · impide borrar | — |
+| `fecha_nacimiento` | date | no | — | — |
+| `nacimiento_pais_id` | int | no | `paises.id` · impide borrar | — |
+| `nacimiento_canton_id` | int | no | `cantones.id` · impide borrar | — |
+| `sexo` | text | no | — | `hombre` · `mujer` |
+| `estado_civil_id` | int | no | `estados_civiles.id` · impide borrar | — |
 | `password_hash` | varchar(255) | sí | — | — |
 | `status` | text | no | — | `Inactivo` · `Activo` · `Verificado` · `Reportado` |
 | `photo_url` | text | no | — | — |
@@ -241,7 +246,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `display_name` | varchar(180) | sí | — | — |
 | `description` | varchar(255) | no | — | — |
 | `template_scope` | text | sí | — | `official` · `ad_hoc` |
-| `template_seed_id` | int | no | `template_seeds.id` · impide borrar | — |
 | `owner_person_id` | int | no | `persons.id` · impide borrar | — |
 | `created_at` | timestamp | sí | — | — |
 
@@ -255,37 +259,23 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `lifecycle_state` | text | sí | — | `draft` · `published` · `retired` |
 | `base_object_prefix` | varchar(255) | sí | — | — |
 | `available_formats` | jsonb | sí | — | — |
-| `schema_object_key` | varchar(255) | sí | — | — |
+| `generador_id` | int | no | `generadores_de_documento.id` · impide borrar | — |
 | `content_hash` | varchar(64) | no | — | — |
 | `parent_version_id` | int | no | `template_artifacts.id` · impide borrar | — |
 | `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
 
-### `template_artifact_fields`
+### `generadores_de_documento`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `template_artifact_id` | int | sí | `template_artifacts.id` · se va con el | — |
-| `field_order` | int | sí | — | — |
-| `data_key` | varchar(180) | sí | — | — |
-| `field_code` | varchar(255) | sí | — | — |
-| `title` | varchar(180) | sí | — | — |
-| `ui_component` | text | sí | — | `text` · `richtext` · `textarea` · `number` · `switch` · `date` · `date_expression` · `select` · `hidden` |
-| `ui_group` | varchar(180) | sí | — | — |
-| `is_required` | smallint | sí | — | — |
-| `created_at` | timestamp | sí | — | — |
-
-### `template_seeds`
-
-| Columna | Tipo | Obligatorio | Apunta a | Admite |
-|---|---|---|---|---|
-| `id` | int | sí | — | — |
-| `seed_code` | varchar(180) | sí | — | — |
-| `display_name` | varchar(180) | sí | — | — |
+| `code` | varchar(180) | sí | — | — |
+| `nombre` | varchar(180) | sí | — | — |
 | `description` | varchar(255) | no | — | — |
-| `seed_type` | varchar(40) | sí | — | — |
-| `source_path` | varchar(255) | sí | — | — |
+| `tipo` | text | sí | — | `latex` · `servicio` |
+| `destino` | varchar(255) | no | — | — |
+| `source_path` | varchar(255) | no | — | — |
 | `preview_path` | varchar(255) | no | — | — |
 | `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
@@ -610,4 +600,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**39 tablas · 373 columnas · 98 referencias.** Leídas del catálogo de PostgreSQL.
+**38 tablas · 368 columnas · 100 referencias.** Leídas del catálogo de PostgreSQL.

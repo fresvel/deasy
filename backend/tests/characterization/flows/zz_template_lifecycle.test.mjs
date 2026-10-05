@@ -74,19 +74,19 @@ after(async () => {
 // Estado compartido entre los pasos del update guiado (son un flujo, no casos sueltos).
 const guided = {};
 
-test("POST /admin/sql/template_seeds/sync -> descubre las semillas publicadas en MinIO", async () => {
+test("POST /admin/sql/generadores_de_documento/sync -> descubre los paquetes publicados en MinIO", async () => {
   const token = await tokenFor("admin");
-  const res = await post("/admin/sql/template_seeds/sync", { token, body: {} });
+  const res = await post("/admin/sql/generadores_de_documento/sync", { token, body: {} });
   matchSnapshot(SUITE, "seed_sync", { status: res.status, body: normalize(res.body, { maskIdKeys: true }) });
   assert.equal(res.status, 200, `el sync debe responder 200: ${JSON.stringify(res.body)}`);
 });
 
-test("GET /admin/sql/template_seeds/:id/preview -> contrato cuando no hay PDF publicado", async () => {
+test("GET /admin/sql/generadores_de_documento/:id/preview -> contrato cuando no hay PDF publicado", async () => {
   const token = await tokenFor("admin");
-  const seeds = await get("/admin/sql/template_seeds", { token });
+  const seeds = await get("/admin/sql/generadores_de_documento", { token });
   const seedId = seeds.body?.[0]?.id;
   assert.ok(seedId, "la fixture debe traer al menos una semilla");
-  const res = await get(`/admin/sql/template_seeds/${seedId}/preview`, { token });
+  const res = await get(`/admin/sql/generadores_de_documento/${seedId}/preview`, { token });
   matchSnapshot(SUITE, "seed_preview", { status: res.status, body: normalize(res.body, { maskIdKeys: true }) });
 });
 
