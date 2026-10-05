@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 38 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 37 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**38 tablas · 370 columnas · 101 claves ajenas · 10 diagramas.**
+**37 tablas · 360 columnas · 100 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -139,7 +139,7 @@ erDiagram
 
 ## Lo que se declara (1 de 2)
 
-**6 tablas** · 50 columnas · 12 claves ajenas propias. Apunta a `cargos`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
+**5 tablas** · 43 columnas · 12 claves ajenas propias. Apunta a `cargos`, `term_types`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -197,15 +197,6 @@ erDiagram
     smallint is_active
     timestamp created_at
   }
-  term_types {
-    int id PK
-    varchar code UK
-    varchar name UK
-    varchar description
-    smallint is_active
-    timestamp created_at
-    timestamp updated_at
-  }
   process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
   term_types ||--o{ process_definition_period_types : "term_type_id"
   cargos |o--o{ process_definition_series : "cargo_id"
@@ -221,29 +212,27 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 9 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 8 claves ajenas desde otros diagramas</summary>
 
-`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `deliverables.owner_process_id` → `processes` · `process_definition_templates.process_definition_id` → `process_definition_versions` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `terms.term_type_id` → `term_types`
+`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `deliverables.owner_process_id` → `processes` · `process_definition_templates.process_definition_id` → `process_definition_versions` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions`
 
 </details>
 
 ## Lo que se declara (2 de 2)
 
-**5 tablas** · 46 columnas · 8 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, `processes`, que salen como caja vacía.
+**5 tablas** · 43 columnas · 7 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, `processes`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
   %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
-  template_seeds {
+  term_types {
     int id PK
-    varchar seed_code UK
-    varchar display_name
+    varchar code UK
+    varchar name UK
     varchar description
-    varchar seed_type
-    varchar source_path
-    varchar preview_path
     smallint is_active
     timestamp created_at
+    timestamp updated_at
   }
   deliverables {
     int id PK
@@ -253,7 +242,6 @@ erDiagram
     int owner_process_id FK
     varchar owner_variation_key
     text template_scope
-    int template_seed_id FK
     int owner_person_id FK
     timestamp created_at
   }
@@ -264,22 +252,22 @@ erDiagram
     text lifecycle_state
     varchar base_object_prefix
     jsonb available_formats
-    varchar schema_object_key
+    int generador_id FK
     varchar content_hash
     int parent_version_id FK
     smallint is_active
     timestamp created_at
   }
-  template_artifact_fields {
+  generadores_de_documento {
     int id PK
-    int template_artifact_id FK
-    int field_order
-    varchar data_key
-    varchar field_code
-    varchar title
-    text ui_component
-    varchar ui_group
-    smallint is_required
+    varchar code UK
+    varchar nombre
+    varchar description
+    text tipo
+    varchar destino
+    varchar source_path
+    varchar preview_path
+    smallint is_active
     timestamp created_at
   }
   process_definition_templates {
@@ -292,18 +280,17 @@ erDiagram
   }
   persons |o--o{ deliverables : "owner_person_id"
   processes |o--o{ deliverables : "owner_process_id"
-  template_seeds |o--o{ deliverables : "template_seed_id"
   template_artifacts ||--o{ process_definition_templates : "template_artifact_id"
   process_definition_versions ||--o{ process_definition_templates : "process_definition_id"
-  template_artifacts ||--o{ template_artifact_fields : "template_artifact_id"
   deliverables ||--o{ template_artifacts : "deliverable_id"
+  generadores_de_documento |o--o{ template_artifacts : "generador_id"
   template_artifacts |o--o{ template_artifacts : "parent_version_id"
 ```
 
 <details>
-<summary>Llegan 7 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 9 claves ajenas desde otros diagramas</summary>
 
-`document_versions.template_artifact_id` → `template_artifacts` · `fill_flow_templates.template_artifact_id` → `template_artifacts` · `fill_flow_templates.process_definition_template_id` → `process_definition_templates` · `signature_flow_templates.template_artifact_id` → `template_artifacts` · `signature_flow_templates.process_definition_template_id` → `process_definition_templates` · `task_items.process_definition_template_id` → `process_definition_templates` · `task_items.template_artifact_id` → `template_artifacts`
+`document_versions.template_artifact_id` → `template_artifacts` · `fill_flow_templates.template_artifact_id` → `template_artifacts` · `fill_flow_templates.process_definition_template_id` → `process_definition_templates` · `process_definition_period_types.term_type_id` → `term_types` · `signature_flow_templates.template_artifact_id` → `template_artifacts` · `signature_flow_templates.process_definition_template_id` → `process_definition_templates` · `task_items.process_definition_template_id` → `process_definition_templates` · `task_items.template_artifact_id` → `template_artifacts` · `terms.term_type_id` → `term_types`
 
 </details>
 

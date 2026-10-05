@@ -179,8 +179,7 @@ flujo reparte los pasos.** (El flujo es el nivel 6.)
 | `terms` | Los periodos concretos: «2026-1», «2026-2», «Permanente», con sus fechas |
 | `deliverables` | **El entregable como obra**: «Informe de Gestión Docente». Es el título, no el archivo |
 | `template_artifacts` | **Las ediciones de esa obra.** La versión 3 del informe. Es lo que de verdad se rellena |
-| `template_artifact_fields` | Los campos que esa edición pide, con su orden y su tipo |
-| `template_seeds` | Las plantillas de arranque que trae el sistema instalado |
+| `generadores_de_documento` | **Quién produce el PDF**: el paquete LaTeX de arranque que trae el sistema, o un servicio al que se le pide |
 | `process_definition_templates` | **Qué ediciones produce este proceso**, y en qué modo: una sola, varias copias, o definida al momento |
 
 :::note[Los tres modos de un entregable]

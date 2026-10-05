@@ -84,7 +84,7 @@ test:char:capture  = test:char:fixture && SNAPSHOT_MODE=update npm run test:char
 test:char          = node --test --test-concurrency=1 tests/characterization/flows/*.test.mjs
 ```
 
-Los prefijos de `z` en los nombres de fichero **fuerzan el orden alfabetico** de ejecución (el runner corre con `--test-concurrency=1`), poniendo al final las suites que *escriben* datos. Hoy son **quince**, y la escalera llega hasta **doce** `z`: `zz_default_process_routed`, `zz_task_generation`, `zz_template_lifecycle`, `zzz_artifact_draft`, `zzzz_sign_batch`, `zzzz_sign_workflow`, `zzzzz_task_item_relay`, `zzzzzz_deliverable_access`, `zzzzzz_flow_steps_db`, `zzzzzzz_schema_flow_reread`, `zzzzzzzz_schema_fields_db`, `zzzzzzzzz_reset_workflow`, `zzzzzzzzzz_position_deactivated`, `zzzzzzzzzzz_upload_log` y `zzzzzzzzzzzz_position_delete`.
+Los prefijos de `z` en los nombres de fichero **fuerzan el orden alfabetico** de ejecución (el runner corre con `--test-concurrency=1`), poniendo al final las suites que *escriben* datos. Hoy son **catorce**, y la escalera llega hasta **doce** `z`: `zz_default_process_routed`, `zz_task_generation`, `zz_template_lifecycle`, `zzz_artifact_draft`, `zzzz_sign_batch`, `zzzz_sign_workflow`, `zzzzz_task_item_relay`, `zzzzzz_deliverable_access`, `zzzzzz_flow_steps_db`, `zzzzzzz_schema_flow_reread`, `zzzzzzzzz_reset_workflow`, `zzzzzzzzzz_position_deactivated`, `zzzzzzzzzzz_upload_log` y `zzzzzzzzzzzz_position_delete`. (Eran quince: `zzzzzzzz_schema_fields_db` se fue con la tabla `template_artifact_fields` en el frente 23.)
 
 :::caution[test:char:run RESETEA la base de dev]
 

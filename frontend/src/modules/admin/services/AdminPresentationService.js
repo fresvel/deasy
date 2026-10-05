@@ -246,8 +246,8 @@ class AdminPresentationService {
     if (tableName === "template_artifacts") {
       return this.getFirstDefinedValue(row.display_name, row.template_code, row.id);
     }
-    if (tableName === "template_seeds") {
-      return this.getFirstDefinedValue(row.display_name, row.seed_code, row.id);
+    if (tableName === "generadores_de_documento") {
+      return this.getFirstDefinedValue(row.nombre, row.code, row.id);
     }
     return this.getFirstDefinedValue(
       row.name,

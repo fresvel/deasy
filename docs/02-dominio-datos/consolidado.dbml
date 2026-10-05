@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 93 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 92 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -335,7 +335,6 @@ Table "deliverables" {
   "owner_process_id" int4
   "owner_variation_key" varchar(120)
   "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
-  "template_seed_id" int4
   "owner_person_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
@@ -651,6 +650,21 @@ Table "fill_requests" {
     (document_fill_flow_id, fill_flow_step_id, assigned_person_id) [type: btree, unique, name: "uq_fill_requests"]
     (document_fill_flow_id, fill_flow_step_id) [type: btree, name: "idx_fill_requests_step"]
   }
+}
+
+Table "generadores_de_documento" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(180) [unique, not null]
+  "nombre" varchar(180) [not null]
+  "description" varchar(255)
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['latex'::text, 'servicio'::text])`, default: 'servicio']
+  "destino" varchar(255) [note: '''A quien se le pide el PDF: nombre de cola o URL de endpoint. NULL para `latex`, que no llama a nadie. Es texto libre y no dos columnas a proposito: hoy no hay ni un consumidor, y partirla antes de saber como se invoca seria inventar la forma del contrato por adelantado.''']
+  "source_path" varchar(255)
+  "preview_path" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''EL CATALOGO DE QUIEN PRODUCE EL PDF. Era `template_seeds` y significaba otra cosa: «la semilla», un proyecto LaTeX+Jinja2 en MinIO que se COPIABA entero por cada version de plantilla, y que era EL mecanismo —no habia camino para definir un documento sin escribir `.tex.j2`. Del mecanismo solo se construyo la copia (no hay renderizador, ni formulario, ni editor de campos), asi que el frente 23 lo desacoplo: el llenado web lo haran servicios programados caso a caso y la semilla LaTeX pasa a ser UNO de los generadores, el primero del catalogo. `tipo` separa las dos mitades: `latex` trae paquete (`source_path`) y no llama a nadie; `servicio` tiene `destino` (cola o endpoint) y no trae paquete.'''
 }
 
 Table "generos" {
@@ -1311,26 +1325,6 @@ Table "telefonos" {
   }
 }
 
-Table "template_artifact_fields" {
-  "id" int4 [pk, not null, increment]
-  "template_artifact_id" int4 [not null]
-  "field_order" int4 [not null, note: '''El orden AUTORADO, 1..N. No se deriva de nada: es el indice del array que mando el formulario. El `schema.json` no puede llevarlo porque su orden es el de las claves de un objeto.''']
-  "data_key" varchar(180) [not null]
-  "field_code" varchar(255) [not null, note: '''La referencia externa del campo (`x-deasy-field-code`). Es la que el generador tendra que contrastar con `signature_flow_steps.slot` para colocar el token de firma sin que el usuario ponga la ubicacion a mano.''']
-  "title" varchar(180) [not null]
-  "ui_component" text [not null, check: `ui_component = ANY (ARRAY['text'::text, 'richtext'::text, 'textarea'::text, 'number'::text, 'switch'::text, 'date'::text, 'date_expression'::text, 'select'::text, 'hidden'::text])`, default: 'text']
-  "ui_group" varchar(180) [not null, default: 'general']
-  "is_required" int2 [not null, default: 0]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (template_artifact_id, data_key) [type: btree, unique, name: "uq_template_artifact_fields_key"]
-    (template_artifact_id, field_order) [type: btree, name: "idx_template_artifact_fields_order"]
-  }
-
-  Note: '''Los CAMPOS que el usuario rellenara en la web, uno por fila, colgados de la EDICION. Vivian solo como `schema.json` en MinIO, y eso costaba tres cosas: se copiaban en binario al versionar (el mismo tubo del `document_owner` que abrio el frente 0), no se podian unir con nada —`field_code` contra `signature_flow_steps.slot` es lo que el generador de Jinja necesita— y el orden era el de las claves de un objeto JS, que coloca las claves enteras primero. `field_order` es la columna que arregla lo tercero.'''
-}
-
 Table "template_artifacts" {
   "id" int4 [pk, not null, increment]
   "deliverable_id" int4 [not null]
@@ -1338,7 +1332,7 @@ Table "template_artifacts" {
   "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
   "base_object_prefix" varchar(255) [not null]
   "available_formats" jsonb [not null]
-  "schema_object_key" varchar(255) [not null]
+  "generador_id" int4 [note: '''QUIEN produce el PDF de esta edicion. Estaba en `deliverables.template_seed_id` y se movio aqui, no se duplico: la fachada del admin ya lo listaba como campo de `template_artifacts` y lo traia por JOIN. NO sustituye a `document_versions.render_engine`, que dice con que motor se renderizo UNA ronda concreta —un hecho de la ejecucion, no una declaracion de la plantilla.''']
   "content_hash" varchar(64)
   "parent_version_id" int4
   "is_active" int2 [not null, default: 1]
@@ -1351,18 +1345,6 @@ Table "template_artifacts" {
   }
 
   Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.'''
-}
-
-Table "template_seeds" {
-  "id" int4 [pk, not null, increment]
-  "seed_code" varchar(180) [unique, not null]
-  "display_name" varchar(180) [not null]
-  "description" varchar(255)
-  "seed_type" varchar(40) [not null]
-  "source_path" varchar(255) [not null]
-  "preview_path" varchar(255)
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
 Table "term_types" {
@@ -1537,7 +1519,6 @@ Ref "fk_contracts_person":"persons"."id" <? "contracts"."person_id"
 Ref "fk_contracts_position":"unit_positions"."id" <? "contracts"."position_id"
 Ref "fk_deliverables_owner_person":"persons"."id" ?<? "deliverables"."owner_person_id"
 Ref "fk_deliverables_owner_process":"processes"."id" ?<? "deliverables"."owner_process_id"
-Ref "fk_deliverables_seed":"template_seeds"."id" ?<? "deliverables"."template_seed_id"
 Ref "fk_direcciones_canton":"cantones"."id" ?<? "direcciones"."canton_id"
 Ref "fk_direcciones_pais":"paises"."id" ?<? "direcciones"."pais_id"
 Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete: cascade]
@@ -1660,8 +1641,8 @@ Ref "fk_telefono_canales_canal":"canales_mensajeria"."id" <? "telefono_canales".
 Ref "fk_telefono_canales_telefono":"telefonos"."id" <? "telefono_canales"."telefono_id" [delete: cascade]
 Ref "fk_telefonos_pais":"paises"."id" ?<? "telefonos"."pais_id"
 Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cascade]
-Ref "fk_template_artifact_fields_artifact":"template_artifacts"."id" <? "template_artifact_fields"."template_artifact_id" [delete: cascade]
 Ref "fk_template_artifacts_deliverable":"deliverables"."id" <? "template_artifacts"."deliverable_id"
+Ref "fk_template_artifacts_generador":"generadores_de_documento"."id" ?<? "template_artifacts"."generador_id"
 Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artifacts"."parent_version_id"
 Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
 Ref "fk_tipos_discapacidad_pais":"paises"."id" <? "tipos_discapacidad"."pais_id"

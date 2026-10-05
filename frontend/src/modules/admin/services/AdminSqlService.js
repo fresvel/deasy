@@ -140,7 +140,7 @@ export class AdminSqlService {
   }
 
   syncTemplateSeeds() {
-    return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_SEEDS_SYNC);
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_GENERADORES_SYNC);
   }
 
   saveDraftTemplateArtifact(formData, artifactId = "", config = {}) {

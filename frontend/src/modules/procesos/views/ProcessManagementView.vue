@@ -101,7 +101,7 @@
                 v-if="selectedProcessItem?.key === 'plantillas' && canCreateAdminTable('template_artifacts', currentUser)"
                 title="Nueva plantilla de documento"
                 meta=""
-                description="Crear desde una semilla o archivos"
+                description="Crear desde un generador o archivos"
                 :icon="IconPlus"
                 badge="Acción especial"
                 badge-variant="info"
@@ -230,8 +230,8 @@ const PROCESS_INDEX_ITEMS = [
     key: "plantillas",
     label: "Modelos",
     icon: "certificate",
-    description: "Gestiona semillas, plantillas y su asignación a procesos.",
-    tables: ["template_seeds", "template_artifacts", "process_definition_templates"]
+    description: "Gestiona generadores, plantillas y su asignación a procesos.",
+    tables: ["generadores_de_documento", "template_artifacts", "process_definition_templates"]
   },
   {
     key: "tareas",
@@ -269,7 +269,7 @@ const PROCESS_INDEX_ITEMS = [
 ];
 
 const TABLE_TAB_LABEL_OVERRIDES = {
-  template_seeds: "Semillas",
+  generadores_de_documento: "Generadores",
   template_artifacts: "Plantillas",
   process_definition_templates: "Procesos asignados"
 };

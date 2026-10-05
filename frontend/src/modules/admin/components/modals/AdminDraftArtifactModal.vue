@@ -87,21 +87,21 @@
 
     <!-- Pestaña: General -->
     <div v-show="activeTab === 'general'" class="mt-4 grid gap-3 md:grid-cols-12">
-      <AdminFieldGroup label="Semilla (base)" :label-for="fieldId('template-seed-id')" group-class="md:col-span-6">
+      <AdminFieldGroup label="Generador" :label-for="fieldId('generador-id')" group-class="md:col-span-6">
         <template #labelSuffix>
-          <AppInfoTip>Toda plantilla nace de una semilla; por defecto se usa la general.</AppInfoTip>
+          <AppInfoTip>Quién produce el PDF de esta plantilla; por defecto, el generador LaTeX general.</AppInfoTip>
         </template>
         <AdminSelectField
-          :id="fieldId('template-seed-id')"
-          :model-value="draftArtifactForm.template_seed_id"
-          @update:model-value="updateField('template_seed_id', $event)"
+          :id="fieldId('generador-id')"
+          :model-value="draftArtifactForm.generador_id"
+          @update:model-value="updateField('generador_id', $event)"
         >
           <option
             v-for="row in draftArtifactSeedOptions"
             :key="row.id"
             :value="String(row.id)"
           >
-            {{ row.display_name }}{{ row.seed_code === DEFAULT_SEED_CODE ? " (por defecto)" : "" }}
+            {{ row.nombre }}{{ row.code === DEFAULT_GENERADOR_CODE ? " (por defecto)" : "" }}
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
@@ -718,24 +718,24 @@ onMounted(() => {
   }
 });
 
-// Código de la semilla por defecto (debe coincidir con DEFAULT_TEMPLATE_SEED_CODE del backend).
-const DEFAULT_SEED_CODE = "latex/informe-general";
+// Código del generador por defecto (debe coincidir con DEFAULT_TEMPLATE_SEED_CODE del backend).
+const DEFAULT_GENERADOR_CODE = "latex/informe-general";
 
-// Al crear (sin editar), preselecciona la semilla por defecto (o la primera) en cuanto cargan las opciones,
-// para no mostrar una opción "General" separada que duplique a la semilla real.
+// Al crear (sin editar), preselecciona el generador por defecto (o el primero) en cuanto cargan las
+// opciones, para no mostrar una opción "General" separada que duplique al generador real.
 watch(
-  () => [props.draftArtifactSeedOptions, props.draftArtifactEditId, props.draftArtifactForm.template_seed_id],
+  () => [props.draftArtifactSeedOptions, props.draftArtifactEditId, props.draftArtifactForm.generador_id],
   () => {
     if (props.draftArtifactEditId) {
       return;
     }
     const options = props.draftArtifactSeedOptions || [];
-    if (!options.length || props.draftArtifactForm.template_seed_id) {
+    if (!options.length || props.draftArtifactForm.generador_id) {
       return;
     }
-    const fallback = options.find((row) => row.seed_code === DEFAULT_SEED_CODE) || options[0];
+    const fallback = options.find((row) => row.code === DEFAULT_GENERADOR_CODE) || options[0];
     if (fallback?.id) {
-      updateField("template_seed_id", String(fallback.id));
+      updateField("generador_id", String(fallback.id));
     }
   },
   { immediate: true, deep: true }
@@ -752,7 +752,7 @@ watch(() => props.newProcessDefinitionId, async (id) => {
 });
 
 // ── Pestañas ──
-// Flujo guiado: semilla/base → documento de referencia → entrega → firmas → campos del documento (schema).
+// Flujo guiado: generador → documento de referencia → entrega → firmas → campos del documento (schema).
 const TAB_KEYS = ["general", "formatos", "entrega", "firmas", "campos"];
 // 'routed' NO autora flujo (se define al enviar) → se ocultan las pestañas de entrega y firmas.
 const isRouted = computed(() => String(props.draftArtifactForm.item_mode || "single") === "routed");

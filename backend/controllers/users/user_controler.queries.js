@@ -460,7 +460,7 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
        ti.template_artifact_id,
        ti.origin_kind,
        ti.title,
-       tar_dl.template_seed_id,
+       tar.generador_id,
        ti.sort_order,
        ti.responsible_position_id,
        ti.assigned_person_id,

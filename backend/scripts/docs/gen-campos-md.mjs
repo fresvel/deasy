@@ -15,7 +15,7 @@ const GRUPOS = [
    ["processes", "process_definition_series", "process_definition_versions", "process_target_rules",
     "process_definition_period_types", "term_types", "terms"]],
   ["Que se produce: entregables y plantillas",
-   ["deliverables", "template_artifacts", "template_artifact_fields", "template_seeds", "process_definition_templates"]],
+   ["deliverables", "template_artifacts", "generadores_de_documento", "process_definition_templates"]],
   ["El disparo y el trabajo real",
    ["process_runs", "tasks", "task_items", "task_item_tenures"]],
   ["El documento producido",
@@ -40,9 +40,15 @@ const main = async () => {
   const nombres = GRUPOS.flatMap(([, t]) => t);
 
   const { rows: cols } = await pool.query(
+    // ⚠️ `current_schemas(false)` Y NO `'public'`. Decia `table_schema = 'public'` y dejo de encontrar
+    //    NADA el 2026-10-04, cuando cada tabla se mudo al esquema de su tema: las otras dos consultas
+    //    de aqui abajo resuelven por `regclass`, que usa el search_path, asi que seguian funcionando
+    //    y la pagina salia con los 100 vinculos y CERO columnas. Esta forma se mantiene sola —el
+    //    search_path lo fija `config/postgres.js` con la misma lista que el esquema—, y la alternativa
+    //    (repetir aqui los ocho nombres) seria una tercera copia de esa lista.
     `SELECT table_name, column_name, data_type, character_maximum_length, is_nullable, column_default
        FROM information_schema.columns
-      WHERE table_schema = 'public' AND table_name = ANY($1)
+      WHERE table_schema = ANY(current_schemas(false)) AND table_name = ANY($1)
       ORDER BY table_name, ordinal_position`, [nombres]);
 
   const { rows: fks } = await pool.query(

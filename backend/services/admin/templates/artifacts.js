@@ -243,3 +243,25 @@ export const findPreferredPdfObject = (objectNames = []) => {
   return pdfCandidates[0];
 };
 
+
+// --- La clave del `schema.json`, DERIVADA (frente 23, F4.2) ---------------------------------------
+//
+// AQUI ESTABA UNA COLUMNA. `template_artifacts.schema_object_key` guardaba esta misma cadena, y sus
+// DOS productores la escribian igual: `${baseObjectPrefix}schema.json`, uno en
+// `_buildDraftStorage` y el otro en el `INSERT` del bootstrap. O sea que la columna era una copia
+// derivable de `base_object_prefix` mas una constante — la misma forma de duplicacion que el frente
+// 23 retira en el resto del modelo, solo que dentro de la misma fila.
+//
+// SE DERIVA Y NO SE GUARDA porque no hay ningun caso en que las dos puedan discrepar legitimamente:
+// el fichero vive DENTRO del prefijo del artifact por construccion, y la copia de version lo
+// arrastra con el prefijo entero. Si algun dia un artifact necesitara apuntar a un esquema fuera de
+// su prefijo, eso no es esta columna de vuelta: es otro dato, con otro nombre y un lector que lo
+// justifique.
+//
+// NORMALIZA LA BARRA FINAL, que es lo unico que esta funcion decide: los prefijos de la base se
+// guardan con ella, pero `_buildDraftStorage` la compone y un prefijo sin barra daria
+// `...1.0.0schema.json`. Antes esa normalizacion estaba repetida en cada sitio que tocaba el prefijo.
+export const schemaObjectKeyForPrefix = (baseObjectPrefix) => {
+  const prefijo = String(baseObjectPrefix || "").replace(/\/?$/, "/");
+  return `${prefijo}schema.json`;
+};

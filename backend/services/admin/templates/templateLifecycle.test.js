@@ -395,13 +395,13 @@ test("las dos copias son rutas distintas (si colapsaran, el ZIP volveria a salir
 // --- Los CAMPOS del formulario: la lista y el fichero (sub-paso S6 del §0.4) ----------------------
 //
 // `normalizeSchemaFieldList` + `buildSchemaJsonFromFieldList` son las dos mitades en que se partió
-// `buildSchemaJsonFromFields`. El corte es el que hace posible la escritura doble: la lista alimenta
-// A LA VEZ el `schema.json` de MinIO y las filas de `template_artifact_fields`, saliendo del MISMO
-// objeto en memoria (misma receta que el sub-paso 3 del §0.8 con `buildWorkflowsDocument`).
+// `buildSchemaJsonFromFields`. El corte se hizo para alimentar A LA VEZ el `schema.json` de MinIO y
+// las filas de `template_artifact_fields`; retirada esa tabla (frente 23, F4.1) le queda un solo
+// consumidor, y estas pruebas pasan a ser la red de la validación de slugs y componentes.
 //
-// Y el contrato del sub-paso es que el FICHERO NO SE MUEVA: `schema.json` entra en el `content_hash`
-// del paquete, que está fijado en el golden `artifact_draft`. Los tests de abajo lo fijan aquí
-// también, porque char no manda `schema_fields` en ningún flow y no vería el cambio.
+// Y lo que fijan sigue siendo lo mismo: que el FICHERO NO SE MUEVA. `schema.json` entra en el
+// `content_hash` del paquete, que está fijado en el golden `artifact_draft`, y char no manda
+// `schema_fields` en ningún flow, así que no vería el cambio.
 
 const CAMPOS_WEB = [
   { key: "semestre", title: "Semestre", component: "text", group: "general", required: true },

@@ -310,6 +310,23 @@
       "working_file_path"
     ]
   },
+  "list_generadores_de_documento": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "code",
+      "created_at",
+      "description",
+      "destino",
+      "id",
+      "is_active",
+      "nombre",
+      "preview_path",
+      "source_path",
+      "tipo"
+    ]
+  },
   "list_permissions": {
     "status": 200,
     "isArray": true,
@@ -544,32 +561,15 @@
       "created_at",
       "description",
       "display_name",
+      "generador_id",
       "id",
       "is_active",
       "lifecycle_state",
       "owner_person_id",
       "parent_version_id",
-      "schema_object_key",
       "storage_version",
       "template_code",
-      "template_scope",
-      "template_seed_id"
-    ]
-  },
-  "list_template_seeds": {
-    "status": 200,
-    "isArray": true,
-    "count": 1,
-    "itemKeys": [
-      "created_at",
-      "description",
-      "display_name",
-      "id",
-      "is_active",
-      "preview_path",
-      "seed_code",
-      "seed_type",
-      "source_path"
+      "template_scope"
     ]
   },
   "list_term_types": {

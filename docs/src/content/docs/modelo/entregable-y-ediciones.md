@@ -11,13 +11,13 @@ metáfora y la sostengo toda la página.
 
 Un **entregable** (`deliverables`) es el *título del libro*: «Informe general de actividades». Es la
 identidad de la cosa que hay que producir. No tiene formato, ni campos, ni maqueta — solo nombre
-(`code`, `display_name`, `description`), a quién pertenece (`owner_process_id` +
-`owner_variation_key`, la línea proceso/variación) y de qué semilla nació (`template_seed_id`).
+(`code`, `display_name`, `description`) y a quién pertenece (`owner_process_id` +
+`owner_variation_key`, la línea proceso/variación).
 
 Una **edición** (`template_artifacts`) es *una impresión concreta* de ese libro: la v1.0.0, la
 v1.1.0. Ahí sí está todo lo material: dónde vive su paquete de archivos (`base_object_prefix`), qué
-formatos ofrece (`available_formats`), dónde está el contrato de campos (`schema_object_key`) y cuál
-es su huella de contenido (`content_hash`).
+formatos ofrece (`available_formats`), cuál es su huella de contenido (`content_hash`) y **quién
+produce su PDF** (`generador_id`).
 
 ## Cómo se encadenan y cómo se publican
 
@@ -65,43 +65,57 @@ concreta. La lista vive en `WEB_FILL_RESOLVER_TYPES_BY_SCOPE`
 
 ## Los campos: qué le van a pedir a quien lo rellene
 
-Una edición declara sus campos en `template_artifact_fields`, **una fila por campo**: su orden
-(`field_order`), la clave con la que viaja el dato (`data_key`), su referencia externa
-(`field_code`), la etiqueta que ve la persona (`title`), qué control se pinta (`ui_component`), en
-qué bloque del formulario va (`ui_group`) y si es obligatorio (`is_required`).
+Los campos de una edición viven en **un fichero**, no en una tabla: el `schema.json` del paquete de
+MinIO, dentro de `base_object_prefix`. Lo escribe el editor de `/admin` y lo relee el mismo editor.
 
-`ui_component` tiene `CHECK` con **nueve** valores: `text`, `richtext`, `textarea`, `number`,
-`switch`, `date`, `date_expression`, `select` y `hidden`.
+:::caution[Aquí había una tabla, y se retiró]
 
-:::note[Por qué filas y no un JSONB]
+Hubo un `template_artifact_fields` con una fila por campo (`field_order`, `data_key`, `field_code`,
+`title`, `ui_component`, `ui_group`, `is_required`). Nació para ser el esqueleto de un generador que
+emitiera el Jinja2 con los tokens de firma ya colocados, uniendo `field_code` con
+`signature_flow_steps.slot`.
 
-Estos campos vivieron hasta hace poco **solo como fichero** (`schema.json` en MinIO). Pasaron a
-tabla por tres motivos medidos, y el tercero es el que descarta la alternativa del `JSONB`: **un
-`CHECK` no cubre una columna JSONB**. Con `ui_component` como columna, los nueve componentes son una
-restricción de la base; dentro de un JSONB serían para siempre una promesa de JavaScript.
+Se retiró en el frente 23 porque **ese generador no se construyó**, y la tabla se quedó sin ningún
+consumidor: su único lector en todo el sistema era el código que copiaba sus filas a la versión
+siguiente. Existía para copiarse a sí misma. Con ella se fue `template_artifacts.schema_object_key`,
+que era `base_object_prefix` + `schema.json` — un valor derivable, y por tanto una tercera forma de
+decir lo mismo. Hoy esa clave se deriva al leer.
 
-`uq_template_artifact_fields_key` hace estructural lo que antes era un `Set` en memoria: dos campos
-con el mismo `data_key` dentro de una edición ya no pueden coexistir. Y la clave ajena es
-`ON DELETE CASCADE` —a diferencia de las cabeceras de flujo— porque un campo tiene exactamente un
-portador y no significa nada sin su edición.
+**El día que un generador tenga que decirle a la web qué preguntar, ese contrato hará falta** — pero
+será otro diseño, no esta tabla de vuelta: colgará del **generador** (uno por servicio, estable) y
+no de cada edición de cada plantilla.
 
 :::
 
-## La semilla: de dónde nacen las plantillas
+## El generador: quién produce el PDF
 
-Una **semilla** (`template_seeds`) es un paquete de partida del catálogo: su código (`seed_code`),
-su tipo (`seed_type`), la ruta del paquete (`source_path`) y una vista previa opcional
-(`preview_path`). Cuando se crea un entregable nuevo se elige de qué semilla nace, y esa semilla
-aporta la maqueta y el contrato de campos inicial. Es lo que evita empezar de cero cada vez.
+El catálogo `generadores_de_documento` dice **quién produce** cada tipo de documento, y cada edición
+declara el suyo en `generador_id`. Su `tipo` tiene `CHECK` con dos valores y parte el catálogo en dos
+mitades excluyentes:
+
+- **`latex`** — trae un paquete de partida en MinIO (`source_path`): un proyecto LaTeX+Jinja2
+  completo que se copia entero al crear una plantilla, con su maqueta y su `schema.json`. No llama a
+  nadie, así que su `destino` es nulo. Es lo que antes se llamaba «la semilla».
+- **`servicio`** — un servicio programado que devuelve el PDF, al que se llama por su `destino`
+  (nombre de cola o URL de endpoint). No trae paquete, así que su `source_path` es nulo.
+
+:::note[La semilla no murió: dejó de ser EL mecanismo]
+
+Esta tabla se llamaba `template_seeds` y significaba otra cosa: «la semilla», el esqueleto LaTeX que
+**todo** documento tenía que copiar. De ese camino sólo se construyó la copia —no hay renderizador,
+ni formulario de llenado, ni editor de campos—, así que exigía escribir `.tex.j2` para definir
+cualquier documento. El frente 23 lo desacopló: el llenado web lo harán servicios programados caso a
+caso, y la semilla LaTeX se queda como **el primer generador del catálogo**, no como el único camino.
+
+:::
 
 ```mermaid
 erDiagram
   deliverables ||--o{ template_artifacts : "tiene ediciones"
-  template_seeds ||--o{ deliverables : "nace de"
+  generadores_de_documento ||--o{ template_artifacts : "produce el PDF de"
   processes ||--o{ deliverables : "pertenece a la linea de"
   persons ||--o{ deliverables : "autor si es personal"
   template_artifacts ||--o{ template_artifacts : "desciende de"
-  template_artifacts ||--o{ template_artifact_fields : "pide estos campos"
 
   deliverables {
     int id PK "EL LIBRO"
@@ -111,7 +125,6 @@ erDiagram
     int owner_process_id FK "linea a la que pertenece"
     varchar owner_variation_key "y su variacion"
     text template_scope "official, ad_hoc"
-    int template_seed_id FK
     int owner_person_id FK "solo si es personal"
     timestamp created_at
   }
@@ -122,31 +135,20 @@ erDiagram
     text lifecycle_state "draft, published, retired -- nace en draft"
     varchar base_object_prefix "carpeta de su paquete"
     jsonb available_formats "pdf, docx, tex"
-    varchar schema_object_key "fichero con el contrato de campos"
+    int generador_id FK "quien produce el PDF"
     varchar content_hash "huella del paquete"
     int parent_version_id FK "edicion de la que desciende"
     smallint is_active
     timestamp created_at
   }
-  template_artifact_fields {
-    int id PK
-    int template_artifact_id FK
-    int field_order "posicion en el formulario"
-    varchar data_key "clave con la que viaja el dato"
-    varchar field_code "referencia externa del campo"
-    varchar title "etiqueta que ve la persona"
-    text ui_component "nueve valores con CHECK"
-    varchar ui_group "bloque del formulario"
-    smallint is_required
-    timestamp created_at
-  }
-  template_seeds {
-    int id PK
-    varchar seed_code
-    varchar display_name
+  generadores_de_documento {
+    int id PK "EL CATALOGO DE QUIEN PRODUCE"
+    varchar code
+    varchar nombre
     varchar description
-    varchar seed_type
-    varchar source_path "paquete de partida"
+    text tipo "latex, servicio -- con CHECK"
+    varchar destino "cola o endpoint -- nulo si es latex"
+    varchar source_path "paquete de partida -- nulo si es servicio"
     varchar preview_path "vista previa"
     smallint is_active
     timestamp created_at

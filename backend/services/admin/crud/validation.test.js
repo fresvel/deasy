@@ -396,11 +396,29 @@ test("unit_relations solo compara padre e hija cuando llegan las dos", () => {
   assert.doesNotThrow(() => validateTableRules("unit_relations", {}));
 });
 
-test("template_seeds exige codigo y ruta fuente con un unico mensaje", () => {
-  throwsWith(() => validateTableRules("template_seeds", {}), "codigo y la ruta fuente");
-  throwsWith(() => validateTableRules("template_seeds", { seed_code: "x" }), "codigo y la ruta fuente");
-  throwsWith(() => validateTableRules("template_seeds", { source_path: "y" }), "codigo y la ruta fuente");
-  assert.doesNotThrow(() => validateTableRules("template_seeds", { seed_code: "x", source_path: "y" }));
+test("generadores_de_documento exige la IDENTIDAD siempre, y el paquete solo al tipo latex", () => {
+  // La regla vieja (`seedCodeAndSourcePath`) exigia codigo + ruta fuente a todo el catalogo, porque
+  // todo el catalogo era una semilla con paquete. Un generador `servicio` no tiene paquete: tiene
+  // `destino`. Asi que la ruta fuente se exige por TIPO, y la identidad sigue siendo obligatoria.
+  throwsWith(() => validateTableRules("generadores_de_documento", {}), "codigo y el nombre");
+  throwsWith(() => validateTableRules("generadores_de_documento", { code: "x" }), "codigo y el nombre");
+  throwsWith(() => validateTableRules("generadores_de_documento", { nombre: "N" }), "codigo y el nombre");
+  // Sin `tipo` se asume `latex`, que es lo que hoy hay en el catalogo: la ruta fuente se sigue exigiendo.
+  throwsWith(
+    () => validateTableRules("generadores_de_documento", { code: "x", nombre: "N" }),
+    "ruta fuente"
+  );
+  throwsWith(
+    () => validateTableRules("generadores_de_documento", { code: "x", nombre: "N", tipo: "latex" }),
+    "ruta fuente"
+  );
+  // Un servicio NO necesita paquete.
+  assert.doesNotThrow(
+    () => validateTableRules("generadores_de_documento", { code: "x", nombre: "N", tipo: "servicio" })
+  );
+  assert.doesNotThrow(
+    () => validateTableRules("generadores_de_documento", { code: "x", nombre: "N", source_path: "y" })
+  );
 });
 
 test("document_versions ignora la version cuando el candidato no la trae", () => {

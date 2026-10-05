@@ -29,17 +29,23 @@ El criterio que los mató, y que conviene tener presente al añadir cualquier co
 ## Plantillas: el modelo “libro y ediciones”
 
 ```mermaid
-%% diagrama 09 — plantillas: la semilla, el libro (deliverables) y sus ediciones
+%% diagrama 09 — plantillas: el generador, el libro (deliverables) y sus ediciones
 flowchart TD
-    SEEDS["template_seeds<br/>(semillas del catalogo: source_path, preview_path, seed_type)"]
+    GEN["generadores_de_documento<br/>(quien produce el PDF: tipo latex / servicio,<br/>source_path o destino, preview_path)"]
     DEL["deliverables — EL LIBRO<br/>code UNIQUE, display_name, owner_process_id,<br/>template_scope (official / ad_hoc), owner_person_id"]
-    ART["template_artifacts — LA EDICION<br/>storage_version, lifecycle_state, base_object_prefix,<br/>available_formats, schema_object_key, content_hash,<br/>parent_version_id (autorreferencial = linaje)"]
+    ART["template_artifacts — LA EDICION<br/>storage_version, lifecycle_state, base_object_prefix,<br/>available_formats, generador_id, content_hash,<br/>parent_version_id (autorreferencial = linaje)"]
 
-    SEEDS --> DEL
     DEL -->|"1:N"| ART
+    GEN --> ART
 ```
 
-Con UNIQUE sobre `(deliverable_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el proceso propietario, el scope, la semilla y la persona propietaria viven en `deliverables`; `template_artifacts` guarda **solo** el estado y el almacenamiento de cada versión.
+Con UNIQUE sobre `(deliverable_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el proceso propietario, el scope y la persona propietaria viven en `deliverables`; `template_artifacts` guarda el estado, el almacenamiento y **quién produce el PDF** de cada versión.
+
+:::note[La semilla pasó a ser un catálogo de generadores]
+
+La tabla del diagrama se llamaba `template_seeds` y colgaba de `deliverables`. Significaba «el esqueleto LaTeX que se copia», y era **el** mecanismo: no había camino para definir un documento sin escribir `.tex.j2`. El frente 23 le cambió el significado —pasa a ser **el servicio que produce este documento**— y movió el puntero a la edición, que es quien lo declara. La semilla LaTeX sigue ahí: es el primer generador del catálogo, de `tipo = 'latex'`.
+
+:::
 
 :::caution[La palabra “entregable” significa dos cosas]
 
@@ -49,7 +55,7 @@ En `sqlTables.js` la tabla `task_items` se etiqueta “Entregables” (la *insta
 
 ### El contenido: Jinja2 sobre LaTeX
 
-El cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en MinIO, no en la base de datos. El bootstrap pública la semilla `backend/services/system/seeds/informe-general` — `schema.json`, `defaults.yaml`, `README.md` y el árbol `src/` con `main.tex.j2` y `make.sh` — y válida el pipeline: render Jinja2 con `StrictUndefined` → `pdflatex` → PDF.
+Para el generador de `tipo = 'latex'`, el cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en MinIO, no en la base de datos. El bootstrap pública el paquete `backend/services/system/seeds/informe-general` — `schema.json`, `defaults.yaml`, `README.md` y el árbol `src/` con `main.tex.j2` y `make.sh` — y válida el pipeline: render Jinja2 con `StrictUndefined` → `pdflatex` → PDF.
 
 **No hay `meta.yaml`**: el flujo se autora en la base, no en un YAML, desde el §0.8. Y `data.yaml` **no es un fichero de la semilla**: es un objeto de MinIO que el bootstrap escribe copiando `defaults.yaml` al prefijo del artifact (`publishBaseSeedAssets`).
 

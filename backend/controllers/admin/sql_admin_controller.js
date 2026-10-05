@@ -136,7 +136,7 @@ export const downloadTemplateSeedArchive = async (req, res) => {
   }
   try {
     const [rows] = await pool.query(
-      "SELECT id, seed_code, display_name, source_path FROM template_seeds WHERE id = ? LIMIT 1",
+      "SELECT id, code, nombre, source_path FROM generadores_de_documento WHERE id = ? LIMIT 1",
       [id]
     );
     const seed = rows?.[0];
@@ -153,7 +153,7 @@ export const downloadTemplateSeedArchive = async (req, res) => {
     return await sendResourcesAsZip(res, {
       bucket: TEMPLATES_BUCKET,
       resources,
-      fileBaseName: (seed.seed_code || seed.display_name || `seed-${id}`).replaceAll("/", "-")
+      fileBaseName: (seed.code || seed.nombre || `generador-${id}`).replaceAll("/", "-")
     });
   } catch (error) {
     console.error("Error al descargar el ZIP del seed:", error);

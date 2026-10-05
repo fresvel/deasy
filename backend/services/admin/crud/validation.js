@@ -193,9 +193,20 @@ const documentVersionNumberAndStatus = (candidate) => {
   }
 };
 
-const seedCodeAndSourcePath = (candidate) => {
-  if (!candidate.seed_code || !candidate.source_path) {
-    throw new Error("Debes registrar el codigo y la ruta fuente del seed.");
+// EL CATALOGO DE GENERADORES (frente 23, F3.1). Era `seedCodeAndSourcePath`, y exigia `seed_code` +
+// `source_path` porque TODO generador era una semilla con su paquete en MinIO.
+//
+// Ya no: un generador de tipo `servicio` no tiene paquete, tiene `destino` (cola o endpoint). Asi que
+// lo obligatorio pasa a ser el par IDENTIDAD —`code` + `nombre`— y la ruta fuente se exige SOLO al
+// tipo que la usa. Es la misma regla de antes aplicada a la mitad del catalogo a la que sigue
+// aplicando, no una relajacion: un generador latex sin `source_path` no puede crear una plantilla,
+// y por eso se sigue rechazando.
+const generadorIdentityAndSource = (candidate) => {
+  if (!candidate.code || !candidate.nombre) {
+    throw new Error("Debes registrar el codigo y el nombre del generador.");
+  }
+  if (String(candidate.tipo || "latex") === "latex" && !candidate.source_path) {
+    throw new Error("Un generador de tipo latex necesita la ruta fuente de su paquete.");
   }
 };
 
@@ -291,8 +302,8 @@ const TABLE_RULES = {
   document_versions: [
     documentVersionNumberAndStatus,
   ],
-  template_seeds: [
-    seedCodeAndSourcePath,
+  generadores_de_documento: [
+    generadorIdentityAndSource,
   ],
   template_artifacts: [
     requires(["base_object_prefix", "Debes registrar el prefijo base del artifact."]),

@@ -175,6 +175,12 @@
         "modelo/flujo-de-entrega.md"
       ]
     },
+    "data_key": {
+      "motivo": "FRENTE 23 (2026-10-04) · se retiro `template_artifact_fields` porque su UNICO lector era el codigo que copiaba sus filas a la version siguiente: la tabla existia para copiarse a si misma. La pagina la nombra en el aviso \":::caution Aqui habia una tabla, y se retiro\", que explica por que se fue y donde tendra que vivir el contrato de campos el dia que haga falta. La mencion es HISTORICA: sin ella, el lector que busque la tabla no encuentra la explicacion. Aqui, una de las siete columnas que la tabla tenia.",
+      "paginas": [
+        "modelo/entregable-y-ediciones.md"
+      ]
+    },
     "datos_personales": {
       "motivo": "CLAVE de la respuesta de GET y PATCH /users/me (UserRepository.perfilDelTitular), no una tabla ni una columna: el objeto con los datos personales que solo se le devuelven al titular.",
       "paginas": [
@@ -356,6 +362,18 @@
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
         "complemento/expediente.md"
+      ]
+    },
+    "field_code": {
+      "motivo": "FRENTE 23 (2026-10-04) · se retiro `template_artifact_fields` porque su UNICO lector era el codigo que copiaba sus filas a la version siguiente: la tabla existia para copiarse a si misma. La pagina la nombra en el aviso \":::caution Aqui habia una tabla, y se retiro\", que explica por que se fue y donde tendra que vivir el contrato de campos el dia que haga falta. La mencion es HISTORICA: sin ella, el lector que busque la tabla no encuentra la explicacion. Era la columna que el generador tendria que haber unido con `signature_flow_steps.slot`, y ese JOIN no se escribio nunca.",
+      "paginas": [
+        "modelo/entregable-y-ediciones.md"
+      ]
+    },
+    "field_order": {
+      "motivo": "FRENTE 23 (2026-10-04) · se retiro `template_artifact_fields` porque su UNICO lector era el codigo que copiaba sus filas a la version siguiente: la tabla existia para copiarse a si misma. La pagina la nombra en el aviso \":::caution Aqui habia una tabla, y se retiro\", que explica por que se fue y donde tendra que vivir el contrato de campos el dia que haga falta. La mencion es HISTORICA: sin ella, el lector que busque la tabla no encuentra la explicacion. Aqui, una de las siete columnas que la tabla tenia.",
+      "paginas": [
+        "modelo/entregable-y-ediciones.md"
       ]
     },
     "field_refs": {
@@ -653,6 +671,12 @@
         "signer.md"
       ]
     },
+    "schema_object_key": {
+      "motivo": "FRENTE 23 (2026-10-04) · columna de `template_artifacts` retirada en F4.2. Era `base_object_prefix` + `schema.json`, o sea un valor DERIVABLE, y sus dos productores la escribian igual. Hoy la clave se deriva al leer (`schemaObjectKeyForPrefix`). La pagina la nombra dentro del aviso que cuenta la retirada de `template_artifact_fields`, porque se fueron juntas.",
+      "paginas": [
+        "modelo/entregable-y-ediciones.md"
+      ]
+    },
     "server_name": {
       "motivo": "DIRECTIVA de nginx.",
       "paginas": [
@@ -743,6 +767,13 @@
         "datos/index.md"
       ]
     },
+    "template_artifact_fields": {
+      "motivo": "FRENTE 23 (2026-10-04) · se retiro `template_artifact_fields` porque su UNICO lector era el codigo que copiaba sus filas a la version siguiente: la tabla existia para copiarse a si misma. La pagina la nombra en el aviso \":::caution Aqui habia una tabla, y se retiro\", que explica por que se fue y donde tendra que vivir el contrato de campos el dia que haga falta. La mencion es HISTORICA: sin ella, el lector que busque la tabla no encuentra la explicacion.",
+      "paginas": [
+        "modelo/entregable-y-ediciones.md",
+        "testing.md"
+      ]
+    },
     "template_code": {
       "motivo": "CAMPO de un seed en JSON, no del esquema.",
       "paginas": [
@@ -750,9 +781,16 @@
       ]
     },
     "template_seed": {
-      "motivo": "PROSA · singular de `template_seeds`.",
+      "motivo": "PROSA · singular de `template_seeds`, hoy `generadores_de_documento` (frente 23).",
       "paginas": [
         "datos/index.md"
+      ]
+    },
+    "template_seeds": {
+      "motivo": "FRENTE 23 (2026-10-04) · la tabla NO se borro: se renombro a `generadores_de_documento` y cambio de significado, de «el esqueleto LaTeX que se copia» a «el servicio que produce este documento». Las dos paginas la nombran para contar ese cambio, que es lo que un lector que venga del nombre viejo necesita leer.",
+      "paginas": [
+        "datos/modos-y-plantillas.md",
+        "modelo/entregable-y-ediciones.md"
       ]
     },
     "tipos_documento": {
@@ -769,6 +807,18 @@
       "motivo": "DESCARTADO · columna que el diseño del frente 18 llego a tener y SE RETIRO el 2026-09-04. La pagina la nombra en el apartado \"Por que no hay titulacion_libre\", que explica los dos motivos: la CINE-F tiene comodin para todo en el nivel detallado, y el nombre real necesitaba una FILA y no una columna paralela que no se puede cotejar ni deduplicar. NO lleva fecha de retirada: no va a existir nunca.",
       "paginas": [
         "complemento/expediente.md"
+      ]
+    },
+    "ui_component": {
+      "motivo": "FRENTE 23 (2026-10-04) · se retiro `template_artifact_fields` porque su UNICO lector era el codigo que copiaba sus filas a la version siguiente: la tabla existia para copiarse a si misma. La pagina la nombra en el aviso \":::caution Aqui habia una tabla, y se retiro\", que explica por que se fue y donde tendra que vivir el contrato de campos el dia que haga falta. La mencion es HISTORICA: sin ella, el lector que busque la tabla no encuentra la explicacion. Aqui, una de las siete columnas que la tabla tenia.",
+      "paginas": [
+        "modelo/entregable-y-ediciones.md"
+      ]
+    },
+    "ui_group": {
+      "motivo": "FRENTE 23 (2026-10-04) · se retiro `template_artifact_fields` porque su UNICO lector era el codigo que copiaba sus filas a la version siguiente: la tabla existia para copiarse a si misma. La pagina la nombra en el aviso \":::caution Aqui habia una tabla, y se retiro\", que explica por que se fue y donde tendra que vivir el contrato de campos el dia que haga falta. La mencion es HISTORICA: sin ella, el lector que busque la tabla no encuentra la explicacion. Aqui, una de las siete columnas que la tabla tenia.",
+      "paginas": [
+        "modelo/entregable-y-ediciones.md"
       ]
     },
     "verify_email": {
@@ -800,6 +850,12 @@
       "motivo": "EVENTO de GitHub Actions.",
       "paginas": [
         "infraestructura/cicd-sonar.md"
+      ]
+    },
+    "zzzzzzzz_schema_fields_db": {
+      "motivo": "FRENTE 23 (2026-10-04) · suite de caracterizacion borrada con la tabla que vigilaba (`template_artifact_fields`). La pagina la nombra entre parentesis para explicar por que la escalera de `z` paso de quince suites a catorce.",
+      "paginas": [
+        "testing.md"
       ]
     }
   },

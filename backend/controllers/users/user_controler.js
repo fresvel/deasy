@@ -781,7 +781,7 @@ export const downloadDeliverableTemplate = async (req, res) => {
     const [rows] = await pool.query(
       `SELECT
          ti.id AS task_item_id,
-         tar_dl.template_seed_id,
+         tar.generador_id,
          tar_dl.display_name AS template_artifact_name,
          tar.available_formats
        FROM task_items ti

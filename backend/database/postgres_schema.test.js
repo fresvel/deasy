@@ -1,12 +1,13 @@
 // Tests unitarios del ESQUEMA. Vigilan lo que `node --check`, `check:imports` y el arranque no ven:
 // el SQL es una cadena de texto hasta que alguien la ejecuta.
 //
-// Cuatro bloques:
+// Cinco bloques:
 //   0. EL CONTRATO DEL FICHERO: describe la forma, NO converge bases anteriores (`TD7-s`).
 //   1. `template_artifacts.lifecycle_state` nace SIN PUBLICAR (defecto 1.13).
 //   2. El portador `template_artifact_id` de las dos cabeceras de flujo (frente 0.8, sub-paso 1).
 //   3. `code` y `name` en los PASOS de entrega, la simetria que le faltaba a `fill_flow_steps`
 //      respecto de `signature_flow_steps` (frente 0.8, sub-paso 1-bis).
+//   4. LO QUE EL FRENTE 23 RETIRO, en negativo: que no vuelva, y el catalogo que lo sustituye.
 //
 // --- BLOQUE 1 -------------------------------------------------------------------------------------
 //
@@ -238,88 +239,91 @@ test("fill_flow_steps: no se indexa code ni name — son descriptivas, no de bus
   ]);
 });
 
-// --- BLOQUE 4: `template_artifact_fields`, los campos del formulario (frente 0.4, sub-paso S6) ----
+// --- BLOQUE 4: lo que el frente 23 RETIRO, y que no debe volver por inercia --------------------
 //
-// El SQL es una cadena de texto hasta que alguien la ejecuta, y ninguna de estas propiedades tiene
-// disparador vivo hoy: el escritor las respeta por construccion (normaliza antes de insertar) y la
-// caracterizacion no manda `schema_fields` en ningun flow — medido: con el escritor de campos
-// anulado del todo, `test:char:run` da 281/281 en verde. O sea que si alguien afloja el esquema, no
-// se entera nadie.
+// Aqui vivian ocho pruebas sobre `template_artifact_fields` (frente 0.4, sub-paso S6): su portador,
+// el CHECK de los nueve `ui_component`, `field_order`, `field_code`, el unico por `data_key` y el
+// orden de sus dos `CREATE INDEX`. La tabla se retiro en el frente 23 (F4.1) porque su unico lector
+// era el codigo que la copiaba a la version siguiente, asi que sus pruebas se van con ella.
+//
+// Lo que queda es la puerta inversa: que lo retirado SIGA retirado. Es el mismo tipo de prueba que
+// las de arriba —el SQL es texto hasta que alguien lo ejecuta— aplicada en negativo, y hace falta
+// porque un `CREATE TABLE IF NOT EXISTS` reintroducido no rompe nada visible: arranca, y la tabla
+// vuelve a existir vacia para copiarse a si misma.
 
-const createFields = SCHEMA.slice(
-  SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifact_fields")
-).split(");")[0];
+// ⚠️ ESTAS PRUEBAS MIRAN EL SQL, NO EL FICHERO, y por eso reusan el `SIN_COMENTARIOS` del bloque 0.
+// El esquema lleva, donde estaba cada cosa retirada, la explicacion de por que se fue —y esa
+// explicacion NOMBRA lo retirado, como debe—. Un `doesNotMatch` sobre el texto crudo fallaria por el
+// epitafio, que es justo lo que hay que conservar.
 
-test("el portador de un campo es el template_artifact, y es obligatorio", () => {
-  const columna = createFields.split("\n").find((l) => l.trim().startsWith("template_artifact_id"));
-  assert.ok(columna, "template_artifact_id debe existir en la definicion");
-  assert.match(columna, /NOT NULL/);
+test("no vuelve `template_artifact_fields`: su unico lector era el que la copiaba", () => {
+  assert.doesNotMatch(SIN_COMENTARIOS, /template_artifact_fields/);
 });
 
-test("el CHECK de ui_component lista los NUEVE componentes que autora la web, y ninguno mas", () => {
-  // Es la razon de fondo por la que se descarto la columna `schema_json JSONB`: un CHECK no cubre un
-  // JSONB (medido en el §0.6), asi que dentro de un JSONB estos nueve serian para siempre una
-  // promesa del `Set` `SCHEMA_FIELD_COMPONENTS` de JavaScript. Esta lista queda alineada con ese
-  // `Set` (`templateLifecycle.js`): si uno cambia, el otro cambia en el mismo commit.
-  const componentes = createFields.match(/ui_component IN \(([^)]+)\)/);
-  assert.ok(componentes, "ui_component debe llevar su CHECK");
-  const listados = componentes[1].split(",").map((v) => v.trim().replace(/'/g, ""));
-  assert.deepEqual(listados, [
-    "text", "richtext", "textarea", "number", "switch", "date", "date_expression", "select", "hidden",
-  ]);
+test("no vuelve `template_artifacts.schema_object_key`: era base_object_prefix + schema.json", () => {
+  // Se deriva al leer. Una columna para un valor derivable es una tercera forma de decir lo mismo.
+  assert.doesNotMatch(SIN_COMENTARIOS, /schema_object_key/);
 });
 
-test("`field_order` es columna, que es lo que hace que el orden autorado exista", () => {
-  // El fichero `schema.json` no puede llevarlo: su orden es el de las claves de un objeto JS, y JS
-  // itera primero las claves de indice de array ordenandolas numericamente. Medido: la entrada
-  // `anio_lectivo, 2025, responsable, 10` sale como `10, 2025, anio_lectivo, responsable`.
-  const columna = createFields.split("\n").find((l) => l.trim().startsWith("field_order"));
-  assert.ok(columna, "field_order debe existir");
-  assert.match(columna, /INT NOT NULL/);
+test("no vuelve `template_seeds`: la tabla sigue, con otro nombre y otro significado", () => {
+  assert.doesNotMatch(SIN_COMENTARIOS, /template_seeds/);
 });
 
-test("`field_code` es columna, que es lo que permitira unirlo con signature_flow_steps.slot", () => {
-  const columna = createFields.split("\n").find((l) => l.trim().startsWith("field_code"));
-  assert.ok(columna, "field_code debe existir");
-  assert.match(columna, /NOT NULL/);
-});
-
-test("no se guarda el `type` de JSON Schema: es funcion pura del componente", () => {
-  // Guardarlo seria una segunda copia que reconciliar. Se deriva al leer (`jsonTypeForComponent`).
-  assert.doesNotMatch(createFields, /^\s*json_type/m);
-});
-
-test("el unico por (artifact, data_key) hace estructural el descarte del slug repetido", () => {
-  assert.match(
-    SCHEMA,
-    /CREATE UNIQUE INDEX IF NOT EXISTS uq_template_artifact_fields_key ON template_artifact_fields \(template_artifact_id, data_key\);/
+test("`generadores_de_documento` es el catalogo, y su `tipo` es un CHECK y no texto libre", () => {
+  // Era `template_seeds.seed_type VARCHAR(40)`. El catalogo nuevo no admite un tipo inventado.
+  const create = SCHEMA.slice(
+    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS generadores_de_documento")
+  ).split(");")[0];
+  assert.ok(create.includes("generadores_de_documento"), "la tabla debe existir");
+  const tipos = create.match(/tipo IN \(([^)]+)\)/);
+  assert.ok(tipos, "tipo debe llevar su CHECK");
+  assert.deepEqual(
+    tipos[1].split(",").map((v) => v.trim().replace(/'/g, "")),
+    ["latex", "servicio"]
   );
 });
 
-test("borrar una edicion se lleva sus campos: la FK va con ON DELETE CASCADE", () => {
-  // La asimetria con las cabeceras de flujo es del MODELO, no un descuido: una cabecera tiene TRES
-  // portadores posibles y quedarse huerfana es un error que hay que ver; un campo tiene uno y no
-  // significa nada sin su edicion. Ademas conserva el comportamiento de
-  // `DELETE /admin/sql/template_artifacts`, que con NO ACTION pasaria a responder 409 en una
-  // plantilla `routed` con campos y sin flujo. Verificado en psql antes de escribirlo.
-  assert.match(
-    createFields,
-    /CONSTRAINT fk_template_artifact_fields_artifact FOREIGN KEY \(template_artifact_id\) REFERENCES template_artifacts\(id\) ON DELETE CASCADE/
-  );
+test("`source_path` y `destino` son las dos mitades excluyentes, y las dos son NULL", () => {
+  // Un generador `latex` trae paquete y no llama a nadie; uno `servicio`, al contrario. Ninguna de
+  // las dos puede ser obligatoria sin romper la otra mitad del catalogo.
+  const create = SCHEMA.slice(
+    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS generadores_de_documento")
+  ).split(");")[0];
+  for (const columna of ["source_path", "destino"]) {
+    const linea = create.split("\n").find((l) => l.trim().startsWith(columna));
+    assert.ok(linea, `${columna} debe existir`);
+    assert.doesNotMatch(linea, /NOT NULL/);
+  }
 });
 
-test("el CREATE INDEX de la tabla nueva va DESPUES de su CREATE TABLE", () => {
-  // Precedentes `673f1fb`, `8f9f1ad`, `99fc7c7`: este fichero se reaplica en CADA arranque, y un
-  // indice colocado antes de existir su columna mata el arranque en bucle.
-  assert.ok(
-    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifact_fields")
-      < SCHEMA.indexOf("CREATE INDEX IF NOT EXISTS idx_template_artifact_fields_order")
-  );
-});
-
-test("la tabla se declara DESPUES de template_artifacts, a la que referencia", () => {
-  assert.ok(
+test("quien produce el PDF lo declara la EDICION, y apunta al catalogo", () => {
+  // Estaba en `deliverables.template_seed_id`. Se movio, no se duplico: la columna vieja no vuelve.
+  const create = SCHEMA.slice(
     SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifacts")
-      < SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifact_fields")
+  ).split(");")[0];
+  assert.ok(create.split("\n").some((l) => l.trim().startsWith("generador_id")));
+  assert.match(
+    create,
+    /CONSTRAINT fk_template_artifacts_generador FOREIGN KEY \(generador_id\) REFERENCES generadores_de_documento\(id\)/
+  );
+  assert.doesNotMatch(SIN_COMENTARIOS, /template_seed_id/);
+});
+
+test("`render_engine` NO se toca: esta en otra tabla y dice otra cosa", () => {
+  // El plan del frente 23 decia que `generador_id` lo sustituia, y era falso: `render_engine` vive en
+  // `document_versions` y significa «con que motor se renderizo ESTA ronda», que es un hecho de la
+  // ejecucion, no una declaracion de la plantilla. Queda fuera del frente, y esta prueba lo fija.
+  const create = SCHEMA.slice(
+    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS document_versions")
+  ).split(");")[0];
+  assert.ok(create.split("\n").some((l) => l.trim().startsWith("render_engine")));
+});
+
+test("el catalogo se declara ANTES de la tabla que lo referencia", () => {
+  // Precedentes `673f1fb`, `8f9f1ad`, `99fc7c7`: el fichero se reaplica en CADA arranque, y una FK
+  // a una tabla que aun no existe mata el arranque en bucle.
+  assert.ok(
+    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS generadores_de_documento")
+      < SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifacts")
   );
 });

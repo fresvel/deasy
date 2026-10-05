@@ -69,7 +69,7 @@
         <AdminTableHeader
           :table="table"
           :loading="loading"
-          :is-template-seeds-table="isTemplateSeedsTable"
+          :is-generadores-table="isGeneradoresTable"
           :is-process-definitions-table="isProcessDefinitionFilterTable"
           :can-create="canCreateCurrentTable"
           :can-update="canUpdateCurrentTable"
@@ -242,7 +242,7 @@
         <AdminTableHeader
           :table="table"
           :loading="loading"
-          :is-template-seeds-table="isTemplateSeedsTable"
+          :is-generadores-table="isGeneradoresTable"
           :is-process-definitions-table="isProcessDefinitionFilterTable"
           :can-create="canCreateCurrentTable"
           :can-update="canUpdateCurrentTable"
@@ -300,7 +300,7 @@
         <AdminTableHeader
           :table="table"
           :loading="loading"
-          :is-template-seeds-table="isTemplateSeedsTable"
+          :is-generadores-table="isGeneradoresTable"
           :is-process-definitions-table="isProcessDefinitionFilterTable"
           :can-create="canCreateCurrentTable"
           :can-update="canUpdateCurrentTable"
@@ -347,7 +347,7 @@
         <AdminTableHeader
           :table="table"
           :loading="loading"
-          :is-template-seeds-table="isTemplateSeedsTable"
+          :is-generadores-table="isGeneradoresTable"
           :is-process-definitions-table="isProcessDefinitionFilterTable"
           :can-create="canCreateCurrentTable"
           :can-update="canUpdateCurrentTable"
@@ -1432,7 +1432,7 @@ const draftArtifactExistingFiles = ref({
   pptx: ""
 });
 const draftArtifactForm = ref({
-  template_seed_id: "",
+  generador_id: "",
   display_name: "",
   description: "",
   storage_version: "",
@@ -1816,7 +1816,7 @@ const hasFkTemplateArtifactFilters = computed(() =>
 );
 
 const isProcessDefinitionFilterTable = computed(() => props.table?.table === "process_definition_versions");
-const isTemplateSeedsTable = computed(() => props.table?.table === "template_seeds");
+const isGeneradoresTable = computed(() => props.table?.table === "generadores_de_documento");
 const isTemplateArtifactsTable = computed(() => props.table?.table === "template_artifacts");
 const isPersonTable = computed(() => props.table?.table === "persons");
 const isUnitsTable = computed(() => props.table?.table === "units");
@@ -1978,7 +1978,7 @@ const loadDraftArtifactPreview = async (seedId) => {
   }
   draftArtifactPreviewStatus.value = "loading";
   try {
-    const response = await axios.get(API_ROUTES.ADMIN_SQL_TEMPLATE_SEED_PREVIEW(seedId), { responseType: "blob" });
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_GENERADOR_PREVIEW(seedId), { responseType: "blob" });
     draftArtifactPreviewObjectUrl = URL.createObjectURL(response.data);
     draftArtifactPreviewUrl.value = draftArtifactPreviewObjectUrl;
     draftArtifactPreviewStatus.value = "ready";
@@ -1987,7 +1987,7 @@ const loadDraftArtifactPreview = async (seedId) => {
     draftArtifactPreviewStatus.value = "empty";
   }
 };
-watch(() => draftArtifactForm.value.template_seed_id, (seedId) => loadDraftArtifactPreview(seedId), { immediate: true });
+watch(() => draftArtifactForm.value.generador_id, (generadorId) => loadDraftArtifactPreview(generadorId), { immediate: true });
 const currentLoggedUser = computed(() => {
   if (typeof window === "undefined") {
     return null;
@@ -2374,8 +2374,8 @@ const resolveDisplayField = (tableMeta) => {
   if (tableMeta.table === "template_artifacts") {
     return "display_name";
   }
-  if (tableMeta.table === "template_seeds") {
-    return "display_name";
+  if (tableMeta.table === "generadores_de_documento") {
+    return "nombre";
   }
   // `numero` y `direccion` entran el 2026-08-28: son el valor legible de `telefonos`,
   // `documentos_identidad` y `emails`. Sin ellos el editor caía al primer campo que no fuera `id`
@@ -2710,7 +2710,7 @@ const {
   fkDisplay,
   allTablesMap,
   isTemplateArtifactsTable,
-  isTemplateSeedsTable,
+  isGeneradoresTable,
   fetchRows: (...args) => fetchRows(...args),
   loadDraftArtifactSeedOptions: (...args) => loadDraftArtifactSeedOptions(...args),
   showFeedbackToast,
@@ -2968,8 +2968,8 @@ const handleDownloadRecordArchive = async () => {
   let url = null;
   if (tableName === "template_artifacts") {
     url = API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_DOWNLOAD(row.id);
-  } else if (tableName === "template_seeds") {
-    url = API_ROUTES.ADMIN_SQL_TEMPLATE_SEED_DOWNLOAD(row.id);
+  } else if (tableName === "generadores_de_documento") {
+    url = API_ROUTES.ADMIN_SQL_GENERADOR_DOWNLOAD(row.id);
   }
   if (!url) {
     return;
@@ -2979,7 +2979,7 @@ const handleDownloadRecordArchive = async () => {
     const response = await axios.get(url, { responseType: "blob" });
     const disposition = response.headers?.["content-disposition"] || "";
     const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
-    const fallbackName = `${row.template_code || row.seed_code || row.display_name || "formatos"}.zip`.replaceAll("/", "-");
+    const fallbackName = `${row.template_code || row.code || row.display_name || row.nombre || "formatos"}.zip`.replaceAll("/", "-");
     const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
     const blobUrl = URL.createObjectURL(response.data);
     const link = document.createElement("a");
@@ -3829,7 +3829,7 @@ const handleDefinitionArtifactsManagerAccept = async () => {
 };
 
 // Crear un entregable a partir de otro: precarga el modal en modo creación con los datos del origen
-// (nombre "(copia)", semilla, campos y flujos), vinculado a la misma configuración. Útil para variar una
+// (nombre "(copia)", generador, campos y flujos), vinculado a la misma configuración. Útil para variar una
 // plantilla oficial sin tocar la original (su contenido se gestiona por el pipeline).
 const cloneTemplateFromGraph = async ({ templateArtifactId, definitionId } = {}) => {
   if (!templateArtifactId) return;

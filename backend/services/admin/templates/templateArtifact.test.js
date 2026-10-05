@@ -213,7 +213,8 @@ const buildSchemaService = ({ readObjectAsText }) => new TemplateArtifactService
   {
     getByKeys: async () => ({
       id: ART_ID,
-      schema_object_key: "System/tpl_x/1.0.0/schema.json",
+      // Sin `schema_object_key` (frente 23, F4.2): la clave del `schema.json` se DERIVA del prefijo.
+      base_object_prefix: "System/tpl_x/1.0.0/",
       template_code: "tpl_x",
       display_name: "Plantilla X",
     }),

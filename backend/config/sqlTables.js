@@ -634,22 +634,32 @@ export const SQL_TABLES = [
     searchFields: ["reason"]
   },
   {
-    table: "template_seeds",
-    label: "Semillas",
+    table: "generadores_de_documento",
+    label: "Generadores de documento",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "seed_code", label: "Codigo", type: "text", required: true },
-      { name: "display_name", label: "Nombre", type: "text", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "nombre", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "seed_type", label: "Tipo", type: "text", required: true },
-      { name: "source_path", label: "Ruta fuente", type: "text", required: true },
+      {
+        name: "tipo",
+        label: "Tipo",
+        type: "select",
+        options: ["latex", "servicio"],
+        defaultValue: "servicio"
+      },
+      // Las dos mitades excluyentes del catalogo: `source_path` es del paquete latex, `destino` del
+      // servicio. Ninguna es `required`, porque exigirla rompe la otra mitad; lo que si se exige, y
+      // por tipo, lo comprueba `generadorIdentityAndSource` (`crud/validation.js`).
+      { name: "destino", label: "Destino (cola o endpoint)", type: "text" },
+      { name: "source_path", label: "Ruta fuente", type: "text" },
       { name: "preview_path", label: "Ruta preview", type: "text" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["seed_code", "display_name", "seed_type"]
+    searchFields: ["code", "nombre", "tipo", "destino"]
   },
   {
     table: "template_artifacts",
@@ -658,7 +668,10 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "template_seed_id", label: "Semilla", type: "number", readOnly: true },
+      // Columna FISICA de `template_artifacts` desde el frente 23 (F3.2). Antes se listaba aqui igual
+      // pero el dato vivia en `deliverables` y `SqlAdminService` lo traia por JOIN: la fachada ya
+      // decia que este era su sitio.
+      { name: "generador_id", label: "Generador", type: "number", readOnly: true },
       { name: "owner_person_id", label: "Persona propietaria", type: "number", readOnly: true },
       { name: "template_code", label: "Codigo", type: "text", required: true },
       { name: "display_name", label: "Nombre", type: "text", required: true },
@@ -681,7 +694,6 @@ export const SQL_TABLES = [
       },
       { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
       { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
-      { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
       { name: "content_hash", label: "Hash", type: "text" },
       { name: "parent_version_id", label: "Versión origen", type: "number", readOnly: true },
       { name: "is_active", label: "Almacenamiento listo", type: "boolean", defaultValue: 1, readOnly: true },

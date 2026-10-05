@@ -16,9 +16,13 @@ import {
   unzipToDirectory,
   walkFiles,
 } from "../kernel/storage.js";
-import { checkJinjaBlockBalance, parseAvailableFormats, sanitizeLatexSource } from "./artifacts.js";
+import {
+  checkJinjaBlockBalance,
+  parseAvailableFormats,
+  sanitizeLatexSource,
+  schemaObjectKeyForPrefix
+} from "./artifacts.js";
 import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
-import { copySchemaFieldsToArtifact } from "./schemaFieldRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -110,13 +114,16 @@ export default class TemplateArtifactService {
     //
     // El JSON mal formado se trata igual que el fallo de red, y a propósito: `schema.json` lo escribe
     // el propio backend, así que un JSON roto es corrupción del paquete, no una entrada del usuario.
-    const schemaText = await this._readObjectAsText(bucket, artifact.schema_object_key);
+    // La clave se DERIVA del prefijo (frente 23, F4.2): `schema_object_key` era una columna que
+    // guardaba exactamente esto. Ver `schemaObjectKeyForPrefix` en `artifacts.js`.
+    const schemaObjectKey = schemaObjectKeyForPrefix(artifact.base_object_prefix);
+    const schemaText = await this._readObjectAsText(bucket, schemaObjectKey);
     let schema;
     try {
       schema = JSON.parse(schemaText || "{}");
     } catch (error) {
       const failure = new Error(
-        `El esquema de campos de la plantilla esta corrupto y no se pudo leer (${artifact.schema_object_key}).`
+        `El esquema de campos de la plantilla esta corrupto y no se pudo leer (${schemaObjectKey}).`
       );
       failure.cause = error;
       throw failure;
@@ -390,7 +397,6 @@ export default class TemplateArtifactService {
       await copyMinioObjectBinary(bucket, objectName, `${newPrefix}${relative}`);
     }
 
-    const newSchemaKey = `${newPrefix}schema.json`;
     // Re-mapea los entry_object_key de available_formats del prefijo viejo al nuevo (antes quedaban
     // apuntando a la versión anterior).
     const remappedFormats = parseAvailableFormats(artifact.available_formats);
@@ -413,13 +419,16 @@ export default class TemplateArtifactService {
       const [result] = await connection.query(
         `INSERT INTO template_artifacts (
           storage_version, lifecycle_state, base_object_prefix,
-          available_formats, schema_object_key, content_hash, parent_version_id, deliverable_id, is_active
+          available_formats, generador_id, content_hash, parent_version_id, deliverable_id, is_active
         ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, 0)`,
         [
           nextStorageVersion,
           newPrefix,
           JSON.stringify(remappedFormats || {}),
-          newSchemaKey,
+          // El generador se HEREDA de la version padre: una version nueva de la misma plantilla la
+          // sigue produciendo el mismo servicio. Antes este dato vivia en `deliverables`, o sea que
+          // se heredaba por no tocarlo; ahora es columna de la edicion y hay que copiarlo.
+          artifact.generador_id ?? null,
           artifact.content_hash,
           Number(artifactId),
           deliverableId,
@@ -431,14 +440,10 @@ export default class TemplateArtifactService {
         targetArtifactId: newArtifactId,
         displayName,
       });
-      // Los CAMPOS del formulario, por el mismo camino y por el mismo motivo (sub-paso S6 del §0.4).
-      // El `schema.json` de la hija ya llegó por la copia binaria de MinIO de más arriba; esto añade
-      // la copia CONTABLE, que es la que se puede listar, unir y migrar con un UPDATE. Sin ella las
-      // dos copias divergirían justo aquí: fichero con campos, tabla vacía.
-      await copySchemaFieldsToArtifact(connection, {
-        sourceArtifactId: Number(artifactId),
-        targetArtifactId: newArtifactId,
-      });
+      // AQUI SE COPIABAN LOS CAMPOS a la version hija (`copySchemaFieldsToArtifact`). Era el UNICO
+      // lector de `template_artifact_fields` en todo el sistema —la tabla existia para copiarse a si
+      // misma—, y con ella se va (frente 23, F4.1). El `schema.json` de la hija sigue llegando por la
+      // copia binaria de MinIO de mas arriba, que es de donde el editor lo lee.
       await connection.commit();
     } catch (error) {
       await connection.rollback().catch(() => {});

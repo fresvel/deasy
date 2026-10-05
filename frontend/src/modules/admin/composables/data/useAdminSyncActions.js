@@ -9,7 +9,7 @@ export function useAdminSyncActions({
   formData,
   fkDisplay,
   allTablesMap,
-  isTemplateSeedsTable,
+  isGeneradoresTable,
   fetchRows,
   loadDraftArtifactSeedOptions,
   showFeedbackToast,
@@ -23,17 +23,17 @@ export function useAdminSyncActions({
     try {
       const response = await adminSqlService.syncTemplateSeeds();
       const { discovered = 0, inserted = 0, updated = 0 } = response.data || {};
-      if (isTemplateSeedsTable.value) {
+      if (isGeneradoresTable.value) {
         await fetchRows();
       }
       await loadDraftArtifactSeedOptions();
       showFeedbackToast({
         kind: "success",
-        title: "Seeds sincronizados",
+        title: "Generadores sincronizados",
         message: `Detectados: ${discovered}. Insertados: ${inserted}. Actualizados: ${updated}.`
       });
     } catch (err) {
-      error.value = err?.response?.data?.message || "No se pudieron sincronizar los seeds.";
+      error.value = err?.response?.data?.message || "No se pudieron sincronizar los generadores.";
       showFeedbackToast({
         kind: "error",
         title: "No se pudieron sincronizar",

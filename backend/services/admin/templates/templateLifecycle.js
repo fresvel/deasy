@@ -61,7 +61,6 @@ import {
   workflowHasSteps
 } from "./workflows.js";
 import { replaceAuthoredFlowForArtifact, copyAuthoredFlowToArtifact, hasFillStepsForArtifact } from "./flowRows.js";
-import { replaceSchemaFieldsForArtifact, copySchemaFieldsToArtifact } from "./schemaFieldRows.js";
 import { parseAvailableFormats, findPreferredPdfObject } from "./artifacts.js";
 import {
   MINIO_TEMPLATES_BUCKET,
@@ -74,8 +73,9 @@ import {
 // dossier, fotos), asi no deja estado en el contenedor ni ensucia el repo en dev.
 const TEMPLATE_DRAFT_STAGING_ROOT = path.join(os.tmpdir(), "deasy", "template-drafts");
 const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
-// Semilla por defecto ("general") cuando se crea una plantilla sin elegir seed. Coincide con la del bootstrap.
-const DEFAULT_SEED_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
+// Generador por defecto cuando se crea una plantilla sin elegir uno. Coincide con el del bootstrap.
+// Es la semilla LaTeX: el PRIMER generador del catalogo, no el unico posible (frente 23, F3.1).
+const DEFAULT_GENERADOR_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
 // Formatos de documento de referencia (al menos uno es obligatorio al crear una plantilla).
 const REFERENCE_DOC_FORMATS = ["pdf", "docx", "xlsx", "pptx"];
 
@@ -99,9 +99,8 @@ const slugifyFieldKey = (value, fallback = "campo") => {
   return base || fallback;
 };
 
-// El `type` de JSON Schema es funcion PURA del componente de UI, y no tiene otro productor. Por eso
-// `template_artifact_fields` NO le da columna: guardarlo seria una segunda copia que reconciliar.
-// Se deriva aqui para el fichero, y quien lea las filas lo deriva igual.
+// El `type` de JSON Schema es funcion PURA del componente de UI, y no tiene otro productor: se
+// deriva aqui, al escribir el fichero, y no se guarda en ninguna parte.
 const jsonTypeForComponent = (component) => (
   component === "switch" ? "boolean"
     : component === "number" ? "number"
@@ -110,19 +109,17 @@ const jsonTypeForComponent = (component) => (
 
 // PASO 1 — la lista NORMALIZADA de campos, EN EL ORDEN QUE MANDO EL FORMULARIO.
 //
-// Esta funcion existe por el sub-paso S6 del §0.4: es la que alimenta A LA VEZ el `schema.json` de
-// MinIO y las filas de `template_artifact_fields`. Las dos copias salen del MISMO objeto en memoria,
-// que es la condicion que hace que la escritura doble no pueda divergir (misma leccion que el
-// sub-paso 3 del §0.8, donde `buildWorkflowsYaml` se partio en `buildWorkflowsDocument` + `dump`).
+// Nacio para alimentar A LA VEZ el `schema.json` de MinIO y las filas de
+// `template_artifact_fields`; con la tabla retirada (frente 23, F4.1) le queda UN solo consumidor,
+// el paso 2, y sigue haciendo falta porque es quien valida los slugs y el catalogo de componentes.
 //
-// ⚠️ Y ES LA UNICA COPIA QUE CONSERVA EL ORDEN AUTORADO. El paso 2 vuelca esto en un objeto
-// `properties`, y ahi el orden se pierde: JS itera primero las claves de indice de array y ademas
-// las ordena numericamente entre si. Medido con un experimento desechable antes de escribir esto:
-// la entrada `anio_lectivo, 2025, responsable, 10` —el slug deja pasar los enteros— sale del objeto
-// como `10, 2025, anio_lectivo, responsable`. O sea, `schema.json` YA se escribe con el orden
-// roto, y no se arregla aqui a proposito: arreglarlo moveria el `content_hash` de todos los
-// paquetes con un campo de clave entera. La columna `field_order` sale del indice de ESTA lista, asi
-// que la base guarda el orden bueno y el fichero conserva el que siempre tuvo.
+// ⚠️ EL ORDEN AUTORADO SE PIERDE EN EL PASO 2, y ya no hay donde conservarlo. El paso 2 vuelca esto
+// en un objeto `properties`, y ahi JS itera primero las claves de indice de array y ademas las
+// ordena numericamente entre si. Medido con un experimento desechable: la entrada
+// `anio_lectivo, 2025, responsable, 10` —el slug deja pasar los enteros— sale del objeto como
+// `10, 2025, anio_lectivo, responsable`. No se arregla aqui a proposito: arreglarlo moveria el
+// `content_hash` de todos los paquetes con un campo de clave entera. `field_order`, la columna que
+// guardaba el orden bueno, se fue con la tabla — y era el ultimo sitio donde existia.
 //
 // Cada `rawField` del formulario: { key, title, field_code, component, group, required }.
 export const normalizeSchemaFieldList = (fields = []) => {
@@ -131,9 +128,8 @@ export const normalizeSchemaFieldList = (fields = []) => {
   (Array.isArray(fields) ? fields : []).forEach((rawField, index) => {
     const dataKey = slugifyFieldKey(rawField?.key || rawField?.title, `campo_${index + 1}`);
     // Descarte silencioso del slug repetido: es el comportamiento de siempre (el segundo se pisaba
-    // en `properties`). Ahora ademas lo impide `uq_template_artifact_fields_key`, pero el descarte
-    // se queda aqui para que la base no vea nunca la fila duplicada y el guardado no falle donde
-    // antes pasaba.
+    // en `properties`). Lo respaldaba `uq_template_artifact_fields_key`; retirada la tabla, este
+    // descarte vuelve a ser el unico que lo impide.
     if (seen.has(dataKey)) return;
     seen.add(dataKey);
     const component = SCHEMA_FIELD_COMPONENTS.has(String(rawField?.component || "").trim())
@@ -578,7 +574,7 @@ export default class TemplateLifecycleService {
     const defId = Number(definitionId);
     const [srcRows] = await this.pool.query(
       `SELECT ta.*, d.code AS template_code, d.display_name, d.description, d.template_scope,
-              d.template_seed_id, d.owner_person_id
+              d.owner_person_id
          FROM template_artifacts ta LEFT JOIN deliverables d ON d.id = ta.deliverable_id
         WHERE ta.id = ? LIMIT 1`,
       [srcId]
@@ -605,9 +601,9 @@ export default class TemplateLifecycleService {
     // Crear el deliverable propio de la línea destino.
     const [delivIns] = await this.pool.query(
       `INSERT INTO deliverables
-         (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [code, src.display_name, src.description, def.process_id, def.variation_key, src.template_scope || "official", src.template_seed_id, src.owner_person_id]
+         (code, display_name, description, owner_process_id, owner_variation_key, template_scope, owner_person_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [code, src.display_name, src.description, def.process_id, def.variation_key, src.template_scope || "official", src.owner_person_id]
     );
     const newDeliverableId = Number(delivIns.insertId);
 
@@ -649,12 +645,13 @@ export default class TemplateLifecycleService {
       await connection.beginTransaction();
       const [taIns] = await connection.query(
         `INSERT INTO template_artifacts
-           (storage_version, lifecycle_state, base_object_prefix, available_formats, schema_object_key,
+           (storage_version, lifecycle_state, base_object_prefix, available_formats, generador_id,
             content_hash, deliverable_id, is_active)
          VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, 1)`,
         [
           newPrefix, JSON.stringify(remappedFormats || {}),
-          `${newPrefix}schema.json`, src.content_hash, newDeliverableId
+          // El generador se hereda del origen: el fork cambia de LINEA, no de productor.
+          src.generador_id ?? null, src.content_hash, newDeliverableId
         ]
       );
       newArtifactId = Number(taIns.insertId);
@@ -663,14 +660,9 @@ export default class TemplateLifecycleService {
         targetArtifactId: newArtifactId,
         displayName: src.display_name,
       });
-      // Los CAMPOS, por el mismo camino (sub-paso S6 del §0.4). El fork copia MinIO en binario igual
-      // que el versionado, así que el `schema.json` del entregable bifurcado ya llegó; lo que faltaba
-      // era su copia en filas. Sin esto, un entregable bifurcado nacería con campos en el fichero y
-      // la tabla vacía.
-      await copySchemaFieldsToArtifact(connection, {
-        sourceArtifactId: srcId,
-        targetArtifactId: newArtifactId,
-      });
+      // AQUI SE COPIABAN LOS CAMPOS a la bifurcacion (`copySchemaFieldsToArtifact`). Se va con
+      // `template_artifact_fields` (frente 23, F4.1): la copia binaria de MinIO ya trae el
+      // `schema.json`, que es lo que el editor lee.
       await connection.commit();
     } catch (error) {
       await connection.rollback().catch(() => {});
@@ -691,15 +683,15 @@ export default class TemplateLifecycleService {
   async getTemplateSeedPreview(seedId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      `SELECT id, display_name, preview_path, source_path
-       FROM template_seeds
+      `SELECT id, nombre, preview_path, source_path
+       FROM generadores_de_documento
        WHERE id = ?
        LIMIT 1`,
       [Number(seedId)]
     );
     const row = rows?.[0];
     if (!row) {
-      throw new Error("El seed seleccionado no existe.");
+      throw new Error("El generador seleccionado no existe.");
     }
     if (!row.preview_path) {
       const seedObjects = await listMinioObjects(MINIO_TEMPLATES_BUCKET, row.source_path, true);
@@ -709,7 +701,7 @@ export default class TemplateLifecycleService {
       }
       row.preview_path = fallbackPreviewPath;
       await this.pool.query(
-        "UPDATE template_seeds SET preview_path = ? WHERE id = ?",
+        "UPDATE generadores_de_documento SET preview_path = ? WHERE id = ?",
         [fallbackPreviewPath, row.id]
       );
     }
@@ -728,14 +720,14 @@ export default class TemplateLifecycleService {
       }
       row.preview_path = fallbackPreviewPath;
       await this.pool.query(
-        "UPDATE template_seeds SET preview_path = ? WHERE id = ?",
+        "UPDATE generadores_de_documento SET preview_path = ? WHERE id = ?",
         [fallbackPreviewPath, row.id]
       );
       objectStream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, row.preview_path);
     }
     return {
       stream: objectStream,
-      fileName: `${slugify(row.display_name || "seed") || "seed"}-preview.pdf`
+      fileName: `${slugify(row.nombre || "generador") || "generador"}-preview.pdf`
     };
   }
 
@@ -809,37 +801,41 @@ export default class TemplateLifecycleService {
 
       const [existingRows] = await this.pool.query(
         `SELECT id
-         FROM template_seeds
-         WHERE seed_code = ?
+         FROM generadores_de_documento
+         WHERE code = ?
          LIMIT 1`,
         [group.seedCode]
       );
 
+      // EL TIPO ES SIEMPRE `latex`, Y NO ES UNA SIMPLIFICACION. Lo que este descubrimiento encuentra
+      // es un PAQUETE publicado en MinIO, y un paquete lo compila la tuberia LaTeX: un generador de
+      // tipo `servicio` no tiene paquete que descubrir, se registra a mano con su `destino`. El
+      // segmento de carpeta no se pierde: viaja dentro de `code` (`latex/informe-general`).
       if (existingRows?.length) {
         await this.pool.query(
-          `UPDATE template_seeds
-           SET display_name = ?,
+          `UPDATE generadores_de_documento
+           SET nombre = ?,
                description = ?,
-               seed_type = ?,
+               tipo = 'latex',
                source_path = ?,
                preview_path = ?,
                is_active = 1
            WHERE id = ?`,
-          [group.displayName, description, group.seedType, group.sourcePath, group.previewPath, existingRows[0].id]
+          [group.displayName, description, group.sourcePath, group.previewPath, existingRows[0].id]
         );
         updated += 1;
       } else {
         await this.pool.query(
-          `INSERT INTO template_seeds (
-            seed_code,
-            display_name,
+          `INSERT INTO generadores_de_documento (
+            code,
+            nombre,
             description,
-            seed_type,
+            tipo,
             source_path,
             preview_path,
             is_active
-          ) VALUES (?, ?, ?, ?, ?, ?, 1)`,
-          [group.seedCode, group.displayName, description, group.seedType, group.sourcePath, group.previewPath]
+          ) VALUES (?, ?, ?, 'latex', ?, ?, 1)`,
+          [group.seedCode, group.displayName, description, group.sourcePath, group.previewPath]
         );
         inserted += 1;
       }
@@ -1192,7 +1188,7 @@ export default class TemplateLifecycleService {
     draftDir,
     bucket,
     baseObjectPrefix,
-    templateSeedId = null,
+    generadorId = null,
     uploadedFiles = {},
     existingAvailableFormats = {}
   } = {}) {
@@ -1216,10 +1212,10 @@ export default class TemplateLifecycleService {
     };
 
     let seedRow = null;
-    if (templateSeedId) {
-      seedRow = await this._getByKeys("template_seeds", { id: templateSeedId });
+    if (generadorId) {
+      seedRow = await this._getByKeys("generadores_de_documento", { id: generadorId });
       if (!seedRow) {
-        throw new Error("El seed seleccionado no existe.");
+        throw new Error("El generador seleccionado no existe.");
       }
       await downloadMinioPrefixToDirectory(
         MINIO_TEMPLATES_BUCKET,
@@ -1246,7 +1242,7 @@ export default class TemplateLifecycleService {
       }
       // El render compilado (formato latex) es opcional/derivable: si el seed no lo publica (p.ej. el seed
       // base se empaqueta sin render/), se omite sin abortar. El contrato real es jinja2.
-      if (String(seedRow.seed_type || "").toLowerCase() === "latex") {
+      if (String(seedRow.tipo || "").toLowerCase() === "latex") {
         try {
           await downloadMinioPrefixToDirectory(
             MINIO_TEMPLATES_BUCKET,
@@ -1392,14 +1388,14 @@ export default class TemplateLifecycleService {
       `UPDATE template_artifacts
        SET base_object_prefix = ?,
            available_formats = ?,
-           schema_object_key = ?,
+           generador_id = ?,
            content_hash = ?,
            is_active = 1
        WHERE id = ?`,
       [
         almacenamiento.baseObjectPrefix,
         JSON.stringify(almacenamiento.availableFormats),
-        almacenamiento.schemaObjectKey,
+        almacenamiento.generadorId,
         almacenamiento.contentHash,
         artifactId
       ]
@@ -1408,13 +1404,12 @@ export default class TemplateLifecycleService {
     if (existingArtifact?.deliverable_id) {
       await connection.query(
         `UPDATE deliverables
-         SET display_name = ?, description = ?, template_scope = ?, template_seed_id = ?, owner_person_id = ?
+         SET display_name = ?, description = ?, template_scope = ?, owner_person_id = ?
          WHERE id = ?`,
         [
           identidad.displayName,
           identidad.description,
           identidad.templateScope,
-          identidad.templateSeedId,
           identidad.ownerPersonId,
           existingArtifact.deliverable_id
         ]
@@ -1452,8 +1447,8 @@ export default class TemplateLifecycleService {
     if (!deliverableId) {
       const [delivIns] = await connection.query(
         `INSERT INTO deliverables
-           (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (code, display_name, description, owner_process_id, owner_variation_key, template_scope, owner_person_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
         [
           identidad.templateCode,
           identidad.displayName,
@@ -1461,7 +1456,6 @@ export default class TemplateLifecycleService {
           ownerProcessId,
           ownerVariationKey,
           identidad.templateScope,
-          identidad.templateSeedId,
           identidad.ownerPersonId
         ]
       );
@@ -1474,7 +1468,7 @@ export default class TemplateLifecycleService {
         lifecycle_state,
         base_object_prefix,
         available_formats,
-        schema_object_key,
+        generador_id,
         content_hash,
         deliverable_id,
         is_active
@@ -1483,7 +1477,7 @@ export default class TemplateLifecycleService {
         almacenamiento.storageVersion,
         almacenamiento.baseObjectPrefix,
         JSON.stringify(almacenamiento.availableFormats),
-        almacenamiento.schemaObjectKey,
+        almacenamiento.generadorId,
         almacenamiento.contentHash,
         deliverableId
       ]
@@ -1513,8 +1507,7 @@ export default class TemplateLifecycleService {
     identidad,
     processDefinitionId,
     itemMode,
-    workflowsDocument,
-    schemaFieldList = []
+    workflowsDocument
   }) {
     const connection = await this.pool.getConnection();
     try {
@@ -1545,21 +1538,9 @@ export default class TemplateLifecycleService {
         });
       }
 
-      // ESCRITURA DOBLE (sub-paso S6 del §0.4): la otra copia de los CAMPOS, la que vive en la base.
-      // Sale de la misma `schemaFieldList` que ya se serializó al `schema.json` del paquete.
-      //
-      // VA SIEMPRE, también con la lista vacía, y ahí se separa del flujo de arriba: el flujo solo
-      // se toca si el formulario mandó uno (`workflowsDocument`), pero los campos se reescriben en
-      // cada guardado porque `schema.json` también se reescribe en cada guardado —a `{}` si no
-      // llegan—. Saltarse el `DELETE` cuando la lista viene vacía dejaría las filas viejas
-      // contradiciendo un fichero ya vaciado, que es exactamente la divergencia que la escritura
-      // doble existe para impedir.
-      if (artifactId) {
-        await replaceSchemaFieldsForArtifact(connection, {
-          artifactId,
-          fields: schemaFieldList
-        });
-      }
+      // AQUI IBA LA SEGUNDA COPIA DE LOS CAMPOS, la de `template_artifact_fields`. Se va con la
+      // tabla (frente 23, F4.1). Ya no hay escritura doble que reconciliar: los campos tienen UN
+      // solo destino, el `schema.json` del paquete que escribe `_writeDraftPackage`.
 
       await connection.commit();
       return artifactId;
@@ -1651,18 +1632,19 @@ export default class TemplateLifecycleService {
     // default 'single'. 'routed' no autora flujo predefinido: se define al enviar (runtime).
     const requestedItemMode = normalizeItemMode(data.item_mode);
     const existingAvailableFormats = parseAvailableFormats(existingArtifact?.available_formats);
-    let templateSeedId = data.template_seed_id ? Number(data.template_seed_id) : null;
+    let generadorId = data.generador_id ? Number(data.generador_id) : null;
 
-    // Toda plantilla nace de una semilla: si al crear no se eligió ninguna, se usa la general (default).
-    if (!isEdit && !templateSeedId) {
+    // Toda plantilla declara quien la produce: si al crear no se eligió ninguno, se usa el generador
+    // por defecto del catálogo, que es la semilla LaTeX (frente 23, F3.2).
+    if (!isEdit && !generadorId) {
       const [defaultSeedRows] = await this.pool.query(
-        "SELECT id FROM template_seeds WHERE seed_code = ? AND is_active = 1 LIMIT 1",
-        [DEFAULT_SEED_CODE]
+        "SELECT id FROM generadores_de_documento WHERE code = ? AND is_active = 1 LIMIT 1",
+        [DEFAULT_GENERADOR_CODE]
       );
       if (!defaultSeedRows?.[0]?.id) {
-        throw new Error(`No existe la semilla por defecto "${DEFAULT_SEED_CODE}". Ejecuta el bootstrap del sistema.`);
+        throw new Error(`No existe el generador por defecto "${DEFAULT_GENERADOR_CODE}". Ejecuta el bootstrap del sistema.`);
       }
-      templateSeedId = Number(defaultSeedRows[0].id);
+      generadorId = Number(defaultSeedRows[0].id);
     }
 
     if (!isEdit) {
@@ -1676,7 +1658,7 @@ export default class TemplateLifecycleService {
         throw new Error("Debes definir al menos un paso en el flujo de entrega.");
       }
     } else if (
-      !templateSeedId
+      !generadorId
       && !Object.values(uploadedFiles).some(Boolean)
       && !Object.keys(existingAvailableFormats).length
     ) {
@@ -1690,7 +1672,7 @@ export default class TemplateLifecycleService {
       description: String(data.description || "").trim() || null,
       ownerCedula,
       requestedOwnerPersonId: normalizeNumericId(data.owner_person_id),
-      templateSeedId,
+      generadorId,
       uploadedFiles,
       requestedItemMode,
       existingAvailableFormats
@@ -1712,15 +1694,14 @@ export default class TemplateLifecycleService {
     if (typeof schemaFields === "string") {
       try { schemaFields = JSON.parse(schemaFields); } catch { schemaFields = null; }
     }
-    // ESCRITURA DOBLE (sub-paso S6 del §0.4): de esta lista salen LAS DOS copias —el `schema.json`
-    // del paquete, aqui mismo, y las filas de `template_artifact_fields`, ya dentro de la transaccion
-    // de `_persistDraftToDatabase`—. Sale UNA sola vez y se pasa a los dos, que es lo que impide que
-    // diverjan; si se normalizara dos veces, "producen lo mismo" volveria a ser una promesa.
+    // AQUI HABIA ESCRITURA DOBLE: de esta lista salian el `schema.json` del paquete y las filas de
+    // `template_artifact_fields`. Con la tabla retirada (frente 23, F4.1) queda UN solo destino, y
+    // la normalizacion de un solo normalizador deja de ser una precaucion contra la divergencia para
+    // ser simplemente lo que valida la entrada del formulario.
     //
-    // El `schema.json` se SIGUE EMITIENDO, y no es andamiaje temporal: es lo que viaja dentro del
-    // paquete de MinIO, entra en el `content_hash`, lo exige `validatePackagedArtifactDraft` y es lo
-    // unico que hoy relee `getTemplateArtifactSchema` para el editor. Mientras exista, cualquier paso
-    // de este frente se deshace volviendo a leer del fichero.
+    // El `schema.json` se SIGUE EMITIENDO: es lo que viaja dentro del paquete de MinIO, entra en el
+    // `content_hash`, lo exige `validatePackagedArtifactDraft` y es lo unico que relee
+    // `getTemplateArtifactSchema` para el editor de `/admin`.
     const schemaFieldList = normalizeSchemaFieldList(schemaFields);
     const schemaJson = schemaFieldList.length
       ? buildSchemaJsonFromFieldList(schemaFieldList)
@@ -1755,7 +1736,7 @@ export default class TemplateLifecycleService {
     //
     // El commit anterior le quitó la sección `workflows:`, que era la única que no era copia literal
     // de una columna de `template_artifacts` / `deliverables`. Lo que quedaba —nombre, versión,
-    // código, scope, descripción y seed_code— es exactamente eso: seis copias. Conservarlo generado
+    // código, scope, descripción y el código de la semilla— es exactamente eso: seis copias. Conservarlo generado
     // obligaría además a rechazarlo explícitamente al re-subir un ZIP, o la grieta vuelve.
     const workflowsDocument = hasCustomWorkflows
       ? buildWorkflowsDocument({ fillWorkflow, signatureWorkflow })
@@ -1770,7 +1751,7 @@ export default class TemplateLifecycleService {
       "utf8"
     );
 
-    return { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument, schemaFieldList };
+    return { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument };
   }
 
   async saveTemplateArtifactDraft(artifactId, data = {}, files = {}, actor = {}) {
@@ -1783,7 +1764,7 @@ export default class TemplateLifecycleService {
       description,
       ownerCedula,
       requestedOwnerPersonId,
-      templateSeedId,
+      generadorId,
       uploadedFiles,
       requestedItemMode,
       existingAvailableFormats
@@ -1820,7 +1801,7 @@ export default class TemplateLifecycleService {
       draftDir,
       bucket,
       baseObjectPrefix,
-      templateSeedId,
+      generadorId,
       uploadedFiles,
       existingAvailableFormats
     });
@@ -1829,8 +1810,7 @@ export default class TemplateLifecycleService {
       throw new Error("No se detectaron formatos disponibles para el borrador.");
     }
 
-    const schemaObjectKey = `${baseObjectPrefix}schema.json`;
-    const { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument, schemaFieldList } = await this._writeDraftPackage({
+    const { contentHash, hasCustomWorkflows, authoringWarnings, workflowsDocument } = await this._writeDraftPackage({
       draftDir,
       data,
       availableFormats,
@@ -1854,10 +1834,10 @@ export default class TemplateLifecycleService {
       // `template_artifacts` (una fila por edición) y la IDENTIDAD en `deliverables` (una por
       // entregable, compartida por sus ediciones). Cada método toca la tabla que le toca.
       const almacenamiento = {
-        storageVersion, baseObjectPrefix, availableFormats, schemaObjectKey, contentHash
+        storageVersion, baseObjectPrefix, availableFormats, generadorId, contentHash
       };
       const identidad = {
-        templateCode, displayName, description, templateScope, templateSeedId, ownerPersonId
+        templateCode, displayName, description, templateScope, ownerPersonId
       };
 
       // Todo lo que va a la base, en UNA transacción (ver `_persistDraftToDatabase`).
@@ -1868,8 +1848,7 @@ export default class TemplateLifecycleService {
         identidad,
         processDefinitionId: data.process_definition_id,
         itemMode: requestedItemMode,
-        workflowsDocument,
-        schemaFieldList
+        workflowsDocument
       });
 
       // Aquí se proyectaba el flujo del `meta.yaml` a cada vínculo, con su aviso y su bandera
@@ -1883,7 +1862,7 @@ export default class TemplateLifecycleService {
 
       return {
         id: createdId,
-        template_seed_id: templateSeedId,
+        generador_id: generadorId,
         owner_person_id: ownerPersonId,
         template_code: templateCode,
         display_name: displayName,
@@ -1892,7 +1871,6 @@ export default class TemplateLifecycleService {
         template_scope: templateScope,
         base_object_prefix: baseObjectPrefix,
         available_formats: availableFormats,
-        schema_object_key: schemaObjectKey,
         content_hash: contentHash,
         is_active: 1,
         __warning: combinedWarning || undefined,
