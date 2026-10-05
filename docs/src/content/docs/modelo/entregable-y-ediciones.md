@@ -22,6 +22,11 @@ configuración está enlazada, y la configuración sabe su proceso y su variaci�
 lector en todo el sistema era un guardia que comprobaba que coincidieran con el vínculo. Se
 retiraron las tres cosas.
 
+Que un entregable sirva **a una sola línea** sigue siendo la regla, y ahora la impone la base en vez
+de ese guardia: el disparador `trg_pdt_linea_unica`, explicado en
+[El vínculo](/modelo/vinculo). Cubre más que el guardia, porque también vigila el clon, los scripts
+de siembra y un `INSERT` a mano.
+
 Una **edición** (`template_artifacts`) es *una impresión concreta* de ese libro: la v1.0.0, la
 v1.1.0. Ahí sí está todo lo material: dónde vive su paquete de archivos (`base_object_prefix`), qué
 formatos ofrece (`available_formats`), dónde está el contrato de campos (`schema_object_key`) y cuál

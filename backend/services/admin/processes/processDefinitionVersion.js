@@ -303,9 +303,11 @@ export default class ProcessDefinitionVersionService {
     // esta linea, clonar desde la configuracion de OTRO proceso se traeria sus reglas de alcance y
     // sus tipos de periodo.
     //
-    // Y OJO: este clon es tambien lo que hizo imposible F1.1 tal como la escribia el plan. Copia el
-    // MISMO `template_artifact_id` a una definicion nueva de la MISMA serie, asi que un unico sobre
-    // esa columna sola lo rechaza. Ver la nota de `postgres_schema.sql`.
+    // Y OJO: este clon es lo que hizo imposible F1.1 tal como la escribia el plan. Copia el MISMO
+    // `template_artifact_id` a una definicion nueva de la MISMA linea, asi que un unico sobre esa
+    // columna sola lo rechazaba. La regla la impone hoy `trg_pdt_linea_unica`, que compara la LINEA
+    // y por tanto deja pasar este clon — y sigue rechazando el que cruce de linea, que es algo que
+    // este guardia no mira porque solo compara el proceso. Ver la nota de `postgres_schema.sql`.
     if (normalizedTargetProcessId && Number(sourceDefinition.process_id) !== normalizedTargetProcessId) {
       throw new Error("Solo se puede clonar desde una configuracion del mismo proceso.");
     }

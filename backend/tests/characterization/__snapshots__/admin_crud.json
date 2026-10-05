@@ -656,6 +656,12 @@
       "updated_at"
     ]
   },
+  "pertenencia_vinculo_de_otra_linea": {
+    "status": 400,
+    "body": {
+      "message": "El entregable \"tpl_informe_general\" pertenece a otra línea (proceso/variación) y no se puede vincular a esta configuración. Crea o usa un entregable propio de esta línea."
+    }
+  },
   "principal_emails_degrada_anterior": {
     "status": 200,
     "body": {

@@ -664,11 +664,11 @@ export const TABLE_HOOKS = {
       // dos columnas se retiraron en F1.2 porque este guardia era su UNICO lector, asi que la
       // comprobacion se va con ellas.
       //
-      // ⚠️ Y DE MOMENTO NO LA SUSTITUYE NADA. F1.1 —el unico de la base que iba a sostener la
-      // regla— quedo abierta: la version del plan rompia el clon de configuraciones (medido, ver la
-      // nota en `postgres_schema.sql` junto a `uq_process_definition_templates`). Hasta que el dueño
-      // decida la forma de esa restriccion, vincular un entregable a una configuracion de otra
-      // linea se acepta.
+      // LA SUSTITUYE LA BASE, y cubre mas: `trg_pdt_linea_unica` (final de `postgres_schema.sql`)
+      // rechaza el vinculo cuyo entregable ya sirva a otra linea, venga de este hook, del clon, de
+      // un script o de un INSERT a mano — por ahi no pasaba el guardia. No es un indice unico
+      // porque la regla mira `(process_id, series_id)` y eso no cabe en un indice de esta tabla.
+      // Su `RAISE EXCEPTION` llega al cliente como 400 con el mismo texto que daba el 422.
       //
       // Vínculo idempotente: si la plantilla ya está en esta configuración (p. ej. porque al crearla desde el
       // wizard ya se enlazó), no se duplica el registro (evita el conflicto de clave unica de

@@ -1028,6 +1028,101 @@ test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flu
   await del("/admin/sql/process_definition_versions", { token, body: { keys: { id: cloneId } } });
 });
 
+// LA REGLA DE PERTENENCIA, PROVOCADA POR HTTP (frente 23, F1.1 — 2026-10-04).
+//
+// «Un entregable sirve a UNA SOLA LÍNEA»: al vincular una edición, todas las definiciones ya
+// vinculadas a cualquier edición de ese mismo entregable tienen que compartir
+// `(process_id, variation_key)` con la definición que se vincula. La impone el disparador
+// `trg_pdt_linea_unica`, no un índice — un único sobre `template_artifact_id` a secas rompía el
+// clon, y el caso de arriba («el clon debe crearse») es justo el que lo cazó.
+//
+// ESTE CASO ES EL OTRO LADO DE ESE MISMO PAR, y hace falta que sean dos: el de arriba fija que lo
+// legítimo pasa, y este que lo ilegítimo muere. Un disparador que nadie provoca no es una
+// protección, es una intención.
+//
+// Se monta una línea ajena entera —proceso, serie y configuración borrador— porque la pertenencia
+// se compara contra `(proceso, variación)` y hay que diferir en algo. Aquí difiere el PROCESO, que
+// es el caso que también cubría el guardia retirado; que difiera solo la VARIACIÓN lo cubre la
+// prueba directa en SQL, porque montar dos series del mismo proceso por HTTP pide un cargo libre y
+// la fixture no garantiza que lo haya.
+test("POST /admin/sql/process_definition_templates de otra línea -> lo rechaza el disparador", async () => {
+  const token = await tokenFor("admin");
+
+  // El entregable que YA tiene dueño: el que sembró el bootstrap en el Proceso por defecto.
+  const links = (await get("/admin/sql/process_definition_templates", { token })).body || [];
+  const linkExistente = links[0];
+  assert.ok(linkExistente?.template_artifact_id, "la fixture debe traer un vínculo sembrado");
+
+  const cargos = (await get("/admin/sql/cargos?limit=5", { token })).body || [];
+  const cargoId = cargos[cargos.length - 1]?.id;
+  assert.ok(cargoId, "la fixture debe traer cargos");
+
+  const proceso = await post("/admin/sql/processes", {
+    token,
+    body: { name: "Proceso ajeno caracterización pertenencia", slug: "proceso-ajeno-pertenencia", is_active: 1 },
+  });
+  const procesoId = proceso.body?.id;
+  assert.ok(procesoId, `el proceso ajeno debe crearse: ${JSON.stringify(proceso.body)}`);
+
+  const serie = await post("/admin/sql/process_definition_series", {
+    token,
+    body: { source_type: "cargo", cargo_id: cargoId },
+  });
+  const serieId = serie.body?.id;
+  assert.ok(serieId, `la serie debe crearse: ${JSON.stringify(serie.body)}`);
+
+  const definicion = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: { process_id: procesoId, series_id: serieId, definition_version: "1.0.0", effective_from: "2026-04-01" },
+  });
+  const definicionAjenaId = definicion.body?.id;
+  assert.ok(definicionAjenaId, `la configuración ajena debe crearse: ${JSON.stringify(definicion.body)}`);
+
+  // ⚠️ EL `finally` NO ES ADORNO. La primera version dejaba la limpieza al final del cuerpo, y
+  // cuando el golden todavia no existia el `matchSnapshot` lanzo antes de llegar a ella: la
+  // configuracion borrador sobrevivio y rompio «tras publicar, la configuracion anterior queda
+  // retirada y la nueva activa», en OTRA suite, que cuenta las definiciones de TODA la base. Un
+  // caso que siembra estado global lo tiene que recoger pase lo que pase.
+  try {
+    const cruzado = await post("/admin/sql/process_definition_templates", {
+      token,
+      body: {
+        process_definition_id: definicionAjenaId,
+        template_artifact_id: linkExistente.template_artifact_id,
+        item_mode: "single",
+      },
+    });
+    matchSnapshot(SUITE, "pertenencia_vinculo_de_otra_linea", {
+      status: cruzado.status,
+      body: normalize(cruzado.body),
+    });
+    assert.equal(cruzado.status, 400, `el vínculo cruzado debe rechazarse: ${JSON.stringify(cruzado.body)}`);
+    assert.match(
+      String(cruzado.body?.message || ""),
+      /pertenece a otra línea/,
+      "el mensaje tiene que explicarle a una persona qué pasa, no filtrar el nombre de una restricción",
+    );
+
+    // Y no dejó el vínculo a medias: lo que el disparador rechaza no se escribe.
+    const despues = (await get("/admin/sql/process_definition_templates", { token })).body || [];
+    assert.equal(
+      despues.filter((row) => Number(row.process_definition_id) === Number(definicionAjenaId)).length,
+      0,
+      "el vínculo rechazado no debe existir",
+    );
+  } finally {
+    for (const [table, id] of [
+      ["process_definition_versions", definicionAjenaId],
+      ["process_definition_series", serieId],
+      ["processes", procesoId],
+    ]) {
+      if (id) {
+        await del(`/admin/sql/${table}`, { token, body: { keys: { id } } });
+      }
+    }
+  }
+});
+
 // `template_artifacts` es el único graft que PROHÍBE la creación por CRUD admin de plano.
 test("POST /admin/sql/template_artifacts -> graft: creación prohibida por CRUD admin", async () => {
   const token = await tokenFor("admin");

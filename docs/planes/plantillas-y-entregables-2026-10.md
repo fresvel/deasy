@@ -6,21 +6,22 @@ hay una masa de puro enredo que necesita aclararse y simplificarse a un modelo c
 Este plan **no se ejecuta hasta que el dueño lo apruebe**. Lo que sigue es lo medido, los dos errores
 que cometí por el camino, y la propuesta.
 
-## Estado general — **4 de 9**
+## Estado general — **5 de 9**
 
 | Fase | Tareas | Estado |
 |---|---|---|
-| **F1** · La regla de pertenencia, en la base | F1.1 🟥 · F1.2 ✅ · F1.3 ✅ | 🟨 **2 de 3** |
+| **F1** · La regla de pertenencia, en la base | F1.1 ✅ · F1.2 ✅ · F1.3 ✅ | ✅ **3 de 3** |
 | **F2** · Las tres copias del lado entregado | F2.1 ✅ · F2.2 ✅ | ✅ **2 de 2** |
 | **F3** · La semilla pasa a ser catálogo de generadores | F3.1 ⬜ · F3.2 ⬜ | ⬜ **0 de 2** |
 | **F4** · Los campos que nadie consume | F4.1 ⬜ · F4.2 ⬜ | ⬜ **0 de 2** |
 
-🟥 **F1.1 está PARADA, no pendiente, y necesita una decisión del dueño.** El índice único que el plan
-escribía rompe el clon de configuraciones. Está medido en la sección siguiente.
+✅ **F1.1 se cerró con un DISPARADOR, no con un índice** (decisión del dueño del 2026-10-04, después
+de que el índice del plan se probara y rompiera el clon). La sección siguiente guarda la medición,
+porque es lo que impide volver a intentarlo a ciegas.
 
 ---
 
-## 🟥 F1.1 · Por qué está parada: el índice del plan rompe el clon
+## ✅ F1.1 · Por qué es un disparador y no el índice que decía el plan
 
 **Medido el 2026-10-04, con el índice puesto.** `npm run test:char:run` responde:
 
@@ -47,18 +48,69 @@ hacen eso:
 | `getOrCreateConfigWorkingDraft` → borrador de trabajo de una activa | ninguno | **rompe** si la activa tiene plantillas |
 | `startTemplateUpdateForActiveConfig` | de **un** artefacto | **rompe** por los demás vínculos de esa definición |
 
-**Y la regla tal como la dijo el dueño no cabe en un índice único de esa tabla**: `variation_key`
-vive en `process_definition_versions`. Expresarla pediría o una columna copiada en
-`process_definition_templates` —justo la duplicación que este frente está quitando— o una
-restricción de otra clase (disparador, o `EXCLUDE` sobre una vista materializada). **Elegir entre
-esas es una decisión de diseño del dueño**, así que F1.1 se deja escrita y sin aplicar.
+**Y la regla no cabe en un índice único de esa tabla**: la línea se identifica con
+`process_definition_versions.(process_id, series_id)`, y pedirlo en un índice de
+`process_definition_templates` obligaría a copiar esa columna aquí — justo la duplicación que este
+frente vino a quitar. Por eso el dueño decidió un **disparador**, que lo lee por el `JOIN` y no copia
+nada.
 
-⚠️ **Consecuencia que hay que conocer mientras siga parada:** F1.2 y F1.3 **sí** se aplicaron, y con
-ellas se fue el guardia `assertDeliverableBelongsToConfigLine`. No se podían dejar: el guardia era el
-único lector de las dos columnas, y las columnas eran lo único que el guardia leía. Así que **ahora
-mismo nada impide vincular una edición a una configuración de otra línea.** Antes lo impedía a
-medias —comprobaba el proceso, no la variación—. Es un hueco conocido y es el precio de haber
-separado el dato de su copia; lo cierra F1.1 en la forma que se decida.
+### El disparador: `trg_pdt_linea_unica`
+
+Al vincular una edición (`INSERT`, o un `UPDATE` que cambie el artefacto o la configuración), **todas**
+las definiciones ya vinculadas a **cualquier** edición de ese mismo **entregable** tienen que
+compartir línea con la definición que se vincula. Si no, `RAISE EXCEPTION` con el mismo texto que
+daba el 422 retirado, que la API devuelve como **400**:
+
+> El entregable "X" pertenece a otra línea (proceso/variación) y no se puede vincular a esta
+> configuración. Crea o usa un entregable propio de esta línea.
+
+| Caso | Resultado | Por qué |
+|---|---|---|
+| **Primer vínculo** de un entregable | pasa | no hay con qué comparar. Es el equivalente del `IF owner_process_id IS NULL THEN RETURN` del guardia viejo |
+| **El clon**: misma línea, definición nueva | pasa | todas las ya vinculadas comparten línea con la destino |
+| **Otro proceso** | muere | |
+| **Mismo proceso, otra variación** | muere | y éste es el que ni el índice ni el guardia del clon distinguían |
+| `UPDATE` que solo mueve `sort_order` o `item_mode` | pasa sin consultar nada | no cambia la pertenencia |
+
+**Cubre más que el guardia que sustituye.** Aquél comparaba la regla entera —las dos columnas, no
+sólo el proceso— pero sólo en el alta por el CRUD de administración. **El clon
+(`cloneProcessDefinitionChildren` inserta vínculos directamente), los scripts de siembra y un
+`INSERT` a mano en psql se lo saltaban.** Por un disparador no pasa nadie de largo, que es el mismo
+argumento por el que la tenencia se abre en un disparador y no en los cinco caminos que insertan en
+`task_items`.
+
+### ⚠️ Lo que el disparador encontró, y NO es de este frente: dos constantes para una sola cosa
+
+La primera versión comparaba literalmente `(process_id, variation_key)`, como decía el enunciado.
+**Rechazaba el clon**, y al medir por qué salió un defecto anterior:
+
+- `variation_key` es una **copia** de `process_definition_series.code`. Quien la escribe al crear una
+  configuración es `ctx.payload.variation_key = String(series.code)`, y al renombrar una serie el
+  hook arrastra la copia con `UPDATE process_definition_versions SET variation_key = <code> WHERE
+  series_id = ?`. La **identidad** de la línea es `(process_id, series_id)`; `variation_key` es su
+  etiqueta.
+- **El bootstrap rompe esa sincronía**, con dos constantes para lo mismo:
+  `DEFAULT_SERIES_CODE = "default"` va a `series.code` y `DEFAULT_VARIATION = "general"` va a
+  `variation_key`. Medido en una base recién sembrada: la configuración del Proceso por defecto es la
+  **única fila del sistema** con `variation_key <> series.code`.
+
+```
+ id | process_id | series_id | variation_key | serie_code
+----+------------+-----------+---------------+------------
+  1 |          1 |         1 | general       | default      <- la unica que no cuadra
+```
+
+**Consecuencia, que es anterior a este disparador:** clonar la configuración del Proceso por defecto
+por el CRUD recalcula `variation_key` desde la serie y le pone `'default'`, mientras el original dice
+`'general'`. Para todo lo que busca por esa columna —`getOrCreateConfigWorkingDraft`
+(`WHERE process_id = ? AND variation_key = ?`), el retiro de la activa anterior de la serie— el clon
+cae en **otra línea**. No lo abro aquí porque no es de este frente, pero **el arreglo es una línea**:
+que el bootstrap use una sola constante.
+
+Por eso el disparador compara **`series_id`, que es el dato, y no `variation_key`, que es su copia** —
+lo mismo que este frente hizo con «qué versión de plantilla». Rechaza igual los dos casos que
+importan y no hereda la deriva. Cuando el bootstrap deje de usar dos constantes, comparar una u otra
+dará el mismo resultado.
 
 ---
 
@@ -277,7 +329,7 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
 
 | Tarea | Qué entrega | Estado |
 |---|---|---|
-| **F1.1** | El índice único sobre `template_artifact_id`, sustituyendo el de la pareja | 🟥 **parada**: rompe el clon (ver arriba) |
+| **F1.1** | El disparador `trg_pdt_linea_unica`: un entregable sirve a una sola línea. **No** el índice único que decía el plan, que rompe el clon (ver arriba) | ✅ |
 | **F1.2** | Fuera `deliverables.owner_process_id`, `owner_variation_key`, la clave ajena `fk_deliverables_owner_process` y el índice muerto `idx_deliverables_owner` | ✅ |
 | **F1.3** | Fuera `assertDeliverableBelongsToConfigLine` y sus tres llamadas (el delegado de `SqlAdminService`, `tableHooks.js` y `repointConfigTemplateLink`) | ✅ |
 
@@ -383,7 +435,7 @@ redundante con `process_target_rules`, la forma de la restricción de pertenenci
 
 | Tarea | Qué entrega | Evidencia | Fecha |
 |---|---|---|---|
-| **F1.1** | 🟥 **PARADA** · el índice del plan es más estricto que la regla del dueño y rompe el clon de configuraciones | `409 Ya existe otro registro con ese valor en «template_artifact_id»` en `admin_crud.test.mjs` («el clon debe crearse») con el índice puesto; 330/330 con el de la pareja. La nota queda escrita en `postgres_schema.sql` junto a `uq_process_definition_templates` | 2026-10-04 |
+| **F1.1** | ✅ `trg_pdt_linea_unica` sobre `process_definition_templates`, `BEFORE INSERT OR UPDATE`. El índice del plan se probó y se descartó con su medición escrita en el esquema | `postgres_schema.sql` (disparador 6 de 6; 56 disparadores en el fichero) · golden NUEVO `admin_crud :: pertenencia_vinculo_de_otra_linea` (400 + el mensaje) · el caso «el clon debe crearse» sigue en verde · 6 casos probados en SQL dentro del contenedor | 2026-10-04 |
 | **F1.2** | ✅ fuera `owner_process_id`, `owner_variation_key`, `fk_deliverables_owner_process` e `idx_deliverables_owner`; `owner_person_id` se queda | `postgres_schema.sql` · 3 `INSERT INTO deliverables` ajustados (bootstrap, fork, borrador) · golden `artifact_draft :: reintento_tras_fallo` movido | 2026-10-04 |
 | **F1.3** | ✅ fuera `assertDeliverableBelongsToConfigLine` y sus 3 llamadas; el guardia del clon se queda con su motivo escrito | `templateLifecycle.js` · `SqlAdminService.js` · `tableHooks.js` · `processDefinitionVersion.js` | 2026-10-04 |
 | **F2.1** | ✅ `process_definition_template_id` NOT NULL; `task_items.template_artifact_id` retirada, 21 referencias resueltas por el vínculo | `postgres_schema.sql` · 14 ficheros de backend · goldens `admin_crud :: list_task_items` y `execution :: sql_task_items` movidos (pierden la clave) | 2026-10-04 |
@@ -394,7 +446,7 @@ redundante con `process_target_rules`, la forma de la restricción de pertenenci
 | Comprobación | Resultado |
 |---|---|
 | `test:unit` | **892/892** · 50 suites · 0 fallos |
-| `test:char:run` | **330/330** · 0 fallos (3 goldens recapturados, abajo) |
+| `test:char:run` | **331/331** · 0 fallos (3 goldens recapturados y 1 nuevo, abajo) |
 | `check:imports` | OK · 168 ficheros |
 | `check:sql-comments` | OK · 273 ficheros |
 | `check:sql-aliases` | OK · 556 consultas en 273 ficheros |
@@ -403,6 +455,12 @@ redundante con `process_target_rules`, la forma de la restricción de pertenenci
 | `check-enlaces-internos` | OK · 0 rotos sobre 54 páginas |
 | `check-diagramas-coherentes` | OK · 95 tablas dibujadas en 54 páginas |
 | `gen-dbml.sh` | regenerado en este commit (8 ficheros) |
+
+**El golden NUEVO:** `admin_crud :: pertenencia_vinculo_de_otra_linea` — `400` y el mensaje del
+disparador. Es la prueba de que se **provoca**: monta una línea ajena entera (proceso, serie y
+configuración borrador) e intenta vincularle el entregable del Proceso por defecto. Su pareja es «el
+clon debe crearse», que fija que lo legítimo sigue pasando; hacen falta las dos, porque un disparador
+que nadie provoca no es una protección sino una intención.
 
 **Los 3 goldens que se movieron, y por qué cada uno** (2 inserciones, 4 eliminaciones en total):
 

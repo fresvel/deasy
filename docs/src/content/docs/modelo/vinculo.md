@@ -47,17 +47,31 @@ sin necesidad de duplicarla. Es una propiedad del modelo que conviene no perder.
 
 :::
 
-:::caution[Y es justo lo que está en revisión]
+:::caution[Pero no a varias LÍNEAS: eso lo impide un disparador]
 
-Lo de arriba describe el esquema de hoy, pero la regla que el dueño quiere es la contraria: *«una
-versión de plantilla debería servir a solo una variación de proceso»*. El cambio está planteado y
-**no aplicado**, porque la forma directa —un único sobre `template_artifact_id` a secas— rompe el
-clon de configuraciones: versionar una configuración copia sus vínculos con el mismo artefacto a la
-definición nueva de la misma serie, y el único lo rechaza. Medido el 2026-10-04.
+Lo de arriba es cierto dentro de **una línea**: la misma edición puede estar vinculada a varias
+configuraciones de esa línea —que es lo que pasa al versionar una configuración, porque clonar copia
+sus vínculos— y cada vínculo lleva su modo.
 
-Mientras se decide, lo que **sí** desapareció es el guardia que lo intentaba desde JavaScript, con
-las dos columnas que leía (`deliverables.owner_process_id` y `owner_variation_key`). O sea que ahora
-mismo nada impide vincular una edición a una configuración de otra línea.
+Lo que **no** puede es cruzar de línea. Desde el 2026-10-04 lo impone la base, con el disparador
+`trg_pdt_linea_unica`: al vincular una edición, **todas** las definiciones ya vinculadas a cualquier
+edición de ese mismo entregable tienen que compartir `(proceso, variación)` con la definición que se
+vincula. El primer vínculo de un entregable siempre pasa — no hay con qué comparar.
+
+Si se cruza, el `INSERT` muere con un mensaje escrito para una persona, y la API lo devuelve como
+400: *«El entregable "X" pertenece a otra línea (proceso/variación) y no se puede vincular a esta
+configuración. Crea o usa un entregable propio de esta línea.»*
+
+**Por qué un disparador y no un índice único.** Se intentó con
+`UNIQUE (template_artifact_id)` y rompía el versionado de configuraciones: ese índice prohíbe el
+mismo artefacto en dos *definiciones*, cuando la regla habla de dos *líneas*, y una línea contiene
+muchas versiones de definición. Y la regla no cabe en un índice de esta tabla, porque la línea se
+identifica con `process_definition_versions.(process_id, series_id)`: pedirla en un índice obligaría
+a copiar esa columna aquí, que es la duplicación que este frente vino a quitar.
+
+Antes lo intentaba un guardia de JavaScript que comparaba dos columnas copiadas en `deliverables`.
+Comprobaba la regla entera, pero solo en el alta por el CRUD de administración: el clon, los scripts
+de siembra y un `INSERT` a mano se lo saltaban. El disparador no se lo salta nadie.
 
 :::
 

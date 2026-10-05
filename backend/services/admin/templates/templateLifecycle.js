@@ -377,10 +377,15 @@ export default class TemplateLifecycleService {
   // que comprobara que coinciden, y el guardia no leia nada mas. Ademas comprobaba el proceso pero
   // NO la variacion, siendo el invariante que decia proteger sobre `(proceso, variacion)`.
   //
-  // ⚠️ LA REGLA SE QUEDA SIN SOSTEN HASTA QUE SE CIERRE F1.1. El unico de la base que iba a
-  // sostenerla —`(template_artifact_id)` a secas— no se aplico: rompe el clon de configuraciones, y
-  // esta medido en la nota de `postgres_schema.sql` junto a `uq_process_definition_templates`. La
-  // forma definitiva de la restriccion es una decision del dueño.
+  // Y LA REGLA LA SOSTIENE AHORA LA BASE, con `trg_pdt_linea_unica` (final de
+  // `postgres_schema.sql`): al vincular una edicion, todas las definiciones ya vinculadas a
+  // cualquier edicion de ese mismo entregable tienen que compartir linea con la destino. Es un
+  // disparador y no un indice unico porque la regla mira `(process_id, series_id)`, que no cabe en
+  // un indice de `process_definition_templates` — y porque el unico sobre `template_artifact_id` a
+  // secas rompia el clon de configuraciones (medido).
+  //
+  // Esto afecta a `repointConfigTemplateLink`, justo debajo: su UPDATE pasa por el disparador. Si
+  // re-apunta el vinculo a una edicion de otra linea, muere ahi.
 
   // Re-apunta el enlace de una configuración (su plantilla de cierto template_code) a una versión concreta.
   async repointConfigTemplateLink(definitionId, templateCode, targetArtifactId, connection = this.pool) {

@@ -41,7 +41,7 @@ flowchart TD
 
 Con UNIQUE sobre `(deliverable_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el scope, la semilla y la persona propietaria viven en `deliverables`; `template_artifacts` guarda **solo** el estado y el almacenamiento de cada versión.
 
-**El proceso propietario no vive en ninguna de las dos** desde el 2026-10-04: a qué línea sirve una edición lo dice su **vínculo** en `process_definition_templates`. `deliverables` tuvo dos columnas con ese dato copiado —`owner_process_id` y `owner_variation_key`— y se retiraron junto con el guardia que las comparaba con el vínculo, que era su único lector.
+**El proceso propietario no vive en ninguna de las dos** desde el 2026-10-04: a qué línea sirve una edición lo dice su **vínculo** en `process_definition_templates`. `deliverables` tuvo dos columnas con ese dato copiado —`owner_process_id` y `owner_variation_key`— y se retiraron junto con el guardia que las comparaba con el vínculo, que era su único lector. Que la pertenencia a una sola línea se cumpla lo impone ahora el disparador `trg_pdt_linea_unica`, que no se puede saltar ni el clon, ni los scripts, ni un `INSERT` a mano.
 
 :::caution[La palabra “entregable” significa dos cosas]
 

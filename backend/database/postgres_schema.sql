@@ -11,7 +11,7 @@
 --
 -- Y POR ESO SOLO HAY QUE CUALIFICAR LOS 'CREATE TABLE'. Un CREATE sin cualificar crearia la tabla
 -- en el PRIMER esquema del search_path, que seria el equivocado. Todo lo demas --los REFERENCES,
--- los 163 indices, los 55 disparadores, los INSERT-- se resuelve por el search_path y se queda
+-- los 163 indices, los 56 disparadores, los INSERT-- se resuelve por el search_path y se queda
 -- exactamente como estaba.
 --
 -- ⚠️ POR QUE HAY 'ALTER TABLE ... SET SCHEMA', CUANDO ESTE FICHERO NO TENIA NI UN ALTER.
@@ -1493,8 +1493,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_template_seeds_code ON template_seeds (seed
 -- `processes`), la duplicacion obligaba a un guardia que comprobara que coinciden, y el guardia era
 -- el unico lector de la columna. La pertenencia se DERIVA por el vinculo.
 --
--- ⚠️ Lo que todavia no hay es QUIEN LA IMPONGA. La restriccion que iba a hacerlo (F1.1 del frente
--- 23) quedo abierta: ver la nota junto a `uq_process_definition_templates`.
+-- Y QUIEN LA IMPONE es `trg_pdt_linea_unica`, al final de este fichero: al vincular una edicion,
+-- todas las definiciones ya vinculadas a cualquier edicion de ese mismo entregable tienen que
+-- compartir `(process_id, variation_key)` con la que se vincula. Cubre mas que el guardia que se
+-- retiro —el clon, los scripts y un INSERT a mano no pasaban por el—, y no necesita que el dato
+-- este copiado aqui para comprobarlo.
 --
 -- `owner_person_id` SE QUEDA, y no es lo mismo: es la persona dueña de un entregable `ad_hoc` —el
 -- que alguien crea para si, fuera de toda configuracion—, no la linea de proceso a la que sirve.
@@ -1634,35 +1637,17 @@ CREATE TABLE IF NOT EXISTS procesos.process_definition_templates (
   CONSTRAINT fk_process_definition_templates_definition FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
   CONSTRAINT fk_process_definition_templates_artifact FOREIGN KEY (template_artifact_id) REFERENCES template_artifacts(id)
 );
--- ⚠️ AQUI IBA EL UNICO SOBRE `(template_artifact_id)` A SECAS — F1.1 del frente 23 — Y NO SE
--- APLICO. Esta linea documenta por que, con la medicion, para que no se vuelva a intentar a ciegas.
+-- ⚠️ ESTE UNICO ES DE LA PAREJA A PROPOSITO, Y SE INTENTO CAMBIAR. F1.1 del frente 23 escribia
+-- `CREATE UNIQUE INDEX ... (template_artifact_id)` a secas y se probo: rompe el versionado de
+-- configuraciones, porque clonar una definicion copia sus vinculos con el MISMO artefacto a una
+-- definicion nueva de la MISMA linea. Medido en `admin_crud.test.mjs` («el clon debe crearse»):
+-- 329 de 330 con el unico sobre la columna sola, 330 de 330 con este.
 --
--- La regla del dueño es: «una version de plantilla deberia servir a solo UNA VARIACION de proceso;
--- si hago un cambio a la version de plantilla eso deberia llevar a una nueva definicion de
--- proceso». El plan la traducia a `CREATE UNIQUE INDEX ... (template_artifact_id)`, y esa
--- traduccion es MAS ESTRICTA que la regla: prohibe el mismo artefacto en dos DEFINICIONES, cuando
--- la regla habla de dos VARIACIONES. Una variacion —(proceso, variation_key), o sea la serie—
--- contiene muchas versiones de definicion.
---
--- Y la diferencia no es teorica. Clonar una definicion copia sus vinculos con el MISMO artefacto a
--- la definicion nueva de la MISMA serie, y eso es como funcionan tres caminos vivos:
---   · `tableHooks.js` -> crear una configuracion con `source_process_definition_id` (sin remap);
---   · `getOrCreateConfigWorkingDraft` -> el borrador de trabajo de una configuracion activa (sin remap);
---   · `startTemplateUpdateForActiveConfig` -> con remap de UN artefacto, asi que los demas vinculos
---     de esa definicion se copian sin remapear.
--- Medido el 2026-10-04 con el unico puesto: la caracterizacion responde
--- `409 Ya existe otro registro con ese valor en «template_artifact_id»` al clonar
--- (`admin_crud.test.mjs`, «el clon debe crearse»). Con la pareja, 330 de 330 en verde.
---
--- Expresar la regla TAL COMO LA DIJO EL DUEÑO no cabe en un unico de esta tabla: `variation_key`
--- vive en `process_definition_versions`, asi que haria falta o una columna copiada aqui —justo la
--- duplicacion que este frente esta quitando— o una restriccion de otra clase. Es una decision del
--- dueño, no del implementador, y por eso F1.1 queda abierta.
---
--- MIENTRAS ESTE ASI, LA PERTENENCIA NO LA SOSTIENE NADIE: el guardia de JavaScript que lo intentaba
--- (`assertDeliverableBelongsToConfigLine`) se retiro con sus columnas en F1.2/F1.3, porque era su
--- unico lector. Comprobaba el proceso pero no la variacion, asi que tampoco sostenia la regla
--- entera — pero sostenia parte.
+-- Lo que este unico sostiene es lo suyo: no se repite el mismo vinculo dentro de una misma
+-- configuracion. LA REGLA DE PERTENENCIA —un entregable sirve a una sola linea— la impone
+-- `trg_pdt_linea_unica`, al final de este fichero, que es un disparador y no un indice porque la
+-- regla mira `(process_id, variation_key)` y `variation_key` vive en `process_definition_versions`:
+-- pedirla en un indice obligaria a copiar esa columna aqui.
 CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_templates ON process_definition_templates (process_definition_id, template_artifact_id);
 
 
@@ -3251,3 +3236,126 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_documentos_pais_nacional
 BEFORE INSERT OR UPDATE ON documentos_identidad
 FOR EACH ROW EXECUTE FUNCTION trg_documentos_pais_nacional_fn();
+
+
+-- 6) LA REGLA DE PERTENENCIA: un entregable sirve a UNA SOLA LINEA (frente 23, F1.1 — 2026-10-04).
+--
+-- La regla, con las palabras del dueño: «una version de plantilla deberia servir a solo una
+-- variacion de proceso; si hago un cambio a la version de plantilla eso deberia llevar a una nueva
+-- definicion de proceso». Operativamente, al vincular una edicion: TODAS las definiciones ya
+-- vinculadas a CUALQUIER edicion de ese mismo entregable tienen que compartir
+-- `(process_id, variation_key)` con la definicion que se vincula.
+--
+-- POR QUE UN DISPARADOR Y NO UN INDICE UNICO. El plan escribia
+-- `CREATE UNIQUE INDEX ... (template_artifact_id)`, y se probo: rompe el versionado de
+-- configuraciones. Clonar una definicion copia sus vinculos con el MISMO artefacto a una definicion
+-- NUEVA de la MISMA linea —lo hacen tres caminos vivos: crear una configuracion con
+-- `source_process_definition_id`, `getOrCreateConfigWorkingDraft` y
+-- `startTemplateUpdateForActiveConfig`—, y el unico lo rechazaba con
+-- `409 Ya existe otro registro con ese valor en «template_artifact_id»`. Medido en
+-- `admin_crud.test.mjs` («el clon debe crearse»): 329 de 330 con el indice, 330 de 330 sin el.
+--
+-- La causa es que el indice es MAS ESTRICTO QUE LA REGLA: prohibe el mismo artefacto en dos
+-- DEFINICIONES, cuando la regla habla de dos LINEAS, y una linea contiene muchas versiones de
+-- definicion. Y la regla tal como se dijo NO CABE en un indice de esta tabla, porque
+-- `variation_key` vive en `process_definition_versions`: pedirlo en un indice obligaria a copiar esa
+-- columna aqui, que es justo la duplicacion que este frente esta quitando. Un disparador la lee por
+-- el JOIN y no copia nada.
+--
+-- QUE CUBRE, Y QUE NO CUBRIA LO ANTERIOR. Hasta hoy lo intentaba
+-- `assertDeliverableBelongsToConfigLine`, un guardia de JavaScript que comparaba
+-- `deliverables.owner_process_id` y `owner_variation_key` —dos columnas que eran una COPIA de lo que
+-- el vinculo ya dice, y de las que el guardia era el unico lector— con la definicion destino.
+-- Comparaba las dos, asi que la regla la comprobaba entera; lo que no cubria era TODO LO QUE NO
+-- PASA POR EL HOOK DE ALTA DEL CRUD:
+--   · el clon (`cloneProcessDefinitionChildren` inserta vinculos directamente);
+--   · los scripts (`seed_dev_rich.mjs`, el bootstrap);
+--   · un INSERT a mano en psql.
+-- Aqui no puede saltarselo nadie, que es el mismo motivo por el que la tenencia se abre en un
+-- disparador y no en los cinco caminos que insertan en `task_items`.
+--
+-- QUE ES «LA MISMA LINEA», Y POR QUE SE COMPARA `series_id` Y NO `variation_key`. La regla se
+-- enuncia sobre `(proceso, variacion)`, y la primera version de este disparador comparaba
+-- literalmente `(pdv.process_id, pdv.variation_key)`. Rompia el clon, y al medir por que salio un
+-- defecto que no es de este frente:
+--
+--   · `variation_key` es una COPIA de `process_definition_series.code`. Su escritor al crear una
+--     configuracion es `ctx.payload.variation_key = String(series.code)`, y cuando una serie se
+--     renombra, el hook de `process_definition_series` arrastra la copia con
+--     `UPDATE process_definition_versions SET variation_key = <code> WHERE series_id = ?`. O sea que
+--     la IDENTIDAD de la linea es `(process_id, series_id)` y `variation_key` es su etiqueta.
+--   · Y el bootstrap rompe esa sincronia, con dos constantes para una sola cosa:
+--     `DEFAULT_SERIES_CODE = "default"` va a `series.code` y `DEFAULT_VARIATION = "general"` va a
+--     `variation_key`. Medido en una base recien sembrada: la configuracion del Proceso por defecto
+--     es la UNICA fila del sistema con `variation_key <> series.code`.
+--   · Consecuencia, que es anterior a este disparador: clonar esa configuracion por el CRUD recalcula
+--     `variation_key` desde la serie y le pone `'default'`, mientras el original dice `'general'`.
+--     Comparando la copia, el clon legitimo parecia cruzar de linea.
+--
+-- Asi que se compara `series_id`, que es el dato, y no `variation_key`, que es su copia — lo mismo
+-- que este frente hizo con «que version de plantilla». Rechaza igual los dos casos que importan
+-- (otro proceso, y otra variacion dentro del mismo proceso, que es otra serie) y no hereda la deriva
+-- de la copia. Si algun dia el bootstrap deja de usar dos constantes, comparar una u otra da el
+-- mismo resultado.
+--
+-- DOS CASOS QUE PASAN A PROPOSITO:
+--   · EL PRIMER VINCULO de un entregable. No hay con que comparar, asi que no hay nada que violar.
+--     Es el equivalente exacto del `IF own.owner_process_id IS NULL THEN RETURN` del guardia viejo,
+--     y lo que hace que crear una plantilla y vincularla siga siendo un solo paso.
+--   · EL CLON. Misma `(process_id, variation_key)`, definicion nueva: todas las definiciones ya
+--     vinculadas comparten la pareja con la destino, asi que la cuenta de ajenas es 0.
+CREATE OR REPLACE FUNCTION public.trg_pdt_linea_unica_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  entregable_id int;
+  entregable_code varchar(180);
+  destino_process_id int;
+  destino_series_id int;
+  vinculos_de_otra_linea int := 0;
+BEGIN
+  -- Re-vincular es lo que se vigila. Un UPDATE que solo mueve `sort_order` o `item_mode` no cambia
+  -- la pertenencia, asi que no hay nada que comprobar y no se paga el JOIN.
+  IF TG_OP = 'UPDATE'
+     AND NEW.template_artifact_id = OLD.template_artifact_id
+     AND NEW.process_definition_id = OLD.process_definition_id THEN
+    RETURN NEW;
+  END IF;
+
+  -- EL ENTREGABLE, no la edicion. La regla es del libro: sus ediciones son la v1 y la v2 de la
+  -- misma cosa, y lo que no puede partirse entre dos lineas es la cosa.
+  SELECT d.id, d.code
+    INTO entregable_id, entregable_code
+    FROM template_artifacts ta
+    INNER JOIN deliverables d ON d.id = ta.deliverable_id
+   WHERE ta.id = NEW.template_artifact_id;
+
+  SELECT pdv.process_id, pdv.series_id
+    INTO destino_process_id, destino_series_id
+    FROM process_definition_versions pdv
+   WHERE pdv.id = NEW.process_definition_id;
+
+  -- Si una de las dos filas no existe, la cuenta sale 0 y la clave ajena rechaza la fila despues.
+  -- Este disparador no es el sitio donde se comprueba que el artefacto o la definicion existan.
+  SELECT COUNT(*)
+    INTO vinculos_de_otra_linea
+    FROM process_definition_templates otro
+    INNER JOIN template_artifacts otro_ta ON otro_ta.id = otro.template_artifact_id
+    INNER JOIN process_definition_versions otro_pdv ON otro_pdv.id = otro.process_definition_id
+   WHERE otro_ta.deliverable_id = entregable_id
+     AND otro.id <> COALESCE(NEW.id, -1)
+     AND (otro_pdv.process_id <> destino_process_id
+          OR otro_pdv.series_id <> destino_series_id);
+
+  IF vinculos_de_otra_linea > 0 THEN
+    RAISE EXCEPTION 'El entregable "%" pertenece a otra línea (proceso/variación) y no se puede vincular a esta configuración. Crea o usa un entregable propio de esta línea.', entregable_code;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_pdt_linea_unica
+BEFORE INSERT OR UPDATE ON process_definition_templates
+FOR EACH ROW EXECUTE FUNCTION trg_pdt_linea_unica_fn();

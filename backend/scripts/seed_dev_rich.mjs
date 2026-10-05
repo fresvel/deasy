@@ -171,14 +171,14 @@ const main = async () => {
 
   // 5. Entregable PROPIO de esta línea, "forkeado" del que sembró el bootstrap.
   //
-  //    REGLA DE NEGOCIO: una VERSIÓN de plantilla debería servir a una sola variación de proceso.
-  //    Por eso aquí NO se reutiliza "tpl_informe_general" (es del proceso por defecto) y se forkea.
+  //    REGLA DE NEGOCIO: un entregable sirve a UNA SOLA LÍNEA (proceso + variación). Por eso aquí
+  //    NO se reutiliza "tpl_informe_general" (es del proceso por defecto) y se forkea.
   //
-  //    ⚠️ Pero hoy NADIE lo impide: el guardia que lo comprobaba
-  //    (`assertDeliverableBelongsToConfigLine`, sobre `deliverables.owner_process_id` /
-  //    `owner_variation_key`) se retiró el 2026-10-04 con esas dos columnas (frente 23, F1.2/F1.3),
-  //    y el índice único que iba a sustituirlo (F1.1) quedó abierto porque rompe el clon de
-  //    configuraciones. Este fork sigue siendo lo correcto; lo que ya no hay es quien te pare.
+  //    Y desde el 2026-10-04 lo impide la BASE: `trg_pdt_linea_unica`. Si quitas el fork y vinculas
+  //    el artefacto del proceso por defecto, este script muere con
+  //    «El entregable "tpl_informe_general" pertenece a otra línea...». Antes lo intentaba un
+  //    guardia de JavaScript (`assertDeliverableBelongsToConfigLine`), que este script **se
+  //    saltaba** porque no pasa por el hook de alta del CRUD.
   //
   //    forkDeliverableForConfig es justo la operación que la UI llama "Crear a partir de
   //    este": crea el entregable de la línea destino, COPIA los objetos de MinIO a un
