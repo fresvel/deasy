@@ -223,7 +223,8 @@ test("POST draft con proceso inexistente -> falla y NO deja el deliverable huér
 
   // Aquí no hay transacción: el `catch` compensa a mano. Debe deshacer TODO lo que insertó esta
   // llamada — vínculo, artifact y deliverable — o el siguiente intento con el mismo nombre reusaría
-  // la fila por `code` y se quedaría con `owner_process_id` NULL para siempre.
+  // la fila por `code` y se quedaría SIN VÍNCULO para siempre. (Hasta el 2026-10-04 el daño se
+  // enunciaba como «con `owner_process_id` NULL»; esa columna se retiró, el daño es el mismo.)
   const huerfano = await findDeliverableByCode(CODES.orphan);
 
   matchSnapshot(SUITE, "defecto_deliverable_huerfano", {
@@ -234,10 +235,12 @@ test("POST draft con proceso inexistente -> falla y NO deja el deliverable huér
   assert.equal(huerfano, null, "una creación fallida no debe dejar el deliverable atrás");
 });
 
-test("reintentar tras la creación fallida -> el deliverable nace con su proceso dueño", async () => {
+test("reintentar tras la creación fallida -> el deliverable nace con su vínculo", async () => {
   const token = await tokenFor("admin");
-  // Este es el daño real que causaba el huérfano: el reintento lo reusaba por `code` y heredaba
-  // su `owner_process_id` NULL, aunque el artifact quedara bien vinculado. Silencioso y permanente.
+  // Este es el daño real que causaba el huérfano: el reintento lo reusaba por `code` y se quedaba
+  // sin la pertenencia. Silencioso y permanente. Lo que se mira es el VÍNCULO, porque desde el
+  // 2026-10-04 es donde vive la pertenencia (frente 23, F1.2) — antes se miraba la copia que el
+  // entregable guardaba, `owner_process_id`.
   const res = await post(DRAFT_PATH, { token, form: draftForm({ display_name: NAMES.orphan }) });
   assert.equal(res.status, 200, `el reintento debe responder 200: ${JSON.stringify(res.body)}`);
 

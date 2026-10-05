@@ -295,6 +295,17 @@ export default class ProcessDefinitionVersionService {
     if (!sourceDefinition) {
       throw new Error("La configuracion origen para clonar no existe.");
     }
+    // ESTE GUARDIA SE QUEDA, Y PROTEGE ALGO QUE NINGUN INDICE MIRA (frente 23, F1.3 — 2026-10-04).
+    // Comprueba el proceso pero no la variacion, y por eso parecia un duplicado blando del guardia
+    // de pertenencia que se retiro. No lo es: lo que este clon copia no son solo los vinculos de
+    // plantilla, son tambien `process_target_rules` y `process_definition_period_types`, que no
+    // tienen artefacto y que ninguna restriccion sobre `process_definition_templates` alcanza. Sin
+    // esta linea, clonar desde la configuracion de OTRO proceso se traeria sus reglas de alcance y
+    // sus tipos de periodo.
+    //
+    // Y OJO: este clon es tambien lo que hizo imposible F1.1 tal como la escribia el plan. Copia el
+    // MISMO `template_artifact_id` a una definicion nueva de la MISMA serie, asi que un unico sobre
+    // esa columna sola lo rechaza. Ver la nota de `postgres_schema.sql`.
     if (normalizedTargetProcessId && Number(sourceDefinition.process_id) !== normalizedTargetProcessId) {
       throw new Error("Solo se puede clonar desde una configuracion del mismo proceso.");
     }

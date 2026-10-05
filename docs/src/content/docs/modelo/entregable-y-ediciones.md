@@ -11,8 +11,16 @@ metáfora y la sostengo toda la página.
 
 Un **entregable** (`deliverables`) es el *título del libro*: «Informe general de actividades». Es la
 identidad de la cosa que hay que producir. No tiene formato, ni campos, ni maqueta — solo nombre
-(`code`, `display_name`, `description`), a quién pertenece (`owner_process_id` +
-`owner_variation_key`, la línea proceso/variación) y de qué semilla nació (`template_seed_id`).
+(`code`, `display_name`, `description`), de qué semilla nació (`template_seed_id`) y, si es un
+entregable personal, quién lo creó (`owner_person_id`).
+
+**A qué línea de proceso sirve no está escrito aquí**, y desde el 2026-10-04 tampoco en ninguna otra
+columna: lo dice el **vínculo** de su edición en `process_definition_templates`, que sabe a qué
+configuración está enlazada, y la configuración sabe su proceso y su variación. Hasta esa fecha
+`deliverables` llevaba dos columnas con la respuesta copiada —`owner_process_id` y
+`owner_variation_key`—; ninguna de las 33 consultas que leen la tabla las seleccionaba, y su único
+lector en todo el sistema era un guardia que comprobaba que coincidieran con el vínculo. Se
+retiraron las tres cosas.
 
 Una **edición** (`template_artifacts`) es *una impresión concreta* de ese libro: la v1.0.0, la
 v1.1.0. Ahí sí está todo lo material: dónde vive su paquete de archivos (`base_object_prefix`), qué
@@ -98,7 +106,6 @@ aporta la maqueta y el contrato de campos inicial. Es lo que evita empezar de ce
 erDiagram
   deliverables ||--o{ template_artifacts : "tiene ediciones"
   template_seeds ||--o{ deliverables : "nace de"
-  processes ||--o{ deliverables : "pertenece a la linea de"
   persons ||--o{ deliverables : "autor si es personal"
   template_artifacts ||--o{ template_artifacts : "desciende de"
   template_artifacts ||--o{ template_artifact_fields : "pide estos campos"
@@ -108,8 +115,6 @@ erDiagram
     varchar code "identificador estable, unico"
     varchar display_name "nombre visible"
     varchar description
-    int owner_process_id FK "linea a la que pertenece"
-    varchar owner_variation_key "y su variacion"
     text template_scope "official, ad_hoc"
     int template_seed_id FK
     int owner_person_id FK "solo si es personal"

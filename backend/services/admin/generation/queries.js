@@ -398,13 +398,14 @@ export const getTaskItemsForDocumentMaterialization = async (connection, taskId)
        ti.id,
        ti.task_id,
        ti.process_definition_template_id,
-       ti.template_artifact_id,
+       pdt.template_artifact_id,
        ti.assigned_person_id,
        ti.target_unit_id,
        ti.responsible_position_id,
        tar_dl.display_name AS template_artifact_name
      FROM task_items ti
-     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      WHERE ti.task_id = ?
      ORDER BY ti.sort_order ASC, ti.id ASC`,

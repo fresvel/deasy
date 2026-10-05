@@ -237,16 +237,28 @@ test("validateTableRules exige una base para el alcance por unidad", () => {
   );
 });
 
-// --- task_items: el entregable depende del origen -----------------------------
+// --- task_items: el entregable NO depende del origen -------------------------
+//
+// Esta prueba decia lo contrario hasta el 2026-10-04 («solo si el item nace del proceso») y fijaba
+// `origin_kind: "ad_hoc"` como la excusa para no traer el vinculo. Era la misma creencia falsa que
+// el frente 23 midio: las tareas ad-hoc cuelgan del Proceso por defecto y SI traen vinculo. Hoy la
+// columna es NOT NULL para todas las filas, asi que el requisito no tiene condicion.
 
-test("validateTableRules exige el entregable solo si el item nace del proceso", () => {
-  const base = { task_id: 1, template_artifact_id: 9 };
+test("validateTableRules exige el vinculo venga el item de donde venga", () => {
+  const base = { task_id: 1 };
   throwsWith(
     () => validateTableRules("task_items", { ...base }),
     "entregable definido por proceso",
   );
-  // origin_kind distinto de "process_defined" libera el requisito.
-  assert.doesNotThrow(() => validateTableRules("task_items", { ...base, origin_kind: "ad_hoc" }));
+  // Y `origin_kind` ya no lo libera: un entregable anadido por el usuario tambien cuelga de un
+  // vinculo, el de la configuracion activa del proceso por defecto.
+  throwsWith(
+    () => validateTableRules("task_items", { ...base, origin_kind: "ad_hoc" }),
+    "entregable definido por proceso",
+  );
+  assert.doesNotThrow(
+    () => validateTableRules("task_items", { ...base, process_definition_template_id: 9, start_date: "2026-01-01" }),
+  );
 });
 
 // --- documents / document_versions: NORMALIZACIÓN IN-PLACE -------------------
@@ -342,24 +354,30 @@ test("process_definition_versions intercala el semver entre sus requeridos", () 
   );
 });
 
-test("task_items intercala el guard de origen entre sus dos requeridos", () => {
+test("task_items pide la tarea, luego el vinculo, y solo despues mira las fechas", () => {
   throwsWith(() => validateTableRules("task_items", {}), "Selecciona una tarea.");
-  // Sin origin_kind explícito cuenta como "process_defined", y ese guard gana al
-  // requerido de plantilla documental que viene después.
+  // El orden importa: el requerido del vinculo va ANTES del cruce de fechas, asi que una fila sin
+  // vinculo se queja del vinculo aunque tambien traiga las fechas al reves.
   throwsWith(
     () => validateTableRules("task_items", { task_id: 1 }),
     "entregable definido por proceso",
-  );
-  throwsWith(
-    () => validateTableRules("task_items", { task_id: 1, origin_kind: "ad_hoc" }),
-    "Selecciona la plantilla documental.",
   );
   throwsWith(
     () =>
       validateTableRules("task_items", {
         task_id: 1,
         origin_kind: "ad_hoc",
-        template_artifact_id: 3,
+        start_date: "2026-06-01",
+        end_date: "2026-01-01",
+      }),
+    "entregable definido por proceso",
+  );
+  throwsWith(
+    () =>
+      validateTableRules("task_items", {
+        task_id: 1,
+        origin_kind: "ad_hoc",
+        process_definition_template_id: 3,
         start_date: "2026-06-01",
         end_date: "2026-01-01",
       }),

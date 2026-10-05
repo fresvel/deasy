@@ -52,7 +52,7 @@ after(async () => {
 
 test("desactivar un puesto deja huérfanos SÓLO los entregables que aún no llegaron a firma", async () => {
   const origen = await query(
-    "SELECT id, task_id, process_definition_template_id, template_artifact_id, start_date, end_date FROM task_items WHERE responsible_position_id = $1 LIMIT 1",
+    "SELECT id, task_id, process_definition_template_id, start_date, end_date FROM task_items WHERE responsible_position_id = $1 LIMIT 1",
     [PUESTO],
   );
   assert.ok(origen.length, "la fixture debe traer algún entregable en ese puesto");
@@ -62,13 +62,14 @@ test("desactivar un puesto deja huérfanos SÓLO los entregables que aún no lle
   // entregable de este puesto había llegado a la firma. Una prueba que sólo comprueba la mitad que
   // el escenario le regala no protege la otra — y la otra es justo la decisión.
   await query(
+    // Sin `template_artifact_id`: retirada el 2026-10-04 (frente 23, F2.1). El vinculo la dice.
     `INSERT INTO task_items
-       (task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
+       (task_id, process_definition_template_id, origin_kind, title,
         sort_order, created_by_person_id, responsible_position_id, assigned_person_id,
         document_status, start_date, end_date)
-     SELECT $1, $2, $3, 'user_added', 'zz char puesto desactivado (en firma)', 90, 24, $4, 3,
-            'Pendiente de firma', $5, $6`,
-    [origen[0].task_id, origen[0].process_definition_template_id, origen[0].template_artifact_id,
+     SELECT $1, $2, 'user_added', 'zz char puesto desactivado (en firma)', 90, 24, $3, 3,
+            'Pendiente de firma', $4, $5`,
+    [origen[0].task_id, origen[0].process_definition_template_id,
      PUESTO, origen[0].start_date, origen[0].end_date],
   );
 

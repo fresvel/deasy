@@ -496,6 +496,22 @@
         "signer.md"
       ]
     },
+    "owner_process_id": {
+      "motivo": "FRENTE 23 (F1.2, 2026-10-04) · columna RETIRADA de `deliverables`. Las tres paginas la nombran para contar que murio y por que: ninguna de las 33 consultas que leen la tabla la seleccionaba, y su unico lector era el guardia `assertDeliverableBelongsToConfigLine`, que comparaba la copia con el vinculo. A que linea sirve un entregable se deriva hoy de `process_definition_templates`.",
+      "paginas": [
+        "datos/modos-y-plantillas.md",
+        "modelo/entregable-y-ediciones.md",
+        "modelo/vinculo.md"
+      ]
+    },
+    "owner_variation_key": {
+      "motivo": "FRENTE 23 (F1.2, 2026-10-04) · la gemela de `owner_process_id`, retirada con ella y por lo mismo. Las paginas la nombran historicamente. Ojo: el guardia que las leia comprobaba el proceso pero NO esta columna, siendo el invariante que decia proteger sobre (proceso, variacion).",
+      "paginas": [
+        "datos/modos-y-plantillas.md",
+        "modelo/entregable-y-ediciones.md",
+        "modelo/vinculo.md"
+      ]
+    },
     "padre_id": {
       "motivo": "DESCARTADO · columna de la alternativa de tabla unica autorreferente para el catalogo de campos, que se EVALUO Y SE DESCARTO (seccion 4, apartado del pais sin taxonomia nacional). Se cita para explicar por que no existe; el criterio esta en docs/planes/referencia/patrones-diseno.md. NO lleva fecha de retirada: no va a existir nunca.",
       "paginas": [

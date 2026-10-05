@@ -572,9 +572,12 @@ export const SQL_TABLES = [
       {
         name: "process_definition_template_id",
         label: "Entregable definido por proceso",
-        type: "number"
+        type: "number",
+        // OBLIGATORIO desde el 2026-10-04 (frente 23, F2.1): la columna es NOT NULL y es la UNICA
+        // fuente de «que version de plantilla». `template_artifact_id` estaba aqui al lado, era una
+        // copia de este vinculo, y se retiro.
+        required: true
       },
-      { name: "template_artifact_id", label: "Plantilla documental", type: "number", required: true },
       {
         name: "origin_kind",
         label: "Origen",

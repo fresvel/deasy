@@ -11,7 +11,7 @@ generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **<!-- gen:total-tablas -->93<!-- /gen --> tablas y <!-- gen:total-relaciones -->182<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+Son **<!-- gen:total-tablas -->93<!-- /gen --> tablas y <!-- gen:total-relaciones -->180<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
 de <!-- gen:total-tablas -->93<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
@@ -72,7 +72,7 @@ las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:
 
 Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables
 (`task_items`) y los documentos producidos. Es donde converge todo: tiene
-**<!-- gen:relaciones-fuera:tareas -->30<!-- /gen --> relaciones con otros dominios**.
+**<!-- gen:relaciones-fuera:tareas -->29<!-- /gen --> relaciones con otros dominios**.
 **<!-- gen:tablas-dominio:tareas -->9<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de tareas](/diagramas/tareas.svg)
@@ -134,7 +134,7 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **capa**
 | **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
 
 **La regla es una sola: una clave ajena puede apuntar a su propia capa o a una inferior, nunca a una
-superior.** Medido sobre las <!-- gen:total-relaciones -->182<!-- /gen --> relaciones del esquema: 103 bajan de capa, 79 se quedan
+superior.** Medido sobre las <!-- gen:total-relaciones -->180<!-- /gen --> relaciones del esquema: 103 bajan de capa, 79 se quedan
 en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
 Dos cosas que las capas enseñan y que ningún diagrama por dominio decía:

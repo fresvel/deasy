@@ -47,6 +47,20 @@ sin necesidad de duplicarla. Es una propiedad del modelo que conviene no perder.
 
 :::
 
+:::caution[Y es justo lo que está en revisión]
+
+Lo de arriba describe el esquema de hoy, pero la regla que el dueño quiere es la contraria: *«una
+versión de plantilla debería servir a solo una variación de proceso»*. El cambio está planteado y
+**no aplicado**, porque la forma directa —un único sobre `template_artifact_id` a secas— rompe el
+clon de configuraciones: versionar una configuración copia sus vínculos con el mismo artefacto a la
+definición nueva de la misma serie, y el único lo rechaza. Medido el 2026-10-04.
+
+Mientras se decide, lo que **sí** desapareció es el guardia que lo intentaba desde JavaScript, con
+las dos columnas que leía (`deliverables.owner_process_id` y `owner_variation_key`). O sea que ahora
+mismo nada impide vincular una edición a una configuración de otra línea.
+
+:::
+
 ## Dos consecuencias del modo que no se ven en la tabla
 
 **Publicar exige flujo, salvo en `routed`.** Al publicar una edición se comprueba que tenga al menos

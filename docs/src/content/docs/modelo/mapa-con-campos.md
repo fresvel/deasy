@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**38 tablas · 370 columnas · 101 claves ajenas · 10 diagramas.**
+**38 tablas · 367 columnas · 99 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -221,15 +221,15 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 9 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 8 claves ajenas desde otros diagramas</summary>
 
-`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `deliverables.owner_process_id` → `processes` · `process_definition_templates.process_definition_id` → `process_definition_versions` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `terms.term_type_id` → `term_types`
+`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_definition_templates.process_definition_id` → `process_definition_versions` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `terms.term_type_id` → `term_types`
 
 </details>
 
 ## Lo que se declara (2 de 2)
 
-**5 tablas** · 46 columnas · 8 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, `processes`, que salen como caja vacía.
+**5 tablas** · 44 columnas · 7 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -250,8 +250,6 @@ erDiagram
     varchar code UK
     varchar display_name
     varchar description
-    int owner_process_id FK
-    varchar owner_variation_key
     text template_scope
     int template_seed_id FK
     int owner_person_id FK
@@ -291,7 +289,6 @@ erDiagram
     timestamp created_at
   }
   persons |o--o{ deliverables : "owner_person_id"
-  processes |o--o{ deliverables : "owner_process_id"
   template_seeds |o--o{ deliverables : "template_seed_id"
   template_artifacts ||--o{ process_definition_templates : "template_artifact_id"
   process_definition_versions ||--o{ process_definition_templates : "process_definition_id"
@@ -301,9 +298,9 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 7 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 6 claves ajenas desde otros diagramas</summary>
 
-`document_versions.template_artifact_id` → `template_artifacts` · `fill_flow_templates.template_artifact_id` → `template_artifacts` · `fill_flow_templates.process_definition_template_id` → `process_definition_templates` · `signature_flow_templates.template_artifact_id` → `template_artifacts` · `signature_flow_templates.process_definition_template_id` → `process_definition_templates` · `task_items.process_definition_template_id` → `process_definition_templates` · `task_items.template_artifact_id` → `template_artifacts`
+`document_versions.template_artifact_id` → `template_artifacts` · `fill_flow_templates.template_artifact_id` → `template_artifacts` · `fill_flow_templates.process_definition_template_id` → `process_definition_templates` · `signature_flow_templates.template_artifact_id` → `template_artifacts` · `signature_flow_templates.process_definition_template_id` → `process_definition_templates` · `task_items.process_definition_template_id` → `process_definition_templates`
 
 </details>
 
@@ -367,7 +364,7 @@ erDiagram
 
 ## Lo que ocurre (2 de 3)
 
-**3 tablas** · 46 columnas · 15 claves ajenas propias. Apunta a `persons`, `process_definition_templates`, `tasks`, `template_artifacts`, `unit_positions`, `units`, que salen como caja vacía.
+**3 tablas** · 45 columnas · 14 claves ajenas propias. Apunta a `persons`, `process_definition_templates`, `tasks`, `template_artifacts`, `unit_positions`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -376,7 +373,6 @@ erDiagram
     int id PK
     int task_id FK
     int process_definition_template_id FK
-    int template_artifact_id FK
     text origin_kind
     varchar title
     int sort_order
@@ -432,12 +428,11 @@ erDiagram
   persons |o--o{ task_items : "assigned_person_id"
   persons |o--o{ task_items : "created_by_person_id"
   units |o--o{ task_items : "origin_unit_id"
-  process_definition_templates |o--o{ task_items : "process_definition_template_id"
+  process_definition_templates ||--o{ task_items : "process_definition_template_id"
   unit_positions ||--o{ task_items : "responsible_position_id"
   task_items |o--o{ task_items : "source_task_item_id"
   units |o--o{ task_items : "target_unit_id"
   tasks ||--o{ task_items : "task_id"
-  template_artifacts ||--o{ task_items : "template_artifact_id"
   persons |o--o{ task_item_tenures : "performed_by_person_id"
 ```
 

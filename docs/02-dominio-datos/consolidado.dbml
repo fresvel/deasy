@@ -332,16 +332,10 @@ Table "deliverables" {
   "code" varchar(180) [unique, not null]
   "display_name" varchar(180) [not null]
   "description" varchar(255)
-  "owner_process_id" int4
-  "owner_variation_key" varchar(120)
   "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
   "template_seed_id" int4
   "owner_person_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (owner_process_id, owner_variation_key) [type: btree, name: "idx_deliverables_owner"]
-  }
 
   Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
 }
@@ -1207,8 +1201,7 @@ Table "task_item_tenures" {
 Table "task_items" {
   "id" int4 [pk, not null, increment]
   "task_id" int4 [not null]
-  "process_definition_template_id" int4
-  "template_artifact_id" int4 [not null]
+  "process_definition_template_id" int4 [not null]
   "origin_kind" text [not null, check: `origin_kind = ANY (ARRAY['process_defined'::text, 'user_added'::text])`, default: 'process_defined']
   "title" varchar(180)
   "sort_order" int4 [not null, default: 1]
@@ -1228,7 +1221,6 @@ Table "task_items" {
 
   Indexes {
     (task_id, process_definition_template_key, responsible_position_key) [type: btree, unique, name: "uq_task_items_defined_target"]
-    template_artifact_id [type: btree, name: "idx_task_items_artifact"]
     created_by_person_id [type: btree, name: "idx_task_items_created_by"]
     (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
     process_definition_template_id [type: btree, name: "idx_task_items_definition_template"]
@@ -1536,7 +1528,6 @@ Ref "fk_contract_origins_contract":"contracts"."id" <? "contract_origins"."contr
 Ref "fk_contracts_person":"persons"."id" <? "contracts"."person_id"
 Ref "fk_contracts_position":"unit_positions"."id" <? "contracts"."position_id"
 Ref "fk_deliverables_owner_person":"persons"."id" ?<? "deliverables"."owner_person_id"
-Ref "fk_deliverables_owner_process":"processes"."id" ?<? "deliverables"."owner_process_id"
 Ref "fk_deliverables_seed":"template_seeds"."id" ?<? "deliverables"."template_seed_id"
 Ref "fk_direcciones_canton":"cantones"."id" ?<? "direcciones"."canton_id"
 Ref "fk_direcciones_pais":"paises"."id" ?<? "direcciones"."pais_id"
@@ -1646,12 +1637,11 @@ Ref "fk_task_item_tenures_position":"unit_positions"."id" ?<? "task_item_tenures
 Ref "fk_task_items_assigned_person":"persons"."id" ?<? "task_items"."assigned_person_id"
 Ref "fk_task_items_created_by":"persons"."id" ?<? "task_items"."created_by_person_id"
 Ref "fk_task_items_origin_unit":"units"."id" ?<? "task_items"."origin_unit_id"
-Ref "fk_task_items_process_definition_template":"process_definition_templates"."id" ?<? "task_items"."process_definition_template_id"
+Ref "fk_task_items_process_definition_template":"process_definition_templates"."id" <? "task_items"."process_definition_template_id"
 Ref "fk_task_items_responsible_position":"unit_positions"."id" <? "task_items"."responsible_position_id"
 Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
 Ref "fk_task_items_target_unit":"units"."id" ?<? "task_items"."target_unit_id"
 Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
-Ref "fk_task_items_template_artifact":"template_artifacts"."id" <? "task_items"."template_artifact_id"
 Ref "fk_tasks_process_definition":"process_definition_versions"."id" <? "tasks"."process_definition_id"
 Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 Ref "fk_tasks_scope_unit":"units"."id" <? "tasks"."scope_unit_id"

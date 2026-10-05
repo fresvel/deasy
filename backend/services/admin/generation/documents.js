@@ -309,6 +309,20 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   );
 
   if (!versionRows?.length) {
+    // CON QUE VERSION DE PLANTILLA SE ABRE ESTA RONDA, LEIDA DEL VINCULO (frente 23, F2.2 —
+    // 2026-10-04). Antes salia de `taskItem.template_artifact_id`, o sea de una COPIA que el
+    // entregable guardaba del vinculo; esa columna se retiro. Se consulta aqui, y no se exige que
+    // el llamador la traiga, porque los cinco llamadores proyectan filas DISTINTAS: dos de ellos
+    // (`loadDerivedTaskItemRow` y `loadFreeTaskItemRow`) no seleccionan el vinculo.
+    const [artifactRows] = await connection.query(
+      `SELECT pdt.template_artifact_id
+         FROM task_items ti
+         INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+        WHERE ti.id = ?
+        LIMIT 1`,
+      [taskItem.id]
+    );
+    const roundArtifactId = artifactRows?.[0]?.template_artifact_id ?? null;
     const [insertResult] = await connection.query(
       `INSERT INTO document_versions (
          task_item_id,
@@ -322,7 +336,7 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
         // primera ronda completa del flujo. El segundo digito nace en 0 y lo mueve la primera
         // subida del archivo.
         1,
-        taskItem.template_artifact_id ?? null,
+        roundArtifactId,
         "Borrador"
       ]
     );

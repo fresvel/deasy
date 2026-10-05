@@ -32,14 +32,16 @@ El criterio que los mató, y que conviene tener presente al añadir cualquier co
 %% diagrama 09 — plantillas: la semilla, el libro (deliverables) y sus ediciones
 flowchart TD
     SEEDS["template_seeds<br/>(semillas del catalogo: source_path, preview_path, seed_type)"]
-    DEL["deliverables — EL LIBRO<br/>code UNIQUE, display_name, owner_process_id,<br/>template_scope (official / ad_hoc), owner_person_id"]
+    DEL["deliverables — EL LIBRO<br/>code UNIQUE, display_name, description,<br/>template_scope (official / ad_hoc), template_seed_id, owner_person_id"]
     ART["template_artifacts — LA EDICION<br/>storage_version, lifecycle_state, base_object_prefix,<br/>available_formats, schema_object_key, content_hash,<br/>parent_version_id (autorreferencial = linaje)"]
 
     SEEDS --> DEL
     DEL -->|"1:N"| ART
 ```
 
-Con UNIQUE sobre `(deliverable_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el proceso propietario, el scope, la semilla y la persona propietaria viven en `deliverables`; `template_artifacts` guarda **solo** el estado y el almacenamiento de cada versión.
+Con UNIQUE sobre `(deliverable_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el scope, la semilla y la persona propietaria viven en `deliverables`; `template_artifacts` guarda **solo** el estado y el almacenamiento de cada versión.
+
+**El proceso propietario no vive en ninguna de las dos** desde el 2026-10-04: a qué línea sirve una edición lo dice su **vínculo** en `process_definition_templates`. `deliverables` tuvo dos columnas con ese dato copiado —`owner_process_id` y `owner_variation_key`— y se retiraron junto con el guardia que las comparaba con el vínculo, que era su único lector.
 
 :::caution[La palabra “entregable” significa dos cosas]
 

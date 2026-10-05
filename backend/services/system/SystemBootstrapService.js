@@ -803,8 +803,10 @@ export const ensureDefaultProcess = async (connection) => {
   }
   const templateSeedId = Number(seedRow.id);
 
-  // 5. entregable base (deliverable) + su versión publicada. Modelo libro/ediciones: identidad/scope/owner/seed
-  //    viven en `deliverables` (dueño = proceso por defecto + variación); la versión solo guarda el storage MinIO.
+  // 5. entregable base (deliverable) + su versión publicada. Modelo libro/ediciones: identidad, scope
+  //    y semilla viven en `deliverables`; la versión solo guarda el storage MinIO. A QUE LINEA SIRVE
+  //    no se guarda aquí desde el 2026-10-04 (frente 23, F1.2): lo dice su vínculo en
+  //    `process_definition_templates`, que es único por versión de plantilla.
   let deliverable = await fetchOne(
     connection,
     "SELECT id FROM deliverables WHERE code = ? LIMIT 1",
@@ -813,14 +815,12 @@ export const ensureDefaultProcess = async (connection) => {
   if (!deliverable) {
     const [r] = await connection.query(
       `INSERT INTO deliverables
-        (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
-       VALUES (?, ?, ?, ?, ?, 'official', ?, NULL)`,
+        (code, display_name, description, template_scope, template_seed_id, owner_person_id)
+       VALUES (?, ?, ?, 'official', ?, NULL)`,
       [
         DEFAULT_TEMPLATE_CODE,
         BASE_SEED_DISPLAY,
         "Plantilla base del proceso por defecto, instanciada del seed informe-general.",
-        processId,
-        DEFAULT_VARIATION,
         templateSeedId,
       ]
     );

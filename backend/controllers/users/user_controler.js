@@ -786,7 +786,8 @@ export const downloadDeliverableTemplate = async (req, res) => {
          tar.available_formats
        FROM task_items ti
        INNER JOIN tasks t ON t.id = ti.task_id
-       INNER JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+       INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+       INNER JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
      LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
        WHERE ti.id = ?
          AND t.process_definition_id = ?

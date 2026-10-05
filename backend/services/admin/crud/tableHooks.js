@@ -658,14 +658,22 @@ export const TABLE_HOOKS = {
   process_definition_templates: {
     async beforeCreate(ctx) {
       await TEMPLATE_CHILD_GUARDS.beforeCreate(ctx);
-      // F3 — "la pared": solo se enlaza un entregable cuyo dueño = (proceso, variación) de la config.
-      await ctx.service.assertDeliverableBelongsToConfigLine(
-        ctx.payload.process_definition_id,
-        ctx.payload.template_artifact_id
-      );
+      // AQUI LLAMABA A `assertDeliverableBelongsToConfigLine` —"la pared"— hasta el 2026-10-04
+      // (frente 23, F1.3). Rechazaba con 422 el vinculo cuyo entregable fuera de otra linea,
+      // comparando `deliverables.owner_process_id` / `owner_variation_key` con la definicion. Esas
+      // dos columnas se retiraron en F1.2 porque este guardia era su UNICO lector, asi que la
+      // comprobacion se va con ellas.
+      //
+      // ⚠️ Y DE MOMENTO NO LA SUSTITUYE NADA. F1.1 —el unico de la base que iba a sostener la
+      // regla— quedo abierta: la version del plan rompia el clon de configuraciones (medido, ver la
+      // nota en `postgres_schema.sql` junto a `uq_process_definition_templates`). Hasta que el dueño
+      // decida la forma de esa restriccion, vincular un entregable a una configuracion de otra
+      // linea se acepta.
+      //
       // Vínculo idempotente: si la plantilla ya está en esta configuración (p. ej. porque al crearla desde el
-      // wizard ya se enlazó), no se duplica el registro (evita el ER_DUP_ENTRY de uq_process_definition_templates);
-      // se devuelve el vínculo existente. `shortCircuit` corta el create() sin llegar al INSERT.
+      // wizard ya se enlazó), no se duplica el registro (evita el conflicto de clave unica de
+      // uq_process_definition_templates); se devuelve el vínculo existente. `shortCircuit` corta el
+      // create() sin llegar al INSERT.
       const [existingLinkRows] = await ctx.pool.query(
         `SELECT id, sort_order FROM process_definition_templates
          WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
@@ -900,7 +908,8 @@ export const TABLE_HOOKS = {
       if (Number(task.process_definition_id) !== Number(template.process_definition_id)) {
         throw new Error("La plantilla seleccionada no pertenece a la configuracion de proceso de la tarea.");
       }
-      ctx.payload.template_artifact_id = template.template_artifact_id;
+      // Aqui se copiaba `template.template_artifact_id` al payload. La columna se retiro el
+      // 2026-10-04 (frente 23, F2.1): el vinculo que ya lleva el payload lo dice.
       if (!ctx.payload.start_date) {
         ctx.payload.start_date = task.start_date;
       }
@@ -937,12 +946,9 @@ export const TABLE_HOOKS = {
         }
         delete updates.process_definition_template_id;
       }
-      if (Object.hasOwn(updates, "template_artifact_id")) {
-        if (Number(updates.template_artifact_id) !== Number(existing.template_artifact_id)) {
-          throw new Error("No se puede cambiar el paquete asociado de un item.");
-        }
-        delete updates.template_artifact_id;
-      }
+      // El guard gemelo de `template_artifact_id` —"No se puede cambiar el paquete asociado de un
+      // item"— murio con la columna el 2026-10-04 (frente 23, F2.1). Era la misma regla dicha dos
+      // veces: la de arriba ya impide cambiar el vinculo, y el paquete lo decide el vinculo.
     }
   },
 

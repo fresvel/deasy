@@ -157,8 +157,7 @@ Table "task_item_tenures" {
 Table "task_items" {
   "id" int4 [pk, not null, increment]
   "task_id" int4 [not null]
-  "process_definition_template_id" int4
-  "template_artifact_id" int4 [not null]
+  "process_definition_template_id" int4 [not null]
   "origin_kind" text [not null, check: `origin_kind = ANY (ARRAY['process_defined'::text, 'user_added'::text])`, default: 'process_defined']
   "title" varchar(180)
   "sort_order" int4 [not null, default: 1]
@@ -178,7 +177,6 @@ Table "task_items" {
 
   Indexes {
     (task_id, process_definition_template_key, responsible_position_key) [type: btree, unique, name: "uq_task_items_defined_target"]
-    template_artifact_id [type: btree, name: "idx_task_items_artifact"]
     created_by_person_id [type: btree, name: "idx_task_items_created_by"]
     (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
     process_definition_template_id [type: btree, name: "idx_task_items_definition_template"]
@@ -249,7 +247,6 @@ Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 //   process_definition_templates -> task_items   [procesos]
 //   unit_positions -> task_items   [organizacion]
 //   units -> task_items   [organizacion]
-//   template_artifacts -> task_items   [plantillas]
 //   process_definition_versions -> tasks   [procesos]
 //   units -> tasks   [organizacion]
 //   terms -> tasks   [procesos]

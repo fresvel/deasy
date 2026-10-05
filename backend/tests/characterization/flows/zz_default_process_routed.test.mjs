@@ -198,12 +198,18 @@ async function readRuntimeSignatureFlow(taskItemId) {
 // El entregable tal como queda: la fila del `task_item`, su documento, su versión, la instancia de
 // flujo de llenado y las solicitudes abiertas. Es el «estado resultante» del punto 4.
 async function readEntregable(taskItemId) {
+  // `template_artifact_id` sale del VINCULO desde el 2026-10-04 (frente 23, F2.1): `task_items` ya
+  // no guarda su copia. Se proyecta con el MISMO nombre para que el golden no se mueva — y que no
+  // se mueva es justo la prueba de que la columna era una copia.
   const [item] = await query(
-    `SELECT id, task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
-            sort_order, created_by_person_id, source_task_item_id, target_unit_id,
-            responsible_position_id, assigned_person_id, document_status, origin_unit_id,
-            start_date, end_date, user_started_at
-       FROM task_items WHERE id = $1`,
+    `SELECT ti.id, ti.task_id, ti.process_definition_template_id, pdt.template_artifact_id,
+            ti.origin_kind, ti.title,
+            ti.sort_order, ti.created_by_person_id, ti.source_task_item_id, ti.target_unit_id,
+            ti.responsible_position_id, ti.assigned_person_id, ti.document_status, ti.origin_unit_id,
+            ti.start_date, ti.end_date, ti.user_started_at
+       FROM task_items ti
+       LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+      WHERE ti.id = $1`,
     [taskItemId],
   );
   // `documents` DESAPARECIO (2026-08-23): era una cascara 1:1 sobre el entregable sin ni una

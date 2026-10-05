@@ -21,16 +21,10 @@ Table "deliverables" {
   "code" varchar(180) [unique, not null]
   "display_name" varchar(180) [not null]
   "description" varchar(255)
-  "owner_process_id" int4
-  "owner_variation_key" varchar(120)
   "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
   "template_seed_id" int4
   "owner_person_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (owner_process_id, owner_variation_key) [type: btree, name: "idx_deliverables_owner"]
-  }
 
   Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
 }
@@ -170,7 +164,6 @@ Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artif
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> deliverables   [identidad]
-//   processes -> deliverables   [procesos]
 //   document_versions -> document_fill_flows   [tareas]
 //   template_artifacts -> document_versions   [tareas]
 //   fill_requests -> document_workflow_observations   [tareas]
@@ -185,4 +178,3 @@ Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artif
 //   persons -> fill_requests   [identidad]
 //   template_artifacts -> process_definition_templates   [procesos]
 //   template_artifacts -> signature_flow_templates   [firmas]
-//   template_artifacts -> task_items   [tareas]

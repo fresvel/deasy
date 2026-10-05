@@ -111,7 +111,7 @@ erDiagram
     int version "número de ronda"
     int version_minor "caché de la última corrección"
     text version_label "GENERADA: version.version_minor"
-    int template_artifact_id FK
+    int template_artifact_id FK "con que edicion se genero ESTA ronda"
     varchar working_file_path "archivo en curso"
     varchar final_file_path "copia del anterior al firmarse"
     varchar payload_hash "sin productor hoy"

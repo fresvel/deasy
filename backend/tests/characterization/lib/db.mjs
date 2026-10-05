@@ -253,9 +253,22 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
 
 // ¿Sobrevive una fila `deliverables` con este `code`? Se usa para FIJAR el defecto de
 // compensación (la creación fallida deja el deliverable huérfano), no para limpiar.
+//
+// PROYECTABA `owner_process_id` y `owner_variation_key` hasta el 2026-10-04. Esas dos columnas se
+// retiraron (frente 23, F1.2): a qué línea sirve un entregable lo dice su VÍNCULO, no una copia
+// dentro de la fila. Lo que la sustituye es `tiene_vinculo`, que contesta la misma pregunta por el
+// camino que hoy es la fuente — y en 0/1 en vez de un id, para que el golden no se ate a una
+// secuencia de la base.
 export async function findDeliverableByCode(code) {
   const rows = await query(
-    "SELECT code, owner_process_id, owner_variation_key FROM deliverables WHERE code = $1",
+    `SELECT d.code,
+            d.template_scope,
+            (SELECT COUNT(*)
+               FROM template_artifacts ta
+               INNER JOIN process_definition_templates pdt ON pdt.template_artifact_id = ta.id
+              WHERE ta.deliverable_id = d.id) AS tiene_vinculo
+       FROM deliverables d
+      WHERE d.code = $1`,
     [code],
   );
   return rows[0] ?? null;

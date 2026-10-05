@@ -157,14 +157,11 @@ const targetScopeConsistent = (candidate) => {
   }
 };
 
-const processDefinedNeedsTemplate = (candidate) => {
-  if (
-    String(candidate.origin_kind || "process_defined") === "process_defined"
-    && !candidate.process_definition_template_id
-  ) {
-    throw new Error("Selecciona el entregable definido por proceso.");
-  }
-};
+// `processDefinedNeedsTemplate` VIVIO AQUI hasta el 2026-10-04 (frente 23, F2.1). Exigia el vinculo
+// SOLO cuando `origin_kind = 'process_defined'`, porque se creia que un entregable `user_added`
+// podia no tenerlo. No es asi: las tareas ad-hoc cuelgan del Proceso por defecto y sus dos caminos
+// de alta toman el vinculo de la configuracion activa de ese proceso. Hoy la columna es NOT NULL
+// para todas las filas, asi que la regla es un `requires` sin condicion — y el mensaje se conserva.
 
 // Solo el estado. La otra mitad de esta regla —"item de tarea O propietario"— sostenía el
 // "documento suelto", retirado: un documento no existe sin su entregable, así que `task_item_id`
@@ -280,8 +277,9 @@ const TABLE_RULES = {
   ],
   task_items: [
     requires(["task_id", "Selecciona una tarea."]),
-    processDefinedNeedsTemplate,
-    requires(["template_artifact_id", "Selecciona la plantilla documental."]),
+    // `template_artifact_id` se exigia aqui hasta el 2026-10-04: era una copia del vinculo y se
+    // retiro (frente 23, F2.1). Lo que hay que elegir es el VINCULO, que es el dato.
+    requires(["process_definition_template_id", "Selecciona el entregable definido por proceso."]),
     datesInOrder("items de tarea"),
   ],
   documents: [

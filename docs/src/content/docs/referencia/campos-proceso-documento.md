@@ -240,8 +240,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `code` | varchar(180) | sí | — | — |
 | `display_name` | varchar(180) | sí | — | — |
 | `description` | varchar(255) | no | — | — |
-| `owner_process_id` | int | no | `processes.id` · impide borrar | — |
-| `owner_variation_key` | varchar(120) | no | — | — |
 | `template_scope` | text | sí | — | `official` · `ad_hoc` |
 | `template_seed_id` | int | no | `template_seeds.id` · impide borrar | — |
 | `owner_person_id` | int | no | `persons.id` · impide borrar | — |
@@ -342,8 +340,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
 | `task_id` | int | sí | `tasks.id` · se va con el | — |
-| `process_definition_template_id` | int | no | `process_definition_templates.id` · impide borrar | — |
-| `template_artifact_id` | int | sí | `template_artifacts.id` · impide borrar | — |
+| `process_definition_template_id` | int | sí | `process_definition_templates.id` · impide borrar | — |
 | `origin_kind` | text | sí | — | `process_defined` · `user_added` |
 | `title` | varchar(180) | no | — | — |
 | `sort_order` | int | sí | — | — |

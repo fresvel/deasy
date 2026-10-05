@@ -86,11 +86,27 @@ relación 1:1 estricta con el entregable —un solo `INSERT` en todo el backend 
 También cuelgan de aquí las tenencias (`task_item_tenures`, `ON DELETE CASCADE`), que son la página
 siguiente.
 
+:::note[Qué edición de plantilla se usa: aquí no se guarda]
+
+`task_items` tuvo una columna `template_artifact_id` hasta el 2026-10-04. Era una **copia** de
+`process_definition_templates.template_artifact_id`, o sea del vínculo que la columna de al lado ya
+apunta: coincidían siempre porque solo existía una versión de cada plantilla, y nada obligaba a que
+siguieran coincidiendo. Se retiró, y `process_definition_template_id` pasó a ser **obligatoria**.
+
+La creencia que la sostenía —«un entregable ad-hoc no tiene vínculo»— era falsa, y hubo que
+corregirla cuatro veces: las tareas ad-hoc cuelgan del **Proceso por defecto**
+(`GENERAL_PROCESS_SLUG = "default"`), y sus dos caminos de alta toman el vínculo de la configuración
+activa de ese proceso. Solo dos ficheros del backend insertan en esta tabla, y los dos lo ponen.
+
+Quien necesite la edición la alcanza por el vínculo, con el `JOIN` que casi todos sus lectores ya
+hacían para llegar al nombre del entregable.
+
+:::
+
 ```mermaid
 erDiagram
   tasks ||--o{ task_items : "contiene"
   process_definition_templates ||--o{ task_items : "segun este vinculo"
-  template_artifacts ||--o{ task_items : "con esta edicion"
   unit_positions ||--o{ task_items : "lo debe este puesto"
   persons ||--o{ task_items : "cache del ocupante"
   persons ||--o{ task_items : "lo anadio"
@@ -102,8 +118,7 @@ erDiagram
   task_items {
     int id PK "QUE SE DEBE"
     int task_id FK
-    int process_definition_template_id FK "el vinculo del que nacio"
-    int template_artifact_id FK "que edicion se usa"
+    int process_definition_template_id FK "el vinculo del que nacio -- NOT NULL"
     text origin_kind "process_defined, user_added"
     varchar title "etiqueta propia de la replica"
     int sort_order

@@ -463,9 +463,16 @@ export default class SqlAdminService {
   async getTaskItem(taskItemId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      `SELECT id, task_id, process_definition_template_id, template_artifact_id, start_date, end_date, user_started_at
-       FROM task_items
-       WHERE id = ?
+      // `template_artifact_id` sale del VINCULO, no de una columna del entregable (frente 23, F2.1
+      // — 2026-10-04). Se proyecta con el mismo nombre a proposito: sus dos lectores —el hook de
+      // `document_versions` y `ensureDocumentForTaskItem`— preguntan «con que version de plantilla
+      // se trabaja», y esa pregunta la contesta el vinculo. Lo que desaparecio es la COPIA.
+      `SELECT ti.id, ti.task_id, ti.process_definition_template_id,
+              pdt.template_artifact_id,
+              ti.start_date, ti.end_date, ti.user_started_at
+       FROM task_items ti
+       LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+       WHERE ti.id = ?
        LIMIT 1`,
       [taskItemId]
     );
@@ -857,7 +864,6 @@ export default class SqlAdminService {
   // El ciclo de vida de plantillas/entregables vive en SqlAdminService.templateLifecycle.js.
   // Delegadores con la misma firma: ni el controller ni el hook de activacion de
   // process_definition_versions (que llama publishDraftTemplatesForDefinition via ctx.service) se tocan.
-  assertDeliverableBelongsToConfigLine(...args) { return this.templateLifecycle.assertDeliverableBelongsToConfigLine(...args); }
   createTemplateArtifactDraft(...args) { return this.templateLifecycle.createTemplateArtifactDraft(...args); }
   finishTemplateUpdate(...args) { return this.templateLifecycle.finishTemplateUpdate(...args); }
   forkDeliverableForConfig(...args) { return this.templateLifecycle.forkDeliverableForConfig(...args); }

@@ -171,9 +171,14 @@ const main = async () => {
 
   // 5. Entregable PROPIO de esta línea, "forkeado" del que sembró el bootstrap.
   //
-  //    REGLA DE NEGOCIO: un entregable pertenece a una línea (owner_process_id +
-  //    owner_variation_key) y NO puede vincularse a otra configuración. Por eso NO se puede
-  //    reutilizar "tpl_informe_general" (es del proceso por defecto).
+  //    REGLA DE NEGOCIO: una VERSIÓN de plantilla debería servir a una sola variación de proceso.
+  //    Por eso aquí NO se reutiliza "tpl_informe_general" (es del proceso por defecto) y se forkea.
+  //
+  //    ⚠️ Pero hoy NADIE lo impide: el guardia que lo comprobaba
+  //    (`assertDeliverableBelongsToConfigLine`, sobre `deliverables.owner_process_id` /
+  //    `owner_variation_key`) se retiró el 2026-10-04 con esas dos columnas (frente 23, F1.2/F1.3),
+  //    y el índice único que iba a sustituirlo (F1.1) quedó abierto porque rompe el clon de
+  //    configuraciones. Este fork sigue siendo lo correcto; lo que ya no hay es quien te pare.
   //
   //    forkDeliverableForConfig es justo la operación que la UI llama "Crear a partir de
   //    este": crea el entregable de la línea destino, COPIA los objetos de MinIO a un
@@ -181,8 +186,8 @@ const main = async () => {
   //    invoca directamente sobre el servicio (este script corre dentro del backend).
   //
   //    Se llama ANTES de crear el vínculo: el fork solo hace UPDATE del enlace existente
-  //    (que aún no hay, así que no afecta a nada) y nos devuelve el artefacto nuevo, que ya
-  //    pertenece a nuestra línea y por tanto SÍ pasa la validación al vincularlo.
+  //    (que aún no hay, así que no afecta a nada) y nos devuelve el artefacto nuevo, que no tiene
+  //    vínculo todavía y por tanto SÍ se puede vincular.
   console.log("Forkeando el entregable a la nueva línea (copia objetos en MinIO)...");
   const fork = await sqlAdmin.forkDeliverableForConfig({
     sourceArtifactId: SEED_ARTIFACT_ID,

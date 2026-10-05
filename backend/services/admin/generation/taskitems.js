@@ -78,10 +78,12 @@ export const ensureTaskItemsForTaskTargets = async (
       }
 
       await connection.query(
+        // `template_artifact_id` salia de aqui hasta el 2026-10-04 (frente 23, F2.1), copiada de
+        // `template.template_artifact_id` — o sea del vinculo que la columna de al lado ya apunta.
+        // Se retiro la columna; quien necesite la version de plantilla la lee por el vinculo.
         `INSERT INTO task_items (
            task_id,
            process_definition_template_id,
-           template_artifact_id,
            origin_kind,
            sort_order,
            target_unit_id,
@@ -89,11 +91,10 @@ export const ensureTaskItemsForTaskTargets = async (
            assigned_person_id,
            start_date,
            end_date
-         ) VALUES (?, ?, ?, 'process_defined', ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, 'process_defined', ?, ?, ?, ?, ?, ?)`,
         [
           taskId,
           template.id,
-          template.template_artifact_id,
           template.sort_order ?? 1,
           target.unit_id,
           // El destinatario ya no se guarda: lo que identifica al entregable es QUIEN LO PRODUCE.

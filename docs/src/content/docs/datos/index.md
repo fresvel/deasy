@@ -36,7 +36,7 @@ Esta es la confusion que mas tiempo cuesta en este repositorio, y **no es sinoni
 
 | **Nombre en el codigo** | **Que es** | **Donde vive** |
 |:---|:---|:---|
-| `deliverable` | El entregable como **tipo**: su identidad institucional, su codigo y su dueno. *No es un archivo.* | `deliverables` |
+| `deliverable` | El entregable como **tipo**: su identidad institucional y su codigo. *No es un archivo*, y desde el 2026-10-04 tampoco lleva escrito a que linea de proceso sirve: eso lo dice su vinculo. | `deliverables` |
 | `template_artifact` | Una **edicion** de ese tipo, con sus ficheros en MinIO y su ciclo de vida (`draft` / `published` / `retired`). El codigo lo abrevia `artifact`; no hay ninguna tabla `artifacts`. | `template_artifacts` |
 | `process_definition_template` | El **vinculo** entre una configuracion de proceso y una edicion. **Aqui vive `item_mode`**: por eso la misma plantilla puede emitirse de tres maneras segun a que proceso este enlazada. | `process_definition_templates` |
 | `task_item` | La **instancia con dueno**: lo que una persona concreta tiene que entregar. Es la tarjeta que el usuario ve en su Home. | `task_items` |

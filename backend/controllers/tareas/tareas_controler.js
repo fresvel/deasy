@@ -74,8 +74,10 @@ export const getuserTarea = async (req, res) => {
            COUNT(*) AS task_item_count,
            GROUP_CONCAT(DISTINCT tar_dl.display_name ORDER BY ti.sort_order SEPARATOR ' | ') AS task_item_names
          FROM task_items ti
+         LEFT JOIN process_definition_templates pdt
+           ON pdt.id = ti.process_definition_template_id
          LEFT JOIN template_artifacts tar
-           ON tar.id = ti.template_artifact_id
+           ON tar.id = pdt.template_artifact_id
            LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
          GROUP BY ti.task_id
        ) tis

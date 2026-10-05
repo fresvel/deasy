@@ -511,7 +511,6 @@
       "start_date",
       "target_unit_id",
       "task_id",
-      "template_artifact_id",
       "title",
       "user_started_at"
     ]

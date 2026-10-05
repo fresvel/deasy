@@ -71,7 +71,7 @@ Reparte el alcance con tres piezas: `unit_scope_type` (`unit_exact`, `unit_subtr
 
 ### `process_definition_templates` — el paquete de entregables.
 
-Vincula configuración con plantilla: `process_definition_id` + `template_artifact_id`, mas `sort_order` y, sobre todo, `item_mode`.
+Vincula configuración con plantilla: `process_definition_id` + `template_artifact_id`, mas `sort_order` y, sobre todo, `item_mode`. Desde el 2026-10-04 es además la **única** fuente de «qué edición de plantilla se usa»: `task_items` guardaba una copia de `template_artifact_id` y se retiró.
 
 ### `process_runs` — la corrida.
 

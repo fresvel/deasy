@@ -219,8 +219,9 @@ test("un usuario NO puede acceder al entregable de otro dentro de su misma tarea
       token: admin,
       body: {
         task_id: tarea.id,
-        process_definition_template_id: 1, // exigido cuando origin_kind = process_defined
-        template_artifact_id: 1,           // obligatorio ("Plantilla documental")
+        process_definition_template_id: 1, // obligatorio: es la UNICA fuente de la plantilla
+        // `template_artifact_id: 1` iba aqui hasta el 2026-10-04 (frente 23, F2.1). Era una copia
+        // del vinculo de la linea de arriba, y la columna se retiro.
         start_date: "2026-01-01",       // obligatorio ("Inicio entregable")
         responsible_position_id: responsiblePositionId,
         // El indice unico uq_task_items_defined_target es (task, pdt, target_position, target_person):

@@ -122,8 +122,8 @@ const assertRecipientExists = async (connection, recipientPersonId) => {
 /**
  * Primera plantilla ligada de una configuración de proceso, en el orden que declara la propia
  * configuración. Devuelve la fila cruda: cada modo aplica DESPUÉS sus propias comprobaciones y
- * su propio mensaje, que no son los mismos (el legacy derivado exige `template_artifact_id`; la
- * tarea libre se conforma con que exista la plantilla).
+ * su propio mensaje, que no son los mismos (el legacy derivado exige que el vinculo apunte a una
+ * version de plantilla; la tarea libre se conforma con que exista el vinculo).
  */
 const getFirstProcessTemplate = async (connection, definitionId) => {
   const [rows] = await connection.query(
@@ -259,7 +259,6 @@ const resolveDerivedTarget = async (
 const insertDerivedTaskItem = async (connection, {
   sourceTaskId,
   definitionTemplateId,
-  templateArtifactId,
   itemTitle,
   authenticatedUserId,
   sourceTaskItemId,
@@ -268,10 +267,11 @@ const insertDerivedTaskItem = async (connection, {
   sourceTask,
 }) => {
   const [itemResult] = await connection.query(
+    // `template_artifact_id` salia de aqui hasta el 2026-10-04 (frente 23, F2.1). Era la copia de
+    // `process_definition_templates.template_artifact_id` del vinculo de la linea de arriba.
     `INSERT INTO task_items (
        task_id,
        process_definition_template_id,
-       template_artifact_id,
        origin_kind,
        title,
        sort_order,
@@ -282,11 +282,10 @@ const insertDerivedTaskItem = async (connection, {
        assigned_person_id,
        start_date,
        end_date
-     ) VALUES (?, ?, ?, 'user_added', ?, 999, ?, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, 'user_added', ?, 999, ?, ?, ?, ?, ?, ?, ?)`,
     [
       sourceTaskId,
       definitionTemplateId,
-      templateArtifactId,
       itemTitle,
       authenticatedUserId,
       sourceTaskItemId || null,
@@ -310,13 +309,14 @@ const loadDerivedTaskItemRow = async (connection, taskItemId) => {
     `SELECT
        ti.id,
        ti.task_id,
-       ti.template_artifact_id,
+       pdt.template_artifact_id,
        ti.assigned_person_id,
        ti.target_unit_id,
        ti.responsible_position_id,
        COALESCE(ti.title, tar_dl.display_name) AS template_artifact_name
      FROM task_items ti
-     LEFT JOIN template_artifacts tar ON tar.id = ti.template_artifact_id
+     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
  LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
      WHERE ti.id = ?
      LIMIT 1`,
@@ -334,7 +334,7 @@ const createDerivedDeliverable = async (connection, { authenticatedUserId, input
     throw new Error("No tienes una posición vigente en la unidad de la tarea origen.");
   }
 
-  const { definitionTemplateId, templateArtifactId, itemMode } = await resolveDeliverableTemplate(connection, {
+  const { definitionTemplateId, itemMode } = await resolveDeliverableTemplate(connection, {
     processDefinitionTemplateId: input.processDefinitionTemplateId,
     sourceTask,
     definitionId,
@@ -352,7 +352,6 @@ const createDerivedDeliverable = async (connection, { authenticatedUserId, input
   const taskItemId = await insertDerivedTaskItem(connection, {
     sourceTaskId: input.sourceTaskId,
     definitionTemplateId,
-    templateArtifactId,
     // Modos configurados: el título es la ETIQUETA limpia (se ve en la tarjeta).
     // Legacy genérico: conserva el "título + descripción" concatenado.
     itemTitle: input.processDefinitionTemplateId
@@ -441,15 +440,16 @@ const insertFreeTaskItem = async (connection, {
   endDate,
 }) => {
   const [freeItemResult] = await connection.query(
+    // Sin `template_artifact_id`: se retiro el 2026-10-04 (frente 23, F2.1). Lo decia `freeTpl`, que
+    // ES el vinculo, asi que la columna repetia el dato de la columna de al lado.
     `INSERT INTO task_items (
-       task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
+       task_id, process_definition_template_id, origin_kind, title,
        sort_order, created_by_person_id, target_unit_id,
        responsible_position_id, assigned_person_id, start_date, end_date
-     ) VALUES (?, ?, ?, 'user_added', ?, 1, ?, ?, ?, ?, ?, ?)`,
+     ) VALUES (?, ?, 'user_added', ?, 1, ?, ?, ?, ?, ?, ?)`,
     [
       taskId,
       freeTpl.id,
-      freeTpl.template_artifact_id,
       itemTitle,
       authenticatedUserId,
       unitId,
@@ -464,9 +464,11 @@ const insertFreeTaskItem = async (connection, {
 
 const loadFreeTaskItemRow = async (connection, freeItemId) => {
   const [freeItemRows] = await connection.query(
-    `SELECT id, task_id, template_artifact_id, assigned_person_id, target_unit_id,
-            responsible_position_id
-     FROM task_items WHERE id = ? LIMIT 1`,
+    `SELECT ti.id, ti.task_id, pdt.template_artifact_id, ti.assigned_person_id, ti.target_unit_id,
+            ti.responsible_position_id
+     FROM task_items ti
+     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+     WHERE ti.id = ? LIMIT 1`,
     [freeItemId]
   );
   return freeItemRows[0];

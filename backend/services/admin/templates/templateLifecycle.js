@@ -368,43 +368,22 @@ export default class TemplateLifecycleService {
     return { id: newId, definition_version: nextVersion, created: true };
   }
 
-  // Re-apunta el enlace de una configuración (su plantilla de cierto template_code) a una versión concreta.
-  // F3 — "la pared": un entregable solo puede vincularse a configs de SU MISMA línea (proceso, variación).
-  // Si el entregable no tiene dueño (legacy/transición) NO se bloquea (se limpia en F4). El clon de config
-  // (cloneProcessDefinitionChildren) NO valida: copia enlaces existentes tal cual hasta el fork de F4.
+  // `assertDeliverableBelongsToConfigLine` VIVIO AQUI hasta el 2026-10-04 (frente 23, F1.3). Era "la
+  // pared": comparaba `deliverables.owner_process_id` / `owner_variation_key` con el proceso y la
+  // variacion de la configuracion, y rechazaba con 422 el vinculo que cruzara de linea.
+  //
+  // Se retira porque sus dos columnas se retiraron, y ellas se retiraron porque el guardia era su
+  // UNICO lector: la columna duplicaba lo que ya dice el vinculo, la duplicacion obligaba al guardia
+  // que comprobara que coinciden, y el guardia no leia nada mas. Ademas comprobaba el proceso pero
+  // NO la variacion, siendo el invariante que decia proteger sobre `(proceso, variacion)`.
+  //
+  // ⚠️ LA REGLA SE QUEDA SIN SOSTEN HASTA QUE SE CIERRE F1.1. El unico de la base que iba a
+  // sostenerla —`(template_artifact_id)` a secas— no se aplico: rompe el clon de configuraciones, y
+  // esta medido en la nota de `postgres_schema.sql` junto a `uq_process_definition_templates`. La
+  // forma definitiva de la restriccion es una decision del dueño.
 
   // Re-apunta el enlace de una configuración (su plantilla de cierto template_code) a una versión concreta.
-  // F3 — "la pared": un entregable solo puede vincularse a configs de SU MISMA línea (proceso, variación).
-  // Si el entregable no tiene dueño (legacy/transición) NO se bloquea (se limpia en F4). El clon de config
-  // (cloneProcessDefinitionChildren) NO valida: copia enlaces existentes tal cual hasta el fork de F4.
-  async assertDeliverableBelongsToConfigLine(definitionId, templateArtifactId, connection = this.pool) {
-    const [defRows] = await connection.query(
-      "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
-      [Number(definitionId)]
-    );
-    const def = defRows?.[0];
-    if (!def) throw new Error("La configuración no existe.");
-    const [ownRows] = await connection.query(
-      `SELECT d.owner_process_id, d.owner_variation_key, d.code
-         FROM template_artifacts ta
-         INNER JOIN deliverables d ON d.id = ta.deliverable_id
-        WHERE ta.id = ? LIMIT 1`,
-      [Number(templateArtifactId)]
-    );
-    const own = ownRows?.[0];
-    if (!own || own.owner_process_id == null) return; // sin dueño todavía → no se bloquea (transición)
-    if (Number(own.owner_process_id) !== Number(def.process_id)
-      || String(own.owner_variation_key) !== String(def.variation_key)) {
-      const e = new Error(
-        `El entregable "${own.code}" pertenece a otra línea (proceso/variación) y no se puede vincular a esta configuración. Crea o usa un entregable propio de esta línea ("Crear a partir de este").`
-      );
-      e.statusCode = 422;
-      throw e;
-    }
-  }
-
   async repointConfigTemplateLink(definitionId, templateCode, targetArtifactId, connection = this.pool) {
-    await this.assertDeliverableBelongsToConfigLine(definitionId, targetArtifactId, connection);
     const [result] = await connection.query(
       // `UPDATE ... SET ... FROM`: la forma `UPDATE ... INNER JOIN ... SET` es de MySQL y
       // PostgreSQL la rechaza al ejecutarla. La tabla que se actualiza NO se repite en el FROM;
@@ -602,12 +581,13 @@ export default class TemplateLifecycleService {
       if (!exists.length) { code = candidate; break; }
     }
 
-    // Crear el deliverable propio de la línea destino.
+    // Crear el deliverable propio de la línea destino. Ya no lleva «de qué línea es» escrito dentro
+    // (frente 23, F1.2 — 2026-10-04): lo dice el vínculo que esta misma operación re-apunta.
     const [delivIns] = await this.pool.query(
       `INSERT INTO deliverables
-         (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [code, src.display_name, src.description, def.process_id, def.variation_key, src.template_scope || "official", src.template_seed_id, src.owner_person_id]
+         (code, display_name, description, template_scope, template_seed_id, owner_person_id)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [code, src.display_name, src.description, src.template_scope || "official", src.template_seed_id, src.owner_person_id]
     );
     const newDeliverableId = Number(delivIns.insertId);
 
@@ -1425,25 +1405,18 @@ export default class TemplateLifecycleService {
   }
 
   // Persistencia de una CREACIÓN. Modelo entregable/ediciones: el `deliverable` se crea (o se REUSA)
-  // PRIMERO —su dueño es la pareja (proceso, variación) de la configuración destino— y luego se
-  // inserta la edición con su `deliverable_id`. Devuelve el id del `template_artifact` nuevo.
+  // PRIMERO y luego se inserta la edición con su `deliverable_id`. Devuelve el id del
+  // `template_artifact` nuevo.
+  //
+  // AQUÍ SE LEÍA LA LÍNEA DE LA CONFIGURACIÓN DESTINO —`process_id` y `variation_key`— para copiarla
+  // al entregable como su dueño. Se retiró el 2026-10-04 (frente 23, F1.2) con las dos columnas:
+  // `processDefinitionId` sigue en la firma porque lo usan los llamadores para otras cosas, pero
+  // esta función ya no necesita consultar nada sobre él.
   //
   // No compensa nada: corre dentro de la transacción de `saveTemplateArtifactDraft`, así que un
   // fallo posterior lo deshace el `ROLLBACK`. Y el `deliverable` REUSADO (ya existía con el mismo
   // `code`, de una edición anterior) no se toca, porque tampoco se inserta.
   async _persistDraftCreation({ connection = this.pool, processDefinitionId, almacenamiento, identidad }) {
-    let ownerProcessId = null;
-    let ownerVariationKey = null;
-    const destDefId = processDefinitionId ? Number(processDefinitionId) : null;
-    if (destDefId) {
-      const [dRows] = await connection.query(
-        "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
-        [destDefId]
-      );
-      ownerProcessId = dRows?.[0]?.process_id ?? null;
-      ownerVariationKey = dRows?.[0]?.variation_key ?? null;
-    }
-
     const [delivExisting] = await connection.query(
       "SELECT id FROM deliverables WHERE code = ? LIMIT 1",
       [identidad.templateCode]
@@ -1452,14 +1425,12 @@ export default class TemplateLifecycleService {
     if (!deliverableId) {
       const [delivIns] = await connection.query(
         `INSERT INTO deliverables
-           (code, display_name, description, owner_process_id, owner_variation_key, template_scope, template_seed_id, owner_person_id)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+           (code, display_name, description, template_scope, template_seed_id, owner_person_id)
+         VALUES (?, ?, ?, ?, ?, ?)`,
         [
           identidad.templateCode,
           identidad.displayName,
           identidad.description,
-          ownerProcessId,
-          ownerVariationKey,
           identidad.templateScope,
           identidad.templateSeedId,
           identidad.ownerPersonId

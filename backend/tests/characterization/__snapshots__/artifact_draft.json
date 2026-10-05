@@ -110,8 +110,8 @@
     "status": 200,
     "deliverable_owner": {
       "code": "draft_zzz-char-huerfano",
-      "owner_process_id": 1,
-      "owner_variation_key": "general"
+      "template_scope": "official",
+      "tiene_vinculo": "1"
     }
   },
   "routed_sin_flujo_ok": {
