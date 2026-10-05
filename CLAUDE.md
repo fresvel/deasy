@@ -383,6 +383,19 @@ son ARTEFACTOS.** Editarlos a mano no sirve de nada: la siguiente regeneración 
 `.github/workflows/docs-dbml.yml` lo detecta. Antes decían "generado por introspección" y **no
 había generador**: se generó una vez en julio y se mantuvo a mano hasta que derivó.
 
+⚠️ **Y una CUARTA página es artefacto, con su puerta propia desde el 2026-10-04**:
+`referencia/campos-proceso-documento.md`, que escribe `backend/scripts/docs/gen-campos-md.mjs` desde
+el catálogo de PostgreSQL. Se regenera con `bash scripts/docs/gen-campos.sh <pila>` y la vigila el
+trabajo **`campos-al-dia`** de `docs-dbml.yml`, que le aplica el esquema a un PostgreSQL vacío — la
+página se deriva del esquema y no necesita ni una fila sembrada.
+
+Era **el único generador de página sin puerta**, y se rompió en silencio el mismo 2026-10-04: al
+repartir las tablas en esquemas por tema, su consulta filtraba `information_schema.columns` por
+`table_schema = 'public'` y **dejó de encontrar nada**. Sus otras dos consultas resuelven por
+`regclass` —o sea por `search_path`— y seguían funcionando, así que el generador **no fallaba**:
+emitía la página con sus 101 vínculos y **cero columnas**. La página commiteada seguía bien sólo
+porque nadie la había regenerado. Se descubrió tres commits después y por casualidad.
+
 ⚠️ **Tres páginas del sitio también son artefacto** desde el 2026-09-10: `complemento/mapa-con-campos.md`
 y `modelo/mapa-con-campos.md` (los dos mapas con todas sus columnas y claves ajenas) y las cifras entre
 marcas `<!-- gen:… -->` de `referencia/modelo-datos.md`. Las escribe `scripts/docs/gen-mapa-campos.mjs`

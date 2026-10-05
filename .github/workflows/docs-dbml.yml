@@ -26,6 +26,8 @@ on:
       - 'docs/src/content/docs/complemento/mapa-*.md'
       - 'docs/src/content/docs/modelo/mapa-*.md'
       - 'docs/src/content/docs/referencia/modelo-datos.md'
+      - 'docs/src/content/docs/referencia/campos-proceso-documento.md'
+      - 'backend/scripts/docs/gen-campos-md.mjs'
       - 'scripts/docs/**'
       - '.github/workflows/docs-dbml.yml'
   push:
@@ -37,6 +39,8 @@ on:
       - 'docs/src/content/docs/complemento/mapa-*.md'
       - 'docs/src/content/docs/modelo/mapa-*.md'
       - 'docs/src/content/docs/referencia/modelo-datos.md'
+      - 'docs/src/content/docs/referencia/campos-proceso-documento.md'
+      - 'backend/scripts/docs/gen-campos-md.mjs'
       - 'scripts/docs/**'
       - '.github/workflows/docs-dbml.yml'
   workflow_dispatch:
@@ -60,3 +64,77 @@ jobs:
 
       - name: Regenerar el modelo y comprobar que no hay deriva
         run: bash scripts/docs/gen-dbml.sh --check
+
+  # ── Bloqueante: la referencia de CAMPOS, que no tenia puerta ─────────────────────────────
+  #
+  # POR QUE EXISTE. `docs/src/content/docs/referencia/campos-proceso-documento.md` es un
+  # ARTEFACTO: lo escribe `backend/scripts/docs/gen-campos-md.mjs` desde el catalogo de
+  # PostgreSQL. Era el UNICO generador de pagina sin comprobacion en CI, y se rompio en
+  # silencio el 2026-10-04: al repartir las tablas en esquemas por tema, su consulta filtraba
+  # `information_schema.columns` por `table_schema = 'public'` y dejo de encontrar nada. Sus
+  # otras dos consultas resuelven por `regclass` --o sea por `search_path`-- y seguian
+  # funcionando, asi que el generador no fallaba: emitia la pagina con sus 101 vinculos y CERO
+  # columnas. La pagina commiteada seguia bien SOLO porque nadie la habia regenerado. Quien lo
+  # hubiera hecho la habria vaciado, y el diff habria parecido intencionado.
+  #
+  # Se descubrio tres commits despues, y por casualidad. Esta puerta es lo que lo habria dicho
+  # el mismo dia.
+  #
+  # POR QUE UN POSTGRESQL DE SERVICIO Y NO LA PILA DE DOCKER. La pagina se deriva del ESQUEMA y
+  # de nada mas: no necesita ni una fila sembrada. Con aplicar `postgres_schema.sql` a una base
+  # vacia basta, y asi la comprobacion no depende de que haya una pila levantada --que en un
+  # runner no la hay-- ni de datos, que la harian fragil.
+  #
+  # POR QUE NO SE PLEGO DENTRO DE `gen-dbml.sh`, que ya levanta su propio PostgreSQL: el
+  # generador importa el pool del backend (`config/postgres.js`), asi que necesita las
+  # dependencias de `backend/`, y los contenedores efimeros de ese script no las tienen. Que
+  # dependa del pool y no de `psql` es lo que mantiene UNA sola forma de hablar con la base en
+  # todo el repositorio, y no vale la pena romperla por un paso de CI.
+  campos-al-dia:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_PASSWORD: camposgen
+          POSTGRES_DB: deasy
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependencias del backend
+        working-directory: backend
+        run: npm ci
+
+      # ON_ERROR_STOP=1: si el esquema no aplica, este paso falla aqui y no mas adelante con un
+      # error raro. Es la misma validacion que hace `gen-dbml.sh`.
+      - name: Aplicar el esquema a una base vacia
+        env:
+          PGPASSWORD: camposgen
+        run: psql -h localhost -U postgres -d deasy -v ON_ERROR_STOP=1 -q -f backend/database/postgres_schema.sql
+
+      - name: Comprobar que la referencia de campos coincide con el esquema
+        env:
+          POSTGRES_HOST: localhost
+          POSTGRES_PORT: '5432'
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: camposgen
+          POSTGRES_DB: deasy
+        working-directory: backend
+        run: |
+          node scripts/docs/gen-campos-md.mjs > /tmp/campos.md
+          if ! diff -u ../docs/src/content/docs/referencia/campos-proceso-documento.md /tmp/campos.md; then
+            echo "" >&2
+            echo "✖ La referencia de campos no coincide con el esquema. Regenerala:" >&2
+            echo "    bash scripts/docs/gen-campos.sh <pila>" >&2
+            exit 1
+          fi
+          echo "✓ La referencia de campos coincide con el esquema."
