@@ -600,4 +600,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**38 tablas · 368 columnas · 100 referencias.** Leídas del catálogo de PostgreSQL.
+**38 tablas · 365 columnas · 98 referencias.** Leídas del catálogo de PostgreSQL.
