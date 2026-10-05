@@ -6,7 +6,7 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **14 de 20**
+## Estado general — **14 de 23**
 
 | Fase | Tareas | Estado |
 |---|---|---|
@@ -15,7 +15,8 @@ incompatibles.**
 | **F3** · La puerta de propiedad | F3.1 ✅ · F3.2 ✅ | ✅ **2 de 2** |
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ⬜ · F5.6 ⬜ | 🟡 **1 de 6** |
-| **F6** · El tema, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⬜ | 🟡 **4 de 5** |
+| **F6** · El tema, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
+| **F7** · Reordenar el backend por temas | F7.1 ⬜ · F7.2 ⬜ · F7.3 ⬜ · F7.4 ⬜ | ⬜ **0 de 4** |
 
 ## F6 · El tema, dentro de la base — 4 de 5
 
@@ -25,7 +26,7 @@ incompatibles.**
 | **F6.2** | El `search_path` en los **tres** pools que se conectan, con prueba que los compara | ✅ |
 | **F6.3** | Los cuatro programas que parsean el esquema, al día | ✅ |
 | **F6.4** | `scripts/migrar-a-esquemas.sql` para una base anterior | ✅ |
-| **F6.5** | Partir el fichero de 3.108 líneas en **15** (carpeta = tema, nombre = nivel) | ⬜ |
+| **F6.5** | ⛔ **DESCARTADA** · partir el fichero del esquema en 15 | ⛔ |
 
 ### Por qué los esquemas, y no es cosmética
 
@@ -81,13 +82,40 @@ cómo PostgreSQL recorre el catálogo, y al repartir las tablas cambió entero: 
 otro orden, y un diff de 198 líneas que no decía nada. Un artefacto generado tiene que salir igual si
 la entrada es igual.
 
-### F6.5 · lo que falta, y por qué se puede
+### F6.5 · ⛔ descartada el 2026-10-04, y el motivo NO es el coste
 
-Partir el fichero **por tema a secas es imposible**: cuatro parejas de temas se necesitan mutuamente
-(identidad↔organización, plantillas↔procesos, plantillas↔tareas, firmas↔tareas), y para crear una
-tabla con clave ajena la tabla a la que apunta tiene que existir ya. **Por nivel sí**, porque ninguna
-relación sube. Así que: **carpeta = tema, nombre de fichero = nivel**, y salen **15 ficheros** — uno
-por cada celda llena de la matriz tema×nivel. El árbol de carpetas *es* el mapa.
+Se llegó a elegir la forma (carpeta = tema, nombre = nivel, 16 ficheros) y hasta el estilo de nombre.
+Y el bloqueo que la tenía parada **se levantó solo**: al retirar `deliverables.owner_process_id` en el
+frente 23 desapareció la dependencia circular entre `plantillas` y `procesos`, y el reparto pasó a
+ser posible sin mover ninguna tabla de tema. **Medido: 15 ficheros y el orden existe.**
+
+Se descarta por dos razones, y la primera es la que manda:
+
+**1 · Un fichero DDL no es un módulo.** No tiene interfaz, nadie lo importa, nadie reutiliza un trozo
+por separado. El criterio de Parnas —ocultar una decisión a un cliente— no se le puede aplicar porque
+no hay cliente. Y lo que sí aplica va en contra: Ousterhout advierte contra subdividir más de lo que
+el problema pide, porque **añade coste de interfaz sin reducir complejidad**.
+
+**2 · El nombre no puede llevar el orden, y eso lo descubrí DESPUÉS de elegirlo.** Para crear una
+tabla con clave ajena, la tabla a la que apunta tiene que existir ya. Con un fichero el orden está
+dentro; con dieciséis, alguien tiene que declararlo — y el orden alfabético **no sirve**: en el nivel
+0 pondría `identidad` antes de `organizacion`, y hay **6 claves ajenas** (`generos.pais_id`,
+`estados_civiles.pais_id`, `parentescos.pais_id`…) que apuntan a `paises`, que es de
+`organizacion`. Hay 4 más en los niveles 4 y 6. Ninguna de las cuatro formas de nombre que se
+barajaron lo resolvía: el problema no es el adorno del número, es que **dos temas comparten nivel y
+uno necesita al otro**.
+
+Suplirlo pedía **tres mecanismos nuevos** —una lista con el orden, un test que la valide, y un
+ayudante que junte los ficheros para los 8 programas que hoy leen el fichero único— cuya única razón
+de existir sería la partición.
+
+⚠️ **Error de proceso que esto dejó al descubierto:** yo ofrecí un sistema de nombres **sin comprobar
+que los nombres pudieran hacer el trabajo que les estaba dando**. Es el mismo error que el índice
+único de F1.1 del frente 23: proponer un mecanismo sin probarlo contra las restricciones reales. El
+dueño eligió con información incompleta por mi culpa, no por capricho suyo.
+
+**Lo que se hace en su lugar es F7**: reordenar el **código**, que sí son módulos y donde el mandato
+de la ingeniería es explícito.
 
 ## F5 · Cerrar la deuda de escritura — 1 de 6
 
@@ -204,22 +232,69 @@ que son genéricos a propósito: el **bootstrap** (`services/system`, 32 tablas)
 de `/admin`** (`services/admin`, 24). Están declarados por nombre en el mapa. Descontándolos, la
 ambigüedad real eran **6** tablas, hoy **5** (ver F5).
 
-### Lo que se descartó: ordenar `backend/` por módulo
+### ⚠️ Esta sección decía «descartado», y estaba mal — pasó a ser F7
 
-Se midió, porque es la alternativa obvia: carpetas verticales (`modules/identidad/…`) en vez de
-`controllers/` + `services/`.
+**Aquí se escribió «Lo que se descartó: ordenar `backend/` por módulo», y el motivo era el COSTE**
+(62 ficheros que habría que partir). El dueño rechazó ese criterio con estas palabras:
 
-| | |
-|---|---|
-| ficheros de backend (sin tests) | 181 |
-| nombran alguna tabla | 103 |
-| **se moverían solos** (1 módulo) | **41** |
-| **habría que partirlos** (2 o más) | **62** |
+> *«no me interesa el costo lo que me interesa es que al final quede legible o se gane legibilidad.
+> ¿De qué me sirve el costo si no se entiende o no sé a dónde ir?»*
 
-Y los peores son `config/rbacCatalog.js` y `config/sqlTables.js` (15 módulos cada uno),
-`services/admin/crud/tableHooks.js` y `SystemBootstrapService.js` (12). **Ésos son transversales a
-propósito**: partirlos por módulo los empeoraría. Así que la carpeta vertical cuesta 62 ficheros
-partidos y pelea contra código que está bien. **Lo que se adopta es el invariante, no la carpeta.**
+Retiré el argumento **en la conversación y no volví a este documento**. El plan siguió diciendo
+«descartado» durante todo el resto de la sesión, hasta que el dueño preguntó por qué no estaba en el
+mapa. Es el mismo fallo que este frente existe para arreglar —el documento separándose de la
+realidad— y lo cometí en una sesión dedicada a eso.
+
+**Lo medido sigue siendo válido; lo que cambia es la conclusión.** Pasa a ser la fase **F7**.
+
+## F7 · Reordenar el backend por temas — 0 de 4
+
+Es **donde está el mandato de la ingeniería**, y no es una opinión: son cuatro principios con nombre
+contra ninguno.
+
+| | Qué dice | Aplicado aquí |
+|---|---|---|
+| **Parnas, 1972** · *On the Criteria To Be Used in Decomposing Systems into Modules* | un sistema se descompone por **ocultación de información**: cada módulo esconde una decisión que puede cambiar. Argumenta **explícitamente contra** descomponer por *pasos del procesamiento* | `routes/` + `controllers/` + `services/` **es** descomponer por pasos del procesamiento |
+| **Principio de cierre común** · Robert C. Martin | *las clases que cambian juntas van en el mismo paquete* | cambiar las firmas toca **33 ficheros en 12 carpetas**, y la carpeta `sign` tiene **2 de los 33** |
+| **Cohesión y acoplamiento** · Stevens, Myers y Constantine, 1974 | una carpeta debe guardar cosas que van juntas, y depender poco de las demás | cohesión **baja** (una carpeta guarda trozos de muchos temas) y acoplamiento **alto** (un tema vive en muchas carpetas). El peor cuadrante |
+| **La prueba de que es alcanzable** | — | `chat`: **12 ficheros en 6 carpetas**, porque se construyó de una pieza. No es un límite del proyecto |
+
+### Lo medido (2026-10-04)
+
+| Tema | Ficheros | Carpetas distintas |
+|---|---|---|
+| personas | 64 | **20** |
+| unidades | 41 | **18** |
+| procesos | 32 | **17** |
+| plantillas | 35 | **16** |
+| tareas | 32 | **15** |
+| firmas | 31 | **13** |
+| chat | 12 | 6 |
+| expediente | 7 | 5 |
+
+El backend tiene ~19 carpetas de servicios: para cualquier tema grande, el código está **en casi
+todas**. No es que no se sepa a dónde ir — **es que no hay un dónde**.
+
+Y de los 103 ficheros que nombran alguna tabla: **48 tocan un solo tema** y se mueven solos; **7 son
+genéricos a propósito** (el registro de todas las tablas, el editor de `/admin`, el instalador) y
+**no se parten**; los demás hay que partirlos, y entre ellos están los que ya están fichados como los
+peores del repositorio (`user_controler.js` toca 6 temas, `orgStructure.js` toca 7).
+
+| Tarea | Qué entrega | Estado |
+|---|---|:--:|
+| **F7.1** | **Un tema de punta a punta: `firmas`.** Sus 31 ficheros a un sitio, con el común declarado | ⬜ |
+| **F7.2** | La comprobación **C** de la puerta pasa de *«que haya un solo escritor»* a *«que el escritor sea el tema dueño»* — verificable por **ruta**, no por convención | ⬜ |
+| **F7.3** | Los temas pequeños, que ya están casi: `expediente` (7 ficheros, 5 carpetas) y `chat` (12 en 6) | ⬜ |
+| **F7.4** | Los grandes, uno a uno, en el orden que el dueño decida. `personas` el último: es el peor (64 ficheros en 20 carpetas) | ⬜ |
+
+⚠️ **Un reparto vertical sin COMÚN declarado miente.** Esos 7 ficheros genéricos no caben en ningún
+tema, y es correcto que no quepan: su contrato *es* ser genéricos. Partirlos por tema los empeoraría.
+
+⚠️ **Y el frontend no entra en esta fase.** Está repartido por **audiencia** —`admin`, `home`,
+`perfil`, `auth`— y ese eje es legítimo: son tres aplicaciones para tres personas distintas. Lo que
+está mal allí es otra cosa: `modules/procesos` tiene **1 fichero** mientras el asistente de procesos
+vive en `modules/admin/`. El arreglo es que el tema sea el **segundo** nivel dentro de cada
+audiencia, y eso es una fase aparte.
 
 ## F5.1 · El teléfono — lo que se arregló, y lo que resultó NO ser
 
