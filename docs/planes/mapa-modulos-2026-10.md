@@ -642,7 +642,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los 5 genéricos y los 7 flujos en el mapa, con su motivo escrito, y la puerta leyendo la **ruta**. Es la red que hace seguro todo lo demás | ⬜ |
 | **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: 77 consultas en 9 ficheros, empezando por `user_controler.queries.js`, que ya pide por escrito ser una capa de datos. Es un **defecto**, y va antes de mover nada | ⬜ |
 | **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
-| **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0, **tras F7.0**), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
+| **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0 — carpeta **reservada vacía**, decidido el 2026-10-07), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
 
 ### Las cinco decisiones que F7.0 tiene que resolver
@@ -658,10 +658,18 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
    `templateLifecycle.js` (1.874 líneas) se parte y la invariante cruza una frontera.
 3. **¿Quién es dueño de `document_versions`?** El mapa dice `tareas`; lo escriben 5 ficheros de 3
    dominios futuros.
-4. **¿`empleo` es un dominio o sólo tablas?** 8 tablas, **0 servicios propios, 0 escritores** salvo el
-   editor genérico. Hoy sería **una carpeta vacía**. (Las 8 **sí** aparecen en el código —todas en
-   `config/rbacCatalog.js`, `vacancies` en 6 ficheros— así que no es que no existan: es que nadie las
-   escribe.)
+4. ✅ **RESUELTA el 2026-10-07 por el dueño: `empleo` ES un dominio y se le reserva la carpeta.**
+   *«Si se tendrá módulo de empleo.»* Hoy son 8 tablas con **0 servicios propios y 0 escritores** salvo
+   el editor genérico —las 8 **sí** aparecen en el código, todas en `config/rbacCatalog.js` y
+   `vacancies` en 6 ficheros, así que no es que no existan: es que nadie las escribe—. La carpeta nace
+   **vacía a propósito**, como el sitio al que ir cuando se construya.
+
+   ⚠️ **Y esto NO repite el defecto de los 15 «módulos» retirados**, aunque se parezca. Allí el
+   problema era que cuatro de los quince **no eran dueños de ni un fichero y nunca lo iban a ser**:
+   eran una clasificación inventada sobre código que no existía. Aquí la carpeta está vacía **porque
+   el trabajo está por hacer y el dueño confirma que se va a hacer**. Una carpeta vacía por reserva
+   declarada es una promesa; una carpeta vacía por clasificación inventada es un error. No son lo
+   mismo.
 5. **¿Se reparte `services/admin`?** Dos de sus cuatro subcarpetas no van donde parecía:
    `processes/` → procesos ✅ y `org/` → organizacion ✅, pero `templates/` **no** es plantillas a
    secas (`templateLifecycle` escribe también procesos) y `generation/` **no** es tareas
