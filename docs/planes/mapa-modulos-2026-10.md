@@ -6,7 +6,7 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **14 de 24**
+## Estado general — **14 de 25**
 
 | Fase | Tareas | Estado |
 |---|---|---|
@@ -16,7 +16,7 @@ incompatibles.**
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ⬜ · F5.6 ⬜ | 🟡 **1 de 6** |
 | **F6** · El tema, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
-| **F7** · Reordenar el backend por dominios | F7.0 ⬜ · F7.1 ⬜ · F7.2 ⬜ · F7.3 ⬜ · F7.4 ⬜ | ⬜ **0 de 5** |
+| **F7** · Reordenar el backend por dominios | F7.0 ⬜ · F7.1 ⬜ · F7.2 ⬜ · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | ⬜ **0 de 6** |
 
 ## F6 · El tema, dentro de la base — 4 de 5
 
@@ -247,7 +247,7 @@ realidad— y lo cometí en una sesión dedicada a eso.
 
 **Lo medido sigue siendo válido; lo que cambia es la conclusión.** Pasa a ser la fase **F7**.
 
-## F7 · Reordenar el backend por dominios — 0 de 5
+## F7 · Reordenar el backend por dominios — 0 de 6
 
 **Reescrita el 2026-10-06** tras evaluar una propuesta externa de reestructuración. La versión
 anterior de esta fase decía «mover `firmas` de punta a punta, sus 31 ficheros a un sitio» y **no era
@@ -353,36 +353,108 @@ que cruza dominios. No hay tercera.
 plantilla — es la invariante del frente 23: *«si cambio una versión de plantilla, eso debe llevar a
 una definición de proceso nueva»*. **Partir ese fichero por dominio partiría esa invariante en dos.**
 
-### La estructura
+### La estructura — CUATRO capas dentro de cada dominio
 
 ```
 backend/
-  index.js                 se queda; único que importa de todos los dominios
-  dominios/<dominio>/      rutas · controllers · services       ← los 8 nombres de ESQUEMAS
-  flujos/                  los 7 que escriben 2+ dominios, LISTA CERRADA y declarada
+  index.js                 se queda; el único que importa de todos los dominios
+  dominios/<dominio>/      ← los 8 nombres de ESQUEMAS
+      index.js             lo único que otro dominio puede importar
+      routes/              la superficie HTTP
+      controllers/         sólo traduce HTTP: sin pool, sin SQL, sin reglas
+      services/            reglas y transacciones; sin req/res
+      datos/               el ÚNICO sitio con SQL sobre las tablas del dominio
+  flujos/                  los 7 que cruzan dominios — ORQUESTACIÓN, SIN UNA SOLA CONSULTA
   transversal/             editor genérico de /admin + bootstrap
   plataforma/              postgres, minio, rabbit, mailer, errors, middlewares genéricos
   database/ scripts/ tests/   sin cambios
 ```
 
-**Lo que se adopta de la propuesta externa:** las carpetas por dominio con las capas dentro; un solo
-punto de entrada por dominio; `plataforma/` nunca importa de un dominio; y las reglas impuestas por
-puertas de CI, no por disciplina.
+⚠️ **La cuarta capa estuvo descartada 24 horas y el descarte era FALSO.** Se escribió que `datos/`
+«sería un fichero en `chat` y una carpeta vacía en `empleo`». Medido el 2026-10-06, fichero a fichero
+y contando consultas:
+
+| Dominio | Ficheros | Irían a `datos/` | Consultas | El mayor |
+|---|---:|---:|---:|---|
+| identidad/personas | 28 | **10** | 105 | `UserRepository.js` (19) |
+| identidad/acceso | 32 | **11** | 45 | `sincronizarCatalogoRbac.js` (12) |
+| organizacion | 10 | 4 | 31 | `orgStructure.js` (23) |
+| procesos | 4 | 2 | 38 | `processGraph.js` (20) |
+| plantillas | 6 | 3 | 27 | `templateArtifact.js` (11) |
+| tareas | 10 | 6 | 40 | `launch.js` (15) |
+| firmas | 6 | 3 | 6 | `BatchSigningService.js` (3) |
+| chat | 15 | 4 | 41 | `chatStore.js` (29) |
+
+En `chat` son **4 ficheros y 41 consultas**, no uno; y en `empleo` lo que está vacío es **el dominio
+entero**, no la capa. El único argumento que quedaba en pie era el coste, y el coste **no es criterio
+en este frente**.
+
+**Y la cuarta capa DISUELVE el problema de los flujos**, que es lo que la hace estructural y no
+cosmética. Si el SQL de cada tabla vive en el `datos/` de su dominio, un flujo **deja de escribir
+tablas ajenas**: llama al `datos/` del vecino **con la misma conexión**, que es exactamente lo que ya
+hacen 29 ficheros hoy. Entonces:
+
+- `flujos/` no tiene **ni una consulta** — y eso lo comprueba una puerta en una línea.
+- La transacción **no se rompe**: sigue abierta en un sitio y viajando por parámetro.
+- La regla *«una tabla la escribe su dominio»* pasa a ser **verificable por ruta**, que es lo que
+  F7.2 necesitaba y no tenía.
+
+### El defecto que la cuarta capa saca a la luz
+
+Medido el 2026-10-06: **77 sentencias SQL viven fuera de `services/`**, en 8 controllers y 1 router.
+Y la dirección contraria está limpia: **0 ficheros de `services/` usan `req`/`res`** (el único
+resultado era un comentario en `TelefonoService.js`).
+
+| Fichero | Líneas | Consultas | Pool | Abre transacción |
+|---|---:|---:|:--:|:--:|
+| `controllers/users/user_controler.queries.js` | 956 | **45** | — | — |
+| `controllers/users/user_controler.js` | 1.695 | **22** | sí | **sí** |
+| `controllers/admin/sql_admin_controller.js` | 622 | 5 | sí | — |
+| `controllers/tareas/tareas_controler.js` | 109 | 2 | sí | — |
+| `controllers/empresa/program_controler.js` | 64 | 1 | sí | — |
+| `controllers/tareas/supervision_controler.js` | 87 | 1 | sí | **sí** |
+| `controllers/users/verificacion_registro_controller.js` | 157 | 1 | sí | — |
+| `controllers/sign/sign_controller.js` | 305 | 0 | sí | **sí** |
+| `routes/dossier_router.js` | 118 | 0 | sí | — |
+
+**El peor no necesita discusión: lo dice el propio fichero.** La cabecera de
+`user_controler.queries.js` —956 líneas, 45 consultas, 22 funciones exportadas— dice:
+
+> *«Acceso a datos (solo LECTURA) de `user_controler.js` … Todas reciben `pool`/`connection`
+> explícitamente: no capturan estado de módulo ni abren conexiones propias. Por eso este módulo NO
+> importa nada — es el candidato natural a promoverse a `services/users/UserWorkspaceRepository.js`
+> cuando se corrija»*
+
+Es una capa de datos **ya escrita**, metida en `controllers/` y esperando que alguien le dé carpeta.
+Eso es `datos/`.
+
+### Las otras dos reglas de la propuesta, medidas
+
+**Regla 1 — un dominio sólo se importa por su `index.js`.** De los **396 imports internos** del
+backend, **268 cruzan** de un destino a otro, así que 268 líneas pasarían por un `index.js`. Es la
+consecuencia mecánica más grande del cambio, y la que hace que el reparto sea comprobable: un import
+que no entre por el `index.js` es una infracción que se ve.
+
+**Regla 4 — `plataforma/` nunca importa de un dominio.** Aparecen 30 cruces, y al mirarlos uno a uno:
+**22 son `index.js`**, que tiene permiso explícito; **3 son colocaciones mal hechas en el reparto**
+—`middlewares/val_password.js` es de `acceso`, `services/realtime/RealtimeGateway.js` es de `chat`,
+`routes/internal_router.js` apunta a un controller de `personas`—; y **1 es acoplamiento real**:
+`errors/sqlErrors.js` importa `config/sqlTables.js` para traducir el nombre de una restricción a un
+mensaje. La regla es cumplible; lo que cazó la medición fueron **errores del reparto, no de la regla**.
 
 **Lo que NO se adopta, y por qué:**
 
 | | Por qué no |
 |---|---|
-| **`datos/` obligatorio en cada dominio** | Es otro refactor —de capas— disfrazado de reorganización. Hoy **64 ficheros tienen SQL** y sólo **5** están declarados como capa de datos (`chatStore`, `dossierStore`, `UserRepository`, `UserCertificateRepository`, `AlmacenEnPostgres`). En `chat` esa carpeta sería un fichero que ya existe; en `empleo`, **una carpeta vacía** —el defecto que mató a los 15 módulos—; en los grandes, extraer SQL de **59 ficheros**. Se declara la regla («el SQL de una tabla vive en su dominio») y la carpeta se crea cuando se gane el sitio |
 | **La regla «los imports no suben de nivel», por nivel de DOMINIO** | **No es cumplible: un dominio no tiene un nivel.** Y si se instancia con el nivel máximo, `plantillas`, `tareas` y `firmas` quedan **las tres en el 6** —«mismo nivel», permitido— y la regla **autoriza exactamente los tres ciclos que importan**. Se reformula **por nivel de TABLA**, que es lo que la comprobación B ya calcula |
-| **La regla «escrituras sobre tablas de otro dominio, no»** | Como está, la violan 7 ficheros **por diseño**. Se reformula: *«una tabla la escribe su dominio **o un flujo declarado»*** — que es la comprobación C generalizada |
+| **La regla «escrituras sobre tablas de otro dominio, no», tal cual** | No hace falta prohibirla: con `datos/` **no puede ocurrir**, porque el SQL de una tabla sólo existe en su dominio. Se reformula como lo que sí se puede comprobar: *«`flujos/` no contiene SQL»* y *«el SQL de una tabla sólo aparece bajo el `datos/` de su dominio»* |
 | **`services/admin/org/orgStructure.js` como genérico** | No lo es: escribe **sólo** tablas de `organizacion`. Se mueve, no se declara |
 
-### Lo que la puerta F7.2 anterior habría dado por bueno, y no lo es
+### La puerta de propiedad: por qué necesitaba `datos/`
 
 La versión anterior proponía que la comprobación C pasara de *«que haya un solo escritor»* a *«que el
-escritor sea el dominio dueño»*. **Fallaría el primer día en cinco tablas**, porque su escritor queda
-en otro dominio:
+escritor sea el dominio dueño»*. **Sin la cuarta capa fallaría el primer día en cinco tablas**, porque
+su escritor quedaría en otro dominio:
 
 | Tabla | Dominio dueño | La escribe desde |
 |---|---|---|
@@ -392,7 +464,11 @@ en otro dominio:
 | `signature_flow_steps` | firmas | plantillas (`flowRows`, `generation/documents`) |
 | `process_definition_versions` | procesos | **plantillas** (`templateLifecycle` — la invariante del frente 23) |
 
-Por eso `flujos/` va **antes** de la puerta, y no después.
+**Con `datos/` las cinco se arreglan sin excepciones**, y es la prueba de que la cuarta capa es
+estructural: el que escribe `document_versions` pasa a ser **siempre** `tareas/datos/`, y lo que cruza
+el dominio es la **llamada**, no la escritura. La puerta deja de necesitar una lista de perdonados y
+pasa a comprobar dos cosas de una línea cada una: *el SQL de una tabla sólo aparece bajo el `datos/`
+de su dominio* y *`flujos/` no contiene SQL*.
 
 ### Qué gana y qué pierde — el canje, dicho entero
 
@@ -401,15 +477,16 @@ Por eso `flujos/` va **antes** de la puerta, y no después.
 cambio esta tabla?* (hoy de 7 a 19 carpetas en los seis dominios grandes; después 1 más los genéricos); *¿dónde
 empiezo a leer `firmas`?* (hoy 21 ficheros en 7 carpetas).
 
-**Y pierde una que la propuesta externa no menciona.** Hoy *«¿cómo se firma un documento?»* se
-responde abriendo **un fichero**. Repartido por dominio, esa pregunta se parte entre `firmas` y
-`tareas`; igual *«¿cómo se lanza un proceso?»* (plantillas+firmas+tareas) y *«¿cómo nace un
-entregable?»*.
+**Y pierde algo, aunque menos de lo que pareció al principio.** Hoy *«¿cómo se firma un documento?»*
+se responde abriendo **un fichero**. Después se responde abriendo **el flujo** —que sigue siendo un
+fichero y conserva el orden de los pasos— pero las consultas que ese flujo usa ya no están a la
+vista: están en `firmas/datos/` y en `tareas/datos/`. Se gana *«¿quién toca esta tabla?»* y se paga
+con un salto más al leer una operación de punta a punta.
 
-**Ése es el canje real: optimiza «¿dónde está esta tabla?» y empeora «¿cómo funciona esta
-operación?».** Conviene de todas formas porque hoy están **las dos** mal — pero sólo si los flujos
-cruzados tienen hogar propio en vez de quedar cortados por la mitad. Sin `flujos/`, el cambio mueve
-el problema en vez de resolverlo.
+⚠️ **Aquí se dijo primero que el canje era mucho peor** —«la pregunta se parte entre `firmas` y
+`tareas`»— y eso era verdad **sólo sin la cuarta capa**. Con `flujos/` guardando la orquestación
+entera y `datos/` guardando las consultas, la operación no se parte: se estratifica. El canje real es
+un salto de lectura, no una pregunta sin dueño.
 
 ⚠️ **Corrección a la tabla que esta fase traía antes.** Decía «firmas: 31 ficheros, 13 carpetas». En
 **código de producción** son **21 ficheros en 7 carpetas**; la cifra incluía los tests, y los tests
@@ -422,9 +499,10 @@ dispersión de los ocho dominios.
 |---|---|:--:|
 | **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`tema` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los 5 genéricos y los 7 flujos en el mapa, con su motivo escrito, y la puerta leyendo la **ruta**. Es la red que hace seguro todo lo demás | ⬜ |
-| **F7.2** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
-| **F7.3** | Los dominios pequeños: `chat` (1 fichero con SQL) y `firmas` (2). `empleo` **sólo tras F7.0** | ⬜ |
-| **F7.4** | Los grandes, uno a uno. `identidad` el último: 62 ficheros en 19 carpetas | ⬜ |
+| **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: 77 consultas en 9 ficheros, empezando por `user_controler.queries.js`, que ya pide por escrito ser una capa de datos. Es un **defecto**, y va antes de mover nada | ⬜ |
+| **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
+| **F7.4** | Los dominios pequeños, con sus cuatro capas: `chat` (15 ficheros, 4 en `datos/`) y `firmas` (6 y 3). `empleo` **sólo tras F7.0** | ⬜ |
+| **F7.5** | Los grandes, uno a uno. `identidad` el último: 62 ficheros en 19 carpetas | ⬜ |
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
