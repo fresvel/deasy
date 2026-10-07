@@ -1,11 +1,19 @@
-// Acceso a datos (solo LECTURA) de user_controler.js: las queries que alimentan el
-// panel operativo, el centro de documentos, el centro de firmas y las bandejas.
-// Extraído en la Fase 3 (God Object #2). Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
+// EL ESPACIO DE TRABAJO DE UNA PERSONA, en modo LECTURA: las consultas que alimentan el panel
+// operativo, el centro de documentos, el centro de firmas y las bandejas.
 //
-// Todas reciben `pool`/`connection` explícitamente: no capturan estado de módulo ni
-// abren conexiones propias. Por eso este módulo NO importa nada — es el candidato
-// natural a promoverse a services/users/UserWorkspaceRepository.js cuando se corrija
-// la fuga de capa (SQL crudo en un controller).
+// Aquí NO hay reglas: 22 funciones, ninguna lanza, ninguna decide. Cada una recibe el `pool` o la
+// `connection` por parámetro y devuelve filas. Es una capa de datos, y por eso vive en `services/`.
+//
+// ⚠️ VIVIÓ EN `controllers/users/user_controler.queries.js` HASTA EL 2026-10-07, y su propia cabecera
+// pedía este traslado: «es el candidato natural a promoverse a
+// services/users/UserWorkspaceRepository.js cuando se corrija la fuga de capa (SQL crudo en un
+// controller)». Eran 45 de las 77 consultas que estaban fuera de la capa de servicio. Se movió tal
+// cual: mismas 22 funciones, mismos nombres, mismas consultas, ni un golden movido.
+// Historia del primer troceado: docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
+//
+// ⚠️ Y su cabecera decía «este módulo NO importa nada», que era falso: importa los dos fragmentos de
+// subconsulta de acceso que usan casi todas sus consultas. Lo que sí es cierto —y es lo que vale— es
+// que no captura estado de módulo ni abre conexiones propias.
 //
 // OJO (bug histórico, ver commit a199a28): en PostgreSQL, un SELECT DISTINCT exige que
 // TODA columna del ORDER BY esté proyectada. MySQL no. Si añades un ORDER BY aquí,
@@ -14,7 +22,7 @@
 import {
   accessSubqueryCorrelated,
   accessSubqueryForTaskItem,
-} from "../../services/documents/DeliverableAccessService.js";
+} from "../documents/DeliverableAccessService.js";
 
 export const getActiveUserPositions = async (pool, userId) => {
   const [rows] = await pool.query(

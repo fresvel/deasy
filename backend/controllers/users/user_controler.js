@@ -53,7 +53,7 @@ import {
   getUserGlobalPendingSignatureRows,
   getAccessibleTaskItemForUser,
   getAccessibleTaskItemDocumentForUser
-} from "./user_controler.queries.js";
+} from "../../services/users/UserWorkspaceRepository.js";
 import { buildUserProcessDefinitionPanel } from "./user_controler.panel.js";
 import { buildUserMenu } from "../../services/users/UserMenuService.js";
 import {

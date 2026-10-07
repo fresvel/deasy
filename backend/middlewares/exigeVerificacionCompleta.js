@@ -4,7 +4,7 @@ import { estadoDeVerificacion } from "../services/users/estadoDeVerificacion.js"
 //
 // ⚠️ **EL GUARDIÁN DEL ROUTER NO ES UNA PUERTA.** Un `beforeEach` de Vue decide qué pantalla se
 // pinta; quien tenga el token llama a la API directamente y se salta el navegador entero. Este
-// repositorio ya tropezó con eso y lo dejó escrito donde dolió — `user_controler.queries.js:486`:
+// repositorio ya tropezó con eso y lo dejó escrito donde dolió — `services/users/UserWorkspaceRepository.js`, en `getTaskItemsForTaskIds`:
 //
 //     «El bloqueo era solo visual: la API los servía igual.»
 //

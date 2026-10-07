@@ -170,7 +170,7 @@ app.use(ROUTES.email, email_router)
 //
 // ⚠️ EL GUARDIAN DEL ROUTER DE VUE NO ES UNA PUERTA. Decide que pantalla se pinta; quien tenga el
 // token llama aqui directamente y se salta el navegador entero. Este repositorio ya tropezo con eso
-// y lo dejo escrito donde dolio --`user_controler.queries.js:486`--:
+// y lo dejo escrito donde dolio --`services/users/UserWorkspaceRepository.js`, en `getTaskItemsForTaskIds`--:
 //
 //     «El bloqueo era solo visual: la API los servia igual.»
 //

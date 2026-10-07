@@ -36,7 +36,7 @@ import {
   getUserPendingFillRequestsForDefinition,
   getAttachmentsForDocumentVersions,
   getFillWorkflowStepsForDocumentVersions
-} from "./user_controler.queries.js";
+} from "../../services/users/UserWorkspaceRepository.js";
 
 export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scopeUnitId = null) => {
   const definition = await getDefinitionContext(pool, definitionId);

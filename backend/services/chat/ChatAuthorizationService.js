@@ -40,7 +40,7 @@ export default class ChatAuthorizationService {
 
     // AQUÍ NO VA el guard del IDOR de entregables
     // (`AND (ti.responsible_position_id IS NULL OR ta.position_id = ti.responsible_position_id)`,
-    // ver `controllers/users/user_controler.queries.js:124`). No es una copia que se quedó atrás:
+    // ver `services/users/UserWorkspaceRepository.js`, en `getUserDocumentCenterRows`). No es una copia que se quedó atrás:
     // se evaluó el 2026-08-09 (plan maestro 1.9) y se descartó, por tres motivos.
     //
     // 1. Aquel guard responde «¿es TUYO este entregable?» y protege consultas cuya FILA es un

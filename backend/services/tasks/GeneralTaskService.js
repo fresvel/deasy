@@ -23,7 +23,7 @@ import {
 const GENERAL_PROCESS_SLUG = "default";
 
 // ---------------------------------------------------------------------------------------------
-// Consultas de apoyo (movidas desde controllers/users/user_controler.queries.js, donde eran de
+// Consultas de apoyo (movidas desde el que hoy es services/users/UserWorkspaceRepository.js, donde eran de
 // uso exclusivo de createGeneralTask).
 // ---------------------------------------------------------------------------------------------
 
