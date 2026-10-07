@@ -17,7 +17,7 @@
 // Ver docs/planes/referencia/calidad-y-medicion.md
 import { getPostgresPool } from "../../config/postgres.js";
 import { SQL_TABLE_MAP } from "../../config/sqlTables.js";
-import OrgStructureService from "./org/orgStructure.js";
+import { OrgStructureService } from "../../dominios/organizacion/index.js";
 import { validateTableRules } from "./crud/validation.js";
 import TemplateArtifactService from "./templates/templateArtifact.js";
 import ProcessDefinitionVersionService from "./processes/processDefinitionVersion.js";
@@ -165,7 +165,25 @@ export default class SqlAdminService {
     this.processGraph = new ProcessGraphService(this.pool, { getByKeys: (...a) => this.getByKeys(...a) });
     this.processDefinitionVersion = new ProcessDefinitionVersionService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
     this.templateArtifact = new TemplateArtifactService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
-    this.orgStructure = new OrgStructureService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
+  }
+
+  // ⚠️ PEREZOSO A PROPOSITO, y es la segunda vez que este patron muerde (2026-10-07).
+  //
+  // `OrgStructureService` llega por la puerta de su dominio —`dominios/organizacion/index.js`—, y ese
+  // barril reexporta tambien `createProgram`, o sea arrastra `program_controler.js`, que hace
+  // `new SqlAdminService()` AL CARGAR EL MODULO. Si el constructor instanciara aqui el subservicio, lo
+  // leeria mientras el barril se inicializa:
+  //
+  //     ReferenceError: Cannot access 'OrgStructureService' before initialization
+  //
+  // El ciclo ya existia; el barril lo vuelve fatal. El defecto de fondo no es el barril: es que CINCO
+  // controllers instancian este servicio al cargar su modulo, y su constructor construia SEIS
+  // subservicios de golpe. Se resuelve al primer uso, que es cuando de verdad hace falta.
+  get orgStructure() {
+    this._orgStructure ??= new OrgStructureService(this.pool, {
+      getByKeys: (tableName, keys) => this.getByKeys(tableName, keys),
+    });
+    return this._orgStructure;
   }
 
   ensurePool() {

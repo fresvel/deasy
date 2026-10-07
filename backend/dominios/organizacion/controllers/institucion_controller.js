@@ -1,5 +1,5 @@
-import InstitucionService from "../../services/system/InstitucionService.js";
-import { nombreLocal } from "../../services/users/documentosPorPais.js";
+import InstitucionService from "../services/InstitucionService.js";
+import { nombreLocal } from "../../../services/users/documentosPorPais.js";
 
 // PUBLICO A PROPOSITO, igual que el catalogo geografico: lo consume el REGISTRO, que por definicion
 // usa quien todavia no tiene cuenta. Y lo que devuelve no es secreto — es cómo se llama la

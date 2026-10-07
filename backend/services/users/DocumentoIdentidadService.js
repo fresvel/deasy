@@ -1,5 +1,5 @@
 import { getPostgresPool } from "../../config/postgres.js";
-import InstitucionService from "../system/InstitucionService.js";
+import { InstitucionService } from "../../dominios/organizacion/index.js";
 import AccesosSensiblesService from "../auth/AccesosSensiblesService.js";
 import { resolveTableResource } from "../../config/rbacPolicy.js";
 import { validadorPara, cedulaEcuatorianaValida, nombreDeTipo } from "./documentosPorPais.js";

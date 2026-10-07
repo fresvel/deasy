@@ -8,7 +8,7 @@
 // que el mensaje puede decir cuantos y de que en vez de «esta referenciado».
 import { isUniqueViolation } from "../../../errors/sqlErrors.js";
 import { conflict, notFound } from "../../../errors/HttpError.js";
-import { slugify, normalizeNumericId } from "../kernel/primitives.js";
+import { slugify, normalizeNumericId } from "../../../services/admin/kernel/primitives.js";
 
 export default class OrgStructureService {
   constructor(pool, { getByKeys } = {}) {

@@ -20,12 +20,14 @@ import swaggerUi from "swagger-ui-express";
 import { ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
 import sign_router from "./routes/sign_router.js";
 
-import program_router from "./routes/program_router.js";
-import unit_router from "./routes/unit_router.js";
+import {
+  programRouter as program_router,
+  systemRouter as system_router,
+  unitRouter as unit_router,
+} from "./dominios/organizacion/index.js";
 import tarea_router from "./routes/tarea_router.js"
 import dossier_router from "./routes/dossier_router.js"
 import { chatRouter as chat_router, notificationRouter as notification_router } from "./dominios/chat/index.js";
-import system_router from "./routes/system_router.js";
 import reset_password_router from "./routes/reset_password_router.js";
 import legalRouter from "./routes/legal_router.js";
 import email_router from "./routes/email_router.js";

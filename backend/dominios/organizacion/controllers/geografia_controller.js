@@ -1,5 +1,5 @@
-import GeografiaService from "../../services/system/GeografiaService.js";
-import InstitucionService from "../../services/system/InstitucionService.js";
+import GeografiaService from "../services/GeografiaService.js";
+import InstitucionService from "../services/InstitucionService.js";
 
 // Transporte puro: valida la entrada, llama a UN servicio y traduce a HTTP. Nada de logica.
 const geografia = new GeografiaService();

@@ -1,7 +1,7 @@
 import { Router } from "express";
-import { getBootstrapStatus, initializeBootstrap } from "../controllers/system/bootstrap_controller.js";
-import { listarPaises, listarProvincias, listarCantones, listarParroquias, nomenclaturaTerritorial } from "../controllers/system/geografia_controller.js";
-import { getInstitucionPublica } from "../controllers/system/institucion_controller.js";
+import { getBootstrapStatus, initializeBootstrap } from "../../../controllers/system/bootstrap_controller.js";
+import { listarPaises, listarProvincias, listarCantones, listarParroquias, nomenclaturaTerritorial } from "../controllers/geografia_controller.js";
+import { getInstitucionPublica } from "../controllers/institucion_controller.js";
 
 const router = Router();
 

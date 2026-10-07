@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { getPostgresPool } from "../../config/postgres.js";
 import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
-import { PAISES, PROVINCIAS_EC, CANTONES_EC, PARROQUIAS_EC } from "../../config/geografiaCatalog.js";
+import { PAISES, PROVINCIAS_EC, CANTONES_EC, PARROQUIAS_EC } from "../../dominios/organizacion/index.js";
 import TelefonoService from "../users/TelefonoService.js";
 import EmailService from "../users/EmailService.js";
 import DocumentoIdentidadService from "../users/DocumentoIdentidadService.js";

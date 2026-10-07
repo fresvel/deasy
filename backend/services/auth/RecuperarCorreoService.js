@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import { getPostgresPool } from "../../config/postgres.js";
-import InstitucionService from "../system/InstitucionService.js";
+import { InstitucionService } from "../../dominios/organizacion/index.js";
 import PasswordService from "./PasswordService.js";
 import { resolverPersonaPorDocumento, TIPO_NACIONAL } from "../users/DocumentoIdentidadService.js";
 

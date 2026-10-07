@@ -11,7 +11,7 @@
 // Y es la COSTURA del multi-inquilino: el día que haya varias instituciones, la resolución entra
 // por aquí y no hay que buscarla por el código.
 
-import { getPostgresPool } from "../../config/postgres.js";
+import { getPostgresPool } from "../../../config/postgres.js";
 
 const errorDeConfiguracion = (mensaje) => {
   const error = new Error(mensaje);

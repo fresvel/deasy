@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createProgram } from "../controllers/empresa/program_controler.js";
+import { createProgram } from "../dominios/organizacion/index.js";
 
 
 

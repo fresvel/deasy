@@ -1,4 +1,4 @@
-import { getPostgresPool } from "../../config/postgres.js";
+import { getPostgresPool } from "../../../config/postgres.js";
 
 // El catalogo geografico, de lectura y SIN autenticar.
 //
