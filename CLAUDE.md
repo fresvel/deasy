@@ -484,11 +484,30 @@ Tres cosas que cuestan si se ignoran:
    tablas con nombre de catálogo —`role_assignment_relation_types`,
    `process_definition_period_types`, `contract_origins`— son tablas de relación de su dueño.
 3. **`_deuda_escritura` lleva el motivo de cada tabla con dos escritores, y se cierra quitando
-   líneas.** Añadir una para callar la puerta es exactamente lo que no hay que hacer. Eran 6; la de
-   `telefono_verification_keys` se cerró el mismo día, y hoy son **6** otra vez porque F7.1 **destapó**
-   `fill_requests` al estrechar la exención: estaba oculta, no es nueva — y su línea dice en qué se
-   diferencia de las otras (son dos operaciones distintas, no la misma regla dos veces) y qué la cierra.
-   **Destapar una deuda que estaba tapada no es añadir una excepción.**
+   líneas.** Añadir una para callar la puerta es exactamente lo que no hay que hacer. Hoy son **2**
+   —`task_items` y `fill_requests`—, y cada línea dice **qué la cierra**: la primera con F7.5, cuando
+   `tareas` se mueva a su dominio; la segunda con la decisión 1 de F7.0, porque son dos operaciones
+   distintas sobre la misma tabla y no la misma regla dos veces. **Ninguna se cierra con una línea de
+   código.**
+
+   Las otras tres —`persons`, `emails`, `chat_notifications`— se cerraron el **2026-10-07** y las tres
+   tenían la misma forma: **un escritor dentro del dominio dueño y otro fuera, en los mecanismos**
+   (`services/mail`, `services/canales`). Se cierran haciendo que el de fuera **pida por la puerta del
+   dueño** en vez de escribir — y eso **no depende** de dónde acaben viviendo esos mecanismos, que es
+   una cuestión de colocación y sigue abierta.
+
+   ⚠️ **Que una escritura del `datos/` salga por la puerta NO es una grieta en la regla: es la regla.**
+   «Una tabla la escribe sólo el `datos/` de su dominio dueño» no dice que nadie más pueda PEDIRLO —
+   dice que nadie más escriba—. El escritor vuelve a ser uno; lo demás son llamadores.
+
+   ⚠️ **Y antes de inventar un módulo nuevo, mira si el dueño ya lo tiene.** La línea de
+   `chat_notifications` proponía «un módulo de avisos»; `chat` ya tenía un creador genérico que recibe
+   las columnas, y un aviso de canal caído es una notificación como las demás —lo que cambia es el
+   `type`—. **La respuesta estaba escrita antes que la pregunta.**
+
+   ⚠️ **Y ojo con las RUTAS de esa lista: se vencen.** Las cinco líneas nombraban ficheros
+   (`services/auth/UserRepository.js`…) que F7.4 había movido, y la puerta no se queja porque usa la
+   lista **por nombre de tabla**. Si mueves código, repasa la prosa de `_deuda_escritura`.
 
 **El dominio NO es el esqueleto, y hay que saber por qué:** 27 de las 92 tablas se relacionan con 3
 dominios o más (`units` con los ocho, `persons` con siete). Por eso el dominio **no da un orden de
@@ -696,10 +715,16 @@ dominios/<dominio>/
 | **escribir** | una tabla la escribe **sólo** el `datos/` de su dominio dueño | comprobación **C** |
 | **leer** | libre hacia otros dominios, **pero separado** en `datos/consulta/` | comprobación **E** |
 
-⚠️ **La E ignora los comentarios, y eso fue un arreglo, no un descuido.** Marcó como infracción la
-frase «lo que mira `paises` está en `datos/consulta/`» —que es **correcta** y señala precisamente
-dónde va lo que cruza—. Es la misma lección que ya estaba en `lib/mapa.mjs`: una comprobación que mire
-la prosa muerde justo cuando alguien documenta bien.
+⚠️ **C, D y E IGNORAN LOS COMENTARIOS, y eso fue un arreglo que hizo falta DOS VECES el mismo día.**
+La **E** marcó como infracción la frase «lo que mira `paises` está en `datos/consulta/`» —correcta, y
+señalando precisamente dónde va lo que cruza—. Y la **C** contó como escritores de `persons` y `emails`
+dos ficheros cuyo único `UPDATE persons` estaba **dentro de un comentario que explica que ya no lo
+hacen**. Ahora hay **una sola** `sinProsa()` en `check-mapa-tablas.mjs` que usan las tres, y no quita
+el `//` detrás de dos puntos para no cortar una `minio://`.
+
+**Es la misma lección que `lib/mapa.mjs` lleva escrita sobre el esquema**, y vale decirla entera: una
+comprobación que mire la prosa **castiga al que explica**, que es el peor incentivo posible aquí. Si
+escribes una puerta que busca nombres en el código, quítale los comentarios **antes** de buscar.
 
 ⚠️ **Punto ciego abierto y medido: `check:instancias` no ve los CAMPOS DE CLASE.** Un
 `documentosLegales = new DocumentosLegales();` como campo se ejecuta en el constructor igual que si

@@ -58,7 +58,6 @@
     "services/system/genericCatalog.js": "Los catálogos reutilizables del bootstrap. Su único usuario es SystemBootstrapService.js.",
     "services/admin/crud/tableHooks.js": "Los enganches del editor genérico de `/admin`. Su contrato ES ser genérico, y a diferencia de SqlAdminService sí nombra tablas literalmente."
   },
-
   "_flujos": {
     "_nota": [
       "FICHEROS QUE CRUZAN DOMINIOS POR DISEÑO, no por descuido. Escriben tablas de dos o tres dominios",
@@ -78,13 +77,57 @@
       "'f7-flujo-piloto' y NO se fusiona: con él solo, las escrituras de cuatro tablas quedan repartidas",
       "entre 'dominios/' y el 'services/' viejo, y esta misma puerta lo caza."
     ],
-    "services/admin/templates/templateLifecycle.js": { "dominios": ["plantillas", "procesos"], "motivo": "Al publicar una versión de plantilla clona la definición de proceso. Es la invariante del frente 23." },
-    "services/admin/templates/flowRows.js": { "dominios": ["firmas", "plantillas"], "motivo": "Guarda los pasos de los DOS recorridos autorados --entrega y firma-- de una misma plantilla." },
-    "services/admin/generation/documents.js": { "dominios": ["firmas", "plantillas", "tareas"], "motivo": "Al lanzar, materializa el entregable y sus dos recorridos de una vez. Es la operación de arranque." },
-    "services/documents/DocumentSignatureWorkflowService.js": { "dominios": ["firmas", "tareas"], "motivo": "Firmar avanza el recorrido de firma y mueve el estado de la versión documental en el mismo paso." },
-    "services/documents/FillRequestWorkflowService.js": { "dominios": ["plantillas", "tareas"], "motivo": "Aprobar o devolver una entrega mueve la solicitud y el entregable juntos." },
-    "services/documents/DocumentWorkflowResetService.js": { "dominios": ["firmas", "plantillas", "tareas"], "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto." },
-    "services/tasks/GeneralTaskService.js": { "dominios": ["procesos", "tareas"], "motivo": "Una tarea libre nace con su periodo: crea la tarea y el término que la enmarca." }
+    "services/admin/templates/templateLifecycle.js": {
+      "dominios": [
+        "plantillas",
+        "procesos"
+      ],
+      "motivo": "Al publicar una versión de plantilla clona la definición de proceso. Es la invariante del frente 23."
+    },
+    "services/admin/templates/flowRows.js": {
+      "dominios": [
+        "firmas",
+        "plantillas"
+      ],
+      "motivo": "Guarda los pasos de los DOS recorridos autorados --entrega y firma-- de una misma plantilla."
+    },
+    "services/admin/generation/documents.js": {
+      "dominios": [
+        "firmas",
+        "plantillas",
+        "tareas"
+      ],
+      "motivo": "Al lanzar, materializa el entregable y sus dos recorridos de una vez. Es la operación de arranque."
+    },
+    "services/documents/DocumentSignatureWorkflowService.js": {
+      "dominios": [
+        "firmas",
+        "tareas"
+      ],
+      "motivo": "Firmar avanza el recorrido de firma y mueve el estado de la versión documental en el mismo paso."
+    },
+    "services/documents/FillRequestWorkflowService.js": {
+      "dominios": [
+        "plantillas",
+        "tareas"
+      ],
+      "motivo": "Aprobar o devolver una entrega mueve la solicitud y el entregable juntos."
+    },
+    "services/documents/DocumentWorkflowResetService.js": {
+      "dominios": [
+        "firmas",
+        "plantillas",
+        "tareas"
+      ],
+      "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto."
+    },
+    "services/tasks/GeneralTaskService.js": {
+      "dominios": [
+        "procesos",
+        "tareas"
+      ],
+      "motivo": "Una tarea libre nace con su periodo: crea la tarea y el término que la enmarca."
+    }
   },
   "_deuda_escritura": {
     "_nota": [
@@ -105,11 +148,8 @@
       "'services/documents/DeliverableUploadService.js'. LA PUERTA AVISÓ SOLA --«ya sólo tiene un",
       "escritor: quita su línea»--, que es como se cierran: quitando líneas, nunca añadiéndolas."
     ],
-    "persons": "services/auth la escribe en UserRepository y services/mail en reset_password.js:121, las dos con 'UPDATE persons SET password_hash'. Cambiar la contraseña es una regla sola escrita dos veces.",
-    "emails": "services/users (EmailService:148) y services/mail (emailVerification.js:58) ejecutan el MISMO 'UPDATE emails SET verificado = 1'. Es el caso gemelo del teléfono y se cierra igual.",
-    "task_items": "services/tasks lo INSERTA al crear una tarea general y services/documents lo toca en el camino del documento. Son dos dueños de la misma identidad (tarea, plantilla, puesto).",
-      "fill_requests": "LA DESTAPÓ F7.1 el 2026-10-07 al estrechar la exención de carpeta a fichero: estaba oculta, no es nueva. Y OJO, no es el caso de «la misma regla dos veces» de las otras cuatro: son dos operaciones distintas sobre la misma tabla. 'services/admin/generation/assignees.js' las CREA al materializar el recorrido de entrega, y 'services/documents/DocumentProgressService.js:113' REACTIVA una devuelta al avanzar de paso. Se cierra en F7.5, cuando las dos caigan en 'plantillas/datos/'; no antes, porque el piloto demostró que mover una sola a 'dominios/' deja la tabla con dos dueños.",
-  "chat_notifications": "services/chat las crea en el camino normal y services/canales en AvisoDeCanalCaido.js:95. Aquí puede que la respuesta sea un módulo de avisos, no mover el aviso al chat."
+    "task_items": "services/tasks lo INSERTA al crear una tarea general y services/documents lo toca en el camino del documento. Son dos duenos de la misma identidad (tarea, plantilla, puesto), y se cierra cuando `tareas` se mueva a su dominio: F7.5. Hasta entonces, no anadas un tercero.",
+    "fill_requests": "LA DESTAPO F7.1 el 2026-10-07 al estrechar la exencion de carpeta a fichero: estaba oculta, no es nueva. Y OJO, no es el caso de «la misma regla dos veces»: son dos operaciones distintas sobre la misma tabla -crear la solicitud y responderla-, asi que se cierra decidiendo de quien es el flujo de entrega (decision 1 de F7.0), no moviendo una linea."
   },
   "identidad": {
     "titulo": "Identidad, personas y RBAC",

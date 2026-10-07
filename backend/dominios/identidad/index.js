@@ -47,6 +47,14 @@ export {
 export { nombreLocal } from "./services/documentosPorPais.js";
 export { estadoDeVerificacion } from "./services/estadoDeVerificacion.js";
 
+// ⚠️ TRES ESCRITURAS DEL `datos/` SALEN POR LA PUERTA, y no es una grieta en la regla: es la regla.
+// «Una tabla la escribe sólo el `datos/` de su dominio dueño» no dice que nadie más pueda PEDIRLO —
+// dice que nadie más escriba. `services/mail` hacía su propio `UPDATE persons` y su propio
+// `UPDATE emails SET verificado`, que es la deuda F5.2/F5.3; ahora llama aquí, y el escritor vuelve a
+// ser uno. Si algún día el correo entra en un dominio propio, estos tres siguen valiendo igual.
+export { marcarVerificado as marcarEmailVerificado } from "./datos/emails.js";
+export { actualizarHashDeContrasena, marcarPersonaVerificada } from "./datos/personas.js";
+
 // Y tres manejadores que montan OTROS routers y que por eso no se pueden quedar dentro:
 // `internal_router` expone la verificación de teléfono al microservicio `channels`, y
 // `reset_password_router` vive aparte porque su superficie es pública y con límite de

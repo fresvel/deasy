@@ -6,7 +6,7 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **18 de 24**
+## Estado general — **21 de 24**
 
 | Fase | Tareas | Estado |
 |---|---|---|
@@ -14,7 +14,7 @@ incompatibles.**
 | **F2** · La puerta de los niveles | F2.1 ✅ · F2.2 ✅ | ✅ **2 de 2** |
 | **F3** · La puerta de propiedad | F3.1 ✅ · F3.2 ✅ | ✅ **2 de 2** |
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
-| **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ✅ · F5.6 ⬜ | 🟡 **2 de 6** |
+| **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ✅ · F5.3 ✅ · F5.4 ⬜ · F5.5 ✅ · F5.6 ✅ | 🟡 **5 de 6** |
 | **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
 | **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⛔ · F7.4 ✅ · F7.5 ⬜ | 🟡 **3 de 5** |
 
@@ -122,11 +122,11 @@ de la ingeniería es explícito.
 | Tarea | Qué entrega | Estado |
 |---|---|:--:|
 | **F5.1** | `telefono_verification_keys` — y con ella la verificación por canal, que sobrevivía a un cambio de número | ✅ |
-| **F5.2** | `emails` — el **mismo** `UPDATE emails SET verificado = 1` en `EmailService:148` y en `emailVerification.js:58` | ⬜ |
-| **F5.3** | `persons` — `UPDATE persons SET password_hash` en `UserRepository` y en `reset_password.js:121` | ⬜ |
-| **F5.4** | `task_items` — `services/tasks` lo inserta y `services/documents` lo toca | ⬜ |
+| **F5.2** | ✅ `emails` — `emailVerification.js` llama a `marcarVerificado` del `datos/` de `identidad` por su puerta | ✅ |
+| **F5.3** | ✅ `persons` — las DOS escrituras de `services/mail` (`password_hash` y `status`) pasan por la puerta de `identidad` | ✅ |
+| **F5.4** | `task_items` — `services/tasks` lo inserta y `services/documents` lo toca. **Se cierra con F7.5**, cuando `tareas` se mueva a su dominio | ⬜ |
 | **F5.5** | `document_versions` — `user_controler.js:727` hace un `UPDATE` que es de `services/documents` | ✅ **la cerró F7.2**: el `UPDATE` se fue a `DeliverableUploadService.js` y **la puerta avisó sola** |
-| **F5.6** | `chat_notifications` — `services/chat` y `services/canales`. Puede que la respuesta sea un módulo de avisos | ⬜ |
+| **F5.6** | ✅ `chat_notifications` — `AvisoDeCanalCaido` usa `crearNotificacion` por la puerta de `chat`. **No hizo falta el módulo de avisos** | ✅ |
 
 ## Por qué existe este frente: las cuatro clasificaciones
 
@@ -1099,6 +1099,61 @@ foto, el escaneo del documento, `supervised-stuck`, `recuperar-correo` y `/admin
 respondiendo con su respuesta de dominio y no con un `TypeError`.
 
 **`identidad` queda desbloqueado**, y es el grande: **62 ficheros**.
+
+### F5.2 · F5.3 · F5.6 — las tres deudas que eran UNA, cerradas el 2026-10-07
+
+**Se vio al medir qué quedaba fuera de `dominios/`, y no antes.** Las tres deudas de escritura tenían
+la misma forma: **un escritor dentro del dominio dueño y otro fuera, en los mecanismos**.
+
+| Deuda | Dueño | Quien escribía por su cuenta |
+|---|---|---|
+| **F5.3** `persons` | `identidad/datos/personas.js` | `services/mail/reset_password.js` (`password_hash`) **y** `emailVerification.js` (`status`) |
+| **F5.2** `emails` | `identidad/datos/emails.js` | `services/mail/emailVerification.js` — el **mismo** `UPDATE` literal |
+| **F5.6** `chat_notifications` | `chat/datos/chatStore.js` | `services/canales/AvisoDeCanalCaido.js` |
+
+**Y la parte que importaba NO dependía de ninguna decisión pendiente.** La pregunta abierta —dónde
+viven los mecanismos: dominio propio, `transversal/`, o repartidos— es de **colocación**. La deuda es
+de **propiedad**, y se cierra haciendo que el de fuera deje de escribir y pida por la puerta del
+dueño. Eso vale igual en cualquiera de las tres formas, así que se hizo primero.
+
+⚠️ **TRES ESCRITURAS DEL `datos/` SALEN POR LA PUERTA, y no es una grieta en la regla: es la regla.**
+«Una tabla la escribe sólo el `datos/` de su dominio dueño» no dice que nadie más pueda PEDIRLO —dice
+que nadie más escriba—. El escritor vuelve a ser uno; lo que hay ahora son llamadores.
+
+⚠️ **Y `F5.6` no necesitó el «módulo de avisos» que su propia línea proponía.** `chat` ya tenía un
+creador genérico (`insertNotification`, que recibe las columnas); un aviso de canal caído es una
+notificación como las demás y lo único que cambia es el `type`. **La respuesta estaba escrita antes
+que la pregunta.** Coste medido y aceptado: ese creador relee la fila que inserta, así que hace una
+consulta más que el INSERT suelto — y ese camino lo recorre el vigilante cuando un canal se cae, no el
+tráfico normal.
+
+#### La C tenía la misma ceguera que la E, y ya van dos
+
+Al quitar las tres líneas de `_deuda_escritura`, la comprobación **C** falló: contaba como escritores
+de `persons` y `emails` dos ficheros cuyo único `UPDATE persons` estaba **dentro de un comentario que
+explica que ya no lo hacen**. Es exactamente lo que le había pasado a la **E** unas horas antes con
+una frase correcta sobre `paises`.
+
+Arreglado **en la raíz y una sola vez**: `sinProsa()` quita los comentarios de bloque, de línea y de
+SQL, y la usan **C, D y E**. El `//` no se quita detrás de dos puntos, para no cortar una `minio://` y
+perder con ella lo que venga después en la línea. Comprobado que la C sigue mordiendo con un
+`UPDATE persons` de verdad.
+
+⚠️ **Es la misma lección que `lib/mapa.mjs` lleva escrita sobre el esquema**, y conviene decirla
+entera: una comprobación que mire la prosa **castiga al que explica**, que es el peor incentivo que se
+le puede poner a este repositorio.
+
+⚠️ **Y las cinco líneas de `_deuda_escritura` nombraban rutas que ya no existían** —`services/auth/
+UserRepository.js`, `services/users/EmailService.js`, `services/chat/chatStore.js`—, vencidas por el
+movimiento de dominios de F7.4. La puerta usa esa lista **por nombre de tabla**, no por ruta, así que
+seguía verde mientras la prosa mentía. Las dos que quedan llevan ahora qué las cierra: `task_items`
+con **F7.5**, y `fill_requests` con la **decisión 1 de F7.0** — no con una línea de código.
+
+**Verificado en la pila D**: las seis puertas · `check-mapa-tablas` con la deuda de **5 a 2** ·
+`test:unit` **897/897** · `test:char:run` **321/321** sin que se moviera un golden. Y a mano, porque
+char no cubre dos de los tres caminos: las **cuatro escrituras ejecutadas por la puerta del dueño**
+contra la base de la pila —`crearNotificacion`, `marcarEmailVerificado`, `marcarPersonaVerificada` y
+`actualizarHashDeContrasena`—, comprobando el efecto en la fila y dejándola como estaba.
 
 ### F7.4 · `identidad`, primera tanda: la persona
 

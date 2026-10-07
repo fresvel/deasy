@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { getPostgresPool } from "../../config/postgres.js";
+import { marcarEmailVerificado, marcarPersonaVerificada } from "../../dominios/identidad/index.js";
 
 export const verifyEmailCode = async (personId, code) => {
   const pool = getPostgresPool();
@@ -54,18 +55,12 @@ export const verifyEmailCode = async (personId, code) => {
   // 4️⃣ Marcar EL CORREO como verificado, y a la persona como verificada. Son dos cosas
   // distintas desde el paso 5: el correo lleva su propia marca y su fecha; el estado de la persona
   // sigue siendo el de siempre.
-  await pool.query(
-    "UPDATE emails SET verificado = 1, verificado_at = CURRENT_TIMESTAMP WHERE id = ?",
-    [emailId]
-  );
-  await pool.query(
-    `
-    UPDATE persons
-    SET status = 'Verificado'
-    WHERE id = ?
-    `,
-    [personId]
-  );
+  //
+  // LAS DOS POR LA PUERTA DE `identidad`, que es su dueño. Aquí estaban escritas a mano, y el
+  // `UPDATE emails SET verificado = 1` era LITERALMENTE el mismo que `EmailService` ya hacía: la
+  // deuda F5.2.
+  await marcarEmailVerificado(pool, emailId);
+  await marcarPersonaVerificada(pool, personId);
 
   // 5️⃣ Eliminar código (one-time use)
   await pool.query(

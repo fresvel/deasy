@@ -4,6 +4,7 @@ import path from "node:path";
 import { getPostgresPool } from "../../config/postgres.js";
 import { transporter } from "../../lib/mailer.js";
 import { generateVerificationCode } from "../../utils/email/generateCode.js";
+import { actualizarHashDeContrasena } from "../../dominios/identidad/index.js";
 
 /**
  * Enviar código de recuperación de contraseña
@@ -116,11 +117,11 @@ export const resetPasswordService = async (email, code, password) => {
   // 3️⃣ Hash de la nueva contraseña
   const passwordHash = await bcrypt.hash(password, 10);
 
-  // 4️⃣ Actualizar contraseña
-  await pool.query(
-    "UPDATE persons SET password_hash = ? WHERE id = ?",
-    [passwordHash, user.id]
-  );
+  // 4️⃣ Actualizar contraseña — POR LA PUERTA DE `identidad`, que es su dueño.
+  // Aquí había un `UPDATE persons SET password_hash` propio, y era la deuda F5.3: la misma escritura
+  // hecha desde dos sitios, así que cambiar cómo se guarda una contraseña había que acordarse de
+  // hacerlo en los dos.
+  await actualizarHashDeContrasena(pool, user.id, passwordHash);
 
   // 5️⃣ Marcar SOLO este código como usado
   await pool.query(

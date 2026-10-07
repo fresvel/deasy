@@ -1,6 +1,7 @@
 import { getPostgresPool } from "../../config/postgres.js";
 import { transporter } from "../../lib/mailer.js";
 import { hayCorreoConfigurado } from "../mail/configuracionDeCorreo.js";
+import { crearNotificacion } from "../../dominios/chat/index.js";
 
 /**
  * A quién se le dice que un canal lleva caído, y por dónde.
@@ -91,11 +92,19 @@ export default class AvisoDeCanalCaido {
   async porNotificacion(destinatarios, titulo, cuerpo) {
     for (const destinatario of destinatarios) {
       try {
-        await this.#pool().query(
-          `INSERT INTO chat_notifications (recipient_person_id, type, title, body)
-           VALUES (?, ?, ?, ?)`,
-          [destinatario.id, "canal_caido", titulo, cuerpo]
-        );
+        // POR LA PUERTA DE `chat`, que es la dueña de `chat_notifications`. Aquí había un INSERT
+        // propio —la deuda F5.6—, y un aviso de canal caído es una notificación como las demás: lo
+        // que cambia es el `type`, no la tabla.
+        //
+        // ⚠️ El creador del dominio RELEE la fila que acaba de insertar para devolverla, así que
+        // esto hace una consulta más que el INSERT suelto. Se acepta a sabiendas: este camino lo
+        // recorre el vigilante cuando un canal se cae, no el tráfico normal.
+        await crearNotificacion({
+          recipient_person_id: destinatario.id,
+          type: "canal_caido",
+          title: titulo,
+          body: cuerpo
+        });
         this.realtime?.emitToUser?.(destinatario.id, "canal:caido", { titulo, cuerpo });
       } catch (error) {
         console.error(`[vigilante] no se pudo notificar a ${destinatario.id}: ${error.message}`);

@@ -49,3 +49,32 @@ export const tieneAutoidentificacion = async (ejecutor, personId) => {
   );
   return Boolean(filas?.length);
 };
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+// LAS DOS ESCRITURAS QUE `services/mail` HACÍA POR SU CUENTA (F5.2 y F5.3, cerradas el 2026-10-07).
+//
+// Estaban declaradas como deuda en `scripts/docs/dominios.json → _deuda_escritura`: `reset_password.js`
+// ejecutaba su propio `UPDATE persons SET password_hash` y `emailVerification.js` su propio
+// `UPDATE persons SET status`. No eran reglas distintas con el mismo SQL: eran la MISMA escritura
+// hecha desde fuera del dominio dueño. Ahora el correo llama aquí por la puerta.
+//
+// Y ésta es la mitad que de verdad importa de esa deuda: no es que el SQL estuviera duplicado, es que
+// `persons` tenía dos dueños, así que un cambio en cómo se guarda una contraseña había que acordarse
+// de hacerlo en dos sitios.
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+export const actualizarHashDeContrasena = async (ejecutor, personId, passwordHash) => {
+  await ejecutor.query(
+    `UPDATE persons SET password_hash = ? WHERE id = ?`,
+    [passwordHash, personId]
+  );
+};
+
+// El estado de la persona y la marca del correo son DOS COSAS distintas desde el paso 5: el correo
+// lleva su propia marca y su fecha (`datos/emails.js`), y esto es el estado de la persona.
+export const marcarPersonaVerificada = async (ejecutor, personId) => {
+  await ejecutor.query(
+    `UPDATE persons SET status = 'Verificado' WHERE id = ?`,
+    [personId]
+  );
+};

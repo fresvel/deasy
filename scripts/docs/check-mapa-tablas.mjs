@@ -115,7 +115,30 @@ const sitioDe = (p) => {
 };
 
 const rutaDe = (p) => relative(join(RAIZ, "backend"), p).split(sep).join("/");
-const contenidos = ficheros(join(RAIZ, "backend")).map((p) => [rutaDe(p), sitioDe(p), readFileSync(p, "utf8")]);
+
+/**
+ * El código SIN SU PROSA: fuera los comentarios de bloque, los de línea y los de SQL.
+ *
+ * ⚠️ ESTO NO ES UNA OPTIMIZACIÓN, ES UNA CORRECCIÓN, y ha hecho falta DOS VECES en el mismo día
+ * (2026-10-07). Primero en la comprobación E, que marcó como infracción la frase «lo que mira
+ * `paises` está en `datos/consulta/`» —correcta, y señalando precisamente dónde va lo que cruza—. Y
+ * luego en la C, que contó como escritores de `persons` y `emails` dos ficheros cuyo único
+ * `UPDATE persons` estaba dentro de un comentario que explicaba **que ya no lo hacen**.
+ *
+ * Es la misma lección que `lib/mapa.mjs` lleva escrita sobre el esquema: citar una tabla al explicar
+ * algo es lo natural, así que una comprobación que mire la prosa muerde justo cuando alguien
+ * documenta bien — y castiga al que explica, que es el peor incentivo posible.
+ *
+ * El `//` no se quita si va detrás de dos puntos, para no cortar una URL (`minio://…`, `https://…`)
+ * y perder con ella lo que venga después en esa línea.
+ */
+const sinProsa = (src) =>
+  src
+    .replace(/\/\*[\s\S]*?\*\//g, " ")
+    .replace(/(^|[^:])\/\/[^\n]*/g, "$1 ")
+    .replace(/--[^\n]*/g, " ");
+
+const contenidos = ficheros(join(RAIZ, "backend")).map((p) => [rutaDe(p), sitioDe(p), sinProsa(readFileSync(p, "utf8"))]);
 const transversales = new Set(mapa.transversales);
 const flujos = mapa.flujos;
 const eximido = (ruta) => transversales.has(ruta) || Object.hasOwn(flujos, ruta);
@@ -191,16 +214,8 @@ for (const [ruta, decl] of Object.entries(flujos)) {
       for (const p of ficheros(carpetaDatos)) {
         const rel = relative(join(RAIZ, "backend"), p).split(sep).join("/");
         if (rel.includes("/datos/consulta/")) continue;   // su contrato ES cruzar
-        // ⚠️ SE QUITAN LOS COMENTARIOS ANTES DE BUSCAR, los de SQL y los de JavaScript. Es la misma
-        // lección que ya está escrita en `lib/mapa.mjs`: citar una tabla al explicar algo es lo
-        // natural, así que una comprobación que mire la prosa muerde justo cuando alguien documenta
-        // bien. Pasó el 2026-10-07: `identidad/datos/verificacionDeTelefono.js` decía «lo que mira
-        // `paises` está en datos/consulta/» —una frase CORRECTA, que señalaba precisamente dónde va
-        // lo que cruza— y la puerta la marcó como infracción.
-        const cuerpo = readFileSync(p, "utf8")
-          .replace(/\/\*[\s\S]*?\*\//g, " ")   // bloque de JavaScript
-          .replace(/\/\/[^\n]*/g, " ")         // línea de JavaScript
-          .replace(/--[^\n]*/g, " ");          // línea de SQL
+        // Sin la prosa: el por qué está en `sinProsa`, y vale para esta comprobación y para la C.
+        const cuerpo = sinProsa(readFileSync(p, "utf8"));
         for (const tabla of tablas) {
           if (!new RegExp(`\\b${tabla}\\b`).test(cuerpo)) continue;
           const duena = mapa.dominioDe.get(tabla);

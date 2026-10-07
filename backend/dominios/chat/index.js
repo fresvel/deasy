@@ -15,3 +15,9 @@ export { default as notificationRouter } from "./routes/notification_router.js";
 export { default as ChatConversationService } from "./services/ChatConversationService.js";
 export { default as ChatAuthorizationService } from "./services/ChatAuthorizationService.js";
 export { logChatInfo, logChatError } from "./services/chat_logging.js";
+
+// ⚠️ EL CREADOR DE NOTIFICACIONES, por el mismo motivo (F5.6). `services/canales/AvisoDeCanalCaido.js`
+// insertaba en `chat_notifications` por su cuenta —era la quinta línea de `_deuda_escritura`—, y con
+// esto el escritor vuelve a ser uno. El aviso de canal caído es una notificación como las demás: lo
+// que cambia es el `type`, no la tabla.
+export { insertNotification as crearNotificacion } from "./datos/chatStore.js";
