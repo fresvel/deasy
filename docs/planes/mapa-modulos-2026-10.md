@@ -642,7 +642,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
-| **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0 — carpeta **reservada vacía**, decidido el 2026-10-07), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
+| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · `empleo` (carpeta reservada) · `organizacion` (2) · `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | 🟡 **1 de 4** |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1 y F7.2 ya tocaron | ⬜ |
 
 ### F7.1 ✅ — declarado, y lo que destapó
@@ -858,6 +858,67 @@ mismo motivo: el criterio que las justificaba no resistió su propia comprobaci�
 criterio lo había invalidado **la auditoría de la propia fase** cuatro commits antes — contar
 referencias a tablas para decidir un corte era exactamente lo que esa auditoría había corregido, y la
 tarea seguía escrita con el criterio viejo.
+
+### F7.4 🟡 — `chat` movido, y tres hallazgos del piloto
+
+**`backend/dominios/chat/` existe**, con las cuatro capas y su puerta:
+
+```
+dominios/chat/
+   index.js       la puerta: lo único que se importa de fuera
+   routes/        chat_router.js · notification_router.js
+   controllers/   chat_controller.js
+   services/      los 9 servicios
+   datos/         chatStore.js — 28 consultas, TODAS de tablas de chat
+```
+
+Los **29 imports relativos** se recalcularon **por script** desde la nueva ubicación, no a mano. De
+fuera entraban **5 imports a 5 ficheros**; ahora entran por el `index.js` y nadie se lo salta.
+
+**1 · La comprobación E, que es lo que compra la subcapa de lecturas.** Provocada:
+
+```
+· E · 'dominios/chat/datos/chatStore.js' nombra 'task_items', que es de 'tareas'.
+      El `datos/` de un dominio sólo nombra SUS tablas; lo que cruza va a 'chat/datos/consulta/'
+```
+
+Sin esa separación, `datos/` podría nombrar cualquier tabla y **nada distinguiría una lectura legítima
+que cruza de un error**. Es la única regla de esta puerta que se puede comprobar sobre las lecturas.
+
+⚠️ **2 · LA PUERTA DEL DOMINIO ROMPIÓ EL ARRANQUE, y es un coste de la regla que no estaba previsto.**
+
+```
+ReferenceError: Cannot access 'realtimeGateway' before initialization
+  at new ChatRealtimePublisherService (…/ChatRealtimePublisherService.js:14)
+  at …/chat_controller.js:20
+```
+
+El ciclo `chat ↔ realtime` **ya existía** —es uno de los **cinco pares mutuos** medidos el
+2026-10-04—. Lo que hizo el barril fue volverlo **fatal**: antes `RealtimeGateway` importaba tres
+ficheros de chat **directamente** y el controller no entraba en su cadena de inicialización; el
+`index.js` arrastra **el dominio entero**, routers incluidos, y el controller **instancia 7 servicios
+al cargar el módulo**, uno de los cuales leía el singleton de la pasarela como parámetro por defecto.
+
+**No se debilitó la puerta: se arregló la fragilidad.** `this.gateway` sólo se usa dentro de los
+métodos, así que se resuelve al usarse, con un getter que conserva la inyección para pruebas. La
+lección, que vale para los tres dominios que faltan: **un barril no es gratis — convierte cualquier
+ciclo latente en un fallo de carga, y un servicio no debe depender de otro módulo en tiempo de
+carga.**
+
+⚠️ **3 · Y `test:char:run` NO es reproducible en una pila recién creada.** Dio **319 de 321**, y se
+probó que no es de este cambio: con el backend de **`develop` en la misma pila** fallan **los mismos
+dos** (`/legal/documentos` y su golden). El motivo: el harness **purga MinIO antes del bootstrap**, y
+la semilla legal la publica el backend **al arrancar** — así que en una pila nueva la purga se la
+lleva y el bootstrap no tiene qué adoptar. En A/B/C pasa porque los objetos sobreviven a la purga.
+**Queda por arreglar y no es de este frente.**
+
+### Lo que falta para cerrar la subcapa en `chat`
+
+Medido: **28 consultas propias y 6 que cruzan**, y las 6 viven en **dos ficheros que son 100 %
+cruzados** (`ChatUnitDirectoryService`, `ChatAuthorizationService`), así que **ningún fichero hay que
+partirlo**. Pero esos dos son **servicios con reglas** —5 `throw` cada uno—, no consultas puras: pasar
+sus 6 consultas a `datos/consulta/` son **dos extracciones** del mismo tipo que las de F7.2. Se dejó
+sin hacer a propósito: un `datos/consulta/` a medias es peor que no tenerlo.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
