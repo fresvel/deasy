@@ -8,6 +8,13 @@ import UserRepository from "../../services/auth/UserRepository.js";
 import RbacService from "../../services/auth/RbacService.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import {
+  deleteAttachment,
+  findAttachmentOfTaskItem,
+  insertAttachment,
+  listAttachmentsOfDocumentVersion,
+  nextAttachmentOrder,
+} from "../../services/documents/DocumentAttachmentService.js";
+import {
   launchProcessDefinitionInTerm
 } from "../../services/admin/TaskGenerationService.js";
 import {
@@ -1174,12 +1181,7 @@ export const listDeliverableAttachments = async (req, res) => {
     if (!target?.document_version_id) {
       return res.status(404).json({ message: "No se encontró un documento activo para ese entregable." });
     }
-    const [rows] = await pool.query(
-      `SELECT * FROM document_attachments
-       WHERE document_version_id = ?
-       ORDER BY sort_order ASC, id ASC`,
-      [Number(target.document_version_id)]
-    );
+    const rows = await listAttachmentsOfDocumentVersion(pool, target.document_version_id);
     return res.json({
       document_version_id: Number(target.document_version_id),
       attachments: (rows || []).map(mapAttachmentRow),
@@ -1247,34 +1249,23 @@ export const uploadDeliverableAttachment = async (req, res) => {
       "Original-Name": originalName
     });
 
-    const [orderRows] = await connection.query(
-      `SELECT COALESCE(MAX(sort_order), 0) + 1 AS next_order
-       FROM document_attachments WHERE document_version_id = ?`,
-      [Number(target.document_version_id)]
-    );
-    const sortOrder = Number(orderRows?.[0]?.next_order || 1);
-
-    const [insertResult] = await connection.query(
-      `INSERT INTO document_attachments
-        (document_version_id, kind, file_path, file_name, mime_type, size_bytes, description, uploaded_by_person_id, sort_order)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        Number(target.document_version_id),
-        kind,
-        relativeObjectPath,
-        originalName.slice(0, 255),
-        (uploadedFile.mimetype || null)?.slice(0, 120) || null,
-        Number(uploadedFile.size || 0) || null,
-        description,
-        authenticatedUserId,
-        sortOrder
-      ]
-    );
+    const sortOrder = await nextAttachmentOrder(connection, target.document_version_id);
+    const attachmentId = await insertAttachment(connection, {
+      documentVersionId: target.document_version_id,
+      kind,
+      filePath: relativeObjectPath,
+      fileName: originalName.slice(0, 255),
+      mimeType: (uploadedFile.mimetype || null)?.slice(0, 120) || null,
+      sizeBytes: Number(uploadedFile.size || 0) || null,
+      description,
+      uploadedByPersonId: authenticatedUserId,
+      sortOrder,
+    });
 
     return res.json({
       message: "El anexo se cargó correctamente.",
       attachment: {
-        id: Number(insertResult.insertId),
+        id: attachmentId,
         document_version_id: Number(target.document_version_id),
         kind,
         file_path: relativeObjectPath,
@@ -1319,20 +1310,12 @@ export const deleteDeliverableAttachment = async (req, res) => {
       return res.status(404).json({ message: "No se encontró el entregable." });
     }
     // El anexo debe pertenecer a una versión documental de este task_item (cualquier instancia).
-    const [rows] = await pool.query(
-      `SELECT da.id, da.file_path
-       FROM document_attachments da
-       INNER JOIN document_versions dv ON dv.id = da.document_version_id
-       WHERE da.id = ? AND dv.task_item_id = ?
-       LIMIT 1`,
-      [attachmentId, Number(target.task_item_id)]
-    );
-    const attachment = rows?.[0];
+    const attachment = await findAttachmentOfTaskItem(pool, attachmentId, target.task_item_id);
     if (!attachment) {
       return res.status(404).json({ message: "El anexo no existe o no pertenece a este entregable." });
     }
 
-    await pool.query(`DELETE FROM document_attachments WHERE id = ?`, [attachmentId]);
+    await deleteAttachment(pool, attachmentId);
 
     const resolved = resolveStoredDocumentObject(attachment.file_path);
     if (resolved) {
@@ -1371,15 +1354,7 @@ export const downloadDeliverableAttachment = async (req, res) => {
     if (!target?.task_item_id) {
       return res.status(404).json({ message: "No se encontró el entregable." });
     }
-    const [rows] = await pool.query(
-      `SELECT da.file_path, da.file_name, da.mime_type
-       FROM document_attachments da
-       INNER JOIN document_versions dv ON dv.id = da.document_version_id
-       WHERE da.id = ? AND dv.task_item_id = ?
-       LIMIT 1`,
-      [attachmentId, Number(target.task_item_id)]
-    );
-    const attachment = rows?.[0];
+    const attachment = await findAttachmentOfTaskItem(pool, attachmentId, target.task_item_id);
     if (!attachment) {
       return res.status(404).json({ message: "El anexo no existe o no pertenece a este entregable." });
     }
