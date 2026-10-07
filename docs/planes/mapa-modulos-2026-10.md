@@ -640,7 +640,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 |---|---|:--:|
 | **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`dominio` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
-| **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: de **77 a 22** en tres pasos. Las 22 que quedan están todas en `user_controler.js`, que es también uno de los 6 de F7.3. Las **transacciones** van en su propio paso | 🟡 |
+| **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: de **77 a 3** en seis pasos. Las 3 que quedan abren transacción, y eso es el paso siguiente. `user_controler.js`: **1.695 → 1.510 líneas** | 🟡 |
 | **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
 | **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0 — carpeta **reservada vacía**, decidido el 2026-10-07), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
@@ -684,7 +684,7 @@ dueños.
 El resumen de la puerta ahora dice, además de lo de siempre:
 `Declarados:  3 transversales · 7 flujos que cruzan dominios`.
 
-### F7.2 🟡 — de 77 consultas a 22, y dos puertas que estaban ciegas
+### F7.2 🟡 — de 77 consultas a 3, y dos puertas que estaban ciegas
 
 | Paso | Qué salió | Quedan |
 |---|---|---:|
@@ -692,8 +692,35 @@ El resumen de la puerta ahora dice, además de lo de siempre:
 | 2 | Los 4 controllers pequeños (5 consultas). `tareas_controler.js` pasa de **109 a 41 líneas**; `program_controler.js` de 64 a 44 | 27 |
 | 3 | `sql_admin_controller.js` (3 consultas) → `services/admin/templates/artifactLookup.js`. Dos eran **la misma consulta repetida**, y queda una | 22 |
 
-Las 22 que faltan están **todas en `user_controler.js`**, que además es uno de los 6 de F7.3: su
-extracción y su partición son el mismo trabajo.
+Y las 22 de `user_controler.js`, el peor fichero del repositorio, en tres pasos más:
+
+| Paso | Qué salió | Consultas | Líneas |
+|---|---|---:|---:|
+| 4 | **Los anexos** (4 manejadores) → `services/documents/DocumentAttachmentService.js`. `document_attachments` la escribía **sólo** ese controller: su dueño pasa a ser un servicio | 22 → 16 | 1.695 → 1.670 |
+| 5 | **Las cinco bandejas** → el repositorio del espacio de trabajo, que ya declaraba ser eso | 16 → 7 | → 1.553 |
+| 6 | El **historial de relevos** → `taskQueries.js`, y la **descarga de plantilla** → el repositorio | 7 → **3** | → **1.510** |
+
+**Quedan 3, todas en `uploadDeliverablePdf`**, que abre una transacción de verdad: eso es el paso de
+las transacciones. Y `getConnection()` bajó de **9 a 4**.
+
+⚠️ **Dos de los grupos no tenían NINGUNA prueba, y se comprobó antes de moverlos.** Las cuatro rutas
+de anexos no las toca ni un golden —la única mención en `tests/` es un comentario— y la descarga de
+plantilla tampoco, porque produce un ZIP. Así que la extracción de esos dos no tenía red de
+comportamiento: ahora la tiene, con **11 pruebas unitarias nuevas** que pintan la forma del SQL, los
+parámetros y los JOIN que impiden coger el anexo de otro entregable.
+
+⚠️ **Y UNA DE ESAS PRUEBAS CAZÓ UNA SUPOSICIÓN MÍA FALSA.** Aseguré que la subconsulta de
+participación compartida mira `task_item_tenures`: **no**, une **cinco** fuentes
+—`entregable_asignado`, `puesto_responsable_ocupante`, `entregable_creador`, `flujo_entrega`,
+`flujo_firma`—. La aserción ahora las pinta por nombre, y provocarla renombrando una tumba **10**
+pruebas, no una: ese fragmento está bien cubierto.
+
+⚠️ **Y `getConnection()` NO ES una transacción.** Lo dije mal y se midió: en `user_controler.js` había
+**9 `getConnection()` y sólo 3 transacciones**; las otras 6 retenían una conexión del pool sin motivo y
+se podían quedar sin soltar por cualquier camino que no pasara por el `finally`. Cinco se fueron con
+las bandejas. Y en **todo** el backend sólo **dos** controllers abren transacción —`user_controler.js`
+y `supervision_controler.js`—, no tres: en `sign_controller.js` hay `getConnection()` y no hay
+`beginTransaction`.
 
 **Antes de mover se comprobó lo que no se podía suponer:** ese SQL usa `GROUP_CONCAT(… SEPARATOR …)`,
 que es MySQL — y funciona porque el pool trae un **traductor de dialecto** que lo reescribe a

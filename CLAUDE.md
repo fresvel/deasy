@@ -634,6 +634,13 @@ anteriores al primer hueco: lo de después puede apoyarse en tablas que trae el 
 ⚠️ **`test:char:run` RESETEA la base de dev** (reset + bootstrap + seed). Es lo normal para char, pero
 no lo lances si tienes datos que quieras conservar. Para actualizar los goldens: `test:char:capture`.
 
+⚠️ **Y si acabas de EDITAR un módulo —aunque lo hayas restaurado—, reinicia el backend antes de
+lanzar char.** El proceso de node se queda con el módulo **viejo en memoria**: el fichero puede estar
+correcto en disco **y dentro del contenedor**, y la corrida seguir ejecutando lo anterior. Costó **11
+fallos fantasma** el 2026-10-07 tras provocar una puerta a propósito: los goldens se quejaban de
+`Clave de fuente de acceso inválida: flujo_firma_RENOMBRADO`, un nombre que ya no existía en ninguna
+parte. `stack.sh <letra> restart backend` y los 321 volvieron a verde.
+
 ## Architecture
 
 ### Capas del backend — regla no negociable
