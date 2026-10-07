@@ -1,4 +1,11 @@
 import { getPostgresPool } from "../../../config/postgres.js";
+import { principalDeSuTipo, actualizarPrincipal, insertarPrincipal } from "../datos/direcciones.js";
+import {
+  idDePaisPorIsoONombre,
+  idDeProvinciaEnElPais,
+  idDeCantonEnLaProvincia,
+  listarConNombres
+} from "../datos/consulta/ubicacionDeLaDireccion.js";
 
 // Las direcciones de una persona. Una fila por direccion, con su tipo.
 //
@@ -44,14 +51,10 @@ export default class DireccionService {
     let paisId = esVacio(paisIdDirecto) ? null : Number(paisIdDirecto);
     if (paisId === null && !esVacio(pais)) {
       const clave = String(pais).trim();
-      const [filas] = await this.pool.query(
-        "SELECT id FROM paises WHERE iso_alpha2 = ? OR name = ? LIMIT 1",
-        [clave.toUpperCase(), clave]
-      );
-      if (!filas?.length) {
+      paisId = await idDePaisPorIsoONombre(this.pool, clave);
+      if (paisId === null) {
         throw errorDeCliente(`El país '${clave}' no está en el catálogo.`);
       }
-      paisId = Number(filas[0].id);
     }
 
     let provinciaId = esVacio(provinciaIdDirecto) ? null : Number(provinciaIdDirecto);
@@ -59,14 +62,10 @@ export default class DireccionService {
       if (paisId === null) {
         throw errorDeCliente("Para resolver la provincia hace falta el país.");
       }
-      const [filas] = await this.pool.query(
-        "SELECT id FROM provincias WHERE pais_id = ? AND name = ? LIMIT 1",
-        [paisId, String(provincia).trim()]
-      );
-      if (!filas?.length) {
+      provinciaId = await idDeProvinciaEnElPais(this.pool, paisId, String(provincia).trim());
+      if (provinciaId === null) {
         throw errorDeCliente(`La provincia '${String(provincia).trim()}' no está en el catálogo de ese país.`);
       }
-      provinciaId = Number(filas[0].id);
     }
 
     let cantonId = esVacio(cantonIdDirecto) ? null : Number(cantonIdDirecto);
@@ -74,14 +73,10 @@ export default class DireccionService {
       if (provinciaId === null) {
         throw errorDeCliente("Para resolver el cantón hace falta la provincia.");
       }
-      const [filas] = await this.pool.query(
-        "SELECT id FROM cantones WHERE provincia_id = ? AND name = ? LIMIT 1",
-        [provinciaId, String(canton).trim()]
-      );
-      if (!filas?.length) {
+      cantonId = await idDeCantonEnLaProvincia(this.pool, provinciaId, String(canton).trim());
+      if (cantonId === null) {
         throw errorDeCliente(`El cantón '${String(canton).trim()}' no está en el catálogo de esa provincia.`);
       }
-      cantonId = Number(filas[0].id);
     }
 
     return { paisId, provinciaId, cantonId };
@@ -115,55 +110,18 @@ export default class DireccionService {
       esVacio(direccion?.longitud) ? null : Number(direccion.longitud)
     ];
 
-    const [existentes] = await connection.query(
-      "SELECT id FROM direcciones WHERE person_id = ? AND tipo = ? AND principal = 1 LIMIT 1",
-      [personId, tipo]
-    );
-
-    if (existentes?.length) {
-      await connection.query(
-        `UPDATE direcciones
-            SET pais_id = ?, provincia_id = ?, canton_id = ?,
-                sector = ?, barrio = ?,
-                calle_primaria = ?, calle_secundaria = ?, referencia = ?,
-                latitud = ?, longitud = ?
-          WHERE id = ?`,
-        [...campos, Number(existentes[0].id)]
-      );
-      return Number(existentes[0].id);
+    const existente = await principalDeSuTipo(connection, personId, tipo);
+    if (existente) {
+      await actualizarPrincipal(connection, existente, campos);
+      return existente;
     }
 
-    const [resultado] = await connection.query(
-      `INSERT INTO direcciones
-         (person_id, tipo, pais_id, provincia_id, canton_id,
-          sector, barrio, calle_primaria, calle_secundaria, referencia, latitud, longitud, principal)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      [personId, tipo, ...campos]
-    );
-    return resultado?.insertId ?? null;
+    return insertarPrincipal(connection, personId, tipo, campos);
   }
 
-  // Las direcciones ya resueltas a nombres, que es lo que se enseña. El id se conserva para poder
-  // editarlas sin volver a buscarlas por nombre.
   async listarPorPersona(personId, connection = this.pool) {
     this.ensurePool();
-    const [filas] = await connection.query(
-      `SELECT d.id, d.tipo, d.principal,
-              d.pais_id, pa.iso_alpha2 AS pais_iso, pa.name AS pais,
-              d.provincia_id, pr.name AS provincia,
-              d.canton_id, ca.name AS canton,
-              d.sector, d.barrio,
-              d.calle_primaria, d.calle_secundaria, d.referencia,
-              d.latitud, d.longitud
-         FROM direcciones d
-         LEFT JOIN paises pa ON pa.id = d.pais_id
-         LEFT JOIN provincias pr ON pr.id = d.provincia_id
-         LEFT JOIN cantones ca ON ca.id = d.canton_id
-        WHERE d.person_id = ? AND d.is_active = 1
-        ORDER BY d.principal DESC, d.id ASC`,
-      [personId]
-    );
-    return filas ?? [];
+    return listarConNombres(connection, personId);
   }
 
   async principalDe(personId, tipo = TIPO_POR_DEFECTO, connection = this.pool) {

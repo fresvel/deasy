@@ -1,5 +1,21 @@
 import { parteLocal } from "./numerosDeTelefono.js";
 import { getPostgresPool } from "../../../config/postgres.js";
+import {
+  otroDuenoDelNumero,
+  principalDeSuTipo,
+  actualizarNumero,
+  insertarPrincipal,
+  desverificarCanales,
+  canalDelTelefono,
+  declararCanal,
+  verificarCanalPorId,
+  insertarCanalVerificado,
+  dejarSoloEstosCanales,
+  canalesDeLosTelefonos
+} from "../datos/telefonos.js";
+import { idDeCanalActivo, borrarLlavesVivas } from "../datos/verificacionDeTelefono.js";
+import { idDePaisPorIso } from "../datos/consulta/paisPorIso.js";
+import { paisesConPrefijo, prefijosActivos, listarConPrefijo } from "../datos/consulta/telefonosConPrefijo.js";
 
 // Los telefonos de una persona y los canales de mensajeria de cada telefono.
 //
@@ -59,23 +75,17 @@ export default class TelefonoService {
   async resolvePaisId({ pais, pais_id: paisIdDirecto, prefijo } = {}) {
     if (!esVacio(paisIdDirecto)) return Number(paisIdDirecto);
     if (!esVacio(pais)) {
-      const [filas] = await this.pool.query(
-        "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1",
-        [String(pais).trim().toUpperCase()]
-      );
-      if (!filas?.length) throw errorDeCliente(`El país '${pais}' no está en el catálogo.`);
-      return Number(filas[0].id);
+      const id = await idDePaisPorIso(this.pool, pais);
+      if (id === null) throw errorDeCliente(`El país '${pais}' no está en el catálogo.`);
+      return id;
     }
     // El prefijo es el ultimo recurso, y es AMBIGUO: "+1" lo comparten Estados Unidos, Canada y
     // media docena de islas. Se acepta porque el formulario lo tiene a mano, pero si empata con
     // varios paises se rechaza en vez de elegir uno al azar.
     if (!esVacio(prefijo)) {
       const clave = String(prefijo).trim().startsWith("+") ? String(prefijo).trim() : `+${String(prefijo).trim()}`;
-      const [filas] = await this.pool.query(
-        "SELECT id FROM paises WHERE phone_code = ? AND is_active = 1",
-        [clave]
-      );
-      if (!filas?.length) throw errorDeCliente(`El prefijo '${clave}' no corresponde a ningún país del catálogo.`);
+      const filas = await paisesConPrefijo(this.pool, clave);
+      if (!filas.length) throw errorDeCliente(`El prefijo '${clave}' no corresponde a ningún país del catálogo.`);
       if (filas.length > 1) {
         throw errorDeCliente(`El prefijo '${clave}' lo comparten ${filas.length} países: manda el país en vez del prefijo.`);
       }
@@ -86,14 +96,11 @@ export default class TelefonoService {
 
   async resolveCanalId(codigo, connection = this.pool) {
     const clave = String(codigo ?? "").trim().toLowerCase();
-    const [filas] = await connection.query(
-      "SELECT id FROM canales_mensajeria WHERE code = ? AND is_active = 1 LIMIT 1",
-      [clave]
-    );
-    if (!filas?.length) {
+    const canalId = await idDeCanalActivo(connection, clave);
+    if (!canalId) {
       throw errorDeCliente(`El canal de mensajería '${clave}' no está en el catálogo.`);
     }
-    return Number(filas[0].id);
+    return canalId;
   }
 
   // Un numero que llega con "+" trae el prefijo pegado, y hay que separarlo o se guarda como si
@@ -105,10 +112,8 @@ export default class TelefonoService {
   async separarPrefijo(bruto) {
     const texto = String(bruto ?? "").trim();
     if (!texto.startsWith("+")) return { paisId: null, numero: soloDigitos(texto) };
-    const [filas] = await this.pool.query(
-      "SELECT id, phone_code FROM paises WHERE phone_code IS NOT NULL AND is_active = 1"
-    );
-    const candidatos = (filas ?? [])
+    const filas = await prefijosActivos(this.pool);
+    const candidatos = filas
       .map((f) => ({ id: Number(f.id), code: String(f.phone_code) }))
       .filter((f) => texto.startsWith(f.code))
       .sort((a, b) => b.code.length - a.code.length);
@@ -150,24 +155,15 @@ export default class TelefonoService {
     // parametro suelto comparado contra NULL y PostgreSQL no puede inferirle el tipo
     // ("could not determine data type of parameter $3"). Y no lo ve nadie hasta que se ejecuta esa
     // rama: el SQL es una cadena de texto para todo lo demas.
-    const [ajenos] = await connection.query(
-      `SELECT t.id FROM telefonos t
-        WHERE t.numero = ? AND t.pais_id IS NOT DISTINCT FROM ?
-          AND t.person_id <> ? LIMIT 1`,
-      [numero, paisId, personId]
-    );
-    if (ajenos?.length) {
+    if (await otroDuenoDelNumero(connection, numero, paisId, personId)) {
       throw errorDeConflicto("Ese número de teléfono ya está registrado por otra persona.");
     }
 
-    const [existentes] = await connection.query(
-      "SELECT id, numero, pais_id FROM telefonos WHERE person_id = ? AND tipo = ? AND principal = 1 LIMIT 1",
-      [personId, tipo]
-    );
+    const existente = await principalDeSuTipo(connection, personId, tipo);
 
     let telefonoId;
-    if (existentes?.length) {
-      telefonoId = Number(existentes[0].id);
+    if (existente) {
+      telefonoId = Number(existente.id);
       // ⚠️ CAMBIAR EL NÚMERO TIRA LO QUE SE HABÍA PROBADO DEL ANTERIOR, y se hace AQUÍ.
       //
       // La fila se reutiliza --mismo id, número nuevo--, así que todo lo que colgaba de ella pasa a
@@ -186,28 +182,15 @@ export default class TelefonoService {
       // Se marca verificado = 0, no se borra la fila del canal: DECLARAR un canal no es VERIFICARLO,
       // y la declaración sigue siendo verdad. Lo que deja de serlo es la prueba.
       const cambiaNumero =
-        String(existentes[0].numero ?? "") !== String(numero) ||
-        Number(existentes[0].pais_id ?? 0) !== Number(paisId ?? 0);
-      await connection.query(
-        "UPDATE telefonos SET pais_id = ?, numero = ? WHERE id = ?",
-        [paisId, numero, telefonoId]
-      );
+        String(existente.numero ?? "") !== String(numero) ||
+        Number(existente.pais_id ?? 0) !== Number(paisId ?? 0);
+      await actualizarNumero(connection, telefonoId, paisId, numero);
       if (cambiaNumero) {
-        await connection.query(
-          "UPDATE telefono_canales SET verificado = 0, verificado_at = NULL WHERE telefono_id = ?",
-          [telefonoId]
-        );
-        await connection.query(
-          "DELETE FROM telefono_verification_keys WHERE telefono_id = ? AND consumida_at IS NULL",
-          [telefonoId]
-        );
+        await desverificarCanales(connection, telefonoId);
+        await borrarLlavesVivas(connection, telefonoId);
       }
     } else {
-      const [resultado] = await connection.query(
-        "INSERT INTO telefonos (person_id, tipo, pais_id, numero, principal) VALUES (?, ?, ?, ?, 1)",
-        [personId, tipo, paisId, numero]
-      );
-      telefonoId = resultado?.insertId ?? null;
+      telefonoId = await insertarPrincipal(connection, personId, tipo, paisId, numero);
     }
 
     if (Array.isArray(telefono?.canales)) {
@@ -245,86 +228,36 @@ export default class TelefonoService {
       // adaptador de PostgreSQL solo traduce `= VALUES(col)` a `EXCLUDED.col`
       // (`config/postgres.js:442`), asi que un `VALUES(...)` ANIDADO dentro de una funcion se queda
       // sin traducir y PostgreSQL responde "syntax error at or near (" en tiempo de llamada.
-      const [existente] = await connection.query(
-        "SELECT id, verificado FROM telefono_canales WHERE telefono_id = ? AND canal_id = ? LIMIT 1",
-        [telefonoId, canalId]
-      );
-      if (existente?.length) {
-        // Nunca se DESVERIFICA al re-declarar los canales: haber comprobado que el numero tiene
-        // WhatsApp sigue siendo cierto aunque el usuario vuelva a guardar el formulario. Y tampoco
-        // se ASCIENDE, que es lo que se retiro: guardar el formulario no prueba nada.
-      } else {
-        await connection.query(
-          // Nace SIN verificar y sin fecha. Verificarlo es otro acto, con su prueba.
-          `INSERT INTO telefono_canales (telefono_id, canal_id, verificado, verificado_at)
-           VALUES (?, ?, 0, NULL)`,
-          [telefonoId, canalId]
-        );
+      const yaEsta = await canalDelTelefono(connection, telefonoId, canalId);
+      if (!yaEsta) {
+        await declararCanal(connection, telefonoId, canalId);
       }
+      // Si ya estaba no se toca: nunca se DESVERIFICA al re-declarar los canales —haber comprobado
+      // que el numero tiene WhatsApp sigue siendo cierto aunque el usuario vuelva a guardar el
+      // formulario— y tampoco se ASCIENDE, que es lo que se retiro: guardar el formulario no prueba
+      // nada.
     }
-    if (ids.length) {
-      await connection.query(
-        `DELETE FROM telefono_canales WHERE telefono_id = ? AND canal_id NOT IN (${ids.map(() => "?").join(", ")})`,
-        [telefonoId, ...ids]
-      );
-    } else {
-      await connection.query("DELETE FROM telefono_canales WHERE telefono_id = ?", [telefonoId]);
-    }
+    await dejarSoloEstosCanales(connection, telefonoId, ids);
   }
 
   async marcarCanalVerificado(telefonoId, codigoCanal, connection = this.pool) {
     const canalId = await this.resolveCanalId(codigoCanal, connection);
-    const [existente] = await connection.query(
-      "SELECT id FROM telefono_canales WHERE telefono_id = ? AND canal_id = ? LIMIT 1",
-      [telefonoId, canalId]
-    );
-    if (existente?.length) {
-      await connection.query(
-        "UPDATE telefono_canales SET verificado = 1, verificado_at = CURRENT_TIMESTAMP WHERE id = ?",
-        [Number(existente[0].id)]
-      );
+    const existente = await canalDelTelefono(connection, telefonoId, canalId);
+    if (existente) {
+      await verificarCanalPorId(connection, existente.id);
     } else {
-      await connection.query(
-        `INSERT INTO telefono_canales (telefono_id, canal_id, verificado, verificado_at)
-         VALUES (?, ?, 1, CURRENT_TIMESTAMP)`,
-        [telefonoId, canalId]
-      );
+      await insertarCanalVerificado(connection, telefonoId, canalId);
     }
   }
 
   async listarPorPersona(personId, connection = this.pool) {
     this.ensurePool();
-    const [filas] = await connection.query(
-      `SELECT t.id, t.tipo, t.principal, t.numero,
-              t.pais_id, pa.iso_alpha2 AS pais_iso, pa.phone_code AS prefijo,
-              -- ⚠️ EL CERO NACIONAL NO VA DETRAS DEL PREFIJO: +593 seguido de 0990000000 da
-              -- +5930990000000, que no es un numero. Se quita al internacionalizar y se
-              -- CONSERVA cuando no hay prefijo, porque entonces la forma local es la correcta.
-              -- No se veia porque hasta el 2026-08-30 el arranque creaba el telefono SIN pais.
-              CASE
-                WHEN COALESCE(pa.phone_code, '') = '' THEN t.numero
-                ELSE pa.phone_code || regexp_replace(t.numero, '^0+', '')
-              END AS numero_completo
-         FROM telefonos t
-         LEFT JOIN paises pa ON pa.id = t.pais_id
-        WHERE t.person_id = ? AND t.is_active = 1
-        ORDER BY t.principal DESC, t.id ASC`,
-      [personId]
-    );
-    const telefonos = filas ?? [];
+    const telefonos = await listarConPrefijo(connection, personId);
     if (!telefonos.length) return telefonos;
 
-    const ids = telefonos.map((t) => Number(t.id));
-    const [canales] = await connection.query(
-      `SELECT tc.telefono_id, cm.code, cm.name, tc.verificado, tc.verificado_at
-         FROM telefono_canales tc
-         JOIN canales_mensajeria cm ON cm.id = tc.canal_id
-        WHERE tc.telefono_id IN (${ids.map(() => "?").join(", ")})
-        ORDER BY cm.code ASC`,
-      ids
-    );
+    const canales = await canalesDeLosTelefonos(connection, telefonos.map((t) => Number(t.id)));
     const porTelefono = new Map();
-    for (const canal of canales ?? []) {
+    for (const canal of canales) {
       const lista = porTelefono.get(Number(canal.telefono_id)) ?? [];
       lista.push({ code: canal.code, name: canal.name, verificado: Number(canal.verificado) === 1, verificado_at: canal.verificado_at });
       porTelefono.set(Number(canal.telefono_id), lista);

@@ -3,7 +3,7 @@
 // MinIO sigue guardando los PDFs. Engine-transparente vía el adaptador.
 import * as Minio from "minio";
 import fs from "node:fs";
-import * as store from "../services/dossierStore.js";
+import * as store from "../datos/dossier.js";
 
 // --- MinIO: cliente, constantes y helpers (sin cambios respecto a la versión Mongo) ---
 const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");

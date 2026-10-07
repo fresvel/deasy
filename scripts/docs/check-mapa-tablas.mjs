@@ -191,7 +191,16 @@ for (const [ruta, decl] of Object.entries(flujos)) {
       for (const p of ficheros(carpetaDatos)) {
         const rel = relative(join(RAIZ, "backend"), p).split(sep).join("/");
         if (rel.includes("/datos/consulta/")) continue;   // su contrato ES cruzar
-        const cuerpo = readFileSync(p, "utf8").replace(/--[^\n]*/g, " ");
+        // ⚠️ SE QUITAN LOS COMENTARIOS ANTES DE BUSCAR, los de SQL y los de JavaScript. Es la misma
+        // lección que ya está escrita en `lib/mapa.mjs`: citar una tabla al explicar algo es lo
+        // natural, así que una comprobación que mire la prosa muerde justo cuando alguien documenta
+        // bien. Pasó el 2026-10-07: `identidad/datos/verificacionDeTelefono.js` decía «lo que mira
+        // `paises` está en datos/consulta/» —una frase CORRECTA, que señalaba precisamente dónde va
+        // lo que cruza— y la puerta la marcó como infracción.
+        const cuerpo = readFileSync(p, "utf8")
+          .replace(/\/\*[\s\S]*?\*\//g, " ")   // bloque de JavaScript
+          .replace(/\/\/[^\n]*/g, " ")         // línea de JavaScript
+          .replace(/--[^\n]*/g, " ");          // línea de SQL
         for (const tabla of tablas) {
           if (!new RegExp(`\\b${tabla}\\b`).test(cuerpo)) continue;
           const duena = mapa.dominioDe.get(tabla);

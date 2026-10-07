@@ -1,3 +1,11 @@
+// LOS CERTIFICADOS DE FIRMA de una persona (`person_certificates`).
+//
+// Vive en `datos/` y no en `services/` porque **ya era** un modulo de datos: siete consultas, un
+// `throw` que es el guard del pool, y `toPublic` para dar forma a la fila. No hay ni una regla de
+// negocio que extraer, asi que no se reescribio su API — se reconocio donde tenia que estar. El
+// nombre de la clase no cambia: quien la usaba sigue usandola igual.
+//
+// Nombra solo `person_certificates`, de `identidad`, asi que no es `datos/consulta/`.
 import { getPostgresPool } from "../../../config/postgres.js";
 
 export default class UserCertificateRepository {
@@ -26,7 +34,7 @@ export default class UserCertificateRepository {
   async findById(id) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      "SELECT * FROM person_certificates WHERE id = ? LIMIT 1",
+      `SELECT * FROM person_certificates WHERE id = ? LIMIT 1`,
       [id]
     );
     return rows?.[0] ?? null;
@@ -59,7 +67,7 @@ export default class UserCertificateRepository {
   async delete(certificateId, personId) {
     this.ensurePool();
     const [result] = await this.pool.query(
-      "DELETE FROM person_certificates WHERE id = ? AND person_id = ?",
+      `DELETE FROM person_certificates WHERE id = ? AND person_id = ?`,
       [certificateId, personId]
     );
     return result.affectedRows > 0;
@@ -68,7 +76,7 @@ export default class UserCertificateRepository {
   async clearDefaultForPerson(personId) {
     this.ensurePool();
     await this.pool.query(
-      "UPDATE person_certificates SET is_default = 0 WHERE person_id = ?",
+      `UPDATE person_certificates SET is_default = 0 WHERE person_id = ?`,
       [personId]
     );
   }
@@ -77,7 +85,7 @@ export default class UserCertificateRepository {
     this.ensurePool();
     await this.clearDefaultForPerson(personId);
     await this.pool.query(
-      "UPDATE person_certificates SET is_default = 1 WHERE id = ? AND person_id = ?",
+      `UPDATE person_certificates SET is_default = 1 WHERE id = ? AND person_id = ?`,
       [certificateId, personId]
     );
     return this.findOwnedById(personId, certificateId);

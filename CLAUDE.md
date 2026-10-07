@@ -696,6 +696,16 @@ dominios/<dominio>/
 | **escribir** | una tabla la escribe **sólo** el `datos/` de su dominio dueño | comprobación **C** |
 | **leer** | libre hacia otros dominios, **pero separado** en `datos/consulta/` | comprobación **E** |
 
+⚠️ **La E ignora los comentarios, y eso fue un arreglo, no un descuido.** Marcó como infracción la
+frase «lo que mira `paises` está en `datos/consulta/`» —que es **correcta** y señala precisamente
+dónde va lo que cruza—. Es la misma lección que ya estaba en `lib/mapa.mjs`: una comprobación que mire
+la prosa muerde justo cuando alguien documenta bien.
+
+⚠️ **Punto ciego abierto y medido: `check:instancias` no ve los CAMPOS DE CLASE.** Un
+`documentosLegales = new DocumentosLegales();` como campo se ejecuta en el constructor igual que si
+estuviera dentro — y `UserRepository` tiene uno. Hoy es **latente y no un fallo**, porque nadie
+instancia esa clase a nivel de módulo; si algún día alguien lo hace, este campo corre al importar.
+
 **Por qué la asimetría, medido:** el **3 %** de las escrituras del backend cruza dominios; el **29 %**
 de las lecturas. Prohibir que una lectura cruce sería absurdo —`units` se relaciona con los ocho
 dominios—, y dejarla mezclada con el `datos/` propio hace que **nada distinga una lectura legítima de
@@ -760,6 +770,36 @@ nadie: el backend no tiene lint, y una instancia sin usar es sintaxis perfecta.
 comentarios: un «Ver el porqué del diseño en el servicio.» se volvió «en el servicio().». Revisa las
 líneas de comentario del diff, que es donde no lo ve ningún test.
 
+⚠️ **Antes de dar por propia una consulta, PREGUNTA AL MAPA de quién es cada tabla.** No se adivina
+por el nombre: **`cargos` es de `identidad`**, no de `organizacion`, y por eso tres consultas del
+organigrama que parecían propias cruzan. Un dominio a ojo es un `datos/` mal puesto:
+
+```bash
+node -e 'const m=require("./scripts/docs/dominios.json");const t=process.argv[1];
+for(const[d,v]of Object.entries(m)){if(!d.startsWith("_")&&v.tablas&&t in v.tablas)console.log(d,v.tablas[t]);}' cargos
+```
+
+⚠️ **Y una puerta a techo cero NO es un censo.** `check:sql-aliases` cuenta plantillas de JavaScript:
+**no ve** una consulta con comillas dobles ni una con el nombre de tabla interpolado. En
+`organizacion` eso convirtió «15 consultas por mover» en **24** — un tercio más de trabajo del
+estimado. Para contar, cuenta; la puerta sólo dice que no hay alias roto.
+
+**Y en `identidad` se midió el otro lado del mismo agujero: 35 consultas del dominio estaban escritas
+con comillas dobles, así que NI `check:sql-aliases` NI `check:sql-comments` las miraban.** Pasarlas a
+plantilla —que es como están las demás— subió lo vigilado de **486 a 521 sentencias reales**, sin
+añadir ni una consulta. **Al escribir una consulta en `datos/`, usa plantilla aunque quepa en una
+línea**: con comillas dobles es invisible para las dos puertas.
+
+⚠️ **Y el contador de la puerta incluye PROSA**: un `` `UPDATE` `` citado dentro de un comentario le
+parece una sentencia. Por eso dice 638 donde las reales son 521. Si comparas dos medidas, quita los
+comentarios antes.
+
+⚠️ **ESTE BLOQUE SE PERDIÓ UNA VEZ, y conviene saber cómo.** Lo borró un reemplazo **por rango** —
+`s[:i] + nuevo + s[j:]`— que buscaba dos anclas y reescribía todo lo que había en medio, sin mirar qué
+era. Tres lecciones desaparecieron de `CLAUDE.md` en el commit `cab28655` y nadie se enteró: no hay
+puerta que vigile la prosa de este fichero. **Si editas por script con dos anclas, comprueba qué vas a
+borrar** (`assert` sobre el trozo intermedio, o reemplazo exacto en vez de rango).
+
 ⚠️ **Y al mover un dominio, recalcula los imports POR SCRIPT**, resolviendo cada ruta desde la
 posición vieja y reescribiéndola desde la nueva. En `chat` fueron **29 imports en 14 ficheros** y en
 `identidad` **102**: a mano es donde se cuela el que nadie prueba.
@@ -775,8 +815,12 @@ Tres cosas del reescritor que **ya costaron una corrida cada una** el 2026-10-07
    casi siempre, así que la excepción es invisible justo cuando más duele.
 3. ⚠️ **Hay rutas relativas que NO son imports.** `new URL("../../database/postgres_schema.sql",
    import.meta.url)` se rompe igual y ningún reescritor de imports la toca. Costó dos tests.
+4. ⚠️ **Y una ruta que pierde el `./` deja de ser una ruta.** `from "datos/certificados.js"` es un
+   **paquete** para ESM, y el error —`Cannot find package 'datos'`— no se parece al problema: dejó
+   **14 suites en rojo**. Lo escribe solo un `os.path.relpath`, que devuelve `datos/x.js` sin prefijo.
+   Si compones rutas por script, **añade el `./` tú**.
 
-**Ya hay puerta para las tres: `npm run check:rutas`** (`backend/scripts/check_relative_paths.mjs`),
+**Ya hay puerta para las cuatro: `npm run check:rutas`** (`backend/scripts/check_relative_paths.mjs`),
 en CI. Resuelve toda ruta relativa del backend —imports con cualquier comilla, `import()` dinámico y
 `new URL(…, import.meta.url)`— y falla si alguna no existe. **Era el hueco que este fichero nombraba
 y nadie tapaba**: ni `node --check` ni `check:imports` la ven, y antes sólo la veía el backend al
@@ -789,14 +833,22 @@ son **cinco**, y la lectura por niveles no sirve para separarlas: el RBAC ocupa 
 
 | Asunto | Tablas | Dónde vive su código |
 |---|---|---|
-| **La persona** | 10 — `persons`, `documentos_identidad`, `emails`, `telefonos`, `direcciones`, `dossiers`… | ✅ **`dominios/identidad/`** |
+| **La persona** | 10 — `persons`, `documentos_identidad`, `emails`, `telefonos`, `direcciones`, `dossiers`… | ✅ **`dominios/identidad/`**, con su subcapa |
 | **Catálogos** (n0) | 10 — `generos`, `estados_civiles`, `cargos`, `parentescos`… | `services/system/genericCatalog.js` (transversal declarado) |
 | **El acceso / RBAC** (n0 y n3) | 8 — `roles`, `permissions`, `role_assignments`, `actions`, `resources`… | `services/auth/RbacService.js` + `middlewares/rbac.js` |
 | **Los mecanismos** (n3) | 5 — códigos de verificación, `intentos_limitados`, `canales_bitacora` | `services/mail/`, `services/limites/`, `services/canales/` |
 | **Lo legal** (n1) | 2 — `consentimientos`, `documentos_legales` | `services/legal/` |
 
 **La primera tanda movió la persona** —50 ficheros: 1 puerta, 2 routers, 18 controllers y 31
-servicios—, que es de `identidad` en cualquier lectura. Los otros cuatro asuntos **siguen fuera a
+servicios— y la segunda cerró su subcapa: `routes/`, `controllers/` y `services/` con **cero
+consultas**, y las **103** repartidas en 9 ficheros de `datos/` (82 propias) y 8 de `datos/consulta/`
+(21 que cruzan). `UserRepository` bajó de **866 a 708 líneas**, y las **cuatro transacciones a mano**
+pasaron a `conTransaccion`.
+
+⚠️ **Dos ficheros no se extrajeron: se RECONOCIERON.** `UserCertificateRepository` y `dossierStore` ya
+*eran* módulos de datos —el segundo lo dice en su cabecera, y tiene **cero** `throw`—, así que se
+movieron a `datos/` **sin tocar su API**. Reescribir la interfaz de un módulo que ya estaba en su sitio
+no es mover código. Antes de extraer un servicio, mira si no es ya esto. Los otros cuatro asuntos **siguen fuera a
 propósito**, y el `index.js` del dominio lleva escrito el por qué de cada uno. El que más importa:
 
 ⚠️ **El RBAC NO entra tras la puerta de `identidad`.** Lo usa **todo router** de la aplicación, así

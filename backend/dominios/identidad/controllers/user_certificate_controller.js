@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import UserRepository from "../services/UserRepository.js";
-import UserCertificateRepository from "../services/UserCertificateRepository.js";
+import UserCertificateRepository from "../datos/certificados.js";
 import {
   ensureBucketExists,
   getMinioObjectStream,

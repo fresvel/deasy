@@ -1,4 +1,16 @@
-import { getPostgresPool } from "../../../config/postgres.js";
+import { getPostgresPool, conTransaccion } from "../../../config/postgres.js";
+import {
+  insertarPersona,
+  actualizarPersona,
+  actualizarFoto,
+  guardarAutoidentificacion as guardarAutoidentificacionEnDatos,
+  tieneAutoidentificacion
+} from "../datos/personas.js";
+import { canalesPorTelefono } from "../datos/telefonos.js";
+import { idDePaisPorIso } from "../datos/consulta/paisPorIso.js";
+import { personaPorId, personaPorCorreo, todasLasPersonas, buscarPersonas } from "../datos/consulta/personaCompleta.js";
+import { direccionesEnLote, telefonosEnLote } from "../datos/consulta/datosEnLote.js";
+import { datosPersonalesDe, paisDelCanton } from "../datos/consulta/datosPersonales.js";
 import DireccionService from "./DireccionService.js";
 import TelefonoService from "./TelefonoService.js";
 import EmailService from "./EmailService.js";
@@ -67,18 +79,15 @@ export default class UserRepository {
     if (!iso) {
       return null;
     }
-    const [rows] = await this.pool.query(
-      "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1",
-      [iso]
-    );
-    if (!rows?.length) {
+    const paisId = await idDePaisPorIso(this.pool, iso);
+    if (paisId === null) {
       const error = new Error(`La nacionalidad '${iso}' no corresponde a ningun pais del catalogo.`);
       // Marca para que el transporte lo traduzca a 400 y no a 500: es dato mal enviado por el
       // cliente, no una averia. Antes `pais` era texto libre y no habia nada que validar.
       error.status = 400;
       throw error;
     }
-    return Number(rows[0].id);
+    return paisId;
   }
 
   // Las direcciones viven en su tabla desde el paso 3, asi que hay que colgarlas de la fila antes de
@@ -105,19 +114,7 @@ export default class UserRepository {
   async findById(id) {
     this.ensurePool();
 
-    const [rows] = await this.pool.query(
-      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
-              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
-              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
-       FROM persons p
-       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
-       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
-       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
-       WHERE p.id = ? LIMIT 1`,
-      [id]
-    );
-
-    return this.conDirecciones(rows?.[0] ?? null);
+    return this.conDirecciones(await personaPorId(this.pool, id));
   }
 
   /**
@@ -146,102 +143,42 @@ export default class UserRepository {
       return null;
     }
 
-    const [rows] = await this.pool.query(
-      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
-              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
-              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
-       FROM persons p
-       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
-       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
-       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
-       WHERE EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ? AND e.is_active = 1) LIMIT 1`,
-      [correo]
-    );
-
-    return this.conDirecciones(rows?.[0] ?? null);
+    return this.conDirecciones(await personaPorCorreo(this.pool, correo));
   }
 
   async findAll() {
     this.ensurePool();
 
-    const [rows] = await this.pool.query(
-      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
-              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
-              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
-       FROM persons p
-       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
-       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
-       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
-       ORDER BY p.created_at DESC`
-    );
-
     // Una sola consulta para TODAS las direcciones, no una por persona: en una lista de 43
     // usuarios eso serian 43 viajes a la base para pintar una tabla.
-    return this.adjuntarDireccionesEnLote(rows ?? []);
+    return this.adjuntarDireccionesEnLote(await todasLasPersonas(this.pool));
   }
 
   async adjuntarDireccionesEnLote(rows) {
     if (!rows.length) return rows;
     const ids = rows.map((r) => Number(r.id)).filter(Boolean);
     if (!ids.length) return rows;
-    const [filas] = await this.pool.query(
-      `SELECT d.person_id, d.id, d.tipo, d.principal,
-              pa.iso_alpha2 AS pais_iso, pa.name AS pais,
-              pr.name AS provincia, ca.name AS canton,
-              d.sector, d.barrio,
-              d.calle_primaria, d.calle_secundaria, d.referencia, d.latitud, d.longitud
-         FROM direcciones d
-         LEFT JOIN paises pa ON pa.id = d.pais_id
-         LEFT JOIN provincias pr ON pr.id = d.provincia_id
-         LEFT JOIN cantones ca ON ca.id = d.canton_id
-        WHERE d.person_id IN (${ids.map(() => "?").join(", ")}) AND d.is_active = 1
-        ORDER BY d.principal DESC, d.id ASC`,
-      ids
-    );
+    const filas = await direccionesEnLote(this.pool, ids);
     const porPersona = new Map();
-    for (const fila of filas ?? []) {
+    for (const fila of filas) {
       const lista = porPersona.get(Number(fila.person_id)) ?? [];
       lista.push(fila);
       porPersona.set(Number(fila.person_id), lista);
     }
-    // Los telefonos, tambien en lote y por el mismo motivo. Devolver `telefonos: []` aqui seria
-    // MENTIR: `whatsapp` se deriva de esa lista, asi que una lista vacia lo dejaria en null para
-    // todo el mundo y pareceria que nadie tiene numero.
-    const [tels] = await this.pool.query(
-      `SELECT t.person_id, t.id, t.tipo, t.principal, t.numero,
-              pa.iso_alpha2 AS pais_iso, pa.phone_code AS prefijo,
-              -- ⚠️ EL CERO NACIONAL NO VA DETRAS DEL PREFIJO: +593 seguido de 0990000000 da
-              -- +5930990000000, que no es un numero. Se quita al internacionalizar y se
-              -- CONSERVA cuando no hay prefijo, porque entonces la forma local es la correcta.
-              -- No se veia porque hasta el 2026-08-30 el arranque creaba el telefono SIN pais.
-              CASE
-                WHEN COALESCE(pa.phone_code, '') = '' THEN t.numero
-                ELSE pa.phone_code || regexp_replace(t.numero, '^0+', '')
-              END AS numero_completo
-         FROM telefonos t
-         LEFT JOIN paises pa ON pa.id = t.pais_id
-        WHERE t.person_id IN (${ids.map(() => "?").join(", ")}) AND t.is_active = 1
-        ORDER BY t.principal DESC, t.id ASC`,
-      ids
-    );
+    // Los telefonos, tambien en lote y por el mismo motivo.
+    const tels = await telefonosEnLote(this.pool, ids);
     const telefonosPorPersona = new Map();
     const telefonoIds = [];
-    for (const tel of tels ?? []) {
+    for (const tel of tels) {
       telefonoIds.push(Number(tel.id));
       const lista = telefonosPorPersona.get(Number(tel.person_id)) ?? [];
       lista.push({ ...tel, canales: [] });
       telefonosPorPersona.set(Number(tel.person_id), lista);
     }
     if (telefonoIds.length) {
-      const [canales] = await this.pool.query(
-        `SELECT tc.telefono_id, cm.code, cm.name, tc.verificado, tc.verificado_at
-           FROM telefono_canales tc
-           JOIN canales_mensajeria cm ON cm.id = tc.canal_id
-          WHERE tc.telefono_id IN (${telefonoIds.map(() => "?").join(", ")})`,
-        telefonoIds
-      );
+      const canales = await canalesPorTelefono(this.pool, telefonoIds);
       const porTelefono = new Map();
-      for (const canal of canales ?? []) {
+      for (const canal of canales) {
         const lista = porTelefono.get(Number(canal.telefono_id)) ?? [];
         lista.push({ code: canal.code, name: canal.name, verificado: Number(canal.verificado) === 1, verificado_at: canal.verificado_at });
         porTelefono.set(Number(canal.telefono_id), lista);
@@ -319,44 +256,7 @@ export default class UserRepository {
       ? `WHERE ${conditions.join(" AND ")}`
       : "";
 
-    const [rows] = await this.pool.query(
-      `SELECT
-         p.*,
-         sdoc.numero AS cedula,
-         semail.direccion AS email,
-         GROUP_CONCAT(DISTINCT ut.id ORDER BY ut.name SEPARATOR ',') AS unit_type_ids,
-         GROUP_CONCAT(DISTINCT ut.name ORDER BY ut.name SEPARATOR ' | ') AS unit_type_names,
-         GROUP_CONCAT(DISTINCT u.id ORDER BY COALESCE(u.label, u.name) SEPARATOR ',') AS unit_ids,
-         GROUP_CONCAT(DISTINCT COALESCE(u.label, u.name) ORDER BY COALESCE(u.label, u.name) SEPARATOR ' | ') AS unit_names,
-         GROUP_CONCAT(DISTINCT c.id ORDER BY c.name SEPARATOR ',') AS cargo_ids,
-         GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ' | ') AS cargo_names
-       FROM persons p
-       LEFT JOIN documentos_identidad sdoc
-         ON sdoc.person_id = p.id AND sdoc.principal = 1 AND sdoc.is_active = 1
-       LEFT JOIN emails semail
-         ON semail.person_id = p.id AND semail.principal = 1 AND semail.is_active = 1
-       LEFT JOIN position_assignments pa
-         ON pa.person_id = p.id
-        AND pa.is_current = 1
-       LEFT JOIN unit_positions up
-         ON up.id = pa.position_id
-        AND up.is_active = 1
-       LEFT JOIN units u
-         ON u.id = up.unit_id
-        AND u.is_active = 1
-       LEFT JOIN unit_types ut
-         ON ut.id = u.unit_type_id
-       LEFT JOIN cargos c
-         ON c.id = up.cargo_id
-        AND c.is_active = 1
-        ${whereClause}
-       GROUP BY p.id, sdoc.numero, semail.direccion
-        ORDER BY p.created_at DESC
-        LIMIT ?`,
-      [...params, safeLimit]
-    );
-
-    return rows;
+    return buscarPersonas(this.pool, whereClause, params, safeLimit);
   }
 
   documentosLegales = new DocumentosLegales();
@@ -408,41 +308,34 @@ export default class UserRepository {
     // otra persona es ella misma, media hora antes. Quien se equivoca una vez no puede reintentar.
     //
     // O entra todo o no entra nada.
-    const conexion = await this.pool.getConnection();
-    let result;
-    try {
-      await conexion.beginTransaction();
-
-      [result] = await conexion.query(
-        `INSERT INTO persons (${columns.join(", ")}) VALUES (${placeholders})`,
-        values
-      );
+    const result = await conTransaccion(async (conexion) => {
+      const insertada = await insertarPersona(conexion, columns, values);
 
       // Los satelites van DESPUES porque necesitan el id de la persona; ahora, dentro de la misma
       // transaccion, ese orden ya no deja rastro si algo falla.
       if (userData.direccion) {
-        await this.direcciones.guardarPrincipal(result.insertId, userData.direccion, conexion);
+        await this.direcciones.guardarPrincipal(insertada.insertId, userData.direccion, conexion);
       }
       if (userData.telefono) {
-        await this.telefonos.guardarPrincipal(result.insertId, userData.telefono, conexion);
+        await this.telefonos.guardarPrincipal(insertada.insertId, userData.telefono, conexion);
       }
       if (userData.email) {
-        await this.emails.guardarPrincipal(result.insertId, userData.email, conexion);
+        await this.emails.guardarPrincipal(insertada.insertId, userData.email, conexion);
       }
       // El documento de identidad: `documento` es el objeto {tipo, pais, numero}; `cedula` es la
       // forma corta que sigue aceptandose y significa "documento nacional".
       const documento = userData.documento ?? (userData.cedula ? { tipo: TIPO_NACIONAL, numero: userData.cedula } : null);
       if (documento) {
-        const documentoId = await this.documentos.guardarPrincipal(result.insertId, documento, conexion);
+        const documentoId = await this.documentos.guardarPrincipal(insertada.insertId, documento, conexion);
         // Y su entrada en la bitacora, en ESTA MISMA transaccion: el alta de un documento es una
         // escritura sobre un dato sensible. Quien la hace es la propia persona que se registra.
         await this.bitacora.registrarEscritura({
-          actorId: result.insertId,
+          actorId: insertada.insertId,
           ip: userData.ip ?? null,
           recurso: resolveTableResource("documentos_identidad"),
           tabla: "documentos_identidad",
           accion: "create",
-          fila: { id: documentoId, person_id: result.insertId },
+          fila: { id: documentoId, person_id: insertada.insertId },
           campos: Object.keys(documento)
         }, conexion);
       }
@@ -453,20 +346,14 @@ export default class UserRepository {
       // puede no escribirse nunca. O entran los dos o no entra ninguno.
       if (userData.consentimientos?.length) {
         await this.documentosLegales.registrarAceptacion(conexion, {
-          personId: result.insertId,
+          personId: insertada.insertId,
           documentos: userData.consentimientos,
           ip: userData.ip,
         });
       }
 
-      await conexion.commit();
-    } catch (error) {
-      await conexion.rollback().catch(() => {});
-      throw error;
-    } finally {
-      // Sin esto se agotan las diez conexiones del pool y la aplicacion entera se cuelga esperando.
-      conexion.release();
-    }
+      return insertada;
+    }, this.pool);
 
     return {
       id: result.insertId,
@@ -579,20 +466,7 @@ export default class UserRepository {
   async datosPersonalesDe(personId) {
     this.ensurePool();
 
-    const [filas] = await this.pool.query(
-      `SELECT to_char(p.fecha_nacimiento, 'YYYY-MM-DD') AS fecha_nacimiento,
-              p.nacimiento_pais_id, p.nacimiento_canton_id, ca.provincia_id AS nacimiento_provincia_id,
-              p.sexo, p.estado_civil_id,
-              aut.genero_id, aut.autoidentificacion_etnica_id
-         FROM persons p
-         LEFT JOIN cantones ca ON ca.id = p.nacimiento_canton_id
-         LEFT JOIN persona_autoidentificacion aut ON aut.person_id = p.id
-        WHERE p.id = ?
-        LIMIT 1`,
-      [personId]
-    );
-
-    const fila = filas?.[0];
+    const fila = await datosPersonalesDe(this.pool, personId);
     if (!fila) return null;
     const datos = Object.fromEntries(CAMPOS_DATOS_PERSONALES.map((campo) => [campo, fila[campo] ?? null]));
     datos.nacimiento_provincia_id = fila.nacimiento_provincia_id ?? null;
@@ -622,10 +496,7 @@ export default class UserRepository {
       throw new Error("El id de la persona es requerido");
     }
 
-    await this.pool.query(
-      "UPDATE persons SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [photoUrl, id]
-    );
+    await actualizarFoto(this.pool, id, photoUrl);
 
     const updated = await this.findById(id);
 
@@ -704,12 +575,7 @@ export default class UserRepository {
       return null;
     }
 
-    values.push(userId);
-
-    await this.pool.query(
-      `UPDATE persons SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
-      values
-    );
+    await actualizarPersona(this.pool, userId, fields, values);
 
     if (direccion) {
       await this.direcciones.guardarPrincipal(userId, direccion);
@@ -734,12 +600,7 @@ export default class UserRepository {
     this.ensurePool();
     const columnas = CAMPOS_AUTOIDENTIFICACION.filter((campo) => Object.hasOwn(datos, campo));
     if (!columnas.length) return;
-    await ejecutor.query(
-      `INSERT INTO persona_autoidentificacion (person_id, ${columnas.join(", ")})
-       VALUES (?, ${columnas.map(() => "?").join(", ")})
-       ON CONFLICT (person_id) DO UPDATE SET ${columnas.map((c) => `${c} = EXCLUDED.${c}`).join(", ")}`,
-      [personId, ...columnas.map((c) => datos[c])]
-    );
+    await guardarAutoidentificacionEnDatos(ejecutor, personId, columnas, columnas.map((c) => datos[c]));
   }
 
   // LO SENSIBLE QUE EL TITULAR CAMBIA DESDE SU PERFIL -- su documento, su genero y su etnia--, con su
@@ -754,9 +615,7 @@ export default class UserRepository {
   async guardarSensiblesDelTitular(userId, { documento = null, autoidentificacion = null } = {}, { ip = null } = {}) {
     if (!documento && !autoidentificacion) return;
     this.ensurePool();
-    const conexion = await this.pool.getConnection();
-    try {
-      await conexion.beginTransaction();
+    await conTransaccion(async (conexion) => {
       if (documento) {
         const previo = await this.documentos.principalDe(userId, conexion);
         const documentoId = await this.documentos.guardarPrincipal(userId, documento, conexion);
@@ -771,28 +630,19 @@ export default class UserRepository {
         }, conexion);
       }
       if (autoidentificacion) {
-        const [existentes] = await conexion.query(
-          "SELECT person_id FROM persona_autoidentificacion WHERE person_id = ? LIMIT 1",
-          [userId]
-        );
+        const yaDeclaraba = await tieneAutoidentificacion(conexion, userId);
         await this.guardarAutoidentificacion(userId, autoidentificacion, conexion);
         await this.bitacora.registrarEscritura({
           actorId: userId,
           ip,
           recurso: resolveTableResource("persona_autoidentificacion"),
           tabla: "persona_autoidentificacion",
-          accion: existentes?.length ? "update" : "create",
+          accion: yaDeclaraba ? "update" : "create",
           fila: { person_id: userId },
           campos: Object.keys(autoidentificacion)
         }, conexion);
       }
-      await conexion.commit();
-    } catch (error) {
-      await conexion.rollback().catch(() => {});
-      throw error;
-    } finally {
-      conexion.release?.();
-    }
+    }, this.pool);
   }
 
   // Comprueba que `nacimiento_canton_id` cuelgue de `nacimiento_pais_id`. Si el UPDATE trae solo uno
@@ -808,20 +658,13 @@ export default class UserRepository {
     const paisId = traePais ? payload.nacimiento_pais_id : actual?.nacimiento_pais_id;
     if (cantonId === null || cantonId === undefined || cantonId === "") return;
 
-    const [filas] = await this.pool.query(
-      `SELECT p.pais_id
-         FROM cantones c
-         INNER JOIN provincias p ON p.id = c.provincia_id
-        WHERE c.id = ?
-        LIMIT 1`,
-      [Number(cantonId)]
-    );
-    if (!filas?.length) {
+    const paisDelCantonId = await paisDelCanton(this.pool, cantonId);
+    if (paisDelCantonId === null) {
       const error = new Error("El cantón de nacimiento no está en el catálogo.");
       error.status = 400;
       throw error;
     }
-    if (paisId !== null && paisId !== undefined && Number(filas[0].pais_id) !== Number(paisId)) {
+    if (paisId !== null && paisId !== undefined && paisDelCantonId !== Number(paisId)) {
       const error = new Error("El cantón de nacimiento no pertenece al país de nacimiento declarado.");
       error.status = 400;
       throw error;

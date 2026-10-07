@@ -1,6 +1,15 @@
 import crypto from "node:crypto";
 import { numerosIguales, numeroMalGuardado } from "./numerosDeTelefono.js";
-import { getPostgresPool } from "../../../config/postgres.js";
+import { getPostgresPool, conTransaccion } from "../../../config/postgres.js";
+import {
+  borrarLlavesVivas,
+  insertarLlave,
+  idDeCanalActivo,
+  consumirLlave,
+  marcarCanalVerificado
+} from "../datos/verificacionDeTelefono.js";
+import { telefonoDelDueno, llavePorHuella, cualesVerificaron as cualesVerificaronEnDatos }
+  from "../datos/consulta/telefonoConSuPais.js";
 
 // Crear, resolver y consumir la llave con la que alguien demuestra que un número es suyo.
 //
@@ -62,17 +71,10 @@ export default class TelefonoVerificacionService {
       throw errorDeCliente("Hace falta saber de quién es el teléfono.");
     }
 
-    const [telefonos] = await connection.query(
-      `SELECT t.id, t.numero, p.phone_code
-         FROM telefonos t
-         LEFT JOIN paises p ON p.id = t.pais_id
-        WHERE t.id = ? AND t.person_id = ? AND t.is_active = 1
-        LIMIT 1`,
-      [id, duenyo]
-    );
+    const telefono = await telefonoDelDueno(connection, id, duenyo);
     // Un teléfono ajeno responde lo MISMO que uno inexistente. Decir «existe pero no es tuyo»
     // convierte esta ruta en un oráculo para averiguar qué identificadores están ocupados.
-    if (!telefonos?.length) {
+    if (!telefono) {
       throw errorDeCliente("Ese teléfono no existe.");
     }
 
@@ -81,7 +83,7 @@ export default class TelefonoVerificacionService {
     // si se dejara llegar hasta ahí, el usuario recorrería el canal entero para que le dijeran «ese
     // número no es el tuyo», que es MENTIRA y además no le dice qué arreglar. `telefonos.pais_id`
     // es nullable, así que el caso existe de verdad.
-    if (!telefonos[0].phone_code) {
+    if (!telefono.phone_code) {
       throw errorDeCliente(
         "Ese teléfono no tiene país. Edítalo y elige el país antes de verificarlo."
       );
@@ -91,26 +93,20 @@ export default class TelefonoVerificacionService {
     // veces compone `593593…`, que no es el teléfono de nadie. Se corta aquí por el mismo motivo
     // que el caso de arriba: dejarlo llegar al final produce un «ese número no es el tuyo» que es
     // MENTIRA y no le dice a nadie qué arreglar.
-    if (numeroMalGuardado(telefonos[0])) {
+    if (numeroMalGuardado(telefono)) {
       throw errorDeCliente(
         "Ese teléfono está guardado con el prefijo del país dentro del número. Edítalo y deja " +
         "sólo la parte local."
       );
     }
 
-    await connection.query(
-      "DELETE FROM telefono_verification_keys WHERE telefono_id = ? AND consumida_at IS NULL",
-      [id]
-    );
+    await borrarLlavesVivas(connection, id);
 
     const llave = generarLlave();
     const expira = new Date(Date.now() + MINUTOS_DE_VIDA * 60 * 1000);
-    await connection.query(
-      "INSERT INTO telefono_verification_keys (telefono_id, llave_hash, expira_at) VALUES (?, ?, ?)",
-      [id, huellaDeLlave(llave), expira]
-    );
+    await insertarLlave(connection, id, huellaDeLlave(llave), expira);
 
-    return { llave, expira_at: expira, telefono: telefonos[0] };
+    return { llave, expira_at: expira, telefono };
   }
 
   /**
@@ -138,17 +134,7 @@ export default class TelefonoVerificacionService {
 
   /** La fila de la llave con el teléfono al que pertenece, y en qué estado está. Privada. */
   async #buscar(llave, connection) {
-    const [filas] = await connection.query(
-      `SELECT k.id, k.telefono_id, k.expira_at, k.consumida_at, t.numero, t.person_id, p.phone_code
-         FROM telefono_verification_keys k
-         INNER JOIN telefonos t ON t.id = k.telefono_id
-         LEFT JOIN paises p ON p.id = t.pais_id
-        WHERE k.llave_hash = ?
-        LIMIT 1`,
-      [huellaDeLlave(llave)]
-    );
-
-    const fila = filas?.[0] ?? null;
+    const fila = await llavePorHuella(connection, huellaDeLlave(llave));
     if (!fila) return { estado: "desconocida", fila: null };
     if (fila.consumida_at) return { estado: "consumida", fila };
     if (new Date(fila.expira_at) < new Date()) return { estado: "caducada", fila };
@@ -182,63 +168,39 @@ export default class TelefonoVerificacionService {
    * verificado. No hay una bandera en `telefonos` que pueda quedarse en desacuerdo con las filas.
    */
   async confirmar({ llave, numero, canal }) {
-    const conexion = await this.pool.getConnection();
-    try {
-      await conexion.beginTransaction();
-
+    // La transacción la abre `conTransaccion`, que hace rollback y propaga ante cualquier error, y
+    // suelta la conexión siempre — sin eso se agotan las diez del pool y la aplicación se cuelga.
+    //
+    // ⚠️ LOS TRES RETORNOS DE «no verificado» YA NO HACEN `rollback` EXPLÍCITO, y es indistinguible:
+    // ninguno de los tres ha escrito nada cuando sale —el estado no es válido, el número no coincide,
+    // o el `UPDATE` tocó cero filas—, así que confirmar una transacción vacía y deshacerla hacen lo
+    // mismo. Lo que sí sigue deshaciendo es el canal inexistente, porque ése LANZA.
+    return conTransaccion(async (conexion) => {
       const { estado, fila } = await this.#buscar(llave, conexion);
       if (estado !== "valida") {
-        await conexion.rollback();
         return { verificado: false, estado };
       }
 
       // La comparación vive en su módulo y conoce el país. Un teléfono guardado SIN país se rechaza
       // aquí dentro: sin prefijo no hay comparación internacional que valga.
       if (!numerosIguales(fila, numero)) {
-        await conexion.rollback();
         return { verificado: false, estado: "numero_distinto" };
       }
 
-      const [canales] = await conexion.query(
-        "SELECT id FROM canales_mensajeria WHERE code = ? AND is_active = 1 LIMIT 1",
-        [String(canal ?? "").trim().toLowerCase()]
-      );
-      if (!canales?.length) {
-        await conexion.rollback();
+      const canalId = await idDeCanalActivo(conexion, String(canal ?? "").trim().toLowerCase());
+      if (!canalId) {
         throw errorDeCliente(`El canal '${canal}' no existe o no está activo.`);
       }
-      const canalId = Number(canales[0].id);
 
-      const [gastada] = await conexion.query(
-        `UPDATE telefono_verification_keys
-            SET consumida_at = CURRENT_TIMESTAMP, canal_id = ?
-          WHERE llave_hash = ? AND consumida_at IS NULL`,
-        [canalId, huellaDeLlave(llave)]
-      );
-      // ⚠️ SE CUENTA POR `affectedRows`, no por la longitud del array. El adaptador decide por el
-      // PRIMER VERBO: un UPDATE devuelve una CABECERA `{affectedRows}`, no filas — está explicado en
-      // `services/admin/org/taskAssignment.js:262`, donde el mismo despiste costó el defecto 1.10.
-      // Contar mal aquí no daría un error: daría «ya consumida» SIEMPRE, y en silencio.
-      //
       // Cero filas significa que otro mensaje la gastó entre la lectura y esta escritura. Es la
-      // carrera, y aquí se pierde limpiamente en vez de verificar dos veces.
-      if (!Number(gastada?.affectedRows)) {
-        await conexion.rollback();
+      // carrera, y aquí se pierde limpiamente en vez de verificar dos veces. Por qué se cuenta por
+      // `affectedRows` y no por la longitud del array está en la consulta.
+      if (!(await consumirLlave(conexion, huellaDeLlave(llave), canalId))) {
         return { verificado: false, estado: "consumida" };
       }
 
-      // ⚠️ NO se toca `telefonos`: esa tabla NO tiene columna `verificado`, y es a propósito. El
-      // esquema lo dice donde importa — la verificación es POR CANAL, que es lo que el modelo viejo
-      // no podía decir: `verify_whatsapp` era una bandera suelta que no distinguía «este número
-      // existe» de «este número tiene WhatsApp».
-      await conexion.query(
-        `INSERT INTO telefono_canales (telefono_id, canal_id, verificado, verificado_at)
-         VALUES (?, ?, 1, CURRENT_TIMESTAMP)
-         ON DUPLICATE KEY UPDATE verificado = 1, verificado_at = CURRENT_TIMESTAMP`,
-        [Number(fila.telefono_id), canalId]
-      );
+      await marcarCanalVerificado(conexion, Number(fila.telefono_id), canalId);
 
-      await conexion.commit();
       // `personId` viaja para que quien llame pueda AVISAR a esa sesion por tiempo real. Sale de la
       // consulta, no de un argumento: quien confirma es el canal, y el canal no sabe de personas
       // --y no debe: una llave filtrada no puede servir para averiguar de quien es un numero.
@@ -247,13 +209,7 @@ export default class TelefonoVerificacionService {
         telefonoId: Number(fila.telefono_id),
         personId: Number(fila.person_id),
       };
-    } catch (error) {
-      await conexion.rollback().catch(() => {});
-      throw error;
-    } finally {
-      // Sin esto se agotan las diez del pool y la aplicación entera se cuelga esperando.
-      conexion.release();
-    }
+    }, this.pool);
   }
 
   /**
@@ -281,18 +237,7 @@ export default class TelefonoVerificacionService {
     const limpios = [...new Set((numeros ?? []).map((n) => String(n).replace(/\D/g, "")).filter(Boolean))];
     if (!limpios.length) return new Set();
 
-    const huecos = limpios.map(() => "?").join(", ");
-    const [filas] = await this.pool.query(
-      // El número se compone igual que en el resto del sistema: prefijo del país + parte local. Se
-      // compara así y no por partes porque lo que llega del canal es UNA cadena internacional.
-      `SELECT DISTINCT regexp_replace(p.phone_code, '\\D', '', 'g') || t.numero AS internacional
-         FROM telefonos t
-         INNER JOIN paises p ON p.id = t.pais_id
-         INNER JOIN telefono_verification_keys k
-                 ON k.telefono_id = t.id AND k.consumida_at IS NOT NULL
-        WHERE regexp_replace(p.phone_code, '\\D', '', 'g') || t.numero IN (${huecos})`,
-      limpios
-    );
-    return new Set((filas ?? []).map((f) => f.internacional));
+    const filas = await cualesVerificaronEnDatos(this.pool, limpios);
+    return new Set(filas.map((f) => f.internacional));
   }
 }

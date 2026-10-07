@@ -36,7 +36,7 @@ export { default as dossierRouter } from "./routes/dossier_router.js";
 
 // Los ocho símbolos que de verdad se usan desde fuera (medido: 14 importadores en 11 ficheros)
 export { default as UserRepository } from "./services/UserRepository.js";
-export { default as UserCertificateRepository } from "./services/UserCertificateRepository.js";
+export { default as UserCertificateRepository } from "./datos/certificados.js";
 export { default as EmailService } from "./services/EmailService.js";
 export { default as TelefonoService } from "./services/TelefonoService.js";
 export {

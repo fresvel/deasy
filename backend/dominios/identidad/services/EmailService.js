@@ -1,4 +1,14 @@
 import { getPostgresPool } from "../../../config/postgres.js";
+import {
+  otroDuenoDeLaDireccion,
+  principalCrudo,
+  actualizarPrincipal,
+  insertarPrincipal,
+  principalVigente,
+  listarDeLaPersona,
+  personaConLaDireccion,
+  marcarVerificado as marcarVerificadoEnDatos
+} from "../datos/emails.js";
 
 // Los correos de una persona.
 //
@@ -72,82 +82,42 @@ export default class EmailService {
 
     // La direccion es de UNA persona. Se dice antes de que lo diga el indice, porque el error de
     // PostgreSQL no le sirve a nadie.
-    const [ajenos] = await connection.query(
-      "SELECT id FROM emails WHERE direccion = ? AND person_id <> ? LIMIT 1",
-      [direccion, personId]
-    );
-    if (ajenos?.length) {
+    if (await otroDuenoDeLaDireccion(connection, direccion, personId)) {
       throw errorDeConflicto("Ese correo ya está registrado por otra persona.");
     }
 
-    const [existentes] = await connection.query(
-      "SELECT id, direccion, verificado FROM emails WHERE person_id = ? AND principal = 1 LIMIT 1",
-      [personId]
-    );
-
-    if (existentes?.length) {
-      const actual = existentes[0];
+    const actual = await principalCrudo(connection, personId);
+    if (actual) {
       // CAMBIAR DE DIRECCION DESVERIFICA. Es el punto en el que un modelo descuidado deja entrar a
       // cualquiera: si la verificacion sobreviviera al cambio, bastaria con verificar un correo
       // propio y luego apuntarlo a otro para heredar la confianza.
       const cambia = normalizar(actual.direccion) !== direccion;
-      await connection.query(
-        `UPDATE emails
-            SET direccion = ?, tipo = ?${cambia ? ", verificado = 0, verificado_at = NULL" : ""}
-          WHERE id = ?`,
-        [direccion, tipo, Number(actual.id)]
-      );
+      await actualizarPrincipal(connection, actual.id, { direccion, tipo, desverificar: cambia });
       return Number(actual.id);
     }
 
-    const [resultado] = await connection.query(
-      "INSERT INTO emails (person_id, tipo, direccion, principal) VALUES (?, ?, ?, 1)",
-      [personId, tipo, direccion]
-    );
-    return resultado?.insertId ?? null;
+    return insertarPrincipal(connection, personId, tipo, direccion);
   }
 
   async principalDe(personId, connection = this.pool) {
     this.ensurePool();
-    const [filas] = await connection.query(
-      `SELECT id, tipo, direccion, verificado, verificado_at
-         FROM emails
-        WHERE person_id = ? AND principal = 1 AND is_active = 1
-        LIMIT 1`,
-      [personId]
-    );
-    return filas?.[0] ?? null;
+    return principalVigente(connection, personId);
   }
 
   async listarPorPersona(personId, connection = this.pool) {
     this.ensurePool();
-    const [filas] = await connection.query(
-      `SELECT id, tipo, direccion, verificado, verificado_at, principal
-         FROM emails
-        WHERE person_id = ? AND is_active = 1
-        ORDER BY principal DESC, id ASC`,
-      [personId]
-    );
-    return filas ?? [];
+    return listarDeLaPersona(connection, personId);
   }
 
-  // Por aqui entra el login. Busca por CUALQUIERA de los correos de la persona, no solo el
-  // principal: si alguien se registro con el personal y luego declara el institucional, los dos
-  // deben seguir sirviendo para entrar.
+  // Por aqui entra el login. La consulta busca por CUALQUIERA de los correos de la persona; lo que
+  // se queda aqui es NORMALIZAR, porque de eso depende que el indice unico signifique algo.
   async buscarPersonaPorEmail(direccion, connection = this.pool) {
     this.ensurePool();
-    const [filas] = await connection.query(
-      `SELECT person_id FROM emails WHERE direccion = ? AND is_active = 1 LIMIT 1`,
-      [normalizar(direccion)]
-    );
-    return filas?.length ? Number(filas[0].person_id) : null;
+    return personaConLaDireccion(connection, normalizar(direccion));
   }
 
   async marcarVerificado(emailId, connection = this.pool) {
-    await connection.query(
-      "UPDATE emails SET verificado = 1, verificado_at = CURRENT_TIMESTAMP WHERE id = ?",
-      [Number(emailId)]
-    );
+    await marcarVerificadoEnDatos(connection, emailId);
   }
 }
 

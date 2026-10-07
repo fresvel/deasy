@@ -1,4 +1,8 @@
 // Acceso a datos del dossier sobre el núcleo relacional (Fase 6, ex-MongoDB).
+//
+// ⚠️ Está en `datos/` porque **ya era** esto: ocho consultas, cero `throw`, y lo demás son los
+// valores por defecto de cada sección y el parseo del JSON — dar forma, no decidir. Se movió
+// desde `services/dossierStore.js` sin tocar su API.
 // Modelo de 2 tablas: dossiers (raíz por person_id) + dossier_items (una fila
 // por ítem, con `section` + `data` JSONB/JSON + url_documento). Engine-transparente
 // vía el adaptador (config/postgres.js).
@@ -7,7 +11,7 @@
 // defaults por sección replican exactamente los del schema Mongoose.
 
 import { getPostgresPool } from "../../../config/postgres.js";
-import { resolverPersonaPorNumero } from "./DocumentoIdentidadService.js";
+import { resolverPersonaPorNumero } from "../services/DocumentoIdentidadService.js";
 
 const pool = () => getPostgresPool();
 

@@ -13,6 +13,12 @@
 // ⚠️ Y MIRA LO QUE NO ES UN IMPORT. Un `new URL("../../database/postgres_schema.sql",
 // import.meta.url)` es una ruta relativa igual, y al mover un fichero se rompe igual — pero ningun
 // reescritor de imports la toca. Costo dos tests en rojo el mismo dia.
+//
+// ⚠️ Y MIRA LAS RUTAS QUE PERDIERON EL `./`. `from "datos/certificados.js"` no es una ruta relativa
+// para ESM: es un PAQUETE, y el error que da es `Cannot find package 'datos'`, que no se parece en
+// nada al problema. Lo escribio un `os.path.relpath` que devuelve `datos/x.js` sin prefijo, y esta
+// puerta —que solo miraba lo que empieza por `.`— lo dejo pasar: 14 suites en rojo. Se reconoce con
+// certeza porque el fichero existe EN DISCO junto al que lo importa; un paquete de verdad no.
 import { readdir, readFile } from "node:fs/promises";
 import { access } from "node:fs/promises";
 import path from "node:path";
@@ -40,12 +46,23 @@ const PATRONES = [
 
 const existe = async (p) => { try { await access(p); return true; } catch { return false; } };
 
+// Un especificador SIN `./` que ademas existe como fichero al lado del que lo importa: perdio el
+// prefijo. Se exige la extension para no confundirlo con un paquete (`express`, `node:fs`).
+const BARE = /\bfrom\s+['"]([A-Za-z_$][^'"\n]*\.(?:js|mjs|cjs|json))['"]/g;
+
 const fallos = [];
 let ficheros = 0;
 let rutas = 0;
 for (const fichero of await listar(RAIZ)) {
   ficheros += 1;
   const src = await readFile(fichero, "utf8");
+  for (const m of src.matchAll(BARE)) {
+    const destino = path.resolve(path.dirname(fichero), m[1]);
+    if (await existe(destino)) {
+      const linea = src.slice(0, m.index).split("\n").length;
+      fallos.push({ rel: path.relative(RAIZ, fichero), linea, que: "sin ./", ruta: m[1] });
+    }
+  }
   for (const { que, re } of PATRONES) {
     for (const m of src.matchAll(re)) {
       rutas += 1;
@@ -65,6 +82,7 @@ if (fallos.length) {
   }
   console.error("\nSi acabas de mover codigo: recalcula la ruta desde la posicion NUEVA, y acuerdate de");
   console.error("las que no son imports (`new URL(..., import.meta.url)`).");
+  console.error("Si dice `sin ./`: la ruta existe pero le falta el prefijo, y ESM la lee como un paquete.");
   process.exit(1);
 }
 console.log(`check:rutas OK — ${ficheros} ficheros, ${rutas} rutas relativas, todas existen.`);

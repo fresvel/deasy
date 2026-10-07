@@ -6,7 +6,7 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **17 de 24**
+## Estado general — **18 de 24**
 
 | Fase | Tareas | Estado |
 |---|---|---|
@@ -16,7 +16,7 @@ incompatibles.**
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ✅ · F5.6 ⬜ | 🟡 **2 de 6** |
 | **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
-| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⛔ · F7.4 🟡 · F7.5 ⬜ | 🟡 **2 de 5** |
+| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⛔ · F7.4 ✅ · F7.5 ⬜ | 🟡 **3 de 5** |
 
 ## F6 · El dominio, dentro de la base — 4 de 5
 
@@ -642,7 +642,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
-| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · **`organizacion` ✅** (movido **y** con su subcapa) · `identidad` 🟡 (la PERSONA movida; cuatro asuntos más y la subcapa, pendientes) | 🟡 **3 de 4** |
+| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · **`organizacion` ✅** · **`identidad` ✅** (la PERSONA, con su subcapa; los otros cuatro asuntos son decisión de F7.0) | ✅ **4 de 4** |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1 y F7.2 ya tocaron | ⬜ |
 
 ### F7.1 ✅ — declarado, y lo que destapó
@@ -1172,8 +1172,63 @@ con un import de comillas simples.
 que es lo que dice que ninguna se quedó sin arrancar— · arranque del backend · `test:char:run`
 **321/321**, **sin que se moviera un golden**.
 
-**Queda de `identidad`**: la subcapa `datos/` (19 ficheros con SQL, 379 consultas) y los cuatro asuntos
-de arriba.
+#### La subcapa, cerrada el mismo 2026-10-07
+
+`routes/`, `controllers/` y `services/` del dominio quedan con **CERO consultas**. Las **103** viven
+en 9 ficheros de `datos/` (**82 propias**) y 8 de `datos/consulta/` (**21 que cruzan**).
+
+| Servicio | Antes | Después |
+|---|---|---|
+| `UserRepository.js` | 866 L · 15 consultas · 2 transacciones a mano | **708 L** · 0 · 0 |
+| `TelefonoService.js` | 337 L · 19 consultas | **269 L** · 0 |
+| `DocumentoIdentidadService.js` | 390 L · 14 consultas · 1 transacción | **323 L** · 0 · 0 |
+| `TelefonoVerificacionService.js` | 299 L · 8 consultas · 1 transacción | **243 L** · 0 · 0 |
+| `EmailService.js` · `DireccionService.js` · `RecuperarCorreoService.js` | 425 L · 17 consultas | **351 L** · 0 |
+
+**Las cuatro transacciones a mano pasaron a `conTransaccion`**, y en `confirmar` eso exigió un
+argumento, no una suposición: sus tres retornos de «no verificado» hacían `rollback` explícito, y
+**ninguno de los tres ha escrito nada** cuando sale, así que confirmar una transacción vacía y
+deshacerla son indistinguibles. Lo que sigue deshaciendo es el canal inexistente, porque ése lanza.
+
+**Dos ficheros no se extrajeron: se RECONOCIERON.** `UserCertificateRepository.js` (7 consultas, un
+`throw` que es el guard del pool) y `dossierStore.js` (8 consultas, **cero** `throw`) ya *eran* módulos
+de datos —el segundo lo dice en su propia cabecera—. Se movieron a `datos/` sin tocar su API: reescribir
+la de un módulo que ya estaba bien no es mover código.
+
+#### Lo que esto enseñó, y las tres puertas que cambió
+
+**1 · «La puerta no es un censo» se volvió medible, y en la dirección contraria a la esperada.** Al
+cerrar la subcapa de `organizacion` quedó escrito que `check:sql-aliases` no ve las consultas con
+comillas dobles. Aquí se cuantificó: **35 consultas del dominio estaban escritas con comillas dobles y
+la puerta no las miraba** —ni ésa ni la de los backticks—. Pasarlas a plantilla, que es lo que hacen
+las demás, subió lo vigilado de **486 a 521 sentencias reales**. No se añadió ni una consulta: se hizo
+visible lo que ya existía. *(El contador de la puerta dice 638 y no 521 porque además cuenta prosa: un
+`` `UPDATE` `` citado en un comentario le parece una sentencia.)*
+
+**2 · La comprobación E marcaba la PROSA.** `datos/verificacionDeTelefono.js` decía «lo que mira
+`paises` está en `datos/consulta/`» —una frase **correcta**, que señala precisamente dónde va lo que
+cruza— y la puerta la marcó como infracción. Ya quitaba los comentarios `--` de SQL; ahora quita
+también los de JavaScript. **Es la misma lección que ya estaba escrita en `lib/mapa.mjs`**: citar una
+tabla al explicar algo es lo natural, así que una comprobación que mire la prosa muerde justo cuando
+alguien documenta bien. Verificado que sigue mordiendo con un `JOIN paises` de verdad.
+
+**3 · `check:rutas` tenía su propio punto ciego: una ruta SIN `./`.** Un `os.path.relpath` devolvió
+`datos/certificados.js` sin prefijo, y para ESM eso no es una ruta: es un paquete. El error —`Cannot
+find package 'datos'`— no se parece al problema, y dejó **14 suites en rojo**. La puerta sólo miraba lo
+que empieza por `.`; ahora marca también un especificador con extensión que **existe en disco** junto
+al fichero que lo importa, que es la señal inequívoca de que perdió el prefijo.
+
+⚠️ **Y un punto ciego que queda abierto, medido y no cerrado**: `check:instancias` **no ve los campos
+de clase**. `UserRepository` tiene `documentosLegales = new DocumentosLegales();` como campo, que se
+ejecuta en el constructor igual que si estuviera dentro. Hoy es inofensivo —nadie instancia
+`UserRepository` a nivel de módulo, y eso sí está a cero—, así que es **latente, no un fallo**. Queda
+escrito porque es exactamente la forma que la puerta no mira.
+
+**Verificado en la pila D**: las **seis** puertas · `test:unit` **897/897 en 50 suites** · arranque del
+backend · `test:char:run` **321/321**, **sin que se moviera un golden**.
+
+**Queda de `identidad`** los cuatro asuntos de arriba —catálogos, acceso/RBAC, mecanismos y legal—, que
+son **decisión de F7.0** y no trabajo mecánico.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 

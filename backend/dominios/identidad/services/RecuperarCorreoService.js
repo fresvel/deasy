@@ -3,6 +3,8 @@ import { getPostgresPool } from "../../../config/postgres.js";
 import { InstitucionService } from "../../organizacion/index.js";
 import PasswordService from "./PasswordService.js";
 import { resolverPersonaPorDocumento, TIPO_NACIONAL } from "./DocumentoIdentidadService.js";
+import { idDePaisPorIso } from "../datos/consulta/paisPorIso.js";
+import { hashYCorreoPrincipal } from "../datos/credenciales.js";
 
 // «Olvidé mi correo» — que NO es «olvidé mi contraseña».
 //
@@ -49,8 +51,7 @@ export default class RecuperarCorreoService {
       const actual = await this.instituciones.paisActual(this.pool);
       return actual.id;
     }
-    const [filas] = await this.pool.query("SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1", [iso]);
-    return filas?.length ? Number(filas[0].id) : null;
+    return idDePaisPorIso(this.pool, iso);
   }
 
   /**
@@ -71,18 +72,7 @@ export default class RecuperarCorreoService {
       ? await resolverPersonaPorDocumento(this.pool, { tipo: tipo || TIPO_NACIONAL, paisId, numero })
       : null;
 
-    const [filas] = personId
-      ? await this.pool.query(
-          `SELECT p.password_hash, e.direccion AS email
-             FROM persons p
-             LEFT JOIN emails e ON e.person_id = p.id AND e.principal = 1 AND e.is_active = 1
-            WHERE p.id = ? AND p.is_active = 1
-            LIMIT 1`,
-          [personId]
-        )
-      : [[]];
-
-    const fila = filas?.[0] ?? null;
+    const fila = personId ? await hashYCorreoPrincipal(this.pool, personId) : null;
     const valida = await this.passwords.verifyPassword(password, fila?.password_hash ?? HASH_SEÑUELO);
 
     if (!fila || !valida || !fila.email) {
