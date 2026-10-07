@@ -308,8 +308,8 @@ reparto, por lo que se puede **medir** —qué tablas nombra cada uno y cuáles 
 | Grupo | Ficheros | Líneas | Destino |
 |---|---:|---:|---|
 | **Con SQL, destino único** | **46** | 11.204 | se mueven enteros |
-| **Con SQL, genéricos declarados** | 4 | 4.935 | `transversal/` — no se parten |
-| **Con SQL, escriben 2+ dominios** | **8** | 5.934 | **no caben en un dominio: son flujos** |
+| **Con SQL, genéricos declarados** | 5 | 5.461 | `transversal/` — no se parten |
+| **Con SQL, escriben 2+ dominios** | **7** | 5.408 | **no caben en un dominio: son flujos** |
 | **Con SQL, sin dominio dominante** | **6** | 4.448 | **hay que partirlos** |
 | **Sin SQL** | 105 | — | siguen a lo que envuelven — **y aquí no hay criterio medible** |
 
@@ -330,12 +330,15 @@ ninguna tabla. Dos son falsos positivos de la propia medida y se corrigen a mano
 | 420 | `services/admin/generation/queries.js` | 4 dominios, 32 % |
 | 109 | `controllers/tareas/tareas_controler.js` | 4 dominios, 33 % |
 
-**Los 8 que NO se parten porque son flujos** — escriben tablas de 2 o 3 dominios **en una sola
+**Los 7 que NO se parten porque son flujos** — escriben tablas de 2 o 3 dominios **en una sola
 transacción**: `templateLifecycle.js` (plantillas+procesos) · `DocumentSignatureWorkflowService.js`
 (firmas+tareas) · `flowRows.js` (firmas+plantillas) · `GeneralTaskService.js` (procesos+tareas) ·
-`genericCatalog.js` (identidad+organizacion) · `generation/documents.js`
-(**firmas+plantillas+tareas**) · `FillRequestWorkflowService.js` (plantillas+tareas) ·
-`DocumentWorkflowResetService.js` (**firmas+plantillas+tareas**).
+`generation/documents.js` (**firmas+plantillas+tareas**) · `FillRequestWorkflowService.js`
+(plantillas+tareas) · `DocumentWorkflowResetService.js` (**firmas+plantillas+tareas**).
+
+⚠️ **Eran 8 y son 7.** `services/system/genericCatalog.js` escribe `identidad`+`organizacion` y se
+contó como flujo; su **único** usuario es `SystemBootstrapService.js`, así que es parte del
+**bootstrap** y va a `transversal/` con él. Se corrigió el 2026-10-06, el mismo día.
 
 ⚠️ **Que comparten transacción no es una suposición.** El pool se abre en **18 ficheros** de producción
 (`getConnection()`; `config/postgres.js` no cuenta — es quien la **define**) y la conexión **viaja como
@@ -356,7 +359,7 @@ una definición de proceso nueva»*. **Partir ese fichero por dominio partiría 
 backend/
   index.js                 se queda; único que importa de todos los dominios
   dominios/<dominio>/      rutas · controllers · services       ← los 8 nombres de ESQUEMAS
-  flujos/                  los 8 que escriben 2+ dominios, LISTA CERRADA y declarada
+  flujos/                  los 7 que escriben 2+ dominios, LISTA CERRADA y declarada
   transversal/             editor genérico de /admin + bootstrap
   plataforma/              postgres, minio, rabbit, mailer, errors, middlewares genéricos
   database/ scripts/ tests/   sin cambios
@@ -372,7 +375,7 @@ puertas de CI, no por disciplina.
 |---|---|
 | **`datos/` obligatorio en cada dominio** | Es otro refactor —de capas— disfrazado de reorganización. Hoy **64 ficheros tienen SQL** y sólo **5** están declarados como capa de datos (`chatStore`, `dossierStore`, `UserRepository`, `UserCertificateRepository`, `AlmacenEnPostgres`). En `chat` esa carpeta sería un fichero que ya existe; en `empleo`, **una carpeta vacía** —el defecto que mató a los 15 módulos—; en los grandes, extraer SQL de **59 ficheros**. Se declara la regla («el SQL de una tabla vive en su dominio») y la carpeta se crea cuando se gane el sitio |
 | **La regla «los imports no suben de nivel», por nivel de DOMINIO** | **No es cumplible: un dominio no tiene un nivel.** Y si se instancia con el nivel máximo, `plantillas`, `tareas` y `firmas` quedan **las tres en el 6** —«mismo nivel», permitido— y la regla **autoriza exactamente los tres ciclos que importan**. Se reformula **por nivel de TABLA**, que es lo que la comprobación B ya calcula |
-| **La regla «escrituras sobre tablas de otro dominio, no»** | Como está, la violan 8 ficheros **por diseño**. Se reformula: *«una tabla la escribe su dominio **o un flujo declarado»*** — que es la comprobación C generalizada |
+| **La regla «escrituras sobre tablas de otro dominio, no»** | Como está, la violan 7 ficheros **por diseño**. Se reformula: *«una tabla la escribe su dominio **o un flujo declarado»*** — que es la comprobación C generalizada |
 | **`services/admin/org/orgStructure.js` como genérico** | No lo es: escribe **sólo** tablas de `organizacion`. Se mueve, no se declara |
 
 ### Lo que la puerta F7.2 anterior habría dado por bueno, y no lo es
@@ -418,7 +421,7 @@ dispersión de los ocho dominios.
 | Tarea | Qué entrega | Estado |
 |---|---|:--:|
 | **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`tema` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
-| **F7.1** | **Declarar el común y los flujos, sin mover nada**: los 4 genéricos y los 8 flujos en el mapa, con su motivo escrito, y la puerta leyendo la **ruta**. Es la red que hace seguro todo lo demás | ⬜ |
+| **F7.1** | **Declarar el común y los flujos, sin mover nada**: los 5 genéricos y los 7 flujos en el mapa, con su motivo escrito, y la puerta leyendo la **ruta**. Es la red que hace seguro todo lo demás | ⬜ |
 | **F7.2** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
 | **F7.3** | Los dominios pequeños: `chat` (1 fichero con SQL) y `firmas` (2). `empleo` **sólo tras F7.0** | ⬜ |
 | **F7.4** | Los grandes, uno a uno. `identidad` el último: 62 ficheros en 19 carpetas | ⬜ |
