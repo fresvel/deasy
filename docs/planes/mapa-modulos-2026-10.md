@@ -398,9 +398,7 @@ tablas ajenas**: llama al `datos/` del vecino **con la misma conexión**, que es
 hacen 29 ficheros hoy. Entonces:
 
 - `flujos/` no tiene **ni una consulta** — y eso lo comprueba una puerta en una línea.
-  ⚠️ **Sin verificar todavía**: son **147 consultas** en los 7 ficheros, 41 sólo en
-  `templateLifecycle.js`. Que la orquestación se lea bien sin ellas es plausible y **no está
-  comprobado en ningún fichero**. Es lo primero que hay que probar en uno pequeño.
+  ✅ **VERIFICADO el 2026-10-06 en el flujo más pequeño** (ver más abajo).
 - La transacción **no se rompe**: sigue abierta en un sitio y viajando por parámetro.
 - La regla *«una tabla la escribe su dominio»* pasa a ser **verificable por ruta**, que es lo que
   F7.2 necesitaba y no tenía.
@@ -570,6 +568,72 @@ un salto de lectura, no una pregunta sin dueño.
 unitarios viven **junto a su módulo**, así que se mudan gratis. La tabla anterior inflaba la
 dispersión de los ocho dominios.
 
+### El piloto: verificado en `DocumentWorkflowResetService.js`
+
+La suposición de que un flujo se lee bien **sin sus consultas** estuvo marcada «sin verificar» y se
+comprobó el **2026-10-06** con un experimento completo sobre el flujo más pequeño de los siete — el
+que `CLAUDE.md` pone como «estilo objetivo».
+
+| | Líneas | Consultas |
+|---|---:|---:|
+| **`flujos/rehacerDocumento.js`** | 147 | **0** |
+| `dominios/tareas/datos/documentVersions.js` | 89 | 3 |
+| `dominios/plantillas/datos/flujoDeLlenado.js` | 57 | 3 |
+| `dominios/firmas/datos/flujoDeFirma.js` | 60 | 3 |
+| | **353** (de 277 → **+27 %**) | 9 = las 9 originales |
+
+**Cómo se repartieron las 6 funciones internas, que es lo informativo:** **4 eran puro acceso a
+datos** y se fueron enteras a un `datos/`; **2 se partieron**, y lo que se quedó en el flujo son
+reglas de verdad —*«la ronda siguiente, entera»* (`max + 1`, qué se arrastra, qué se pone a `null`,
+el estado `Borrador`) y *resolver el estado «cancelado» y lanzar si no existe»*—. El orquestador
+exportado **no se tocó**: mismos guards 404/403, mismo orden, misma forma de retorno. Se conservaron
+**los nombres originales de cada función**, justamente para que el diff probara que es un movimiento.
+
+**Lo que lo demuestra:**
+
+| | |
+|---|---|
+| Los tres `check:` | verde — **550 consultas en 275 ficheros** |
+| **La puerta provocada** | se quitó un import y `check:imports` lo cazó: *«`flujos/rehacerDocumento.js:58` · `insertDocumentVersion` → falta importarlo de `dominios/tareas/datos/documentVersions.js`»*. **Ve las carpetas nuevas** y nombra el módulo de origen |
+| `test:unit` | **879 / 879** |
+| `test:char:run` | **321 / 321**, con su golden propio corriendo: `✔ reset · nace una versión NUEVA y la anterior se conserva` |
+| **Goldens movidos** | **ninguno**. Es la prueba de que fue un movimiento y no una reescritura |
+
+⚠️ **Y destapó un hueco que había que cerrar en el mismo commit: un test dentro de `flujos/` o
+`dominios/` NO se ejecutaba, y en silencio.** Se probó metiendo un test que lanza una excepción:
+`test:unit` siguió diciendo **879 / 0 fallos**. Los globs de `test:unit` son una **lista blanca**, así
+que la estructura nueva obliga a ampliarlos **en los dos sitios** — hecho, y comprobado al revés: con
+el glob ampliado el centinela sí falla (880 tests, 1 fallo).
+**`sonar-project.properties` no tiene ese problema**: sus inclusiones de test son por **sufijo**
+(`**/*.test.js`), no por ruta.
+
+⚠️ **Y el hallazgo que más cambia el plan: el piloto NO se puede fusionar solo.**
+`check-mapa-tablas.mjs` falla con **exit 1 y 4 hallazgos** en cuanto el piloto existe:
+
+```
+· C · 'document_fill_flows'      la escriben 2 sitios: dominios · services/documents
+· C · 'fill_requests'            la escriben 2 sitios: dominios · services/documents
+· C · 'signature_flow_instances' la escriben 2 sitios: dominios · services/documents
+· C · 'signature_requests'       la escriben 2 sitios: dominios · services/documents
+```
+
+**La puerta está bien y el piloto está bien.** Lo que dice es que los otros escritores de esas cuatro
+tablas siguen en su sitio viejo, así que la escritura queda repartida entre `dominios/` y `services/`.
+Y de ahí sale la conclusión que reordena el trabajo:
+
+> **La unidad de trabajo de F7 no es un fichero: son TODOS los escritores de una tabla.**
+
+Por eso el piloto vive en la rama **`f7-flujo-piloto`** y **no se fusiona**: `develop` tiene que
+quedarse con la puerta en verde. Y por eso F7.5 va **tabla por tabla**, no fichero por fichero —
+`signature_requests` y `signature_flow_instances` las escriben 2 ficheros cada una, `fill_requests`
+cinco, y hasta que se muevan los cinco la tabla tiene dos dueños.
+
+⚠️ **Segundo hallazgo, sin resolver: un flujo depende de otro flujo.** `rehacerDocumento.js` necesita
+`resolveCurrentSignatureStep`, que vive en `DocumentSignatureWorkflowService.js` — otro de los siete.
+Es una **lectura de firmas** que debería acabar en `firmas/datos/`; mientras no lo esté, un flujo
+importa de otro. La regla *«un dominio sólo se importa por su `index.js`»* **no dice nada de
+flujo→flujo**, y eso hay que decidirlo en F7.0.
+
 ### Las tareas
 
 | Tarea | Qué entrega | Estado |
@@ -579,7 +643,7 @@ dispersión de los ocho dominios.
 | **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: 77 consultas en 9 ficheros, empezando por `user_controler.queries.js`, que ya pide por escrito ser una capa de datos. Es un **defecto**, y va antes de mover nada | ⬜ |
 | **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
 | **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0, **tras F7.0**), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
-| **F7.5** | **Los cuatro entrelazados, en este orden**: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
+| **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
