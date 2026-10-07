@@ -697,12 +697,20 @@ de las lecturas. Prohibir que una lectura cruce sería absurdo —`units` se rel
 dominios—, y dejarla mezclada con el `datos/` propio hace que **nada distinga una lectura legítima de
 un error**. Separarla da las dos cosas.
 
-⚠️ **LA PUERTA DEL DOMINIO NO ES GRATIS: convierte cualquier ciclo latente en un fallo de carga.**
-Al mover `chat`, el `index.js` rompió el arranque con `ReferenceError: Cannot access 'realtimeGateway'
-before initialization`. El ciclo `chat ↔ realtime` **ya existía**; lo que hizo el barril fue volverlo
-fatal, porque arrastra **el dominio entero** —routers incluidos— y el controller instanciaba 7
-servicios **al cargar el módulo**. La respuesta no es debilitar la puerta: **un servicio no debe
-depender de otro módulo en tiempo de carga.** Se arregló resolviendo el singleton al usarlo.
+⚠️ **NO INSTANCIES NADA A NIVEL DE MÓDULO. Es el fallo que mordió CUATRO veces el 2026-10-07**, uno
+por cada dominio que se movió: `ChatRealtimePublisherService` (la pasarela como parámetro por
+defecto), `SqlAdminService` (6 subservicios en el constructor), `program_controler` y
+`bootstrap_controller` (`const x = new Servicio()` al cargar).
+
+**ESM tolera los ciclos; lo que no tolera es USAR una referencia antes de que se inicialice.** La
+puerta de un dominio sólo cambia **quién entra primero**, así que cada dominio que se mueve destapa
+otra. Y **hacer perezoso un campo sólo mueve qué orden rompe**: hubo un caso en que el backend
+arrancaba y el test que importaba el servicio directo reventaba. **Prueba los DOS órdenes de carga —
+el arranque y el test— porque uno solo miente.**
+
+Se arreglan resolviendo al **primer uso**: `let x = null; const dame = () => (x ??= new Servicio());`.
+Medido: quedan **33 instanciaciones a nivel de módulo en 17 controllers** (`chat_controller` 8,
+`user_controler` 5). **No añadas la 34.**
 
 ⚠️ **Y al mover un dominio, recalcula los imports POR SCRIPT**, resolviendo cada ruta desde la
 posición vieja y reescribiéndola desde la nueva. En `chat` fueron **29 imports en 14 ficheros**: a

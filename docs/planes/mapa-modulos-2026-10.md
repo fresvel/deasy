@@ -642,7 +642,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
-| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · `empleo` (carpeta reservada) · `organizacion` (2) · `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | 🟡 **1 de 4** |
+| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · `organizacion` 🟡 (movido, subcapa pendiente) · `identidad` ⬜ | 🟡 **2 de 4** |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1 y F7.2 ya tocaron | ⬜ |
 
 ### F7.1 ✅ — declarado, y lo que destapó
@@ -960,6 +960,49 @@ se queda huérfano en el servicio.
 **El veredicto de la subcapa, con el dominio hecho:** el coste real fue **dos extracciones** y el
 resultado es **una regla de lectura que una puerta puede comprobar**, que es justo lo que la propuesta
 sin subcapa no podía tener. En los otros siete dominios el reparto se decide igual: con su número.
+
+### F7.4 · `empleo` reservado y `organizacion` movido
+
+**`empleo`**: carpeta con su `index.js` **vacío a propósito** y sus 8 tablas nombradas. Queda escrito
+por qué **no** repite el defecto de los 15 «módulos» retirados: allí cuatro no eran dueños de nada y
+nunca lo iban a ser; aquí el trabajo está por hacer y el dueño confirmó que se hará.
+
+**`organizacion`**: **12 ficheros** movidos, con `routes/`, `controllers/`, `services/`, `datos/` y
+`catalogos/`, más su puerta. **23 imports** recalculados por script. De fuera entraban **9 imports a 7
+ficheros**; ahora entran por el `index.js`.
+
+⚠️ **Su `system_router.js` arrastra dos rutas que no son del dominio** —`/system/bootstrap/status` e
+`initialize`, que son del transversal—. Viene aquí porque **6 de sus 8 rutas** son de organizacion, y
+partirlo ahora obligaría a montar dos routers en el mismo prefijo sin necesidad. Está escrito en la
+puerta para que el día que el bootstrap se mueva a `transversal/` se vea.
+
+**La subcapa de `organizacion` queda pendiente**: 12 consultas propias y 3 que cruzan, y las 15 viven
+en tres servicios con reglas (`orgStructure.js` con **27 `throw`**, `GeografiaService` con 6,
+`InstitucionService` con 2). Es el mismo trabajo que en `chat` pero el doble de grande.
+
+### ⚠️ EL PRERREQUISITO QUE ESTE FRENTE DESTAPÓ: instanciar al cargar el módulo
+
+**El mismo fallo mordió CUATRO veces en un día**, y no es el barril:
+
+| Dónde | Qué hacía |
+|---|---|
+| `ChatRealtimePublisherService` | la pasarela como **parámetro por defecto** |
+| `SqlAdminService` | **6 subservicios** en el constructor |
+| `program_controler` | `const service = new SqlAdminService()` |
+| `bootstrap_controller` | `const bootstrapService = new SystemBootstrapService()` |
+
+**ESM tolera los ciclos; lo que no tolera es USAR una referencia antes de que se inicialice.** La
+puerta de un dominio sólo cambia **quién entra primero**, así que **cada dominio que se mueve destapa
+otra**. Y hacer perezoso un campo **sólo mueve qué orden rompe**: se vio aquí — el backend arrancaba y
+`SqlAdminService.test.js` fallaba.
+
+**Medido: 33 instanciaciones a nivel de módulo en 17 controllers.** `chat_controller` tiene 8,
+`user_controler` 5. Eso es un **prerrequisito para mover más dominios**, no un incidente — y
+`identidad`, el siguiente, es el grande: **62 ficheros**.
+
+**Verificación, y la lección de cómo se verifica:** hay que probar **los dos órdenes de carga**,
+porque uno solo miente. El backend arrancando no dice nada si el test que importa el servicio directo
+revienta.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
