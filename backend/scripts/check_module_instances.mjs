@@ -1,36 +1,43 @@
-// NADIE INSTANCIA UN SERVICIO AL CARGAR EL MODULO. Puerta a techo cero.
+// NADIE CONSTRUYE UNA DE NUESTRAS CLASES AL CARGAR EL MODULO. Puerta a techo cero.
 //
 // Por que existe: ESM tolera los ciclos, pero NO tolera usar una referencia antes de que se
-// inicialice. Un `const servicio = new Servicio()` en el cuerpo de un modulo se ejecuta en el
-// instante del import, asi que si `Servicio` llega por la puerta de un dominio —un `index.js` que
-// reexporta— se pide antes de que esa puerta termine de evaluarse y revienta con
+// inicialice. Si el cuerpo de un modulo hace `new Servicio()`, eso se ejecuta en el instante del
+// import; y si `Servicio` llega por la puerta de un dominio —un `index.js` que reexporta— se pide
+// antes de que esa puerta termine de evaluarse y revienta con
 //
 //     ReferenceError: Cannot access 'X' before initialization
 //
-// El 2026-10-07 mordio CUATRO veces en un dia, una por cada dominio que se movio, y cada vez costo
-// un arranque roto. Y hacer perezoso UN campo solo mueve que orden rompe: hubo un caso en que el
-// backend arrancaba y el test que importaba el servicio directo fallaba.
+// Mordio CUATRO veces el 2026-10-07 moviendo dominios, y una QUINTA al mover `identidad`, esa ya
+// con la puerta puesta — porque la puerta mirabasolo `controllers/`, `routes/` y `dominios/`, y el
+// culpable estaba en `services/realtime/RealtimeGateway.js`. Lecciones, las dos en el codigo de
+// abajo:
 //
-// La forma correcta es resolver al PRIMER USO:
+//   1 · NO SE RECORTA EL ALCANCE A OJO. Se mira todo el backend. Antes se excluian `services/`,
+//       `middlewares/`, `config/`, `utils/` y `scripts/` «porque el problema vive en los
+//       controladores», y alli habia NUEVE sitios, tres de ellos construyendo justo lo que pasa por
+//       la puerta de un dominio. Es el mismo fallo que tuvieron `check:sql-aliases` y
+//       `check:sql-comments` al excluir una carpeta por NOMBRE.
 //
-//     let _servicio = null;
-//     const servicio = () => (_servicio ??= new Servicio());
+//   2 · UNA SOLA REGLA Y CERO EXCEPCIONES. Se probo tambien mirar el CUERPO DE LOS CONSTRUCTORES
+//       —`RealtimeGateway` construia tres servicios de dos dominios en el suyo, igual que
+//       `SqlAdminService` con sus seis— y se RETIRO al medirlo: marcaba 13 sitios de los que 11 eran
+//       inofensivos. Un constructor solo corre al cargar SI alguien instancia esa clase a nivel de
+//       modulo, asi que con el nivel de modulo a CERO la comprobacion del constructor no puede
+//       encontrar nada: es redundante por construccion, no por optimismo.
 //
-// Se mira `controllers/`, `routes/` y `dominios/`, que es donde vive el problema: son los modulos
-// que importan servicios, y los que un router carga en cadena al arrancar.
+//       ⚠️ Lo que eso exige es que NO HAYA EXCEPCIONES. Las dos que parecian razonables —`index.js`,
+//       cuyo cuerpo corre al final, y `scripts/*.mjs`, que son puntos de entrada— se arreglaron en
+//       vez de eximirse, y costaron cuatro lineas. Si alguien añade una excepcion aqui, la
+//       redundancia de arriba deja de ser cierta y vuelve el fallo por el constructor.
+//
+// Lo que NO se mira, y por que: construir algo de FUERA (`new Minio.Client({...})`, `new Router()`,
+// `new Set()`) no puede participar en un ciclo de nuestros modulos, que es el fallo que esto
+// persigue. Se reconoce por el import: si la clase no entra por una ruta RELATIVA, no es nuestra.
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const RAICES = ["controllers", "routes", "dominios"];
-const IGNORAR = new Set(["node_modules", "coverage", ".git"]);
-
-// No instancian nada de otro modulo nuestro, asi que no pueden participar en un ciclo:
-// `Router` es de express, y `Set`/`Map`/`URL`/`Date`/`RegExp` son del lenguaje.
-const INOCENTES = new Set(["Router", "Set", "Map", "WeakMap", "URL", "Date", "RegExp", "Error", "Intl"]);
-
-// `const|let|var NOMBRE = new Clase(` en la COLUMNA CERO, que es lo que significa "a nivel de
-// modulo". Con sangria esta dentro de un bloque y se ejecuta cuando toca, no al importar.
-const DECLARACION = /^(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new\s+([A-Za-z_$][\w$]*)/;
+const RAIZ = process.cwd();
+const IGNORAR = new Set(["node_modules", "coverage", ".git", "templates", "public"]);
 
 const listar = async (dir) => {
   const salida = [];
@@ -43,29 +50,45 @@ const listar = async (dir) => {
   return salida;
 };
 
+// Las clases que el fichero importa por ruta RELATIVA: esas son nuestras.
+const nuestrasClases = (src) => {
+  const nombres = new Set();
+  const relativo = /import\s+([^;]+?)\s+from\s+"(\.[^"]+)"/g;
+  for (const m of src.matchAll(relativo)) {
+    for (const trozo of m[1].replace(/[{}]/g, ",").split(",")) {
+      const nombre = trozo.trim().split(/\s+as\s+/).pop()?.trim();
+      if (nombre && /^[A-Z][\w$]*$/.test(nombre)) nombres.add(nombre);
+    }
+  }
+  // Y las que el propio fichero declara: un singleton de su propia clase cuenta igual.
+  for (const m of src.matchAll(/^\s*(?:export\s+(?:default\s+)?)?class\s+([A-Z][\w$]*)/gm)) nombres.add(m[1]);
+  return nombres;
+};
+
+const DECLARACION = /^(?:export\s+)?(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*new\s+([A-Za-z_$][\w$]*)\s*\(/;
+
 const fallos = [];
 let ficheros = 0;
-for (const raiz of RAICES) {
-  for (const ruta of await listar(raiz)) {
-    ficheros += 1;
-    const lineas = (await readFile(ruta, "utf8")).split("\n");
-    lineas.forEach((linea, i) => {
-      const m = DECLARACION.exec(linea);
-      if (m && !INOCENTES.has(m[2])) {
-        fallos.push({ ruta, linea: i + 1, nombre: m[1], clase: m[2], texto: linea.trim() });
-      }
-    });
-  }
+for (const ruta of await listar(RAIZ)) {
+  ficheros += 1;
+  const src = await readFile(ruta, "utf8");
+  const nuestras = nuestrasClases(src);
+  src.split("\n").forEach((linea, i) => {
+    const m = DECLARACION.exec(linea);
+    if (m && nuestras.has(m[2])) {
+      fallos.push({ rel: path.relative(RAIZ, ruta), linea: i + 1, nombre: m[1], clase: m[2], texto: linea.trim() });
+    }
+  });
 }
 
 if (fallos.length) {
-  console.error(`check:instancias FALLA — ${fallos.length} instanciacion(es) a nivel de modulo:\n`);
+  console.error(`check:instancias FALLA — ${fallos.length} sitio(s) construyendo una clase nuestra al cargar:\n`);
   for (const f of fallos) {
-    console.error(`  ${f.ruta}:${f.linea}  ${f.texto}`);
+    console.error(`  ${f.rel}:${f.linea}  ${f.texto}`);
     console.error(`      ->  let _${f.nombre} = null;`);
     console.error(`          const ${f.nombre} = () => (_${f.nombre} ??= new ${f.clase}(…));`);
     console.error(`          ...y cada uso pasa de \`${f.nombre}.\` a \`${f.nombre}().\`\n`);
   }
   process.exit(1);
 }
-console.log(`check:instancias OK — ${ficheros} ficheros, ningun servicio instanciado al cargar el modulo.`);
+console.log(`check:instancias OK — ${ficheros} ficheros, nada nuestro construido al cargar el modulo.`);

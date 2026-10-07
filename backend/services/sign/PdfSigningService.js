@@ -18,8 +18,7 @@ import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import { getPostgresPool } from "../../config/postgres.js";
-import UserRepository from "../auth/UserRepository.js";
-import UserCertificateRepository from "../auth/UserCertificateRepository.js";
+import { UserRepository, UserCertificateRepository } from "../../dominios/identidad/index.js";
 import { badRequest, notFound } from "../../errors/HttpError.js";
 import { requestSignerJob } from "../infrastructure/rabbit_signer.js";
 import { formatTokenForSigner } from "../../utils/tokenGenerator.js";
@@ -33,8 +32,10 @@ import {
   uploadFileToMinio
 } from "../storage/minio_service.js";
 
-const userRepository = new UserRepository();
-const certificateRepository = new UserCertificateRepository();
+let _userRepository = null;
+const userRepository = () => (_userRepository ??= new UserRepository());
+let _certificateRepository = null;
+const certificateRepository = () => (_certificateRepository ??= new UserCertificateRepository());
 const pool = getPostgresPool();
 
 export const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
@@ -76,7 +77,7 @@ export const resolveSigningUser = async (rawUserId) => {
   if (!userId || Number.isNaN(userId)) {
     throw new Error("Usuario autenticado inválido.");
   }
-  const user = await userRepository.findById(userId);
+  const user = await userRepository().findById(userId);
   if (!user) {
     throw new Error("Usuario no encontrado.");
   }
@@ -99,7 +100,7 @@ export const buildSignContext = async (
   { body = {}, userId },
   {
     resolveUser = resolveSigningUser,
-    findOwnedCertificate = (ownerId, certificateId) => certificateRepository.findOwnedById(ownerId, certificateId),
+    findOwnedCertificate = (ownerId, certificateId) => certificateRepository().findOwnedById(ownerId, certificateId),
     statObject = statMinioObject,
   } = {},
 ) => {

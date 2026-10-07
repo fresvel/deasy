@@ -31,7 +31,7 @@
 // tambien se deshace. Ver docs/planes/referencia/patrones-diseno.md §3.1.
 
 import fs from "node:fs";
-import { resolverPersonaPorNumero } from "../../users/DocumentoIdentidadService.js";
+import { resolverPersonaPorNumero } from "../../../dominios/identidad/index.js";
 import os from "node:os";
 import path from "node:path";
 import { randomUUID } from "node:crypto";

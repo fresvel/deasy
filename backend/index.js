@@ -4,7 +4,7 @@ import express from "express";
 import realtimeGateway from "./services/realtime/RealtimeGateway.js";
 import AvisoDeCanalCaido from "./services/canales/AvisoDeCanalCaido.js";
 import VigilanteDeCanales from "./services/canales/VigilanteDeCanales.js";
-import user_router from "./routes/user_router.js";
+import { userRouter, dossierRouter } from "./dominios/identidad/index.js";
 import internalRouter from "./routes/internal_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
@@ -26,14 +26,13 @@ import {
   unitRouter as unit_router,
 } from "./dominios/organizacion/index.js";
 import tarea_router from "./routes/tarea_router.js"
-import dossier_router from "./routes/dossier_router.js"
 import { chatRouter as chat_router, notificationRouter as notification_router } from "./dominios/chat/index.js";
 import reset_password_router from "./routes/reset_password_router.js";
 import legalRouter from "./routes/legal_router.js";
 import email_router from "./routes/email_router.js";
 import { authMiddleware } from "./middlewares/auth.js";
 import { exigeVerificacionCompleta } from "./middlewares/exigeVerificacionCompleta.js";
-import UserRepository from "./services/auth/UserRepository.js";
+import { UserRepository } from "./dominios/identidad/index.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -159,7 +158,7 @@ app.get(DOCS_JSON_PATH, (req, res) => {
   res.send(swaggerSpec);
 });
 
-app.use(ROUTES.users, user_router)
+app.use(ROUTES.users, userRouter)
 // SOLO microservicios. Lleva su propia guarda; nginx ademas devuelve 404 desde fuera.
 app.use(ROUTES.internal, internalRouter)
 app.use(ROUTES.resetPassword, reset_password_router)
@@ -186,8 +185,12 @@ app.use(ROUTES.email, email_router)
 // `users` se queda fuera a proposito: ahi viven el alta, el acceso y LOS DOS PASOS DE VERIFICACION,
 // asi que cerrarlo dejaria a la gente sin poder completar lo que se le exige. Y `internal` tampoco,
 // que no la llama un navegador sino `channels`, con su clave compartida.
-const userRepositorySingleton = new UserRepository();
-const soloVerificados = exigeVerificacionCompleta((id) => userRepositorySingleton.findById(id));
+// Al primer uso, como todo: este fichero es el punto de entrada y su cuerpo corre al final, asi
+// que aqui seria inofensivo — pero la puerta `check:instancias` no tiene excepciones, y tenerla
+// sin excepciones es justo lo que la hace fiable.
+let _userRepositorySingleton = null;
+const userRepositorySingleton = () => (_userRepositorySingleton ??= new UserRepository());
+const soloVerificados = exigeVerificacionCompleta((id) => userRepositorySingleton().findById(id));
 const exigeCuentaCompleta = [authMiddleware, soloVerificados];
 
 app.use(ROUTES.admin, ...exigeCuentaCompleta, admin_router)
@@ -201,7 +204,7 @@ app.use(ROUTES.tarea, tarea_router)
 app.use(ROUTES.chat, ...exigeCuentaCompleta, chat_router)
 app.use(ROUTES.notifications, ...exigeCuentaCompleta, notification_router)
 
-app.use(ROUTES.dossier, ...exigeCuentaCompleta, dossier_router)
+app.use(ROUTES.dossier, ...exigeCuentaCompleta, dossierRouter)
 
 app.use(ROUTES.sign, ...exigeCuentaCompleta, sign_router)
 app.use(ROUTES.system, system_router)
@@ -349,7 +352,7 @@ const startServer = async () => {
   await initializeDatabaseWithRetry();
 
   const httpServer = http.createServer(app);
-  realtimeGateway.init(httpServer, { corsOrigin: resolveCorsOrigin, credentials: true });
+  realtimeGateway().init(httpServer, { corsOrigin: resolveCorsOrigin, credentials: true });
 
   httpServer.listen(PORT, () => {
     console.log(`Servidor iniciado en: http://localhost:${PORT}/deasy/v1/`)
@@ -367,7 +370,7 @@ const startServer = async () => {
   // Con dos, las dos vigilarían y cada aviso llegaría por duplicado. Escalar el backend exige
   // resolver esto ANTES, no después.
   new VigilanteDeCanales({
-    avisador: new AvisoDeCanalCaido({ realtime: realtimeGateway }),
+    avisador: new AvisoDeCanalCaido({ realtime: realtimeGateway() }),
   }).iniciar();
 };
 

@@ -34,7 +34,7 @@ export default class ChatRealtimePublisherService {
   // Sigue admitiendo inyeccion —es como se prueba— pero si no se inyecta nada, se resuelve el
   // singleton la primera vez que hace falta.
   get gateway() {
-    return this.gatewayInyectada ?? realtimeGateway;
+    return this.gatewayInyectada ?? realtimeGateway();
   }
 
   async publishMessageCreated(payload) {

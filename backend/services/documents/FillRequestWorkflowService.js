@@ -16,14 +16,15 @@
 // fallos de verdad y el controller los devuelve como 500. Ese contrato es el que impide que un
 // fallo de infraestructura se disfrace de culpa del cliente.
 
-import UserRepository from "../auth/UserRepository.js";
+import { UserRepository } from "../../dominios/identidad/index.js";
 import { badRequest, conflict, forbidden, notFound } from "../../errors/HttpError.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import { FILL_REQUEST_STATUS } from "./DocumentWorkflowCatalog.js";
 import { syncDocumentProgressFromFillRequest } from "./DocumentProgressService.js";
 import { addDocumentObservation } from "./DocumentObservationService.js";
 
-const userRepository = new UserRepository();
+let _userRepository = null;
+const userRepository = () => (_userRepository ??= new UserRepository());
 
 const getCurrentUser = async (rawUserId, findUserById) => {
   const userId = Number(rawUserId);
@@ -190,7 +191,7 @@ export const assertFillActionAllowed = ({ action, currentStatus, assignedPersonI
 // El segundo argumento existe para las pruebas: en producción nadie lo pasa.
 export const updateFillRequestStatus = async (
   { userId, requestId, action, nextStatus, note = null },
-  { pool = getPostgresPool(), findUserById = (id) => userRepository.findById(id) } = {},
+  { pool = getPostgresPool(), findUserById = (id) => userRepository().findById(id) } = {},
 ) => {
   if (!pool) {
     throw new Error("La conexión con PostgreSQL no está disponible.");

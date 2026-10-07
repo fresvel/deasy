@@ -1,5 +1,5 @@
 import { getPostgresPool } from "../../config/postgres.js";
-import { resolverPersonaPorNumero, MENSAJE_DOCUMENTO_AMBIGUO } from "../../services/users/DocumentoIdentidadService.js";
+import { resolverPersonaPorNumero, MENSAJE_DOCUMENTO_AMBIGUO } from "../../dominios/identidad/index.js";
 import { listTasksForPerson } from "../../services/tasks/taskQueries.js";
 
 export const getuserTarea = async (req, res) => {

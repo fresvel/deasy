@@ -1,4 +1,4 @@
-import { estadoDeVerificacion } from "../services/users/estadoDeVerificacion.js";
+import { estadoDeVerificacion } from "../dominios/identidad/index.js";
 
 // La puerta DE VERDAD del registro en tres pasos.
 //

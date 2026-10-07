@@ -1,6 +1,6 @@
 import express from "express";
 import { requiereServicioInterno } from "../middlewares/servicioInterno.js";
-import { estadoDeLlave, confirmarLlave, numerosVerificados } from "../controllers/users/telefono_verificacion_controller.js";
+import { estadoDeLlave, confirmarLlave, numerosVerificados } from "../dominios/identidad/index.js";
 
 // Rutas que SÓLO llaman los microservicios de Deasy, nunca un navegador.
 //

@@ -1,9 +1,5 @@
 import { Router } from "express";
-import {
-  requestPasswordReset,
-  verifyResetCode,
-  resetPassword
-} from "../controllers/users/reset_password.js";
+import { requestPasswordReset, verifyResetCode, resetPassword } from "../dominios/identidad/index.js";
 import { limitaYCuenta } from "../middlewares/limitaIntentos.js";
 
 const router = Router();

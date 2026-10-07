@@ -7,16 +7,17 @@ import {
 } from "../config/rbacPolicy.js";
 import { SQL_TABLE_MAP } from "../config/sqlTables.js";
 
-const rbacService = new RbacService();
+let _rbacService = null;
+const rbacService = () => (_rbacService ??= new RbacService());
 
 const getAuthenticatedUserId = (req) => Number(req.user?.uid || req.auth?.userId || 0);
 
-const hasAnyRole = (access, roles = []) => rbacService.hasAnyRole(access, roles);
-const can = (access, resource, action) => rbacService.can(access, resource, action);
+const hasAnyRole = (access, roles = []) => rbacService().hasAnyRole(access, roles);
+const can = (access, resource, action) => rbacService().can(access, resource, action);
 const hasPermissionOrManage = (access, permissionCode) => {
   const [resource, action] = String(permissionCode || "").split(".");
   if (!resource || !action) {
-    return rbacService.hasPermission(access, permissionCode);
+    return rbacService().hasPermission(access, permissionCode);
   }
   return can(access, resource, action);
 };
@@ -30,7 +31,7 @@ const ensureAccessContext = async (req, res) => {
   }
 
   const userId = getAuthenticatedUserId(req);
-  const context = await rbacService.getUserAccessContext(userId);
+  const context = await rbacService().getUserAccessContext(userId);
   if (!context) {
     res.status(401).json({ message: "Usuario autenticado no disponible o inactivo." });
     return null;

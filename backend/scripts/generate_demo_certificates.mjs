@@ -17,7 +17,7 @@ import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 
 import { closePostgresPool, getPostgresPool } from "../config/postgres.js";
-import UserCertificateRepository from "../services/auth/UserCertificateRepository.js";
+import { UserCertificateRepository } from "../dominios/identidad/index.js";
 import { ensureBucketExists, uploadFileToMinio } from "../services/storage/minio_service.js";
 
 const execFileAsync = promisify(execFile);
@@ -27,7 +27,8 @@ const CERT_PASSWORD = "Demo1234!";
 const CERT_LABEL = "Demo Autofirmado";
 const CERT_VALID_DAYS = 3650;
 
-const certificateRepository = new UserCertificateRepository();
+let _certificateRepository = null;
+const certificateRepository = () => (_certificateRepository ??= new UserCertificateRepository());
 const pool = getPostgresPool();
 
 if (!pool) {
@@ -146,7 +147,7 @@ const registerCertificate = async (person, p12Path) => {
     "Content-Type": "application/x-pkcs12"
   });
 
-  return certificateRepository.create({
+  return certificateRepository().create({
     person_id: person.id,
     label: CERT_LABEL,
     original_filename: originalFilename,
@@ -188,7 +189,7 @@ const main = async () => {
       // Reemisión: el certificado anterior deja de ser el default, pero NO se borra — su
       // objeto en MinIO puede seguir referenciado por firmas ya hechas.
       if (Number(person.certificate_count) > 0) {
-        await certificateRepository.clearDefaultForPerson(person.id);
+        await certificateRepository().clearDefaultForPerson(person.id);
       }
       const { tempDir, p12Path } = await createPkcs12ForPerson(person);
       try {

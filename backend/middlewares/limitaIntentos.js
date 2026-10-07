@@ -14,7 +14,8 @@ import { SUJETOS } from "../services/limites/reglas.js";
  *  · En `/validate/cedula` va antes de la llamada a **webservices.ec**, que cuesta dinero.
  */
 
-const limitadorPorDefecto = new Limitador();
+let _limitadorPorDefecto = null;
+const limitadorPorDefecto = () => (_limitadorPorDefecto ??= new Limitador());
 
 /**
  * De dónde sale el sujeto que se cuenta.
@@ -47,7 +48,7 @@ export const sujetoDe = (req, forma) => {
 /**
  * @param {string} accion  una clave de `REGLAS`. Sin regla, no frena nada.
  */
-export const limitaIntentos = (accion, { limitador = limitadorPorDefecto } = {}) => {
+export const limitaIntentos = (accion, { limitador = limitadorPorDefecto() } = {}) => {
   const regla = limitador.reglas[accion];
 
   return async (req, res, next) => {

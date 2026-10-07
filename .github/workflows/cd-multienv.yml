@@ -180,6 +180,13 @@ jobs:
       - name: Check module-level instances
         working-directory: backend
         run: npm run check:instancias
+      # Que toda ruta relativa resuelva. Era el hueco que `CLAUDE.md` nombraba y nadie tapaba: ni
+      # `node --check` ni `check:imports` ven una ruta rota, y hasta ahora solo lo veía el backend al
+      # arrancar. Mira las DOS comillas —el import que se escapó usaba simples— y también las rutas
+      # que no son imports, como `new URL(..., import.meta.url)`. A techo cero.
+      - name: Check relative paths
+        working-directory: backend
+        run: npm run check:rutas
       # El mapa de módulos: que cada tabla del esquema esté en un módulo, que ninguna clave ajena
       # apunte a una capa superior, y que no haya una tabla NUEVA escrita desde dos sitios. Va aquí
       # —y no solo en docs-dbml— porque la tercera comprobación mira el CÓDIGO: un segundo escritor

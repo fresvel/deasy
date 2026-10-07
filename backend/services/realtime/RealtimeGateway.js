@@ -1,7 +1,7 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { getAccessTokenSecret } from "../../utils/login/generate_token.js";
-import UserRepository from "../auth/UserRepository.js";
+import { UserRepository } from "../../dominios/identidad/index.js";
 import {
   ChatAuthorizationService,
   ChatConversationService,
@@ -22,11 +22,31 @@ const processRoom = (processId) => `process:${processId}`;
  * MQTT (users/{id}, conversations/{id}, processes/{id}).
  */
 class RealtimeGateway {
+  // ⚠️ EL CONSTRUCTOR NO INSTANCIA NADA, y esta es la razón: abajo hay un **singleton de módulo**
+  // (`new RealtimeGateway()` al final del fichero), así que todo lo que el constructor construyera
+  // se construiría al IMPORTAR este módulo. Y los tres que construía vienen de la puerta de un
+  // dominio —`UserRepository` de `identidad`, los dos de `chat`—, así que importar esto arrastraba
+  // dos puertas enteras antes de que terminaran de inicializarse. Costó 9 suites en rojo con
+  // `ReferenceError: Cannot access 'UserRepository' before initialization` al mover `identidad`.
+  //
+  // Resueltos al PRIMER USO. El singleton puede quedarse: lo que no podía quedarse era su trabajo.
   constructor() {
     this.io = null;
-    this.userRepository = new UserRepository();
-    this.conversationService = new ChatConversationService();
-    this.authorizationService = new ChatAuthorizationService();
+    this._userRepository = null;
+    this._conversationService = null;
+    this._authorizationService = null;
+  }
+
+  get userRepository() {
+    return (this._userRepository ??= new UserRepository());
+  }
+
+  get conversationService() {
+    return (this._conversationService ??= new ChatConversationService());
+  }
+
+  get authorizationService() {
+    return (this._authorizationService ??= new ChatAuthorizationService());
   }
 
   /**
@@ -177,6 +197,13 @@ class RealtimeGateway {
   }
 }
 
-// Singleton compartido por todo el backend.
-const realtimeGateway = new RealtimeGateway();
+// Singleton compartido por todo el backend, RESUELTO AL PRIMER USO y no al importar.
+//
+// Se exporta una funcion, no la instancia, y eso es a proposito: construirla aqui ejecutaba su
+// constructor en el instante del import, y su constructor alcanzaba servicios de DOS dominios
+// —`identidad` y `chat`—, asi que importar este modulo arrastraba las dos puertas antes de que
+// terminaran de inicializarse. Son tres consumidores y cuatro usos: sale mas barato que una
+// excepcion en la puerta.
+let instancia = null;
+const realtimeGateway = () => (instancia ??= new RealtimeGateway());
 export default realtimeGateway;

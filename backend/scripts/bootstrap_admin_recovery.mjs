@@ -32,10 +32,11 @@ const payload = {
   confirm_password: confirmPassword
 };
 
-const bootstrapService = new SystemBootstrapService();
+let _bootstrapService = null;
+const bootstrapService = () => (_bootstrapService ??= new SystemBootstrapService());
 
 try {
-  const result = await bootstrapService.recoverAdmin(payload);
+  const result = await bootstrapService().recoverAdmin(payload);
   console.log(result.message);
   console.log(`AdminSistema: ${result.admin.email} (${result.admin.cedula})`);
 } catch (error) {

@@ -26,7 +26,8 @@ import { get, post, put } from "../tests/characterization/lib/http.mjs";
 import { tokenFor } from "../tests/characterization/lib/auth.mjs";
 import SqlAdminService from "../services/admin/SqlAdminService.js";
 
-const sqlAdmin = new SqlAdminService();
+let _sqlAdmin = null;
+const sqlAdmin = () => (_sqlAdmin ??= new SqlAdminService());
 
 const SLUG = "informe-gestion-docente";
 const UNIT_ID = 8;            // Tecnologías de la Información
@@ -189,7 +190,7 @@ const main = async () => {
   //    (que aún no hay, así que no afecta a nada) y nos devuelve el artefacto nuevo, que no tiene
   //    vínculo todavía y por tanto SÍ se puede vincular.
   console.log("Forkeando el entregable a la nueva línea (copia objetos en MinIO)...");
-  const fork = await sqlAdmin.forkDeliverableForConfig({
+  const fork = await sqlAdmin().forkDeliverableForConfig({
     sourceArtifactId: SEED_ARTIFACT_ID,
     definitionId,
     newCode: "tpl_informe_gestion_docente",

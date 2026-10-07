@@ -598,11 +598,12 @@ bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # OBLI
 bash scripts/docker-env.sh dev exec -T backend npm run check:sql-comments # OBLIGATORIO tras tocar SQL
 bash scripts/docker-env.sh dev exec -T backend npm run check:sql-aliases  # OBLIGATORIO tras tocar SQL
 bash scripts/docker-env.sh dev exec -T backend npm run check:instancias   # OBLIGATORIO: nada `new` al cargar un modulo
+bash scripts/docker-env.sh dev exec -T backend npm run check:rutas        # OBLIGATORIO tras mover código: que las rutas resuelvan
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov para SonarQube
 ```
 El backend **no tiene lint**, pero **sí tiene tests** — ejecútalos, no valides "a mano".
 
-**Los `check:` marcados OBLIGATORIO corren en CI** (los tres de SQL e imports desde el 2026-08-26; `check:instancias` desde el 2026-10-07), en el job
+**Los `check:` marcados OBLIGATORIO corren en CI** (los tres de SQL e imports desde el 2026-08-26; `check:instancias` y `check:rutas`, desde el 2026-10-07), en el job
 `backend-checks` de `cd-multienv.yml`, y en `pull_request` además de en `push`: si te los saltas en
 local, te para el PR. Antes solo corría `check:imports`, y las otras dos dependían de que alguien se
 acordara. `check:params` **no** está en CI: es una decisión pendiente, no un olvido.
@@ -671,11 +672,12 @@ estados y cualquier bucle de trabajo viven en `backend/services/`.
 responsabilidad**, y se lee de una sentada. Los infractores conocidos están listados en `docs/planes/referencia/calidad-y-medicion.md` §5-D; no añadas
 más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extrae un servicio.
 
-### El código por dominios — la forma, probada en `chat` y en `organizacion`
+### El código por dominios — la forma, probada en `chat`, `organizacion` e `identidad`
 
-Desde el **2026-10-07** hay **dos** dominios enteros movidos con sus cuatro capas y su subcapa de
-lecturas —`backend/dominios/chat/` y `backend/dominios/organizacion/`—, y su forma es el contrato
-para los seis que faltan (`empleo` tiene la carpeta reservada y vacía):
+Desde el **2026-10-07** hay **tres** dominios movidos a `backend/dominios/` —`chat` y `organizacion`
+con sus cuatro capas y su subcapa de lecturas, e `identidad` con las cuatro capas y la subcapa
+pendiente—, y su forma es el contrato para los que faltan (`empleo` tiene la carpeta reservada y
+vacía):
 
 ```
 dominios/<dominio>/
@@ -719,16 +721,36 @@ const servicio = () => (_servicio ??= new Servicio());
 ```
 
 **Hoy son CERO, y hay puerta a techo cero**: `npm run check:instancias`
-(`backend/scripts/check_module_instances.mjs`), que corre en el job `backend-checks` de CI junto a
-las otras tres. Mira `controllers/`, `routes/` y `dominios/` en la **columna cero** —con sangría ya
-está dentro de un bloque y se ejecuta cuando toca— y no cuenta `new Router`, `new Set`, `new Map`,
-`new URL`, `new Date`, `new RegExp` ni `new Intl`, que no instancian nada nuestro y no pueden entrar
-en un ciclo. Cuando falla **dice qué escribir**, con el nombre de la variable ya puesto.
+(`backend/scripts/check_module_instances.mjs`), en el job `backend-checks` de CI. Mira **todo el
+backend** en la **columna cero** —con sangría ya está dentro de un bloque y se ejecuta cuando toca— y
+sólo marca **nuestras** clases: las reconoce porque entran por una ruta **relativa**, así que un
+`new Minio.Client({…})` o un `new Router()` no cuentan (no pueden participar en un ciclo de nuestros
+módulos, que es el fallo que esto persigue). Cuando falla **dice qué escribir**, con el nombre de la
+variable ya puesto.
+
+⚠️ **Su primer alcance estaba MAL RECORTADO, y el primer dominio que se movió lo demostró.** Miraba
+sólo `controllers/`, `routes/` y `dominios/` «porque el problema vive en los controladores», y al
+mover `identidad` falló por `services/realtime/RealtimeGateway.js` — que la puerta **no miraba**.
+Había **nueve** sitios fuera del alcance, tres construyendo justo lo que pasa por la puerta de un
+dominio. **Es el mismo fallo que `check:sql-aliases` y `check:sql-comments` al excluir una carpeta por
+nombre**: 73 ficheros vistos contra **203** reales. Un recorte a ojo es donde esto muerde.
+
+⚠️ **Y se probó mirar también el cuerpo de los CONSTRUCTORES —y se retiró midiendo.** `RealtimeGateway`
+construía tres servicios de dos dominios en el suyo, igual que `SqlAdminService` con sus seis. Pero la
+comprobación marcaba **13 sitios y 11 eran inofensivos**: un constructor sólo corre al cargar **si
+alguien instancia esa clase a nivel de módulo**, así que con el nivel de módulo a cero no puede
+encontrar nada. Es redundante **por construcción**, no por optimismo — y eso exige que la puerta **no
+tenga excepciones**. Las dos que parecían razonables (`index.js`, cuyo cuerpo corre al final, y los
+`scripts/*.mjs`, que son puntos de entrada) **se arreglaron en vez de eximirse**, y costaron cuatro
+líneas. Si alguien añade una excepción, la redundancia deja de ser cierta y vuelve el fallo por el
+constructor.
 
 Eran **30 en 16 ficheros** y se cerraron el 2026-10-07 en una tanda: 26 por script y 4 a mano
 —`sql_admin_controller`, donde `editor` envuelve a `service` y las dos tenían que volverse perezosas
 en orden; `dossier_controler`, cuyo cliente de MinIO ocupa varias líneas **y lee el entorno al
-construirse**; y una que resultó estar **muerta**—.
+construirse**; y una que resultó estar **muerta**—. Y mover `identidad`, ese mismo día, destapó
+**once más** donde la puerta no miraba: siete en `services/`, uno en `middlewares/` y tres en
+`scripts/`, más el **singleton de `RealtimeGateway`** y el de `index.js`. Total real: **41**.
 
 ⚠️ **`SqlAdminService` estaba importada e instanciada en `user_controler.js` con CERO usos.** El
 servicio más grande del backend, construido al cargar el controlador más grande, para nada. No lo veía
@@ -739,9 +761,60 @@ comentarios: un «Ver el porqué del diseño en el servicio.» se volvió «en e
 líneas de comentario del diff, que es donde no lo ve ningún test.
 
 ⚠️ **Y al mover un dominio, recalcula los imports POR SCRIPT**, resolviendo cada ruta desde la
-posición vieja y reescribiéndola desde la nueva. En `chat` fueron **29 imports en 14 ficheros**: a
-mano es donde se cuela el que nadie prueba. `node --check` y `check:imports` **no** ven una ruta
-relativa rota — eso sólo lo ve el backend al arrancar.
+posición vieja y reescribiéndola desde la nueva. En `chat` fueron **29 imports en 14 ficheros** y en
+`identidad` **102**: a mano es donde se cuela el que nadie prueba.
+
+Tres cosas del reescritor que **ya costaron una corrida cada una** el 2026-10-07:
+
+1. ⚠️ **Si el DESTINO también se movió, resolver desde la posición vieja no basta.** La primera
+   pasada de `identidad` dejó **63 rutas apuntando a las carpetas viejas**: el script resolvía bien y
+   reescribía bien, pero hacia donde el fichero *estaba*. Hace falta el mapa **viejo→nuevo** y
+   consultarlo antes de volver a escribir la ruta.
+2. ⚠️ **ACEPTA LAS DOS COMILLAS.** Un import con comillas **simples** sobrevivió a cuatro barridos
+   seguidos y dejó el backend sin arrancar (`routes/dossier_router.js`). El repositorio usa dobles
+   casi siempre, así que la excepción es invisible justo cuando más duele.
+3. ⚠️ **Hay rutas relativas que NO son imports.** `new URL("../../database/postgres_schema.sql",
+   import.meta.url)` se rompe igual y ningún reescritor de imports la toca. Costó dos tests.
+
+**Ya hay puerta para las tres: `npm run check:rutas`** (`backend/scripts/check_relative_paths.mjs`),
+en CI. Resuelve toda ruta relativa del backend —imports con cualquier comilla, `import()` dinámico y
+`new URL(…, import.meta.url)`— y falla si alguna no existe. **Era el hueco que este fichero nombraba
+y nadie tapaba**: ni `node --check` ni `check:imports` la ven, y antes sólo la veía el backend al
+arrancar, que es un mal detector porque para entonces ya perdiste la corrida.
+
+### `identidad` son CINCO asuntos, no uno — y por eso se mueve a tandas
+
+Su dominio tiene **34 tablas** y este fichero decía «son tres cosas apiladas». Medido el 2026-10-07,
+son **cinco**, y la lectura por niveles no sirve para separarlas: el RBAC ocupa el nivel 0 **y** el 3.
+
+| Asunto | Tablas | Dónde vive su código |
+|---|---|---|
+| **La persona** | 10 — `persons`, `documentos_identidad`, `emails`, `telefonos`, `direcciones`, `dossiers`… | ✅ **`dominios/identidad/`** |
+| **Catálogos** (n0) | 10 — `generos`, `estados_civiles`, `cargos`, `parentescos`… | `services/system/genericCatalog.js` (transversal declarado) |
+| **El acceso / RBAC** (n0 y n3) | 8 — `roles`, `permissions`, `role_assignments`, `actions`, `resources`… | `services/auth/RbacService.js` + `middlewares/rbac.js` |
+| **Los mecanismos** (n3) | 5 — códigos de verificación, `intentos_limitados`, `canales_bitacora` | `services/mail/`, `services/limites/`, `services/canales/` |
+| **Lo legal** (n1) | 2 — `consentimientos`, `documentos_legales` | `services/legal/` |
+
+**La primera tanda movió la persona** —50 ficheros: 1 puerta, 2 routers, 18 controllers y 31
+servicios—, que es de `identidad` en cualquier lectura. Los otros cuatro asuntos **siguen fuera a
+propósito**, y el `index.js` del dominio lleva escrito el por qué de cada uno. El que más importa:
+
+⚠️ **El RBAC NO entra tras la puerta de `identidad`.** Lo usa **todo router** de la aplicación, así
+que meterlo dentro obligaría a **todos** los dominios a importar `identidad` para resolver un
+permiso. Dónde va es una de las decisiones de F7.0.
+
+⚠️ **Y `identidad` ⇄ `organizacion` es un CICLO ENTRE PUERTAS, a sabiendas.**
+`DocumentoIdentidadService` necesita `InstitucionService` —de qué país es la institución decide cuál
+es el documento nacional— y `organizacion/controllers/institucion_controller.js` necesita
+`nombreLocal` de `identidad`. Es una de las cuatro parejas que el mapa ya declara mutuamente
+dependientes, así que no es un error que haya que deshacer. **Lo que lo hace inofensivo es que nadie
+instancie al cargar**: el ciclo existía ya en los dos dominios anteriores, y la primera vez que
+mordió de verdad fue aquí, con nueve suites en rojo.
+
+⚠️ **No vuelvas a contar «62 ficheros».** Esa cifra contaba cualquier mención del nombre de una tabla,
+**comentarios incluidos**. Apretado a referencias dentro del SQL son **36 ficheros y 379 consultas**,
+y de esos 36 sólo **19 son del dominio**: los otros 15 leen `identidad` pero escriben en otro, así que
+se van con el suyo cuando les toque.
 
 ### La transacción se abre con `conTransaccion`, y NO en un controller
 

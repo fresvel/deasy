@@ -1,4 +1,4 @@
-import UserRepository from "../../../services/auth/UserRepository.js";
+import { UserRepository } from "../../identidad/index.js";
 
 export default class ChatIdentityService {
   constructor({ userRepository = new UserRepository() } = {}) {

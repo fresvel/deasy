@@ -1,0 +1,865 @@
+import { getPostgresPool } from "../../../config/postgres.js";
+import DireccionService from "./DireccionService.js";
+import TelefonoService from "./TelefonoService.js";
+import EmailService from "./EmailService.js";
+import DocumentoIdentidadService, { TIPO_NACIONAL } from "./DocumentoIdentidadService.js";
+import { estadoDeVerificacion } from "./estadoDeVerificacion.js";
+import DocumentosLegales from "../../../services/legal/DocumentosLegales.js";
+import AccesosSensiblesService from "../../../services/auth/AccesosSensiblesService.js";
+import { resolveTableResource } from "../../../config/rbacPolicy.js";
+
+const DEFAULT_STATUS = "Inactivo";
+
+// Las columnas de `persona_autoidentificacion` que declara la propia persona desde su perfil. Hasta P8
+// eran columnas de `persons`; salieron por ser datos sensibles (LOPDP, Art. 4).
+export const CAMPOS_AUTOIDENTIFICACION = ["genero_id", "autoidentificacion_etnica_id"];
+
+// LOS DATOS PERSONALES, con LAS MISMAS CLAVES al escribir (`updateMe`) y al leer (`datosPersonalesDe`),
+// para que el formulario del perfil lea exactamente lo que escribe. Una sola lista: dos acabarian
+// discrepando, que es como se perdieron en silencio la nacionalidad, el correo y el documento.
+export const CAMPOS_DATOS_PERSONALES = [
+  "fecha_nacimiento",
+  "nacimiento_pais_id",
+  "nacimiento_canton_id",
+  "sexo",
+  "estado_civil_id",
+  // Los dos sensibles, que viven en `persona_autoidentificacion` desde P8.
+  ...CAMPOS_AUTOIDENTIFICACION
+];
+
+// Saca del payload los campos de autoidentificacion y los devuelve aparte, o NULL si no venia
+// ninguno. Una cadena vacia es «lo quito» y se guarda como NULL: tal cual, la clave ajena la rechazaria.
+const apartarAutoidentificacion = (payload) => {
+  const datos = {};
+  for (const campo of CAMPOS_AUTOIDENTIFICACION) {
+    if (payload[campo] !== undefined) {
+      datos[campo] = payload[campo] === "" ? null : payload[campo];
+    }
+    delete payload[campo];
+  }
+  return Object.keys(datos).length ? datos : null;
+};
+
+export default class UserRepository {
+  constructor(pool = getPostgresPool()) {
+    this.pool = pool;
+    this.direcciones = new DireccionService(pool);
+    this.telefonos = new TelefonoService(pool);
+    this.emails = new EmailService(pool);
+    this.documentos = new DocumentoIdentidadService(pool);
+    this.bitacora = new AccesosSensiblesService(pool);
+  }
+
+  ensurePool() {
+    if (!this.pool) {
+      throw new Error("La conexión con PostgreSQL no está disponible.");
+    }
+  }
+
+  // La nacionalidad entra por la API como codigo ISO-3166 alfa-2 ("EC"), que es lo que un cliente
+  // puede escribir, y se guarda como clave ajena a `paises`. Se admite tambien el id ya resuelto,
+  // que es lo que manda el editor generico de /admin.
+  async resolveNacionalidadPaisId(userData) {
+    if (userData.nacionalidad_pais_id !== undefined && userData.nacionalidad_pais_id !== null && userData.nacionalidad_pais_id !== "") {
+      return Number(userData.nacionalidad_pais_id);
+    }
+    const iso = String(userData.nacionalidad ?? "").trim().toUpperCase();
+    if (!iso) {
+      return null;
+    }
+    const [rows] = await this.pool.query(
+      "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1",
+      [iso]
+    );
+    if (!rows?.length) {
+      const error = new Error(`La nacionalidad '${iso}' no corresponde a ningun pais del catalogo.`);
+      // Marca para que el transporte lo traduzca a 400 y no a 500: es dato mal enviado por el
+      // cliente, no una averia. Antes `pais` era texto libre y no habia nada que validar.
+      error.status = 400;
+      throw error;
+    }
+    return Number(rows[0].id);
+  }
+
+  // Las direcciones viven en su tabla desde el paso 3, asi que hay que colgarlas de la fila antes de
+  // mapearla. `direccion` (singular) es LA principal de residencia, que es lo que enseña el perfil.
+  async conDirecciones(userRow) {
+    if (!userRow) return userRow;
+    const personId = userRow.id ?? userRow._id;
+    const [direcciones, telefonos, emails, documentos] = await Promise.all([
+      this.direcciones.listarPorPersona(personId),
+      this.telefonos.listarPorPersona(personId),
+      this.emails.listarPorPersona(personId),
+      this.documentos.listarPorPersona(personId)
+    ]);
+    return {
+      ...userRow,
+      direcciones,
+      direccion: direcciones.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null,
+      telefonos,
+      emails,
+      documentos
+    };
+  }
+
+  async findById(id) {
+    this.ensurePool();
+
+    const [rows] = await this.pool.query(
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
+              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
+       FROM persons p
+       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
+       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
+       WHERE p.id = ? LIMIT 1`,
+      [id]
+    );
+
+    return this.conDirecciones(rows?.[0] ?? null);
+  }
+
+  /**
+   * Por AQUI ENTRA EL LOGIN, y sólo acepta correo.
+   *
+   * Hasta el 2026-08-29 se llamaba `findByCedulaOrEmail` y buscaba también por número de documento:
+   *
+   *     EXISTS (SELECT 1 FROM documentos_identidad d WHERE d.person_id = p.id AND d.numero = ?)
+   *
+   * **A SECAS**, cuando la unicidad de un documento es `(tipo, país, número)`. El número solo NO es
+   * único —dos pasaportes de países distintos con el mismo número son legales en el modelo—, así que
+   * la consulta podía emparejar a la persona equivocada. En autenticación.
+   *
+   * No se acotó: se quitó. El documento no es una llave con la que entrar, y no por la unicidad sino
+   * por la ESTABILIDAD: un pasaporte se renueva con número nuevo, y quien entrara con él perdería su
+   * acceso. El correo lo controla la persona y no caduca.
+   *
+   * El correo se busca por CUALQUIERA de los suyos, no sólo el principal: quien se registró con el
+   * personal y luego declara el institucional debe poder seguir entrando con los dos.
+   */
+  async findByEmail(email) {
+    this.ensurePool();
+
+    const correo = String(email ?? "").trim().toLowerCase();
+    if (!correo) {
+      return null;
+    }
+
+    const [rows] = await this.pool.query(
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
+              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
+       FROM persons p
+       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
+       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
+       WHERE EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ? AND e.is_active = 1) LIMIT 1`,
+      [correo]
+    );
+
+    return this.conDirecciones(rows?.[0] ?? null);
+  }
+
+  async findAll() {
+    this.ensurePool();
+
+    const [rows] = await this.pool.query(
+      `SELECT p.*, na.iso_alpha2 AS nacionalidad, na.name AS nacionalidad_nombre,
+              em.direccion AS email, em.verificado AS email_verificado, em.id AS email_id,
+              di.numero AS cedula, di.verificado AS documento_verificado, di.tipo AS documento_tipo
+       FROM persons p
+       LEFT JOIN paises na ON na.id = p.nacionalidad_pais_id
+       LEFT JOIN emails em ON em.person_id = p.id AND em.principal = 1 AND em.is_active = 1
+       LEFT JOIN documentos_identidad di ON di.person_id = p.id AND di.principal = 1 AND di.is_active = 1
+       ORDER BY p.created_at DESC`
+    );
+
+    // Una sola consulta para TODAS las direcciones, no una por persona: en una lista de 43
+    // usuarios eso serian 43 viajes a la base para pintar una tabla.
+    return this.adjuntarDireccionesEnLote(rows ?? []);
+  }
+
+  async adjuntarDireccionesEnLote(rows) {
+    if (!rows.length) return rows;
+    const ids = rows.map((r) => Number(r.id)).filter(Boolean);
+    if (!ids.length) return rows;
+    const [filas] = await this.pool.query(
+      `SELECT d.person_id, d.id, d.tipo, d.principal,
+              pa.iso_alpha2 AS pais_iso, pa.name AS pais,
+              pr.name AS provincia, ca.name AS canton,
+              d.sector, d.barrio,
+              d.calle_primaria, d.calle_secundaria, d.referencia, d.latitud, d.longitud
+         FROM direcciones d
+         LEFT JOIN paises pa ON pa.id = d.pais_id
+         LEFT JOIN provincias pr ON pr.id = d.provincia_id
+         LEFT JOIN cantones ca ON ca.id = d.canton_id
+        WHERE d.person_id IN (${ids.map(() => "?").join(", ")}) AND d.is_active = 1
+        ORDER BY d.principal DESC, d.id ASC`,
+      ids
+    );
+    const porPersona = new Map();
+    for (const fila of filas ?? []) {
+      const lista = porPersona.get(Number(fila.person_id)) ?? [];
+      lista.push(fila);
+      porPersona.set(Number(fila.person_id), lista);
+    }
+    // Los telefonos, tambien en lote y por el mismo motivo. Devolver `telefonos: []` aqui seria
+    // MENTIR: `whatsapp` se deriva de esa lista, asi que una lista vacia lo dejaria en null para
+    // todo el mundo y pareceria que nadie tiene numero.
+    const [tels] = await this.pool.query(
+      `SELECT t.person_id, t.id, t.tipo, t.principal, t.numero,
+              pa.iso_alpha2 AS pais_iso, pa.phone_code AS prefijo,
+              -- ⚠️ EL CERO NACIONAL NO VA DETRAS DEL PREFIJO: +593 seguido de 0990000000 da
+              -- +5930990000000, que no es un numero. Se quita al internacionalizar y se
+              -- CONSERVA cuando no hay prefijo, porque entonces la forma local es la correcta.
+              -- No se veia porque hasta el 2026-08-30 el arranque creaba el telefono SIN pais.
+              CASE
+                WHEN COALESCE(pa.phone_code, '') = '' THEN t.numero
+                ELSE pa.phone_code || regexp_replace(t.numero, '^0+', '')
+              END AS numero_completo
+         FROM telefonos t
+         LEFT JOIN paises pa ON pa.id = t.pais_id
+        WHERE t.person_id IN (${ids.map(() => "?").join(", ")}) AND t.is_active = 1
+        ORDER BY t.principal DESC, t.id ASC`,
+      ids
+    );
+    const telefonosPorPersona = new Map();
+    const telefonoIds = [];
+    for (const tel of tels ?? []) {
+      telefonoIds.push(Number(tel.id));
+      const lista = telefonosPorPersona.get(Number(tel.person_id)) ?? [];
+      lista.push({ ...tel, canales: [] });
+      telefonosPorPersona.set(Number(tel.person_id), lista);
+    }
+    if (telefonoIds.length) {
+      const [canales] = await this.pool.query(
+        `SELECT tc.telefono_id, cm.code, cm.name, tc.verificado, tc.verificado_at
+           FROM telefono_canales tc
+           JOIN canales_mensajeria cm ON cm.id = tc.canal_id
+          WHERE tc.telefono_id IN (${telefonoIds.map(() => "?").join(", ")})`,
+        telefonoIds
+      );
+      const porTelefono = new Map();
+      for (const canal of canales ?? []) {
+        const lista = porTelefono.get(Number(canal.telefono_id)) ?? [];
+        lista.push({ code: canal.code, name: canal.name, verificado: Number(canal.verificado) === 1, verificado_at: canal.verificado_at });
+        porTelefono.set(Number(canal.telefono_id), lista);
+      }
+      for (const lista of telefonosPorPersona.values()) {
+        for (const tel of lista) {
+          tel.canales = porTelefono.get(Number(tel.id)) ?? [];
+        }
+      }
+    }
+
+    return rows.map((row) => {
+      const lista = porPersona.get(Number(row.id)) ?? [];
+      return {
+        ...row,
+        direcciones: lista,
+        direccion: lista.find((d) => d.tipo === "residencia" && Number(d.principal) === 1) ?? null,
+        telefonos: telefonosPorPersona.get(Number(row.id)) ?? []
+      };
+    });
+  }
+
+  async search(term = "", limit = 20, status = null, filters = {}) {
+    this.ensurePool();
+
+    const normalized = term?.trim();
+    const safeLimit = Number.isFinite(Number(limit))
+      ? Math.max(1, Number(limit))
+      : 20;
+
+    const statusFilter = status?.trim();
+    const unitTypeId = filters?.unitTypeId ? Number(filters.unitTypeId) : null;
+    const unitId = filters?.unitId ? Number(filters.unitId) : null;
+    const cargoId = filters?.cargoId ? Number(filters.cargoId) : null;
+
+    const conditions = [];
+    const params = [];
+
+    if (normalized) {
+      const like = `%${normalized}%`;
+
+      // Ni la cedula ni el correo son columnas de `persons`: se filtra por sus tablas. Se busca en
+      // TODOS los documentos y correos de la persona, no solo en el principal, que es lo que espera
+      // quien teclea un numero en el buscador.
+      conditions.push(
+        `(EXISTS (SELECT 1 FROM documentos_identidad sd WHERE sd.person_id = p.id AND sd.numero ILIKE ?)
+          OR EXISTS (SELECT 1 FROM emails se WHERE se.person_id = p.id AND se.direccion ILIKE ?)
+          OR p.first_name ILIKE ? OR p.last_name ILIKE ?)`
+      );
+
+      params.push(like, like, like, like);
+    }
+
+    if (statusFilter) {
+      conditions.push("p.status = ?");
+      params.push(statusFilter);
+    }
+
+    if (unitTypeId) {
+      conditions.push("ut.id = ?");
+      params.push(unitTypeId);
+    }
+
+    if (unitId) {
+      conditions.push("u.id = ?");
+      params.push(unitId);
+    }
+
+    if (cargoId) {
+      conditions.push("c.id = ?");
+      params.push(cargoId);
+    }
+
+    const whereClause = conditions.length
+      ? `WHERE ${conditions.join(" AND ")}`
+      : "";
+
+    const [rows] = await this.pool.query(
+      `SELECT
+         p.*,
+         sdoc.numero AS cedula,
+         semail.direccion AS email,
+         GROUP_CONCAT(DISTINCT ut.id ORDER BY ut.name SEPARATOR ',') AS unit_type_ids,
+         GROUP_CONCAT(DISTINCT ut.name ORDER BY ut.name SEPARATOR ' | ') AS unit_type_names,
+         GROUP_CONCAT(DISTINCT u.id ORDER BY COALESCE(u.label, u.name) SEPARATOR ',') AS unit_ids,
+         GROUP_CONCAT(DISTINCT COALESCE(u.label, u.name) ORDER BY COALESCE(u.label, u.name) SEPARATOR ' | ') AS unit_names,
+         GROUP_CONCAT(DISTINCT c.id ORDER BY c.name SEPARATOR ',') AS cargo_ids,
+         GROUP_CONCAT(DISTINCT c.name ORDER BY c.name SEPARATOR ' | ') AS cargo_names
+       FROM persons p
+       LEFT JOIN documentos_identidad sdoc
+         ON sdoc.person_id = p.id AND sdoc.principal = 1 AND sdoc.is_active = 1
+       LEFT JOIN emails semail
+         ON semail.person_id = p.id AND semail.principal = 1 AND semail.is_active = 1
+       LEFT JOIN position_assignments pa
+         ON pa.person_id = p.id
+        AND pa.is_current = 1
+       LEFT JOIN unit_positions up
+         ON up.id = pa.position_id
+        AND up.is_active = 1
+       LEFT JOIN units u
+         ON u.id = up.unit_id
+        AND u.is_active = 1
+       LEFT JOIN unit_types ut
+         ON ut.id = u.unit_type_id
+       LEFT JOIN cargos c
+         ON c.id = up.cargo_id
+        AND c.is_active = 1
+        ${whereClause}
+       GROUP BY p.id, sdoc.numero, semail.direccion
+        ORDER BY p.created_at DESC
+        LIMIT ?`,
+      [...params, safeLimit]
+    );
+
+    return rows;
+  }
+
+  documentosLegales = new DocumentosLegales();
+
+  async create(userData) {
+    this.ensurePool();
+
+    const payload = {
+      password_hash: userData.password_hash ?? userData.password,
+      first_name: userData.first_name ?? userData.nombre,
+      last_name: userData.last_name ?? userData.apellido,
+      nacionalidad_pais_id: await this.resolveNacionalidadPaisId(userData),
+      status: userData.status ?? DEFAULT_STATUS,
+      photo_url: userData.photo_url ?? userData.photoUrl ?? null,
+      is_active: userData.is_active ?? 1,
+      token: userData.token
+    };
+
+    if (!payload.token) {
+      throw new Error("Token no generado");
+    }
+    const requiredFields = ["password_hash", "first_name", "last_name"];
+
+    const missingFields = requiredFields.filter(
+      (field) => !payload[field]
+    );
+
+    if (missingFields.length) {
+      throw new Error(
+        `Datos incompletos del usuario: ${missingFields.join(", ")}`
+      );
+    }
+
+    const columns = Object.keys(payload);
+    const values = columns.map((key) => payload[key]);
+    const placeholders = columns.map(() => "?").join(", ");
+
+    // ── TODO EL ALTA VA EN UNA TRANSACCION ────────────────────────────────────────────────────
+    //
+    // ⚠️ ANTES NO. La persona se insertaba, y sus satelites --direccion, telefono, correo,
+    // documento-- iban despues, cada uno por su cuenta. El comentario que habia aqui lo decia con
+    // todas las letras: "si viene mal, el servicio lanza con status 400 y la persona ya esta
+    // creada". Comprobado el 2026-08-31 con dos peticiones reales: dejaron DOS personas colgadas,
+    // una con correo y telefono pero sin documento, y otra vacia.
+    //
+    // Con un registro de un solo paso eso era feo. Con el de TRES PASOS (C8) es inaceptable, y por
+    // un motivo concreto que se midio: el telefono queda GUARDADO Y OCUPADO, asi que el segundo
+    // intento de la misma persona falla con "ese numero ya esta registrado por otra persona" --y la
+    // otra persona es ella misma, media hora antes. Quien se equivoca una vez no puede reintentar.
+    //
+    // O entra todo o no entra nada.
+    const conexion = await this.pool.getConnection();
+    let result;
+    try {
+      await conexion.beginTransaction();
+
+      [result] = await conexion.query(
+        `INSERT INTO persons (${columns.join(", ")}) VALUES (${placeholders})`,
+        values
+      );
+
+      // Los satelites van DESPUES porque necesitan el id de la persona; ahora, dentro de la misma
+      // transaccion, ese orden ya no deja rastro si algo falla.
+      if (userData.direccion) {
+        await this.direcciones.guardarPrincipal(result.insertId, userData.direccion, conexion);
+      }
+      if (userData.telefono) {
+        await this.telefonos.guardarPrincipal(result.insertId, userData.telefono, conexion);
+      }
+      if (userData.email) {
+        await this.emails.guardarPrincipal(result.insertId, userData.email, conexion);
+      }
+      // El documento de identidad: `documento` es el objeto {tipo, pais, numero}; `cedula` es la
+      // forma corta que sigue aceptandose y significa "documento nacional".
+      const documento = userData.documento ?? (userData.cedula ? { tipo: TIPO_NACIONAL, numero: userData.cedula } : null);
+      if (documento) {
+        const documentoId = await this.documentos.guardarPrincipal(result.insertId, documento, conexion);
+        // Y su entrada en la bitacora, en ESTA MISMA transaccion: el alta de un documento es una
+        // escritura sobre un dato sensible. Quien la hace es la propia persona que se registra.
+        await this.bitacora.registrarEscritura({
+          actorId: result.insertId,
+          ip: userData.ip ?? null,
+          recurso: resolveTableResource("documentos_identidad"),
+          tabla: "documentos_identidad",
+          accion: "create",
+          fila: { id: documentoId, person_id: result.insertId },
+          campos: Object.keys(documento)
+        }, conexion);
+      }
+
+      // ⚠️ EL CONSENTIMIENTO VA AQUI, DENTRO DE LA MISMA TRANSACCION. Una persona creada sin la
+      // constancia de que acepto es exactamente el agujero que esto viene a tapar: el Art. 5 del
+      // Reglamento exige poder DEMOSTRAR el consentimiento, y una fila que se escribe «despues»
+      // puede no escribirse nunca. O entran los dos o no entra ninguno.
+      if (userData.consentimientos?.length) {
+        await this.documentosLegales.registrarAceptacion(conexion, {
+          personId: result.insertId,
+          documentos: userData.consentimientos,
+          ip: userData.ip,
+        });
+      }
+
+      await conexion.commit();
+    } catch (error) {
+      await conexion.rollback().catch(() => {});
+      throw error;
+    } finally {
+      // Sin esto se agotan las diez conexiones del pool y la aplicacion entera se cuelga esperando.
+      conexion.release();
+    }
+
+    return {
+      id: result.insertId,
+      ...payload
+    };
+  }
+
+  toPublicUser(userRow, access = null) {
+    // El telefono principal que declara canal WhatsApp. Si no hay ninguno, no hay whatsapp.
+    const telefonos = userRow?.telefonos ?? [];
+    const telefonoDeCanal = telefonos.find((t) => (t.canales ?? []).some((c) => c.code === "whatsapp"));
+
+    if (!userRow) return null;
+
+    const toNumericArray = (value) => {
+      if (!value) return [];
+      return String(value)
+        .split(",")
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item));
+    };
+
+    const toStringArray = (value) => {
+      if (!value) return [];
+      return String(value)
+        .split(" | ")
+        .map((item) => item.trim())
+        .filter(Boolean);
+    };
+
+    const unitTypeNames = toStringArray(userRow.unit_type_names);
+    const unitNames = toStringArray(userRow.unit_names);
+    const cargoNames = toStringArray(userRow.cargo_names);
+
+    const publicUser = {
+      id: userRow.id ?? userRow._id,
+      _id: (userRow.id ?? userRow._id)?.toString(),
+      // `cedula` YA NO ES UNA COLUMNA: es el numero del documento principal, colgado por JOIN. Se
+      // conserva en el objeto publico porque es identificador de acceso y medio frontend lo lee.
+      cedula: userRow.cedula ?? null,
+      documento_tipo: userRow.documento_tipo ?? null,
+      documentos: userRow.documentos ?? [],
+      first_name: userRow.first_name,
+      last_name: userRow.last_name,
+      // `email` YA NO ES UNA COLUMNA de `persons`: es el principal de la tabla `emails`, colgado
+      // por JOIN en las tres lecturas. Se conserva en el objeto publico porque es el identificador
+      // de acceso y medio frontend lo lee.
+      email: userRow.email ?? null,
+      emails: userRow.emails ?? [],
+      // `whatsapp` YA NO ES UNA COLUMNA: se deriva del telefono principal que tiene ese canal. Se
+      // conserva en el objeto publico porque el bot de bienvenida y el frontend lo leen, pero es
+      // una proyeccion, no un dato: no hay dos sitios donde el numero pueda discrepar.
+      whatsapp: telefonoDeCanal?.numero_completo ?? null,
+      telefonos: userRow.telefonos ?? [],
+      nacionalidad: userRow.nacionalidad ?? null,
+      nacionalidad_nombre: userRow.nacionalidad_nombre ?? null,
+      // Las direcciones ya no son columnas de `persons`: las cuelga quien lee (ver `conDirecciones`).
+      direcciones: userRow.direcciones ?? [],
+      direccion: userRow.direccion ?? null,
+      signatureToken: userRow.token ?? null,
+      signatureMarker: userRow.token ? `!-${userRow.token}-!` : null,
+      photoUrl: userRow.photo_url ?? userRow.photoUrl ?? null,
+      status: userRow.status ?? DEFAULT_STATUS,
+      current_assignment: {
+        unit_type_ids: toNumericArray(userRow.unit_type_ids),
+        unit_type_names: unitTypeNames,
+        unit_ids: toNumericArray(userRow.unit_ids),
+        unit_names: unitNames,
+        cargo_ids: toNumericArray(userRow.cargo_ids),
+        cargo_names: cargoNames
+      },
+      unit_type_name: unitTypeNames[0] ?? "",
+      unit_name: unitNames[0] ?? "",
+      cargo_name: cargoNames[0] ?? "",
+        // Que le falta para poder usar el sistema. TODO DERIVADO: no hay bandera en `persons` que
+        // pueda acabar contradiciendo a las filas de las que deberia salir.
+        //
+        // ⚠️ SUSTITUYE A `verify: { email, whatsapp }`, retirado el 2026-08-31. Tenia dos
+        // problemas: no lo leia nadie en el frontend, y mentia por omision --decia «whatsapp»
+        // cuando la verificacion del telefono pasó a valer por CUALQUIERA de los tres canales.
+        verificacion: estadoDeVerificacion(userRow),
+      createdAt: userRow.created_at ?? userRow.createdAt ?? null,
+      updatedAt: userRow.updated_at ?? userRow.updatedAt ?? null
+    };
+
+    if (access) {
+      publicUser.access = access;
+      publicUser.roles = access.roleNames || [];
+      publicUser.permissions = access.permissions || [];
+      publicUser.role = access.primaryRole || null;
+    }
+
+    return publicUser;
+  }
+
+  // LOS DATOS PERSONALES DE UNA PERSONA, para dárselos A ELLA MISMA. Solo los llaman los dos manejadores
+  // de /users/me (`perfilDelTitular` y `updateMe`); nadie mas deberia.
+  //
+  // ⚠️ NO VAN EN `findById` NI EN `toPublicUser`, y es deliberado. `findById` lo usan el chat, el
+  // tiempo real, la firma, el flujo de llenado y la puerta de verificacion; `toPublicUser` compone
+  // el login y el listado de personas. Meter aqui el genero y la etnia --datos SENSIBLES, LOPDP
+  // Art. 4-- los pondria en todos esos caminos, que no los necesitan (minimizacion, Art. 39).
+  //
+  // No se apunta en `accesos_sensibles`: la bitacora responde a «quien vio lo de esta persona», y el
+  // titular no es un tercero. Es la misma regla que `entradasDeLectura`.
+  //
+  // `fecha_nacimiento` sale como AAAA-MM-DD, que es lo que se escribe: el DATE crudo llega al JSON
+  // como marca de tiempo con zona, y un formulario lo pintaria un dia antes o despues.
+  // `nacimiento_provincia_id` no se guarda: se DEDUCE del canton, y el PATCH la ignora.
+  async datosPersonalesDe(personId) {
+    this.ensurePool();
+
+    const [filas] = await this.pool.query(
+      `SELECT to_char(p.fecha_nacimiento, 'YYYY-MM-DD') AS fecha_nacimiento,
+              p.nacimiento_pais_id, p.nacimiento_canton_id, ca.provincia_id AS nacimiento_provincia_id,
+              p.sexo, p.estado_civil_id,
+              aut.genero_id, aut.autoidentificacion_etnica_id
+         FROM persons p
+         LEFT JOIN cantones ca ON ca.id = p.nacimiento_canton_id
+         LEFT JOIN persona_autoidentificacion aut ON aut.person_id = p.id
+        WHERE p.id = ?
+        LIMIT 1`,
+      [personId]
+    );
+
+    const fila = filas?.[0];
+    if (!fila) return null;
+    const datos = Object.fromEntries(CAMPOS_DATOS_PERSONALES.map((campo) => [campo, fila[campo] ?? null]));
+    datos.nacimiento_provincia_id = fila.nacimiento_provincia_id ?? null;
+    return datos;
+  }
+
+  // Lo que GET /users/me le devuelve al titular: el usuario publico --el mismo que ven los demas
+  // caminos-- MAS sus datos personales, en un objeto aparte. Aparte y no sueltos entre los demas
+  // campos, para que se vea de un vistazo que son solo suyos y una prueba pueda afirmar que NO estan
+  // donde no deben.
+  async perfilDelTitular(personId, access = null) {
+    const [fila, datosPersonales] = await Promise.all([
+      this.findById(personId),
+      this.datosPersonalesDe(personId)
+    ]);
+    if (!fila) return null;
+    return { ...this.toPublicUser(fila, access), datos_personales: datosPersonales };
+  }
+
+  // Por ID y no por numero de documento: era una subconsulta a `documentos_identidad` para llegar a
+  // la persona que ya venia identificada en la ruta, y ataba la foto a un dato que cambia.
+  async updatePhotoByPersonId(personId, photoUrl) {
+    this.ensurePool();
+
+    const id = Number(personId);
+    if (!Number.isInteger(id) || id <= 0) {
+      throw new Error("El id de la persona es requerido");
+    }
+
+    await this.pool.query(
+      "UPDATE persons SET photo_url = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [photoUrl, id]
+    );
+
+    const updated = await this.findById(id);
+
+    return this.toPublicUser(updated);
+  }
+
+  async update(userId, data, { ip = null } = {}) {
+    this.ensurePool();
+
+    // La nacionalidad se traduce AQUI, en el unico sitio por el que pasan todas las escrituras, y no
+    // en cada llamador: hay al menos dos caminos (`updateMe` y el PATCH de perfil, que llama directo)
+    // y parchear cada uno es exactamente como se olvida uno. Sin esto, `nacionalidad` viajaba como
+    // nombre de columna y PostgreSQL respondia 42703 en tiempo de LLAMADA -- que ninguna prueba de
+    // caracterizacion veia, porque ningun fixture manda nacionalidad.
+    const payload = { ...data };
+
+    // `direccion` NO es una columna de `persons` desde el paso 3. Se aparta ANTES de componer el
+    // UPDATE o PostgreSQL responde 42703 en tiempo de llamada, que es exactamente como se rompio
+    // `nacionalidad` en el paso anterior.
+    const direccion = payload.direccion;
+    delete payload.direccion;
+    delete payload.direcciones;
+    const telefono = payload.telefono;
+    delete payload.telefono;
+    delete payload.telefonos;
+    delete payload.whatsapp;
+    const documento = payload.documento ?? (payload.cedula ? { tipo: TIPO_NACIONAL, numero: payload.cedula } : null);
+    delete payload.documento;
+    delete payload.documentos;
+    delete payload.cedula;
+    delete payload.documento_tipo;
+    delete payload.documento_verificado;
+    const email = payload.email;
+    delete payload.email;
+    delete payload.emails;
+    delete payload.email_verificado;
+    delete payload.email_id;
+    // LA AUTOIDENTIFICACION NO ES DE `persons` DESDE P8. Se aparta ANTES de componer el UPDATE -- o
+    // PostgreSQL responde 42703 en tiempo de llamada, que es como se rompieron `nacionalidad` y
+    // `direccion`-- y se guarda en su tabla al final.
+    const autoidentificacion = apartarAutoidentificacion(payload);
+
+    if (payload.nacionalidad !== undefined) {
+      const resuelto = await this.resolveNacionalidadPaisId(payload);
+      delete payload.nacionalidad;
+      payload.nacionalidad_pais_id = resuelto;
+    }
+    delete payload.nacionalidad_nombre;
+
+    // EL CANTON DE NACIMIENTO TIENE QUE SER DE SU PAIS. No lo puede comprobar un CHECK -- haria
+    // falta un JOIN--, y la clave ajena sola solo garantiza que el canton EXISTE, no que sea del
+    // pais declarado. Sin esto se podria guardar "naci en Colombia, canton Esmeraldas".
+    //
+    // Se valida aqui, en el unico sitio por el que pasan todas las escrituras, por el mismo motivo
+    // que la nacionalidad: parchear cada llamador es exactamente como se olvida uno.
+    await this.validarCantonDeNacimiento(payload, userId);
+
+    const fields = [];
+    const values = [];
+
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined) {
+        fields.push(`${key} = ?`);
+        values.push(value);
+      }
+    });
+
+    if (!fields.length) {
+      if (direccion || telefono || email || documento || autoidentificacion) {
+        if (direccion) await this.direcciones.guardarPrincipal(userId, direccion);
+        if (telefono) await this.telefonos.guardarPrincipal(userId, telefono);
+        if (email) await this.emails.guardarPrincipal(userId, email);
+        await this.guardarSensiblesDelTitular(userId, { documento, autoidentificacion }, { ip });
+        return this.toPublicUser(await this.findById(userId));
+      }
+      return null;
+    }
+
+    values.push(userId);
+
+    await this.pool.query(
+      `UPDATE persons SET ${fields.join(", ")}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+      values
+    );
+
+    if (direccion) {
+      await this.direcciones.guardarPrincipal(userId, direccion);
+    }
+    if (telefono) {
+      await this.telefonos.guardarPrincipal(userId, telefono);
+    }
+    if (email) {
+      await this.emails.guardarPrincipal(userId, email);
+    }
+    await this.guardarSensiblesDelTitular(userId, { documento, autoidentificacion }, { ip });
+
+    const updated = await this.findById(userId);
+
+    return this.toPublicUser(updated);
+  }
+
+  // Guarda el genero y la etnia en su tabla. Upsert por `person_id`, que es la clave primaria: la fila
+  // nace la primera vez que la persona declara algo. Las columnas salen de CAMPOS_AUTOIDENTIFICACION,
+  // nunca del cuerpo de la peticion.
+  async guardarAutoidentificacion(personId, datos, ejecutor = this.pool) {
+    this.ensurePool();
+    const columnas = CAMPOS_AUTOIDENTIFICACION.filter((campo) => Object.hasOwn(datos, campo));
+    if (!columnas.length) return;
+    await ejecutor.query(
+      `INSERT INTO persona_autoidentificacion (person_id, ${columnas.join(", ")})
+       VALUES (?, ${columnas.map(() => "?").join(", ")})
+       ON CONFLICT (person_id) DO UPDATE SET ${columnas.map((c) => `${c} = EXCLUDED.${c}`).join(", ")}`,
+      [personId, ...columnas.map((c) => datos[c])]
+    );
+  }
+
+  // LO SENSIBLE QUE EL TITULAR CAMBIA DESDE SU PERFIL -- su documento, su genero y su etnia--, con su
+  // entrada en la bitacora EN LA MISMA TRANSACCION.
+  //
+  // El editor de /admin ya lo hacia; este camino no, y el esquema promete «toda escritura». Aqui el
+  // actor ES el titular: no es un tercero, pero un cambio de su documento es un hecho que hay que poder
+  // reconstruir -- y en P6, con las cuentas bancarias, sera EL rastro del desvio de nomina, donde quien
+  // cambia la cuenta entra con las credenciales del titular.
+  //
+  // O se confirman el cambio y su entrada, o ninguno: si la bitacora falla, el PATCH falla entero.
+  async guardarSensiblesDelTitular(userId, { documento = null, autoidentificacion = null } = {}, { ip = null } = {}) {
+    if (!documento && !autoidentificacion) return;
+    this.ensurePool();
+    const conexion = await this.pool.getConnection();
+    try {
+      await conexion.beginTransaction();
+      if (documento) {
+        const previo = await this.documentos.principalDe(userId, conexion);
+        const documentoId = await this.documentos.guardarPrincipal(userId, documento, conexion);
+        await this.bitacora.registrarEscritura({
+          actorId: userId,
+          ip,
+          recurso: resolveTableResource("documentos_identidad"),
+          tabla: "documentos_identidad",
+          accion: previo ? "update" : "create",
+          fila: { id: documentoId, person_id: userId },
+          campos: Object.keys(typeof documento === "object" ? documento : { numero: documento })
+        }, conexion);
+      }
+      if (autoidentificacion) {
+        const [existentes] = await conexion.query(
+          "SELECT person_id FROM persona_autoidentificacion WHERE person_id = ? LIMIT 1",
+          [userId]
+        );
+        await this.guardarAutoidentificacion(userId, autoidentificacion, conexion);
+        await this.bitacora.registrarEscritura({
+          actorId: userId,
+          ip,
+          recurso: resolveTableResource("persona_autoidentificacion"),
+          tabla: "persona_autoidentificacion",
+          accion: existentes?.length ? "update" : "create",
+          fila: { person_id: userId },
+          campos: Object.keys(autoidentificacion)
+        }, conexion);
+      }
+      await conexion.commit();
+    } catch (error) {
+      await conexion.rollback().catch(() => {});
+      throw error;
+    } finally {
+      conexion.release?.();
+    }
+  }
+
+  // Comprueba que `nacimiento_canton_id` cuelgue de `nacimiento_pais_id`. Si el UPDATE trae solo uno
+  // de los dos, el otro se lee de la fila: cambiar el pais sin tocar el canton tiene que fallar
+  // igual, o la incoherencia entra por la puerta de atras.
+  async validarCantonDeNacimiento(payload, userId) {
+    const traeCanton = payload.nacimiento_canton_id !== undefined;
+    const traePais = payload.nacimiento_pais_id !== undefined;
+    if (!traeCanton && !traePais) return;
+
+    const actual = (traeCanton && traePais) ? null : await this.findById(userId);
+    const cantonId = traeCanton ? payload.nacimiento_canton_id : actual?.nacimiento_canton_id;
+    const paisId = traePais ? payload.nacimiento_pais_id : actual?.nacimiento_pais_id;
+    if (cantonId === null || cantonId === undefined || cantonId === "") return;
+
+    const [filas] = await this.pool.query(
+      `SELECT p.pais_id
+         FROM cantones c
+         INNER JOIN provincias p ON p.id = c.provincia_id
+        WHERE c.id = ?
+        LIMIT 1`,
+      [Number(cantonId)]
+    );
+    if (!filas?.length) {
+      const error = new Error("El cantón de nacimiento no está en el catálogo.");
+      error.status = 400;
+      throw error;
+    }
+    if (paisId !== null && paisId !== undefined && Number(filas[0].pais_id) !== Number(paisId)) {
+      const error = new Error("El cantón de nacimiento no pertenece al país de nacimiento declarado.");
+      error.status = 400;
+      throw error;
+    }
+  }
+
+  async updateMe(userId, data, contexto = {}) {
+    // ⚠️ ESTA ES LA UNICA LISTA, y por eso duele olvidarse de ella: un campo que no este aqui se
+    // descarta EN SILENCIO y la respuesta sale 200 sin haber guardado nada. Paso CINCO veces antes
+    // de que `updateMyProfile` dejara de componer su propia lista y delegara aqui.
+    // `UserRepository.datosPersonales.test.js` la compara con las columnas del esquema.
+    const allowedFields = [
+      "first_name",
+      "last_name",
+      "email",
+      "nacionalidad",
+      "nacionalidad_pais_id",
+      "direccion",
+      "telefono",
+      "documento",
+      // Los datos personales del frente 20 (P2). Van por el mismo camino que todo lo demas, y con la
+      // MISMA lista con la que el titular los lee. Dos de ellos NO son columnas de `persons` desde
+      // P8: `update` los aparta y los guarda en `persona_autoidentificacion`.
+      ...CAMPOS_DATOS_PERSONALES
+    ];
+
+    const filtered = {};
+
+    allowedFields.forEach((field) => {
+      if (data[field] !== undefined) {
+        filtered[field] = data[field];
+      }
+    });
+
+    const actualizado = await this.update(userId, filtered, contexto);
+    // `update` devuelve el usuario publico, que es el de todos los caminos. Al titular, y solo aqui,
+    // se le suman sus datos personales: la respuesta del PATCH es lo que el formulario vuelve a pintar.
+    if (!actualizado) return actualizado;
+    return { ...actualizado, datos_personales: await this.datosPersonalesDe(userId) };
+  }
+}

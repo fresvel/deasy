@@ -642,7 +642,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
-| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · **`organizacion` ✅** (movido **y** con su subcapa) · `identidad` ⬜ | 🟡 **3 de 4** |
+| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · **`organizacion` ✅** (movido **y** con su subcapa) · `identidad` 🟡 (la PERSONA movida; cuatro asuntos más y la subcapa, pendientes) | 🟡 **3 de 4** |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1 y F7.2 ya tocaron | ⬜ |
 
 ### F7.1 ✅ — declarado, y lo que destapó
@@ -1099,6 +1099,81 @@ foto, el escaneo del documento, `supervised-stuck`, `recuperar-correo` y `/admin
 respondiendo con su respuesta de dominio y no con un `TypeError`.
 
 **`identidad` queda desbloqueado**, y es el grande: **62 ficheros**.
+
+### F7.4 · `identidad`, primera tanda: la persona
+
+**Lo primero que hizo la medición fue encoger la tarea, y la cifra vieja era mía.** «62 ficheros»
+contaba cualquier mención del nombre de una tabla, **comentarios incluidos**. Apretado a referencias
+dentro del SQL: **36 ficheros y 379 consultas**, y de esos 36 sólo **19 son del dominio** — los otros
+15 leen `identidad` pero escriben en otro dominio, así que se van con el suyo.
+
+**Y lo segundo fue partir el dominio en cinco.** Este plan y `CLAUDE.md` decían «tres cosas
+apiladas»; son **cinco**, y los niveles no las separan porque el RBAC ocupa el 0 **y** el 3:
+
+| Asunto | Tablas | Estado |
+|---|---|---|
+| **La persona** | 10 — `persons`, `documentos_identidad`, `emails`, `telefonos`, `direcciones`, `dossiers`… | ✅ movida |
+| **Catálogos** (n0) | 10 — `generos`, `estados_civiles`, `cargos`… | ⬜ las escribe el catálogo genérico, transversal declarado |
+| **El acceso / RBAC** (n0 y n3) | 8 — `roles`, `permissions`, `role_assignments`, `actions`, `resources` | ⬜ **decisión de F7.0** |
+| **Los mecanismos** (n3) | 5 — verificación, `intentos_limitados`, `canales_bitacora` | ⬜ candidatos a `transversal/` |
+| **Lo legal** (n1) | 2 — `consentimientos`, `documentos_legales` | ⬜ |
+
+**Movidos: 50 ficheros** — la puerta, **2 routers** (`user_router` y `dossier_router`), **18
+controllers** (todo `controllers/users/`) y **31 servicios**. **102 imports** recalculados por script,
+y la puerta exporta **14 símbolos**: los 8 que de verdad se usaban de fuera (medido: 14 importadores
+en 11 ficheros), los 2 routers y 6 manejadores que montan otros routers.
+
+⚠️ **El RBAC se quedó fuera por una razón de diseño, no por tamaño**: lo usa **todo router**, así que
+meterlo tras la puerta obligaría a **todos** los dominios a importar `identidad` para resolver un
+permiso.
+
+#### Lo que esta tanda rompió, que es lo que enseña
+
+**1 · El ciclo entre puertas mordió por primera vez.** `identidad` ⇄ `organizacion` se necesitan
+mutuamente —el país de la institución decide cuál es el documento nacional— y el mapa ya las declaraba
+mutuamente dependientes. El ciclo existía con `chat` y `organizacion` sin molestar; aquí dejó **9
+suites en rojo** con `ReferenceError: Cannot access 'UserRepository' before initialization`.
+
+**Y el culpable estaba donde la puerta nueva NO miraba**: `services/realtime/RealtimeGateway.js`, con
+un singleton de módulo cuyo **constructor** construía tres servicios de **dos** dominios. O sea: el
+prerrequisito que se cerró hace tres commits estaba cerrado **sólo en el alcance que yo le había
+recortado**.
+
+**2 · El recorte de alcance era el mismo error de las puertas del SQL.** `check:instancias` miraba
+`controllers/`, `routes/` y `dominios/` «porque el problema vive en los controladores». Fuera había
+**once** sitios más —7 en `services/`, 1 en `middlewares/`, 3 en `scripts/`— y tres construían justo
+lo que pasa por la puerta de un dominio. **73 ficheros vistos contra 203 reales.** Ampliada a todo el
+backend, y las dos excepciones que parecían razonables (`index.js` y los `scripts/*.mjs`, que son
+puntos de entrada) **se arreglaron en vez de eximirse**: cuatro líneas.
+
+**3 · Se probó mirar los constructores y se retiró MIDIENDO.** Marcaba **13 sitios y 11 eran
+inofensivos**: un constructor sólo corre al cargar si alguien instancia esa clase a nivel de módulo,
+así que con el nivel de módulo a cero es redundante **por construcción**. Eso sí exige que la puerta
+no tenga excepciones, y por eso no las tiene.
+
+**4 · Un import con comillas SIMPLES sobrevivió a cuatro barridos y dejó el backend sin arrancar.**
+`routes/dossier_router.js` escribe sus imports con `'`; todos mis regex miraban `"`. Se descubrió por
+el log del arranque, no por una puerta. Y de paso resolvió bien la pregunta de dónde va ese router:
+el dosier es el expediente de **la persona**, así que entró al dominio.
+
+**5 · Y hay rutas relativas que no son imports.** `new URL("../../database/postgres_schema.sql",
+import.meta.url)` se rompe igual al mover el fichero y ningún reescritor de imports la toca: dos tests
+en rojo.
+
+**Puerta nueva para 4 y 5: `npm run check:rutas`** (`backend/scripts/check_relative_paths.mjs`), en
+CI. Resuelve las **679 rutas relativas** del backend —imports con cualquier comilla, `import()`
+dinámico y `new URL(…, import.meta.url)`— y falla si alguna no existe. **Era el hueco que `CLAUDE.md`
+nombraba y nadie tapaba**: ni `node --check` ni `check:imports` la ven, y antes sólo la veía el backend
+al arrancar, que es un mal detector porque para entonces ya perdiste la corrida. Comprobado que muerde
+con un import de comillas simples.
+
+**Verificado en la pila D**: las **seis** puertas (`imports`, `instancias`, `rutas`, `sql-aliases`,
+`sql-comments`, `check-mapa-tablas`) · `test:unit` **897/897 en 50 suites** —el mismo número que antes,
+que es lo que dice que ninguna se quedó sin arrancar— · arranque del backend · `test:char:run`
+**321/321**, **sin que se moviera un golden**.
+
+**Queda de `identidad`**: la subcapa `datos/` (19 ficheros con SQL, 379 consultas) y los cuatro asuntos
+de arriba.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
