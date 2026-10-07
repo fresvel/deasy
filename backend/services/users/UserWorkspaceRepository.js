@@ -961,3 +961,148 @@ export const getFillWorkflowStepsForDocumentVersions = async (pool, documentVers
 // getCustomTermType / getActiveGeneralDefinition / resolveUserPositionInUnit se movieron a
 // services/tasks/GeneralTaskService.js con la Fase D: eran de uso exclusivo de createGeneralTask.
 
+
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+// LAS BANDEJAS Y SUS CATÁLOGOS. Movidas desde `controllers/users/user_controler.js` el 2026-10-07
+// (F7.2). Mismas consultas; lo que se dejó en el controller es el 403, el 400/404 y la forma de la
+// respuesta.
+//
+// ⚠️ Y SE LES QUITÓ UN `getConnection()` QUE NO HACÍA FALTA. Los cinco manejadores pedían una conexión
+// dedicada del pool y NINGUNO abría transacción: `beginTransaction` no aparecía en ninguno. Sin
+// transacción, una conexión dedicada y el pool hacen lo mismo, y la dedicada se podía quedar sin
+// soltar por cualquier camino que no pasara por el `finally`. Ahora reciben el ejecutor que les den.
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+
+// Los entregables que se pueden AÑADIR a una tarea: los de modo replicado o enrutado de su definición.
+export const findAddableDeliverables = async (ejecutor, definitionId) => {
+  const [rows] = await ejecutor.query(
+    `SELECT pdt.id,
+            pdt.template_artifact_id,
+            pdt.item_mode,
+            pdt.sort_order,
+            COALESCE(dl.display_name, dl.code) AS name
+     FROM process_definition_templates pdt
+     LEFT JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+     LEFT JOIN deliverables dl ON dl.id = ta.deliverable_id
+     WHERE pdt.process_definition_id = ?
+       AND pdt.item_mode IN ('replicated', 'routed')
+     ORDER BY pdt.sort_order ASC, pdt.id ASC`,
+    [Number(definitionId)]
+  );
+  return rows || [];
+};
+
+// Buscador de destinatarios. El filtro es opcional y se compone aquí, con la consulta, y no en el
+// controller: componerlo allí era dejarle decidir la forma del SQL.
+export const findRecipients = async (ejecutor, texto = "") => {
+  const q = String(texto || "").trim();
+  const params = [];
+  let where = "p.is_active = 1";
+  if (q) {
+    const like = `%${q}%`;
+    where +=
+      " AND (p.first_name ILIKE ? OR p.last_name ILIKE ? OR d.numero ILIKE ? OR e.direccion ILIKE ? OR CONCAT(p.first_name, ' ', p.last_name) ILIKE ?)";
+    params.push(like, like, like, like, like);
+  }
+  const [rows] = await ejecutor.query(
+    `SELECT p.id, d.numero AS cedula, p.first_name, p.last_name, e.direccion AS email,
+            CONCAT(p.first_name, ' ', p.last_name) AS full_name
+     FROM persons p
+     LEFT JOIN emails e ON e.person_id = p.id AND e.principal = 1 AND e.is_active = 1
+     LEFT JOIN documentos_identidad d ON d.person_id = p.id AND d.principal = 1 AND d.is_active = 1
+     WHERE ${where}
+     ORDER BY p.first_name ASC, p.last_name ASC
+     LIMIT 25`,
+    params
+  );
+  return rows || [];
+};
+
+// El catálogo que necesita el editor de flujo en runtime: unidades y cargos activos.
+export const findFlowCatalog = async (ejecutor) => {
+  const [units] = await ejecutor.query(
+    `SELECT id, name FROM units WHERE is_active = 1 ORDER BY name ASC LIMIT 1000`
+  );
+  const [cargos] = await ejecutor.query(
+    `SELECT id, name FROM cargos WHERE is_active = 1 ORDER BY name ASC LIMIT 500`
+  );
+  return { units: units || [], cargos: cargos || [] };
+};
+
+// Lo que esta persona ENVIÓ: entregables enrutados que ella creó.
+export const findRoutedItemsCreatedBy = async (ejecutor, personId) => {
+  const [rows] = await ejecutor.query(
+    `SELECT
+       ti.id,
+       ti.title AS label,
+       ti.created_at,
+       p.id AS process_id,
+       p.name AS process_name,
+       pdv.id AS definition_id,
+       ti.document_status
+     FROM task_items ti
+     JOIN process_definition_templates pdt
+       ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
+     JOIN tasks t ON t.id = ti.task_id
+     JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     JOIN processes p ON p.id = pdv.process_id
+     WHERE ti.created_by_person_id = ?
+     ORDER BY ti.created_at DESC, ti.id DESC
+     LIMIT 200`,
+    [personId]
+  );
+  return rows || [];
+};
+
+// Subconsultas EXISTS reutilizables: ¿la persona es asignada de llenado / firma del documento del item?
+const FILL_EXISTS = `EXISTS (
+  SELECT 1 FROM fill_requests fr
+    JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
+    JOIN document_versions dv ON dv.id = dff.document_version_id
+   WHERE dv.task_item_id = ti.id AND fr.assigned_person_id = ?
+)`;
+const SIGN_EXISTS = `EXISTS (
+  SELECT 1 FROM signature_requests sr
+    JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+    JOIN document_versions dv ON dv.id = sfi.document_version_id
+   WHERE dv.task_item_id = ti.id AND sr.assigned_person_id = ?
+)`;
+
+// Lo que esta persona RECIBIÓ: un documento es «recibido» si participas en su ENTREGA o en su FIRMA.
+// El tercer término era `ti.target_person_id = ?` —el «Para:»—, retirado el 2026-08-23: quien recibe
+// el documento firma su recibido, así que ya entra por SIGN_EXISTS.
+export const findRoutedItemsReceivedBy = async (ejecutor, personId) => {
+  const [rows] = await ejecutor.query(
+    `SELECT
+       ti.id,
+       ti.title AS label,
+       ti.created_at,
+       ti.created_by_person_id,
+       NULLIF(TRIM(CONCAT(COALESCE(sender.first_name, ''), ' ', COALESCE(sender.last_name, ''))), '') AS sender_name,
+       p.id AS process_id,
+       p.name AS process_name,
+       pdv.id AS definition_id,
+       ti.document_status,
+       ${FILL_EXISTS} AS needs_fill,
+       ${SIGN_EXISTS} AS needs_sign
+     FROM task_items ti
+     JOIN process_definition_templates pdt
+       ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
+     JOIN tasks t ON t.id = ti.task_id
+     JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     JOIN processes p ON p.id = pdv.process_id
+     LEFT JOIN persons sender ON sender.id = ti.created_by_person_id
+     WHERE (ti.created_by_person_id IS NULL OR ti.created_by_person_id <> ?)
+       AND ( ${FILL_EXISTS} OR ${SIGN_EXISTS} )
+     ORDER BY ti.created_at DESC, ti.id DESC
+     LIMIT 200`,
+    [
+      personId, // FILL_EXISTS (select)
+      personId, // SIGN_EXISTS (select)
+      personId, // created_by <> (where)
+      personId, // FILL_EXISTS (where)
+      personId, // SIGN_EXISTS (where)
+    ]
+  );
+  return rows || [];
+};

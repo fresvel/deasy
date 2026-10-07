@@ -15,6 +15,14 @@ import {
   nextAttachmentOrder,
 } from "../../services/documents/DocumentAttachmentService.js";
 import {
+  findAddableDeliverables,
+  findFlowCatalog,
+  findRecipients,
+  findRoutedItemsCreatedBy,
+  findRoutedItemsReceivedBy,
+} from "../../services/users/UserWorkspaceRepository.js";
+import { getProcessDefinitionIdForTask } from "../../services/tasks/taskQueries.js";
+import {
   launchProcessDefinitionInTerm
 } from "../../services/admin/TaskGenerationService.js";
 import {
@@ -1411,42 +1419,18 @@ export const listAddableDeliverables = async (req, res) => {
   if (!pool) {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
-  const connection = await pool.getConnection();
   try {
     // Por definición (proceso de envíos aunque no tenga tarea) o resuelto desde la tarea.
-    let definitionId = requestedDefinitionId || null;
-    if (!definitionId) {
-      const [taskRows] = await connection.query(
-        `SELECT process_definition_id FROM tasks WHERE id = ? LIMIT 1`,
-        [taskId]
-      );
-      definitionId = taskRows?.[0]?.process_definition_id
-        ? Number(taskRows[0].process_definition_id)
-        : null;
-    }
+    const definitionId =
+      requestedDefinitionId || (await getProcessDefinitionIdForTask(pool, taskId));
     if (!definitionId) {
       return res.status(404).json({ message: "Configuración no encontrada." });
     }
-    const [rows] = await connection.query(
-      `SELECT pdt.id,
-              pdt.template_artifact_id,
-              pdt.item_mode,
-              pdt.sort_order,
-              COALESCE(dl.display_name, dl.code) AS name
-       FROM process_definition_templates pdt
-       LEFT JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
-       LEFT JOIN deliverables dl ON dl.id = ta.deliverable_id
-       WHERE pdt.process_definition_id = ?
-         AND pdt.item_mode IN ('replicated', 'routed')
-       ORDER BY pdt.sort_order ASC, pdt.id ASC`,
-      [definitionId]
-    );
+    const rows = await findAddableDeliverables(pool, definitionId);
     return res.json({ result: "ok", task_id: taskId, definition_id: definitionId, deliverables: rows });
   } catch (error) {
     console.error("listAddableDeliverables error:", error);
     return res.status(500).json({ message: "No se pudieron cargar los entregables agregables." });
-  } finally {
-    connection.release();
   }
 };
 
@@ -1462,33 +1446,12 @@ export const searchTaskRecipients = async (req, res) => {
   if (!pool) {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
-  const connection = await pool.getConnection();
   try {
-    const params = [];
-    let where = "p.is_active = 1";
-    if (q) {
-      const like = `%${q}%`;
-      where +=
-        " AND (p.first_name ILIKE ? OR p.last_name ILIKE ? OR d.numero ILIKE ? OR e.direccion ILIKE ? OR CONCAT(p.first_name, ' ', p.last_name) ILIKE ?)";
-      params.push(like, like, like, like, like);
-    }
-    const [rows] = await connection.query(
-      `SELECT p.id, d.numero AS cedula, p.first_name, p.last_name, e.direccion AS email,
-              CONCAT(p.first_name, ' ', p.last_name) AS full_name
-       FROM persons p
-       LEFT JOIN emails e ON e.person_id = p.id AND e.principal = 1 AND e.is_active = 1
-       LEFT JOIN documentos_identidad d ON d.person_id = p.id AND d.principal = 1 AND d.is_active = 1
-       WHERE ${where}
-       ORDER BY p.first_name ASC, p.last_name ASC
-       LIMIT 25`,
-      params
-    );
+    const rows = await findRecipients(pool, q);
     return res.json({ result: "ok", recipients: rows });
   } catch (error) {
     console.error("searchTaskRecipients error:", error);
     return res.status(500).json({ message: "No se pudieron cargar los destinatarios." });
-  } finally {
-    connection.release();
   }
 };
 
@@ -1503,20 +1466,12 @@ export const listFlowCatalog = async (req, res) => {
   if (!pool) {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
-  const connection = await pool.getConnection();
   try {
-    const [units] = await connection.query(
-      `SELECT id, name FROM units WHERE is_active = 1 ORDER BY name ASC LIMIT 1000`
-    );
-    const [cargos] = await connection.query(
-      `SELECT id, name FROM cargos WHERE is_active = 1 ORDER BY name ASC LIMIT 500`
-    );
+    const { units, cargos } = await findFlowCatalog(pool);
     return res.json({ result: "ok", units, cargos });
   } catch (error) {
     console.error("listFlowCatalog error:", error);
     return res.status(500).json({ message: "No se pudo cargar el catálogo de cargos/unidades." });
-  } finally {
-    connection.release();
   }
 };
 
@@ -1532,34 +1487,12 @@ export const listMySends = async (req, res) => {
   if (!pool) {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
-  const connection = await pool.getConnection();
   try {
-    const [rows] = await connection.query(
-      `SELECT
-         ti.id,
-         ti.title AS label,
-         ti.created_at,
-         p.id AS process_id,
-         p.name AS process_name,
-         pdv.id AS definition_id,
-         ti.document_status
-       FROM task_items ti
-       JOIN process_definition_templates pdt
-         ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
-       JOIN tasks t ON t.id = ti.task_id
-       JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-       JOIN processes p ON p.id = pdv.process_id
-       WHERE ti.created_by_person_id = ?
-       ORDER BY ti.created_at DESC, ti.id DESC
-       LIMIT 200`,
-      [authenticatedUserId]
-    );
+    const rows = await findRoutedItemsCreatedBy(pool, authenticatedUserId);
     return res.json({ result: "ok", sends: rows });
   } catch (error) {
     console.error("listMySends error:", error);
     return res.status(500).json({ message: "No se pudieron cargar tus envíos." });
-  } finally {
-    connection.release();
   }
 };
 
@@ -1577,62 +1510,12 @@ export const listMyReceived = async (req, res) => {
   if (!pool) {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
-  // Subconsultas EXISTS reutilizables: ¿la persona es asignada de llenado / firma del documento del item?
-  const FILL_EXISTS = `EXISTS (
-    SELECT 1 FROM fill_requests fr
-      JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-      JOIN document_versions dv ON dv.id = dff.document_version_id
-     WHERE dv.task_item_id = ti.id AND fr.assigned_person_id = ?
-  )`;
-  const SIGN_EXISTS = `EXISTS (
-    SELECT 1 FROM signature_requests sr
-      JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-      JOIN document_versions dv ON dv.id = sfi.document_version_id
-     WHERE dv.task_item_id = ti.id AND sr.assigned_person_id = ?
-  )`;
-  const connection = await pool.getConnection();
   try {
-    const [rows] = await connection.query(
-      `SELECT
-         ti.id,
-         ti.title AS label,
-         ti.created_at,
-         ti.created_by_person_id,
-         NULLIF(TRIM(CONCAT(COALESCE(sender.first_name, ''), ' ', COALESCE(sender.last_name, ''))), '') AS sender_name,
-         p.id AS process_id,
-         p.name AS process_name,
-         pdv.id AS definition_id,
-         ti.document_status,
-         ${FILL_EXISTS} AS needs_fill,
-         ${SIGN_EXISTS} AS needs_sign
-       FROM task_items ti
-       JOIN process_definition_templates pdt
-         ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
-       JOIN tasks t ON t.id = ti.task_id
-       JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-       JOIN processes p ON p.id = pdv.process_id
-       LEFT JOIN persons sender ON sender.id = ti.created_by_person_id
-       WHERE (ti.created_by_person_id IS NULL OR ti.created_by_person_id <> ?)
-         -- Un documento es «recibido» si participas en su ENTREGA o en su FIRMA. El tercer
-         -- termino era ti.target_person_id = ? —el «Para:»—, retirado el 2026-08-23: quien
-         -- recibe el documento firma su recibido, asi que ya entra por SIGN_EXISTS.
-         AND ( ${FILL_EXISTS} OR ${SIGN_EXISTS} )
-       ORDER BY ti.created_at DESC, ti.id DESC
-       LIMIT 200`,
-      [
-        authenticatedUserId, // FILL_EXISTS (select)
-        authenticatedUserId, // SIGN_EXISTS (select)
-        authenticatedUserId, // created_by <> (where)
-        authenticatedUserId, // FILL_EXISTS (where)
-        authenticatedUserId, // SIGN_EXISTS (where)
-      ]
-    );
+    const rows = await findRoutedItemsReceivedBy(pool, authenticatedUserId);
     return res.json({ result: "ok", received: rows });
   } catch (error) {
     console.error("listMyReceived error:", error);
     return res.status(500).json({ message: "No se pudieron cargar los documentos recibidos." });
-  } finally {
-    connection.release();
   }
 };
 

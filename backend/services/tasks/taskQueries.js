@@ -98,3 +98,13 @@ export const getProcessDefinitionIdForTaskItem = async (connection, taskItemId) 
   );
   return rows?.[0]?.process_definition_id ?? null;
 };
+
+// La definición de proceso de una TAREA. Hermana de la de arriba, que va por entregable.
+// Movida desde `user_controler.js` (F7.2, 2026-10-07).
+export const getProcessDefinitionIdForTask = async (ejecutor, taskId) => {
+  const [rows] = await ejecutor.query(
+    `SELECT process_definition_id FROM tasks WHERE id = ? LIMIT 1`,
+    [Number(taskId)]
+  );
+  return rows?.[0]?.process_definition_id ? Number(rows[0].process_definition_id) : null;
+};
