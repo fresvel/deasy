@@ -710,8 +710,15 @@ arrancaba y el test que importaba el servicio directo reventaba. **Prueba los DO
 el arranque y el test— porque uno solo miente.**
 
 Se arreglan resolviendo al **primer uso**: `let x = null; const dame = () => (x ??= new Servicio());`.
-Medido: quedan **33 instanciaciones a nivel de módulo en 17 controllers** (`chat_controller` 8,
-`user_controler` 5). **No añadas la 34.**
+Remedido el **2026-10-07** tras cerrar `organizacion`: quedan **30 instanciaciones de servicio a nivel
+de módulo en 16 ficheros** —`chat_controller` 8, `user_controler` 4, y seis ficheros con 2—. **No
+añadas la 31.** Para contarlas, excluye `new Router`, `new Set` y `new URL`, que no instancian nada de
+otro módulo:
+
+```bash
+grep -rnE "^(const|let) +[A-Za-z_$]+ *= *new +[A-Z]" --include=*.js backend/{controllers,routes,dominios} \
+  | grep -v "\.test\." | grep -vE "new (Router|Set|URL)\b"
+```
 
 ⚠️ **Antes de dar por propia una consulta, PREGUNTA AL MAPA de quién es cada tabla.** No se adivina
 por el nombre: **`cargos` es de `identidad`**, no de `organizacion`, y por eso tres consultas del
