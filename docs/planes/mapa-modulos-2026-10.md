@@ -281,8 +281,9 @@ entre sí**: su única clave ajena va a `persons`. Las tablas sueltas lo son por
 catálogo no tiene ninguna. **Buscar conectividad es perseguir una propiedad que el modelo no tiene.**
 
 Así que el criterio en uso es *«de qué trata la tabla», a ojo, con el diagrama como entregable*: un
-criterio de **nombrado**, no de descomposición. Y por eso las dos decisiones de más abajo —si el flujo
-de llenado es de `plantillas` o de `firmas`, si `empleo` es un dominio— **no tienen a qué apelar**.
+criterio de **nombrado**, no de descomposición. Y por eso las **cinco** decisiones de más abajo —entre
+ellas si el flujo de llenado es de `plantillas` o de `firmas`, y si `empleo` es un dominio— **no
+tienen a qué apelar**.
 
 **El criterio que hay que declarar es el de Parnas, y se verifica por dónde CAE un cambio, no por el
 grafo:** una frase falsable por dominio, de la forma *«si cambia X, cambia SOLO este dominio»*. Eso ya
@@ -298,6 +299,7 @@ por dos colisiones medidas:
 |---|---|
 | **`dominios/` no es una palabra nueva** | El repositorio ya la usa **para esta misma partición**, en tres sitios: `scripts/docs/dominios.json` (la fuente única), `docs/02-dominio-datos/dominios/<dominio>.dbml` (ocho ficheros, uno por dominio) y los ocho `docs/public/diagramas/*.svg` |
 | **`modules/` choca dos veces** | (1) los **15 «módulos» retirados** el 2026-10-04, que `CLAUDE.md` prohíbe reintroducir; (2) **`frontend/src/modules/` ya existe** y su eje es **mixto** —`admin`, `home`, `perfil`, `auth` son audiencia; `firmas`, `procesos` son dominio—, así que la misma palabra significaría dos cosas distintas en las dos mitades del monorepo |
+| ⚠️ **Y esta fase está escrita entera en «dominio», adelantándose a su propia F7.0** | Es deliberado para que se lea, no una decisión tomada: mientras F7.0 no elija, **`tema` y `dominio` son la misma cosa con dos nombres** |
 | ⚠️ **Pero `tema` y `dominio` son HOY la misma cosa con dos nombres** | Y la ambigüedad **ya existía**: la fuente única se llama **`dominios.json`** y lo que declara dentro son **`temas`**; `docs/02-dominio-datos/dominios/` guarda un fichero por **tema**; y la puerta imprime *«8 temas · 8 niveles · 92 tablas»*. Elegir la carpeta obliga a elegir la palabra: **va en F7.0**, y se aplica en los tres sitios de golpe o no se aplica |
 
 ### Lo medido: 169 ficheros de producción
@@ -307,7 +309,7 @@ reparto, por lo que se puede **medir** —qué tablas nombra cada uno y cuáles 
 
 | Grupo | Ficheros | Líneas | Destino |
 |---|---:|---:|---|
-| **Con SQL, destino único** | **46** | 11.204 | se mueven enteros |
+| **Con SQL, destino único** | **46** | 11.204 | van a un solo dominio — pero **se parten por dentro**: la regla a `services/`, las consultas a `datos/` |
 | **Con SQL, genéricos declarados** | 5 | 5.461 | `transversal/` — no se parten |
 | **Con SQL, escriben 2+ dominios** | **7** | 5.408 | **no caben en un dominio: son flujos** |
 | **Con SQL, sin dominio dominante** | **6** | 4.448 | **hay que partirlos** |
@@ -363,7 +365,8 @@ backend/
       routes/              la superficie HTTP
       controllers/         sólo traduce HTTP: sin pool, sin SQL, sin reglas
       services/            reglas y transacciones; sin req/res
-      datos/               el ÚNICO sitio con SQL sobre las tablas del dominio
+      datos/               el ÚNICO que ESCRIBE las tablas del dominio
+                           (leer con JOIN hacia abajo, libre — ver más adelante)
   flujos/                  los 7 que cruzan dominios — ORQUESTACIÓN, SIN UNA SOLA CONSULTA
   transversal/             editor genérico de /admin + bootstrap
   plataforma/              postgres, minio, rabbit, mailer, errors, middlewares genéricos
@@ -395,6 +398,9 @@ tablas ajenas**: llama al `datos/` del vecino **con la misma conexión**, que es
 hacen 29 ficheros hoy. Entonces:
 
 - `flujos/` no tiene **ni una consulta** — y eso lo comprueba una puerta en una línea.
+  ⚠️ **Sin verificar todavía**: son **147 consultas** en los 7 ficheros, 41 sólo en
+  `templateLifecycle.js`. Que la orquestación se lea bien sin ellas es plausible y **no está
+  comprobado en ningún fichero**. Es lo primero que hay que probar en uno pequeño.
 - La transacción **no se rompe**: sigue abierta en un sitio y viajando por parámetro.
 - La regla *«una tabla la escribe su dominio»* pasa a ser **verificable por ruta**, que es lo que
   F7.2 necesitaba y no tenía.
@@ -428,6 +434,76 @@ resultado era un comentario en `TelefonoService.js`).
 Es una capa de datos **ya escrita**, metida en `controllers/` y esperando que alguien le dé carpeta.
 Eso es `datos/`.
 
+### Cómo se monta un dominio: NO es mover ficheros, es recolectar
+
+Es la corrección más importante de la auditoría del 2026-10-06, y cambia el *qué* de la fase. Se
+había escrito «los dominios pequeños, y luego los grandes, uno a uno», como si un dominio se montara
+mudando sus ficheros. **No es así.** Medido:
+
+| Dominio | Su SQL vive hoy en | En su casa | **Fuera** |
+|---|---:|---:|---:|
+| tareas | 28 ficheros | 6 | **22** |
+| procesos | 24 | 2 | **22** |
+| organizacion | 30 | 4 | **26** |
+| plantillas | 23 | 3 | **20** |
+| identidad | 44 | 21 | 23 |
+| firmas | 18 | 3 | **15** |
+| empleo | 3 | 0 | 3 |
+| chat | 2 | 2 | **0** |
+
+De los 15 ficheros ajenos que tienen SQL de `firmas`, **sólo 3 se mudan**. Los otros 12 —
+`user_controler.queries.js`, `tableHooks.js`, `orgStructure.js`, `SystemBootstrapService.js`… — **se
+quedan donde están**, y lo que se extrae es *el trozo de firmas que llevan dentro*.
+
+### Y la regla no es sobre el SQL: es sobre las ESCRITURAS
+
+La primera redacción decía *«el SQL de una tabla sólo aparece bajo el `datos/` de su dominio»*.
+**Es demasiado fuerte y había que corregirla**: obligaría a centralizar **126 lecturas** de
+`organizacion` y **66** de `identidad`, y con ello **prohibiría los JOIN entre dominios** — que la
+propuesta externa permitía expresamente («lecturas con JOIN hacia dominios de nivel inferior,
+permitidas»). `units` se relaciona con los ocho dominios y `persons` con siete: centralizar sus
+lecturas sería rehacer media aplicación para empeorarla.
+
+**La regla, en su forma correcta:**
+
+| | |
+|---|---|
+| **Escribir** | sólo el `datos/` del dominio dueño. Comprobable por ruta |
+| **Leer** | libre hacia dominios de nivel **inferior o igual**, desde el `datos/` de quien pregunta |
+| **`flujos/`** | ni escribe ni consulta: orquesta, y llama al `datos/` de cada dominio con la misma conexión |
+
+Y medido con la regla correcta, el trabajo es **mucho menor de lo que parecía**, porque los
+escritores ajenos son pocos y son **los mismos**:
+
+| Dominio | Escritores ajenos | Cuáles |
+|---|---:|---|
+| **chat** | **0** | ya está recolectado |
+| **empleo** | **0** | no tiene código |
+| **organizacion** | **2** | `SystemBootstrapService.js` · `genericCatalog.js` — los dos del bootstrap, ya declarado transversal |
+| **identidad** | **2** | los mismos dos |
+| procesos | 4 | `tableHooks.js` · `templateLifecycle.js` · `SystemBootstrapService.js` · uno más |
+| firmas | 5 | `tableHooks.js` · `documents.js` · `flowRows.js` · `DocumentSignatureWorkflowService.js` · `DocumentWorkflowResetService.js` |
+| plantillas | 7 | los anteriores + `templateLifecycle.js` |
+| tareas | 7 | los anteriores + `user_controler.js` · `taskAssignment.js` |
+
+⚠️ **Y eso invierte el orden que esta fase traía.** Decía «`identidad` el último: es el peor, 62
+ficheros en 19 carpetas». Por número de ficheros lo es; por **lo que cuesta montar su `datos/`** es de
+los más fáciles: **2 escritores ajenos, y los dos ya están declarados**. Los difíciles son `tareas` y
+`plantillas`, con 7 — y sus escritores ajenos son, casi todos, **los mismos ficheros que F7.1, F7.2 y
+F7.3 ya tocan**. Hechas esas tres, los ocho `datos/` se montan casi solos.
+
+### Quién abre la transacción — la pieza que faltaba
+
+La propuesta externa decía *«sólo `datos/` importa el pool»*. **No es sostenible**, y la medición dice
+por qué: de los **18 ficheros** que abren transacción hoy, **15 están en la capa de servicio** (3 de
+ellos entre los flujos), **2 son controllers** y 1 está entre los que hay que partir.
+
+| | |
+|---|---|
+| `datos/` | **recibe** la conexión por parámetro y **nunca** la pide. Es lo que ya hacen 29 ficheros |
+| `services/` y `flujos/` | **abren** la transacción, por un ayudante de `plataforma/` |
+| `controllers/` | **ninguna de las dos cosas**. Los 2 que hoy la abren —`sign_controller.js` y `supervision_controler.js`— son **defecto**, y entran en F7.2 |
+
 ### Las otras dos reglas de la propuesta, medidas
 
 **Regla 1 — un dominio sólo se importa por su `index.js`.** De los **396 imports internos** del
@@ -447,7 +523,7 @@ mensaje. La regla es cumplible; lo que cazó la medición fueron **errores del r
 | | Por qué no |
 |---|---|
 | **La regla «los imports no suben de nivel», por nivel de DOMINIO** | **No es cumplible: un dominio no tiene un nivel.** Y si se instancia con el nivel máximo, `plantillas`, `tareas` y `firmas` quedan **las tres en el 6** —«mismo nivel», permitido— y la regla **autoriza exactamente los tres ciclos que importan**. Se reformula **por nivel de TABLA**, que es lo que la comprobación B ya calcula |
-| **La regla «escrituras sobre tablas de otro dominio, no», tal cual** | No hace falta prohibirla: con `datos/` **no puede ocurrir**, porque el SQL de una tabla sólo existe en su dominio. Se reformula como lo que sí se puede comprobar: *«`flujos/` no contiene SQL»* y *«el SQL de una tabla sólo aparece bajo el `datos/` de su dominio»* |
+| **La regla «escrituras sobre tablas de otro dominio, no», tal cual** | Con `datos/` deja de hacer falta prohibirla. Se reformula en lo que sí se comprueba: *«una tabla la ESCRIBE sólo el `datos/` de su dominio»* y *«`flujos/` no contiene SQL»*. **Ojo: sobre las escrituras, nunca sobre todo el SQL** — la versión fuerte prohibiría los JOIN entre dominios (ver arriba) |
 | **`services/admin/org/orgStructure.js` como genérico** | No lo es: escribe **sólo** tablas de `organizacion`. Se mueve, no se declara |
 
 ### La puerta de propiedad: por qué necesitaba `datos/`
@@ -473,9 +549,10 @@ de su dominio* y *`flujos/` no contiene SQL*.
 ### Qué gana y qué pierde — el canje, dicho entero
 
 **Gana tres preguntas que hoy no tienen carpeta:** *¿quién escribe esta tabla?* (hoy un `grep` sobre
-169 ficheros; después una carpeta, **y una puerta por ruta**, que hoy es imposible); *¿qué se rompe si
-cambio esta tabla?* (hoy de 7 a 19 carpetas en los seis dominios grandes; después 1 más los genéricos); *¿dónde
-empiezo a leer `firmas`?* (hoy 21 ficheros en 7 carpetas).
+169 ficheros; después una carpeta, **y una puerta por ruta**, que hoy es imposible); *¿quién ESCRIBE esta tabla?*
+(hoy de 7 a 19 carpetas en los seis dominios grandes; después **un solo `datos/`**); *¿dónde empiezo a
+leer `firmas`?* (hoy 21 ficheros en 7 carpetas; después `firmas/` **más `flujos/`** — 5 de sus 18
+ficheros con SQL son flujos, así que **no es una carpeta, son dos**).
 
 **Y pierde algo, aunque menos de lo que pareció al principio.** Hoy *«¿cómo se firma un documento?»*
 se responde abriendo **un fichero**. Después se responde abriendo **el flujo** —que sigue siendo un
@@ -501,8 +578,8 @@ dispersión de los ocho dominios.
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los 5 genéricos y los 7 flujos en el mapa, con su motivo escrito, y la puerta leyendo la **ruta**. Es la red que hace seguro todo lo demás | ⬜ |
 | **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: 77 consultas en 9 ficheros, empezando por `user_controler.queries.js`, que ya pide por escrito ser una capa de datos. Es un **defecto**, y va antes de mover nada | ⬜ |
 | **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
-| **F7.4** | Los dominios pequeños, con sus cuatro capas: `chat` (15 ficheros, 4 en `datos/`) y `firmas` (6 y 3). `empleo` **sólo tras F7.0** | ⬜ |
-| **F7.5** | Los grandes, uno a uno. `identidad` el último: 62 ficheros en 19 carpetas | ⬜ |
+| **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0, **tras F7.0**), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
+| **F7.5** | **Los cuatro entrelazados, en este orden**: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
