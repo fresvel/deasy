@@ -8,13 +8,17 @@ import * as store from "../../services/users/dossierStore.js";
 // --- MinIO: cliente, constantes y helpers (sin cambios respecto a la versión Mongo) ---
 const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");
 const minioUseSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
-const minioClient = new Minio.Client({
+// Al primer uso, como el resto: aqui no es por el orden de carga de ESM —Minio es un paquete de
+// fuera y no participa en ningun ciclo— sino porque LEE EL ENTORNO al construirse. Importar este
+// controlador en un test fijaba el cliente con las variables que hubiera en ese instante.
+let _minioClient = null;
+const minioClient = () => (_minioClient ??= new Minio.Client({
   endPoint: minioUrl.hostname,
   port: Number(minioUrl.port || (minioUseSSL ? 443 : 80)),
   useSSL: minioUseSSL,
   accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER,
   secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD,
-});
+}));
 
 const MINIO_DOSSIER_BUCKET = process.env.MINIO_DOSSIER_BUCKET || "deasy-dossier";
 const MINIO_DOSSIER_PREFIX = process.env.MINIO_DOSSIER_PREFIX || "Dosier";
@@ -35,17 +39,17 @@ const TIPO_TO_SECTION = {
 const SECTION_TO_TIPO = Object.fromEntries(Object.entries(TIPO_TO_SECTION).map(([t, s]) => [s, t]));
 
 const removeMinioObject = (bucket, objectName) =>
-  new Promise((resolve, reject) => minioClient.removeObject(bucket, objectName, (e) => (e ? reject(e) : resolve(true))));
+  new Promise((resolve, reject) => minioClient().removeObject(bucket, objectName, (e) => (e ? reject(e) : resolve(true))));
 const statMinioObject = (bucket, objectName) =>
-  new Promise((resolve, reject) => minioClient.statObject(bucket, objectName, (e, stat) => (e ? reject(e) : resolve(stat))));
+  new Promise((resolve, reject) => minioClient().statObject(bucket, objectName, (e, stat) => (e ? reject(e) : resolve(stat))));
 const uploadFileToMinIO = (bucket, objectName, filePath, metadata = {}) =>
-  new Promise((resolve, reject) => minioClient.fPutObject(bucket, objectName, filePath, metadata, (e, etag) => (e ? reject(e) : resolve(etag))));
+  new Promise((resolve, reject) => minioClient().fPutObject(bucket, objectName, filePath, metadata, (e, etag) => (e ? reject(e) : resolve(etag))));
 const ensureBucketExists = (bucket) =>
   new Promise((resolve, reject) =>
-    minioClient.bucketExists(bucket, (e, exists) => {
+    minioClient().bucketExists(bucket, (e, exists) => {
       if (e) return reject(e);
       if (exists) return resolve(true);
-      minioClient.makeBucket(bucket, "", (me) => (me ? reject(me) : resolve(true)));
+      minioClient().makeBucket(bucket, "", (me) => (me ? reject(me) : resolve(true)));
     })
   );
 
@@ -316,7 +320,7 @@ export const getDossierDocumentUrl = async (req, res) => {
     const objectName = buildDossierObjectName(dossier.person_id, tipoDocumento, registroId);
     try {
       await new Promise((resolve, reject) => {
-        minioClient.getObject(MINIO_DOSSIER_BUCKET, objectName, (err, dataStream) => {
+        minioClient().getObject(MINIO_DOSSIER_BUCKET, objectName, (err, dataStream) => {
           if (err) return reject(err);
           res.setHeader("Content-Type", "application/pdf");
           res.setHeader("Content-Disposition", `inline; filename="${registroId}.pdf"`);

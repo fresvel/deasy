@@ -1,6 +1,7 @@
 import DocumentosLegales from "../../services/legal/DocumentosLegales.js";
 
-const documentos = new DocumentosLegales();
+let _documentos = null;
+const documentos = () => (_documentos ??= new DocumentosLegales());
 
 /**
  * La administración de los textos legales.
@@ -40,7 +41,7 @@ const fallar = (res, error, contexto) => {
 
 export const listarDocumentos = async (_req, res) => {
   try {
-    const filas = await documentos.todos();
+    const filas = await documentos().todos();
     return res.json({ documentos: filas.map(comoRespuesta) });
   } catch (error) {
     return fallar(res, error, "No se pudieron listar los documentos legales");
@@ -50,8 +51,8 @@ export const listarDocumentos = async (_req, res) => {
 /** Uno solo, CON su texto: es lo que carga el editor. */
 export const verDocumento = async (req, res) => {
   try {
-    const fila = await documentos.obtener(req.params.id);
-    const texto = await documentos.leerTexto(fila.id);
+    const fila = await documentos().obtener(req.params.id);
+    const texto = await documentos().leerTexto(fila.id);
     return res.json({ documento: { ...comoRespuesta(fila), texto } });
   } catch (error) {
     return fallar(res, error, "No se pudo leer el documento legal");
@@ -65,7 +66,7 @@ export const crearBorrador = async (req, res) => {
     return res.status(400).json({ message: "Hacen falta la clase y la version del documento." });
   }
   try {
-    const fila = await documentos.crearBorrador(clase, version);
+    const fila = await documentos().crearBorrador(clase, version);
     return res.status(201).json({ documento: comoRespuesta(fila) });
   } catch (error) {
     return fallar(res, error, "No se pudo crear el borrador legal");
@@ -79,7 +80,7 @@ export const guardarBorrador = async (req, res) => {
     return res.status(400).json({ message: "Falta el texto del documento." });
   }
   try {
-    const fila = await documentos.guardarBorrador(req.params.id, req.body.texto);
+    const fila = await documentos().guardarBorrador(req.params.id, req.body.texto);
     return res.json({ documento: comoRespuesta(fila) });
   } catch (error) {
     return fallar(res, error, "No se pudo guardar el borrador legal");
@@ -92,7 +93,7 @@ export const guardarBorrador = async (req, res) => {
  */
 export const publicarDocumento = async (req, res) => {
   try {
-    const fila = await documentos.publicar(req.params.id);
+    const fila = await documentos().publicar(req.params.id);
     return res.json({ documento: comoRespuesta(fila) });
   } catch (error) {
     return fallar(res, error, "No se pudo publicar el documento legal");
@@ -101,7 +102,7 @@ export const publicarDocumento = async (req, res) => {
 
 export const retirarDocumento = async (req, res) => {
   try {
-    const fila = await documentos.retirar(req.params.id);
+    const fila = await documentos().retirar(req.params.id);
     return res.json({ documento: comoRespuesta(fila) });
   } catch (error) {
     return fallar(res, error, "No se pudo retirar el documento legal");
@@ -110,7 +111,7 @@ export const retirarDocumento = async (req, res) => {
 
 export const historialDeDocumento = async (req, res) => {
   try {
-    return res.json({ historial: await documentos.historial(req.params.id) });
+    return res.json({ historial: await documentos().historial(req.params.id) });
   } catch (error) {
     return fallar(res, error, "No se pudo leer el historial del borrador legal");
   }
@@ -125,7 +126,7 @@ export const historialDeDocumento = async (req, res) => {
  */
 export const estadoDelArchivo = async (_req, res) => {
   try {
-    return res.json(await documentos.estadoDelArchivo());
+    return res.json(await documentos().estadoDelArchivo());
   } catch (error) {
     return fallar(res, error, "No se pudo leer el estado del archivo legal");
   }

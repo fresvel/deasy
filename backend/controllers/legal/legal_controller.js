@@ -1,6 +1,7 @@
 import DocumentosLegales from "../../services/legal/DocumentosLegales.js";
 
-const documentos = new DocumentosLegales();
+let _documentos = null;
+const documentos = () => (_documentos ??= new DocumentosLegales());
 
 /**
  * Los textos vigentes, para enseñarlos en el registro.
@@ -15,7 +16,7 @@ const documentos = new DocumentosLegales();
  */
 export const documentosVigentes = async (_req, res) => {
   try {
-    const publicados = await documentos.publicados();
+    const publicados = await documentos().publicados();
     return res.json({
       documentos: publicados.map((d) => ({
         id: d.id,
@@ -28,6 +29,6 @@ export const documentosVigentes = async (_req, res) => {
     });
   } catch (error) {
     console.error("No se pudieron leer los documentos legales:", error.message);
-    return res.status(500).json({ message: "No se pudieron cargar los documentos." });
+    return res.status(500).json({ message: "No se pudieron cargar los documentos()." });
   }
 };

@@ -52,7 +52,6 @@ import {
 } from "../../services/storage/minio_service.js";
 import { transitionDocumentVersionState } from "../../services/documents/DocumentStateService.js";
 import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
-import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import { parseAvailableFormats } from "../../services/admin/templates/artifacts.js";
 import {
   sanitizeStorageSegment,
@@ -89,12 +88,14 @@ import { isUniqueViolation } from "../../errors/sqlErrors.js";
 import { accessSubqueryForTaskItem } from "../../services/documents/DeliverableAccessService.js";
 import DocumentosLegales from "../../services/legal/DocumentosLegales.js";
 
-const documentosLegales = new DocumentosLegales();
+let _documentosLegales = null;
+const documentosLegales = () => (_documentosLegales ??= new DocumentosLegales());
 
 
-const userRepository = new UserRepository();
-const rbacService = new RbacService();
-const sqlAdminService = new SqlAdminService();
+let _userRepository = null;
+const userRepository = () => (_userRepository ??= new UserRepository());
+let _rbacService = null;
+const rbacService = () => (_rbacService ??= new RbacService());
 
 
 export const createUser = async (req, res) => {
@@ -119,7 +120,7 @@ export const createUser = async (req, res) => {
     //
     // Y se exigen TODAS las clases publicadas, no una: el Art. 8 pide que, con una pluralidad de
     // finalidades, CONSTE el consentimiento para todas ellas.
-    const aceptacion = await documentosLegales.validarAceptacion(req.body.consentimientos);
+    const aceptacion = await documentosLegales().validarAceptacion(req.body.consentimientos);
     if (!aceptacion.valida) {
       return res.status(400).send({
         message: aceptacion.motivo === "falta_aceptar"
@@ -164,7 +165,7 @@ export const createUser = async (req, res) => {
       token
     };
 
-    const createdUser = await userRepository.create(userPayload);
+    const createdUser = await userRepository().create(userPayload);
     console.log(`Usuario creado en PostgreSQL con id ${createdUser.id}`);
 
       // ⚠️ EL CORREO SE MANDA **SIN BLOQUEAR LA RESPUESTA**, y esto no es una optimizacion: es la
@@ -188,8 +189,8 @@ export const createUser = async (req, res) => {
     // Se RELEE la persona antes de responder. `create()` devuelve lo que inserto en `persons`, y
     // desde el paso 4 el telefono NO esta ahi: vive en `telefonos` con sus canales. Sin esta
     // relectura el bot no encontraria el numero y la respuesta saldria sin telefono ni direccion.
-    const usuarioCompleto = (await userRepository.findById(createdUser.id)) ?? createdUser;
-    const usuarioPublico = userRepository.toPublicUser(usuarioCompleto);
+    const usuarioCompleto = (await userRepository().findById(createdUser.id)) ?? createdUser;
+    const usuarioPublico = userRepository().toPublicUser(usuarioCompleto);
 
     // ⚠️ AQUI SE MANDABA UN «WhatsApp de bienvenida» DESDE EL NUMERO DE LA INSTITUCION. Se retiro
     // con el resto del `WhatsAppBot` (C5, 2026-08-31), y no por limpieza: escribirle a alguien por
@@ -266,12 +267,12 @@ export const getUsers = async (req, res) => {
     const unitTypeId = req.query?.unit_type_id ?? null;
     const unitId = req.query?.unit_id ?? null;
     const cargoId = req.query?.cargo_id ?? null;
-    const users = await userRepository.search(term, limit, status, {
+    const users = await userRepository().search(term, limit, status, {
       unitTypeId,
       unitId,
       cargoId
     });
-    res.json(users.map((user) => userRepository.toPublicUser(user)));
+    res.json(users.map((user) => userRepository().toPublicUser(user)));
   } catch (error) {
     console.log("Error Buscando Usuarios");
     console.error(error.message);
@@ -971,8 +972,8 @@ export const updateMyProfile = async (req, res) => {
     // SIRVIO: la quinta ocurrio con el aviso delante. Asi que ya no hay dos listas. `updateMe` es
     // la unica, y este handler solo transporta.
     // La IP viaja para la bitacora: un cambio de documento, genero o etnia queda apuntado.
-    const updatedUser = await userRepository.updateMe(userId, req.body ?? {}, { ip: req.ip ?? null });
-    const access = await rbacService.getUserAccess(userId);
+    const updatedUser = await userRepository().updateMe(userId, req.body ?? {}, { ip: req.ip ?? null });
+    const access = await rbacService().getUserAccess(userId);
 
     res.json({
       result: "ok",
@@ -1007,8 +1008,8 @@ export const getMyProfile = async (req, res) => {
     // lo comparten el chat, el tiempo real y la firma, y `toPublicUser` el login y el listado de
     // personas, y el genero y la etnia no deben viajar por ahi. Por que, en
     // `UserRepository.datosPersonalesDe`.
-    const access = await rbacService.getUserAccess(userId);
-    const user = await userRepository.perfilDelTitular(userId, access);
+    const access = await rbacService().getUserAccess(userId);
+    const user = await userRepository().perfilDelTitular(userId, access);
 
     if (!user) {
       return res.status(404).json({

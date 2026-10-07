@@ -1,7 +1,8 @@
 import AuthService from "../../services/auth/AuthService.js";
 import AuthenticationError from "../../errors/AuthenticationError.js";
 
-const authService = new AuthService();
+let _authService = null;
+const authService = () => (_authService ??= new AuthService());
 
 export const loginUser = async (req, res) => {
   try {
@@ -17,7 +18,7 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    const { token, expiresIn, user } = await authService.login(credentials, res);
+    const { token, expiresIn, user } = await authService().login(credentials, res);
 
     res.json({
       token,

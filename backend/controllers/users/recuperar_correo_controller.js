@@ -1,11 +1,12 @@
 import RecuperarCorreoService from "../../services/auth/RecuperarCorreoService.js";
 
-const servicio = new RecuperarCorreoService();
+let _servicio = null;
+const servicio = () => (_servicio ??= new RecuperarCorreoService());
 
 // PÚBLICO a propósito: lo usa quien no puede entrar. Ver el porqué del diseño en el servicio.
 export const recuperarCorreo = async (req, res) => {
   try {
-    const { email } = await servicio.recuperar(req.body ?? {});
+    const { email } = await servicio().recuperar(req.body ?? {});
     res.json({ email });
   } catch (error) {
     // El mismo código y el mismo mensaje para todo: el 401 no distingue «no existe» de «no es tu

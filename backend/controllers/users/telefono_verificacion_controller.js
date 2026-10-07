@@ -3,7 +3,8 @@ import realtimeGateway from "../../services/realtime/RealtimeGateway.js";
 import { canalesConQR, hayAlgunCanal } from "../../services/users/canalesDeVerificacion.js";
 import { aFormatoInternacional } from "../../services/users/numerosDeTelefono.js";
 
-const servicio = new TelefonoVerificacionService();
+let _servicio = null;
+const servicio = () => (_servicio ??= new TelefonoVerificacionService());
 
 // Pide una llave para verificar UN teléfono propio. Devuelve ya compuesto lo que la pantalla necesita
 // para pintar el QR y los botones, para que el frontend no tenga que saber armar enlaces de
@@ -21,7 +22,7 @@ export const pedirVerificacionDeTelefono = async (req, res) => {
     // La ruta es `/me/…`, así que el dueño sale del token y NUNCA de la petición. Sin esto,
     // cualquiera con sesión pedía una llave para el teléfono de otro y se llevaba su número en la
     // respuesta — el mismo IDOR que ya mordió en los entregables.
-    const { llave, expira_at, telefono } = await servicio.crear({
+    const { llave, expira_at, telefono } = await servicio().crear({
       telefonoId: req.params?.id,
       personId: req.user?.uid,
     });
@@ -47,7 +48,7 @@ export const pedirVerificacionDeTelefono = async (req, res) => {
 // compartir sus datos para nada.
 export const estadoDeLlave = async (req, res) => {
   try {
-    const { estado } = await servicio.estadoDeLlave(req.body?.llave);
+    const { estado } = await servicio().estadoDeLlave(req.body?.llave);
     // Un 404 para todo lo que no vale, con el motivo dentro: al usuario le dicen cosas distintas y
     // sólo «caducada» y «consumida» significan «repite sin cambiar nada».
     return estado === "valida" ? res.json({ estado }) : res.status(404).json({ estado });
@@ -61,7 +62,7 @@ export const estadoDeLlave = async (req, res) => {
 export const confirmarLlave = async (req, res) => {
   try {
     const { llave, numero, canal } = req.body ?? {};
-    const resultado = await servicio.confirmar({ llave, numero, canal });
+    const resultado = await servicio().confirmar({ llave, numero, canal });
     if (!resultado.verificado) {
       // 409 y no 422: la petición está bien formada y lo que falla es el estado del mundo. Un solo
       // código para los cuatro motivos mantiene simple al cliente, que los traduce por `estado`.
@@ -96,7 +97,7 @@ export const confirmarLlave = async (req, res) => {
  */
 export const numerosVerificados = async (req, res) => {
   try {
-    const verificados = await servicio.cualesVerificaron(req.body?.numeros);
+    const verificados = await servicio().cualesVerificaron(req.body?.numeros);
     return res.json({ verificados: [...verificados] });
   } catch (error) {
     console.error("No se pudo comprobar qué números verificaron:", error.message);

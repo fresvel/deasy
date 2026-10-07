@@ -18,10 +18,17 @@ import {
   sendResourcesAsZip
 } from "../../utils/templateArchive.js";
 
-const service = new SqlAdminService();
+// Las dos se resuelven al PRIMER USO y no al cargar el modulo: `SqlAdminService` entra por la puerta
+// de `dominios/organizacion`, y construirla aqui arriba la pedia antes de que esa puerta acabara de
+// inicializarse. Es el fallo de ESM que mordio cuatro veces el 2026-10-07.
+let _service = null;
+const service = () => (_service ??= new SqlAdminService());
+
 // Las cuatro operaciones del editor generico pasan por aqui para que la bitacora de accesos
 // sensibles vea cada lectura y cada escritura. Ver SqlAdminConBitacora.
-const editor = new SqlAdminConBitacora(service);
+// Envuelve a `service()`, asi que resolver el editor resuelve tambien el servicio — una sola vez.
+let _editor = null;
+const editor = () => (_editor ??= new SqlAdminConBitacora(service()));
 
 // Quien accede, con que recurso -- lo deja `requireSqlAdminPermission`-- y desde donde.
 const contextoDeAcceso = (req) => ({
@@ -32,7 +39,7 @@ const contextoDeAcceso = (req) => ({
 
 export const getSqlMeta = (req, res) => {
   try {
-    const tables = tablasLegibles(service.getMeta(), req.auth?.access);
+    const tables = tablasLegibles(service().getMeta(), req.auth?.access);
     res.json({ tables });
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });
@@ -41,7 +48,7 @@ export const getSqlMeta = (req, res) => {
 
 export const getOperationStats = async (_req, res) => {
   try {
-    const stats = await service.getOperationStats();
+    const stats = await service().getOperationStats();
     res.json(stats);
   } catch (error) {
     res.status(error.statusCode || 500).json({ message: error.message });
@@ -50,7 +57,7 @@ export const getOperationStats = async (_req, res) => {
 
 export const syncTemplateSeeds = async (_req, res) => {
   try {
-    const result = await service.syncTemplateSeedsFromSource();
+    const result = await service().syncTemplateSeedsFromSource();
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -59,7 +66,7 @@ export const syncTemplateSeeds = async (_req, res) => {
 
 export const getTemplateSeedPreview = async (req, res) => {
   try {
-    const result = await service.getTemplateSeedPreview(req.params.id);
+    const result = await service().getTemplateSeedPreview(req.params.id);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `inline; filename=\"${result.fileName}\"`);
     result.stream.on("error", (error) => {
@@ -209,7 +216,7 @@ export const applyTemplateArtifactSource = async (req, res) => {
   const tmpPath = path.join(os.tmpdir(), `tpl-source-${randomUUID()}.zip`);
   try {
     fs.writeFileSync(tmpPath, file.buffer);
-    const result = await service.applyTemplateArtifactSource(id, tmpPath, buildArtifactDraftActor(req));
+    const result = await service().applyTemplateArtifactSource(id, tmpPath, buildArtifactDraftActor(req));
     return res.json(result);
   } catch (error) {
     console.error("Error al aplicar el source de la plantilla:", error);
@@ -221,7 +228,7 @@ export const applyTemplateArtifactSource = async (req, res) => {
 
 export const createTemplateArtifactDraft = async (req, res) => {
   try {
-    const created = await service.createTemplateArtifactDraft(req.body ?? {}, req.files ?? {}, buildArtifactDraftActor(req));
+    const created = await service().createTemplateArtifactDraft(req.body ?? {}, req.files ?? {}, buildArtifactDraftActor(req));
     res.json(created);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -230,7 +237,7 @@ export const createTemplateArtifactDraft = async (req, res) => {
 
 export const updateTemplateArtifactDraft = async (req, res) => {
   try {
-    const updated = await service.updateTemplateArtifactDraft(req.params.id, req.body ?? {}, req.files ?? {}, buildArtifactDraftActor(req));
+    const updated = await service().updateTemplateArtifactDraft(req.params.id, req.body ?? {}, req.files ?? {}, buildArtifactDraftActor(req));
     res.json(updated);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -239,7 +246,7 @@ export const updateTemplateArtifactDraft = async (req, res) => {
 
 export const getTemplateArtifactSchema = async (req, res) => {
   try {
-    const result = await service.getTemplateArtifactSchema(req.params.id);
+    const result = await service().getTemplateArtifactSchema(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -248,7 +255,7 @@ export const getTemplateArtifactSchema = async (req, res) => {
 
 export const setTemplateArtifactActive = async (req, res) => {
   try {
-    const result = await service.setTemplateArtifactActive(req.params.id, req.body?.is_active);
+    const result = await service().setTemplateArtifactActive(req.params.id, req.body?.is_active);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -257,7 +264,7 @@ export const setTemplateArtifactActive = async (req, res) => {
 
 export const createTemplateArtifactVersion = async (req, res) => {
   try {
-    const result = await service.createTemplateArtifactVersion(req.params.id, req.body?.bump_level);
+    const result = await service().createTemplateArtifactVersion(req.params.id, req.body?.bump_level);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -266,7 +273,7 @@ export const createTemplateArtifactVersion = async (req, res) => {
 
 export const publishTemplateArtifact = async (req, res) => {
   try {
-    const result = await service.publishTemplateArtifact(req.params.id);
+    const result = await service().publishTemplateArtifact(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -275,7 +282,7 @@ export const publishTemplateArtifact = async (req, res) => {
 
 export const retireTemplateArtifact = async (req, res) => {
   try {
-    const result = await service.retireTemplateArtifact(req.params.id);
+    const result = await service().retireTemplateArtifact(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -284,7 +291,7 @@ export const retireTemplateArtifact = async (req, res) => {
 
 export const getTemplateVersions = async (req, res) => {
   try {
-    const result = await service.getTemplateVersions(req.query?.code);
+    const result = await service().getTemplateVersions(req.query?.code);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -293,7 +300,7 @@ export const getTemplateVersions = async (req, res) => {
 
 export const getConfigActivationDiff = async (req, res) => {
   try {
-    const result = await service.getConfigActivationDiff(req.params.id);
+    const result = await service().getConfigActivationDiff(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -302,7 +309,7 @@ export const getConfigActivationDiff = async (req, res) => {
 
 export const useTemplateVersionInConfig = async (req, res) => {
   try {
-    const result = await service.useTemplateVersionInConfig({
+    const result = await service().useTemplateVersionInConfig({
       definitionId: req.body?.definition_id,
       templateArtifactId: req.body?.template_artifact_id
     });
@@ -314,7 +321,7 @@ export const useTemplateVersionInConfig = async (req, res) => {
 
 export const startGuidedTemplateUpdate = async (req, res) => {
   try {
-    const result = await service.startTemplateUpdateForActiveConfig({
+    const result = await service().startTemplateUpdateForActiveConfig({
       definitionId: req.body?.definition_id,
       templateArtifactId: req.body?.template_artifact_id,
       bumpLevel: req.body?.bump_level
@@ -327,7 +334,7 @@ export const startGuidedTemplateUpdate = async (req, res) => {
 
 export const finishGuidedTemplateUpdate = async (req, res) => {
   try {
-    const result = await service.finishTemplateUpdate({
+    const result = await service().finishTemplateUpdate({
       templateArtifactId: req.body?.template_artifact_id,
       configDefinitionId: req.body?.config_definition_id
     });
@@ -341,7 +348,7 @@ export const finishGuidedTemplateUpdate = async (req, res) => {
 // Lo consume el editor de plantillas para habilitar/acotar los ámbitos del flujo de entrega.
 export const getProcessTargetScope = async (req, res) => {
   try {
-    const result = await service.getProcessTargetScope(req.params.id);
+    const result = await service().getProcessTargetScope(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -352,7 +359,7 @@ export const getProcessTargetScope = async (req, res) => {
 // en el alcance del proceso. Lo consume el editor de plantillas para poblar el select de cargo de cada paso.
 export const listResolvableCargos = async (req, res) => {
   try {
-    const result = await service.listResolvableCargos(req.params.id, {
+    const result = await service().listResolvableCargos(req.params.id, {
       unitId: req.query.unit_id || null,
       unitTypeId: req.query.unit_type_id || null
     });
@@ -366,7 +373,7 @@ export const listResolvableCargos = async (req, res) => {
 // puesto vacante). Idempotente; opcional `position_id` para acotar. Solo AdminSistema.
 export const reconcileTaskItemAssignments = async (req, res) => {
   try {
-    const result = await service.reconcileOpenTaskItemAssignments({
+    const result = await service().reconcileOpenTaskItemAssignments({
       positionId: req.body?.position_id || req.query?.position_id || null,
       performedByPersonId: req.user?.uid ?? null
     });
@@ -380,7 +387,7 @@ export const reconcileTaskItemAssignments = async (req, res) => {
 // solo escritura: cero SELECT en todo el repo. Éste es su primer lector.
 export const listTaskItemHandovers = async (req, res) => {
   try {
-    res.json(await service.listTaskItemHandovers(req.params.id));
+    res.json(await service().listTaskItemHandovers(req.params.id));
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
   }
@@ -389,7 +396,7 @@ export const listTaskItemHandovers = async (req, res) => {
 // F-C handover: traspasa el MISMO entregable a otra persona (no duplica) + asiento de auditoría.
 export const handoverTaskItem = async (req, res) => {
   try {
-    const result = await service.handoverTaskItem(req.params.id, {
+    const result = await service().handoverTaskItem(req.params.id, {
       toPersonId: req.body?.to_person_id ?? null,
       reason: req.body?.reason ?? null,
       triggerKind: req.body?.trigger_kind ?? "manual",
@@ -404,7 +411,7 @@ export const handoverTaskItem = async (req, res) => {
 // F-C lista de atascados: task_items abiertos por persona/puesto/unidad, o huérfanos (sin persona).
 export const listStuckTaskItems = async (req, res) => {
   try {
-    const result = await service.listStuckTaskItems({
+    const result = await service().listStuckTaskItems({
       personId: req.query.person_id || null,
       positionId: req.query.position_id || null,
       unitId: req.query.unit_id || null
@@ -420,7 +427,7 @@ export const listStuckTaskItems = async (req, res) => {
 // bloquear el cargo (la serie ya decide el cargo; la regla solo añade alcance y entrega).
 export const getProcessDefinitionSeriesScope = async (req, res) => {
   try {
-    const result = await service.getProcessDefinitionSeriesScope(req.params.id);
+    const result = await service().getProcessDefinitionSeriesScope(req.params.id);
     res.json(result || {});
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -429,7 +436,7 @@ export const getProcessDefinitionSeriesScope = async (req, res) => {
 
 export const getUnitGraph = async (req, res) => {
   try {
-    const result = await service.getUnitGraph(req.query?.relation_type || "org");
+    const result = await service().getUnitGraph(req.query?.relation_type || "org");
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -438,7 +445,7 @@ export const getUnitGraph = async (req, res) => {
 
 export const createUnitWithParent = async (req, res) => {
   try {
-    const result = await service.createUnitWithParent(req.body || {});
+    const result = await service().createUnitWithParent(req.body || {});
     res.status(201).json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -447,7 +454,7 @@ export const createUnitWithParent = async (req, res) => {
 
 export const getUnitDetail = async (req, res) => {
   try {
-    const result = await service.getUnitDetail(req.params.id);
+    const result = await service().getUnitDetail(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -456,7 +463,7 @@ export const getUnitDetail = async (req, res) => {
 
 export const getProcessGraph = async (req, res) => {
   try {
-    const result = await service.getProcessGraph();
+    const result = await service().getProcessGraph();
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -465,7 +472,7 @@ export const getProcessGraph = async (req, res) => {
 
 export const getProcessDetail = async (req, res) => {
   try {
-    const result = await service.getProcessDetail(req.params.id);
+    const result = await service().getProcessDetail(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -474,7 +481,7 @@ export const getProcessDetail = async (req, res) => {
 
 export const createProcessWithParent = async (req, res) => {
   try {
-    const result = await service.createProcessWithParent(req.body || {});
+    const result = await service().createProcessWithParent(req.body || {});
     res.status(201).json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -483,7 +490,7 @@ export const createProcessWithParent = async (req, res) => {
 
 export const setProcessParent = async (req, res) => {
   try {
-    const result = await service.setProcessParent(req.params.id, req.body?.parent_id ?? null);
+    const result = await service().setProcessParent(req.params.id, req.body?.parent_id ?? null);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -492,7 +499,7 @@ export const setProcessParent = async (req, res) => {
 
 export const getUnitProcesses = async (req, res) => {
   try {
-    const result = await service.getUnitProcesses(req.params.id);
+    const result = await service().getUnitProcesses(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -501,7 +508,7 @@ export const getUnitProcesses = async (req, res) => {
 
 export const getUnitAttachableProcesses = async (req, res) => {
   try {
-    const result = await service.getUnitAttachableProcesses(req.params.id);
+    const result = await service().getUnitAttachableProcesses(req.params.id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -510,7 +517,7 @@ export const getUnitAttachableProcesses = async (req, res) => {
 
 export const addUnitPosition = async (req, res) => {
   try {
-    const result = await service.addUnitPosition(req.params.id, req.body || {});
+    const result = await service().addUnitPosition(req.params.id, req.body || {});
     res.status(201).json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -519,7 +526,7 @@ export const addUnitPosition = async (req, res) => {
 
 export const updateUnitPosition = async (req, res) => {
   try {
-    const result = await service.updateUnitPosition(req.params.positionId, req.body || {});
+    const result = await service().updateUnitPosition(req.params.positionId, req.body || {});
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -528,7 +535,7 @@ export const updateUnitPosition = async (req, res) => {
 
 export const removeUnitPosition = async (req, res) => {
   try {
-    const result = await service.removeUnitPosition(req.params.positionId);
+    const result = await service().removeUnitPosition(req.params.positionId);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -537,7 +544,7 @@ export const removeUnitPosition = async (req, res) => {
 
 export const assignUnitPosition = async (req, res) => {
   try {
-    const result = await service.assignUnitPosition(req.params.positionId, req.body?.person_id);
+    const result = await service().assignUnitPosition(req.params.positionId, req.body?.person_id);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -546,7 +553,7 @@ export const assignUnitPosition = async (req, res) => {
 
 export const unassignUnitPosition = async (req, res) => {
   try {
-    const result = await service.unassignUnitPosition(req.params.positionId);
+    const result = await service().unassignUnitPosition(req.params.positionId);
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -561,7 +568,7 @@ export const listSqlRows = async (req, res) => {
         .filter(([key, value]) => key.startsWith("filter_") && value !== undefined && value !== "")
         .map(([key, value]) => [key.replace("filter_", ""), value])
     );
-    const rows = await editor.list(table, {
+    const rows = await editor().list(table, {
       q: req.query.q,
       limit: req.query.limit,
       offset: req.query.offset,
@@ -578,7 +585,7 @@ export const listSqlRows = async (req, res) => {
 export const createSqlRow = async (req, res) => {
   try {
     const { table } = req.params;
-    const created = await editor.create(table, req.body ?? {}, contextoDeAcceso(req));
+    const created = await editor().create(table, req.body ?? {}, contextoDeAcceso(req));
     res.json(created);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -590,7 +597,7 @@ export const updateSqlRow = async (req, res) => {
     const { table } = req.params;
     const keys = req.body?.keys ?? req.body ?? {};
     const data = req.body?.data ?? req.body ?? {};
-    const updated = await editor.update(table, keys, data, contextoDeAcceso(req));
+    const updated = await editor().update(table, keys, data, contextoDeAcceso(req));
     res.json(updated);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });
@@ -601,7 +608,7 @@ export const deleteSqlRow = async (req, res) => {
   try {
     const { table } = req.params;
     const keys = req.body?.keys ?? req.body ?? {};
-    const deleted = await editor.remove(table, keys, contextoDeAcceso(req));
+    const deleted = await editor().remove(table, keys, contextoDeAcceso(req));
     res.json({ deleted });
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });

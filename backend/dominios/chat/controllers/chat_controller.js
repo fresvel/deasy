@@ -10,14 +10,22 @@ import ChatRealtimePublisherService from "../services/ChatRealtimePublisherServi
 import ChatUnitDirectoryService from "../services/ChatUnitDirectoryService.js";
 import { logChatError } from "../services/chat_logging.js";
 
-const identityService = new ChatIdentityService();
-const attachmentService = new ChatAttachmentService();
-const conversationService = new ChatConversationService();
-const authorizationService = new ChatAuthorizationService();
-const unitDirectoryService = new ChatUnitDirectoryService();
-const messageService = new ChatMessageService();
-const notificationService = new ChatNotificationService();
-const realtimePublisherService = new ChatRealtimePublisherService();
+let _identityService = null;
+const identityService = () => (_identityService ??= new ChatIdentityService());
+let _attachmentService = null;
+const attachmentService = () => (_attachmentService ??= new ChatAttachmentService());
+let _conversationService = null;
+const conversationService = () => (_conversationService ??= new ChatConversationService());
+let _authorizationService = null;
+const authorizationService = () => (_authorizationService ??= new ChatAuthorizationService());
+let _unitDirectoryService = null;
+const unitDirectoryService = () => (_unitDirectoryService ??= new ChatUnitDirectoryService());
+let _messageService = null;
+const messageService = () => (_messageService ??= new ChatMessageService());
+let _notificationService = null;
+const notificationService = () => (_notificationService ??= new ChatNotificationService());
+let _realtimePublisherService = null;
+const realtimePublisherService = () => (_realtimePublisherService ??= new ChatRealtimePublisherService());
 
 const handleControllerError = (res, error, fallbackMessage) => {
   const status = Number(error?.status || 500);
@@ -34,8 +42,8 @@ const handleControllerError = (res, error, fallbackMessage) => {
 
 export const listConversations = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const conversations = await conversationService.listForParticipant(personId, {
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const conversations = await conversationService().listForParticipant(personId, {
       limit: req.query?.limit
     });
     return res.json({ data: conversations });
@@ -46,8 +54,8 @@ export const listConversations = async (req, res) => {
 
 export const getConversation = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const conversation = await conversationService.getForParticipant(req.params.id, personId);
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const conversation = await conversationService().getForParticipant(req.params.id, personId);
     return res.json({ data: conversation });
   } catch (error) {
     return handleControllerError(res, error, "No se pudo cargar la conversación.");
@@ -56,9 +64,9 @@ export const getConversation = async (req, res) => {
 
 export const createConversation = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
     const requestedParticipants = Array.isArray(req.body?.participant_ids) ? req.body.participant_ids : [];
-    const conversation = await conversationService.createConversation({
+    const conversation = await conversationService().createConversation({
       type: req.body?.type,
       title: req.body?.title,
       participantIds: [personId, ...requestedParticipants],
@@ -73,8 +81,8 @@ export const createConversation = async (req, res) => {
 
 export const listConversationMessages = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const messages = await messageService.listForConversation(req.params.id, personId, {
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const messages = await messageService().listForConversation(req.params.id, personId, {
       limit: req.query?.limit,
       before: req.query?.before
     });
@@ -86,16 +94,16 @@ export const listConversationMessages = async (req, res) => {
 
 export const createConversationMessage = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const result = await messageService.createMessage(req.params.id, personId, req.body || {});
-    const notifications = await notificationService.createForMessage({
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const result = await messageService().createMessage(req.params.id, personId, req.body || {});
+    const notifications = await notificationService().createForMessage({
       conversation: result.conversation,
       message: result.message,
       recipientPersonIds: result.recipient_person_ids || []
     });
     let realtime = { published: false, reason: "not_attempted" };
     try {
-      realtime = await realtimePublisherService.publishMessageCreated(result);
+      realtime = await realtimePublisherService().publishMessageCreated(result);
     } catch (realtimeError) {
       console.error("Chat realtime publish failed", {
         conversationId: result?.conversation?.id || null,
@@ -120,9 +128,9 @@ export const createConversationMessage = async (req, res) => {
 
 export const markConversationRead = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const result = await messageService.markConversationRead(req.params.id, personId);
-    const notifications = await notificationService.markConversationRead(personId, req.params.id);
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const result = await messageService().markConversationRead(req.params.id, personId);
+    const notifications = await notificationService().markConversationRead(personId, req.params.id);
     return res.json({
       data: result,
       notifications
@@ -135,8 +143,8 @@ export const markConversationRead = async (req, res) => {
 export const uploadConversationAttachments = async (req, res) => {
   const files = Array.isArray(req.files) ? req.files : [];
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const attachments = await attachmentService.uploadAttachments(req.params.id, personId, files);
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const attachments = await attachmentService().uploadAttachments(req.params.id, personId, files);
     return res.status(201).json({ data: attachments });
   } catch (error) {
     return handleControllerError(res, error, "No se pudieron cargar los adjuntos del chat.");
@@ -147,8 +155,8 @@ export const uploadConversationAttachments = async (req, res) => {
 
 export const downloadConversationAttachment = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const result = await attachmentService.downloadAttachment(
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const result = await attachmentService().downloadAttachment(
       req.params.id,
       req.params.messageId,
       req.params.attachmentIndex,
@@ -184,13 +192,13 @@ export const downloadConversationAttachment = async (req, res) => {
 
 export const getProcessThread = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const context = await authorizationService.resolveProcessThreadContext({
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const context = await authorizationService().resolveProcessThreadContext({
       personId,
       processId: req.params.processId,
       scopeUnitId: req.query?.scope_unit_id
     });
-    const conversation = await conversationService.getByStableKeyForParticipant(context.stableKey, personId);
+    const conversation = await conversationService().getByStableKeyForParticipant(context.stableKey, personId);
     if (!conversation) {
       return res.status(404).json({
         message: "Thread del proceso no encontrado para el ámbito solicitado.",
@@ -213,16 +221,16 @@ export const getProcessThread = async (req, res) => {
 
 export const createOrGetProcessThread = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const context = await authorizationService.resolveProcessThreadContext({
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const context = await authorizationService().resolveProcessThreadContext({
       personId,
       processId: req.params.processId,
       scopeUnitId: req.body?.scope_unit_id ?? req.query?.scope_unit_id
     });
 
-    const existingConversationRecord = await conversationService.getByStableKey(context.stableKey);
+    const existingConversationRecord = await conversationService().getByStableKey(context.stableKey);
     if (existingConversationRecord) {
-      const syncedConversation = await conversationService.syncProcessThread(existingConversationRecord.id, {
+      const syncedConversation = await conversationService().syncProcessThread(existingConversationRecord.id, {
         participantIds: context.participantIds,
         adminIds: context.adminIds,
         currentDefinitionId: context.currentDefinitionId,
@@ -241,7 +249,7 @@ export const createOrGetProcessThread = async (req, res) => {
       });
     }
 
-    const createdConversation = await conversationService.createProcessThread({
+    const createdConversation = await conversationService().createProcessThread({
       processId: context.processId,
       scopeUnitId: context.scopeUnitId,
       stableKey: context.stableKey,
@@ -275,11 +283,11 @@ export const createOrGetProcessThread = async (req, res) => {
 
 export const listUnitThreads = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const units = await unitDirectoryService.listUnitsForPerson(personId);
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const units = await unitDirectoryService().listUnitsForPerson(personId);
     const items = await Promise.all(
       units.map(async (unit) => {
-        const conversation = await conversationService.getByStableKeyForParticipant(unit.stableKey, personId);
+        const conversation = await conversationService().getByStableKeyForParticipant(unit.stableKey, personId);
         return {
           unit_id: unit.unitId,
           label: unit.label,
@@ -296,12 +304,12 @@ export const listUnitThreads = async (req, res) => {
 
 export const getUnitThread = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const context = await unitDirectoryService.resolveUnitThreadContext({
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const context = await unitDirectoryService().resolveUnitThreadContext({
       personId,
       unitId: req.params.unitId
     });
-    const conversation = await conversationService.getByStableKeyForParticipant(context.stableKey, personId);
+    const conversation = await conversationService().getByStableKeyForParticipant(context.stableKey, personId);
     if (!conversation) {
       return res.status(404).json({
         message: "Chat de la unidad no encontrado.",
@@ -316,15 +324,15 @@ export const getUnitThread = async (req, res) => {
 
 export const createOrGetUnitThread = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const context = await unitDirectoryService.resolveUnitThreadContext({
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const context = await unitDirectoryService().resolveUnitThreadContext({
       personId,
       unitId: req.params.unitId
     });
 
-    const existingConversationRecord = await conversationService.getByStableKey(context.stableKey);
+    const existingConversationRecord = await conversationService().getByStableKey(context.stableKey);
     if (existingConversationRecord) {
-      const syncedConversation = await conversationService.syncUnitThread(existingConversationRecord.id, {
+      const syncedConversation = await conversationService().syncUnitThread(existingConversationRecord.id, {
         participantIds: context.participantIds,
         adminIds: context.adminIds,
         unitLabel: context.unitLabel
@@ -335,7 +343,7 @@ export const createOrGetUnitThread = async (req, res) => {
       });
     }
 
-    const createdConversation = await conversationService.createUnitThread({
+    const createdConversation = await conversationService().createUnitThread({
       unitId: context.unitId,
       stableKey: context.stableKey,
       participantIds: context.participantIds,
@@ -355,8 +363,8 @@ export const createOrGetUnitThread = async (req, res) => {
 
 export const listNotifications = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const notifications = await notificationService.listForRecipient(personId, {
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const notifications = await notificationService().listForRecipient(personId, {
       limit: req.query?.limit
     });
     return res.json({ data: notifications });
@@ -367,8 +375,8 @@ export const listNotifications = async (req, res) => {
 
 export const markNotificationsRead = async (req, res) => {
   try {
-    const { personId } = await identityService.resolveAuthenticatedPerson(req);
-    const notifications = await notificationService.markRead(personId, req.body?.notification_ids || []);
+    const { personId } = await identityService().resolveAuthenticatedPerson(req);
+    const notifications = await notificationService().markRead(personId, req.body?.notification_ids || []);
     return res.json({ data: notifications });
   } catch (error) {
     return handleControllerError(res, error, "No se pudieron marcar las notificaciones como leídas.");

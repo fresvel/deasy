@@ -1016,8 +1016,10 @@ escribe una vez y se usa para **decidir** y para **explicar**, y eso es lo que i
 desincronicen —ya pasó: el mensaje decía «vacantes, contratos o reglas» cuando ya eran ocho—. Partirla
 entre el servicio (el texto) y los datos (las tablas) habría reintroducido exactamente ese fallo.
 
-**Verificado en la pila D**: `check:imports` · `check:sql-aliases` (**599 consultas en 303 ficheros**,
-mismo total que antes: nada se añadió) · `check:sql-comments` · `check-mapa-tablas` · `test:unit`
+**Verificado en la pila D**: `check:imports` · `check:sql-aliases` (**600 consultas en 304 ficheros**;
+las de producción son las mismas **599** de antes — el +1 es el fichero de test nuevo, porque la
+puerta cuenta también los tests, comprobado por sustracción) · `check:sql-comments` ·
+`check-mapa-tablas` · `test:unit`
 **897/897** · `test:char:run` **321/321**, **sin que se moviera un golden**.
 
 **Y a mano, porque los goldens no llegan.** De los **12 endpoints** del dominio, char sólo cubre dos
@@ -1043,7 +1045,7 @@ retiró el 2026-08-29: una consulta que asume unicidad donde la base no la impon
 aquí**: poner el `UNIQUE` es un cambio de modelo, hay que decidir qué se hace con las filas que ya
 estén duplicadas, y lleva documentación publicada en el mismo commit. Es ficha del **frente 1**.
 
-### ⚠️ EL PRERREQUISITO QUE ESTE FRENTE DESTAPÓ: instanciar al cargar el módulo
+### ✅ EL PRERREQUISITO QUE ESTE FRENTE DESTAPÓ, y que ya está cerrado — con puerta
 
 **El mismo fallo mordió CUATRO veces en un día**, y no es el barril:
 
@@ -1059,13 +1061,44 @@ puerta de un dominio sólo cambia **quién entra primero**, así que **cada domi
 otra**. Y hacer perezoso un campo **sólo mueve qué orden rompe**: se vio aquí — el backend arrancaba y
 `SqlAdminService.test.js` fallaba.
 
-**Medido: 33 instanciaciones a nivel de módulo en 17 controllers.** `chat_controller` tiene 8,
-`user_controler` 5. Eso es un **prerrequisito para mover más dominios**, no un incidente — y
-`identidad`, el siguiente, es el grande: **62 ficheros**.
-
 **Verificación, y la lección de cómo se verifica:** hay que probar **los dos órdenes de carga**,
 porque uno solo miente. El backend arrancando no dice nada si el test que importa el servicio directo
 revienta.
+
+#### Cerrado el 2026-10-07: de 30 a CERO, en una tanda
+
+La cifra que estaba escrita aquí —33 en 17— **era mía y estaba vencida**: contaba antes de arreglar
+`program_controler` y `bootstrap_controller`, y además metía 12 `new Router`/`new Set`/`new URL`, que
+no instancian nada nuestro y no pueden entrar en un ciclo. Remedido: **30 en 16 ficheros**.
+
+| Cómo | Cuántas | Qué tenían de particular |
+|---|---|---|
+| Por script | **26** | La forma simple, en una línea. 149 sitios de uso reescritos, con el recuento de cada identificador cuadrado contra el censo previo |
+| A mano | **3** | `sql_admin_controller` (`editor` envuelve a `service`: las dos perezosas, y el editor resuelve el servicio al resolverse) · `dossier_controler` (constructor de varias líneas, y **lee el entorno**: importarlo en un test fijaba el cliente con las variables de ese instante) |
+| Borrada | **1** | `SqlAdminService` en `user_controler.js` con **CERO usos** |
+
+⚠️ **Lo de la borrada merece su línea: el servicio más grande del backend, instanciado al cargar el
+controlador más grande, para nada.** Importado y construido, nunca llamado. No lo veía nadie — el
+backend no tiene lint y una instancia sin usar es sintaxis perfecta.
+
+⚠️ **Y una trampa del método «extrae por script»: el regex también reescribe la PROSA.** `ident.`
+aparece en los comentarios, y un «Ver el porqué del diseño en el servicio.» quedó como «en el
+servicio().». Ningún test lo ve. Se caza mirando las líneas de comentario del diff, y conviene
+hacerlo siempre que se convierta por patrón.
+
+**La puerta, que es lo que lo cierra de verdad:** `npm run check:instancias`
+(`backend/scripts/check_module_instances.mjs`), en el job `backend-checks` de CI con las otras tres.
+Mira la **columna cero** de `controllers/`, `routes/` y `dominios/`, y cuando falla **dice qué
+escribir**. Se comprobó que muerde devolviendo una de las 30 a su forma vieja: la cazó y salió con 1.
+Una regla sin puerta se vuelve a romper — aquí está medido cuatro veces en un día.
+
+**Verificado**: las cuatro puertas + la nueva · `test:unit` **897/897** (primer orden de carga) ·
+arranque del backend y `test:char:run` **321/321** (segundo orden) · y **a mano los 9 endpoints que
+ningún golden ejercita** —los cinco de geografía, la institución, `/admin/canales`, el certificado, la
+foto, el escaneo del documento, `supervised-stuck`, `recuperar-correo` y `/admin/process`—, todos
+respondiendo con su respuesta de dominio y no con un `TypeError`.
+
+**`identidad` queda desbloqueado**, y es el grande: **62 ficheros**.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 

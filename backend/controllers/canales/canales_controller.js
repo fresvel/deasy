@@ -1,8 +1,10 @@
 import RbacService from "../../services/auth/RbacService.js";
 import ClienteDeChannels from "../../services/canales/ClienteDeChannels.js";
 
-const cliente = new ClienteDeChannels();
-const rbac = new RbacService();
+let _cliente = null;
+const cliente = () => (_cliente ??= new ClienteDeChannels());
+let _rbac = null;
+const rbac = () => (_rbac ??= new RbacService());
 
 /**
  * Cómo están los canales.
@@ -13,7 +15,7 @@ const rbac = new RbacService();
  * la que hace que alguien recargue en vez de ir a mirar el contenedor.
  */
 export const estadoDeCanales = async (req, res) => {
-  const respuesta = await cliente.estado();
+  const respuesta = await cliente().estado();
 
   if (!respuesta.alcanzable) {
     return res.json({
@@ -36,7 +38,7 @@ export const estadoDeCanales = async (req, res) => {
     },
     // Se dice si PUEDE pedirlo, para que la pantalla no ofrezca un botón que va a dar 403. La
     // comprobación de verdad la hace la ruta del QR: esto es cortesía, no seguridad.
-    puedeVerQr: rbac.can(req.access, "channels", "manage"),
+    puedeVerQr: rbac().can(req.access, "channels", "manage"),
     canales: respuesta.canales ?? [],
   });
 };
@@ -50,7 +52,7 @@ export const estadoDeCanales = async (req, res) => {
  * canal, y por eso pide `manage` y no `read`, y por eso se registra quién lo pidió.
  */
 export const codigoDeVinculacion = async (req, res) => {
-  const respuesta = await cliente.codigoDeVinculacion();
+  const respuesta = await cliente().codigoDeVinculacion();
 
   if (!respuesta.alcanzable) {
     return res.status(503).json({ message: "No se pudo hablar con el servicio de canales." });

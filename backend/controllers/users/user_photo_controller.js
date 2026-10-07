@@ -12,7 +12,8 @@ import {
   storeProfilePhoto
 } from "../../services/users/profilePhotoStorage.js";
 
-const userRepository = new UserRepository();
+let _userRepository = null;
+const userRepository = () => (_userRepository ??= new UserRepository());
 
 // Sube la foto a MinIO y deja en persons.photo_url la referencia minio://.
 // La foto anterior se borra a posteriori y sin bloquear: perder el objeto viejo es
@@ -26,13 +27,13 @@ export const updateUserPhoto = async (req, res) => {
     }
 
     const personId = Number(req.params?.personId);
-    const existingUser = await userRepository.findById(personId);
+    const existingUser = await userRepository().findById(personId);
     if (!existingUser) {
       return res.status(404).send({ message: "Usuario no encontrado" });
     }
 
     const stored = await storeProfilePhoto({ personId, filePath: req.file.path });
-    const updatedUser = await userRepository.updatePhotoByPersonId(personId, stored.reference);
+    const updatedUser = await userRepository().updatePhotoByPersonId(personId, stored.reference);
     await removeStoredPhoto(existingUser.photo_url);
 
     res.json({ result: "ok", user: updatedUser });
@@ -56,7 +57,7 @@ export const getUserPhoto = async (req, res) => {
   }
 
   try {
-    const user = await userRepository.findById(personId);
+    const user = await userRepository().findById(personId);
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }

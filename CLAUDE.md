@@ -597,11 +597,12 @@ bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # cont
 bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # OBLIGATORIO tras mover código
 bash scripts/docker-env.sh dev exec -T backend npm run check:sql-comments # OBLIGATORIO tras tocar SQL
 bash scripts/docker-env.sh dev exec -T backend npm run check:sql-aliases  # OBLIGATORIO tras tocar SQL
+bash scripts/docker-env.sh dev exec -T backend npm run check:instancias   # OBLIGATORIO: nada `new` al cargar un modulo
 bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov para SonarQube
 ```
 El backend **no tiene lint**, pero **sí tiene tests** — ejecútalos, no valides "a mano".
 
-**Los tres `check:` marcados OBLIGATORIO corren desde el 2026-08-26 en CI**, en el job
+**Los `check:` marcados OBLIGATORIO corren en CI** (los tres de SQL e imports desde el 2026-08-26; `check:instancias` desde el 2026-10-07), en el job
 `backend-checks` de `cd-multienv.yml`, y en `pull_request` además de en `push`: si te los saltas en
 local, te para el PR. Antes solo corría `check:imports`, y las otras dos dependían de que alguien se
 acordara. `check:params` **no** está en CI: es una decisión pendiente, no un olvido.
@@ -709,30 +710,33 @@ otra. Y **hacer perezoso un campo sólo mueve qué orden rompe**: hubo un caso e
 arrancaba y el test que importaba el servicio directo reventaba. **Prueba los DOS órdenes de carga —
 el arranque y el test— porque uno solo miente.**
 
-Se arreglan resolviendo al **primer uso**: `let x = null; const dame = () => (x ??= new Servicio());`.
-Remedido el **2026-10-07** tras cerrar `organizacion`: quedan **30 instanciaciones de servicio a nivel
-de módulo en 16 ficheros** —`chat_controller` 8, `user_controler` 4, y seis ficheros con 2—. **No
-añadas la 31.** Para contarlas, excluye `new Router`, `new Set` y `new URL`, que no instancian nada de
-otro módulo:
+Se arreglan resolviendo al **primer uso**:
 
-```bash
-grep -rnE "^(const|let) +[A-Za-z_$]+ *= *new +[A-Z]" --include=*.js backend/{controllers,routes,dominios} \
-  | grep -v "\.test\." | grep -vE "new (Router|Set|URL)\b"
+```js
+let _servicio = null;
+const servicio = () => (_servicio ??= new Servicio());
+// ...y cada uso pasa de `servicio.` a `servicio().`
 ```
 
-⚠️ **Antes de dar por propia una consulta, PREGUNTA AL MAPA de quién es cada tabla.** No se adivina
-por el nombre: **`cargos` es de `identidad`**, no de `organizacion`, y por eso tres consultas del
-organigrama que parecían propias cruzan. Un dominio a ojo es un `datos/` mal puesto:
+**Hoy son CERO, y hay puerta a techo cero**: `npm run check:instancias`
+(`backend/scripts/check_module_instances.mjs`), que corre en el job `backend-checks` de CI junto a
+las otras tres. Mira `controllers/`, `routes/` y `dominios/` en la **columna cero** —con sangría ya
+está dentro de un bloque y se ejecuta cuando toca— y no cuenta `new Router`, `new Set`, `new Map`,
+`new URL`, `new Date`, `new RegExp` ni `new Intl`, que no instancian nada nuestro y no pueden entrar
+en un ciclo. Cuando falla **dice qué escribir**, con el nombre de la variable ya puesto.
 
-```bash
-node -e 'const m=require("./scripts/docs/dominios.json");const t=process.argv[1];
-for(const[d,v]of Object.entries(m)){if(!d.startsWith("_")&&v.tablas&&t in v.tablas)console.log(d,v.tablas[t]);}' cargos
-```
+Eran **30 en 16 ficheros** y se cerraron el 2026-10-07 en una tanda: 26 por script y 4 a mano
+—`sql_admin_controller`, donde `editor` envuelve a `service` y las dos tenían que volverse perezosas
+en orden; `dossier_controler`, cuyo cliente de MinIO ocupa varias líneas **y lee el entorno al
+construirse**; y una que resultó estar **muerta**—.
 
-⚠️ **Y una puerta a techo cero NO es un censo.** `check:sql-aliases` cuenta plantillas de JavaScript:
-**no ve** una consulta con comillas dobles ni una con el nombre de tabla interpolado. En
-`organizacion` eso convirtió «15 consultas por mover» en **24** — un tercio más de trabajo del
-estimado. Para contar, cuenta; la puerta sólo dice que no hay alias roto.
+⚠️ **`SqlAdminService` estaba importada e instanciada en `user_controler.js` con CERO usos.** El
+servicio más grande del backend, construido al cargar el controlador más grande, para nada. No lo veía
+nadie: el backend no tiene lint, y una instancia sin usar es sintaxis perfecta.
+
+⚠️ **Al convertir los usos por regex, cuidado con la PROSA.** `ident.` también aparece en los
+comentarios: un «Ver el porqué del diseño en el servicio.» se volvió «en el servicio().». Revisa las
+líneas de comentario del diff, que es donde no lo ve ningún test.
 
 ⚠️ **Y al mover un dominio, recalcula los imports POR SCRIPT**, resolviendo cada ruta desde la
 posición vieja y reescribiéndola desde la nueva. En `chat` fueron **29 imports en 14 ficheros**: a

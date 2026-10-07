@@ -10,8 +10,10 @@ import {
   uploadFileToMinio
 } from "../../services/storage/minio_service.js";
 
-const certificateRepository = new UserCertificateRepository();
-const userRepository = new UserRepository();
+let _certificateRepository = null;
+const certificateRepository = () => (_certificateRepository ??= new UserCertificateRepository());
+let _userRepository = null;
+const userRepository = () => (_userRepository ??= new UserRepository());
 
 const MINIO_CERTIFICATES_BUCKET = process.env.MINIO_CERTIFICATES_BUCKET || "deasy-certificates";
 
@@ -26,7 +28,7 @@ const getCurrentUser = async (req) => {
   if (!userId || Number.isNaN(userId)) {
     throw new Error("Usuario autenticado inválido.");
   }
-  const user = await userRepository.findById(userId);
+  const user = await userRepository().findById(userId);
   if (!user) {
     throw new Error("Usuario no encontrado.");
   }
@@ -56,11 +58,11 @@ const filterExistingCertificates = async (rows) => {
 export const listMyCertificates = async (req, res) => {
   try {
     const user = await getCurrentUser(req);
-    const rows = await certificateRepository.listByPersonId(user.id);
+    const rows = await certificateRepository().listByPersonId(user.id);
     const existingRows = await filterExistingCertificates(rows);
     res.json({
       result: "ok",
-      certificates: existingRows.map((row) => certificateRepository.toPublic(row))
+      certificates: existingRows.map((row) => certificateRepository().toPublic(row))
     });
   } catch (error) {
     console.error("Error listando certificados:", error);
@@ -87,10 +89,10 @@ export const uploadMyCertificate = async (req, res) => {
 
     const isDefault = String(req.body?.is_default || "").trim() === "1";
     if (isDefault) {
-      await certificateRepository.clearDefaultForPerson(user.id);
+      await certificateRepository().clearDefaultForPerson(user.id);
     }
 
-    const created = await certificateRepository.create({
+    const created = await certificateRepository().create({
       person_id: user.id,
       label,
       original_filename: req.file.originalname,
@@ -101,7 +103,7 @@ export const uploadMyCertificate = async (req, res) => {
 
     res.status(201).json({
       result: "ok",
-      certificate: certificateRepository.toPublic(created)
+      certificate: certificateRepository().toPublic(created)
     });
   } catch (error) {
     console.error("Error subiendo certificado:", error);
@@ -117,12 +119,12 @@ export const deleteMyCertificate = async (req, res) => {
   try {
     const user = await getCurrentUser(req);
     const certificateId = Number(req.params?.certificateId);
-    const certificate = await certificateRepository.findOwnedById(user.id, certificateId);
+    const certificate = await certificateRepository().findOwnedById(user.id, certificateId);
     if (!certificate) {
       return res.status(404).json({ message: "Certificado no encontrado." });
     }
 
-    await certificateRepository.delete(certificate.id, user.id);
+    await certificateRepository().delete(certificate.id, user.id);
     try {
       await removeMinioObject(certificate.bucket, certificate.object_name);
     } catch (minioError) {
@@ -140,13 +142,13 @@ export const setMyDefaultCertificate = async (req, res) => {
   try {
     const user = await getCurrentUser(req);
     const certificateId = Number(req.params?.certificateId);
-    const updated = await certificateRepository.setDefault(certificateId, user.id);
+    const updated = await certificateRepository().setDefault(certificateId, user.id);
     if (!updated) {
       return res.status(404).json({ message: "Certificado no encontrado." });
     }
     res.json({
       result: "ok",
-      certificate: certificateRepository.toPublic(updated)
+      certificate: certificateRepository().toPublic(updated)
     });
   } catch (error) {
     console.error("Error marcando certificado por defecto:", error);
@@ -158,7 +160,7 @@ export const downloadMyCertificate = async (req, res) => {
   try {
     const user = await getCurrentUser(req);
     const certificateId = Number(req.params?.certificateId);
-    const certificate = await certificateRepository.findOwnedById(user.id, certificateId);
+    const certificate = await certificateRepository().findOwnedById(user.id, certificateId);
     if (!certificate) {
       return res.status(404).json({ message: "Certificado no encontrado." });
     }

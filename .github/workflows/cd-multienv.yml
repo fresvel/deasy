@@ -173,6 +173,13 @@ jobs:
       - name: Check SQL aliases
         working-directory: backend
         run: npm run check:sql-aliases
+      # Que nadie instancie un servicio al CARGAR el módulo. ESM tolera los ciclos; lo que no tolera
+      # es usar una referencia antes de que se inicialice, y la puerta de un dominio sólo cambia
+      # quién entra primero — así que el fallo aparece al mover código, no al escribirlo. Mordió
+      # cuatro veces el 2026-10-07, una por cada dominio movido. A techo cero.
+      - name: Check module-level instances
+        working-directory: backend
+        run: npm run check:instancias
       # El mapa de módulos: que cada tabla del esquema esté en un módulo, que ninguna clave ajena
       # apunte a una capa superior, y que no haya una tabla NUEVA escrita desde dos sitios. Va aquí
       # —y no solo en docs-dbml— porque la tercera comprobación mira el CÓDIGO: un segundo escritor

@@ -14,17 +14,19 @@ import {
   storeEscaneo
 } from "../../services/users/documentoEscaneoStorage.js";
 
-const userRepository = new UserRepository();
-const documentos = new DocumentoIdentidadService();
+let _userRepository = null;
+const userRepository = () => (_userRepository ??= new UserRepository());
+let _documentos = null;
+const documentos = () => (_documentos ??= new DocumentoIdentidadService());
 
 // Resuelve el documento PRINCIPAL de la persona identificada en la ruta por su ID. Se usa el
 // principal y no un id de documento suelto para que la URL no permita apuntar al documento de otro.
 const resolverDocumento = async (personId) => {
   const id = Number(personId);
   if (!Number.isInteger(id) || id <= 0) return { error: 400, message: "Se requiere el id de la persona." };
-  const persona = await userRepository.findById(id);
+  const persona = await userRepository().findById(id);
   if (!persona) return { error: 404, message: "Usuario no encontrado." };
-  const documento = await documentos.principalDe(persona.id ?? persona._id);
+  const documento = await documentos().principalDe(persona.id ?? persona._id);
   if (!documento) return { error: 404, message: "La persona no tiene un documento de identidad registrado." };
   return { documento };
 };
@@ -46,7 +48,7 @@ export const subirEscaneoDocumento = async (req, res) => {
     });
     // El anterior se borra DESPUES de dejar registrado el nuevo, y sin bloquear: perder el objeto
     // viejo es menos grave que dejar el registro apuntando a algo que ya no esta.
-    const anterior = await documentos.registrarEscaneoConRastro({
+    const anterior = await documentos().registrarEscaneoConRastro({
       documento,
       referencia: reference,
       actorId: req.auth?.userId ?? req.user?.uid,
@@ -75,7 +77,7 @@ export const descargarEscaneoDocumento = async (req, res) => {
 
     // Si lo baja un tercero, queda apuntado ANTES de abrirlo: si la bitacora falla, no sale nada.
     if (documento.escaneo_ref) {
-      await documentos.registrarLecturaDeEscaneo({
+      await documentos().registrarLecturaDeEscaneo({
         documento,
         actorId: req.auth?.userId ?? req.user?.uid,
         ip: req.ip ?? null
