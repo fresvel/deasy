@@ -1020,6 +1020,29 @@ entre el servicio (el texto) y los datos (las tablas) habría reintroducido exac
 mismo total que antes: nada se añadió) · `check:sql-comments` · `check-mapa-tablas` · `test:unit`
 **897/897** · `test:char:run` **321/321**, **sin que se moviera un golden**.
 
+**Y a mano, porque los goldens no llegan.** De los **12 endpoints** del dominio, char sólo cubre dos
+—`GET /admin/sql/units` y `/units/graph`—. Los otros diez se probaron con sesión de admin: el detalle
+de la unidad devolviendo cargo, nombre y cédula (las tres columnas que **cruzan a `identidad`**), los
+procesos que la alcanzan, crear/editar/borrar puesto, asignar y desasignar ocupante, crear unidad con
+padre, y los dos 409 —la segunda jefatura y el puesto con dependencias, que respondió
+*«1 ocupacion depende de este puesto»* con el singular bien elegido—. **Las filas de prueba se
+borraron**; quedan 14 unidades, las de la siembra.
+
+⚠️ **HALLAZGO AJENO, destapado al probar: `units.slug` NO ES ÚNICO en la base.** El esquema lo declara
+`VARCHAR(180) NOT NULL` y **sin `UNIQUE`** (`backend/database/postgres_schema.sql:414`), así que:
+
+1. `createUnitWithParent` promete *«Ya existe una unidad con ese slug. Cambia el nombre o el slug.»* y
+   ese `catch` de `isUniqueViolation` **es inalcanzable** — se comprobó creando dos veces la misma
+   unidad: **201 y 201**, dos filas con `slug = 'unidad-de-prueba-f7-4'`;
+2. y `SystemBootstrapService.js:561` resuelve una unidad con
+   `SELECT id FROM units WHERE slug = ? LIMIT 1`, **sin `ORDER BY`**: con dos filas iguales el
+   bootstrap engancha a **una cualquiera**.
+
+Es **la misma forma** que el defecto del login por número de documento —`d.numero = ?` a secas— que se
+retiró el 2026-08-29: una consulta que asume unicidad donde la base no la impone. **No se arregla
+aquí**: poner el `UNIQUE` es un cambio de modelo, hay que decidir qué se hace con las filas que ya
+estén duplicadas, y lleva documentación publicada en el mismo commit. Es ficha del **frente 1**.
+
 ### ⚠️ EL PRERREQUISITO QUE ESTE FRENTE DESTAPÓ: instanciar al cargar el módulo
 
 **El mismo fallo mordió CUATRO veces en un día**, y no es el barril:
