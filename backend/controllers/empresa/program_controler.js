@@ -1,4 +1,5 @@
 import { getPostgresPool } from "../../config/postgres.js";
+import { listUnits } from "../../services/admin/org/unitListing.js";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 
 const service = new SqlAdminService();
@@ -30,32 +31,12 @@ export const getPrograms = async (req, res) => {
       return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
     }
 
-    const conditions = [];
-    const params = [];
-
-    if (req.query.unit_type_id) {
-      conditions.push("u.unit_type_id = ?");
-      params.push(Number(req.query.unit_type_id));
-    }
-    if (req.query.unit_type) {
-      conditions.push("ut.name = ?");
-      params.push(String(req.query.unit_type));
-    }
-    if (req.query.is_active !== undefined) {
-      conditions.push("u.is_active = ?");
-      params.push(Number(req.query.is_active) === 1 ? 1 : 0);
-    }
-
-    const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
-    const [rows] = await pool.query(
-      `SELECT u.*, ut.name AS unit_type_name
-       FROM units u
-       LEFT JOIN unit_types ut ON ut.id = u.unit_type_id
-       ${whereClause}
-       ORDER BY u.name ASC`,
-      params
-    );
-    res.json(rows || []);
+    const rows = await listUnits(pool, {
+      unitTypeId: req.query.unit_type_id,
+      unitType: req.query.unit_type,
+      isActive: req.query.is_active,
+    });
+    res.json(rows);
   } catch (error) {
     console.log("Error Listando Unidades")
     res.status(500).json({ message: error.message });

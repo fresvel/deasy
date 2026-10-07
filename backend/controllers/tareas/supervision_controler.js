@@ -1,6 +1,7 @@
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
+import { getProcessDefinitionIdForTaskItem } from "../../services/tasks/taskQueries.js";
 
 const service = new SqlAdminService();
 
@@ -54,15 +55,7 @@ export const supervisorResetTaskItemWorkflow = async (req, res) => {
 
     // La definición sale del propio entregable: el jefe no la conoce ni tiene por qué mandarla, y
     // aceptarla del cliente sería dejar que eligiera sobre qué proceso opera.
-    const [rows] = await connection.query(
-      `SELECT t.process_definition_id
-         FROM task_items ti
-         INNER JOIN tasks t ON t.id = ti.task_id
-        WHERE ti.id = ?
-        LIMIT 1`,
-      [Number(req.params.taskItemId)]
-    );
-    const definitionId = rows?.[0]?.process_definition_id;
+    const definitionId = await getProcessDefinitionIdForTaskItem(connection, req.params.taskItemId);
     if (!definitionId) {
       return res.status(404).json({ message: "El entregable no existe o no tiene proceso." });
     }

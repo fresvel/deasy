@@ -2,6 +2,7 @@ import { verifyEmailCode } from "../../services/mail/emailVerification.js";
 import { sendEmailVerification } from "../../services/mail/sendEmailVerification.js";
 import { hayCorreoConfigurado } from "../../services/mail/configuracionDeCorreo.js";
 import { getPostgresPool } from "../../config/postgres.js";
+import { ultimoCodigoEnviadoAt } from "../../services/mail/saveEmailVerificationCode.js";
 import EmailService from "../../services/users/EmailService.js";
 import TelefonoService from "../../services/users/TelefonoService.js";
 
@@ -60,17 +61,7 @@ export const reenviarMiCodigo = async (req, res) => {
     // evaluó migrarlo y **éste es mejor**: cuenta desde el `created_at` del último código ENVIADO,
     // que es el hecho que se quiere frenar y que ya está guardado. Contarlo aparte crearía dos
     // fuentes de verdad y costaría una fila por reenvío. El porqué completo, en `limites/reglas.js`.
-    const [filas] = await getPostgresPool().query(
-      `SELECT c.created_at
-         FROM email_verification_codes c
-         INNER JOIN emails e ON e.id = c.email_id
-        WHERE e.person_id = ?
-        ORDER BY c.created_at DESC
-        LIMIT 1`,
-      [personId]
-    );
-
-    const ultimo = filas?.[0]?.created_at ? new Date(filas[0].created_at).getTime() : 0;
+    const ultimo = await ultimoCodigoEnviadoAt(personId);
     const faltan = ESPERA_ENTRE_ENVIOS_MS - (Date.now() - ultimo);
     if (faltan > 0) {
       return res.status(429).json({
