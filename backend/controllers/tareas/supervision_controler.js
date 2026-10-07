@@ -1,6 +1,6 @@
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import { getPostgresPool } from "../../config/postgres.js";
-import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
+import { rehacerFlujoDelEntregable } from "../../services/documents/DocumentWorkflowResetService.js";
 import { getProcessDefinitionIdForTaskItem } from "../../services/tasks/taskQueries.js";
 
 const service = new SqlAdminService();
@@ -48,32 +48,28 @@ export const supervisorResetTaskItemWorkflow = async (req, res) => {
   if (!pool) {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
-  const connection = await pool.getConnection();
   try {
     const personId = req.user?.uid ?? null;
-    await service.assertSupervisesTaskItem(personId, req.params.taskItemId, connection);
+    await service.assertSupervisesTaskItem(personId, req.params.taskItemId, pool);
 
     // La definición sale del propio entregable: el jefe no la conoce ni tiene por qué mandarla, y
     // aceptarla del cliente sería dejar que eligiera sobre qué proceso opera.
-    const definitionId = await getProcessDefinitionIdForTaskItem(connection, req.params.taskItemId);
+    const definitionId = await getProcessDefinitionIdForTaskItem(pool, req.params.taskItemId);
     if (!definitionId) {
       return res.status(404).json({ message: "El entregable no existe o no tiene proceso." });
     }
 
-    await connection.beginTransaction();
-    const result = await resetDocumentWorkflowForTaskItem({
-      connection,
+    // `bypassStepOwnership` porque la legitimidad del jefe NO es ser titular del paso, es el
+    // ALCANCE: `assertSupervisesTaskItem` ya comprobó que el entregable cae en una unidad que
+    // encabeza. La transacción la abre el servicio, que es quien sabe qué es atómico aquí.
+    const result = await rehacerFlujoDelEntregable({
       userId: personId,
       definitionId,
       taskItemId: Number(req.params.taskItemId),
       bypassStepOwnership: true,
     });
-    await connection.commit();
     return res.json(result);
   } catch (error) {
-    await connection.rollback().catch(() => {});
     return res.status(error.status || 400).json({ message: error.message });
-  } finally {
-    connection.release();
   }
 };

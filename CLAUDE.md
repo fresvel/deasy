@@ -653,6 +653,23 @@ estados y cualquier bucle de trabajo viven en `backend/services/`.
 responsabilidad**, y se lee de una sentada. Los infractores conocidos están listados en `docs/planes/referencia/calidad-y-medicion.md` §5-D; no añadas
 más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extrae un servicio.
 
+### La transacción se abre con `conTransaccion`, y NO en un controller
+
+`config/postgres.js` exporta **`conTransaccion(trabajo)`**: abre la conexión, `beginTransaction`, llama
+a tu función, `commit`; y ante cualquier error hace `rollback` y **propaga el error original**, con
+`release` siempre. Existe desde el **2026-10-07**, y antes ese patrón estaba **copiado a mano en 19
+ficheros**, cuatro de ellos **controllers**.
+
+- La usan **`services/`** y los flujos. **Un controller no**: si necesita atomicidad, llama a un
+  servicio. Medido al cerrar F7.2: en `controllers/` y `routes/` hay **cero** `.query(`, **cero**
+  `beginTransaction` y **cero** `getConnection()`.
+- ⚠️ **`getConnection()` NO es una transacción.** Pedir una conexión dedicada sin `beginTransaction`
+  no protege nada y se puede quedar sin soltar por cualquier camino que no pase por el `finally`.
+  Había **siete** así; ya no hay ninguna.
+- ⚠️ **No metas en la transacción lo que la base no puede deshacer.** Subir un objeto a MinIO va
+  **fuera**: una transacción de PostgreSQL no borra un fichero ya escrito, y abarcarla promete una
+  atomicidad que no existe.
+
 ### Reglas al mover código
 
 1. **Refactor = mover código, NO reescribir comportamiento.** Si cambias qué hace algo, no es un refactor.

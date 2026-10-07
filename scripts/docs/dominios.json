@@ -98,13 +98,17 @@
       "por donde pasan los tres. El antes/después está medido en 'TelefonoService.test.js'.",
       "",
       "Lo que está mal en cada una NO es la carpeta: es que la misma regla se aplica en dos sitios y uno",
-      "se queda atrás. El arreglo es llevar el invariante a donde no se pueda esquivar."
+      "se queda atrás. El arreglo es llevar el invariante a donde no se pueda esquivar.",
+      "",
+      "CERRADA el 2026-10-07: la de 'document_versions'. Su línea decía «controllers/users/",
+      "user_controler.js:727 hace un UPDATE que corresponde a services/documents», y F7.2 lo movió a",
+      "'services/documents/DeliverableUploadService.js'. LA PUERTA AVISÓ SOLA --«ya sólo tiene un",
+      "escritor: quita su línea»--, que es como se cierran: quitando líneas, nunca añadiéndolas."
     ],
     "persons": "services/auth la escribe en UserRepository y services/mail en reset_password.js:121, las dos con 'UPDATE persons SET password_hash'. Cambiar la contraseña es una regla sola escrita dos veces.",
     "emails": "services/users (EmailService:148) y services/mail (emailVerification.js:58) ejecutan el MISMO 'UPDATE emails SET verificado = 1'. Es el caso gemelo del teléfono y se cierra igual.",
     "task_items": "services/tasks lo INSERTA al crear una tarea general y services/documents lo toca en el camino del documento. Son dos dueños de la misma identidad (tarea, plantilla, puesto).",
-    "document_versions": "controllers/users/user_controler.js:727 hace un UPDATE que corresponde a services/documents. Un controller es transporte no por norma, sino porque la regla queda fuera del sitio por donde pasan los demás caminos.",
-    "fill_requests": "LA DESTAPÓ F7.1 el 2026-10-07 al estrechar la exención de carpeta a fichero: estaba oculta, no es nueva. Y OJO, no es el caso de «la misma regla dos veces» de las otras cuatro: son dos operaciones distintas sobre la misma tabla. 'services/admin/generation/assignees.js' las CREA al materializar el recorrido de entrega, y 'services/documents/DocumentProgressService.js:113' REACTIVA una devuelta al avanzar de paso. Se cierra en F7.5, cuando las dos caigan en 'plantillas/datos/'; no antes, porque el piloto demostró que mover una sola a 'dominios/' deja la tabla con dos dueños.",
+      "fill_requests": "LA DESTAPÓ F7.1 el 2026-10-07 al estrechar la exención de carpeta a fichero: estaba oculta, no es nueva. Y OJO, no es el caso de «la misma regla dos veces» de las otras cuatro: son dos operaciones distintas sobre la misma tabla. 'services/admin/generation/assignees.js' las CREA al materializar el recorrido de entrega, y 'services/documents/DocumentProgressService.js:113' REACTIVA una devuelta al avanzar de paso. Se cierra en F7.5, cuando las dos caigan en 'plantillas/datos/'; no antes, porque el piloto demostró que mover una sola a 'dominios/' deja la tabla con dos dueños.",
   "chat_notifications": "services/chat las crea en el camino normal y services/canales en AvisoDeCanalCaido.js:95. Aquí puede que la respuesta sea un módulo de avisos, no mover el aviso al chat."
   },
   "identidad": {

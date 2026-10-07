@@ -1,4 +1,4 @@
-import { getPostgresPool } from "../../config/postgres.js";
+import { conTransaccion, getPostgresPool } from "../../config/postgres.js";
 
 const VALID_PHASES = new Set(["review", "signature"]);
 const VALID_KINDS = new Set(["observation", "return_reason", "rejection_reason", "internal_note"]);
@@ -135,3 +135,13 @@ export const resolveDocumentObservation = async (observationId, resolvedByPerson
     [Number(resolvedByPersonId), Number(observationId)]
   );
 };
+
+// REGISTRAR una observación, con su transacción. Antes la abría el controller.
+//
+// La abre aquí porque aquí está la regla: `addDocumentObservation` puede devolver vacío cuando el
+// entregable no tiene versión documental, y entonces no hay nada que confirmar. Un controller no
+// tiene por qué saber eso.
+export const registrarObservacionDelEntregable = async ({ taskItemId, phase, kind, message, authorPersonId }) =>
+  conTransaccion((conexion) =>
+    addDocumentObservation(conexion, { taskItemId, phase, kind, message, authorPersonId })
+  );

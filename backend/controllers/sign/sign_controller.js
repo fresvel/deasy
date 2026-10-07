@@ -286,17 +286,14 @@ export const getSignatureFlow = async (req, res) => {
       return res.status(500).json({ error: "La conexión a PostgreSQL no está disponible." });
     }
 
-    const connection = await pool.getConnection();
-    try {
-      const snapshot = await getSignatureFlowSnapshot({
-        connection,
-        documentVersionId,
-        userId: Number(req.user?.uid || 0),
-      });
-      return res.json(snapshot);
-    } finally {
-      connection.release();
-    }
+    // Una conexión dedicada del pool y sin transacción: el `getConnection()` que había aquí no
+    // protegía nada y se podía quedar sin soltar por cualquier camino que no pasara por el `finally`.
+    const snapshot = await getSignatureFlowSnapshot({
+      connection: pool,
+      documentVersionId,
+      userId: Number(req.user?.uid || 0),
+    });
+    return res.json(snapshot);
   } catch (error) {
     console.error("[sign_controller] Error signature flow:", error);
     return res.status(500).json({ error: error.message || "No se pudo obtener el flujo de firmas." });

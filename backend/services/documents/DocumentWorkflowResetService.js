@@ -5,6 +5,7 @@ import {
   SIGNATURE_REQUEST_STATUS,
 } from "./DocumentWorkflowCatalog.js";
 import { resolveCurrentSignatureStep } from "./DocumentSignatureWorkflowService.js";
+import { conTransaccion } from "../../config/postgres.js";
 
 const RESET_NOTE = "Reset manual del flujo";
 
@@ -275,3 +276,28 @@ export const resetDocumentWorkflowForTaskItem = async ({
     resetBy: fillOwnership ? "fill" : "signature",
   };
 };
+
+// REHACER el flujo de un entregable, con su transacción.
+//
+// ⚠️ LA ABRÍAN DOS CONTROLLERS CON EL MISMO CÓDIGO COPIADO: el del responsable
+// (`user_controler.resetDeliverableWorkflow`) y el del jefe de unidad
+// (`supervision_controler.supervisorResetTaskItemWorkflow`). Dos copias de la misma frontera de
+// transacción, y la diferencia real entre ellos es UN booleano —`bypassStepOwnership`—, no la
+// atomicidad. Ahora la frontera está una vez y el booleano es un parámetro.
+export const rehacerFlujoDelEntregable = async ({
+  userId,
+  definitionId,
+  taskItemId,
+  documentId = null,
+  bypassStepOwnership = false,
+}) =>
+  conTransaccion((conexion) =>
+    resetDocumentWorkflowForTaskItem({
+      connection: conexion,
+      userId,
+      definitionId,
+      taskItemId,
+      documentId,
+      bypassStepOwnership,
+    })
+  );

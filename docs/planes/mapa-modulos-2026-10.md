@@ -6,7 +6,7 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **15 de 25**
+## Estado general — **17 de 25**
 
 | Fase | Tareas | Estado |
 |---|---|---|
@@ -14,9 +14,9 @@ incompatibles.**
 | **F2** · La puerta de los niveles | F2.1 ✅ · F2.2 ✅ | ✅ **2 de 2** |
 | **F3** · La puerta de propiedad | F3.1 ✅ · F3.2 ✅ | ✅ **2 de 2** |
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
-| **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ⬜ · F5.6 ⬜ | 🟡 **1 de 6** |
+| **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ✅ · F5.6 ⬜ | 🟡 **2 de 6** |
 | **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
-| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 🟡 · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | 🟡 **1 de 6** |
+| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | 🟡 **2 de 6** |
 
 ## F6 · El dominio, dentro de la base — 4 de 5
 
@@ -117,7 +117,7 @@ dueño eligió con información incompleta por mi culpa, no por capricho suyo.
 **Lo que se hace en su lugar es F7**: reordenar el **código**, que sí son módulos y donde el mandato
 de la ingeniería es explícito.
 
-## F5 · Cerrar la deuda de escritura — 1 de 6
+## F5 · Cerrar la deuda de escritura — 2 de 6
 
 | Tarea | Qué entrega | Estado |
 |---|---|:--:|
@@ -125,7 +125,7 @@ de la ingeniería es explícito.
 | **F5.2** | `emails` — el **mismo** `UPDATE emails SET verificado = 1` en `EmailService:148` y en `emailVerification.js:58` | ⬜ |
 | **F5.3** | `persons` — `UPDATE persons SET password_hash` en `UserRepository` y en `reset_password.js:121` | ⬜ |
 | **F5.4** | `task_items` — `services/tasks` lo inserta y `services/documents` lo toca | ⬜ |
-| **F5.5** | `document_versions` — `user_controler.js:727` hace un `UPDATE` que es de `services/documents` | ⬜ |
+| **F5.5** | `document_versions` — `user_controler.js:727` hace un `UPDATE` que es de `services/documents` | ✅ **la cerró F7.2**: el `UPDATE` se fue a `DeliverableUploadService.js` y **la puerta avisó sola** |
 | **F5.6** | `chat_notifications` — `services/chat` y `services/canales`. Puede que la respuesta sea un módulo de avisos | ⬜ |
 
 ## Por qué existe este frente: las cuatro clasificaciones
@@ -640,7 +640,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 |---|---|:--:|
 | **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`dominio` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
-| **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: de **77 a 3** en seis pasos. Las 3 que quedan abren transacción, y eso es el paso siguiente. `user_controler.js`: **1.695 → 1.510 líneas** | 🟡 |
+| **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
 | **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0 — carpeta **reservada vacía**, decidido el 2026-10-07), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
@@ -684,7 +684,7 @@ dueños.
 El resumen de la puerta ahora dice, además de lo de siempre:
 `Declarados:  3 transversales · 7 flujos que cruzan dominios`.
 
-### F7.2 🟡 — de 77 consultas a 3, y dos puertas que estaban ciegas
+### F7.2 ✅ — de 77 consultas a CERO, y dos puertas que estaban ciegas
 
 | Paso | Qué salió | Quedan |
 |---|---|---:|
@@ -753,6 +753,55 @@ nombre en vez de por ruta. La lección queda escrita en `CLAUDE.md`.
 controllers (`user_controler.js`, `sign_controller.js`, `supervision_controler.js`). Mover una
 frontera de transacción cambia **quién es dueño de la unidad de trabajo**: es un cambio de diseño, no
 una extracción, y va en su propio paso.
+
+### F7.2 ✅ — el cierre: la frontera de transacción
+
+**Medido sobre `controllers/` y `routes/` al cerrar: `.query(` **0** · `beginTransaction`/`commit`/
+`rollback` **0** · `getConnection()` **0**.** Lo único que queda del vocabulario de base de datos en
+esa capa son **comentarios**.
+
+**1 · Se construyó el ayudante que el frente 9 enumeró y nunca se hizo.** `conTransaccion` en
+`config/postgres.js`, junto al pool, que es su única dependencia. El patrón —`getConnection`,
+`beginTransaction`, `commit`, `rollback` en el catch, `release` en el finally— estaba **copiado a mano
+en 19 ficheros**, y **cuatro de esas copias vivían en controllers**. Copiar una frontera de
+transacción es copiar la decisión de qué es atómico, y cada copia podía olvidarse un `rollback` o un
+`release` por un camino de salida.
+
+Lleva **4 pruebas propias**, y una vigila el caso que las copias a mano hacían mal: **si el `rollback`
+también falla, el error que llega al llamador es el ORIGINAL** —el que explica qué pasó— y la conexión
+se suelta igual. Una fuga ahí agota el pool en producción y **no la ve ningún test de HTTP**.
+
+**2 · Las cuatro transacciones se fueron a su servicio**, y una de ellas estaba **duplicada**:
+
+| Dónde estaba | A dónde fue |
+|---|---|
+| `user_controler.addTaskItemObservation` | `DocumentObservationService.registrarObservacionDelEntregable` |
+| `user_controler.uploadDeliverablePdf` | `DeliverableUploadService` (nuevo), con sus 3 consultas |
+| `user_controler.resetDeliverableWorkflow` | `DocumentWorkflowResetService.rehacerFlujoDelEntregable` |
+| `supervision_controler.supervisorResetTaskItemWorkflow` | **el mismo**: era la misma frontera copiada, y la diferencia real entre los dos es **un booleano** (`bypassStepOwnership`), no la atomicidad |
+
+**3 · Lo que se dejó FUERA de la transacción, a propósito.** En la subida del entregable, resolver el
+entregable, calcular el número de corrección y escribir el objeto en MinIO pasan **antes y fuera**:
+una transacción de base de datos **no deshace un objeto ya escrito en MinIO**, así que abarcarla sería
+prometer una atomicidad que no existe.
+
+**4 · Y cerró una deuda de F5, sola.** `F5.5` pedía mover el `UPDATE document_versions` de
+`user_controler.js:727` a `services/documents`. Al hacerlo, **la puerta avisó por su cuenta**:
+
+```
+⚠ C · 'document_versions' ya solo tiene un escritor: quita su línea de _deuda_escritura
+```
+
+Quitada. La deuda baja de **6 a 5**, y se cerró como dice que se cierran: **quitando una línea, no
+añadiéndola**.
+
+⚠️ **LO QUE NO ESTÁ HECHO, y es la regla entera y no un resto:** `controllers/` ya no tiene SQL ni
+transacciones, pero **ocho ficheros siguen importando el pool** para pasárselo a un servicio como
+ejecutor — 33 usos, 23 de ellos en `user_controler.js`. La regla de la estructura dice
+*«`controllers/`: sólo traduce HTTP, **sin pool**, sin SQL, sin reglas»*. Cerrarlo pide que cada
+función llamada resuelva el pool por su cuenta cuando no se le dé uno —como ya hace
+`listDocumentObservations`—, y eso son 33 firmas: **es otra tarea, con su propio riesgo, y no se mete
+de tapadillo en ésta.**
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 

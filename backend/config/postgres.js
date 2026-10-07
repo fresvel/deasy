@@ -563,6 +563,39 @@ export const assertPostgresConnection = async () => {
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────────────────────────
+// LA FRONTERA DE TRANSACCIÓN, en un solo sitio.
+//
+// Hasta el 2026-10-07 este patrón —getConnection, beginTransaction, commit, rollback en el catch,
+// release en el finally— estaba copiado a mano en 19 ficheros, y CUATRO de esas copias vivían en
+// CONTROLLERS, que son transporte. Copiar una frontera de transacción es copiar la decisión de qué
+// es atómico, y cada copia podía olvidarse un `rollback` o un `release` por un camino de salida.
+//
+// Lo usan `services/` y los flujos. Un controller NO: si necesita atomicidad, llama a un servicio.
+//
+// ⚠️ Esto es el `withTransaction` que el frente 9 enumeró entre sus entregables (D1…D6) y que nunca
+// se construyó. Se escribe aquí, junto al pool, porque es su única dependencia.
+// El segundo parámetro existe SÓLO para poder probar esto sin base de datos; en producción nadie lo
+// pasa y se resuelve el pool de siempre.
+export const conTransaccion = async (trabajo, poolInyectado = undefined) => {
+  const pool = poolInyectado === undefined ? getPostgresPool() : poolInyectado;
+  if (!pool) {
+    throw new Error("Conexion PostgreSQL no disponible");
+  }
+  const conexion = await pool.getConnection();
+  try {
+    await conexion.beginTransaction();
+    const resultado = await trabajo(conexion);
+    await conexion.commit();
+    return resultado;
+  } catch (error) {
+    await conexion.rollback().catch(() => {});
+    throw error;
+  } finally {
+    conexion.release();
+  }
+};
+
 export const closePostgresPool = async () => {
   if (!pool) return;
   await pool.end();

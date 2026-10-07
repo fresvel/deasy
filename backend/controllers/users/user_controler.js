@@ -14,6 +14,12 @@ import {
   listAttachmentsOfDocumentVersion,
   nextAttachmentOrder,
 } from "../../services/documents/DocumentAttachmentService.js";
+import { registrarObservacionDelEntregable } from "../../services/documents/DocumentObservationService.js";
+import { rehacerFlujoDelEntregable } from "../../services/documents/DocumentWorkflowResetService.js";
+import {
+  nextUploadMinor,
+  registrarSubidaDelEntregable,
+} from "../../services/documents/DeliverableUploadService.js";
 import {
   findAddableDeliverables,
   findFlowCatalog,
@@ -576,9 +582,8 @@ export const addTaskItemObservation = async (req, res) => {
   if (!pool) {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
-  const connection = await pool.getConnection();
   try {
-    const taskItem = await getAccessibleTaskItemForUser(connection, userId, definitionId, taskItemId);
+    const taskItem = await getAccessibleTaskItemForUser(pool, userId, definitionId, taskItemId);
     if (!taskItem) {
       return res.status(404).json({ message: "No se encontró el entregable solicitado." });
     }
@@ -586,25 +591,20 @@ export const addTaskItemObservation = async (req, res) => {
     // da ver Y comentar. El 403 que había aquí sólo podía dispararse para alguien que SÍ ve el
     // entregable pero no está en la cadena — el caso del creador de la tarea—, y esa distinción
     // se retiró a propósito.
-    await connection.beginTransaction();
-    const observationId = await addDocumentObservation(connection, {
+    const observationId = await registrarObservacionDelEntregable({
       taskItemId: taskItem.task_item_id,
       phase,
       kind,
       message,
       authorPersonId: userId,
     });
-    await connection.commit();
     if (!observationId) {
       return res.status(400).json({ message: "No se pudo registrar la observación (el entregable no tiene versión documental)." });
     }
     return res.status(201).json({ id: observationId });
   } catch (error) {
-    await connection.rollback().catch(() => {});
     console.error("Error agregando observación del entregable:", error);
     return res.status(400).json({ message: error.message || "No se pudo agregar la observación." });
-  } finally {
-    connection.release();
   }
 };
 
@@ -672,9 +672,8 @@ export const uploadDeliverablePdf = async (req, res) => {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
-  const connection = await pool.getConnection();
   try {
-    const target = await getAccessibleTaskItemDocumentForUser(connection, authenticatedUserId, definitionId, taskItemId, { documentId });
+    const target = await getAccessibleTaskItemDocumentForUser(pool, authenticatedUserId, definitionId, taskItemId, { documentId });
     if (!target?.document_version_id) {
       return res.status(404).json({ message: "No se encontró un documento activo para ese entregable." });
     }
@@ -695,17 +694,7 @@ export const uploadDeliverablePdf = async (req, res) => {
     const originalName = String(uploadedFile.originalname || "entregable.pdf");
     const extension = path.extname(originalName).replace(/^\./, "").toLowerCase() || "pdf";
 
-    // CADA SUBIDA ES UNA CORRECCION, y tiene su numero (2026-08-23). El siguiente menor se calcula
-    // ANTES de subir porque forma parte de la ruta del objeto: `…/v0001/m0003/working/pdf/…`, que
-    // se lee «ronda 1, correccion 3» sin consultar nada.
-    const [minorRows] = await connection.query(
-      `SELECT COALESCE(MAX(minor), 0) + 1 AS siguiente
-         FROM document_version_uploads
-        WHERE document_version_id = ?`,
-      [Number(target.document_version_id)]
-    );
-    const minor = Number(minorRows?.[0]?.siguiente || 1);
-
+    const minor = await nextUploadMinor(pool, target.document_version_id);
     const relativeObjectPath = buildWorkingObjectPathForUpload({
       basePath: buildCanonicalDocumentVersionBasePath(target),
       originalName,
@@ -714,48 +703,24 @@ export const uploadDeliverablePdf = async (req, res) => {
     });
     const minioObjectName = `${MINIO_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
 
+    // Fuera de la transacción a propósito: una transacción de base de datos no deshace un objeto ya
+    // escrito en MinIO, así que abarcarla sería prometer una atomicidad que no existe.
     await ensureBucketExists(MINIO_DOCUMENTS_BUCKET);
     await uploadFileToMinio(MINIO_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
       "Content-Type": uploadedFile.mimetype || "application/octet-stream",
       "Original-Name": originalName
     });
 
-    await connection.beginTransaction();
-
-    // La BITACORA. Es lo que hasta hoy no existia: quien elaboro el documento no constaba en
-    // ninguna parte, mientras que un ANEXO —material de apoyo— si guardaba quien lo subio.
-    await connection.query(
-      `INSERT INTO document_version_uploads
-         (document_version_id, minor, file_path, file_name, mime_type, size_bytes, uploaded_by_person_id)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
-      [
-        Number(target.document_version_id),
-        minor,
-        relativeObjectPath,
-        originalName,
-        uploadedFile.mimetype || null,
-        uploadedFile.size ?? null,
-        authenticatedUserId,
-      ]
-    );
-
-    // `working_file_path` sigue siendo EL ARCHIVO VIGENTE y no se mueve de sitio: son 74 lecturas en
-    // el backend, y ninguna necesita saber de la bitacora. Lo que se sobrescribia y se perdia era el
-    // puntero al anterior; ahora ese puntero vive en la bitacora, con su autor y su fecha.
-    await connection.query(
-      `UPDATE document_versions
-       SET working_file_path = ?,
-           version_minor = ?
-       WHERE id = ?`,
-      [relativeObjectPath, minor, Number(target.document_version_id)]
-    );
-
-    const currentStatus = String(target.document_version_status || "").trim();
-    if (currentStatus === "Borrador" || currentStatus === "Pendiente de llenado" || currentStatus === "Observado") {
-      await transitionDocumentVersionState(connection, Number(target.document_version_id), "En llenado");
-    }
-
-    await connection.commit();
+    await registrarSubidaDelEntregable({
+      documentVersionId: target.document_version_id,
+      minor,
+      filePath: relativeObjectPath,
+      fileName: originalName,
+      mimeType: uploadedFile.mimetype || null,
+      sizeBytes: uploadedFile.size ?? null,
+      uploadedByPersonId: authenticatedUserId,
+      currentStatus: target.document_version_status,
+    });
 
     return res.json({
       message: "El archivo del entregable se cargó correctamente.",
@@ -767,14 +732,12 @@ export const uploadDeliverablePdf = async (req, res) => {
       template_artifact_name: target.template_artifact_name || `Entregable #${target.task_item_id}`
     });
   } catch (error) {
-    await connection.rollback().catch(() => {});
     console.error("Error al subir el archivo del entregable:", error);
     return res.status(500).json({
       message: "No se pudo cargar el archivo del entregable.",
       error: error.message
     });
   } finally {
-    connection.release();
     await fs.remove(uploadedFile.path).catch(() => {});
   }
 };
@@ -961,24 +924,20 @@ export const resetDeliverableWorkflow = async (req, res) => {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
-  const connection = await pool.getConnection();
   try {
-    const target = await getAccessibleTaskItemDocumentForUser(connection, authenticatedUserId, definitionId, taskItemId, { documentId });
+    const target = await getAccessibleTaskItemDocumentForUser(pool, authenticatedUserId, definitionId, taskItemId, { documentId });
     if (target?.requires_document_selection) {
       return res.status(409).json({
         message: "Debes seleccionar la instancia documental que deseas resetear.",
         requires_document_selection: true,
       });
     }
-    await connection.beginTransaction();
-    const result = await resetDocumentWorkflowForTaskItem({
-      connection,
+    const result = await rehacerFlujoDelEntregable({
       userId: authenticatedUserId,
       definitionId,
       taskItemId,
       documentId: documentId || target?.document_id || null,
     });
-    await connection.commit();
 
     return res.json({
       message: "El flujo del entregable se reseteó correctamente.",
@@ -990,14 +949,11 @@ export const resetDeliverableWorkflow = async (req, res) => {
       reset_by: result.resetBy,
     });
   } catch (error) {
-    await connection.rollback().catch(() => {});
     const statusCode = Number(error?.statusCode || 500);
     console.error("Error reseteando el flujo del entregable:", error);
     return res.status(statusCode).json({
       message: error?.message || "No se pudo resetear el flujo del entregable.",
     });
-  } finally {
-    connection.release();
   }
 };
 
@@ -1183,9 +1139,8 @@ export const uploadDeliverableAttachment = async (req, res) => {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
 
-  const connection = await pool.getConnection();
   try {
-    const target = await getAccessibleTaskItemDocumentForUser(connection, authenticatedUserId, definitionId, taskItemId, { documentId });
+    const target = await getAccessibleTaskItemDocumentForUser(pool, authenticatedUserId, definitionId, taskItemId, { documentId });
     if (!target?.document_version_id) {
       return res.status(404).json({ message: "No se encontró un documento activo para ese entregable." });
     }
@@ -1214,8 +1169,8 @@ export const uploadDeliverableAttachment = async (req, res) => {
       "Original-Name": originalName
     });
 
-    const sortOrder = await nextAttachmentOrder(connection, target.document_version_id);
-    const attachmentId = await insertAttachment(connection, {
+    const sortOrder = await nextAttachmentOrder(pool, target.document_version_id);
+    const attachmentId = await insertAttachment(pool, {
       documentVersionId: target.document_version_id,
       kind,
       filePath: relativeObjectPath,
@@ -1246,7 +1201,6 @@ export const uploadDeliverableAttachment = async (req, res) => {
     console.error("Error al subir el anexo del entregable:", error);
     return res.status(500).json({ message: "No se pudo cargar el anexo.", error: error.message });
   } finally {
-    connection.release();
     await fs.remove(uploadedFile.path).catch(() => {});
   }
 };
