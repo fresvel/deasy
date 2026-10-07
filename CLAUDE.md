@@ -428,19 +428,36 @@ Cada tabla aparece **una vez**, dentro de su **dominio**, y su valor es su **niv
 | **dominio** | de qué trata | 8, los de siempre. De aquí salen los 8 diagramas, y es **donde debería vivir su código** |
 | **nivel** | de qué depende | 0 (abajo) a 7 (arriba). De aquí sale el **orden de lectura** |
 
-**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: 103 bajan,
-79 se quedan, **0 suben**. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
+**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: **102 bajan,
+77 se quedan, 0 suben** de 179. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
 transversales declarados por nombre (el bootstrap y el editor genérico de `/admin`).
 
 ```bash
-node scripts/docs/check-mapa-tablas.mjs    # tres comprobaciones
+node scripts/docs/check-mapa-tablas.mjs    # cinco comprobaciones
 ```
 
 | | Qué caza |
 |---|---|
+| **0** | `dominios.json` vuelve a decir «tema» o «capa» (ver el glosario de arriba) |
 | **A** | una tabla del esquema sin dominio, o en dos |
+| **A-bis** | una tabla creada en el esquema de PostgreSQL equivocado |
 | **B** | una clave ajena que **sube** de nivel |
 | **C** | una tabla que escriben **dos** sitios, siendo nueva |
+| **D** | un **flujo** que escribe un dominio **que no declaró** |
+
+**La exención de la C es POR FICHERO, no por carpeta** (desde el 2026-10-07). Antes eximía
+`services/admin` y `services/system` enteras —31 ficheros, 15 de ellos escritores— y sólo **3** lo
+merecen. Al estrecharla apareció **una** tabla que estaba tapada, `fill_requests`.
+
+⚠️ **Y hay un punto ciego que no se cierra nombrándolo:** `services/admin/SqlAdminService.js`, el
+editor genérico, escribe **construyendo el nombre de la tabla**, así que la C —que busca el nombre
+literal— **nunca pudo verlo**. Lo que lo cubre es el catálogo de `sqlTables.js` y la A-bis, no ésta.
+
+**`_flujos` son los 7 ficheros que cruzan dominios por diseño**, cada uno con los dominios que
+escribe y su motivo. Escriben tablas de dos o tres dominios **en una misma transacción**, que abre
+quien llama. La lista es **cerrada**: la D falla si un flujo escribe un dominio que no declaró, y
+avisa si declara uno que ya no escribe o si se quedó con uno solo —entonces deja de ser un flujo y se
+mueve a su dominio—.
 
 Corre en CI en **dos** sitios y no por duplicar: `docs-dbml.yml` caza los cambios de esquema y de
 mapa, y `backend-checks` de `cd-multienv.yml` caza los de **código** — un segundo escritor aparece
@@ -468,9 +485,12 @@ Tres cosas que cuestan si se ignoran:
    `process_definition_period_types`, `contract_origins`— son tablas de relación de su dueño.
 3. **`_deuda_escritura` lleva el motivo de cada tabla con dos escritores, y se cierra quitando
    líneas.** Añadir una para callar la puerta es exactamente lo que no hay que hacer. Eran 6; la de
-   `telefono_verification_keys` se cerró el mismo día.
+   `telefono_verification_keys` se cerró el mismo día, y hoy son **6** otra vez porque F7.1 **destapó**
+   `fill_requests` al estrechar la exención: estaba oculta, no es nueva — y su línea dice en qué se
+   diferencia de las otras (son dos operaciones distintas, no la misma regla dos veces) y qué la cierra.
+   **Destapar una deuda que estaba tapada no es añadir una excepción.**
 
-**El dominio NO es el esqueleto, y hay que saber por qué:** 29 de las 93 tablas se relacionan con 3
+**El dominio NO es el esqueleto, y hay que saber por qué:** 27 de las 92 tablas se relacionan con 3
 dominios o más (`units` con los ocho, `persons` con siete). Por eso el dominio **no da un orden de
 lectura** —cuatro parejas de dominios se apuntan mutuamente— y por eso existe el nivel. Y por eso
 **el dominio `identidad` ocupa tres niveles** (catálogos, la persona, el acceso): sus 34 tablas no son

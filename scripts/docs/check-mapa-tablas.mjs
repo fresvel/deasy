@@ -86,6 +86,13 @@ for (const { origen, columna, destino } of fks) {
 // `controllers/users`), que es lo más fino que hoy distingue de verdad. Lo que importa aquí es que
 // haya UN escritor, no en qué carpeta vive: el día que el código se reparta por dominios, esto pasa a
 // comprobar que el escritor es el dominio dueño.
+//
+// ⚠️ LA EXENCIÓN ES POR FICHERO, NO POR CARPETA (desde el 2026-10-07, F7.1). Antes se eximían
+// `services/admin` y `services/system` enteras --31 ficheros, 15 de ellos escritores-- y sólo 3 lo
+// merecen. Lo que tapaba era real pero pequeño: una tabla, `fill_requests`.
+//
+// Y los FLUJOS (`_flujos`) no están eximidos a secas: cada uno declara QUÉ dominios escribe, y la
+// comprobación D falla si escribe uno que no declaró.
 const deuda = Object.fromEntries(
   Object.entries(JSON.parse(readFileSync(RUTA_MAPA, "utf8"))._deuda_escritura ?? {}).filter(
     ([clave]) => !clave.startsWith("_")
@@ -107,13 +114,16 @@ const sitioDe = (p) => {
   return partes[0] === "services" || partes[0] === "controllers" ? partes.slice(0, 2).join("/") : partes[0];
 };
 
-const contenidos = ficheros(join(RAIZ, "backend")).map((p) => [sitioDe(p), readFileSync(p, "utf8")]);
+const rutaDe = (p) => relative(join(RAIZ, "backend"), p).split(sep).join("/");
+const contenidos = ficheros(join(RAIZ, "backend")).map((p) => [rutaDe(p), sitioDe(p), readFileSync(p, "utf8")]);
 const transversales = new Set(mapa.transversales);
+const flujos = mapa.flujos;
+const eximido = (ruta) => transversales.has(ruta) || Object.hasOwn(flujos, ruta);
 
 for (const tabla of tablas) {
   const escribe = new RegExp(`(INSERT\\s+INTO|UPDATE|DELETE\\s+FROM)\\s+(?:\\w+\\.)?${tabla}\\b`, "i");
   const sitios = new Set();
-  for (const [s, c] of contenidos) if (escribe.test(c) && !transversales.has(s)) sitios.add(s);
+  for (const [ruta, s, c] of contenidos) if (escribe.test(c) && !eximido(ruta)) sitios.add(s);
   if (sitios.size <= 1) {
     if (deuda[tabla]) avisos.push(`C · '${tabla}' ya solo tiene un escritor: quita su línea de _deuda_escritura`);
     continue;
@@ -123,6 +133,38 @@ for (const tabla of tablas) {
     `C · '${tabla}' la escriben ${sitios.size} sitios: ${[...sitios].sort().join(" · ")}. ` +
       `Una tabla tiene un dominio dueño; el invariante va donde no se pueda esquivar, no en cada llamador`
   );
+}
+
+// ── D · Los flujos escriben sólo lo que declaran ──────────────────────────────────────────────
+// Un flujo cruza dominios por diseño y por eso está fuera de la comprobación C. El precio es que
+// declare CUÁLES: si mañana alguien le añade una escritura a un cuarto dominio, esto lo para.
+for (const [ruta, decl] of Object.entries(flujos)) {
+  const fila = contenidos.find(([r]) => r === ruta);
+  if (!fila) {
+    fallos.push(`D · '_flujos' nombra '${ruta}' y ese fichero no existe. Si se movió, actualiza el mapa`);
+    continue;
+  }
+  const declarados = new Set(decl.dominios ?? []);
+  for (const d of declarados) {
+    if (!Object.hasOwn(mapa.dominios, d)) fallos.push(`D · el flujo '${ruta}' declara el dominio '${d}', que no existe`);
+  }
+  const escritos = new Set();
+  for (const tabla of tablas) {
+    const escribe = new RegExp(`(INSERT\\s+INTO|UPDATE|DELETE\\s+FROM)\\s+(?:\\w+\\.)?${tabla}\\b`, "i");
+    if (escribe.test(fila[2])) escritos.add(mapa.dominioDe.get(tabla));
+  }
+  for (const d of escritos) {
+    if (!declarados.has(d)) {
+      fallos.push(
+        `D · el flujo '${ruta}' escribe tablas de '${d}' y no lo declara en '_flujos'. ` +
+          `Decláralo con su motivo, o saca esa escritura al \`datos/\` de su dominio`
+      );
+    }
+  }
+  for (const d of declarados) {
+    if (!escritos.has(d)) avisos.push(`D · el flujo '${ruta}' declara '${d}' y ya no escribe ninguna de sus tablas: quítalo`);
+  }
+  if (escritos.size <= 1) avisos.push(`D · '${ruta}' ya sólo escribe un dominio: deja de ser un flujo y se mueve a él`);
 }
 
 // ── A-bis · Los esquemas de la base son los dominios ──────────────────────────────────────────────
@@ -163,6 +205,7 @@ const n = (x) => String(x).padStart(3);
 console.log(`Mapa de tablas:  ${Object.keys(mapa.dominios).length} dominios · 8 niveles · ${tablas.length} tablas`);
 console.log(`Claves ajenas:   ${n(bajan)} bajan de nivel · ${n(iguales)} en su nivel · ${n(fks.length - bajan - iguales)} suben`);
 console.log(`Deuda declarada: ${Object.keys(deuda).length} tablas con más de un escritor`);
+console.log(`Declarados:      ${transversales.size} transversales · ${Object.keys(flujos).length} flujos que cruzan dominios`);
 
 for (const a of avisos) console.log(`\n  ⚠ ${a}`);
 

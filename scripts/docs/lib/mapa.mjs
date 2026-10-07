@@ -33,6 +33,8 @@ export const RUTA_MAPA = join(AQUI, "..", "dominios.json");
  *
  *   dominios     clave -> { titulo, descripcion, color?, tablas: [...] }
  *   dominioDe    tabla -> clave del dominio
+ *   transversales  RUTAS de fichero eximidas de la propiedad de escritura
+ *   flujos         ruta -> { dominios: [...], motivo } — cruzan dominios por diseño
  *   nivelDe   tabla -> 0..7
  */
 export function leerMapa(ruta = RUTA_MAPA) {
@@ -66,6 +68,9 @@ export function leerMapa(ruta = RUTA_MAPA) {
     nivelDe,
     niveles: crudo._niveles ?? {},
     transversales: Object.keys(crudo._escritores_transversales ?? {}).filter((k) => !k.startsWith("_")),
+    flujos: Object.fromEntries(
+      Object.entries(crudo._flujos ?? {}).filter(([k]) => !k.startsWith("_"))
+    ),
     fallos,
   };
 }

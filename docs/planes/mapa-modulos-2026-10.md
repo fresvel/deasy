@@ -6,7 +6,7 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **14 de 25**
+## Estado general — **15 de 25**
 
 | Fase | Tareas | Estado |
 |---|---|---|
@@ -16,7 +16,7 @@ incompatibles.**
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ⬜ · F5.6 ⬜ | 🟡 **1 de 6** |
 | **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
-| **F7** · Reordenar el backend por dominios | F7.0 ⬜ · F7.1 ⬜ · F7.2 ⬜ · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | ⬜ **0 de 6** |
+| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ⬜ · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | 🟡 **1 de 6** |
 
 ## F6 · El dominio, dentro de la base — 4 de 5
 
@@ -247,7 +247,7 @@ realidad— y lo cometí en una sesión dedicada a eso.
 
 **Lo medido sigue siendo válido; lo que cambia es la conclusión.** Pasa a ser la fase **F7**.
 
-## F7 · Reordenar el backend por dominios — 0 de 6
+## F7 · Reordenar el backend por dominios — 1 de 6
 
 **Reescrita el 2026-10-06** tras evaluar una propuesta externa de reestructuración. La versión
 anterior de esta fase decía «mover `firmas` de punta a punta, sus 31 ficheros a un sitio» y **no era
@@ -639,11 +639,50 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | Tarea | Qué entrega | Estado |
 |---|---|:--:|
 | **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`dominio` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
-| **F7.1** | **Declarar el común y los flujos, sin mover nada**: los 5 genéricos y los 7 flujos en el mapa, con su motivo escrito, y la puerta leyendo la **ruta**. Es la red que hace seguro todo lo demás | ⬜ |
+| **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
 | **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: 77 consultas en 9 ficheros, empezando por `user_controler.queries.js`, que ya pide por escrito ser una capa de datos. Es un **defecto**, y va antes de mover nada | ⬜ |
 | **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
 | **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0 — carpeta **reservada vacía**, decidido el 2026-10-07), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
+
+### F7.1 ✅ — declarado, y lo que destapó
+
+Cerrada el **2026-10-07**. No movió ni un fichero de sitio: lo que hizo fue **declarar** y **estrechar
+la puerta**.
+
+**1 · La exención pasó de carpeta a fichero, y eso era el agujero.** `_escritores_transversales`
+eximía `services/admin` y `services/system` **enteras**: 31 ficheros, **15 de ellos escritores**,
+cuando sólo **3** lo merecen (`SystemBootstrapService.js`, `genericCatalog.js`, `crud/tableHooks.js`).
+Al estrecharla apareció **una** tabla que estaba tapada: `fill_requests`.
+
+⚠️ **Y la exención del editor genérico resultó INÚTIL.** `services/admin/SqlAdminService.js` escribe
+con `INSERT INTO ${tableName}` —construyendo el nombre—, así que la comprobación C, que busca el
+nombre **literal** de cada tabla, **nunca pudo verlo**. Eximirlo no servía de nada: lo que cubre al
+editor genérico es el catálogo de `sqlTables.js` y la comprobación A-bis.
+
+**2 · Los 7 flujos están declarados con los dominios que escribe cada uno**, y eso habilita una puerta
+nueva, la **D**: *un flujo que escribe un dominio que no declaró es un fallo*. Más dos avisos: si
+declara uno que ya no escribe, y si se quedó con uno solo —entonces deja de ser un flujo y se mueve a
+su dominio—.
+
+**3 · `fill_requests` entra en `_deuda_escritura`, y no es «añadir una línea para callar la puerta».**
+Estaba **tapada**, no es nueva. Y su caso **no es el de las otras cuatro**: no es la misma regla
+escrita dos veces, son **dos operaciones distintas** sobre la misma tabla —`generation/assignees.js`
+las **crea** al materializar el recorrido de entrega; `DocumentProgressService.js:113` **reactiva** una
+devuelta al avanzar de paso—. Su línea dice eso y dice qué la cierra: **F7.5**, cuando las dos caigan
+en `plantillas/datos/`. No antes, porque el piloto demostró que mover una sola deja la tabla con dos
+dueños.
+
+**Lo que lo demuestra — las tres provocaciones:**
+
+| Provocación | Lo que dijo la puerta |
+|---|---|
+| Un flujo escribe un dominio sin declararlo | `D · el flujo 'GeneralTaskService.js' escribe tablas de 'identidad' y no lo declara en '_flujos'` |
+| Un fichero de `services/admin` que ya no está eximido escribe una tabla ajena | `C · 'telefonos' la escriben 2 sitios: services/admin · services/users` |
+| Un flujo declarado cambia de ruta | `D · '_flujos' nombra '…/MovidoDeSitio.js' y ese fichero no existe` |
+
+El resumen de la puerta ahora dice, además de lo de siempre:
+`Declarados:  3 transversales · 7 flujos que cruzan dominios`.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
