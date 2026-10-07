@@ -6,9 +6,39 @@
 // `isForeignKeyViolation` se importaba para traducir el fallo del borrado de un puesto a un mensaje
 // amable. Ya no hace falta: desde el 2026-08-23 se PREGUNTA antes en vez de intentar y traducir, asi
 // que el mensaje puede decir cuantos y de que en vez de «esta referenciado».
+//
+// EL SQL YA NO ESTA AQUI (F7.4, 2026-10-07). Aqui quedan las reglas —que la cabeza de unidad sea un
+// puesto ocupable, que el perfil sea un JSON de cuatro secciones, que un puesto con historia se
+// desactive en vez de borrarse, que una arista nueva no cierre un ciclo— y la forma de la respuesta.
+// Las consultas viven en `../datos/` si solo nombran tablas de `organizacion`, y en
+// `../datos/consulta/` si cruzan a otro dominio.
 import { isUniqueViolation } from "../../../errors/sqlErrors.js";
 import { conflict, notFound } from "../../../errors/HttpError.js";
+import { conTransaccion } from "../../../config/postgres.js";
 import { slugify, normalizeNumericId } from "../../../services/admin/kernel/primitives.js";
+import {
+  listarNodosDelGrafo,
+  listarTiposDeRelacion,
+  listarAristasDelGrafo,
+  existeCaminoEntreUnidades,
+  insertarUnidad,
+  insertarRelacion
+} from "../datos/unidades.js";
+import {
+  siguienteSlot,
+  insertarPuesto,
+  actualizarPuesto,
+  existePuesto,
+  borrarPuesto,
+  cerrarOcupacionVigente,
+  abrirOcupacion
+} from "../datos/puestos.js";
+import { listarPuestosConOcupante } from "../datos/consulta/ocupantesDeLaUnidad.js";
+import {
+  listarProcesosQueAlcanzanLaUnidad,
+  listarProcesosEnganchables
+} from "../datos/consulta/procesosDeLaUnidad.js";
+import { contarDependenciasDelPuesto } from "../datos/consulta/dependenciasDelPuesto.js";
 
 export default class OrgStructureService {
   constructor(pool, { getByKeys } = {}) {
@@ -36,60 +66,25 @@ export default class OrgStructureService {
   // relationTypeCode filtra las aristas por tipo (p. ej. 'org'); 'all' devuelve todas.
   async getUnitGraph(relationTypeCode = "org") {
     this.ensurePool();
-    const [nodes] = await this.pool.query(
-      `SELECT u.id, u.name, u.label, u.slug, u.unit_type_id, ut.name AS unit_type_name, u.is_active,
-              (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_active = 1) AS positions_count,
-              (SELECT COUNT(*) FROM unit_positions p
-                 INNER JOIN position_assignments pa ON pa.position_id = p.id AND pa.is_current = 1
-                WHERE p.unit_id = u.id AND p.is_active = 1) AS occupied_count,
-              (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_unit_head = 1 AND p.is_active = 1) AS head_count
-       FROM units u
-       LEFT JOIN unit_types ut ON ut.id = u.unit_type_id
-       ORDER BY u.id ASC`
-    );
-    const [relationTypes] = await this.pool.query(
-      "SELECT id, code, name FROM relation_unit_types ORDER BY id ASC"
-    );
-    let edgeSql =
-      `SELECT ur.id, ur.parent_unit_id, ur.child_unit_id, ur.relation_type_id, rt.code AS relation_type_code
-       FROM unit_relations ur
-       INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id`;
-    const params = [];
-    const code = String(relationTypeCode || "").trim();
-    if (code && code !== "all") {
-      edgeSql += " WHERE rt.code = ?";
-      params.push(code);
-    }
-    edgeSql += " ORDER BY ur.id ASC";
-    const [edges] = await this.pool.query(edgeSql, params);
+    const nodes = await listarNodosDelGrafo(this.pool);
+    const relationTypes = await listarTiposDeRelacion(this.pool);
+    const edges = await listarAristasDelGrafo(this.pool, relationTypeCode);
     return { nodes, edges, relationTypes };
   }
 
 
   // Detecta si crear la arista parent->child (en un tipo de relación) cerraría un ciclo: ocurre si el padre
-  // ya es descendiente del hijo dentro de ese mismo tipo. CTE recursiva acotada al relation_type.
+  // ya es descendiente del hijo dentro de ese mismo tipo.
   async wouldCreateUnitCycle(parentUnitId, childUnitId, relationTypeId, connection = this.pool) {
     if (Number(parentUnitId) === Number(childUnitId)) {
       return true;
     }
-    const [rows] = await connection.query(
-      `WITH RECURSIVE descendants AS (
-         SELECT child_unit_id FROM unit_relations
-          WHERE parent_unit_id = ? AND relation_type_id = ?
-         UNION ALL
-         SELECT ur.child_unit_id FROM unit_relations ur
-         INNER JOIN descendants d ON ur.parent_unit_id = d.child_unit_id
-          WHERE ur.relation_type_id = ?
-       )
-       SELECT 1 FROM descendants WHERE child_unit_id = ? LIMIT 1`,
-      [childUnitId, relationTypeId, relationTypeId, parentUnitId]
-    );
-    return rows.length > 0;
+    return existeCaminoEntreUnidades(connection, childUnitId, parentUnitId, relationTypeId);
   }
 
 
   // Detalle de una unidad para el panel del organigrama: sus puestos (cargo, slot, jefatura, activo) y el
-  // ocupante actual de cada uno (position_assignments → persons).
+  // ocupante actual de cada uno.
   async getUnitDetail(unitId) {
     this.ensurePool();
     const id = Number(unitId);
@@ -100,21 +95,7 @@ export default class OrgStructureService {
     if (!unit) {
       throw new Error("La unidad no existe.");
     }
-    const [positions] = await this.pool.query(
-      `SELECT p.id, p.slot_no, p.title, p.is_unit_head, p.is_active, p.position_type, p.cargo_id, p.profile,
-              c.name AS cargo_name, c.code AS cargo_code,
-              pa.id AS assignment_id, pa.start_date,
-              pers.id AS person_id, pdoc.numero AS cedula,
-              CONCAT(COALESCE(pers.first_name, ''), ' ', COALESCE(pers.last_name, '')) AS person_name
-       FROM unit_positions p
-       LEFT JOIN cargos c ON c.id = p.cargo_id
-       LEFT JOIN position_assignments pa ON pa.position_id = p.id AND pa.is_current = 1
-       LEFT JOIN persons pers ON pers.id = pa.person_id
-       LEFT JOIN documentos_identidad pdoc ON pdoc.person_id = pers.id AND pdoc.principal = 1 AND pdoc.is_active = 1
-       WHERE p.unit_id = ?
-       ORDER BY p.is_unit_head DESC, c.name ASC, p.slot_no ASC`,
-      [id]
-    );
+    const positions = await listarPuestosConOcupante(this.pool, id);
     return {
       unit: { id: unit.id, name: unit.name, label: unit.label },
       positions
@@ -134,46 +115,7 @@ export default class OrgStructureService {
     if (!unit) {
       throw new Error("La unidad no existe.");
     }
-    const [rows] = await this.pool.query(
-      `SELECT
-              ptr.id AS rule_id,
-              pdv.id AS definition_id,
-              p.name AS process_name,
-              pdv.name AS definition_name,
-              pdv.definition_version,
-              pdv.variation_key,
-              pdv.status,
-              ptr.unit_scope_type,
-              ptr.recipient_policy,
-              ptr.priority,
-              ptr.is_active AS rule_active,
-              ptr.unit_id,
-              ptr.unit_type_id,
-              ptr.cargo_id,
-              ptr.position_id,
-              c.name AS cargo_name,
-              up.title AS position_title,
-              upc.name AS position_cargo_name,
-              CASE
-                WHEN ptr.unit_id = ? THEN 'direct'
-                WHEN ptr.unit_type_id IS NOT NULL AND ptr.unit_type_id = ? THEN 'type'
-                WHEN ptr.unit_scope_type = 'all_units' THEN 'global'
-                ELSE 'other'
-              END AS origin
-       FROM process_target_rules ptr
-       INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
-       INNER JOIN processes p ON p.id = pdv.process_id
-       LEFT JOIN cargos c ON c.id = ptr.cargo_id
-       LEFT JOIN unit_positions up ON up.id = ptr.position_id
-       LEFT JOIN cargos upc ON upc.id = up.cargo_id
-       WHERE ptr.unit_id = ?
-          OR (ptr.unit_type_id IS NOT NULL AND ptr.unit_type_id = ?)
-          OR ptr.unit_scope_type = 'all_units'
-       ORDER BY (ptr.unit_id = ?) DESC,
-                FIELD(pdv.status, 'active', 'draft', 'retired'),
-                p.name ASC, pdv.definition_version DESC`,
-      [id, unit.unit_type_id, id, unit.unit_type_id, id]
-    );
+    const rows = await listarProcesosQueAlcanzanLaUnidad(this.pool, id, unit.unit_type_id);
     return {
       unit: { id: unit.id, name: unit.name },
       processes: rows
@@ -181,41 +123,21 @@ export default class OrgStructureService {
   }
 
 
-  // Configuraciones de proceso a las que se puede vincular esta unidad vía regla de alcance.
-  // Dos restricciones del modelo:
-  // 1) Las reglas de alcance solo se editan mientras la configuración está en 'draft' (activar congela el
-  //    diseño; cambiar alcance ⇒ nueva versión). Por eso solo se ofrecen configuraciones en draft.
-  // 2) Solo variaciones por cargo o default: las variaciones por tipo de unidad fijan el alcance a 'unit_type'
-  //    (unit_id NULL) y aplican a todas las unidades del tipo, así que no se acotan por unidad.
+  // Configuraciones de proceso a las que se puede vincular esta unidad vía regla de alcance. Las dos
+  // restricciones del modelo que lo acotan están explicadas en la consulta.
   async getUnitAttachableProcesses(unitId) {
     this.ensurePool();
-    const id = Number(unitId);
-    if (!id) {
+    if (!Number(unitId)) {
       throw new Error("Unidad inválida.");
     }
-    const [rows] = await this.pool.query(
-      `SELECT pdv.id AS definition_id,
-              p.name AS process_name,
-              pdv.name AS definition_name,
-              pdv.definition_version,
-              pdv.variation_key,
-              pds.source_type AS series_source_type,
-              pds.cargo_id AS series_cargo_id,
-              c.name AS series_cargo_name
-         FROM process_definition_versions pdv
-         INNER JOIN processes p ON p.id = pdv.process_id
-         INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
-         LEFT JOIN cargos c ON c.id = pds.cargo_id
-        WHERE pdv.status = 'draft'
-          AND pds.source_type <> 'unit_type'
-        ORDER BY p.name ASC, pdv.definition_version DESC`
-    );
+    // La consulta no se acota por unidad a proposito: las dos restricciones que la filtran son del
+    // modelo de procesos. La unidad se valida igual, para que un id roto no devuelva una lista.
+    const rows = await listarProcesosEnganchables(this.pool);
     return { definitions: rows };
   }
 
 
   // --- Gestión de puestos y ocupaciones desde el organigrama ---
-  // Crea un puesto (unit_position) en una unidad. slot_no se autoincrementa por (unidad, cargo).
   // Normaliza el perfil del puesto a un JSON con las keys soportadas (formacion/experiencia/capacitacion/
   // investigacion). Acepta objeto o string JSON; devuelve un string JSON o null si queda vacío.
   normalizePositionProfile(profile) {
@@ -243,6 +165,7 @@ export default class OrgStructureService {
   }
 
 
+  // Crea un puesto en una unidad. El slot_no se autoincrementa por (unidad, cargo).
   async addUnitPosition(unitId, data = {}) {
     this.ensurePool();
     const uId = Number(unitId);
@@ -254,18 +177,18 @@ export default class OrgStructureService {
     const isHead = data.is_unit_head ? 1 : 0;
     this.assertUnitHeadAllowed(isHead, positionType);
     const profileJson = this.normalizePositionProfile(data.profile);
-    const [slotRows] = await this.pool.query(
-      "SELECT COALESCE(MAX(slot_no), 0) + 1 AS next_slot FROM unit_positions WHERE unit_id = ? AND cargo_id = ?",
-      [uId, cargoId]
-    );
-    const nextSlot = Number(slotRows?.[0]?.next_slot || 1);
+    const slotNo = await siguienteSlot(this.pool, uId, cargoId);
     try {
-      const [r] = await this.pool.query(
-        `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, profile, position_type, is_unit_head, is_active)
-         VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
-        [uId, cargoId, nextSlot, String(data.title || "").trim() || null, profileJson, positionType, isHead]
-      );
-      return { id: Number(r.insertId) };
+      const id = await insertarPuesto(this.pool, {
+        unitId: uId,
+        cargoId,
+        slotNo,
+        title: String(data.title || "").trim() || null,
+        profile: profileJson,
+        positionType,
+        isHead
+      });
+      return { id };
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw conflict("La unidad ya tiene una jefatura asignada (solo se permite una).");
@@ -285,20 +208,15 @@ export default class OrgStructureService {
     const effType = data.position_type !== undefined ? data.position_type : existing.position_type;
     const effHead = data.is_unit_head !== undefined ? (data.is_unit_head ? 1 : 0) : existing.is_unit_head;
     this.assertUnitHeadAllowed(effHead, effType);
-    const fields = [];
-    const params = [];
-    if (data.title !== undefined) { fields.push("title = ?"); params.push(String(data.title || "").trim() || null); }
-    if (data.cargo_id !== undefined) { fields.push("cargo_id = ?"); params.push(Number(data.cargo_id)); }
-    if (data.position_type !== undefined) { fields.push("position_type = ?"); params.push(effType); }
-    if (data.is_unit_head !== undefined) { fields.push("is_unit_head = ?"); params.push(effHead); }
-    if (data.is_active !== undefined) { fields.push("is_active = ?"); params.push(data.is_active ? 1 : 0); }
-    if (data.profile !== undefined) { fields.push("profile = ?"); params.push(this.normalizePositionProfile(data.profile)); }
-    if (!fields.length) {
-      return { id: pid };
-    }
-    params.push(pid);
+    const cambios = {};
+    if (data.title !== undefined) cambios.title = String(data.title || "").trim() || null;
+    if (data.cargo_id !== undefined) cambios.cargo_id = Number(data.cargo_id);
+    if (data.position_type !== undefined) cambios.position_type = effType;
+    if (data.is_unit_head !== undefined) cambios.is_unit_head = effHead;
+    if (data.is_active !== undefined) cambios.is_active = data.is_active ? 1 : 0;
+    if (data.profile !== undefined) cambios.profile = this.normalizePositionProfile(data.profile);
     try {
-      await this.pool.query(`UPDATE unit_positions SET ${fields.join(", ")} WHERE id = ?`, params);
+      await actualizarPuesto(this.pool, pid, cambios);
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw conflict("La unidad ya tiene una jefatura asignada (solo se permite una).");
@@ -309,26 +227,8 @@ export default class OrgStructureService {
   }
 
 
-  // LAS OCHO COSAS QUE PUEDEN DEPENDER DE UN PUESTO. La lista se escribe una vez y se usa para
-  // decidir Y para explicar, que es lo que impide que se queden desincronizadas: el mensaje que ve
-  // el usuario sale de la misma consulta que toma la decision.
-  //
-  // Eran TRES cuando se escribio el mensaje viejo («vacantes, contratos o reglas»), y hoy son ocho:
-  // dos las añadio la reordenacion del entregable del 2026-08-23 —`task_items.responsible_position_id`,
-  // que ademas es obligatorio, y `task_item_tenures.position_id`— y otras tres estaban desde antes
-  // sin nombrarse.
-  static DEPENDENCIAS_DE_UN_PUESTO = [
-    ["position_assignments", "position_id", "ocupacion", "ocupaciones"],
-    ["task_items", "responsible_position_id", "entregable", "entregables"],
-    ["task_item_tenures", "position_id", "tenencia", "tenencias"],
-    ["vacancies", "position_id", "vacante", "vacantes"],
-    ["contracts", "position_id", "contrato", "contratos"],
-    ["process_target_rules", "position_id", "regla de proceso", "reglas de proceso"],
-    ["fill_flow_steps", "position_id", "paso de entrega", "pasos de entrega"],
-    ["signature_flow_steps", "position_id", "paso de firma", "pasos de firma"],
-  ];
-
-  // Elimina un puesto SOLO si esta virgen. Si algo depende de el, se rechaza nombrando QUE.
+  // Elimina un puesto SOLO si esta virgen. Si algo depende de el, se rechaza nombrando QUE. La lista
+  // de las ocho dependencias, con su motivo, esta en `../datos/consulta/dependenciasDelPuesto.js`.
   //
   // ⚠️ ESTE METODO ESTUVO MUERTO AL 100%, y conviene saber por que antes de tocarlo. Empezaba con un
   // `DELETE rart FROM ... INNER JOIN ...`, sintaxis multi-tabla de MySQL que PostgreSQL rechaza, asi
@@ -355,40 +255,30 @@ export default class OrgStructureService {
       throw new Error("Puesto invalido.");
     }
 
-    const [existe] = await this.pool.query("SELECT id FROM unit_positions WHERE id = ? LIMIT 1", [pid]);
-    if (!existe.length) {
+    if (!(await existePuesto(this.pool, pid))) {
       throw notFound("El puesto no existe.");
     }
 
     // Se pregunta ANTES en vez de intentar y traducir el fallo: asi el mensaje puede decir CUANTOS y
     // DE QUE, que es lo unico accionable. «Esta referenciado» no le dice a nadie que hacer.
-    const bloqueos = [];
-    let total = 0;
-    for (const [tabla, columna, singular, plural] of OrgStructureService.DEPENDENCIAS_DE_UN_PUESTO) {
-      const [filas] = await this.pool.query(
-        `SELECT COUNT(*) AS n FROM ${tabla} WHERE ${columna} = ?`,
-        [pid]
-      );
-      const n = Number(filas?.[0]?.n || 0);
-      if (n > 0) {
-        bloqueos.push(`${n} ${n === 1 ? singular : plural}`);
-        total += n;
-      }
-    }
-
-    if (bloqueos.length) {
+    const dependencias = await contarDependenciasDelPuesto(this.pool, pid);
+    if (dependencias.length) {
+      const total = dependencias.reduce((suma, { n }) => suma + n, 0);
+      const bloqueos = dependencias.map(({ n, singular, plural }) => `${n} ${n === 1 ? singular : plural}`);
       throw conflict(
         `No se puede eliminar: ${bloqueos.join(", ")} ${total === 1 ? "depende" : "dependen"} ` +
         "de este puesto. Desactivalo en su lugar."
       );
     }
 
-    await this.pool.query("DELETE FROM unit_positions WHERE id = ?", [pid]);
+    await borrarPuesto(this.pool, pid);
     return { id: pid };
   }
 
 
-  // Asigna (o cambia) el ocupante de un puesto: cierra la ocupación vigente y crea la nueva (atómico).
+  // Asigna (o cambia) el ocupante de un puesto: cierra la ocupación vigente y crea la nueva. Las dos
+  // escrituras van en UNA transacción — cerrar sin abrir deja el puesto vacante, y abrir sin cerrar
+  // deja dos ocupantes vigentes del mismo puesto.
   async assignUnitPosition(positionId, personId) {
     this.ensurePool();
     const pid = Number(positionId);
@@ -404,36 +294,18 @@ export default class OrgStructureService {
     if (!person) {
       throw new Error("La persona no existe.");
     }
-    const connection = await this.pool.getConnection();
-    try {
-      await connection.beginTransaction();
-      await connection.query(
-        "UPDATE position_assignments SET is_current = 0, end_date = CURDATE() WHERE position_id = ? AND is_current = 1",
-        [pid]
-      );
-      await connection.query(
-        "INSERT INTO position_assignments (position_id, person_id, start_date, is_current) VALUES (?, ?, CURDATE(), 1)",
-        [pid, perId]
-      );
-      await connection.commit();
-      return { ok: true };
-    } catch (error) {
-      await connection.rollback();
-      throw error;
-    } finally {
-      connection.release();
-    }
+    await conTransaccion(async (conexion) => {
+      await cerrarOcupacionVigente(conexion, pid);
+      await abrirOcupacion(conexion, pid, perId);
+    }, this.pool);
+    return { ok: true };
   }
 
 
   // Quita el ocupante vigente de un puesto (cierra la ocupación).
   async unassignUnitPosition(positionId) {
     this.ensurePool();
-    const pid = Number(positionId);
-    await this.pool.query(
-      "UPDATE position_assignments SET is_current = 0, end_date = CURDATE() WHERE position_id = ? AND is_current = 1",
-      [pid]
-    );
+    await cerrarOcupacionVigente(this.pool, Number(positionId));
     return { ok: true };
   }
 
@@ -454,34 +326,31 @@ export default class OrgStructureService {
     if (!finalSlug) {
       throw new Error("No se pudo derivar un slug para la unidad.");
     }
-    const connection = await this.pool.getConnection();
     try {
-      await connection.beginTransaction();
-      const [unitResult] = await connection.query(
-        "INSERT INTO units (name, label, slug, unit_type_id, is_active) VALUES (?, ?, ?, ?, 1)",
-        [nm.slice(0, 180), (String(label || "").trim() || nm).slice(0, 180), finalSlug, unitTypeId]
-      );
-      const newUnitId = Number(unitResult.insertId);
-      let relationId = null;
-      const parentId = Number(parent_unit_id);
-      const relTypeId = Number(relation_type_id);
-      if (parentId && relTypeId) {
-        const [relResult] = await connection.query(
-          "INSERT INTO unit_relations (relation_type_id, parent_unit_id, child_unit_id) VALUES (?, ?, ?)",
-          [relTypeId, parentId, newUnitId]
-        );
-        relationId = Number(relResult.insertId);
-      }
-      await connection.commit();
-      return { unit_id: newUnitId, relation_id: relationId };
+      return await conTransaccion(async (conexion) => {
+        const newUnitId = await insertarUnidad(conexion, {
+          name: nm.slice(0, 180),
+          label: (String(label || "").trim() || nm).slice(0, 180),
+          slug: finalSlug,
+          unitTypeId
+        });
+        let relationId = null;
+        const parentId = Number(parent_unit_id);
+        const relTypeId = Number(relation_type_id);
+        if (parentId && relTypeId) {
+          relationId = await insertarRelacion(conexion, {
+            relationTypeId: relTypeId,
+            parentUnitId: parentId,
+            childUnitId: newUnitId
+          });
+        }
+        return { unit_id: newUnitId, relation_id: relationId };
+      }, this.pool);
     } catch (error) {
-      await connection.rollback();
       if (isUniqueViolation(error)) {
         throw conflict("Ya existe una unidad con ese slug. Cambia el nombre o el slug.");
       }
       throw error;
-    } finally {
-      connection.release();
     }
   }
 }

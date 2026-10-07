@@ -12,6 +12,7 @@
 // por aquí y no hay que buscarla por el código.
 
 import { getPostgresPool } from "../../../config/postgres.js";
+import { institucionesActivas } from "../datos/instituciones.js";
 
 const errorDeConfiguracion = (mensaje) => {
   const error = new Error(mensaje);
@@ -30,13 +31,7 @@ export default class InstitucionService {
 
   /** La institución de esta instalación, con su país ya resuelto (id, ISO y nombre). */
   async actual(connection = this.pool) {
-    const [filas] = await connection.query(
-      `SELECT i.id, i.nombre, i.pais_id, p.iso_alpha2 AS pais_iso, p.name AS pais_nombre
-         FROM instituciones i
-         INNER JOIN paises p ON p.id = i.pais_id
-        WHERE i.is_active = 1
-        ORDER BY i.id ASC`
-    );
+    const filas = await institucionesActivas(connection);
 
     if (!filas.length) {
       throw errorDeConfiguracion(

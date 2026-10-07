@@ -16,7 +16,7 @@ incompatibles.**
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ✅ · F5.6 ⬜ | 🟡 **2 de 6** |
 | **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
-| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⛔ · F7.4 ⬜ · F7.5 ⬜ | 🟡 **2 de 5** |
+| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⛔ · F7.4 🟡 · F7.5 ⬜ | 🟡 **2 de 5** |
 
 ## F6 · El dominio, dentro de la base — 4 de 5
 
@@ -642,7 +642,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
-| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · `organizacion` 🟡 (movido, subcapa pendiente) · `identidad` ⬜ | 🟡 **2 de 4** |
+| **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · **`organizacion` ✅** (movido **y** con su subcapa) · `identidad` ⬜ | 🟡 **3 de 4** |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1 y F7.2 ya tocaron | ⬜ |
 
 ### F7.1 ✅ — declarado, y lo que destapó
@@ -976,9 +976,49 @@ ficheros**; ahora entran por el `index.js`.
 partirlo ahora obligaría a montar dos routers en el mismo prefijo sin necesidad. Está escrito en la
 puerta para que el día que el bootstrap se mueva a `transversal/` se vea.
 
-**La subcapa de `organizacion` queda pendiente**: 12 consultas propias y 3 que cruzan, y las 15 viven
-en tres servicios con reglas (`orgStructure.js` con **27 `throw`**, `GeografiaService` con 6,
-`InstitucionService` con 2). Es el mismo trabajo que en `chat` pero el doble de grande.
+**Y su subcapa, cerrada el mismo 2026-10-07.** `routes/`, `controllers/`, `services/` y `catalogos/`
+quedan con **CERO consultas**; las **24 que se movieron** viven en 5 ficheros de `datos/` (20 propias)
+y 3 de `datos/consulta/` (4 que cruzan). `orgStructure.js`: **487 → 355 líneas**, sus **26 `throw`**
+intactos y sus dos transacciones pasadas a `conTransaccion`.
+
+| Dónde | Qué, y por qué ahí |
+|---|---|
+| `datos/unidades.js` | 6 · el grafo (nodos, tipos, aristas), la CTE del ciclo y los dos INSERT de «crear hijo» |
+| `datos/puestos.js` | 7 · los puestos y las ocupaciones |
+| `datos/geografia.js` | 6 · países y divisiones administrativas |
+| `datos/instituciones.js` | 1 · la institución con su país resuelto |
+| `datos/unitListing.js` | 1 · ya estaba, de F7.2 |
+| `datos/consulta/ocupantesDeLaUnidad.js` | 1 · cruza a `identidad` (`cargos`, `persons`, `documentos_identidad`) |
+| `datos/consulta/procesosDeLaUnidad.js` | 2 · cruza a `procesos` y a `identidad` |
+| `datos/consulta/dependenciasDelPuesto.js` | 1 · los `COUNT` de las **8 tablas de 6 dominios** que pueden depender de un puesto |
+
+**Tres cosas que esto enseñó, y ninguna es el tamaño:**
+
+**1 · `cargos` es de `identidad`, no de `organizacion`.** Tres consultas que parecían propias cruzan
+sólo por eso. No se adivina leyendo el nombre de la tabla: se pregunta al mapa. La comprobación **E**
+lo dice sola, y se verificó que **no está ciega** a los ficheros nuevos provocándola a propósito
+—un `JOIN persons` en `datos/unidades.js`— antes de dar la fase por buena.
+
+**2 · «12 propias y 3 que cruzan» era la cuenta de la PUERTA, no la real.** Las de verdad eran
+**20 y 4**. `check:sql-aliases` cuenta plantillas de JavaScript, así que no ve una consulta escrita
+con comillas dobles (la de `paises` por ISO) ni una con el nombre de tabla interpolado (las ocho
+dependencias del puesto). Una puerta a techo cero no es un censo, y usarla como censo subestima el
+trabajo en un tercio.
+
+**3 · Lo único que NO fue un movimiento verbatim fue el `UPDATE` dinámico**, y por eso es lo único
+con test nuevo. El `SET` se construía con las claves que llegaban; ahora las columnas salen de una
+lista **cerrada** del propio módulo de datos y una clave que no esté en ella se ignora. Tres tests
+(`datos/puestos.test.js`) fijan el SET, el caso sin cambios —que antes habría sido
+`SET  WHERE id = ?`— y el borde: `unit_id` y `id` no son editables desde el organigrama.
+
+⚠️ **La lista de las 8 dependencias del puesto viajó COMPLETA, con su singular y su plural.** Se
+escribe una vez y se usa para **decidir** y para **explicar**, y eso es lo que impide que las dos se
+desincronicen —ya pasó: el mensaje decía «vacantes, contratos o reglas» cuando ya eran ocho—. Partirla
+entre el servicio (el texto) y los datos (las tablas) habría reintroducido exactamente ese fallo.
+
+**Verificado en la pila D**: `check:imports` · `check:sql-aliases` (**599 consultas en 303 ficheros**,
+mismo total que antes: nada se añadió) · `check:sql-comments` · `check-mapa-tablas` · `test:unit`
+**897/897** · `test:char:run` **321/321**, **sin que se moviera un golden**.
 
 ### ⚠️ EL PRERREQUISITO QUE ESTE FRENTE DESTAPÓ: instanciar al cargar el módulo
 

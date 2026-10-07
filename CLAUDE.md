@@ -670,10 +670,11 @@ estados y cualquier bucle de trabajo viven en `backend/services/`.
 responsabilidad**, y se lee de una sentada. Los infractores conocidos están listados en `docs/planes/referencia/calidad-y-medicion.md` §5-D; no añadas
 más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extrae un servicio.
 
-### El código por dominios — la forma, probada en `chat`
+### El código por dominios — la forma, probada en `chat` y en `organizacion`
 
-Desde el **2026-10-07** hay un dominio entero movido, `backend/dominios/chat/`, y su forma es el
-contrato para los siete que faltan:
+Desde el **2026-10-07** hay **dos** dominios enteros movidos con sus cuatro capas y su subcapa de
+lecturas —`backend/dominios/chat/` y `backend/dominios/organizacion/`—, y su forma es el contrato
+para los seis que faltan (`empleo` tiene la carpeta reservada y vacía):
 
 ```
 dominios/<dominio>/
@@ -711,6 +712,20 @@ el arranque y el test— porque uno solo miente.**
 Se arreglan resolviendo al **primer uso**: `let x = null; const dame = () => (x ??= new Servicio());`.
 Medido: quedan **33 instanciaciones a nivel de módulo en 17 controllers** (`chat_controller` 8,
 `user_controler` 5). **No añadas la 34.**
+
+⚠️ **Antes de dar por propia una consulta, PREGUNTA AL MAPA de quién es cada tabla.** No se adivina
+por el nombre: **`cargos` es de `identidad`**, no de `organizacion`, y por eso tres consultas del
+organigrama que parecían propias cruzan. Un dominio a ojo es un `datos/` mal puesto:
+
+```bash
+node -e 'const m=require("./scripts/docs/dominios.json");const t=process.argv[1];
+for(const[d,v]of Object.entries(m)){if(!d.startsWith("_")&&v.tablas&&t in v.tablas)console.log(d,v.tablas[t]);}' cargos
+```
+
+⚠️ **Y una puerta a techo cero NO es un censo.** `check:sql-aliases` cuenta plantillas de JavaScript:
+**no ve** una consulta con comillas dobles ni una con el nombre de tabla interpolado. En
+`organizacion` eso convirtió «15 consultas por mover» en **24** — un tercio más de trabajo del
+estimado. Para contar, cuenta; la puerta sólo dice que no hay alias roto.
 
 ⚠️ **Y al mover un dominio, recalcula los imports POR SCRIPT**, resolviendo cada ruta desde la
 posición vieja y reescribiéndola desde la nueva. En `chat` fueron **29 imports en 14 ficheros**: a
