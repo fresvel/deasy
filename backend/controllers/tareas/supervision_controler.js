@@ -1,6 +1,6 @@
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import { getPostgresPool } from "../../config/postgres.js";
-import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
+import { resetDocumentWorkflowForTaskItem } from "../../flujos/rehacerDocumento.js";
 
 const service = new SqlAdminService();
 

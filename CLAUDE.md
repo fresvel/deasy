@@ -55,7 +55,8 @@ Reglas:
   en el repo y añadirlo obliga a mantener un patrón muerto en la config de Sonar y en los globs de
   `test:unit`.
 - Un test unitario nuevo tiene que **caer dentro de los globs de `backend/package.json → test:unit`**
-  (`config/`, `services/**`, `utils/**`, `middlewares/**`, `controllers/**`, `errors/**`). Si lo pones
+  (`config/`, `database/**`, `services/**`, `utils/**`, `middlewares/**`, `controllers/**`,
+  `errors/**`, y desde el piloto de F7 también `dominios/**` y `flujos/**`). Si lo pones
   fuera, no lo ejecuta nadie y no te vas a enterar. Si el módulo vive en otra carpeta, **amplía el glob
   en el mismo commit — y en los DOS sitios**: `test:unit` y `test:unit:coverage` llevan la misma lista
   duplicada (el segundo con prefijo `backend/`, porque corre desde la raíz del repo para que las rutas

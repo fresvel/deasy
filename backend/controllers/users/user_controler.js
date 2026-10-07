@@ -26,7 +26,7 @@ import {
   removeMinioObject
 } from "../../services/storage/minio_service.js";
 import { transitionDocumentVersionState } from "../../services/documents/DocumentStateService.js";
-import { resetDocumentWorkflowForTaskItem } from "../../services/documents/DocumentWorkflowResetService.js";
+import { resetDocumentWorkflowForTaskItem } from "../../flujos/rehacerDocumento.js";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import { parseAvailableFormats } from "../../services/admin/templates/artifacts.js";
 import {
