@@ -16,7 +16,7 @@ incompatibles.**
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ⬜ · F5.6 ⬜ | 🟡 **1 de 6** |
 | **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
-| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ⬜ · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | 🟡 **1 de 6** |
+| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 🟡 · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | 🟡 **1 de 6** |
 
 ## F6 · El dominio, dentro de la base — 4 de 5
 
@@ -640,7 +640,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 |---|---|:--:|
 | **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`dominio` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
-| **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: 77 consultas en 9 ficheros, empezando por `user_controler.queries.js`, que ya pide por escrito ser una capa de datos. Es un **defecto**, y va antes de mover nada | ⬜ |
+| **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: de **77 a 22** en tres pasos. Las 22 que quedan están todas en `user_controler.js`, que es también uno de los 6 de F7.3. Las **transacciones** van en su propio paso | 🟡 |
 | **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
 | **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0 — carpeta **reservada vacía**, decidido el 2026-10-07), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
 | **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
@@ -683,6 +683,49 @@ dueños.
 
 El resumen de la puerta ahora dice, además de lo de siempre:
 `Declarados:  3 transversales · 7 flujos que cruzan dominios`.
+
+### F7.2 🟡 — de 77 consultas a 22, y dos puertas que estaban ciegas
+
+| Paso | Qué salió | Quedan |
+|---|---|---:|
+| 1 | `user_controler.queries.js` (45 consultas) → `services/users/UserWorkspaceRepository.js`. **Lo pedía su propia cabecera**, palabra por palabra | 32 |
+| 2 | Los 4 controllers pequeños (5 consultas). `tareas_controler.js` pasa de **109 a 41 líneas**; `program_controler.js` de 64 a 44 | 27 |
+| 3 | `sql_admin_controller.js` (3 consultas) → `services/admin/templates/artifactLookup.js`. Dos eran **la misma consulta repetida**, y queda una | 22 |
+
+Las 22 que faltan están **todas en `user_controler.js`**, que además es uno de los 6 de F7.3: su
+extracción y su partición son el mismo trabajo.
+
+**Antes de mover se comprobó lo que no se podía suponer:** ese SQL usa `GROUP_CONCAT(… SEPARATOR …)`,
+que es MySQL — y funciona porque el pool trae un **traductor de dialecto** que lo reescribe a
+`string_agg` (`config/postgres.js`). Y la **composición del WHERE opcional** se movió con su consulta:
+dejarla en el controller era la mitad de la fuga, porque el controller decidía la forma del SQL.
+
+⚠️ **DOS PUERTAS OBLIGATORIAS ESTABAN CIEGAS A 52 CONSULTAS, y salió de perseguir un contador que no
+cuadraba.** `check:sql-aliases` bajó de 550 a 548 cuando la cuenta decía −1. Al aislarlo, el módulo
+nuevo **no se contaba**: su lista de exclusión compara el **nombre** de la carpeta a cualquier
+profundidad y contiene `templates` —pensado para `backend/templates/`, el de Jinja—, así que también
+se saltaba `services/admin/templates/`:
+
+| Fichero invisible | Consultas |
+|---|---:|
+| `templateLifecycle.js` (87 KB, el mayor del repositorio) | **45** |
+| `flowRows.js` | 16 |
+| `templateArtifact.js` | 10 |
+
+`check:sql-aliases` y `check:sql-comments`, las dos a techo cero, sin mirar esa carpeta.
+`check:imports` **no** lo tenía. Arregladas: se excluye sólo en la **raíz**. Ahora miran **600
+consultas en 285 ficheros** —eran 548 en 274— y **están limpias**, que es la buena noticia.
+
+**Provocada para probar que el arreglo sirve**, dentro de la carpeta que estaba ciega:
+`check:sql-aliases FALLA — services/admin/templates/templateArtifact.js:624 usa "zz." y no se declara`.
+
+Es **el mismo fallo que cometí hoy** en un script de medición propio: excluir un directorio por
+nombre en vez de por ruta. La lección queda escrita en `CLAUDE.md`.
+
+⚠️ **Y lo que NO entra en F7.2, dicho a propósito:** las **transacciones** siguen abiertas en tres
+controllers (`user_controler.js`, `sign_controller.js`, `supervision_controler.js`). Mover una
+frontera de transacción cambia **quién es dueño de la unidad de trabajo**: es un cambio de diseño, no
+una extracción, y va en su propio paso.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 

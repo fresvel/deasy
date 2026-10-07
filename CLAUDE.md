@@ -618,8 +618,16 @@ responde `missing FROM-clause entry for table "ti"` **en tiempo de llamada**. No
 --check`, no lo ve `check:imports`, y el backend arranca igual. Muerde sobre todo al reemplazar en
 bloque: retirando la tabla `documents` (2026-08-23) un reemplazo global de una línea de `JOIN` se
 llevó **tres joins legítimos** a `task_items` en consultas que no tenían nada que ver, y el diff era
-de 91 sitios — leerlo no servía. Lo vigila **`npm run check:sql-aliases`**, a techo cero (**442
-consultas en 200 ficheros**, medido el 2026-08-26; decía 428). Sólo mira sentencias completas y, en las que se componen con `${…}`, sólo los usos
+de 91 sitios — leerlo no servía. Lo vigila **`npm run check:sql-aliases`**, a techo cero (**600
+consultas en 285 ficheros**, medido el 2026-10-07; decía 442 en 200).
+
+⚠️ **Y hasta el 2026-10-07 esa puerta y la de los backticks estaban CIEGAS a
+`services/admin/templates/`** —`templateLifecycle.js` (45 consultas, el fichero más grande del
+repositorio), `flowRows.js` (16), `templateArtifact.js` (10)—. Su lista de exclusión comparaba el
+**nombre** de la carpeta a cualquier profundidad y contiene `templates`, pensado para
+`backend/templates/`, el de Jinja. Dos puertas obligatorias, las dos a techo cero, sin mirar **52
+consultas**. Arreglado: se excluye sólo en la **raíz** de `backend/`. `check:imports` no lo tenía.
+**Si añades una exclusión a un recorrido de directorios, hazla por RUTA, no por nombre.** Sólo mira sentencias completas y, en las que se componen con `${…}`, sólo los usos
 anteriores al primer hueco: lo de después puede apoyarse en tablas que trae el fragmento.
 `npm run start` (`node index.js`) sirve la API en `/deasy/v1`, Swagger en `/deasy/docs`.
 
