@@ -905,12 +905,26 @@ lección, que vale para los tres dominios que faltan: **un barril no es gratis �
 ciclo latente en un fallo de carga, y un servicio no debe depender de otro módulo en tiempo de
 carga.**
 
-⚠️ **3 · Y `test:char:run` NO es reproducible en una pila recién creada.** Dio **319 de 321**, y se
-probó que no es de este cambio: con el backend de **`develop` en la misma pila** fallan **los mismos
-dos** (`/legal/documentos` y su golden). El motivo: el harness **purga MinIO antes del bootstrap**, y
-la semilla legal la publica el backend **al arrancar** — así que en una pila nueva la purga se la
-lleva y el bootstrap no tiene qué adoptar. En A/B/C pasa porque los objetos sobreviven a la purga.
-**Queda por arreglar y no es de este frente.**
+⚠️ **3 · `test:char:run` NO era reproducible en una pila recién creada — ARREGLADO el 2026-10-07.**
+Dio **319 de 321**, y se probó que no era de este cambio: con el backend de **`develop` en la misma
+pila** fallaban **los mismos dos** (`/legal/documentos` y su golden).
+
+**Y la causa no era la que supuse.** Dije que el harness purga MinIO antes del bootstrap y se lleva la
+semilla legal. **Falso**: `deasy-legal` no está en la lista que purga. La causa real es peor —
+**ningún paso automático creaba nunca esos textos**. Viven sólo en MinIO con retención COMPLIANCE, y
+en A/B/C estaban porque **alguien los publicó a mano meses atrás**. Una suite golden-master que
+depende de contenido publicado a mano no es una suite: es una coincidencia.
+
+| | |
+|---|---|
+| **Qué se arregló** | `npm run test:char:legal`, dentro de `test:char:fixture` **después del bootstrap y antes del seed** |
+| **Cómo** | conduce el sistema **por su propia API** (borrador → texto → publicar), no escribiendo en MinIO a mano: así el object key, la huella y la retención salen por el camino de producción |
+| **Los textos** | `backend/tests/characterization/setup/legal/`, **exportados byte a byte** de una pila que los tenía, para que **el golden siga valiendo**: `terminos_de_uso` son 2025 caracteres, exactamente lo que el golden afirma |
+| **Idempotente** | en una pila donde el archivo ya los tiene, el bootstrap los adopta y el paso se salta. Probado: `[legal] saltado: terminos_de_uso (ya publicada, adoptada del archivo)` |
+| **Y el silencio** | adoptar **cero** ya no es silencioso: el arranque avisa *«Archivo legal VACÍO: … el alta no registrará consentimiento alguno»* |
+
+**Resultado: 321 de 321 en la pila nueva, sin mover un golden.** Y provocado al revés: sin los textos,
+el paso falla diciendo *«No hay textos legales en …»* en vez de un `ENOENT` que no explica nada.
 
 ### Lo que falta para cerrar la subcapa en `chat`
 

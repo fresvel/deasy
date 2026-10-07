@@ -184,6 +184,17 @@ const conectarArchivoLegal = async () => {
     if (adoptados.length) {
       const detalle = adoptados.map((d) => `${d.clase} ${d.version} [${d.accion}]`).join(", ");
       console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con MinIO (${detalle})`);
+    } else {
+      // ⚠️ ESTE CASO ESTABA EN SILENCIO Y COSTO UNA TARDE (2026-10-07). El archivo legal vive SOLO en
+      // MinIO, asi que en una instalacion nueva esta VACIO y aqui no hay nada que adoptar. No era un
+      // error —no lanza— pero dejaba el sistema sin un solo texto que aceptar, y el alta registraba
+      // CERO consentimientos sin que nada se quejara. Dos pruebas de caracterizacion fallaban y
+      // parecian un fallo de codigo.
+      console.warn(
+        "⚠️  Archivo legal VACIO: no hay ningun texto publicado, asi que el alta no registrara " +
+          "consentimiento alguno. Publica los textos en /admin -> Legal, o --si es el harness-- " +
+          "ejecuta `npm run test:char:legal`."
+      );
     }
     return adoptados;
   } catch (error) {

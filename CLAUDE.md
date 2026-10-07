@@ -634,6 +634,23 @@ anteriores al primer hueco: lo de después puede apoyarse en tablas que trae el 
 ⚠️ **`test:char:run` RESETEA la base de dev** (reset + bootstrap + seed). Es lo normal para char, pero
 no lo lances si tienes datos que quieras conservar. Para actualizar los goldens: `test:char:capture`.
 
+⚠️ **El archivo legal lo siembra el harness, y hasta el 2026-10-07 NO lo sembraba nadie.** Los textos
+legales viven **sólo en MinIO** (`deasy-legal`, con retención COMPLIANCE) y **ningún paso automático
+los creaba**: en las pilas A, B y C estaban porque alguien los publicó a mano meses atrás. En una pila
+**recién creada** el archivo arranca vacío, el bootstrap adopta **cero** y `test:char:run` daba
+**319 de 321** — con dos fallos de `/legal/documentos` que parecían un fallo de código. Se comprobó
+que no lo eran: con el backend de `develop` **en la misma pila** fallaban los mismos dos.
+
+Ahora los siembra **`npm run test:char:legal`**, que corre dentro de `test:char:fixture` **después del
+bootstrap y antes del seed**, conduce el sistema por su propia API —no escribe en MinIO a mano— y es
+**idempotente**: si el archivo ya los tiene, el bootstrap los adopta y el paso se salta. Los textos
+viven en `backend/tests/characterization/setup/legal/`, **exportados byte a byte de una pila que los
+tenía** para que el golden siga valiendo (`terminos_de_uso` son 2025 caracteres, que es exactamente lo
+que el golden afirma).
+
+Y el caso que estaba en silencio ya avisa: si el archivo está vacío, el arranque dice
+**«⚠️ Archivo legal VACÍO: … el alta no registrará consentimiento alguno»** en vez de no decir nada.
+
 ⚠️ **Y si acabas de EDITAR un módulo —aunque lo hayas restaurado—, reinicia el backend antes de
 lanzar char.** El proceso de node se queda con el módulo **viejo en memoria**: el fichero puede estar
 correcto en disco **y dentro del contenedor**, y la corrida seguir ejecutando lo anterior. Costó **11
