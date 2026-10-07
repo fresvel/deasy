@@ -3,9 +3,9 @@ title: "El sistema en orden de lectura"
 description: "Las 93 tablas en el único orden en que se pueden leer sin que nada dependa de algo que todavía no has visto."
 ---
 
-Esta página existe porque el sistema **no se puede entender leyéndolo por temas**.
+Esta página existe porque el sistema **no se puede entender leyéndolo por dominios**.
 
-Las tablas se pueden agrupar por tema —«esto es de personas», «esto es de firmas»— y de hecho se
+Las tablas se pueden agrupar por dominio —«esto es de personas», «esto es de firmas»— y de hecho se
 agrupan así en los diagramas. Pero esos grupos **se necesitan unos a otros en círculo**: medido el
 2026-10-04, hay cuatro parejas que se apuntan mutuamente (identidad ↔ organización, plantillas ↔
 procesos, plantillas ↔ tareas, firmas ↔ tareas). Eso significa que **no existe ningún orden** en el

@@ -7,10 +7,19 @@
 // ⚠️ Esto existe para que no haya dos parsers. Si hace falta un dato nuevo del mapa, se añade aquí
 // y lo ven los tres.
 //
-// ⚠️ El fichero se llama `dominios.json` por historia: nació repartiendo diagramas por dominio.
-// «Dominio» y «tema» son la misma cosa; renombrarlo obligaría a tocar los dos workflows de CI y no
-// paga. Lo que NO queda es el «módulo»: fue un tercer eje que se retiró el 2026-10-04 porque cuatro
-// de sus quince grupos no eran dueños de ni un fichero de código.
+// ⚠️ TRES PALABRAS, TRES SIGNIFICADOS, Y NO SE MEZCLAN (fijado el 2026-10-07 por el dueño):
+//
+//     DOMINIO  de qué trata una tabla. Son 8, y de ahí salen los 8 diagramas y los 8 esquemas.
+//     NIVEL    de qué depende, 0..7. De aquí sale el orden de lectura y la regla de las claves ajenas.
+//     CAPA     routes / controllers / services / datos, DENTRO del código de un dominio. Nada más.
+//
+// Esto no es estilo: «dominio» y «capa» fueron los nombres de los DOS EJES en la primera versión del
+// mapa (`tabla -> módulo -> {dominio, capa}`), así que un texto viejo que diga «capa 3» habla de un
+// NIVEL, y uno nuevo que diga «capa» habla de `services/`. Se renombró todo a `nivel` el 2026-10-07
+// justamente para que «capa» signifique una sola cosa.
+//
+// Y lo que NO queda es el «módulo»: fue un tercer eje que se retiró el 2026-10-04 porque cuatro de
+// sus quince grupos no eran dueños de ni un fichero de código.
 
 import { readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -22,38 +31,38 @@ export const RUTA_MAPA = join(AQUI, "..", "dominios.json");
 /**
  * Lee el mapa y lo devuelve indexado por tabla.
  *
- *   temas     clave -> { titulo, descripcion, color?, tablas: [...] }
- *   temaDe    tabla -> clave del tema
+ *   dominios     clave -> { titulo, descripcion, color?, tablas: [...] }
+ *   dominioDe    tabla -> clave del dominio
  *   nivelDe   tabla -> 0..7
  */
 export function leerMapa(ruta = RUTA_MAPA) {
   const crudo = JSON.parse(readFileSync(ruta, "utf8"));
   const fallos = [];
 
-  const temas = {};
-  const temaDe = new Map();
+  const dominios = {};
+  const dominioDe = new Map();
   const nivelDe = new Map();
 
-  for (const [clave, tema] of Object.entries(crudo)) {
+  for (const [clave, dominio] of Object.entries(crudo)) {
     if (clave.startsWith("_")) continue;
-    if (!tema.tablas || typeof tema.tablas !== "object" || Array.isArray(tema.tablas)) {
-      fallos.push(`el tema '${clave}' no declara 'tablas' como {tabla: nivel}`);
+    if (!dominio.tablas || typeof dominio.tablas !== "object" || Array.isArray(dominio.tablas)) {
+      fallos.push(`el dominio '${clave}' no declara 'tablas' como {tabla: nivel}`);
       continue;
     }
     const lista = [];
-    for (const [tabla, nivel] of Object.entries(tema.tablas)) {
-      if (!Number.isInteger(nivel)) fallos.push(`'${tabla}' (tema '${clave}') no declara un nivel entero`);
-      if (temaDe.has(tabla)) fallos.push(`la tabla '${tabla}' está en dos temas: '${temaDe.get(tabla)}' y '${clave}'`);
-      temaDe.set(tabla, clave);
+    for (const [tabla, nivel] of Object.entries(dominio.tablas)) {
+      if (!Number.isInteger(nivel)) fallos.push(`'${tabla}' (dominio '${clave}') no declara un nivel entero`);
+      if (dominioDe.has(tabla)) fallos.push(`la tabla '${tabla}' está en dos dominios: '${dominioDe.get(tabla)}' y '${clave}'`);
+      dominioDe.set(tabla, clave);
       nivelDe.set(tabla, nivel);
       lista.push(tabla);
     }
-    temas[clave] = { ...tema, tablas: lista };
+    dominios[clave] = { ...dominio, tablas: lista };
   }
 
   return {
-    temas,
-    temaDe,
+    dominios,
+    dominioDe,
     nivelDe,
     niveles: crudo._niveles ?? {},
     transversales: Object.keys(crudo._escritores_transversales ?? {}).filter((k) => !k.startsWith("_")),
@@ -67,7 +76,7 @@ export function leerMapa(ruta = RUTA_MAPA) {
  * ⚠️ SE SALTAN LAS LÍNEAS DE COMENTARIO, y no es una precaución teórica: la cabecera del esquema
  * explica la trampa del 'IF NOT EXISTS' citando un 'CREATE TABLE IF NOT EXISTS firmas.x', y sin
  * este filtro aparecía una tabla fantasma llamada 'x' --94 en vez de 93-- que la puerta reclamaba
- * como tabla sin tema. Citar una sentencia dentro de un comentario es lo natural al explicar SQL,
+ * como tabla sin dominio. Citar una sentencia dentro de un comentario es lo natural al explicar SQL,
  * así que esto muerde de nuevo en cuanto alguien documente algo bien.
  */
 export function tablasDelEsquema(rutaEsquema) {

@@ -390,7 +390,7 @@ trabajo **`campos-al-dia`** de `docs-dbml.yml`, que le aplica el esquema a un Po
 página se deriva del esquema y no necesita ni una fila sembrada.
 
 Era **el único generador de página sin puerta**, y se rompió en silencio el mismo 2026-10-04: al
-repartir las tablas en esquemas por tema, su consulta filtraba `information_schema.columns` por
+repartir las tablas en esquemas por dominio, su consulta filtraba `information_schema.columns` por
 `table_schema = 'public'` y **dejó de encontrar nada**. Sus otras dos consultas resuelven por
 `regclass` —o sea por `search_path`— y seguían funcionando, así que el generador **no fallaba**:
 emitía la página con sus 101 vínculos y **cero columnas**. La página commiteada seguía bien sólo
@@ -407,11 +407,25 @@ dibújala en uno de los dos, dentro de su subgrupo, o el generador falla a prop�
 
 ### El mapa de las tablas — `scripts/docs/dominios.json` es la FUENTE ÚNICA
 
-Cada tabla aparece **una vez**, dentro de su **tema**, y su valor es su **nivel**. Dos ejes, un sitio:
+⚠️ **TRES PALABRAS, TRES SIGNIFICADOS, Y NO SE MEZCLAN** (fijado por el dueño el 2026-10-07):
+
+| | |
+|---|---|
+| **dominio** | de qué trata una tabla. Son **8**, y de ahí salen los 8 diagramas y los 8 esquemas |
+| **nivel** | de qué depende. **0 a 7**. De aquí sale el orden de lectura y la regla de las claves ajenas |
+| **capa** | `routes` / `controllers` / `services` / `datos`, **dentro del código** de un dominio. Nada más |
+
+**No es estilo, es que YA SE MEZCLÓ:** «dominio» y «capa» fueron los nombres de los **dos ejes** en la
+primera versión del mapa (`tabla → módulo → {dominio, capa}`). Así que un texto heredado que diga
+«capa 3» habla de un **nivel**, y uno nuevo que diga «capa» habla de `services/`. Por eso se renombró
+todo a `nivel`, y por eso **la puerta falla si `dominios.json` vuelve a decir «tema» o «capa»**
+(comprobación **0**).
+
+Cada tabla aparece **una vez**, dentro de su **dominio**, y su valor es su **nivel**. Dos ejes, un sitio:
 
 | | | |
 |---|---|---|
-| **tema** | de qué trata | 8, los de siempre. De aquí salen los 8 diagramas, y es **donde debería vivir su código** |
+| **dominio** | de qué trata | 8, los de siempre. De aquí salen los 8 diagramas, y es **donde debería vivir su código** |
 | **nivel** | de qué depende | 0 (abajo) a 7 (arriba). De aquí sale el **orden de lectura** |
 
 **La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: 103 bajan,
@@ -424,7 +438,7 @@ node scripts/docs/check-mapa-tablas.mjs    # tres comprobaciones
 
 | | Qué caza |
 |---|---|
-| **A** | una tabla del esquema sin tema, o en dos |
+| **A** | una tabla del esquema sin dominio, o en dos |
 | **B** | una clave ajena que **sube** de nivel |
 | **C** | una tabla que escriben **dos** sitios, siendo nueva |
 
@@ -433,7 +447,7 @@ mapa, y `backend-checks` de `cd-multienv.yml` caza los de **código** — un seg
 al tocar el backend, no al tocar el esquema.
 
 ⚠️ **Aquí hubo un TERCER EJE —15 «módulos»— y se retiró el 2026-10-04, el mismo día.** Perdió en
-tres mediciones a la vez: juntaba peor las relaciones (**37 % contra 50 %** de los temas), tenía una
+tres mediciones a la vez: juntaba peor las relaciones (**37 % contra 50 %** de los dominios), tenía una
 dependencia circular, y **cuatro de los quince no eran dueños de ni un fichero de código** —habrían
 sido carpetas vacías—. Cortaba por dentro de una función: el recorrido de llenado es parte de las
 plantillas tanto en el código como en la pantalla. **No lo vuelvas a introducir.**
@@ -445,7 +459,7 @@ protegían.** Están en el historial de git si alguna vez hacen falta.
 
 Tres cosas que cuestan si se ignoran:
 
-1. **Si añades una tabla, ponla en un tema con su nivel**: `"<tema>": { "tablas": { "<tabla>": <nivel> } }`.
+1. **Si añades una tabla, ponla en un dominio con su nivel**: `"<dominio>": { "tablas": { "<tabla>": <nivel> } }`.
    El generador y la puerta fallan a propósito si está en ninguno o en dos.
 2. **El nivel no es decorativo.** Si la tabla nueva obliga a una clave ajena que sube, **no está en el
    nivel que crees** o la relación va al revés. Las dos cosas son hallazgos: así se descubrió que
@@ -456,11 +470,11 @@ Tres cosas que cuestan si se ignoran:
    líneas.** Añadir una para callar la puerta es exactamente lo que no hay que hacer. Eran 6; la de
    `telefono_verification_keys` se cerró el mismo día.
 
-**El tema NO es el esqueleto, y hay que saber por qué:** 29 de las 93 tablas se relacionan con 3
-temas o más (`units` con los ocho, `persons` con siete). Por eso el tema **no da un orden de
-lectura** —cuatro parejas de temas se apuntan mutuamente— y por eso existe el nivel. Y por eso
-**el tema `identidad` ocupa tres niveles** (catálogos, la persona, el acceso): sus 34 tablas no son
-un tema, son tres cosas apiladas.
+**El dominio NO es el esqueleto, y hay que saber por qué:** 29 de las 93 tablas se relacionan con 3
+dominios o más (`units` con los ocho, `persons` con siete). Por eso el dominio **no da un orden de
+lectura** —cuatro parejas de dominios se apuntan mutuamente— y por eso existe el nivel. Y por eso
+**el dominio `identidad` ocupa tres niveles** (catálogos, la persona, el acceso): sus 34 tablas no son
+un dominio, son tres cosas apiladas.
 
 Si añades una tabla, el generador falla a propósito si no tiene módulo, para que no se quede fuera de
 los diagramas en silencio.
@@ -469,21 +483,21 @@ Lo único que se escribe a mano es **`docs/02-dominio-datos/anotaciones.json`**:
 una tabla o una columna. Se inyecta como nota en el DBML, y el generador falla si nombras algo que
 no existe.
 
-### Las tablas viven en OCHO esquemas de PostgreSQL, uno por tema
+### Las tablas viven en OCHO esquemas de PostgreSQL, uno por dominio
 
 Desde el **2026-10-04** no hay nada en `public` salvo las 12 funciones de los disparadores. Una tabla
-vive en el esquema de su tema: `identidad.persons`, `firmas.signature_requests`,
-`plantillas.template_artifacts`. El tema dejó de ser una afirmación en un fichero y pasó a ser
+vive en el esquema de su dominio: `identidad.persons`, `firmas.signature_requests`,
+`plantillas.template_artifacts`. El dominio dejó de ser una afirmación en un fichero y pasó a ser
 **dónde está la tabla**.
 
 **Y las consultas NO cambiaron: son las mismas 555.** El `search_path` hace que PostgreSQL resuelva
 `signature_requests` sin cualificar, igual que antes. Lo que cambia es que **ahora se puede**
-cualificar, y que `pg_dump -n firmas` saca un tema entero.
+cualificar, y que `pg_dump -n firmas` saca un dominio entero.
 
 | | |
 |---|---|
-| Si **añades una tabla** | cualifícala con su tema: `CREATE TABLE IF NOT EXISTS firmas.lo_que_sea (`. Sin el prefijo se crearía en `identidad`, que es el primero del `search_path`. Lo caza `check-mapa-tablas.mjs` (comprobación **A-bis**) |
-| Si **añades un tema** | va en **tres** sitios: el `SET search_path` del esquema, `ESQUEMAS` en `config/postgres.js`, y el mapa. Los compara `config/postgres.searchPath.test.js` |
+| Si **añades una tabla** | cualifícala con su dominio: `CREATE TABLE IF NOT EXISTS firmas.lo_que_sea (`. Sin el prefijo se crearía en `identidad`, que es el primero del `search_path`. Lo caza `check-mapa-tablas.mjs` (comprobación **A-bis**) |
+| Si **añades un dominio** | va en **tres** sitios: el `SET search_path` del esquema, `ESQUEMAS` en `config/postgres.js`, y el mapa. Los compara `config/postgres.searchPath.test.js` |
 
 ⚠️ **La lista de esquemas está en TRES pools distintos** y no hay forma de que uno lea del otro: el
 de la aplicación (`config/postgres.js`), el del inicializador (que importa `ESQUEMAS`) y **el del
@@ -503,9 +517,9 @@ el sistema arranca como si la instalación fuera nueva.
 `check-doc-modelo.mjs`, `postgres_schema.test.js` y los otros dos tests que leen el fichero. Van
 sobre la **forma** de la tabla, no sobre dónde vive; dónde vive lo comprueba la puerta.
 
-**Por qué el esquema se puede partir por nivel y no por tema.** Cuatro parejas de temas se necesitan
+**Por qué el esquema se puede partir por nivel y no por dominio.** Cuatro parejas de dominios se necesitan
 mutuamente (identidad↔organización, plantillas↔procesos, plantillas↔tareas, firmas↔tareas), así que
-**no hay ningún orden en el que aplicar un tema tras otro**: para crear una tabla con clave ajena, la
+**no hay ningún orden en el que aplicar un dominio tras otro**: para crear una tabla con clave ajena, la
 tabla a la que apunta tiene que existir ya. Por nivel sí, porque ninguna relación sube.
 
 ### Azimutt — el explorador interactivo (perfil `explorer`)

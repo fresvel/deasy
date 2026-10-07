@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // La puerta del mapa de las tablas. Tres comprobaciones, y cada una caza algo distinto.
 //
-//   A · COBERTURA   cada tabla del esquema está en exactamente un tema, con su nivel
+//   A · COBERTURA   cada tabla del esquema está en exactamente un dominio, con su nivel
 //   B · NIVEL       ninguna clave ajena apunta a un nivel SUPERIOR
 //   C · PROPIEDAD   cada tabla la escribe un solo sitio del código
 //
@@ -33,15 +33,33 @@ const tablas = tablasDelEsquema(ESQUEMA);
 const fallos = [...mapa.fallos];
 const avisos = [];
 
-// ── A · Cobertura ─────────────────────────────────────────────────────────────────────────────
-for (const tabla of tablas) {
-  if (!mapa.temaDe.has(tabla)) {
-    fallos.push(`A · la tabla '${tabla}' no está en ningún tema. Añádela a scripts/docs/dominios.json`);
+// ── 0 · La PALABRA ───────────────────────────────────────────────────────────────────────────
+// Tres palabras, tres significados: DOMINIO (de qué trata, 8) · NIVEL (de qué depende, 0..7) ·
+// CAPA (routes/controllers/services/datos, dentro del código). Se fijó el 2026-10-07 y se vigila
+// aquí porque YA SE MEZCLÓ: en la primera versión del mapa los dos ejes se llamaban «dominio» y
+// «capa», así que un «capa 3» heredado habla de un NIVEL y uno nuevo habla de `services/`. La fuente
+// única no puede volver a decir ninguna de las dos.
+{
+  const crudo = readFileSync(RUTA_MAPA, "utf8");
+  for (const palabra of ["tema", "temas", "capa", "capas"]) {
+    if (new RegExp(`\\b${palabra}\\b`, "i").test(crudo)) {
+      fallos.push(
+        `0 · 'dominios.json' dice '${palabra}'. Son DOMINIO (de qué trata), NIVEL (de qué depende) ` +
+        `y CAPA (routes/controllers/services/datos, sólo dentro del código). Ver lib/mapa.mjs`
+      );
+    }
   }
 }
-for (const tabla of mapa.temaDe.keys()) {
+
+// ── A · Cobertura ─────────────────────────────────────────────────────────────────────────────
+for (const tabla of tablas) {
+  if (!mapa.dominioDe.has(tabla)) {
+    fallos.push(`A · la tabla '${tabla}' no está en ningún dominio. Añádela a scripts/docs/dominios.json`);
+  }
+}
+for (const tabla of mapa.dominioDe.keys()) {
   if (!tablas.includes(tabla)) {
-    fallos.push(`A · el mapa nombra '${tabla}' (tema '${mapa.temaDe.get(tabla)}') y no existe en el esquema`);
+    fallos.push(`A · el mapa nombra '${tabla}' (dominio '${mapa.dominioDe.get(tabla)}') y no existe en el esquema`);
   }
 }
 
@@ -66,8 +84,8 @@ for (const { origen, columna, destino } of fks) {
 // ── C · Propiedad de escritura ────────────────────────────────────────────────────────────────
 // El «sitio» de un fichero son sus dos primeras componentes bajo `backend/` (`services/users`,
 // `controllers/users`), que es lo más fino que hoy distingue de verdad. Lo que importa aquí es que
-// haya UN escritor, no en qué carpeta vive: el día que el código se reparta por temas, esto pasa a
-// comprobar que el escritor es el tema dueño.
+// haya UN escritor, no en qué carpeta vive: el día que el código se reparta por dominios, esto pasa a
+// comprobar que el escritor es el dominio dueño.
 const deuda = Object.fromEntries(
   Object.entries(JSON.parse(readFileSync(RUTA_MAPA, "utf8"))._deuda_escritura ?? {}).filter(
     ([clave]) => !clave.startsWith("_")
@@ -103,16 +121,16 @@ for (const tabla of tablas) {
   if (deuda[tabla]) continue;
   fallos.push(
     `C · '${tabla}' la escriben ${sitios.size} sitios: ${[...sitios].sort().join(" · ")}. ` +
-      `Una tabla tiene un tema dueño; el invariante va donde no se pueda esquivar, no en cada llamador`
+      `Una tabla tiene un dominio dueño; el invariante va donde no se pueda esquivar, no en cada llamador`
   );
 }
 
-// ── A-bis · Los esquemas de la base son los temas ──────────────────────────────────────────────
-// Desde el 2026-10-04 cada tema es un esquema de PostgreSQL, así que el `SET search_path` del
-// fichero del esquema tiene que listar exactamente estos ocho temas, más `public` al final (donde
+// ── A-bis · Los esquemas de la base son los dominios ──────────────────────────────────────────────
+// Desde el 2026-10-04 cada dominio es un esquema de PostgreSQL, así que el `SET search_path` del
+// fichero del esquema tiene que listar exactamente estos ocho dominios, más `public` al final (donde
 // viven las 12 funciones de los disparadores).
 //
-// Si se separan, el fallo no se ve al arrancar: las consultas de un tema entero empiezan a
+// Si se separan, el fallo no se ve al arrancar: las consultas de un dominio entero empiezan a
 // responder «relation does not exist» mientras el resto funciona. La otra mitad de esta vigilancia
 // --que el pool del backend use la misma lista-- está en `backend/config/postgres.searchPath.test.js`,
 // que sí puede leer los dos ficheros que compara.
@@ -122,19 +140,19 @@ if (!lineaRuta) {
   fallos.push("A-bis · postgres_schema.sql no lleva un 'SET search_path = ...;' en una línea");
 } else {
   const declarados = lineaRuta[1].split(",").map((x) => x.trim());
-  const temas = Object.keys(mapa.temas);
-  const esperado = [...temas, "public"];
+  const dominios = Object.keys(mapa.dominios);
+  const esperado = [...dominios, "public"];
   if (declarados.join(",") !== esperado.join(",")) {
     fallos.push(
-      `A-bis · el search_path del esquema no coincide con los temas del mapa.\n       esquema: ${declarados.join(", ")}\n       mapa:    ${esperado.join(", ")}`
+      `A-bis · el search_path del esquema no coincide con los dominios del mapa.\n       esquema: ${declarados.join(", ")}\n       mapa:    ${esperado.join(", ")}`
     );
   }
   for (const tabla of tablas) {
-    const tema = mapa.temaDe.get(tabla);
-    if (!tema) continue;
-    if (!new RegExp(`CREATE TABLE IF NOT EXISTS ${tema}\\.${tabla}\\b`).test(sqlEsquema)) {
+    const dominio = mapa.dominioDe.get(tabla);
+    if (!dominio) continue;
+    if (!new RegExp(`CREATE TABLE IF NOT EXISTS ${dominio}\\.${tabla}\\b`).test(sqlEsquema)) {
       fallos.push(
-        `A-bis · el mapa dice que '${tabla}' es de '${tema}' y el esquema no la crea en ese esquema de la base`
+        `A-bis · el mapa dice que '${tabla}' es de '${dominio}' y el esquema no la crea en ese esquema de la base`
       );
     }
   }
@@ -142,7 +160,7 @@ if (!lineaRuta) {
 
 // ── Veredicto ─────────────────────────────────────────────────────────────────────────────────
 const n = (x) => String(x).padStart(3);
-console.log(`Mapa de tablas:  ${Object.keys(mapa.temas).length} temas · 8 niveles · ${tablas.length} tablas`);
+console.log(`Mapa de tablas:  ${Object.keys(mapa.dominios).length} dominios · 8 niveles · ${tablas.length} tablas`);
 console.log(`Claves ajenas:   ${n(bajan)} bajan de nivel · ${n(iguales)} en su nivel · ${n(fks.length - bajan - iguales)} suben`);
 console.log(`Deuda declarada: ${Object.keys(deuda).length} tablas con más de un escritor`);
 

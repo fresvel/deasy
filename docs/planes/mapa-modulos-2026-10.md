@@ -11,18 +11,18 @@ incompatibles.**
 | Fase | Tareas | Estado |
 |---|---|---|
 | **F1** · Escribir el mapa | F1.1 ✅ · F1.2 ✅ · F1.3 ✅ | ✅ **3 de 3** |
-| **F2** · La puerta de las capas | F2.1 ✅ · F2.2 ✅ | ✅ **2 de 2** |
+| **F2** · La puerta de los niveles | F2.1 ✅ · F2.2 ✅ | ✅ **2 de 2** |
 | **F3** · La puerta de propiedad | F3.1 ✅ · F3.2 ✅ | ✅ **2 de 2** |
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ⬜ · F5.6 ⬜ | 🟡 **1 de 6** |
-| **F6** · El tema, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
+| **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
 | **F7** · Reordenar el backend por dominios | F7.0 ⬜ · F7.1 ⬜ · F7.2 ⬜ · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | ⬜ **0 de 6** |
 
-## F6 · El tema, dentro de la base — 4 de 5
+## F6 · El dominio, dentro de la base — 4 de 5
 
 | Tarea | Qué entrega | Estado |
 |---|---|:--:|
-| **F6.1** | Las 93 tablas en **8 esquemas de PostgreSQL**, uno por tema | ✅ |
+| **F6.1** | Las 93 tablas en **8 esquemas de PostgreSQL**, uno por dominio | ✅ |
 | **F6.2** | El `search_path` en los **tres** pools que se conectan, con prueba que los compara | ✅ |
 | **F6.3** | Los cuatro programas que parsean el esquema, al día | ✅ |
 | **F6.4** | `scripts/migrar-a-esquemas.sql` para una base anterior | ✅ |
@@ -30,12 +30,12 @@ incompatibles.**
 
 ### Por qué los esquemas, y no es cosmética
 
-El tema era **una afirmación en un fichero JSON**: decía que `signature_requests` es de firmas y
+El dominio era **una afirmación en un fichero JSON**: decía que `signature_requests` es de firmas y
 había que creérselo. Ahora **lo dice la base de datos**, y si alguien crea una tabla en el esquema
 equivocado falla una puerta de CI. Es la diferencia entre documentar y constatar.
 
 **Y las 555 consultas no se tocaron.** El `search_path` resuelve los nombres sin cualificar igual que
-antes. Lo que se gana: una consulta *puede* decir de qué tema es, y `pg_dump -n firmas` saca un tema
+antes. Lo que se gana: una consulta *puede* decir de qué dominio es, y `pg_dump -n firmas` saca un dominio
 entero.
 
 ### Lo que lo demuestra
@@ -84,10 +84,10 @@ la entrada es igual.
 
 ### F6.5 · ⛔ descartada el 2026-10-04, y el motivo NO es el coste
 
-Se llegó a elegir la forma (carpeta = tema, nombre = nivel, 16 ficheros) y hasta el estilo de nombre.
+Se llegó a elegir la forma (carpeta = dominio, nombre = nivel, 16 ficheros) y hasta el estilo de nombre.
 Y el bloqueo que la tenía parada **se levantó solo**: al retirar `deliverables.owner_process_id` en el
 frente 23 desapareció la dependencia circular entre `plantillas` y `procesos`, y el reparto pasó a
-ser posible sin mover ninguna tabla de tema. **Medido: 15 ficheros y el orden existe.**
+ser posible sin mover ninguna tabla de dominio. **Medido: 15 ficheros y el orden existe.**
 
 Se descarta por dos razones, y la primera es la que manda:
 
@@ -102,7 +102,7 @@ dentro; con dieciséis, alguien tiene que declararlo — y el orden alfabético 
 0 pondría `identidad` antes de `organizacion`, y hay **6 claves ajenas** (`generos.pais_id`,
 `estados_civiles.pais_id`, `parentescos.pais_id`…) que apuntan a `paises`, que es de
 `organizacion`. Hay 4 más en los niveles 4 y 6. Ninguna de las cuatro formas de nombre que se
-barajaron lo resolvía: el problema no es el adorno del número, es que **dos temas comparten nivel y
+barajaron lo resolvía: el problema no es el adorno del número, es que **dos dominios comparten nivel y
 uno necesita al otro**.
 
 Suplirlo pedía **tres mecanismos nuevos** —una lista con el orden, un test que la valide, y un
@@ -160,12 +160,12 @@ y ahí el número es 20–35 %.
 
 ## F1 · El mapa — qué se escribió
 
-**93 tablas · 15 módulos · 8 dominios · 8 capas.** `dominios.json` dejó de repartir diagramas y pasó
+**93 tablas · 15 módulos · 8 dominios · 8 niveles.** `dominios.json` dejó de repartir diagramas y pasó
 a contestar «¿a qué parte del sistema pertenece esta tabla?». Cada tabla está en **un** módulo, y
-cada módulo declara **dominio** (el diagrama, que sigue siendo uno de 8) y **capa** (su sitio en el
+cada módulo declara **dominio** (el diagrama, que sigue siendo uno de 8) y **nivel** (su sitio en el
 orden de dependencia).
 
-| Capa | Módulos | Tablas |
+| Nivel | Módulos | Tablas |
 |---|---|:--:|
 | **0** · catálogos y territorio | `cat_territorio` · `cat_identidad` · `cat_firmas` · `cat_procesos` | 22 |
 | **1** · identidad | `identidad` | 13 |
@@ -176,13 +176,13 @@ orden de dependencia).
 | **6** · flujos | `flujo_entrega` · `flujo_firma` · `flujo_rastro` | 11 |
 | **7** · encima | `chat` · `empleo` | 14 |
 
-### Lo que el cruce dominio ⨯ capa enseñó, y ningún diagrama decía
+### Lo que el cruce dominio ⨯ nivel enseñó, y ningún diagrama decía
 
-**1 · El dominio `identidad` no es un tema: son tres módulos apilados.** Sus 34 tablas se reparten
-entre la capa 0 (10 catálogos), la 1 (la persona, 13) y la 3 (el acceso, 11). Era el diagrama más
+**1 · El dominio `identidad` no es un dominio: son tres módulos apilados.** Sus 34 tablas se reparten
+entre el nivel 0 (10 catálogos), la 1 (la persona, 13) y la 3 (el acceso, 11). Era el diagrama más
 difícil de leer del sitio, y ésta es la razón medible.
 
-**2 · El acceso va ENCIMA de la organización.** El primer reparto lo puso debajo y la puerta de capas
+**2 · El acceso va ENCIMA de la organización.** El primer reparto lo puso debajo y la puerta de niveles
 lo rechazó con dos claves ajenas: `role_assignments.unit_id → units` y
 `role_assignments.derived_from_assignment_id → position_assignments`. Un rol se asigna **dentro de**
 una unidad. Consecuencia práctica: **quien cambia el organigrama puede romper permisos; al revés no
@@ -192,9 +192,9 @@ pasa nunca.**
 
 | Tabla | Parece | Es |
 |---|---|---|
-| `role_assignment_relation_types` | catálogo de tipos | tabla de relación de `role_assignments` (capa 3) |
-| `process_definition_period_types` | catálogo de periodos | detalle de `process_definition_versions` (capa 4) |
-| `contract_origins` | catálogo de orígenes | detalle de `contracts` (capa 7) |
+| `role_assignment_relation_types` | catálogo de tipos | tabla de relación de `role_assignments` (nivel 3) |
+| `process_definition_period_types` | catálogo de periodos | detalle de `process_definition_versions` (nivel 4) |
+| `contract_origins` | catálogo de orígenes | detalle de `contracts` (nivel 7) |
 
 **4 · `process_runs` estaba en el dominio equivocado** (F1.3). Vivía en `procesos`, que es la
 **declaración**; un lanzamiento es **ejecución**, y `tasks.process_run_id` apunta a él. Movido al
@@ -205,18 +205,18 @@ dominio `tareas`: `procesos` 9 → 8 tablas, `tareas` 8 → 9.
 de la tabla a la que sirve, en dos diagramas distintos. Que un módulo tenga una tabla no es un
 defecto; es la descripción honesta.
 
-**5 · La capa 7 está medio vacía.** De las 93 tablas, **15 no aparecen en una sola línea de código**,
+**5 · El nivel 7 está medio vacío.** De las 93 tablas, **15 no aparecen en una sola línea de código**,
 y 8 son el bloque de empleo entero. Más **8 que sólo se leen** y nadie escribe. No es código muerto:
 es modelo declarado sin implementar, y ahora está dicho en el mapa.
 
-## F2 · La puerta de las capas
+## F2 · La puerta de los niveles
 
-**Una clave ajena solo puede apuntar a su capa o a una inferior.** De las **182** del esquema:
+**Una clave ajena solo puede apuntar a su nivel o a uno inferior.** De las **182** del esquema:
 
 | | | |
 |---|---:|---|
-| apuntan a una capa **inferior** | 103 | 57 % ✔ |
-| apuntan a su **misma** capa | 79 | 43 % ✔ |
+| apuntan a un nivel **inferior** | 103 | 57 % ✔ |
+| apuntan a su **mismo** nivel | 79 | 43 % ✔ |
 | apuntan **hacia arriba** | **0** | infracción |
 
 La puerta **nace en verde**, que es el momento barato de ponerla: a partir de aquí, el día que una
@@ -292,15 +292,15 @@ lista de los sitios donde la frontera está mal puesta.
 
 ### Por qué `dominios/` y no `modules/`
 
-La propuesta externa llamaba a la carpeta `temas/`. Se descarta el nombre, y `modules/` **también**,
+La propuesta externa llamaba a la carpeta `dominios/`. Se descarta el nombre, y `modules/` **también**,
 por dos colisiones medidas:
 
 | | |
 |---|---|
 | **`dominios/` no es una palabra nueva** | El repositorio ya la usa **para esta misma partición**, en tres sitios: `scripts/docs/dominios.json` (la fuente única), `docs/02-dominio-datos/dominios/<dominio>.dbml` (ocho ficheros, uno por dominio) y los ocho `docs/public/diagramas/*.svg` |
 | **`modules/` choca dos veces** | (1) los **15 «módulos» retirados** el 2026-10-04, que `CLAUDE.md` prohíbe reintroducir; (2) **`frontend/src/modules/` ya existe** y su eje es **mixto** —`admin`, `home`, `perfil`, `auth` son audiencia; `firmas`, `procesos` son dominio—, así que la misma palabra significaría dos cosas distintas en las dos mitades del monorepo |
-| ⚠️ **Y esta fase está escrita entera en «dominio», adelantándose a su propia F7.0** | Es deliberado para que se lea, no una decisión tomada: mientras F7.0 no elija, **`tema` y `dominio` son la misma cosa con dos nombres** |
-| ⚠️ **Pero `tema` y `dominio` son HOY la misma cosa con dos nombres** | Y la ambigüedad **ya existía**: la fuente única se llama **`dominios.json`** y lo que declara dentro son **`temas`**; `docs/02-dominio-datos/dominios/` guarda un fichero por **tema**; y la puerta imprime *«8 temas · 8 niveles · 92 tablas»*. Elegir la carpeta obliga a elegir la palabra: **va en F7.0**, y se aplica en los tres sitios de golpe o no se aplica |
+| ⚠️ **Y esta fase está escrita entera en «dominio», adelantándose a su propia F7.0** | Es deliberado para que se lea, no una decisión tomada: mientras F7.0 no elija, **`dominio` y `dominio` son la misma cosa con dos nombres** |
+| ⚠️ **Pero `dominio` y `dominio` son HOY la misma cosa con dos nombres** | Y la ambigüedad **ya existía**: la fuente única se llama **`dominios.json`** y lo que declara dentro son **`dominios`**; `docs/02-dominio-datos/dominios/` guarda un fichero por **dominio**; y la puerta imprime *«8 dominios · 8 niveles · 92 tablas»*. Elegir la carpeta obliga a elegir la palabra: **va en F7.0**, y se aplica en los tres sitios de golpe o no se aplica |
 
 ### Lo medido: 169 ficheros de producción
 
@@ -638,7 +638,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 
 | Tarea | Qué entrega | Estado |
 |---|---|:--:|
-| **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`tema` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
+| **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`dominio` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los 5 genéricos y los 7 flujos en el mapa, con su motivo escrito, y la puerta leyendo la **ruta**. Es la red que hace seguro todo lo demás | ⬜ |
 | **F7.2** | **Sacar el SQL de `controllers/` y `routes/`**: 77 consultas en 9 ficheros, empezando por `user_controler.queries.js`, que ya pide por escrito ser una capa de datos. Es un **defecto**, y va antes de mover nada | ⬜ |
 | **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
@@ -775,7 +775,7 @@ fallan a lo ancho:
 | Regla candidata | Recurso RBAC | Subgrupo dibujado |
 |---|---|---|
 | un grupo cabe dentro de **un** módulo | falla en **7 de 14** | falla en **8 de 13** |
-| un grupo no mezcla **capas** | falla en **5 de 14** | falla |
+| un grupo no mezcla **niveles** | falla en **5 de 14** | falla |
 | un módulo no está **partido** entre grupos | falla en **6 de 14** | falla |
 
 Si tres reglas razonables fallan todas, la hipótesis era mala. Y lo era: **las tres agrupaciones
@@ -783,7 +783,7 @@ contestan preguntas distintas**, y las tres hacen falta.
 
 | Agrupación | Pregunta |
 |---|---|
-| **módulo y capa** | ¿qué depende de qué? |
+| **módulo y nivel** | ¿qué depende de qué? |
 | **recurso de permiso** | ¿quién puede actuar sobre esto? |
 | **subgrupo del mapa** | ¿cómo se le cuenta esto a alguien que no lo conoce? |
 
@@ -792,8 +792,8 @@ Dos ejemplos de por qué forzarlas a coincidir sería un error:
 - El recurso **`catalogos`** junta las listas cerradas de la persona (`generos`, `parentescos`…) con
   las del territorio (`cantones`, `instituciones`…), de **dos módulos**. Correcto: administrar
   catálogos es un solo trabajo, y partir el permiso en dos no serviría a nadie.
-- El subgrupo **«Cómo se te localiza»** junta el correo y el teléfono (capa 1), el canal por el que se
-  escribe (capa 0) y la llave con que se prueba el número (capa 3). **Tres capas, una sola frase** — y
+- El subgrupo **«Cómo se te localiza»** junta el correo y el teléfono (nivel 1), el canal por el que se
+  escribe (nivel 0) y la llave con que se prueba el número (nivel 3). **Tres niveles, una sola frase** — y
   la frase es lo que hace legible el dibujo.
 
 ### Entonces, ¿qué se vigila?
@@ -832,10 +832,10 @@ confianza falsa.
 
 | Tarea | Qué entrega | Evidencia | Fecha |
 |---|---|---|---|
-| **F1.1** | `dominios.json` pasa a tabla → módulo → {dominio, capa}: 93 tablas, 15 módulos | `node scripts/docs/check-mapa-modulos.mjs` → 93 tablas, 15 módulos, 0 fallos | 2026-10-04 |
+| **F1.1** | `dominios.json` pasa a tabla → módulo → {dominio, capa} —así se llamaban los dos ejes entonces: hoy son `dominio` y `nivel`—: 93 tablas, 15 módulos | `node scripts/docs/check-mapa-modulos.mjs` → 93 tablas, 15 módulos, 0 fallos | 2026-10-04 |
 | **F1.2** | `scripts/docs/lib/mapa.mjs` — un solo parser, con las `tablas` de un dominio **derivadas** de sus módulos | `postprocess-dbml.mjs` lo consume; `gen-dbml.sh` regenera los 8 diagramas | 2026-10-04 |
 | **F1.3** | `process_runs` al dominio `tareas`; `term_types` evaluado y **no** movido, con el motivo escrito | `procesos` 9→8 y `tareas` 8→9 en `modelo-datos.md`; diff de `procesos.svg` y `tareas.svg` | 2026-10-04 |
-| **F2.1** | La regla de las capas, comprobada | 103 bajan · 79 igual · **0 suben** de 182 | 2026-10-04 |
+| **F2.1** | La regla de los niveles, comprobada | 103 bajan · 79 igual · **0 suben** de 182 | 2026-10-04 |
 | **F2.2** | En CI, en los **dos** sitios que hacen falta | `docs-dbml.yml` (esquema y mapa) y `backend-checks` de `cd-multienv.yml` (código) | 2026-10-04 |
 | **F3.1** | La regla de propiedad, con los dos transversales declarados por nombre | la puerta lista las 5 tablas de deuda y pasa | 2026-10-04 |
 | **F3.2** | `_deuda_escritura` con el motivo de cada una y la instrucción de cerrarla quitando líneas | 5 entradas, cada una con fichero y línea | 2026-10-04 |
@@ -854,16 +854,16 @@ no me había hecho —**¿se puede leer el sistema en algún orden?**— y sali�
 | Los 8 dominios de la documentación (ya existían) | 8 | **50 %** | **NO** — 4 parejas mutuas |
 | Los 18 grupos de permisos | 18 | 44 % | **NO** — 2 parejas |
 | **Los 15 módulos de este frente** | 15 | **37 %** | **NO** — 1 pareja |
-| **Las 8 capas** | 8 | 43 % | **SÍ** |
+| **Los 8 niveles** | 8 | 43 % | **SÍ** |
 
 Tres conclusiones, y dos son contra mí:
 
 1. **Los 15 módulos son la peor de las cuatro agrupaciones**, y encima tienen un bucle
    (`declaracion_plantillas` ↔ `declaracion_procesos`), así que no tienen ni la propiedad que
    justificaba inventarlos.
-2. **Todas las agrupaciones por tema tienen bucles.** Ésa es la razón medible de que el sistema no se
+2. **Todas las agrupaciones por dominio tienen bucles.** Ésa es la razón medible de que el sistema no se
    pueda entender leyéndolo: no falta documentación, falta un **orden** posible.
-3. **Lo único que da un orden son las capas**, que es lo que este frente produjo casi de rebote y
+3. **Lo único que da un orden son los niveles**, que es lo que este frente produjo casi de rebote y
    luego dejó de mencionar.
 
 De ahí sale **[`orden-de-lectura.md`](../src/content/docs/orden-de-lectura.md)**: las 93 tablas en sus
@@ -882,7 +882,7 @@ trabajo propio** —19 recursos, 95 permisos, 13 roles— y es más grave que to
 `emails` es el caso gemelo del teléfono —el **mismo** `UPDATE` en dos ficheros— y debería ir primera.
 
 **No se hace: varias bases de datos.** Se evaluó y el argumento es numérico: **103 de las 182** claves
-ajenas cruzan de capa. Partir en bases separadas convierte cada una de esas en código de aplicación
+ajenas cruzan de nivel. Partir en bases separadas convierte cada una de esas en código de aplicación
 que mantiene a mano una integridad que hoy regala PostgreSQL. Si algún día hace falta aislamiento, el
 camino son los **esquemas SQL** dentro de la misma base —mismas transacciones, mismas claves ajenas,
 namespaces separados—, y eso se decide después de F4, no antes.

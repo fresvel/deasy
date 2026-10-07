@@ -44,7 +44,7 @@ const reBloqueChecks = /^[ \t]*Checks\s*\{[\s\S]*?^[ \t]*\}[ \t]*\n/gm;
 const sinChecksDeTabla = (texto) => texto.replace(reBloqueChecks, '').replace(/\n{3,}/g, '\n\n');
 
 // ── 0. Quitar la cualificacion de esquema ──────────────────────────────────────────────────
-// Desde el 2026-10-04 cada tabla vive en el esquema de su tema, y db2dbml lo refleja:
+// Desde el 2026-10-04 cada tabla vive en el esquema de su dominio, y db2dbml lo refleja:
 //
 //   Table "firmas"."signature_requests" { ... }
 //   Ref "fk":"tareas"."task_items"."id" ?<? "firmas"."signature_requests"."task_item_id"
@@ -53,7 +53,7 @@ const sinChecksDeTabla = (texto) => texto.replace(reBloqueChecks, '').replace(/\
 // fichero y dos en gen-mapa-campos.mjs--. Asi el modelo publicado sale IDENTICO al de antes de los
 // esquemas, que es la prueba de que el cambio no se ve desde la documentacion.
 //
-// No se pierde nada: que cada tabla este en el esquema de su tema lo comprueba
+// No se pierde nada: que cada tabla este en el esquema de su dominio lo comprueba
 // check-mapa-tablas.mjs leyendo postgres_schema.sql, que es donde esta escrito.
 //
 // ⚠️ El orden de los dos reemplazos NO es indiferente. La forma de tres partes es la de un Ref
@@ -71,9 +71,9 @@ const anotaciones = JSON.parse(readFileSync(anotacionesPath, 'utf8'));
 // tiene tres niveles --tabla -> modulo -> {dominio, capa}-- y las 'tablas' de un dominio son DERIVADAS,
 // la union de las de sus modulos. Dos parsers del mismo fichero es como uno se queda atras.
 const mapa = leerMapa(dominiosPath);
-// 'temas' desde el 2026-10-04: el fichero reparte por TEMA (de que trata) y cada tabla lleva
+// 'dominios' desde el 2026-10-04: el fichero reparte por TEMA (de que trata) y cada tabla lleva
 // ademas su NIVEL (de que depende). El eslabon intermedio --el «modulo»-- se retiro.
-const temas = mapa.temas;
+const dominios = mapa.dominios;
 
 const fallos = [...mapa.fallos];
 
@@ -201,7 +201,7 @@ const CABECERA = (extra) => `// ================================================
 const bloqueTabla = (nombre) => {
   const t = tablas.get(nombre);
   const dom = asignadas.get(nombre);
-  const color = dom ? temas[dom]?.color : null;
+  const color = dom ? dominios[dom]?.color : null;
   const attr = color ? ` [headercolor: ${color}]` : '';
   return `Table "${nombre}"${attr} {\n${t.cuerpo.replace(/\s*$/, '')}\n}\n`;
 };
@@ -210,7 +210,7 @@ const bloqueTabla = (nombre) => {
 // Va ANTES de construir el consolidado: `bloqueTabla` necesita saber a qué dominio pertenece
 // cada tabla para pintarle su color. Al revés el consolidado salía sin colorear, en silencio.
 const asignadas = new Map();
-for (const [clave, dom] of Object.entries(temas)) {
+for (const [clave, dom] of Object.entries(dominios)) {
   if (clave.startsWith('_')) continue;
   for (const t of dom.tablas) {
     if (asignadas.has(t)) fallos.push(`La tabla '${t}' está en dos dominios: '${asignadas.get(t)}' y '${clave}'`);
@@ -249,7 +249,7 @@ if (existsSync(domDir)) rmSync(domDir, { recursive: true });
 mkdirSync(domDir, { recursive: true });
 
 const resumen = [];
-for (const [clave, dom] of Object.entries(temas)) {
+for (const [clave, dom] of Object.entries(dominios)) {
   if (clave.startsWith('_')) continue;
   const suyas = new Set(dom.tablas);
   const internos = refs.filter(r => suyas.has(r.origen) && suyas.has(r.destino));

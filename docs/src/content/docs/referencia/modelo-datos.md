@@ -117,12 +117,12 @@ desglosado. **<!-- gen:tablas-dominio:empleo -->8<!-- /gen --> tablas.**
 
 [Abrir a tamaño real](/diagramas/empleo.svg)
 
-## Las ocho capas: qué puede depender de qué
+## Los ocho niveles: qué puede depender de qué
 
-Los ocho dominios agrupan por **tema**, para que un diagrama se pueda leer. No dicen **qué rompe
-qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **capa**, de 0 abajo a 7 arriba:
+Los ocho dominios agrupan por **dominio**, para que un diagrama se pueda leer. No dicen **qué rompe
+qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **nivel**, de 0 abajo a 7 arriba:
 
-| Capa | Qué vive aquí |
+| Nivel | Qué vive aquí |
 |---|---|
 | **0 · catálogos y territorio** | Lo que no cambia y de lo que depende todo el mundo: la cadena país → provincia → cantón → parroquia, la institución y las listas cerradas |
 | **1 · identidad** | La persona y lo que es suyo: documento, domicilio, teléfonos, correos, expediente |
@@ -133,26 +133,26 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **capa**
 | **6 · flujos** | Entrega y firma, con su rastro |
 | **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
 
-**La regla es una sola: una clave ajena puede apuntar a su propia capa o a una inferior, nunca a una
-superior.** Medido sobre las <!-- gen:total-relaciones -->179<!-- /gen --> relaciones del esquema: 103 bajan de capa, 79 se quedan
+**La regla es una sola: una clave ajena puede apuntar a su propio nivel o a uno inferior, nunca a una
+superior.** Medido sobre las <!-- gen:total-relaciones -->179<!-- /gen --> relaciones del esquema: 102 bajan de nivel, 77 se quedan
 en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
-Dos cosas que las capas enseñan y que ningún diagrama por dominio decía:
+Dos cosas que los niveles enseñan y que ningún diagrama por dominio decía:
 
 **El acceso va ENCIMA de la organización, no al lado.** Un rol se asigna *dentro de* una unidad
 (`role_assignments.unit_id`, `role_assignments.derived_from_assignment_id`). Así que quien cambia el
 organigrama puede romper los permisos de alguien; al contrario no pasa nunca.
 
 **El dominio de identidad son en realidad tres cosas apiladas.** Sus 34 tablas se reparten entre la
-capa 0 (los catálogos: género, estado civil, parentesco…), la 1 (la persona) y la 3 (el acceso). Por
-eso era el diagrama más difícil de leer: no es un tema, son tres.
+nivel 0 (los catálogos: género, estado civil, parentesco…), la 1 (la persona) y la 3 (el acceso). Por
+eso era el diagrama más difícil de leer: no es un dominio, son tres.
 
-El reparto completo —qué tabla está en qué módulo y en qué capa— vive en `scripts/docs/dominios.json`,
+El reparto completo —qué tabla está en qué módulo y en qué nivel— vive en `scripts/docs/dominios.json`,
 que es la **fuente única**: de ahí salen los diagramas, estas cifras y las comprobaciones.
 
-## El tema no es una etiqueta: es una carpeta dentro de la base
+## El dominio no es una etiqueta: es una carpeta dentro de la base
 
-Desde el **2026-10-04**, cada tabla vive en un **esquema de PostgreSQL** con el nombre de su tema. Un
+Desde el **2026-10-04**, cada tabla vive en un **esquema de PostgreSQL** con el nombre de su dominio. Un
 esquema es, literalmente, una carpeta dentro de la base de datos:
 
 | | |
@@ -162,16 +162,16 @@ esquema es, literalmente, una carpeta dentro de la base de datos:
 | `firmas.signature_requests` | las peticiones de firma |
 | `plantillas.template_artifacts` | las ediciones de una plantilla |
 
-Son ocho —uno por tema— y en `public` no queda ninguna tabla: solo las doce funciones que usan los
+Son ocho —uno por dominio— y en `public` no queda ninguna tabla: solo las doce funciones que usan los
 disparadores.
 
 **Y las consultas del sistema no cambiaron.** Las 555 siguen escribiendo `signature_requests` sin
-decir de qué tema es, porque la conexión declara los ocho esquemas y PostgreSQL resuelve el nombre
+decir de qué dominio es, porque la conexión declara los ocho esquemas y PostgreSQL resuelve el nombre
 igual que antes. Lo que se gana es otra cosa:
 
-- una consulta **puede** decir de qué tema es, cuando eso ayude a leerla;
-- `pg_dump -n firmas` saca **un tema entero**, para inspeccionarlo o copiarlo aparte;
-- y, lo que más vale: **el tema de una tabla dejó de ser una afirmación en un fichero.** Antes un
+- una consulta **puede** decir de qué dominio es, cuando eso ayude a leerla;
+- `pg_dump -n firmas` saca **un dominio entero**, para inspeccionarlo o copiarlo aparte;
+- y, lo que más vale: **el dominio de una tabla dejó de ser una afirmación en un fichero.** Antes un
   JSON decía «`signature_requests` es de firmas» y había que creérselo. Ahora lo dice la propia base
   de datos, y si alguien crea una tabla en el esquema equivocado, falla una puerta de CI.
 
@@ -198,7 +198,7 @@ Las tablas se agrupan **tres** veces en este sistema y las tres agrupaciones son
 
 | Agrupación | Responde a | Dónde se ve |
 |---|---|---|
-| **módulo y capa** | ¿qué depende de qué? | esta página |
+| **módulo y nivel** | ¿qué depende de qué? | esta página |
 | **recurso de permiso** | ¿quién puede actuar sobre esto? | [Qué puedes hacer](/complemento/permisos/) |
 | **subgrupo del mapa** | ¿cómo se cuenta esto a alguien que no lo conoce? | los dos mapas completos |
 
@@ -206,7 +206,7 @@ Medido: el recurso de permiso y el subgrupo dibujado coinciden con los módulos 
 **27 %**. **No es un descuadre que haya que arreglar**: el recurso `catalogos` junta a propósito las
 listas cerradas de la persona y las del territorio, porque administrarlas es un solo trabajo; y el
 subgrupo «Cómo se te localiza» junta el correo, el teléfono, el canal y la llave de verificación
-—tres capas distintas— porque es una sola frase.
+—tres niveles distintos— porque es una sola frase.
 
 Lo que sí está vigilado es que ninguna de las tres crezca sin que alguien lo decida: cada recurso y
 cada subgrupo **declara los módulos que abarca, con su motivo**, y una tabla que caiga en el recurso
