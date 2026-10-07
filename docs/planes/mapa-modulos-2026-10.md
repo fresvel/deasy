@@ -926,13 +926,40 @@ depende de contenido publicado a mano no es una suite: es una coincidencia.
 **Resultado: 321 de 321 en la pila nueva, sin mover un golden.** Y provocado al revés: sin los textos,
 el paso falla diciendo *«No hay textos legales en …»* en vez de un `ENOENT` que no explica nada.
 
-### Lo que falta para cerrar la subcapa en `chat`
+### La subcapa de lecturas, CERRADA en `chat`
 
-Medido: **28 consultas propias y 6 que cruzan**, y las 6 viven en **dos ficheros que son 100 %
-cruzados** (`ChatUnitDirectoryService`, `ChatAuthorizationService`), así que **ningún fichero hay que
-partirlo**. Pero esos dos son **servicios con reglas** —5 `throw` cada uno—, no consultas puras: pasar
-sus 6 consultas a `datos/consulta/` son **dos extracciones** del mismo tipo que las de F7.2. Se dejó
-sin hacer a propósito: un `datos/consulta/` a medias es peor que no tenerlo.
+**Las dos reglas se cumplen ya en un dominio entero, y las dos son comprobables:**
+
+| | Regla | Cómo se comprueba |
+|---|---|---|
+| **R1** | todo el SQL vive en `datos/` | **0** consultas en `routes/`, `controllers/` y `services/` de chat |
+| **R2** | `datos/` sólo nombra SUS tablas | la comprobación **E**, verde y provocada |
+
+```
+datos/chatStore.js                        28 consultas, TODAS de chat
+datos/consulta/directorioDeUnidades.js     3, de `organizacion`
+datos/consulta/accesoAlHilo.js             3, de `procesos` + `tareas` + `organizacion`
+```
+
+Las 6 salieron de **dos servicios con reglas**, que es lo que hacía que no fuera gratis:
+
+| Fichero | Antes | Después | Consultas |
+|---|---:|---:|---:|
+| `ChatUnitDirectoryService` | 141 | **111** | 3 → **0** |
+| `ChatAuthorizationService` | 230 | **137** | 3 → **0** |
+
+**Y los servicios se quedan con todo lo que decide**: el 400, el 404 de «unidad no encontrada», el 403
+de «no perteneces a esta unidad», el 403 de «no tienes acceso operativo», el 409 de «más de una unidad
+accesible» y el cómputo de los conjuntos de participantes y moderadores. Lo que se fue es el SQL.
+
+El SQL se movió **por rangos de línea, verbatim**, incluida la historia de sus comentarios — entre
+ellos el párrafo de **18 líneas** que explica por qué el guard del IDOR de entregables **no** va en la
+consulta del hilo, con sus tres motivos medidos. Ese párrafo **viaja con la consulta que explica**, no
+se queda huérfano en el servicio.
+
+**El veredicto de la subcapa, con el dominio hecho:** el coste real fue **dos extracciones** y el
+resultado es **una regla de lectura que una puerta puede comprobar**, que es justo lo que la propuesta
+sin subcapa no podía tener. En los otros siete dominios el reparto se decide igual: con su número.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 

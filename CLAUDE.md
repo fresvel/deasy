@@ -670,6 +670,45 @@ estados y cualquier bucle de trabajo viven en `backend/services/`.
 responsabilidad**, y se lee de una sentada. Los infractores conocidos están listados en `docs/planes/referencia/calidad-y-medicion.md` §5-D; no añadas
 más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extrae un servicio.
 
+### El código por dominios — la forma, probada en `chat`
+
+Desde el **2026-10-07** hay un dominio entero movido, `backend/dominios/chat/`, y su forma es el
+contrato para los siete que faltan:
+
+```
+dominios/<dominio>/
+    index.js            la PUERTA: lo único que se importa de fuera
+    routes/             la superficie HTTP
+    controllers/        sólo traduce HTTP: sin pool, sin SQL, sin reglas
+    services/           reglas y transacciones; sin req/res
+    datos/              el SQL del dominio — SÓLO sus tablas
+    datos/consulta/     el SQL que CRUZA a otros dominios
+```
+
+**Dos reglas, y las dos tienen puerta:**
+
+| | Regla | Quién la comprueba |
+|---|---|---|
+| **escribir** | una tabla la escribe **sólo** el `datos/` de su dominio dueño | comprobación **C** |
+| **leer** | libre hacia otros dominios, **pero separado** en `datos/consulta/` | comprobación **E** |
+
+**Por qué la asimetría, medido:** el **3 %** de las escrituras del backend cruza dominios; el **29 %**
+de las lecturas. Prohibir que una lectura cruce sería absurdo —`units` se relaciona con los ocho
+dominios—, y dejarla mezclada con el `datos/` propio hace que **nada distinga una lectura legítima de
+un error**. Separarla da las dos cosas.
+
+⚠️ **LA PUERTA DEL DOMINIO NO ES GRATIS: convierte cualquier ciclo latente en un fallo de carga.**
+Al mover `chat`, el `index.js` rompió el arranque con `ReferenceError: Cannot access 'realtimeGateway'
+before initialization`. El ciclo `chat ↔ realtime` **ya existía**; lo que hizo el barril fue volverlo
+fatal, porque arrastra **el dominio entero** —routers incluidos— y el controller instanciaba 7
+servicios **al cargar el módulo**. La respuesta no es debilitar la puerta: **un servicio no debe
+depender de otro módulo en tiempo de carga.** Se arregló resolviendo el singleton al usarlo.
+
+⚠️ **Y al mover un dominio, recalcula los imports POR SCRIPT**, resolviendo cada ruta desde la
+posición vieja y reescribiéndola desde la nueva. En `chat` fueron **29 imports en 14 ficheros**: a
+mano es donde se cuela el que nadie prueba. `node --check` y `check:imports` **no** ven una ruta
+relativa rota — eso sólo lo ve el backend al arrancar.
+
 ### La transacción se abre con `conTransaccion`, y NO en un controller
 
 `config/postgres.js` exporta **`conTransaccion(trabajo)`**: abre la conexión, `beginTransaction`, llama
