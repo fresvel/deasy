@@ -1,4 +1,9 @@
 import { getPostgresPool } from "../../../config/postgres.js";
+import {
+  etiquetaDeUnidadActiva,
+  miembrosDeUnidad,
+  unidadesDeLaPersona,
+} from "../datos/consulta/directorioDeUnidades.js";
 
 const normalizeNumericId = (value) => {
   const number = Number(value);
@@ -39,27 +44,7 @@ export default class ChatUnitDirectoryService {
       throw error;
     }
 
-    const [rows] = await this.pool.query(
-      `SELECT
-         u.id AS unit_id,
-         COALESCE(u.label, u.name) AS unit_label,
-         (
-           SELECT COUNT(DISTINCT pa2.person_id)
-           FROM position_assignments pa2
-           INNER JOIN unit_positions up2 ON up2.id = pa2.position_id
-           WHERE up2.unit_id = u.id
-             AND pa2.is_current = 1
-         ) AS member_count
-       FROM position_assignments pa
-       INNER JOIN unit_positions up ON up.id = pa.position_id
-       INNER JOIN units u ON u.id = up.unit_id
-       WHERE pa.person_id = ?
-         AND pa.is_current = 1
-         AND u.is_active = 1
-       GROUP BY u.id, unit_label
-       ORDER BY unit_label`,
-      [normalizedPersonId]
-    );
+    const rows = await unidadesDeLaPersona(this.pool, normalizedPersonId);
 
     return rows
       .map((row) => {
@@ -86,32 +71,17 @@ export default class ChatUnitDirectoryService {
       throw error;
     }
 
-    const [unitRows] = await this.pool.query(
-      `SELECT COALESCE(u.label, u.name) AS unit_label
-       FROM units u
-       WHERE u.id = ?
-         AND u.is_active = 1
-       LIMIT 1`,
-      [normalizedUnitId]
-    );
+    const etiqueta = await etiquetaDeUnidadActiva(this.pool, normalizedUnitId);
 
-    if (!unitRows.length) {
+    if (!etiqueta) {
       const error = new Error("Unidad no encontrada o inactiva.");
       error.status = 404;
       throw error;
     }
 
-    const unitLabel = unitRows[0].unit_label || `Unidad #${normalizedUnitId}`;
+    const unitLabel = etiqueta;
 
-    const [memberRows] = await this.pool.query(
-      `SELECT pa.person_id, MAX(up.is_unit_head) AS is_unit_head
-       FROM position_assignments pa
-       INNER JOIN unit_positions up ON up.id = pa.position_id
-       WHERE up.unit_id = ?
-         AND pa.is_current = 1
-       GROUP BY pa.person_id`,
-      [normalizedUnitId]
-    );
+    const memberRows = await miembrosDeUnidad(this.pool, normalizedUnitId);
 
     const participantIds = [];
     const adminIds = [];
