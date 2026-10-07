@@ -5,8 +5,8 @@ import {
   getMinioObjectStream,
   statMinioObject,
   uploadFileToMinio,
-} from "../storage/minio_service.js";
-import * as store from "./chatStore.js";
+} from "../../../services/storage/minio_service.js";
+import * as store from "../datos/chatStore.js";
 import { logChatInfo } from "./chat_logging.js";
 
 const MINIO_CHAT_BUCKET = process.env.MINIO_CHAT_BUCKET || "deasy-chat";

@@ -5,7 +5,7 @@
 // IDs: se exponen como STRING (String(n)) para preservar el contrato "id opaco"
 // que tenía Mongo (ObjectId.toString()); el front los trata como opacos.
 
-import { getPostgresPool } from "../../config/postgres.js";
+import { getPostgresPool } from "../../../config/postgres.js";
 
 const pool = () => getPostgresPool();
 

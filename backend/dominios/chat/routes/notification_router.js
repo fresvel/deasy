@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { authMiddleware } from "../middlewares/auth.js";
-import { listNotifications, markNotificationsRead } from "../controllers/chat/chat_controller.js";
+import { authMiddleware } from "../../../middlewares/auth.js";
+import { listNotifications, markNotificationsRead } from "../controllers/chat_controller.js";
 
 const router = new Router();
 

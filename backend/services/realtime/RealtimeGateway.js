@@ -2,9 +2,12 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { getAccessTokenSecret } from "../../utils/login/generate_token.js";
 import UserRepository from "../auth/UserRepository.js";
-import ChatConversationService from "../chat/ChatConversationService.js";
-import ChatAuthorizationService from "../chat/ChatAuthorizationService.js";
-import { logChatInfo, logChatError } from "../chat/chat_logging.js";
+import {
+  ChatAuthorizationService,
+  ChatConversationService,
+  logChatError,
+  logChatInfo,
+} from "../../dominios/chat/index.js";
 
 const userRoom = (personId) => `user:${personId}`;
 const conversationRoom = (conversationId) => `conversation:${conversationId}`;

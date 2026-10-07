@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import os from "node:os";
-import { authMiddleware } from "../middlewares/auth.js";
+import { authMiddleware } from "../../../middlewares/auth.js";
 import {
   createConversation,
   createConversationMessage,
@@ -18,7 +18,7 @@ import {
   markConversationRead,
   markNotificationsRead,
   uploadConversationAttachments
-} from "../controllers/chat/chat_controller.js";
+} from "../controllers/chat_controller.js";
 
 const router = new Router();
 const uploadChatAttachment = multer({

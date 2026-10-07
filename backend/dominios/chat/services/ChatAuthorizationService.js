@@ -2,8 +2,8 @@ import {
   ACCESS_LEVELS,
   accessSubqueryCorrelated,
   listProcessParticipants,
-} from "../documents/DeliverableAccessService.js";
-import { getPostgresPool } from "../../config/postgres.js";
+} from "../../../services/documents/DeliverableAccessService.js";
+import { getPostgresPool } from "../../../config/postgres.js";
 
 const normalizeNumericId = (value) => {
   const number = Number(value);

@@ -1,14 +1,14 @@
 import path from "node:path";
 import fs from "fs-extra";
-import ChatConversationService from "../../services/chat/ChatConversationService.js";
-import ChatAuthorizationService from "../../services/chat/ChatAuthorizationService.js";
-import ChatAttachmentService from "../../services/chat/ChatAttachmentService.js";
-import ChatIdentityService from "../../services/chat/ChatIdentityService.js";
-import ChatMessageService from "../../services/chat/ChatMessageService.js";
-import ChatNotificationService from "../../services/chat/ChatNotificationService.js";
-import ChatRealtimePublisherService from "../../services/chat/ChatRealtimePublisherService.js";
-import ChatUnitDirectoryService from "../../services/chat/ChatUnitDirectoryService.js";
-import { logChatError } from "../../services/chat/chat_logging.js";
+import ChatConversationService from "../services/ChatConversationService.js";
+import ChatAuthorizationService from "../services/ChatAuthorizationService.js";
+import ChatAttachmentService from "../services/ChatAttachmentService.js";
+import ChatIdentityService from "../services/ChatIdentityService.js";
+import ChatMessageService from "../services/ChatMessageService.js";
+import ChatNotificationService from "../services/ChatNotificationService.js";
+import ChatRealtimePublisherService from "../services/ChatRealtimePublisherService.js";
+import ChatUnitDirectoryService from "../services/ChatUnitDirectoryService.js";
+import { logChatError } from "../services/chat_logging.js";
 
 const identityService = new ChatIdentityService();
 const attachmentService = new ChatAttachmentService();

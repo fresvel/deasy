@@ -24,8 +24,7 @@ import program_router from "./routes/program_router.js";
 import unit_router from "./routes/unit_router.js";
 import tarea_router from "./routes/tarea_router.js"
 import dossier_router from "./routes/dossier_router.js"
-import chat_router from "./routes/chat_router.js";
-import notification_router from "./routes/notification_router.js";
+import { chatRouter as chat_router, notificationRouter as notification_router } from "./dominios/chat/index.js";
 import system_router from "./routes/system_router.js";
 import reset_password_router from "./routes/reset_password_router.js";
 import legalRouter from "./routes/legal_router.js";

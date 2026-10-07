@@ -1,4 +1,4 @@
-import realtimeGateway from "../realtime/RealtimeGateway.js";
+import realtimeGateway from "../../../services/realtime/RealtimeGateway.js";
 import { logChatInfo } from "./chat_logging.js";
 
 /**
@@ -11,9 +11,30 @@ import { logChatInfo } from "./chat_logging.js";
  * (controllers/chat/chat_controller.js).
  */
 export default class ChatRealtimePublisherService {
-  constructor(gateway = realtimeGateway) {
-    this.gateway = gateway;
+  // ⚠️ LA PASARELA SE RESUELVE AL USARLA, NO AL CONSTRUIR, y no es un detalle de estilo.
+  //
+  // Antes el parametro por defecto era `gateway = realtimeGateway`, y como `chat_controller` hace
+  // `new ChatRealtimePublisherService()` AL CARGAR EL MODULO, esa referencia se leia durante la carga.
+  // Mientras `services/realtime/RealtimeGateway.js` importaba tres ficheros de chat directamente
+  // funcionaba por casualidad: el controller no entraba en su cadena de inicializacion. Al pasar los
+  // imports por `dominios/chat/index.js` (F7.4, 2026-10-07) el barril arrastra tambien los routers, y
+  // con ellos el controller, asi que la pasarela se leia a medio inicializar:
+  //
+  //     ReferenceError: Cannot access 'realtimeGateway' before initialization
+  //
+  // El ciclo chat <-> realtime ya existia --es uno de los cinco pares mutuos medidos el 2026-10-04--;
+  // lo que hizo el barril fue volverlo FATAL. La respuesta no es debilitar la puerta del dominio: es
+  // que un servicio no dependa de otro modulo EN TIEMPO DE CARGA. `this.gateway` solo se usa dentro de
+  // los metodos, asi que resolverlo ahi es equivalente y quita el acoplamiento de orden.
+  constructor(gateway = null) {
+    this.gatewayInyectada = gateway;
     this.enabled = String(process.env.CHAT_REALTIME_ENABLED || "true").trim().toLowerCase() !== "false";
+  }
+
+  // Sigue admitiendo inyeccion —es como se prueba— pero si no se inyecta nada, se resuelve el
+  // singleton la primera vez que hace falta.
+  get gateway() {
+    return this.gatewayInyectada ?? realtimeGateway;
   }
 
   async publishMessageCreated(payload) {

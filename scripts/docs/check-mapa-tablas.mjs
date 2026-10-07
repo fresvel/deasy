@@ -20,7 +20,7 @@
 // cada uno con su motivo en `_deuda_escritura`. Falla con cualquiera NUEVO; cerrar los declarados
 // se hace quitándolos de la lista, nunca ampliándola para callarla.
 
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, relative, sep, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { leerMapa, tablasDelEsquema, clavesAjenas, RUTA_MAPA } from "./lib/mapa.mjs";
@@ -165,6 +165,46 @@ for (const [ruta, decl] of Object.entries(flujos)) {
     if (!escritos.has(d)) avisos.push(`D · el flujo '${ruta}' declara '${d}' y ya no escribe ninguna de sus tablas: quítalo`);
   }
   if (escritos.size <= 1) avisos.push(`D · '${ruta}' ya sólo escribe un dominio: deja de ser un flujo y se mueve a él`);
+}
+
+// ── E · El `datos/` de un dominio sólo nombra SUS tablas ──────────────────────────────────────
+// La mitad limpia del acceso a datos, y es la única regla de esta puerta que se puede comprobar sobre
+// las LECTURAS. Medido el 2026-10-07: el 29 % de las consultas del backend cruza dominios, así que
+// prohibirlo sería absurdo — pero se puede exigir que lo que cruza esté SEPARADO:
+//
+//     dominios/<d>/datos/            SOLO tablas de <d>        <- esto comprueba E
+//     dominios/<d>/datos/consulta/   lo que necesite           <- exento, es su contrato
+//
+// Sin esa separación `datos/` podría nombrar cualquier tabla y nada distinguiría una lectura legítima
+// que cruza de un error. Con ella, la mitad propia queda vigilada.
+{
+  const RAIZ_DOM = join(RAIZ, "backend", "dominios");
+  if (existsSync(RAIZ_DOM)) {
+    for (const dominio of readdirSync(RAIZ_DOM, { withFileTypes: true })) {
+      if (!dominio.isDirectory()) continue;
+      if (!Object.hasOwn(mapa.dominios, dominio.name)) {
+        fallos.push(`E · 'backend/dominios/${dominio.name}' no es un dominio del mapa`);
+        continue;
+      }
+      const carpetaDatos = join(RAIZ_DOM, dominio.name, "datos");
+      if (!existsSync(carpetaDatos)) continue;
+      for (const p of ficheros(carpetaDatos)) {
+        const rel = relative(join(RAIZ, "backend"), p).split(sep).join("/");
+        if (rel.includes("/datos/consulta/")) continue;   // su contrato ES cruzar
+        const cuerpo = readFileSync(p, "utf8").replace(/--[^\n]*/g, " ");
+        for (const tabla of tablas) {
+          if (!new RegExp(`\\b${tabla}\\b`).test(cuerpo)) continue;
+          const duena = mapa.dominioDe.get(tabla);
+          if (duena !== dominio.name) {
+            fallos.push(
+              `E · '${rel}' nombra '${tabla}', que es de '${duena}'. El \`datos/\` de un dominio sólo ` +
+                `nombra SUS tablas; lo que cruza va a '${dominio.name}/datos/consulta/'`
+            );
+          }
+        }
+      }
+    }
+  }
 }
 
 // ── A-bis · Los esquemas de la base son los dominios ──────────────────────────────────────────────

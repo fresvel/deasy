@@ -1,4 +1,4 @@
-import * as store from "./chatStore.js";
+import * as store from "../datos/chatStore.js";
 import { logChatInfo } from "./chat_logging.js";
 
 export default class ChatMessageService {

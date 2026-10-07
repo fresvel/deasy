@@ -1,4 +1,4 @@
-import { getPostgresPool } from "../../config/postgres.js";
+import { getPostgresPool } from "../../../config/postgres.js";
 
 const normalizeNumericId = (value) => {
   const number = Number(value);
