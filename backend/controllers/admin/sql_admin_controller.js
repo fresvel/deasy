@@ -8,6 +8,10 @@ import { tablasLegibles } from "../../services/admin/tablasLegibles.js";
 import { parseAvailableFormats } from "../../services/admin/templates/artifacts.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import {
+  findGeneradorDeDocumentoById,
+  findTemplateArtifactById,
+} from "../../services/admin/templates/artifactLookup.js";
+import {
   TEMPLATES_BUCKET,
   collectFormatResources,
   collectPrefixResources,
@@ -95,13 +99,7 @@ export const downloadTemplateArtifactArchive = async (req, res) => {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   try {
-    const [rows] = await pool.query(
-      `SELECT ta.id, d.code AS template_code, d.display_name, ta.available_formats
-         FROM template_artifacts ta LEFT JOIN deliverables d ON d.id = ta.deliverable_id
-        WHERE ta.id = ? LIMIT 1`,
-      [id]
-    );
-    const artifact = rows?.[0];
+    const artifact = await findTemplateArtifactById(pool, id);
     if (!artifact) {
       return res.status(404).json({ message: "No se encontro el paquete de plantilla." });
     }
@@ -135,11 +133,7 @@ export const downloadTemplateSeedArchive = async (req, res) => {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   try {
-    const [rows] = await pool.query(
-      "SELECT id, code, nombre, source_path FROM generadores_de_documento WHERE id = ? LIMIT 1",
-      [id]
-    );
-    const seed = rows?.[0];
+    const seed = await findGeneradorDeDocumentoById(pool, id);
     if (!seed) {
       return res.status(404).json({ message: "No se encontro el seed." });
     }
@@ -175,13 +169,7 @@ export const downloadTemplateArtifactSource = async (req, res) => {
     return res.status(500).json({ message: "Conexion PostgreSQL no disponible" });
   }
   try {
-    const [rows] = await pool.query(
-      `SELECT ta.id, d.code AS template_code, ta.available_formats
-         FROM template_artifacts ta LEFT JOIN deliverables d ON d.id = ta.deliverable_id
-        WHERE ta.id = ? LIMIT 1`,
-      [id]
-    );
-    const artifact = rows?.[0];
+    const artifact = await findTemplateArtifactById(pool, id);
     if (!artifact) {
       return res.status(404).json({ message: "No se encontro el paquete de plantilla." });
     }

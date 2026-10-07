@@ -25,7 +25,13 @@ import { fileURLToPath } from "node:url";
 
 const AQUI = path.dirname(fileURLToPath(import.meta.url));
 const BACKEND_ROOT = path.resolve(AQUI, "..");
-const IGNORAR = new Set(["node_modules", "coverage", ".git", "public", "templates"]);
+// ⚠️ `templates` SE EXCLUYE SÓLO EN LA RAÍZ DE `backend/`, y el matiz costó 73 consultas: la lista
+// se comparaba con el NOMBRE de cada carpeta a cualquier profundidad, así que también se saltaba
+// `services/admin/templates/` --`templateLifecycle.js` (45 consultas), `flowRows.js` (16),
+// `templateArtifact.js` (10)--. Una puerta obligatoria, a techo cero, ciega al fichero más grande del
+// repositorio. Se descubrió el 2026-10-07 al mover una consulta ahí y ver que el contador no subía.
+const IGNORAR_RAIZ = new Set(["node_modules", "coverage", ".git", "public", "templates"]);
+const IGNORAR = new Set(["node_modules", "coverage", ".git"]);
 
 // Pseudo-tablas y esquemas que se cualifican sin declararse en ningún FROM.
 const CALIFICADORES_LIBRES = new Set([
@@ -40,12 +46,12 @@ const NO_SON_ALIAS = new Set([
   "union", "intersect", "except", "returning", "for", "window", "fetch", "into", "select",
 ]);
 
-const listar = (dir) => {
+const listar = (dir, raiz = true) => {
   const salida = [];
   for (const entrada of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (IGNORAR.has(entrada.name)) continue;
+    if (raiz ? IGNORAR_RAIZ.has(entrada.name) : IGNORAR.has(entrada.name)) continue;
     const ruta = path.join(dir, entrada.name);
-    if (entrada.isDirectory()) salida.push(...listar(ruta));
+    if (entrada.isDirectory()) salida.push(...listar(ruta, false));
     else if (/\.(js|mjs)$/.test(entrada.name)) salida.push(ruta);
   }
   return salida;
