@@ -6,7 +6,7 @@
 Y la respuesta medida fue incómoda: **no es que falte documentación, es que había cuatro y son
 incompatibles.**
 
-## Estado general — **17 de 25**
+## Estado general — **17 de 24**
 
 | Fase | Tareas | Estado |
 |---|---|---|
@@ -16,7 +16,7 @@ incompatibles.**
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ⬜ · F5.3 ⬜ · F5.4 ⬜ · F5.5 ✅ · F5.6 ⬜ | 🟡 **2 de 6** |
 | **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
-| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⬜ · F7.4 ⬜ · F7.5 ⬜ | 🟡 **2 de 6** |
+| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⛔ · F7.4 ⬜ · F7.5 ⬜ | 🟡 **2 de 5** |
 
 ## F6 · El dominio, dentro de la base — 4 de 5
 
@@ -247,7 +247,7 @@ realidad— y lo cometí en una sesión dedicada a eso.
 
 **Lo medido sigue siendo válido; lo que cambia es la conclusión.** Pasa a ser la fase **F7**.
 
-## F7 · Reordenar el backend por dominios — 1 de 6
+## F7 · Reordenar el backend por dominios — 2 de 5
 
 **Reescrita el 2026-10-06** tras evaluar una propuesta externa de reestructuración. La versión
 anterior de esta fase decía «mover `firmas` de punta a punta, sus 31 ficheros a un sitio» y **no era
@@ -487,8 +487,8 @@ escritores ajenos son pocos y son **los mismos**:
 ⚠️ **Y eso invierte el orden que esta fase traía.** Decía «`identidad` el último: es el peor, 62
 ficheros en 19 carpetas». Por número de ficheros lo es; por **lo que cuesta montar su `datos/`** es de
 los más fáciles: **2 escritores ajenos, y los dos ya están declarados**. Los difíciles son `tareas` y
-`plantillas`, con 7 — y sus escritores ajenos son, casi todos, **los mismos ficheros que F7.1, F7.2 y
-F7.3 ya tocan**. Hechas esas tres, los ocho `datos/` se montan casi solos.
+`plantillas`, con 7 — y sus escritores ajenos son, casi todos, **los mismos ficheros que F7.1 y F7.2
+ya tocaron**. Hechas esas dos, los ocho `datos/` se montan casi solos.
 
 ### Quién abre la transacción — la pieza que faltaba
 
@@ -641,9 +641,9 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`dominio` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
-| **F7.3** | **Partir los 6 sin dominio dominante**, de menor a mayor: `tareas_controler.js` (109) → `generation/queries.js` (420) → `taskAssignment.js` (633) → `UserMenuService.js` (635) → `user_controler.queries.js` (956) → `user_controler.js` (1.695) | ⬜ |
+| **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
 | **F7.4** | **Los cuatro que ya no tienen escritores ajenos**, que son casi gratis: `chat` (0), `empleo` (0 — carpeta **reservada vacía**, decidido el 2026-10-07), `organizacion` (2) e `identidad` (2 — los cuatro escritores son el bootstrap, ya declarado) | ⬜ |
-| **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1–F7.3 ya tocaron | ⬜ |
+| **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1 y F7.2 ya tocaron | ⬜ |
 
 ### F7.1 ✅ — declarado, y lo que destapó
 
@@ -802,6 +802,62 @@ ejecutor — 33 usos, 23 de ellos en `user_controler.js`. La regla de la estruct
 función llamada resuelva el pool por su cuenta cuando no se le dé uno —como ya hace
 `listDocumentObservations`—, y eso son 33 firmas: **es otra tarea, con su propio riesgo, y no se mete
 de tapadillo en ésta.**
+
+### F7.3 ⛔ — descartada, y por qué el criterio no se sostenía
+
+Se midió el **2026-10-07** antes de partir nada, y el resultado fue que **no hay nada que partir**.
+
+**1 · La lista había cambiado sola, y de forma reveladora.** Decía 6 ficheros y 4.448 líneas. Al
+remedirla tras F7.2 son **5 y 2.975**, y lo que entra y sale cuenta la historia:
+
+| | |
+|---|---|
+| **Salieron** | `controllers/users/user_controler.js` y `controllers/tareas/tareas_controler.js` — ya no tienen una sola consulta |
+| **Entraron** | `services/users/UserWorkspaceRepository.js` (1.141 líneas) y `services/tasks/taskQueries.js` — **dos módulos que creó F7.2** |
+
+⚠️ **Dicho sin adornos: F7.2 no eliminó la mezcla de dominios, la MOVIÓ.** La sacó de los controllers
+—que es la parte que importaba, porque allí era una fuga de capa— y la concentró en dos repositorios
+de lectura. Eso es progreso en la capa, no en la mezcla.
+
+**2 · Pero la mezcla de un módulo de LECTURA no es una infracción**, y eso lo decidió la auditoría de
+esta misma fase, no esta tarea: *escribir, sólo el `datos/` del dominio dueño; **leer** con JOIN hacia
+dominios de nivel inferior o igual, **libre***. Medido en los cinco:
+
+| Fichero | Lee de | Escribe en |
+|---|---:|---|
+| `services/tasks/taskQueries.js` | 5 dominios | **nada** |
+| `services/admin/generation/queries.js` | 4 | **nada** |
+| `services/users/UserMenuService.js` | 6 | **nada** |
+| `services/users/UserWorkspaceRepository.js` | 6 | **nada** |
+| `services/admin/org/taskAssignment.js` | 4 | `tareas`, **uno solo** |
+
+**Cuatro de los cinco no escriben nada. El quinto escribe un dominio.** Ninguno infringe la regla, y
+partir un módulo de lectura por dominio **esparciría la respuesta a una pregunta**: el espacio de
+trabajo de una persona cruza seis dominios porque la pregunta los cruza.
+
+**3 · Y el problema que F7.3 existía para resolver no existe.** Su premisa era de colocación: *«no
+caben en un dominio, hay que partirlos antes de poder colocarlos»*. Con la regla corregida cada uno
+tiene destino, y es el dominio **que pregunta**:
+
+| Fichero | Va a | Por qué |
+|---|---|---|
+| `UserWorkspaceRepository.js` | `identidad/personas/datos/` | pregunta por el espacio de trabajo de **una persona** |
+| `UserMenuService.js` | `identidad/personas/datos/` | el menú **de una persona** |
+| `taskQueries.js` | `tareas/datos/` | lecturas de tareas y entregables |
+| `generation/queries.js` | `tareas/datos/` | las búsquedas del lanzamiento |
+| `taskAssignment.js` | `tareas/` | **escribe** `tareas`, y la escritura manda sobre la lectura |
+
+**4 · Lo que sí queda, y no es de este frente.** `UserWorkspaceRepository.js` tiene **1.141 líneas**.
+No es un problema de dominios —es una lista plana de funciones de consulta, sin ramas— sino de tamaño,
+y el tamaño tiene su documento: [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md).
+Lo que sí hay que saber de él es que, al leer de seis dominios, **un cambio en cualquiera de los seis
+esquemas puede obligar a tocarlo**: es el precio de una lectura que cruza, y se paga a sabiendas.
+
+⚠️ **Es la segunda tarea de este frente que muere midiendo**, después de `F6.5`. Y las dos por el
+mismo motivo: el criterio que las justificaba no resistió su propia comprobación. Aquí, además, el
+criterio lo había invalidado **la auditoría de la propia fase** cuatro commits antes — contar
+referencias a tablas para decidir un corte era exactamente lo que esa auditoría había corregido, y la
+tarea seguía escrita con el criterio viejo.
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
