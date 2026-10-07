@@ -1106,3 +1106,35 @@ export const findRoutedItemsReceivedBy = async (ejecutor, personId) => {
   );
   return rows || [];
 };
+
+// EL ARTEFACTO DE PLANTILLA de un entregable, si esta persona participa en él.
+// Movida desde `user_controler.js` (F7.2, 2026-10-07).
+//
+// ⚠️ El predicado de participación es `accessSubqueryForTaskItem()`, el MISMO que usa el guard, y no
+// una copia: la cuarta copia laxa vivió aquí hasta el 2026-08-22 con un comentario que ya admitía
+// serlo. Tres parámetros donde había ocho: el id del entregable viaja dos veces —el WHERE y el ancla
+// de la subconsulta— y la persona una sola vez.
+export const findDeliverableTemplateForUser = async (ejecutor, { taskItemId, definitionId, personId }) => {
+  const [rows] = await ejecutor.query(
+    `SELECT
+       ti.id AS task_item_id,
+       tar.generador_id,
+       tar_dl.display_name AS template_artifact_name,
+       tar.available_formats
+     FROM task_items ti
+     INNER JOIN tasks t ON t.id = ti.task_id
+     INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+     INNER JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
+     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     WHERE ti.id = ?
+       AND t.process_definition_id = ?
+       AND EXISTS (
+         SELECT 1
+         FROM (${accessSubqueryForTaskItem()}) participantes
+         WHERE participantes.person_id = ?
+       )
+     LIMIT 1`,
+    [taskItemId, definitionId, taskItemId, personId]
+  );
+  return rows?.[0] ?? null;
+};

@@ -20,8 +20,12 @@ import {
   findRecipients,
   findRoutedItemsCreatedBy,
   findRoutedItemsReceivedBy,
+  findDeliverableTemplateForUser,
 } from "../../services/users/UserWorkspaceRepository.js";
-import { getProcessDefinitionIdForTask } from "../../services/tasks/taskQueries.js";
+import {
+  getProcessDefinitionIdForTask,
+  listTenureHistoryForTaskItem,
+} from "../../services/tasks/taskQueries.js";
 import {
   launchProcessDefinitionInTerm
 } from "../../services/admin/TaskGenerationService.js";
@@ -793,34 +797,11 @@ export const downloadDeliverableTemplate = async (req, res) => {
   }
 
   try {
-    const [rows] = await pool.query(
-      `SELECT
-         ti.id AS task_item_id,
-         tar.generador_id,
-         tar_dl.display_name AS template_artifact_name,
-         tar.available_formats
-       FROM task_items ti
-       INNER JOIN tasks t ON t.id = ti.task_id
-       INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-       INNER JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
-       WHERE ti.id = ?
-         AND t.process_definition_id = ?
-         -- La CUARTA copia del predicado de participacion vivio aqui hasta el 2026-08-22, con
-         -- un comentario que ya admitia ser un duplicado «para que no quede una copia laxa que
-         -- alguien reutilice como referencia». La forma correcta de que no quede una copia laxa
-         -- es que no quede ninguna copia: ahora es la misma subconsulta que usa el guard.
-         AND EXISTS (
-           SELECT 1
-           FROM (${accessSubqueryForTaskItem()}) participantes
-           WHERE participantes.person_id = ?
-         )
-       LIMIT 1`,
-      // Tres parametros donde habia ocho: el id del entregable viaja dos veces (el WHERE y el
-      // ancla de la subconsulta) y la persona una sola vez.
-      [taskItemId, definitionId, taskItemId, authenticatedUserId]
-    );
-    const target = rows?.[0];
+    const target = await findDeliverableTemplateForUser(pool, {
+      taskItemId,
+      definitionId,
+      personId: authenticatedUserId,
+    });
     if (!target) {
       return res.status(404).json({ message: "No se encontró el entregable solicitado." });
     }
@@ -1132,31 +1113,7 @@ export const listDeliverableHandovers = async (req, res) => {
     if (!target?.task_item_id) {
       return res.status(404).json({ message: "No se encontró el entregable." });
     }
-    const [rows] = await pool.query(
-      // Sale de `task_item_tenures` (periodos) con forma de EVENTOS (`from`/`to`), que es la que el
-      // frontend pinta: el «de quien» es el ocupante de la tenencia anterior, o sea un `LAG`.
-      // Ahora incluye tambien la tenencia `original` del reparto inicial, que el asiento viejo no
-      // registraba — el historial empezaba en el segundo responsable.
-      `SELECT te.id,
-              te.from_person_id,
-              te.person_id AS to_person_id,
-              te.reason,
-              te.opened_by AS trigger_kind,
-              te.started_at AS created_at,
-              CONCAT(fp.first_name, ' ', fp.last_name) AS from_person_name,
-              CONCAT(tp.first_name, ' ', tp.last_name) AS to_person_name
-         FROM (
-           SELECT t.id, t.task_item_id, t.person_id, t.reason, t.opened_by, t.started_at,
-                  LAG(t.person_id) OVER (PARTITION BY t.task_item_id ORDER BY t.started_at, t.id)
-                    AS from_person_id
-             FROM task_item_tenures t
-            WHERE t.task_item_id = ?
-         ) te
-         LEFT JOIN persons fp ON fp.id = te.from_person_id
-         LEFT JOIN persons tp ON tp.id = te.person_id
-        ORDER BY te.id DESC`,
-      [Number(target.task_item_id)]
-    );
+    const rows = await listTenureHistoryForTaskItem(pool, target.task_item_id);
     // `performed_by_person_id` NO se expone: a un responsable le importa el qué y el porqué, no qué
     // administrador lo ejecutó. Sigue en la tabla para la consulta forense.
     return res.json(rows);

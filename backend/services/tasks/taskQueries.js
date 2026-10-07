@@ -108,3 +108,38 @@ export const getProcessDefinitionIdForTask = async (ejecutor, taskId) => {
   );
   return rows?.[0]?.process_definition_id ? Number(rows[0].process_definition_id) : null;
 };
+
+// EL HISTORIAL DE RELEVOS de un entregable, con forma de EVENTOS.
+// Movido desde `user_controler.js` (F7.2, 2026-10-07).
+//
+// Sale de `task_item_tenures` (periodos) con forma de eventos (`from`/`to`), que es la que el
+// frontend pinta: el «de quién» es el ocupante de la tenencia anterior, o sea un `LAG`. Incluye la
+// tenencia `original` del reparto inicial, que el asiento viejo no registraba — el historial empezaba
+// en el segundo responsable.
+//
+// `performed_by_person_id` NO se proyecta: a un responsable le importa el qué y el porqué, no qué
+// administrador lo ejecutó. Sigue en la tabla para la consulta forense.
+export const listTenureHistoryForTaskItem = async (ejecutor, taskItemId) => {
+  const [rows] = await ejecutor.query(
+    `SELECT te.id,
+            te.from_person_id,
+            te.person_id AS to_person_id,
+            te.reason,
+            te.opened_by AS trigger_kind,
+            te.started_at AS created_at,
+            CONCAT(fp.first_name, ' ', fp.last_name) AS from_person_name,
+            CONCAT(tp.first_name, ' ', tp.last_name) AS to_person_name
+       FROM (
+         SELECT t.id, t.task_item_id, t.person_id, t.reason, t.opened_by, t.started_at,
+                LAG(t.person_id) OVER (PARTITION BY t.task_item_id ORDER BY t.started_at, t.id)
+                  AS from_person_id
+           FROM task_item_tenures t
+          WHERE t.task_item_id = ?
+       ) te
+       LEFT JOIN persons fp ON fp.id = te.from_person_id
+       LEFT JOIN persons tp ON tp.id = te.person_id
+      ORDER BY te.id DESC`,
+    [Number(taskItemId)]
+  );
+  return rows || [];
+};
