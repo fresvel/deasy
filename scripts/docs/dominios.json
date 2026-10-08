@@ -113,20 +113,20 @@
       ],
       "motivo": "Aprobar o devolver una entrega mueve la solicitud y el entregable juntos."
     },
-    "services/documents/DocumentWorkflowResetService.js": {
-      "dominios": [
-        "firmas",
-        "plantillas",
-        "tareas"
-      ],
-      "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto."
-    },
     "services/tasks/GeneralTaskService.js": {
       "dominios": [
         "procesos",
         "tareas"
       ],
       "motivo": "Una tarea libre nace con su periodo: crea la tarea y el término que la enmarca."
+    },
+    "flujos/rehacerDocumento.js": {
+      "dominios": [
+        "firmas",
+        "plantillas",
+        "tareas"
+      ],
+      "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto de F7, y el PRIMERO que vive en `flujos/` con CERO consultas: su SQL esta en el `datos/` de cada dominio."
     }
   },
   "_deuda_escritura": {

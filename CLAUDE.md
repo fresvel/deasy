@@ -55,7 +55,8 @@ Reglas:
   en el repo y añadirlo obliga a mantener un patrón muerto en la config de Sonar y en los globs de
   `test:unit`.
 - Un test unitario nuevo tiene que **caer dentro de los globs de `backend/package.json → test:unit`**
-  (`config/`, `services/**`, `utils/**`, `middlewares/**`, `controllers/**`, `errors/**`). Si lo pones
+  (`config/`, `database/**`, `services/**`, `utils/**`, `middlewares/**`, `controllers/**`,
+  `errors/**`, y desde el piloto de F7 también `dominios/**` y `flujos/**`). Si lo pones
   fuera, no lo ejecuta nadie y no te vas a enterar. Si el módulo vive en otra carpeta, **amplía el glob
   en el mismo commit — y en los DOS sitios**: `test:unit` y `test:unit:coverage` llevan la misma lista
   duplicada (el segundo con prefijo `backend/`, porque corre desde la raíz del repo para que las rutas
@@ -445,6 +446,13 @@ node scripts/docs/check-mapa-tablas.mjs    # cinco comprobaciones
 | **C** | una tabla que escriben **dos** sitios, siendo nueva |
 | **D** | un **flujo** que escribe un dominio **que no declaró** |
 
+⚠️ **La D cuenta los dominios de un flujo por DOS vías, y la segunda hizo falta añadirla:** las tablas
+que escribe él mismo **y** los dominios cuyo **`datos/`** importa. Medía sólo la primera, o sea daba por
+supuesto que un flujo lleva su SQL — y el piloto de F7 demuestra lo contrario (`flujos/rehacerDocumento.js`
+tiene **cero** consultas). Con la medida vieja emitía cuatro avisos diciendo que ese flujo ya no cruzaba.
+**Sólo `datos/`, no la puerta**: dos flujos importan `dominios/identidad/index.js` para LEER, y contarlo
+como escritura daba dos fallos falsos.
+
 **La exención de la C es POR FICHERO, no por carpeta** (desde el 2026-10-07). Antes eximía
 `services/admin` y `services/system` enteras —31 ficheros, 15 de ellos escritores— y sólo **3** lo
 merecen. Al estrecharla apareció **una** tabla que estaba tapada, `fill_requests`.
@@ -687,8 +695,13 @@ parte. `stack.sh <letra> restart backend` y los 321 volvieron a verde.
 y traduce el resultado a HTTP. La lógica de negocio, las transacciones de varios pasos, las máquinas de
 estados y cualquier bucle de trabajo viven en `backend/services/`.
 
-`backend/services/documents/DocumentWorkflowResetService.js` es el estilo objetivo: **una sola
-responsabilidad**, y se lee de una sentada. Los infractores conocidos están listados en `docs/planes/referencia/calidad-y-medicion.md` §5-D; no añadas
+`backend/services/documents/DeliverableUploadService.js` es el estilo objetivo: **una sola
+responsabilidad** —registrar la subida de un entregable—, 66 líneas, y se lee de una sentada.
+
+⚠️ **Aquí ponía `DocumentWorkflowResetService.js`, y ese fichero YA NO EXISTE**: lo sustituyó
+`backend/flujos/rehacerDocumento.js` al integrar el piloto de F7 el 2026-10-07. Y ése es el estilo
+objetivo de **un flujo**, que es otra cosa: cruza tres dominios a propósito y tiene **cero
+consultas** —cada una vive en el `datos/` de su dominio— porque un flujo decide el ORDEN, no el SQL. Los infractores conocidos están listados en `docs/planes/referencia/calidad-y-medicion.md` §5-D; no añadas
 más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extrae un servicio.
 
 ### El código por dominios — la forma, probada en `chat`, `organizacion` e `identidad`
@@ -844,6 +857,11 @@ Tres cosas del reescritor que **ya costaron una corrida cada una** el 2026-10-07
    **paquete** para ESM, y el error —`Cannot find package 'datos'`— no se parece al problema: dejó
    **14 suites en rojo**. Lo escribe solo un `os.path.relpath`, que devuelve `datos/x.js` sin prefijo.
    Si compones rutas por script, **añade el `./` tú**.
+
+⚠️ **Y un hueco que NINGUNA puerta cubre: que el módulo EXPORTE lo que le importan.** `check:rutas`
+comprueba que el fichero exista; `check:imports`, que un símbolo usado esté importado. Que
+`import { x } from "./y.js"` falle porque `y.js` ya no exporta `x` sólo lo ve **node al cargar** — seis
+suites en rojo al integrar el piloto de F7, por un símbolo que había cambiado de módulo.
 
 **Ya hay puerta para las cuatro: `npm run check:rutas`** (`backend/scripts/check_relative_paths.mjs`),
 en CI. Resuelve toda ruta relativa del backend —imports con cualquier comilla, `import()` dinámico y

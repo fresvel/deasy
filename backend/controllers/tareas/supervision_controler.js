@@ -1,6 +1,6 @@
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import { getPostgresPool } from "../../config/postgres.js";
-import { rehacerFlujoDelEntregable } from "../../services/documents/DocumentWorkflowResetService.js";
+import { rehacerFlujoDelEntregable } from "../../flujos/rehacerDocumento.js";
 import { getProcessDefinitionIdForTaskItem } from "../../services/tasks/taskQueries.js";
 
 let _service = null;

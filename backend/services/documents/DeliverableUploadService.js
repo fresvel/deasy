@@ -12,6 +12,7 @@
 // existe.
 import { conTransaccion } from "../../config/postgres.js";
 import { transitionDocumentVersionState } from "./DocumentStateService.js";
+import { actualizarArchivoVigente } from "../../dominios/tareas/index.js";
 
 // Los estados desde los que una subida ARRANCA el llenado. Era una condición suelta en el controller.
 const ESTADOS_QUE_PASAN_A_EN_LLENADO = new Set(["Borrador", "Pendiente de llenado", "Observado"]);
@@ -52,13 +53,7 @@ export const registrarSubidaDelEntregable = async ({
     // `working_file_path` sigue siendo EL ARCHIVO VIGENTE y no se mueve de sitio: son 74 lecturas en
     // el backend, y ninguna necesita saber de la bitacora. Lo que se sobrescribia y se perdia era el
     // puntero al anterior; ahora ese puntero vive en la bitacora, con su autor y su fecha.
-    await conexion.query(
-      `UPDATE document_versions
-       SET working_file_path = ?,
-           version_minor = ?
-       WHERE id = ?`,
-      [filePath, minor, Number(documentVersionId)]
-    );
+    await actualizarArchivoVigente(conexion, documentVersionId, filePath, minor);
 
     if (ESTADOS_QUE_PASAN_A_EN_LLENADO.has(String(currentStatus || "").trim())) {
       await transitionDocumentVersionState(conexion, Number(documentVersionId), "En llenado");

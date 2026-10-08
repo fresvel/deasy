@@ -3,6 +3,7 @@ import {
   normalizeDocumentVersionStatus,
 } from "./DocumentStateService.js";
 import { ensureSignatureFlowForDocumentVersion } from "./DocumentSignatureWorkflowService.js";
+import { actualizarAvanceDelFlujo } from "../../dominios/plantillas/index.js";
 export {
   syncDocumentProgressFromDocumentSignature,
   syncDocumentProgressFromDocumentVersionSignatureSummary,
@@ -151,13 +152,7 @@ export const syncDocumentProgressFromFillRequest = async (connection, fillReques
   else if (allApproved) flowStatus = "approved";
   else if (anyActive) flowStatus = "in_progress";
 
-  await connection.query(
-    `UPDATE document_fill_flows
-     SET status = ?,
-         current_step_order = ?
-     WHERE id = ?`,
-    [flowStatus, nextStepOrder, context.document_fill_flow_id]
-  );
+  await actualizarAvanceDelFlujo(connection, context.document_fill_flow_id, flowStatus, nextStepOrder);
 
   if (anyRejected) {
     await transitionDocumentVersionState(connection, Number(context.document_version_id), "Observado");

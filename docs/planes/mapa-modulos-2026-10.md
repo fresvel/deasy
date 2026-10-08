@@ -1285,6 +1285,71 @@ backend · `test:char:run` **321/321**, **sin que se moviera un golden**.
 **Queda de `identidad`** los cuatro asuntos de arriba —catálogos, acceso/RBAC, mecanismos y legal—, que
 son **decisión de F7.0** y no trabajo mecánico.
 
+### El piloto, integrado el 2026-10-07 — y lo que la fusión destapó
+
+La rama `f7-flujo-piloto` llevaba **28 commits sin fusionar** y su propio mensaje decía por qué: «a
+solas pone la puerta en rojo». Al integrarla, la puerta dijo **exactamente qué** y la mitad no existía
+cuando se escribió el piloto.
+
+**Tres conflictos de git, y los tres eran lo mismo: el piloto se había quedado ATRÁS, no obsoleto.**
+
+| Conflicto | Qué pasaba |
+|---|---|
+| `supervision_controler.js` | F7.2 había **renombrado** la entrada: `rehacerFlujoDelEntregable` en vez de `resetDocumentWorkflowForTaskItem` |
+| `user_controler.js` | el fichero **se movió** a `dominios/identidad/controllers/` (git siguió el rename solo), y el piloto traía de vuelta el `SqlAdminService` que resultó estar **muerto** |
+| `DocumentWorkflowResetService.js` | el piloto lo **borra** y F7.2 le había **añadido** el envoltorio de la transacción |
+
+⚠️ **Ese envoltorio es lo que se habría perdido tomando la rama tal cual**, y no es un detalle:
+`rehacerFlujoDelEntregable` existe porque la frontera de transacción **la abrían DOS controllers con el
+mismo código copiado**, y la diferencia real entre ellos es un booleano. Tomar el piloto sin él
+devolvía el `beginTransaction` a los controllers, que es justo lo que F7.2 dejó a cero. Se portó al
+flujo, con la nota de dónde viene.
+
+#### Y la puerta encontró cuatro cosas que el piloto no podía saber
+
+**1 · La comprobación E no existía.** `dominios/tareas/datos/documentVersions.js` tenía una consulta que
+cruza a `procesos` (`process_definition_versions`, `terms`). Movida a
+`tareas/datos/consulta/ultimaVersionDelEntregable.js`. **No es que el piloto estuviera mal: es que la
+regla que lo ordena llegó después**, y eso es para lo que sirve una puerta.
+
+**2 · La C destapó tres escrituras ajenas**, y se cerraron como las de F5 —por la puerta del dueño, no
+declarando deuda—:
+
+| Tabla | Quien escribía por su cuenta | Ahora |
+|---|---|---|
+| `document_versions` | `DeliverableUploadService` (el archivo vigente) | `tareas/datos/documentVersions.js` |
+| `document_versions` | `DocumentStateService` (el estado) | ídem — la máquina de estados **decide**, no escribe |
+| `document_fill_flows` | `DocumentProgressService` (el avance) | `plantillas/datos/flujoDeLlenado.js` |
+
+**Eso obligó a abrir dos puertas parciales**, `dominios/tareas/index.js` y
+`dominios/plantillas/index.js`: hoy esos dominios **sólo tienen `datos/`** —su `services/` se mueve en
+F7.5— y su `index.js` lo dice en la primera línea, para que nadie los lea como un dominio terminado.
+
+**3 · LA COMPROBACIÓN D MEDÍA MAL, y el piloto es el contraejemplo.** Contaba los dominios de un flujo
+**buscando escrituras dentro del fichero**, o sea dando por supuesto que un flujo lleva su SQL. El
+piloto demuestra lo contrario —**cero consultas**—, así que la D emitió **cuatro avisos que decían lo
+contrario de la verdad**: que ya no cruzaba y que debía dejar de ser un flujo. Ahora los dominios de un
+flujo son la unión de **lo que escribe él** y **los dominios cuyo `datos/` importa**.
+
+⚠️ **Y al arreglarlo, la primera versión contaba también los imports de la PUERTA — y eso daba dos
+fallos falsos**: `templateLifecycle.js` y `FillRequestWorkflowService.js` importan
+`dominios/identidad/index.js` para **leer**. Importar el `datos/` de otro dominio es usar su capa de
+escritura; importar su puerta puede ser cualquier cosa. La regla quedó acotada a `datos/`.
+
+**4 · Un hueco que sigue abierto, y que esta fusión encontró:** el flujo importaba
+`getLatestDocumentVersionForTaskItem` del módulo donde ya no está. **Eso no lo ve ninguna puerta** —
+`check:rutas` comprueba que el fichero exista, `check:imports` que un símbolo usado esté importado, y
+ninguna que el módulo **exporte** lo que le piden—. Lo vio node al cargar, con seis suites en rojo.
+
+⚠️ **Y una pregunta de diseño que esto plantea y F7.0 debe cerrar:** el flujo importa
+`dominios/<d>/datos/…` **directamente**, saltándose la puerta. Para los seis flujos que llevan su SQL
+no se planteaba; para éste sí. La regla «un dominio sólo se importa por su `index.js`» no dice nada de
+**flujo→`datos/`**, igual que no decía nada de flujo→flujo.
+
+**Verificado en la pila D**: las seis puertas · `check-mapa-tablas` **sin un solo aviso** ·
+`test:unit` **897/897 en 50 suites** · arranque · `test:char:run` **321/321**, **sin que se moviera un
+golden** — que en un merge de 28 commits de divergencia es la única prueba que vale.
+
 ### Las cinco decisiones que F7.0 tiene que resolver
 
 1. **¿De qué dominio es el flujo de entrega?** `fill_requests` está en **plantillas** y

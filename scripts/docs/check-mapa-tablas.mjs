@@ -161,6 +161,18 @@ for (const tabla of tablas) {
 // ── D · Los flujos escriben sólo lo que declaran ──────────────────────────────────────────────
 // Un flujo cruza dominios por diseño y por eso está fuera de la comprobación C. El precio es que
 // declare CUÁLES: si mañana alguien le añade una escritura a un cuarto dominio, esto lo para.
+//
+// ⚠️ UN FLUJO PUEDE CRUZAR SIN TENER UNA SOLA CONSULTA, y esta comprobación no lo veía. Contaba los
+// dominios buscando sentencias de escritura DENTRO del fichero, y eso daba por supuesto que un flujo
+// lleva su SQL. El piloto de F7 demostró lo contrario —`flujos/rehacerDocumento.js` tiene **cero**
+// consultas: cada una vive en el `datos/` de su dominio y el flujo sólo decide el orden—, así que al
+// integrarlo la D emitió CUATRO avisos que decían justo lo contrario de la verdad: que ya no cruzaba
+// y que debía dejar de ser un flujo.
+//
+// Ahora los dominios de un flujo son la unión de DOS cosas:
+//   · las tablas que escribe él mismo —el caso de los seis flujos que todavía llevan su SQL—, y
+//   · los dominios cuyo `datos/` IMPORTA —el caso del flujo sin consultas—.
+// Las dos formas valen, y la segunda es la que F7.5 va a generalizar.
 for (const [ruta, decl] of Object.entries(flujos)) {
   const fila = contenidos.find(([r]) => r === ruta);
   if (!fila) {
@@ -175,6 +187,16 @@ for (const [ruta, decl] of Object.entries(flujos)) {
   for (const tabla of tablas) {
     const escribe = new RegExp(`(INSERT\\s+INTO|UPDATE|DELETE\\s+FROM)\\s+(?:\\w+\\.)?${tabla}\\b`, "i");
     if (escribe.test(fila[2])) escritos.add(mapa.dominioDe.get(tabla));
+  }
+  // Y los dominios cuyo `datos/` importa: un flujo sin SQL cruza por aquí.
+  //
+  // ⚠️ SÓLO `datos/`, NO la puerta, y la diferencia importa: medido al escribir esto, dos flujos
+  // —`templateLifecycle.js` y `FillRequestWorkflowService.js`— importan `dominios/identidad/index.js`
+  // para LEER (`resolverPersonaPorNumero`, `UserRepository`), y contarlo como escritura daba dos
+  // fallos que eran mentira. Importar el `datos/` de otro dominio es usar su capa de escritura;
+  // importar su puerta puede ser cualquier cosa.
+  for (const m of fila[2].matchAll(/from\s+['"][^'"]*dominios\/(\w+)\/datos\//g)) {
+    if (Object.hasOwn(mapa.dominios, m[1])) escritos.add(m[1]);
   }
   for (const d of escritos) {
     if (!declarados.has(d)) {

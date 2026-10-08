@@ -1,3 +1,7 @@
+import { actualizarEstado } from "../../dominios/tareas/index.js";
+// ⚠️ ÚNICO import de este fichero, y es el del `datos/` de `tareas`: la máquina de estados
+// DECIDE la transición, pero no la escribe. Lo escribía con su propio `UPDATE`, y eso dejaba
+// `document_versions` con dos escritores — lo destapó la comprobación C al integrar el piloto.
 export const DOCUMENT_STATUSES = Object.freeze([
   "Inicial",
   "Pendiente de llenado",
@@ -214,12 +218,7 @@ export const transitionDocumentVersionState = async (connection, documentVersion
     throw new Error(`Transición inválida de versión documental: ${currentStatus} -> ${targetStatus}`);
   }
 
-  await connection.query(
-    `UPDATE document_versions
-     SET status = ?
-     WHERE id = ?`,
-    [targetStatus, documentVersionId]
-  );
+  await actualizarEstado(connection, documentVersionId, targetStatus);
 
   const documentStatus = deriveDocumentStatusFromVersionStatus(targetStatus);
   await transitionDocumentState(connection, Number(current.task_item_id), documentStatus, { allowDirect: true });

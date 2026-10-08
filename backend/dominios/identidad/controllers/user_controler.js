@@ -15,7 +15,7 @@ import {
   nextAttachmentOrder,
 } from "../../../services/documents/DocumentAttachmentService.js";
 import { registrarObservacionDelEntregable } from "../../../services/documents/DocumentObservationService.js";
-import { rehacerFlujoDelEntregable } from "../../../services/documents/DocumentWorkflowResetService.js";
+import { rehacerFlujoDelEntregable } from "../../../flujos/rehacerDocumento.js";
 import {
   nextUploadMinor,
   registrarSubidaDelEntregable,
@@ -51,7 +51,6 @@ import {
   removeMinioObject
 } from "../../../services/storage/minio_service.js";
 import { transitionDocumentVersionState } from "../../../services/documents/DocumentStateService.js";
-import { resetDocumentWorkflowForTaskItem } from "../../../services/documents/DocumentWorkflowResetService.js";
 import { parseAvailableFormats } from "../../../services/admin/templates/artifacts.js";
 import {
   sanitizeStorageSegment,
