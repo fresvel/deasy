@@ -46,18 +46,17 @@
 //   · el de la PLANTILLA (`edicion_id`) — lo escribe el formulario web DIRECTO en la base,
 //     uno solo, compartido por todas las configuraciones donde el entregable esté enlazado.
 //   · el del VÍNCULO (`vinculo_id`) lo sembraba el sync leyendo la sección
-//     `workflows:` del `meta.yaml`. Retirada la sección, no queda quien lo escriba. Los goldens de
-//     este flow lo enseñan en negativo: donde había dos cabeceras por lado, queda una.
-// Se distinguen en el golden sin añadir columnas, pero OJO con cuál se mira: `normalize` enmascara
-// las claves de id **aunque valgan `null`**, así que `vinculo_id` sale
-// `"<normalized>"` en los dos y NO sirve de discriminante. Lo que los separa en el golden es
-// `process_definition_id` e `item_mode` —conceptos del VÍNCULO, que la plantilla no tiene y salen
-// `null`—. El portador de verdad se comprueba sobre la fila CRUDA en `unicaCabeceraDeLaPlantilla`,
-// antes de normalizar.
+//     `workflows:` del `meta.yaml`. Retirada la sección, no quedó quien lo escribiera, y la fase 2
+//     del frente 24 **borró la columna**: ya no es «un portador que nadie usa», es ninguno.
+// Lo que separa en el golden una cabecera autorada de una de runtime es `process_definition_id` e
+// `item_mode` —conceptos del VÍNCULO, que la autorada no alcanza y salen `null`—. El portador de
+// verdad se comprueba sobre la fila CRUDA en `unicaCabeceraDeLaPlantilla`, antes de normalizar:
+// `normalize` enmascara las claves de id **aunque valgan `null`**, así que un portador vacío y uno
+// relleno se verían igual.
 // La identidad de negocio la resuelven los dos por el mismo `LEFT JOIN`, gracias al `COALESCE`.
 //
 // SOBRE EL ENMASCARADO. Se enmascaran los ids ESTRUCTURALES (el `id` de la propia fila y los que la
-// cuelgan de otra: `fill_flow_template_id`, `template_id`, `vinculo_id`,
+// cuelgan de otra: `fill_flow_template_id`, `template_id`,
 // `task_item_id`, `edicion_id`, `catalogo_documental_id`), porque su valor depende del orden de
 // siembra y de qué secuencias movieron los flows anteriores, no del comportamiento. En su lugar cada
 // plantilla de flujo lleva su identidad de NEGOCIO (`process_definition_id`, `deliverable_code`,
@@ -163,7 +162,6 @@ const REFERENCE_PDF = {
 
 const FILL_TEMPLATE_COLUMNS = `
   fft.id,
-  fft.vinculo_id,
   fft.task_item_id,
   fft.name,
   fft.description,
@@ -199,11 +197,18 @@ const SIGNATURE_STEP_COLUMNS = `
 // que la prueba del sub-paso se quedaría fuera de la clave que tiene que probarlo. No mueve nada de
 // lo anterior: para una fila del vínculo, `fft.edicion_id` es `NULL` y el `COALESCE`
 // devuelve exactamente el mismo artifact que antes.
+//
+// ⚠️ EL VÍNCULO SE ALCANZA POR EL ENTREGABLE, no por la cabecera. La fase 2 del frente 24 borró
+// `vinculo_id` de las dos cabeceras, así que `pdt` entra por `task_items.vinculo_id` — el entregable
+// sí sabe de qué vínculo nació. Las formas de fila que quedan salen igual que antes: la de runtime
+// recupera su configuración por ese camino y la autorada sigue con `pdt` en NULL y su artifact por
+// `edicion_id`. La del vínculo ya no existe.
 async function readFillFlows({ runtime, deliverableCode = null }) {
   const templates = await query(
     `SELECT ${FILL_TEMPLATE_COLUMNS}
        FROM fill_flow_templates fft
-       LEFT JOIN vinculos pdt ON pdt.id = fft.vinculo_id
+       LEFT JOIN task_items ti ON ti.id = fft.task_item_id
+       LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
        LEFT JOIN ediciones ta
               ON ta.id = COALESCE(pdt.edicion_id, fft.edicion_id)
        LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
@@ -229,7 +234,8 @@ async function readSignatureFlows({ runtime, deliverableCode = null }) {
   const templates = await query(
     `SELECT ${SIGNATURE_TEMPLATE_COLUMNS}
        FROM signature_flow_templates sft
-       LEFT JOIN vinculos pdt ON pdt.id = sft.vinculo_id
+       LEFT JOIN task_items ti ON ti.id = sft.task_item_id
+       LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
        LEFT JOIN ediciones ta
               ON ta.id = COALESCE(pdt.edicion_id, sft.edicion_id)
        LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
@@ -441,7 +447,10 @@ test("autoría · POST draft con flujo de ENTREGA y de FIRMA -> 200", async () =
 const unicaCabeceraDeLaPlantilla = (flows, lado) => {
   assert.equal(flows.length, 1, `${lado}: una sola cabecera, la de la plantilla`);
   const [porPlantilla] = flows;
-  assert.equal(porPlantilla.vinculo_id, null, `${lado}: cuelga de la PLANTILLA, no del vínculo`);
+  assert.ok(
+    !("vinculo_id" in porPlantilla),
+    `${lado}: cuelga de la EDICION; el portador por vínculo ya no existe (fase 2, frente 24)`,
+  );
   assert.equal(porPlantilla.task_item_id, null, `${lado}: y nunca de un entregable de runtime`);
 };
 
@@ -498,7 +507,7 @@ test("versionado · POST /ediciones/:id/version sobre la plantilla autorada -> 2
 // el sub-paso promete.
 const copiaFiel = (flows, lado) => {
   const [delPadre, deLaHija] = flows;
-  assert.equal(deLaHija.vinculo_id, null, `${lado}: la hija cuelga de SU artifact`);
+  assert.ok(!("vinculo_id" in deLaHija), `${lado}: la hija cuelga de SU artifact, y de nada más`);
   assert.equal(deLaHija.task_item_id, null, `${lado}: y NUNCA de un entregable de runtime`);
   assert.equal(deLaHija.is_active, 1, `${lado}: la cabecera copiada nace activa`);
   const sinIds = (pasos) => pasos.map(({ id: _id, ...resto }) => resto);

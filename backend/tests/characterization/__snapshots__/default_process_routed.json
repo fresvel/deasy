@@ -84,8 +84,7 @@
         "unit_type_id": null
       }
     ],
-    "task_item_id": "<normalized>",
-    "vinculo_id": "<normalized>"
+    "task_item_id": "<normalized>"
   },
   "derived_flujo_firma": {
     "description": null,
@@ -149,8 +148,7 @@
         "unit_type_id": null
       }
     ],
-    "task_item_id": "<normalized>",
-    "vinculo_id": "<normalized>"
+    "task_item_id": "<normalized>"
   },
   "derived_respuesta": {
     "status": 200,
@@ -277,8 +275,7 @@
         "unit_type_id": null
       }
     ],
-    "task_item_id": "<normalized>",
-    "vinculo_id": "<normalized>"
+    "task_item_id": "<normalized>"
   },
   "free_flujo_firma": {
     "description": null,
@@ -313,8 +310,7 @@
         "unit_type_id": null
       }
     ],
-    "task_item_id": "<normalized>",
-    "vinculo_id": "<normalized>"
+    "task_item_id": "<normalized>"
   },
   "free_respuesta": {
     "status": 200,
@@ -336,7 +332,6 @@
       "message": "Un envío necesita su flujo: indica al menos quién elabora el entregable y quién lo firma."
     }
   },
-  "vinculo_competidor": [],
   "vinculo_routed": {
     "status": 200,
     "body": {

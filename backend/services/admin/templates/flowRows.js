@@ -124,10 +124,12 @@ export const replaceSignatureFlowSteps = async (connection, signatureFlowTemplat
 
 // --- Cabeceras colgadas de la PLANTILLA ---------------------------------------------------------
 //
-// El portador es `edicion_id`, con `vinculo_id` y `task_item_id` a
-// NULL. Esa forma no es una convención: es LITERALMENTE la que exige el escalón 3 del resolvedor
-// (`generation/queries.js`), que además pide `is_active = 1`. Cambiarla aquí deja el flujo escrito y
-// no leído por nadie.
+// El portador es `edicion_id`, con `task_item_id` a NULL. Esa forma no es una convención: es
+// LITERALMENTE la que exige el SEGUNDO escalón del resolvedor (`generation/queries.js`), que además
+// pide `is_active = 1`. Cambiarla aquí deja el flujo escrito y no leído por nadie.
+//
+// Eran tres portadores y son DOS desde la fase 2 del frente 24: `vinculo_id` ya no existe, y el
+// `CHECK` `ck_fill_flow_templates_un_portador` exige exactamente uno de los dos que quedan.
 //
 // Hay UNA cabecera por artifact y lado, y se reutiliza entre guardados. No lleva el marcador
 // `artifact_sync_*` de las del vínculo porque no lo necesita: el vínculo tiene N flujos y hay que
@@ -150,7 +152,6 @@ const findArtifactFlowHeaderId = async (connection, table, artifactId) => {
     `SELECT id
      FROM ${table}
      WHERE edicion_id = ?
-       AND vinculo_id IS NULL
        AND task_item_id IS NULL
      ORDER BY id DESC
      LIMIT 1`,
@@ -235,7 +236,8 @@ export const replaceAuthoredFlowForArtifact = async (
 // declaró andamiaje en su propio comentario:
 //
 //   · `edicion_id`            -> lo escribe el formulario web. El bueno.
-//   · `vinculo_id`  -> lo sembraba el sync desde el `meta.yaml`, uno por vínculo.
+//   · `vinculo_id`  -> lo sembraba el sync desde el `meta.yaml`, uno por vínculo. **La columna ya
+//     no existe**: la borró la fase 2 del frente 24, y con ella la guarda `IS NULL` que quedaba.
 //
 // El segundo término hacía falta HOY, y estaba medido: toda plantilla que no se hubiera vuelto a
 // guardar por el formulario tenía su flujo solo ahí, así que contar solo por artifact la habría
@@ -260,7 +262,6 @@ export const hasFillStepsForArtifact = async (connection, artifactId) => {
        WHERE f.is_active = 1
          AND f.task_item_id IS NULL
          AND f.edicion_id = ?
-         AND f.vinculo_id IS NULL
        LIMIT 1
      ) AS has_steps`,
     [id]
@@ -363,7 +364,10 @@ const parseSignersColumn = (value) => {
 // AQUÍ HUBO TRES ESCALONES, y los dos últimos eran andamiaje declarado:
 //   2. `vinculo_id` — el que el sync sembraba en CADA vínculo desde el
 //      `meta.yaml`. Hacía falta mientras el bootstrap y las versiones antiguas tuvieran su flujo
-//      solo ahí. Sin sync no hay quien lo escriba.
+//      solo ahí. Sin sync no hay quien lo escriba. **Su COLUMNA tampoco existe ya**: la borró la
+//      fase 2 del frente 24, así que la guarda `vinculo_id IS NULL` que aquí había dejó de ser
+//      redundante y pasó a ser un error en tiempo de llamada. Es el fallo que este repositorio
+//      lleva escrito: el SQL no lo valida nadie hasta que se ejecuta esa rama.
 //   3. La VERSIÓN PADRE (`parent_version_id`), subiendo por el linaje. Existió porque
 //      `createTemplateArtifactVersion` copiaba MinIO en binario y NO creaba filas, así que una
 //      versión recién creada no tenía portador propio y reabrirla mostraba el flujo VACÍO — y el
@@ -384,7 +388,6 @@ const findFlowSourceHeaderId = async (connection, table, artifactId) => {
     `SELECT id, is_active
      FROM ${table}
      WHERE edicion_id = ?
-       AND vinculo_id IS NULL
        AND task_item_id IS NULL
      ORDER BY id DESC
      LIMIT 1`,

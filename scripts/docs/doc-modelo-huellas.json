@@ -478,7 +478,7 @@
     ]
   },
   "fill_flow_templates": {
-    "huella": "e5ae0e41f9695300",
+    "huella": "31331d9cac58dab4",
     "paginas": [
       "modelo/flujo-de-entrega.md",
       "modelo/mapa-completo.md",
@@ -916,7 +916,7 @@
     ]
   },
   "signature_flow_templates": {
-    "huella": "fcb173192eb4b046",
+    "huella": "cf557eacbe045752",
     "paginas": [
       "datos/firmas-y-dominios.md",
       "modelo/flujo-de-firma.md",
@@ -1196,8 +1196,6 @@
       "datos/motor-de-procesos.md",
       "modelo/entregable-concreto.md",
       "modelo/entregable-y-ediciones.md",
-      "modelo/flujo-de-entrega.md",
-      "modelo/flujo-de-firma.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/siembra.md",

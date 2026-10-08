@@ -82,8 +82,9 @@ export async function closeDb() {
 //   pasos de flujo → plantillas de flujo → vínculo a configuración → artifact → deliverable.
 //
 // ⚠️ EL FLUJO CUELGA DE DOS SITIOS, Y ESTE LIMPIADOR SOLO CONOCÍA UNO. Desde el sub-paso 3 del §0.8
-// `saveTemplateArtifactDraft` escribe también el flujo AUTORADO colgando de `edicion_id`
-// (con el vínculo a NULL), así que borrar solo lo que cuelga del vínculo dejaba filas apuntando al
+// `saveTemplateArtifactDraft` escribe el flujo AUTORADO colgando de `edicion_id` —hoy el ÚNICO
+// portador autorado, desde la fase 2 del frente 24—, así que borrar solo lo que colgaba del
+// vínculo dejaba filas apuntando al
 // artifact y el `DELETE FROM ediciones` reventaba con
 // `fk_fill_flow_templates_artifact`. No se manifestaba como un golden movido sino como TRES suites
 // caídas en su `after()` —`zz_template_lifecycle`, `zzz_artifact_draft` y este mismo flow—, y de
@@ -110,26 +111,13 @@ export async function cleanupDraftArtifactByCode(code) {
     const linkIds = links.map((row) => row.id);
 
     if (linkIds.length) {
-      await query(
-        `DELETE FROM fill_flow_steps
-          WHERE fill_flow_template_id IN (
-            SELECT id FROM fill_flow_templates WHERE vinculo_id = ANY($1::int[])
-          )`,
-        [linkIds],
-      );
-      await query(
-        `DELETE FROM signature_flow_steps
-          WHERE template_id IN (
-            SELECT id FROM signature_flow_templates WHERE vinculo_id = ANY($1::int[])
-          )`,
-        [linkIds],
-      );
-      await query("DELETE FROM fill_flow_templates WHERE vinculo_id = ANY($1::int[])", [linkIds]);
-      await query("DELETE FROM signature_flow_templates WHERE vinculo_id = ANY($1::int[])", [linkIds]);
+      // Los vínculos se van, pero sus recorridos ya NO cuelgan de ellos: desde la fase 2 del
+      // frente 24 `vinculo_id` no existe y el único portador autorado es `edicion_id`, que limpia
+      // el bloque de abajo. Aquí había cuatro DELETE por el portador muerto.
       await query("DELETE FROM vinculos WHERE id = ANY($1::int[])", [linkIds]);
     }
 
-    // El segundo portador: el flujo autorado que cuelga del propio artifact (§0.8, sub-paso 3).
+    // El portador autorado: el flujo que cuelga del propio artifact (§0.8, sub-paso 3).
     await query(
       `DELETE FROM fill_flow_steps
         WHERE fill_flow_template_id IN (

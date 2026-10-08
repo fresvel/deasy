@@ -86,7 +86,6 @@ Table "fill_flow_steps" {
 
 Table "fill_flow_templates" {
   "id" int4 [pk, not null, increment]
-  "vinculo_id" int4
   "task_item_id" int4
   "edicion_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
   "name" varchar(180) [not null]
@@ -154,7 +153,6 @@ Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow
 //   relation_unit_types -> fill_flow_steps   [organizacion]
 //   unit_types -> fill_flow_steps   [organizacion]
 //   units -> fill_flow_steps   [organizacion]
-//   vinculos -> fill_flow_templates   [procesos]
 //   task_items -> fill_flow_templates   [tareas]
 //   persons -> fill_requests   [identidad]
 //   ediciones -> signature_flow_templates   [firmas]

@@ -236,7 +236,7 @@ const TABLE_RULES = {
     datesInOrder("tareas"),
   ],
   fill_flow_templates: [
-    requires(["vinculo_id", "Selecciona la plantilla de proceso configurado."]),
+    requires(["edicion_id", "Selecciona la edicion de la plantilla."]),
   ],
   fill_flow_steps: [
     requires(
@@ -257,7 +257,7 @@ const TABLE_RULES = {
     ),
   ],
   signature_flow_templates: [
-    requires(["vinculo_id", "Selecciona la plantilla de proceso configurado."]),
+    requires(["edicion_id", "Selecciona la edicion de la plantilla."]),
   ],
   vacancies: [],
   contracts: [

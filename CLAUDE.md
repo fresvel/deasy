@@ -429,8 +429,8 @@ Cada tabla aparece **una vez**, dentro de su **dominio**, y su valor es su **niv
 | **dominio** | de qué trata | 8, los de siempre. De aquí salen los 8 diagramas, y es **donde debería vivir su código** |
 | **nivel** | de qué depende | 0 (abajo) a 7 (arriba). De aquí sale el **orden de lectura** |
 
-**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: **102 bajan,
-77 se quedan, 0 suben** de 179. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
+**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: **100 bajan,
+77 se quedan, 0 suben** de 177. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
 transversales declarados por nombre (el bootstrap y el editor genérico de `/admin`).
 
 ```bash

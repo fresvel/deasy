@@ -4,7 +4,8 @@
 // Por qué existe (sub-paso 7 de `docs/planes/plan-maestro-2026-08.md` §0.8). El sub-paso 7 borró
 // `BASE_META_YAML`, el `meta.yaml` escrito a mano dentro del bootstrap. Su criterio de cierre era
 // que el `count(*)` de flujos colgados del vínculo del Proceso por defecto pasara de 1 a 0 — y lo
-// hizo: la clave `vinculo_competidor` es hoy `[]`, y ninguna otra de este fichero se movió.
+// hizo: la clave `vinculo_competidor` se quedó en `[]`, y ninguna otra de este fichero se movió.
+// Esa clave **ya no existe**: la fase 2 del frente 24 borró la columna que vigilaba (ver más abajo).
 // **El riesgo de ese paso era romper el Proceso por defecto**, y esta prueba es la que lo recorre
 // entero; sigue siendo la red que protege el desmontaje del sub-paso 8.
 //
@@ -64,25 +65,25 @@
 // LAS CUATRO PROPIEDADES QUE SE FIJAN, y por qué esas:
 //
 //   1. **El flujo cuelga del ENTREGABLE.** `task_item_id` relleno y `edicion_id` en NULL.
-//      Es LA definición de `routed`: un flujo que colgara de la plantilla sería `single`, y uno que
-//      colgara solo del vínculo sería el flujo predefinido que `routed` promete no tener.
-//      `vinculo_id` va relleno TAMBIÉN, y no es un descuido: la fila lleva los
-//      dos portadores porque el segundo AFINA al primero («soy del vínculo 1 **y además**
-//      específicamente de este entregable»). El §0.8 lo corrigió por escrito tras medirlo, y por eso
-//      la resolución es por PRIORIDAD y no por «qué columna está rellena».
+//      Es LA definición de `routed`: un flujo que colgara de la edición sería `single`.
+//      Aquí decía que `vinculo_id` iba relleno TAMBIÉN —la fila llevaba dos portadores porque el
+//      segundo AFINABA al primero—, y la fase 2 del frente 24 **borró esa columna**: un routed
+//      cuelga del entregable y de nada más, y el `CHECK` `ck_fill_flow_templates_un_portador` exige
+//      exactamente un portador. La resolución sigue siendo por PRIORIDAD y no por «qué columna está
+//      rellena», pero ahora son DOS escalones, no tres.
 //
 //   2. **Los pasos son los que el usuario mandó, en su orden.** No basta con que exista un flujo:
 //      tiene que ser ESE. Se comparan persona a persona contra lo enviado, que es más fuerte que el
 //      golden — un golden congela lo que hay, esto exige que sea lo que se pidió.
 //
-//   3. **El flujo de runtime GANA al del vínculo.** Era la propiedad que el sub-paso 7 ponía en
-//      riesgo, y la única que se podía romper sin que se cayera nada más: el vínculo del Proceso por
-//      defecto llevaba un flujo sembrado por el sync desde `BASE_META_YAML`, con un paso
-//      `document_owner`. Si el escalonado hubiera fallado, el documento se habría gobernado por ESE
-//      flujo y las solicitudes de llenado habrían ido al dueño en vez de a quien eligió el usuario.
-//      Retirado el competidor, la mitad negativa de la comprobación (`NO por el del vínculo`) queda
-//      vacua **a propósito** — no hay rival contra el que comparar; la positiva sigue entera, y la
-//      lista de rivales se recorre igual para que el día que reaparezca uno, se note aquí.
+//   3. **El documento se gobierna por el flujo de runtime.** Era la propiedad que el sub-paso 7
+//      ponía en riesgo: el vínculo del Proceso por defecto llevaba un flujo sembrado por el sync
+//      desde `BASE_META_YAML`, con un paso `document_owner`. Si el escalonado hubiera fallado, las
+//      solicitudes de llenado habrían ido al dueño en vez de a quien eligió el usuario.
+//      La mitad NEGATIVA de esta comprobación —«y NO por el del vínculo»— se retiró en la fase 2 del
+//      frente 24, y no por quedarse vacua: **el rival ya no puede existir**. Sin columna
+//      `vinculo_id` no hay dónde escribirlo, así que lo que antes vigilaba una lista de rivales lo
+//      garantiza hoy el esquema. Queda la positiva, que es la que afirma algo.
 //
 //   4. **El estado en que queda el entregable.** Qué documento y qué versión se crean y con qué
 //      estado, más las solicitudes de llenado que se abren. Es el resultado observable del camino
@@ -154,7 +155,7 @@ const MASK_OPTS = {
 // --- Lectura del oráculo -------------------------------------------------------------------------
 
 const FILL_TEMPLATE_COLUMNS = `
-  id, vinculo_id, task_item_id, edicion_id, name, description, is_active`;
+  id, task_item_id, edicion_id, name, description, is_active`;
 const SIGNATURE_TEMPLATE_COLUMNS = FILL_TEMPLATE_COLUMNS;
 
 const FILL_STEP_COLUMNS = `
@@ -258,46 +259,26 @@ const TITULO_GENERICO = /^Documento \d+$/;
 // de documento que normalizar: el titulo es el del ENTREGABLE, y ese lo pone quien lo crea.
 const sinAutoincrementalEnElTitulo = (resultado) => resultado;
 
-// El COMPETIDOR: el flujo que colgaba del vínculo del Proceso por defecto, sembrado por el sync
-// desde `BASE_META_YAML`. Era el que ganaría si el escalonado se rompiera, y el que el sub-paso 7
-// tenía que dejar a cero. **Ya está a cero; que vuelva a llenarse significa que reapareció un
-// productor de flujo fuera del formulario.**
-async function readVinculoCompetidor(linkId) {
-  const headers = await query(
-    `SELECT ${FILL_TEMPLATE_COLUMNS} FROM fill_flow_templates
-      WHERE vinculo_id = $1 AND task_item_id IS NULL
-      ORDER BY id`,
-    [linkId],
-  );
-  const ids = headers.map((row) => row.id);
-  const steps = ids.length
-    ? await query(
-        `SELECT ${FILL_STEP_COLUMNS} FROM fill_flow_steps
-          WHERE fill_flow_template_id = ANY($1::int[]) ORDER BY fill_flow_template_id, step_order`,
-        [ids],
-      )
-    : [];
-  return headers.map((header) => ({
-    ...header,
-    steps: steps
-      .filter((step) => Number(step.fill_flow_template_id) === Number(header.id))
-      .map(({ fill_flow_template_id: _fk, ...rest }) => rest),
-  }));
-}
+// EL COMPETIDOR YA NO PUEDE EXISTIR, y por eso aquí no se lee nada. Hubo una función
+// `readVinculoCompetidor` y un golden `vinculo_competidor` que fotografiaban los recorridos colgados
+// del vínculo del Proceso por defecto: el sub-paso 7 los dejó a cero y esto vigilaba que siguieran a
+// cero. La fase 2 del frente 24 borró la columna `vinculo_id` de las dos cabeceras, así que el rival
+// no está a cero por vigilancia sino por construcción: **ya no hay dónde escribirlo**, y el `CHECK`
+// `ck_fill_flow_templates_un_portador` lo remata exigiendo exactamente un portador. Un golden que
+// afirma `[]` sobre una columna que no existe no vigila nada; lo que vigila ahora es el esquema.
 
 // --- Aserciones compartidas por los dos modos -----------------------------------------------------
 
 // Punto 1: la propiedad que DEFINE `routed`. Se comprueba sobre la fila CRUDA, antes de normalizar:
 // `normalize` enmascara las claves de id **aunque valgan null**, así que en el golden no se
 // distingue un `edicion_id` vacío de uno relleno.
-const cuelgaDelEntregable = (flow, { taskItemId, linkId }, lado) => {
+const cuelgaDelEntregable = (flow, { taskItemId }, lado) => {
   assert.ok(flow, `${lado}: el envío routed debe materializar un flujo`);
   assert.equal(Number(flow.task_item_id), Number(taskItemId), `${lado}: el flujo cuelga del ENTREGABLE`);
   assert.equal(flow.edicion_id, null, `${lado}: y NO de la plantilla — eso sería 'single'`);
-  assert.equal(
-    Number(flow.vinculo_id),
-    Number(linkId),
-    `${lado}: el vínculo va relleno TAMBIÉN — el portador del entregable lo AFINA, no lo cancela`,
+  assert.ok(
+    !("vinculo_id" in flow),
+    `${lado}: el portador por vínculo ya no existe — un routed cuelga del entregable y de nada más`,
   );
   assert.equal(Number(flow.is_active), 1, `${lado}: la cabecera nace activa`);
 };
@@ -317,20 +298,13 @@ const pasosDeEntregaSegunLoEnviado = (flow, personIds, lado) => {
 
 // Punto 3: el documento se gobierna por el flujo de RUNTIME, no por el del vínculo. Es la propiedad
 // que el sub-paso 7 puede romper sin que se caiga nada más, y se comprueba en las dos direcciones.
-const gobiernaElFlujoDeRuntime = (estado, flow, competidor, lado) => {
+const gobiernaElFlujoDeRuntime = (estado, flow, lado) => {
   assert.equal(estado.fill_flows.length, 1, `${lado}: una instancia de flujo de llenado`);
   assert.equal(
     Number(estado.fill_flows[0].fill_flow_template_id),
     Number(flow.id),
     `${lado}: el documento se gobierna por el flujo que definió el usuario`,
   );
-  for (const rival of competidor) {
-    assert.notEqual(
-      Number(estado.fill_flows[0].fill_flow_template_id),
-      Number(rival.id),
-      `${lado}: y NO por el flujo predefinido del vínculo`,
-    );
-  }
 };
 
 // Y su consecuencia visible: a quién se le pide llenar. Si el escalonado fallara, la solicitud iría
@@ -504,9 +478,8 @@ test("free · el entregable resultante: documento, versión y solicitudes de lle
 test("free · el documento lo gobierna el flujo de RUNTIME, no el predefinido del vínculo", async () => {
   assert.ok(estado.freeItemId, "depende del paso anterior");
   const flow = await readRuntimeFillFlow(estado.freeItemId);
-  const competidor = await readVinculoCompetidor(estado.linkId);
   const resultado = await readEntregable(estado.freeItemId);
-  gobiernaElFlujoDeRuntime(resultado, flow, competidor, "free");
+  gobiernaElFlujoDeRuntime(resultado, flow, "free");
   solicitudesParaQuienSeEligio(resultado, FREE_ENTREGA, "free");
 });
 
@@ -609,24 +582,8 @@ test("derived · el entregable resultante: documento, versión y solicitudes de 
 test("derived · el documento lo gobierna el flujo de RUNTIME, no el predefinido del vínculo", async () => {
   assert.ok(estado.derivedItemId, "depende del paso anterior");
   const flow = await readRuntimeFillFlow(estado.derivedItemId);
-  const competidor = await readVinculoCompetidor(estado.linkId);
   const resultado = await readEntregable(estado.derivedItemId);
-  gobiernaElFlujoDeRuntime(resultado, flow, competidor, "derived");
+  gobiernaElFlujoDeRuntime(resultado, flow, "derived");
   solicitudesParaQuienSeEligio(resultado, DERIVED_ENTREGA, "derived");
 });
 
-// --- 3) El competidor, congelado -----------------------------------------------------------------
-
-test("el vínculo del Proceso por defecto YA NO lleva ningún flujo predefinido", async () => {
-  // Ésta fue la ÚNICA clave de este flow que movió el sub-paso 7, y su criterio de cierre era
-  // quedarse en `[]`. Documentaba el `document_owner` que nadie autoró: llegaba del `meta.yaml`
-  // escrito a mano dentro del bootstrap, sobre un vínculo `routed` cuyo propio bootstrap declara que
-  // NO siembra flujo (punto 6 de `ensureDefaultProcess`). El sync no mira `item_mode`, y por eso lo
-  // proyectaba igual.
-  //
-  // Que vuelva a tener contenido significa una de dos: reapareció un productor fuera del formulario,
-  // o el desmontaje del sub-paso 8 dejó filas rancias colgando del vínculo.
-  assert.ok(estado.linkId, "depende del primer caso");
-  const competidor = await readVinculoCompetidor(estado.linkId);
-  matchSnapshot(SUITE, "vinculo_competidor", normalize(competidor, MASK_OPTS));
-});

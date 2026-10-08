@@ -31,6 +31,7 @@ import {
   envolverEnTransaccion,
 } from "./crud/tableHooks.js";
 import { translateConstraintError } from "../../errors/sqlErrors.js";
+import { conflict } from "../../errors/HttpError.js";
 
 const DEFAULT_LIMIT = 50;
 
@@ -203,6 +204,36 @@ export default class SqlAdminService {
   retireActiveDefinitionsInSeries(...args) { return this.processDefinitionVersion.retireActiveDefinitionsInSeries(...args); }
   getProcessDefinitionVersion(...args) { return this.processDefinitionVersion.getProcessDefinitionVersion(...args); }
   ensureDraftDefinitionContext(...args) { return this.processDefinitionVersion.ensureDraftDefinitionContext(...args); }
+
+  // LOS PASOS DE UN RECORRIDO SE EDITAN MIENTRAS SU EDICION ES BORRADOR, y no mientras una definicion
+  // de proceso lo sea. Es la puerta que sustituye a `ensureDraftDefinitionContext` para los pasos
+  // (frente 24, fase 2): la cabecera colgaba del vinculo y de ahi salia UNA definicion a la que
+  // preguntar; anclada en la edicion esa pregunta no tiene una sola respuesta --una edicion puede
+  // estar enlazada a varias configuraciones-- y la que si la tiene es la edicion.
+  //
+  // Es la MISMA puerta que usa `templateLifecycle` para publicar, asi que un recorrido no se puede
+  // tocar despues de publicado por los dos caminos, no por uno.
+  async ensureDraftEdicionContext(edicionId, { entityLabel = "esto" } = {}) {
+    this.ensurePool();
+    const id = Number(edicionId);
+    if (!id) {
+      throw new Error(`No se puede editar ${entityLabel}: falta la edicion a la que pertenecen.`);
+    }
+    const [filas] = await this.pool.query(
+      `SELECT lifecycle_state FROM ediciones WHERE id = ? LIMIT 1`,
+      [id]
+    );
+    const estado = filas?.[0]?.lifecycle_state;
+    if (!estado) {
+      throw new Error(`No se puede editar ${entityLabel}: la edicion asociada no existe.`);
+    }
+    if (String(estado) !== "draft") {
+      throw conflict(
+        `No se puede editar ${entityLabel}: la edicion esta en '${estado}'. ` +
+        "Crea una version nueva para cambiar su recorrido."
+      );
+    }
+  }
   cloneProcessDefinitionChildren(...args) { return this.processDefinitionVersion.cloneProcessDefinitionChildren(...args); }
   getProcessDefinitionSeriesScope(...args) { return this.processDefinitionVersion.getProcessDefinitionSeriesScope(...args); }
   applyTargetRuleSeriesConstraints(...args) { return this.processDefinitionVersion.applyTargetRuleSeriesConstraints(...args); }
@@ -515,7 +546,7 @@ export default class SqlAdminService {
   async getFillFlowTemplate(fillFlowTemplateId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      `SELECT id, vinculo_id
+      `SELECT id, edicion_id
        FROM fill_flow_templates
        WHERE id = ?
        LIMIT 1`,

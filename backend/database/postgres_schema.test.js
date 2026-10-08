@@ -130,9 +130,14 @@ test("lifecycle_state sigue admitiendo draft, published y retired", () => {
 //   2. el ORDEN: el `CREATE INDEX` va DESPUES de la tabla. Al reves el arranque muere con
 //      «relation does not exist» (precedentes 673f1fb, 8f9f1ad, 99fc7c7, 38c2b56).
 //
-// Lo que aqui NO hay, a proposito, es un CHECK de "exactamente un portador": las filas de runtime
-// llevan HOY `vinculo_id` y `task_item_id` a la vez (`generation/documents.js:248`
-// y `:278`), asi que los tres portadores no son excluyentes y ese CHECK seria falso el dia uno.
+// Y lo que aqui SI hay desde la fase 2 del frente 24 es un CHECK de "exactamente un portador".
+// Antes no podia haberlo, y el motivo esta medido: las filas de runtime llevaban `vinculo_id` Y
+// `task_item_id` a la vez en el MISMO INSERT, asi que los tres portadores no eran excluyentes y el
+// CHECK habria sido falso el dia uno. Al morir el escalon del vinculo quedan DOS portadores y cada
+// escritor usa uno: el runtime escribe `task_item_id` (`generation/documents.js:218` y `:248`) y el
+// editor de `/admin` escribe `edicion_id` (`crud/validation.js:239` y `:260`). Una cabecera sin
+// ancla no la resuelve NADIE —los dos resolutores preguntan por un portador—, asi que el CHECK no
+// prohibe un caso legitimo: prohibe basura.
 
 const bloqueCreate = (tabla) =>
   SCHEMA.slice(SCHEMA.indexOf(`CREATE TABLE IF NOT EXISTS ${tabla} (`)).split(");")[0];
@@ -155,16 +160,21 @@ for (const tabla of ["fill_flow_templates", "signature_flow_templates"]) {
     );
   });
 
-  test(`${tabla}: vinculo_id ya no es NOT NULL en la definicion`, () => {
-    const columna = create
-      .split("\n")
-      .find((linea) => linea.trim().startsWith("vinculo_id"));
-    assert.ok(columna, "la columna del portador por vinculo debe seguir existiendo");
-    assert.match(columna, /vinculo_id INT NULL,/);
+  test(`${tabla}: vinculo_id ya no existe en la definicion`, () => {
     assert.doesNotMatch(
-      columna,
-      /NOT NULL/,
-      "el vinculo deja de ser obligatorio: una cabecera puede colgar del entregable"
+      create,
+      /\bvinculo_id\b/,
+      "el escalon del vinculo murio en la fase 2: el ancla es el entregable o la edicion"
+    );
+  });
+
+  test(`${tabla}: el CHECK admite UN portador y solo uno`, () => {
+    assert.match(
+      create,
+      new RegExp(
+        `CONSTRAINT ck_${tabla}_un_portador CHECK \\(num_nonnulls\\(task_item_id, edicion_id\\) = 1\\)`
+      ),
+      "dos portadores excluyentes: ni los dos a la vez, ni ninguno"
     );
   });
 

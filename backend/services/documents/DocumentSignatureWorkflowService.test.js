@@ -1,14 +1,26 @@
 // Red unitaria de la PRIORIDAD con que se resuelve el flujo de FIRMA de un entregable.
 //
-// Gemelo del de entrega (`services/admin/generation/queries.test.js`) y con el mismo motivo: lo que
-// se vigila no es «qué columna está rellena», sino el ORDEN de los tres escalones y las guardas
-// `IS NULL` que los separan. El flujo de firma que `materializeRuntimeFlowForTaskItem` escribe al
-// enviar (generation/documents.js:278) rellena `vinculo_id` Y `task_item_id` en
-// el MISMO INSERT: sin `task_item_id IS NULL` en el escalón del vínculo, esa fila se serviría como
-// flujo del vínculo a cualquier otro entregable.
+// Lo que esto vigila no es «qué columna está rellena», sino el ORDEN de los DOS escalones y la
+// guarda `IS NULL` que los separa:
 //
-// La conexión falsa interpreta el SQL —qué portador compara con el parámetro y qué columnas declara
-// `IS NULL`— y filtra con eso una tabla en memoria; quitar una guarda del SQL tira el test.
+//   1. el flujo del ENTREGABLE   (`task_item_id`) — el que se define al enviar, en runtime;
+//   2. el flujo de la EDICIÓN    (`edicion_id`)   — el autorado, que el vínculo alcanza por su edición.
+//
+// **Hubo un tercer escalón, el del VÍNCULO, y murió en la fase 2 del frente 24.** No se retiró por
+// gusto: la puerta de publicación nunca lo aceptó —exigía el de la edición y lo excluía
+// explícitamente—, así que un flujo colgado del vínculo no podía publicar nada. Por eso aquí hay un
+// test que falla si alguna consulta vuelve a preguntar por `vinculo_id`, y por eso `fila()` ya no
+// sabe escribir ese portador: el caso ni se puede expresar.
+//
+// La guarda que queda sí es real y está en la base: el flujo que `materializeRuntimeFlowForTaskItem`
+// escribe al enviar cuelga del entregable. Si el escalón de la edición dejara de exigir
+// `task_item_id IS NULL`, una fila de runtime que llevara edición casaría también como flujo de la
+// edición, y un entregable nacido del lanzamiento acabaría usando el flujo privado del envío de otro.
+//
+// Por eso la conexión falsa no devuelve respuestas fijas: interpreta el SQL —qué portador compara
+// con el parámetro y qué columnas declara `IS NULL`— y filtra con eso una tabla en memoria. Quitar
+// una guarda del SQL cambia lo que el falso devuelve, y el test se cae. Un doble con respuestas
+// pregrabadas pasaría en verde con la consulta rota.
 import test from "node:test";
 import assert from "node:assert/strict";
 
@@ -19,30 +31,31 @@ import {
 
 const VINCULO = 7; // vinculos.id
 const OTRO_VINCULO = 8;
-const PLANTILLA = 55; // ediciones.id que enlaza VINCULO
-const OTRA_PLANTILLA = 99; // el que enlaza OTRO_VINCULO
-const VINCULO_SIN_PLANTILLA = 9;
+const EDICION = 55; // ediciones.id que enlaza VINCULO
+const OTRA_EDICION = 99; // la que enlaza OTRO_VINCULO
+const VINCULO_SIN_EDICION = 9;
 const ENTREGABLE = 300; // task_items.id
 
 // `vinculos`: qué edición enlaza cada vínculo.
 const VINCULOS = new Map([
-  [VINCULO, PLANTILLA],
-  [OTRO_VINCULO, OTRA_PLANTILLA],
-  [VINCULO_SIN_PLANTILLA, null],
+  [VINCULO, EDICION],
+  [OTRO_VINCULO, OTRA_EDICION],
+  [VINCULO_SIN_EDICION, null],
 ]);
 
-const fila = ({ id, vinculo = null, entregable = null, plantilla = null, activo = 1 }) => ({
+// Los DOS portadores que la tabla admite. No hay un tercero: desde la fase 2 el `CHECK`
+// `ck_signature_flow_templates_un_portador` exige exactamente uno de estos dos.
+const fila = ({ id, entregable = null, edicion = null, activo = 1 }) => ({
   id,
-  vinculo_id: vinculo,
   task_item_id: entregable,
-  edicion_id: plantilla,
+  edicion_id: edicion,
   is_active: activo,
 });
 
 /**
- * Conexión falsa que ejecuta las tres consultas contra `filas` interpretando el propio SQL:
- * el portador que se compara con el parámetro y las guardas `IS NULL` salen del texto de la
- * consulta, no de una tabla de respuestas.
+ * Conexión falsa que ejecuta las consultas contra `filas` interpretando el propio SQL: el portador
+ * que se compara con el parámetro y las guardas `IS NULL` salen del texto de la consulta, no de una
+ * tabla de respuestas.
  */
 const conexionDeFlujos = (filas, tabla = "signature_flow_templates") => {
   const consultas = [];
@@ -51,6 +64,11 @@ const conexionDeFlujos = (filas, tabla = "signature_flow_templates") => {
     async query(sql, params = []) {
       consultas.push({ sql, params });
       assert.ok(sql.includes(`FROM ${tabla}`), `consulta contra otra tabla: ${sql}`);
+      assert.doesNotMatch(
+        sql,
+        /\bvinculo_id\b/,
+        "el escalón del vínculo murió en la fase 2: ninguna consulta debe volver a nombrarlo"
+      );
 
       let portador;
       let valor;
@@ -61,9 +79,6 @@ const conexionDeFlujos = (filas, tabla = "signature_flow_templates") => {
         valor = VINCULOS.has(Number(params[0])) ? VINCULOS.get(Number(params[0])) : null;
       } else if (/\btask_item_id = \?/.test(sql)) {
         portador = "task_item_id";
-        valor = Number(params[0]);
-      } else if (/\bvinculo_id = \?/.test(sql)) {
-        portador = "vinculo_id";
         valor = Number(params[0]);
       } else {
         throw new Error(`consulta no reconocida: ${sql}`);
@@ -86,9 +101,8 @@ const conexionDeFlujos = (filas, tabla = "signature_flow_templates") => {
 
 test("firma: con flujo del ENTREGABLE gana ese, y no se pregunta nada más", async () => {
   const conexion = conexionDeFlujos([
-    fila({ id: 1, vinculo: VINCULO, entregable: ENTREGABLE }),
-    fila({ id: 2, vinculo: VINCULO }),
-    fila({ id: 3, plantilla: PLANTILLA }),
+    fila({ id: 1, entregable: ENTREGABLE }),
+    fila({ id: 3, edicion: EDICION }),
   ]);
 
   const flujo = await getActiveSignatureFlowTemplateForDefinitionTemplate(conexion, VINCULO, ENTREGABLE);
@@ -97,64 +111,55 @@ test("firma: con flujo del ENTREGABLE gana ese, y no se pregunta nada más", asy
   assert.equal(conexion.consultas.length, 1);
 });
 
-test("firma: sin flujo del entregable gana el del VÍNCULO", async () => {
-  const conexion = conexionDeFlujos([
-    fila({ id: 2, vinculo: VINCULO }),
-    fila({ id: 3, plantilla: PLANTILLA }),
-  ]);
-
-  const flujo = await getActiveSignatureFlowTemplateForDefinitionTemplate(conexion, VINCULO, ENTREGABLE);
-
-  assert.deepEqual(flujo, { id: 2 });
-  assert.equal(conexion.consultas.length, 2);
-});
-
-test("firma: sin flujo del entregable ni del vínculo gana el de la PLANTILLA (escalón nuevo)", async () => {
-  const conexion = conexionDeFlujos([
-    fila({ id: 3, plantilla: PLANTILLA }),
-  ]);
+test("firma: sin flujo del entregable gana el de la EDICIÓN que el vínculo enlaza", async () => {
+  const conexion = conexionDeFlujos([fila({ id: 3, edicion: EDICION })]);
 
   const flujo = await getActiveSignatureFlowTemplateForDefinitionTemplate(conexion, VINCULO, ENTREGABLE);
 
   assert.deepEqual(flujo, { id: 3 });
-  assert.equal(conexion.consultas.length, 3);
+  assert.equal(conexion.consultas.length, 2, "dos escalones, dos consultas: ni una más");
 });
 
-test("firma: el flujo de RUNTIME no lo devuelve el escalón del vínculo", async () => {
-  // Fila con los DOS portadores, tal y como la escribe `materializeRuntimeFlowForTaskItem`.
-  const runtime = fila({ id: 1, vinculo: VINCULO, entregable: ENTREGABLE });
+test("firma: el flujo de RUNTIME no se cuela por el escalón de la EDICIÓN", async () => {
+  // Una cabecera de runtime con edición es lo que el `CHECK` prohíbe hoy, pero puede quedar de
+  // antes: la guarda `task_item_id IS NULL` es lo que impide servirla a otro entregable.
+  const runtime = { id: 1, task_item_id: ENTREGABLE, edicion_id: EDICION, is_active: 1 };
 
   const soloRuntime = conexionDeFlujos([runtime]);
   assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(soloRuntime, VINCULO, null), null);
   assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(soloRuntime, VINCULO, 999), null);
 
-  const conPlantilla = conexionDeFlujos([runtime, fila({ id: 3, plantilla: PLANTILLA })]);
-  const flujo = await getActiveSignatureFlowTemplateForDefinitionTemplate(conPlantilla, VINCULO, 999);
-  assert.deepEqual(flujo, { id: 3 });
+  // Y con un flujo de edición presente, cae a ése, no al privado del otro envío.
+  const conEdicion = conexionDeFlujos([runtime, fila({ id: 3, edicion: EDICION })]);
+  assert.deepEqual(await getActiveSignatureFlowTemplateForDefinitionTemplate(conEdicion, VINCULO, 999), { id: 3 });
 });
 
-test("firma: el escalón de plantilla no cruza ediciones ni se cuela por otro vínculo", async () => {
-  const otraEdicion = conexionDeFlujos([fila({ id: 3, plantilla: OTRA_PLANTILLA })]);
+test("firma: el escalón de la edición no cruza ediciones ni vínculos huérfanos", async () => {
+  // El flujo de OTRA edición no vale para este vínculo.
+  const otraEdicion = conexionDeFlujos([fila({ id: 3, edicion: OTRA_EDICION })]);
   assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(otraEdicion, VINCULO, null), null);
 
-  const deOtroVinculo = conexionDeFlujos([
-    fila({ id: 4, vinculo: OTRO_VINCULO, plantilla: PLANTILLA }),
-  ]);
-  assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(deOtroVinculo, VINCULO, null), null);
-
-  const huerfano = conexionDeFlujos([fila({ id: 3, plantilla: PLANTILLA })]);
-  assert.equal(
-    await getActiveSignatureFlowTemplateForDefinitionTemplate(huerfano, VINCULO_SIN_PLANTILLA, null),
-    null
-  );
+  // Vínculo sin edición enlazada y vínculo inexistente: NULL, sin reventar.
+  const huerfano = conexionDeFlujos([fila({ id: 3, edicion: EDICION })]);
+  assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(huerfano, VINCULO_SIN_EDICION, null), null);
   assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(huerfano, 12345, null), null);
 });
 
-test("firma: un flujo de plantilla inactivo no se devuelve", async () => {
-  const conexion = conexionDeFlujos([fila({ id: 3, plantilla: PLANTILLA, activo: 0 })]);
+test("firma: un flujo de edición inactivo no se devuelve", async () => {
+  const conexion = conexionDeFlujos([fila({ id: 3, edicion: EDICION, activo: 0 })]);
   assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(conexion, VINCULO, null), null);
 });
 
+test("firma: el escalón del VÍNCULO está muerto y no vuelve", async () => {
+  // No basta con que nadie lo use: si alguien reintroduce la consulta del vínculo, la conexión
+  // falsa la rechaza arriba. Esto afirma además que el recorrido completo son DOS consultas.
+  const conexion = conexionDeFlujos([]);
+  assert.equal(await getActiveSignatureFlowTemplateForDefinitionTemplate(conexion, VINCULO, ENTREGABLE), null);
+  assert.equal(conexion.consultas.length, 2);
+  for (const { sql } of conexion.consultas) {
+    assert.doesNotMatch(sql, /\bvinculo_id\b/);
+  }
+});
 
 // --- Ámbitos: el ORDEN de los parámetros (defecto 1.16) --------------------------------------
 //

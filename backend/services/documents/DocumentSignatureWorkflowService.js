@@ -87,19 +87,6 @@ export const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
       return inst[0];
     }
   }
-  const [rows] = await connection.query(
-    `SELECT id
-     FROM signature_flow_templates
-     WHERE vinculo_id = ?
-       AND task_item_id IS NULL
-       AND is_active = 1
-     ORDER BY id DESC
-     LIMIT 1`,
-    [processDefinitionTemplateId]
-  );
-  if (rows?.[0]) {
-    return rows[0];
-  }
   // Flujo de la PLANTILLA que el vínculo enlaza. La subconsulta devuelve NULL si el vínculo no
   // existe o no tiene artifact, y `columna = NULL` no casa con nada: no hace falta guarda extra.
   const [byArtifact] = await connection.query(
@@ -110,7 +97,6 @@ export const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
              FROM vinculos
              WHERE id = ?
            )
-       AND vinculo_id IS NULL
        AND task_item_id IS NULL
        AND is_active = 1
      ORDER BY id DESC

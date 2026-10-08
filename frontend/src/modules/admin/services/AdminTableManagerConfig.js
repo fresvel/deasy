@@ -199,9 +199,12 @@ export const RELATED_RECORD_CONFIG = {
   process_runs: [
     { table: "tasks", label: "Tareas", foreignKey: "process_run_id", orderBy: "created_at", order: "desc" }
   ],
-  vinculos: [
-    { table: "fill_flow_templates", label: "Flujos de entrega", foreignKey: "vinculo_id", orderBy: "created_at", order: "desc" },
-    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "vinculo_id", orderBy: "created_at", order: "desc" }
+  // Los recorridos autorados cuelgan de la EDICIÓN, no del vínculo: el escalón del vínculo murió en
+  // la fase 2 del frente 24 y su columna ya no existe. Un vínculo alcanza su recorrido A TRAVÉS de
+  // la edición que enlaza, así que aquí no hay nada que listar.
+  ediciones: [
+    { table: "fill_flow_templates", label: "Flujos de entrega", foreignKey: "edicion_id", orderBy: "created_at", order: "desc" },
+    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "edicion_id", orderBy: "created_at", order: "desc" }
   ],
   fill_flow_templates: [
     { table: "fill_flow_steps", label: "Pasos de entrega", foreignKey: "fill_flow_template_id", orderBy: "step_order", order: "asc" }

@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**37 tablas · 357 columnas · 98 claves ajenas · 10 diagramas.**
+**37 tablas · 355 columnas · 96 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -285,9 +285,9 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 8 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 6 claves ajenas desde otros diagramas</summary>
 
-`document_versions.edicion_id` → `ediciones` · `fill_flow_templates.edicion_id` → `ediciones` · `fill_flow_templates.vinculo_id` → `vinculos` · `process_definition_period_types.term_type_id` → `term_types` · `signature_flow_templates.edicion_id` → `ediciones` · `signature_flow_templates.vinculo_id` → `vinculos` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
+`document_versions.edicion_id` → `ediciones` · `fill_flow_templates.edicion_id` → `ediciones` · `process_definition_period_types.term_type_id` → `term_types` · `signature_flow_templates.edicion_id` → `ediciones` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
 
 </details>
 
@@ -470,14 +470,13 @@ erDiagram
 
 ## Flujo de entrega
 
-**4 tablas** · 41 columnas · 15 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `relation_unit_types`, `task_items`, `unit_positions`, `unit_types`, `units`, `vinculos`, que salen como caja vacía.
+**4 tablas** · 40 columnas · 14 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `relation_unit_types`, `task_items`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
   %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   fill_flow_templates {
     int id PK
-    int vinculo_id FK
     int task_item_id FK
     int edicion_id FK
     varchar name
@@ -534,7 +533,6 @@ erDiagram
   unit_types |o--o{ fill_flow_steps : "unit_type_id"
   units |o--o{ fill_flow_steps : "unit_id"
   ediciones |o--o{ fill_flow_templates : "edicion_id"
-  vinculos |o--o{ fill_flow_templates : "vinculo_id"
   task_items |o--o{ fill_flow_templates : "task_item_id"
   document_fill_flows ||--o{ fill_requests : "document_fill_flow_id"
   persons |o--o{ fill_requests : "assigned_person_id"
@@ -550,14 +548,13 @@ erDiagram
 
 ## Flujo de firma (1 de 2)
 
-**4 tablas** · 43 columnas · 16 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `signature_request_statuses`, `task_items`, `unit_positions`, `unit_types`, `units`, `vinculos`, que salen como caja vacía.
+**4 tablas** · 42 columnas · 15 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `signature_request_statuses`, `task_items`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
   %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   signature_flow_templates {
     int id PK
-    int vinculo_id FK
     int task_item_id FK
     int edicion_id FK
     varchar name
@@ -616,7 +613,6 @@ erDiagram
   unit_types |o--o{ signature_flow_steps : "unit_type_id"
   units |o--o{ signature_flow_steps : "unit_id"
   ediciones |o--o{ signature_flow_templates : "edicion_id"
-  vinculos |o--o{ signature_flow_templates : "vinculo_id"
   task_items |o--o{ signature_flow_templates : "task_item_id"
   signature_flow_instances ||--o{ signature_requests : "instance_id"
   persons |o--o{ signature_requests : "assigned_person_id"

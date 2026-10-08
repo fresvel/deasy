@@ -116,13 +116,29 @@ export const requiresSignaturePdfForFinalFillApproval = async (connection, conte
     return false;
   }
 
+  // Los pasos del recorrido QUE DE VERDAD APLICA a este entregable, en el mismo orden que el
+  // resolvedor: primero el suyo (`routed`), si no el de su edición. Antes contaba sólo los del
+  // vínculo —el escalón 2—, que para un `routed` acertaba por accidente: el flujo de runtime
+  // escribía las dos anclas. Frente 24, fase 2.
   const [signatureRows] = await connection.query(
     `SELECT COUNT(sfs.id) AS total
-     FROM signature_flow_templates sft
-     INNER JOIN signature_flow_steps sfs ON sfs.template_id = sft.id
-     WHERE sft.vinculo_id = ?
-       AND sft.is_active = 1`,
-    [context.vinculo_id]
+     FROM signature_flow_steps sfs
+     WHERE sfs.template_id = COALESCE(
+       (
+         SELECT sft.id FROM signature_flow_templates sft
+          WHERE sft.task_item_id = ? AND sft.is_active = 1
+          ORDER BY sft.id DESC LIMIT 1
+       ),
+       (
+         SELECT sft.id FROM signature_flow_templates sft
+          INNER JOIN vinculos pdt ON pdt.id = ?
+          WHERE sft.edicion_id = pdt.edicion_id
+            AND sft.task_item_id IS NULL
+            AND sft.is_active = 1
+          ORDER BY sft.id DESC LIMIT 1
+       )
+     )`,
+    [context.task_item_id, context.vinculo_id]
   );
   const totalSignatureSteps = Number(signatureRows?.[0]?.total || 0);
   if (!totalSignatureSteps) {

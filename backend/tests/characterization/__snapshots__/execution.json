@@ -130,10 +130,10 @@
     "itemKeys": [
       "created_at",
       "description",
+      "edicion_id",
       "id",
       "is_active",
-      "name",
-      "vinculo_id"
+      "name"
     ]
   },
   "sql_task_items": {

@@ -206,8 +206,12 @@ const main = async () => {
   }, token);
 
   // 7. Flujo de ENTREGA: lo llena el responsable de la tarea (el docente).
+  //
+  // ANCLADO EN LA EDICION, no en el vinculo: el escalon del vinculo murio en el frente 24. Aqui
+  // estaba anclado ahi, y era la UNICA fila de escalon 2 que existia en todo el sistema -- la puso
+  // esta siembra por el editor generico, porque ninguna funcion del dominio lo escribia.
   const fillTplId = await create("fill_flow_templates", {
-    vinculo_id: pdtId,
+    edicion_id: fork.artifact_id,
     name: "Elaboración del informe",
     is_active: 1,
   }, token);
@@ -221,7 +225,7 @@ const main = async () => {
 
   // 8. Flujo de FIRMA: lo firma el Coordinador de la misma unidad.
   const signTplId = await create("signature_flow_templates", {
-    vinculo_id: pdtId,
+    edicion_id: fork.artifact_id,
     name: "Firma del coordinador",
     is_active: 1,
   }, token);

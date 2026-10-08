@@ -1,6 +1,6 @@
 ---
 title: "El flujo de entrega: quién lo rellena y quién lo revisa"
-description: "Una cabecera que puede colgar de tres sitios, pasos ordenados que nombran una forma de encontrar a la persona en vez de a la persona, y una instancia pegada a la ronda."
+description: "Una cabecera que cuelga de uno de dos sitios, pasos ordenados que nombran una forma de encontrar a la persona en vez de a la persona, y una instancia pegada a la ronda."
 sidebar:
   label: "11 · El flujo de entrega"
   order: 11
@@ -12,31 +12,43 @@ quien lo revisa, quien lo aprueba. Eso es el **flujo de entrega**.
 Se declara en dos piezas: una **cabecera** (`fill_flow_templates`) que le da nombre, y una lista de
 **pasos ordenados** (`fill_flow_steps`).
 
-## La cabecera cuelga de tres sitios, y no son excluyentes
+## La cabecera cuelga de uno de dos sitios, y sólo de uno
 
-La cabecera tiene tres columnas portadoras, y es lo que hace posibles los tres modos de emisión:
+La cabecera tiene dos columnas portadoras, y son **excluyentes**:
 
 | Portador | Qué flujo es |
 |---|---|
 | `edicion_id` | El flujo **autorado en la edición de plantilla**, compartido por todas las configuraciones donde esté enlazada |
-| `vinculo_id` | El flujo particular **de un vínculo**: esa plantilla en ese proceso configurado |
 | `task_item_id` | El flujo **definido en runtime** sobre un entregable concreto, en modo `routed` |
 
-:::caution[Los tres portadores pueden estar rellenos a la vez, y por eso la prioridad no es «qué columna tiene valor»]
+Lo exige la base con un `CHECK` que cuenta cuántos portadores van rellenos y pide **exactamente
+uno**. Ni los dos a la vez, ni ninguno — una cabecera sin ancla no la encontraría nadie, porque el
+resolutor pregunta por un portador.
 
-Aquí **no hay ningún `CHECK`** que los haga excluyentes, y no es un olvido: las filas de runtime
-llevan hoy **los dos primeros a la vez**, porque `task_item_id` discrimina al productor pero el
-vínculo sigue siendo su contexto.
+El resolutor baja **dos escalones por prioridad** —primero el entregable, después la edición— y el
+primero que encuentre algo activo manda. El escalón de la edición exige además `task_item_id IS
+NULL`: sin esa guarda, el flujo privado de un envío se le serviría a cualquier otro entregable.
 
-Por eso el resolutor no busca «la columna que esté rellena»: baja **tres escalones por prioridad**
-—entregable, vínculo, plantilla— y **cada escalón exige `NULL` en los portadores de los escalones
-anteriores**. Sin ese `IS NULL`, el flujo privado de un envío se le serviría a cualquier otro
-entregable del mismo vínculo.
+:::note[Hubo un tercer portador, `vinculo_id`, y murió]
+
+Era «el flujo particular de un vínculo»: esa plantilla en ese proceso configurado. Se retiró
+después de medirlo tres veces, y las tres decían lo mismo:
+
+- **nadie lo escribía** desde que se retiró el sincronizador que proyectaba el `meta.yaml` de cada
+  plantilla sobre sus vínculos;
+- **la puerta de publicación lo excluía** con un `vinculo_id IS NULL` explícito, así que un flujo
+  colgado del vínculo no podía publicar nada — era un recorrido que no llegaba a usarse;
+- las únicas filas que existían las ponía la **siembra de datos de ejemplo**, a través del editor
+  genérico de `/admin`.
+
+Y ese tercer portador era justo lo que hacía imposible el `CHECK`: las filas de runtime llevaban
+`vinculo_id` **y** `task_item_id` a la vez, así que los tres no eran excluyentes. Con dos, lo son.
+
+Un vínculo sigue alcanzando su recorrido, pero **a través de la edición que enlaza**. Y eso tiene
+una consecuencia que conviene saber: desenlazar una plantilla de una configuración **ya no borra su
+recorrido**, porque el recorrido nunca fue del vínculo.
 
 :::
-
-El primer escalón que encuentre algo activo, manda. Una cabecera colgada del vínculo **gana a la de
-la plantilla aunque sea más vieja**.
 
 ## Cómo dice un paso a quién le toca
 
@@ -95,7 +107,6 @@ cuándo se respondió y una nota de respuesta.
 ```mermaid
 erDiagram
   ediciones ||--o{ fill_flow_templates : "flujo de la plantilla"
-  vinculos ||--o{ fill_flow_templates : "flujo del vínculo"
   task_items ||--o{ fill_flow_templates : "flujo definido en runtime"
   fill_flow_templates ||--o{ fill_flow_steps : "pasos ordenados"
   fill_flow_templates ||--o{ document_fill_flows : "se instancia en"
@@ -106,8 +117,7 @@ erDiagram
 
   fill_flow_templates {
     int id PK "LA CABECERA"
-    int edicion_id FK "escalón 3: la plantilla"
-    int vinculo_id FK "escalón 2: el vínculo"
+    int edicion_id FK "escalón 2: la edición"
     int task_item_id FK "escalón 1: el entregable"
     varchar name
     varchar description

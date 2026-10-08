@@ -6,14 +6,15 @@ sidebar:
   order: 12
 ---
 
-El flujo de firma tiene **la misma estructura que el de entrega** —cabecera colgada de tres
+El flujo de firma tiene **la misma estructura que el de entrega** —cabecera colgada de uno de dos
 portadores, pasos ordenados, instancia pegada a la ronda y solicitudes— y las mismas tres formas de
 encontrar a quien le toca. Si leíste [la página anterior](/modelo/flujo-de-entrega), esta
 es la misma película con dos añadidos importantes.
 
-Los tres escalones de resolución son idénticos: `task_item_id` (runtime), luego
-`vinculo_id` (el vínculo), luego `edicion_id` (la plantilla), cada uno
-exigiendo `NULL` en los anteriores.
+Los dos escalones de resolución son idénticos: primero `task_item_id` (el recorrido definido al
+enviar), después `edicion_id` (el autorado en la edición), y el segundo exige `task_item_id IS NULL`.
+Su `CHECK` es el mismo: exactamente un portador relleno. El tercer portador que hubo —el del
+vínculo— murió igual aquí que allí, y el porqué está contado en esa página.
 
 :::note[Dos valores por defecto que sí cambian]
 
@@ -119,7 +120,6 @@ resultado, cuándo, y en qué archivo quedó el documento ya firmado. Un detalle
 ```mermaid
 erDiagram
   ediciones ||--o{ signature_flow_templates : "flujo de la plantilla"
-  vinculos ||--o{ signature_flow_templates : "flujo del vínculo"
   task_items ||--o{ signature_flow_templates : "flujo definido en runtime"
   signature_flow_templates ||--o{ signature_flow_steps : "pasos ordenados"
   signature_flow_templates ||--o{ signature_flow_instances : "se instancia en"
@@ -136,9 +136,8 @@ erDiagram
 
   signature_flow_templates {
     int id PK "LA CABECERA"
-    int vinculo_id FK "portador 1: el vinculo"
-    int task_item_id FK "portador 2: el entregable (runtime)"
-    int edicion_id FK "portador 3: la edicion de plantilla"
+    int task_item_id FK "portador 1: el entregable (runtime)"
+    int edicion_id FK "portador 2: la edicion de plantilla"
     varchar name
     varchar description
     smallint is_active

@@ -8,7 +8,7 @@
 | # | Fase | Qué entrega | Evidencia | Estado |
 |---|---|---|---|:--:|
 | **1** | Los tres renombrados | de `deliverables`, `template_artifacts` y `process_definition_templates` a `catalogo_documental`, `ediciones` y `vinculos` | **167 ficheros · 1.664 ocurrencias**; 7 puertas + `test:unit` 897/897 + `test:char:run` 321/321; goldens movidos y **probado que el diff es SÓLO el renombrado**; migración `scripts/migrar-recorrido.sql` aplicada y verificada | ✅ |
-| **2** | Muere el escalón 2 | fuera `vinculo_id` de las cabeceras, fuera su campo en `/admin`, fuera el escalón del resolvedor | el resolvedor baja de 3 escalones a 2 | ⬜ |
+| **2** | Muere el escalón 2 | fuera `vinculo_id` de las dos cabeceras **y su `CHECK` de un solo portador**, fuera su campo en `/admin`, fuera el escalón de los dos resolvedores | el resolvedor baja de 3 escalones a 2 (**2 consultas, no 3**, afirmado por unitario); 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320**; migración probada en sus **tres** rutas (mueve 1 cabecera, para con mensaje y **deshace el `DROP COLUMN`**, idempotente); goldens movidos en 5 ficheros y **revisado uno a uno**; `check-mapa-tablas` 100/77/0, `check-doc-modelo` y `check-enlaces-internos` en verde | ✅ |
 | **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; mueren `signature_request_statuses` y su `status_id` | los goldens se mueven, y ese diff ES la prueba | ⬜ |
 | **4** | E1 · la unificación | 6 tablas → 3: `pasos_declarados`, `recorridos`, `turnos`, con `lado` | el resolvedor pasa de 2 funciones a 1 | ⬜ |
 | **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
@@ -137,3 +137,50 @@ barrido.
 API —la ruta `/admin/sql/ediciones` y los campos `edicion_id`/`vinculo_id` de las respuestas—. Es
 correcto que los mueva, y dejarlo fuera de la API habría conservado justo la confusión que este frente
 viene a quitar.
+
+## 8 · Lo que la fase 2 enseñó
+
+**1 · «0 filas movidas» puede ser correcto y a la vez no demostrar nada.** La migración del escalón 2
+corrió sobre la pila y dijo `0 cabeceras movidas`, sin avisos. Era cierto: la siembra de
+caracterización crea recorridos `routed`, que cuelgan del entregable, así que **la rama que mueve no
+se ejercitaba**. Correr no es funcionar. Al recrear la situación a mano la migración siguió diciendo
+`0` y dejó la cabecera sin ancla — y el fallo era **mi dato de prueba**: inserté `vinculo_id = 2`
+cuando los vínculos de esa base eran el `1` y el `4`, así que el `UPDATE … FROM` no tenía con qué
+unirse. Con un vínculo que existe: `1 cabecera movida`. **Antes de culpar al código, comprueba que el
+id que inventaste exista.**
+
+**2 · Y entonces se probaron las TRES rutas, no sólo la buena.** Mueve; para con un mensaje que trae
+el `DELETE` exacto a ejecutar **y deshace el `DROP COLUMN`** porque todo va en una transacción; y al
+relanzarla termina. La del fallo es la que nadie prueba y es la que deja una base a medias.
+
+**3 · Borrar una columna NO lo ven las puertas obligatorias.** `check:sql-aliases` y `check:imports`
+dieron verde con **tres consultas de `flowRows.js` nombrando `vinculo_id`** — un alias correcto sobre
+una columna que ya no existe es sintaxis perfecta para todo el mundo menos para PostgreSQL, y sólo en
+tiempo de llamada. Lo cazó `test:char:run`. Es la lección que `CLAUDE.md` ya lleva escrita —«el SQL no
+lo valida NADIE hasta que se ejecuta esa rama»— y aquí volvió a morder. **El barrido hay que hacerlo
+por inventario, no con `grep | head`**: fueron 111 referencias, de las que sólo 14 eran del portador
+muerto; las demás son `task_items.vinculo_id`, que es legítimo y se parece muchísimo.
+
+**4 · La columna muerta tapaba un agujero.** Los hooks de las dos cabeceras guardaban «sólo en
+borrador» preguntando por el vínculo. Sin esa columna, `ctx.payload.vinculo_id` es siempre
+`undefined` y el `return` temprano **apagaba la comprobación entera**, en silencio. Y al reanclarla en
+la edición apareció lo de verdad: la cabecera **autorada** nunca estuvo guardada —tenía `vinculo_id`
+en `NULL`, así que `getTaskTemplate(null)` devolvía `null` y el `if (template)` se saltaba el guard—.
+Se editaba el recorrido de una edición publicada sin que nadie dijera nada.
+
+**5 · Un golden que se mueve puede ser la prueba de un fallo ARREGLADO.** `signature_flow_count` del
+panel operativo pasó de `1` a `0`, y no es una pérdida: la unión vieja era
+`sft.vinculo_id = pdt.id` **sin** `task_item_id IS NULL`, así que contaba como «recorrido autorado de
+este vínculo» una cabecera de runtime que pertenecía a **un** entregable ya enviado. Medido con las
+dos uniones sobre la misma base: la vieja da 1, la nueva 0, y los recorridos autorados de ese vínculo
+son **cero**. El `1` era el fallo.
+
+**6 · Un `CHECK` imposible se volvió posible, y pagó el mismo día.** «Exactamente un portador» no se
+podía declarar mientras runtime escribiera dos columnas a la vez. Con dos portadores excluyentes sí,
+y gracias a él se puede **deducir** el ancla de runtime sin leerla — que hizo falta, porque
+`sqlTables.js` no cataloga `task_item_id` en estas tablas y la rama que la miraba **no se disparó
+nunca**. Lo delató que la corrida saliera 320/320 cuando esperaba un fallo.
+
+⚠️ **Y una de operación: `test:char` a secas no es `test:char:run`.** Sin rehacer la fixture, la base
+arrastra lo que mutó la corrida anterior: **58 fallos** que no son del código. La fixture es parte de
+la prueba.

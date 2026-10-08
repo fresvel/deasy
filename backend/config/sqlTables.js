@@ -1194,9 +1194,12 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      // ANCLA EN LA EDICION, no en el vinculo. El escalon del vinculo murio en el frente 24:
+      // nadie lo escribia, su productor (`meta.yaml` + WorkflowSyncService) se borro en el §0.8, y la
+      // puerta de publicacion lo EXCLUIA con un `vinculo_id IS NULL`. Un recorrido es de la edicion.
       {
-        name: "vinculo_id",
-        label: "Plantilla de proceso configurado",
+        name: "edicion_id",
+        label: "Edicion de la plantilla",
         type: "number",
         required: true
       },
@@ -1337,9 +1340,12 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      // ANCLA EN LA EDICION, no en el vinculo. El escalon del vinculo murio en el frente 24:
+      // nadie lo escribia, su productor (`meta.yaml` + WorkflowSyncService) se borro en el §0.8, y la
+      // puerta de publicacion lo EXCLUIA con un `vinculo_id IS NULL`. Un recorrido es de la edicion.
       {
-        name: "vinculo_id",
-        label: "Plantilla de proceso configurado",
+        name: "edicion_id",
+        label: "Edicion de la plantilla",
         type: "number",
         required: true
       },

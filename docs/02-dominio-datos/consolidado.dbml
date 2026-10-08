@@ -635,7 +635,6 @@ Table "fill_flow_steps" {
 
 Table "fill_flow_templates" {
   "id" int4 [pk, not null, increment]
-  "vinculo_id" int4
   "task_item_id" int4
   "edicion_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
   "name" varchar(180) [not null]
@@ -1147,7 +1146,6 @@ Table "signature_flow_steps" {
 
 Table "signature_flow_templates" {
   "id" int4 [pk, not null, increment]
-  "vinculo_id" int4
   "task_item_id" int4
   "edicion_id" int4
   "name" varchar(180) [not null]
@@ -1551,7 +1549,6 @@ Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps
 Ref "fk_fill_flow_steps_unit_type":"unit_types"."id" ?<? "fill_flow_steps"."unit_type_id"
 Ref "fk_fill_flow_steps_unit":"units"."id" ?<? "fill_flow_steps"."unit_id"
 Ref "fk_fill_flow_templates_artifact":"ediciones"."id" ?<? "fill_flow_templates"."edicion_id"
-Ref "fk_fill_flow_templates_definition_template":"vinculos"."id" ?<? "fill_flow_templates"."vinculo_id"
 Ref "fk_fill_flow_templates_task_item":"task_items"."id" ?<? "fill_flow_templates"."task_item_id" [delete: cascade]
 Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
 Ref "fk_fill_requests_person":"persons"."id" ?<? "fill_requests"."assigned_person_id"
@@ -1607,7 +1604,6 @@ Ref "fk_signature_flow_steps_template":"signature_flow_templates"."id" <? "signa
 Ref "fk_signature_flow_steps_unit_type":"unit_types"."id" ?<? "signature_flow_steps"."unit_type_id"
 Ref "fk_signature_flow_steps_unit":"units"."id" ?<? "signature_flow_steps"."unit_id"
 Ref "fk_signature_flow_templates_artifact":"ediciones"."id" ?<? "signature_flow_templates"."edicion_id"
-Ref "fk_signature_flow_templates_definition_template":"vinculos"."id" ?<? "signature_flow_templates"."vinculo_id"
 Ref "fk_signature_flow_templates_task_item":"task_items"."id" ?<? "signature_flow_templates"."task_item_id" [delete: cascade]
 Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signature_requests"."instance_id"
 Ref "fk_signature_requests_person":"persons"."id" ?<? "signature_requests"."assigned_person_id"

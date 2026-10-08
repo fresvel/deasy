@@ -163,13 +163,17 @@ test("sin cabecera previa, se crea una colgada del artifact y con los otros port
   assert.equal(resultado.signatures.steps, 1);
 });
 
-test("la busqueda de la cabecera exige los otros dos portadores a NULL", async () => {
+test("la busqueda de la cabecera exige el OTRO portador a NULL, y no nombra el muerto", async () => {
   const connection = buildConnection();
   await replaceAuthoredFlowForArtifact(connection, { artifactId: ARTIFACT_ID, fillSteps: [fillStep()] });
 
   const [select] = find(connection, /^SELECT id FROM fill_flow_templates/);
   assert.match(select.sql, /edicion_id = \?/);
-  assert.match(select.sql, /vinculo_id IS NULL/);
+  assert.doesNotMatch(
+    select.sql,
+    /\bvinculo_id\b/,
+    "el escalon del vinculo murio en la fase 2: su columna no existe y nombrarla revienta en SQL"
+  );
   assert.match(select.sql, /task_item_id IS NULL/);
   assert.deepEqual(select.params, [ARTIFACT_ID]);
 });
@@ -261,7 +265,11 @@ test("el gate cuenta los pasos por UN portador: el de la plantilla", async () =>
 
   const [{ sql, params }] = connection.calls;
   assert.match(sql, /f\.edicion_id = \?/);
-  assert.match(sql, /f\.vinculo_id IS NULL/);
+  assert.doesNotMatch(
+    sql,
+    /\bvinculo_id\b/,
+    "el gate excluia el escalon del vinculo con un IS NULL; sin columna, nombrarlo revienta"
+  );
   assert.equal(/vinculos/.test(sql), false, "el gate ya no mira los vinculos");
   assert.deepEqual(params, [ARTIFACT_ID], "un solo portador, un solo parametro");
 });

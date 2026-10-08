@@ -85,3 +85,84 @@ BEGIN
 END $$;
 
 COMMIT;
+
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+-- FASE 2 · muere el escalón 2 (el recorrido del VÍNCULO)
+--
+-- Se midió antes de quitarlo: nadie lo escribía, su único productor —el `meta.yaml` que proyectaba
+-- `WorkflowSyncService`— se borró en el sub-paso 8 del §0.8, y la puerta de publicación lo EXCLUÍA
+-- con un `vinculo_id IS NULL` explícito. Las únicas filas que existían las ponía la siembra de dev
+-- a través del editor genérico de /admin.
+--
+-- ⚠️ ORDEN IMPORTANTE: primero se MIGRAN las filas que queden a la edición del vínculo, y sólo
+-- después se borra la columna. Al revés se perderían los pasos que cuelgan de esas cabeceras.
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+
+BEGIN;
+
+DO $$
+DECLARE r RECORD; migradas INT := 0; huerfanas INT := 0; ids TEXT;
+BEGIN
+  FOR r IN SELECT 'plantillas' AS esq, 'fill_flow_templates' AS tabla
+           UNION ALL SELECT 'firmas', 'signature_flow_templates'
+  LOOP
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = r.esq AND table_name = r.tabla AND column_name = 'vinculo_id') THEN
+      CONTINUE;   -- ya migrada
+    END IF;
+
+    -- 1 · las de RUNTIME llevaban las DOS anclas; se quedan sólo con la del entregable.
+    EXECUTE format('UPDATE %I.%I SET vinculo_id = NULL WHERE task_item_id IS NOT NULL', r.esq, r.tabla);
+
+    -- 2 · las del VÍNCULO pasan a la EDICIÓN que ese vínculo enlaza — si esa edición no tiene ya
+    --     una cabecera propia, que ganaría de todos modos por ser la que el resolvedor busca.
+    EXECUTE format($f$
+      UPDATE %I.%I h
+         SET edicion_id = v.edicion_id
+        FROM procesos.vinculos v
+       WHERE h.vinculo_id = v.id
+         AND h.task_item_id IS NULL
+         AND h.edicion_id IS NULL
+         AND NOT EXISTS (SELECT 1 FROM %I.%I otra
+                          WHERE otra.edicion_id = v.edicion_id
+                            AND otra.task_item_id IS NULL)
+    $f$, r.esq, r.tabla, r.esq, r.tabla);
+    GET DIAGNOSTICS migradas = ROW_COUNT;
+
+    -- 3 · y si alguna se queda SIN ANCLA, esto PARA. No es celo: una cabecera sin ancla no la
+    --     encuentra ningun escalon —los dos resolutores preguntan por un portador—, asi que sus
+    --     pasos no los sirve nadie, y ademas bloquea el CHECK del paso 4. Borrarla es seguro pero
+    --     es una decision de quien migra, no de este script. Como el bloque entero va en una sola
+    --     transaccion, al fallar aqui NO queda media migracion: se arregla y se vuelve a lanzar.
+    EXECUTE format('SELECT count(*) FROM %I.%I WHERE edicion_id IS NULL AND task_item_id IS NULL', r.esq, r.tabla)
+      INTO huerfanas;
+    IF huerfanas > 0 THEN
+      EXECUTE format('SELECT string_agg(id::text, '', '' ORDER BY id) FROM %I.%I WHERE edicion_id IS NULL AND task_item_id IS NULL', r.esq, r.tabla)
+        INTO ids;
+      RAISE EXCEPTION 'MIGRACION DETENIDA: % cabecera(s) de %.% quedan SIN ANCLA (ids: %). La edicion de su vinculo ya tenia recorrido propio, asi que estas son redundantes y nadie las sirve. Revisalas y, si confirmas que sobran: DELETE FROM %.% WHERE id IN (%); y relanza este script.',
+        huerfanas, r.esq, r.tabla, ids, r.esq, r.tabla, ids;
+    END IF;
+    RAISE NOTICE 'MIGRACION: %.% -> % cabecera(s) movidas del vinculo a la edicion', r.esq, r.tabla, migradas;
+
+    EXECUTE format('ALTER TABLE %I.%I DROP COLUMN vinculo_id', r.esq, r.tabla);
+  END LOOP;
+
+  -- 4 · el CHECK de "exactamente un portador", que el escalon del vinculo hacia imposible: las
+  --     filas de runtime llevaban `vinculo_id` Y `task_item_id` a la vez, asi que los tres
+  --     portadores no eran excluyentes. Con dos si lo son, y cada escritor usa uno.
+  --     Va aparte del CREATE TABLE porque `CREATE TABLE IF NOT EXISTS` no toca una tabla que ya
+  --     existe (contrato TD7-s): sobre una base viva el CHECK del esquema ni se aplica ni falla.
+  FOR r IN SELECT 'plantillas' AS esq, 'fill_flow_templates' AS tabla
+           UNION ALL SELECT 'firmas', 'signature_flow_templates'
+  LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_constraint
+                    WHERE conname = 'ck_' || r.tabla || '_un_portador'
+                      AND conrelid = (r.esq || '.' || r.tabla)::regclass) THEN
+      EXECUTE format('ALTER TABLE %I.%I ADD CONSTRAINT %I CHECK (num_nonnulls(task_item_id, edicion_id) = 1)',
+                     r.esq, r.tabla, 'ck_' || r.tabla || '_un_portador');
+      RAISE NOTICE 'MIGRACION: %.% -> CHECK de un solo portador anadido', r.esq, r.tabla;
+    END IF;
+  END LOOP;
+END $$;
+
+COMMIT;

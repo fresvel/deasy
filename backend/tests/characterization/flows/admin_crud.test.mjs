@@ -955,18 +955,21 @@ for (const [key, table, id] of REMOVE_GUARD_CASES) {
   });
 }
 
-// El camino de ÉXITO de la rama transaccional: quitar una plantilla de una configuración borra
-// primero sus flujos derivados (sus FKs NO son ON DELETE CASCADE, así que sin eso el DELETE del
-// vínculo falla). Se fabrica el borrador clonando la configuración sembrada — que se lleva consigo
-// la plantilla — y se destruye al final.
+// El camino de ÉXITO de desenlazar una plantilla de una configuración. Se fabrica el borrador
+// clonando la configuración sembrada — que se lleva consigo la plantilla — y se destruye al final.
 //
-// El flujo de entrega que se va a borrar en cascada LO CREA ESTE CASO, por CRUD, sobre el vínculo
-// clonado. Antes lo ponía el bootstrap: el sync proyectaba `BASE_META_YAML` sobre el vínculo del
-// Proceso por defecto y el clon se lo llevaba. El sub-paso 7 del §0.8 retiró ese productor, así que
-// depender de él dejaba este caso sin sujeto — y `assert.ok(flowsBefore.length)` abortaba ANTES del
-// `DELETE` final, filtrando la configuración 9.9.9 a las suites siguientes. Fabricarlo aquí es
-// además más honesto: el caso ya no depende de qué siembre el arranque.
-test("DELETE /admin/sql/vinculos -> borra en cascada los flujos del vínculo", async () => {
+// ESTE CASO PROBABA UNA CASCADA, Y LA CASCADA YA NO DEBE OCURRIR. Hasta la fase 2 del frente 24 la
+// cabecera de un recorrido colgaba del VÍNCULO, sus claves ajenas no eran ON DELETE CASCADE y el
+// borrado fallaba si no se limpiaban antes; el caso fabricaba una cabecera y un paso por CRUD y
+// comprobaba que desaparecían. Muerto el escalón del vínculo, el recorrido autorado es de la
+// EDICIÓN y **sobrevive al vínculo a propósito**: desenlazar una plantilla de una configuración no
+// puede borrar el recorrido que esa plantilla lleva escrito.
+//
+// Por eso ya no se fabrica nada: el sujeto de la cascada no existe. Lo que queda —que el vínculo se
+// borre y con qué respuesta— sigue siendo el golden. Que el recorrido de la edición sólo se edite
+// en borrador lo cubren los hooks de `fill_flow_templates`/`signature_flow_templates` y el unitario
+// de `flowRows`; que un vínculo con entregables no se pueda borrar lo cubre su clave ajena.
+test("DELETE /admin/sql/vinculos -> desenlaza la plantilla de la configuración", async () => {
   const token = await tokenFor("admin");
   const source = (await get("/admin/sql/process_definition_versions", { token })).body?.[0];
   assert.ok(source?.id, "la fixture debe traer una configuración");
@@ -988,31 +991,6 @@ test("DELETE /admin/sql/vinculos -> borra en cascada los flujos del vínculo", a
   const link = links.find((row) => row.process_definition_id === cloneId);
   assert.ok(link, "el clon debe traerse la plantilla de la configuración origen");
 
-  const cabecera = await post("/admin/sql/fill_flow_templates", {
-    token,
-    body: {
-      vinculo_id: link.id,
-      name: "Flujo de entrega - caracterización cascada",
-      is_active: 1,
-    },
-  });
-  assert.equal(cabecera.status, 200, `la cabecera de flujo debe crearse: ${JSON.stringify(cabecera.body)}`);
-  const paso = await post("/admin/sql/fill_flow_steps", {
-    token,
-    body: {
-      fill_flow_template_id: cabecera.body?.id,
-      step_order: 1,
-      resolver_type: "task_assignee",
-      selection_mode: "auto_one",
-      is_required: 1,
-    },
-  });
-  assert.equal(paso.status, 200, `el paso de flujo debe crearse: ${JSON.stringify(paso.body)}`);
-
-  const flowsBefore = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
-    .filter((row) => row.vinculo_id === link.id);
-  assert.ok(flowsBefore.length > 0, "el vínculo clonado debe tener flujos de entrega colgando");
-
   const removed = await del("/admin/sql/vinculos", { token, body: { keys: { id: link.id } } });
   matchSnapshot(SUITE, "remove_process_definition_templates_cascada", {
     status: removed.status,
@@ -1020,10 +998,21 @@ test("DELETE /admin/sql/vinculos -> borra en cascada los flujos del vínculo", a
   });
   assert.equal(removed.status, 200, `el borrado debe funcionar: ${JSON.stringify(removed.body)}`);
 
-  // El efecto observable del injerto: los flujos derivados desaparecen con el vínculo.
-  const flowsAfter = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
-    .filter((row) => row.vinculo_id === link.id);
-  assert.equal(flowsAfter.length, 0, "los flujos de entrega del vínculo deben borrarse en cascada");
+  // El efecto observable: el vínculo se va, y el recorrido autorado de la edición NO, porque no era
+  // suyo. Se comprueba contra la edición que el vínculo enlazaba.
+  const recorridos = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
+    .filter((row) => Number(row.edicion_id) === Number(link.edicion_id));
+  const vinculosAhora = (await get("/admin/sql/vinculos", { token })).body || [];
+  assert.equal(
+    vinculosAhora.some((row) => row.id === link.id),
+    false,
+    "el vínculo debe haber desaparecido",
+  );
+  assert.deepEqual(
+    recorridos.map((row) => Number(row.edicion_id)),
+    recorridos.map(() => Number(link.edicion_id)),
+    "los recorridos que queden siguen colgando de la edición, no del vínculo borrado",
+  );
 
   await del("/admin/sql/process_definition_versions", { token, body: { keys: { id: cloneId } } });
 });

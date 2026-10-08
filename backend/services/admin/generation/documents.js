@@ -215,9 +215,9 @@ export const materializeRuntimeFlowForTaskItem = async (
 
   if (entrega.length) {
     const [ft] = await connection.query(
-      `INSERT INTO fill_flow_templates (vinculo_id, task_item_id, name, is_active)
-       VALUES (?, ?, 'Entrega (definida al enviar)', 1)`,
-      [processDefinitionTemplateId, taskItemId]
+      `INSERT INTO fill_flow_templates (task_item_id, name, is_active)
+       VALUES (?, 'Entrega (definida al enviar)', 1)`,
+      [taskItemId]
     );
     const fillTplId = Number(ft.insertId);
     let order = 1;
@@ -245,9 +245,9 @@ export const materializeRuntimeFlowForTaskItem = async (
 
   if (firma.length) {
     const [st] = await connection.query(
-      `INSERT INTO signature_flow_templates (vinculo_id, task_item_id, name, is_active)
-       VALUES (?, ?, 'Firma (definida al enviar)', 1)`,
-      [processDefinitionTemplateId, taskItemId]
+      `INSERT INTO signature_flow_templates (task_item_id, name, is_active)
+       VALUES (?, 'Firma (definida al enviar)', 1)`,
+      [taskItemId]
     );
     const sigTplId = Number(st.insertId);
     let order = 1;

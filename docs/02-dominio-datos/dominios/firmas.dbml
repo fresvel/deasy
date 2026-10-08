@@ -78,7 +78,6 @@ Table "signature_flow_steps" {
 
 Table "signature_flow_templates" {
   "id" int4 [pk, not null, increment]
-  "vinculo_id" int4
   "task_item_id" int4
   "edicion_id" int4
   "name" varchar(180) [not null]
@@ -145,7 +144,6 @@ Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_reque
 //   unit_types -> signature_flow_steps   [organizacion]
 //   units -> signature_flow_steps   [organizacion]
 //   ediciones -> signature_flow_templates   [plantillas]
-//   vinculos -> signature_flow_templates   [procesos]
 //   task_items -> signature_flow_templates   [tareas]
 //   persons -> signature_requests   [identidad]
 //   persons -> signature_batch_jobs   [identidad]

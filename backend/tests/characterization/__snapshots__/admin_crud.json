@@ -820,7 +820,7 @@
   "remove_guard_flujo_de_firma_de_configuracion_activa": {
     "status": 400,
     "body": {
-      "message": "Solo se pueden modificar los flujos de firma cuando la configuracion esta en draft."
+      "message": "No se puede editar los flujos de firma: este recorrido se definio al enviar un entregable y pertenece a el, no a una edicion."
     }
   },
   "remove_guard_plantilla_de_configuracion_activa": {

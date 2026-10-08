@@ -231,6 +231,38 @@ const mapOneActivePerSeries = (error) => {
 // El registro. Una entrada por tabla con lógica propia; las demás pasan por el camino genérico.
 // -------------------------------------------------------------------------------------------
 
+// EL ANCLA DE UNA CABECERA DE RECORRIDO decide tambien POR QUE se rechaza editarla. Son dos desde
+// la fase 2 del frente 24, y cada una da una respuesta distinta:
+//
+//   · `task_item_id` -> el recorrido se definio AL ENVIAR y pertenece a ese entregable. El editor
+//     generico no lo toca, y lo que hay que decir es ESO.
+//   · `edicion_id`   -> se edita mientras la edicion este en `draft`. Misma puerta que los pasos y
+//     que `templateLifecycle` para publicar.
+//
+// ⚠️ EL ANCLA DE RUNTIME NO SE PUEDE LEER DE LA FILA, y conviene saber por que: `sqlTables.js` no
+// cataloga `task_item_id` en estas dos tablas, asi que ni `ctx.existing` ni `getByKeys` lo traen
+// --se comprobo: la rama que lo miraba no se disparo NUNCA--. Se deduce, y la deduccion es
+// solida gracias al `CHECK` `ck_*_un_portador`: si una fila que YA EXISTE no tiene edicion, su
+// portador es por fuerza el entregable, porque no hay un tercero ni se admite ninguno.
+//
+// En `create` NO se deduce, y el orden de los pasos es el motivo: la cabecera de este fichero lo
+// deja escrito --`beforeCreate -> [requeridos -> validateFieldTypes -> validateTableRules]`--, o sea
+// que este hook corre ANTES de la validacion. Un payload sin edicion se deja pasar para que sea
+// `validateTableRules` quien hable, con su mensaje propio («Selecciona la edicion de la plantilla.»),
+// que es el que el formulario espera. Adelantarse aqui lo unico que haria es empeorarlo.
+const exigirRecorridoEditable = async (ctx, fila, entityLabel, { creando = false } = {}) => {
+  if (!fila?.edicion_id) {
+    if (creando) {
+      return;
+    }
+    throw new Error(
+      `No se puede editar ${entityLabel}: este recorrido se definio al enviar un entregable y pertenece a el, no a una edicion.`
+    );
+  }
+  await ctx.service.ensureDraftEdicionContext(fila.edicion_id, { entityLabel });
+};
+
+
 export const TABLE_HOOKS = {
   // ⚠️ LA BITACORA NO SE ESCRIBE DESDE /admin -- ni AdminSistema, que tiene `manage` de todo--. Una
   // entrada dada de alta a mano es una entrada FALSA con aspecto de verdadera. Las altas las hace
@@ -713,36 +745,16 @@ export const TABLE_HOOKS = {
 
     beforeRemove: TEMPLATE_CHILD_GUARDS.beforeRemove,
 
-    // Quitar una plantilla de la configuración: sus flujos derivados (entrega/firma) cuelgan del
-    // vínculo y sus FKs NO son ON DELETE CASCADE, así que hay que borrarlos ANTES, en la misma
-    // transacción. Solo aplica en draft (lo garantiza beforeRemove); en draft no existen instancias
-    // de runtime (requests/firmas), por eso basta con templates + pasos.
-    async beforeRemoveTx(ctx) {
-      const templateId = Number(ctx.keyPayload.id);
-      const [fillTemplates] = await ctx.connection.query(
-        "SELECT id FROM fill_flow_templates WHERE vinculo_id = ?",
-        [templateId]
-      );
-      for (const template of fillTemplates) {
-        await ctx.connection.query("DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?", [template.id]);
-      }
-      await ctx.connection.query(
-        "DELETE FROM fill_flow_templates WHERE vinculo_id = ?",
-        [templateId]
-      );
-      const [signatureTemplates] = await ctx.connection.query(
-        "SELECT id FROM signature_flow_templates WHERE vinculo_id = ?",
-        [templateId]
-      );
-      for (const template of signatureTemplates) {
-        await ctx.connection.query("DELETE FROM signature_flow_steps WHERE template_id = ?", [template.id]);
-      }
-      await ctx.connection.query(
-        "DELETE FROM signature_flow_templates WHERE vinculo_id = ?",
-        [templateId]
-      );
-    },
-
+    // AQUI HABIA UN `beforeRemoveTx` que borraba las cabeceras del vinculo y sus pasos antes del
+    // DELETE, porque sus claves ajenas no eran ON DELETE CASCADE y el borrado fallaba sin eso.
+    // Ya no hace falta: UN VINCULO NO ES DUENO DE NINGUNA CABECERA desde que murio el escalon 2
+    // (fase 2 del frente 24). El recorrido autorado es de la EDICION y sobrevive al vinculo --que
+    // es justo lo que se quiere: desenlazar una plantilla de una configuracion no puede borrar el
+    // recorrido que esa plantilla tiene escrito--. Las cabeceras de runtime cuelgan del ENTREGABLE
+    // con ON DELETE CASCADE, asi que se van con el; y un vinculo con entregables no se puede borrar
+    // --su clave ajena es NO ACTION--, asi que cuando este borrado ya no queda ninguna.
+    //
+    // Un hook vacio es peor que ninguno: se lee como "aqui falta algo".
   },
 
   process_target_rules: {
@@ -1004,41 +1016,34 @@ export const TABLE_HOOKS = {
   document_signatures: syncProgressHooks(syncDocumentProgressFromDocumentSignature),
 
   fill_flow_templates: {
-    // El flujo pertenece a la definición vía su plantilla; solo se edita con la definición en
-    // borrador. En create la definición se resuelve a través de la plantilla del payload.
+    // EL ANCLA ES LA EDICION, y esto cambió con la fase 2 del frente 24. Antes la cabecera colgaba
+    // del vínculo y de ahí se sacaba UNA definición de proceso a la que exigir borrador. Sin esa
+    // columna la pregunta «¿de qué definición es?» no tiene una sola respuesta —una edición puede
+    // estar enlazada a varias configuraciones—, y la que sí la tiene es la propia edición, que
+    // lleva su ciclo de vida. Es la misma puerta que usan los pasos y que usa `templateLifecycle`.
+    //
+    // ⚠️ ESTO GUARDA UN CASO QUE ANTES NO SE GUARDABA, y no es un descuido al trasladar: la
+    // cabecera AUTORADA tenía `vinculo_id` en NULL, así que `getTaskTemplate(null)` devolvía null y
+    // el `if (template)` se saltaba la comprobación entera. Se editaba el recorrido de una edición
+    // publicada sin que nadie dijera nada. Dejar la guarda apagada al quitar la columna habría sido
+    // una regresión silenciosa.
     //
     // NOTA: el injerto original hacía `payload.process_definition_id = ...` y lo borraba tres
     // líneas después. Era código muerto: `process_definition_id` no es campo de esta tabla en
     // `sqlTables.js`, así que `pickPayload` nunca lo pone en el payload y el delete no borraba
     // nada. No se traslada.
     async beforeCreate(ctx) {
-      if (!ctx.payload.vinculo_id) {
-        return;
-      }
-      const template = await ctx.service.getTaskTemplate(ctx.payload.vinculo_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado seleccionada no existe.");
-      }
-      await ctx.service.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los flujos de entrega" }
-      );
+      await exigirRecorridoEditable(ctx, ctx.payload, "los flujos de entrega", { creando: true });
     },
 
     async beforeUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "vinculo_id")) {
-        if (Number(ctx.updates.vinculo_id) !== Number(ctx.existing.vinculo_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un flujo de entrega.");
+      if (Object.hasOwn(ctx.updates, "edicion_id")) {
+        if (Number(ctx.updates.edicion_id) !== Number(ctx.existing.edicion_id)) {
+          throw new Error("No se puede cambiar la edicion asociada de un flujo de entrega.");
         }
-        delete ctx.updates.vinculo_id;
+        delete ctx.updates.edicion_id;
       }
-      const template = await ctx.service.getTaskTemplate(ctx.existing.vinculo_id);
-      if (template) {
-        await ctx.service.ensureDraftDefinitionContext(
-          template.process_definition_id,
-          { entityLabel: "los flujos de entrega" }
-        );
-      }
+      await exigirRecorridoEditable(ctx, ctx.existing, "los flujos de entrega");
     }
   },
 
@@ -1051,12 +1056,14 @@ export const TABLE_HOOKS = {
       if (!fillFlowTemplate) {
         throw new Error("La plantilla de entrega seleccionada no existe.");
       }
-      const template = await ctx.service.getTaskTemplate(fillFlowTemplate.vinculo_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso definida asociada no existe.");
-      }
-      await ctx.service.ensureDraftDefinitionContext(
-        template.process_definition_id,
+      // LA EDICION MANDA, NO LA DEFINICION, y esto cambio con el frente 24: la cabecera colgaba del
+      // vinculo (el escalon 2) y de ahi se sacaba UNA definicion de proceso a la que exigir borrador.
+      // Anclada en la edicion, esa pregunta no tiene una sola respuesta --una edicion puede estar
+      // enlazada a varias configuraciones-- y la que si la tiene es la propia edicion, que lleva su
+      // ciclo de vida: los pasos se editan mientras la edicion es `draft`, que es la misma puerta que
+      // usa `templateLifecycle` para publicar.
+      await ctx.service.ensureDraftEdicionContext(
+        fillFlowTemplate.edicion_id,
         { entityLabel: "los pasos de entrega" }
       );
     },
@@ -1070,66 +1077,41 @@ export const TABLE_HOOKS = {
       }
       const fillFlowTemplate = await ctx.service.getFillFlowTemplate(ctx.existing.fill_flow_template_id);
       if (fillFlowTemplate) {
-        const template = await ctx.service.getTaskTemplate(fillFlowTemplate.vinculo_id);
-        if (template) {
-          await ctx.service.ensureDraftDefinitionContext(
-            template.process_definition_id,
-            { entityLabel: "los pasos de entrega" }
-          );
-        }
+        await ctx.service.ensureDraftEdicionContext(
+          fillFlowTemplate.edicion_id,
+          { entityLabel: "los pasos de entrega" }
+        );
       }
     }
   },
 
   signature_flow_templates: {
+    // Mismo cambio que en `fill_flow_templates`: el ancla es la EDICION desde la fase 2 del
+    // frente 24. La asimetría que había entre las dos —aquí el ancla ausente era ERROR, allí se
+    // ignoraba en silencio— se desvanece sola: `ensureDraftEdicionContext` trata el ancla ausente
+    // como error en los dos lados, que es lo que la de firma ya hacía.
     async beforeCreate(ctx) {
-      if (!ctx.payload.vinculo_id) {
-        return;
-      }
-      const template = await ctx.service.getTaskTemplate(ctx.payload.vinculo_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado seleccionada no existe.");
-      }
-      await ctx.service.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los flujos de firma" }
-      );
+      await exigirRecorridoEditable(ctx, ctx.payload, "los flujos de firma", { creando: true });
     },
 
-    // Ojo a la asimetría con fill_flow_templates: aquí la plantilla ausente es ERROR, allí se
-    // ignora en silencio. Es comportamiento preexistente, se preserva tal cual.
     async beforeUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "vinculo_id")) {
-        if (Number(ctx.updates.vinculo_id) !== Number(ctx.existing.vinculo_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un flujo de firma.");
+      if (Object.hasOwn(ctx.updates, "edicion_id")) {
+        if (Number(ctx.updates.edicion_id) !== Number(ctx.existing.edicion_id)) {
+          throw new Error("No se puede cambiar la edicion asociada de un flujo de firma.");
         }
-        delete ctx.updates.vinculo_id;
+        delete ctx.updates.edicion_id;
       }
-      const template = await ctx.service.getTaskTemplate(ctx.existing.vinculo_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
-      }
-      await ctx.service.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los flujos de firma" }
-      );
+      await exigirRecorridoEditable(ctx, ctx.existing, "los flujos de firma");
     },
 
-    // Cuelga de la configuración a través de su plantilla, no por `process_definition_id` directo,
-    // así que no puede reutilizar el guard compartido de las tres hijas.
+    // Cuelga de la EDICION, no de `process_definition_id` directo, así que no puede reutilizar el
+    // guard compartido de las tres hijas.
     async beforeRemove(ctx) {
       const existing = await ctx.service.getByKeys(ctx.tableName, ctx.keyPayload);
       if (!existing) {
         throw new Error("Registro no encontrado.");
       }
-      const template = await ctx.service.getTaskTemplate(existing.vinculo_id);
-      if (!template) {
-        throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
-      }
-      await ctx.service.ensureDraftDefinitionContext(
-        template.process_definition_id,
-        { entityLabel: "los flujos de firma" }
-      );
+      await exigirRecorridoEditable(ctx, existing, "los flujos de firma");
     }
   },
 };

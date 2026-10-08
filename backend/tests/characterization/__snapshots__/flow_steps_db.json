@@ -46,8 +46,7 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>",
-      "vinculo_id": "<normalized>"
+      "task_item_id": "<normalized>"
     }
   ],
   "autorado_firma": [
@@ -135,8 +134,7 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>",
-      "vinculo_id": "<normalized>"
+      "task_item_id": "<normalized>"
     }
   ],
   "plantilla_entrega": [],
@@ -178,8 +176,7 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>",
-      "vinculo_id": "<normalized>"
+      "task_item_id": "<normalized>"
     }
   ],
   "runtime_firma": [
@@ -220,8 +217,7 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>",
-      "vinculo_id": "<normalized>"
+      "task_item_id": "<normalized>"
     }
   ],
   "versionado_entrega": [
@@ -271,8 +267,7 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>",
-      "vinculo_id": "<normalized>"
+      "task_item_id": "<normalized>"
     },
     {
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
@@ -320,8 +315,7 @@
         }
       ],
       "storage_version": "1.1.0",
-      "task_item_id": "<normalized>",
-      "vinculo_id": "<normalized>"
+      "task_item_id": "<normalized>"
     }
   ],
   "versionado_firma": [
@@ -409,8 +403,7 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>",
-      "vinculo_id": "<normalized>"
+      "task_item_id": "<normalized>"
     },
     {
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
@@ -496,8 +489,7 @@
         }
       ],
       "storage_version": "1.1.0",
-      "task_item_id": "<normalized>",
-      "vinculo_id": "<normalized>"
+      "task_item_id": "<normalized>"
     }
   ]
 }

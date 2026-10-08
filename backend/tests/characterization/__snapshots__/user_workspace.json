@@ -336,7 +336,7 @@
           {
             "edicion_id": "<normalized>",
             "id": "<normalized>",
-            "signature_flow_count": "1",
+            "signature_flow_count": "0",
             "sort_order": 1,
             "template_artifact_active": 1,
             "template_artifact_name": "Informe general"

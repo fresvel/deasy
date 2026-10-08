@@ -441,7 +441,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `vinculo_id` | int | no | `vinculos.id` · impide borrar | — |
 | `task_item_id` | int | no | `task_items.id` · se va con el | — |
 | `edicion_id` | int | no | `ediciones.id` · impide borrar | — |
 | `name` | varchar(180) | sí | — | — |
@@ -504,7 +503,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `vinculo_id` | int | no | `vinculos.id` · impide borrar | — |
 | `task_item_id` | int | no | `task_items.id` · se va con el | — |
 | `edicion_id` | int | no | `ediciones.id` · impide borrar | — |
 | `name` | varchar(180) | sí | — | — |
@@ -600,4 +598,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**38 tablas · 365 columnas · 98 referencias.** Leídas del catálogo de PostgreSQL.
+**38 tablas · 363 columnas · 96 referencias.** Leídas del catálogo de PostgreSQL.

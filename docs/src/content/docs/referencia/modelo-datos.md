@@ -11,7 +11,7 @@ generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **<!-- gen:total-tablas -->92<!-- /gen --> tablas y <!-- gen:total-relaciones -->179<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+Son **<!-- gen:total-tablas -->92<!-- /gen --> tablas y <!-- gen:total-relaciones -->177<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
 de <!-- gen:total-tablas -->92<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
@@ -134,7 +134,7 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **nivel*
 | **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
 
 **La regla es una sola: una clave ajena puede apuntar a su propio nivel o a uno inferior, nunca a una
-superior.** Medido sobre las <!-- gen:total-relaciones -->179<!-- /gen --> relaciones del esquema: 102 bajan de nivel, 77 se quedan
+superior.** Medido sobre las <!-- gen:total-relaciones -->177<!-- /gen --> relaciones del esquema: 102 bajan de nivel, 77 se quedan
 en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
 Dos cosas que los niveles enseñan y que ningún diagrama por dominio decía:

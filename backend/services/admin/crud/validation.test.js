@@ -76,13 +76,13 @@ test("validateTableRules exige configuracion y periodo antes de mirar las fechas
   assert.doesNotThrow(() => validateTableRules("tasks", { process_definition_id: 1, term_id: 3 }));
 });
 
-test("validateTableRules exige la plantilla de proceso configurado en los dos tipos de flujo", () => {
+// El ancla de una cabecera autorada es la EDICION, no el vinculo: el escalon del vinculo murio en la
+// fase 2 del frente 24. Lo que exige el formulario tiene que ser el portador que de verdad resuelve.
+test("validateTableRules exige la EDICION en los dos tipos de flujo", () => {
   for (const table of ["fill_flow_templates", "signature_flow_templates"]) {
-    throwsWith(
-      () => validateTableRules(table, {}),
-      "Selecciona la plantilla de proceso configurado.",
-    );
-    assert.doesNotThrow(() => validateTableRules(table, { vinculo_id: 7 }));
+    throwsWith(() => validateTableRules(table, {}), "Selecciona la edicion de la plantilla.");
+    throwsWith(() => validateTableRules(table, { vinculo_id: 7 }), "Selecciona la edicion de la plantilla.");
+    assert.doesNotThrow(() => validateTableRules(table, { edicion_id: 55 }));
   }
 });
 

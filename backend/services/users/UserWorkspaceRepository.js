@@ -317,8 +317,11 @@ export const getDefinitionTemplates = async (pool, definitionId) => {
      FROM vinculos pdt
      INNER JOIN ediciones tar ON tar.id = pdt.edicion_id
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
+     -- El recorrido de un vinculo ES el de su edicion: la cabecera del vinculo --el escalon 2-- no la
+     -- escribia nadie y la puerta de publicacion la excluia. Frente 24, fase 2.
      LEFT JOIN signature_flow_templates sft
-       ON sft.vinculo_id = pdt.id
+       ON sft.edicion_id = pdt.edicion_id
+      AND sft.task_item_id IS NULL
       AND sft.is_active = 1
      WHERE pdt.process_definition_id = ?
      GROUP BY
@@ -829,14 +832,29 @@ export const getSignatureWorkflowStepsForDocumentVersions = async (pool, documen
      FROM (
        SELECT
          dv.id AS document_version_id,
+         -- ESTO RESOLVIA «POR EL VINCULO», Y ACERTABA PARA routed DE CASUALIDAD: el flujo de
+         -- runtime escribia las DOS anclas, la del entregable y la del vinculo, asi que una busqueda
+         -- por vinculo lo encontraba. El dia que runtime deje de escribir el vinculo --frente 24,
+         -- fase 2-- esto se habria quedado sin encontrar nada para los routed, en silencio y sin que
+         -- ningun test lo dijera. Ahora resuelve de verdad, en el mismo orden que el resolvedor de
+         -- generation/queries.js: primero el del ENTREGABLE, despues el de la EDICION.
          COALESCE(
            (
              SELECT sft.id
-             FROM task_items ti2
-             INNER JOIN signature_flow_templates sft
-               ON sft.vinculo_id = ti2.vinculo_id
-              AND sft.is_active = 1
-             WHERE ti2.id = dv.task_item_id
+             FROM signature_flow_templates sft
+             WHERE sft.task_item_id = dv.task_item_id
+               AND sft.is_active = 1
+             ORDER BY sft.id DESC
+             LIMIT 1
+           ),
+           (
+             SELECT sft.id
+             FROM signature_flow_templates sft
+             INNER JOIN task_items ti2 ON ti2.id = dv.task_item_id
+             INNER JOIN vinculos pdt ON pdt.id = ti2.vinculo_id
+             WHERE sft.edicion_id = pdt.edicion_id
+               AND sft.task_item_id IS NULL
+               AND sft.is_active = 1
              ORDER BY sft.id DESC
              LIMIT 1
            ),
