@@ -185,7 +185,7 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
       request_id: step.fill_request_id ? Number(step.fill_request_id) : null,
       assigned_person_id: step.assigned_person_id ? Number(step.assigned_person_id) : null,
       is_manual: Boolean(step.is_manual),
-      request_status: step.request_status || "pending",
+      request_status: step.request_status || "pendiente",
       requested_at: step.requested_at || null,
       responded_at: step.responded_at || null,
       response_note: step.response_note || null,
@@ -201,8 +201,8 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
   const getCurrentSignatureStepOrder = (requests = []) => {
     const pendingLike = (Array.isArray(requests) ? requests : [])
       .filter((request) => {
-        const code = String(request?.request_status_code || request?.status_name || request?.status || "").trim().toLowerCase();
-        return ["pendiente", "pending", "en_progreso", "in_progress"].includes(code) && !request?.responded_at;
+        const code = String(request?.request_status_code || request?.status || "").trim().toLowerCase();
+        return ["pendiente", "en_progreso"].includes(code) && !request?.responded_at;
       })
       .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
 

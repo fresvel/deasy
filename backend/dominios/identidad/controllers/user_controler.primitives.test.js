@@ -22,8 +22,7 @@ import {
   doesPositionMatchRule,
   buildRuleDisplayLabel,
   buildFillStepDisplayLabel,
-  isPendingLikeFillStatus,
-  isPendingLikeSignatureStatus,
+  estaAbiertoElTurno,
   canCurrentUserResetWorkflow
 } from "./user_controler.primitives.js";
 
@@ -203,13 +202,15 @@ test("buildFillStepDisplayLabel: nombre asignado gana; si no, traduce el resolve
   assert.equal(buildFillStepDisplayLabel({ resolver_type: "desconocido" }), "Responsable no resuelto");
 });
 
-test("isPendingLikeFillStatus / isPendingLikeSignatureStatus normalizan y reconocen sinónimos", () => {
-  assert.equal(isPendingLikeFillStatus(" Pending "), true);
-  assert.equal(isPendingLikeFillStatus("in_progress"), true);
-  assert.equal(isPendingLikeFillStatus("done"), false);
-  assert.equal(isPendingLikeSignatureStatus("pendiente"), true);
-  assert.equal(isPendingLikeSignatureStatus("en_progreso"), true);
-  assert.equal(isPendingLikeSignatureStatus("firmado"), false);
+test("estaAbiertoElTurno normaliza, y vale para los DOS lados", () => {
+  // Una sola funcion desde la fase 3 del frente 24: eran dos, una por idioma.
+  assert.equal(estaAbiertoElTurno(" Pendiente "), true);
+  assert.equal(estaAbiertoElTurno("en_progreso"), true);
+  assert.equal(estaAbiertoElTurno("completado"), false);
+  // Y el vocabulario viejo ya NO se reconoce: tolerarlo era lo que escondia los dos idiomas.
+  assert.equal(estaAbiertoElTurno("pending"), false);
+  assert.equal(estaAbiertoElTurno("in_progress"), false);
+  assert.equal(estaAbiertoElTurno("firmado"), false);
 });
 
 test("canCurrentUserResetWorkflow: permite si el usuario es el responsable del paso de llenado actual", () => {
@@ -218,8 +219,8 @@ test("canCurrentUserResetWorkflow: permite si el usuario es el responsable del p
     fillWorkflow: {
       current_step_order: 2,
       steps: [
-        { step_order: 1, assigned_person_id: 5, request_status: "in_progress" },
-        { step_order: 2, assigned_person_id: 7, request_status: "pending", responded_at: null }
+        { step_order: 1, assigned_person_id: 5, request_status: "en_progreso" },
+        { step_order: 2, assigned_person_id: 7, request_status: "pendiente", responded_at: null }
       ]
     },
     signatureRequests: []
@@ -232,7 +233,7 @@ test("canCurrentUserResetWorkflow: niega si el paso actual ya fue respondido o e
     userId: 7,
     fillWorkflow: {
       current_step_order: 2,
-      steps: [{ step_order: 2, assigned_person_id: 7, request_status: "pending", responded_at: "2024-01-01" }]
+      steps: [{ step_order: 2, assigned_person_id: 7, request_status: "pendiente", responded_at: "2024-01-01" }]
     },
     signatureRequests: []
   });
@@ -240,7 +241,7 @@ test("canCurrentUserResetWorkflow: niega si el paso actual ya fue respondido o e
 
   const deOtro = canCurrentUserResetWorkflow({
     userId: 7,
-    fillWorkflow: { current_step_order: 1, steps: [{ step_order: 1, assigned_person_id: 99, request_status: "pending" }] },
+    fillWorkflow: { current_step_order: 1, steps: [{ step_order: 1, assigned_person_id: 99, request_status: "pendiente" }] },
     signatureRequests: []
   });
   assert.equal(deOtro, false);

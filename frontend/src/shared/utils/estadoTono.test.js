@@ -5,8 +5,8 @@ import {
   tonoCorrida, tonoDiff, tonoActividad, tonoSincronizacion,
   coberturaEstado, tonoCobertura, tonoOrigen, tonoAmbito,
   tonoTarea, etiquetaTarea,
-  tonoLlenado, etiquetaLlenado, tonoPasoLlenado,
-  tonoPasoFirma, tonoSolicitudFirma,
+  tonoRecorrido, etiquetaRecorrido, tonoPasoLlenado,
+  tonoPasoFirma,
   tonoDocumento, tonoPersona, tonoVacante, tonoContrato,
   tonoAcceso, tonoObservacion,
   tonoFlujo, etiquetaFlujo,
@@ -152,7 +152,8 @@ describe("etiquetas — un solo sitio, y estaban en cinco", () => {
 
 describe("los ejes nuevos tampoco dejan una pastilla sin tono", () => {
   const todos = Object.values(TONOS);
-  const funciones = [tonoTarea, tonoLlenado, tonoPasoFirma, tonoSolicitudFirma,
+  // `tonoRecorrido` sustituye a `tonoLlenado` Y a `tonoSolicitudFirma`: un vocabulario, una función.
+  const funciones = [tonoTarea, tonoRecorrido, tonoPasoFirma,
                      tonoDocumento, tonoPersona, tonoVacante, tonoContrato, tonoAcceso];
 
   it("un valor desconocido cae a `neutral`, nunca a undefined", () => {
@@ -176,8 +177,10 @@ describe("las columnas `Estado` de admin están cubiertas ENTERAS", () => {
     "process_runs.status": [tonoCorrida, ["pending", "active", "completed", "cancelled"]],
     "tasks.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
     "task_items.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
-    "document_fill_flows.status": [tonoLlenado, ["pending", "in_progress", "approved", "rejected", "cancelled"]],
-    "fill_requests.status": [tonoLlenado, ["pending", "in_progress", "approved", "rejected", "returned", "cancelled"]],
+    "document_fill_flows.status": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"]],
+    "fill_requests.status": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "devuelto", "cancelado"]],
+    "signature_flow_instances.status": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"]],
+    "signature_requests.status": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"]],
     "persons.status": [tonoPersona, ["Inactivo", "Activo", "Verificado", "Reportado"]],
     "vacancies.status": [tonoVacante, ["abierta", "cubierta", "cerrada", "cancelada"]],
     "contracts.status": [tonoContrato, ["activo", "finalizado", "cancelado"]],
@@ -207,23 +210,20 @@ describe("las cuatro contradicciones que resolvió F9-bis", () => {
 
   it("`pendiente` es SALMON en todos los ejes — el ámbar ya significa «retirado»", () => {
     expect(tonoTarea("pendiente")).toBe(TONOS.SALMON);
-    expect(tonoLlenado("pending")).toBe(TONOS.SALMON);
-    expect(tonoPasoFirma("pending")).toBe(TONOS.SALMON);
-    expect(tonoSolicitudFirma("pendiente")).toBe(TONOS.SALMON);
+    expect(tonoRecorrido("pendiente")).toBe(TONOS.SALMON);
+    expect(tonoPasoFirma("pending")).toBe(TONOS.SALMON);   // valor de VISTA, no de columna
     expect(tonoCorrida("pending")).toBe(TONOS.SALMON);
   });
 
   it("`en proceso` es INFO — ni bueno ni malo, como `changed`", () => {
     expect(tonoTarea("en_proceso")).toBe(TONOS.INFO);
-    expect(tonoLlenado("in_progress")).toBe(TONOS.INFO);
-    expect(tonoSolicitudFirma("en_progreso")).toBe(TONOS.INFO);
+    expect(tonoRecorrido("en_progreso")).toBe(TONOS.INFO);
     expect(tonoDocumento("En proceso")).toBe(TONOS.INFO);
   });
 
   it("`cancelado` es NEUTRAL — el rojo es para el error y la destrucción", () => {
     expect(tonoTarea("cancelada")).toBe(TONOS.NEUTRAL);
-    expect(tonoLlenado("cancelled")).toBe(TONOS.NEUTRAL);
-    expect(tonoSolicitudFirma("cancelado")).toBe(TONOS.NEUTRAL);
+    expect(tonoRecorrido("cancelado")).toBe(TONOS.NEUTRAL);
     expect(tonoCorrida("cancelled")).toBe(TONOS.NEUTRAL);
     expect(tonoContrato("cancelado")).toBe(TONOS.NEUTRAL);
   });
@@ -252,13 +252,16 @@ describe("el eje tolerante `tonoFlujo` — lo que heredó de las tres funciones 
 
   it("resuelve los tres vocabularios reales, que era lo que `includes()` hacía a ojo", () => {
     expect(tonoFlujo("Firmado completo")).toBe(TONOS.SUCCESS);   // documents.status
-    expect(tonoFlujo("approved")).toBe(TONOS.SUCCESS);           // fill_requests.status
+    expect(tonoFlujo("completado")).toBe(TONOS.SUCCESS);         // fill_requests.status
+    // Y el vocabulario ingles retirado NO se tolera: el eje absorbe texto libre del backend, no
+    // un segundo idioma para una columna nuestra. Tolerarlo seria volver a tener dos nombres.
+    expect(tonoFlujo("approved", TONOS.NEUTRAL)).toBe(TONOS.NEUTRAL);
     expect(tonoFlujo("completada")).toBe(TONOS.SUCCESS);         // tasks.status
     expect(tonoFlujo("retired")).toBe(TONOS.WARNING);            // ciclo de vida
   });
 
   it("`etiquetaFlujo` traduce lo que viene en inglés y respeta lo que ya viene en español", () => {
-    expect(etiquetaFlujo("approved")).toBe("Aprobado");
+    expect(etiquetaFlujo("completado")).toBe("Completado");
     expect(etiquetaFlujo("retired")).toBe("Retirada");
     expect(etiquetaFlujo("Firmado completo")).toBe("Firmado completo");
     expect(etiquetaFlujo("")).toBe("Sin estado");
@@ -267,26 +270,28 @@ describe("el eje tolerante `tonoFlujo` — lo que heredó de las tres funciones 
 
 describe("los dos ejes de PASO: el turno manda sobre el estado", () => {
   it("el paso que toca es INFO aunque su estado diga otra cosa", () => {
-    expect(tonoPasoLlenado("approved", true)).toBe(TONOS.INFO);
+    expect(tonoPasoLlenado("completado", true)).toBe(TONOS.INFO);
     expect(tonoPasoFirma("current")).toBe(TONOS.INFO);
   });
 
   it("un paso que no es el actual conserva su estado", () => {
-    expect(tonoPasoLlenado("approved", false)).toBe(TONOS.SUCCESS);
-    expect(tonoPasoLlenado("returned", false)).toBe(TONOS.WARNING);
+    expect(tonoPasoLlenado("completado", false)).toBe(TONOS.SUCCESS);
+    expect(tonoPasoLlenado("devuelto", false)).toBe(TONOS.WARNING);
   });
 
-  it("las dos listas de pasos ya no discrepan en `pending`, que comparten bloque de CSS", () => {
-    expect(tonoPasoLlenado("pending", false)).toBe(tonoPasoFirma("pending"));
+  // Ya no comparten el literal —el de entrega es `pendiente` y el de firma es el `pending` que
+  // inyecta la vista—, pero siguen compartiendo bloque de CSS, asi que el TONO tiene que coincidir.
+  it("las dos listas de pasos ya no discrepan en el estado de espera, que comparte bloque de CSS", () => {
+    expect(tonoPasoLlenado("pendiente", false)).toBe(tonoPasoFirma("pending"));
   });
 });
 
 describe("etiquetas y observaciones", () => {
-  it("`etiquetaTarea` y `etiquetaLlenado` cubren su vocabulario y tienen defecto", () => {
+  it("`etiquetaTarea` y `etiquetaRecorrido` cubren su vocabulario y tienen defecto", () => {
     expect(etiquetaTarea("en_proceso")).toBe("En proceso");
     expect(etiquetaTarea("loquesea")).toBe("Sin estado");
-    expect(etiquetaLlenado("approved")).toBe("Aprobado");
-    expect(etiquetaLlenado("loquesea")).toBe("Pendiente");
+    expect(etiquetaRecorrido("completado")).toBe("Completado");
+    expect(etiquetaRecorrido("loquesea")).toBe("Pendiente");
   });
 
   it("una observación resuelta gana SUCCESS por encima de su clase", () => {
@@ -305,8 +310,11 @@ describe("el registro de columnas de admin — qué celda es una pastilla", () =
   // Eran 14 hasta el 2026-08-23: `task_assignments.status` cayó con su tabla, que era una foto del
   // reparto que ningún relevo refrescaba. La columna nunca tuvo escritores fuera del editor
   // genérico, así que su pastilla pintaba siempre el mismo 'pendiente'.
-  it("las 13 columnas del registro resuelven tono Y etiqueta", () => {
-    expect(COLUMNAS_DE_ESTADO).toHaveLength(13);
+  // Y pasaron de 13 a 15 en la fase 3 del frente 24: `signature_flow_instances.status` y
+  // `signature_requests.status` estaban EXCLUIDAS por llegar como numero (eran `status_id`, clave
+  // ajena a un catalogo). Hoy son texto con el mismo vocabulario que la entrega, asi que entran.
+  it("las 15 columnas del registro resuelven tono Y etiqueta", () => {
+    expect(COLUMNAS_DE_ESTADO).toHaveLength(15);
     for (const ruta of COLUMNAS_DE_ESTADO) {
       const [tabla, columna] = [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
       expect(esColumnaDeEstado(tabla, columna)).toBe(true);
@@ -321,7 +329,9 @@ describe("el registro de columnas de admin — qué celda es una pastilla", () =
     expect(esColumnaDeEstado("persons", "is_active")).toBe(false);
     expect(esColumnaDeEstado("vinculos", "item_mode")).toBe(false);
     expect(esColumnaDeEstado("process_runs", "run_mode")).toBe(false);
-    expect(esColumnaDeEstado("signature_requests", "status_id")).toBe(false);
+    // `status_id` ya no existe; lo que queda como clave ajena a un catalogo de estados, y por eso
+    // sigue fuera, es el del HECHO de firmar.
+    expect(esColumnaDeEstado("document_signatures", "signature_status_id")).toBe(false);
     expect(esColumnaDeEstado("units", "name")).toBe(false);
   });
 
@@ -423,7 +433,7 @@ describe("los 32 booleanos del esquema, cada uno con su eje", () => {
     "generadores_de_documento.is_active", "ediciones.is_active", "persons.is_active",
     "roles.is_active", "cargos.is_active", "unit_positions.is_active",
     "fill_flow_templates.is_active", "signature_statuses.is_active",
-    "signature_request_statuses.is_active", "signature_flow_templates.is_active",
+    "signature_flow_templates.is_active",
     "role_assignments.is_current", "role_assignments.current_flag",
     "position_assignments.is_current", "position_assignments.current_flag"
   ];
@@ -434,15 +444,17 @@ describe("los 32 booleanos del esquema, cada uno con su eje", () => {
     "persons.verify_email", "persons.verify_whatsapp"
   ];
 
-  it("son 32 y ni una más: 23 de habilitación y 9 de rasgo", () => {
-    expect(HABILITACION).toHaveLength(23);
+  // Eran 32 hasta la fase 3 del frente 24: `signature_request_statuses.is_active` cayó con su
+  // tabla, que era un catálogo de cinco códigos donde bastaba un CHECK.
+  it("son 31 y ni una más: 22 de habilitación y 9 de rasgo", () => {
+    expect(HABILITACION).toHaveLength(22);
     expect(RASGO).toHaveLength(9);
-    expect(new Set([...HABILITACION, ...RASGO]).size).toBe(32);
+    expect(new Set([...HABILITACION, ...RASGO]).size).toBe(31);
   });
 
   const parte = (ruta) => [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
 
-  it("las 23 de habilitación avisan cuando están apagadas", () => {
+  it("las 22 de habilitación avisan cuando están apagadas", () => {
     for (const ruta of HABILITACION) {
       const [t, c] = parte(ruta);
       expect(tonoDeBooleano(t, c, 1)).toBe(TONOS.SUCCESS);

@@ -256,7 +256,6 @@
     "titulo": "Firma electrónica",
     "descripcion": "El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.",
     "tablas": {
-      "signature_request_statuses": 0,
       "signature_statuses": 0,
       "signature_batch_jobs": 6,
       "signature_flow_instances": 6,

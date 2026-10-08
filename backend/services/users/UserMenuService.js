@@ -221,7 +221,6 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        INNER JOIN processes p ON p.id = pdv.process_id
-       LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
        LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
        LEFT JOIN (
          SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions

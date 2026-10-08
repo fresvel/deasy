@@ -74,7 +74,7 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
     [
       fillFlowTemplate.id,
       documentVersionId,
-      "pending",
+      "pendiente",
       firstStepOrder
     ]
   );
@@ -92,7 +92,7 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
            status,
            is_manual
          ) VALUES (?, ?, ?, ?, ?)`,
-        [documentFillFlowId, step.id, null, "pending", 1]
+        [documentFillFlowId, step.id, null, "pendiente", 1]
       );
       continue;
     }
@@ -106,7 +106,7 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
            status,
            is_manual
          ) VALUES (?, ?, ?, ?, ?)`,
-        [documentFillFlowId, step.id, assignedPersonId, "pending", 0]
+        [documentFillFlowId, step.id, assignedPersonId, "pendiente", 0]
       );
     }
   }

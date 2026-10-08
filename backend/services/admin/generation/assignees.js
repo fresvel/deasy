@@ -160,7 +160,7 @@ export const repairFillRequestsForFlow = async (connection, documentFillFlowId, 
              status,
              is_manual
            ) VALUES (?, ?, ?, ?, ?)`,
-          [documentFillFlowId, stepId, null, "pending", 1]
+          [documentFillFlowId, stepId, null, "pendiente", 1]
         );
       }
       continue;
@@ -184,7 +184,7 @@ export const repairFillRequestsForFlow = async (connection, documentFillFlowId, 
           `UPDATE fill_requests
            SET assigned_person_id = ?,
                is_manual = 0,
-               status = 'pending',
+               status = 'pendiente',
                responded_at = NULL,
                response_note = NULL
            WHERE id = ?`,
@@ -199,7 +199,7 @@ export const repairFillRequestsForFlow = async (connection, documentFillFlowId, 
              status,
              is_manual
            ) VALUES (?, ?, ?, ?, ?)`,
-          [documentFillFlowId, stepId, assignedPersonId, "pending", 0]
+          [documentFillFlowId, stepId, assignedPersonId, "pendiente", 0]
         );
       }
     }

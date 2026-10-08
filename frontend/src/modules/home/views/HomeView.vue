@@ -1538,10 +1538,11 @@
                 <AppTag variant="neutral">
                   Paso {{ fillWorkflowState.request?.step_order || 1 }}
                 </AppTag>
-                <!-- Llevaba `variant="info"` FIJO y el texto en INGLES CRUDO (`pending`): el
+                <!-- Llevaba `variant="info"` FIJO y el texto en INGLES CRUDO (`pending`), que es justo
+                   el idioma que la fase 3 del frente 24 retiro de la base: el
                      mismo defecto que `ediciones`, y en la pantalla mas usada. -->
-                <AppTag :variant="tonoLlenado(fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending')">
-                  Estado: {{ etiquetaLlenado(fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending') }}
+                <AppTag :variant="tonoRecorrido(fillWorkflowState.request?.status || 'pendiente')">
+                  Estado: {{ etiquetaRecorrido(fillWorkflowState.request?.status || 'pendiente') }}
                 </AppTag>
                 <AppTag :variant="fillWorkflowState.subject.preloadFilePath ? 'success' : 'warning'">
                   {{ fillWorkflowState.subject.preloadFilePath ? `Archivo: ${getFileNameFromPath(fillWorkflowState.subject.preloadFilePath)}` : 'Sin archivo de trabajo' }}
@@ -1574,8 +1575,8 @@
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
-                    <AppTag :variant="tonoLlenado(step.request_status)">
-                      {{ etiquetaLlenado(step.request_status) }}
+                    <AppTag :variant="tonoRecorrido(step.request_status)">
+                      {{ etiquetaRecorrido(step.request_status) }}
                     </AppTag>
                     <AppTag
                       v-if="fillWorkflowState.subject.workflow.fill_flow?.current_step_order === step.step_order"
@@ -1854,7 +1855,7 @@
               >
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <p class="text-sm font-semibold text-strong m-0">Paso {{ request.stepOrder }}</p>
-                  <AppTag :variant="tonoSolicitudFirma(request.requestStatusCode)">
+                  <AppTag :variant="tonoRecorrido(request.requestStatusCode)">
                     {{ signatureRequestStatusLabel(request.requestStatusCode) }}
                   </AppTag>
                 </div>
@@ -2164,7 +2165,7 @@ import {
   getFillStepResolverLabel,
   getSignatureStepResolverLabel,
 } from '@/modules/home/views/homeView.helpers.js';
-import { tonoLlenado, etiquetaLlenado, tonoPasoFirma, tonoSolicitudFirma, tonoAcceso, tonoFlujo, etiquetaFlujo } from '@/shared/utils/estadoTono.js';
+import { tonoRecorrido, etiquetaRecorrido, tonoPasoFirma, tonoAcceso, tonoFlujo, etiquetaFlujo } from '@/shared/utils/estadoTono.js';
 import {
   resolveWorkspaceProcessIcon,
   workspaceIconToneClass,
@@ -3518,7 +3519,7 @@ const signatureRequestStatusLabel = (statusCode) => {
 /* `signatureRequestTagVariant` murio el 2026-08-20 (F9-bis). Era la TERCERA traduccion del
    mismo estado de solicitud de firma —y la que mas discrepaba: `en_progreso` en ambar donde el
    resto lo daba en azul, `cancelado` en rojo donde la doctrina lo da en gris—. Es
-   `tonoSolicitudFirma` de `estadoTono.js`. */
+   `tonoRecorrido` de `estadoTono.js`. */
 
 const loadDocumentCenterPage = async () => {
   const userId = currentUserId.value;
@@ -4283,7 +4284,7 @@ const fillWorkflowNotes = computed(() => {
       stepOrder: Number(step.step_order || 0),
       label: step.display_label || 'Responsable no resuelto',
       note: String(step.response_note || '').trim(),
-      statusLabel: etiquetaLlenado(step.request_status),
+      statusLabel: etiquetaRecorrido(step.request_status),
       respondedAt: step.responded_at || null,
       respondedAtLabel: formatWorkflowDateTime(step.responded_at)
     }))
@@ -4305,21 +4306,21 @@ const canReplaceFillFile = computed(() => {
 const canApproveFillRequest = computed(() => {
   const code = getFillRequestStatusCode(fillWorkflowState.value.request);
   return canOperateCurrentFillRequest.value
-    && ['pending', 'in_progress'].includes(code)
+    && ['pendiente', 'en_progreso'].includes(code)
     && subjectHasWorkingArtifact(fillWorkflowState.value.subject);
 });
 const canReturnFillRequest = computed(() =>
   canOperateCurrentFillRequest.value
   && isReviewFillStep.value
-  && ['pending', 'in_progress'].includes(getFillRequestStatusCode(fillWorkflowState.value.request))
+  && ['pendiente', 'en_progreso'].includes(getFillRequestStatusCode(fillWorkflowState.value.request))
 );
 const canRejectFillRequest = computed(() =>
   canOperateCurrentFillRequest.value
   && isReviewFillStep.value
-  && ['pending', 'in_progress'].includes(getFillRequestStatusCode(fillWorkflowState.value.request))
+  && ['pendiente', 'en_progreso'].includes(getFillRequestStatusCode(fillWorkflowState.value.request))
 );
 const canCancelFillRequest = computed(() =>
-  canOperateCurrentFillRequest.value && ['pending', 'in_progress'].includes(getFillRequestStatusCode(fillWorkflowState.value.request))
+  canOperateCurrentFillRequest.value && ['pendiente', 'en_progreso'].includes(getFillRequestStatusCode(fillWorkflowState.value.request))
 );
 const canReplacePreviewFillFile = computed(() =>
   Boolean(deliverablePreviewSource.value)
@@ -4802,8 +4803,8 @@ const openDocumentSignFlow = (payload) => {
     return;
   }
   const pendingSignatureRequest = getCurrentSignatureRequestsFromSubject(doc).find((request) => {
-    const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
-    return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code)
+    const code = String(request?.request_status_code || request?.status || '').trim().toLowerCase();
+    return ['pendiente', 'en_progreso'].includes(code)
       && !request?.responded_at
       && Number(request?.assigned_person_id || 0) === Number(currentUserId.value || 0);
   });

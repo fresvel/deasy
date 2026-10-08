@@ -176,8 +176,7 @@ export const FK_TABLE_MAP = {
   signature_request_id: "signature_requests",
   signature_status_id: "signature_statuses",
   step_id: "signature_flow_steps",
-  instance_id: "signature_flow_instances",
-  status_id: "signature_request_statuses"
+  instance_id: "signature_flow_instances"
 };
 
 export const RELATED_RECORD_CONFIG = {

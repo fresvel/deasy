@@ -139,8 +139,7 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
     `SELECT DISTINCT
        sr.id AS signature_request_id,
        sr.requested_at,
-       srs.code AS signature_request_status_code,
-       srs.name AS signature_request_status_name,
+       sr.status AS signature_request_status_code,
        sfs.step_order,
        sfs.name AS step_name,
        ti.id AS document_id,
@@ -187,7 +186,6 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
      LEFT JOIN unit_positions scope_position ON scope_position.id = ti.responsible_position_id
      LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
-     LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
      WHERE sr.assigned_person_id = ?
        AND sr.responded_at IS NULL
@@ -740,7 +738,7 @@ export const getUserPendingSignaturesForDefinition = async (pool, userId, defini
        sr.id,
        sr.requested_at,
        sr.responded_at,
-       srs.name AS status_name,
+       sr.status AS request_status_code,
        sfs.step_order,       tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
        dv.id AS document_version_id,
@@ -753,7 +751,6 @@ export const getUserPendingSignaturesForDefinition = async (pool, userId, defini
      INNER JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
-     LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     WHERE sr.assigned_person_id = ?
        AND t.process_definition_id = ?
        AND LOWER(COALESCE(dv.status, '')) IN (
@@ -782,8 +779,7 @@ export const getSignatureWorkflowRequestsForDocumentVersions = async (pool, docu
        sr.assigned_person_id,
        sr.requested_at,
        sr.responded_at,
-       srs.code AS request_status_code,
-       srs.name AS status_name,
+       sr.status AS request_status_code,
        sfs.step_order,       c.name AS cargo_name,
        tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
@@ -798,7 +794,6 @@ export const getSignatureWorkflowRequestsForDocumentVersions = async (pool, docu
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
      LEFT JOIN persons p ON p.id = sr.assigned_person_id
-     LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
      WHERE sfi.document_version_id IN (${placeholders})
      ORDER BY sfi.document_version_id ASC, sfs.step_order ASC, sr.id ASC`,
@@ -882,7 +877,12 @@ export const getUserPendingFillRequestsForDefinition = async (pool, userId, defi
        fr.id,
        fr.requested_at,
        fr.responded_at,
-       fr.status AS status_name,
+       -- SE LLAMABA status_name, Y ERA UNA MENTIRA COMPARTIDA: aqui traia el CODIGO y en el lado
+       -- de firma la misma clave traia la ETIQUETA del catalogo. El frontend la leia primero como
+       -- codigo, asi que "En progreso" llegaba como "en progreso" y no coincidia con nada --por eso
+       -- habia una entrada "en progreso" con espacio en el mapa de tonos--. Una clave, dos
+       -- significados. Hoy es lo que es (fase 3 del frente 24).
+       fr.status,
        ffs.step_order,
        tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,

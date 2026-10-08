@@ -2,7 +2,7 @@
 // `services/documents/FillRequestWorkflowService.js`; aquí solo se lee la petición, se llama al
 // servicio y se traduce el resultado (o el error) a HTTP.
 import { updateFillRequestStatus } from "../../services/documents/FillRequestWorkflowService.js";
-import { FILL_REQUEST_STATUS } from "../../services/documents/DocumentWorkflowCatalog.js";
+import { ESTADO_RECORRIDO } from "../../services/documents/DocumentWorkflowCatalog.js";
 
 const runFillRequestAction = async (req, res, action, nextStatus) => {
   try {
@@ -22,16 +22,16 @@ const runFillRequestAction = async (req, res, action, nextStatus) => {
 };
 
 export const startFillRequest = (req, res) =>
-  runFillRequestAction(req, res, "start", FILL_REQUEST_STATUS.IN_PROGRESS);
+  runFillRequestAction(req, res, "start", ESTADO_RECORRIDO.EN_PROGRESO);
 
 export const approveFillRequest = (req, res) =>
-  runFillRequestAction(req, res, "approve", FILL_REQUEST_STATUS.APPROVED);
+  runFillRequestAction(req, res, "approve", ESTADO_RECORRIDO.COMPLETADO);
 
 export const returnFillRequest = (req, res) =>
-  runFillRequestAction(req, res, "return", FILL_REQUEST_STATUS.RETURNED);
+  runFillRequestAction(req, res, "return", ESTADO_RECORRIDO.DEVUELTO);
 
 export const rejectFillRequest = (req, res) =>
-  runFillRequestAction(req, res, "reject", FILL_REQUEST_STATUS.REJECTED);
+  runFillRequestAction(req, res, "reject", ESTADO_RECORRIDO.RECHAZADO);
 
 export const cancelFillRequest = (req, res) =>
-  runFillRequestAction(req, res, "cancel", FILL_REQUEST_STATUS.CANCELLED);
+  runFillRequestAction(req, res, "cancel", ESTADO_RECORRIDO.CANCELADO);

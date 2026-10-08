@@ -234,29 +234,40 @@ const ETIQUETA_TAREA = Object.freeze({
 export const tonoTarea = (valor) => TAREA[clave(valor)] ?? TONOS.NEUTRAL;
 export const etiquetaTarea = (valor) => ETIQUETA_TAREA[clave(valor)] ?? "Sin estado";
 
-/* ── LLENADO (`document_fill_flows.status`, `fill_requests.status` y los pasos del flujo) ──
-   `returned` es el único tono que el eje de firma no gasta: un paso de llenado puede estar
-   DEVUELTO, y eso no existe firmando. Venía de `getFillStepStatusTagVariant`. */
-const LLENADO = Object.freeze({
-  pending: TONOS.SALMON,
-  in_progress: TONOS.INFO,
-  approved: TONOS.SUCCESS,
-  rejected: TONOS.DANGER,
-  returned: TONOS.WARNING,
-  cancelled: TONOS.NEUTRAL
+/* ── EL RECORRIDO — LOS DOS LADOS Y LOS DOS NIVELES ────────────────────────────────────────
+   `document_fill_flows.status`, `fill_requests.status`, `signature_flow_instances.status` y
+   `signature_requests.status`. UN mapa, porque desde la fase 3 del frente 24 es UN vocabulario:
+   antes había dos —`LLENADO` en inglés y `SOLICITUD_FIRMA` en español— para el mismo concepto.
+
+   `devuelto` es el único tono que el lado de firma no gasta: un paso de entrega puede estar
+   DEVUELTO, y eso no existe firmando. Se queda en el mapa único porque un mapa no necesita
+   prohibir lo que el CHECK de la columna ya prohíbe. Venía de `getFillStepStatusTagVariant`.
+
+   ⚠️ AQUÍ HABÍA UNA ENTRADA `"en progreso"` CON ESPACIO, y conviene saber por qué desaparece:
+   el backend mandaba la etiqueta del catálogo (`srs.name`, «En progreso») y el frontend la
+   minusculizaba para usarla COMO CÓDIGO. Era un parche sobre un fallo: «En progreso» daba
+   `"en progreso"`, que no coincidía con `en_progreso` en ningún otro mapa. Muerto el catálogo,
+   viaja el código y el parche sobra. */
+const RECORRIDO = Object.freeze({
+  pendiente: TONOS.SALMON,
+  en_progreso: TONOS.INFO,
+  completado: TONOS.SUCCESS,
+  rechazado: TONOS.DANGER,
+  devuelto: TONOS.WARNING,
+  cancelado: TONOS.NEUTRAL
 });
 
-const ETIQUETA_LLENADO = Object.freeze({
-  pending: "Pendiente",
-  in_progress: "En progreso",
-  approved: "Aprobado",
-  rejected: "Rechazado",
-  returned: "Devuelto",
-  cancelled: "Cancelado"
+const ETIQUETA_RECORRIDO = Object.freeze({
+  pendiente: "Pendiente",
+  en_progreso: "En progreso",
+  completado: "Completado",
+  rechazado: "Rechazado",
+  devuelto: "Devuelto",
+  cancelado: "Cancelado"
 });
 
-export const tonoLlenado = (valor) => LLENADO[clave(valor)] ?? TONOS.NEUTRAL;
-export const etiquetaLlenado = (valor) => ETIQUETA_LLENADO[clave(valor)] ?? "Pendiente";
+export const tonoRecorrido = (valor) => RECORRIDO[clave(valor)] ?? TONOS.NEUTRAL;
+export const etiquetaRecorrido = (valor) => ETIQUETA_RECORRIDO[clave(valor)] ?? "Pendiente";
 
 /* ── PASO DE UN FLUJO DE FIRMA ────────────────────────────────────────────────────────────
    `current` no es un valor que venga de la base: lo inyecta la vista cuando el paso es el que
@@ -270,18 +281,6 @@ const PASO_FIRMA = Object.freeze({
 });
 
 export const tonoPasoFirma = (valor) => PASO_FIRMA[clave(valor)] ?? TONOS.NEUTRAL;
-
-/* ── SOLICITUD DE FIRMA (`signature_request_statuses`, en español) ─────────────────────── */
-const SOLICITUD_FIRMA = Object.freeze({
-  pendiente: TONOS.SALMON,
-  en_progreso: TONOS.INFO,
-  "en progreso": TONOS.INFO,
-  completado: TONOS.SUCCESS,
-  rechazado: TONOS.DANGER,
-  cancelado: TONOS.NEUTRAL
-});
-
-export const tonoSolicitudFirma = (valor) => SOLICITUD_FIRMA[clave(valor)] ?? TONOS.NEUTRAL;
 
 /* ── DOCUMENTO (`documents.status` y `document_versions.status`) ───────────────────────────
    Los dos vocabularios los declara `DocumentStateService.js` y se solapan en 9 de sus valores;
@@ -407,8 +406,7 @@ export const tonoFlujo = (valor, fallback = TONOS.NEUTRAL) => {
   const k = clave(valor);
   if (!k) return fallback;
   return DOCUMENTO[k]
-    ?? LLENADO[k]
-    ?? SOLICITUD_FIRMA[k]
+    ?? RECORRIDO[k]
     ?? TAREA[k]
     ?? CICLO_VIDA[k]
     ?? FLUJO_EXTRA[k]
@@ -416,7 +414,7 @@ export const tonoFlujo = (valor, fallback = TONOS.NEUTRAL) => {
 };
 
 /* ── PASO DE UN FLUJO DE LLENADO ──────────────────────────────────────────────────────────
-   El mismo mapa que LLENADO más una regla: el paso que TOCA manda sobre su propio estado.
+   El mismo mapa que RECORRIDO más una regla: el paso que TOCA manda sobre su propio estado.
    Es la gemela de `tonoPasoFirma`, y lo es a propósito — desde F3.3·L7 las dos listas de pasos
    comparten un solo bloque de CSS (`deasy-flow-step--{tono}`), así que no pueden discrepar.
 
@@ -425,15 +423,17 @@ export const tonoFlujo = (valor, fallback = TONOS.NEUTRAL) => {
    SALMON. Mismo componente, dos colores para el mismo estado. Gana SALMON, que es lo que ya
    hacía firma y lo que dice CORRIDA. */
 export const tonoPasoLlenado = (estado, esActual = false) =>
-  (esActual ? TONOS.INFO : tonoLlenado(estado));
+  (esActual ? TONOS.INFO : tonoRecorrido(estado));
 
-/* La etiqueta del eje tolerante. Los valores en INGLES tienen traduccion; los que ya vienen en
-   español —`documents.status` y `document_versions.status` los declara asi la base— solo se
-   capitalizan, que es lo que hacia `RoutedProcessPanel` y es correcto: inventarles una segunda
-   forma seria volver a tener dos nombres para lo mismo. */
+/* La etiqueta del eje tolerante. Los valores en INGLES que quedan son texto libre que el backend
+   puede devolver —`completed`, `signed`, `done`…—, no vocabulario de ninguna columna: el del
+   recorrido pasó a español en la fase 3 del frente 24. Los que ya vienen en español
+   —`documents.status` y `document_versions.status` los declara asi la base— solo se capitalizan,
+   que es lo que hacia `RoutedProcessPanel` y es correcto: inventarles una segunda forma seria
+   volver a tener dos nombres para lo mismo. */
 const ETIQUETA_FLUJO = Object.freeze({
   ...ETIQUETA_CICLO_VIDA,
-  ...ETIQUETA_LLENADO,
+  ...ETIQUETA_RECORRIDO,
   ...ETIQUETA_TAREA,
   completed: "Completado",
   signed: "Firmado",
@@ -473,10 +473,14 @@ export const etiquetaFlujo = (valor) => {
      · las 16 columnas `is_active` «Activo», que son un booleano de habilitacion;
      · las clasificaciones (`Origen de corrida`, `Modo de emision`, `Seleccion`, `Resolucion`,
        `Origen`), que no son un ciclo sino un tipo;
-     · `signature_flow_instances.status_id`, `signature_requests.status_id` y
-       `document_signatures.signature_status_id`, que son CLAVES AJENAS a una tabla de estados
-       y llegan como numero: la celda no tiene el nombre que traducir.
-   Las tres exclusiones son decisiones, no olvidos, y por eso estan escritas. */
+     · `document_signatures.signature_status_id`, que es CLAVE AJENA a `signature_statuses` y
+       llega como numero: la celda no tiene el nombre que traducir.
+   La exclusion es una decision, no un olvido, y por eso esta escrita.
+
+   ⚠️ AQUI SE EXCLUIAN TAMBIEN `signature_flow_instances.status_id` y `signature_requests.status_id`,
+   por el mismo motivo —llegaban como numero—. Dejo de ser cierto en la fase 3 del frente 24: hoy
+   son `status` TEXT con el mismo vocabulario que la entrega, asi que entran en el registro y se
+   pintan como las demas. El motivo de la exclusion desaparecio, y con el la exclusion. */
 
 const ETIQUETA_CORRIDA = Object.freeze({
   pending: "Pendiente",
@@ -502,8 +506,10 @@ const COLUMNA_ESTADO = Object.freeze({
   "process_runs.status": [tonoCorrida, etiquetaCorrida],
   "tasks.status": [tonoTarea, etiquetaTarea],
   "task_items.status": [tonoTarea, etiquetaTarea],
-  "document_fill_flows.status": [tonoLlenado, etiquetaLlenado],
-  "fill_requests.status": [tonoLlenado, etiquetaLlenado],
+  "document_fill_flows.status": [tonoRecorrido, etiquetaRecorrido],
+  "fill_requests.status": [tonoRecorrido, etiquetaRecorrido],
+  "signature_flow_instances.status": [tonoRecorrido, etiquetaRecorrido],
+  "signature_requests.status": [tonoRecorrido, etiquetaRecorrido],
   "persons.status": [tonoPersona, presenta],
   "vacancies.status": [tonoVacante, presenta],
   "contracts.status": [tonoContrato, presenta],

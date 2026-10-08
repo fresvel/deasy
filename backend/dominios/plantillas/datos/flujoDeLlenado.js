@@ -17,7 +17,7 @@ export const getCurrentFillOwnership = async (connection, documentVersionId, use
       AND fr.fill_flow_step_id = ffs.id
      WHERE dff.document_version_id = ?
        AND fr.assigned_person_id = ?
-       AND fr.status IN ('pending', 'in_progress')
+       AND fr.status IN ('pendiente', 'en_progreso')
      LIMIT 1`,
     [documentVersionId, userId]
   );
@@ -38,11 +38,11 @@ export const findFillFlowIdByDocumentVersion = async (connection, documentVersio
 export const cancelFillRequestsOfFlow = async (connection, flowId, nota) => {
   await connection.query(
     `UPDATE fill_requests
-     SET status = 'cancelled',
+     SET status = 'cancelado',
          responded_at = COALESCE(responded_at, NOW()),
          response_note = COALESCE(response_note, ?)
      WHERE document_fill_flow_id = ?
-       AND status IN ('pending', 'in_progress', 'returned')`,
+       AND status IN ('pendiente', 'en_progreso', 'devuelto')`,
     [nota, flowId]
   );
 };
@@ -50,7 +50,7 @@ export const cancelFillRequestsOfFlow = async (connection, flowId, nota) => {
 export const cancelFillFlow = async (connection, flowId) => {
   await connection.query(
     `UPDATE document_fill_flows
-     SET status = 'cancelled'
+     SET status = 'cancelado'
      WHERE id = ?`,
     [flowId]
   );

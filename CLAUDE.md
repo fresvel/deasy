@@ -429,8 +429,8 @@ Cada tabla aparece **una vez**, dentro de su **dominio**, y su valor es su **niv
 | **dominio** | de qué trata | 8, los de siempre. De aquí salen los 8 diagramas, y es **donde debería vivir su código** |
 | **nivel** | de qué depende | 0 (abajo) a 7 (arriba). De aquí sale el **orden de lectura** |
 
-**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: **100 bajan,
-77 se quedan, 0 suben** de 177. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
+**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: **98 bajan,
+77 se quedan, 0 suben** de 175. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
 transversales declarados por nombre (el bootstrap y el editor genérico de `/admin`).
 
 ```bash
@@ -517,7 +517,7 @@ Tres cosas que cuestan si se ignoran:
    (`services/auth/UserRepository.js`…) que F7.4 había movido, y la puerta no se queja porque usa la
    lista **por nombre de tabla**. Si mueves código, repasa la prosa de `_deuda_escritura`.
 
-**El dominio NO es el esqueleto, y hay que saber por qué:** 27 de las 92 tablas se relacionan con 3
+**El dominio NO es el esqueleto, y hay que saber por qué:** 27 de las 91 tablas se relacionan con 3
 dominios o más (`units` con los ocho, `persons` con siete). Por eso el dominio **no da un orden de
 lectura** —cuatro parejas de dominios se apuntan mutuamente— y por eso existe el nivel. Y por eso
 **el dominio `identidad` ocupa tres niveles** (catálogos, la persona, el acceso): sus 34 tablas no son

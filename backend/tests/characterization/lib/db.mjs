@@ -308,7 +308,7 @@ export async function countSignatureBatchJobs() {
 
 // --- Restauración de la solicitud de entrega usada por zzzz_sign_workflow -----------------------
 //
-// La máquina de estados de `fill_requests` NO tiene marcha atrás por HTTP: de `approved` no se sale,
+// La máquina de estados de `fill_requests` NO tiene marcha atrás por HTTP: de `completado` no se sale,
 // y el CRUD de admin rechaza el `UPDATE` porque su hook re-sincroniza el progreso documental y la
 // transición inversa de `document_versions` es ilegal. Así que la vuelta al estado inicial se hace
 // por SQL, igual que la limpieza del borrador de plantilla.

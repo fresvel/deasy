@@ -102,16 +102,21 @@ Hay un tercer JSONB en la tabla, `anchor_refs`, que es un contrato **sin product
 
 ## Los estados de firma son catálogo, no lista fija
 
-A diferencia del resto del sistema, aquí los estados viven en **tablas propias** que se pueden
-consultar y ampliar sin tocar el esquema. Hay dos catálogos distintos y conviene no confundirlos:
+Aquí hay **dos cosas distintas** que se confundían con facilidad, y una de ellas dejó de ser una
+tabla el 2026-10-08:
 
-| Tabla | Qué describe | Códigos sembrados |
+| Dónde | Qué describe | Valores |
 |---|---|---|
-| `signature_request_statuses` | Cómo va **la solicitud** | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
-| `signature_statuses` | Cómo salió **la firma en sí** | `firmado` · `fallido` · `invalido` · `cancelado` |
+| `signature_requests.status` y `signature_flow_instances.status` | Cómo va **la solicitud** y cómo va la instancia | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado`, cerrados por `CHECK` |
+| `signature_statuses` | Cómo salió **la firma en sí** | `firmado` · `fallido` · `invalido` · `cancelado`, en una tabla de catálogo |
 
-`signature_flow_instances.status_id` apunta al **primero** de los dos: la instancia reutiliza el
-catálogo de la solicitud.
+El estado de la solicitud era un catálogo propio, `signature_request_statuses`, y se retiró: es el
+mismo concepto que el del lado de entrega, así que hoy es el mismo `CHECK` y el mismo vocabulario.
+El porqué, con lo que costaba la indirección, está en
+[los vocabularios de estado](/modelo/vocabularios-de-estado/).
+
+**El de `signature_statuses` sí sigue siendo una tabla**, y no por inercia: es el resultado de una
+operación criptográfica, no el turno de una persona.
 
 Y al final la **firma en sí** queda registrada en `document_signatures`: quién firmó, con qué
 resultado, cuándo, y en qué archivo quedó el documento ya firmado. Un detalle del nombre:
@@ -127,8 +132,6 @@ erDiagram
   signature_flow_instances ||--o{ signature_requests : "genera solicitudes"
   signature_flow_steps ||--o{ signature_requests : "de este paso"
   persons ||--o{ signature_requests : "dirigida a"
-  signature_request_statuses ||--o{ signature_requests : "estado de la solicitud"
-  signature_request_statuses ||--o{ signature_flow_instances : "estado de la instancia"
   signature_requests ||--o{ document_signatures : "produce la firma"
   document_versions ||--o{ document_signatures : "sobre esta ronda"
   persons ||--o{ document_signatures : "firmada por"
@@ -170,7 +173,7 @@ erDiagram
     int id PK "LA INSTANCIA"
     int template_id FK
     int document_version_id FK "única por ronda"
-    int status_id FK
+    text status "CHECK: 5 valores"
     timestamp created_at
   }
   signature_requests {
@@ -178,7 +181,7 @@ erDiagram
     int instance_id FK
     int step_id FK
     int assigned_person_id FK
-    int status_id FK
+    text status "CHECK: 5 valores"
     smallint is_manual
     timestamp requested_at
     timestamp notified_at
@@ -193,14 +196,6 @@ erDiagram
     varchar note_short
     varchar signed_file_path
     timestamp signed_at
-    timestamp created_at
-  }
-  signature_request_statuses {
-    int id PK
-    varchar code "5 códigos sembrados"
-    varchar name
-    varchar description
-    smallint is_active
     timestamp created_at
   }
   signature_statuses {

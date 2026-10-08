@@ -4,16 +4,15 @@ import {
 } from "./DocumentStateService.js";
 import { addDocumentObservation } from "./DocumentObservationService.js";
 import {
-  SIGNATURE_REQUEST_STATUS,
+  ESTADO_RECORRIDO,
   SIGNATURE_STATUS,
   getSignatureStatusIdByCode,
-  getSignatureRequestStatusIdByCode,
 } from "./DocumentWorkflowCatalog.js";
 
 const normalizeCode = (value) => String(value || "").trim().toLowerCase();
-const SIGN_ACTIVE = new Set([SIGNATURE_REQUEST_STATUS.IN_PROGRESS]);
-const SIGN_APPROVED = new Set([SIGNATURE_REQUEST_STATUS.COMPLETED]);
-const SIGN_REJECTED = new Set([SIGNATURE_REQUEST_STATUS.REJECTED, SIGNATURE_REQUEST_STATUS.CANCELLED]);
+const SIGN_ACTIVE = new Set([ESTADO_RECORRIDO.EN_PROGRESO]);
+const SIGN_APPROVED = new Set([ESTADO_RECORRIDO.COMPLETADO]);
+const SIGN_REJECTED = new Set([ESTADO_RECORRIDO.RECHAZADO, ESTADO_RECORRIDO.CANCELADO]);
 const DOC_SIGNATURE_SUCCESS = new Set([SIGNATURE_STATUS.SIGNED]);
 const SIGNATURE_APPROVAL_AND = "and";
 const SIGNATURE_APPROVAL_OR = "or";
@@ -271,18 +270,6 @@ const resolveSignatureTemplateStepsForContext = async (connection, signatureFlow
     steps: resolvedSteps,
     unresolvedRequiredSteps,
   };
-};
-
-const getSignaturePendingStatusId = async (connection) => {
-  const [rows] = await connection.query(
-    `SELECT id
-     FROM signature_request_statuses
-     WHERE LOWER(code) = ?
-     ORDER BY id ASC
-     LIMIT 1`,
-    [SIGNATURE_REQUEST_STATUS.PENDING]
-  );
-  return rows?.[0] ? Number(rows[0].id) : null;
 };
 
 const resolveScopeForStep = (step, context) => {
@@ -584,8 +571,8 @@ const deriveSignatureStatusCode = (result) => {
 
 const deriveSignatureRequestStatusCode = (signatureStatusCode) =>
   signatureStatusCode === SIGNATURE_STATUS.SIGNED
-    ? SIGNATURE_REQUEST_STATUS.COMPLETED
-    : SIGNATURE_REQUEST_STATUS.PENDING;
+    ? ESTADO_RECORRIDO.COMPLETADO
+    : ESTADO_RECORRIDO.PENDIENTE;
 
 const truncateNote = (value, max = 255) => {
   const normalized = String(value || "").trim();
@@ -776,11 +763,10 @@ export const resolveCurrentSignatureStep = async (connection, documentVersionId)
        sfs.step_order,
        sfs.approval_mode,
        sfs.required_signers_min,
-       srs.code AS request_status_code,
+       sr.status AS request_status_code,
        ss.code AS signature_status_code
      FROM signature_requests sr
      INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     INNER JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN (
        SELECT ds1.signature_request_id, ds1.signature_status_id
        FROM document_signatures ds1
@@ -822,18 +808,13 @@ export const ensureSignatureFlowForDocumentVersion = async (connection, document
     };
   }
 
-  const pendingStatusId = await getSignaturePendingStatusId(connection);
-  if (!pendingStatusId) {
-    throw new Error("No existe el estado Pendiente en signature_request_statuses.");
-  }
-
   const [insertInstanceResult] = await connection.query(
     `INSERT INTO signature_flow_instances (
        template_id,
        document_version_id,
-       status_id
+       status
      ) VALUES (?, ?, ?)`,
-    [readiness.signatureFlowTemplate.id, documentVersionId, pendingStatusId]
+    [readiness.signatureFlowTemplate.id, documentVersionId, ESTADO_RECORRIDO.PENDIENTE]
   );
   const signatureFlowInstanceId = Number(insertInstanceResult.insertId);
 
@@ -844,10 +825,10 @@ export const ensureSignatureFlowForDocumentVersion = async (connection, document
            instance_id,
            step_id,
            assigned_person_id,
-           status_id,
+           status,
            is_manual
          ) VALUES (?, ?, ?, ?, ?)`,
-        [signatureFlowInstanceId, step.id, null, pendingStatusId, 1]
+        [signatureFlowInstanceId, step.id, null, ESTADO_RECORRIDO.PENDIENTE, 1]
       );
       continue;
     }
@@ -858,10 +839,10 @@ export const ensureSignatureFlowForDocumentVersion = async (connection, document
            instance_id,
            step_id,
            assigned_person_id,
-           status_id,
+           status,
            is_manual
          ) VALUES (?, ?, ?, ?, ?)`,
-        [signatureFlowInstanceId, step.id, assignedPersonId, pendingStatusId, 0]
+        [signatureFlowInstanceId, step.id, assignedPersonId, ESTADO_RECORRIDO.PENDIENTE, 0]
       );
     }
   }
@@ -910,18 +891,17 @@ export const registerSignatureEvidence = async ({ connection, context, result })
   }
 
   if (signatureRequest?.id) {
+    // El estado se ESCRIBE, no se resuelve: era una consulta al catalogo por cada firma, y el
+    // `if (!requestStatusId)` que la acompañaba era un error imposible de provocar sin borrar una
+    // fila del catalogo a mano. Hoy lo valida el CHECK de la columna (fase 3 del frente 24).
     const requestStatusCode = deriveSignatureRequestStatusCode(signatureStatusCode);
-    const requestStatusId = await getSignatureRequestStatusIdByCode(connection, requestStatusCode);
-    if (!requestStatusId) {
-      throw new Error(`No existe el estado de solicitud de firma '${requestStatusCode}'.`);
-    }
-    const shouldMarkRequestAsResponded = requestStatusCode === SIGNATURE_REQUEST_STATUS.COMPLETED;
+    const shouldMarkRequestAsResponded = requestStatusCode === ESTADO_RECORRIDO.COMPLETADO;
     await connection.query(
       `UPDATE signature_requests
-       SET status_id = ?,
+       SET status = ?,
            responded_at = ?
        WHERE id = ?`,
-      [requestStatusId, shouldMarkRequestAsResponded ? new Date() : null, Number(signatureRequest.id)]
+      [requestStatusCode, shouldMarkRequestAsResponded ? new Date() : null, Number(signatureRequest.id)]
     );
   }
 
@@ -1001,10 +981,9 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
     `SELECT
        sfi.id,
        sfi.template_id,
-       srs.code AS status_code,
+       sfi.status AS status_code,
        sfi.created_at
      FROM signature_flow_instances sfi
-     INNER JOIN signature_request_statuses srs ON srs.id = sfi.status_id
      WHERE sfi.document_version_id = ?
      LIMIT 1`,
     [documentVersionId]
@@ -1055,14 +1034,13 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
        sfs.approval_mode,
        sfs.required_signers_min,
        sfs.required_cargo_id,
-       srs.code AS request_status_code,
+       sr.status AS request_status_code,
        ss.code AS signature_status_code,
        p.first_name,
        p.last_name,
        c.name AS cargo_name
      FROM signature_requests sr
      INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     INNER JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN (
        SELECT ds1.signature_request_id, ds1.signature_status_id
        FROM document_signatures ds1
@@ -1082,10 +1060,10 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
   );
 
   const pendingStatusCodes = new Set([
-    SIGNATURE_REQUEST_STATUS.PENDING,
-    SIGNATURE_REQUEST_STATUS.IN_PROGRESS,
+    ESTADO_RECORRIDO.PENDIENTE,
+    ESTADO_RECORRIDO.EN_PROGRESO,
   ]);
-  const completedStatusCode = SIGNATURE_REQUEST_STATUS.COMPLETED;
+  const completedStatusCode = ESTADO_RECORRIDO.COMPLETADO;
 
   for (const row of requestRows) {
     const assignedPersonId = Number(row.assigned_person_id || 0);
@@ -1161,11 +1139,10 @@ export const syncDocumentProgressFromSignatureRequest = async (connection, signa
        sfs.step_order,
        sfs.approval_mode,
        sfs.required_signers_min,
-       srs.code AS request_status_code,
+       sr.status AS request_status_code,
        ss.code AS signature_status_code
      FROM signature_requests sr
      INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     INNER JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN (
        SELECT ds1.signature_request_id, ds1.signature_status_id
        FROM document_signatures ds1
@@ -1189,27 +1166,19 @@ export const syncDocumentProgressFromSignatureRequest = async (connection, signa
   const anyApproved = stepSummaries.some((item) => item.approved);
   const anyActive = stepSummaries.some((item) => item.hasActive);
 
-  let instanceStatusCode = SIGNATURE_REQUEST_STATUS.PENDING;
-  if (allApproved) instanceStatusCode = SIGNATURE_REQUEST_STATUS.COMPLETED;
-  else if (anyActive || anyApproved) instanceStatusCode = SIGNATURE_REQUEST_STATUS.IN_PROGRESS;
-  else if (anyRejected) instanceStatusCode = SIGNATURE_REQUEST_STATUS.REJECTED;
+  let instanceStatusCode = ESTADO_RECORRIDO.PENDIENTE;
+  if (allApproved) instanceStatusCode = ESTADO_RECORRIDO.COMPLETADO;
+  else if (anyActive || anyApproved) instanceStatusCode = ESTADO_RECORRIDO.EN_PROGRESO;
+  else if (anyRejected) instanceStatusCode = ESTADO_RECORRIDO.RECHAZADO;
 
-  const [statusRows] = await connection.query(
-    `SELECT id
-     FROM signature_request_statuses
-     WHERE LOWER(code) = ?
-     ORDER BY id ASC
-     LIMIT 1`,
-    [normalizeCode(instanceStatusCode)]
+  // Aqui habia una CONSULTA al catalogo para traducir el codigo a id, y un `if` que se saltaba el
+  // UPDATE en silencio si no lo encontraba. Sin catalogo, el estado se escribe (fase 3, frente 24).
+  await connection.query(
+    `UPDATE signature_flow_instances
+     SET status = ?
+     WHERE id = ?`,
+    [instanceStatusCode, context.instance_id]
   );
-  if (statusRows?.[0]?.id) {
-    await connection.query(
-      `UPDATE signature_flow_instances
-       SET status_id = ?
-       WHERE id = ?`,
-      [Number(statusRows[0].id), context.instance_id]
-    );
-  }
 
   if (allApproved) {
     await transitionDocumentVersionState(connection, Number(context.document_version_id), "Firmado completo");

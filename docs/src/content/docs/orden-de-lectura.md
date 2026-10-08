@@ -75,7 +75,6 @@ parroquias.
 | `relation_unit_types` | Los tipos de vínculo entre unidades. El principal es el orgánico (quién está debajo de quién) |
 | `term_types` | Los tipos de periodo: semestral, anual, permanente |
 | `signature_statuses` | Los estados de una firma |
-| `signature_request_statuses` | Los estados de una petición de firma |
 | `actions` | Los verbos con los que se nombra un permiso: leer, crear, modificar, borrar, administrar |
 | `resources` | Las cosas sobre las que se dan permisos: personas, unidades, documentos… |
 

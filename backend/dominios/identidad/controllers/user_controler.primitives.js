@@ -212,11 +212,12 @@ export const buildFillStepDisplayLabel = (step) => {
   }
 };
 
-export const isPendingLikeFillStatus = (value) =>
-  ["pending", "in_progress"].includes(String(value || "").trim().toLowerCase());
-
-export const isPendingLikeSignatureStatus = (value) =>
-  ["pendiente", "pending", "en_progreso", "in_progress"].includes(String(value || "").trim().toLowerCase());
+// UNA SOLA PREGUNTA PARA LOS DOS LADOS. Eran dos funciones —`isPendingLikeFillStatus` con el
+// vocabulario ingles y `isPendingLikeSignatureStatus` tolerando los DOS idiomas a la vez— y esa
+// duplicacion era el sintoma, no la causa: con un vocabulario unico (fase 3 del frente 24) la
+// pregunta «¿esto sigue abierto?» es la misma en entrega y en firma.
+export const estaAbiertoElTurno = (value) =>
+  ["pendiente", "en_progreso"].includes(String(value || "").trim().toLowerCase());
 
 export const canCurrentUserResetWorkflow = ({ userId, fillWorkflow, signatureRequests }) => {
   const normalizedUserId = Number(userId || 0);
@@ -227,7 +228,7 @@ export const canCurrentUserResetWorkflow = ({ userId, fillWorkflow, signatureReq
     const canResetFromFill = (fillWorkflow?.steps || []).some((step) =>
       Number(step?.step_order || 0) === currentFillStepOrder
       && Number(step?.assigned_person_id || 0) === normalizedUserId
-      && isPendingLikeFillStatus(step?.request_status)
+      && estaAbiertoElTurno(step?.request_status)
       && !step?.responded_at
     );
     if (canResetFromFill) {
@@ -236,7 +237,7 @@ export const canCurrentUserResetWorkflow = ({ userId, fillWorkflow, signatureReq
   }
 
   const pendingSignatureRequests = (Array.isArray(signatureRequests) ? signatureRequests : [])
-    .filter((request) => isPendingLikeSignatureStatus(request?.request_status_code || request?.status_name || request?.status))
+    .filter((request) => estaAbiertoElTurno(request?.request_status_code || request?.status))
     .filter((request) => !request?.responded_at)
     .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
 

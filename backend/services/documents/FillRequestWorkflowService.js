@@ -19,7 +19,7 @@
 import { UserRepository } from "../../dominios/identidad/index.js";
 import { badRequest, conflict, forbidden, notFound } from "../../errors/HttpError.js";
 import { getPostgresPool } from "../../config/postgres.js";
-import { FILL_REQUEST_STATUS } from "./DocumentWorkflowCatalog.js";
+import { ESTADO_RECORRIDO } from "./DocumentWorkflowCatalog.js";
 import { syncDocumentProgressFromFillRequest } from "./DocumentProgressService.js";
 import { addDocumentObservation } from "./DocumentObservationService.js";
 
@@ -94,7 +94,7 @@ export const reactivatePreviousFillStepIfNeeded = async (connection, context) =>
          response_note = NULL
      WHERE document_fill_flow_id = ?
        AND fill_flow_step_id = ?`,
-    [FILL_REQUEST_STATUS.PENDING, context.document_fill_flow_id, Number(previousStep.id)]
+    [ESTADO_RECORRIDO.PENDIENTE, context.document_fill_flow_id, Number(previousStep.id)]
   );
 
   return previousStepOrder;
@@ -175,11 +175,11 @@ export const requiresSignaturePdfForFinalFillApproval = async (connection, conte
 // `Object.prototype` y `?.has` reventaba con un TypeError (500) en vez de con el 409 de siempre.
 // Hoy la acción la fija el router, así que no era alcanzable; con un `Map` deja de depender de eso.
 const ALLOWED_STATUSES_BY_ACTION = new Map([
-  ["start", new Set([FILL_REQUEST_STATUS.PENDING])],
-  ["approve", new Set([FILL_REQUEST_STATUS.PENDING, FILL_REQUEST_STATUS.IN_PROGRESS])],
-  ["return", new Set([FILL_REQUEST_STATUS.PENDING, FILL_REQUEST_STATUS.IN_PROGRESS])],
-  ["reject", new Set([FILL_REQUEST_STATUS.PENDING, FILL_REQUEST_STATUS.IN_PROGRESS])],
-  ["cancel", new Set([FILL_REQUEST_STATUS.PENDING, FILL_REQUEST_STATUS.IN_PROGRESS])],
+  ["start", new Set([ESTADO_RECORRIDO.PENDIENTE])],
+  ["approve", new Set([ESTADO_RECORRIDO.PENDIENTE, ESTADO_RECORRIDO.EN_PROGRESO])],
+  ["return", new Set([ESTADO_RECORRIDO.PENDIENTE, ESTADO_RECORRIDO.EN_PROGRESO])],
+  ["reject", new Set([ESTADO_RECORRIDO.PENDIENTE, ESTADO_RECORRIDO.EN_PROGRESO])],
+  ["cancel", new Set([ESTADO_RECORRIDO.PENDIENTE, ESTADO_RECORRIDO.EN_PROGRESO])],
 ]);
 
 export const assertFillActionAllowed = ({ action, currentStatus, assignedPersonId, currentUserId, isManual }) => {
@@ -249,7 +249,7 @@ export const updateFillRequestStatus = async (
       }
     }
 
-    const shouldRespondNow = nextStatus !== FILL_REQUEST_STATUS.IN_PROGRESS;
+    const shouldRespondNow = nextStatus !== ESTADO_RECORRIDO.EN_PROGRESO;
     const assignedPersonId = context.assigned_person_id || (context.is_manual ? Number(user.id) : null);
     await connection.query(
       `UPDATE fill_requests

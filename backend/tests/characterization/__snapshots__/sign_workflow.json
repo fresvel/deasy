@@ -40,9 +40,9 @@
     "body": {
       "documentVersionId": "<normalized>",
       "fillRequestId": "<normalized>",
-      "flowStatus": "approved",
+      "flowStatus": "completado",
       "message": "Solicitud de entrega actualizada.",
-      "status": "approved"
+      "status": "completado"
     }
   },
   "approve_sin_pdf": {
@@ -52,16 +52,16 @@
     }
   },
   "approve_sin_pdf_rollback": {
-    "status": "pending"
+    "status": "pendiente"
   },
   "cancel_ok": {
     "status": 200,
     "body": {
       "documentVersionId": "<normalized>",
       "fillRequestId": "<normalized>",
-      "flowStatus": "pending",
+      "flowStatus": "pendiente",
       "message": "Solicitud de entrega actualizada.",
-      "status": "cancelled"
+      "status": "cancelado"
     }
   },
   "id_cero": {
@@ -135,27 +135,27 @@
     "body": {
       "documentVersionId": "<normalized>",
       "fillRequestId": "<normalized>",
-      "flowStatus": "in_progress",
+      "flowStatus": "en_progreso",
       "message": "Solicitud de entrega actualizada.",
-      "status": "in_progress"
+      "status": "en_progreso"
     }
   },
   "manual_autoasignacion_efecto": {
     "reclamada_por_el_gestor": true,
-    "status": "in_progress"
+    "status": "en_progreso"
   },
   "reject_ok": {
     "status": 200,
     "body": {
       "documentVersionId": "<normalized>",
       "fillRequestId": "<normalized>",
-      "flowStatus": "rejected",
+      "flowStatus": "rechazado",
       "message": "Solicitud de entrega actualizada.",
-      "status": "rejected"
+      "status": "rechazado"
     }
   },
   "return_efecto": {
-    "status": "pending",
+    "status": "pendiente",
     "response_note": "faltan datos en el formulario"
   },
   "return_ok": {
@@ -163,9 +163,9 @@
     "body": {
       "documentVersionId": "<normalized>",
       "fillRequestId": "<normalized>",
-      "flowStatus": "pending",
+      "flowStatus": "pendiente",
       "message": "Solicitud de entrega actualizada.",
-      "status": "returned"
+      "status": "devuelto"
     }
   },
   "sin_responsable_gestor": {
@@ -215,81 +215,81 @@
     "body": {
       "documentVersionId": "<normalized>",
       "fillRequestId": "<normalized>",
-      "flowStatus": "in_progress",
+      "flowStatus": "en_progreso",
       "message": "Solicitud de entrega actualizada.",
-      "status": "in_progress"
+      "status": "en_progreso"
     }
   },
   "start_repetido_409": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de in_progress usando la acción start."
+      "error": "La solicitud no puede pasar de en_progreso usando la acción start."
     }
   },
-  "terminal_approved_approve": {
+  "terminal_cancelado_approve": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de approved usando la acción approve."
+      "error": "La solicitud no puede pasar de cancelado usando la acción approve."
     }
   },
-  "terminal_approved_cancel": {
+  "terminal_completado_approve": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de approved usando la acción cancel."
+      "error": "La solicitud no puede pasar de completado usando la acción approve."
     }
   },
-  "terminal_approved_reject": {
+  "terminal_completado_cancel": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de approved usando la acción reject."
+      "error": "La solicitud no puede pasar de completado usando la acción cancel."
     }
   },
-  "terminal_approved_return": {
+  "terminal_completado_reject": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de approved usando la acción return."
+      "error": "La solicitud no puede pasar de completado usando la acción reject."
     }
   },
-  "terminal_approved_start": {
+  "terminal_completado_return": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de approved usando la acción start."
+      "error": "La solicitud no puede pasar de completado usando la acción return."
     }
   },
-  "terminal_cancelled_approve": {
+  "terminal_completado_start": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de cancelled usando la acción approve."
+      "error": "La solicitud no puede pasar de completado usando la acción start."
     }
   },
-  "terminal_rejected_approve": {
+  "terminal_rechazado_approve": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de rejected usando la acción approve."
+      "error": "La solicitud no puede pasar de rechazado usando la acción approve."
     }
   },
-  "terminal_rejected_cancel": {
+  "terminal_rechazado_cancel": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de rejected usando la acción cancel."
+      "error": "La solicitud no puede pasar de rechazado usando la acción cancel."
     }
   },
-  "terminal_rejected_reject": {
+  "terminal_rechazado_reject": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de rejected usando la acción reject."
+      "error": "La solicitud no puede pasar de rechazado usando la acción reject."
     }
   },
-  "terminal_rejected_return": {
+  "terminal_rechazado_return": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de rejected usando la acción return."
+      "error": "La solicitud no puede pasar de rechazado usando la acción return."
     }
   },
-  "terminal_rejected_start": {
+  "terminal_rechazado_start": {
     "status": 409,
     "body": {
-      "error": "La solicitud no puede pasar de rejected usando la acción start."
+      "error": "La solicitud no puede pasar de rechazado usando la acción start."
     }
   }
 }

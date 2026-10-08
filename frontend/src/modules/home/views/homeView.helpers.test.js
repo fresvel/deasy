@@ -166,9 +166,11 @@ describe('mapSigner', () => {
 
 describe('getFillRequestStatusCode', () => {
   test('normaliza desde cualquiera de los alias de estado', () => {
-    expect(getFillRequestStatusCode({ status_name: 'In_Progress' })).toBe('in_progress');
-    expect(getFillRequestStatusCode({ requestStatus: ' APPROVED ' })).toBe('approved');
+    expect(getFillRequestStatusCode({ status: 'En_Progreso' })).toBe('en_progreso');
+    expect(getFillRequestStatusCode({ requestStatus: ' COMPLETADO ' })).toBe('completado');
     expect(getFillRequestStatusCode({})).toBe('');
+    // `status_name` ya no es alias: traia la etiqueta del catalogo, no el codigo.
+    expect(getFillRequestStatusCode({ status_name: 'En progreso' })).toBe('');
   });
 });
 
@@ -182,7 +184,7 @@ describe('isCompletedSignatureRequestStatus', () => {
 
 /* `getWorkflowStateTagVariant`, `getDeliverableAccessTagVariant`, `getFillStepStatusLabel` y
    `getFillStepStatusTagVariant` murieron el 2026-08-20 (F9-bis): son `tonoFlujo`, `tonoAcceso`,
-   `etiquetaLlenado` y `tonoLlenado` en `estadoTono.js`, y sus pruebas se fueron con ellas. */
+   `etiquetaRecorrido` y `tonoRecorrido` en `estadoTono.js`, y sus pruebas se fueron con ellas. */
 
 /* Estas pruebas afirmaban sobre el NOMBRE DE LA PALETA (`toContain('slate')`), asi que una
    migracion de color las rompio aunque el comportamiento fuera identico. Un test acoplado al valor
@@ -194,11 +196,11 @@ describe('getFillStepTono', () => {
 
   test('el paso ACTUAL manda sobre el estado', () => {
     /* Mismo estado, distinto turno: si el turno no mandara, los dos saldrian iguales. */
-    expect(tono('approved', 2)).not.toBe(tono('approved', 1));
+    expect(tono('completado', 2)).not.toBe(tono('completado', 1));
   });
 
   test('si no es el actual, cada estado se distingue de los demas', () => {
-    const tonos = ['approved', 'rejected', 'returned', 'pendiente'].map((e) => tono(e, 1));
+    const tonos = ['completado', 'rechazado', 'devuelto', 'pendiente'].map((e) => tono(e, 1));
     expect(new Set(tonos).size).toBe(tonos.length);
   });
 
@@ -209,7 +211,7 @@ describe('getFillStepTono', () => {
   test('todo tono devuelto tiene bloque en `deasy-flow-step--*`', () => {
     /* Lo que impide el fallo que L3 dejo pasar: un tono sin bloque no falla, sale sin pintar. */
     const conBloque = ['success', 'info', 'danger', 'salmon', 'warning', 'neutral'];
-    for (const e of ['approved', 'rejected', 'returned', 'loquesea']) {
+    for (const e of ['completado', 'rechazado', 'devuelto', 'loquesea']) {
       expect(conBloque).toContain(tono(e, 1));
     }
   });

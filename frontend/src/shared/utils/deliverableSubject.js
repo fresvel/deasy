@@ -60,7 +60,7 @@ export const buildDeliverableSubject = (payload = {}, fallbacks = {}) => {
     templateArtifactName: payload?.template_artifact_name || payload?.templateArtifactName || documentPayload?.template_artifact_name || documentPayload?.templateArtifactName || '',
     actions: payload?.actions || documentPayload?.actions || {},
     workflow: payload?.workflow || documentPayload?.workflow || {},
-    status: payload?.status || payload?.status_name || payload?.statusName || documentPayload?.status || documentPayload?.status_name || documentPayload?.statusName || '',
+    status: payload?.status || payload?.statusName || documentPayload?.status || documentPayload?.statusName || '',
     documentStatus: payload?.document_status || payload?.documentStatus || documentPayload?.document_status || documentPayload?.documentStatus || '',
     pendingFillCount: payload?.pending_fill_count || payload?.pendingFillCount || documentPayload?.pending_fill_count || documentPayload?.pendingFillCount || 0,
     pendingSignatureCount: payload?.pending_signature_count || payload?.pendingSignatureCount || documentPayload?.pending_signature_count || documentPayload?.pendingSignatureCount || 0,

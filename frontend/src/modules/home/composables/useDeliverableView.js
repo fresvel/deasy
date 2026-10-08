@@ -242,7 +242,7 @@ export function useDeliverableView({
     if (subjectHasWorkingArtifact(payload)) return true;
     const request = getCurrentFillWorkflowRequest(payload);
     const code = getFillRequestStatusCode(request);
-    return ['in_progress', 'approved', 'returned', 'rejected', 'cancelled'].includes(code);
+    return ['en_progreso', 'completado', 'devuelto', 'rechazado', 'cancelado'].includes(code);
   };
 
   const shouldShowStartDeliverable = (payload) => {
@@ -252,7 +252,7 @@ export function useDeliverableView({
     return Boolean(
       subject.documentId
       && !isSignaturePhaseDocumentStatus(payload)
-      && code === 'pending'
+      && code === 'pendiente'
       && !hasDeliverableBeenStarted(payload)
     );
   };
@@ -263,7 +263,7 @@ export function useDeliverableView({
     if (subjectHasWorkingArtifact(payload)) return false;
     const request = getCurrentFillWorkflowRequest(payload);
     const code = getFillRequestStatusCode(request);
-    if (code !== 'pending') {
+    if (code !== 'pendiente') {
       return false;
     }
     return currentUserCanOperateFillStep(payload) || isFillRequestActionableByCurrentUser(request);
@@ -278,7 +278,7 @@ export function useDeliverableView({
       && !isSignaturePhaseDocumentStatus(payload)
       && currentUserCanOperateFillStep(payload)
       && hasDeliverableBeenStarted(payload)
-      && ['pending', 'in_progress', 'returned'].includes(code)
+      && ['pendiente', 'en_progreso', 'devuelto'].includes(code)
     );
   };
 
@@ -291,7 +291,7 @@ export function useDeliverableView({
     const code = getFillRequestStatusCode(getCurrentFillWorkflowRequest(payload));
     return !isSignaturePhaseDocumentStatus(payload)
       && currentUserCanOperateFillStep(payload)
-      && ['pending', 'in_progress'].includes(code)
+      && ['pendiente', 'en_progreso'].includes(code)
       && subjectHasWorkingArtifact(payload);
   };
 
@@ -300,7 +300,7 @@ export function useDeliverableView({
     return !isSignaturePhaseDocumentStatus(payload)
       && currentUserCanOperateFillStep(payload)
       && isReviewFillRequestForPayload(payload)
-      && ['pending', 'in_progress', 'returned'].includes(code);
+      && ['pendiente', 'en_progreso', 'devuelto'].includes(code);
   };
 
   const canRejectFillRequestForPayload = (payload) => {
@@ -308,7 +308,7 @@ export function useDeliverableView({
     return !isSignaturePhaseDocumentStatus(payload)
       && currentUserCanOperateFillStep(payload)
       && isReviewFillRequestForPayload(payload)
-      && ['pending', 'in_progress', 'returned'].includes(code);
+      && ['pendiente', 'en_progreso', 'devuelto'].includes(code);
   };
 
   const getFillApproveActionLabelForPayload = (payload) => (
@@ -331,8 +331,8 @@ export function useDeliverableView({
     const steps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
     const flowSteps = Array.isArray(subject.workflow?.fill_flow?.steps) ? subject.workflow.fill_flow.steps : [];
     return requests.some((request) => !(request?.responded_at || request?.respondedAt))
-      || steps.some((step) => ['pending', 'in_progress', 'returned'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()))
-      || flowSteps.some((step) => ['pending', 'in_progress', 'returned'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()));
+      || steps.some((step) => ['pendiente', 'en_progreso', 'devuelto'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()))
+      || flowSteps.some((step) => ['pendiente', 'en_progreso', 'devuelto'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()));
   };
 
   const hasFillWorkflowActivity = (payload) => {
@@ -389,8 +389,8 @@ export function useDeliverableView({
     );
     if (explicit > 0) {
       const matchesExplicitPendingStep = requests.some((request) => {
-        const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
-        return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code)
+        const code = String(request?.request_status_code || request?.status || '').trim().toLowerCase();
+        return ['pendiente', 'en_progreso'].includes(code)
           && !request?.responded_at
           && Number(request?.step_order || 0) === explicit;
       });
@@ -399,8 +399,8 @@ export function useDeliverableView({
 
     const pendingLike = requests
       .filter((request) => {
-        const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
-        return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
+        const code = String(request?.request_status_code || request?.status || '').trim().toLowerCase();
+        return ['pendiente', 'en_progreso'].includes(code) && !request?.responded_at;
       })
       .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
     if (pendingLike.length) {
@@ -426,8 +426,8 @@ export function useDeliverableView({
 
     const requests = getCurrentSignatureRequestsFromSubject(payload);
     return requests.some((request) => {
-      const code = String(request?.request_status_code || request?.status_name || request?.status || '').trim().toLowerCase();
-      const isPendingLike = ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code);
+      const code = String(request?.request_status_code || request?.status || '').trim().toLowerCase();
+      const isPendingLike = ['pendiente', 'en_progreso'].includes(code);
       return isPendingLike
         && !request?.responded_at
         && Number(request?.assigned_person_id || 0) === currentUser;
@@ -490,8 +490,8 @@ export function useDeliverableView({
     }
 
     const hasPendingLikeRequests = requests.some((request) => {
-      const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
-      return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
+      const code = String(request?.request_status_code || request?.requestStatusCode || request?.status || '').trim().toLowerCase();
+      return ['pendiente', 'en_progreso'].includes(code) && !request?.responded_at;
     });
     if (hasPendingLikeRequests) {
       return false;
@@ -524,7 +524,7 @@ export function useDeliverableView({
       const relatedRequests = requests.filter((request) => Number(request?.step_order || request?.stepOrder || 0) === stepOrder);
       return relatedRequests.length > 0 && relatedRequests.every((request) =>
         isCompletedSignatureRequestStatus(
-          request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status
+          request?.request_status_code || request?.requestStatusCode || request?.status
         )
       );
     });
@@ -564,10 +564,10 @@ export function useDeliverableView({
     );
 
     const futureSignature = signatureRequests.some((request) => {
-      const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
+      const code = String(request?.request_status_code || request?.requestStatusCode || request?.status || '').trim().toLowerCase();
       return Number(request?.assigned_person_id || 0) === currentUser
         && !request?.responded_at
-        && ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code)
+        && ['pendiente', 'en_progreso'].includes(code)
         && Number(request?.step_order || request?.stepOrder || 0) > currentSignatureStepOrder;
     });
 
@@ -581,7 +581,7 @@ export function useDeliverableView({
       && (
         Boolean(request?.responded_at)
         || isCompletedSignatureRequestStatus(
-          request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status
+          request?.request_status_code || request?.requestStatusCode || request?.status
         )
       )
     );
@@ -734,13 +734,13 @@ export function useDeliverableView({
         const relatedRequests = requests.filter((request) => Number(request?.step_order || request?.stepOrder || 0) === stepOrder);
         if (!relatedRequests.length) return false;
         return relatedRequests.every((request) => {
-          const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
+          const code = String(request?.request_status_code || request?.requestStatusCode || request?.status || '').trim().toLowerCase();
           return ['completado', 'completed'].includes(code);
         });
       }).length;
       const hasActivePendingStep = requests.some((request) => {
-        const code = String(request?.request_status_code || request?.requestStatusCode || request?.status_name || request?.status || '').trim().toLowerCase();
-        return ['pendiente', 'pending', 'en_progreso', 'in_progress'].includes(code) && !request?.responded_at;
+        const code = String(request?.request_status_code || request?.requestStatusCode || request?.status || '').trim().toLowerCase();
+        return ['pendiente', 'en_progreso'].includes(code) && !request?.responded_at;
       });
       const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
       return {
@@ -757,11 +757,11 @@ export function useDeliverableView({
     const current = Number(subject.workflow?.fill_flow?.current_step_order || subject.workflow?.current_fill_step_order || getCurrentFillWorkflowRequest(payload)?.step_order || 0) || total;
     const completedSteps = fillSteps.filter((step) => {
       const code = String(step?.request_status || '').trim().toLowerCase();
-      return code === 'approved';
+      return code === 'completado';
     }).length;
     const hasActivePendingStep = fillSteps.some((step) => {
       const code = String(step?.request_status || '').trim().toLowerCase();
-      return ['pending', 'in_progress', 'returned'].includes(code);
+      return ['pendiente', 'en_progreso', 'devuelto'].includes(code);
     });
     const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
     return {

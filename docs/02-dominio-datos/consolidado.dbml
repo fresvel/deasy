@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 92 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 91 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -388,7 +388,7 @@ Table "document_fill_flows" {
   "id" int4 [pk, not null, increment]
   "fill_flow_template_id" int4 [not null]
   "document_version_id" int4 [unique, not null]
-  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'approved'::text, 'rejected'::text, 'cancelled'::text])`, default: 'pending']
+  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
   "current_step_order" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
@@ -655,7 +655,7 @@ Table "fill_requests" {
   "document_fill_flow_id" int4 [not null]
   "fill_flow_step_id" int4 [not null]
   "assigned_person_id" int4
-  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'in_progress'::text, 'approved'::text, 'rejected'::text, 'returned'::text, 'cancelled'::text])`, default: 'pending']
+  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
   "is_manual" int2 [not null, default: 0]
   "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "responded_at" timestamp
@@ -1107,7 +1107,7 @@ Table "signature_flow_instances" {
   "id" int4 [pk, not null, increment]
   "template_id" int4 [not null]
   "document_version_id" int4 [unique, not null]
-  "status_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
@@ -1159,21 +1159,12 @@ Table "signature_flow_templates" {
   }
 }
 
-Table "signature_request_statuses" {
-  "id" int4 [pk, not null, increment]
-  "code" varchar(40) [unique, not null]
-  "name" varchar(80) [not null]
-  "description" varchar(255)
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-}
-
 Table "signature_requests" {
   "id" int4 [pk, not null, increment]
   "instance_id" int4 [not null]
   "step_id" int4 [not null]
   "assigned_person_id" int4
-  "status_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
   "is_manual" int2 [not null, default: 0]
   "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "notified_at" timestamp
@@ -1595,7 +1586,6 @@ Ref "fk_role_assignments_unit":"units"."id" <? "role_assignments"."unit_id"
 Ref "fk_role_permissions_permission":"permissions"."id" <? "role_permissions"."permission_id"
 Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
 Ref "fk_signature_flow_instances_document":"document_versions"."id" <? "signature_flow_instances"."document_version_id"
-Ref "fk_signature_flow_instances_status":"signature_request_statuses"."id" <? "signature_flow_instances"."status_id"
 Ref "fk_signature_flow_instances_template":"signature_flow_templates"."id" <? "signature_flow_instances"."template_id"
 Ref "fk_signature_flow_steps_cargo":"cargos"."id" ?<? "signature_flow_steps"."required_cargo_id"
 Ref "fk_signature_flow_steps_person":"persons"."id" ?<? "signature_flow_steps"."assigned_person_id"
@@ -1607,7 +1597,6 @@ Ref "fk_signature_flow_templates_artifact":"ediciones"."id" ?<? "signature_flow_
 Ref "fk_signature_flow_templates_task_item":"task_items"."id" ?<? "signature_flow_templates"."task_item_id" [delete: cascade]
 Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signature_requests"."instance_id"
 Ref "fk_signature_requests_person":"persons"."id" ?<? "signature_requests"."assigned_person_id"
-Ref "fk_signature_requests_status":"signature_request_statuses"."id" <? "signature_requests"."status_id"
 Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_requests"."step_id"
 Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
 Ref "fk_task_item_tenures_person":"persons"."id" ?<? "task_item_tenures"."person_id"

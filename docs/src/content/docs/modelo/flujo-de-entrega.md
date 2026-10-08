@@ -93,13 +93,15 @@ Al ponerse en marcha, el flujo declarado se convierte en una **instancia** (`doc
 pegada a la ronda concreta, que lleva la cuenta de por qué paso va en `current_step_order`. Un índice
 único sobre `document_version_id` garantiza **una sola instancia de entrega por ronda**.
 
-Cada paso genera una o varias **solicitudes** (`fill_requests`) dirigidas a una persona. Aquí los
-estados **sí están cerrados por `CHECK`**, y en inglés:
+Cada paso genera una o varias **solicitudes** (`fill_requests`) dirigidas a una persona. Los estados
+están cerrados por `CHECK`, y son **los mismos que en firma** desde el 2026-10-08: un vocabulario,
+en español, para los dos lados y los dos niveles (ver [los vocabularios de
+estado](/modelo/vocabularios-de-estado/)).
 
 | Tabla | Estados admitidos |
 |---|---|
-| `document_fill_flows.status` | `pending` · `in_progress` · `approved` · `rejected` · `cancelled` |
-| `fill_requests.status` | `pending` · `in_progress` · `approved` · `rejected` · `returned` · `cancelled` |
+| `document_fill_flows.status` | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
+| `fill_requests.status` | los cinco anteriores más `devuelto`, que **sólo existe en la entrega** |
 
 La solicitud guarda además `is_manual` —si a esa persona la eligieron a mano—, cuándo se pidió,
 cuándo se respondió y una nota de respuesta.

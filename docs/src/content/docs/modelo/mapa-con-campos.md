@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 37 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 36 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**37 tablas · 355 columnas · 96 claves ajenas · 10 diagramas.**
+**36 tablas · 349 columnas · 94 claves ajenas · 9 diagramas.**
 
 ## Cómo leerla
 
@@ -546,9 +546,9 @@ erDiagram
 
 </details>
 
-## Flujo de firma (1 de 2)
+## Flujo de firma
 
-**4 tablas** · 42 columnas · 15 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `signature_request_statuses`, `task_items`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
+**6 tablas** · 57 columnas · 17 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `task_items`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -589,7 +589,7 @@ erDiagram
     int id PK
     int template_id FK
     int document_version_id FK, UK
-    int status_id FK
+    text status
     timestamp created_at
   }
   signature_requests {
@@ -597,43 +597,12 @@ erDiagram
     int instance_id FK
     int step_id FK
     int assigned_person_id FK
-    int status_id FK
+    text status
     smallint is_manual
     timestamp requested_at
     timestamp notified_at
     timestamp responded_at
   }
-  document_versions ||--o| signature_flow_instances : "document_version_id"
-  signature_request_statuses ||--o{ signature_flow_instances : "status_id"
-  signature_flow_templates ||--o{ signature_flow_instances : "template_id"
-  cargos |o--o{ signature_flow_steps : "required_cargo_id"
-  persons |o--o{ signature_flow_steps : "assigned_person_id"
-  unit_positions |o--o{ signature_flow_steps : "position_id"
-  signature_flow_templates ||--o{ signature_flow_steps : "template_id"
-  unit_types |o--o{ signature_flow_steps : "unit_type_id"
-  units |o--o{ signature_flow_steps : "unit_id"
-  ediciones |o--o{ signature_flow_templates : "edicion_id"
-  task_items |o--o{ signature_flow_templates : "task_item_id"
-  signature_flow_instances ||--o{ signature_requests : "instance_id"
-  persons |o--o{ signature_requests : "assigned_person_id"
-  signature_request_statuses ||--o{ signature_requests : "status_id"
-  signature_flow_steps ||--o{ signature_requests : "step_id"
-```
-
-<details>
-<summary>Llegan 2 claves ajenas desde otros diagramas</summary>
-
-`document_signatures.signature_request_id` → `signature_requests` · `document_workflow_observations.signature_request_id` → `signature_requests`
-
-</details>
-
-## Flujo de firma (2 de 2)
-
-**3 tablas** · 21 columnas · 4 claves ajenas propias. Apunta a `document_versions`, `persons`, `signature_requests`, que salen como caja vacía.
-
-```mermaid
-erDiagram
-  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   document_signatures {
     int id PK
     int signature_request_id FK
@@ -643,14 +612,6 @@ erDiagram
     varchar note_short
     varchar signed_file_path
     timestamp signed_at
-    timestamp created_at
-  }
-  signature_request_statuses {
-    int id PK
-    varchar code UK
-    varchar name
-    varchar description
-    smallint is_active
     timestamp created_at
   }
   signature_statuses {
@@ -665,12 +626,25 @@ erDiagram
   signature_requests |o--o{ document_signatures : "signature_request_id"
   persons ||--o{ document_signatures : "signer_user_id"
   signature_statuses ||--o{ document_signatures : "signature_status_id"
+  document_versions ||--o| signature_flow_instances : "document_version_id"
+  signature_flow_templates ||--o{ signature_flow_instances : "template_id"
+  cargos |o--o{ signature_flow_steps : "required_cargo_id"
+  persons |o--o{ signature_flow_steps : "assigned_person_id"
+  unit_positions |o--o{ signature_flow_steps : "position_id"
+  signature_flow_templates ||--o{ signature_flow_steps : "template_id"
+  unit_types |o--o{ signature_flow_steps : "unit_type_id"
+  units |o--o{ signature_flow_steps : "unit_id"
+  ediciones |o--o{ signature_flow_templates : "edicion_id"
+  task_items |o--o{ signature_flow_templates : "task_item_id"
+  signature_flow_instances ||--o{ signature_requests : "instance_id"
+  persons |o--o{ signature_requests : "assigned_person_id"
+  signature_flow_steps ||--o{ signature_requests : "step_id"
 ```
 
 <details>
-<summary>Llegan 2 claves ajenas desde otros diagramas</summary>
+<summary>Llega 1 clave ajena desde otros diagramas</summary>
 
-`signature_flow_instances.status_id` → `signature_request_statuses` · `signature_requests.status_id` → `signature_request_statuses`
+`document_workflow_observations.signature_request_id` → `signature_requests`
 
 </details>
 

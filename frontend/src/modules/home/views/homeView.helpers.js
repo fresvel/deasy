@@ -105,9 +105,15 @@ export const mapSigner = (s) => (s.kind === 'cargo'
 
 // El modal de envío/tarea usa el flujo de runtime (elabora/firma) cuando es routed o alta libre.
 
+/* ⚠️ AQUI MIRABA PRIMERO `status_name`, y era un fallo: esa clave traia la ETIQUETA del catalogo
+   (`srs.name`, «En progreso») y aqui se minusculizaba para usarla COMO CODIGO, con lo que
+   `en_progreso` llegaba como `en progreso` y no coincidia con nada. Muerto el catalogo (fase 3 del
+   frente 24) viaja el codigo, y la clave ya no existe. */
 export const getFillRequestStatusCode = (request) =>
-  String(request?.status_name || request?.statusName || request?.status || request?.request_status || request?.requestStatus || '').trim().toLowerCase();
+  String(request?.status || request?.request_status || request?.requestStatus || '').trim().toLowerCase();
 
+/* `completed` en ingles se mantiene a proposito: no es vocabulario de columna sino texto libre que
+   puede llegar de un origen antiguo. El de la columna es `completado`. */
 export const isCompletedSignatureRequestStatus = (value) =>
   ['completado', 'completed'].includes(String(value || '').trim().toLowerCase());
 
@@ -118,7 +124,7 @@ export const isCompletedSignatureRequestStatus = (value) =>
 /* `getDeliverableAccessTagVariant` murio el 2026-08-20 (F9-bis): es `tonoAcceso`. */
 
 /* `getFillStepStatusLabel` y `getFillStepStatusTagVariant` murieron el 2026-08-20 (F9-bis):
-   son `etiquetaLlenado` y `tonoLlenado`, el eje de `fill_requests.status`. El segundo dejaba
+   son `etiquetaRecorrido` y `tonoRecorrido`, el eje de `fill_requests.status`. El segundo dejaba
    `pending` sin caso y caia a NEUTRAL; el eje lo pinta SALMON, como el resto del sistema. */
 
 export const formatWorkflowDateTime = (value) => {

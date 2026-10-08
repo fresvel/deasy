@@ -299,7 +299,6 @@ export const TABLE_RESOURCE_MAP = {
   signature_flow_instances: "signature_flows",
   signature_flow_steps: "signature_flows",
   signature_flow_templates: "signature_flows",
-  signature_request_statuses: "signature_flows",
   signature_requests: "signature_flows",
   signature_statuses: "signature_flows",
   task_item_tenures: "process_execution",

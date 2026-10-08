@@ -166,3 +166,112 @@ BEGIN
 END $$;
 
 COMMIT;
+
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+-- FASE 3 · un mecanismo y un idioma para el estado del recorrido
+--
+-- Cuatro columnas describian lo mismo de dos maneras: la ENTREGA con `status TEXT` y un CHECK en
+-- INGLES, y la FIRMA con `status_id` apuntando al catalogo `signature_request_statuses`, en ESPAÑOL.
+-- Se unifica en CHECK y en español.
+--
+-- ⚠️ `signature_statuses` NO SE TOCA: es el estado del HECHO de firmar
+-- (`document_signatures.signature_status_id`), no el de la solicitud.
+--
+-- ⚠️ EL ORDEN TIENE TRES PASOS Y NINGUNO SE PUEDE ADELANTAR, y el segundo costo una corrida:
+--   1. se QUITA el CHECK viejo. Admite solo ingles, asi que mientras este puesto **rechaza el
+--      propio UPDATE que traduce** (`new row ... violates check constraint`);
+--   2. se TRADUCEN los valores;
+--   3. y se pone el CHECK nuevo. Al reves lo rechazaria el `ALTER`.
+-- Despues se añade la columna de texto a las dos de firma, se rellena desde el catalogo, y solo al
+-- final se borran `status_id` y el catalogo.
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+
+BEGIN;
+
+DO $$
+DECLARE
+  r RECORD;
+  traducidas INT := 0;
+  rebeldes TEXT;
+  ES6 TEXT := '''pendiente'', ''en_progreso'', ''completado'', ''rechazado'', ''devuelto'', ''cancelado''';
+  ES5 TEXT := '''pendiente'', ''en_progreso'', ''completado'', ''rechazado'', ''cancelado''';
+BEGIN
+  -- 1 · ENTREGA: traducir los valores y recolocar el CHECK.
+  FOR r IN SELECT 'plantillas' AS esq, 'fill_requests' AS tabla, 1 AS con_devuelto
+           UNION ALL SELECT 'plantillas', 'document_fill_flows', 0
+  LOOP
+    -- EL CHECK VIEJO, FUERA ANTES DE TRADUCIR: admite solo ingles y rechazaria el UPDATE.
+    EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.esq, r.tabla, r.tabla || '_status_check');
+
+    -- Idempotencia: si ya no queda ni un valor en ingles, esta tabla ya paso por aqui.
+    EXECUTE format($f$
+      UPDATE %I.%I SET status = CASE status
+        WHEN 'pending'     THEN 'pendiente'
+        WHEN 'in_progress' THEN 'en_progreso'
+        WHEN 'approved'    THEN 'completado'
+        WHEN 'rejected'    THEN 'rechazado'
+        WHEN 'returned'    THEN 'devuelto'
+        WHEN 'cancelled'   THEN 'cancelado'
+        ELSE status END
+      WHERE status IN ('pending','in_progress','approved','rejected','returned','cancelled')
+    $f$, r.esq, r.tabla);
+    GET DIAGNOSTICS traducidas = ROW_COUNT;
+    RAISE NOTICE 'MIGRACION: %.% -> % fila(s) traducidas al español', r.esq, r.tabla, traducidas;
+
+    -- Si queda algun valor que no sea del vocabulario nuevo, esto PARA: poner el CHECK encima lo
+    -- rechazaria igual, pero con un mensaje que no dice QUE valor sobra.
+    EXECUTE format($f$
+      SELECT string_agg(DISTINCT quote_literal(status), ', ') FROM %I.%I
+       WHERE status NOT IN (%s)
+    $f$, r.esq, r.tabla, CASE WHEN r.con_devuelto = 1 THEN ES6 ELSE ES5 END) INTO rebeldes;
+    IF rebeldes IS NOT NULL THEN
+      RAISE EXCEPTION 'MIGRACION DETENIDA: %.% tiene valores de estado fuera del vocabulario nuevo: %. Traducelos a mano y relanza.',
+        r.esq, r.tabla, rebeldes;
+    END IF;
+
+    -- Y el CHECK nuevo, ya con el vocabulario traducido debajo.
+    EXECUTE format('ALTER TABLE %I.%I ADD CONSTRAINT %I CHECK (status IN (%s))',
+                   r.esq, r.tabla, r.tabla || '_status_check',
+                   CASE WHEN r.con_devuelto = 1 THEN ES6 ELSE ES5 END);
+    EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN status SET DEFAULT ''pendiente''', r.esq, r.tabla);
+  END LOOP;
+
+  -- 2 · FIRMA: de clave ajena a texto. El catalogo ya estaba en español, asi que aqui no se
+  --     traduce nada: se COPIA el codigo y se tira la indireccion.
+  FOR r IN SELECT 'firmas' AS esq, 'signature_requests' AS tabla
+           UNION ALL SELECT 'firmas', 'signature_flow_instances'
+  LOOP
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns
+                    WHERE table_schema = r.esq AND table_name = r.tabla AND column_name = 'status_id') THEN
+      CONTINUE;   -- ya migrada
+    END IF;
+
+    EXECUTE format('ALTER TABLE %I.%I ADD COLUMN IF NOT EXISTS status TEXT', r.esq, r.tabla);
+    EXECUTE format($f$
+      UPDATE %I.%I h SET status = srs.code
+        FROM firmas.signature_request_statuses srs
+       WHERE srs.id = h.status_id
+    $f$, r.esq, r.tabla);
+    GET DIAGNOSTICS traducidas = ROW_COUNT;
+    RAISE NOTICE 'MIGRACION: %.% -> % fila(s) con su codigo copiado del catalogo', r.esq, r.tabla, traducidas;
+
+    EXECUTE format('SELECT count(*)::text FROM %I.%I WHERE status IS NULL', r.esq, r.tabla) INTO rebeldes;
+    IF rebeldes <> '0' THEN
+      RAISE EXCEPTION 'MIGRACION DETENIDA: %.% deja % fila(s) sin estado (su status_id no estaba en el catalogo).',
+        r.esq, r.tabla, rebeldes;
+    END IF;
+
+    EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN status SET NOT NULL', r.esq, r.tabla);
+    EXECUTE format('ALTER TABLE %I.%I ALTER COLUMN status SET DEFAULT ''pendiente''', r.esq, r.tabla);
+    EXECUTE format('ALTER TABLE %I.%I DROP CONSTRAINT IF EXISTS %I', r.esq, r.tabla, r.tabla || '_status_check');
+    EXECUTE format('ALTER TABLE %I.%I ADD CONSTRAINT %I CHECK (status IN (%s))',
+                   r.esq, r.tabla, r.tabla || '_status_check', ES5);
+    EXECUTE format('ALTER TABLE %I.%I DROP COLUMN status_id', r.esq, r.tabla);
+  END LOOP;
+
+  -- 3 · y el catalogo, que ya no lo lee nadie.
+  DROP TABLE IF EXISTS firmas.signature_request_statuses;
+  RAISE NOTICE 'MIGRACION: firmas.signature_request_statuses -> borrada (un CHECK la sustituye)';
+END $$;
+
+COMMIT;

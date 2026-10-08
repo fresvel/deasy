@@ -716,6 +716,15 @@
         "complemento/permisos.md"
       ]
     },
+    "signature_request_statuses": {
+      "motivo": "FRENTE 24, FASE 3 (2026-10-08) · MENCION HISTORICA. Era el catalogo de 5 codigos del estado de una solicitud y de una instancia de FIRMA, mientras la ENTREGA resolvia lo mismo con `status TEXT` y un CHECK: dos mecanismos y dos idiomas para un concepto. Se unifico en CHECK y en español, y la tabla se borro. Las cuatro paginas que lo nombran lo hacen para contar POR QUE murio y que lo sustituye -- que es justo lo que no hay que borrar. NO CONFUNDIR con `signature_statuses`, que sigue viva y es el estado del HECHO de firmar.",
+      "paginas": [
+        "datos/firmas-y-dominios.md",
+        "modelo/flujo-de-firma.md",
+        "modelo/mapa-completo.md",
+        "modelo/vocabularios-de-estado.md"
+      ]
+    },
     "sin_equivalente": {
       "motivo": "DESCARTADO · valor de la columna grado de la tabla de equivalencias N:M que se EVALUO Y SE DESCARTO (seccion 4 de la pagina, apartado del anclaje). Se cita para explicar por que no existe. NO lleva fecha de retirada: no va a existir nunca.",
       "paginas": [
@@ -744,6 +753,12 @@
       "motivo": "FUNCION del signer.",
       "paginas": [
         "signer.md"
+      ]
+    },
+    "status_id": {
+      "motivo": "FRENTE 24, FASE 3 (2026-10-08) · MENCION HISTORICA. Era la columna con que `signature_requests` y `signature_flow_instances` apuntaban al catalogo `signature_request_statuses`. Hoy las dos llevan `status` TEXT con CHECK, y la pagina la nombra en la tabla que compara el ANTES y el DESPUES de los dos mecanismos -- que es precisamente lo que explica el cambio. NO CONFUNDIR con `signature_status_id`, que existe y apunta a `signature_statuses`.",
+      "paginas": [
+        "modelo/vocabularios-de-estado.md"
       ]
     },
     "string_agg": {

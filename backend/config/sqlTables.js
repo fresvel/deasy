@@ -1270,8 +1270,8 @@ export const SQL_TABLES = [
         name: "status",
         label: "Estado",
         type: "select",
-        options: ["pending", "in_progress", "approved", "rejected", "cancelled"],
-        defaultValue: "pending"
+        options: ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"],
+        defaultValue: "pendiente"
       },
       { name: "current_step_order", label: "Paso actual", type: "number" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
@@ -1293,8 +1293,8 @@ export const SQL_TABLES = [
         name: "status",
         label: "Estado",
         type: "select",
-        options: ["pending", "in_progress", "approved", "rejected", "returned", "cancelled"],
-        defaultValue: "pending"
+        options: ["pendiente", "en_progreso", "completado", "rechazado", "devuelto", "cancelado"],
+        defaultValue: "pendiente"
       },
       { name: "is_manual", label: "Manual", type: "boolean", defaultValue: 0 },
       { name: "requested_at", label: "Solicitado", type: "datetime", readOnly: true },
@@ -1306,21 +1306,6 @@ export const SQL_TABLES = [
   {
     table: "signature_statuses",
     label: "Estados de firma",
-    category: "Firmas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "code", label: "Codigo", type: "text", required: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["code", "name"]
-  },
-  {
-    table: "signature_request_statuses",
-    label: "Estados de solicitud",
     category: "Firmas",
     primaryKeys: ["id"],
     fields: [
@@ -1430,10 +1415,16 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "template_id", label: "Plantilla", type: "number", required: true },
       { name: "document_version_id", label: "Version documento", type: "number", required: true },
-      { name: "status_id", label: "Estado", type: "number", required: true },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"],
+        defaultValue: "pendiente"
+      },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: []
+    searchFields: ["status"]
   },
   {
     table: "signature_requests",
@@ -1445,13 +1436,19 @@ export const SQL_TABLES = [
       { name: "instance_id", label: "Instancia", type: "number", required: true },
       { name: "step_id", label: "Paso", type: "number", required: true },
       { name: "assigned_person_id", label: "Persona", type: "number" },
-      { name: "status_id", label: "Estado", type: "number", required: true },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"],
+        defaultValue: "pendiente"
+      },
       { name: "is_manual", label: "Manual", type: "boolean", defaultValue: 0 },
       { name: "requested_at", label: "Solicitado", type: "datetime", readOnly: true },
       { name: "notified_at", label: "Notificado", type: "datetime", readOnly: true },
       { name: "responded_at", label: "Respondido", type: "datetime" }
     ],
-    searchFields: []
+    searchFields: ["status"]
   },
   {
     table: "vacancies",

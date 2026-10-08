@@ -14,8 +14,8 @@ import {
   updateFillRequestStatus,
 } from "./FillRequestWorkflowService.js";
 
-const PENDING = "pending";
-const IN_PROGRESS = "in_progress";
+const PENDING = "pendiente";
+const IN_PROGRESS = "en_progreso";
 
 // --- assertFillActionAllowed: los tres guards y su ORDEN ---------------------------------------
 
@@ -31,7 +31,7 @@ test("operar la solicitud de otro es 403", () => {
 test("el guard de propiedad va ANTES que el de transición: una solicitud ajena en estado terminal sigue siendo 403", () => {
   assert.throws(
     () => assertFillActionAllowed({
-      action: "start", currentStatus: "approved", assignedPersonId: 7, currentUserId: 9, isManual: false,
+      action: "start", currentStatus: "completado", assignedPersonId: 7, currentUserId: 9, isManual: false,
     }),
     (error) => error.statusCode === 403,
   );
@@ -58,7 +58,7 @@ test("una transición ilegal es 409 y NOMBRA estado y acción (contrato del fron
       action: "start", currentStatus: IN_PROGRESS, assignedPersonId: 9, currentUserId: 9, isManual: false,
     }),
     (error) => error.statusCode === 409
-      && error.message === "La solicitud no puede pasar de in_progress usando la acción start.",
+      && error.message === "La solicitud no puede pasar de en_progreso usando la acción start.",
   );
 });
 
@@ -80,7 +80,7 @@ test("start solo sale de pending; approve/return/reject/cancel salen también de
 });
 
 test("los estados terminales cierran las cinco acciones", () => {
-  for (const currentStatus of ["approved", "rejected", "cancelled", "returned"]) {
+  for (const currentStatus of ["completado", "rechazado", "cancelado", "devuelto"]) {
     for (const action of ["start", "approve", "return", "reject", "cancel"]) {
       assert.throws(
         () => assertFillActionAllowed({ action, currentStatus, assignedPersonId: 9, currentUserId: 9, isManual: false }),
@@ -93,7 +93,7 @@ test("los estados terminales cierran las cinco acciones", () => {
 
 test("el estado se compara sin distinguir mayúsculas ni espacios", () => {
   assert.doesNotThrow(() => assertFillActionAllowed({
-    action: "start", currentStatus: "  PENDING ", assignedPersonId: 9, currentUserId: 9, isManual: false,
+    action: "start", currentStatus: "  PENDIENTE ", assignedPersonId: 9, currentUserId: 9, isManual: false,
   }));
 });
 
@@ -141,7 +141,7 @@ test("con dos pasos, devolver reactiva el paso anterior y lo deja en pending", a
   assert.equal(reactivado, 1);
   const update = connection.queries.at(-1);
   assert.match(update.sql, /UPDATE fill_requests/);
-  assert.deepEqual(update.params, ["pending", 3, 55]);
+  assert.deepEqual(update.params, ["pendiente", 3, 55]);
 });
 
 test("si el paso anterior no existe en la plantilla, no se actualiza nada", async () => {
@@ -335,7 +335,7 @@ test("in_progress no sella responded_at; los estados de respuesta sí", async ()
 
   const rechazo = conexionDeFlujo(contextoDe());
   await updateFillRequestStatus(
-    { userId: 9, requestId: 1, action: "reject", nextStatus: "rejected" },
+    { userId: 9, requestId: 1, action: "reject", nextStatus: "rechazado" },
     { pool: poolCon(rechazo), findUserById: usuario },
   );
   const updateRechazo = rechazo.queries.find((q) => q.sql.includes("UPDATE fill_requests"));
@@ -368,7 +368,7 @@ test("aprobar el último paso sin PDF en working es 409, no 500, y deshace la tr
   });
   await assert.rejects(
     () => updateFillRequestStatus(
-      { userId: 9, requestId: 1, action: "approve", nextStatus: "approved" },
+      { userId: 9, requestId: 1, action: "approve", nextStatus: "completado" },
       { pool: poolCon(connection), findUserById: usuario },
     ),
     // El código ES el contrato: era 500 (defecto 1.2) y ahora es 409, como los otros dos guards de
@@ -386,7 +386,7 @@ test("un fallo a mitad de la escritura deshace la transacción y propaga el erro
   });
   await assert.rejects(
     () => updateFillRequestStatus(
-      { userId: 9, requestId: 1, action: "cancel", nextStatus: "cancelled" },
+      { userId: 9, requestId: 1, action: "cancel", nextStatus: "cancelado" },
       { pool: poolCon(connection), findUserById: usuario },
     ),
     (error) => error.statusCode === undefined && /se cayó la base/.test(error.message),

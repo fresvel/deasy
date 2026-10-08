@@ -69,7 +69,7 @@ const cards = computed(() => {
       title: "Entregas",
       icon: "check-double",
       iconWrap: "deasy-icon-box--warning",
-      total: sumCounts(n(by, "pending"), n(by, "in_progress"), n(by, "returned"), n(by, "approved"))
+      total: sumCounts(n(by, "pendiente"), n(by, "en_progreso"), n(by, "devuelto"), n(by, "completado"))
     });
   }
 

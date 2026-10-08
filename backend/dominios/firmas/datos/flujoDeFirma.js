@@ -1,7 +1,10 @@
 // EXPERIMENTO F7 (2026-10-06) · El `datos/` de `firmas` para el flujo de firma.
 // Movido desde `services/documents/DocumentWorkflowResetService.js` sin cambiar ninguna consulta.
-// Toca SOLO tablas de `firmas`: signature_flow_instances, signature_requests,
-// signature_flow_steps, signature_request_statuses.
+// Toca SOLO tablas de `firmas`: signature_flow_instances, signature_requests, signature_flow_steps.
+//
+// EL ESTADO ES UNA COLUMNA, no un catalogo, desde la fase 3 del frente 24: donde habia un
+// `INNER JOIN signature_request_statuses srs ON srs.id = sr.status_id` y un `LOWER(srs.code) IN (…)`
+// ahora hay `sr.status IN (…)`. Una tabla menos en cada consulta, y el vocabulario cerrado por CHECK.
 
 export const getSignatureOwnershipAtStep = async (connection, documentVersionId, stepOrder, userId) => {
   const [rows] = await connection.query(
@@ -11,11 +14,10 @@ export const getSignatureOwnershipAtStep = async (connection, documentVersionId,
      FROM signature_flow_instances sfi
      INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
      INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     INNER JOIN signature_request_statuses srs ON srs.id = sr.status_id
      WHERE sfi.document_version_id = ?
        AND sfs.step_order = ?
        AND sr.assigned_person_id = ?
-       AND LOWER(srs.code) IN ('pendiente', 'en_progreso')
+       AND sr.status IN ('pendiente', 'en_progreso')
        AND sr.responded_at IS NULL
      LIMIT 1`,
     [documentVersionId, stepOrder, userId]
@@ -34,27 +36,26 @@ export const findSignatureInstanceIdByDocumentVersion = async (connection, docum
   return Number(rows?.[0]?.id || 0);
 };
 
-export const cancelSignatureRequestsOfInstance = async (connection, instanceId, cancelledStatusId) => {
+export const cancelSignatureRequestsOfInstance = async (connection, instanceId, estadoCancelado) => {
   await connection.query(
-    // `UPDATE ... SET ... FROM`, no `UPDATE ... INNER JOIN ... SET`: lo segundo es MySQL y
-    // PostgreSQL lo rechaza en tiempo de EJECUCION, no de carga. Las columnas del SET van sin
-    // cualificar; en la parte derecha si vale `sr.`.
-    `UPDATE signature_requests sr
-        SET status_id = ?,
-            responded_at = COALESCE(sr.responded_at, NOW())
-       FROM signature_request_statuses srs
-      WHERE srs.id = sr.status_id
-        AND sr.instance_id = ?
-        AND LOWER(srs.code) IN ('pendiente', 'en_progreso')`,
-    [cancelledStatusId, instanceId]
+    // Aqui habia un `UPDATE … SET … FROM signature_request_statuses` que solo existia para traducir
+    // el codigo a id. Sin catalogo no hace falta `FROM` ninguno, asi que tampoco la trampa que el
+    // comentario de al lado avisaba: `UPDATE … INNER JOIN … SET` es MySQL y PostgreSQL lo rechaza en
+    // tiempo de EJECUCION. Se queda escrito porque la trampa sigue viva en el resto del repositorio.
+    `UPDATE signature_requests
+        SET status = ?,
+            responded_at = COALESCE(responded_at, NOW())
+      WHERE instance_id = ?
+        AND status IN ('pendiente', 'en_progreso')`,
+    [estadoCancelado, instanceId]
   );
 };
 
-export const cancelSignatureInstance = async (connection, instanceId, cancelledStatusId) => {
+export const cancelSignatureInstance = async (connection, instanceId, estadoCancelado) => {
   await connection.query(
     `UPDATE signature_flow_instances
-     SET status_id = ?
+     SET status = ?
      WHERE id = ?`,
-    [cancelledStatusId, instanceId]
+    [estadoCancelado, instanceId]
   );
 };

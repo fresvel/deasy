@@ -73,8 +73,6 @@ flowchart TB
     SFI --> SR["signature_requests"]
     SFS --> SR
     SR --> DS["document_signatures"]
-    SRS["signature_request_statuses"] --> SFI
-    SRS --> SR
     SS["signature_statuses"] --> DS
   end
 
@@ -103,10 +101,14 @@ produce, cuelga de él la sucesión de turnos, cuelgan las rondas y cuelgan las 
 tenía ni una columna propia y desapareció.
 
 **Los dos flujos son simétricos**, y en el dibujo se ve: cabecera → pasos, cabecera → instancia,
-instancia → solicitudes. Las diferencias reales son tres y están en el detalle, no en la forma: la
-firma añade el `slot` y el `approval_mode`, y sus estados son **tablas de catálogo** en vez de `CHECK`
-— por eso `signature_request_statuses` y `signature_statuses` aparecen aquí como tablas y en el flujo
-de entrega no hay equivalentes.
+instancia → solicitudes. Las diferencias reales son dos y están en el detalle, no en la forma: la
+firma añade el `slot` y el `approval_mode`.
+
+La tercera diferencia **se cerró**: los estados de la firma eran una **tabla de catálogo**
+(`signature_request_statuses`) donde la entrega usaba un `CHECK`, y por eso aparecía aquí como tabla
+sin equivalente en el flujo de entrega. Hoy los cuatro estados del recorrido son `CHECK` con el mismo
+vocabulario, así que esa tabla ya no existe. La que sigue dibujada, `signature_statuses`, es otra
+cosa: el resultado del **hecho** de firmar.
 
 **Lo que el mapa no dibuja** son las otras **55 tablas** del esquema, y están todas en el
 [mapa del complemento](/complemento/mapa-completo/): la rama de vacantes y contratación (8), el RBAC

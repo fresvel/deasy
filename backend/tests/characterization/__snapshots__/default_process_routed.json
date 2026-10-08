@@ -10,7 +10,7 @@
         "document_version_id": "<normalized>",
         "fill_flow_template_id": "<normalized>",
         "id": "<normalized>",
-        "status": "pending"
+        "status": "pendiente"
       }
     ],
     "fill_requests": [
@@ -20,7 +20,7 @@
         "fill_flow_step_id": "<normalized>",
         "id": "<normalized>",
         "is_manual": 0,
-        "status": "pending",
+        "status": "pendiente",
         "step_order": 1
       }
     ],
@@ -175,7 +175,7 @@
         "document_version_id": "<normalized>",
         "fill_flow_template_id": "<normalized>",
         "id": "<normalized>",
-        "status": "pending"
+        "status": "pendiente"
       }
     ],
     "fill_requests": [
@@ -185,7 +185,7 @@
         "fill_flow_step_id": "<normalized>",
         "id": "<normalized>",
         "is_manual": 0,
-        "status": "pending",
+        "status": "pendiente",
         "step_order": 1
       },
       {
@@ -194,7 +194,7 @@
         "fill_flow_step_id": "<normalized>",
         "id": "<normalized>",
         "is_manual": 0,
-        "status": "pending",
+        "status": "pendiente",
         "step_order": 2
       }
     ],

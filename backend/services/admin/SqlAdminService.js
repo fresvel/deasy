@@ -264,10 +264,7 @@ export default class SqlAdminService {
       scalar("SELECT COUNT(*) AS c FROM tasks WHERE status NOT IN ('completada','cancelada') AND end_date IS NOT NULL AND end_date < CURDATE()"),
       groupByStatus("SELECT document_status AS status, COUNT(*) AS c FROM task_items GROUP BY document_status"),
       groupByStatus("SELECT status, COUNT(*) AS c FROM fill_requests GROUP BY status"),
-      groupByStatus(
-        "SELECT srs.code AS status, COUNT(*) AS c FROM signature_flow_instances sfi "
-        + "JOIN signature_request_statuses srs ON srs.id = sfi.status_id GROUP BY srs.code"
-      )
+      groupByStatus("SELECT status, COUNT(*) AS c FROM signature_flow_instances GROUP BY status")
     ]);
     return {
       tasks: tasks === null ? null : { byStatus: tasks, overdue: overdue ?? 0 },

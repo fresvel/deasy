@@ -8,10 +8,7 @@
 import { conTransaccion } from "../config/postgres.js";
 import { ensureFillFlowForDocumentVersion } from "../services/admin/TaskGenerationService.js";
 import { transitionDocumentVersionState } from "../services/documents/DocumentStateService.js";
-import {
-  getSignatureRequestStatusIdByCode,
-  SIGNATURE_REQUEST_STATUS,
-} from "../services/documents/DocumentWorkflowCatalog.js";
+import { ESTADO_RECORRIDO } from "../services/documents/DocumentWorkflowCatalog.js";
 import { resolveCurrentSignatureStep } from "../services/documents/DocumentSignatureWorkflowService.js";
 import {
   getMaxDocumentVersionForTaskItem,
@@ -58,16 +55,10 @@ const cancelOpenSignatureRequests = async (connection, documentVersionId) => {
     return;
   }
 
-  const cancelledStatusId = await getSignatureRequestStatusIdByCode(
-    connection,
-    SIGNATURE_REQUEST_STATUS.CANCELLED
-  );
-  if (!cancelledStatusId) {
-    throw new Error("No existe el estado cancelado para solicitudes de firma.");
-  }
-
-  await cancelSignatureRequestsOfInstance(connection, instanceId, cancelledStatusId);
-  await cancelSignatureInstance(connection, instanceId, cancelledStatusId);
+  // El codigo se pasa tal cual: ya no hay catalogo que resolver (fase 3 del frente 24), asi que
+  // tampoco hay un "no existe ese estado" que comprobar. Lo valida el CHECK de la columna.
+  await cancelSignatureRequestsOfInstance(connection, instanceId, ESTADO_RECORRIDO.CANCELADO);
+  await cancelSignatureInstance(connection, instanceId, ESTADO_RECORRIDO.CANCELADO);
 };
 
 const createResetDocumentVersion = async (connection, currentVersion) => {

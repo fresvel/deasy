@@ -19,7 +19,7 @@
 //
 // ⚠️ PREFIJO "zzzz_" DELIBERADO, y este es el flow MÁS destructivo del harness. Corre el último de
 // todos (después de `zzz_artifact_draft` y de `zzzz_sign_batch`) porque conduce la solicitud de
-// entrega de la fixture hasta `approved`, lo que dispara la creación del flujo de firma y mueve el
+// entrega de la fixture hasta `completado`, lo que dispara la creación del flujo de firma y mueve el
 // estado de la versión documental. Si corriera antes, movería los golden de `execution`,
 // `user_workspace` y `tasks`. El `after` restaura las dos filas que esos golden leen, pero NO todo
 // (ver `restoreFillRequestFixture` en lib/db.mjs): la posición es la garantía, el teardown es la red.
@@ -192,15 +192,15 @@ test("POST .../start de una solicitud ajena, con el gestor -> 403 (es propiedad,
 
 // ─── 2. Transiciones válidas e inválidas, conducidas por el responsable ─────────────────────────
 
-test("pending -> start -> 200 in_progress", async () => {
-  await ponerEnEstado({ status: "pending", responded_at: null, response_note: null });
+test("pendiente -> start -> 200 en_progreso", async () => {
+  await ponerEnEstado({ status: "pendiente", responded_at: null, response_note: null });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "start"), { token });
-  assert.equal(res.status, 200, `start desde pending debe funcionar: ${JSON.stringify(res.body)}`);
+  assert.equal(res.status, 200, `start desde pendiente debe funcionar: ${JSON.stringify(res.body)}`);
   matchSnapshot(SUITE, "start_ok", snapshotShape(res, OBJ_OPTS));
 });
 
-test("in_progress -> start -> 409 (no 500): la transición no existe", async () => {
+test("en_progreso -> start -> 409 (no 500): la transición no existe", async () => {
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "start"), { token });
   assert.equal(res.status, 409);
@@ -212,7 +212,7 @@ test("in_progress -> start -> 409 (no 500): la transición no existe", async () 
 // `UPDATE ... INNER JOIN ... SET`, multi-tabla de MySQL, y PostgreSQL respondía 500
 // `syntax error at or near "INNER"`. El diff de estos dos goldens (500 -> 200) FUE la prueba del
 // arreglo. Ahora sí hay `assert`: el contrato dejó de ser "revienta" y pasó a ser observable.
-test("in_progress -> return con motivo -> 200", async () => {
+test("en_progreso -> return con motivo -> 200", async () => {
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "return"), {
     token,
@@ -222,8 +222,8 @@ test("in_progress -> return con motivo -> 200", async () => {
   matchSnapshot(SUITE, "return_ok", snapshotShape(res, OBJ_OPTS));
 });
 
-// Devolver NO deja la solicitud en `returned`: con un flujo de UN paso, la reactivación de
-// `syncDocumentProgressFromFillRequest` la devuelve a `pending` para que se pueda rehacer. Esa es
+// Devolver NO deja la solicitud en `devuelto`: con un flujo de UN paso, la reactivación de
+// `syncDocumentProgressFromFillRequest` la devuelve a `pendiente` para que se pueda rehacer. Esa es
 // justo la rama que el defecto impedía ejecutar, así que aquí es donde se ve que funciona.
 test("tras el return, el paso se reactiva y el motivo queda guardado", async () => {
   const fila = await estadoActual();
@@ -233,38 +233,38 @@ test("tras el return, el paso se reactiva y el motivo queda guardado", async () 
   });
 });
 
-test("in_progress -> reject con motivo -> 200 rejected (flowStatus=rejected)", async () => {
+test("en_progreso -> reject con motivo -> 200 rechazado (flowStatus=rechazado)", async () => {
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "reject"), {
     token,
     body: { note: "el entregable no corresponde" },
   });
-  assert.equal(res.status, 200, `reject desde in_progress debe funcionar: ${JSON.stringify(res.body)}`);
+  assert.equal(res.status, 200, `reject desde en_progreso debe funcionar: ${JSON.stringify(res.body)}`);
   matchSnapshot(SUITE, "reject_ok", snapshotShape(res, OBJ_OPTS));
 });
 
 for (const accion of ACCIONES) {
-  test(`rejected -> ${accion} -> 409 (estado terminal para las cinco acciones)`, async () => {
+  test(`rechazado -> ${accion} -> 409 (estado terminal para las cinco acciones)`, async () => {
     const token = await tokenFor("usuario");
     const res = await post(ruta(miSolicitud, accion), { token });
-    assert.equal(res.status, 409, `desde rejected, ${accion} debe ser 409`);
-    matchSnapshot(SUITE, `terminal_rejected_${accion}`, snapshotShape(res, OBJ_OPTS));
+    assert.equal(res.status, 409, `desde rechazado, ${accion} debe ser 409`);
+    matchSnapshot(SUITE, `terminal_rechazado_${accion}`, snapshotShape(res, OBJ_OPTS));
   });
 }
 
-test("pending -> cancel -> 200 cancelled (y el flujo del documento vuelve a pending)", async () => {
-  await ponerEnEstado({ status: "pending", responded_at: null, response_note: null });
+test("pendiente -> cancel -> 200 cancelado (y el flujo del documento vuelve a pendiente)", async () => {
+  await ponerEnEstado({ status: "pendiente", responded_at: null, response_note: null });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "cancel"), { token });
   assert.equal(res.status, 200, `cancel desde pending debe funcionar: ${JSON.stringify(res.body)}`);
   matchSnapshot(SUITE, "cancel_ok", snapshotShape(res, OBJ_OPTS));
 });
 
-test("cancelled -> approve -> 409 (cancelar también es terminal)", async () => {
+test("cancelado -> approve -> 409 (cancelar también es terminal)", async () => {
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "approve"), { token });
   assert.equal(res.status, 409);
-  matchSnapshot(SUITE, "terminal_cancelled_approve", snapshotShape(res, OBJ_OPTS));
+  matchSnapshot(SUITE, "terminal_cancelado_approve", snapshotShape(res, OBJ_OPTS));
 });
 
 // ─── 3. El guard propio de `approve` ────────────────────────────────────────────────────────────
@@ -273,7 +273,7 @@ test("cancelled -> approve -> 409 (cancelar también es terminal)", async () => 
 // firma y el archivo de trabajo no es un PDF" salía como 500. Ahora hay `assert`: el contrato dejó de
 // ser "revienta" y pasó a ser el mismo 409 que la transición ilegal y que "sin responsable resoluble".
 test("approve del último paso sin PDF en working -> 409 (no 500: es regla de negocio)", async () => {
-  await ponerEnEstado({ status: "pending", responded_at: null, response_note: null });
+  await ponerEnEstado({ status: "pendiente", responded_at: null, response_note: null });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "approve"), { token });
   assert.equal(res.status, 409, "aprobar sin PDF es un conflicto de estado, no un fallo del servidor");
@@ -297,7 +297,7 @@ test("el approve fallido no cambió el estado de la solicitud", async () => {
 // existencia de la solicitud ya la revela el par 404/403 de la sección 1, así que responder lo
 // mismo a los dos no filtra nada nuevo.
 test("sin responsable y sin modo manual -> 409 para el responsable original", async () => {
-  await ponerEnEstado({ assigned_person_id: null, status: "pending" });
+  await ponerEnEstado({ assigned_person_id: null, status: "pendiente" });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "start"), { token });
   assert.equal(res.status, 409, "una solicitud sin responsable es un conflicto de estado, no un 500");
@@ -314,7 +314,7 @@ test("sin responsable y sin modo manual -> el MISMO 409 para un tercero (no hay 
 // 🔴 DEFECTO 4 — la solicitud manual se la queda quien la inicie. Es el comportamiento buscado para
 // pasos "manuales", pero hoy no hay ninguna restricción de quién puede reclamarlos.
 test("sin responsable pero manual -> un tercero la INICIA y se la auto-asigna", async () => {
-  await ponerEnEstado({ assigned_person_id: null, status: "pending", is_manual: 1 });
+  await ponerEnEstado({ assigned_person_id: null, status: "pendiente", is_manual: 1 });
   const token = await tokenFor("gestor");
   const res = await post(ruta(miSolicitud, "start"), { token });
   assert.equal(res.status, 200, `manual + sin responsable debe permitir el auto-reclamo: ${JSON.stringify(res.body)}`);
@@ -331,12 +331,12 @@ test("tras el auto-reclamo, el responsable de la solicitud es quien la inició",
 
 // ─── 5. La aprobación real: IRREVERSIBLE, va la última ──────────────────────────────────────────
 
-test("con PDF en working, el responsable aprueba -> 200 approved (flowStatus=approved)", async () => {
+test("con PDF en working, el responsable aprueba -> 200 completado (flowStatus=completado)", async () => {
   const admin = await tokenFor("admin");
   await ponerEnEstado({
     assigned_person_id: USUARIO_ID,
     is_manual: 0,
-    status: "pending",
+    status: "pendiente",
     responded_at: null,
     response_note: null,
   });
@@ -360,10 +360,10 @@ test("con PDF en working, el responsable aprueba -> 200 approved (flowStatus=app
 });
 
 for (const accion of ACCIONES) {
-  test(`approved -> ${accion} -> 409 (aprobar cierra la solicitud)`, async () => {
+  test(`completado -> ${accion} -> 409 (aprobar cierra la solicitud)`, async () => {
     const token = await tokenFor("usuario");
     const res = await post(ruta(miSolicitud, accion), { token });
     assert.equal(res.status, 409, `desde approved, ${accion} debe ser 409`);
-    matchSnapshot(SUITE, `terminal_approved_${accion}`, snapshotShape(res, OBJ_OPTS));
+    matchSnapshot(SUITE, `terminal_completado_${accion}`, snapshotShape(res, OBJ_OPTS));
   });
 }

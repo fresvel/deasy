@@ -390,7 +390,7 @@
             "current_signature_step_order": null,
             "fill_flow": {
               "current_step_order": 1,
-              "status": "pending",
+              "status": "pendiente",
               "steps": [
                 {
                   "assigned_person_id": "<normalized>",
@@ -403,7 +403,7 @@
                   "is_required": true,
                   "position_title": null,
                   "request_id": "<normalized>",
-                  "request_status": "pending",
+                  "request_status": "pendiente",
                   "requested_at": "<normalized>",
                   "resolver_type": "specific_person",
                   "responded_at": null,
@@ -423,7 +423,7 @@
                 "id": "<normalized>",
                 "requested_at": "<normalized>",
                 "responded_at": null,
-                "status_name": "pending",
+                "status": "pendiente",
                 "step_order": 1,
                 "template_artifact_name": "Informe general"
               }
@@ -440,7 +440,7 @@
                 "is_required": true,
                 "position_title": null,
                 "request_id": "<normalized>",
-                "request_status": "pending",
+                "request_status": "pendiente",
                 "requested_at": "<normalized>",
                 "resolver_type": "specific_person",
                 "responded_at": null,
@@ -483,7 +483,7 @@
           "id": "<normalized>",
           "requested_at": "<normalized>",
           "responded_at": null,
-          "status_name": "pending",
+          "status": "pendiente",
           "step_order": 1,
           "template_artifact_name": "Informe general"
         }
@@ -579,7 +579,7 @@
                   "current_signature_step_order": null,
                   "fill_flow": {
                     "current_step_order": 1,
-                    "status": "pending",
+                    "status": "pendiente",
                     "steps": [
                       {
                         "assigned_person_id": "<normalized>",
@@ -592,7 +592,7 @@
                         "is_required": true,
                         "position_title": null,
                         "request_id": "<normalized>",
-                        "request_status": "pending",
+                        "request_status": "pendiente",
                         "requested_at": "<normalized>",
                         "resolver_type": "specific_person",
                         "responded_at": null,
@@ -612,7 +612,7 @@
                       "id": "<normalized>",
                       "requested_at": "<normalized>",
                       "responded_at": null,
-                      "status_name": "pending",
+                      "status": "pendiente",
                       "step_order": 1,
                       "template_artifact_name": "Informe general"
                     }
@@ -629,7 +629,7 @@
                       "is_required": true,
                       "position_title": null,
                       "request_id": "<normalized>",
-                      "request_status": "pending",
+                      "request_status": "pendiente",
                       "requested_at": "<normalized>",
                       "resolver_type": "specific_person",
                       "responded_at": null,
@@ -711,7 +711,7 @@
                     "current_signature_step_order": null,
                     "fill_flow": {
                       "current_step_order": 1,
-                      "status": "pending",
+                      "status": "pendiente",
                       "steps": [
                         {
                           "assigned_person_id": "<normalized>",
@@ -724,7 +724,7 @@
                           "is_required": true,
                           "position_title": null,
                           "request_id": "<normalized>",
-                          "request_status": "pending",
+                          "request_status": "pendiente",
                           "requested_at": "<normalized>",
                           "resolver_type": "specific_person",
                           "responded_at": null,
@@ -744,7 +744,7 @@
                         "id": "<normalized>",
                         "requested_at": "<normalized>",
                         "responded_at": null,
-                        "status_name": "pending",
+                        "status": "pendiente",
                         "step_order": 1,
                         "template_artifact_name": "Informe general"
                       }
@@ -761,7 +761,7 @@
                         "is_required": true,
                         "position_title": null,
                         "request_id": "<normalized>",
-                        "request_status": "pending",
+                        "request_status": "pendiente",
                         "requested_at": "<normalized>",
                         "resolver_type": "specific_person",
                         "responded_at": null,
@@ -826,7 +826,7 @@
                 "current_signature_step_order": null,
                 "fill_flow": {
                   "current_step_order": 1,
-                  "status": "pending",
+                  "status": "pendiente",
                   "steps": [
                     {
                       "assigned_person_id": "<normalized>",
@@ -839,7 +839,7 @@
                       "is_required": true,
                       "position_title": null,
                       "request_id": "<normalized>",
-                      "request_status": "pending",
+                      "request_status": "pendiente",
                       "requested_at": "<normalized>",
                       "resolver_type": "specific_person",
                       "responded_at": null,
@@ -859,7 +859,7 @@
                     "id": "<normalized>",
                     "requested_at": "<normalized>",
                     "responded_at": null,
-                    "status_name": "pending",
+                    "status": "pendiente",
                     "step_order": 1,
                     "template_artifact_name": "Informe general"
                   }
@@ -876,7 +876,7 @@
                     "is_required": true,
                     "position_title": null,
                     "request_id": "<normalized>",
-                    "request_status": "pending",
+                    "request_status": "pendiente",
                     "requested_at": "<normalized>",
                     "resolver_type": "specific_person",
                     "responded_at": null,

@@ -1,6 +1,6 @@
 ---
 title: "Campos de la cadena proceso → documento"
-description: "Las 38 tablas del recorrido, con todas sus columnas, tipos, referencias y valores admitidos. Generada del catálogo de PostgreSQL."
+description: "Las 37 tablas del recorrido, con todas sus columnas, tipos, referencias y valores admitidos. Generada del catálogo de PostgreSQL."
 sidebar:
   order: 20
 ---
@@ -22,7 +22,7 @@ y esta página saldría mintiendo. `npm run test:char:run` la recrea.
 
 :::
 
-Son **38 tablas**. El recorrido narrado, con sus diagramas, está en
+Son **37 tablas**. El recorrido narrado, con sus diagramas, está en
 [Del proceso al documento firmado](/modelo/). Esta página es el
 detalle: **cada columna de cada tabla**, en el orden de la cadena y no en orden alfabético.
 
@@ -477,7 +477,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `id` | int | sí | — | — |
 | `fill_flow_template_id` | int | sí | `fill_flow_templates.id` · impide borrar | — |
 | `document_version_id` | int | sí | `document_versions.id` · impide borrar | — |
-| `status` | text | sí | — | `pending` · `in_progress` · `approved` · `rejected` · `cancelled` |
+| `status` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
 | `current_step_order` | int | no | — | — |
 | `created_at` | timestamp | sí | — | — |
 | `updated_at` | timestamp | sí | — | — |
@@ -490,7 +490,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `document_fill_flow_id` | int | sí | `document_fill_flows.id` · impide borrar | — |
 | `fill_flow_step_id` | int | sí | `fill_flow_steps.id` · impide borrar | — |
 | `assigned_person_id` | int | no | `persons.id` · impide borrar | — |
-| `status` | text | sí | — | `pending` · `in_progress` · `approved` · `rejected` · `returned` · `cancelled` |
+| `status` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `devuelto` · `cancelado` |
 | `is_manual` | smallint | sí | — | — |
 | `requested_at` | timestamp | sí | — | — |
 | `responded_at` | timestamp | no | — | — |
@@ -543,7 +543,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `id` | int | sí | — | — |
 | `template_id` | int | sí | `signature_flow_templates.id` · impide borrar | — |
 | `document_version_id` | int | sí | `document_versions.id` · impide borrar | — |
-| `status_id` | int | sí | `signature_request_statuses.id` · impide borrar | — |
+| `status` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
 | `created_at` | timestamp | sí | — | — |
 
 ### `signature_requests`
@@ -554,7 +554,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `instance_id` | int | sí | `signature_flow_instances.id` · impide borrar | — |
 | `step_id` | int | sí | `signature_flow_steps.id` · impide borrar | — |
 | `assigned_person_id` | int | no | `persons.id` · impide borrar | — |
-| `status_id` | int | sí | `signature_request_statuses.id` · impide borrar | — |
+| `status` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
 | `is_manual` | smallint | sí | — | — |
 | `requested_at` | timestamp | sí | — | — |
 | `notified_at` | timestamp | no | — | — |
@@ -574,17 +574,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `signed_at` | timestamp | no | — | — |
 | `created_at` | timestamp | sí | — | — |
 
-### `signature_request_statuses`
-
-| Columna | Tipo | Obligatorio | Apunta a | Admite |
-|---|---|---|---|---|
-| `id` | int | sí | — | — |
-| `code` | varchar(40) | sí | — | — |
-| `name` | varchar(80) | sí | — | — |
-| `description` | varchar(255) | no | — | — |
-| `is_active` | smallint | sí | — | — |
-| `created_at` | timestamp | sí | — | — |
-
 ### `signature_statuses`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
@@ -598,4 +587,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**38 tablas · 363 columnas · 96 referencias.** Leídas del catálogo de PostgreSQL.
+**37 tablas · 357 columnas · 94 referencias.** Leídas del catálogo de PostgreSQL.

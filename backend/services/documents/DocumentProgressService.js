@@ -12,10 +12,10 @@ export {
 
 const normalizeCode = (value) => String(value || "").trim().toLowerCase();
 
-const FILL_PENDING = new Set(["pending"]);
-const FILL_ACTIVE = new Set(["in_progress"]);
-const FILL_APPROVED = new Set(["approved"]);
-const FILL_REJECTED = new Set(["rejected", "returned"]);
+const FILL_PENDING = new Set(["pendiente"]);
+const FILL_ACTIVE = new Set(["en_progreso"]);
+const FILL_APPROVED = new Set(["completado"]);
+const FILL_REJECTED = new Set(["rechazado", "devuelto"]);
 
 const firstPendingStepOrder = (stepSummaries) => {
   const candidate = stepSummaries.find((item) => !item.approved);
@@ -104,7 +104,7 @@ export const syncDocumentProgressFromFillRequest = async (connection, fillReques
 
   if (nextStepOrder && arePreviousStepsApproved(stepSummaries, nextStepOrder)) {
     const currentStepRows = rows.filter((row) => Number(row.step_order) === Number(nextStepOrder));
-    const allReturned = currentStepRows.length > 0 && currentStepRows.every((row) => normalizeCode(row.request_status) === "returned");
+    const allReturned = currentStepRows.length > 0 && currentStepRows.every((row) => normalizeCode(row.request_status) === "devuelto");
     if (allReturned) {
       await connection.query(
         // PostgreSQL no admite `UPDATE ... INNER JOIN ... SET` (eso es multi-tabla de MySQL): usa
@@ -112,13 +112,13 @@ export const syncDocumentProgressFromFillRequest = async (connection, fillReques
         // Estuvo con la sintaxis vieja desde la migracion y reventaba con
         // `syntax error at or near "INNER"`, dejando `return` inservible. Ver zzzz_sign_workflow.
         `UPDATE fill_requests fr
-            SET status = 'pending',
+            SET status = 'pendiente',
                 responded_at = NULL
            FROM fill_flow_steps ffs
           WHERE ffs.id = fr.fill_flow_step_id
             AND fr.document_fill_flow_id = ?
             AND ffs.step_order = ?
-            AND fr.status = 'returned'`,
+            AND fr.status = 'devuelto'`,
         [context.document_fill_flow_id, nextStepOrder]
       );
 
@@ -147,10 +147,10 @@ export const syncDocumentProgressFromFillRequest = async (connection, fillReques
   const allApproved = stepSummaries.length > 0 && stepSummaries.every((item) => item.approved);
   const anyActive = effectiveStepSummaries.some((item) => item.hasActive);
 
-  let flowStatus = "pending";
-  if (anyRejected) flowStatus = "rejected";
-  else if (allApproved) flowStatus = "approved";
-  else if (anyActive) flowStatus = "in_progress";
+  let flowStatus = "pendiente";
+  if (anyRejected) flowStatus = "rechazado";
+  else if (allApproved) flowStatus = "completado";
+  else if (anyActive) flowStatus = "en_progreso";
 
   await actualizarAvanceDelFlujo(connection, context.document_fill_flow_id, flowStatus, nextStepOrder);
 

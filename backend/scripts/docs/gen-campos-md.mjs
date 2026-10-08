@@ -24,7 +24,7 @@ const GRUPOS = [
    ["fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests"]],
   ["El flujo de firma",
    ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests",
-    "document_signatures", "signature_request_statuses", "signature_statuses"]],
+    "document_signatures", "signature_statuses"]],
 ];
 
 const tipo = (c) => {

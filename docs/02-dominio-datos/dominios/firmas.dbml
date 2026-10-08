@@ -39,7 +39,7 @@ Table "signature_flow_instances" {
   "id" int4 [pk, not null, increment]
   "template_id" int4 [not null]
   "document_version_id" int4 [unique, not null]
-  "status_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
@@ -91,21 +91,12 @@ Table "signature_flow_templates" {
   }
 }
 
-Table "signature_request_statuses" {
-  "id" int4 [pk, not null, increment]
-  "code" varchar(40) [unique, not null]
-  "name" varchar(80) [not null]
-  "description" varchar(255)
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-}
-
 Table "signature_requests" {
   "id" int4 [pk, not null, increment]
   "instance_id" int4 [not null]
   "step_id" int4 [not null]
   "assigned_person_id" int4
-  "status_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
   "is_manual" int2 [not null, default: 0]
   "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "notified_at" timestamp
@@ -126,11 +117,9 @@ Table "signature_statuses" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Ref "fk_signature_flow_instances_status":"signature_request_statuses"."id" <? "signature_flow_instances"."status_id"
 Ref "fk_signature_flow_instances_template":"signature_flow_templates"."id" <? "signature_flow_instances"."template_id"
 Ref "fk_signature_flow_steps_template":"signature_flow_templates"."id" <? "signature_flow_steps"."template_id"
 Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signature_requests"."instance_id"
-Ref "fk_signature_requests_status":"signature_request_statuses"."id" <? "signature_requests"."status_id"
 Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_requests"."step_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──

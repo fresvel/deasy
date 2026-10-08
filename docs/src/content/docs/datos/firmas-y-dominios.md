@@ -23,7 +23,7 @@ flowchart LR
 
 La columna `anchor_refs` (JSONB) **es un fósil**: no tiene productor ni consumidor. El escritor la serializa siempre como `[]` y el lector la devuelve tal cual; ningún formulario le pone un valor y ningún render la mira. Quien decide **dónde se dibuja la firma** es la columna `slot` del paso, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}`. Su gemela en el lado de entrega es `fill_flow_steps.field_refs`, con el mismo problema.
 
-Los catalogos de estado se siembran en el propio esquema: `signature_statuses` (`firmado`, `fallido`, `invalido`, `cancelado`) y `signature_request_statuses` (`pendiente`, `en_progreso`, `completado`, `rechazado`, `cancelado`).
+El catalogo de estado se siembra en el propio esquema: `signature_statuses` (`firmado`, `fallido`, `invalido`, `cancelado`), que es el resultado del **hecho** de firmar. El estado de la **solicitud** era un segundo catalogo, `signature_request_statuses`, y dejo de serlo el 2026-10-08: hoy es la columna `status` con el mismo `CHECK` y el mismo vocabulario que el lado de entrega ([los vocabularios de estado](/modelo/vocabularios-de-estado/)).
 
 ### El flujo de firma en lote
 

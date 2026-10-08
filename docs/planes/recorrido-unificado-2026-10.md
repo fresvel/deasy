@@ -9,7 +9,7 @@
 |---|---|---|---|:--:|
 | **1** | Los tres renombrados | de `deliverables`, `template_artifacts` y `process_definition_templates` a `catalogo_documental`, `ediciones` y `vinculos` | **167 ficheros · 1.664 ocurrencias**; 7 puertas + `test:unit` 897/897 + `test:char:run` 321/321; goldens movidos y **probado que el diff es SÓLO el renombrado**; migración `scripts/migrar-recorrido.sql` aplicada y verificada | ✅ |
 | **2** | Muere el escalón 2 | fuera `vinculo_id` de las dos cabeceras **y su `CHECK` de un solo portador**, fuera su campo en `/admin`, fuera el escalón de los dos resolvedores | el resolvedor baja de 3 escalones a 2 (**2 consultas, no 3**, afirmado por unitario); 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320**; migración probada en sus **tres** rutas (mueve 1 cabecera, para con mensaje y **deshace el `DROP COLUMN`**, idempotente); goldens movidos en 5 ficheros y **revisado uno a uno**; `check-mapa-tablas` 100/77/0, `check-doc-modelo` y `check-enlaces-internos` en verde | ✅ |
-| **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; mueren `signature_request_statuses` y su `status_id` | los goldens se mueven, y ese diff ES la prueba | ⬜ |
+| **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; muertas `signature_request_statuses` y las dos `status_id`; un mapa de tonos en vez de dos y un predicado en vez de dos | 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320** + frontend lint y **498** vitest; el diff del golden es **sólo** vocabulario (60 líneas, cada valor retirado con su equivalente y los recuentos cuadrando) más 11 claves renombradas; migración probada en sus tres rutas; de 92 tablas a **91** y de 100 a **98** claves ajenas | ✅ |
 | **4** | E1 · la unificación | 6 tablas → 3: `pasos_declarados`, `recorridos`, `turnos`, con `lado` | el resolvedor pasa de 2 funciones a 1 | ⬜ |
 | **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
 
@@ -184,3 +184,48 @@ nunca**. Lo delató que la corrida saliera 320/320 cuando esperaba un fallo.
 ⚠️ **Y una de operación: `test:char` a secas no es `test:char:run`.** Sin rehacer la fixture, la base
 arrastra lo que mutó la corrida anterior: **58 fallos** que no son del código. La fixture es parte de
 la prueba.
+
+
+## 9 · Lo que la fase 3 enseñó
+
+**1 · El vocabulario de un sitio NO es el vocabulario de todos.** `pending`, `approved` y `cancelled`
+aparecían **260 veces en 28 ficheros**, y sólo una parte era del recorrido: las demás son
+`process_runs.status` (`pending`·`active`·`completed`·`cancelled`), el estado de un **lote de firma**,
+los del **dosier** y hasta **modos de interfaz** (`canShowLauncher('pending')`, que no es un estado).
+Un reemplazo global habría roto cuatro vocabularios para arreglar uno. Lo que permitió acotarlo fue
+una página del sitio que ya mapeaba **quién gobierna cada columna**
+(`modelo/vocabularios-de-estado.md`): el perímetro real eran **cuatro columnas**, no 260 literales.
+
+**2 · El `CHECK` viejo rechaza el `UPDATE` que traduce.** La migración paró con
+`new row ... violates check constraint`, y es obvio al verlo: mientras el `CHECK` en inglés esté
+puesto, no se puede escribir español debajo. El orden es **quitar el viejo → traducir → poner el
+nuevo**, y no hay forma de adelantar ningún paso. La transacción lo deshizo entero, que es por lo que
+el bloque va en una sola.
+
+**3 · Dos funciones gemelas eran el SÍNTOMA, no la causa.** `isPendingLikeFillStatus` miraba el
+vocabulario inglés y `isPendingLikeSignatureStatus` toleraba **los dos idiomas a la vez**. Lo mismo en
+el frontend: `LLENADO` (inglés) y `SOLICITUD_FIRMA` (español) eran dos mapas de tonos para el mismo
+concepto. Con un vocabulario se colapsan en uno, y lo que queda es **menos código**, no más.
+
+**4 · Y una clave con DOS significados, que es el hallazgo que paga la fase.** `status_name` traía
+en el lado de ENTREGA el **código** (`fr.status AS status_name`) y en el de FIRMA la **etiqueta** del
+catálogo (`srs.name`). El frontend la leía primero y la minusculizaba **como si fuera un código**, así
+que «En progreso» llegaba como `en progreso` — que no coincide con `en_progreso` en ningún mapa. El
+parche estaba a la vista y nadie lo había leído así: una entrada `"en progreso"` **con espacio** en
+`estadoTono.js`. Muerto el catálogo, el parche sobra y la clave se llama `status`.
+
+**5 · El motivo de una exclusión caduca antes que la exclusión.** `estadoTono.js` dejaba
+`signature_flow_instances.status_id` y `signature_requests.status_id` **fuera** del registro de
+columnas-pastilla, con su razón escrita: «llegan como número, la celda no tiene el nombre que
+traducir». Era cierta y dejó de serlo el mismo día en que pasaron a ser texto. Las columnas-pastilla
+van de 13 a **15** sin tocar una línea de presentación: sólo quitando una exclusión que ya no aplicaba.
+
+**6 · Un `JOIN` muerto se esconde a plena vista.** `UserMenuService` unía
+`signature_request_statuses` y **no usaba ni una de sus columnas**. No lo ve ningún test —el resultado
+es idéntico con y sin él— y no lo ve ninguna puerta. Lo delató contar los usos del alias (`srs.`)
+antes de reescribir, en vez de ir consulta por consulta.
+
+⚠️ **Y una de método: renombrar una clave de golden NO es lo mismo que cambiar su valor.** Las 11
+claves `terminal_<estado>_<accion>` se renombraron **a mano en el JSON**, conservando el valor y la
+posición, porque `test:char:capture` añade las nuevas pero **no borra las viejas**: hacerlo por
+captura habría dejado 11 claves huérfanas que ningún test lee y que nadie volvería a mirar.

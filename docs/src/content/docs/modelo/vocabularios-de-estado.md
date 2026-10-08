@@ -24,9 +24,11 @@ primero que hay que tener claro, así que va explícita.
 | Ámbito del paso | `unit_scope_type` en los dos flujos | `unit_exact` · `unit_subtree` · `unit_type` · `all_units` · `context_exact` | **Sí** |
 | Elección del paso de entrega | `fill_flow_steps.selection_mode` | `auto_one` · `auto_all` · `manual` | **Sí** |
 | Elección del paso de firma | `signature_flow_steps.selection_mode` | los mismos, por convenio | **No.** Es la asimetría que delata la deuda |
-| Instancia de entrega | `document_fill_flows.status` | `pending` · `in_progress` · `approved` · `rejected` · `cancelled` | **Sí** |
-| Solicitud de entrega | `fill_requests.status` | los cinco anteriores más `returned` | **Sí** |
-| Solicitud y resultado de firma | `signature_request_statuses` · `signature_statuses` | catálogos de 5 y 4 códigos | **Son tablas**, consultables y ampliables sin tocar el esquema |
+| Instancia de entrega | `document_fill_flows.status` | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` | **Sí** |
+| Solicitud de entrega | `fill_requests.status` | los cinco anteriores más `devuelto` | **Sí** |
+| Instancia de firma | `signature_flow_instances.status` | los mismos cinco de la instancia de entrega | **Sí** |
+| Solicitud de firma | `signature_requests.status` | los mismos cinco | **Sí** |
+| Resultado de firmar | `signature_statuses` | catálogo de 4 códigos | **Es una tabla**, consultable y ampliable sin tocar el esquema |
 | **Documento** | `task_items.document_status` | **11 valores** | **No.** Solo en el código |
 | **Ronda** | `document_versions.status` | **12 valores** | **No.** Solo en el código |
 | **Tarea** | `tasks.status` | `pendiente` · `en_proceso` · `completada` · `cancelada` | **No.** Una sola lista, en `config/sqlTables.js` |
@@ -34,6 +36,49 @@ primero que hay que tener claro, así que va explícita.
 
 Esas cuatro últimas son las que se siguen como `TD7-e`: **cuatro columnas de estado sin `CHECK`**, no
 las ocho que se contaron en su día. La decisión pendiente es cuáles bajan su dominio a la base.
+
+## El recorrido tiene UN vocabulario, y antes tenía dos
+
+Las cuatro columnas del recorrido —instancia y solicitud, entrega y firma— describen lo mismo: cómo
+va el turno de alguien. Hasta el **2026-10-08** lo describían de **dos maneras distintas**:
+
+| | Mecanismo | Idioma |
+|---|---|---|
+| Entrega | `status TEXT` con `CHECK` | inglés (`pending`, `approved`…) |
+| Firma | `status_id` contra la tabla `signature_request_statuses` | español (`pendiente`, `completado`…) |
+
+Dos mecanismos y dos idiomas para un solo concepto. Hoy son **un `CHECK` y el español**:
+
+`pendiente` · `en_progreso` · `completado` · `rechazado` · `devuelto` · `cancelado`
+
+**`devuelto` sólo es legal en la entrega** —un paso de entrega se puede devolver, y firmando eso no
+existe—, y eso no se declara en el código: lo acota el `CHECK` de cada columna. `fill_requests` admite
+los seis; las otras tres, cinco.
+
+:::note[Por qué `CHECK` y no una tabla, que es lo que se retiró]
+
+Un catálogo parece más flexible —se añade un código sin tocar el esquema—, y por eso existía. Lo que
+costaba era peor que lo que daba:
+
+- **cada lectura del estado de una firma era una CONSULTA más**, un `JOIN` a una tabla de cinco filas
+  que nunca creció;
+- el código traducía código → `id` antes de escribir, con un «y si no existe ese estado» que sólo
+  podía pasar borrando una fila del catálogo a mano;
+- y **la etiqueta viajaba al frontend como si fuera el código**. «En progreso» llegaba minusculizado
+  a `en progreso`, que no coincide con `en_progreso`: hubo que meter una entrada con espacio en el
+  mapa de tonos para taparlo.
+
+Con el vocabulario cerrado en un `CHECK`, validar es comparar contra cinco cadenas: sin red, sin base
+y sin poder equivocarse de catálogo. Es la misma decisión que ya estaba tomada y escrita para el tipo
+de documento de identidad, y la que ya usan `item_mode`, `lifecycle_state`, `template_scope`,
+`resolver_type` y `unit_scope_type`.
+
+⚠️ **`signature_statuses` no se tocó**, y conviene saber por qué: es el estado del **hecho** de
+firmar —`firmado`, `fallido`, `invalido`, `cancelado`—, el resultado de una operación criptográfica,
+no el de una solicitud. Las dos tablas eran idénticas en forma y distintas en significado, que es
+justo lo que hacía fácil confundirlas.
+
+:::
 
 :::note[La tarea sí tiene vocabulario conocido, aunque la base no lo imponga]
 

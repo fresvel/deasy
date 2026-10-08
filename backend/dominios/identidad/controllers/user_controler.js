@@ -445,7 +445,6 @@ export const getUserGlobalSignatureCenter = async (req, res) => {
         document_status: row.document_status || null,
         document_version_status: row.document_version_status || null,
         signature_request_status_code: row.signature_request_status_code || null,
-        signature_request_status_name: row.signature_request_status_name || null,
         requested_at: row.requested_at || null,
         step_order: row.step_order ? Number(row.step_order) : null,
         step_name: row.step_name || null,
