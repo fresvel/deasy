@@ -106,8 +106,23 @@ const plantillasSql = (fuente) => {
 const declarados = (sql) => {
   const nombres = new Set();
   // `FROM tabla alias`, `JOIN tabla AS alias`, `UPDATE tabla alias`, `INSERT INTO tabla`
-  for (const m of sql.matchAll(/\b(?:FROM|JOIN|UPDATE|INTO)\s+([a-z_][\w]*)(?:\s+(?:AS\s+)?([a-z_][\w]*))?/gi)) {
-    nombres.add(m[1].toLowerCase());
+  //
+  // ⚠️ LA TABLA PUEDE IR CUALIFICADA CON SU ESQUEMA (`plantillas.ediciones e`), y hasta el
+  // 2026-10-08 esto no lo contemplaba: el nombre se leia con `[a-z_][\w]*`, que NO incluye el
+  // punto, asi que de `FROM plantillas.ediciones e` se quedaba con `plantillas` y el alias `e`
+  // **no lo veia nunca**. La consulta corre perfectamente y la puerta la reportaba como alias sin
+  // declarar.
+  //
+  // No salto antes porque el repositorio no cualifica --las 555 consultas se apoyan en el
+  // `search_path`--, pero desde que el esquema se partio en ocho (2026-10-04) cualificar es
+  // legitimo, y la primera consulta que lo hizo cayo aqui.
+  //
+  // Se registran LOS DOS nombres, el cualificado y el corto: una consulta puede referirse a la
+  // tabla por cualquiera de ellos.
+  for (const m of sql.matchAll(/\b(?:FROM|JOIN|UPDATE|INTO)\s+([a-z_][\w]*(?:\.[a-z_][\w]*)?)(?:\s+(?:AS\s+)?([a-z_][\w]*))?/gi)) {
+    const tabla = m[1].toLowerCase();
+    nombres.add(tabla);
+    if (tabla.includes(".")) nombres.add(tabla.split(".").pop());
     if (m[2] && !NO_SON_ALIAS.has(m[2].toLowerCase())) nombres.add(m[2].toLowerCase());
   }
   // alias de subconsulta: `) alias` o `) AS alias`
@@ -133,10 +148,24 @@ const declarados = (sql) => {
 
 const usados = (sql) => {
   const nombres = new Map();
-  for (const m of sql.matchAll(/\b([a-z_][\w]*)\.([a-z_][\w]*)/gi)) {
-    const alias = m[1].toLowerCase();
+  for (const m of sql.matchAll(/(\b(?:FROM|JOIN|UPDATE|INTO)\s+)?\b([a-z_][\w]*)\.([a-z_][\w]*)/gi)) {
+    // ⚠️ EL ESQUEMA DE UNA TABLA NO ES UN ALIAS. En "FROM plantillas.ediciones e" el prefijo
+    // cualifica a la TABLA; en "SELECT e.id" cualifica a una COLUMNA y ahi si tiene que estar
+    // declarado.
+    //
+    // (Los ejemplos van entre comillas y NO entre acentos graves a proposito: este comprobador
+    // busca plantillas de JavaScript que empiecen por SELECT o WITH, asi que un ejemplo entre
+    // acentos dentro de su propio comentario se lee como una consulta y se reporta a si mismo.
+    // Paso al escribir esta nota.) Se distinguen por lo que llevan DELANTE, y por eso el patron captura el
+    // `FROM`/`JOIN`/`UPDATE`/`INTO` opcional: sin esto, la primera consulta que cualificara con su
+    // esquema --legitimo desde que el esquema se partio en ocho-- se reportaba como alias huerfano.
+    //
+    // No ensancha la puerta: lo que se salta es UNA aparicion concreta, la que va pegada a un
+    // FROM/JOIN. Un `plantillas.x` suelto en el SELECT sigue reportandose.
+    if (m[1]) continue;
+    const alias = m[2].toLowerCase();
     if (CALIFICADORES_LIBRES.has(alias)) continue;
-    if (!nombres.has(alias)) nombres.set(alias, m[0]);
+    if (!nombres.has(alias)) nombres.set(alias, `${m[2]}.${m[3]}`);
   }
   return nombres;
 };

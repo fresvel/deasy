@@ -7,3 +7,11 @@ export {
   findFillFlowIdByDocumentVersion,
   getCurrentFillOwnership
 } from "./datos/flujoDeLlenado.js";
+
+// La receta del recorrido unificado (frente 24, fase 4). Escribe `pasos_declarados` y
+// `participantes_declarados`: las dos tablas de este dominio, por su `datos/`.
+export {
+  participantesDeUnPasoDeEntrega,
+  participantesDeUnPasoDeFirma,
+  reemplazarReceta
+} from "./datos/recetaDelRecorrido.js";

@@ -12,6 +12,12 @@
 // NO DEPENDE DE this.pool NI DE NINGÚN SERVICIO: recibe la `connection` por parámetro, así que el
 // llamador decide si va suelto o dentro de una transacción. `saveTemplateArtifactDraft` lo llama
 // dentro de la suya.
+import {
+  participantesDeUnPasoDeEntrega,
+  participantesDeUnPasoDeFirma,
+  reemplazarReceta
+} from "../../../dominios/plantillas/index.js";
+
 
 // --- Pasos --------------------------------------------------------------------------------------
 //
@@ -194,6 +200,27 @@ const replaceArtifactFlowSide = async (connection, side, { artifactId, name, ste
   return { flowTemplateId: headerId, steps: steps.length };
 };
 
+// LA PROYECCION A LA FORMA NUEVA. Vive aqui y no en el `datos/` del dominio porque es la TRADUCCION
+// de la forma vieja, que es justo lo que desaparece: el dominio solo tiene que saber escribir la
+// nueva. Cuando el paso 4 retire las ocho tablas, esta funcion se va con ellas.
+const escribirRecetaNueva = async (connection, { origen, origenId, fillSteps, signatureSteps }) => {
+  const proyecta = (steps, accion, participantesDe) => steps.map((step) => ({
+    orden: Number(step.stepOrder) || 0,
+    code: step.code ?? null,
+    nombre: step.name ?? null,
+    participantes: participantesDe(step, `${origen} ${origenId}, paso ${step.stepOrder} de ${accion}`),
+  }));
+
+  await reemplazarReceta(connection, {
+    origen, origenId, accion: "entrega",
+    pasos: proyecta(fillSteps, "entrega", participantesDeUnPasoDeEntrega),
+  });
+  await reemplazarReceta(connection, {
+    origen, origenId, accion: "firma",
+    pasos: proyecta(signatureSteps, "firma", participantesDeUnPasoDeFirma),
+  });
+};
+
 // Escribe en la base el flujo AUTORADO de una plantilla, colgando de `edicion_id`.
 // `fillSteps`/`signatureSteps` llegan ya normalizados (misma forma que consume el sync), porque la
 // normalización necesita los catálogos de cargos y tipos de unidad y este módulo no toca servicios.
@@ -219,6 +246,12 @@ export const replaceAuthoredFlowForArtifact = async (
     steps: signatureSteps,
     writeSteps: replaceSignatureFlowSteps,
   });
+
+  // Y LA MISMA RECETA EN SU FORMA NUEVA (frente 24, fase 4, paso 2). Se escribe EN PARALELO porque
+  // la ejecucion todavia apunta por clave ajena a los pasos viejos: receta y ejecucion no se pueden
+  // mudar por separado. Lo que esto demuestra, sobre datos reales, es que la forma nueva representa
+  // lo mismo --incluida la conversion del JSONB `signers` a filas-- antes de mover ningun lector.
+  await escribirRecetaNueva(connection, { origen: "edicion", origenId: id, fillSteps, signatureSteps });
 
   return { fill, signatures: signature };
 };

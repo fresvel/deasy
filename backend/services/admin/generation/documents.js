@@ -5,6 +5,11 @@
 // `ensureSignatureFlowForDocumentVersion` es hoy un delegador de una línea a
 // DocumentSignatureWorkflowService: la firma se movió allí, aquí solo queda el punto de
 // entrada que conservan los consumidores.
+import {
+  participantesDeUnPasoDeEntrega,
+  participantesDeUnPasoDeFirma,
+  reemplazarReceta
+} from "../../../dominios/plantillas/index.js";
 import { transitionDocumentVersionState } from "../../documents/DocumentStateService.js";
 import { ensureSignatureFlowForDocumentVersion as ensureDocumentSignatureWorkflowForDocumentVersion } from "../../documents/DocumentSignatureWorkflowService.js";
 import {
@@ -275,6 +280,34 @@ export const materializeRuntimeFlowForTaskItem = async (
       signatureSteps += 1;
     }
   }
+
+  // Y LA MISMA RECETA EN SU FORMA NUEVA (frente 24, fase 4, paso 2), en paralelo. Aqui el origen es
+  // el ENTREGABLE: es la receta que el usuario define AL ENVIAR, el modo `routed`.
+  //
+  // El `slot` lo acuña este escritor como `firma_<orden>` y se lo queda el PRIMER firmante del paso;
+  // a los demas el convertidor les deriva el suyo. Antes compartian uno solo y solo el primero tenia
+  // marca en el PDF.
+  await reemplazarReceta(connection, {
+    origen: "entregable", origenId: Number(taskItemId), accion: "entrega",
+    pasos: entrega.map((s, i) => ({
+      orden: i + 1,
+      code: null,
+      nombre: null,
+      participantes: participantesDeUnPasoDeEntrega(s, `entregable ${taskItemId}, paso ${i + 1} de entrega`),
+    })),
+  });
+  await reemplazarReceta(connection, {
+    origen: "entregable", origenId: Number(taskItemId), accion: "firma",
+    pasos: firma.map((step, i) => ({
+      orden: i + 1,
+      code: `firma_${i + 1}`,
+      nombre: `Firma ${i + 1}`,
+      participantes: participantesDeUnPasoDeFirma(
+        { ...step, slot: `firma_${i + 1}` },
+        `entregable ${taskItemId}, paso ${i + 1} de firma`
+      ),
+    })),
+  });
 
   return { fillSteps, signatureSteps };
 };

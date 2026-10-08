@@ -11,7 +11,7 @@
 | **2** | Muere el escalón 2 | fuera `vinculo_id` de las dos cabeceras **y su `CHECK` de un solo portador**, fuera su campo en `/admin`, fuera el escalón de los dos resolvedores | el resolvedor baja de 3 escalones a 2 (**2 consultas, no 3**, afirmado por unitario); 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320**; migración probada en sus **tres** rutas (mueve 1 cabecera, para con mensaje y **deshace el `DROP COLUMN`**, idempotente); goldens movidos en 5 ficheros y **revisado uno a uno**; `check-mapa-tablas` 100/77/0, `check-doc-modelo` y `check-enlaces-internos` en verde | ✅ |
 | **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; muertas `signature_request_statuses` y las dos `status_id`; un mapa de tonos en vez de dos y un predicado en vez de dos | 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320** + frontend lint y **498** vitest; el diff del golden es **sólo** vocabulario (60 líneas, cada valor retirado con su equivalente y los recuentos cuadrando) más 11 claves renombradas; migración probada en sus tres rutas; de 92 tablas a **91** y de 100 a **98** claves ajenas | ✅ |
 | **3-bis** | El atasco del rechazo en firma | el rechazo sin firmas dadas devuelve el documento a «Observado»; al volver, el recorrido rechazado **se reabre** en vez de ignorarse; y el rechazo manda sobre el estado de la instancia | 5 puertas + `test:unit` **904/904** (5 unitarios nuevos: la transición en las dos matrices, el camino de vuelta, y las dos ramas del reabrir) + `test:char:run` 320/320 **sin mover un golden** — y eso ES el hallazgo: ningún flow rechaza una firma (§11) | ✅ |
-| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10), en cuatro pasos: **1 · el esquema ✅** · 2 · la receta ⬜ · 3 · la ejecución ⬜ · 4 · lo que cuelga ⬜ | paso 1: las 4 tablas, **11 restricciones ejercitadas en vivo**; 5 puertas + `test:unit` **911/911** + `test:char:run` 320/320 | 🔸 |
+| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10), en cuatro pasos: **1 · el esquema ✅** · **2 · la receta ✅** · 3 · la ejecución ⬜ · 4 · lo que cuelga ⬜ | paso 1: 11 restricciones en vivo. Paso 2: los 3 escritores llenan la forma nueva **en paralelo** y la comprobación cruzada da **0 diferencias** sobre una receta rica (§13); 5 puertas + `test:unit` **920/920** + `test:char:run` 320/320 | 🔸 |
 | **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
 
 ## 1 · Por qué, en una frase
@@ -395,3 +395,60 @@ saber dónde vive. Comprobar justamente **en qué esquema nace** una tabla neces
 saltaba por culpa del **comentario** que explica por qué ese ámbito se retiró. Es la lección que
 `check-mapa-tablas.mjs` lleva escrita en su `sinProsa()`: si miras nombres dentro del código, quita
 los comentarios **antes** de mirar.
+
+
+## 13 · Fase 4, paso 2 — la receta
+
+**En paralelo, no en sustitución.** Los tres escritores de receta —el editor de plantillas, la copia
+de versionado y la materialización de `routed`— llenan **además** `pasos_declarados` y
+`participantes_declarados`. No se puede hacer de otra forma: la ejecución apunta por clave ajena a
+los pasos viejos (`fill_requests.fill_flow_step_id`), así que receta y ejecución se mudan juntas o
+no se mudan. El paso 3 mueve la ejecución; el 4 retira lo viejo.
+
+Lo que esto compra es la **prueba de que la forma nueva representa lo mismo**, sobre datos reales,
+antes de apostar un solo lector.
+
+### La comprobación cruzada
+
+`backend/scripts/verificar_receta_nueva.mjs` escribe una receta por el camino real y compara las dos
+formas fila a fila, con un `FULL OUTER JOIN` sobre los seis campos que importan. La siembra de
+caracterización es **pobre** para esto —deja dos participantes y ningún paso de firma con varios
+firmantes—, así que el script construye el caso de riesgo y lo deshace sin dejar rastro:
+
+```
+participantes · forma vieja: 5 · forma nueva: 5 · diferencias: 0
+huecos del paso de firma (uno por firmante): firma_1 · firma_1_2 · firma_1_3
+```
+
+La segunda línea es la propiedad que la forma vieja **no podía tener**: tres firmantes, tres huecos.
+
+### Tres cosas que costaron
+
+**1 · El ámbito por defecto era distinto por lado, y lo delató el cruce.** `fill_flow_steps` traía
+`DEFAULT 'unit_exact'` y `signature_flow_steps` `'context_exact'`. El convertidor usaba uno solo, y
+la comprobación marcó una diferencia en un paso `specific_person` —donde el ámbito es **inerte**,
+porque el resolutor devuelve la persona sin mirarlo—. Se alineó con la columna vieja: mientras las
+dos formas convivan, la nueva tiene que **reproducir** la vieja, y unificar el defecto es una
+limpieza del paso 4. Sin el cruce, esto no se habría visto.
+
+**2 · La limpieza del arnés rompió cuatro suites, y el fallo se leyó en otro sitio.** La clave ajena
+`fk_pasos_declarados_edicion` **no** es `ON DELETE CASCADE` —a propósito: no se borra una edición que
+tenga recorrido—, así que el `DELETE FROM ediciones` del `after()` empezó a fallar. El síntoma
+aparente fue otro: un caso posterior afirmando «ningún flujo nace fuera del formulario» veía **1**,
+porque las limpiezas caídas habían dejado residuo. La línea que lo delata es `Test Files`, no `Tests`.
+
+**3 · `check:sql-aliases` estaba CIEGA a los alias sobre tablas cualificadas** —y eso no es un
+problema del script nuevo, es un hueco de la puerta—. Su patrón leía el nombre de tabla con
+`[a-z_][\w]*`, que no incluye el punto: de `FROM plantillas.ediciones e` se quedaba con
+`plantillas` y **el alias `e` no lo veía nunca**. No había saltado porque el repositorio no
+cualifica —las consultas se apoyan en el `search_path`—, pero cualificar es legítimo desde que el
+esquema se partió en ocho. Se le enseñaron las dos mitades: la tabla puede traer esquema, y el
+esquema pegado a un `FROM`/`JOIN` **no es un alias**.
+
+⚠️ **Y al documentarlo, la puerta se reportó a sí misma.** El ejemplo `SELECT e.id` que escribí entre
+acentos graves dentro de su propio comentario lo leyó como una consulta. Los ejemplos de SQL en ese
+fichero van entre comillas. Es la tercera vez en este frente que una comprobación que mira texto
+castiga al que explica.
+
+**Probado por mutación**, que es el estándar que esa puerta se puso: con el ensanche puesto, un alias
+huérfano de verdad sigue reportándose, tanto en una consulta sin cualificar como en una cualificada.

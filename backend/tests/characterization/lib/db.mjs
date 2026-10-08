@@ -117,6 +117,12 @@ export async function cleanupDraftArtifactByCode(code) {
       await query("DELETE FROM vinculos WHERE id = ANY($1::int[])", [linkIds]);
     }
 
+    // LA RECETA EN SU FORMA NUEVA (frente 24, fase 4). Va antes que la vieja por el mismo motivo
+    // que ella: `fk_pasos_declarados_edicion` NO es ON DELETE CASCADE --no se borra una edicion que
+    // tenga recorrido-- asi que el `DELETE FROM ediciones` de abajo reventaria. Los participantes
+    // caen con su paso.
+    await query("DELETE FROM pasos_declarados WHERE edicion_id = ANY($1::int[])", [artifactIds]);
+
     // El portador autorado: el flujo que cuelga del propio artifact (§0.8, sub-paso 3).
     await query(
       `DELETE FROM fill_flow_steps
