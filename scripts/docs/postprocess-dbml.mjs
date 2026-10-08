@@ -59,8 +59,13 @@ const sinChecksDeTabla = (texto) => texto.replace(reBloqueChecks, '').replace(/\
 // ⚠️ El orden de los dos reemplazos NO es indiferente. La forma de tres partes es la de un Ref
 // (esquema.tabla.columna) y la de dos la de un Table; si se hiciera primero la de dos, se comeria
 // el 'esquema.tabla' de un Ref y dejaria la columna colgando.
+// ⚠️ Y hay una TERCERA forma, la de una clave ajena COMPUESTA, que db2dbml emite con las columnas
+// entre parentesis: `"tareas"."recorridos".("accion", "id")`. La trae `fk_turnos_recorrido` desde la
+// fase 4 del frente 24. Va PRIMERO porque la de tres partes no la reconoce --su tercer trozo empieza
+// por `(` y no por comilla-- y sin esto el esquema se quedaba pegado y el Ref no parseaba.
 const sinEsquemas = (texto) =>
   texto
+    .replace(/"(\w+)"\."(\w+)"\.\(/g, '"$2".(')
     .replace(/"(\w+)"\."(\w+)"\."(\w+)"/g, '"$2"."$3"')
     .replace(/^Table\s+"(\w+)"\."(\w+)"/gm, 'Table "$2"');
 
@@ -93,7 +98,11 @@ while ((m = reTabla.exec(raw)) !== null) {
 // `<?`, `?<?`, `>?`... El `?` marca lado nullable. Olvidarlo dejaba fuera las 139 relaciones.
 for (const linea of raw.split('\n')) {
   if (!linea.startsWith('Ref')) continue;
-  const mm = /"([^"]+)"\."[^"]+"\s*[<>?~-]+\s*"([^"]+)"\."[^"]+"/.exec(linea);
+  // El lado de una relacion es `"tabla"."columna"` o, si la clave ajena es COMPUESTA,
+  // `"tabla".("col", "col")`. Lo unico que se usa aguas abajo es el NOMBRE DE LA TABLA, asi que las
+  // dos formas se aceptan y la columna se descarta igual.
+  const lado = '"([^"]+)"\\.(?:"[^"]+"|\\([^)]*\\))';
+  const mm = new RegExp(`${lado}\\s*[<>?~-]+\\s*${lado}`).exec(linea);
   if (mm) refs.push({ texto: linea, origen: mm[1], destino: mm[2] });
   else fallos.push(`Ref que no se pudo parsear: ${linea}`);
 }

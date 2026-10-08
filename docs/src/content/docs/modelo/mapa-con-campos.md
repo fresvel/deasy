@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 36 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 40 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**36 tablas · 349 columnas · 94 claves ajenas · 9 diagramas.**
+**40 tablas · 385 columnas · 104 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -131,9 +131,9 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 58 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 62 claves ajenas desde otros diagramas</summary>
 
-`aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `fill_flow_steps.cargo_id` → `cargos` · `fill_flow_steps.assigned_person_id` → `persons` · `fill_flow_steps.position_id` → `unit_positions` · `fill_flow_steps.unit_type_id` → `unit_types` · `fill_flow_steps.unit_id` → `units` · `fill_requests.assigned_person_id` → `persons` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `process_definition_series.cargo_id` → `cargos` · `process_definition_series.unit_type_id` → `unit_types` · `process_runs.created_by_user_id` → `persons` · `process_target_rules.cargo_id` → `cargos` · `process_target_rules.position_id` → `unit_positions` · `process_target_rules.unit_type_id` → `unit_types` · `process_target_rules.unit_id` → `units` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `signature_flow_steps.required_cargo_id` → `cargos` · `signature_flow_steps.assigned_person_id` → `persons` · `signature_flow_steps.position_id` → `unit_positions` · `signature_flow_steps.unit_type_id` → `unit_types` · `signature_flow_steps.unit_id` → `units` · `signature_requests.assigned_person_id` → `persons` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
+`aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `fill_flow_steps.cargo_id` → `cargos` · `fill_flow_steps.assigned_person_id` → `persons` · `fill_flow_steps.position_id` → `unit_positions` · `fill_flow_steps.unit_type_id` → `unit_types` · `fill_flow_steps.unit_id` → `units` · `fill_requests.assigned_person_id` → `persons` · `participantes_declarados.cargo_id` → `cargos` · `participantes_declarados.persona_id` → `persons` · `participantes_declarados.unit_id` → `units` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `process_definition_series.cargo_id` → `cargos` · `process_definition_series.unit_type_id` → `unit_types` · `process_runs.created_by_user_id` → `persons` · `process_target_rules.cargo_id` → `cargos` · `process_target_rules.position_id` → `unit_positions` · `process_target_rules.unit_type_id` → `unit_types` · `process_target_rules.unit_id` → `units` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `signature_flow_steps.required_cargo_id` → `cargos` · `signature_flow_steps.assigned_person_id` → `persons` · `signature_flow_steps.position_id` → `unit_positions` · `signature_flow_steps.unit_type_id` → `unit_types` · `signature_flow_steps.unit_id` → `units` · `signature_requests.assigned_person_id` → `persons` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `turnos.persona_id` → `persons` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
 
 </details>
 
@@ -285,9 +285,9 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 6 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 7 claves ajenas desde otros diagramas</summary>
 
-`document_versions.edicion_id` → `ediciones` · `fill_flow_templates.edicion_id` → `ediciones` · `process_definition_period_types.term_type_id` → `term_types` · `signature_flow_templates.edicion_id` → `ediciones` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
+`document_versions.edicion_id` → `ediciones` · `fill_flow_templates.edicion_id` → `ediciones` · `pasos_declarados.edicion_id` → `ediciones` · `process_definition_period_types.term_type_id` → `term_types` · `signature_flow_templates.edicion_id` → `ediciones` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
 
 </details>
 
@@ -424,9 +424,9 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 9 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 11 claves ajenas desde otros diagramas</summary>
 
-`document_attachments.document_version_id` → `document_versions` · `document_fill_flows.document_version_id` → `document_versions` · `document_signatures.document_version_id` → `document_versions` · `document_version_uploads.document_version_id` → `document_versions` · `document_workflow_observations.task_item_id` → `task_items` · `document_workflow_observations.document_version_id` → `document_versions` · `fill_flow_templates.task_item_id` → `task_items` · `signature_flow_instances.document_version_id` → `document_versions` · `signature_flow_templates.task_item_id` → `task_items`
+`document_attachments.document_version_id` → `document_versions` · `document_fill_flows.document_version_id` → `document_versions` · `document_signatures.document_version_id` → `document_versions` · `document_version_uploads.document_version_id` → `document_versions` · `document_workflow_observations.task_item_id` → `task_items` · `document_workflow_observations.document_version_id` → `document_versions` · `fill_flow_templates.task_item_id` → `task_items` · `pasos_declarados.task_item_id` → `task_items` · `recorridos.document_version_id` → `document_versions` · `signature_flow_instances.document_version_id` → `document_versions` · `signature_flow_templates.task_item_id` → `task_items`
 
 </details>
 
@@ -545,6 +545,69 @@ erDiagram
 `document_workflow_observations.fill_request_id` → `fill_requests`
 
 </details>
+
+## Recorrido unificado — sustituye a los dos de abajo
+
+**4 tablas** · 36 columnas · 10 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `task_items`, `units`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  pasos_declarados {
+    int id PK
+    text accion
+    int edicion_id FK
+    int task_item_id FK
+    int orden
+    varchar code
+    varchar nombre
+    timestamp created_at
+  }
+  participantes_declarados {
+    int id PK
+    int paso_id FK
+    int orden
+    text resolver_type
+    int persona_id FK
+    int cargo_id FK
+    text unit_scope_type
+    int unit_id FK
+    varchar slot
+    timestamp created_at
+  }
+  recorridos {
+    int id PK
+    int document_version_id FK
+    text accion
+    text estado
+    int paso_actual
+    timestamp created_at
+    timestamp updated_at
+  }
+  turnos {
+    int id PK
+    int recorrido_id
+    text accion
+    int participante_id FK
+    int persona_id FK
+    text estado
+    smallint manual
+    timestamp solicitado
+    timestamp notificado
+    timestamp respondido
+    varchar nota_respuesta
+  }
+  cargos |o--o{ participantes_declarados : "cargo_id"
+  pasos_declarados ||--o{ participantes_declarados : "paso_id"
+  persons |o--o{ participantes_declarados : "persona_id"
+  units |o--o{ participantes_declarados : "unit_id"
+  ediciones |o--o{ pasos_declarados : "edicion_id"
+  task_items |o--o{ pasos_declarados : "task_item_id"
+  document_versions ||--o{ recorridos : "document_version_id"
+  participantes_declarados ||--o{ turnos : "participante_id"
+  persons |o--o{ turnos : "persona_id"
+  recorridos |o--o{ turnos : "accion, recorrido_id"
+```
 
 ## Flujo de firma
 

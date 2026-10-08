@@ -229,12 +229,14 @@
     "descripcion": "El modelo 'libro y ediciones': `catalogo_documental` porta la identidad y `ediciones` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.",
     "tablas": {
       "catalogo_documental": 4,
-      "generadores_de_documento": 4,
-      "ediciones": 4,
       "document_fill_flows": 6,
+      "ediciones": 4,
       "fill_flow_steps": 6,
       "fill_flow_templates": 6,
-      "fill_requests": 6
+      "fill_requests": 6,
+      "generadores_de_documento": 4,
+      "participantes_declarados": 6,
+      "pasos_declarados": 6
     }
   },
   "tareas": {
@@ -242,14 +244,16 @@
     "descripcion": "Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables (`task_items`) y los documentos producidos.",
     "tablas": {
       "document_attachments": 5,
+      "document_signatures": 6,
       "document_version_uploads": 5,
       "document_versions": 5,
+      "document_workflow_observations": 6,
       "process_runs": 5,
+      "recorridos": 6,
       "task_item_tenures": 5,
       "task_items": 5,
       "tasks": 5,
-      "document_signatures": 6,
-      "document_workflow_observations": 6
+      "turnos": 6
     }
   },
   "firmas": {

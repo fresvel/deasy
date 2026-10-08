@@ -235,6 +235,7 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 //   units -> fill_flow_steps   [plantillas]
 //   paises -> generos   [identidad]
 //   paises -> parentescos   [identidad]
+//   units -> participantes_declarados   [plantillas]
 //   cantones -> persons   [identidad]
 //   paises -> persons   [identidad]
 //   paises -> persons   [identidad]

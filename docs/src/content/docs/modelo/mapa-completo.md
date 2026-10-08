@@ -66,6 +66,13 @@ flowchart TB
     FFS --> FR
   end
 
+  subgraph REC["Recorrido unificado — sustituye a los dos de abajo"]
+    direction TB
+    PASO["pasos_declarados"] --> PART["participantes_declarados"]
+    RECO["recorridos"] --> TUR["turnos"]
+    PART --> TUR
+  end
+
   subgraph FIR["Flujo de firma"]
     direction TB
     SFT["signature_flow_templates"] --> SFS["signature_flow_steps"]
@@ -84,6 +91,9 @@ flowchart TB
   TI -.-> SFT
   DV --> DFF
   DV --> SFI
+  TA -.-> PASO
+  TI -.-> PASO
+  DV --> RECO
   DS --> FIN(["archivo final firmado"])
   TI --> OBS["document_workflow_observations"]
   DV --> OBS
@@ -103,6 +113,28 @@ tenía ni una columna propia y desapareció.
 **Los dos flujos son simétricos**, y en el dibujo se ve: cabecera → pasos, cabecera → instancia,
 instancia → solicitudes. Las diferencias reales son dos y están en el detalle, no en la forma: la
 firma añade el `slot` y el `approval_mode`.
+
+:::note[Y esa simetría es lo que el «recorrido unificado» viene a borrar]
+
+Las cuatro tablas de `pasos_declarados` · `participantes_declarados` · `recorridos` · `turnos`
+sustituyen a las **ocho** de los dos flujos. Si los dos lados son el mismo mecanismo —y el dibujo lo
+enseña—, mantenerlos en dos juegos de tablas obliga a escribir cada regla dos veces: hoy los dos
+resolutores de paso son **44 líneas idénticas de 50**, en dominios distintos.
+
+Lo que cambia no es sólo el número de tablas:
+
+- **un paso declara una `accion`** (`entrega` o `firma`) en vez de vivir en la tabla de su lado;
+- **la cabecera desaparece**: de sus siete columnas sólo se leían dos, y el paso lleva hoy su propio
+  origen —la edición, o el entregable si el recorrido se definió al enviar;
+- **los firmantes de un paso son filas**, no una lista JSONB sin validar que mandaba sobre columnas
+  que sí tenían `CHECK`;
+- y **el hueco de la firma baja al firmante**: con varios firmantes y un solo hueco, sólo el primero
+  tenía marca en el papel.
+
+Nacen vacías y conviven con las ocho mientras dura el cambio; las viejas se retiran cuando ya no las
+referencia nadie. El diseño completo, campo a campo, está en el plan del frente 24.
+
+:::
 
 La tercera diferencia **se cerró**: los estados de la firma eran una **tabla de catálogo**
 (`signature_request_statuses`) donde la entrega usaba un `CHECK`, y por eso aparecía aquí como tabla

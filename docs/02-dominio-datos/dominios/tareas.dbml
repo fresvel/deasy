@@ -131,6 +131,21 @@ Table "process_runs" {
   }
 }
 
+Table "recorridos" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
+  "paso_actual" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (id, accion) [type: btree, unique, name: "uq_recorridos_id_accion"]
+    (document_version_id, accion) [type: btree, unique, name: "uq_recorridos_version_accion"]
+  }
+}
+
 Table "task_item_tenures" {
   "id" int4 [pk, not null, increment]
   "task_item_id" int4 [not null]
@@ -209,6 +224,25 @@ Table "tasks" {
   }
 }
 
+Table "turnos" {
+  "id" int4 [pk, not null, increment]
+  "recorrido_id" int4 [not null]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "participante_id" int4 [not null]
+  "persona_id" int4
+  "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
+  "manual" int2 [not null, default: 0]
+  "solicitado" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "notificado" timestamp
+  "respondido" timestamp
+  "nota_respuesta" varchar(255)
+
+  Indexes {
+    (recorrido_id, participante_id, persona_id) [type: btree, unique, name: "uq_turnos"]
+    (recorrido_id, participante_id) [type: btree, name: "idx_turnos_participante"]
+  }
+}
+
 Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
 Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
 Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_version_uploads"."document_version_id" [delete: cascade]
@@ -216,10 +250,12 @@ Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."t
 Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
 Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
+Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"
 Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
 Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
 Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
 Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
+Ref "fk_turnos_recorrido":"recorridos".("accion", "id") <? "turnos".("accion", "recorrido_id") [delete: cascade]
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> document_attachments   [identidad]
@@ -234,6 +270,7 @@ Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 //   persons -> document_workflow_observations   [identidad]
 //   signature_requests -> document_workflow_observations   [firmas]
 //   task_items -> fill_flow_templates   [plantillas]
+//   task_items -> pasos_declarados   [plantillas]
 //   persons -> process_runs   [identidad]
 //   process_definition_versions -> process_runs   [procesos]
 //   terms -> process_runs   [procesos]
@@ -250,4 +287,6 @@ Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 //   process_definition_versions -> tasks   [procesos]
 //   units -> tasks   [organizacion]
 //   terms -> tasks   [procesos]
+//   participantes_declarados -> turnos   [plantillas]
+//   persons -> turnos   [identidad]
 //   persons -> task_item_tenures   [identidad]

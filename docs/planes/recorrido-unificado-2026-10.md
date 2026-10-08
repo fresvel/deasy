@@ -11,7 +11,7 @@
 | **2** | Muere el escalón 2 | fuera `vinculo_id` de las dos cabeceras **y su `CHECK` de un solo portador**, fuera su campo en `/admin`, fuera el escalón de los dos resolvedores | el resolvedor baja de 3 escalones a 2 (**2 consultas, no 3**, afirmado por unitario); 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320**; migración probada en sus **tres** rutas (mueve 1 cabecera, para con mensaje y **deshace el `DROP COLUMN`**, idempotente); goldens movidos en 5 ficheros y **revisado uno a uno**; `check-mapa-tablas` 100/77/0, `check-doc-modelo` y `check-enlaces-internos` en verde | ✅ |
 | **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; muertas `signature_request_statuses` y las dos `status_id`; un mapa de tonos en vez de dos y un predicado en vez de dos | 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320** + frontend lint y **498** vitest; el diff del golden es **sólo** vocabulario (60 líneas, cada valor retirado con su equivalente y los recuentos cuadrando) más 11 claves renombradas; migración probada en sus tres rutas; de 92 tablas a **91** y de 100 a **98** claves ajenas | ✅ |
 | **3-bis** | El atasco del rechazo en firma | el rechazo sin firmas dadas devuelve el documento a «Observado»; al volver, el recorrido rechazado **se reabre** en vez de ignorarse; y el rechazo manda sobre el estado de la instancia | 5 puertas + `test:unit` **904/904** (5 unitarios nuevos: la transición en las dos matrices, el camino de vuelta, y las dos ramas del reabrir) + `test:char:run` 320/320 **sin mover un golden** — y eso ES el hallazgo: ningún flow rechaza una firma (§11) | ✅ |
-| **4** | E1 · la unificación | **8 tablas → 4**: `pasos_declarados`, `participantes_declarados`, `recorridos`, `turnos`, con `accion`. Diseño cerrado campo a campo (§3 y §10) | el resolvedor pasa de 2 funciones a 1; de 82 columnas a ~35; **sin migración**, se recrea | ⬜ |
+| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10), en cuatro pasos: **1 · el esquema ✅** · 2 · la receta ⬜ · 3 · la ejecución ⬜ · 4 · lo que cuelga ⬜ | paso 1: las 4 tablas, **11 restricciones ejercitadas en vivo**; 5 puertas + `test:unit` **911/911** + `test:char:run` 320/320 | 🔸 |
 | **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
 
 ## 1 · Por qué, en una frase
@@ -348,3 +348,50 @@ calcula (`anyApproved`):
 |---|---|
 | **nadie ha firmado aún** en esa ronda | el documento vuelve a **«Observado»** — la misma salida que el rechazo de entrega. No hay firma que invalidar, así que la ronda se puede corregir |
 | **ya hay alguna firma** | **ronda nueva**. Aquí sí es proporcionado, porque hay algo que invalidar |
+
+
+## 12 · Fase 4, paso 1 — el esquema
+
+**Aditivo a propósito.** Las cuatro tablas nacen **junto a las ocho viejas** y vacías: nadie las
+escribe todavía. Así este paso queda verde y revisable por sí solo, y las viejas se retiran en el
+paso 4, cuando ya no las referencie nadie. Sin migración: la base se recrea.
+
+### Las once restricciones, ejercitadas contra la base
+
+No basta con que el esquema compile. Cada regla del diseño se probó en vivo, en una transacción
+deshecha:
+
+| | Caso | Resultado |
+|---|---|---|
+| 1 | un paso con **los dos** orígenes | rechazado · `ck_pasos_declarados_un_origen` |
+| 2 | un paso **sin** origen | rechazado · el mismo |
+| 3 | un paso con un origen | aceptado |
+| 4 | el **mismo orden** en la misma edición y acción | rechazado · `uq_pasos_declarados_edicion` |
+| 5 | el mismo orden con **otra acción** | aceptado |
+| 6 | dos firmantes con el **mismo hueco** en el mismo documento | rechazado · `trg_participantes_slot_unico` |
+| 7 | huecos distintos | aceptado |
+| 8 | un turno **devuelto** en entrega | aceptado |
+| 9 | un turno **devuelto** en firma | rechazado · `ck_turnos_devuelto_solo_entrega` |
+| 10 | un turno que **miente** sobre su acción | rechazado · `fk_turnos_recorrido`, la compuesta |
+| 11 | dos recorridos de la misma acción para una versión | rechazado · `uq_recorridos_version_accion` |
+
+El 10 es el que justifica la clave ajena compuesta: sin ella la `accion` duplicada podría derivar y
+el `CHECK` del 9 se estaría aplicando **contra una mentira**.
+
+### Tres cosas que costaron, y que no estaban previstas
+
+**1 · El generador del modelo no sabía leer una clave ajena compuesta.** Son **dos** parsers de DBML
+—`postprocess-dbml.mjs` y `gen-mapa-campos.mjs`—, y los dos fallaban: el primero ni siquiera
+despegaba el prefijo de esquema, porque su expresión esperaba `"esq"."tabla"."col"` y una compuesta
+viene `"esq"."tabla".("a", "b")`. Se les enseñó la forma en lugar de evitar la clave compuesta; en el
+mapa con campos la relación se etiqueta con **las dos columnas**, porque con una sola el diagrama
+mentiría.
+
+**2 · `SCHEMA` viene normalizado en `postgres_schema.test.js`.** `sinEsquema` le quita el prefijo de
+dominio a cada `CREATE` para que los once sitios que buscan una tabla por su nombre no tengan que
+saber dónde vive. Comprobar justamente **en qué esquema nace** una tabla necesita el fichero crudo.
+
+**3 · Y una comprobación mía castigó al que explica.** Un `assert.doesNotMatch(create, /unit_subtree/)`
+saltaba por culpa del **comentario** que explica por qué ese ámbito se retiró. Es la lección que
+`check-mapa-tablas.mjs` lleva escrita en su `sinProsa()`: si miras nombres dentro del código, quita
+los comentarios **antes** de mirar.

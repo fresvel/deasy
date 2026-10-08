@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 91 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 95 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -798,6 +798,39 @@ Table "parroquias" {
   }
 }
 
+Table "participantes_declarados" {
+  "id" int4 [pk, not null, increment]
+  "paso_id" int4 [not null]
+  "orden" int4 [not null, default: 1]
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'task_assignee']
+  "persona_id" int4
+  "cargo_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'context_exact'::text, 'all_units'::text])`, default: 'context_exact']
+  "unit_id" int4
+  "slot" varchar(80)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (paso_id, orden) [type: btree, unique, name: "uq_participantes_declarados_orden"]
+  }
+}
+
+Table "pasos_declarados" {
+  "id" int4 [pk, not null, increment]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "edicion_id" int4
+  "task_item_id" int4
+  "orden" int4 [not null]
+  "code" varchar(120)
+  "nombre" varchar(180)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (edicion_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_edicion"]
+    (task_item_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_entregable"]
+  }
+}
+
 Table "password_reset_codes" {
   "id" int8 [pk, not null, increment]
   "person_id" int4 [not null]
@@ -1010,6 +1043,21 @@ Table "provincias" {
   Indexes {
     (pais_id, name) [type: btree, unique, name: "uq_provincias_pais_name"]
     pais_id [type: btree, name: "idx_provincias_pais"]
+  }
+}
+
+Table "recorridos" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
+  "paso_actual" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (id, accion) [type: btree, unique, name: "uq_recorridos_id_accion"]
+    (document_version_id, accion) [type: btree, unique, name: "uq_recorridos_version_accion"]
   }
 }
 
@@ -1351,6 +1399,25 @@ Table "tipos_discapacidad" {
   }
 }
 
+Table "turnos" {
+  "id" int4 [pk, not null, increment]
+  "recorrido_id" int4 [not null]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "participante_id" int4 [not null]
+  "persona_id" int4
+  "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
+  "manual" int2 [not null, default: 0]
+  "solicitado" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "notificado" timestamp
+  "respondido" timestamp
+  "nota_respuesta" varchar(255)
+
+  Indexes {
+    (recorrido_id, participante_id, persona_id) [type: btree, unique, name: "uq_turnos"]
+    (recorrido_id, participante_id) [type: btree, name: "idx_turnos_participante"]
+  }
+}
+
 Table "unit_positions" {
   "id" int4 [pk, not null, increment]
   "unit_id" int4 [not null]
@@ -1550,6 +1617,12 @@ Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
 Ref "fk_parentescos_pais":"paises"."id" <? "parentescos"."pais_id"
 Ref "fk_parroquias_canton":"cantones"."id" <? "parroquias"."canton_id"
 Ref "fk_parroquias_clase":"clases_parroquia"."id" ?<? "parroquias"."clase_id"
+Ref "fk_participantes_declarados_cargo":"cargos"."id" ?<? "participantes_declarados"."cargo_id"
+Ref "fk_participantes_declarados_paso":"pasos_declarados"."id" <? "participantes_declarados"."paso_id" [delete: cascade]
+Ref "fk_participantes_declarados_persona":"persons"."id" ?<? "participantes_declarados"."persona_id"
+Ref "fk_participantes_declarados_unidad":"units"."id" ?<? "participantes_declarados"."unit_id"
+Ref "fk_pasos_declarados_edicion":"ediciones"."id" ?<? "pasos_declarados"."edicion_id"
+Ref "fk_pasos_declarados_entregable":"task_items"."id" ?<? "pasos_declarados"."task_item_id" [delete: cascade]
 Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_id" [delete: cascade]
 Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
 Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"
@@ -1577,6 +1650,7 @@ Ref "fk_process_target_rules_unit_type":"unit_types"."id" ?<? "process_target_ru
 Ref "fk_process_target_rules_unit":"units"."id" ?<? "process_target_rules"."unit_id"
 Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
+Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"
 Ref "fk_role_assignment_relation_types_relation_type":"relation_unit_types"."id" <? "role_assignment_relation_types"."relation_type_id"
 Ref "fk_role_assignment_relation_types_role_assignment":"role_assignments"."id" <? "role_assignment_relation_types"."role_assignment_id"
 Ref "fk_role_assignments_person":"persons"."id" <? "role_assignments"."person_id"
@@ -1619,6 +1693,9 @@ Ref "fk_telefonos_pais":"paises"."id" ?<? "telefonos"."pais_id"
 Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cascade]
 Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
 Ref "fk_tipos_discapacidad_pais":"paises"."id" <? "tipos_discapacidad"."pais_id"
+Ref "fk_turnos_participante":"participantes_declarados"."id" <? "turnos"."participante_id"
+Ref "fk_turnos_persona":"persons"."id" ?<? "turnos"."persona_id"
+Ref "fk_turnos_recorrido":"recorridos".("accion", "id") <? "turnos".("accion", "recorrido_id") [delete: cascade]
 Ref "fk_tvk_canal":"canales_mensajeria"."id" ?<? "telefono_verification_keys"."canal_id"
 Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono_id" [delete: cascade]
 Ref "fk_unit_positions_cargo":"cargos"."id" <? "unit_positions"."cargo_id"

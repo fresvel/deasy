@@ -97,9 +97,15 @@ function leerDbml(texto) {
   }
   const refs = [];
   for (const linea of texto.split("\n").filter((l) => l.startsWith("Ref "))) {
-    const r = linea.match(/^Ref "([^"]+)":"([a-z0-9_]+)"\."([a-z0-9_]+)" \??<\?? "([a-z0-9_]+)"\."([a-z0-9_]+)"/);
-    if (!r) falla(`una clave ajena que no se sabe leer — ¿compuesta o con otra cardinalidad?: ${linea}`);
-    refs.push({ nombre: r[1], padre: r[2], hija: r[4], columna: r[5] });
+    // Cada lado es `"tabla"."columna"` o, si la clave ajena es COMPUESTA, `"tabla".("col", "col")`.
+    // La segunda forma la estrena `fk_turnos_recorrido` en la fase 4 del frente 24: `turnos` lleva
+    // `accion` duplicada a proposito y la clave ajena compuesta es lo que impide que mienta.
+    const lado = '"([a-z0-9_]+)"\\.(?:"([a-z0-9_]+)"|\\(([^)]*)\\))';
+    const r = linea.match(new RegExp(`^Ref "([^"]+)":${lado} \\??<\\?? ${lado}`));
+    if (!r) falla(`una clave ajena que no se sabe leer — ¿cardinalidad no contemplada?: ${linea}`);
+    // En la compuesta se etiquetan las DOS columnas: el diagrama miente si solo ensena una.
+    const columnaHija = r[6] ?? String(r[7]).replace(/"/g, "").replace(/\s*,\s*/g, ", ");
+    refs.push({ nombre: r[1], padre: r[2], hija: r[5], columna: columnaHija });
   }
   return { tablas, refs };
 }

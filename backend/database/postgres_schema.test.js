@@ -337,3 +337,87 @@ test("el catalogo se declara ANTES de la tabla que lo referencia", () => {
       < SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS ediciones")
   );
 });
+
+// --- EL RECORRIDO UNIFICADO (frente 24, fase 4) --------------------------------------------------
+//
+// Cuatro tablas que sustituyen a ocho. Lo que aqui se pinza NO es que existan —eso lo comprueba el
+// arranque— sino las cuatro reglas que no se ven leyendo el CREATE de corrido, y que son justo las
+// que el diseno costo decidir.
+
+const bloqueRecorrido = (tabla) =>
+  SCHEMA.slice(SCHEMA.indexOf(`CREATE TABLE IF NOT EXISTS ${tabla} (`)).split(");")[0];
+
+// ⚠️ `SCHEMA` viene NORMALIZADO: `sinEsquema` (:40) le quita el prefijo de dominio a cada CREATE,
+// para que los once sitios que buscan una tabla por su nombre no tengan que saber donde vive. Para
+// comprobar justamente eso --en que esquema NACE-- hace falta el fichero crudo.
+const SCHEMA_CRUDO = fs.readFileSync(
+  path.join(path.dirname(fileURLToPath(import.meta.url)), "postgres_schema.sql"),
+  "utf8"
+);
+
+test("pasos_declarados: un paso cuelga de UN origen y solo de uno", () => {
+  const create = bloqueRecorrido("pasos_declarados");
+  assert.match(create, /num_nonnulls\(edicion_id, task_item_id\) = 1/);
+  // Los dos origenes son claves ajenas de verdad, que es lo que se gana frente a un `origen_id`
+  // polimorfico: la base impide apuntar a una edicion que ya no existe.
+  assert.match(create, /FOREIGN KEY \(edicion_id\) REFERENCES ediciones\(id\)/);
+  assert.match(create, /FOREIGN KEY \(task_item_id\) REFERENCES task_items\(id\)/);
+});
+
+test("pasos_declarados: la unicidad que NO existia, una por origen", () => {
+  // Hoy hay CERO indices unicos sobre las anclas de los flujos y el codigo lo compensa con
+  // `ORDER BY id DESC LIMIT 1`. Son DOS indices porque el origen son dos columnas excluyentes.
+  assert.match(
+    SCHEMA,
+    /uq_pasos_declarados_edicion[\s\S]{0,120}\(edicion_id, accion, orden\) WHERE edicion_id IS NOT NULL/
+  );
+  assert.match(
+    SCHEMA,
+    /uq_pasos_declarados_entregable[\s\S]{0,120}\(task_item_id, accion, orden\) WHERE task_item_id IS NOT NULL/
+  );
+});
+
+test("participantes_declarados: los dos vocabularios quedan cerrados, y mas estrechos", () => {
+  const create = bloqueRecorrido("participantes_declarados");
+  // Tres resolutores: los seis retirados ya no pueden colarse por un JSONB sin CHECK.
+  assert.match(create, /resolver_type IN \('task_assignee', 'specific_person', 'cargo_in_scope'\)/);
+  // Y TRES ambitos, no cinco: `unit_subtree` y `unit_type` no los produce ninguna pantalla.
+  assert.match(create, /unit_scope_type IN \('unit_exact', 'context_exact', 'all_units'\)/);
+
+  // ⚠️ SIN LA PROSA, y no es un detalle: el comentario de esa columna NOMBRA los dos ambitos que se
+  // retiraron, porque explica por que se fueron. Buscarlos sobre el texto crudo hacia fallar el
+  // aserto justo por estar explicado. Es la misma leccion que `check-mapa-tablas.mjs` lleva escrita
+  // en su `sinProsa()`: una comprobacion que mira los comentarios castiga al que explica.
+  const sinProsa = create.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+  assert.doesNotMatch(sinProsa, /unit_subtree|unit_type_id/);
+});
+
+test("participantes_declarados: el hueco de firma vive aqui, no en el paso", () => {
+  // Con N firmantes y un solo hueco, el firmador solo encontraba la marca del primero.
+  assert.match(bloqueRecorrido("participantes_declarados"), /^\s*slot VARCHAR\(80\) NULL,/m);
+  assert.doesNotMatch(bloqueRecorrido("pasos_declarados"), /\bslot\b/);
+});
+
+test("turnos: `devuelto` solo es legal en entrega, y la accion no puede mentir", () => {
+  const create = bloqueRecorrido("turnos");
+  // El CHECK necesita ver la accion, que vive en `recorridos`: por eso esta duplicada aqui...
+  assert.match(create, /CHECK \(estado <> 'devuelto' OR accion = 'entrega'\)/);
+  // ...y por eso la clave ajena es COMPUESTA. Sin ella la copia podria desincronizarse y el CHECK
+  // se estaria aplicando contra una mentira.
+  assert.match(create, /FOREIGN KEY \(recorrido_id, accion\) REFERENCES recorridos\(id, accion\)/);
+});
+
+test("recorridos: uno por version y accion, y con la UNIQUE que la FK compuesta necesita", () => {
+  assert.match(SCHEMA, /uq_recorridos_version_accion[\s\S]{0,80}\(document_version_id, accion\)/);
+  assert.match(bloqueRecorrido("recorridos"), /CONSTRAINT uq_recorridos_id_accion UNIQUE \(id, accion\)/);
+});
+
+test("las cuatro nacen en el esquema de su dominio", () => {
+  for (const tabla of ["plantillas.pasos_declarados", "plantillas.participantes_declarados",
+                       "tareas.recorridos", "tareas.turnos"]) {
+    assert.ok(
+      SCHEMA_CRUDO.includes(`CREATE TABLE IF NOT EXISTS ${tabla} (`),
+      `${tabla} tiene que nacer en el esquema de su dominio`
+    );
+  }
+});

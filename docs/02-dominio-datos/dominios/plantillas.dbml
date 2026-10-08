@@ -133,6 +133,39 @@ Table "generadores_de_documento" {
   Note: '''EL CATALOGO DE QUIEN PRODUCE EL PDF. Era `template_seeds` y significaba otra cosa: «la semilla», un proyecto LaTeX+Jinja2 en MinIO que se COPIABA entero por cada version de plantilla, y que era EL mecanismo —no habia camino para definir un documento sin escribir `.tex.j2`. Del mecanismo solo se construyo la copia (no hay renderizador, ni formulario, ni editor de campos), asi que el frente 23 lo desacoplo: el llenado web lo haran servicios programados caso a caso y la semilla LaTeX pasa a ser UNO de los generadores, el primero del catalogo. `tipo` separa las dos mitades: `latex` trae paquete (`source_path`) y no llama a nadie; `servicio` tiene `destino` (cola o endpoint) y no trae paquete.'''
 }
 
+Table "participantes_declarados" {
+  "id" int4 [pk, not null, increment]
+  "paso_id" int4 [not null]
+  "orden" int4 [not null, default: 1]
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'task_assignee']
+  "persona_id" int4
+  "cargo_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'context_exact'::text, 'all_units'::text])`, default: 'context_exact']
+  "unit_id" int4
+  "slot" varchar(80)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (paso_id, orden) [type: btree, unique, name: "uq_participantes_declarados_orden"]
+  }
+}
+
+Table "pasos_declarados" {
+  "id" int4 [pk, not null, increment]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "edicion_id" int4
+  "task_item_id" int4
+  "orden" int4 [not null]
+  "code" varchar(120)
+  "nombre" varchar(180)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (edicion_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_edicion"]
+    (task_item_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_entregable"]
+  }
+}
+
 Ref "fk_document_fill_flows_template":"fill_flow_templates"."id" <? "document_fill_flows"."fill_flow_template_id"
 Ref "fk_ediciones_catalogo":"catalogo_documental"."id" <? "ediciones"."catalogo_documental_id"
 Ref "fk_ediciones_generador":"generadores_de_documento"."id" ?<? "ediciones"."generador_id"
@@ -141,6 +174,8 @@ Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps
 Ref "fk_fill_flow_templates_artifact":"ediciones"."id" ?<? "fill_flow_templates"."edicion_id"
 Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
 Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
+Ref "fk_participantes_declarados_paso":"pasos_declarados"."id" <? "participantes_declarados"."paso_id" [delete: cascade]
+Ref "fk_pasos_declarados_edicion":"ediciones"."id" ?<? "pasos_declarados"."edicion_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> catalogo_documental   [identidad]
@@ -155,5 +190,10 @@ Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow
 //   units -> fill_flow_steps   [organizacion]
 //   task_items -> fill_flow_templates   [tareas]
 //   persons -> fill_requests   [identidad]
+//   cargos -> participantes_declarados   [identidad]
+//   persons -> participantes_declarados   [identidad]
+//   units -> participantes_declarados   [organizacion]
+//   task_items -> pasos_declarados   [tareas]
 //   ediciones -> signature_flow_templates   [firmas]
+//   participantes_declarados -> turnos   [tareas]
 //   ediciones -> vinculos   [procesos]
