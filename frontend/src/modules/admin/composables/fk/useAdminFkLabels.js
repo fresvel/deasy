@@ -129,7 +129,7 @@ export function useAdminFkLabels({
       return;
     }
     if (
-      tableMeta?.table !== "process_definition_templates"
+      tableMeta?.table !== "vinculos"
       && !rowsToScan.some((row) => row?.process_definition_id !== null && row?.process_definition_id !== undefined && row?.process_definition_id !== "")
     ) {
       return;

@@ -11,7 +11,7 @@
 export const findTemplateArtifactById = async (pool, id) => {
   const [rows] = await pool.query(
     `SELECT ta.id, d.code AS template_code, d.display_name, ta.available_formats
-       FROM template_artifacts ta LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+       FROM ediciones ta LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
       WHERE ta.id = ? LIMIT 1`,
     [id]
   );

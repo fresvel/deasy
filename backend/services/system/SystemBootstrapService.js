@@ -566,7 +566,7 @@ const ensureBootstrapUnit = async (connection) => {
 // Proceso por defecto 'default': paraguas de tareas libres / no clasificadas.
 // Su plantilla base NACE DE UN SEED real (contrato latex/jinja2 + schema), empaquetado dentro del backend
 // en services/system/seeds/informe-general. El bootstrap lo publica a MinIO (catálogo Seeds/ + artifact
-// instanciado System/) y registra la fila generadores_de_documento + template_artifacts. El flujo de entrega queda
+// instanciado System/) y registra la fila generadores_de_documento + ediciones. El flujo de entrega queda
 // simple (1 paso: el dueño llena) y la firma ad-hoc, para ser robusto en instalación virgen.
 const DEFAULT_PROCESS_SLUG = "default";
 const DEFAULT_PROCESS_NAME = "Proceso por defecto";
@@ -605,7 +605,7 @@ const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
 // heredaba el paso sin pasar por el formulario.
 //
 // ✅ LA VENTANA QUE ESTO DEJÓ ABIERTA ESTÁ CERRADA (sub-paso 8). Entre el 7 y el 8, la columna
-// `template_artifacts.meta_object_key` era NOT NULL y el bootstrap la rellenaba con la ruta de un
+// `ediciones.meta_object_key` era NOT NULL y el bootstrap la rellenaba con la ruta de un
 // objeto que ya no se subía. El 8 borró la columna, el `meta.yaml` entero y el `WorkflowSyncService`
 // que lo leía: no queda puntero que colgar ni lector que se lo encuentre ausente.
 
@@ -812,18 +812,18 @@ export const ensureDefaultProcess = async (connection) => {
   const generadorId = Number(seedRow.id);
 
   // 5. entregable base (deliverable) + su versión publicada. Modelo libro/ediciones: la identidad y el
-  //    scope viven en `deliverables`; la versión guarda el storage MinIO y QUIÉN la produce
+  //    scope viven en `catalogo_documental`; la versión guarda el storage MinIO y QUIÉN la produce
   //    (`generador_id`). A QUE LINEA SIRVE no se guarda en ninguna de las dos desde el 2026-10-04
-  //    (frente 23): lo dice su vínculo en `process_definition_templates`, y lo impone el disparador
+  //    (frente 23): lo dice su vínculo en `vinculos`, y lo impone el disparador
   //    `trg_pdt_linea_unica`.
   let deliverable = await fetchOne(
     connection,
-    "SELECT id FROM deliverables WHERE code = ? LIMIT 1",
+    "SELECT id FROM catalogo_documental WHERE code = ? LIMIT 1",
     [DEFAULT_TEMPLATE_CODE]
   );
   if (!deliverable) {
     const [r] = await connection.query(
-      `INSERT INTO deliverables
+      `INSERT INTO catalogo_documental
         (code, display_name, description, template_scope, owner_person_id)
        VALUES (?, ?, ?, 'official', NULL)`,
       [
@@ -838,14 +838,14 @@ export const ensureDefaultProcess = async (connection) => {
 
   let artifact = await fetchOne(
     connection,
-    "SELECT id FROM template_artifacts WHERE deliverable_id = ? LIMIT 1",
+    "SELECT id FROM ediciones WHERE catalogo_documental_id = ? LIMIT 1",
     [deliverableId]
   );
   if (!artifact) {
     const availableFormats = { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } };
     const [r] = await connection.query(
-      `INSERT INTO template_artifacts
-        (deliverable_id, storage_version, lifecycle_state, base_object_prefix,
+      `INSERT INTO ediciones
+        (catalogo_documental_id, storage_version, lifecycle_state, base_object_prefix,
          available_formats, generador_id, is_active)
        VALUES (?, '1.0.0', 'published', ?, ?, ?, 1)`,
       [
@@ -881,13 +881,13 @@ export const ensureDefaultProcess = async (connection) => {
   // 5. vínculo configuración↔plantilla
   let pdt = await fetchOne(
     connection,
-    "SELECT id FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
+    "SELECT id FROM vinculos WHERE process_definition_id = ? AND edicion_id = ? LIMIT 1",
     [definitionId, artifactId]
   );
   if (!pdt) {
     const [r] = await connection.query(
-      `INSERT INTO process_definition_templates
-        (process_definition_id, template_artifact_id, sort_order, item_mode)
+      `INSERT INTO vinculos
+        (process_definition_id, edicion_id, sort_order, item_mode)
        VALUES (?, ?, 1, 'routed')`,
       [definitionId, artifactId]
     );
@@ -897,7 +897,7 @@ export const ensureDefaultProcess = async (connection) => {
   // Proceso por defecto = routed comodín: cualquiera crea una tarea y la endosa a alguien
   // (que puede ser uno mismo). Idempotente para instalaciones previas.
   await connection.query(
-    "UPDATE process_definition_templates SET item_mode = 'routed' WHERE id = ? AND item_mode <> 'routed'",
+    "UPDATE vinculos SET item_mode = 'routed' WHERE id = ? AND item_mode <> 'routed'",
     [pdtId]
   );
 

@@ -15,7 +15,7 @@
 ## Convenciones
 
 - Mantener relacion definicion de proceso -> plantillas de definicion -> artifacts publicados.
-- Los artifacts publicados del sistema se almacenan en MinIO dentro del bucket `deasy-templates`, bajo `System`, y se referencian desde `template_artifacts`.
+- Los artifacts publicados del sistema se almacenan en MinIO dentro del bucket `deasy-templates`, bajo `System`, y se referencian desde `ediciones`.
 - Los seeds base pueden publicarse manualmente a `deasy-templates/Seeds`.
 - Los paquetes de usuario creados desde el admin se suben directo a `deasy-templates/Users/<cedula>/...` en la misma operacion.
 - Documentos generados ya se modelan para salir hacia MinIO en `deasy-documents`.
@@ -35,9 +35,9 @@ secuencia:
 3. Ejecutar `node tools/templates/cli.mjs publish`.
    - Publica ese `dist` directo a MinIO en `deasy-templates/System`.
 
-4. En el admin, usar `Sincronizar dist` dentro de `template_artifacts`.
+4. En el admin, usar `Sincronizar dist` dentro de `ediciones`.
    - Esto no sube archivos.
-   - Lee el `dist` local y crea/actualiza una fila por paquete en `template_artifacts` con `bucket`,
+   - Lee el `dist` local y crea/actualiza una fila por paquete en `ediciones` con `bucket`,
      `base_object_prefix`, `available_formats` (JSON), `artifact_origin=system` y demas metadata.
    - Si `meta.yaml` declara `repository_stage`, ese valor se sincroniza a `artifact_stage`.
    - El valor permitido es: `draft`, `review`, `approved`, `published`, `archived`.
@@ -46,9 +46,9 @@ secuencia:
      en modo solo lectura para poder ver `tools/templates/dist/Plantillas/`.
    - Si acabas de agregar ese montaje, recrea `backend` antes de usar el boton.
 
-5. Vincular los `template_artifacts` resultantes en `process_definition_templates`.
+5. Vincular los `ediciones` resultantes en `vinculos`.
    - Esa relacion es la que usa Deasy para asociar una definicion de proceso con sus plantillas.
-   - Si una fila de `process_definition_templates` tiene `creates_task = 1`, esa plantilla
+   - Si una fila de `vinculos` tiene `creates_task = 1`, esa plantilla
      participara en la generacion automatica de tareas por periodo.
 
 ## Artifacts de usuario desde el admin
@@ -62,7 +62,7 @@ El panel de `template_seeds` y el flujo de artifacts de usuario agregan dos acci
      - `node tools/templates/cli.mjs publish-seeds`
    - `template_seeds` funciona como catalogo de esos seeds publicados; no hace falta una tabla separada.
 
-2. `Agregar` en `template_artifacts` (flujo de usuario)
+2. `Agregar` en `ediciones` (flujo de usuario)
    - Abre el modal de paquete de usuario.
    - Permite crear un `template_artifact` en etapa `draft`.
    - Puede basarse en un `template_seed` y/o archivos subidos por el usuario (`pdf`, `docx`, `xlsx`, `pptx`).
@@ -93,4 +93,4 @@ Para los artifacts `user`, hoy el flujo empieza en `draft`.
 - Cuando el CLI crea un template `user/latex` a partir de una semilla, escribe `seed_code` en `meta.yaml`.
 - Tambien agrega `seed` como alias legible derivado del mismo valor.
 - El CLI tambien deja el comentario `repository_stage: draft | review | approved | published | archived` y crea `repository_stage: published` por defecto.
-- `Sincronizar dist` usa `seed_code` para enlazar automaticamente `template_artifacts.template_seed_id`.
+- `Sincronizar dist` usa `seed_code` para enlazar automaticamente `ediciones.template_seed_id`.

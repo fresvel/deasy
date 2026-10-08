@@ -23,7 +23,7 @@ export const ensureSignatureFlowForDocumentVersion = async (connection, document
 };
 export const ensureFillFlowForDocumentVersion = async (connection, documentVersionId) => {
   const context = await getDocumentVersionFillContext(connection, documentVersionId);
-  if (!context?.process_definition_template_id) {
+  if (!context?.vinculo_id) {
     return null;
   }
 
@@ -38,7 +38,7 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
     const flowId = Number(existingFlow[0][0].id);
     const fillFlowTemplate = await getActiveFillFlowTemplateForDefinitionTemplate(
       connection,
-      context.process_definition_template_id,
+      context.vinculo_id,
       context.task_item_id
     );
     if (fillFlowTemplate?.id) {
@@ -51,7 +51,7 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
 
   const fillFlowTemplate = await getActiveFillFlowTemplateForDefinitionTemplate(
     connection,
-    context.process_definition_template_id,
+    context.vinculo_id,
     context.task_item_id
   );
 
@@ -215,7 +215,7 @@ export const materializeRuntimeFlowForTaskItem = async (
 
   if (entrega.length) {
     const [ft] = await connection.query(
-      `INSERT INTO fill_flow_templates (process_definition_template_id, task_item_id, name, is_active)
+      `INSERT INTO fill_flow_templates (vinculo_id, task_item_id, name, is_active)
        VALUES (?, ?, 'Entrega (definida al enviar)', 1)`,
       [processDefinitionTemplateId, taskItemId]
     );
@@ -245,7 +245,7 @@ export const materializeRuntimeFlowForTaskItem = async (
 
   if (firma.length) {
     const [st] = await connection.query(
-      `INSERT INTO signature_flow_templates (process_definition_template_id, task_item_id, name, is_active)
+      `INSERT INTO signature_flow_templates (vinculo_id, task_item_id, name, is_active)
        VALUES (?, ?, 'Firma (definida al enviar)', 1)`,
       [processDefinitionTemplateId, taskItemId]
     );
@@ -310,24 +310,24 @@ export const ensureDocumentForTaskItem = async (connection, taskItem) => {
 
   if (!versionRows?.length) {
     // CON QUE VERSION DE PLANTILLA SE ABRE ESTA RONDA, LEIDA DEL VINCULO (frente 23, F2.2 —
-    // 2026-10-04). Antes salia de `taskItem.template_artifact_id`, o sea de una COPIA que el
+    // 2026-10-04). Antes salia de `taskItem.edicion_id`, o sea de una COPIA que el
     // entregable guardaba del vinculo; esa columna se retiro. Se consulta aqui, y no se exige que
     // el llamador la traiga, porque los cinco llamadores proyectan filas DISTINTAS: dos de ellos
     // (`loadDerivedTaskItemRow` y `loadFreeTaskItemRow`) no seleccionan el vinculo.
     const [artifactRows] = await connection.query(
-      `SELECT pdt.template_artifact_id
+      `SELECT pdt.edicion_id
          FROM task_items ti
-         INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+         INNER JOIN vinculos pdt ON pdt.id = ti.vinculo_id
         WHERE ti.id = ?
         LIMIT 1`,
       [taskItem.id]
     );
-    const roundArtifactId = artifactRows?.[0]?.template_artifact_id ?? null;
+    const roundArtifactId = artifactRows?.[0]?.edicion_id ?? null;
     const [insertResult] = await connection.query(
       `INSERT INTO document_versions (
          task_item_id,
          version,
-         template_artifact_id,
+         edicion_id,
          status
        ) VALUES (?, ?, ?, ?)`,
       [

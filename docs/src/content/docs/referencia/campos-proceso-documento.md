@@ -237,7 +237,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ## Que se produce: entregables y plantillas
 
-### `deliverables`
+### `catalogo_documental`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
@@ -249,19 +249,19 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `owner_person_id` | int | no | `persons.id` · impide borrar | — |
 | `created_at` | timestamp | sí | — | — |
 
-### `template_artifacts`
+### `ediciones`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `deliverable_id` | int | sí | `deliverables.id` · impide borrar | — |
+| `catalogo_documental_id` | int | sí | `catalogo_documental.id` · impide borrar | — |
 | `storage_version` | varchar(20) | sí | — | — |
 | `lifecycle_state` | text | sí | — | `draft` · `published` · `retired` |
 | `base_object_prefix` | varchar(255) | sí | — | — |
 | `available_formats` | jsonb | sí | — | — |
 | `generador_id` | int | no | `generadores_de_documento.id` · impide borrar | — |
 | `content_hash` | varchar(64) | no | — | — |
-| `parent_version_id` | int | no | `template_artifacts.id` · impide borrar | — |
+| `parent_version_id` | int | no | `ediciones.id` · impide borrar | — |
 | `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
 
@@ -280,13 +280,13 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
 
-### `process_definition_templates`
+### `vinculos`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
 | `process_definition_id` | int | sí | `process_definition_versions.id` · se va con el | — |
-| `template_artifact_id` | int | sí | `template_artifacts.id` · impide borrar | — |
+| `edicion_id` | int | sí | `ediciones.id` · impide borrar | — |
 | `sort_order` | int | sí | — | — |
 | `item_mode` | text | sí | — | `single` · `replicated` · `routed` |
 | `created_at` | timestamp | sí | — | — |
@@ -330,7 +330,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
 | `task_id` | int | sí | `tasks.id` · se va con el | — |
-| `process_definition_template_id` | int | sí | `process_definition_templates.id` · impide borrar | — |
+| `vinculo_id` | int | sí | `vinculos.id` · impide borrar | — |
 | `origin_kind` | text | sí | — | `process_defined` · `user_added` |
 | `title` | varchar(180) | no | — | — |
 | `sort_order` | int | sí | — | — |
@@ -376,7 +376,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `version` | int | sí | — | — |
 | `version_minor` | int | sí | — | — |
 | `version_label` | text | no | — | — |
-| `template_artifact_id` | int | no | `template_artifacts.id` · impide borrar | — |
+| `edicion_id` | int | no | `ediciones.id` · impide borrar | — |
 | `payload_hash` | varchar(64) | no | — | — |
 | `payload_object_path` | varchar(255) | no | — | — |
 | `working_file_path` | varchar(255) | no | — | — |
@@ -441,9 +441,9 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `process_definition_template_id` | int | no | `process_definition_templates.id` · impide borrar | — |
+| `vinculo_id` | int | no | `vinculos.id` · impide borrar | — |
 | `task_item_id` | int | no | `task_items.id` · se va con el | — |
-| `template_artifact_id` | int | no | `template_artifacts.id` · impide borrar | — |
+| `edicion_id` | int | no | `ediciones.id` · impide borrar | — |
 | `name` | varchar(180) | sí | — | — |
 | `description` | varchar(255) | no | — | — |
 | `is_active` | smallint | sí | — | — |
@@ -504,9 +504,9 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `process_definition_template_id` | int | no | `process_definition_templates.id` · impide borrar | — |
+| `vinculo_id` | int | no | `vinculos.id` · impide borrar | — |
 | `task_item_id` | int | no | `task_items.id` · se va con el | — |
-| `template_artifact_id` | int | no | `template_artifacts.id` · impide borrar | — |
+| `edicion_id` | int | no | `ediciones.id` · impide borrar | — |
 | `name` | varchar(180) | sí | — | — |
 | `description` | varchar(255) | no | — | — |
 | `is_active` | smallint | sí | — | — |

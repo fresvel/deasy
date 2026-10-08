@@ -64,7 +64,7 @@ La carpeta fuente para la carga manual en desarrollo es:
    - Usuario: valor de `MINIO_ROOT_USER`
    - Clave: valor de `MINIO_ROOT_PASSWORD`
 
-6. Registra en Deasy los datos del artifact publicado en `template_artifacts`:
+6. Registra en Deasy los datos del artifact publicado en `ediciones`:
    - `bucket`
    - `base_object_prefix`
    - `available_formats`
@@ -78,20 +78,20 @@ En el flujo normal del sistema, MinIO participa asi:
 1. Editar la fuente del template en `tools/templates/templates/`.
 2. Ejecutar `node tools/templates/cli.mjs package` para construir `dist`.
 3. Ejecutar `node tools/templates/cli.mjs publish` para subir ese `dist` a MinIO.
-4. En el admin, usar `Sincronizar dist` en `template_artifacts`.
+4. En el admin, usar `Sincronizar dist` en `ediciones`.
    - Este paso registra en MariaDB los artifacts detectados en el `dist` local.
    - No vuelve a subir archivos; solo sincroniza metadata.
-5. Vincular esos `template_artifacts` en `process_definition_templates`.
+5. Vincular esos `ediciones` en `vinculos`.
    - Desde ahi, una definicion de proceso ya puede usar esos templates.
 
 Flujo adicional para paquetes de usuario creados desde el admin:
 
-1. En `template_artifacts`, usa `Sincronizar seeds`.
+1. En `ediciones`, usa `Sincronizar seeds`.
 2. Crea el paquete de usuario desde el modal del admin.
 3. El backend escribe el paquete temporal en `backend/storage/minio-jobs/templates-drafts/...`.
 4. El backend lo sube directamente a:
    - `s3://<MINIO_TEMPLATES_BUCKET>/Users/<cedula>/...`
-5. Solo cuando la carga termina correctamente, se inserta o actualiza `template_artifacts`.
+5. Solo cuando la carga termina correctamente, se inserta o actualiza `ediciones`.
 
 Flujo manual para publicar seeds locales:
 

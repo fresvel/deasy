@@ -156,12 +156,12 @@ backticks**; el esquema es `backend/database/postgres_schema.sql`.
 
 | Tarea | Página | Tablas |
 |---|---|---|
-| AM-01 | La siembra | `processes` · `process_definition_series` · `process_definition_versions` · `process_definition_period_types` · `process_definition_templates` · `process_target_rules` · `template_seeds` · `deliverables` · `template_artifacts` · `template_artifact_fields` · `terms` |
+| AM-01 | La siembra | `processes` · `process_definition_series` · `process_definition_versions` · `process_definition_period_types` · `vinculos` · `process_target_rules` · `template_seeds` · `catalogo_documental` · `ediciones` · `template_artifact_fields` · `terms` |
 | AM-02 | La organización | `units` · `unit_positions` · `cargos` · `position_assignments` · `relation_unit_types` |
 | AM-03 | El proceso | `processes` · `process_definition_versions` · `process_definition_series` · `process_definition_period_types` · `terms` · `term_types` |
 | AM-04 | El reparto | `process_target_rules` · `unit_positions` · `position_assignments` · `task_item_tenures` |
-| AM-05 | Entregable y ediciones | `deliverables` · `template_artifacts` · `template_artifact_fields` · `template_seeds` |
-| AM-06 | El vínculo y los modos | `process_definition_templates` · `template_artifacts` |
+| AM-05 | Entregable y ediciones | `catalogo_documental` · `ediciones` · `template_artifact_fields` · `template_seeds` |
+| AM-06 | El vínculo y los modos | `vinculos` · `ediciones` |
 | AM-07 | El disparo | `process_runs` · `tasks` · `task_items` · `unit_positions` · `persons` |
 | AM-08 | El entregable concreto | `task_items` · `task_item_tenures` · `document_versions` |
 | AM-09 | Quién lo debe | `task_item_tenures` · `task_items` · `position_assignments` |

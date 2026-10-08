@@ -3,8 +3,8 @@
 //
 // Cinco bloques:
 //   0. EL CONTRATO DEL FICHERO: describe la forma, NO converge bases anteriores (`TD7-s`).
-//   1. `template_artifacts.lifecycle_state` nace SIN PUBLICAR (defecto 1.13).
-//   2. El portador `template_artifact_id` de las dos cabeceras de flujo (frente 0.8, sub-paso 1).
+//   1. `ediciones.lifecycle_state` nace SIN PUBLICAR (defecto 1.13).
+//   2. El portador `edicion_id` de las dos cabeceras de flujo (frente 0.8, sub-paso 1).
 //   3. `code` y `name` en los PASOS de entrega, la simetria que le faltaba a `fill_flow_steps`
 //      respecto de `signature_flow_steps` (frente 0.8, sub-paso 1-bis).
 //   4. LO QUE EL FRENTE 23 RETIRO, en negativo: que no vuelva, y el catalogo que lo sustituye.
@@ -12,8 +12,8 @@
 // --- BLOQUE 1 -------------------------------------------------------------------------------------
 //
 // Por que un test sobre el TEXTO del esquema y no sobre la base: el defecto no tiene disparador vivo
-// —los cuatro `INSERT INTO template_artifacts` del repo fijan `lifecycle_state` explicitamente y el
-// CRUD generico ni llega al INSERT, porque `tableHooks.template_artifacts.beforeCreate()` lanza
+// —los cuatro `INSERT INTO ediciones` del repo fijan `lifecycle_state` explicitamente y el
+// CRUD generico ni llega al INSERT, porque `tableHooks.ediciones.beforeCreate()` lanza
 // siempre—, asi que no hay ruta HTTP que lo ejercite y ningun golden puede vigilarlo. Lo que si se
 // puede romper en silencio es el PAR que hace efectivo el arreglo, y eso es lo que se fija aqui:
 //
@@ -33,7 +33,7 @@ import { fileURLToPath } from "node:url";
 
 
 // ⚠️ SE QUITA EL ESQUEMA DEL NOMBRE AL LEER. Desde el 2026-10-04 cada tabla vive en el esquema de su
-// tema, asi que el fichero dice 'CREATE TABLE IF NOT EXISTS plantillas.template_artifacts'. Estas
+// tema, asi que el fichero dice 'CREATE TABLE IF NOT EXISTS plantillas.ediciones'. Estas
 // pruebas van sobre LA FORMA de la tabla --sus columnas, sus CHECK, sus claves-- y no sobre donde
 // vive; normalizar aqui, una vez, evita tocar los once sitios que la buscan por su nombre. Que cada
 // tabla este en el esquema de su tema lo comprueba 'scripts/docs/check-mapa-tablas.mjs'.
@@ -91,12 +91,12 @@ test("persons.token se declara una sola vez", () => {
   assert.match(declaraciones[0], /NOT NULL UNIQUE/);
 });
 
-// Solo el bloque `CREATE TABLE ... template_artifacts (...)`, para no confundirlo con otras tablas.
+// Solo el bloque `CREATE TABLE ... ediciones (...)`, para no confundirlo con otras tablas.
 const createTemplateArtifacts = SCHEMA.slice(
-  SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifacts")
+  SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS ediciones")
 ).split(");")[0];
 
-test("la definicion de template_artifacts declara lifecycle_state con DEFAULT 'draft'", () => {
+test("la definicion de ediciones declara lifecycle_state con DEFAULT 'draft'", () => {
   const columna = createTemplateArtifacts
     .split("\n")
     .find((linea) => linea.trim().startsWith("lifecycle_state"));
@@ -131,7 +131,7 @@ test("lifecycle_state sigue admitiendo draft, published y retired", () => {
 //      «relation does not exist» (precedentes 673f1fb, 8f9f1ad, 99fc7c7, 38c2b56).
 //
 // Lo que aqui NO hay, a proposito, es un CHECK de "exactamente un portador": las filas de runtime
-// llevan HOY `process_definition_template_id` y `task_item_id` a la vez (`generation/documents.js:248`
+// llevan HOY `vinculo_id` y `task_item_id` a la vez (`generation/documents.js:248`
 // y `:278`), asi que los tres portadores no son excluyentes y ese CHECK seria falso el dia uno.
 
 const bloqueCreate = (tabla) =>
@@ -140,27 +140,27 @@ const bloqueCreate = (tabla) =>
 for (const tabla of ["fill_flow_templates", "signature_flow_templates"]) {
   const create = bloqueCreate(tabla);
 
-  test(`${tabla}: la definicion declara template_artifact_id nulable`, () => {
-    const columna = create.split("\n").find((linea) => linea.trim().startsWith("template_artifact_id"));
+  test(`${tabla}: la definicion declara edicion_id nulable`, () => {
+    const columna = create.split("\n").find((linea) => linea.trim().startsWith("edicion_id"));
     assert.ok(columna, "la columna debe existir en la definicion de la tabla");
-    assert.match(columna, /template_artifact_id INT NULL,/);
+    assert.match(columna, /edicion_id INT NULL,/);
   });
 
-  test(`${tabla}: la FK del portador apunta a template_artifacts(id)`, () => {
+  test(`${tabla}: la FK del portador apunta a ediciones(id)`, () => {
     assert.match(
       create,
       new RegExp(
-        `CONSTRAINT fk_${tabla}_artifact FOREIGN KEY \\(template_artifact_id\\) REFERENCES template_artifacts\\(id\\)`
+        `CONSTRAINT fk_${tabla}_artifact FOREIGN KEY \\(edicion_id\\) REFERENCES ediciones\\(id\\)`
       )
     );
   });
 
-  test(`${tabla}: process_definition_template_id ya no es NOT NULL en la definicion`, () => {
+  test(`${tabla}: vinculo_id ya no es NOT NULL en la definicion`, () => {
     const columna = create
       .split("\n")
-      .find((linea) => linea.trim().startsWith("process_definition_template_id"));
+      .find((linea) => linea.trim().startsWith("vinculo_id"));
     assert.ok(columna, "la columna del portador por vinculo debe seguir existiendo");
-    assert.match(columna, /process_definition_template_id INT NULL,/);
+    assert.match(columna, /vinculo_id INT NULL,/);
     assert.doesNotMatch(
       columna,
       /NOT NULL/,
@@ -171,7 +171,7 @@ for (const tabla of ["fill_flow_templates", "signature_flow_templates"]) {
   test(`${tabla}: el indice del portador se crea DESPUES de la tabla que lo sostiene`, () => {
     const tablaPos = SCHEMA.indexOf(`CREATE TABLE IF NOT EXISTS ${tabla} (`);
     const indice = SCHEMA.indexOf(
-      `CREATE INDEX IF NOT EXISTS idx_${tabla}_artifact ON ${tabla} (template_artifact_id);`
+      `CREATE INDEX IF NOT EXISTS idx_${tabla}_artifact ON ${tabla} (edicion_id);`
     );
     assert.ok(tablaPos > 0, "debe existir la definicion de la tabla");
     assert.ok(indice > 0, "debe existir el indice del portador");
@@ -260,7 +260,7 @@ test("no vuelve `template_artifact_fields`: su unico lector era el que la copiab
   assert.doesNotMatch(SIN_COMENTARIOS, /template_artifact_fields/);
 });
 
-test("no vuelve `template_artifacts.schema_object_key`: era base_object_prefix + schema.json", () => {
+test("no vuelve `ediciones.schema_object_key`: era base_object_prefix + schema.json", () => {
   // Se deriva al leer. Una columna para un valor derivable es una tercera forma de decir lo mismo.
   assert.doesNotMatch(SIN_COMENTARIOS, /schema_object_key/);
 });
@@ -297,14 +297,14 @@ test("`source_path` y `destino` son las dos mitades excluyentes, y las dos son N
 });
 
 test("quien produce el PDF lo declara la EDICION, y apunta al catalogo", () => {
-  // Estaba en `deliverables.template_seed_id`. Se movio, no se duplico: la columna vieja no vuelve.
+  // Estaba en `catalogo_documental.template_seed_id`. Se movio, no se duplico: la columna vieja no vuelve.
   const create = SCHEMA.slice(
-    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifacts")
+    SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS ediciones")
   ).split(");")[0];
   assert.ok(create.split("\n").some((l) => l.trim().startsWith("generador_id")));
   assert.match(
     create,
-    /CONSTRAINT fk_template_artifacts_generador FOREIGN KEY \(generador_id\) REFERENCES generadores_de_documento\(id\)/
+    /CONSTRAINT fk_ediciones_generador FOREIGN KEY \(generador_id\) REFERENCES generadores_de_documento\(id\)/
   );
   assert.doesNotMatch(SIN_COMENTARIOS, /template_seed_id/);
 });
@@ -324,6 +324,6 @@ test("el catalogo se declara ANTES de la tabla que lo referencia", () => {
   // a una tabla que aun no existe mata el arranque en bucle.
   assert.ok(
     SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS generadores_de_documento")
-      < SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS template_artifacts")
+      < SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS ediciones")
   );
 });

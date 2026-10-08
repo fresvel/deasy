@@ -1,7 +1,7 @@
 // Characterization: EL IDA Y VUELTA DEL EDITOR — autorar un flujo y volver a leerlo.
 //
 // Por qué existe (sub-paso 5 de `docs/planes/plan-maestro-2026-08.md` §0.8). El endpoint
-// `GET /admin/sql/template_artifacts/:id/schema` es lo único que rellena el editor cuando se reabre
+// `GET /admin/sql/ediciones/:id/schema` es lo único que rellena el editor cuando se reabre
 // una plantilla (`useAdminDraftArtifactFlow.js:119`, y `:143` para «crear a partir de»). Reconstruía
 // `fill_workflow`/`signature_workflow` desde el `meta.yaml` de MinIO; desde este sub-paso los
 // reconstruye desde las filas de la base. **El contrato de salida no cambia**: el frontend está
@@ -34,7 +34,7 @@ import { cleanupDraftArtifactByCode, closeDb } from "../lib/db.mjs";
 import { FIXTURE, USERS } from "../config.mjs";
 
 const SUITE = "schema_flow_reread";
-const DRAFT_PATH = "/admin/sql/template_artifacts/draft";
+const DRAFT_PATH = "/admin/sql/ediciones/draft";
 
 const AUTHORED_NAME = "zzzzzzz char relectura de flujo";
 const AUTHORED_CODE = "draft_zzzzzzz-char-relectura-de-flujo";
@@ -173,7 +173,7 @@ const pasoEsperado = (step, { defaults = {} } = {}) => ({
 test("relectura · el flujo de ENTREGA vuelve equivalente a lo autorado", async () => {
   const token = await tokenFor("admin");
   assert.ok(estado.artifactId, "depende del paso anterior");
-  const res = await get(`/admin/sql/template_artifacts/${estado.artifactId}/schema`, { token });
+  const res = await get(`/admin/sql/ediciones/${estado.artifactId}/schema`, { token });
   assert.equal(res.status, 200, `schema debe responder 200: ${JSON.stringify(res.body)}`);
 
   const esperado = {
@@ -190,7 +190,7 @@ test("relectura · el flujo de ENTREGA vuelve equivalente a lo autorado", async 
 test("relectura · el flujo de FIRMA vuelve equivalente a lo autorado", async () => {
   const token = await tokenFor("admin");
   assert.ok(estado.artifactId, "depende del paso anterior");
-  const res = await get(`/admin/sql/template_artifacts/${estado.artifactId}/schema`, { token });
+  const res = await get(`/admin/sql/ediciones/${estado.artifactId}/schema`, { token });
   assert.equal(res.status, 200, `schema debe responder 200: ${JSON.stringify(res.body)}`);
 
   const esperado = {
@@ -220,7 +220,7 @@ test("relectura · el flujo de FIRMA vuelve equivalente a lo autorado", async ()
 test("relectura · huella del contrato que consume el editor", async () => {
   const token = await tokenFor("admin");
   assert.ok(estado.artifactId, "depende del paso anterior");
-  const res = await get(`/admin/sql/template_artifacts/${estado.artifactId}/schema`, { token });
+  const res = await get(`/admin/sql/ediciones/${estado.artifactId}/schema`, { token });
   assert.equal(res.status, 200, `schema debe responder 200: ${JSON.stringify(res.body)}`);
   const { fields: _fields, artifact_id: _artifactId, ...contrato } = res.body ?? {};
   matchSnapshot(SUITE, "schema_flujo_autorado", contrato);
@@ -239,8 +239,8 @@ test("relectura · una VERSION recien creada hereda el flujo de su padre", async
   const token = await tokenFor("admin");
   assert.ok(estado.artifactId, "depende del paso anterior");
 
-  const original = await get(`/admin/sql/template_artifacts/${estado.artifactId}/schema`, { token });
-  const version = await post(`/admin/sql/template_artifacts/${estado.artifactId}/version`, {
+  const original = await get(`/admin/sql/ediciones/${estado.artifactId}/schema`, { token });
+  const version = await post(`/admin/sql/ediciones/${estado.artifactId}/version`, {
     token,
     body: { bump_level: "minor" },
   });
@@ -248,7 +248,7 @@ test("relectura · una VERSION recien creada hereda el flujo de su padre", async
   const hijaId = version.body?.id;
   assert.ok(hijaId, "debe devolverse el id de la version nueva");
 
-  const hija = await get(`/admin/sql/template_artifacts/${hijaId}/schema`, { token });
+  const hija = await get(`/admin/sql/ediciones/${hijaId}/schema`, { token });
   assert.equal(hija.status, 200, `schema de la version debe responder 200: ${JSON.stringify(hija.body)}`);
   assert.deepEqual(hija.body?.fill_workflow, original.body?.fill_workflow, "la version hereda la entrega");
   assert.deepEqual(hija.body?.signature_workflow, original.body?.signature_workflow, "la version hereda la firma");
@@ -264,7 +264,7 @@ test("relectura · una VERSION recien creada hereda el flujo de su padre", async
 // plantilla autorada; lo retira el sub-paso 8, y entonces esta clave vuelve a ser la que lo mida.
 test("relectura · la plantilla de la fixture ya no trae flujo sembrado por el sync", async () => {
   const token = await tokenFor("admin");
-  const res = await get("/admin/sql/template_artifacts/1/schema", { token });
+  const res = await get("/admin/sql/ediciones/1/schema", { token });
   assert.equal(res.status, 200, `schema debe responder 200: ${JSON.stringify(res.body)}`);
   assert.equal(res.body?.fill_workflow?.steps?.length, 0, "sin `BASE_META_YAML` la fixture no define ningún paso");
   const { fields: _fields, ...contrato } = res.body ?? {};

@@ -48,7 +48,7 @@ test("los identificadores llegan como números", () => {
   const input = parseGeneralTaskInput({
     source_task_item_id: "3",
     unit_id: "12",
-    process_definition_template_id: "44",
+    vinculo_id: "44",
     recipient_person_id: "8",
   });
   assert.equal(input.sourceTaskItemId, 3);
@@ -145,7 +145,7 @@ test("una plantilla de instancia única no admite réplicas ni envíos", async (
     if (sql.includes("FROM tasks t")) return [[{ id: 3, process_definition_id: 42, scope_unit_id: 100 }]];
     if (sql.includes("FROM position_assignments pa")) return [[{ id: 55 }]];
     if (sql.includes("item_mode, process_definition_id")) {
-      return [[{ id: 44, template_artifact_id: 9, item_mode: "single", process_definition_id: 42 }]];
+      return [[{ id: 44, edicion_id: 9, item_mode: "single", process_definition_id: 42 }]];
     }
     throw new Error(`consulta inesperada: ${sql.slice(0, 60)}`);
   });
@@ -157,7 +157,7 @@ test("una plantilla de instancia única no admite réplicas ni envíos", async (
         mode: "derived",
         title: "Algo",
         source_task_id: 3,
-        process_definition_template_id: 44,
+        vinculo_id: 44,
       }),
     }),
     /instancia única/
@@ -170,7 +170,7 @@ test("una plantilla de otro proceso se rechaza antes de mirar su modo", async ()
     if (sql.includes("FROM tasks t")) return [[{ id: 3, process_definition_id: 42, scope_unit_id: 100 }]];
     if (sql.includes("FROM position_assignments pa")) return [[{ id: 55 }]];
     if (sql.includes("item_mode, process_definition_id")) {
-      return [[{ id: 44, template_artifact_id: 9, item_mode: "single", process_definition_id: 99 }]];
+      return [[{ id: 44, edicion_id: 9, item_mode: "single", process_definition_id: 99 }]];
     }
     throw new Error(`consulta inesperada: ${sql.slice(0, 60)}`);
   });
@@ -182,7 +182,7 @@ test("una plantilla de otro proceso se rechaza antes de mirar su modo", async ()
         mode: "derived",
         title: "Algo",
         source_task_id: 3,
-        process_definition_template_id: 44,
+        vinculo_id: 44,
       }),
     }),
     /no pertenece al proceso de la tarea origen/
@@ -199,7 +199,7 @@ test("routed SIN FLUJO se rechaza, y ya no vale traer solo el destinatario", asy
     if (sql.includes("FROM tasks t")) return [[{ id: 3, process_definition_id: 42, scope_unit_id: 100 }]];
     if (sql.includes("FROM position_assignments pa")) return [[{ id: 55 }]];
     if (sql.includes("item_mode, process_definition_id")) {
-      return [[{ id: 44, template_artifact_id: 9, item_mode: "routed", process_definition_id: 42 }]];
+      return [[{ id: 44, edicion_id: 9, item_mode: "routed", process_definition_id: 42 }]];
     }
     throw new Error(`consulta inesperada: ${sql.slice(0, 60)}`);
   });
@@ -211,7 +211,7 @@ test("routed SIN FLUJO se rechaza, y ya no vale traer solo el destinatario", asy
         mode: "derived",
         title: "Algo",
         source_task_id: 3,
-        process_definition_template_id: 44,
+        vinculo_id: 44,
       }),
     }),
     /necesita su flujo/
@@ -224,7 +224,7 @@ test("routed con un destinatario que no existe se rechaza", async () => {
     if (sql.includes("FROM tasks t")) return [[{ id: 3, process_definition_id: 42, scope_unit_id: 100 }]];
     if (sql.includes("FROM position_assignments pa")) return [[{ id: 55 }]];
     if (sql.includes("item_mode, process_definition_id")) {
-      return [[{ id: 44, template_artifact_id: 9, item_mode: "routed", process_definition_id: 42 }]];
+      return [[{ id: 44, edicion_id: 9, item_mode: "routed", process_definition_id: 42 }]];
     }
     if (sql.includes("FROM persons WHERE id = ?")) return [[]];
     throw new Error(`consulta inesperada: ${sql.slice(0, 60)}`);
@@ -237,7 +237,7 @@ test("routed con un destinatario que no existe se rechaza", async () => {
         mode: "derived",
         title: "Algo",
         source_task_id: 3,
-        process_definition_template_id: 44,
+        vinculo_id: 44,
         recipient_person_id: 8,
       }),
     }),

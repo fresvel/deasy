@@ -30,10 +30,10 @@ UPDATE position_assignments SET is_current = 0, end_date = CURRENT_DATE
 
 -- ── CASO B ────────────────────────────────────────────────────────────────────────────────
 INSERT INTO task_items
-  (task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
+  (task_id, vinculo_id, edicion_id, origin_kind, title,
    sort_order, created_by_person_id, responsible_position_id, assigned_person_id,
    document_status, start_date, end_date)
-SELECT ti.task_id, ti.process_definition_template_id, ti.template_artifact_id, 'user_added',
+SELECT ti.task_id, ti.vinculo_id, ti.edicion_id, 'user_added',
        'Informe de laboratorio (demo: silla vacante)', 50, 24, 26, 29,
        'Pendiente de llenado', ti.start_date, ti.end_date
   FROM task_items ti WHERE ti.id = 1;
@@ -46,15 +46,15 @@ UPDATE position_assignments SET is_current = 0, end_date = CURRENT_DATE
 --   puesto, el primero queda huérfano con causa `position_deactivated` y el segundo NO se toca
 --   —hay gente convocada— pero SÍ aparece en el panel para que el jefe decida.
 INSERT INTO task_items
-  (task_id, process_definition_template_id, template_artifact_id, origin_kind, title,
+  (task_id, vinculo_id, edicion_id, origin_kind, title,
    sort_order, created_by_person_id, responsible_position_id, assigned_person_id,
    document_status, start_date, end_date)
-SELECT ti.task_id, ti.process_definition_template_id, ti.template_artifact_id, 'user_added',
+SELECT ti.task_id, ti.vinculo_id, ti.edicion_id, 'user_added',
        'Plan de asignatura (demo: puesto desactivado)', 60, 24, 27, 30,
        'Pendiente de llenado', ti.start_date, ti.end_date
   FROM task_items ti WHERE ti.id = 1
 UNION ALL
-SELECT ti.task_id, ti.process_definition_template_id, ti.template_artifact_id, 'user_added',
+SELECT ti.task_id, ti.vinculo_id, ti.edicion_id, 'user_added',
        'Acta de consejo (demo: en firma, puesto desactivado)', 61, 24, 27, 30,
        'Pendiente de firma', ti.start_date, ti.end_date
   FROM task_items ti WHERE ti.id = 1;

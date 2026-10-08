@@ -99,7 +99,7 @@ abierto y documentado. Ver [El flujo de firma](/modelo/flujo-de-firma).
 ```mermaid
 erDiagram
   task_items ||--o{ document_versions : "produjo estas rondas"
-  template_artifacts ||--o{ document_versions : "con esta edición"
+  ediciones ||--o{ document_versions : "con esta edición"
   document_versions ||--o{ document_version_uploads : "y estas correcciones"
   persons ||--o{ document_version_uploads : "subida por"
   document_versions ||--o{ document_attachments : "con estos anexos"
@@ -111,7 +111,7 @@ erDiagram
     int version "número de ronda"
     int version_minor "caché de la última corrección"
     text version_label "GENERADA: version.version_minor"
-    int template_artifact_id FK "con que edicion se genero ESTA ronda"
+    int edicion_id FK "con que edicion se genero ESTA ronda"
     varchar working_file_path "archivo en curso"
     varchar final_file_path "copia del anterior al firmarse"
     varchar payload_hash "sin productor hoy"

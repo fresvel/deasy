@@ -570,11 +570,11 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "task_id", label: "Tarea", type: "number", required: true },
       {
-        name: "process_definition_template_id",
+        name: "vinculo_id",
         label: "Entregable definido por proceso",
         type: "number",
         // OBLIGATORIO desde el 2026-10-04 (frente 23, F2.1): la columna es NOT NULL y es la UNICA
-        // fuente de «que version de plantilla». `template_artifact_id` estaba aqui al lado, era una
+        // fuente de «que version de plantilla». `edicion_id` estaba aqui al lado, era una
         // copia de este vinculo, y se retiro.
         required: true
       },
@@ -665,14 +665,14 @@ export const SQL_TABLES = [
     searchFields: ["code", "nombre", "tipo", "destino"]
   },
   {
-    table: "template_artifacts",
+    table: "ediciones",
     label: "Plantillas documentales",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      // Columna FISICA de `template_artifacts` desde el frente 23 (F3.2). Antes se listaba aqui igual
-      // pero el dato vivia en `deliverables` y `SqlAdminService` lo traia por JOIN: la fachada ya
+      // Columna FISICA de `ediciones` desde el frente 23 (F3.2). Antes se listaba aqui igual
+      // pero el dato vivia en `catalogo_documental` y `SqlAdminService` lo traia por JOIN: la fachada ya
       // decia que este era su sitio.
       { name: "generador_id", label: "Generador", type: "number", readOnly: true },
       { name: "owner_person_id", label: "Persona propietaria", type: "number", readOnly: true },
@@ -705,14 +705,14 @@ export const SQL_TABLES = [
     searchFields: ["template_code", "display_name", "storage_version"]
   },
   {
-    table: "process_definition_templates",
+    table: "vinculos",
     label: "Entregables del proceso",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
-      { name: "template_artifact_id", label: "Plantilla documental", type: "number", required: true },
+      { name: "edicion_id", label: "Plantilla documental", type: "number", required: true },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
       {
         name: "item_mode",
@@ -1151,7 +1151,7 @@ export const SQL_TABLES = [
       { name: "version", label: "Version (ronda)", type: "number", defaultValue: "1", required: true },
       { name: "version_minor", label: "Correccion vigente", type: "number", readOnly: true },
       { name: "version_label", label: "Version", type: "text", readOnly: true },
-      { name: "template_artifact_id", label: "Artifact", type: "number" },
+      { name: "edicion_id", label: "Artifact", type: "number" },
       { name: "payload_hash", label: "Hash payload", type: "text", readOnly: true },
       { name: "payload_object_path", label: "Ruta payload", type: "text", readOnly: true },
       { name: "working_file_path", label: "Ruta working", type: "text" },
@@ -1195,7 +1195,7 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       {
-        name: "process_definition_template_id",
+        name: "vinculo_id",
         label: "Plantilla de proceso configurado",
         type: "number",
         required: true
@@ -1338,7 +1338,7 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       {
-        name: "process_definition_template_id",
+        name: "vinculo_id",
         label: "Plantilla de proceso configurado",
         type: "number",
         required: true

@@ -68,7 +68,7 @@ export function useAdminEditorFlow({
 
   const openEdit = async (row) => {
     if (
-      props.table?.table === "template_artifacts"
+      props.table?.table === "ediciones"
       && String(row?.lifecycle_state || "published") !== "draft"
     ) {
       showFeedbackToast({
@@ -78,7 +78,7 @@ export function useAdminEditorFlow({
       });
       return { blocked: true };
     }
-    if (props.table?.table === "template_artifacts") {
+    if (props.table?.table === "ediciones") {
       await openDraftArtifactModal(row);
       return { redirected: true };
     }
@@ -128,10 +128,10 @@ export function useAdminEditorFlow({
     fkDisplay.value = {};
     formData.value = {
       ...formData.value,
-      template_artifact_id: row.id ? String(row.id) : ""
+      edicion_id: row.id ? String(row.id) : ""
     };
     if (row.id !== null && row.id !== undefined && row.id !== "") {
-      setFkLabel("template_artifacts", row.id, formatFkOptionLabel("template_artifacts", row));
+      setFkLabel("ediciones", row.id, formatFkOptionLabel("ediciones", row));
     }
     await refreshFormFkDisplayLabels();
     ensureEditorInstance();

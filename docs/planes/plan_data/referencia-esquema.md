@@ -34,9 +34,9 @@ sobre `dossiers` + `dossier_items`. Los binarios viven en MinIO, no en la base.
 | Organigrama | 7 | `unit_types`:14, `units`:22, `relation_unit_types`:91, `unit_relations`:115, `cargos`:131, `unit_positions`:143, `position_assignments`:165 |
 | Reclutamiento | 8 | `vacancies`:183, `vacancy_visibility`:266, `aplications`:204 *(sic, una sola «p»)*, `offers`:223, `contracts`:239, `contract_origins`:379, `contract_origin_recruitment`:387, `contract_origin_renewal`:398 |
 | RBAC | 8 | `roles`:258, `resources`:281, `actions`:293, `permissions`:305, `role_permissions`:324, `role_assignments`:334, `role_assignment_relation_types`:359, `cargo_role_map`:369 |
-| Procesos (definición) | 7 | `processes`:409, `process_definition_series`:420, `process_definition_versions`:435, `process_target_rules`:456, `process_definition_templates`:540, `process_definition_period_types`:581, `process_runs`:607 |
+| Procesos (definición) | 7 | `processes`:409, `process_definition_series`:420, `process_definition_versions`:435, `process_target_rules`:456, `vinculos`:540, `process_definition_period_types`:581, `process_runs`:607 |
 | Calendario | 2 | `term_types`:553, `terms`:595 |
-| Plantillas / entregables | 3 | `template_seeds`:480, `deliverables`:497, `template_artifacts`:519 |
+| Plantillas / entregables | 3 | `template_seeds`:480, `catalogo_documental`:497, `ediciones`:519 |
 | Ejecución de tareas | 3 | `tasks`:728, `task_items`:765, `task_item_tenures`:873 |
 | Documentos | 4 | `document_versions`:966, `document_version_uploads`:1024, `document_attachments`, `document_workflow_observations` |
 | Flujo de llenado | 4 | `fill_flow_templates`:825, `fill_flow_steps`:839, `document_fill_flows`:866, `fill_requests`:881 |
@@ -58,7 +58,7 @@ tabla»** ([plan §1](./plan-datos-2026-08.md#1--la-decisión-de-fondo-por-qué-
 
 **(b) Join / asociativa — 10 (15 %).** `unit_relations`, `role_permissions`, `cargo_role_map`,
 `role_assignment_relation_types`, `vacancy_visibility`, `permissions`,
-`process_definition_period_types`, `process_definition_templates`, `chat_conversation_participants`,
+`process_definition_period_types`, `vinculos`, `chat_conversation_participants`,
 `chat_message_reads`. Cuatro son solo FKs sin ningún atributo.
 
 **(c) Entidad con comportamiento — 24 (36 %).** `persons`, `person_certificates`, `units`,
@@ -73,7 +73,7 @@ tabla»** ([plan §1](./plan-datos-2026-08.md#1--la-decisión-de-fondo-por-qué-
 `chat_message_attachments`, `dossier_items`. **Ninguna tiene `updated_at`**, que es la señal.
 
 **(e) Configuración / versionado — 9 (13 %).** `process_definition_series`,
-`process_definition_versions`, `process_target_rules`, `deliverables`, `template_artifacts`,
+`process_definition_versions`, `process_target_rules`, `catalogo_documental`, `ediciones`,
 `fill_flow_templates`, `fill_flow_steps`, `signature_flow_templates`, `signature_flow_steps`.
 
 **(f) Subtipo — 3 (4 %).** `contract_origins`:379 con discriminador `origin_type` →
@@ -95,7 +95,7 @@ tabla»** ([plan §1](./plan-datos-2026-08.md#1--la-decisión-de-fondo-por-qué-
   sería `CREATE UNIQUE INDEX ... WHERE`, que el esquema **usa una sola vez**
   (`uq_chat_conversations_stable_key`:1157).
 - **No hay `BOOLEAN`**: todo es `SMALLINT NOT NULL DEFAULT 1/0`.
-- **6 columnas JSONB**: `unit_positions.profile`:148, `template_artifacts.available_formats`:525,
+- **6 columnas JSONB**: `unit_positions.profile`:148, `ediciones.available_formats`:525,
   `signature_flow_steps.anchor_refs`:952 y `.signers`:953, `signature_batch_jobs.results`:1099,
   `dossier_items.data`:1249. **Arrays: 0.**
 
@@ -110,9 +110,9 @@ importan para el dominio:
 |---|---|---|
 | 53 | `persons.status` | Inactivo, Activo, Verificado, Reportado |
 | 443 | `process_definition_versions.status` | draft, active, retired |
-| 504 | `deliverables.template_scope` | official, ad_hoc |
-| 523 | `template_artifacts.lifecycle_state` | draft, published, retired |
-| 545 | `process_definition_templates.item_mode` | single, replicated, routed |
+| 504 | `catalogo_documental.template_scope` | official, ad_hoc |
+| 523 | `ediciones.lifecycle_state` | draft, published, retired |
+| 545 | `vinculos.item_mode` | single, replicated, routed |
 | 615 | `process_runs.status` | pending, active, completed, cancelled |
 | 725 | `documents.origin_type` | task_item, standalone, imported, generated |
 | 870 | `document_fill_flows.status` | pending, in_progress, approved, rejected, cancelled |
@@ -171,13 +171,13 @@ clases**:
 | `PersonRepository` | `persons` | `persons`, `person_certificates`, `email_verification_codes`, `password_reset_codes` |
 | `OrgRepository` | `units` | `units`, `unit_relations`, `unit_positions`, `position_assignments`, + vista `unit_org_levels` |
 | `RbacRepository` | `roles` | `roles`, `permissions`, `role_permissions`, `role_assignments`, `cargo_role_map`, `role_assignment_relation_types` |
-| `ProcessDefinitionRepository` | `processes` | `processes`, `process_definition_series`, `process_definition_versions`, `process_target_rules`, `process_definition_templates`, `process_definition_period_types` |
+| `ProcessDefinitionRepository` | `processes` | `processes`, `process_definition_series`, `process_definition_versions`, `process_target_rules`, `vinculos`, `process_definition_period_types` |
 | `ProcessRunRepository` | `process_runs` | `process_runs` |
 | `TaskRepository` | `tasks` | `tasks`, `task_items`, `task_item_tenures` |
 | `DocumentRepository` | `documents` | `documents`, `document_versions`, `document_attachments`, `document_workflow_observations` |
 | `SignatureRepository` | `signature_flow_instances` | `signature_flow_*`, `signature_requests`, `document_signatures`, `signature_batch_jobs` |
 | `FillFlowRepository` | `document_fill_flows` | `fill_flow_templates`, `fill_flow_steps`, `document_fill_flows`, `fill_requests` |
-| `TemplateRepository` | `deliverables` | `deliverables`, `template_artifacts`, `template_seeds` |
+| `TemplateRepository` | `catalogo_documental` | `catalogo_documental`, `ediciones`, `template_seeds` |
 
 Fuera del reparto quedan: los **12 catálogos y 10 joins**, que ya sirve el motor de metadatos; y
 `chat_*` + `dossier*`, que **ya tienen su repositorio de facto** (`chatStore.js`, `dossierStore.js`)
@@ -202,7 +202,7 @@ Las cuatro cascadas de 2 aristas, que confirman los cortes: `tasks`→`task_item
 | `unit_types`, `process_definition_versions`, `document_versions` | 5 |
 
 **Ciclos a nivel de tabla: ninguno.** Cinco autorreferencias (`processes.parent_id`:416,
-`template_artifacts.parent_version_id`:532, `process_runs.source_run_id`:620,
+`ediciones.parent_version_id`:532, `process_runs.source_run_id`:620,
 `task_items.source_task_item_id`:683, `chat_messages.reply_to_message_id`:1185). Un ciclo potencial se
 evitó a propósito: `chat_conversations.last_message_id` **se dejó sin FK** (comentario `:1137`).
 

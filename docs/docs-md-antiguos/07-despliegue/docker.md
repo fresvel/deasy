@@ -71,7 +71,7 @@ Montajes relevantes en desarrollo:
 - `../backend -> /app/backend`
 - `../tools/templates -> /app/tools/templates` (solo lectura en `backend`)
   - Esto permite que el backend lea `tools/templates/dist/Plantillas/`.
-  - Lo usa el endpoint de sincronizacion de `template_artifacts` (`Sincronizar dist`).
+  - Lo usa el endpoint de sincronizacion de `ediciones` (`Sincronizar dist`).
 - `storage_data -> /app/backend/storage` (lectura/escritura en `backend` y `storage-uploader`)
   - El backend deja paquetes temporales en `backend/storage/minio-jobs/...`.
   - `storage-uploader` consume esos paquetes y los sube a MinIO.

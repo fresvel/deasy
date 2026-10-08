@@ -28,7 +28,7 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        dv.task_item_id,
        ti.task_id,
        ti.assigned_person_id AS task_item_assigned_person_id,
-       ti.process_definition_template_id,
+       ti.vinculo_id,
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        ti.created_by_person_id AS item_created_by_person_id,
@@ -38,7 +38,7 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
      LEFT JOIN task_items ti ON ti.id = dv.task_item_id
      LEFT JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-     LEFT JOIN template_artifacts tar ON tar.id = dv.template_artifact_id
+     LEFT JOIN ediciones tar ON tar.id = dv.edicion_id
      LEFT JOIN unit_positions up_item ON up_item.id = ti.responsible_position_id
      LEFT JOIN units u_item ON u_item.id = up_item.unit_id
      LEFT JOIN units u_task_scope ON u_task_scope.id = t.scope_unit_id
@@ -50,24 +50,24 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
 };
 
 const shouldInferSignatureFlowForContext = (context) => {
-  if (!context?.process_definition_template_id) {
+  if (!context?.vinculo_id) {
     return false;
   }
 
   // usage_role attachment/support y artifact_origin deprecados como gate: toda plantilla de proceso
   // (siempre usage_role='primary') puede tener flujo de firma. Las adjunciones ad-hoc van por
-  // document_attachments y no llegan aquí (no crean task_items con process_definition_template_id).
+  // document_attachments y no llegan aquí (no crean task_items con vinculo_id).
   return true;
 };
 
 // Gemelo de `getActiveFillFlowTemplateForDefinitionTemplate` (generation/queries.js): tres escalones
 // por PRIORIDAD, no por «qué columna está rellena». Una misma fila puede llevar dos portadores a la
 // vez —el flujo de runtime que escribe `materializeRuntimeFlowForTaskItem` (generation/documents.js:278)
-// lleva `process_definition_template_id` Y `task_item_id`—, así que cada escalón exige NULL en los
+// lleva `vinculo_id` Y `task_item_id`—, así que cada escalón exige NULL en los
 // portadores de los anteriores. Los escalones:
 //   1. del ENTREGABLE   (`task_item_id`)                   — flujo definido en runtime
-//   2. del VÍNCULO      (`process_definition_template_id`) — flujo autorado para esa configuración
-//   3. de la PLANTILLA  (`template_artifact_id`)           — flujo del entregable, compartido por
+//   2. del VÍNCULO      (`vinculo_id`) — flujo autorado para esa configuración
+//   3. de la PLANTILLA  (`edicion_id`)           — flujo del entregable, compartido por
 //      todas las configuraciones donde esté enlazado (§0.8 del plan maestro)
 // Se exporta solo para poder probar la prioridad con un unitario; el consumidor real es de aquí.
 export const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
@@ -90,7 +90,7 @@ export const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
   const [rows] = await connection.query(
     `SELECT id
      FROM signature_flow_templates
-     WHERE process_definition_template_id = ?
+     WHERE vinculo_id = ?
        AND task_item_id IS NULL
        AND is_active = 1
      ORDER BY id DESC
@@ -105,12 +105,12 @@ export const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
   const [byArtifact] = await connection.query(
     `SELECT id
      FROM signature_flow_templates
-     WHERE template_artifact_id = (
-             SELECT template_artifact_id
-             FROM process_definition_templates
+     WHERE edicion_id = (
+             SELECT edicion_id
+             FROM vinculos
              WHERE id = ?
            )
-       AND process_definition_template_id IS NULL
+       AND vinculo_id IS NULL
        AND task_item_id IS NULL
        AND is_active = 1
      ORDER BY id DESC
@@ -742,7 +742,7 @@ export const inspectDocumentVersionSignatureReadiness = async (connection, docum
 
   const signatureFlowTemplate = await getActiveSignatureFlowTemplateForDefinitionTemplate(
     connection,
-    context.process_definition_template_id,
+    context.vinculo_id,
     context.task_item_id
   );
   if (!signatureFlowTemplate?.id) {

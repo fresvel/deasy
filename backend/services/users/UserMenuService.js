@@ -97,7 +97,7 @@ const getProcessTargetRuleRows = async (pool) => {
        ptr.position_id,
        ptr.recipient_policy,
        EXISTS(
-         SELECT 1 FROM process_definition_templates pdt
+         SELECT 1 FROM vinculos pdt
          WHERE pdt.process_definition_id = pdv.id AND pdt.item_mode = 'routed'
        ) AS is_routed
      FROM processes p

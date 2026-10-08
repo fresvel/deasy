@@ -177,10 +177,10 @@ flujo reparte los pasos.** (El flujo es el nivel 6.)
 | `process_target_rules` | **La regla:** a qué unidades y a qué puestos alcanza este proceso |
 | `process_definition_period_types` | En qué tipos de periodo se repite |
 | `terms` | Los periodos concretos: «2026-1», «2026-2», «Permanente», con sus fechas |
-| `deliverables` | **El entregable como obra**: «Informe de Gestión Docente». Es el título, no el archivo |
-| `template_artifacts` | **Las ediciones de esa obra.** La versión 3 del informe. Es lo que de verdad se rellena |
+| `catalogo_documental` | **El entregable como obra**: «Informe de Gestión Docente». Es el título, no el archivo |
+| `ediciones` | **Las ediciones de esa obra.** La versión 3 del informe. Es lo que de verdad se rellena |
 | `generadores_de_documento` | **Quién produce el PDF**: el paquete LaTeX de arranque que trae el sistema, o un servicio al que se le pide |
-| `process_definition_templates` | **Qué ediciones produce este proceso**, y en qué modo: una sola, varias copias, o definida al momento |
+| `vinculos` | **Qué ediciones produce este proceso**, y en qué modo: una sola, varias copias, o definida al momento |
 
 :::note[Los tres modos de un entregable]
 - **una sola**: el entregable y quién lo llena y lo firma vienen decididos en la plantilla.

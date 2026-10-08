@@ -9,17 +9,17 @@ sidebar:
 Aquí vive la distinción que más confusión causa si no se nombra bien, así que la nombro con una
 metáfora y la sostengo toda la página.
 
-Un **entregable** (`deliverables`) es el *título del libro*: «Informe general de actividades». Es la
+Un **entregable** (`catalogo_documental`) es el *título del libro*: «Informe general de actividades». Es la
 identidad de la cosa que hay que producir. No tiene formato, ni campos, ni maqueta — solo nombre
 (`code`, `display_name`, `description`) y, si es un entregable personal, quién lo creó
 (`owner_person_id`). **De qué semilla nació ya no se guarda aquí**: desde el 2026-10-04 lo que se
-guarda es quién produce su PDF, y cuelga de la **edición** (`template_artifacts.generador_id`), no
+guarda es quién produce su PDF, y cuelga de la **edición** (`ediciones.generador_id`), no
 del nombre.
 
 **A qué línea de proceso sirve no está escrito aquí**, y desde el 2026-10-04 tampoco en ninguna otra
-columna: lo dice el **vínculo** de su edición en `process_definition_templates`, que sabe a qué
+columna: lo dice el **vínculo** de su edición en `vinculos`, que sabe a qué
 configuración está enlazada, y la configuración sabe su proceso y su variación. Hasta esa fecha
-`deliverables` llevaba dos columnas con la respuesta copiada —`owner_process_id` y
+`catalogo_documental` llevaba dos columnas con la respuesta copiada —`owner_process_id` y
 `owner_variation_key`—; ninguna de las 33 consultas que leen la tabla las seleccionaba, y su único
 lector en todo el sistema era un guardia que comprobaba que coincidieran con el vínculo. Se
 retiraron las tres cosas.
@@ -29,7 +29,7 @@ de ese guardia: el disparador `trg_pdt_linea_unica`, explicado en
 [El vínculo](/modelo/vinculo). Cubre más que el guardia, porque también vigila el clon, los scripts
 de siembra y un `INSERT` a mano.
 
-Una **edición** (`template_artifacts`) es *una impresión concreta* de ese libro: la v1.0.0, la
+Una **edición** (`ediciones`) es *una impresión concreta* de ese libro: la v1.0.0, la
 v1.1.0. Ahí sí está todo lo material: dónde vive su paquete de archivos (`base_object_prefix`), qué
 formatos ofrece (`available_formats`), cuál es su huella de contenido (`content_hash`) y **quién
 produce su PDF** (`generador_id`).
@@ -43,7 +43,7 @@ entregable**. Publicar una edición retira automáticamente la anterior.
 
 Dos cosas que la base sí impone: `lifecycle_state` tiene un `CHECK` con esos tres valores y **nace
 en `draft` por defecto**, para que un `INSERT` despistado deje una fila que el control de activación
-rechaza en vez de una plantilla publicada que nunca pasó por él. Y `uq_template_artifacts_storage`
+rechaza en vez de una plantilla publicada que nunca pasó por él. Y `uq_ediciones_storage`
 impide repetir `storage_version` dentro del mismo entregable.
 
 :::caution[Una asimetría que conviene conocer]
@@ -57,7 +57,7 @@ la misma transacción en la que publica la nueva.
 Comprobado sobre el esquema vigente: hay **ocho** columnas-bandera generadas que respaldan un índice
 único parcial de este tipo —en `unit_positions`, `position_assignments`, `vacancies`, `aplications`,
 `offers`, `role_assignments`, `process_definition_versions` y `task_item_tenures`— y **ninguna está
-en `template_artifacts`**.
+en `ediciones`**.
 
 :::
 
@@ -92,7 +92,7 @@ emitiera el Jinja2 con los tokens de firma ya colocados, uniendo `field_code` co
 
 Se retiró en el frente 23 porque **ese generador no se construyó**, y la tabla se quedó sin ningún
 consumidor: su único lector en todo el sistema era el código que copiaba sus filas a la versión
-siguiente. Existía para copiarse a sí misma. Con ella se fue `template_artifacts.schema_object_key`,
+siguiente. Existía para copiarse a sí misma. Con ella se fue `ediciones.schema_object_key`,
 que era `base_object_prefix` + `schema.json` — un valor derivable, y por tanto una tercera forma de
 decir lo mismo. Hoy esa clave se deriva al leer.
 
@@ -126,12 +126,12 @@ caso, y la semilla LaTeX se queda como **el primer generador del catálogo**, no
 
 ```mermaid
 erDiagram
-  deliverables ||--o{ template_artifacts : "tiene ediciones"
-  generadores_de_documento ||--o{ template_artifacts : "produce el PDF de"
-  persons ||--o{ deliverables : "autor si es personal"
-  template_artifacts ||--o{ template_artifacts : "desciende de"
+  catalogo_documental ||--o{ ediciones : "tiene ediciones"
+  generadores_de_documento ||--o{ ediciones : "produce el PDF de"
+  persons ||--o{ catalogo_documental : "autor si es personal"
+  ediciones ||--o{ ediciones : "desciende de"
 
-  deliverables {
+  catalogo_documental {
     int id PK "EL LIBRO"
     varchar code "identificador estable, unico"
     varchar display_name "nombre visible"
@@ -140,9 +140,9 @@ erDiagram
     int owner_person_id FK "solo si es personal"
     timestamp created_at
   }
-  template_artifacts {
+  ediciones {
     int id PK "LA EDICION"
-    int deliverable_id FK
+    int catalogo_documental_id FK
     varchar storage_version "1.1.0"
     text lifecycle_state "draft, published, retired -- nace en draft"
     varchar base_object_prefix "carpeta de su paquete"

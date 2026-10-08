@@ -25,7 +25,7 @@ export class AdminFkService {
       payload.variation_key = "";
       payload.status = "active";
     }
-    if (tableName === "template_artifacts") {
+    if (tableName === "ediciones") {
       payload.template_code = "";
       payload.storage_version = "";
       payload.is_active = "";

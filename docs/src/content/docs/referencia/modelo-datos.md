@@ -61,7 +61,7 @@ cosas. **<!-- gen:tablas-dominio:procesos -->8<!-- /gen --> tablas.**
 
 ## Plantillas y entregables
 
-El modelo «libro y ediciones»: `deliverables` porta la identidad estable y `template_artifacts`
+El modelo «libro y ediciones»: `catalogo_documental` porta la identidad estable y `ediciones`
 las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:tablas-dominio:plantillas -->7<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de plantillas](/diagramas/plantillas.svg)
@@ -160,7 +160,7 @@ esquema es, literalmente, una carpeta dentro de la base de datos:
 | `identidad.persons` | la persona |
 | `organizacion.units` | las unidades |
 | `firmas.signature_requests` | las peticiones de firma |
-| `plantillas.template_artifacts` | las ediciones de una plantilla |
+| `plantillas.ediciones` | las ediciones de una plantilla |
 
 Son ocho —uno por dominio— y en `public` no queda ninguna tabla: solo las doce funciones que usan los
 disparadores.

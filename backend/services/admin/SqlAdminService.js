@@ -278,7 +278,7 @@ export default class SqlAdminService {
     let groupByClause = "";
     let columnPrefix = "";
     const normalizedFilters = { ...filters };
-    // template_artifacts: estos campos viven en `deliverables` (alias d). Se rutean ahí en select/búsqueda/filtro/orden.
+    // ediciones: estos campos viven en `catalogo_documental` (alias d). Se rutean ahí en select/búsqueda/filtro/orden.
     const TA_DELIV_COLS = {
       template_code: "d.code",
       display_name: "d.display_name",
@@ -287,11 +287,11 @@ export default class SqlAdminService {
       owner_person_id: "d.owner_person_id"
     };
     // `template_seed_id` estaba en esa lista y ya no: desde el frente 23 (F3.2) quien produce el PDF
-    // es `template_artifacts.generador_id`, columna FISICA de esta tabla. La fachada que lo traia por
-    // JOIN desde `deliverables` deja de hacer falta — era justo la pista de que el dato estaba en la
+    // es `ediciones.generador_id`, columna FISICA de esta tabla. La fachada que lo traia por
+    // JOIN desde `catalogo_documental` deja de hacer falta — era justo la pista de que el dato estaba en la
     // tabla equivocada.
     const qualifyField = (field) => {
-      if (tableName === "template_artifacts" && TA_DELIV_COLS[field]) return TA_DELIV_COLS[field];
+      if (tableName === "ediciones" && TA_DELIV_COLS[field]) return TA_DELIV_COLS[field];
       return columnPrefix ? `${columnPrefix}${field}` : field;
     };
 
@@ -356,21 +356,21 @@ export default class SqlAdminService {
 
     }
 
-    if (tableName === "template_artifacts") {
-      columnPrefix = "template_artifacts.";
-      joinClause = "LEFT JOIN deliverables d ON d.id = template_artifacts.deliverable_id";
+    if (tableName === "ediciones") {
+      columnPrefix = "ediciones.";
+      joinClause = "LEFT JOIN catalogo_documental d ON d.id = ediciones.catalogo_documental_id";
       const selectFields = physicalFields.map((field) =>
-        TA_DELIV_COLS[field] ? `${TA_DELIV_COLS[field]} AS ${field}` : `template_artifacts.${field}`
+        TA_DELIV_COLS[field] ? `${TA_DELIV_COLS[field]} AS ${field}` : `ediciones.${field}`
       );
       selectClause = `SELECT ${selectFields.join(", ")}`;
-      // Filtro "por proceso al que pertenece": plantillas vinculadas a ese proceso vía process_definition_templates.
+      // Filtro "por proceso al que pertenece": plantillas vinculadas a ese proceso vía vinculos.
       const processFilter = normalizedFilters.process_id;
       delete normalizedFilters.process_id;
       if (processFilter !== undefined && processFilter !== null && processFilter !== "") {
         conditions.push(`EXISTS (
-          SELECT 1 FROM process_definition_templates pdt
+          SELECT 1 FROM vinculos pdt
             INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
-           WHERE pdt.template_artifact_id = template_artifacts.id AND pdv.process_id = ?
+           WHERE pdt.edicion_id = ediciones.id AND pdv.process_id = ?
         )`);
         params.push(processFilter);
       }
@@ -409,7 +409,7 @@ export default class SqlAdminService {
     const orderColumn =
       (tableName === "processes" && safeOrderBy === "active_definition_version")
         ? safeOrderBy
-        : tableName === "template_artifacts"
+        : tableName === "ediciones"
           ? qualifyField(safeOrderBy)
           : joinClause
             ? `${tableName}.${safeOrderBy}`
@@ -429,18 +429,18 @@ export default class SqlAdminService {
 
   async getByKeys(tableName, keys) {
     this.ensurePool();
-    // template_artifacts: la identidad/atributos del entregable viven en `deliverables` (modelo "libro/ediciones").
+    // ediciones: la identidad/atributos del entregable viven en `catalogo_documental` (modelo "libro/ediciones").
     // Se resuelven vía JOIN y se exponen con los MISMOS nombres (template_code/display_name/scope/seed/owner_person)
     // para no romper a los ~muchos llamadores. Funciona antes y después del drop de columnas (lee de `d`).
-    if (tableName === "template_artifacts" && keys?.id !== undefined) {
+    if (tableName === "ediciones" && keys?.id !== undefined) {
       const [rows] = await this.pool.query(
         `SELECT ta.id, ta.storage_version, ta.lifecycle_state, ta.is_active, ta.base_object_prefix,
                 ta.available_formats, ta.generador_id, ta.content_hash,
-                ta.parent_version_id, ta.deliverable_id, ta.created_at,
+                ta.parent_version_id, ta.catalogo_documental_id, ta.created_at,
                 d.code AS template_code, d.display_name, d.description, d.template_scope,
                 d.owner_person_id
-           FROM template_artifacts ta
-           LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+           FROM ediciones ta
+           LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
           WHERE ta.id = ? LIMIT 1`,
         [Number(keys.id)]
       );
@@ -459,8 +459,8 @@ export default class SqlAdminService {
   async getTaskTemplate(templateId) {
     this.ensurePool();
     const [rows] = await this.pool.query(
-      `SELECT id, process_definition_id, template_artifact_id, sort_order
-       FROM process_definition_templates
+      `SELECT id, process_definition_id, edicion_id, sort_order
+       FROM vinculos
        WHERE id = ?
        LIMIT 1`,
       [templateId]
@@ -484,15 +484,15 @@ export default class SqlAdminService {
   async getTaskItem(taskItemId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      // `template_artifact_id` sale del VINCULO, no de una columna del entregable (frente 23, F2.1
+      // `edicion_id` sale del VINCULO, no de una columna del entregable (frente 23, F2.1
       // — 2026-10-04). Se proyecta con el mismo nombre a proposito: sus dos lectores —el hook de
       // `document_versions` y `ensureDocumentForTaskItem`— preguntan «con que version de plantilla
       // se trabaja», y esa pregunta la contesta el vinculo. Lo que desaparecio es la COPIA.
-      `SELECT ti.id, ti.task_id, ti.process_definition_template_id,
-              pdt.template_artifact_id,
+      `SELECT ti.id, ti.task_id, ti.vinculo_id,
+              pdt.edicion_id,
               ti.start_date, ti.end_date, ti.user_started_at
        FROM task_items ti
-       LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+       LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
        WHERE ti.id = ?
        LIMIT 1`,
       [taskItemId]
@@ -515,7 +515,7 @@ export default class SqlAdminService {
   async getFillFlowTemplate(fillFlowTemplateId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      `SELECT id, process_definition_template_id
+      `SELECT id, vinculo_id
        FROM fill_flow_templates
        WHERE id = ?
        LIMIT 1`,
@@ -613,9 +613,9 @@ export default class SqlAdminService {
            CASE WHEN ta.lifecycle_state = 'draft' THEN COALESCE(d.display_name, d.code) END,
            ', ' ORDER BY ta.id
          ) AS draft_names
-       FROM process_definition_templates pdt
-       INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
-       LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+       FROM vinculos pdt
+       INNER JOIN ediciones ta ON ta.id = pdt.edicion_id
+       LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
        WHERE pdt.process_definition_id = ?`,
       [normalizedDefinitionId]
     );
@@ -706,7 +706,7 @@ export default class SqlAdminService {
     if (hooks.beforeCreate) {
       await hooks.beforeCreate(ctx);
       // Un hook puede resolver el create sin llegar al INSERT (vinculo idempotente de
-      // process_definition_templates): devuelve la fila que ya existia.
+      // vinculos): devuelve la fila que ya existia.
       if (ctx.shortCircuit !== undefined) {
         return sanitizePersonRow(tableName, ctx.shortCircuit);
       }

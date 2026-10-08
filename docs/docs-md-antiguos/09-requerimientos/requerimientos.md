@@ -14,7 +14,7 @@ El nucleo funcional ya quedo rediseñado sobre:
 - `process_definition_versions`
 - `process_target_rules`
 - `process_definition_triggers`
-- `process_definition_templates`
+- `vinculos`
 - `tasks`
 - `task_items`
 - `documents`
@@ -31,9 +31,9 @@ Reglas ya implementadas:
   - y, si `has_document = 1`, al menos un paquete vinculado.
 - Reglas, disparadores y paquetes solo se editan en `draft`.
 - `tasks` representa la instancia del proceso en un periodo.
-- `task_items` representa los entregables derivados de `process_definition_templates`.
+- `task_items` representa los entregables derivados de `vinculos`.
 - `documents` cuelga de `task_items`.
-- `signature_flow_templates` cuelga de `process_definition_templates`.
+- `signature_flow_templates` cuelga de `vinculos`.
 
 ## Estado actual del modulo de templates
 
@@ -44,7 +44,7 @@ Ya quedo implementado:
 - `package`
 - `publish`
 - `publish-seeds`
-- sincronizacion de `template_artifacts` desde `dist`
+- sincronizacion de `ediciones` desde `dist`
 - sincronizacion de `template_seeds` desde MinIO
 - paquetes de usuario (`artifact_origin = user`) creados desde el admin
 - upload directo a MinIO para paquetes de usuario

@@ -9,7 +9,6 @@
       "lifecycle_state": "draft",
       "name": "Flujo de entrega - zzzzzz char flujo en base",
       "process_definition_id": null,
-      "process_definition_template_id": "<normalized>",
       "steps": [
         {
           "assigned_person_id": null,
@@ -47,7 +46,8 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>"
+      "task_item_id": "<normalized>",
+      "vinculo_id": "<normalized>"
     }
   ],
   "autorado_firma": [
@@ -60,7 +60,6 @@
       "lifecycle_state": "draft",
       "name": "Flujo de firma - zzzzzz char flujo en base",
       "process_definition_id": null,
-      "process_definition_template_id": "<normalized>",
       "steps": [
         {
           "approval_mode": "and",
@@ -136,7 +135,8 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>"
+      "task_item_id": "<normalized>",
+      "vinculo_id": "<normalized>"
     }
   ],
   "plantilla_entrega": [],
@@ -158,7 +158,6 @@
       "lifecycle_state": "retired",
       "name": "Entrega (definida al enviar)",
       "process_definition_id": 1,
-      "process_definition_template_id": "<normalized>",
       "steps": [
         {
           "assigned_person_id": 3,
@@ -179,7 +178,8 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>"
+      "task_item_id": "<normalized>",
+      "vinculo_id": "<normalized>"
     }
   ],
   "runtime_firma": [
@@ -192,7 +192,6 @@
       "lifecycle_state": "retired",
       "name": "Firma (definida al enviar)",
       "process_definition_id": 1,
-      "process_definition_template_id": "<normalized>",
       "steps": [
         {
           "approval_mode": "and",
@@ -221,7 +220,8 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>"
+      "task_item_id": "<normalized>",
+      "vinculo_id": "<normalized>"
     }
   ],
   "versionado_entrega": [
@@ -234,7 +234,6 @@
       "lifecycle_state": "draft",
       "name": "Flujo de entrega - zzzzzz char flujo en base",
       "process_definition_id": null,
-      "process_definition_template_id": "<normalized>",
       "steps": [
         {
           "assigned_person_id": null,
@@ -272,7 +271,8 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>"
+      "task_item_id": "<normalized>",
+      "vinculo_id": "<normalized>"
     },
     {
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
@@ -283,7 +283,6 @@
       "lifecycle_state": "draft",
       "name": "Flujo de entrega - zzzzzz char flujo en base",
       "process_definition_id": null,
-      "process_definition_template_id": "<normalized>",
       "steps": [
         {
           "assigned_person_id": null,
@@ -321,7 +320,8 @@
         }
       ],
       "storage_version": "1.1.0",
-      "task_item_id": "<normalized>"
+      "task_item_id": "<normalized>",
+      "vinculo_id": "<normalized>"
     }
   ],
   "versionado_firma": [
@@ -334,7 +334,6 @@
       "lifecycle_state": "draft",
       "name": "Flujo de firma - zzzzzz char flujo en base",
       "process_definition_id": null,
-      "process_definition_template_id": "<normalized>",
       "steps": [
         {
           "approval_mode": "and",
@@ -410,7 +409,8 @@
         }
       ],
       "storage_version": "1.0.0",
-      "task_item_id": "<normalized>"
+      "task_item_id": "<normalized>",
+      "vinculo_id": "<normalized>"
     },
     {
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
@@ -421,7 +421,6 @@
       "lifecycle_state": "draft",
       "name": "Flujo de firma - zzzzzz char flujo en base",
       "process_definition_id": null,
-      "process_definition_template_id": "<normalized>",
       "steps": [
         {
           "approval_mode": "and",
@@ -497,7 +496,8 @@
         }
       ],
       "storage_version": "1.1.0",
-      "task_item_id": "<normalized>"
+      "task_item_id": "<normalized>",
+      "vinculo_id": "<normalized>"
     }
   ]
 }

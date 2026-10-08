@@ -17,7 +17,7 @@
 | **1.9** | «Una copia del IDOR se quedó atrás» | **NO ERA UN DEFECTO** | — |
 | 1.11 | Los parámetros de MÁS se ignoraban en silencio (**y la premisa era falsa**) | 2026-08-14 | **ninguno, y es correcto** |
 | 1.12 | Se activa una configuración con una plantilla sin publicar | 2026-08-10 · `e6d291d`+`73d2e82` | 1 nuevo |
-| 1.13 | `template_artifacts.lifecycle_state` nace `published` | 2026-08-10 · `673f1fb` | **ninguno, y es correcto** |
+| 1.13 | `ediciones.lifecycle_state` nace `published` | 2026-08-10 · `673f1fb` | **ninguno, y es correcto** |
 | 1.14 | Clonar una configuración convertía en `single` todo lo `routed` | 2026-08-11 · `597cd43` | 1 línea |
 | 1.15 | El catálogo de semillas nunca llegaba a un entorno ya arrancado | 2026-08-14 | **ninguno — el golden ya era correcto** |
 | 1.16 | Orden de parámetros cruzado en `context_ancestor_type` | 2026-08-14 | **ninguno, y es correcto** |
@@ -339,7 +339,7 @@ dos ramas, 14 unitarios nuevos. **La clave del golden NO se renombró**: el diff
 
 ---
 
-## 1.13 · `template_artifacts.lifecycle_state` nacía `published` por defecto
+## 1.13 · `ediciones.lifecycle_state` nacía `published` por defecto
 
 **Dónde**: `backend/database/postgres_schema.sql:523`. Cerrado el 2026-08-10 (`673f1fb`).
 
@@ -348,9 +348,9 @@ dos ramas, 14 unitarios nuevos. **La clave del golden NO se renombró**: el diff
 1. El bootstrap **NO dependía del DEFAULT** — `SystemBootstrapService.js:503` fija `'published'`
    explícitamente.
 2. «Una fila creada por el CRUD genérico» **no era alcanzable**: `pickPayload` descarta la columna por
-   `readOnly`, pero antes de eso `tableHooks.template_artifacts.beforeCreate()` **lanza siempre**.
+   `readOnly`, pero antes de eso `tableHooks.ediciones.beforeCreate()` **lanza siempre**.
 
-Censados los **cuatro** `INSERT INTO template_artifacts` del repo: los cuatro fijan la columna. Era
+Censados los **cuatro** `INSERT INTO ediciones` del repo: los cuatro fijan la columna. Era
 por tanto un **defecto latente sin disparador vivo, como el 1.5** — ningún golden se movió.
 
 > **Cómo se hizo efectivo, y esto se olvida:** no basta con cambiar el `CREATE TABLE`, porque
@@ -370,7 +370,7 @@ exige tocar los dos gemelos a la vez**.
 **Dónde**: `services/admin/processes/processDefinitionVersion.js:303-340`. Cerrado el 2026-08-11
 (`597cd43`).
 
-El `SELECT` del clonado copiaba `template_artifact_id, sort_order` y **`item_mode` no**; la columna
+El `SELECT` del clonado copiaba `edicion_id, sort_order` y **`item_mode` no**; la columna
 tiene `NOT NULL DEFAULT 'single'`, así que el modo se perdía **en silencio**. Como la actualización
 guiada clona la configuración, **actualizar un proceso deshacía su modelo de emisión**.
 

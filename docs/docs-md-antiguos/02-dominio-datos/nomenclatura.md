@@ -17,7 +17,7 @@
 - persons: datos base de usuarios
 - users: usuarios/autenticacion (modelo en backend/models/users/)
 - processes: procesos de negocio
-- template_artifacts: artefactos publicados de plantillas
+- ediciones: artefactos publicados de plantillas
 - documents: documentos generados
 
 ## Abreviaturas

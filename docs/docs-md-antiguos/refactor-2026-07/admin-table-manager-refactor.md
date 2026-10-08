@@ -24,8 +24,8 @@
 - gestión especializada de `process_definition_versions`
 - gestión especializada de `process_target_rules`
 - gestión especializada de `process_definition_triggers`
-- gestión especializada de `process_definition_templates`
-- gestión especializada de `template_artifacts`
+- gestión especializada de `vinculos`
+- gestión especializada de `ediciones`
 - gestión especializada de asignaciones de personas
 
 El archivo supera las 10k líneas porque mezcla:

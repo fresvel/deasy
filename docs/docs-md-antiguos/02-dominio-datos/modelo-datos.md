@@ -56,17 +56,17 @@
 - term_types(id, code, name, description, is_active, created_at, updated_at)
 - terms(id, name, term_type_id, start_date, end_date, is_active)
 - tasks(id, process_definition_id, term_id, launch_mode, created_by_user_id, parent_task_id, responsible_position_id, start_date, end_date, status, created_at)
-- task_items(id, task_id, process_definition_template_id, template_artifact_id, template_usage_role, sort_order, responsible_position_id, assigned_person_id, status, created_at)
+- task_items(id, task_id, vinculo_id, edicion_id, template_usage_role, sort_order, responsible_position_id, assigned_person_id, status, created_at)
 - task_assignments(id, task_id, position_id, assigned_person_id, status, assigned_at, unassigned_at)
 - template_seeds(id, seed_code, display_name, description, seed_type, source_path, preview_path, is_active, created_at)
-- template_artifacts(id, template_seed_id, owner_person_id, template_code, display_name, description, owner_ref, source_version, storage_version, artifact_origin, artifact_stage, bucket, base_object_prefix, available_formats, schema_object_key, meta_object_key, content_hash, is_active, created_at)
-- process_definition_templates(id, process_definition_id, template_artifact_id, usage_role, creates_task, is_required, sort_order, created_at)
+- ediciones(id, template_seed_id, owner_person_id, template_code, display_name, description, owner_ref, source_version, storage_version, artifact_origin, artifact_stage, bucket, base_object_prefix, available_formats, schema_object_key, meta_object_key, content_hash, is_active, created_at)
+- vinculos(id, process_definition_id, edicion_id, usage_role, creates_task, is_required, sort_order, created_at)
 - documents(id, task_item_id, status, comments_thread_ref, created_at, updated_at)
 - document_versions(id, document_id, version, payload_mongo_id, payload_hash, latex_path, pdf_path, signed_pdf_path, status, created_at)
 - signature_types(id, code, name, description, is_active, created_at)
 - signature_statuses(id, code, name, description, is_active, created_at)
 - signature_request_statuses(id, code, name, description, is_active, created_at)
-- signature_flow_templates(id, process_definition_template_id, name, description, is_active, created_at)
+- signature_flow_templates(id, vinculo_id, name, description, is_active, created_at)
 - signature_flow_steps(id, template_id, step_order, step_type_id, required_cargo_id, selection_mode, required_signers_min, required_signers_max, is_required, created_at)
 - signature_flow_instances(id, template_id, document_version_id, status_id, created_at)
 - signature_requests(id, instance_id, step_id, assigned_person_id, status_id, is_manual, requested_at, notified_at, responded_at)
@@ -77,7 +77,7 @@
 1) Crear `processes` para la identidad estable del proceso.
 2) Crear primero una fila en `process_definition_series` en el catalogo global de series. Cada serie debe basarse en un `unit_type` o un `cargo` (las series `legacy` solo se usan para migracion). Luego crear una fila en `process_definition_versions` por cada definicion vigente o futura del proceso. La definicion referencia `series_id` y conserva `variation_key` como snapshot derivado del codigo de la serie. Su `definition_version` usa formato semantico `major.minor.patch` (ej: `0.1.0`). Las nuevas definiciones se crean en `draft` y, por restriccion de dominio, solo puede existir una definicion `active` por cada `process_id + variation_key`.
    - No se permite pasarla a `active` hasta que tenga al menos un `process_target_rule` activo y al menos un `process_definition_trigger` activo.
-   - Si `has_document = 1`, ademas debe tener al menos un registro vinculado en `process_definition_templates`.
+   - Si `has_document = 1`, ademas debe tener al menos un registro vinculado en `vinculos`.
 3) Definir el alcance con una o varias filas en `process_target_rules`:
    - `unit_exact`: una unidad puntual.
    - `unit_subtree`: una unidad y toda su jerarquia.
@@ -85,11 +85,11 @@
    - `all_units`: cualquier unidad activa.
    - Si solo cambia el alcance, reutilizar la misma definicion y ajustar/agregar reglas.
    - Si cambia la logica funcional (templates, modo, contenido), crear una nueva version o una nueva `variation_key`.
-4) Publicar templates empaquetados en MinIO y registrarlos en `template_artifacts`.
-5) Vincular los templates requeridos a la definicion mediante `process_definition_templates`.
+4) Publicar templates empaquetados en MinIO y registrarlos en `ediciones`.
+5) Vincular los templates requeridos a la definicion mediante `vinculos`.
    - Estas filas pertenecen a una definicion concreta; no deben "moverse" cuando otra version se activa.
    - Se editan mientras la definicion esta en `draft`.
-   - Al crear una nueva version desde `Versionar`, el backend clona automaticamente las `process_definition_templates` y las `process_target_rules` de la definicion origen para conservar trazabilidad sin recapturar todo.
+   - Al crear una nueva version desde `Versionar`, el backend clona automaticamente las `vinculos` y las `process_target_rules` de la definicion origen para conservar trazabilidad sin recapturar todo.
 6) Registrar la politica de disparo en `process_definition_triggers`.
    - `automatic_by_term_type`: una fila por cada `term_type_id` que dispare automaticamente.
    - `manual_only`: solo se instancia manualmente sobre un `term` existente.
@@ -103,7 +103,7 @@
    - crea `task_items` por cada `process_definition_template` con `creates_task = 1`,
    - y asigna destinatarios generales con `process_target_rules`.
    - Los `documents` formales cuelgan de `task_items`, no de `tasks`.
-   - Los `signature_flow_templates` cuelgan de `process_definition_templates`, para que cada entregable pueda tener su propio flujo.
+   - Los `signature_flow_templates` cuelgan de `vinculos`, para que cada entregable pueda tener su propio flujo.
 9) Las tareas manuales tambien validan disparador:
    - `manual_only` para periodos normales,
    - `manual_custom_term` para periodos de tipo `Custom`.

@@ -1395,7 +1395,7 @@ repite** en el `FROM` y su condición de unión pasa al `WHERE`. Dos detalles qu
 
 - **Las columnas del `SET` van SIN cualificar.** `SET fr.status = …` es error de sintaxis en PG,
   aunque `fr.` sí valga en la parte derecha (`COALESCE(sr.responded_at, NOW())`).
-- **El `FROM` se evalúa contra los valores VIEJOS**, así que buscar por `ta.id = pdt.template_artifact_id`
+- **El `FROM` se evalúa contra los valores VIEJOS**, así que buscar por `ta.id = pdt.edicion_id`
   y reasignar esa misma columna es correcto y conserva la semántica de MySQL.
 
 **Por qué no lo cazó nada hasta ahora, que es la lección de verdad:**
@@ -1476,7 +1476,7 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 - **`backend/config/sqlTables.js`** (1 009 L, 52,9 % duplicado) y su gemelo del frontend: son
   **datos**, no código. La duplicación es la forma correcta.
 - **`AdminTableManager.vue`** (3 964 ncloc): motor de metadatos legítimo. El peso son ~2 injertos
-  concentrados (`process_definition_versions`, `template_artifacts`), a extraer como paneles propios.
+  concentrados (`process_definition_versions`, `ediciones`), a extraer como paneles propios.
   Sin polimorfismo.
 - **`useDeliverableView.js`**: proyección read-only, medido. Convertirlo en dueño de su estado
   **invertiría** el acoplamiento.

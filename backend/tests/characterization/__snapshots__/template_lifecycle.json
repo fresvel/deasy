@@ -38,8 +38,8 @@
       "__notice": "Plantilla v1.1.0 publicada y configuración v1.1.0 activada.",
       "config_definition_id": "<normalized>",
       "config_status": "active",
+      "edicion_id": "<normalized>",
       "retired_previous_config": 1,
-      "template_artifact_id": "<normalized>",
       "template_lifecycle_state": "published"
     }
   },

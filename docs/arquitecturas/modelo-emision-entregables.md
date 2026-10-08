@@ -6,7 +6,7 @@
 ## Contexto
 
 `procesos → tareas → entregables`. Cada **plantilla ligada** a una configuración de
-proceso declara su **modo de emisión** en `process_definition_templates.item_mode`
+proceso declara su **modo de emisión** en `vinculos.item_mode`
 (`ENUM('single','replicated','routed')`). El modo define **cuándo/cómo** se instancian
 sus entregables y **de dónde sale su flujo** (entrega + firma).
 
@@ -73,7 +73,7 @@ el modelo quedó como quedó:
 
 ## Modelo de datos (referencia)
 
-- `process_definition_templates.item_mode` — el modo por plantilla ligada.
+- `vinculos.item_mode` — el modo por plantilla ligada.
 - Réplicas/instancias routed = `task_items` con `origin_kind='user_added'`.
 - **EL «Para:» NO EXISTE** desde el **2026-08-23**. `task_items.target_person_id` y
   `target_position_id` se retiraron: el destinatario **se deriva del flujo de firma** —quien firma al
@@ -99,7 +99,7 @@ el modelo quedó como quedó:
 | Modo | Veredicto | Evidencia |
 |---|---|---|
 | **single** | ✅ **Aplica** | Siembra filtrada a `single` → 1 instancia al lanzar (`TaskGenerationService.js:1172,1236`); flujo predefinido heredado del template ligado (`746‑838`, `290‑304`). Autoría web `task_assignee`/`cargo_in_scope`. |
-| **replicated** | ✅ **Aplica** | 0 siembra al lanzar; el usuario crea N réplicas `user_added` con etiqueta (`user_controler.js:3806‑3842`) que **heredan** el flujo del template vía `process_definition_template_id` (`TaskGenerationService.js:761‑776`; firma `DocumentSignatureWorkflowService.js:660‑662`). |
+| **replicated** | ✅ **Aplica** | 0 siembra al lanzar; el usuario crea N réplicas `user_added` con etiqueta (`user_controler.js:3806‑3842`) que **heredan** el flujo del template vía `vinculo_id` (`TaskGenerationService.js:761‑776`; firma `DocumentSignatureWorkflowService.js:660‑662`). |
 | **routed** | ⚠️ **Diverge** | El modelo exige flujo **definido al instanciar**; el código solo captura **etiqueta + 1 destinatario** (`user_controler.js:3685,3790‑3804`; `HomeView.vue:4829‑4842`, sin pasos) y **hereda** el flujo del template (misma vía que single). **No existe editor de flujo runtime.** |
 | **Proceso por defecto** | ⚠️ **Divergía — CERRADO en P1.4** | Entonces funcionaba por un **atajo**: link `item_mode='routed'` + un paso `document_owner` **sembrado**; el destinatario quedaba como owner. Hoy el bootstrap **no siembra flujo alguno** para el proceso por defecto: define entrega y firma al enviar (`SystemBootstrapService.js:535‑537`, donde queda el comentario del atajo retirado). |
 | **Autoría de flujo** | ✅ **Aplica** | Solo `task_assignee`/`cargo_in_scope` (+`specific_person` en ad_hoc); **sin** `document_owner`/`position`/`manual_pick` (`SqlAdminService.js:261`; modal `307‑311/468‑471`). El editor **ignora `item_mode`** (el modo vive en el LINK, no en la plantilla). |
@@ -126,7 +126,7 @@ Como es runtime, el usuario elige **personas concretas** → cada paso = resolut
 
 ### Decisión de esquema (a resolver primero)
 `fill_requests.fill_flow_step_id` y `signature_requests.step_id` son **FK NOT NULL** a las
-tablas de pasos, y `fill_flow_templates.process_definition_template_id` /
+tablas de pasos, y `fill_flow_templates.vinculo_id` /
 `signature_flow_instances.template_id` son **NOT NULL**. ⇒ un flujo por‑instancia necesita
 filas de **template + steps propias**. **Recomendado:** añadir columna nullable
 **`task_item_id`** a `fill_flow_templates` y `signature_flow_templates`:
@@ -229,12 +229,12 @@ paralelo con quórum.
 ## Plan P3 — Consolidar administración de plantillas en el proceso + `item_mode` al crear
 
 **Motivación (verificada archivo:línea):** `item_mode` vive en el LINK
-`process_definition_templates`, no en la plantilla. Hoy el link se inserta **sin `item_mode`**
+`vinculos`, no en la plantilla. Hoy el link se inserta **sin `item_mode`**
 → queda en `DEFAULT 'single'` (`SqlAdminService.js` INSERT del link). El selector de modo solo
 existe en `AdminDefinitionArtifactsPanel.vue` (panel del proceso), **no** en la creación de la
 plantilla (`AdminDraftArtifactModal.vue`, que además exige elegir proceso con
 `requireProcessLink=true`). El esquema ya asume dueño único por plantilla
-(`deliverables.owner_process_id`), así que el "proceso destino" del modal es redundante.
+(`catalogo_documental.owner_process_id`), así que el "proceso destino" del modal es redundante.
 
 **Objetivo:** (A) fijar el modo de emisión **al crear** la plantilla; (B) entrada única desde
 el proceso (proceso implícito por contexto), reduciendo campos del modal.
@@ -245,7 +245,7 @@ alcance (ciclo de runtime); la pestaña global "Plantillas" pasa a solo lectura/
 ### Fases
 1. **Backend — aceptar `item_mode` al crear/vincular** (`SqlAdminService.js`,
    `sql_admin_router.js`): validar ENUM `single|replicated|routed` (default `single`),
-   incluirlo en el INSERT de `process_definition_templates`; **relajar** el fail‑fast de
+   incluirlo en el INSERT de `vinculos`; **relajar** el fail‑fast de
    "≥1 paso de entrega" cuando el modo es `routed` (routed no autora flujo). Aditivo, sin ruptura.
 2. **Frontend — selector de modo en el modal de creación** (`AdminDraftArtifactModal.vue`,
    `useAdminDraftArtifactFlow.js`): `<select>` `item_mode` en *General* (reusar labels/aviso de
@@ -276,7 +276,7 @@ alcance (ciclo de runtime); la pestaña global "Plantillas" pasa a solo lectura/
   llega por contexto (`hasPreselectedProcess`) — el vínculo se resuelve por `preselectProcessDefinitionId`;
   (b) el badge "Tipo de plantilla" solo aparece en edición/consulta (al crear desde admin siempre es
   oficial). Lint OK.
-- **F4 — HECHO**. La tabla global "Plantillas" (`template_artifacts`) pasa a **consulta/versionado**:
+- **F4 — HECHO**. La tabla global "Plantillas" (`ediciones`) pasa a **consulta/versionado**:
   se oculta el botón "Crear" (`canCreateCurrentTable && !isTemplateArtifactsTable`) y se añade un
   banner informativo ("las plantillas se crean desde un proceso"). En el modal, "Configuración
   destino" tampoco se muestra al **editar** (el vínculo se conserva; se gestiona desde el proceso).

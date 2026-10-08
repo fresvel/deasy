@@ -232,16 +232,16 @@ import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 
-const ARCHIVE_DOWNLOADABLE_TABLES = new Set(["template_artifacts", "generadores_de_documento"]);
+const ARCHIVE_DOWNLOADABLE_TABLES = new Set(["ediciones", "generadores_de_documento"]);
 const MAX_RELATED_FIELDS = 6;
 const RELATED_FIELD_PRIORITY = {
   process_definition_versions: ["series_id", "definition_version", "name", "status", "effective_from"],
-  process_definition_templates: ["template_artifact_id", "sort_order"],
+  vinculos: ["edicion_id", "sort_order"],
   process_target_rules: ["unit_scope_type", "unit_id", "unit_type_id", "cargo_id", "position_id", "is_active"],
   process_definition_period_types: ["term_type_id", "is_active"],
   process_runs: ["status", "term_id", "started_at", "completed_at"],
   tasks: ["title", "name", "status", "due_at", "created_at"],
-  task_items: ["process_definition_template_id", "status", "sort_order", "created_at"],
+  task_items: ["vinculo_id", "status", "sort_order", "created_at"],
   task_item_tenures: ["person_id", "position_id", "opened_by", "started_at", "ended_at"],
   documents: ["title", "name", "status", "current_version_id", "created_at"],
   document_versions: ["version_number", "status", "created_at"],
@@ -311,7 +311,7 @@ const syncBadge = computed(() => {
   return { label: SYNC_LABELS[status], tono: tonoSincronizacion(status) };
 });
 const canResyncWorkflows = computed(() =>
-  props.recordViewerTable?.table === "template_artifacts"
+  props.recordViewerTable?.table === "ediciones"
   && props.syncStatus?.status === "stale"
 );
 
@@ -320,7 +320,7 @@ const canDownloadArchive = computed(() =>
 );
 // Edición de código (LaTeX) solo cuando el visor fue abierto desde un flujo editable.
 const canEditSource = computed(() =>
-  props.editable && props.isAdmin && Boolean(props.recordViewerRow?.id) && props.recordViewerTable?.table === "template_artifacts"
+  props.editable && props.isAdmin && Boolean(props.recordViewerRow?.id) && props.recordViewerTable?.table === "ediciones"
 );
 const canAddProcessConfiguration = (section) =>
   props.editable && isProcessConfigurationSection(section) && props.canCreateProcessConfiguration;

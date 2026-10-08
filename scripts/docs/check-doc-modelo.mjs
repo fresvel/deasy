@@ -52,7 +52,7 @@ const actualizar = process.argv.includes('--update');
 // ⚠️ EL FICHERO SE NORMALIZA AL LEERLO, por dos motivos distintos y los dos medidos el 2026-10-04,
 // cuando las tablas se repartieron en un esquema de PostgreSQL por tema.
 //
-//   1. Se quita el esquema del nombre ('plantillas.template_artifacts' -> 'template_artifacts').
+//   1. Se quita el esquema del nombre ('plantillas.ediciones' -> 'ediciones').
 //      Sin esto, esta puerta no reconocia NI UNA tabla y declaraba muertos los 67 nombres que el
 //      sitio cita. Y, mas fino: la HUELLA de cada tabla se calcula sobre su definicion, asi que el
 //      prefijo habria movido las 93 huellas y la puerta habria pedido revisar 93 paginas por un

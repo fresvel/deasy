@@ -90,23 +90,23 @@ test("GET /admin/sql/generadores_de_documento/:id/preview -> contrato cuando no 
   matchSnapshot(SUITE, "seed_preview", { status: res.status, body: normalize(res.body, { maskIdKeys: true }) });
 });
 
-test("POST /admin/sql/template_artifacts/use-in-config sin datos -> contrato de error", async () => {
+test("POST /admin/sql/ediciones/use-in-config sin datos -> contrato de error", async () => {
   const token = await tokenFor("admin");
-  const res = await post("/admin/sql/template_artifacts/use-in-config", { token, body: {} });
+  const res = await post("/admin/sql/ediciones/use-in-config", { token, body: {} });
   matchSnapshot(SUITE, "use_in_config_sin_datos", { status: res.status, body: normalize(res.body) });
 });
 
 // --- El update guiado, de principio a fin ------------------------------------------------------
 
-test("POST /admin/sql/template_artifacts/guided-update -> crea borrador de plantilla Y de configuración", async () => {
+test("POST /admin/sql/ediciones/guided-update -> crea borrador de plantilla Y de configuración", async () => {
   const token = await tokenFor("admin");
-  const templates = await get("/admin/sql/process_definition_templates", { token });
+  const templates = await get("/admin/sql/vinculos", { token });
   const link = templates.body?.[0];
   assert.ok(link, "la fixture debe traer una plantilla vinculada");
 
-  const res = await post("/admin/sql/template_artifacts/guided-update", {
+  const res = await post("/admin/sql/ediciones/guided-update", {
     token,
-    body: { definition_id: link.process_definition_id, template_artifact_id: link.template_artifact_id },
+    body: { definition_id: link.process_definition_id, edicion_id: link.edicion_id },
   });
   matchSnapshot(SUITE, "guided_update_start", { status: res.status, body: normalize(res.body, { maskIdKeys: true }) });
   assert.equal(res.status, 200, `guided-update debe responder 200: ${JSON.stringify(res.body)}`);
@@ -138,7 +138,7 @@ test("POST draft vinculado al borrador de configuración -> segundo entregable e
   const token = await tokenFor("admin");
   assert.ok(guided.configDraftId, "depende del paso anterior");
 
-  const res = await post("/admin/sql/template_artifacts/draft", {
+  const res = await post("/admin/sql/ediciones/draft", {
     token,
     form: {
       display_name: COLADO.name,
@@ -157,13 +157,13 @@ test("POST draft vinculado al borrador de configuración -> segundo entregable e
   assert.ok(guided.coladoId, "debe devolverse el id del segundo entregable");
 });
 
-test("POST /admin/sql/template_artifacts/guided-update/finish -> publica la plantilla y activa la configuración", async () => {
+test("POST /admin/sql/ediciones/guided-update/finish -> publica la plantilla y activa la configuración", async () => {
   const token = await tokenFor("admin");
   assert.ok(guided.templateDraftId, "depende del paso anterior");
 
-  const res = await post("/admin/sql/template_artifacts/guided-update/finish", {
+  const res = await post("/admin/sql/ediciones/guided-update/finish", {
     token,
-    body: { template_artifact_id: guided.templateDraftId, config_definition_id: guided.configDraftId },
+    body: { edicion_id: guided.templateDraftId, config_definition_id: guided.configDraftId },
   });
   matchSnapshot(SUITE, "guided_update_finish", { status: res.status, body: normalize(res.body, { maskIdKeys: true }) });
   assert.equal(res.status, 200, `finish debe responder 200: ${JSON.stringify(res.body)}`);
@@ -183,7 +183,7 @@ test("defecto 1.12: la configuración se activa con el segundo entregable aún e
   const token = await tokenFor("admin");
   assert.ok(guided.coladoId, "depende del paso anterior");
 
-  const artifacts = await get("/admin/sql/template_artifacts", { token });
+  const artifacts = await get("/admin/sql/ediciones", { token });
   const colado = (artifacts.body || []).find((row) => Number(row.id) === Number(guided.coladoId));
   const definitions = await get("/admin/sql/process_definition_versions", { token });
   const config = (definitions.body || []).find((row) => Number(row.id) === Number(guided.configDraftId));

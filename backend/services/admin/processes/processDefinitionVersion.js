@@ -299,12 +299,12 @@ export default class ProcessDefinitionVersionService {
     // Comprueba el proceso pero no la variacion, y por eso parecia un duplicado blando del guardia
     // de pertenencia que se retiro. No lo es: lo que este clon copia no son solo los vinculos de
     // plantilla, son tambien `process_target_rules` y `process_definition_period_types`, que no
-    // tienen artefacto y que ninguna restriccion sobre `process_definition_templates` alcanza. Sin
+    // tienen artefacto y que ninguna restriccion sobre `vinculos` alcanza. Sin
     // esta linea, clonar desde la configuracion de OTRO proceso se traeria sus reglas de alcance y
     // sus tipos de periodo.
     //
     // Y OJO: este clon es lo que hizo imposible F1.1 tal como la escribia el plan. Copia el MISMO
-    // `template_artifact_id` a una definicion nueva de la MISMA linea, asi que un unico sobre esa
+    // `edicion_id` a una definicion nueva de la MISMA linea, asi que un unico sobre esa
     // columna sola lo rechazaba. La regla la impone hoy `trg_pdt_linea_unica`, que compara la LINEA
     // y por tanto deja pasar este clon — y sigue rechazando el que cruce de linea, que es algo que
     // este guardia no mira porque solo compara el proceso. Ver la nota de `postgres_schema.sql`.
@@ -320,8 +320,8 @@ export default class ProcessDefinitionVersionService {
     // `routed` y el de la configuración ACTIVA decía `single`. Al añadir una columna de datos a esta
     // tabla, añádela también aquí y al INSERT de abajo.
     const [templateRows] = await connection.query(
-      `SELECT template_artifact_id, sort_order, item_mode
-       FROM process_definition_templates
+      `SELECT edicion_id, sort_order, item_mode
+       FROM vinculos
        WHERE process_definition_id = ?
        ORDER BY sort_order ASC, id ASC`,
       [normalizedSourceId]
@@ -341,11 +341,11 @@ export default class ProcessDefinitionVersionService {
     };
 
     for (const row of templateRows) {
-      const targetArtifactId = remapArtifactId(row.template_artifact_id);
+      const targetArtifactId = remapArtifactId(row.edicion_id);
       await connection.query(
-        `INSERT INTO process_definition_templates (
+        `INSERT INTO vinculos (
           process_definition_id,
-          template_artifact_id,
+          edicion_id,
           sort_order,
           item_mode
         ) VALUES (?, ?, ?, ?)`,

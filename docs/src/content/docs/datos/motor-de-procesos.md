@@ -16,7 +16,7 @@ flowchart TD
     PDS["process_definition_series<br/>LA SERIE (el eje de variacion)"]
     PTR["process_target_rules<br/>LA REGLA: a que unidades y cargos alcanza"]
     PDPT["process_definition_period_types<br/>en que tipos de periodo corre"]
-    PDT["process_definition_templates<br/>que documentos produce (+ item_mode)"]
+    PDT["vinculos<br/>que documentos produce (+ item_mode)"]
     RUNS["process_runs<br/>EL LANZAMIENTO en un periodo concreto"]
     TSK["tasks<br/>una por (definicion x periodo x unidad)"]
     ITM["task_items<br/>LOS ENTREGABLES concretos (que se debe)"]
@@ -69,9 +69,9 @@ Es poco habitual y merece la pena entender el porque: si la regla “no se puede
 
 Reparte el alcance con tres piezas: `unit_scope_type` (`unit_exact`, `unit_subtree`, `unit_type`, `all_units`), el `cargo_id` o `position_id` dentro de la unidad, y una `recipient_policy` (`all_matches`, `unit_head`, `exact_position`). Además `priority` y vigencia.
 
-### `process_definition_templates` — el paquete de entregables.
+### `vinculos` — el paquete de entregables.
 
-Vincula configuración con plantilla: `process_definition_id` + `template_artifact_id`, mas `sort_order` y, sobre todo, `item_mode`. Desde el 2026-10-04 es además la **única** fuente de «qué edición de plantilla se usa»: `task_items` guardaba una copia de `template_artifact_id` y se retiró.
+Vincula configuración con plantilla: `process_definition_id` + `edicion_id`, mas `sort_order` y, sobre todo, `item_mode`. Desde el 2026-10-04 es además la **única** fuente de «qué edición de plantilla se usa»: `task_items` guardaba una copia de `edicion_id` y se retiró.
 
 ### `process_runs` — la corrida.
 

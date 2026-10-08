@@ -83,7 +83,7 @@ export function useAdminDraftArtifactFlow({
   };
 
   const openDraftArtifactModal = async (row = null, { force = false, show = true, preselectDefinitionId = "", cloneFrom = null } = {}) => {
-    if (!force && (!props.table || props.table.table !== "template_artifacts")) {
+    if (!force && (!props.table || props.table.table !== "ediciones")) {
       return;
     }
     draftArtifactError.value = "";

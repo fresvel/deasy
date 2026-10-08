@@ -195,19 +195,19 @@ const main = async () => {
     definitionId,
     newCode: "tpl_informe_gestion_docente",
   });
-  console.log(`  ✔ entregable #${fork.deliverable_id}, artefacto #${fork.artifact_id} (${fork.base_object_prefix})`);
+  console.log(`  ✔ entregable #${fork.catalogo_documental_id}, artefacto #${fork.artifact_id} (${fork.base_object_prefix})`);
 
   // 6. Plantilla vinculada en modo SINGLE: 1 instancia al lanzar, con flujo predefinido.
-  const pdtId = await create("process_definition_templates", {
+  const pdtId = await create("vinculos", {
     process_definition_id: definitionId,
-    template_artifact_id: fork.artifact_id,
+    edicion_id: fork.artifact_id,
     sort_order: 1,
     item_mode: "single",
   }, token);
 
   // 7. Flujo de ENTREGA: lo llena el responsable de la tarea (el docente).
   const fillTplId = await create("fill_flow_templates", {
-    process_definition_template_id: pdtId,
+    vinculo_id: pdtId,
     name: "Elaboración del informe",
     is_active: 1,
   }, token);
@@ -221,7 +221,7 @@ const main = async () => {
 
   // 8. Flujo de FIRMA: lo firma el Coordinador de la misma unidad.
   const signTplId = await create("signature_flow_templates", {
-    process_definition_template_id: pdtId,
+    vinculo_id: pdtId,
     name: "Firma del coordinador",
     is_active: 1,
   }, token);

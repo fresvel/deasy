@@ -259,7 +259,7 @@ autolimpiante** (crear → fijar la respuesta normalizada → borrar, para no al
 |---|---|---|
 | **Éxito caracterizado** (nuevos round-trips) | `persons` (hash de contraseña + token, con asserts de que NO devuelve la contraseña), `unit_positions` (validación cabeza/tipo) | ✅ golden + asserts |
 | **Solo contrato de error** | `unit_relations`, `process_definition_series`, `vacancies`, `cargos`, `unit_types`, `processes` | ⚠️ falta éxito (payloads simples, añadir en el cut) |
-| **Solo error + estado complejo** | `process_definition_versions`, `process_definition_templates`, `process_target_rules`, `process_definition_period_types`, `template_artifacts` | ⚠️ requieren contexto de **borrador de definición** (cascada); caracterizar con setup previo |
+| **Solo error + estado complejo** | `process_definition_versions`, `vinculos`, `process_target_rules`, `process_definition_period_types`, `ediciones` | ⚠️ requieren contexto de **borrador de definición** (cascada); caracterizar con setup previo |
 | **Runtime, CRUD-admin-only** | `tasks`, `task_items`, `documents`, `document_versions`, `fill_/signature_flow_*`, `*_requests`, `document_signatures` | ⚠️ los flujos NO los ejercitan (usan SQL directo); su graft admin es funcionalidad de borde |
 
 **Estrategia recomendada para el cut #7: TABLA POR TABLA, no todo de golpe.** Para cada tabla grafted: (1) añadir su round-trip
@@ -407,8 +407,8 @@ ruta exacta. La lección registrada tras el cut #4 ("`node --check` no valida re
 que ni lo importan ni lo declaran. Verificado que caza los cuatro.
 
 **3. `saveTemplateArtifactDraft` compensaba de menos: la creación fallida dejaba el `deliverable` huérfano.** La función
-no corre en transacción; el `catch` compensa a mano y borraba la fila de `template_artifacts` y el prefijo de MinIO, pero
-**no** la fila de `deliverables` recién insertada ni el vínculo a la configuración. Reproducido contra dev: un POST con
+no corre en transacción; el `catch` compensa a mano y borraba la fila de `ediciones` y el prefijo de MinIO, pero
+**no** la fila de `catalogo_documental` recién insertada ni el vínculo a la configuración. Reproducido contra dev: un POST con
 `process_definition_id` inexistente falla con "El proceso destino seleccionado no existe." (400) **después** del INSERT, y
 la fila sobrevive con `owner_process_id` NULL. El daño real no es la fila suelta: el alta busca el deliverable por `code`
 (`draft_<slug(display_name)>`), así que el siguiente intento con el mismo nombre **reusa la huérfana** y hereda sus NULL —
@@ -430,9 +430,9 @@ tenía ningún golden. **`char 148 → 161`**, con tres piezas nuevas:
    una opción `form` que envía `FormData`; el camino JSON queda intacto. La trampa: **no fijar el `Content-Type` a mano** —
    sin el `boundary` que genera `fetch`, multer rechaza la petición.
 2. **`lib/db.mjs`, SQL directo SOLO para teardown.** Excepción medida al harness HTTP-only, porque la limpieza **no se
-   puede hacer por HTTP**: `deliverables` no está en `config/sqlTables.js` ni tiene método de servicio que la borre (no
-   existe ninguna ruta que elimine esa fila); `DELETE process_definition_templates` responde 400 mientras la configuración
-   destino no esté en `draft` (la de la fixture está `active`); y sin borrar el vínculo, `DELETE template_artifacts`
+   puede hacer por HTTP**: `catalogo_documental` no está en `config/sqlTables.js` ni tiene método de servicio que la borre (no
+   existe ninguna ruta que elimine esa fila); `DELETE vinculos` responde 400 mientras la configuración
+   destino no esté en `draft` (la de la fixture está `active`); y sin borrar el vínculo, `DELETE ediciones`
    responde 409 por FK. Se usa para **limpiar, nunca para asertar**.
 3. **`flows/zzz_artifact_draft.test.mjs`** — 13 casos: contratos de error de la validación, que `routed` **no** exige flujo
    de entrega, los caminos felices de crear (POST) y editar (PUT), y el defecto de compensación de §3.1.b.
@@ -442,7 +442,7 @@ los `zz_` ("artifact" < "task" < "template") y habría movido secuencias y conte
 `zz_template_lifecycle`. Con `zzz_` corre el último y no puede perturbar ningún golden previo.
 
 **Solo se enmascara `id`** — y esto corrige el supuesto de partida. Medido: `storage_version` sale de la **base**
-(`getNextStorageVersionForTemplateCode` une `template_artifacts`→`deliverables` por `code`), **no de MinIO**, así que con
+(`getNextStorageVersionForTemplateCode` une `ediciones`→`catalogo_documental` por `code`), **no de MinIO**, así que con
 el round-trip autolimpiante vuelve a `1.0.0` en cada corrida; y `content_hash` es **determinista** (idéntico entre corridas
 con la base reseteada y MinIO en distinto estado). Fijarlos literalmente convierte el golden en una **huella byte a byte**
 del `meta.yaml`, el `schema.json`, el contrato de la semilla y el fichero subido — mucho más fuerte que enmascararlos.
@@ -505,7 +505,7 @@ fork. **Insuficiente sin un tercer entregable**: `signatureService`/`useSignatur
 
 - `sqlTables.js` (1009 L) y `frontend/.../sqlTables.js` — **datos**, no código.
 - `AdminTableManager.vue` (4001 ncloc) — motor de metadatos legítimo; el peso son ~2 injertos concentrados
-  (`process_definition_versions`, `template_artifacts`), a extraer como paneles propios, sin polimorfismo.
+  (`process_definition_versions`, `ediciones`), a extraer como paneles propios, sin polimorfismo.
 - `UnitGraphView`/`ProcessGraphView` — 17 % de similitud; dominio irreducible. Sólo extraer fontanería
   (`useGraphExport`/`useGraphLayout`) y **arreglar el selector global** de `ProcessGraphView.vue:1098`
   (apunta a `.unit-graph-canvas` ajeno — footgun latente que las subrutas pueden activar).

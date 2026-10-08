@@ -15,7 +15,7 @@ const GRUPOS = [
    ["processes", "process_definition_series", "process_definition_versions", "process_target_rules",
     "process_definition_period_types", "term_types", "terms"]],
   ["Que se produce: entregables y plantillas",
-   ["deliverables", "template_artifacts", "generadores_de_documento", "process_definition_templates"]],
+   ["catalogo_documental", "ediciones", "generadores_de_documento", "vinculos"]],
   ["El disparo y el trabajo real",
    ["process_runs", "tasks", "task_items", "task_item_tenures"]],
   ["El documento producido",

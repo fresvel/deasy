@@ -210,7 +210,7 @@ Table "documentos_legales" {
     (clase, version) [type: btree, unique, name: "uq_documento_legal"]
   }
 
-  Note: '''Los textos legales que una persona acepta, VERSION A VERSION. Sigue el patron de `template_artifacts`: version, estado de ciclo de vida y huella del contenido. El BORRADOR vive en la columna `texto` de esta tabla y el PUBLICADO en el archivo inmutable, porque una errata publicada en un almacen con bloqueo de objetos quedaria diez años sin poder quitarse. Publicar es lo que mueve el texto de un sitio al otro, y es irreversible. `retired` NO es borrar: hay gente cuya prueba de consentimiento apunta a esa version.'''
+  Note: '''Los textos legales que una persona acepta, VERSION A VERSION. Sigue el patron de `ediciones`: version, estado de ciclo de vida y huella del contenido. El BORRADOR vive en la columna `texto` de esta tabla y el PUBLICADO en el archivo inmutable, porque una errata publicada en un almacen con bloqueo de objetos quedaria diez años sin poder quitarse. Publicar es lo que mueve el texto de un sitio al otro, y es irreversible. `retired` NO es borrar: hay gente cuya prueba de consentimiento apunta a esa version.'''
 }
 
 Table "dossier_items" {
@@ -564,6 +564,7 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> aplications   [empleo]
 //   paises -> autoidentificaciones_etnicas   [organizacion]
+//   persons -> catalogo_documental   [plantillas]
 //   paises -> categorias_visa   [organizacion]
 //   persons -> chat_conversations   [chat]
 //   persons -> chat_messages   [chat]
@@ -571,7 +572,6 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 //   persons -> chat_conversation_participants   [chat]
 //   persons -> chat_message_reads   [chat]
 //   persons -> contracts   [empleo]
-//   persons -> deliverables   [plantillas]
 //   cantones -> direcciones   [organizacion]
 //   paises -> direcciones   [organizacion]
 //   provincias -> direcciones   [organizacion]

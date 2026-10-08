@@ -27,8 +27,8 @@ Estas tablas definen el comportamiento de los procesos y deben permanecer en la 
 - `process_definition_triggers`
 - `process_target_rules`
 - `template_seeds`
-- `template_artifacts`
-- `process_definition_templates`
+- `ediciones`
+- `vinculos`
 - `fill_flow_templates`
 - `fill_flow_steps`
 - `signature_flow_templates`

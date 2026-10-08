@@ -36,10 +36,10 @@ const buildService = ({ itemModes = ["single"], hasSteps = 1, fallaElConteo = fa
       events.push("consulta-modos");
       return [itemModes.map((item_mode) => ({ item_mode }))];
     }
-    if (texto.startsWith("SELECT deliverable_id")) {
-      return [[{ deliverable_id: 3 }]];
+    if (texto.startsWith("SELECT catalogo_documental_id")) {
+      return [[{ catalogo_documental_id: 3 }]];
     }
-    if (texto.startsWith("UPDATE template_artifacts SET is_active")) {
+    if (texto.startsWith("UPDATE ediciones SET is_active")) {
       events.push(`activa:${params[0]}`);
       return [{}];
     }

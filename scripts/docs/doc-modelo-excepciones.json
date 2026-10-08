@@ -226,6 +226,12 @@
         "complemento/expediente.md"
       ]
     },
+    "documentos_tipo": {
+      "motivo": "FRENTE 24 · nombre PROPUESTO Y DESCARTADO el 2026-10-08. La pagina explica por que no se eligio: `tipo` ya significa la clase de un documento de identidad. Nunca fue una tabla.",
+      "paginas": [
+        "datos/index.md"
+      ]
+    },
     "documents": {
       "motivo": "MEMORIA · cascara 1:1 sobre task_items, sin una sola columna propia.",
       "paginas": [
@@ -515,7 +521,7 @@
       ]
     },
     "owner_process_id": {
-      "motivo": "FRENTE 23 (F1.2, 2026-10-04) · columna RETIRADA de `deliverables`. Las tres paginas la nombran para contar que murio y por que: ninguna de las 33 consultas que leen la tabla la seleccionaba, y su unico lector era el guardia `assertDeliverableBelongsToConfigLine`, que comparaba la copia con el vinculo. A que linea sirve un entregable se deriva hoy de `process_definition_templates`.",
+      "motivo": "FRENTE 23 (F1.2, 2026-10-04) · columna RETIRADA de `catalogo_documental`. Las tres paginas la nombran para contar que murio y por que: ninguna de las 33 consultas que leen la tabla la seleccionaba, y su unico lector era el guardia `assertDeliverableBelongsToConfigLine`, que comparaba la copia con el vinculo. A que linea sirve un entregable se deriva hoy de `vinculos`.",
       "paginas": [
         "datos/modos-y-plantillas.md",
         "modelo/entregable-y-ediciones.md"
@@ -581,7 +587,13 @@
       ]
     },
     "process_definition_template": {
-      "motivo": "PROSA · singular de `process_definition_templates`.",
+      "motivo": "PROSA · singular de `vinculos`.",
+      "paginas": [
+        "datos/index.md"
+      ]
+    },
+    "process_definition_templates": {
+      "motivo": "FRENTE 24 · nombre RETIRADO el 2026-10-08: hoy es `vinculos`. Mismo motivo que `template_artifacts`.",
       "paginas": [
         "datos/index.md"
       ]
@@ -686,7 +698,7 @@
       ]
     },
     "schema_object_key": {
-      "motivo": "FRENTE 23 (2026-10-04) · columna de `template_artifacts` retirada en F4.2. Era `base_object_prefix` + `schema.json`, o sea un valor DERIVABLE, y sus dos productores la escribian igual. Hoy la clave se deriva al leer (`schemaObjectKeyForPrefix`). La pagina la nombra dentro del aviso que cuenta la retirada de `template_artifact_fields`, porque se fueron juntas.",
+      "motivo": "FRENTE 23 (2026-10-04) · columna de `ediciones` retirada en F4.2. Era `base_object_prefix` + `schema.json`, o sea un valor DERIVABLE, y sus dos productores la escribian igual. Hoy la clave se deriva al leer (`schemaObjectKeyForPrefix`). La pagina la nombra dentro del aviso que cuenta la retirada de `template_artifact_fields`, porque se fueron juntas.",
       "paginas": [
         "modelo/entregable-y-ediciones.md"
       ]
@@ -776,7 +788,7 @@
       ]
     },
     "template_artifact": {
-      "motivo": "PROSA · singular de `template_artifacts`.",
+      "motivo": "PROSA · singular de `ediciones`.",
       "paginas": [
         "datos/index.md"
       ]
@@ -786,6 +798,12 @@
       "paginas": [
         "modelo/entregable-y-ediciones.md",
         "testing.md"
+      ]
+    },
+    "template_artifacts": {
+      "motivo": "FRENTE 24 · nombre RETIRADO el 2026-10-08: hoy es `ediciones`. La pagina lo cita en la columna «Se llamaba» del mapa de eslabones, porque toda la prosa anterior a esa fecha usa el nombre viejo y sin esa columna no se puede leer.",
+      "paginas": [
+        "datos/index.md"
       ]
     },
     "template_code": {

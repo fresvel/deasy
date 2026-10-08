@@ -57,8 +57,8 @@ El valor `default` es interno y no se ofrece para creacion manual. La serie clas
 - `terms`: Periodos
 ### Plantillas
 - `template_seeds`: Seeds de plantilla
-- `template_artifacts`: Paquetes de plantilla
-- `process_definition_templates`: Plantillas de procesos definidos
+- `ediciones`: Paquetes de plantilla
+- `vinculos`: Plantillas de procesos definidos
 ### Usuarios
 - `persons`: Usuarios
 ### Seguridad

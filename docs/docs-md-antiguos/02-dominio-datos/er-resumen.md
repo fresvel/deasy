@@ -17,8 +17,8 @@ units 1─∞ unit_relations (child_id)
 processes 1─∞ processes (parent_id)
 processes 1─∞ process_definition_versions
 process_definition_versions 1─∞ process_target_rules
-process_definition_versions 1─∞ process_definition_templates
-template_artifacts 1─∞ process_definition_templates
+process_definition_versions 1─∞ vinculos
+ediciones 1─∞ vinculos
 term_types 1─∞ terms
 terms 1─∞ tasks
 process_definition_versions 1─∞ tasks
@@ -39,7 +39,7 @@ relation_unit_types ∞─∞ role_assignments (via role_assignment_relation_typ
 
 task_items 1─∞ documents
 documents 1─∞ document_versions
-process_definition_templates 1─∞ signature_flow_templates
+vinculos 1─∞ signature_flow_templates
 signature_flow_templates 1─∞ signature_flow_steps
 document_versions 1─∞ signature_flow_instances
 signature_flow_instances 1─∞ signature_requests

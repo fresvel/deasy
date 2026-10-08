@@ -100,7 +100,7 @@ const canDeleteProcessConfigurationRow = (row) =>
   && String(row?.status || "").trim().toLowerCase() === "draft";
 ```
 
-El backend tiene el guard escrito (`SqlAdminService.js:1185`, `ensureDraftDefinitionContext`) y lo aplica a **cuatro tablas hijas** (`process_definition_templates`, `process_target_rules`, `process_definition_period_types`, `signature_flow_templates`). **No lo aplica a `process_definition_versions`** — la configuración en sí. Ésa cae al `DELETE FROM ${tableName}` genérico de `SqlAdminService.js:5907` sin comprobar `status`.
+El backend tiene el guard escrito (`SqlAdminService.js:1185`, `ensureDraftDefinitionContext`) y lo aplica a **cuatro tablas hijas** (`vinculos`, `process_target_rules`, `process_definition_period_types`, `signature_flow_templates`). **No lo aplica a `process_definition_versions`** — la configuración en sí. Ésa cae al `DELETE FROM ${tableName}` genérico de `SqlAdminService.js:5907` sin comprobar `status`.
 
 **Alcance honesto**: no es un bypass de autenticación — el endpoint exige RBAC de admin. Es una **regla de integridad que sólo vive en el cliente**: quien llegue por API puede borrar una configuración *activa*, con procesos en curso referenciándola, pese a que la UI lo presenta como imposible.
 

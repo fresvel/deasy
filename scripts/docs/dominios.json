@@ -217,7 +217,7 @@
       "term_types": 0,
       "process_definition_period_types": 4,
       "process_definition_series": 4,
-      "process_definition_templates": 4,
+      "vinculos": 4,
       "process_definition_versions": 4,
       "process_target_rules": 4,
       "processes": 4,
@@ -226,11 +226,11 @@
   },
   "plantillas": {
     "titulo": "Plantillas y entregables",
-    "descripcion": "El modelo 'libro y ediciones': `deliverables` porta la identidad y `template_artifacts` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.",
+    "descripcion": "El modelo 'libro y ediciones': `catalogo_documental` porta la identidad y `ediciones` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.",
     "tablas": {
-      "deliverables": 4,
+      "catalogo_documental": 4,
       "generadores_de_documento": 4,
-      "template_artifacts": 4,
+      "ediciones": 4,
       "document_fill_flows": 6,
       "fill_flow_steps": 6,
       "fill_flow_templates": 6,

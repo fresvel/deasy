@@ -78,12 +78,12 @@ export const ensureTaskItemsForTaskTargets = async (
       }
 
       await connection.query(
-        // `template_artifact_id` salia de aqui hasta el 2026-10-04 (frente 23, F2.1), copiada de
-        // `template.template_artifact_id` — o sea del vinculo que la columna de al lado ya apunta.
+        // `edicion_id` salia de aqui hasta el 2026-10-04 (frente 23, F2.1), copiada de
+        // `template.edicion_id` — o sea del vinculo que la columna de al lado ya apunta.
         // Se retiro la columna; quien necesite la version de plantilla la lee por el vinculo.
         `INSERT INTO task_items (
            task_id,
-           process_definition_template_id,
+           vinculo_id,
            origin_kind,
            sort_order,
            target_unit_id,

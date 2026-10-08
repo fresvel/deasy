@@ -57,7 +57,7 @@ quieta es la constatación de que esto es una reubicación pura.
 
 **1 · El harness tenía su propio pool.** `tests/characterization/lib/db.mjs` abre el suyo y no hereda
 nada del de la aplicación. Sin el `search_path` ahí: **169 de 338 pruebas en rojo** con
-`relation "template_artifacts" does not exist`. Ahora importa `ESQUEMAS` en vez de copiarlo — es el
+`relation "ediciones" does not exist`. Ahora importa `ESQUEMAS` en vez de copiarlo — es el
 tercer pool del repositorio y una copia más habría sido una copia más que quedarse atrás.
 
 **2 · El contrato del fichero tenía razón y yo no.** Metí 94 `ALTER TABLE ... SET SCHEMA` para
@@ -85,7 +85,7 @@ la entrada es igual.
 ### F6.5 · ⛔ descartada el 2026-10-04, y el motivo NO es el coste
 
 Se llegó a elegir la forma (carpeta = dominio, nombre = nivel, 16 ficheros) y hasta el estilo de nombre.
-Y el bloqueo que la tenía parada **se levantó solo**: al retirar `deliverables.owner_process_id` en el
+Y el bloqueo que la tenía parada **se levantó solo**: al retirar `catalogo_documental.owner_process_id` en el
 frente 23 desapareció la dependencia circular entre `plantillas` y `procesos`, y el reparto pasó a
 ser posible sin mover ninguna tabla de dominio. **Medido: 15 ficheros y el orden existe.**
 

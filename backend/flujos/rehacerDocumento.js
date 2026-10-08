@@ -78,7 +78,7 @@ const createResetDocumentVersion = async (connection, currentVersion) => {
   const id = await insertDocumentVersion(connection, {
     taskItemId: Number(currentVersion.task_item_id),
     version: nextVersion,
-    templateArtifactId: currentVersion.template_artifact_id ?? null,
+    templateArtifactId: currentVersion.edicion_id ?? null,
     payloadHash: currentVersion.payload_hash ?? null,
     payloadObjectPath: currentVersion.payload_object_path ?? null,
     workingFilePath: null,

@@ -52,7 +52,7 @@ export const getFillRequestContext = async (connection, fillRequestId) => {
        ffs.step_order,
        dv.working_file_path,
        ti.id AS task_item_id,
-       ti.process_definition_template_id,
+       ti.vinculo_id,
        ti.user_started_at
      FROM fill_requests fr
      INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
@@ -101,7 +101,7 @@ export const reactivatePreviousFillStepIfNeeded = async (connection, context) =>
 };
 
 export const requiresSignaturePdfForFinalFillApproval = async (connection, context) => {
-  if (!context?.process_definition_template_id || !context?.fill_flow_template_id) {
+  if (!context?.vinculo_id || !context?.fill_flow_template_id) {
     return false;
   }
 
@@ -120,9 +120,9 @@ export const requiresSignaturePdfForFinalFillApproval = async (connection, conte
     `SELECT COUNT(sfs.id) AS total
      FROM signature_flow_templates sft
      INNER JOIN signature_flow_steps sfs ON sfs.template_id = sft.id
-     WHERE sft.process_definition_template_id = ?
+     WHERE sft.vinculo_id = ?
        AND sft.is_active = 1`,
-    [context.process_definition_template_id]
+    [context.vinculo_id]
   );
   const totalSignatureSteps = Number(signatureRows?.[0]?.total || 0);
   if (!totalSignatureSteps) {

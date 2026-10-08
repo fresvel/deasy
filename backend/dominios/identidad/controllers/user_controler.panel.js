@@ -240,7 +240,7 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
         task_item_id: item.task_item_id,
         origin_unit_id: item.origin_unit_id,
         unit_label: item.origin_unit_label || null,
-        template_artifact_id: taskItem?.template_artifact_id || null,
+        edicion_id: taskItem?.edicion_id || null,
         template_artifact_name: taskItem?.template_artifact_name || null,
         item_mode: taskItem?.item_mode || null,
         recipient_name: taskItem?.recipient_name || null,
@@ -270,7 +270,7 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
         },
         actions: {
           can_upload_deliverable: canUploadDeliverable,
-          can_download_template: Boolean(taskItem?.template_artifact_id),
+          can_download_template: Boolean(taskItem?.edicion_id),
           can_manage_fill: canManageFill,
           can_review_signature_flow: Boolean(
             relatedSignatureSteps.length
@@ -335,7 +335,7 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
       });
       const fallbackActions = {
         can_upload_deliverable: canUploadDeliverable,
-        can_download_template: Boolean(item.template_artifact_id),
+        can_download_template: Boolean(item.edicion_id),
         can_manage_fill: canManageFill,
         can_review_signature_flow: Boolean(
           relatedSignatureSteps.length

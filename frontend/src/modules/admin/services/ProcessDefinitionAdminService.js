@@ -45,14 +45,14 @@ export class ProcessDefinitionAdminService {
   createArtifactForm() {
     // creates_task ya no se expone (toda plantilla materializa un entregable) y el orden lo asigna el backend.
     return {
-      template_artifact_id: "",
+      edicion_id: "",
       sort_order: ""
     };
   }
 
   createArtifactLabels() {
     return {
-      template_artifact_id: ""
+      edicion_id: ""
     };
   }
 
@@ -170,7 +170,7 @@ export class ProcessDefinitionAdminService {
   buildArtifactPayload(definitionId, form) {
     const payload = {
       process_definition_id: Number(definitionId),
-      template_artifact_id: Number(form.template_artifact_id)
+      edicion_id: Number(form.edicion_id)
     };
     // El orden se asigna automáticamente al crear; en edición se conserva el existente si llega en el form.
     const sortOrder = Number(form.sort_order);
@@ -243,7 +243,7 @@ export class ProcessDefinitionAdminService {
   }
 
   listArtifacts(processDefinitionId) {
-    return this.sqlService.list("process_definition_templates", {
+    return this.sqlService.list("vinculos", {
       filter_process_definition_id: processDefinitionId,
       orderBy: "sort_order",
       order: "asc",
@@ -253,18 +253,18 @@ export class ProcessDefinitionAdminService {
 
   saveArtifact(artifactId, payload) {
     if (artifactId) {
-      return this.sqlService.update("process_definition_templates", { id: Number(artifactId) }, payload);
+      return this.sqlService.update("vinculos", { id: Number(artifactId) }, payload);
     }
 
-    return this.sqlService.create("process_definition_templates", payload);
+    return this.sqlService.create("vinculos", payload);
   }
 
   deleteArtifact(artifactId) {
-    return this.sqlService.remove("process_definition_templates", { id: Number(artifactId) });
+    return this.sqlService.remove("vinculos", { id: Number(artifactId) });
   }
 
   hasArtifacts(processDefinitionId) {
-    return this.sqlService.list("process_definition_templates", {
+    return this.sqlService.list("vinculos", {
       filter_process_definition_id: processDefinitionId,
       limit: 1
     });

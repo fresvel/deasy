@@ -1539,7 +1539,7 @@
                   Paso {{ fillWorkflowState.request?.step_order || 1 }}
                 </AppTag>
                 <!-- Llevaba `variant="info"` FIJO y el texto en INGLES CRUDO (`pending`): el
-                     mismo defecto que `template_artifacts`, y en la pantalla mas usada. -->
+                     mismo defecto que `ediciones`, y en la pantalla mas usada. -->
                 <AppTag :variant="tonoLlenado(fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending')">
                   Estado: {{ etiquetaLlenado(fillWorkflowState.request?.status_name || fillWorkflowState.request?.status || 'pending') }}
                 </AppTag>
@@ -3646,7 +3646,7 @@ const loadAddableDeliverables = async () => {
     if (!task?.id) continue;
     try {
       const data = await processPanelService.listAddableDeliverables(userId, { taskId: task.id });
-      const list = Array.isArray(data?.deliverables) ? data.deliverables : [];
+      const list = Array.isArray(data?.catalogo_documental) ? data.catalogo_documental : [];
       if (list.length) next[task.id] = list;
     } catch {
       // silencioso: una tarea que falla no rompe el resto
@@ -3696,7 +3696,7 @@ const loadRoutedTemplates = async () => {
     if (next[defId]) continue;
     try {
       const data = await processPanelService.listAddableDeliverables(userId, { definitionId: defId });
-      const list = Array.isArray(data?.deliverables) ? data.deliverables : [];
+      const list = Array.isArray(data?.catalogo_documental) ? data.catalogo_documental : [];
       next[defId] = list.filter((t) => String(t.item_mode) === 'routed');
     } catch {
       next[defId] = [];

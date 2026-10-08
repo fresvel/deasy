@@ -129,7 +129,7 @@ export function useGeneralTask({
         description: form.description.trim() || null,
         unit_id: form.unitId || null,
         source_task_id: form.sourceTaskId || null,
-        process_definition_template_id: form.processDefinitionTemplateId || null,
+        vinculo_id: form.processDefinitionTemplateId || null,
         // Destinatario principal (owner / "Para:") derivado del flujo; el flujo completo va en `flow`.
         recipient_person_id: primaryRecipient,
         flow: usesRuntimeFlow

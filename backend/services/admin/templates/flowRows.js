@@ -124,7 +124,7 @@ export const replaceSignatureFlowSteps = async (connection, signatureFlowTemplat
 
 // --- Cabeceras colgadas de la PLANTILLA ---------------------------------------------------------
 //
-// El portador es `template_artifact_id`, con `process_definition_template_id` y `task_item_id` a
+// El portador es `edicion_id`, con `vinculo_id` y `task_item_id` a
 // NULL. Esa forma no es una convención: es LITERALMENTE la que exige el escalón 3 del resolvedor
 // (`generation/queries.js`), que además pide `is_active = 1`. Cambiarla aquí deja el flujo escrito y
 // no leído por nadie.
@@ -149,8 +149,8 @@ const findArtifactFlowHeaderId = async (connection, table, artifactId) => {
   const [rows] = await connection.query(
     `SELECT id
      FROM ${table}
-     WHERE template_artifact_id = ?
-       AND process_definition_template_id IS NULL
+     WHERE edicion_id = ?
+       AND vinculo_id IS NULL
        AND task_item_id IS NULL
      ORDER BY id DESC
      LIMIT 1`,
@@ -182,7 +182,7 @@ const replaceArtifactFlowSide = async (connection, side, { artifactId, name, ste
     await connection.query(`UPDATE ${table} SET name = ?, is_active = 1 WHERE id = ?`, [name, headerId]);
   } else {
     const [inserted] = await connection.query(
-      `INSERT INTO ${table} (template_artifact_id, name, is_active)
+      `INSERT INTO ${table} (edicion_id, name, is_active)
        VALUES (?, ?, 1)`,
       [artifactId, name]
     );
@@ -193,7 +193,7 @@ const replaceArtifactFlowSide = async (connection, side, { artifactId, name, ste
   return { flowTemplateId: headerId, steps: steps.length };
 };
 
-// Escribe en la base el flujo AUTORADO de una plantilla, colgando de `template_artifact_id`.
+// Escribe en la base el flujo AUTORADO de una plantilla, colgando de `edicion_id`.
 // `fillSteps`/`signatureSteps` llegan ya normalizados (misma forma que consume el sync), porque la
 // normalización necesita los catálogos de cargos y tipos de unidad y este módulo no toca servicios.
 export const replaceAuthoredFlowForArtifact = async (
@@ -234,8 +234,8 @@ export const replaceAuthoredFlowForArtifact = async (
 // UN SOLO PORTADOR, desde el sub-paso 8. El sub-paso 4 dejó aquí un `OR` sobre DOS portadores y lo
 // declaró andamiaje en su propio comentario:
 //
-//   · `template_artifact_id`            -> lo escribe el formulario web. El bueno.
-//   · `process_definition_template_id`  -> lo sembraba el sync desde el `meta.yaml`, uno por vínculo.
+//   · `edicion_id`            -> lo escribe el formulario web. El bueno.
+//   · `vinculo_id`  -> lo sembraba el sync desde el `meta.yaml`, uno por vínculo.
 //
 // El segundo término hacía falta HOY, y estaba medido: toda plantilla que no se hubiera vuelto a
 // guardar por el formulario tenía su flujo solo ahí, así que contar solo por artifact la habría
@@ -259,8 +259,8 @@ export const hasFillStepsForArtifact = async (connection, artifactId) => {
        JOIN fill_flow_templates f ON f.id = s.fill_flow_template_id
        WHERE f.is_active = 1
          AND f.task_item_id IS NULL
-         AND f.template_artifact_id = ?
-         AND f.process_definition_template_id IS NULL
+         AND f.edicion_id = ?
+         AND f.vinculo_id IS NULL
        LIMIT 1
      ) AS has_steps`,
     [id]
@@ -357,11 +357,11 @@ const parseSignersColumn = (value) => {
   }
 };
 
-// DÓNDE VIVE EL FLUJO DE ESTA PLANTILLA: en su propio portador, `template_artifact_id`, y en ningún
+// DÓNDE VIVE EL FLUJO DE ESTA PLANTILLA: en su propio portador, `edicion_id`, y en ningún
 // otro sitio. Es lo que el sub-paso 8 viene a dejar.
 //
 // AQUÍ HUBO TRES ESCALONES, y los dos últimos eran andamiaje declarado:
-//   2. `process_definition_template_id` — el que el sync sembraba en CADA vínculo desde el
+//   2. `vinculo_id` — el que el sync sembraba en CADA vínculo desde el
 //      `meta.yaml`. Hacía falta mientras el bootstrap y las versiones antiguas tuvieran su flujo
 //      solo ahí. Sin sync no hay quien lo escriba.
 //   3. La VERSIÓN PADRE (`parent_version_id`), subiendo por el linaje. Existió porque
@@ -383,8 +383,8 @@ const findFlowSourceHeaderId = async (connection, table, artifactId) => {
   const [rows] = await connection.query(
     `SELECT id, is_active
      FROM ${table}
-     WHERE template_artifact_id = ?
-       AND process_definition_template_id IS NULL
+     WHERE edicion_id = ?
+       AND vinculo_id IS NULL
        AND task_item_id IS NULL
      ORDER BY id DESC
      LIMIT 1`,
@@ -506,7 +506,7 @@ export const readAuthoredFlowForArtifact = async (connection, artifactId) => {
 // LA MISMA BÚSQUEDA QUE HACE EL EDITOR. No es reutilización por comodidad: la propiedad que se
 // quiere es «la hija nace con el flujo que el editor mostraba para el padre». Cualquier otro
 // criterio haría que versionar CAMBIE el flujo.
-//   · Del ARTIFACT (`template_artifact_id`): el flujo autorado. Es el único caso desde el sub-paso 8;
+//   · Del ARTIFACT (`edicion_id`): el flujo autorado. Es el único caso desde el sub-paso 8;
 //     antes había dos escalones más —el vínculo y la versión padre— y su motivo está en el
 //     comentario de `findFlowSourceHeaderId`.
 //   · Del TASK_ITEM (`task_item_id`): **NUNCA**, y no por precaución. Esa cabecera es el flujo que

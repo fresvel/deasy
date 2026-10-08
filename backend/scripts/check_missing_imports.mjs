@@ -117,7 +117,7 @@ for (const [file, source] of sources) {
     // por eso: `push(...faltante(x))` lleva un punto justo antes del nombre, el lookbehind lo tomaba
     // por `obj.faltante(` y lo descartaba. Asi sobrevivio `sanitizeLatexSource` sin importar en
     // `services/admin/templates/templateArtifact.js` — un ReferenceError vivo en
-    // `POST /template_artifacts/:id/source`, que es EXACTAMENTE la clase de fallo para la que existe
+    // `POST /ediciones/:id/source`, que es EXACTAMENTE la clase de fallo para la que existe
     // este script. La segunda alternativa reabre ese caso sin admitir `obj.x(`.
     const usage = new RegExp(`(?:(?<![.\\w$])|(?<=\\.\\.\\.))${name}\\s*\\(`);
     if (!usage.test(body)) continue;

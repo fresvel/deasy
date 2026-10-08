@@ -3,7 +3,7 @@
 // Qué protegen, y por qué no basta el characterization. El char observa el resultado con la base
 // llena y el sync corriendo al lado; aquí se mira el escritor solo, y sobre todo se fija LA FORMA DE
 // LA CABECERA. Esa forma no es una convención: el escalón 3 del resolvedor
-// (`generation/queries.js`) busca `template_artifact_id = X AND process_definition_template_id IS
+// (`generation/queries.js`) busca `edicion_id = X AND vinculo_id IS
 // NULL AND task_item_id IS NULL AND is_active = 1`. Si el escritor pusiera cualquiera de los otros
 // dos portadores, el flujo quedaría escrito y NO lo leería nadie — y eso no da error en ningún
 // sitio, solo un entregable que no arranca.
@@ -152,8 +152,8 @@ test("sin cabecera previa, se crea una colgada del artifact y con los otros port
 
   const [insertFill] = find(connection, /^INSERT INTO fill_flow_templates/);
   // Las columnas listadas SON el contrato con el resolvedor: si apareciera
-  // `process_definition_template_id` o `task_item_id`, el escalón 3 dejaría de encontrar la fila.
-  assert.match(insertFill.sql, /INSERT INTO fill_flow_templates \(template_artifact_id, name, is_active\)/);
+  // `vinculo_id` o `task_item_id`, el escalón 3 dejaría de encontrar la fila.
+  assert.match(insertFill.sql, /INSERT INTO fill_flow_templates \(edicion_id, name, is_active\)/);
   assert.deepEqual(insertFill.params, [ARTIFACT_ID, "Flujo de entrega - Informe general"]);
 
   const [insertSig] = find(connection, /^INSERT INTO signature_flow_templates/);
@@ -168,8 +168,8 @@ test("la busqueda de la cabecera exige los otros dos portadores a NULL", async (
   await replaceAuthoredFlowForArtifact(connection, { artifactId: ARTIFACT_ID, fillSteps: [fillStep()] });
 
   const [select] = find(connection, /^SELECT id FROM fill_flow_templates/);
-  assert.match(select.sql, /template_artifact_id = \?/);
-  assert.match(select.sql, /process_definition_template_id IS NULL/);
+  assert.match(select.sql, /edicion_id = \?/);
+  assert.match(select.sql, /vinculo_id IS NULL/);
   assert.match(select.sql, /task_item_id IS NULL/);
   assert.deepEqual(select.params, [ARTIFACT_ID]);
 });
@@ -260,9 +260,9 @@ test("el gate cuenta los pasos por UN portador: el de la plantilla", async () =>
   assert.equal(await hasFillStepsForArtifact(connection, ARTIFACT_ID), true);
 
   const [{ sql, params }] = connection.calls;
-  assert.match(sql, /f\.template_artifact_id = \?/);
-  assert.match(sql, /f\.process_definition_template_id IS NULL/);
-  assert.equal(/process_definition_templates/.test(sql), false, "el gate ya no mira los vinculos");
+  assert.match(sql, /f\.edicion_id = \?/);
+  assert.match(sql, /f\.vinculo_id IS NULL/);
+  assert.equal(/vinculos/.test(sql), false, "el gate ya no mira los vinculos");
   assert.deepEqual(params, [ARTIFACT_ID], "un solo portador, un solo parametro");
 });
 
@@ -335,12 +335,12 @@ const buildReadConnection = ({
       if (falla) throw new Error("la base no responde");
       const artifactId = params[0];
       if (/^SELECT id, is_active FROM fill_flow_templates/.test(flat)) {
-        return [cabecera(/WHERE template_artifact_id = \?/.test(flat) ? fillHeaders : fillLinkHeaders, artifactId)];
+        return [cabecera(/WHERE edicion_id = \?/.test(flat) ? fillHeaders : fillLinkHeaders, artifactId)];
       }
       if (/^SELECT id, is_active FROM signature_flow_templates/.test(flat)) {
-        return [cabecera(/WHERE template_artifact_id = \?/.test(flat) ? signatureHeaders : signatureLinkHeaders, artifactId)];
+        return [cabecera(/WHERE edicion_id = \?/.test(flat) ? signatureHeaders : signatureLinkHeaders, artifactId)];
       }
-      if (/^SELECT parent_version_id FROM template_artifacts/.test(flat)) {
+      if (/^SELECT parent_version_id FROM ediciones/.test(flat)) {
         return [parents[artifactId] ? [{ parent_version_id: parents[artifactId] }] : [{ parent_version_id: null }]];
       }
       if (/FROM fill_flow_steps/.test(flat)) return [fillRows];
@@ -403,7 +403,7 @@ test("el lector lee el flujo colgado del ARTIFACT, y NO mira ni el vinculo ni el
 
   assert.equal(flujo.fill.steps.length, 1);
   assert.equal(
-    connection.calls.some((call) => /process_definition_templates/.test(call.sql)),
+    connection.calls.some((call) => /vinculos/.test(call.sql)),
     false,
     "el escalon del vinculo ya no existe",
   );
@@ -587,12 +587,12 @@ const buildCopyConnection = ({
       const artifactId = params[0];
       // Búsqueda del ORIGEN (el escalonado del lector: artifact -> vínculo -> padre).
       if (/^SELECT id, is_active FROM fill_flow_templates/.test(flat)) {
-        return [cabecera(/WHERE template_artifact_id = \?/.test(flat) ? fillHeaders : fillLinkHeaders, artifactId)];
+        return [cabecera(/WHERE edicion_id = \?/.test(flat) ? fillHeaders : fillLinkHeaders, artifactId)];
       }
       if (/^SELECT id, is_active FROM signature_flow_templates/.test(flat)) {
-        return [cabecera(/WHERE template_artifact_id = \?/.test(flat) ? signatureHeaders : signatureLinkHeaders, artifactId)];
+        return [cabecera(/WHERE edicion_id = \?/.test(flat) ? signatureHeaders : signatureLinkHeaders, artifactId)];
       }
-      if (/^SELECT parent_version_id FROM template_artifacts/.test(flat)) {
+      if (/^SELECT parent_version_id FROM ediciones/.test(flat)) {
         return [parents[artifactId] ? [{ parent_version_id: parents[artifactId] }] : [{ parent_version_id: null }]];
       }
       // Búsqueda de la cabecera del DESTINO (el escritor): una versión recién creada no tiene.

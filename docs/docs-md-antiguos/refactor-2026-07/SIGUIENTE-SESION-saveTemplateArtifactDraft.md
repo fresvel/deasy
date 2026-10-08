@@ -97,9 +97,9 @@ tangle.
 
 Create branch, in order:
 
-1. `deliverables` — INSERT, **or reuses** the existing row with the same `code`
-2. `template_artifacts` — INSERT (`lifecycle_state = 'draft'`)
-3. `process_definition_templates` — INSERT of the link (or UPDATE of `item_mode` if it already existed)
+1. `catalogo_documental` — INSERT, **or reuses** the existing row with the same `code`
+2. `ediciones` — INSERT (`lifecycle_state = 'draft'`)
+3. `vinculos` — INSERT of the link (or UPDATE of `item_mode` if it already existed)
 4. fill/signature flow templates and steps, via `_syncArtifactWorkflowsForTemplateArtifactId`
 5. **MinIO objects** under `baseObjectPrefix`, plus a temporary directory under `BACKEND_STORAGE_ROOT`
    (this one is always removed, in the `finally`)
@@ -107,7 +107,7 @@ Create branch, in order:
 ### Three things to know before designing the test
 
 **`templateCode` is deterministic**: `draft_<slugify(display_name)>`. Two runs with the same
-`display_name` reuse the SAME `deliverables` row (lookup is by `code`), but
+`display_name` reuse the SAME `catalogo_documental` row (lookup is by `code`), but
 `_getNextStorageVersionForTemplateCode` **bumps the version** on every run — so `baseObjectPrefix`
 changes (`.../draft_x/1.0.0/`, `1.1.0/`…). Without full cleanup, every run leaves one more artifact
 and one more prefix in MinIO, and any golden capturing the version will drift.
@@ -116,9 +116,9 @@ and one more prefix in MinIO, and any golden capturing the version will drift.
 `runInTransaction`. The `try/catch` is manual compensation, not atomicity.
 
 **The compensation looks incomplete — verify this before touching anything.** The create-branch
-`catch` deletes the `template_artifacts` row and the MinIO prefix, but **not** the `deliverables` row
+`catch` deletes the `ediciones` row and the MinIO prefix, but **not** the `catalogo_documental` row
 it just inserted, nor the link, nor the synced workflows. If it fails after the deliverable INSERT —
-say, on "El proceso destino seleccionado no existe." — an orphan `deliverables` row survives and the
+say, on "El proceso destino seleccionado no existe." — an orphan `catalogo_documental` row survives and the
 next run will reuse it by `code`. **I am not claiming this as a confirmed defect: test it.** If it is
 one, the §3.1.b pattern applies — pin the broken behavior with a golden first, then fix it, so that
 the golden diff **is** the proof of the fix.
@@ -151,8 +151,8 @@ need a different name).
 Routes and permissions:
 
 ```
-POST /admin/sql/template_artifacts/draft        templates:create
-PUT  /admin/sql/template_artifacts/draft/:id    templates:update
+POST /admin/sql/ediciones/draft        templates:create
+PUT  /admin/sql/ediciones/draft/:id    templates:update
 ```
 
 Both wrapped in `draftArtifactUpload.fields([pdf_file, docx_file, xlsx_file, pptx_file])`, `maxCount 1`
@@ -173,8 +173,8 @@ What to pin, at minimum:
   The signal that it went well is the usual one: the golden diff is **purely additive**, 0 deletions,
   and the `list_*` counts in `admin_crud` don't move.
 
-> The generic CRUD `DELETE` removes the `template_artifacts` row but **does not touch MinIO**
-> (`template_artifacts` has no `beforeRemove` in `tableHooks.js`). Prefix cleanup has to go through
+> The generic CRUD `DELETE` removes the `ediciones` row but **does not touch MinIO**
+> (`ediciones` has no `beforeRemove` in `tableHooks.js`). Prefix cleanup has to go through
 > some other path; decide which one and say so in the commit.
 
 Both branches already have verified smoke coverage (POST with a PDF → 200 with the artifact in MinIO;

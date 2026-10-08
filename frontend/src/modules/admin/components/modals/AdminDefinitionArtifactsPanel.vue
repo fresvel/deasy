@@ -41,8 +41,8 @@
       scroll-class=""
     >
       <template #cell="{ row, field }">
-        <template v-if="field.name === 'template_artifact_id'">
-          {{ formatCell(row.template_artifact_id, { name: 'template_artifact_id' }) }}
+        <template v-if="field.name === 'edicion_id'">
+          {{ formatCell(row.edicion_id, { name: 'edicion_id' }) }}
         </template>
         <template v-else-if="field.name === 'item_mode'">
           <select v-if="canManage" aria-label="Modo de emisión de la plantilla" :value="row.item_mode || 'single'" class="deasy-control deasy-control--select" @change="$emit('set-item-mode', { row, itemMode: $event.target.value })">
@@ -112,7 +112,7 @@ const displayTableFields = computed(() =>
   props.tableFields
     .filter((field) => !HIDDEN_ARTIFACT_COLUMNS.has(field.name))
     .map((field) =>
-      field.name === "template_artifact_id"
+      field.name === "edicion_id"
         ? { ...field, label: "Plantilla" }
         : field
     )

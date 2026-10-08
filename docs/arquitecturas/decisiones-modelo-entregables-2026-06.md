@@ -15,7 +15,7 @@ a tareas derivadas con `parent_task_id`.
 Estado al cierre de esta implementacion:
 
 - El esquema MariaDB activo ya fue migrado al modelo nuevo.
-- El frontend/admin ya no expone `process_definition_templates.is_required`, `tasks.launch_mode`,
+- El frontend/admin ya no expone `vinculos.is_required`, `tasks.launch_mode`,
   `automatic_flag`, `manual_user_flag` ni `parent_task_id` como controles de negocio.
 - La creacion desde Home usa "Agregar entregable" y envia `source_task_id`; el backend conserva
   `parent_task_id` solo como alias legacy temporal de entrada.
@@ -55,8 +55,8 @@ Estado al cierre de esta implementacion:
 
 | Concepto de negocio | Tabla actual | Decision |
 |---|---|---|
-| Plantilla documental versionada | `template_artifacts` | Se mantiene. Define estructura, archivos base, schema, render y metadatos de plantilla. |
-| Entregable definido por proceso | `process_definition_templates` | Se mantiene como relacion entre configuracion/version de proceso y plantilla. Debe limpiarse y enriquecerse. |
+| Plantilla documental versionada | `ediciones` | Se mantiene. Define estructura, archivos base, schema, render y metadatos de plantilla. |
+| Entregable definido por proceso | `vinculos` | Se mantiene como relacion entre configuracion/version de proceso y plantilla. Debe limpiarse y enriquecerse. |
 | Instancia de entregable | `task_items` | Se mantiene. Es el entregable real generado dentro de una tarea. |
 | Documento principal | `documents` | Se mantiene. Debe haber un documento principal por entregable. |
 | Version documental | `document_versions` | Se mantiene. Versiona el documento principal. |
@@ -114,8 +114,8 @@ Una plantilla no es lo mismo que un entregable definido por proceso.
 
 Reglas:
 
-- `template_artifacts` describe el molde documental.
-- `process_definition_templates` describe que una configuracion de proceso usa una plantilla como
+- `ediciones` describe el molde documental.
+- `vinculos` describe que una configuracion de proceso usa una plantilla como
   entregable.
 - Una misma plantilla puede usarse en varios procesos o versiones de proceso.
 - Si cambian responsables, reglas, orden, contexto o flujo por proceso, no hace falta crear una nueva
@@ -125,7 +125,7 @@ Reglas:
 
 ## Decision 5: eliminar obligatoriedad del entregable definido por proceso
 
-El campo `process_definition_templates.is_required` se considera obsoleto.
+El campo `vinculos.is_required` se considera obsoleto.
 
 Regla de negocio:
 
@@ -145,7 +145,7 @@ Nota:
 
 ## Decision 6: clasificacion de plantillas
 
-Se debe agregar una clasificacion a `template_artifacts` para distinguir gobierno, visibilidad y
+Se debe agregar una clasificacion a `ediciones` para distinguir gobierno, visibilidad y
 reutilizacion.
 
 Valores acordados:
@@ -156,7 +156,7 @@ Valores acordados:
 
 Reglas:
 
-- `official` puede vincularse a `process_definition_templates`.
+- `official` puede vincularse a `vinculos`.
 - `user_reusable` puede reutilizarse por su creador o por el alcance que se defina despues.
 - `ad_hoc` no debe contaminar la configuracion del proceso ni aparecer como entregable oficial.
 - Una plantilla `ad_hoc` puede usarse por un `task_item user_added`.
@@ -173,7 +173,7 @@ Motivo:
 - Las plantillas oficiales quedan separadas del contenido de usuario.
 - Las plantillas reutilizables de usuario quedan visibles como catalogo personal o compartible.
 - Las plantillas ad hoc quedan atadas a un entregable puntual y no contaminan el catalogo reusable.
-- La clasificacion no debe depender solo del prefijo; debe persistirse en `template_artifacts.template_scope`.
+- La clasificacion no debe depender solo del prefijo; debe persistirse en `ediciones.template_scope`.
 
 Estado actual detectado:
 
@@ -197,9 +197,9 @@ Valores descartados por ahora:
 
 Reglas:
 
-- `process_defined` requiere `process_definition_template_id`.
-- `user_added` puede tener `process_definition_template_id = NULL`.
-- Todo `task_item` debe tener `template_artifact_id`.
+- `process_defined` requiere `vinculo_id`.
+- `user_added` puede tener `vinculo_id = NULL`.
+- Todo `task_item` debe tener `edicion_id`.
 - Si un `user_added` deriva de otro entregable, debe registrar `source_task_item_id`.
 - El contexto de proceso se hereda desde `tasks.process_definition_id`.
 
@@ -397,8 +397,8 @@ Mapa de nombres acordado:
 
 | Tabla/concepto tecnico | Nombre UX recomendado |
 |---|---|
-| `template_artifacts` | Plantillas documentales |
-| `process_definition_templates` | Entregables del proceso |
+| `ediciones` | Plantillas documentales |
+| `vinculos` | Entregables del proceso |
 | `task_items` | Entregables |
 | `documents` | Documento principal |
 | `document_versions` | Versiones del documento |
@@ -418,13 +418,13 @@ Reglas:
 
 - Usar "Configuracion de proceso", no "Version de proceso", en UI.
 - Usar "Entregables del proceso", no "Plantillas de procesos definidos", para la relacion
-  `process_definition_templates`.
+  `vinculos`.
 - Usar "Revision del entregable", no "llenado", cuando el usuario esta aprobando/devolviendo.
 - Reservar nombres tecnicos para admin avanzado, logs y documentacion tecnica.
 
 ## Especificacion tecnica aprobada
 
-### `template_artifacts`
+### `ediciones`
 
 Agregar:
 
@@ -438,7 +438,7 @@ Reglas de persistencia:
 - `ad_hoc`: requiere `owner_person_id`/`owner_ref` y `base_object_prefix` bajo
   `Users/{owner_ref}/AdHoc/{task_item_id_or_draft_token}/...`.
 
-### `process_definition_templates`
+### `vinculos`
 
 Eliminar:
 
@@ -446,7 +446,7 @@ Eliminar:
 
 Regla sustituta:
 
-- Todo registro activo/vinculado en `process_definition_templates` es requerido por definicion.
+- Todo registro activo/vinculado en `vinculos` es requerido por definicion.
 
 Mantener por ahora:
 
@@ -482,7 +482,7 @@ Regla:
 
 Cambiar:
 
-- `process_definition_template_id INT NULL`.
+- `vinculo_id INT NULL`.
 
 Agregar:
 
@@ -493,7 +493,7 @@ Agregar:
 - `target_position_id INT NULL`.
 - `target_person_id INT NULL`.
 - `title VARCHAR(180) NULL`.
-- `process_definition_template_key INT AS (IF(origin_kind = 'process_defined', process_definition_template_id, NULL)) PERSISTENT`.
+- `process_definition_template_key INT AS (IF(origin_kind = 'process_defined', vinculo_id, NULL)) PERSISTENT`.
 - `target_position_key INT AS (IF(origin_kind = 'process_defined', IFNULL(target_position_id, 0), NULL)) PERSISTENT`.
 - `target_person_key INT AS (IF(origin_kind = 'process_defined', IFNULL(target_person_id, 0), NULL)) PERSISTENT`.
 
@@ -503,9 +503,9 @@ Reemplazar unicidad:
 
 Reglas:
 
-- `process_defined` requiere `process_definition_template_id`.
-- `user_added` permite `process_definition_template_id = NULL`.
-- Todo `task_item` requiere `template_artifact_id`.
+- `process_defined` requiere `vinculo_id`.
+- `user_added` permite `vinculo_id = NULL`.
+- Todo `task_item` requiere `edicion_id`.
 - `created_by_person_id` identifica quien creo el entregable.
 - `source_task_item_id` identifica derivacion desde otro entregable, sin crear tarea hija.
 - `target_*` identifica hacia quien va dirigido el entregable.
@@ -611,8 +611,8 @@ estaba mezclado con tareas manuales/derivadas; ahora el entregable adicional viv
 Columnas relevantes implementadas:
 
 - `origin_kind`: `process_defined` o `user_added`.
-- `process_definition_template_id`: nullable. Requerido conceptualmente para `process_defined`.
-- `template_artifact_id`: plantilla documental concreta usada por el entregable.
+- `vinculo_id`: nullable. Requerido conceptualmente para `process_defined`.
+- `edicion_id`: plantilla documental concreta usada por el entregable.
 - `title`: titulo legible para entregables agregados o personalizados.
 - `created_by_person_id`: quien creo el entregable.
 - `source_task_item_id`: entregable origen si el nuevo entregable deriva de otro.
@@ -631,11 +631,11 @@ generadas. Solo aplican cuando `origin_kind = 'process_defined'`; por eso los en
 
 Reglas de uso:
 
-- `process_defined` se genera desde `process_definition_templates` y reglas de destino.
+- `process_defined` se genera desde `vinculos` y reglas de destino.
 - `user_added` se agrega manualmente dentro de una tarea existente.
 - `user_added` puede heredar contexto de la tarea, pero no debe crear una tarea hija.
-- Todo `task_item` debe tener `template_artifact_id`.
-- El esquema permite `process_definition_template_id = NULL` para `user_added`. El flujo actual de
+- Todo `task_item` debe tener `edicion_id`.
+- El esquema permite `vinculo_id = NULL` para `user_added`. El flujo actual de
   Home todavia usa la plantilla base del proceso `default` para materializar un entregable simple,
   hasta que exista el wizard completo de plantillas/runtime.
 
@@ -643,17 +643,17 @@ Reglas de uso:
 
 Hay dos conceptos distintos que no deben mezclarse:
 
-- `template_artifacts`: plantilla documental versionada, con archivos, schema, metadatos y rutas en
+- `ediciones`: plantilla documental versionada, con archivos, schema, metadatos y rutas en
   MinIO.
-- `process_definition_templates`: relacion M:N entre una configuracion de proceso y una plantilla
+- `vinculos`: relacion M:N entre una configuracion de proceso y una plantilla
   documental que se convierte en entregable del proceso.
 
-`process_definition_templates.is_required` fue eliminado. Todo entregable definido en una
+`vinculos.is_required` fue eliminado. Todo entregable definido en una
 configuracion activa es requerido por regla de negocio. Si en el futuro se necesita opcionalidad,
 debe modelarse como una regla explicita nueva, no reintroduciendo `is_required` sin rediscutir el
 modelo.
 
-`template_artifacts.template_scope` clasifica la plantilla:
+`ediciones.template_scope` clasifica la plantilla:
 
 - `official`: institucional, bajo `System/{template_code}/{storage_version}/`.
 - `user_reusable`: creada por usuario y reutilizable, bajo
@@ -738,8 +738,8 @@ ser:
 
 Cambios aplicados en admin/frontend:
 
-- `process_definition_templates` se presenta como "Entregables del proceso".
-- `template_artifacts` se presenta como "Plantillas documentales".
+- `vinculos` se presenta como "Entregables del proceso".
+- `ediciones` se presenta como "Plantillas documentales".
 - `task_items` se presenta como "Entregables".
 - Se retiro `is_required` de formularios/listados de entregables del proceso.
 - Se retiro `parent_task_id` de los FK editables del admin.
@@ -755,10 +755,10 @@ Los seeds activos fueron alineados con el esquema nuevo:
 
 - `backend/scripts/seeds/pucese.seed.json` ya no depende de `tasks.launch_mode`,
   `automatic_flag`, `manual_user_flag`, `parent_task_id` ni
-  `process_definition_templates.is_required`.
+  `vinculos.is_required`.
 - Los `tasks` del seed incluyen `scope_unit_id`.
 - Los `task_items` del seed incluyen `origin_kind`, `created_by_person_id` y `target_*`.
-- `template_artifacts` incluye `template_scope`.
+- `ediciones` incluye `template_scope`.
 - `seed_demo_accounts.mjs` crea tareas/entregables demo con el nuevo modelo.
 
 El backup `pucese.seed.backup.json` conserva el esquema antiguo porque es historico. No usarlo como
@@ -768,14 +768,14 @@ referencia del modelo vigente.
 
 `backend/database/mariadb_initializer.js` hace migracion incremental sin reset:
 
-- agrega `template_artifacts.template_scope`;
-- elimina `process_definition_templates.is_required`;
+- agrega `ediciones.template_scope`;
+- elimina `vinculos.is_required`;
 - agrega `tasks.scope_unit_id` y `normalized_scope_unit_id`;
 - backfillea `scope_unit_id` desde el puesto responsable cuando puede;
 - crea la nueva unicidad de `tasks`;
 - retira indices legacy dependientes de `launch_mode`/flags;
 - elimina `launch_mode`, `automatic_flag`, `manual_user_flag` y `parent_task_id`;
-- hace nullable `task_items.process_definition_template_id`;
+- hace nullable `task_items.vinculo_id`;
 - agrega `origin_kind`, `title`, `created_by_person_id`, `source_task_item_id` y `target_*`;
 - crea claves generadas/unicidad de `task_items`;
 - crea `document_workflow_observations`.
@@ -812,7 +812,7 @@ No hacer lo siguiente sin una nueva decision explicita:
 - no reintroducir `tasks.launch_mode`;
 - no usar `automatic_flag` ni `manual_user_flag`;
 - no volver a exponer `parent_task_id` en frontend/admin;
-- no reintroducir `process_definition_templates.is_required`;
+- no reintroducir `vinculos.is_required`;
 - no tratar plantilla documental como sinonimo de entregable de proceso;
 - no inferir `template_scope` solo por ruta MinIO;
 - no consultar acceso a entregables usando solo `assigned_person_id`; considerar tambien
@@ -827,13 +827,13 @@ Si hay conflicto entre ambas, prevalece la guia de implementacion.
 
 Cambios probables en `task_items`:
 
-- Permitir `process_definition_template_id NULL`.
+- Permitir `vinculo_id NULL`.
 - Agregar `origin_kind ENUM('process_defined', 'user_added')`.
 - Agregar `created_by_person_id`.
 - Agregar `source_task_item_id NULL`.
 - Evaluar `title` o `display_name` para entregables `user_added`.
 
-Cambios probables en `template_artifacts`:
+Cambios probables en `ediciones`:
 
 - Agregar `template_scope ENUM('official', 'user_reusable', 'ad_hoc')`.
 - Ajustar `base_object_prefix` segun `template_scope`:
@@ -842,7 +842,7 @@ Cambios probables en `template_artifacts`:
   - `Users/{owner_ref}/AdHoc/{task_item_id_or_draft_token}/{template_code}/{storage_version}/`
     para `ad_hoc`.
 
-Cambios probables en `process_definition_templates`:
+Cambios probables en `vinculos`:
 
 - Eliminar `is_required`.
 - Renombrar conceptualmente a "entregables definidos por proceso" en UX/UI.

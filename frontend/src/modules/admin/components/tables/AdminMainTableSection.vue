@@ -449,7 +449,7 @@ const resetGenericSearch = () => {
 /* `isDefinitionStatusField` murio el 2026-08-20. Habilitaba la pastilla en DOS columnas y su
    comentario daba el resto por deliberado: «el resto de columnas status siguen como texto
    plano». Lo que eso producia, medido en pantalla, es que `process_definition_versions` pintaba
-   «Retirada» en pastilla y en español mientras `template_artifacts` pintaba el MISMO ciclo de
+   «Retirada» en pastilla y en español mientras `ediciones` pintaba el MISMO ciclo de
    vida en texto plano y en INGLES CRUDO.
 
    Que columna es un estado, y con que eje, lo dice ahora `COLUMNA_ESTADO` en `estadoTono.js`:

@@ -183,9 +183,9 @@ test("GET /admin/sql/units/:id/processes -> procesos de la unidad", async () => 
 
 // El schema del artifact procesa available_formats con parseAvailableFormats. Fija su
 // contrato de claves: guardia de la unificación de esa función (antes triplicada).
-test("GET /admin/sql/template_artifacts/:id/schema -> esquema del artifact", async () => {
+test("GET /admin/sql/ediciones/:id/schema -> esquema del artifact", async () => {
   const token = await tokenFor("admin");
-  const res = await get("/admin/sql/template_artifacts/1/schema", { token });
+  const res = await get("/admin/sql/ediciones/1/schema", { token });
   assert.equal(res.status, 200, `schema debe responder 200: ${JSON.stringify(res.body)}`);
   matchSnapshot(SUITE, "template_artifact_schema", {
     status: res.status,
@@ -203,8 +203,8 @@ const LIST_TABLES = [
   "persons", "units", "unit_types", "unit_relations", "relation_unit_types",
   "cargos", "unit_positions", "position_assignments", "term_types", "terms",
   "processes", "process_definition_series", "process_definition_versions",
-  "process_target_rules", "process_definition_templates",
-  "generadores_de_documento", "template_artifacts",
+  "process_target_rules", "vinculos",
+  "generadores_de_documento", "ediciones",
   "tasks", "task_items", "task_item_tenures", "document_versions",
   "roles", "permissions", "role_permissions", "cargo_role_map",
 ];
@@ -222,9 +222,9 @@ for (const table of LIST_TABLES) {
 // (versionado de definiciones, target-scope/series, task-assignment, artifacts).
 // Son GET puros, sin efectos. Se fija su forma de respuesta; el valor concreto no
 // importa, sí que el endpoint siga respondiendo con la misma forma tras mover el código.
-test("GET /admin/sql/template_artifacts/versions -> versiones de artifacts", async () => {
+test("GET /admin/sql/ediciones/versions -> versiones de artifacts", async () => {
   const token = await tokenFor("admin");
-  const res = await get("/admin/sql/template_artifacts/versions", { token });
+  const res = await get("/admin/sql/ediciones/versions", { token });
   matchSnapshot(SUITE, "template_artifact_versions", listFingerprint(res));
 });
 
@@ -943,7 +943,7 @@ test("POST/PATCH /admin/sql/processes -> crear con padre, reasignar y rechazar c
 
 const REMOVE_GUARD_CASES = [
   ["configuracion_activa", "process_definition_versions", 1],
-  ["plantilla_de_configuracion_activa", "process_definition_templates", 1],
+  ["plantilla_de_configuracion_activa", "vinculos", 1],
   ["flujo_de_firma_de_configuracion_activa", "signature_flow_templates", 1],
 ];
 
@@ -966,7 +966,7 @@ for (const [key, table, id] of REMOVE_GUARD_CASES) {
 // depender de él dejaba este caso sin sujeto — y `assert.ok(flowsBefore.length)` abortaba ANTES del
 // `DELETE` final, filtrando la configuración 9.9.9 a las suites siguientes. Fabricarlo aquí es
 // además más honesto: el caso ya no depende de qué siembre el arranque.
-test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flujos del vínculo", async () => {
+test("DELETE /admin/sql/vinculos -> borra en cascada los flujos del vínculo", async () => {
   const token = await tokenFor("admin");
   const source = (await get("/admin/sql/process_definition_versions", { token })).body?.[0];
   assert.ok(source?.id, "la fixture debe traer una configuración");
@@ -984,14 +984,14 @@ test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flu
   assert.equal(clone.status, 200, `el clon debe crearse: ${JSON.stringify(clone.body)}`);
   const cloneId = clone.body?.id;
 
-  const links = (await get("/admin/sql/process_definition_templates", { token })).body || [];
+  const links = (await get("/admin/sql/vinculos", { token })).body || [];
   const link = links.find((row) => row.process_definition_id === cloneId);
   assert.ok(link, "el clon debe traerse la plantilla de la configuración origen");
 
   const cabecera = await post("/admin/sql/fill_flow_templates", {
     token,
     body: {
-      process_definition_template_id: link.id,
+      vinculo_id: link.id,
       name: "Flujo de entrega - caracterización cascada",
       is_active: 1,
     },
@@ -1010,10 +1010,10 @@ test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flu
   assert.equal(paso.status, 200, `el paso de flujo debe crearse: ${JSON.stringify(paso.body)}`);
 
   const flowsBefore = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
-    .filter((row) => row.process_definition_template_id === link.id);
+    .filter((row) => row.vinculo_id === link.id);
   assert.ok(flowsBefore.length > 0, "el vínculo clonado debe tener flujos de entrega colgando");
 
-  const removed = await del("/admin/sql/process_definition_templates", { token, body: { keys: { id: link.id } } });
+  const removed = await del("/admin/sql/vinculos", { token, body: { keys: { id: link.id } } });
   matchSnapshot(SUITE, "remove_process_definition_templates_cascada", {
     status: removed.status,
     body: normalize(removed.body, { maskIdKeys: true }),
@@ -1022,7 +1022,7 @@ test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flu
 
   // El efecto observable del injerto: los flujos derivados desaparecen con el vínculo.
   const flowsAfter = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
-    .filter((row) => row.process_definition_template_id === link.id);
+    .filter((row) => row.vinculo_id === link.id);
   assert.equal(flowsAfter.length, 0, "los flujos de entrega del vínculo deben borrarse en cascada");
 
   await del("/admin/sql/process_definition_versions", { token, body: { keys: { id: cloneId } } });
@@ -1033,7 +1033,7 @@ test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flu
 // «Un entregable sirve a UNA SOLA LÍNEA»: al vincular una edición, todas las definiciones ya
 // vinculadas a cualquier edición de ese mismo entregable tienen que compartir
 // `(process_id, variation_key)` con la definición que se vincula. La impone el disparador
-// `trg_pdt_linea_unica`, no un índice — un único sobre `template_artifact_id` a secas rompía el
+// `trg_pdt_linea_unica`, no un índice — un único sobre `edicion_id` a secas rompía el
 // clon, y el caso de arriba («el clon debe crearse») es justo el que lo cazó.
 //
 // ESTE CASO ES EL OTRO LADO DE ESE MISMO PAR, y hace falta que sean dos: el de arriba fija que lo
@@ -1045,13 +1045,13 @@ test("DELETE /admin/sql/process_definition_templates -> borra en cascada los flu
 // es el caso que también cubría el guardia retirado; que difiera solo la VARIACIÓN lo cubre la
 // prueba directa en SQL, porque montar dos series del mismo proceso por HTTP pide un cargo libre y
 // la fixture no garantiza que lo haya.
-test("POST /admin/sql/process_definition_templates de otra línea -> lo rechaza el disparador", async () => {
+test("POST /admin/sql/vinculos de otra línea -> lo rechaza el disparador", async () => {
   const token = await tokenFor("admin");
 
   // El entregable que YA tiene dueño: el que sembró el bootstrap en el Proceso por defecto.
-  const links = (await get("/admin/sql/process_definition_templates", { token })).body || [];
+  const links = (await get("/admin/sql/vinculos", { token })).body || [];
   const linkExistente = links[0];
-  assert.ok(linkExistente?.template_artifact_id, "la fixture debe traer un vínculo sembrado");
+  assert.ok(linkExistente?.edicion_id, "la fixture debe traer un vínculo sembrado");
 
   const cargos = (await get("/admin/sql/cargos?limit=5", { token })).body || [];
   const cargoId = cargos[cargos.length - 1]?.id;
@@ -1084,11 +1084,11 @@ test("POST /admin/sql/process_definition_templates de otra línea -> lo rechaza 
   // retirada y la nueva activa», en OTRA suite, que cuenta las definiciones de TODA la base. Un
   // caso que siembra estado global lo tiene que recoger pase lo que pase.
   try {
-    const cruzado = await post("/admin/sql/process_definition_templates", {
+    const cruzado = await post("/admin/sql/vinculos", {
       token,
       body: {
         process_definition_id: definicionAjenaId,
-        template_artifact_id: linkExistente.template_artifact_id,
+        edicion_id: linkExistente.edicion_id,
         item_mode: "single",
       },
     });
@@ -1104,7 +1104,7 @@ test("POST /admin/sql/process_definition_templates de otra línea -> lo rechaza 
     );
 
     // Y no dejó el vínculo a medias: lo que el disparador rechaza no se escribe.
-    const despues = (await get("/admin/sql/process_definition_templates", { token })).body || [];
+    const despues = (await get("/admin/sql/vinculos", { token })).body || [];
     assert.equal(
       despues.filter((row) => Number(row.process_definition_id) === Number(definicionAjenaId)).length,
       0,
@@ -1123,10 +1123,10 @@ test("POST /admin/sql/process_definition_templates de otra línea -> lo rechaza 
   }
 });
 
-// `template_artifacts` es el único graft que PROHÍBE la creación por CRUD admin de plano.
-test("POST /admin/sql/template_artifacts -> graft: creación prohibida por CRUD admin", async () => {
+// `ediciones` es el único graft que PROHÍBE la creación por CRUD admin de plano.
+test("POST /admin/sql/ediciones -> graft: creación prohibida por CRUD admin", async () => {
   const token = await tokenFor("admin");
-  const res = await post("/admin/sql/template_artifacts", { token, body: { name: "X" } });
+  const res = await post("/admin/sql/ediciones", { token, body: { name: "X" } });
   matchSnapshot(SUITE, "graft_template_artifacts_create_prohibido", {
     status: res.status,
     body: normalize(res.body),

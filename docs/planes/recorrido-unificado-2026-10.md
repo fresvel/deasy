@@ -1,14 +1,14 @@
 # Frente 24 · El recorrido documental, unificado — y el fin de cuatro «plantillas»
 
-> **Estado**: 🟡 en ejecución · abierto el **2026-10-08** · worktree `deasy-recorrido`, pila **B**
+> **Estado**: 🟡 en ejecución · **fase 1 de 5 cerrada** · abierto el **2026-10-08** · worktree `deasy-recorrido`, pila **B**
 > **Decidido por el dueño** el 2026-10-08 tras el análisis de la decisión 1 de F7.0 (frente 22).
 
 ## 0 · Control de ejecución
 
 | # | Fase | Qué entrega | Evidencia | Estado |
 |---|---|---|---|:--:|
-| **1** | Los tres renombrados | `deliverables`→`catalogo_documental` · `template_artifacts`→`ediciones` · `process_definition_templates`→`vinculos` | las 6 puertas + char 321/321 | ⬜ |
-| **2** | Muere el escalón 2 | fuera `process_definition_template_id` de las cabeceras, fuera su campo en `/admin`, fuera el escalón del resolvedor | el resolvedor baja de 3 escalones a 2 | ⬜ |
+| **1** | Los tres renombrados | de `deliverables`, `template_artifacts` y `process_definition_templates` a `catalogo_documental`, `ediciones` y `vinculos` | **167 ficheros · 1.664 ocurrencias**; 7 puertas + `test:unit` 897/897 + `test:char:run` 321/321; goldens movidos y **probado que el diff es SÓLO el renombrado**; migración `scripts/migrar-recorrido.sql` aplicada y verificada | ✅ |
+| **2** | Muere el escalón 2 | fuera `vinculo_id` de las cabeceras, fuera su campo en `/admin`, fuera el escalón del resolvedor | el resolvedor baja de 3 escalones a 2 | ⬜ |
 | **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; mueren `signature_request_statuses` y su `status_id` | los goldens se mueven, y ese diff ES la prueba | ⬜ |
 | **4** | E1 · la unificación | 6 tablas → 3: `pasos_declarados`, `recorridos`, `turnos`, con `lado` | el resolvedor pasa de 2 funciones a 1 | ⬜ |
 | **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
@@ -66,7 +66,7 @@ cadena lleven la palabra «recorrido».
 
 | Hallazgo | Medida |
 |---|---|
-| El escalón 2 (del vínculo) está **muerto** | nadie lo escribe; su productor (`meta.yaml` + `WorkflowSyncService`) se borró en el §0.8; y la puerta de publicación lo **excluye** con `process_definition_template_id IS NULL` |
+| El escalón 2 (del vínculo) está **muerto** | nadie lo escribe; su productor (`meta.yaml` + `WorkflowSyncService`) se borró en el §0.8; y la puerta de publicación lo **excluye** con `vinculo_id IS NULL` |
 | La cabecera **no es una entidad** | su `name` no se lee en ninguna consulta del backend, y en `routed` es el literal fijo `'Entrega (definida al enviar)'` |
 | No hay unicidad | **cero** índices únicos en las tres anclas; el código compensa con `ORDER BY id DESC LIMIT 1` |
 | Los dos lados son **el mismo mecanismo** | `flowRows.js` ya los resuelve con **una** función y un mapa `HEADER_TABLES[side]` |
@@ -110,3 +110,30 @@ consulta por dentro** —cero `data->`, cero índices— y aquí el contenido de
   mitad de entrega?» desaparece.
 - **No arregla el defecto 1.19** (`signers` en JSONB). Lo deja nombrado como prerrequisito de
   cualquier movimiento futuro hacia JSONB.
+
+
+## 7 · Lo que la fase 1 enseñó
+
+**1 · `\bnombre` dentro de un REGEX LITERAL derrota a un renombrado con `\bnombre\b`.** El carácter
+anterior a `nombre` es la letra `b` del `\b`, que es carácter de palabra: no hay límite y el patrón no
+casa. Sobrevivieron así dos matchers de test (`/\bprocess_definition_template_id = \?/`) y tiraron **10
+pruebas**. Se encuentran con `grep -rE '\\b(nombre)'`.
+
+**2 · El mismo `_` esconde los nombres de índices, restricciones y claves de golden.**
+`uq_deliverables_code`, `list_template_artifacts`: el `_` anterior tampoco deja límite de palabra. Los
+**13 identificadores** del esquema y las **2 claves de golden** hubo que renombrarlos a mano.
+
+**3 · El golden se recaptura DESPUÉS de probar que el diff es sólo el renombrado**, no antes. Se probó
+aplicando el mapa de nombres a las **90 líneas borradas** y comprobando que el multiconjunto coincide
+con las **90 añadidas**: el residuo fueron exactamente los 4 nombres de tabla. Sin esa prueba, un
+recapture esconde cualquier otro cambio que se hubiera colado.
+
+**4 · Y el script de renombrado SE COMIÓ EL PLAN que documenta el renombrado.** La tabla «Antes →
+Ahora» de la sección 2 quedó diciendo `catalogo_documental` → `catalogo_documental`. Si renombras en
+`docs/planes/`, la columna de los nombres viejos hay que restaurarla a mano — o excluir el plan del
+barrido.
+
+⚠️ **Y la fase 1 MOVIÓ GOLDENS**, que el plan sólo preveía para la fase 3: el renombrado llega a la
+API —la ruta `/admin/sql/ediciones` y los campos `edicion_id`/`vinculo_id` de las respuestas—. Es
+correcto que los mueva, y dejarlo fuera de la API habría conservado justo la confusión que este frente
+viene a quitar.

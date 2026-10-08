@@ -60,8 +60,8 @@ export default class TemplateArtifactService {
          d.display_name,
          ta.storage_version,
          d.template_scope
-       FROM template_artifacts ta
-       LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+       FROM ediciones ta
+       LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
        WHERE ta.id = ?
        LIMIT 1`,
       [artifactId]
@@ -80,8 +80,8 @@ export default class TemplateArtifactService {
     const [rows] = await this.pool.query(
       `SELECT ta.id, d.code AS template_code, d.display_name, ta.storage_version, ta.lifecycle_state, ta.is_active,
               ta.parent_version_id, d.template_scope, ta.created_at
-         FROM template_artifacts ta
-         INNER JOIN deliverables d ON d.id = ta.deliverable_id
+         FROM ediciones ta
+         INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
         WHERE d.code = ?
         ORDER BY ta.created_at DESC, ta.id DESC`,
       [code]
@@ -94,7 +94,7 @@ export default class TemplateArtifactService {
   // editables en la web (formato inverso de buildSchemaJsonFromFields).
   async getTemplateArtifactSchema(artifactId) {
     this.ensurePool();
-    const artifact = await this._getByKeys("template_artifacts", { id: Number(artifactId) });
+    const artifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
@@ -227,7 +227,7 @@ export default class TemplateArtifactService {
   // por id (sin contexto de link). Si tiene algún vínculo no-routed, o ninguno, se mantiene el readiness.
   async isArtifactRoutedOnly(artifactId, connection = this.pool) {
     const [rows] = await connection.query(
-      "SELECT item_mode FROM process_definition_templates WHERE template_artifact_id = ?",
+      "SELECT item_mode FROM vinculos WHERE edicion_id = ?",
       [Number(artifactId)]
     );
     if (!rows.length) return false;
@@ -242,7 +242,7 @@ export default class TemplateArtifactService {
   async setTemplateArtifactActive(artifactId, active) {
     this.ensurePool();
     const nextActive = active ? 1 : 0;
-    const artifact = await this._getByKeys("template_artifacts", { id: Number(artifactId) });
+    const artifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
@@ -257,7 +257,7 @@ export default class TemplateArtifactService {
     }
 
     await this.pool.query(
-      "UPDATE template_artifacts SET is_active = ? WHERE id = ?",
+      "UPDATE ediciones SET is_active = ? WHERE id = ?",
       [nextActive, Number(artifactId)]
     );
 
@@ -265,18 +265,18 @@ export default class TemplateArtifactService {
   }
 
 
-  // F5 — "una sola publicada por ENTREGABLE": retira las demás versiones publicadas del mismo deliverable_id
-  // (== mismo deliverable_id) que la versión dada. NO publica la versión dada (eso lo hace quien llama).
+  // F5 — "una sola publicada por ENTREGABLE": retira las demás versiones publicadas del mismo catalogo_documental_id
+  // (== mismo catalogo_documental_id) que la versión dada. NO publica la versión dada (eso lo hace quien llama).
   async retirePriorPublishedSiblings(connection, artifactId) {
     const [rows] = await connection.query(
-      "SELECT deliverable_id FROM template_artifacts WHERE id = ? LIMIT 1",
+      "SELECT catalogo_documental_id FROM ediciones WHERE id = ? LIMIT 1",
       [Number(artifactId)]
     );
-    const delivId = rows?.[0]?.deliverable_id || null;
+    const delivId = rows?.[0]?.catalogo_documental_id || null;
     if (delivId) {
       await connection.query(
-        `UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0
-          WHERE deliverable_id = ? AND id <> ? AND lifecycle_state = 'published'`,
+        `UPDATE ediciones SET lifecycle_state = 'retired', is_active = 0
+          WHERE catalogo_documental_id = ? AND id <> ? AND lifecycle_state = 'published'`,
         [delivId, Number(artifactId)]
       );
     }
@@ -289,7 +289,7 @@ export default class TemplateArtifactService {
   async publishTemplateArtifact(artifactId) {
     this.ensurePool();
     const id = Number(artifactId);
-    const artifact = await this._getByKeys("template_artifacts", { id });
+    const artifact = await this._getByKeys("ediciones", { id });
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
@@ -308,7 +308,7 @@ export default class TemplateArtifactService {
       // Una sola publicada por ENTREGABLE: retira las otras publicadas del mismo deliverable.
       await this.retirePriorPublishedSiblings(connection, id);
       await connection.query(
-        "UPDATE template_artifacts SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
+        "UPDATE ediciones SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
         [id]
       );
       await connection.commit();
@@ -333,7 +333,7 @@ export default class TemplateArtifactService {
   async retireTemplateArtifact(artifactId) {
     this.ensurePool();
     const id = Number(artifactId);
-    const artifact = await this._getByKeys("template_artifacts", { id });
+    const artifact = await this._getByKeys("ediciones", { id });
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
@@ -341,7 +341,7 @@ export default class TemplateArtifactService {
       return { artifact_id: id, lifecycle_state: "retired", changed: false };
     }
     await this.pool.query(
-      "UPDATE template_artifacts SET lifecycle_state = 'retired', is_active = 0 WHERE id = ?",
+      "UPDATE ediciones SET lifecycle_state = 'retired', is_active = 0 WHERE id = ?",
       [id]
     );
     return { artifact_id: id, lifecycle_state: "retired", changed: true };
@@ -359,7 +359,7 @@ export default class TemplateArtifactService {
   // (la que el editor mostraría para el padre) y cuál NO (la de runtime, que es de un envío concreto).
   async createTemplateArtifactVersion(artifactId, bumpLevel = "minor") {
     this.ensurePool();
-    const artifact = await this._getByKeys("template_artifacts", { id: Number(artifactId) });
+    const artifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
@@ -367,9 +367,9 @@ export default class TemplateArtifactService {
     const templateCode = String(artifact.template_code);
     const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode, bumpLevel);
     // El entregable se identifica por código (siempre existe tras backfill/creación). Robusto aunque getByKeys
-    // no traiga deliverable_id (la columna no está en la config de sqlTables).
+    // no traiga catalogo_documental_id (la columna no está en la config de sqlTables).
     const [delivRows] = await this.pool.query(
-      "SELECT id, display_name FROM deliverables WHERE code = ? LIMIT 1",
+      "SELECT id, display_name FROM catalogo_documental WHERE code = ? LIMIT 1",
       [templateCode]
     );
     const deliverableId = delivRows?.[0]?.id || null;
@@ -405,7 +405,7 @@ export default class TemplateArtifactService {
         entry.entry_object_key = `${newPrefix}${String(entry.entry_object_key).slice(oldPrefix.length)}`;
       }
     }
-    // Identidad/scope/owner viven en `deliverables`; la versión solo hereda deliverable_id (mismo entregable).
+    // Identidad/scope/owner viven en `catalogo_documental`; la versión solo hereda catalogo_documental_id (mismo entregable).
     //
     // LA VERSIÓN Y SU FLUJO, EN UNA TRANSACCIÓN, por el mismo motivo que `_persistDraftToDatabase`
     // (sub-paso 3): el flujo cuelga del artifact por FK, así que sin ella un fallo al copiarlo
@@ -417,16 +417,16 @@ export default class TemplateArtifactService {
     try {
       await connection.beginTransaction();
       const [result] = await connection.query(
-        `INSERT INTO template_artifacts (
+        `INSERT INTO ediciones (
           storage_version, lifecycle_state, base_object_prefix,
-          available_formats, generador_id, content_hash, parent_version_id, deliverable_id, is_active
+          available_formats, generador_id, content_hash, parent_version_id, catalogo_documental_id, is_active
         ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, 0)`,
         [
           nextStorageVersion,
           newPrefix,
           JSON.stringify(remappedFormats || {}),
           // El generador se HEREDA de la version padre: una version nueva de la misma plantilla la
-          // sigue produciendo el mismo servicio. Antes este dato vivia en `deliverables`, o sea que
+          // sigue produciendo el mismo servicio. Antes este dato vivia en `catalogo_documental`, o sea que
           // se heredaba por no tocarlo; ahora es columna de la edicion y hay que copiarlo.
           artifact.generador_id ?? null,
           artifact.content_hash,
@@ -477,7 +477,7 @@ export default class TemplateArtifactService {
       error.statusCode = 403;
       throw error;
     }
-    const artifact = await this._getByKeys("template_artifacts", { id: Number(artifactId) });
+    const artifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
@@ -596,8 +596,8 @@ export default class TemplateArtifactService {
   async getNextStorageVersionForTemplateCode(templateCode, level = "minor", connection = this.pool) {
     const [rows] = await connection.query(
       `SELECT ta.storage_version
-       FROM template_artifacts ta
-       INNER JOIN deliverables d ON d.id = ta.deliverable_id
+       FROM ediciones ta
+       INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
        WHERE d.code = ?`,
       [templateCode]
     );

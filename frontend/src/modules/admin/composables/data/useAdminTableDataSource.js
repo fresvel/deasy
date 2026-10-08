@@ -191,10 +191,10 @@ export function useAdminTableDataSource({
       }
 
       const [artifactResponse, linkedResponse] = await Promise.all([
-        axios.get(API_ROUTES.ADMIN_SQL_TABLE("template_artifacts"), {
+        axios.get(API_ROUTES.ADMIN_SQL_TABLE("ediciones"), {
           params: artifactParams
         }),
-        axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+        axios.get(API_ROUTES.ADMIN_SQL_TABLE("vinculos"), {
           params: {
             limit: 5000
           }
@@ -203,7 +203,7 @@ export function useAdminTableDataSource({
 
       const linkedArtifactIds = new Set(
         (linkedResponse.data || [])
-          .map((row) => row?.template_artifact_id)
+          .map((row) => row?.edicion_id)
           .filter((value) => value !== null && value !== undefined && value !== "")
           .map((value) => String(value))
       );
@@ -264,7 +264,7 @@ export function useAdminTableDataSource({
           }
         });
       }
-      if (props.table?.table === "template_artifacts") {
+      if (props.table?.table === "ediciones") {
         Object.entries(templateArtifactInlineFilters.value).forEach(([key, value]) => {
           if (value !== "" && value !== null && value !== undefined) {
             filters[`filter_${key}`] = typeof value === "string" ? value.trim() : value;

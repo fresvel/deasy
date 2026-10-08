@@ -2,8 +2,8 @@
 //
 // Por qué existe: es la función más compleja del backend (541 L, CC 158 según Sonar) y no
 // tenía NINGÚN golden. El cut #8 la movió literalmente de fichero; el siguiente paso es
-// partirla, y partir a ciegas 541 líneas que escriben en cinco sitios (deliverables,
-// template_artifacts, el vínculo a configuración, los flujos sincronizados y MinIO) es
+// partirla, y partir a ciegas 541 líneas que escriben en cinco sitios (catalogo_documental,
+// ediciones, el vínculo a configuración, los flujos sincronizados y MinIO) es
 // exactamente lo que esta red de seguridad impide.
 //
 // ⚠️ EL PREFIJO "zzz_" ES DELIBERADO. Los flows corren en orden alfabético con
@@ -16,14 +16,14 @@
 //   1. Los contratos de error de la fase de validación (la mitad de las ramas, y baratos).
 //   2. Que `routed` NO exige flujo de entrega (los demás modos sí).
 //   3. El camino feliz de CREAR (POST) y de EDITAR (PUT), con su contrato de respuesta.
-//   4. El DEFECTO DE COMPENSACIÓN: una creación que falla después del INSERT en `deliverables`
+//   4. El DEFECTO DE COMPENSACIÓN: una creación que falla después del INSERT en `catalogo_documental`
 //      deja la fila huérfana. Se fija el comportamiento ROTO a propósito (patrón §3.1.b de la
 //      auditoría): cuando se corrija, el diff del golden SERÁ la prueba del arreglo.
 //
 // Sobre el enmascarado: sólo se enmascara `id`. Medido contra dev, `storage_version`,
 // `base_object_prefix` y `content_hash` son DETERMINISTAS — `content_hash` sale idéntico entre
 // corridas con la base reseteada y MinIO en distinto estado, y la versión se calcula de la BASE
-// (`getNextStorageVersionForTemplateCode` une template_artifacts→deliverables por `code`), no de
+// (`getNextStorageVersionForTemplateCode` une ediciones→catalogo_documental por `code`), no de
 // MinIO. Con el round-trip autolimpiante vuelve a 1.0.0 en cada corrida. Fijarlos literalmente
 // convierte el golden en una huella byte a byte del meta.yaml, el schema.json, el contrato de la
 // semilla y el fichero subido.
@@ -40,11 +40,11 @@ import { FIXTURE, USERS } from "../config.mjs";
 
 const SUITE = "artifact_draft";
 
-const DRAFT_PATH = "/admin/sql/template_artifacts/draft";
+const DRAFT_PATH = "/admin/sql/ediciones/draft";
 
 // `templateCode` es determinista: `draft_<slugify(display_name)>`. Cada caso que escribe usa un
 // nombre propio para que el defecto del huérfano no contamine el camino feliz (que reusaría la
-// fila `deliverables` por `code`).
+// fila `catalogo_documental` por `code`).
 const NAMES = {
   happy: "zzz char draft",
   routed: "zzz char routed",
@@ -142,7 +142,7 @@ test("PUT draft de un artifact inexistente -> contrato de error", async () => {
 
 test("PUT draft sobre una plantilla PUBLICADA -> guard de inmutabilidad", async () => {
   const token = await tokenFor("admin");
-  const list = await get("/admin/sql/template_artifacts", { token });
+  const list = await get("/admin/sql/ediciones", { token });
   const published = (list.body || []).find((row) => String(row.lifecycle_state || "published") !== "draft");
   assert.ok(published, "la fixture debe traer al menos una plantilla no-borrador");
 
@@ -170,10 +170,10 @@ test("el borrador creado queda en lifecycle_state=draft y vinculado al proceso",
   const token = await tokenFor("admin");
   assert.ok(happy.id, "depende del paso anterior");
 
-  const artifacts = await get("/admin/sql/template_artifacts", { token });
+  const artifacts = await get("/admin/sql/ediciones", { token });
   const created = (artifacts.body || []).find((row) => Number(row.id) === Number(happy.id));
-  const links = await get("/admin/sql/process_definition_templates", { token });
-  const link = (links.body || []).find((row) => Number(row.template_artifact_id) === Number(happy.id));
+  const links = await get("/admin/sql/vinculos", { token });
+  const link = (links.body || []).find((row) => Number(row.edicion_id) === Number(happy.id));
 
   matchSnapshot(SUITE, "crear_efectos", {
     lifecycle_state: created?.lifecycle_state ?? null,
@@ -212,7 +212,7 @@ test("POST draft con item_mode=routed y SIN flujo -> se permite (el flujo es de 
 // --- COMPENSACIÓN DE UNA CREACIÓN FALLIDA --------------------------------------------------------
 
 // La clave del golden se llama `defecto_deliverable_huerfano` a propósito y NO se renombra: fijó
-// primero el comportamiento ROTO (la fila `deliverables` sobrevivía a la creación fallida) y el
+// primero el comportamiento ROTO (la fila `catalogo_documental` sobrevivía a la creación fallida) y el
 // diff de ese golden — de la fila a `null` — ES la prueba del arreglo. Renombrarla la borraría.
 test("POST draft con proceso inexistente -> falla y NO deja el deliverable huérfano", async () => {
   const token = await tokenFor("admin");

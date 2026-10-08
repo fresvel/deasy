@@ -73,12 +73,12 @@ export const processDefinitionActivationTriggerTableFields = [
 ];
 
 export const processDefinitionActivationArtifactTableFields = [
-  { name: "template_artifact_id", label: "Plantilla documental" }
+  { name: "edicion_id", label: "Plantilla documental" }
 ];
 
 export const definitionArtifactsTableFields = [
   { name: "id", label: "ID" },
-  { name: "template_artifact_id", label: "Plantilla documental" },
+  { name: "edicion_id", label: "Plantilla documental" },
   { name: "item_mode", label: "Modo de emisión" },
   { name: "sort_order", label: "Orden" }
 ];
@@ -112,7 +112,7 @@ export const FK_TABLE_MAP = {
   process_definition_id: "process_definition_versions",
   process_run_id: "process_runs",
   source_run_id: "process_runs",
-  process_definition_template_id: "process_definition_templates",
+  vinculo_id: "vinculos",
   fill_flow_template_id: "fill_flow_templates",
   fill_flow_step_id: "fill_flow_steps",
   generador_id: "generadores_de_documento",
@@ -150,7 +150,7 @@ export const FK_TABLE_MAP = {
   // ninguna tabla, así que sin el formulario que las inventaba no las pedía nadie.
   nacionalidad_pais_id: "paises",
   template_id: "signature_flow_templates",
-  template_artifact_id: "template_artifacts",
+  edicion_id: "ediciones",
   task_item_id: "task_items",
   document_id: "documents",
   document_version_id: "document_versions",
@@ -192,16 +192,16 @@ export const RELATED_RECORD_CONFIG = {
   process_definition_versions: [
     { table: "process_definition_period_types", label: "Periodos del proceso", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "priority", order: "asc" },
-    { table: "process_definition_templates", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
+    { table: "vinculos", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
     { table: "process_runs", label: "Corridas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "tasks", label: "Tareas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" }
   ],
   process_runs: [
     { table: "tasks", label: "Tareas", foreignKey: "process_run_id", orderBy: "created_at", order: "desc" }
   ],
-  process_definition_templates: [
-    { table: "fill_flow_templates", label: "Flujos de entrega", foreignKey: "process_definition_template_id", orderBy: "created_at", order: "desc" },
-    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "process_definition_template_id", orderBy: "created_at", order: "desc" }
+  vinculos: [
+    { table: "fill_flow_templates", label: "Flujos de entrega", foreignKey: "vinculo_id", orderBy: "created_at", order: "desc" },
+    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "vinculo_id", orderBy: "created_at", order: "desc" }
   ],
   fill_flow_templates: [
     { table: "fill_flow_steps", label: "Pasos de entrega", foreignKey: "fill_flow_template_id", orderBy: "step_order", order: "asc" }

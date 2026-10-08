@@ -295,6 +295,7 @@
     "count": 1,
     "itemKeys": [
       "created_at",
+      "edicion_id",
       "final_file_path",
       "format",
       "id",
@@ -303,11 +304,32 @@
       "render_engine",
       "status",
       "task_item_id",
-      "template_artifact_id",
       "version",
       "version_label",
       "version_minor",
       "working_file_path"
+    ]
+  },
+  "list_ediciones": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "available_formats",
+      "base_object_prefix",
+      "content_hash",
+      "created_at",
+      "description",
+      "display_name",
+      "generador_id",
+      "id",
+      "is_active",
+      "lifecycle_state",
+      "owner_person_id",
+      "parent_version_id",
+      "storage_version",
+      "template_code",
+      "template_scope"
     ]
   },
   "list_generadores_de_documento": {
@@ -387,19 +409,6 @@
       "is_active",
       "source_type",
       "unit_type_id"
-    ]
-  },
-  "list_process_definition_templates": {
-    "status": 200,
-    "isArray": true,
-    "count": 1,
-    "itemKeys": [
-      "created_at",
-      "id",
-      "item_mode",
-      "process_definition_id",
-      "sort_order",
-      "template_artifact_id"
     ]
   },
   "list_process_definition_versions": {
@@ -521,7 +530,6 @@
       "id",
       "origin_kind",
       "origin_unit_id",
-      "process_definition_template_id",
       "responsible_position_id",
       "sort_order",
       "source_task_item_id",
@@ -529,7 +537,8 @@
       "target_unit_id",
       "task_id",
       "title",
-      "user_started_at"
+      "user_started_at",
+      "vinculo_id"
     ]
   },
   "list_tasks": {
@@ -547,28 +556,6 @@
       "start_date",
       "status",
       "term_id"
-    ]
-  },
-  "list_template_artifacts": {
-    "status": 200,
-    "isArray": true,
-    "count": 1,
-    "itemKeys": [
-      "available_formats",
-      "base_object_prefix",
-      "content_hash",
-      "created_at",
-      "description",
-      "display_name",
-      "generador_id",
-      "id",
-      "is_active",
-      "lifecycle_state",
-      "owner_person_id",
-      "parent_version_id",
-      "storage_version",
-      "template_code",
-      "template_scope"
     ]
   },
   "list_term_types": {
@@ -654,6 +641,19 @@
       "slug",
       "unit_type_id",
       "updated_at"
+    ]
+  },
+  "list_vinculos": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "created_at",
+      "edicion_id",
+      "id",
+      "item_mode",
+      "process_definition_id",
+      "sort_order"
     ]
   },
   "pertenencia_vinculo_de_otra_linea": {

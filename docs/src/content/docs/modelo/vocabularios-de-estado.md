@@ -14,10 +14,10 @@ primero que hay que tener claro, así que va explícita.
 | Qué describe | Columna | Valores | ¿`CHECK` en la base? |
 |---|---|---|---|
 | Configuración | `process_definition_versions.status` | `draft` · `active` · `retired` | **Sí** |
-| Edición de plantilla | `template_artifacts.lifecycle_state` | `draft` · `published` · `retired` | **Sí** |
-| Ámbito del entregable | `deliverables.template_scope` | `official` · `ad_hoc` | **Sí** |
+| Edición de plantilla | `ediciones.lifecycle_state` | `draft` · `published` · `retired` | **Sí** |
+| Ámbito del entregable | `catalogo_documental.template_scope` | `official` · `ad_hoc` | **Sí** |
 | Corrida | `process_runs.status` | `pending` · `active` · `completed` · `cancelled` | **Sí** |
-| Modo del vínculo | `process_definition_templates.item_mode` | `single` · `replicated` · `routed` | **Sí** |
+| Modo del vínculo | `vinculos.item_mode` | `single` · `replicated` · `routed` | **Sí** |
 | Origen del entregable | `task_items.origin_kind` | `process_defined` · `user_added` | **Sí** |
 | Causa del turno | `task_item_tenures.opened_by` | `original` · `occupancy_start` · `occupancy_end` · `position_deactivated` · `reconcile` · `manual` | **Sí** |
 | Cómo se encuentra a quien entrega o firma | `resolver_type` en los dos flujos | `task_assignee` · `cargo_in_scope` · `specific_person` | **Sí**, pero solo en la columna: el JSONB `signers` se salta esta protección |

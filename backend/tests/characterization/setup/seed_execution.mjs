@@ -26,15 +26,15 @@ const { usuarioPersonId: USUARIO_PERSON_ID, adminPersonId: ADMIN_PERSON_ID } = F
 const { definitionId: DEFINITION_ID } = FIXTURE;
 
 // El bootstrap ya siembra la capa de plantillas (deliverable + template_artifact +
-// el link process_definition_templates) por la lógica real de la aplicación.
+// el link vinculos) por la lógica real de la aplicación.
 // Antes esto se inyectaba aquí escribiendo directo al pool, saltándose el guard
 // del endpoint CRUD, porque el seed baseline la dejaba vacía. Ahora solo se
 // comprueba: si falta, el fallo debe apuntar al bootstrap, no a un test.
 async function assertTemplateLayer() {
   const pool = getPostgresPool();
   const [rows] = await pool.query(
-    `SELECT ta.id FROM process_definition_templates pdt
-       JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
+    `SELECT ta.id FROM vinculos pdt
+       JOIN ediciones ta ON ta.id = pdt.edicion_id
       WHERE pdt.process_definition_id = ? LIMIT 1`,
     [DEFINITION_ID]
   );

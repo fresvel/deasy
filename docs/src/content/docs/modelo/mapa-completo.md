@@ -38,9 +38,9 @@ flowchart TB
     PDV --> PTR["process_target_rules"]
     PDV --> PDPT["process_definition_period_types"]
     TT["term_types"] --> PDPT
-    DEL["deliverables"] --> TA["template_artifacts"]
+    DEL["catalogo_documental"] --> TA["ediciones"]
     GEN["generadores_de_documento"] --> TA
-    PDV --> PDT["process_definition_templates"]
+    PDV --> PDT["vinculos"]
     TA --> PDT
   end
 

@@ -98,7 +98,7 @@
                 @click="selectTable(table)"
               />
               <AppNavCard
-                v-if="selectedProcessItem?.key === 'plantillas' && canCreateAdminTable('template_artifacts', currentUser)"
+                v-if="selectedProcessItem?.key === 'plantillas' && canCreateAdminTable('ediciones', currentUser)"
                 title="Nueva plantilla de documento"
                 meta=""
                 description="Crear desde un generador o archivos"
@@ -231,7 +231,7 @@ const PROCESS_INDEX_ITEMS = [
     label: "Modelos",
     icon: "certificate",
     description: "Gestiona generadores, plantillas y su asignación a procesos.",
-    tables: ["generadores_de_documento", "template_artifacts", "process_definition_templates"]
+    tables: ["generadores_de_documento", "ediciones", "vinculos"]
   },
   {
     key: "tareas",
@@ -270,8 +270,8 @@ const PROCESS_INDEX_ITEMS = [
 
 const TABLE_TAB_LABEL_OVERRIDES = {
   generadores_de_documento: "Generadores",
-  template_artifacts: "Plantillas",
-  process_definition_templates: "Procesos asignados"
+  ediciones: "Plantillas",
+  vinculos: "Procesos asignados"
 };
 
 const router = useRouter();
@@ -449,7 +449,7 @@ const handleHeroBack = () => {
 };
 
 const openTemplateArtifactDraftFromHome = async () => {
-  const templateArtifactsTable = tableMap.value.template_artifacts;
+  const templateArtifactsTable = tableMap.value.ediciones;
   if (!templateArtifactsTable) return;
   selectTable(templateArtifactsTable);
   await nextTick();

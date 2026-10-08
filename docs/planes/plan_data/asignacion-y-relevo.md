@@ -264,8 +264,8 @@ Es lo que completa el modelo: la tenencia dice *quién respondía* y el autor de
 
 **No hay ninguna decisión escrita de colapsarla.** Lo que existe es el *catálogo* de las cuatro
 relaciones 1:1 por índice (`referencia-esquema.md:252`); nadie acordó actuar sobre ellas. Lo que sí
-se colapsó en su día fue otra cosa: las columnas duplicadas de `template_artifacts` sobre
-`deliverables`.
+se colapsó en su día fue otra cosa: las columnas duplicadas de `ediciones` sobre
+`catalogo_documental`.
 
 ### ¿Basta con `document_versions`?
 
@@ -361,7 +361,7 @@ Quedan **dos hechos propios**. Una tabla con una foránea entrante, dos columnas
 
 ### El argumento en contra, que es real
 
-**Un entregable que no produzca documento.** Hoy no existe: `task_items.template_artifact_id` es
+**Un entregable que no produzca documento.** Hoy no existe: `task_items.edicion_id` es
 `NOT NULL` y `ensureDocumentForTaskItem` corre para todos. Pero si mañana un entregable es «entregar
 la llave del laboratorio», fundir obliga a arrastrar columnas de documento en una fila que no lo es.
 

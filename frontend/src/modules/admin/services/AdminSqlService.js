@@ -120,21 +120,21 @@ export class AdminSqlService {
   useTemplateVersionInConfig(definitionId, templateArtifactId) {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_USE_IN_CONFIG(), {
       definition_id: definitionId,
-      template_artifact_id: templateArtifactId
+      edicion_id: templateArtifactId
     });
   }
 
   startGuidedTemplateUpdate(definitionId, templateArtifactId, bumpLevel = "minor") {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_GUIDED_UPDATE_START(), {
       definition_id: definitionId,
-      template_artifact_id: templateArtifactId,
+      edicion_id: templateArtifactId,
       bump_level: bumpLevel
     });
   }
 
   finishGuidedTemplateUpdate(templateArtifactId, configDefinitionId) {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_TEMPLATE_GUIDED_UPDATE_FINISH(), {
-      template_artifact_id: templateArtifactId,
+      edicion_id: templateArtifactId,
       config_definition_id: configDefinitionId
     });
   }

@@ -135,7 +135,7 @@ const ESQUEMA = path.resolve(AQUI, "../../database/postgres_schema.sql");
 test("la lista del esquema y la de JavaScript son la MISMA", () => {
   
 // ⚠️ SE QUITA EL ESQUEMA DEL NOMBRE AL LEER. Desde el 2026-10-04 cada tabla vive en el esquema de su
-// tema, asi que el fichero dice 'CREATE TABLE IF NOT EXISTS plantillas.template_artifacts'. Estas
+// tema, asi que el fichero dice 'CREATE TABLE IF NOT EXISTS plantillas.ediciones'. Estas
 // pruebas van sobre LA FORMA de la tabla --sus columnas, sus CHECK, sus claves-- y no sobre donde
 // vive; normalizar aqui, una vez, evita tocar los once sitios que la buscan por su nombre. Que cada
 // tabla este en el esquema de su tema lo comprueba 'scripts/docs/check-mapa-tablas.mjs'.

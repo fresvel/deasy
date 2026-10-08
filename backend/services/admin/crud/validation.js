@@ -236,7 +236,7 @@ const TABLE_RULES = {
     datesInOrder("tareas"),
   ],
   fill_flow_templates: [
-    requires(["process_definition_template_id", "Selecciona la plantilla de proceso configurado."]),
+    requires(["vinculo_id", "Selecciona la plantilla de proceso configurado."]),
   ],
   fill_flow_steps: [
     requires(
@@ -257,7 +257,7 @@ const TABLE_RULES = {
     ),
   ],
   signature_flow_templates: [
-    requires(["process_definition_template_id", "Selecciona la plantilla de proceso configurado."]),
+    requires(["vinculo_id", "Selecciona la plantilla de proceso configurado."]),
   ],
   vacancies: [],
   contracts: [
@@ -288,9 +288,9 @@ const TABLE_RULES = {
   ],
   task_items: [
     requires(["task_id", "Selecciona una tarea."]),
-    // `template_artifact_id` se exigia aqui hasta el 2026-10-04: era una copia del vinculo y se
+    // `edicion_id` se exigia aqui hasta el 2026-10-04: era una copia del vinculo y se
     // retiro (frente 23, F2.1). Lo que hay que elegir es el VINCULO, que es el dato.
-    requires(["process_definition_template_id", "Selecciona el entregable definido por proceso."]),
+    requires(["vinculo_id", "Selecciona el entregable definido por proceso."]),
     datesInOrder("items de tarea"),
   ],
   documents: [
@@ -303,7 +303,7 @@ const TABLE_RULES = {
   generadores_de_documento: [
     generadorIdentityAndSource,
   ],
-  template_artifacts: [
+  ediciones: [
     requires(["base_object_prefix", "Debes registrar el prefijo base del artifact."]),
     artifactFormatsPresent,
   ],

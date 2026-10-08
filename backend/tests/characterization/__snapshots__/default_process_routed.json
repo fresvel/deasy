@@ -28,30 +28,30 @@
       "assigned_person_id": 3,
       "created_by_person_id": 3,
       "document_status": "Pendiente de llenado",
+      "edicion_id": "<normalized>",
       "end_date": "<normalized>",
       "id": "<normalized>",
       "origin_kind": "user_added",
       "origin_unit_id": 8,
-      "process_definition_template_id": "<normalized>",
       "responsible_position_id": 25,
       "sort_order": 999,
       "source_task_item_id": "<normalized>",
       "start_date": "<normalized>",
       "target_unit_id": null,
       "task_id": "<normalized>",
-      "template_artifact_id": "<normalized>",
       "title": "zz char routed derivado",
-      "user_started_at": null
+      "user_started_at": null,
+      "vinculo_id": "<normalized>"
     },
     "versions": [
       {
+        "edicion_id": "<normalized>",
         "final_file_path": null,
         "format": null,
         "id": "<normalized>",
         "payload_object_path": null,
         "status": "Pendiente de llenado",
         "task_item_id": "<normalized>",
-        "template_artifact_id": "<normalized>",
         "version": 1,
         "version_label": "1.0",
         "version_minor": 0,
@@ -61,10 +61,10 @@
   },
   "derived_flujo_entrega": {
     "description": null,
+    "edicion_id": "<normalized>",
     "id": "<normalized>",
     "is_active": 1,
     "name": "Entrega (definida al enviar)",
-    "process_definition_template_id": "<normalized>",
     "steps": [
       {
         "assigned_person_id": 1,
@@ -85,14 +85,14 @@
       }
     ],
     "task_item_id": "<normalized>",
-    "template_artifact_id": "<normalized>"
+    "vinculo_id": "<normalized>"
   },
   "derived_flujo_firma": {
     "description": null,
+    "edicion_id": "<normalized>",
     "id": "<normalized>",
     "is_active": 1,
     "name": "Firma (definida al enviar)",
-    "process_definition_template_id": "<normalized>",
     "steps": [
       {
         "approval_mode": "at_least",
@@ -150,7 +150,7 @@
       }
     ],
     "task_item_id": "<normalized>",
-    "template_artifact_id": "<normalized>"
+    "vinculo_id": "<normalized>"
   },
   "derived_respuesta": {
     "status": 200,
@@ -204,30 +204,30 @@
       "assigned_person_id": 3,
       "created_by_person_id": 3,
       "document_status": "Pendiente de llenado",
+      "edicion_id": "<normalized>",
       "end_date": "<normalized>",
       "id": "<normalized>",
       "origin_kind": "user_added",
       "origin_unit_id": 8,
-      "process_definition_template_id": "<normalized>",
       "responsible_position_id": 25,
       "sort_order": 1,
       "source_task_item_id": "<normalized>",
       "start_date": "<normalized>",
       "target_unit_id": 8,
       "task_id": "<normalized>",
-      "template_artifact_id": "<normalized>",
       "title": "zz char routed libre\n\nEntregable ad-hoc con flujo definido al enviar.",
-      "user_started_at": null
+      "user_started_at": null,
+      "vinculo_id": "<normalized>"
     },
     "versions": [
       {
+        "edicion_id": "<normalized>",
         "final_file_path": null,
         "format": null,
         "id": "<normalized>",
         "payload_object_path": null,
         "status": "Pendiente de llenado",
         "task_item_id": "<normalized>",
-        "template_artifact_id": "<normalized>",
         "version": 1,
         "version_label": "1.0",
         "version_minor": 0,
@@ -237,10 +237,10 @@
   },
   "free_flujo_entrega": {
     "description": null,
+    "edicion_id": "<normalized>",
     "id": "<normalized>",
     "is_active": 1,
     "name": "Entrega (definida al enviar)",
-    "process_definition_template_id": "<normalized>",
     "steps": [
       {
         "assigned_person_id": 2,
@@ -278,14 +278,14 @@
       }
     ],
     "task_item_id": "<normalized>",
-    "template_artifact_id": "<normalized>"
+    "vinculo_id": "<normalized>"
   },
   "free_flujo_firma": {
     "description": null,
+    "edicion_id": "<normalized>",
     "id": "<normalized>",
     "is_active": 1,
     "name": "Firma (definida al enviar)",
-    "process_definition_template_id": "<normalized>",
     "steps": [
       {
         "approval_mode": "and",
@@ -314,7 +314,7 @@
       }
     ],
     "task_item_id": "<normalized>",
-    "template_artifact_id": "<normalized>"
+    "vinculo_id": "<normalized>"
   },
   "free_respuesta": {
     "status": 200,
@@ -340,16 +340,16 @@
   "vinculo_routed": {
     "status": 200,
     "body": {
-      "definition_id": 1,
-      "deliverables": [
+      "catalogo_documental": [
         {
+          "edicion_id": "<normalized>",
           "id": "<normalized>",
           "item_mode": "routed",
           "name": "Informe general",
-          "sort_order": 1,
-          "template_artifact_id": "<normalized>"
+          "sort_order": 1
         }
       ],
+      "definition_id": 1,
       "result": "ok",
       "task_id": "<normalized>"
     }

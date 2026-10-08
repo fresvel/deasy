@@ -21,7 +21,7 @@
  * función pregunta por los DATOS se queda en su componente; si pregunta por el COLOR se va al CSS.
  * En medio está el nombre del tono. El vocabulario es el de `AppTag`, y el diccionario de ciclo de
  * vida —`draft` · `published` · `retired`— ya existe en `estadoTono.js` con estos tres valores
- * exactos: se REUSA, no se copia. Era el mismo eje que `template_artifacts.lifecycle_state`.
+ * exactos: se REUSA, no se copia. Era el mismo eje que `ediciones.lifecycle_state`.
  */
 import { TONOS, etiquetaCicloVida, tonoCicloVida } from "@/shared/utils/estadoTono";
 

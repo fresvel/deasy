@@ -24,7 +24,7 @@ export const getLatestDocumentVersionForTaskItem = async (connection, definition
        dv.id AS document_version_id,
        dv.version_label AS document_version,
        dv.status AS document_version_status,
-       dv.template_artifact_id,
+       dv.edicion_id,
        dv.payload_hash,
        dv.payload_object_path,
        dv.format,

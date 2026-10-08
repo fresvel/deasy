@@ -60,7 +60,7 @@ Código relevante revisado:
 
 Estado real de la base viva al momento de la revisión:
 
-- Hay datos en `processes`, `process_definition_versions`, `process_target_rules`, `process_definition_triggers`, `process_definition_templates`, `template_artifacts`, `tasks`, `task_items`.
+- Hay datos en `processes`, `process_definition_versions`, `process_target_rules`, `process_definition_triggers`, `vinculos`, `ediciones`, `tasks`, `task_items`.
 - No hay datos en `documents`, `document_versions`, `signature_flow_templates`, `signature_flow_steps`, `signature_flow_instances`, `signature_requests`, `document_signatures`.
 
 Conclusión:
@@ -161,8 +161,8 @@ Esto aplica tanto a Jinja/LaTeX como a Word/Excel y otros formatos.
 - `process_target_rules`
 - `process_definition_triggers`
 - `template_seeds`
-- `template_artifacts`
-- `process_definition_templates`
+- `ediciones`
+- `vinculos`
 - `tasks`
 - `task_items`
 
@@ -197,7 +197,7 @@ Opcionales según nivel de detalle:
 ### Núcleo de procesos
 
 - `processes` 1:N `process_definition_versions`
-- `process_definition_versions` 1:N `process_definition_templates`
+- `process_definition_versions` 1:N `vinculos`
 - `process_definition_versions` 1:N `process_target_rules`
 - `process_definition_versions` 1:N `process_definition_triggers`
 
@@ -220,14 +220,14 @@ Para documentos standalone:
 
 ### Flujos de llenado
 
-- `process_definition_templates` 1:N `fill_flow_templates`
+- `vinculos` 1:N `fill_flow_templates`
 - `fill_flow_templates` 1:N `fill_flow_steps`
 - `document_versions` 1:0..1 `document_fill_flows`
 - `document_fill_flows` 1:N `fill_requests`
 
 ### Flujos de firma
 
-- `process_definition_templates` 1:N `signature_flow_templates`
+- `vinculos` 1:N `signature_flow_templates`
 - `signature_flow_templates` 1:N `signature_flow_steps`
 - `document_versions` 1:0..1 `document_signature_flows`
 - `document_signature_flows` 1:N `signature_requests`
@@ -235,8 +235,8 @@ Para documentos standalone:
 
 ### Metadata técnica del artifact
 
-- `template_artifacts` 1:N `artifact_fill_schema_versions`
-- `template_artifacts` 1:N `artifact_signature_anchor_versions`
+- `ediciones` 1:N `artifact_fill_schema_versions`
+- `ediciones` 1:N `artifact_signature_anchor_versions`
 
 ## Refactor Propuesto de `document_versions`
 
@@ -356,7 +356,7 @@ En la línea principal de migración ya están implementadas y aplicadas estas p
 - `documents` y `document_versions` ya se materializan desde `task_items`
 - `documents` soporta `owner_person_id` y `origin_type`
 - `document_versions` ya evolucionó a:
-  - `template_artifact_id`
+  - `edicion_id`
   - `payload_object_path`
   - `working_file_path`
   - `final_file_path`

@@ -274,7 +274,7 @@ export function useAdminFkSearch({
         await loadFkUnitOptions();
       }
     }
-    if (tableName === "process_definition_versions" || tableName === "template_artifacts") {
+    if (tableName === "process_definition_versions" || tableName === "ediciones") {
       await loadFkProcessDefinitionProcessOptions();
     }
     await fetchFkRows();

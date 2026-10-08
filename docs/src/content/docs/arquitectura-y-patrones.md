@@ -198,7 +198,7 @@ Es el ejemplo vivo de lo que cuesta el motor dirigido por metadatos. Medido el 2
 | Complejidad cognitiva | 300 |
 
 Treinta y ocho condicionales sobre `props.table.table === "…"`: `process_definition_versions` 10,
-`template_artifacts` 9, `processes` 4, `units` 3, `unit_positions` 3, y seis entidades más. **Es un
+`ediciones` 9, `processes` 4, `units` 3, `unit_positions` 3, y seis entidades más. **Es un
 motor genérico con once excepciones cosidas por dentro** — el olor que la regla del repositorio
 prohíbe: *no injertes casos especiales en el camino genérico*.
 

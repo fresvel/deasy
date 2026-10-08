@@ -13,10 +13,10 @@
 
 Project plantillas {
   database_type: 'PostgreSQL'
-  Note: '''Plantillas y entregables — El modelo \'libro y ediciones\': `deliverables` porta la identidad y `template_artifacts` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.'''
+  Note: '''Plantillas y entregables — El modelo \'libro y ediciones\': `catalogo_documental` porta la identidad y `ediciones` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.'''
 }
 
-Table "deliverables" {
+Table "catalogo_documental" {
   "id" int4 [pk, not null, increment]
   "code" varchar(180) [unique, not null]
   "display_name" varchar(180) [not null]
@@ -25,7 +25,7 @@ Table "deliverables" {
   "owner_person_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
-  Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
+  Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `ediciones` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
 }
 
 Table "document_fill_flows" {
@@ -36,6 +36,28 @@ Table "document_fill_flows" {
   "current_step_order" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "ediciones" {
+  "id" int4 [pk, not null, increment]
+  "catalogo_documental_id" int4 [not null]
+  "storage_version" varchar(20) [not null]
+  "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
+  "base_object_prefix" varchar(255) [not null]
+  "available_formats" jsonb [not null]
+  "generador_id" int4 [note: '''QUIEN produce el PDF de esta edicion. Estaba en `catalogo_documental.template_seed_id` y se movio aqui, no se duplico: la fachada del admin ya lo listaba como campo de `ediciones` y lo traia por JOIN. NO sustituye a `document_versions.render_engine`, que dice con que motor se renderizo UNA ronda concreta —un hecho de la ejecucion, no una declaracion de la plantilla.''']
+  "content_hash" varchar(64)
+  "parent_version_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (catalogo_documental_id, storage_version) [type: btree, unique, name: "uq_ediciones_storage"]
+    catalogo_documental_id [type: btree, name: "idx_ediciones_catalogo"]
+    lifecycle_state [type: btree, name: "idx_ediciones_state"]
+  }
+
+  Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `catalogo_documental`, que es quien porta la identidad.'''
 }
 
 Table "fill_flow_steps" {
@@ -64,20 +86,20 @@ Table "fill_flow_steps" {
 
 Table "fill_flow_templates" {
   "id" int4 [pk, not null, increment]
-  "process_definition_template_id" int4
+  "vinculo_id" int4
   "task_item_id" int4
-  "template_artifact_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
+  "edicion_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
   "name" varchar(180) [not null]
   "description" varchar(255)
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    template_artifact_id [type: btree, name: "idx_fill_flow_templates_artifact"]
+    edicion_id [type: btree, name: "idx_fill_flow_templates_artifact"]
     task_item_id [type: btree, name: "idx_fill_flow_templates_task_item"]
   }
 
-  Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).'''
+  Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`vinculo_id`), de runtime (`task_item_id`) o autorado en la plantilla (`edicion_id`, frente 0.8).'''
 }
 
 Table "fill_requests" {
@@ -112,41 +134,19 @@ Table "generadores_de_documento" {
   Note: '''EL CATALOGO DE QUIEN PRODUCE EL PDF. Era `template_seeds` y significaba otra cosa: «la semilla», un proyecto LaTeX+Jinja2 en MinIO que se COPIABA entero por cada version de plantilla, y que era EL mecanismo —no habia camino para definir un documento sin escribir `.tex.j2`. Del mecanismo solo se construyo la copia (no hay renderizador, ni formulario, ni editor de campos), asi que el frente 23 lo desacoplo: el llenado web lo haran servicios programados caso a caso y la semilla LaTeX pasa a ser UNO de los generadores, el primero del catalogo. `tipo` separa las dos mitades: `latex` trae paquete (`source_path`) y no llama a nadie; `servicio` tiene `destino` (cola o endpoint) y no trae paquete.'''
 }
 
-Table "template_artifacts" {
-  "id" int4 [pk, not null, increment]
-  "deliverable_id" int4 [not null]
-  "storage_version" varchar(20) [not null]
-  "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
-  "base_object_prefix" varchar(255) [not null]
-  "available_formats" jsonb [not null]
-  "generador_id" int4 [note: '''QUIEN produce el PDF de esta edicion. Estaba en `deliverables.template_seed_id` y se movio aqui, no se duplico: la fachada del admin ya lo listaba como campo de `template_artifacts` y lo traia por JOIN. NO sustituye a `document_versions.render_engine`, que dice con que motor se renderizo UNA ronda concreta —un hecho de la ejecucion, no una declaracion de la plantilla.''']
-  "content_hash" varchar(64)
-  "parent_version_id" int4
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (deliverable_id, storage_version) [type: btree, unique, name: "uq_template_artifacts_storage"]
-    deliverable_id [type: btree, name: "idx_template_artifacts_deliverable"]
-    lifecycle_state [type: btree, name: "idx_template_artifacts_state"]
-  }
-
-  Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.'''
-}
-
 Ref "fk_document_fill_flows_template":"fill_flow_templates"."id" <? "document_fill_flows"."fill_flow_template_id"
+Ref "fk_ediciones_catalogo":"catalogo_documental"."id" <? "ediciones"."catalogo_documental_id"
+Ref "fk_ediciones_generador":"generadores_de_documento"."id" ?<? "ediciones"."generador_id"
+Ref "fk_ediciones_parent":"ediciones"."id" ?<? "ediciones"."parent_version_id"
 Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps"."fill_flow_template_id"
-Ref "fk_fill_flow_templates_artifact":"template_artifacts"."id" ?<? "fill_flow_templates"."template_artifact_id"
+Ref "fk_fill_flow_templates_artifact":"ediciones"."id" ?<? "fill_flow_templates"."edicion_id"
 Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
 Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
-Ref "fk_template_artifacts_deliverable":"deliverables"."id" <? "template_artifacts"."deliverable_id"
-Ref "fk_template_artifacts_generador":"generadores_de_documento"."id" ?<? "template_artifacts"."generador_id"
-Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artifacts"."parent_version_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
-//   persons -> deliverables   [identidad]
+//   persons -> catalogo_documental   [identidad]
 //   document_versions -> document_fill_flows   [tareas]
-//   template_artifacts -> document_versions   [tareas]
+//   ediciones -> document_versions   [tareas]
 //   fill_requests -> document_workflow_observations   [tareas]
 //   cargos -> fill_flow_steps   [identidad]
 //   persons -> fill_flow_steps   [identidad]
@@ -154,8 +154,8 @@ Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artif
 //   relation_unit_types -> fill_flow_steps   [organizacion]
 //   unit_types -> fill_flow_steps   [organizacion]
 //   units -> fill_flow_steps   [organizacion]
-//   process_definition_templates -> fill_flow_templates   [procesos]
+//   vinculos -> fill_flow_templates   [procesos]
 //   task_items -> fill_flow_templates   [tareas]
 //   persons -> fill_requests   [identidad]
-//   template_artifacts -> process_definition_templates   [procesos]
-//   template_artifacts -> signature_flow_templates   [firmas]
+//   ediciones -> signature_flow_templates   [firmas]
+//   ediciones -> vinculos   [procesos]

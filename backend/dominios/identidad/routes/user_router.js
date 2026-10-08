@@ -209,7 +209,7 @@ router.post(
   createGeneralTask
 );
 router.get(
-  '/:id/addable-deliverables',
+  '/:id/addable-catalogo_documental',
   authMiddleware,
   loadAccessContext,
   requireRouteUserAccess({ resource: "process_execution", action: "create" }),

@@ -740,7 +740,7 @@ const openTemplateFromNode = (tpl) => {
     templateCode: tpl.template_code,
     displayName: tpl.display_name,
     definitionId: tpl.definition_id,
-    pinnedArtifactId: tpl.template_artifact_id,
+    pinnedArtifactId: tpl.edicion_id,
     configName: cfg?.definition_name || cfg?.name || "",
     configStatus: cfg?.status || "",
     versions: []
@@ -845,8 +845,8 @@ const addSiblingConfig = (cfg) => {
 };
 // Entregable: versionar (solo ad_hoc; el botón ya se oculta en oficiales).
 const versionTemplate = (tpl) => {
-  if (!tpl?.template_artifact_id) return;
-  emit("version-template", { templateArtifactId: tpl.template_artifact_id, displayName: tpl.display_name, templateCode: tpl.template_code });
+  if (!tpl?.edicion_id) return;
+  emit("version-template", { templateArtifactId: tpl.edicion_id, displayName: tpl.display_name, templateCode: tpl.template_code });
 };
 // Entregable: agregar hermano → gestor de plantillas de su misma configuración.
 const addSiblingTemplate = (tpl) => {
@@ -858,16 +858,16 @@ const addSiblingTemplate = (tpl) => {
 };
 // Entregable: crear uno nuevo a partir del actual (clona nombre/generador/campos/flujos en modo creación).
 const cloneTemplate = (tpl) => {
-  if (!tpl?.template_artifact_id) return;
+  if (!tpl?.edicion_id) return;
   closeDetail();
-  emit("clone-template", { templateArtifactId: tpl.template_artifact_id, definitionId: tpl.definition_id });
+  emit("clone-template", { templateArtifactId: tpl.edicion_id, definitionId: tpl.definition_id });
 };
 // Entregable bajo config ACTIVA: actualización guiada (versiona plantilla + config y las publica/activa juntas).
 const guidedUpdateTemplate = (tpl) => {
-  if (!tpl?.template_artifact_id || !tpl?.definition_id) return;
+  if (!tpl?.edicion_id || !tpl?.definition_id) return;
   emit("guided-update-template", {
     definitionId: tpl.definition_id,
-    templateArtifactId: tpl.template_artifact_id,
+    templateArtifactId: tpl.edicion_id,
     displayName: tpl.display_name,
     templateCode: tpl.template_code,
     storageVersion: tpl.storage_version

@@ -14,7 +14,7 @@
 // goldens deben salir IDÉNTICOS. Si salen idénticos, la inversión no cambió el comportamiento; si se
 // mueven, el diff señala el paso y la columna exactos.
 //
-// ⚠️ EL ORÁCULO NO PUEDE SER `GET /template_artifacts/:id/schema`. Cuando se escribió esto, ese
+// ⚠️ EL ORÁCULO NO PUEDE SER `GET /ediciones/:id/schema`. Cuando se escribió esto, ese
 // endpoint leía el flujo del `meta.yaml`: habría medido justo lo que el sub-paso 3 iba a cambiar.
 // Desde el sub-paso 5 ya lee de la base, y SIGUE sin servir de oráculo — devuelve el flujo APLANADO
 // en forma de formulario, colapsa los dos portadores en una vista sola sin decir de cuál leyó, y no
@@ -25,8 +25,8 @@
 // corren en orden alfabético con --test-concurrency=1 y la colación del contenedor es POSIX (byte a
 // byte: '_' 0x5F < 'z' 0x7A), así que "zzzzz_task_item_relay" < "zzzzzz_flow_steps_db" y este corre
 // el ÚLTIMO. Tiene que ser el último por dos razones independientes:
-//   · ESCRIBE: autorar un borrador con flujo inserta en deliverables, template_artifacts,
-//     process_definition_templates y las cuatro tablas de flujo, y mueve sus secuencias. Corriendo
+//   · ESCRIBE: autorar un borrador con flujo inserta en catalogo_documental, ediciones,
+//     vinculos y las cuatro tablas de flujo, y mueve sus secuencias. Corriendo
 //     antes movería las huellas `list_*` de admin_crud y los ids de los flows que escriben.
 //   · LEE EL ESTADO ACUMULADO: el golden de plantilla incluye lo que dejan `zz_template_lifecycle`
 //     (la configuración clonada y su artifact v1.1.0) y `zzz_artifact_draft` (que limpia lo suyo).
@@ -43,13 +43,13 @@
 // runtime (`generation/documents.js:246,278` lo escribe siempre con el task_item).
 //
 // DENTRO DEL ORIGEN «PLANTILLA» YA SOLO QUEDA UN PORTADOR, y esa es la novedad del sub-paso 8:
-//   · el de la PLANTILLA (`template_artifact_id`) — lo escribe el formulario web DIRECTO en la base,
+//   · el de la PLANTILLA (`edicion_id`) — lo escribe el formulario web DIRECTO en la base,
 //     uno solo, compartido por todas las configuraciones donde el entregable esté enlazado.
-//   · el del VÍNCULO (`process_definition_template_id`) lo sembraba el sync leyendo la sección
+//   · el del VÍNCULO (`vinculo_id`) lo sembraba el sync leyendo la sección
 //     `workflows:` del `meta.yaml`. Retirada la sección, no queda quien lo escriba. Los goldens de
 //     este flow lo enseñan en negativo: donde había dos cabeceras por lado, queda una.
 // Se distinguen en el golden sin añadir columnas, pero OJO con cuál se mira: `normalize` enmascara
-// las claves de id **aunque valgan `null`**, así que `process_definition_template_id` sale
+// las claves de id **aunque valgan `null`**, así que `vinculo_id` sale
 // `"<normalized>"` en los dos y NO sirve de discriminante. Lo que los separa en el golden es
 // `process_definition_id` e `item_mode` —conceptos del VÍNCULO, que la plantilla no tiene y salen
 // `null`—. El portador de verdad se comprueba sobre la fila CRUDA en `unicaCabeceraDeLaPlantilla`,
@@ -57,8 +57,8 @@
 // La identidad de negocio la resuelven los dos por el mismo `LEFT JOIN`, gracias al `COALESCE`.
 //
 // SOBRE EL ENMASCARADO. Se enmascaran los ids ESTRUCTURALES (el `id` de la propia fila y los que la
-// cuelgan de otra: `fill_flow_template_id`, `template_id`, `process_definition_template_id`,
-// `task_item_id`, `template_artifact_id`, `deliverable_id`), porque su valor depende del orden de
+// cuelgan de otra: `fill_flow_template_id`, `template_id`, `vinculo_id`,
+// `task_item_id`, `edicion_id`, `catalogo_documental_id`), porque su valor depende del orden de
 // siembra y de qué secuencias movieron los flows anteriores, no del comportamiento. En su lugar cada
 // plantilla de flujo lleva su identidad de NEGOCIO (`process_definition_id`, `deliverable_code`,
 // `storage_version`, `lifecycle_state`, `item_mode`), que sí es estable y además se lee.
@@ -104,7 +104,7 @@ import { FIXTURE, USERS } from "../config.mjs";
 
 const SUITE = "flow_steps_db";
 
-const DRAFT_PATH = "/admin/sql/template_artifacts/draft";
+const DRAFT_PATH = "/admin/sql/ediciones/draft";
 
 // El borrador que este flow autora. `code` es determinista: `draft_<slugify(display_name)>`.
 const AUTHORED_NAME = "zzzzzz char flujo en base";
@@ -163,7 +163,7 @@ const REFERENCE_PDF = {
 
 const FILL_TEMPLATE_COLUMNS = `
   fft.id,
-  fft.process_definition_template_id,
+  fft.vinculo_id,
   fft.task_item_id,
   fft.name,
   fft.description,
@@ -194,19 +194,19 @@ const SIGNATURE_STEP_COLUMNS = `
 // (con nulos) en vez de desaparecer en silencio.
 //
 // El `COALESCE` de los dos portadores es lo que hace legibles las cabeceras nuevas del sub-paso 3.
-// Sin él, un flujo colgado de `template_artifact_id` llega al golden con la identidad entera en
+// Sin él, un flujo colgado de `edicion_id` llega al golden con la identidad entera en
 // `null` —no se sabría de qué entregable es—, y además no casaría con el filtro por `d.code`, así
 // que la prueba del sub-paso se quedaría fuera de la clave que tiene que probarlo. No mueve nada de
-// lo anterior: para una fila del vínculo, `fft.template_artifact_id` es `NULL` y el `COALESCE`
+// lo anterior: para una fila del vínculo, `fft.edicion_id` es `NULL` y el `COALESCE`
 // devuelve exactamente el mismo artifact que antes.
 async function readFillFlows({ runtime, deliverableCode = null }) {
   const templates = await query(
     `SELECT ${FILL_TEMPLATE_COLUMNS}
        FROM fill_flow_templates fft
-       LEFT JOIN process_definition_templates pdt ON pdt.id = fft.process_definition_template_id
-       LEFT JOIN template_artifacts ta
-              ON ta.id = COALESCE(pdt.template_artifact_id, fft.template_artifact_id)
-       LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+       LEFT JOIN vinculos pdt ON pdt.id = fft.vinculo_id
+       LEFT JOIN ediciones ta
+              ON ta.id = COALESCE(pdt.edicion_id, fft.edicion_id)
+       LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
       WHERE fft.task_item_id IS ${runtime ? "NOT NULL" : "NULL"}
         AND ($1::text IS NULL OR d.code = $1::text)
       ORDER BY d.code, ta.storage_version, pdt.process_definition_id, fft.id`,
@@ -229,10 +229,10 @@ async function readSignatureFlows({ runtime, deliverableCode = null }) {
   const templates = await query(
     `SELECT ${SIGNATURE_TEMPLATE_COLUMNS}
        FROM signature_flow_templates sft
-       LEFT JOIN process_definition_templates pdt ON pdt.id = sft.process_definition_template_id
-       LEFT JOIN template_artifacts ta
-              ON ta.id = COALESCE(pdt.template_artifact_id, sft.template_artifact_id)
-       LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+       LEFT JOIN vinculos pdt ON pdt.id = sft.vinculo_id
+       LEFT JOIN ediciones ta
+              ON ta.id = COALESCE(pdt.edicion_id, sft.edicion_id)
+       LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
       WHERE sft.task_item_id IS ${runtime ? "NOT NULL" : "NULL"}
         AND ($1::text IS NULL OR d.code = $1::text)
       ORDER BY d.code, ta.storage_version, pdt.process_definition_id, sft.id`,
@@ -292,7 +292,7 @@ after(async () => {
 //
 // LAS DOS ESTÁN VACÍAS DESDE EL SUB-PASO 7, y ése es su valor: la de entrega llevaba las TRES filas
 // que sembró `BASE_META_YAML` —la del vínculo v1.0.0, la del vínculo v1.1.0 que la actualización
-// guiada heredó, y la que el sub-paso 6 copió al portador `template_artifact_id`—, las tres con un
+// guiada heredó, y la que el sub-paso 6 copió al portador `edicion_id`—, las tres con un
 // paso `document_owner` que nadie autoró nunca. Retirado el productor, el bootstrap no siembra
 // ningún flujo: es el criterio de cierre de §0.2 y §0.3, medido aquí en filas.
 // Si alguna vuelve a llenarse, es que reapareció un productor fuera del formulario.
@@ -433,7 +433,7 @@ test("autoría · POST draft con flujo de ENTREGA y de FIRMA -> 200", async () =
 // cabeceras por lado —la del vínculo, que sembraba el sync leyendo el `meta.yaml`, y la de la
 // plantilla, que escribe el formulario directo— y esta comprobación exigía que fueran idénticas paso
 // a paso. Retirada la sección `workflows:` del YAML, el sync no tiene de dónde leer y **la copia del
-// vínculo ya no nace**: queda UNA cabecera por lado, la del portador `template_artifact_id`.
+// vínculo ya no nace**: queda UNA cabecera por lado, la del portador `edicion_id`.
 //
 // Lo que se comprueba ahora es esa unicidad, y es la prueba positiva del desmontaje: si alguna vez
 // vuelve a aparecer una segunda cabecera colgada del vínculo, es que reapareció un productor fuera
@@ -441,7 +441,7 @@ test("autoría · POST draft con flujo de ENTREGA y de FIRMA -> 200", async () =
 const unicaCabeceraDeLaPlantilla = (flows, lado) => {
   assert.equal(flows.length, 1, `${lado}: una sola cabecera, la de la plantilla`);
   const [porPlantilla] = flows;
-  assert.equal(porPlantilla.process_definition_template_id, null, `${lado}: cuelga de la PLANTILLA, no del vínculo`);
+  assert.equal(porPlantilla.vinculo_id, null, `${lado}: cuelga de la PLANTILLA, no del vínculo`);
   assert.equal(porPlantilla.task_item_id, null, `${lado}: y nunca de un entregable de runtime`);
 };
 
@@ -481,10 +481,10 @@ test("autoría · flujo de FIRMA autorado, tal como quedó en la base", async ()
 
 const versionado = { hijaId: null };
 
-test("versionado · POST /template_artifacts/:id/version sobre la plantilla autorada -> 200", async () => {
+test("versionado · POST /ediciones/:id/version sobre la plantilla autorada -> 200", async () => {
   const token = await tokenFor("admin");
   assert.ok(autorado.artifactId, "depende de la autoría");
-  const res = await post(`/admin/sql/template_artifacts/${autorado.artifactId}/version`, {
+  const res = await post(`/admin/sql/ediciones/${autorado.artifactId}/version`, {
     token,
     body: { bump_level: "minor" },
   });
@@ -498,7 +498,7 @@ test("versionado · POST /template_artifacts/:id/version sobre la plantilla auto
 // el sub-paso promete.
 const copiaFiel = (flows, lado) => {
   const [delPadre, deLaHija] = flows;
-  assert.equal(deLaHija.process_definition_template_id, null, `${lado}: la hija cuelga de SU artifact`);
+  assert.equal(deLaHija.vinculo_id, null, `${lado}: la hija cuelga de SU artifact`);
   assert.equal(deLaHija.task_item_id, null, `${lado}: y NUNCA de un entregable de runtime`);
   assert.equal(deLaHija.is_active, 1, `${lado}: la cabecera copiada nace activa`);
   const sinIds = (pasos) => pasos.map(({ id: _id, ...resto }) => resto);
@@ -544,7 +544,7 @@ test("versionado · publicar la versión recién creada YA NO falla por «sin fl
   // Con las filas copiadas, el gate encuentra el flujo por el portador de la propia versión.
   const token = await tokenFor("admin");
   assert.ok(versionado.hijaId, "depende del paso anterior");
-  const res = await patch(`/admin/sql/template_artifacts/${versionado.hijaId}/publish`, { token, body: {} });
+  const res = await patch(`/admin/sql/ediciones/${versionado.hijaId}/publish`, { token, body: {} });
   assert.equal(res.status, 200, `publicar la versión debe responder 200: ${JSON.stringify(res.body)}`);
   assert.equal(res.body?.lifecycle_state, "published");
 });
@@ -552,13 +552,13 @@ test("versionado · publicar la versión recién creada YA NO falla por «sin fl
 // --- 5) LA VENTANA DEL SUB-PASO 7, CERRADA (sub-paso 8 del §0.8) ---------------------------------
 //
 // El sub-paso 7 retiró `BASE_META_YAML` y dejó a propósito una ventana abierta: la columna
-// `template_artifacts.meta_object_key` era `NOT NULL` y seguía apuntando a un `meta.yaml` que ya no
+// `ediciones.meta_object_key` era `NOT NULL` y seguía apuntando a un `meta.yaml` que ya no
 // se subía. Se midió entonces qué se rompía DE VERDAD con eso, y la respuesta fue UNA cosa:
 //
-//   POST /admin/sql/template_artifacts/:id/resync
+//   POST /admin/sql/ediciones/:id/resync
 //     -> 400 {"message":"The specified key does not exist."}
 //
-// (Los otros dos caminos temidos —los hooks de `process_definition_templates` sin `catch`— no se
+// (Los otros dos caminos temidos —los hooks de `vinculos` sin `catch`— no se
 // alcanzaban con la plantilla base porque antes intercepta la pared de línea, 422, o el guard de
 // borrador, 400; y el clonado degradaba el fallo a aviso.)
 //
@@ -576,15 +576,15 @@ const ARTIFACT_BASE_ID = 1;
 
 test("ventana 7 · POST :id/resync — el endpoint que reventaba ya no existe", async () => {
   const token = await tokenFor("admin");
-  const res = await post(`/admin/sql/template_artifacts/${ARTIFACT_BASE_ID}/resync`, { token, body: {} });
+  const res = await post(`/admin/sql/ediciones/${ARTIFACT_BASE_ID}/resync`, { token, body: {} });
   assert.equal(res.status, 404, `resync debe ser 404, no el 400 de MinIO: ${JSON.stringify(res.body)}`);
 });
 
 test("ventana 7 · sync-status y workflows/reconcile tampoco existen", async () => {
   const token = await tokenFor("admin");
-  const status = await get(`/admin/sql/template_artifacts/${ARTIFACT_BASE_ID}/sync-status`, { token });
+  const status = await get(`/admin/sql/ediciones/${ARTIFACT_BASE_ID}/sync-status`, { token });
   assert.equal(status.status, 404, `sync-status debe ser 404: ${JSON.stringify(status.body)}`);
-  const reconcile = await post("/admin/sql/template_artifacts/workflows/reconcile", { token, body: {} });
+  const reconcile = await post("/admin/sql/ediciones/workflows/reconcile", { token, body: {} });
   assert.equal(reconcile.status, 404, `workflows/reconcile debe ser 404: ${JSON.stringify(reconcile.body)}`);
 });
 
@@ -592,7 +592,7 @@ test("ventana 7 · `meta_object_key` ya no existe como columna, así que no hay 
   const columnas = await query(
     `SELECT column_name
        FROM information_schema.columns
-      WHERE table_name = 'template_artifacts'
+      WHERE table_name = 'ediciones'
         AND column_name = 'meta_object_key'`,
   );
   assert.deepEqual(columnas, [], "la columna del sub-paso 7 debe estar borrada");
@@ -600,7 +600,7 @@ test("ventana 7 · `meta_object_key` ya no existe como columna, así que no hay 
   // Y la plantilla base sigue siendo perfectamente usable sin ella: su editor abre (lee de la base)
   // y responde con el flujo vacío, que es la verdad. Antes esto dependía de un fichero de MinIO.
   const token = await tokenFor("admin");
-  const schema = await get(`/admin/sql/template_artifacts/${ARTIFACT_BASE_ID}/schema`, { token });
+  const schema = await get(`/admin/sql/ediciones/${ARTIFACT_BASE_ID}/schema`, { token });
   assert.equal(schema.status, 200, `el editor de la plantilla base debe abrir: ${JSON.stringify(schema.body)}`);
   assert.equal(schema.body?.fill_workflow?.steps?.length, 0);
 });

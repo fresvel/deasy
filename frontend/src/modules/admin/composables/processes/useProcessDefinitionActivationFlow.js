@@ -73,7 +73,7 @@ export function useProcessDefinitionActivationFlow({
           limit: 100
         }
       }),
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("vinculos"), {
         params: {
           filter_process_definition_id: definitionId,
           orderBy: "sort_order",
@@ -87,7 +87,7 @@ export function useProcessDefinitionActivationFlow({
     processDefinitionActivationArtifacts.value = artifactsResponse.data || [];
     await prefetchFkLabelsForRows(processDefinitionActivationRules.value, ["unit_id", "unit_type_id", "cargo_id", "position_id"]);
     await prefetchFkLabelsForRows(processDefinitionActivationTriggers.value, ["term_type_id"]);
-    await prefetchFkLabelsForRows(processDefinitionActivationArtifacts.value, ["template_artifact_id"]);
+    await prefetchFkLabelsForRows(processDefinitionActivationArtifacts.value, ["edicion_id"]);
   };
 
   const openProcessDefinitionActivationModal = async () => {

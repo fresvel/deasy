@@ -81,10 +81,10 @@ export const getExecutableTemplatesMap = async (connection) => {
     `SELECT
        pdt.id,
        pdt.process_definition_id,
-       pdt.template_artifact_id,
+       pdt.edicion_id,
        pdt.sort_order,
        pdt.item_mode
-     FROM process_definition_templates pdt
+     FROM vinculos pdt
      ORDER BY pdt.process_definition_id ASC, pdt.sort_order ASC, pdt.id ASC`
   );
   const map = new Map();
@@ -161,7 +161,7 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
        dv.task_item_id,
        dv.status AS document_version_status,
        ti.document_status,
-       ti.process_definition_template_id,
+       ti.vinculo_id,
        ti.assigned_person_id AS task_item_assigned_person_id,
        ti.responsible_position_id AS task_item_responsible_position_id,
        ti.created_by_person_id AS item_created_by_person_id,
@@ -183,13 +183,13 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
 
 // Tres escalones, por PRIORIDAD y no por «qué columna está rellena». El orden importa porque una
 // misma fila puede llevar dos portadores a la vez: el flujo de runtime que escribe
-// `materializeRuntimeFlowForTaskItem` (documents.js:248) lleva `process_definition_template_id` Y
+// `materializeRuntimeFlowForTaskItem` (documents.js:248) lleva `vinculo_id` Y
 // `task_item_id`. Por eso cada escalón exige NULL en los portadores de los escalones anteriores: sin
 // ese `IS NULL`, el flujo privado de un envío se le serviría a cualquier otro entregable del mismo
 // vínculo. Los escalones:
 //   1. del ENTREGABLE   (`task_item_id`)                — flujo definido en runtime
-//   2. del VÍNCULO      (`process_definition_template_id`) — flujo autorado para esa configuración
-//   3. de la PLANTILLA  (`template_artifact_id`)        — flujo del entregable, compartido por todas
+//   2. del VÍNCULO      (`vinculo_id`) — flujo autorado para esa configuración
+//   3. de la PLANTILLA  (`edicion_id`)        — flujo del entregable, compartido por todas
 //      las configuraciones donde esté enlazado (§0.8 del plan maestro)
 export const getActiveFillFlowTemplateForDefinitionTemplate = async (
   connection,
@@ -212,7 +212,7 @@ export const getActiveFillFlowTemplateForDefinitionTemplate = async (
   const [rows] = await connection.query(
     `SELECT id
      FROM fill_flow_templates
-     WHERE process_definition_template_id = ?
+     WHERE vinculo_id = ?
        AND task_item_id IS NULL
        AND is_active = 1
      ORDER BY id DESC
@@ -227,12 +227,12 @@ export const getActiveFillFlowTemplateForDefinitionTemplate = async (
   const [byArtifact] = await connection.query(
     `SELECT id
      FROM fill_flow_templates
-     WHERE template_artifact_id = (
-             SELECT template_artifact_id
-             FROM process_definition_templates
+     WHERE edicion_id = (
+             SELECT edicion_id
+             FROM vinculos
              WHERE id = ?
            )
-       AND process_definition_template_id IS NULL
+       AND vinculo_id IS NULL
        AND task_item_id IS NULL
        AND is_active = 1
      ORDER BY id DESC
@@ -355,14 +355,14 @@ export const getPositionsForRule = async (connection, rule) => {
 
 export const getExistingTaskItemTemplateIds = async (connection, taskId) => {
   const [rows] = await connection.query(
-    `SELECT process_definition_template_id
+    `SELECT vinculo_id
      FROM task_items
      WHERE task_id = ?
        AND origin_kind = 'process_defined'
        AND responsible_position_id IS NULL`,
     [taskId]
   );
-  return new Set(rows.map((row) => Number(row.process_definition_template_id)));
+  return new Set(rows.map((row) => Number(row.vinculo_id)));
 };
 
 export const getExistingTaskItemTargetKeys = async (connection, taskId) => {
@@ -371,7 +371,7 @@ export const getExistingTaskItemTargetKeys = async (connection, taskId) => {
     // QUIEN LO PRODUCE. Antes iba por los dos destinos —el receptor—, que es el eje equivocado
     // desde que el dueño decidio «un entregable por persona que lo entrega» (2026-08-23).
     `SELECT
-       process_definition_template_id,
+       vinculo_id,
        COALESCE(responsible_position_id, 0) AS responsible_position_id
      FROM task_items
      WHERE task_id = ?
@@ -379,7 +379,7 @@ export const getExistingTaskItemTargetKeys = async (connection, taskId) => {
     [taskId]
   );
   return new Set(rows.map((row) => [
-    Number(row.process_definition_template_id || 0),
+    Number(row.vinculo_id || 0),
     Number(row.responsible_position_id || 0)
   ].join(":")));
 };
@@ -397,16 +397,16 @@ export const getTaskItemsForDocumentMaterialization = async (connection, taskId)
     `SELECT
        ti.id,
        ti.task_id,
-       ti.process_definition_template_id,
-       pdt.template_artifact_id,
+       ti.vinculo_id,
+       pdt.edicion_id,
        ti.assigned_person_id,
        ti.target_unit_id,
        ti.responsible_position_id,
        tar_dl.display_name AS template_artifact_name
      FROM task_items ti
-     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      WHERE ti.task_id = ?
      ORDER BY ti.sort_order ASC, ti.id ASC`,
     [taskId]

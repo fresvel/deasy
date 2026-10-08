@@ -53,7 +53,7 @@ test("el mensaje del rechazo nombra TODOS los borradores que quedan", async () =
   );
 });
 
-// `draft_names` es NULL cuando el LEFT JOIN a `deliverables` no resuelve el nombre. El mensaje debe
+// `draft_names` es NULL cuando el LEFT JOIN a `catalogo_documental` no resuelve el nombre. El mensaje debe
 // seguir siendo legible, sin un "()" vacío colgando.
 test("sin nombres resolubles, el mensaje no arrastra un parentesis vacio", async () => {
   await assert.rejects(

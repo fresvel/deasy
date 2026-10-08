@@ -82,7 +82,7 @@ test("validateTableRules exige la plantilla de proceso configurado en los dos ti
       () => validateTableRules(table, {}),
       "Selecciona la plantilla de proceso configurado.",
     );
-    assert.doesNotThrow(() => validateTableRules(table, { process_definition_template_id: 7 }));
+    assert.doesNotThrow(() => validateTableRules(table, { vinculo_id: 7 }));
   }
 });
 
@@ -257,7 +257,7 @@ test("validateTableRules exige el vinculo venga el item de donde venga", () => {
     "entregable definido por proceso",
   );
   assert.doesNotThrow(
-    () => validateTableRules("task_items", { ...base, process_definition_template_id: 9, start_date: "2026-01-01" }),
+    () => validateTableRules("task_items", { ...base, vinculo_id: 9, start_date: "2026-01-01" }),
   );
 });
 
@@ -302,15 +302,15 @@ test("la versión documental es la RONDA: un entero mayor o igual a 1", () => {
   assert.doesNotThrow(() => validateTableRules("document_versions", { version: 12 }));
 });
 
-// --- template_artifacts -------------------------------------------------------
+// --- ediciones -------------------------------------------------------
 
 test("validateTableRules exige al menos un formato disponible en el artifact", () => {
   throwsWith(
-    () => validateTableRules("template_artifacts", { base_object_prefix: "x", available_formats: "{}" }),
+    () => validateTableRules("ediciones", { base_object_prefix: "x", available_formats: "{}" }),
     "al menos un formato",
   );
   assert.doesNotThrow(() =>
-    validateTableRules("template_artifacts", {
+    validateTableRules("ediciones", {
       base_object_prefix: "x",
       available_formats: '{"pdf":"x/doc.pdf"}',
     }),
@@ -377,7 +377,7 @@ test("task_items pide la tarea, luego el vinculo, y solo despues mira las fechas
       validateTableRules("task_items", {
         task_id: 1,
         origin_kind: "ad_hoc",
-        process_definition_template_id: 3,
+        vinculo_id: 3,
         start_date: "2026-06-01",
         end_date: "2026-01-01",
       }),
@@ -385,13 +385,13 @@ test("task_items pide la tarea, luego el vinculo, y solo despues mira las fechas
   );
 });
 
-test("template_artifacts exige el prefijo base antes de mirar los formatos", () => {
+test("ediciones exige el prefijo base antes de mirar los formatos", () => {
   throwsWith(
-    () => validateTableRules("template_artifacts", { available_formats: "{}" }),
+    () => validateTableRules("ediciones", { available_formats: "{}" }),
     "Debes registrar el prefijo base del artifact.",
   );
   throwsWith(
-    () => validateTableRules("template_artifacts", { base_object_prefix: "x" }),
+    () => validateTableRules("ediciones", { base_object_prefix: "x" }),
     "al menos un formato",
   );
 });

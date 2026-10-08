@@ -84,16 +84,16 @@ router.get("/stats/operation", requireAnyRole(MANAGEMENT_ROLES), getOperationSta
 router.post("/generadores_de_documento/sync", requireSqlAdminPermission({ resource: "templates", action: "update" }), syncTemplateSeeds);
 router.get("/generadores_de_documento/:id/preview", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateSeedPreview);
 router.get("/generadores_de_documento/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateSeedArchive);
-router.get("/template_artifacts/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateArtifactArchive);
-router.get("/template_artifacts/:id/schema", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSchema);
-router.patch("/template_artifacts/:id/active", requireSqlAdminPermission({ resource: "templates", action: "update" }), setTemplateArtifactActive);
-router.post("/template_artifacts/:id/version", requireSqlAdminPermission({ resource: "templates", action: "create" }), createTemplateArtifactVersion);
-router.patch("/template_artifacts/:id/publish", requireSqlAdminPermission({ resource: "templates", action: "update" }), publishTemplateArtifact);
-router.patch("/template_artifacts/:id/retire", requireSqlAdminPermission({ resource: "templates", action: "update" }), retireTemplateArtifact);
-router.get("/template_artifacts/versions", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateVersions);
-router.post("/template_artifacts/use-in-config", requireSqlAdminPermission({ resource: "templates", action: "update" }), useTemplateVersionInConfig);
-router.post("/template_artifacts/guided-update", requireSqlAdminPermission({ resource: "templates", action: "update" }), startGuidedTemplateUpdate);
-router.post("/template_artifacts/guided-update/finish", requireSqlAdminPermission({ resource: "templates", action: "update" }), finishGuidedTemplateUpdate);
+router.get("/ediciones/:id/download", requireSqlAdminPermission({ resource: "templates", action: "read" }), downloadTemplateArtifactArchive);
+router.get("/ediciones/:id/schema", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateArtifactSchema);
+router.patch("/ediciones/:id/active", requireSqlAdminPermission({ resource: "templates", action: "update" }), setTemplateArtifactActive);
+router.post("/ediciones/:id/version", requireSqlAdminPermission({ resource: "templates", action: "create" }), createTemplateArtifactVersion);
+router.patch("/ediciones/:id/publish", requireSqlAdminPermission({ resource: "templates", action: "update" }), publishTemplateArtifact);
+router.patch("/ediciones/:id/retire", requireSqlAdminPermission({ resource: "templates", action: "update" }), retireTemplateArtifact);
+router.get("/ediciones/versions", requireSqlAdminPermission({ resource: "templates", action: "read" }), getTemplateVersions);
+router.post("/ediciones/use-in-config", requireSqlAdminPermission({ resource: "templates", action: "update" }), useTemplateVersionInConfig);
+router.post("/ediciones/guided-update", requireSqlAdminPermission({ resource: "templates", action: "update" }), startGuidedTemplateUpdate);
+router.post("/ediciones/guided-update/finish", requireSqlAdminPermission({ resource: "templates", action: "update" }), finishGuidedTemplateUpdate);
 router.get("/process_definitions/:id/activation-diff", requireSqlAdminPermission({ resource: "templates", action: "read" }), getConfigActivationDiff);
 router.get("/process_definitions/:id/target-scope", requireSqlAdminPermission({ resource: "templates", action: "read" }), getProcessTargetScope);
 router.get("/process_definitions/:id/resolvable-cargos", requireSqlAdminPermission({ resource: "templates", action: "read" }), listResolvableCargos);
@@ -105,15 +105,15 @@ router.post("/task-items/:id/handover", requireSqlAdminPermission({ resource: "t
 router.get("/task-items/:id/handovers", requireSqlAdminPermission({ resource: "templates", action: "read" }), listTaskItemHandovers);
 router.get("/process_definitions/:id/series-scope", requireSqlAdminPermission({ resource: "templates", action: "read" }), getProcessDefinitionSeriesScope);
 // Edición de código LaTeX: descarga/re-subida del contrato. SOLO AdminSistema (es código ejecutable).
-router.get("/template_artifacts/:id/source", requireAnyRole(["AdminSistema"]), downloadTemplateArtifactSource);
+router.get("/ediciones/:id/source", requireAnyRole(["AdminSistema"]), downloadTemplateArtifactSource);
 router.post(
-  "/template_artifacts/:id/source",
+  "/ediciones/:id/source",
   requireAnyRole(["AdminSistema"]),
   draftArtifactUpload.single("source"),
   applyTemplateArtifactSource
 );
 router.post(
-  "/template_artifacts/draft",
+  "/ediciones/draft",
   requireSqlAdminPermission({ resource: "templates", action: "create" }),
   draftArtifactUpload.fields([
     { name: "pdf_file", maxCount: 1 },
@@ -124,7 +124,7 @@ router.post(
   createTemplateArtifactDraft
 );
 router.put(
-  "/template_artifacts/draft/:id",
+  "/ediciones/draft/:id",
   requireSqlAdminPermission({ resource: "templates", action: "update" }),
   draftArtifactUpload.fields([
     { name: "pdf_file", maxCount: 1 },

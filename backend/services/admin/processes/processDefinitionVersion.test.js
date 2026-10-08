@@ -1,6 +1,6 @@
 // Unitarios de `cloneProcessDefinitionChildren`: LO QUE SE LEE SE ESCRIBE.
 //
-// Por qué existe. El clon de los vínculos copiaba `template_artifact_id` y `sort_order` y se dejaba
+// Por qué existe. El clon de los vínculos copiaba `edicion_id` y `sort_order` y se dejaba
 // `item_mode`, que es NOT NULL DEFAULT 'single'. Eso no da error: convierte en `single` —en silencio—
 // todo entregable `routed` o `replicated` de la configuración clonada. Y como clonar es lo que hace
 // la actualización guiada de plantillas, cada actualización deshacía el modo de emisión. Ocurrió de
@@ -54,14 +54,14 @@ function fakeConnection({ definition, templates = [], rules = [], periodTypes = 
     async query(sql, params) {
       const text = String(sql);
       if (/^\s*INSERT/i.test(text)) {
-        if (text.includes("process_definition_templates")) log.inserts.templates.push({ sql: text, params });
+        if (text.includes("vinculos")) log.inserts.templates.push({ sql: text, params });
         else if (text.includes("process_target_rules")) log.inserts.rules.push({ sql: text, params });
         else if (text.includes("process_definition_period_types")) log.inserts.periodTypes.push({ sql: text, params });
         else assert.fail(`INSERT inesperado durante el clonado: ${text}`);
         return [{ affectedRows: 1 }];
       }
       if (text.includes("FROM process_definition_versions")) return [definition ? [definition] : []];
-      if (text.includes("FROM process_definition_templates")) {
+      if (text.includes("FROM vinculos")) {
         log.selects.templates = text;
         return [templates];
       }
@@ -83,9 +83,9 @@ const DEFINITION = { id: SOURCE_ID, process_id: PROCESS_ID, variation_key: "defa
 
 // Una configuración con LOS TRES modos, para que ninguno pueda colarse por el hueco de otro.
 const TEMPLATES = [
-  { template_artifact_id: 10, sort_order: 1, item_mode: "routed" },
-  { template_artifact_id: 20, sort_order: 2, item_mode: "replicated" },
-  { template_artifact_id: 30, sort_order: 3, item_mode: "single" }
+  { edicion_id: 10, sort_order: 1, item_mode: "routed" },
+  { edicion_id: 20, sort_order: 2, item_mode: "replicated" },
+  { edicion_id: 30, sort_order: 3, item_mode: "single" }
 ];
 
 const RULES = [
@@ -140,7 +140,7 @@ test("el clon conserva el item_mode de cada vinculo (routed y replicated no caen
     "clonar una configuracion NO puede convertir sus entregables en 'single'"
   );
   assert.deepEqual(
-    cloned.map((row) => [row.template_artifact_id, row.sort_order]),
+    cloned.map((row) => [row.edicion_id, row.sort_order]),
     [[10, 1], [20, 2], [30, 3]],
     "y el resto del vinculo viaja igual que antes"
   );
@@ -162,15 +162,15 @@ test("el remap de plantilla re-apunta el artifact pero NO toca el item_mode", as
   });
 
   const cloned = connection.log.inserts.templates.map(insertedRow);
-  assert.equal(cloned[0].template_artifact_id, 99, "el vinculo remapeado apunta a la version nueva");
+  assert.equal(cloned[0].edicion_id, 99, "el vinculo remapeado apunta a la version nueva");
   assert.equal(cloned[0].item_mode, "routed", "y sigue siendo routed: el remap cambia la plantilla, no el modo");
-  assert.equal(cloned[1].template_artifact_id, 20, "los no remapeados no se tocan");
+  assert.equal(cloned[1].edicion_id, 20, "los no remapeados no se tocan");
 });
 
 // --- La invariante generica: todo lo que se lee se escribe ----------------------------------------
 
 const HIJOS = [
-  { nombre: "templates", tabla: "process_definition_templates" },
+  { nombre: "templates", tabla: "vinculos" },
   { nombre: "rules", tabla: "process_target_rules" },
   { nombre: "periodTypes", tabla: "process_definition_period_types" }
 ];

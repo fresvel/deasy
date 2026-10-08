@@ -27,7 +27,7 @@
 // y que ninguna transaccion de PostgreSQL puede deshacer.
 //
 // Efecto lateral bueno de la transaccion, y no era el objetivo: la pila NO apilaba en EDICION, asi
-// que una edicion que fallaba al vincular dejaba aplicado el `UPDATE` de `template_artifacts`. Ahora
+// que una edicion que fallaba al vincular dejaba aplicado el `UPDATE` de `ediciones`. Ahora
 // tambien se deshace. Ver docs/planes/referencia/patrones-diseno.md §3.1.
 
 import fs from "node:fs";
@@ -185,7 +185,7 @@ export const PACKAGE_DATA_FILE_NAME = "data.yaml";
 
 // `data.yaml` va DOS VECES a proposito, igual que en el bootstrap
 // (`SystemBootstrapService.js:367-368`), y la copia de dentro NO es redundante: es la UNICA que
-// viaja al usuario. `GET /template_artifacts/:id/source` zipea solo `template/jinja2/` con rutas
+// viaja al usuario. `GET /ediciones/:id/source` zipea solo `template/jinja2/` con rutas
 // relativas a ese prefijo, y `make.sh` busca `data.yaml`/`defaults.yaml` relativos a su propio
 // directorio, que en el ZIP es la raiz. Con solo la copia de la raiz del paquete, el render con
 // `StrictUndefined` reventaba antes de llegar a LaTeX — medido:
@@ -283,9 +283,9 @@ export default class TemplateLifecycleService {
     if (!normalizedDefinitionId) return 0;
     const [rows] = await connection.query(
       `SELECT ta.*, pdt.item_mode AS item_mode, d.display_name AS deliverable_name
-         FROM process_definition_templates pdt
-         INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
-         LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+         FROM vinculos pdt
+         INNER JOIN ediciones ta ON ta.id = pdt.edicion_id
+         LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
         WHERE pdt.process_definition_id = ? AND ta.lifecycle_state = 'draft'`,
       [normalizedDefinitionId]
     );
@@ -303,7 +303,7 @@ export default class TemplateLifecycleService {
       }
       await this._retirePriorPublishedSiblings(connection, artifact.id);
       await connection.query(
-        "UPDATE template_artifacts SET lifecycle_state = 'published' WHERE id = ?",
+        "UPDATE ediciones SET lifecycle_state = 'published' WHERE id = ?",
         [artifact.id]
       );
       published += 1;
@@ -365,7 +365,7 @@ export default class TemplateLifecycleService {
   }
 
   // `assertDeliverableBelongsToConfigLine` VIVIO AQUI hasta el 2026-10-04 (frente 23, F1.3). Era "la
-  // pared": comparaba `deliverables.owner_process_id` / `owner_variation_key` con el proceso y la
+  // pared": comparaba `catalogo_documental.owner_process_id` / `owner_variation_key` con el proceso y la
   // variacion de la configuracion, y rechazaba con 422 el vinculo que cruzara de linea.
   //
   // Se retira porque sus dos columnas se retiraron, y ellas se retiraron porque el guardia era su
@@ -377,7 +377,7 @@ export default class TemplateLifecycleService {
   // `postgres_schema.sql`): al vincular una edicion, todas las definiciones ya vinculadas a
   // cualquier edicion de ese mismo entregable tienen que compartir linea con la destino. Es un
   // disparador y no un indice unico porque la regla mira `(process_id, series_id)`, que no cabe en
-  // un indice de `process_definition_templates` — y porque el unico sobre `template_artifact_id` a
+  // un indice de `vinculos` — y porque el unico sobre `edicion_id` a
   // secas rompia el clon de configuraciones (medido).
   //
   // Esto afecta a `repointConfigTemplateLink`, justo debajo: su UPDATE pasa por el disparador. Si
@@ -389,12 +389,12 @@ export default class TemplateLifecycleService {
       // `UPDATE ... SET ... FROM`: la forma `UPDATE ... INNER JOIN ... SET` es de MySQL y
       // PostgreSQL la rechaza al ejecutarla. La tabla que se actualiza NO se repite en el FROM;
       // su condicion de union pasa al WHERE. Se evalua contra los valores VIEJOS, asi que buscar
-      // por `ta.id = pdt.template_artifact_id` y reasignar esa misma columna es correcto.
-      `UPDATE process_definition_templates pdt
-          SET template_artifact_id = ?
-         FROM template_artifacts ta
-         JOIN deliverables d ON d.id = ta.deliverable_id
-        WHERE ta.id = pdt.template_artifact_id
+      // por `ta.id = pdt.edicion_id` y reasignar esa misma columna es correcto.
+      `UPDATE vinculos pdt
+          SET edicion_id = ?
+         FROM ediciones ta
+         JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+        WHERE ta.id = pdt.edicion_id
           AND pdt.process_definition_id = ?
           AND d.code = ?`,
       [Number(targetArtifactId), Number(definitionId), String(templateCode)]
@@ -419,7 +419,7 @@ export default class TemplateLifecycleService {
     if (!defId || !targetId) {
       throw new Error("Faltan datos: configuración y versión de plantilla.");
     }
-    const target = await this._getByKeys("template_artifacts", { id: targetId });
+    const target = await this._getByKeys("ediciones", { id: targetId });
     if (!target) throw new Error("La versión de plantilla no existe.");
 
     const [defRows] = await this.pool.query(
@@ -494,9 +494,9 @@ export default class TemplateLifecycleService {
     const loadTemplates = async (id) => {
       const [rows] = await this.pool.query(
         `SELECT d.code AS template_code, d.display_name, ta.storage_version, ta.lifecycle_state
-           FROM process_definition_templates pdt
-           INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
-           INNER JOIN deliverables d ON d.id = ta.deliverable_id
+           FROM vinculos pdt
+           INNER JOIN ediciones ta ON ta.id = pdt.edicion_id
+           INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
           WHERE pdt.process_definition_id = ?`,
         [id]
       );
@@ -559,7 +559,7 @@ export default class TemplateLifecycleService {
     const [srcRows] = await this.pool.query(
       `SELECT ta.*, d.code AS template_code, d.display_name, d.description, d.template_scope,
               d.owner_person_id
-         FROM template_artifacts ta LEFT JOIN deliverables d ON d.id = ta.deliverable_id
+         FROM ediciones ta LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
         WHERE ta.id = ? LIMIT 1`,
       [srcId]
     );
@@ -578,14 +578,14 @@ export default class TemplateLifecycleService {
     let code = newCode || `${src.template_code}__${procSlug}`;
     for (let i = 1; ; i += 1) {
       const candidate = i === 1 ? code : `${code}-${i}`;
-      const [exists] = await this.pool.query("SELECT id FROM deliverables WHERE code = ? LIMIT 1", [candidate]);
+      const [exists] = await this.pool.query("SELECT id FROM catalogo_documental WHERE code = ? LIMIT 1", [candidate]);
       if (!exists.length) { code = candidate; break; }
     }
 
     // Crear el deliverable propio de la línea destino. Ya no lleva «de qué línea es» escrito dentro
     // (frente 23, F1.2 — 2026-10-04): lo dice el vínculo que esta misma operación re-apunta.
     const [delivIns] = await this.pool.query(
-      `INSERT INTO deliverables
+      `INSERT INTO catalogo_documental
          (code, display_name, description, template_scope, owner_person_id)
        VALUES (?, ?, ?, ?, ?)`,
       [code, src.display_name, src.description, src.template_scope || "official", src.owner_person_id]
@@ -629,9 +629,9 @@ export default class TemplateLifecycleService {
     try {
       await connection.beginTransaction();
       const [taIns] = await connection.query(
-        `INSERT INTO template_artifacts
+        `INSERT INTO ediciones
            (storage_version, lifecycle_state, base_object_prefix, available_formats, generador_id,
-            content_hash, deliverable_id, is_active)
+            content_hash, catalogo_documental_id, is_active)
          VALUES ('1.0.0', 'published', ?, ?, ?, ?, ?, 1)`,
         [
           newPrefix, JSON.stringify(remappedFormats || {}),
@@ -658,11 +658,11 @@ export default class TemplateLifecycleService {
 
     // Re-apuntar el enlace de la config destino (del original al fork).
     await this.pool.query(
-      "UPDATE process_definition_templates SET template_artifact_id = ? WHERE process_definition_id = ? AND template_artifact_id = ?",
+      "UPDATE vinculos SET edicion_id = ? WHERE process_definition_id = ? AND edicion_id = ?",
       [newArtifactId, defId, srcId]
     );
 
-    return { deliverable_id: newDeliverableId, artifact_id: newArtifactId, code, base_object_prefix: newPrefix };
+    return { catalogo_documental_id: newDeliverableId, artifact_id: newArtifactId, code, base_object_prefix: newPrefix };
   }
 
   async getTemplateSeedPreview(seedId) {
@@ -858,14 +858,14 @@ export default class TemplateLifecycleService {
     }
 
     const [linkRows] = await this.pool.query(
-      "SELECT id FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
+      "SELECT id FROM vinculos WHERE process_definition_id = ? AND edicion_id = ? LIMIT 1",
       [defId, tplId]
     );
     if (!linkRows.length) {
       throw new Error("La plantilla seleccionada no pertenece a esta configuración.");
     }
 
-    const template = await this._getByKeys("template_artifacts", { id: tplId });
+    const template = await this._getByKeys("ediciones", { id: tplId });
     if (!template) {
       throw new Error("La plantilla no existe.");
     }
@@ -941,7 +941,7 @@ export default class TemplateLifecycleService {
       throw new Error("Faltan datos: se requieren la plantilla y la configuración borrador.");
     }
 
-    const template = await this._getByKeys("template_artifacts", { id: tplId });
+    const template = await this._getByKeys("ediciones", { id: tplId });
     if (!template) {
       throw new Error("La plantilla borrador no existe.");
     }
@@ -962,7 +962,7 @@ export default class TemplateLifecycleService {
     }
 
     const [linkRows] = await this.pool.query(
-      "SELECT id, item_mode FROM process_definition_templates WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1",
+      "SELECT id, item_mode FROM vinculos WHERE process_definition_id = ? AND edicion_id = ? LIMIT 1",
       [cfgId, tplId]
     );
     if (!linkRows.length) {
@@ -989,7 +989,7 @@ export default class TemplateLifecycleService {
       // Una sola publicada por ENTREGABLE: retira las demás publicadas del mismo deliverable.
       await this._retirePriorPublishedSiblings(connection, tplId);
       await connection.query(
-        "UPDATE template_artifacts SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
+        "UPDATE ediciones SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
         [tplId]
       );
 
@@ -1025,7 +1025,7 @@ export default class TemplateLifecycleService {
       );
       await connection.commit();
       return {
-        template_artifact_id: tplId,
+        edicion_id: tplId,
         template_lifecycle_state: "published",
         config_definition_id: cfgId,
         config_status: "active",
@@ -1104,7 +1104,7 @@ export default class TemplateLifecycleService {
     let linkedDefinitionId = normalizeNumericId(processDefinitionId);
     if (!linkedDefinitionId && existingArtifactId) {
       const [linkRows] = await this.pool.query(
-        "SELECT process_definition_id FROM process_definition_templates WHERE template_artifact_id = ? LIMIT 1",
+        "SELECT process_definition_id FROM vinculos WHERE edicion_id = ? LIMIT 1",
         [Number(existingArtifactId)]
       );
       linkedDefinitionId = normalizeNumericId(linkRows?.[0]?.process_definition_id);
@@ -1337,15 +1337,15 @@ export default class TemplateLifecycleService {
     }
 
     const [existingLink] = await connection.query(
-      `SELECT id FROM process_definition_templates
-       WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
+      `SELECT id FROM vinculos
+       WHERE process_definition_id = ? AND edicion_id = ? LIMIT 1`,
       [definitionId, templateArtifactId]
     );
 
     if (!existingLink?.length) {
       const [linkInsert] = await connection.query(
-        `INSERT INTO process_definition_templates
-          (process_definition_id, template_artifact_id, sort_order, item_mode)
+        `INSERT INTO vinculos
+          (process_definition_id, edicion_id, sort_order, item_mode)
          VALUES (?, ?, 1, ?)`,
         [definitionId, templateArtifactId, itemMode]
       );
@@ -1355,8 +1355,8 @@ export default class TemplateLifecycleService {
     if (itemMode !== "single") {
       // El link ya existía (p. ej. reintento): respeta el modo solicitado si no es el default.
       await connection.query(
-        `UPDATE process_definition_templates SET item_mode = ?
-         WHERE process_definition_id = ? AND template_artifact_id = ?`,
+        `UPDATE vinculos SET item_mode = ?
+         WHERE process_definition_id = ? AND edicion_id = ?`,
         [itemMode, definitionId, templateArtifactId]
       );
     }
@@ -1370,7 +1370,7 @@ export default class TemplateLifecycleService {
     const artifactId = Number(existingArtifact.id);
 
     await connection.query(
-      `UPDATE template_artifacts
+      `UPDATE ediciones
        SET base_object_prefix = ?,
            available_formats = ?,
            generador_id = ?,
@@ -1386,9 +1386,9 @@ export default class TemplateLifecycleService {
       ]
     );
 
-    if (existingArtifact?.deliverable_id) {
+    if (existingArtifact?.catalogo_documental_id) {
       await connection.query(
-        `UPDATE deliverables
+        `UPDATE catalogo_documental
          SET display_name = ?, description = ?, template_scope = ?, owner_person_id = ?
          WHERE id = ?`,
         [
@@ -1396,7 +1396,7 @@ export default class TemplateLifecycleService {
           identidad.description,
           identidad.templateScope,
           identidad.ownerPersonId,
-          existingArtifact.deliverable_id
+          existingArtifact.catalogo_documental_id
         ]
       );
     }
@@ -1405,7 +1405,7 @@ export default class TemplateLifecycleService {
   }
 
   // Persistencia de una CREACIÓN. Modelo entregable/ediciones: el `deliverable` se crea (o se REUSA)
-  // PRIMERO y luego se inserta la edición con su `deliverable_id`. Devuelve el id del
+  // PRIMERO y luego se inserta la edición con su `catalogo_documental_id`. Devuelve el id del
   // `template_artifact` nuevo.
   //
   // AQUÍ SE LEÍA LA LÍNEA DE LA CONFIGURACIÓN DESTINO —`process_id` y `variation_key`— para copiarla
@@ -1418,13 +1418,13 @@ export default class TemplateLifecycleService {
   // `code`, de una edición anterior) no se toca, porque tampoco se inserta.
   async _persistDraftCreation({ connection = this.pool, processDefinitionId, almacenamiento, identidad }) {
     const [delivExisting] = await connection.query(
-      "SELECT id FROM deliverables WHERE code = ? LIMIT 1",
+      "SELECT id FROM catalogo_documental WHERE code = ? LIMIT 1",
       [identidad.templateCode]
     );
     let deliverableId = delivExisting?.[0]?.id;
     if (!deliverableId) {
       const [delivIns] = await connection.query(
-        `INSERT INTO deliverables
+        `INSERT INTO catalogo_documental
            (code, display_name, description, template_scope, owner_person_id)
          VALUES (?, ?, ?, ?, ?)`,
         [
@@ -1439,14 +1439,14 @@ export default class TemplateLifecycleService {
     }
 
     const [result] = await connection.query(
-      `INSERT INTO template_artifacts (
+      `INSERT INTO ediciones (
         storage_version,
         lifecycle_state,
         base_object_prefix,
         available_formats,
         generador_id,
         content_hash,
-        deliverable_id,
+        catalogo_documental_id,
         is_active
       ) VALUES (?, 'draft', ?, ?, ?, ?, ?, 1)`,
       [
@@ -1461,8 +1461,8 @@ export default class TemplateLifecycleService {
     return result.insertId;
   }
 
-  // TODO lo que un borrador escribe en la base, en UNA transacción: la edición (`template_artifacts`
-  // + `deliverables`), el vínculo a la configuración destino y el flujo autorado.
+  // TODO lo que un borrador escribe en la base, en UNA transacción: la edición (`ediciones`
+  // + `catalogo_documental`), el vínculo a la configuración destino y el flujo autorado.
   //
   // La abre el sub-paso 3 del §0.8 y no es un adorno. Antes había compensación manual con pila de
   // deshacer, y el flujo nuevo NO se podía escribir así: cuelga del artifact por FK, así que un
@@ -1470,7 +1470,7 @@ export default class TemplateLifecycleService {
   // compensación acababa de borrar. Con `ROLLBACK` los tres efectos son uno solo.
   //
   // Efecto lateral bueno, y no era el objetivo: la pila de deshacer NO apilaba en EDICIÓN, así que
-  // una edición que fallaba al vincular dejaba aplicado el `UPDATE` de `template_artifacts`. Ahora
+  // una edición que fallaba al vincular dejaba aplicado el `UPDATE` de `ediciones`. Ahora
   // también se deshace.
   //
   // Lo que queda FUERA a propósito: la subida a MinIO (ocurre antes y ninguna transacción de
@@ -1529,7 +1529,7 @@ export default class TemplateLifecycleService {
   }
 
   // LA ÚNICA COPIA DEL FLUJO AUTORADO (sub-paso 8 del §0.8): las filas colgadas de
-  // `template_artifact_id`. Ya no hay `meta.yaml` con el que divergir ni sync que las duplique en
+  // `edicion_id`. Ya no hay `meta.yaml` con el que divergir ni sync que las duplique en
   // cada vínculo.
   //
   // Las DOS decisiones de "¿hay flujo que escribir?" las toma `authoredWorkflowHasSteps`, que es
@@ -1587,7 +1587,7 @@ export default class TemplateLifecycleService {
 
     let existingArtifact = null;
     if (isEdit) {
-      existingArtifact = await this._getByKeys("template_artifacts", { id: Number(artifactId) });
+      existingArtifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
       if (!existingArtifact) {
         throw new Error("El artifact seleccionado no existe.");
       }
@@ -1711,7 +1711,7 @@ export default class TemplateLifecycleService {
     // transacción— pero no se serializa a ningún sitio.
     //
     // El commit anterior le quitó la sección `workflows:`, que era la única que no era copia literal
-    // de una columna de `template_artifacts` / `deliverables`. Lo que quedaba —nombre, versión,
+    // de una columna de `ediciones` / `catalogo_documental`. Lo que quedaba —nombre, versión,
     // código, scope, descripción y el código de la semilla— es exactamente eso: seis copias. Conservarlo generado
     // obligaría además a rechazarlo explícitamente al re-subir un ZIP, o la grieta vuelve.
     const workflowsDocument = hasCustomWorkflows
@@ -1807,7 +1807,7 @@ export default class TemplateLifecycleService {
       if (!isEdit) prefijoSubidoAMinio = baseObjectPrefix;
 
       // El corte en dos objetos NO es cosmético: es el modelo. El ALMACENAMIENTO vive en
-      // `template_artifacts` (una fila por edición) y la IDENTIDAD en `deliverables` (una por
+      // `ediciones` (una fila por edición) y la IDENTIDAD en `catalogo_documental` (una por
       // entregable, compartida por sus ediciones). Cada método toca la tabla que le toca.
       const almacenamiento = {
         storageVersion, baseObjectPrefix, availableFormats, generadorId, contentHash

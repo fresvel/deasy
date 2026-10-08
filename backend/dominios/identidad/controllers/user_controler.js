@@ -1338,7 +1338,7 @@ export const listAddableDeliverables = async (req, res) => {
       return res.status(404).json({ message: "Configuración no encontrada." });
     }
     const rows = await findAddableDeliverables(pool, definitionId);
-    return res.json({ result: "ok", task_id: taskId, definition_id: definitionId, deliverables: rows });
+    return res.json({ result: "ok", task_id: taskId, definition_id: definitionId, catalogo_documental: rows });
   } catch (error) {
     console.error("listAddableDeliverables error:", error);
     return res.status(500).json({ message: "No se pudieron cargar los entregables agregables." });

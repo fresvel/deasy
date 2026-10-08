@@ -96,9 +96,9 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN processes p ON p.id = pdv.process_id
-     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      LEFT JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN term_types tt ON tt.id = trm.term_type_id
      LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
@@ -179,9 +179,9 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN processes p ON p.id = pdv.process_id
-     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      LEFT JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN term_types tt ON tt.id = trm.term_type_id
      LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
@@ -310,15 +310,15 @@ export const getDefinitionTemplates = async (pool, definitionId) => {
     `SELECT
        pdt.id,
        pdt.sort_order,
-       tar.id AS template_artifact_id,
+       tar.id AS edicion_id,
        tar_dl.display_name AS template_artifact_name,
        tar.is_active AS template_artifact_active,
        COUNT(DISTINCT sft.id) AS signature_flow_count
-     FROM process_definition_templates pdt
-     INNER JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     FROM vinculos pdt
+     INNER JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      LEFT JOIN signature_flow_templates sft
-       ON sft.process_definition_template_id = pdt.id
+       ON sft.vinculo_id = pdt.id
       AND sft.is_active = 1
      WHERE pdt.process_definition_id = ?
      GROUP BY
@@ -361,8 +361,8 @@ export const getUserOwnedTemplateArtifacts = async (pool, userId) => {
        ta.is_active,
        ta.available_formats,
        ta.created_at
-     FROM template_artifacts ta
-     INNER JOIN deliverables d ON d.id = ta.deliverable_id
+     FROM ediciones ta
+     INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
      WHERE d.owner_person_id = ?
        AND ta.is_active = 1
      ORDER BY ta.created_at DESC, ta.id DESC
@@ -466,8 +466,8 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
     `SELECT
        ti.id,
        ti.task_id,
-       ti.process_definition_template_id,
-       pdt.template_artifact_id,
+       ti.vinculo_id,
+       pdt.edicion_id,
        ti.origin_kind,
        ti.title,
        tar.generador_id,
@@ -484,9 +484,9 @@ export const getTaskItemsForTaskIds = async (pool, taskIds, userId) => {
        COALESCE(target_unit.label, target_unit.name) AS target_unit_label
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id
-     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      LEFT JOIN unit_positions rp ON rp.id = ti.responsible_position_id
      LEFT JOIN units target_unit ON target_unit.id = ti.target_unit_id
      WHERE ti.task_id IN (${placeholders})
@@ -610,8 +610,8 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
        ti.id AS task_item_id,
        t.id AS task_id,
        t.term_id,
-       ti.process_definition_template_id,
-       pdt.template_artifact_id,
+       ti.vinculo_id,
+       pdt.edicion_id,
        ti.origin_kind,
        ti.target_unit_id,
        ti.start_date,
@@ -632,9 +632,9 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      INNER JOIN terms trm ON trm.id = t.term_id
-     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      LEFT JOIN unit_positions responsible_pos ON responsible_pos.id = ti.responsible_position_id
      WHERE ti.id = ?
        AND t.process_definition_id = ?
@@ -747,9 +747,9 @@ export const getUserPendingSignaturesForDefinition = async (pool, userId, defini
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
      INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
-     INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     INNER JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
      LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     WHERE sr.assigned_person_id = ?
        AND t.process_definition_id = ?
@@ -790,9 +790,9 @@ export const getSignatureWorkflowRequestsForDocumentVersions = async (pool, docu
      FROM signature_flow_instances sfi
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
      INNER JOIN task_items ti ON ti.id = dv.task_item_id
-     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
      LEFT JOIN persons p ON p.id = sr.assigned_person_id
      LEFT JOIN signature_request_statuses srs ON srs.id = sr.status_id
@@ -834,7 +834,7 @@ export const getSignatureWorkflowStepsForDocumentVersions = async (pool, documen
              SELECT sft.id
              FROM task_items ti2
              INNER JOIN signature_flow_templates sft
-               ON sft.process_definition_template_id = ti2.process_definition_template_id
+               ON sft.vinculo_id = ti2.vinculo_id
               AND sft.is_active = 1
              WHERE ti2.id = dv.task_item_id
              ORDER BY sft.id DESC
@@ -876,9 +876,9 @@ export const getUserPendingFillRequestsForDefinition = async (pool, userId, defi
      INNER JOIN document_versions dv ON dv.id = dff.document_version_id
      INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
-     LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     LEFT JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      WHERE fr.assigned_person_id = ?
        AND t.process_definition_id = ?
        AND LOWER(COALESCE(dv.status, '')) IN (
@@ -977,13 +977,13 @@ export const getFillWorkflowStepsForDocumentVersions = async (pool, documentVers
 export const findAddableDeliverables = async (ejecutor, definitionId) => {
   const [rows] = await ejecutor.query(
     `SELECT pdt.id,
-            pdt.template_artifact_id,
+            pdt.edicion_id,
             pdt.item_mode,
             pdt.sort_order,
             COALESCE(dl.display_name, dl.code) AS name
-     FROM process_definition_templates pdt
-     LEFT JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
-     LEFT JOIN deliverables dl ON dl.id = ta.deliverable_id
+     FROM vinculos pdt
+     LEFT JOIN ediciones ta ON ta.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental dl ON dl.id = ta.catalogo_documental_id
      WHERE pdt.process_definition_id = ?
        AND pdt.item_mode IN ('replicated', 'routed')
      ORDER BY pdt.sort_order ASC, pdt.id ASC`,
@@ -1041,8 +1041,8 @@ export const findRoutedItemsCreatedBy = async (ejecutor, personId) => {
        pdv.id AS definition_id,
        ti.document_status
      FROM task_items ti
-     JOIN process_definition_templates pdt
-       ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
+     JOIN vinculos pdt
+       ON pdt.id = ti.vinculo_id AND pdt.item_mode = 'routed'
      JOIN tasks t ON t.id = ti.task_id
      JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      JOIN processes p ON p.id = pdv.process_id
@@ -1086,8 +1086,8 @@ export const findRoutedItemsReceivedBy = async (ejecutor, personId) => {
        ${FILL_EXISTS} AS needs_fill,
        ${SIGN_EXISTS} AS needs_sign
      FROM task_items ti
-     JOIN process_definition_templates pdt
-       ON pdt.id = ti.process_definition_template_id AND pdt.item_mode = 'routed'
+     JOIN vinculos pdt
+       ON pdt.id = ti.vinculo_id AND pdt.item_mode = 'routed'
      JOIN tasks t ON t.id = ti.task_id
      JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
      JOIN processes p ON p.id = pdv.process_id
@@ -1123,9 +1123,9 @@ export const findDeliverableTemplateForUser = async (ejecutor, { taskItemId, def
        tar.available_formats
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id
-     INNER JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
-     INNER JOIN template_artifacts tar ON tar.id = pdt.template_artifact_id
-     LEFT JOIN deliverables tar_dl ON tar_dl.id = tar.deliverable_id
+     INNER JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     INNER JOIN ediciones tar ON tar.id = pdt.edicion_id
+     LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      WHERE ti.id = ?
        AND t.process_definition_id = ?
        AND EXISTS (

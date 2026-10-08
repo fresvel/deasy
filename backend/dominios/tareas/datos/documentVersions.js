@@ -18,7 +18,7 @@ export const insertDocumentVersion = async (connection, fila) => {
     `INSERT INTO document_versions (
        task_item_id,
        version,
-       template_artifact_id,
+       edicion_id,
        payload_hash,
        payload_object_path,
        working_file_path,

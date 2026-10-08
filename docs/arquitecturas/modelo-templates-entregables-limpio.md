@@ -8,7 +8,7 @@
 > - ✅ Paso 1 — proceso `default` sembrado en bootstrap (`SystemBootstrapService.ensureDefaultProcess`).
 >   *(Al escribirse esto la plantilla base era `tpl_default_memo` con un flujo de llenado
 >   `document_owner`. **Ninguna de las dos cosas existe hoy**: la plantilla base es
->   `tpl_informe_general` —el único `deliverables` de una base recién sembrada— y el proceso por
+>   `tpl_informe_general` —el único `catalogo_documental` de una base recién sembrada— y el proceso por
 >   defecto **no lleva flujo sembrado**, porque es `routed` y lo define el usuario al enviar.)*
 > - ✅ Paso 2 — tareas libres migradas: `createGeneralTask` apunta al slug `default`; proceso `general`
 >   viejo y contenedor vacío `tpl_general_tarea_libre` eliminados. Verificado: la tarea libre materializa
@@ -29,8 +29,8 @@
 >   best-effort). Validado end-to-end: render jinja2 (StrictUndefined OK) + compilación pdflatex → PDF.
 >   *(Se llamaba `publishDefaultTemplateAssets()` y subía además un `meta.yaml`; **ya no hay
 >   `meta.yaml`** — el flujo se autora en la base desde el §0.8.)*
-> - ✅ Limpieza de campos inútiles — DROP de columnas muertas: `template_artifacts.artifact_origin`
->   (constante 'process'; propiedad por owner_ref), `process_definition_templates.usage_role` +
+> - ✅ Limpieza de campos inútiles — DROP de columnas muertas: `ediciones.artifact_origin`
+>   (constante 'process'; propiedad por owner_ref), `vinculos.usage_role` +
 >   `task_items.template_usage_role` (constantes 'primary'; UNIQUE KEY reconstruido sin la columna en un
 >   ALTER atómico), y `processes.unit_id/program_id/person_id/term_id` (vestigiales, nunca usadas). Migración
 >   idempotente en `postgres_initializer.js` + `postgres_schema.sql`. Front/back limpios; build y writes OK.
@@ -40,7 +40,7 @@
 
 ## 1. Diagnóstico del ruido actual
 
-Tres conceptos distintos están hoy entremezclados en un solo campo (`template_artifacts.artifact_origin = process | general`):
+Tres conceptos distintos están hoy entremezclados en un solo campo (`ediciones.artifact_origin = process | general`):
 
 1. **Propiedad / control** — ¿la plantilla es del sistema (curada) o de un usuario?
 2. **Tipo / comportamiento** — ¿materializa documento con llenado+firma, o es un contenedor suelto?
@@ -48,13 +48,13 @@ Tres conceptos distintos están hoy entremezclados en un solo campo (`template_a
 
 Además existen dos significados de "adjunto" que se confunden:
 
-- `process_definition_templates.usage_role = attachment|support` → *plantilla secundaria planificada en la definición*.
+- `vinculos.usage_role = attachment|support` → *plantilla secundaria planificada en la definición*.
 - `document_attachments` (Fase A) → *archivos ad-hoc que el usuario sube a un entregable*.
 
 Y un dato inconsistente: el contenedor de tareas libres `tpl_general_tarea_libre` quedó como
 `artifact_origin='general'` pero almacenado bajo `System/` (debería ser de usuario o tener marcador propio).
 
-Verificación de datos (2026-06): `process_definition_templates` y `task_items` están **100 % en `primary`**
+Verificación de datos (2026-06): `vinculos` y `task_items` están **100 % en `primary`**
 (no hay `attachment`/`support` en uso) → unificar adjuntos es de bajo riesgo.
 
 ## 2. Los tres ejes, separados
@@ -110,18 +110,18 @@ Notas:
 La cadena real (verificada en el esquema) es de **molde → instancia → resultado → adjuntos**:
 
 ```
-template_artifacts                 (EL MOLDE: schema, render, flujos, kind, propiedad)
-  └─ process_definition_templates  (vínculo definición↔artifact; creates_task)
-       └─ task_items               (EL ENTREGABLE: process_definition_template_id + template_artifact_id)
+ediciones                 (EL MOLDE: schema, render, flujos, kind, propiedad)
+  └─ vinculos  (vínculo definición↔artifact; creates_task)
+       └─ task_items               (EL ENTREGABLE: vinculo_id + edicion_id)
             └─ documents           (contenedor; SIEMPRE cuelga de su entregable)
-                 └─ document_versions      (template_artifact_id = con qué plantilla se generó)
+                 └─ document_versions      (edicion_id = con qué plantilla se generó)
                       ├─ archivo principal  (working_file_path / final_file_path)
                       └─ document_attachments  (ANEXOS ad-hoc: kind=annex/evidence/source/other)
 ```
 
 Claves para despejar la duda del usuario:
 
-- **El entregable sigue atado a la plantilla** por `task_items.template_artifact_id` (+ el vínculo de
+- **El entregable sigue atado a la plantilla** por `task_items.edicion_id` (+ el vínculo de
   definición). Esto **no cambió** con los anexos.
 - **Los anexos cuelgan de `document_versions`, un nivel por debajo del entregable.** Son archivos
   *adicionales al resultado*, no redefinen la plantilla.
@@ -159,7 +159,7 @@ entregable, y admite anexos (`document_attachments`). Sin tipos especiales ni pa
 
 Se **unifica toda adjunción en `document_attachments`** y se **deprecia `usage_role = attachment|support`**:
 
-- `process_definition_templates.usage_role` y `task_items.template_usage_role` quedan efectivamente en
+- `vinculos.usage_role` y `task_items.template_usage_role` quedan efectivamente en
   `primary` (único valor en uso). Se documenta como deprecado; el ENUM puede conservarse por
   compatibilidad pero no se generan nuevos `attachment`/`support`.
 - Cualquier archivo adicional a un entregable es un **anexo ad-hoc** (`document_attachments`), no una
@@ -183,7 +183,7 @@ render jinja2.
 
 > ⚠️ **`artifact_stage` con cinco estados (draft→review→approved→published→archived) nunca existió
 > como columna, y hoy tampoco existe el concepto.** El gobierno real es
-> `template_artifacts.lifecycle_state` con **tres** valores —`draft`, `published`, `retired`— y por
+> `ediciones.lifecycle_state` con **tres** valores —`draft`, `published`, `retired`— y por
 > defecto `draft`; las transiciones son los endpoints `.../publish` y `.../retire`. El diagrama de
 > arriba conserva las etiquetas «stage» de la propuesta original; léelas como *intención*, no como
 > nombres de estado. Está listado como confusión conocida en el sitio de `docs/`
@@ -225,11 +225,11 @@ Reglas derivadas:
 - **GestorProcesos = diseñador**: crea definiciones, plantillas, las vincula, y puede borrar/archivar
   plantillas maestras (control total, igual que sobre definiciones).
 - **GestorEjecucionProcesos = operador**: puede **crear plantillas**, pero al crearlas **debe elegir un
-  proceso destino** (existente o `default`) — quedan vinculadas vía `process_definition_templates` en el
+  proceso destino** (existente o `default`) — quedan vinculadas vía `vinculos` en el
   acto de creación. Como no tiene `process_definitions.create`, **no puede inventar procesos nuevos** ni
   dejar plantillas "sueltas". Su techo es `update` sobre plantillas (sin delete/manage).
 - **Implicación técnica**: el flujo web de creación debe, para este rol, **exigir `process_definition_id`
-  destino** y crear el vínculo `process_definition_templates` en la misma transacción. Para GestorProcesos
+  destino** y crear el vínculo `vinculos` en la misma transacción. Para GestorProcesos
   el vínculo puede ser opcional/posterior.
 
 ## 8. Decisiones registradas (usuario, 2026-06)

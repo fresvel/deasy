@@ -66,7 +66,7 @@ La creacion de `chk_process_unit_program` ahora:
 
 - Migrar una base existente al nombre y estructura nuevos (procesos, definiciones, templates de proceso):
   - `node backend/scripts/migrate_process_templates.mjs`
-- Consolidar `template_artifacts` a una fila por paquete y mover formatos a JSON:
+- Consolidar `ediciones` a una fila por paquete y mover formatos a JSON:
   - `node backend/scripts/migrate_template_artifacts_to_json.mjs`
 - Agregar `artifact_origin` y normalizar origenes:
   - `node backend/scripts/migrate_template_artifact_origin.mjs`
@@ -74,7 +74,7 @@ La creacion de `chk_process_unit_program` ahora:
   - `node backend/scripts/migrate_template_artifact_stage_enum.mjs`
 - Migrar prefijos de templates en MinIO a `System/Users`:
   - `node backend/scripts/migrate_template_prefixes_to_system_users.mjs`
-- Agregar FK `owner_person_id` a `template_artifacts`:
+- Agregar FK `owner_person_id` a `ediciones`:
   - `node backend/scripts/migrate_template_artifact_owner_fk.mjs`
 - Sincronizar modelo de seeds y drafts de paquetes de usuario:
   - `node backend/scripts/migrate_template_seed_drafts.mjs`
@@ -102,10 +102,10 @@ Pasos sugeridos:
 3) Crear `process_definition_triggers`.
 4) Migrar cada version vigente de `process_versions` a `process_definition_versions`.
 5) Convertir cada relacion previa de `process_units` + `cargo_id` en una o mas filas de `process_target_rules`.
-6) Reconvertir `tasks` para que representen la instancia del proceso (`process_definition_id + term_id`) y agregar `task_items` para los entregables derivados de `process_definition_templates`.
+6) Reconvertir `tasks` para que representen la instancia del proceso (`process_definition_id + term_id`) y agregar `task_items` para los entregables derivados de `vinculos`.
 7) Actualizar `documents.task_id` -> `documents.task_item_id`.
-8) Actualizar `signature_flow_templates.process_version_id` -> `signature_flow_templates.process_definition_template_id`.
-9) Registrar paquetes publicados en `template_artifacts` y vincularlos con `process_definition_templates`.
+8) Actualizar `signature_flow_templates.process_version_id` -> `signature_flow_templates.vinculo_id`.
+9) Registrar paquetes publicados en `ediciones` y vincularlos con `vinculos`.
 10) Cambiar la generacion automatica para crear una `task` por definicion y `task_items` solo para las plantillas con `creates_task = 1`.
 
 Restriccion vigente sobre definiciones:
@@ -114,7 +114,7 @@ Restriccion vigente sobre definiciones:
 - solo puede existir una definicion `active` por cada `process_id + variation_key`
 - al activar una definicion nueva de una serie, la activa anterior de esa misma serie se retira automaticamente (`retired`)
 - la definicion no puede pasar a `active` sin al menos una regla activa y al menos un disparador activo
-- si `has_document = 1`, la definicion no puede pasar a `active` sin al menos un registro en `process_definition_templates`
+- si `has_document = 1`, la definicion no puede pasar a `active` sin al menos un registro en `vinculos`
 
 Regla practica de migracion:
 

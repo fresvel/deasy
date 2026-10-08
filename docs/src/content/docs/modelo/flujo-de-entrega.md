@@ -18,8 +18,8 @@ La cabecera tiene tres columnas portadoras, y es lo que hace posibles los tres m
 
 | Portador | Qué flujo es |
 |---|---|
-| `template_artifact_id` | El flujo **autorado en la edición de plantilla**, compartido por todas las configuraciones donde esté enlazada |
-| `process_definition_template_id` | El flujo particular **de un vínculo**: esa plantilla en ese proceso configurado |
+| `edicion_id` | El flujo **autorado en la edición de plantilla**, compartido por todas las configuraciones donde esté enlazada |
+| `vinculo_id` | El flujo particular **de un vínculo**: esa plantilla en ese proceso configurado |
 | `task_item_id` | El flujo **definido en runtime** sobre un entregable concreto, en modo `routed` |
 
 :::caution[Los tres portadores pueden estar rellenos a la vez, y por eso la prioridad no es «qué columna tiene valor»]
@@ -94,8 +94,8 @@ cuándo se respondió y una nota de respuesta.
 
 ```mermaid
 erDiagram
-  template_artifacts ||--o{ fill_flow_templates : "flujo de la plantilla"
-  process_definition_templates ||--o{ fill_flow_templates : "flujo del vínculo"
+  ediciones ||--o{ fill_flow_templates : "flujo de la plantilla"
+  vinculos ||--o{ fill_flow_templates : "flujo del vínculo"
   task_items ||--o{ fill_flow_templates : "flujo definido en runtime"
   fill_flow_templates ||--o{ fill_flow_steps : "pasos ordenados"
   fill_flow_templates ||--o{ document_fill_flows : "se instancia en"
@@ -106,8 +106,8 @@ erDiagram
 
   fill_flow_templates {
     int id PK "LA CABECERA"
-    int template_artifact_id FK "escalón 3: la plantilla"
-    int process_definition_template_id FK "escalón 2: el vínculo"
+    int edicion_id FK "escalón 3: la plantilla"
+    int vinculo_id FK "escalón 2: el vínculo"
     int task_item_id FK "escalón 1: el entregable"
     varchar name
     varchar description

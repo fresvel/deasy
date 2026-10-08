@@ -4,11 +4,11 @@
 // el harness es deliberadamente HTTP-only, porque lo que fijamos es el CONTRATO HTTP.
 // Pero el borrador de plantilla escribe en cinco sitios y la limpieza NO se puede hacer
 // por HTTP. Medido contra dev:
-//   - `deliverables` no está en `config/sqlTables.js` ni tiene método de servicio que la
+//   - `catalogo_documental` no está en `config/sqlTables.js` ni tiene método de servicio que la
 //     borre: NO existe ninguna ruta que elimine esa fila.
-//   - `DELETE /admin/sql/process_definition_templates` responde 400 mientras la
+//   - `DELETE /admin/sql/vinculos` responde 400 mientras la
 //     configuración destino no esté en `draft` (la de la fixture está `active`).
-//   - y sin borrar el vínculo, `DELETE /admin/sql/template_artifacts` responde 409 por FK.
+//   - y sin borrar el vínculo, `DELETE /admin/sql/ediciones` responde 409 por FK.
 // Dejar las filas rompería la regla de round-trips autolimpiantes.
 //
 // REGLA: esto se usa para LIMPIAR, nunca para ASERTAR. Una aserción contra SQL dejaría de
@@ -17,7 +17,7 @@
 // EXCEPCIÓN, con nombre y fecha: `flows/zzzzzz_flow_steps_db.test.mjs` (2026-08-10) SÍ asierta
 // contra SQL, y usa el `query` de aquí para hacerlo. No es una grieta en la regla, es su límite:
 // el §0.8 del plan maestro va a mover el flujo del `meta.yaml` a la base, y NO EXISTE contrato HTTP
-// que observe el resultado. `GET /template_artifacts/:id/schema` parece servir y no sirve, y desde el
+// que observe el resultado. `GET /ediciones/:id/schema` parece servir y no sirve, y desde el
 // sub-paso 5 sigue sin servir aunque ya lea de la base: devuelve el flujo APLANADO en forma de
 // formulario, colapsa los dos portadores en una sola vista y no dice de cuál leyó, así que no puede
 // observar la escritura doble ni el `can_reject` derivado. Y lo que se fija por HTTP del paquete es
@@ -28,7 +28,7 @@
 // SEGUNDA EXCEPCIÓN, con nombre y fecha: `flows/zzzzzzzz_default_process_routed.test.mjs`
 // (2026-08-11), por el mismo límite. Ejercita el camino de usuario del Proceso por defecto
 // (`POST /users/:id/general-tasks`, modo `routed`) y tiene que comprobar DE QUÉ cuelga el flujo que
-// se materializa: `task_item_id` relleno y `template_artifact_id` en `NULL` es *la* propiedad que
+// se materializa: `task_item_id` relleno y `edicion_id` en `NULL` es *la* propiedad que
 // define el modo, y no hay respuesta HTTP que la diga. El endpoint devuelve ids y nada más.
 
 import pg from "pg";
@@ -58,7 +58,7 @@ function getPool() {
     password: process.env.POSTGRES_PASSWORD,
     database: process.env.POSTGRES_DB,
     max: 2,
-    // ⚠️ SIN ESTO, 169 DE 338 PRUEBAS FALLAN con «relation "template_artifacts" does not exist».
+    // ⚠️ SIN ESTO, 169 DE 338 PRUEBAS FALLAN con «relation "ediciones" does not exist».
     // Las tablas viven en el esquema de su tema desde el 2026-10-04, y este pool es propio: no
     // hereda nada del de la aplicacion. Medido el 2026-10-04 al repartir el esquema.
     options: `-c search_path=${ESQUEMAS.join(",")}`,
@@ -78,13 +78,13 @@ export async function closeDb() {
 }
 
 // Borra TODO lo que deja un borrador de plantilla identificado por `code` (template_code /
-// deliverables.code). El orden respeta las FK (ninguna cascada: todas son NO ACTION):
+// catalogo_documental.code). El orden respeta las FK (ninguna cascada: todas son NO ACTION):
 //   pasos de flujo → plantillas de flujo → vínculo a configuración → artifact → deliverable.
 //
 // ⚠️ EL FLUJO CUELGA DE DOS SITIOS, Y ESTE LIMPIADOR SOLO CONOCÍA UNO. Desde el sub-paso 3 del §0.8
-// `saveTemplateArtifactDraft` escribe también el flujo AUTORADO colgando de `template_artifact_id`
+// `saveTemplateArtifactDraft` escribe también el flujo AUTORADO colgando de `edicion_id`
 // (con el vínculo a NULL), así que borrar solo lo que cuelga del vínculo dejaba filas apuntando al
-// artifact y el `DELETE FROM template_artifacts` reventaba con
+// artifact y el `DELETE FROM ediciones` reventaba con
 // `fk_fill_flow_templates_artifact`. No se manifestaba como un golden movido sino como TRES suites
 // caídas en su `after()` —`zz_template_lifecycle`, `zzz_artifact_draft` y este mismo flow—, y de
 // rebote como restos acumulados en `plantilla_entrega`. Fue el hallazgo del experimento desechable.
@@ -95,8 +95,8 @@ export async function closeDb() {
 export async function cleanupDraftArtifactByCode(code) {
   const artifacts = await query(
     `SELECT ta.id
-       FROM template_artifacts ta
-       INNER JOIN deliverables d ON d.id = ta.deliverable_id
+       FROM ediciones ta
+       INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
       WHERE d.code = $1`,
     [code],
   );
@@ -104,7 +104,7 @@ export async function cleanupDraftArtifactByCode(code) {
 
   if (artifactIds.length) {
     const links = await query(
-      "SELECT id FROM process_definition_templates WHERE template_artifact_id = ANY($1::int[])",
+      "SELECT id FROM vinculos WHERE edicion_id = ANY($1::int[])",
       [artifactIds],
     );
     const linkIds = links.map((row) => row.id);
@@ -113,44 +113,44 @@ export async function cleanupDraftArtifactByCode(code) {
       await query(
         `DELETE FROM fill_flow_steps
           WHERE fill_flow_template_id IN (
-            SELECT id FROM fill_flow_templates WHERE process_definition_template_id = ANY($1::int[])
+            SELECT id FROM fill_flow_templates WHERE vinculo_id = ANY($1::int[])
           )`,
         [linkIds],
       );
       await query(
         `DELETE FROM signature_flow_steps
           WHERE template_id IN (
-            SELECT id FROM signature_flow_templates WHERE process_definition_template_id = ANY($1::int[])
+            SELECT id FROM signature_flow_templates WHERE vinculo_id = ANY($1::int[])
           )`,
         [linkIds],
       );
-      await query("DELETE FROM fill_flow_templates WHERE process_definition_template_id = ANY($1::int[])", [linkIds]);
-      await query("DELETE FROM signature_flow_templates WHERE process_definition_template_id = ANY($1::int[])", [linkIds]);
-      await query("DELETE FROM process_definition_templates WHERE id = ANY($1::int[])", [linkIds]);
+      await query("DELETE FROM fill_flow_templates WHERE vinculo_id = ANY($1::int[])", [linkIds]);
+      await query("DELETE FROM signature_flow_templates WHERE vinculo_id = ANY($1::int[])", [linkIds]);
+      await query("DELETE FROM vinculos WHERE id = ANY($1::int[])", [linkIds]);
     }
 
     // El segundo portador: el flujo autorado que cuelga del propio artifact (§0.8, sub-paso 3).
     await query(
       `DELETE FROM fill_flow_steps
         WHERE fill_flow_template_id IN (
-          SELECT id FROM fill_flow_templates WHERE template_artifact_id = ANY($1::int[])
+          SELECT id FROM fill_flow_templates WHERE edicion_id = ANY($1::int[])
         )`,
       [artifactIds],
     );
     await query(
       `DELETE FROM signature_flow_steps
         WHERE template_id IN (
-          SELECT id FROM signature_flow_templates WHERE template_artifact_id = ANY($1::int[])
+          SELECT id FROM signature_flow_templates WHERE edicion_id = ANY($1::int[])
         )`,
       [artifactIds],
     );
-    await query("DELETE FROM fill_flow_templates WHERE template_artifact_id = ANY($1::int[])", [artifactIds]);
-    await query("DELETE FROM signature_flow_templates WHERE template_artifact_id = ANY($1::int[])", [artifactIds]);
+    await query("DELETE FROM fill_flow_templates WHERE edicion_id = ANY($1::int[])", [artifactIds]);
+    await query("DELETE FROM signature_flow_templates WHERE edicion_id = ANY($1::int[])", [artifactIds]);
 
-    await query("DELETE FROM template_artifacts WHERE id = ANY($1::int[])", [artifactIds]);
+    await query("DELETE FROM ediciones WHERE id = ANY($1::int[])", [artifactIds]);
   }
 
-  await query("DELETE FROM deliverables WHERE code = $1", [code]);
+  await query("DELETE FROM catalogo_documental WHERE code = $1", [code]);
 }
 
 // --- Tareas ad-hoc del Proceso por defecto: borrar el GRAFO entero -------------------------------
@@ -251,7 +251,7 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
   }
 }
 
-// ¿Sobrevive una fila `deliverables` con este `code`? Se usa para FIJAR el defecto de
+// ¿Sobrevive una fila `catalogo_documental` con este `code`? Se usa para FIJAR el defecto de
 // compensación (la creación fallida deja el deliverable huérfano), no para limpiar.
 //
 // PROYECTABA `owner_process_id` y `owner_variation_key` hasta el 2026-10-04. Esas dos columnas se
@@ -264,10 +264,10 @@ export async function findDeliverableByCode(code) {
     `SELECT d.code,
             d.template_scope,
             (SELECT COUNT(*)
-               FROM template_artifacts ta
-               INNER JOIN process_definition_templates pdt ON pdt.template_artifact_id = ta.id
-              WHERE ta.deliverable_id = d.id) AS tiene_vinculo
-       FROM deliverables d
+               FROM ediciones ta
+               INNER JOIN vinculos pdt ON pdt.edicion_id = ta.id
+              WHERE ta.catalogo_documental_id = d.id) AS tiene_vinculo
+       FROM catalogo_documental d
       WHERE d.code = $1`,
     [code],
   );

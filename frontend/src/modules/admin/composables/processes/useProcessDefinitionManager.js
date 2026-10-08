@@ -720,7 +720,7 @@ export function useProcessDefinitionManager({
     try {
       const response = await processDefinitionAdminService.listArtifacts(definitionId);
       definitionArtifactsRows.value = response.data || [];
-      await prefetchFkLabelsForRows(definitionArtifactsRows.value, ["template_artifact_id"]);
+      await prefetchFkLabelsForRows(definitionArtifactsRows.value, ["edicion_id"]);
     } catch {
       definitionArtifactsRows.value = [];
       definitionArtifactsError.value = "No se pudieron cargar las plantillas vinculadas.";
@@ -788,16 +788,16 @@ export function useProcessDefinitionManager({
   };
 
   const openDefinitionArtifactFkSearch = () => {
-    openFkSearch({ name: "template_artifact_id" }, (row) => {
+    openFkSearch({ name: "edicion_id" }, (row) => {
       const idValue = row.id ?? "";
       definitionArtifactsForm.value = {
         ...definitionArtifactsForm.value,
-        template_artifact_id: idValue ? String(idValue) : ""
+        edicion_id: idValue ? String(idValue) : ""
       };
-      const labelValue = formatFkOptionLabel("template_artifacts", row);
+      const labelValue = formatFkOptionLabel("ediciones", row);
       definitionArtifactsLabels.value = {
         ...definitionArtifactsLabels.value,
-        template_artifact_id: labelValue ? String(labelValue) : ""
+        edicion_id: labelValue ? String(labelValue) : ""
       };
       // El panel ya no tiene tarjeta de selección con botón "Guardar": al elegir la plantilla se vincula
       // inmediatamente (modo creación, editId vacío). Antes esto solo rellenaba el formulario y "no pasaba nada".
@@ -811,11 +811,11 @@ export function useProcessDefinitionManager({
   const clearDefinitionArtifactSelection = () => {
     definitionArtifactsForm.value = {
       ...definitionArtifactsForm.value,
-      template_artifact_id: ""
+      edicion_id: ""
     };
     definitionArtifactsLabels.value = {
       ...definitionArtifactsLabels.value,
-      template_artifact_id: ""
+      edicion_id: ""
     };
   };
 
@@ -829,13 +829,13 @@ export function useProcessDefinitionManager({
     }
     definitionArtifactsEditId.value = row.id ? String(row.id) : "";
     definitionArtifactsForm.value = {
-      template_artifact_id: row.template_artifact_id ? String(row.template_artifact_id) : "",
+      edicion_id: row.edicion_id ? String(row.edicion_id) : "",
       // creates_task ya no se edita (siempre materializa entregable); sort_order se conserva (interno).
       sort_order: row.sort_order !== null && row.sort_order !== undefined ? String(row.sort_order) : ""
     };
     definitionArtifactsLabels.value = {
-      template_artifact_id: row.template_artifact_id
-        ? String(getFkCachedLabel("template_artifacts", row.template_artifact_id) || row.template_artifact_id)
+      edicion_id: row.edicion_id
+        ? String(getFkCachedLabel("ediciones", row.edicion_id) || row.edicion_id)
         : ""
     };
   };
@@ -850,7 +850,7 @@ export function useProcessDefinitionManager({
       definitionArtifactsError.value = "Solo puedes modificar plantillas mientras la configuracion este en draft.";
       return;
     }
-    if (!definitionArtifactsForm.value.template_artifact_id) {
+    if (!definitionArtifactsForm.value.edicion_id) {
       definitionArtifactsError.value = "Selecciona una plantilla.";
       return;
     }
@@ -878,7 +878,7 @@ export function useProcessDefinitionManager({
     definitionArtifactsError.value = "";
     try {
       const payload = processDefinitionAdminService.buildArtifactPayload(definitionId, {
-        template_artifact_id: row.template_artifact_id,
+        edicion_id: row.edicion_id,
         sort_order: row.sort_order,
         item_mode: itemMode
       });

@@ -140,6 +140,18 @@ Table "cargos" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
+Table "catalogo_documental" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(180) [unique, not null]
+  "display_name" varchar(180) [not null]
+  "description" varchar(255)
+  "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
+  "owner_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `ediciones` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
+}
+
 Table "categorias_visa" {
   "id" int4 [pk, not null, increment]
   "pais_id" int4 [not null]
@@ -327,18 +339,6 @@ Table "contracts" {
   }
 }
 
-Table "deliverables" {
-  "id" int4 [pk, not null, increment]
-  "code" varchar(180) [unique, not null]
-  "display_name" varchar(180) [not null]
-  "description" varchar(255)
-  "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
-  "owner_person_id" int4
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `template_artifacts` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
-}
-
 Table "direcciones" {
   "id" int4 [pk, not null, increment]
   "person_id" int4 [not null]
@@ -432,7 +432,7 @@ Table "document_versions" {
   "version" int4 [not null, default: 1, note: '''La RONDA: un intento completo del flujo (llenar -> firmar). Entero desde el 2026-08-23; antes era decimal y el numero mentia, porque 0.1 y 0.2 parecian correcciones del mismo documento y eran dos rondas, la primera cancelada entera. Las CORRECCIONES son el segundo digito y viven en `document_version_uploads`.''']
   "version_minor" int4 [not null, default: 0]
   "version_label" text [note: "columna generada (STORED)"]
-  "template_artifact_id" int4
+  "edicion_id" int4
   "payload_hash" varchar(64)
   "payload_object_path" varchar(255)
   "working_file_path" varchar(255)
@@ -444,7 +444,7 @@ Table "document_versions" {
 
   Indexes {
     (task_item_id, version) [type: btree, unique, name: "uq_document_versions"]
-    template_artifact_id [type: btree, name: "idx_document_versions_artifact"]
+    edicion_id [type: btree, name: "idx_document_versions_artifact"]
     task_item_id [type: btree, name: "idx_document_versions_item"]
   }
 }
@@ -515,7 +515,7 @@ Table "documentos_legales" {
     (clase, version) [type: btree, unique, name: "uq_documento_legal"]
   }
 
-  Note: '''Los textos legales que una persona acepta, VERSION A VERSION. Sigue el patron de `template_artifacts`: version, estado de ciclo de vida y huella del contenido. El BORRADOR vive en la columna `texto` de esta tabla y el PUBLICADO en el archivo inmutable, porque una errata publicada en un almacen con bloqueo de objetos quedaria diez años sin poder quitarse. Publicar es lo que mueve el texto de un sitio al otro, y es irreversible. `retired` NO es borrar: hay gente cuya prueba de consentimiento apunta a esa version.'''
+  Note: '''Los textos legales que una persona acepta, VERSION A VERSION. Sigue el patron de `ediciones`: version, estado de ciclo de vida y huella del contenido. El BORRADOR vive en la columna `texto` de esta tabla y el PUBLICADO en el archivo inmutable, porque una errata publicada en un almacen con bloqueo de objetos quedaria diez años sin poder quitarse. Publicar es lo que mueve el texto de un sitio al otro, y es irreversible. `retired` NO es borrar: hay gente cuya prueba de consentimiento apunta a esa version.'''
 }
 
 Table "dossier_items" {
@@ -538,6 +538,28 @@ Table "dossiers" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Note: '''El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.'''
+}
+
+Table "ediciones" {
+  "id" int4 [pk, not null, increment]
+  "catalogo_documental_id" int4 [not null]
+  "storage_version" varchar(20) [not null]
+  "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
+  "base_object_prefix" varchar(255) [not null]
+  "available_formats" jsonb [not null]
+  "generador_id" int4 [note: '''QUIEN produce el PDF de esta edicion. Estaba en `catalogo_documental.template_seed_id` y se movio aqui, no se duplico: la fachada del admin ya lo listaba como campo de `ediciones` y lo traia por JOIN. NO sustituye a `document_versions.render_engine`, que dice con que motor se renderizo UNA ronda concreta —un hecho de la ejecucion, no una declaracion de la plantilla.''']
+  "content_hash" varchar(64)
+  "parent_version_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (catalogo_documental_id, storage_version) [type: btree, unique, name: "uq_ediciones_storage"]
+    catalogo_documental_id [type: btree, name: "idx_ediciones_catalogo"]
+    lifecycle_state [type: btree, name: "idx_ediciones_state"]
+  }
+
+  Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `catalogo_documental`, que es quien porta la identidad.'''
 }
 
 Table "email_verification_codes" {
@@ -613,20 +635,20 @@ Table "fill_flow_steps" {
 
 Table "fill_flow_templates" {
   "id" int4 [pk, not null, increment]
-  "process_definition_template_id" int4
+  "vinculo_id" int4
   "task_item_id" int4
-  "template_artifact_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
+  "edicion_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
   "name" varchar(180) [not null]
   "description" varchar(255)
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    template_artifact_id [type: btree, name: "idx_fill_flow_templates_artifact"]
+    edicion_id [type: btree, name: "idx_fill_flow_templates_artifact"]
     task_item_id [type: btree, name: "idx_fill_flow_templates_task_item"]
   }
 
-  Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`process_definition_template_id`), de runtime (`task_item_id`) o autorado en la plantilla (`template_artifact_id`, frente 0.8).'''
+  Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`vinculo_id`), de runtime (`task_item_id`) o autorado en la plantilla (`edicion_id`, frente 0.8).'''
 }
 
 Table "fill_requests" {
@@ -904,21 +926,6 @@ Table "process_definition_series" {
   }
 }
 
-Table "process_definition_templates" {
-  "id" int4 [pk, not null, increment]
-  "process_definition_id" int4 [not null]
-  "template_artifact_id" int4 [not null]
-  "sort_order" int4 [not null, default: 1]
-  "item_mode" text [not null, check: `item_mode = ANY (ARRAY['single'::text, 'replicated'::text, 'routed'::text])`, default: 'single', note: '''Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).''']
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (process_definition_id, template_artifact_id) [type: btree, unique, name: "uq_process_definition_templates"]
-  }
-
-  Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
-}
-
 Table "process_definition_versions" {
   "id" int4 [pk, not null, increment]
   "process_id" int4 [not null]
@@ -1140,16 +1147,16 @@ Table "signature_flow_steps" {
 
 Table "signature_flow_templates" {
   "id" int4 [pk, not null, increment]
-  "process_definition_template_id" int4
+  "vinculo_id" int4
   "task_item_id" int4
-  "template_artifact_id" int4
+  "edicion_id" int4
   "name" varchar(180) [not null]
   "description" varchar(255)
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    template_artifact_id [type: btree, name: "idx_signature_flow_templates_artifact"]
+    edicion_id [type: btree, name: "idx_signature_flow_templates_artifact"]
     task_item_id [type: btree, name: "idx_signature_flow_templates_task_item"]
   }
 }
@@ -1215,7 +1222,7 @@ Table "task_item_tenures" {
 Table "task_items" {
   "id" int4 [pk, not null, increment]
   "task_id" int4 [not null]
-  "process_definition_template_id" int4 [not null]
+  "vinculo_id" int4 [not null]
   "origin_kind" text [not null, check: `origin_kind = ANY (ARRAY['process_defined'::text, 'user_added'::text])`, default: 'process_defined']
   "title" varchar(180)
   "sort_order" int4 [not null, default: 1]
@@ -1237,7 +1244,7 @@ Table "task_items" {
     (task_id, process_definition_template_key, responsible_position_key) [type: btree, unique, name: "uq_task_items_defined_target"]
     created_by_person_id [type: btree, name: "idx_task_items_created_by"]
     (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
-    process_definition_template_id [type: btree, name: "idx_task_items_definition_template"]
+    vinculo_id [type: btree, name: "idx_task_items_definition_template"]
     origin_kind [type: btree, name: "idx_task_items_origin"]
     source_task_item_id [type: btree, name: "idx_task_items_source"]
     target_unit_id [type: btree, name: "idx_task_items_target_unit"]
@@ -1315,28 +1322,6 @@ Table "telefonos" {
     (person_id, tipo, principal_flag) [type: btree, unique, name: "uq_telefonos_principal"]
     person_id [type: btree, name: "idx_telefonos_person"]
   }
-}
-
-Table "template_artifacts" {
-  "id" int4 [pk, not null, increment]
-  "deliverable_id" int4 [not null]
-  "storage_version" varchar(20) [not null]
-  "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
-  "base_object_prefix" varchar(255) [not null]
-  "available_formats" jsonb [not null]
-  "generador_id" int4 [note: '''QUIEN produce el PDF de esta edicion. Estaba en `deliverables.template_seed_id` y se movio aqui, no se duplico: la fachada del admin ya lo listaba como campo de `template_artifacts` y lo traia por JOIN. NO sustituye a `document_versions.render_engine`, que dice con que motor se renderizo UNA ronda concreta —un hecho de la ejecucion, no una declaracion de la plantilla.''']
-  "content_hash" varchar(64)
-  "parent_version_id" int4
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (deliverable_id, storage_version) [type: btree, unique, name: "uq_template_artifacts_storage"]
-    deliverable_id [type: btree, name: "idx_template_artifacts_deliverable"]
-    lifecycle_state [type: btree, name: "idx_template_artifacts_state"]
-  }
-
-  Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `deliverables`, que es quien porta la identidad.'''
 }
 
 Table "term_types" {
@@ -1472,6 +1457,21 @@ Table "vacancy_visibility" {
   }
 }
 
+Table "vinculos" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "edicion_id" int4 [not null]
+  "sort_order" int4 [not null, default: 1]
+  "item_mode" text [not null, check: `item_mode = ANY (ARRAY['single'::text, 'replicated'::text, 'routed'::text])`, default: 'single', note: '''Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, edicion_id) [type: btree, unique, name: "uq_vinculos"]
+  }
+
+  Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
+}
+
 Ref "fk_applications_person":"persons"."id" <? "aplications"."person_id"
 Ref "fk_applications_vacancy":"vacancies"."id" <? "aplications"."vacancy_id"
 Ref "fk_autoidentificacion_etnia":"autoidentificaciones_etnicas"."id" ?<? "persona_autoidentificacion"."autoidentificacion_etnica_id"
@@ -1481,6 +1481,7 @@ Ref "fk_autoidentificaciones_etnicas_pais":"paises"."id" <? "autoidentificacione
 Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
 Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
 Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
+Ref "fk_catalogo_documental_owner_person":"persons"."id" ?<? "catalogo_documental"."owner_person_id"
 Ref "fk_categorias_visa_pais":"paises"."id" <? "categorias_visa"."pais_id"
 Ref "fk_chat_attachments_message":"chat_messages"."id" <? "chat_message_attachments"."message_id" [delete: cascade]
 Ref "fk_chat_conv_created_by":"persons"."id" <? "chat_conversations"."created_by"
@@ -1509,7 +1510,6 @@ Ref "fk_contract_origin_renewal_from":"contracts"."id" <? "contract_origin_renew
 Ref "fk_contract_origins_contract":"contracts"."id" <? "contract_origins"."contract_id" [delete: cascade]
 Ref "fk_contracts_person":"persons"."id" <? "contracts"."person_id"
 Ref "fk_contracts_position":"unit_positions"."id" <? "contracts"."position_id"
-Ref "fk_deliverables_owner_person":"persons"."id" ?<? "deliverables"."owner_person_id"
 Ref "fk_direcciones_canton":"cantones"."id" ?<? "direcciones"."canton_id"
 Ref "fk_direcciones_pais":"paises"."id" ?<? "direcciones"."pais_id"
 Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete: cascade]
@@ -1524,7 +1524,7 @@ Ref "fk_document_signatures_signer":"persons"."id" <? "document_signatures"."sig
 Ref "fk_document_signatures_status":"signature_statuses"."id" <? "document_signatures"."signature_status_id"
 Ref "fk_document_version_uploads_person":"persons"."id" ?<? "document_version_uploads"."uploaded_by_person_id"
 Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_version_uploads"."document_version_id" [delete: cascade]
-Ref "fk_document_versions_artifact":"template_artifacts"."id" ?<? "document_versions"."template_artifact_id"
+Ref "fk_document_versions_artifact":"ediciones"."id" ?<? "document_versions"."edicion_id"
 Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: cascade]
 Ref "fk_document_workflow_observations_author":"persons"."id" <? "document_workflow_observations"."author_person_id"
 Ref "fk_document_workflow_observations_fill_request":"fill_requests"."id" ?<? "document_workflow_observations"."fill_request_id"
@@ -1537,6 +1537,9 @@ Ref "fk_documentos_pais":"paises"."id" <? "documentos_identidad"."pais_id"
 Ref "fk_documentos_person":"persons"."id" <? "documentos_identidad"."person_id" [delete: cascade]
 Ref "fk_dossier_items_dossier":"dossiers"."id" <? "dossier_items"."dossier_id" [delete: cascade]
 Ref "fk_dossiers_person":"persons"."id" <? "dossiers"."person_id" [delete: cascade]
+Ref "fk_ediciones_catalogo":"catalogo_documental"."id" <? "ediciones"."catalogo_documental_id"
+Ref "fk_ediciones_generador":"generadores_de_documento"."id" ?<? "ediciones"."generador_id"
+Ref "fk_ediciones_parent":"ediciones"."id" ?<? "ediciones"."parent_version_id"
 Ref "fk_email_verification_codes_email":"emails"."id" <? "email_verification_codes"."email_id" [delete: cascade]
 Ref "fk_emails_person":"persons"."id" <? "emails"."person_id" [delete: cascade]
 Ref "fk_estados_civiles_pais":"paises"."id" <? "estados_civiles"."pais_id"
@@ -1547,8 +1550,8 @@ Ref "fk_fill_flow_steps_relation_type":"relation_unit_types"."id" ?<? "fill_flow
 Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps"."fill_flow_template_id"
 Ref "fk_fill_flow_steps_unit_type":"unit_types"."id" ?<? "fill_flow_steps"."unit_type_id"
 Ref "fk_fill_flow_steps_unit":"units"."id" ?<? "fill_flow_steps"."unit_id"
-Ref "fk_fill_flow_templates_artifact":"template_artifacts"."id" ?<? "fill_flow_templates"."template_artifact_id"
-Ref "fk_fill_flow_templates_definition_template":"process_definition_templates"."id" ?<? "fill_flow_templates"."process_definition_template_id"
+Ref "fk_fill_flow_templates_artifact":"ediciones"."id" ?<? "fill_flow_templates"."edicion_id"
+Ref "fk_fill_flow_templates_definition_template":"vinculos"."id" ?<? "fill_flow_templates"."vinculo_id"
 Ref "fk_fill_flow_templates_task_item":"task_items"."id" ?<? "fill_flow_templates"."task_item_id" [delete: cascade]
 Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
 Ref "fk_fill_requests_person":"persons"."id" ?<? "fill_requests"."assigned_person_id"
@@ -1573,8 +1576,6 @@ Ref "fk_process_definition_period_types_definition":"process_definition_versions
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
 Ref "fk_process_definition_series_cargo":"cargos"."id" ?<? "process_definition_series"."cargo_id"
 Ref "fk_process_definition_series_unit_type":"unit_types"."id" ?<? "process_definition_series"."unit_type_id"
-Ref "fk_process_definition_templates_artifact":"template_artifacts"."id" <? "process_definition_templates"."template_artifact_id"
-Ref "fk_process_definition_templates_definition":"process_definition_versions"."id" <? "process_definition_templates"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_versions_process":"processes"."id" <? "process_definition_versions"."process_id" [delete: cascade]
 Ref "fk_process_definition_versions_series":"process_definition_series"."id" <? "process_definition_versions"."series_id"
 Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user_id"
@@ -1605,8 +1606,8 @@ Ref "fk_signature_flow_steps_position":"unit_positions"."id" ?<? "signature_flow
 Ref "fk_signature_flow_steps_template":"signature_flow_templates"."id" <? "signature_flow_steps"."template_id"
 Ref "fk_signature_flow_steps_unit_type":"unit_types"."id" ?<? "signature_flow_steps"."unit_type_id"
 Ref "fk_signature_flow_steps_unit":"units"."id" ?<? "signature_flow_steps"."unit_id"
-Ref "fk_signature_flow_templates_artifact":"template_artifacts"."id" ?<? "signature_flow_templates"."template_artifact_id"
-Ref "fk_signature_flow_templates_definition_template":"process_definition_templates"."id" ?<? "signature_flow_templates"."process_definition_template_id"
+Ref "fk_signature_flow_templates_artifact":"ediciones"."id" ?<? "signature_flow_templates"."edicion_id"
+Ref "fk_signature_flow_templates_definition_template":"vinculos"."id" ?<? "signature_flow_templates"."vinculo_id"
 Ref "fk_signature_flow_templates_task_item":"task_items"."id" ?<? "signature_flow_templates"."task_item_id" [delete: cascade]
 Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signature_requests"."instance_id"
 Ref "fk_signature_requests_person":"persons"."id" ?<? "signature_requests"."assigned_person_id"
@@ -1618,11 +1619,11 @@ Ref "fk_task_item_tenures_position":"unit_positions"."id" ?<? "task_item_tenures
 Ref "fk_task_items_assigned_person":"persons"."id" ?<? "task_items"."assigned_person_id"
 Ref "fk_task_items_created_by":"persons"."id" ?<? "task_items"."created_by_person_id"
 Ref "fk_task_items_origin_unit":"units"."id" ?<? "task_items"."origin_unit_id"
-Ref "fk_task_items_process_definition_template":"process_definition_templates"."id" <? "task_items"."process_definition_template_id"
 Ref "fk_task_items_responsible_position":"unit_positions"."id" <? "task_items"."responsible_position_id"
 Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
 Ref "fk_task_items_target_unit":"units"."id" ?<? "task_items"."target_unit_id"
 Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
+Ref "fk_task_items_vinculo":"vinculos"."id" <? "task_items"."vinculo_id"
 Ref "fk_tasks_process_definition":"process_definition_versions"."id" <? "tasks"."process_definition_id"
 Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 Ref "fk_tasks_scope_unit":"units"."id" <? "tasks"."scope_unit_id"
@@ -1631,9 +1632,6 @@ Ref "fk_telefono_canales_canal":"canales_mensajeria"."id" <? "telefono_canales".
 Ref "fk_telefono_canales_telefono":"telefonos"."id" <? "telefono_canales"."telefono_id" [delete: cascade]
 Ref "fk_telefonos_pais":"paises"."id" ?<? "telefonos"."pais_id"
 Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cascade]
-Ref "fk_template_artifacts_deliverable":"deliverables"."id" <? "template_artifacts"."deliverable_id"
-Ref "fk_template_artifacts_generador":"generadores_de_documento"."id" ?<? "template_artifacts"."generador_id"
-Ref "fk_template_artifacts_parent":"template_artifacts"."id" ?<? "template_artifacts"."parent_version_id"
 Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
 Ref "fk_tipos_discapacidad_pais":"paises"."id" <? "tipos_discapacidad"."pais_id"
 Ref "fk_tvk_canal":"canales_mensajeria"."id" ?<? "telefono_verification_keys"."canal_id"
@@ -1648,6 +1646,8 @@ Ref "fk_vacancies_position":"unit_positions"."id" <? "vacancies"."position_id"
 Ref "fk_vacancy_visibility_role":"roles"."id" ?<? "vacancy_visibility"."role_id"
 Ref "fk_vacancy_visibility_unit":"units"."id" ?<? "vacancy_visibility"."unit_id"
 Ref "fk_vacancy_visibility_vacancy":"vacancies"."id" <? "vacancy_visibility"."vacancy_id"
+Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."process_definition_id" [delete: cascade]
+Ref "fk_vinculos_edicion":"ediciones"."id" <? "vinculos"."edicion_id"
 Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
 Ref "signature_batch_jobs_user_id_fkey":"persons"."id" ?<? "signature_batch_jobs"."user_id"
 Ref "task_item_tenures_performed_by_person_id_fkey":"persons"."id" ?<? "task_item_tenures"."performed_by_person_id"

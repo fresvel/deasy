@@ -534,7 +534,7 @@ no existe.
 
 Desde el **2026-10-04** no hay nada en `public` salvo las 12 funciones de los disparadores. Una tabla
 vive en el esquema de su dominio: `identidad.persons`, `firmas.signature_requests`,
-`plantillas.template_artifacts`. El dominio dejó de ser una afirmación en un fichero y pasó a ser
+`plantillas.ediciones`. El dominio dejó de ser una afirmación en un fichero y pasó a ser
 **dónde está la tabla**.
 
 **Y las consultas NO cambiaron: son las mismas 555.** El `search_path` hace que PostgreSQL resuelva
@@ -550,7 +550,7 @@ cualificar, y que `pg_dump -n firmas` saca un dominio entero.
 de la aplicación (`config/postgres.js`), el del inicializador (que importa `ESQUEMAS`) y **el del
 harness de caracterización** (`tests/characterization/lib/db.mjs`, que también lo importa). Al
 repartir el esquema, olvidar el tercero costó **169 de 338 pruebas en rojo** con
-`relation "template_artifacts" does not exist`.
+`relation "ediciones" does not exist`.
 
 ⚠️ **`postgres_schema.sql` NO reubica una base anterior**, y es el contrato `TD7-s`: describe la
 forma y nada más. Una base de antes de los esquemas **se resetea** (`scripts/reset-system.sh dev`) o
@@ -1018,7 +1018,7 @@ rename puro conserva la marca, reescribir la línea la pierde.
 Processes are modeled as `processes` + `process_definition_versions` + `process_target_rules` in PostgreSQL. The series → rule → flow model governs assignment: a series names the process, a rule distributes the process scope, and the flow distributes the steps. Templates (Jinja2) linked to a process determine whether it is document-producing.
 
 ### Modos de emisión de entregables (single / replicated / routed) — LEER `docs/arquitecturas/modelo-emision-entregables.md`
-Cada plantilla ligada declara su modo en `process_definition_templates.item_mode`:
+Cada plantilla ligada declara su modo en `vinculos.item_mode`:
 - **single**: entregable + flujo (entrega/firma) **predefinidos en la plantilla**; 1 instancia al lanzar.
 - **replicated**: flujo **predefinido**; el responsable crea N réplicas etiquetadas que **heredan** ese flujo.
 - **routed**: **sin flujo predefinido** — el usuario **define entrega + firma AL INSTANCIAR** (runtime).

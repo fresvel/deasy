@@ -12,7 +12,7 @@ encontrar a quien le toca. Si leíste [la página anterior](/modelo/flujo-de-ent
 es la misma película con dos añadidos importantes.
 
 Los tres escalones de resolución son idénticos: `task_item_id` (runtime), luego
-`process_definition_template_id` (el vínculo), luego `template_artifact_id` (la plantilla), cada uno
+`vinculo_id` (el vínculo), luego `edicion_id` (la plantilla), cada uno
 exigiendo `NULL` en los anteriores.
 
 :::note[Dos valores por defecto que sí cambian]
@@ -118,8 +118,8 @@ resultado, cuándo, y en qué archivo quedó el documento ya firmado. Un detalle
 
 ```mermaid
 erDiagram
-  template_artifacts ||--o{ signature_flow_templates : "flujo de la plantilla"
-  process_definition_templates ||--o{ signature_flow_templates : "flujo del vínculo"
+  ediciones ||--o{ signature_flow_templates : "flujo de la plantilla"
+  vinculos ||--o{ signature_flow_templates : "flujo del vínculo"
   task_items ||--o{ signature_flow_templates : "flujo definido en runtime"
   signature_flow_templates ||--o{ signature_flow_steps : "pasos ordenados"
   signature_flow_templates ||--o{ signature_flow_instances : "se instancia en"
@@ -136,9 +136,9 @@ erDiagram
 
   signature_flow_templates {
     int id PK "LA CABECERA"
-    int process_definition_template_id FK "portador 1: el vinculo"
+    int vinculo_id FK "portador 1: el vinculo"
     int task_item_id FK "portador 2: el entregable (runtime)"
-    int template_artifact_id FK "portador 3: la edicion de plantilla"
+    int edicion_id FK "portador 3: la edicion de plantilla"
     varchar name
     varchar description
     smallint is_active

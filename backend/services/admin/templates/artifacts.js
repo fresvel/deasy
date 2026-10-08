@@ -77,7 +77,7 @@ const DRAFT_ARTIFACT_FILE_POLICY = {
     mimetypes: ["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
     label: "PowerPoint (.pptx)",
   },
-  // La re-subida de código (`POST /template_artifacts/:id/source`) comparte instancia de multer con
+  // La re-subida de código (`POST /ediciones/:id/source`) comparte instancia de multer con
   // el borrador, así que su campo va en el mismo mapa. `applyTemplateArtifactSource` ya lo trata
   // como ZIP (`unzipToDirectory`); antes ni siquiera se comprobaba que lo fuera.
   source: {
@@ -246,7 +246,7 @@ export const findPreferredPdfObject = (objectNames = []) => {
 
 // --- La clave del `schema.json`, DERIVADA (frente 23, F4.2) ---------------------------------------
 //
-// AQUI ESTABA UNA COLUMNA. `template_artifacts.schema_object_key` guardaba esta misma cadena, y sus
+// AQUI ESTABA UNA COLUMNA. `ediciones.schema_object_key` guardaba esta misma cadena, y sus
 // DOS productores la escribian igual: `${baseObjectPrefix}schema.json`, uno en
 // `_buildDraftStorage` y el otro en el `INSERT` del bootstrap. O sea que la columna era una copia
 // derivable de `base_object_prefix` mas una constante — la misma forma de duplicacion que el frente

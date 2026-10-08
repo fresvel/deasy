@@ -311,7 +311,7 @@ export const useTemplateVersionInConfig = async (req, res) => {
   try {
     const result = await service().useTemplateVersionInConfig({
       definitionId: req.body?.definition_id,
-      templateArtifactId: req.body?.template_artifact_id
+      templateArtifactId: req.body?.edicion_id
     });
     res.json(result);
   } catch (error) {
@@ -323,7 +323,7 @@ export const startGuidedTemplateUpdate = async (req, res) => {
   try {
     const result = await service().startTemplateUpdateForActiveConfig({
       definitionId: req.body?.definition_id,
-      templateArtifactId: req.body?.template_artifact_id,
+      templateArtifactId: req.body?.edicion_id,
       bumpLevel: req.body?.bump_level
     });
     res.json(result);
@@ -335,7 +335,7 @@ export const startGuidedTemplateUpdate = async (req, res) => {
 export const finishGuidedTemplateUpdate = async (req, res) => {
   try {
     const result = await service().finishTemplateUpdate({
-      templateArtifactId: req.body?.template_artifact_id,
+      templateArtifactId: req.body?.edicion_id,
       configDefinitionId: req.body?.config_definition_id
     });
     res.json(result);

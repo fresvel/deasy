@@ -232,18 +232,18 @@ class AdminPresentationService {
         return parts.join(" · ");
       }
     }
-    if (tableName === "process_definition_templates") {
+    if (tableName === "vinculos") {
       const parts = [
         row.process_definition_id ? `Def ${row.process_definition_id}` : null,
-        row.template_artifact_id
-          ? (getFkCachedLabel("template_artifacts", row.template_artifact_id) || `Paquete ${row.template_artifact_id}`)
+        row.edicion_id
+          ? (getFkCachedLabel("ediciones", row.edicion_id) || `Paquete ${row.edicion_id}`)
           : null
       ].filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
       if (parts.length) {
         return parts.join(" · ");
       }
     }
-    if (tableName === "template_artifacts") {
+    if (tableName === "ediciones") {
       return this.getFirstDefinedValue(row.display_name, row.template_code, row.id);
     }
     if (tableName === "generadores_de_documento") {

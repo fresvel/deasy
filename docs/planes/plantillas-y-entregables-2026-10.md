@@ -31,9 +31,9 @@ porque es lo que impide volver a intentarlo a ciegas.
 **Medido el 2026-10-04, con el índice puesto.** `npm run test:char:run` responde:
 
 ```
-✖ DELETE /admin/sql/process_definition_templates -> borra en cascada los flujos del vínculo
+✖ DELETE /admin/sql/vinculos -> borra en cascada los flujos del vínculo
   AssertionError: el clon debe crearse:
-    {"message":"Ya existe otro registro con ese valor en «template_artifact_id»."}
+    {"message":"Ya existe otro registro con ese valor en «edicion_id»."}
   409 !== 200
 ```
 
@@ -42,7 +42,7 @@ Con el índice de la pareja, 330 de 330 en verde. Con el de la columna sola, 329
 **La causa, y es del modelo, no del test.** La regla que dijo el dueño es *«una versión de plantilla
 debería servir a solo una **variación** de proceso»*. Una variación es `(proceso, variation_key)`, o
 sea **la serie**, y una serie contiene **muchas versiones de definición**. El índice
-`UNIQUE (template_artifact_id)` prohíbe el mismo artefacto en dos **definiciones** — que es más
+`UNIQUE (edicion_id)` prohíbe el mismo artefacto en dos **definiciones** — que es más
 estricto que la regla— y eso choca de frente con cómo se versiona una configuración: **clonar copia
 los vínculos con el MISMO artefacto a una definición nueva de la misma serie**. Tres caminos vivos
 hacen eso:
@@ -55,7 +55,7 @@ hacen eso:
 
 **Y la regla no cabe en un índice único de esa tabla**: la línea se identifica con
 `process_definition_versions.(process_id, series_id)`, y pedirlo en un índice de
-`process_definition_templates` obligaría a copiar esa columna aquí — justo la duplicación que este
+`vinculos` obligaría a copiar esa columna aquí — justo la duplicación que este
 frente vino a quitar. Por eso el dueño decidió un **disparador**, que lo lee por el `JOIN` y no copia
 nada.
 
@@ -121,7 +121,7 @@ dará el mismo resultado.
 
 ## Lo que se midió, y son hechos
 
-### A · `deliverables` no guarda ningún fichero
+### A · `catalogo_documental` no guarda ningún fichero
 
 Sus 10 columnas: 1 identificador, **3 de identidad** (`code`, `display_name`, `description`),
 **3 de dueño** (`owner_process_id`, `owner_variation_key`, `owner_person_id`), 1 de scope, 1 de
@@ -133,12 +133,12 @@ de la plantilla.** Sin ella, la v1 y la v2 serían dos cosas sin relación.
 
 ### B · Las 3 columnas de dueño las lee UN solo sitio
 
-**33 consultas del backend leen `deliverables`.** Las 33 hacen lo mismo:
-`JOIN deliverables ON id = deliverable_id`, para sacar el nombre.
+**33 consultas del backend leen `catalogo_documental`.** Las 33 hacen lo mismo:
+`JOIN catalogo_documental ON id = catalogo_documental_id`, para sacar el nombre.
 
 **Ninguna** filtra ni selecciona por `owner_process_id` ni `owner_variation_key`. Su único lector en
 todo el sistema es `assertDeliverableBelongsToConfigLine`, el guardia que las compara con la
-definición. Y el índice `idx_deliverables_owner` **no lo usa nadie**: ninguna consulta puede
+definición. Y el índice `idx_catalogo_documental_owner` **no lo usa nadie**: ninguna consulta puede
 aprovecharlo.
 
 > La columna duplica un dato que ya se alcanza por el vínculo → la duplicación obliga a un guardia
@@ -146,8 +146,8 @@ aprovecharlo.
 
 ### C · El esquema permite lo que el código intenta prohibir
 
-El único índice único de `process_definition_templates` es sobre **la pareja**
-`(process_definition_id, template_artifact_id)`. Así que la base **permite** que una versión de
+El único índice único de `vinculos` es sobre **la pareja**
+`(process_definition_id, edicion_id)`. Así que la base **permite** que una versión de
 plantilla se vincule a muchas definiciones, de distintas variaciones y de distintos procesos.
 
 Lo único que lo intenta es el guardia, y **comprueba el proceso pero NO la variación** — mientras el
@@ -158,12 +158,12 @@ invariante que dice proteger es sobre `(proceso, variación)`.
 «Qué versión de plantilla» está escrito tres veces. Con los datos de dev, donde los tres dicen `2`:
 
 ```
-① process_definition_templates.template_artifact_id    la configuración lo dice
-② task_items.template_artifact_id                      los 17 entregables lo copian
-③ document_versions.template_artifact_id               cada ronda lo copia otra vez
+① vinculos.edicion_id    la configuración lo dice
+② task_items.edicion_id                      los 17 entregables lo copian
+③ document_versions.edicion_id               cada ronda lo copia otra vez
 ```
 
-Y `task_items` guarda además `process_definition_template_id`, que apunta al vínculo que **ya lo
+Y `task_items` guarda además `vinculo_id`, que apunta al vínculo que **ya lo
 dice**. Coinciden hoy porque solo existe una versión de cada plantilla. **Nada obliga a que coincidan.**
 
 ### E · La semilla, y lo que la opción LaTeX llegó a ser
@@ -203,9 +203,9 @@ cuarto agente al que corrijo en eso»*, y tenía razón. Medido:
 
 - `GeneralTaskService.js:23` → `const GENERAL_PROCESS_SLUG = "default"`: las tareas ad-hoc cuelgan
   del **Proceso por defecto**, que existe exactamente para eso;
-- sus **dos** caminos de alta (líneas 273 y 445) insertan `process_definition_template_id`, tomado de
+- sus **dos** caminos de alta (líneas 273 y 445) insertan `vinculo_id`, tomado de
   la configuración activa de ese proceso;
-- y `template_artifact_id` lo copian **del propio vínculo**;
+- y `edicion_id` lo copian **del propio vínculo**;
 - solo **dos ficheros** insertan en `task_items`, los dos ponen el vínculo, y en los datos son
   **17 de 17**.
 
@@ -223,7 +223,7 @@ Eso se expresa con **un índice único**, y la base pasa a sostener la regla sol
 
 ```sql
 -- en lugar del único actual sobre la PAREJA
-CREATE UNIQUE INDEX uq_pdt_artifact ON process_definition_templates (template_artifact_id);
+CREATE UNIQUE INDEX uq_pdt_artifact ON vinculos (edicion_id);
 ```
 
 | La regla | Cómo queda sostenida |
@@ -247,13 +247,13 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
         │                                │ owner_process_id        ← 1 solo lector:
         │ template_seed_id                │                           el guardia
         ▼                                │
-  deliverables ───────────────────────────┘
+  catalogo_documental ───────────────────────────┘
   code · display_name · description
   owner_process_id · owner_variation_key · owner_person_id
   template_scope · template_seed_id
         │
         ▼
-  template_artifacts            ◄──── process_definition_templates
+  ediciones            ◄──── vinculos
   storage_version                     UNIQUE(definicion, artefacto)   ← permite N vínculos
   lifecycle_state                     item_mode · sort_order
   base_object_prefix
@@ -271,31 +271,31 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
   source_path · preview_path                  │ (derivado por el vínculo)
   «QUIÉN produce el PDF»                      │
         │                                     │
-        │                               deliverables
+        │                               catalogo_documental
         │                               code · display_name · description
         │                               owner_person_id · template_scope
         │                               (las 3 columnas de dueño: FUERA) ──┘
         │                                     │
         │ generador_id                        │
         ▼                                     │
-  deliverables                                │
+  catalogo_documental                                │
   code · display_name · description           │
   owner_person_id · template_scope            │
   (owner_process_id, owner_variation_key:     │
    FUERA ✅ 2026-10-04) ──────────────────────┘
         │
         ▼
-  template_artifacts            ◄──── process_definition_templates
-  storage_version                     UNIQUE(template_artifact_id)   ← 🟥 NO APLICADO:
+  ediciones            ◄──── vinculos
+  storage_version                     UNIQUE(edicion_id)   ← 🟥 NO APLICADO:
   lifecycle_state                     item_mode · sort_order            rompe el clon
   base_object_prefix
   content_hash
-  generador_id                   ← NUEVA. Era deliverables.template_seed_id
+  generador_id                   ← NUEVA. Era catalogo_documental.template_seed_id
   (schema_object_key: FUERA)     ← derivable de base_object_prefix
 
   (template_artifact_fields: FUERA)
   (template_seeds: pasa a ser generadores_de_documento)
-  (deliverables.template_seed_id: FUERA — se movió a la edición, no se duplicó)
+  (catalogo_documental.template_seed_id: FUERA — se movió a la edición, no se duplicó)
 ```
 
 ### El lado entregado
@@ -303,14 +303,14 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
 ```
 ──────────────────────────── ANTES ────────────────────────────
 
-  process_definition_templates ─── template_artifact_id = 2   ①
+  vinculos ─── edicion_id = 2   ①
         │
-        │ process_definition_template_id
+        │ vinculo_id
         ▼
-  task_items ───────────────────── template_artifact_id = 2   ② copia
+  task_items ───────────────────── edicion_id = 2   ② copia
         │
         ▼
-  document_versions ───────────── template_artifact_id = 2    ③ copia
+  document_versions ───────────── edicion_id = 2    ③ copia
         │
         ▼
   document_version_uploads
@@ -320,14 +320,14 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
 
 ──────────────────────────── DESPUÉS ───────────────────────────
 
-  process_definition_templates ─── template_artifact_id       ① la ÚNICA fuente
+  vinculos ─── edicion_id       ① la ÚNICA fuente
         │
-        │ process_definition_template_id   (NOT NULL: los 17 ya lo tienen)
+        │ vinculo_id   (NOT NULL: los 17 ya lo tienen)
         ▼
-  task_items                      (sin template_artifact_id ✅ 2026-10-04)
+  task_items                      (sin edicion_id ✅ 2026-10-04)
         │
         ▼
-  document_versions ───────────── template_artifact_id
+  document_versions ───────────── edicion_id
         │                          ↑ significa otra cosa: «con qué versión
         │                            se generó ESTA ronda». Obligatoria
         ▼                            en cuanto hay render
@@ -343,14 +343,14 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
 | Tarea | Qué entrega | Estado |
 |---|---|---|
 | **F1.1** | El disparador `trg_pdt_linea_unica`: un entregable sirve a una sola línea. **No** el índice único que decía el plan, que rompe el clon (ver arriba) | ✅ |
-| **F1.2** | Fuera `deliverables.owner_process_id`, `owner_variation_key`, la clave ajena `fk_deliverables_owner_process` y el índice muerto `idx_deliverables_owner` | ✅ |
+| **F1.2** | Fuera `catalogo_documental.owner_process_id`, `owner_variation_key`, la clave ajena `fk_deliverables_owner_process` y el índice muerto `idx_catalogo_documental_owner` | ✅ |
 | **F1.3** | Fuera `assertDeliverableBelongsToConfigLine` y sus tres llamadas (el delegado de `SqlAdminService`, `tableHooks.js` y `repointConfigTemplateLink`) | ✅ |
 
 **El guardia del clon SE QUEDA, y protege algo distinto.** Es la línea de
 `cloneProcessDefinitionChildren` que exige clonar desde el mismo proceso. Comprueba el proceso y no
 la variación, sí — pero lo que ese clon copia no son solo vínculos de plantilla: son también
 `process_target_rules` y `process_definition_period_types`, que no tienen artefacto y que ninguna
-restricción sobre `process_definition_templates` alcanza. Sin esa línea, clonar desde la
+restricción sobre `vinculos` alcanza. Sin esa línea, clonar desde la
 configuración de otro proceso se traería sus reglas de alcance y sus tipos de periodo.
 
 **Efecto lateral medido:** quitando `owner_process_id` desaparece la dependencia circular entre los
@@ -361,22 +361,22 @@ de tema** — el bloqueo del frente 22 (F6.5) era un síntoma de esta redundanci
 
 | Tarea | Qué entrega | Estado |
 |---|---|---|
-| **F2.1** | `task_items.process_definition_template_id` pasa a `NOT NULL` y se retira `task_items.template_artifact_id`: se lee por el vínculo | ✅ |
-| **F2.2** | `document_versions.template_artifact_id` se queda, **documentada como lo que es**: con qué versión se generó esa ronda, y rellenada **del vínculo** y no de una copia | ✅ |
+| **F2.1** | `task_items.vinculo_id` pasa a `NOT NULL` y se retira `task_items.edicion_id`: se lee por el vínculo | ✅ |
+| **F2.2** | `document_versions.edicion_id` se queda, **documentada como lo que es**: con qué versión se generó esa ronda, y rellenada **del vínculo** y no de una copia | ✅ |
 
 **Los lectores que tenía la copia, y cómo quedaron (medido el 2026-10-04).** 21 referencias a
-`task_items.template_artifact_id` en el backend, cero en el frontend:
+`task_items.edicion_id` en el backend, cero en el frontend:
 
 | Qué | Cuántos | Cómo se resolvió |
 |---|---|---|
 | `INSERT` que la rellenaban | 3 (`generation/taskitems.js`, y los dos de `GeneralTaskService.js`) | la columna sale del `INSERT`; el vínculo ya estaba |
-| Consultas que la saltaban para llegar al nombre del entregable | 11 | `JOIN process_definition_templates pdt` y `tar.id = pdt.template_artifact_id`. En 3 de ellas el `pdt` **ya estaba unido** |
-| Proyecciones de la columna en una respuesta | 3 | `pdt.template_artifact_id` con el mismo alias |
+| Consultas que la saltaban para llegar al nombre del entregable | 11 | `JOIN vinculos pdt` y `tar.id = pdt.edicion_id`. En 3 de ellas el `pdt` **ya estaba unido** |
+| Proyecciones de la columna en una respuesta | 3 | `pdt.edicion_id` con el mismo alias |
 | Guardias e hidrataciones del CRUD genérico | 4 (`tableHooks`, `validation`, `sqlTables`, `SqlAdminService.getTaskItem`) | el de inmutabilidad se retira (el del vínculo ya lo cubre); `getTaskItem` proyecta la columna **desde el vínculo** |
 | Fixtures de caracterización | 4 ficheros | leen por el vínculo o dejan de ponerla |
 
 **Lo que NO se tocó, y por qué:** `DocumentWorkflowResetService.createResetDocumentVersion` copia
-`template_artifact_id` de la ronda ANTERIOR, no del `task_item`. F2.2 solo manda sobre lo que se
+`edicion_id` de la ronda ANTERIOR, no del `task_item`. F2.2 solo manda sobre lo que se
 rellenaba copiando del entregable. Si una ronda nueva debe tomar la versión **vigente** en lugar de
 arrastrar la de la ronda cancelada, es otra decisión — y cambia un golden.
 
@@ -393,20 +393,20 @@ se irán programando desde los Word.
 | Tarea | Qué entrega |
 |---|---|
 | **F3.1** | ✅ `template_seeds` → `generadores_de_documento`: `code`, `nombre`, `tipo` (`latex`\|`servicio`, con CHECK), `destino`, `source_path`, `preview_path`, `description`, `is_active` |
-| **F3.2** | ✅ `template_artifacts.generador_id` apunta ahí, y **sustituye a `deliverables.template_seed_id`**, que se retira |
+| **F3.2** | ✅ `ediciones.generador_id` apunta ahí, y **sustituye a `catalogo_documental.template_seed_id`**, que se retira |
 
 ⚠️ **AQUÍ DECÍA QUE `generador_id` SUSTITUÍA A `render_engine`, Y ERA FALSO.** Corregido al
-ejecutar, el 2026-10-04. `render_engine` **no está en `template_artifacts`**: está en
+ejecutar, el 2026-10-04. `render_engine` **no está en `ediciones`**: está en
 `document_versions`, y significa otra cosa — *con qué motor se renderizó ESTA ronda*, que es un hecho
 de la ejecución y no una declaración de la plantilla. Son dos columnas distintas en dos tablas
 distintas, y **`render_engine` NO se toca: queda fuera de este frente.** Lo fija una prueba en
 `backend/database/postgres_schema.test.js` para que la confusión no vuelva por inercia.
 
 ⚠️ **Y el diagrama de ANTES/DESPUÉS de más arriba se contradecía con esta tabla**: dibujaba
-`generador_id` colgando de `deliverables` (donde estaba `template_seed_id`) mientras el texto lo
-ponía en `template_artifacts`. Se resolvió **a favor del texto**, con un argumento y no por
-desempate: `sqlTables.js` ya listaba «Semilla» como campo de `template_artifacts` y
-`SqlAdminService` lo traía por JOIN desde `deliverables` — o sea que la fachada del admin ya decía
+`generador_id` colgando de `catalogo_documental` (donde estaba `template_seed_id`) mientras el texto lo
+ponía en `ediciones`. Se resolvió **a favor del texto**, con un argumento y no por
+desempate: `sqlTables.js` ya listaba «Semilla» como campo de `ediciones` y
+`SqlAdminService` lo traía por JOIN desde `catalogo_documental` — o sea que la fachada del admin ya decía
 que el sitio del dato era la edición. **Es un MOVIMIENTO, no una suma**: la columna vieja se retira
 en el mismo commit, para no dejar dos punteros al mismo catálogo.
 
@@ -432,7 +432,7 @@ adelantado.
 | Tarea | Qué entrega |
 |---|---|
 | **F4.1** | ✅ Fuera `template_artifact_fields` (18 filas por plantilla que solo se copian a sí mismas) y `schemaFieldRows.js` |
-| **F4.2** | ✅ Fuera `template_artifacts.schema_object_key`, que apunta al `schema.json` copiado |
+| **F4.2** | ✅ Fuera `ediciones.schema_object_key`, que apunta al `schema.json` copiado |
 
 El `schema.json` de MinIO **sigue existiendo** y el editor de `/admin` lo sigue leyendo y
 escribiendo: lo que se fue es su REFLEJO en la base. Y la clave del fichero se **deriva** de
@@ -486,11 +486,11 @@ redundante con `process_target_rules`, la forma de la restricción de pertenenci
 
 | Tarea | Qué entrega | Evidencia | Fecha |
 |---|---|---|---|
-| **F1.1** | ✅ `trg_pdt_linea_unica` sobre `process_definition_templates`, `BEFORE INSERT OR UPDATE`. El índice del plan se probó y se descartó con su medición escrita en el esquema | `postgres_schema.sql` (disparador 6 de 6; 56 disparadores en el fichero) · golden NUEVO `admin_crud :: pertenencia_vinculo_de_otra_linea` (400 + el mensaje) · el caso «el clon debe crearse» sigue en verde · 6 casos probados en SQL dentro del contenedor | 2026-10-04 |
-| **F1.2** | ✅ fuera `owner_process_id`, `owner_variation_key`, `fk_deliverables_owner_process` e `idx_deliverables_owner`; `owner_person_id` se queda | `postgres_schema.sql` · 3 `INSERT INTO deliverables` ajustados (bootstrap, fork, borrador) · golden `artifact_draft :: reintento_tras_fallo` movido | 2026-10-04 |
+| **F1.1** | ✅ `trg_pdt_linea_unica` sobre `vinculos`, `BEFORE INSERT OR UPDATE`. El índice del plan se probó y se descartó con su medición escrita en el esquema | `postgres_schema.sql` (disparador 6 de 6; 56 disparadores en el fichero) · golden NUEVO `admin_crud :: pertenencia_vinculo_de_otra_linea` (400 + el mensaje) · el caso «el clon debe crearse» sigue en verde · 6 casos probados en SQL dentro del contenedor | 2026-10-04 |
+| **F1.2** | ✅ fuera `owner_process_id`, `owner_variation_key`, `fk_deliverables_owner_process` e `idx_catalogo_documental_owner`; `owner_person_id` se queda | `postgres_schema.sql` · 3 `INSERT INTO catalogo_documental` ajustados (bootstrap, fork, borrador) · golden `artifact_draft :: reintento_tras_fallo` movido | 2026-10-04 |
 | **F1.3** | ✅ fuera `assertDeliverableBelongsToConfigLine` y sus 3 llamadas; el guardia del clon se queda con su motivo escrito | `templateLifecycle.js` · `SqlAdminService.js` · `tableHooks.js` · `processDefinitionVersion.js` | 2026-10-04 |
-| **F2.1** | ✅ `process_definition_template_id` NOT NULL; `task_items.template_artifact_id` retirada, 21 referencias resueltas por el vínculo | `postgres_schema.sql` · 14 ficheros de backend · goldens `admin_crud :: list_task_items` y `execution :: sql_task_items` movidos (pierden la clave) | 2026-10-04 |
-| **F2.2** | ✅ `document_versions.template_artifact_id` documentada como «con qué versión se generó ESTA ronda» y rellenada del vínculo | `postgres_schema.sql` · `generation/documents.js` (`ensureDocumentForTaskItem` resuelve el artefacto con un `JOIN` al vínculo) | 2026-10-04 |
+| **F2.1** | ✅ `vinculo_id` NOT NULL; `task_items.edicion_id` retirada, 21 referencias resueltas por el vínculo | `postgres_schema.sql` · 14 ficheros de backend · goldens `admin_crud :: list_task_items` y `execution :: sql_task_items` movidos (pierden la clave) | 2026-10-04 |
+| **F2.2** | ✅ `document_versions.edicion_id` documentada como «con qué versión se generó ESTA ronda» y rellenada del vínculo | `postgres_schema.sql` · `generation/documents.js` (`ensureDocumentForTaskItem` resuelve el artefacto con un `JOIN` al vínculo) | 2026-10-04 |
 
 **Verificación de este commit** (pila B, dentro de los contenedores):
 
@@ -517,14 +517,14 @@ que nadie provoca no es una protección sino una intención.
 
 | Golden | Diff | Por qué es el esperado |
 |---|---|---|
-| `admin_crud :: list_task_items` | `itemKeys` pierde `template_artifact_id` | el CRUD genérico proyecta las columnas de `sqlTables.js`, y esa columna ya no está |
+| `admin_crud :: list_task_items` | `itemKeys` pierde `edicion_id` | el CRUD genérico proyecta las columnas de `sqlTables.js`, y esa columna ya no está |
 | `execution :: sql_task_items` | idéntico al anterior | el mismo contrato, medido sobre datos poblados |
 | `artifact_draft :: reintento_tras_fallo` | `deliverable_owner` pierde `owner_process_id: 1` y `owner_variation_key: "general"`, gana `template_scope: "official"` y `tiene_vinculo: "1"` | las dos columnas no existen. La prueba vigila que un reintento tras una creación fallida **no reutilice una fila sin pertenencia**, y esa pregunta se contesta ahora por el vínculo — en 0/1 y no con un id, para no atar el golden a una secuencia |
 
 | **F3.1** | `template_seeds` → `generadores_de_documento`, con `tipo` bajo `CHECK` y `destino`. La semilla LaTeX queda como su primera fila, sembrada por el bootstrap | `postgres_schema.sql`; 4 pruebas nuevas en `postgres_schema.test.js`; `validation.js` pasa a exigir identidad siempre y paquete sólo al tipo `latex`; **las 3 rutas del catálogo renombradas** (`/admin/sql/generadores_de_documento/{sync,:id/preview,:id/download}`) con su frontend; golden `admin_crud :: list_generadores_de_documento` capturado y `list_template_seeds` retirado | 2026-10-04 |
-| **F3.2** | `template_artifacts.generador_id` con su FK, **movida** desde `deliverables.template_seed_id` | `postgres_schema.sql`; `sqlTables.js` (de campo de fachada a columna física) y `SqlAdminService` (fuera del `TA_DELIV_COLS`); el generador se **hereda** al versionar y al bifurcar; goldens `artifact_draft` y `user_workspace :: panel_usuario` movidos | 2026-10-04 |
+| **F3.2** | `ediciones.generador_id` con su FK, **movida** desde `catalogo_documental.template_seed_id` | `postgres_schema.sql`; `sqlTables.js` (de campo de fachada a columna física) y `SqlAdminService` (fuera del `TA_DELIV_COLS`); el generador se **hereda** al versionar y al bifurcar; goldens `artifact_draft` y `user_workspace :: panel_usuario` movidos | 2026-10-04 |
 | **F4.1** | Fuera `template_artifact_fields`, `schemaFieldRows.js` (+ su test) y la suite `zzzzzzzz_schema_fields_db` (+ su golden) | 3 lectores resueltos: `templateArtifact.js` (copia al versionar), `templateLifecycle.js` (escritura doble + copia al bifurcar) y `SystemBootstrapService.js` (volcado de los 18 campos del seed). **Epitafio en el esquema** con el por qué y dónde vivirá el contrato el día que haga falta; 8 pruebas de la tabla sustituidas por 3 en negativo | 2026-10-04 |
-| **F4.2** | Fuera `template_artifacts.schema_object_key` | `schemaObjectKeyForPrefix` en `artifacts.js` deriva la clave del prefijo; `getTemplateArtifactSchema` la usa; los 4 `INSERT`/`UPDATE` que la escribían dejan de hacerlo | 2026-10-04 |
+| **F4.2** | Fuera `ediciones.schema_object_key` | `schemaObjectKeyForPrefix` en `artifacts.js` deriva la clave del prefijo; `getTemplateArtifactSchema` la usa; los 4 `INSERT`/`UPDATE` que la escribían dejan de hacerlo | 2026-10-04 |
 
 **Verificación de F3+F4** (pila C, 2026-10-04): `test:unit` 879/879 · `test:char:run` 320/320 ·
 `check:imports` OK (167 ficheros) · `check:sql-comments` OK (272 ficheros) · `check:sql-aliases` OK

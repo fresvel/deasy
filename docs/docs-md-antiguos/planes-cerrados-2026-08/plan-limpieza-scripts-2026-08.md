@@ -71,7 +71,7 @@ Los otros dos retro-parches van disfrazados de seed:
    `cargo_role_map` contaminado: quien corriera después el patch RBAC convertía a `usuario.demo` y
    `auditor.demo` en administradores.
 3. **`seed_pucese.mjs apply --baseline` deja la base inconsistente.** Vacía `template_seeds` y
-   `template_artifacts` con `session_replication_role = replica`, pero `deliverables`, `dossiers`,
+   `ediciones` con `session_replication_role = replica`, pero `catalogo_documental`, `dossiers`,
    `dossier_items` y las 6 tablas `chat_*` no figuran en el snapshot, así que no se vacían y quedan
    colgando de filas borradas.
 

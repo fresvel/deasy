@@ -153,7 +153,7 @@ test("si el paso anterior no existe en la plantilla, no se actualiza nada", asyn
 // --- requiresSignaturePdfForFinalFillApproval ---------------------------------------------------
 
 const contextoFinal = (overrides = {}) => ({
-  process_definition_template_id: 10,
+  vinculo_id: 10,
   fill_flow_template_id: 20,
   step_order: 2,
   working_file_path: "Unidades/x/entregable.docx",
@@ -168,7 +168,7 @@ const conPasosYFirmas = (maxStepOrder, totalFirmas) => fakeConnection((sql) => {
 
 test("sin plantilla de proceso o sin flujo de entrega no se exige PDF", async () => {
   const connection = fakeConnection(() => { throw new Error("no debería consultar"); });
-  assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ process_definition_template_id: null })), false);
+  assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ vinculo_id: null })), false);
   assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ fill_flow_template_id: null })), false);
 });
 
@@ -283,7 +283,7 @@ const contextoDe = (overrides = {}) => ({
   working_file_path: "Unidades/x/e.pdf",
   task_item_id: 55,
   user_started_at: null,
-  process_definition_template_id: null,
+  vinculo_id: null,
   fill_flow_template_id: null,
   ...overrides,
 });
@@ -356,7 +356,7 @@ test("aprobar el último paso sin PDF en working es 409, no 500, y deshace la tr
   const connection = fakeConnection((sql) => {
     if (sql.includes("FROM fill_requests fr")) {
       return [[contextoDe({
-        process_definition_template_id: 10,
+        vinculo_id: 10,
         fill_flow_template_id: 20,
         step_order: 2,
         working_file_path: "Unidades/x/e.docx",

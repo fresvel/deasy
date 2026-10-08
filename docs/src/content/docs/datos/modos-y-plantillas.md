@@ -4,7 +4,7 @@ description: "`single`, `replicated` y `routed`, y el modelo «libro y ediciones
 sidebar:
   order: 2
 ---
-Vive en `process_definition_templates.item_mode`, es decir, **en el vinculo plantilla-proceso**, no en la plantilla. Es un matiz importante. Define *cuando* nace el entregable y *de donde sale su flujo*:
+Vive en `vinculos.item_mode`, es decir, **en el vinculo plantilla-proceso**, no en la plantilla. Es un matiz importante. Define *cuando* nace el entregable y *de donde sale su flujo*:
 
 | **Modo**     | **Flujo**                                     | **Instanciación**                                                                                            | **Ejemplo**                             |
 |:-------------|:----------------------------------------------|:-------------------------------------------------------------------------------------------------------------|:----------------------------------------|
@@ -29,29 +29,29 @@ El criterio que los mató, y que conviene tener presente al añadir cualquier co
 ## Plantillas: el modelo “libro y ediciones”
 
 ```mermaid
-%% diagrama 09 — plantillas: el generador, el libro (deliverables) y sus ediciones
+%% diagrama 09 — plantillas: el generador, el libro (catalogo_documental) y sus ediciones
 flowchart TD
     GEN["generadores_de_documento<br/>(quien produce el PDF: tipo latex / servicio,<br/>source_path o destino, preview_path)"]
-    DEL["deliverables — EL LIBRO<br/>code UNIQUE, display_name, description,<br/>template_scope (official / ad_hoc), owner_person_id"]
-    ART["template_artifacts — LA EDICION<br/>storage_version, lifecycle_state, base_object_prefix,<br/>available_formats, generador_id, content_hash,<br/>parent_version_id (autorreferencial = linaje)"]
+    DEL["catalogo_documental — EL LIBRO<br/>code UNIQUE, display_name, description,<br/>template_scope (official / ad_hoc), owner_person_id"]
+    ART["ediciones — LA EDICION<br/>storage_version, lifecycle_state, base_object_prefix,<br/>available_formats, generador_id, content_hash,<br/>parent_version_id (autorreferencial = linaje)"]
 
     DEL -->|"1:N"| ART
     GEN --> ART
 ```
 
-Con UNIQUE sobre `(deliverable_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el scope y la persona propietaria viven en `deliverables`; `template_artifacts` guarda el estado, el almacenamiento y **quién produce el PDF** de cada versión.
+Con UNIQUE sobre `(catalogo_documental_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el scope y la persona propietaria viven en `catalogo_documental`; `ediciones` guarda el estado, el almacenamiento y **quién produce el PDF** de cada versión.
 
-**El proceso propietario no vive en ninguna de las dos** desde el 2026-10-04: a qué línea sirve una edición lo dice su **vínculo** en `process_definition_templates`. `deliverables` tuvo dos columnas con ese dato copiado —`owner_process_id` y `owner_variation_key`— y se retiraron junto con el guardia que las comparaba con el vínculo, que era su único lector. Que la pertenencia a una sola línea se cumpla lo impone ahora el disparador `trg_pdt_linea_unica`, que no se puede saltar ni el clon, ni los scripts, ni un `INSERT` a mano.
+**El proceso propietario no vive en ninguna de las dos** desde el 2026-10-04: a qué línea sirve una edición lo dice su **vínculo** en `vinculos`. `catalogo_documental` tuvo dos columnas con ese dato copiado —`owner_process_id` y `owner_variation_key`— y se retiraron junto con el guardia que las comparaba con el vínculo, que era su único lector. Que la pertenencia a una sola línea se cumpla lo impone ahora el disparador `trg_pdt_linea_unica`, que no se puede saltar ni el clon, ni los scripts, ni un `INSERT` a mano.
 
 :::note[La semilla pasó a ser un catálogo de generadores]
 
-La tabla del diagrama se llamaba `template_seeds` y colgaba de `deliverables`. Significaba «el esqueleto LaTeX que se copia», y era **el** mecanismo: no había camino para definir un documento sin escribir `.tex.j2`. El frente 23 le cambió el significado —pasa a ser **el servicio que produce este documento**— y movió el puntero a la edición, que es quien lo declara. La semilla LaTeX sigue ahí: es el primer generador del catálogo, de `tipo = 'latex'`.
+La tabla del diagrama se llamaba `template_seeds` y colgaba de `catalogo_documental`. Significaba «el esqueleto LaTeX que se copia», y era **el** mecanismo: no había camino para definir un documento sin escribir `.tex.j2`. El frente 23 le cambió el significado —pasa a ser **el servicio que produce este documento**— y movió el puntero a la edición, que es quien lo declara. La semilla LaTeX sigue ahí: es el primer generador del catálogo, de `tipo = 'latex'`.
 
 :::
 
 :::caution[La palabra “entregable” significa dos cosas]
 
-En `sqlTables.js` la tabla `task_items` se etiqueta “Entregables” (la *instancia* a producir). En el esquema, `deliverables` es “el libro”: la *identidad de la plantilla*. Es una fuente real de confusión al leer el código; siempre hay que mirar el contexto.
+En `sqlTables.js` la tabla `task_items` se etiqueta “Entregables” (la *instancia* a producir). En el esquema, `catalogo_documental` es “el libro”: la *identidad de la plantilla*. Es una fuente real de confusión al leer el código; siempre hay que mirar el contexto.
 
 :::
 
@@ -59,7 +59,7 @@ En `sqlTables.js` la tabla `task_items` se etiqueta “Entregables” (la *insta
 
 Para el generador de `tipo = 'latex'`, el cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en MinIO, no en la base de datos. El bootstrap pública el paquete `backend/services/system/seeds/informe-general` — `schema.json`, `defaults.yaml`, `README.md` y el árbol `src/` con `main.tex.j2` y `make.sh` — y válida el pipeline: render Jinja2 con `StrictUndefined` → `pdflatex` → PDF.
 
-**No hay `meta.yaml`**: el flujo se autora en la base, no en un YAML, desde el §0.8. Y `data.yaml` **no es un fichero de la semilla**: es un objeto de MinIO que el bootstrap escribe copiando `defaults.yaml` al prefijo del artifact (`publishBaseSeedAssets`).
+**No hay `meta.yaml`**: el flujo se autora en la base, no en un YAML, desde el §0.8. Y `data.yaml` **no es un fichero de la semilla**: es un objeto de MinIO que el bootstrap escribe copiando `defaults.yaml` al prefijo de la edicion (`publishBaseSeedAssets`).
 
 La **propiedad** se expresa por el prefijo dentro de MinIO, en `base_object_prefix`: `System/...` para las plantillas curadas por el administrador, `Users/{id_de_persona}/...` para las subidas por un gestor —el id y no la cédula, porque un documento de identidad puede cambiar y la ruta de los ficheros no debe—. El pipeline de maduración documentado es:
 
@@ -73,4 +73,4 @@ Falta *cablear* el render Jinja2 a PDF en tiempo de ejecución: hoy el render vi
 
 ### Ciclo de vida y versionado
 
-`template_artifacts.lifecycle_state` admite `draft`, `published` y `retired`, y **por defecto `draft`**: una edición nace sin publicar y hay que publicarla explícitamente. El versionado es **por linaje**: una fila nueva con `storage_version` nuevo y `parent_version_id` apuntando a la anterior. `templateLifecycle.js` retira la versión publicada previa del mismo código al publicar, y válida que haya al menos un paso de entrega. Ese último requisito **se relaja para `routed`**, que por definición no autora flujo.
+`ediciones.lifecycle_state` admite `draft`, `published` y `retired`, y **por defecto `draft`**: una edición nace sin publicar y hay que publicarla explícitamente. El versionado es **por linaje**: una fila nueva con `storage_version` nuevo y `parent_version_id` apuntando a la anterior. `templateLifecycle.js` retira la versión publicada previa del mismo código al publicar, y válida que haya al menos un paso de entrega. Ese último requisito **se relaja para `routed`**, que por definición no autora flujo.

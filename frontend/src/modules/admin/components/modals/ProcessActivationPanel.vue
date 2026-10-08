@@ -136,8 +136,8 @@
             scroll-class=""
           >
             <template #cell="{ row, field }">
-              <template v-if="field.name === 'template_artifact_id'">
-                {{ formatCell(row.template_artifact_id, { name: "template_artifact_id" }, row) }}
+              <template v-if="field.name === 'edicion_id'">
+                {{ formatCell(row.edicion_id, { name: "edicion_id" }, row) }}
               </template>
               <template v-else>
                 {{ row[field.name] || "—" }}
@@ -149,7 +149,7 @@
                 :show-delete="false"
                 view-title="Ver plantilla vinculada"
                 view-label="Ver plantilla vinculada"
-                @view="$emit('view-row', { table: 'process_definition_templates', row })"
+                @view="$emit('view-row', { table: 'vinculos', row })"
               />
             </template>
           </AppDataTable>

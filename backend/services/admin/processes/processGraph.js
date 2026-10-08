@@ -56,13 +56,13 @@ export default class ProcessGraphService {
     // es el distintivo que identifica que es el mismo entregable.
     const [templates] = await this.pool.query(
       `SELECT pdt.id, pdt.process_definition_id AS definition_id, pdv.process_id,
-              pdt.template_artifact_id, d.code AS template_code, d.display_name, d.template_scope,
+              pdt.edicion_id, d.code AS template_code, d.display_name, d.template_scope,
               ta.storage_version, ta.lifecycle_state,
-              (SELECT COUNT(*) FROM template_artifacts tav WHERE tav.deliverable_id = ta.deliverable_id) AS version_count
-         FROM process_definition_templates pdt
+              (SELECT COUNT(*) FROM ediciones tav WHERE tav.catalogo_documental_id = ta.catalogo_documental_id) AS version_count
+         FROM vinculos pdt
          INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
-         INNER JOIN template_artifacts ta ON ta.id = pdt.template_artifact_id
-         INNER JOIN deliverables d ON d.id = ta.deliverable_id
+         INNER JOIN ediciones ta ON ta.id = pdt.edicion_id
+         INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
         ORDER BY pdt.process_definition_id, pdt.sort_order ASC`
     );
     return { nodes, edges, configs, templates };
@@ -187,7 +187,7 @@ export default class ProcessGraphService {
               sc.name AS series_cargo_name,
               sut.name AS series_unit_type_name,
               (SELECT COUNT(*) FROM process_target_rules ptr WHERE ptr.process_definition_id = pdv.id) AS rules_count,
-              (SELECT COUNT(*) FROM process_definition_templates pdt WHERE pdt.process_definition_id = pdv.id) AS templates_count,
+              (SELECT COUNT(*) FROM vinculos pdt WHERE pdt.process_definition_id = pdv.id) AS templates_count,
               (SELECT COUNT(*) FROM process_runs pr WHERE pr.process_definition_id = pdv.id) AS runs_count
          FROM process_definition_versions pdv
          INNER JOIN process_definition_series pds ON pds.id = pdv.series_id

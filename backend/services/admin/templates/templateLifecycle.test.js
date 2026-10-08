@@ -93,7 +93,7 @@ const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } =
       if (sql.includes("FROM process_definition_versions")) {
         return [[{ id: CFG_ID, process_id: 1, variation_key: "general", definition_version: "1.1.0", status: "draft" }]];
       }
-      if (sql.includes("FROM process_definition_templates")) {
+      if (sql.includes("FROM vinculos")) {
         return [[{ id: 500, item_mode: "single" }]];
       }
       return [[]];
@@ -245,13 +245,13 @@ const buildDraftService = ({ falla = null } = {}) => {
     query: async (sql) => {
       const texto = String(sql).replace(/\s+/g, " ").trim();
       if (/^SELECT process_id/i.test(texto)) return [[{ process_id: 1, variation_key: "general" }]];
-      if (/^SELECT id FROM deliverables/i.test(texto)) return [[]];
-      if (/^INSERT INTO deliverables/i.test(texto)) { events.push("insert:deliverable"); return [{ insertId: 5 }]; }
-      if (/^INSERT INTO template_artifacts/i.test(texto)) { events.push("insert:artifact"); return [{ insertId: DRAFT_ARTIFACT_ID }]; }
-      if (/^UPDATE template_artifacts/i.test(texto)) { events.push("update:artifact"); return [{}]; }
-      if (/^UPDATE deliverables/i.test(texto)) { events.push("update:deliverable"); return [{}]; }
-      if (/^SELECT id FROM process_definition_templates/i.test(texto)) return [[]];
-      if (/^INSERT INTO process_definition_templates/i.test(texto)) { events.push("insert:vinculo"); return [{ insertId: 9 }]; }
+      if (/^SELECT id FROM catalogo_documental/i.test(texto)) return [[]];
+      if (/^INSERT INTO catalogo_documental/i.test(texto)) { events.push("insert:deliverable"); return [{ insertId: 5 }]; }
+      if (/^INSERT INTO ediciones/i.test(texto)) { events.push("insert:artifact"); return [{ insertId: DRAFT_ARTIFACT_ID }]; }
+      if (/^UPDATE ediciones/i.test(texto)) { events.push("update:artifact"); return [{}]; }
+      if (/^UPDATE catalogo_documental/i.test(texto)) { events.push("update:deliverable"); return [{}]; }
+      if (/^SELECT id FROM vinculos/i.test(texto)) return [[]];
+      if (/^INSERT INTO vinculos/i.test(texto)) { events.push("insert:vinculo"); return [{ insertId: 9 }]; }
       if (/flow_templates/i.test(texto) || /flow_steps/i.test(texto)) { events.push("escribe:flujo"); return [[]]; }
       return [[]];
     },
@@ -326,12 +326,12 @@ test("si falla al escribir el FLUJO, el artifact y el vinculo tampoco quedan esc
 
 // Efecto lateral bueno de la transacción, y no era el objetivo: la pila de deshacer NO apilaba en
 // EDICIÓN, así que una edición que fallaba al vincular dejaba aplicado el UPDATE de
-// `template_artifacts`. Ahora también se deshace.
+// `ediciones`. Ahora también se deshace.
 test("una EDICION que falla al vincular tambien se deshace (antes no)", async () => {
   const { service, events } = buildDraftService({ falla: "vinculo" });
 
   await assert.rejects(
-    persistir(service, { isEdit: true, existingArtifact: { id: DRAFT_ARTIFACT_ID, deliverable_id: 5 } }),
+    persistir(service, { isEdit: true, existingArtifact: { id: DRAFT_ARTIFACT_ID, catalogo_documental_id: 5 } }),
     /El proceso destino seleccionado no existe/,
   );
   assert.ok(events.includes("update:artifact"), "el UPDATE llegó a ejecutarse...");
@@ -357,7 +357,7 @@ test("sin flujo autorado la transaccion sigue siendo la misma, sin escribir fluj
 //   - `bash make.sh` -> rc=1, «Fallo al renderizar ./Contenido/Referencias.tex.j2:
 //     'bibliography_style' is undefined» (StrictUndefined), sin PDF.
 //
-// La causa es que `GET /template_artifacts/:id/source` zipea SOLO el prefijo del contrato jinja2, con
+// La causa es que `GET /ediciones/:id/source` zipea SOLO el prefijo del contrato jinja2, con
 // las rutas relativas a el; y `make.sh` busca el fichero de datos relativo a su propio directorio,
 // que en el ZIP es la raiz. De ahi que las dos copias no sean redundantes: la de la raiz del paquete
 // es la que consume el backend, la del contrato es la UNICA que viaja al usuario.

@@ -56,13 +56,13 @@
           "document_version_status": "Pendiente de llenado",
           "item_created_by_person_id": "<normalized>",
           "process_definition_id": "<normalized>",
-          "process_definition_template_id": "<normalized>",
           "scope_unit_id": "<normalized>",
           "scope_unit_type_id": "<normalized>",
           "task_id": "<normalized>",
           "task_item_assigned_person_id": "<normalized>",
           "task_item_id": "<normalized>",
           "task_item_responsible_position_id": "<normalized>",
+          "vinculo_id": "<normalized>",
           "working_file_path": "<normalized>"
         },
         "currentStatus": "Pendiente de llenado",
@@ -81,6 +81,7 @@
     "count": 1,
     "itemKeys": [
       "created_at",
+      "edicion_id",
       "final_file_path",
       "format",
       "id",
@@ -89,7 +90,6 @@
       "render_engine",
       "status",
       "task_item_id",
-      "template_artifact_id",
       "version",
       "version_label",
       "version_minor",
@@ -133,7 +133,7 @@
       "id",
       "is_active",
       "name",
-      "process_definition_template_id"
+      "vinculo_id"
     ]
   },
   "sql_task_items": {
@@ -149,7 +149,6 @@
       "id",
       "origin_kind",
       "origin_unit_id",
-      "process_definition_template_id",
       "responsible_position_id",
       "sort_order",
       "source_task_item_id",
@@ -157,7 +156,8 @@
       "target_unit_id",
       "task_id",
       "title",
-      "user_started_at"
+      "user_started_at",
+      "vinculo_id"
     ]
   },
   "sql_tasks": {

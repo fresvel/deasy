@@ -9,7 +9,7 @@ export const SEMANTIC_VERSION_REGEX = /^\d+\.\d+\.\d+$/;
 export const STORAGE_VERSION_BUMP_LEVELS = new Set(["patch", "minor", "major"]);
 
 // Modos de emisión válidos para el vínculo plantilla↔proceso
-// (process_definition_templates.item_mode). El modo vive en el LINK, no en la
+// (vinculos.item_mode). El modo vive en el LINK, no en la
 // plantilla. 'routed' no autora flujo (se define al enviar).
 export const ITEM_EMISSION_MODES = ["single", "replicated", "routed"];
 

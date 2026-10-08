@@ -25,25 +25,37 @@ No hay `ALTER TABLE` evolutivo, y es deliberado desde el 2026-08-24. Antes los h
 | **Corrida (run)**    | El acto de *lanzar* la configuración en un periodo. Genera las tareas.                                                                                    | `process_runs`                             |
 | **Tarea**            | La instancia del proceso para un ámbito concreto (una unidad, un periodo). Es el contenedor.                                                              | `tasks`                                    |
 | **Entregable**       | Cada documento concreto a producir dentro de la tarea, con responsable, vencimiento y estado.                                                             | `task_items`                               |
-| **Plantilla**        | El *molde* del documento: su `schema.json` de campos + cuerpo (Jinja2/LaTeX u ofimatico) + formatos, versionado y almacenado en MinIO. **Son tres tablas, no una**: ver abajo. | `deliverables` + `template_artifacts` + `process_definition_templates` |
+| **Plantilla**        | El *molde* del documento: su `schema.json` de campos + cuerpo (Jinja2/LaTeX u ofimatico) + formatos, versionado y almacenado en MinIO. **Son tres tablas, no una**: ver abajo. | `catalogo_documental` + `ediciones` + `vinculos` |
 | **Flujo de entrega** | Cadena de pasos “quien llena y aprueba el documento antes de firmarlo”.                                                                                   | `fill_flow_*` / `fill_requests`            |
 | **Firma**            | Firma electronica PAdES sobre el PDF, con certificado `.p12` del firmante.                                                                                | `signature_flow_*` / `document_signatures` |
 | **Dossier**          | El **expediente o CV personal** (titulos, experiencia, publicaciones). *No* es el expediente de un proceso.                                               | `dossiers` + `dossier_items`               |
 
-### Los cuatro nombres de “entregable”, que son cuatro cosas distintas
+### Los cuatro eslabones de “entregable”, que son cuatro cosas distintas
 
-Esta es la confusion que mas tiempo cuesta en este repositorio, y **no es sinonimia**: cada nombre es un eslabon distinto. Leer `artifact` donde el codigo dice `template_artifact` y creer que habla del entregable de una persona lleva media tarde de despiste.
+Esta era **la confusion que mas tiempo costaba en este repositorio**: cuatro tablas distintas se
+llamaban «plantilla» o «entregable» segun quien hablara. Desde el **2026-10-08** cada eslabon se llama
+como lo que es, y esta tabla es el mapa — incluido **el nombre viejo**, porque la prosa anterior a esa
+fecha lo usa.
 
-| **Nombre en el codigo** | **Que es** | **Donde vive** |
+| **Tabla** | **Que es** | **Se llamaba** |
 |:---|:---|:---|
-| `deliverable` | El entregable como **tipo**: su identidad institucional y su codigo. *No es un archivo*, y desde el 2026-10-04 tampoco lleva escrito a que linea de proceso sirve: eso lo dice su vinculo. | `deliverables` |
-| `template_artifact` | Una **edicion** de ese tipo, con sus ficheros en MinIO y su ciclo de vida (`draft` / `published` / `retired`). El codigo lo abrevia `artifact`; no hay ninguna tabla `artifacts`. | `template_artifacts` |
-| `process_definition_template` | El **vinculo** entre una configuracion de proceso y una edicion. **Aqui vive `item_mode`**: por eso la misma plantilla puede emitirse de tres maneras segun a que proceso este enlazada. | `process_definition_templates` |
-| `task_item` | La **instancia con dueno**: lo que una persona concreta tiene que entregar. Es la tarjeta que el usuario ve en su Home. | `task_items` |
+| `catalogo_documental` | El entregable como **tipo**: su identidad institucional y su codigo. *No es un archivo*, y desde el 2026-10-04 tampoco lleva escrito a que linea de proceso sirve: eso lo dice su vinculo. | `deliverables` |
+| `ediciones` | Una **edicion** de ese tipo, con sus ficheros en MinIO y su ciclo de vida (`draft` / `published` / `retired`). | `template_artifacts`, que el codigo abreviaba `artifact` |
+| `vinculos` | El **vinculo** entre una configuracion de proceso y una edicion. **Aqui vive `item_mode`**: por eso la misma edicion puede emitirse de tres maneras segun a que proceso este enlazada. | `process_definition_templates` |
+| `task_items` | La **instancia con dueno**: lo que una persona concreta tiene que entregar. Es la tarjeta que el usuario ve en su Home. | — |
 
-Y un quinto eslabon al lado de la edicion, el **generador** (`generadores_de_documento`): **quien produce el PDF**. Lo declara `template_artifacts.generador_id`, y de `tipo = 'latex'` es tambien la plantilla de fabrica cuyo paquete se copia al crear el entregable. Se llamaba `template_seed` y era *el* mecanismo; desde el frente 23 es *uno* de los generadores posibles. La cadena completa, de molde a documento firmado:
+⚠️ **Por que no se llaman `documentos_tipo` ni `formatos`**, que fueron las dos primeras propuestas:
+`tipo` ya significa la clase de un documento de identidad (`documentos_identidad.tipo`, con su
+`CHECK`), y `formato` ya significa pdf/docx (`ediciones.available_formats`). Un nombre que colisiona
+con otro que ya existe no resuelve una confusion: la mueve.
 
-`deliverable` → `template_artifact` (← `generador`) → (vinculo) → `task_item` → `document_version` → `document_version_upload`
+Y un quinto eslabon al lado de la edicion, el **generador** (`generadores_de_documento`): **quien
+produce el PDF**. Lo declara `ediciones.generador_id`, y de `tipo = 'latex'` es tambien la plantilla de
+fabrica cuyo paquete se copia al crear el entregable. Se llamaba `template_seed` y era *el* mecanismo;
+desde el frente 23 es *uno* de los generadores posibles. La cadena completa, de molde a documento
+firmado:
+
+`catalogo_documental` → `ediciones` (← `generador`) → `vinculos` → `task_items` → `document_versions` → `document_version_uploads`
 
 :::caution[Y “documento” tampoco es lo que parece]
 

@@ -48,7 +48,7 @@ tests/characterization/
 
 `zzzzzz_flow_steps_db` rompe a propósito la regla «black-box HTTP», y conviene saber por qué antes
 de copiarlo: el §0.8 del plan maestro va a mover el flujo del `meta.yaml` a la base, y **ninguna ruta
-expone el resultado**. La que lo parece —`GET /template_artifacts/:id/schema`— lee el flujo del
+expone el resultado**. La que lo parece —`GET /ediciones/:id/schema`— lee el flujo del
 propio `meta.yaml`, o sea justo lo que se va a eliminar; y lo que hoy se fija por HTTP es el
 `content_hash` del paquete de MinIO, que **incluye ese fichero** y por tanto cambiará por
 construcción sin decir nada del flujo. Cuando lo que hay que caracterizar es el estado que un cambio

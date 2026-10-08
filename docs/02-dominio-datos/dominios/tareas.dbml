@@ -73,7 +73,7 @@ Table "document_versions" {
   "version" int4 [not null, default: 1, note: '''La RONDA: un intento completo del flujo (llenar -> firmar). Entero desde el 2026-08-23; antes era decimal y el numero mentia, porque 0.1 y 0.2 parecian correcciones del mismo documento y eran dos rondas, la primera cancelada entera. Las CORRECCIONES son el segundo digito y viven en `document_version_uploads`.''']
   "version_minor" int4 [not null, default: 0]
   "version_label" text [note: "columna generada (STORED)"]
-  "template_artifact_id" int4
+  "edicion_id" int4
   "payload_hash" varchar(64)
   "payload_object_path" varchar(255)
   "working_file_path" varchar(255)
@@ -85,7 +85,7 @@ Table "document_versions" {
 
   Indexes {
     (task_item_id, version) [type: btree, unique, name: "uq_document_versions"]
-    template_artifact_id [type: btree, name: "idx_document_versions_artifact"]
+    edicion_id [type: btree, name: "idx_document_versions_artifact"]
     task_item_id [type: btree, name: "idx_document_versions_item"]
   }
 }
@@ -157,7 +157,7 @@ Table "task_item_tenures" {
 Table "task_items" {
   "id" int4 [pk, not null, increment]
   "task_id" int4 [not null]
-  "process_definition_template_id" int4 [not null]
+  "vinculo_id" int4 [not null]
   "origin_kind" text [not null, check: `origin_kind = ANY (ARRAY['process_defined'::text, 'user_added'::text])`, default: 'process_defined']
   "title" varchar(180)
   "sort_order" int4 [not null, default: 1]
@@ -179,7 +179,7 @@ Table "task_items" {
     (task_id, process_definition_template_key, responsible_position_key) [type: btree, unique, name: "uq_task_items_defined_target"]
     created_by_person_id [type: btree, name: "idx_task_items_created_by"]
     (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
-    process_definition_template_id [type: btree, name: "idx_task_items_definition_template"]
+    vinculo_id [type: btree, name: "idx_task_items_definition_template"]
     origin_kind [type: btree, name: "idx_task_items_origin"]
     source_task_item_id [type: btree, name: "idx_task_items_source"]
     target_unit_id [type: btree, name: "idx_task_items_target_unit"]
@@ -228,7 +228,7 @@ Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 //   persons -> document_signatures   [identidad]
 //   signature_statuses -> document_signatures   [firmas]
 //   persons -> document_version_uploads   [identidad]
-//   template_artifacts -> document_versions   [plantillas]
+//   ediciones -> document_versions   [plantillas]
 //   persons -> document_workflow_observations   [identidad]
 //   fill_requests -> document_workflow_observations   [plantillas]
 //   persons -> document_workflow_observations   [identidad]
@@ -244,9 +244,9 @@ Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 //   persons -> task_items   [identidad]
 //   persons -> task_items   [identidad]
 //   units -> task_items   [organizacion]
-//   process_definition_templates -> task_items   [procesos]
 //   unit_positions -> task_items   [organizacion]
 //   units -> task_items   [organizacion]
+//   vinculos -> task_items   [procesos]
 //   process_definition_versions -> tasks   [procesos]
 //   units -> tasks   [organizacion]
 //   terms -> tasks   [procesos]

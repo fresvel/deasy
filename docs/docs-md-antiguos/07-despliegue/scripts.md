@@ -220,7 +220,7 @@ Credenciales demo en `backend/scripts/seeds/pucese.seed.json`:
 - `drop_legacy_tables.mjs`: elimina tablas legacy ya reemplazadas.
 - `migrate_process_definition_series.mjs`: migracion de series/versiones de definiciones de proceso.
 - `migrate_process_templates.mjs`: migracion de vinculos de procesos-plantillas.
-- `migrate_template_artifact_owner_fk.mjs`: ajusta columna/indice/FK de owner en template_artifacts.
+- `migrate_template_artifact_owner_fk.mjs`: ajusta columna/indice/FK de owner en ediciones.
 - `migrate_template_artifact_stage_enum.mjs`: expande enum de `artifact_stage`.
 - `migrate_template_artifacts_to_json.mjs`: migra contenido de artifacts a representacion JSON.
 - `migrate_template_artifact_origin.mjs`: normaliza origen de artifacts y objetos relacionados.

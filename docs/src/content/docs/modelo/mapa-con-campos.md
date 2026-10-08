@@ -133,7 +133,7 @@ erDiagram
 <details>
 <summary>Llegan 58 claves ajenas desde otros diagramas</summary>
 
-`aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `deliverables.owner_person_id` → `persons` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `fill_flow_steps.cargo_id` → `cargos` · `fill_flow_steps.assigned_person_id` → `persons` · `fill_flow_steps.position_id` → `unit_positions` · `fill_flow_steps.unit_type_id` → `unit_types` · `fill_flow_steps.unit_id` → `units` · `fill_requests.assigned_person_id` → `persons` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `process_definition_series.cargo_id` → `cargos` · `process_definition_series.unit_type_id` → `unit_types` · `process_runs.created_by_user_id` → `persons` · `process_target_rules.cargo_id` → `cargos` · `process_target_rules.position_id` → `unit_positions` · `process_target_rules.unit_type_id` → `unit_types` · `process_target_rules.unit_id` → `units` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `signature_flow_steps.required_cargo_id` → `cargos` · `signature_flow_steps.assigned_person_id` → `persons` · `signature_flow_steps.position_id` → `unit_positions` · `signature_flow_steps.unit_type_id` → `unit_types` · `signature_flow_steps.unit_id` → `units` · `signature_requests.assigned_person_id` → `persons` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
+`aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `fill_flow_steps.cargo_id` → `cargos` · `fill_flow_steps.assigned_person_id` → `persons` · `fill_flow_steps.position_id` → `unit_positions` · `fill_flow_steps.unit_type_id` → `unit_types` · `fill_flow_steps.unit_id` → `units` · `fill_requests.assigned_person_id` → `persons` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `process_definition_series.cargo_id` → `cargos` · `process_definition_series.unit_type_id` → `unit_types` · `process_runs.created_by_user_id` → `persons` · `process_target_rules.cargo_id` → `cargos` · `process_target_rules.position_id` → `unit_positions` · `process_target_rules.unit_type_id` → `unit_types` · `process_target_rules.unit_id` → `units` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `signature_flow_steps.required_cargo_id` → `cargos` · `signature_flow_steps.assigned_person_id` → `persons` · `signature_flow_steps.position_id` → `unit_positions` · `signature_flow_steps.unit_type_id` → `unit_types` · `signature_flow_steps.unit_id` → `units` · `signature_requests.assigned_person_id` → `persons` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
 
 </details>
 
@@ -214,7 +214,7 @@ erDiagram
 <details>
 <summary>Llegan 7 claves ajenas desde otros diagramas</summary>
 
-`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_definition_templates.process_definition_id` → `process_definition_versions` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions`
+`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `vinculos.process_definition_id` → `process_definition_versions`
 
 </details>
 
@@ -234,7 +234,7 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
-  deliverables {
+  catalogo_documental {
     int id PK
     varchar code UK
     varchar display_name
@@ -243,9 +243,9 @@ erDiagram
     int owner_person_id FK
     timestamp created_at
   }
-  template_artifacts {
+  ediciones {
     int id PK
-    int deliverable_id FK
+    int catalogo_documental_id FK
     varchar storage_version
     text lifecycle_state
     varchar base_object_prefix
@@ -268,26 +268,26 @@ erDiagram
     smallint is_active
     timestamp created_at
   }
-  process_definition_templates {
+  vinculos {
     int id PK
     int process_definition_id FK
-    int template_artifact_id FK
+    int edicion_id FK
     int sort_order
     text item_mode
     timestamp created_at
   }
-  persons |o--o{ deliverables : "owner_person_id"
-  template_artifacts ||--o{ process_definition_templates : "template_artifact_id"
-  process_definition_versions ||--o{ process_definition_templates : "process_definition_id"
-  deliverables ||--o{ template_artifacts : "deliverable_id"
-  generadores_de_documento |o--o{ template_artifacts : "generador_id"
-  template_artifacts |o--o{ template_artifacts : "parent_version_id"
+  persons |o--o{ catalogo_documental : "owner_person_id"
+  catalogo_documental ||--o{ ediciones : "catalogo_documental_id"
+  generadores_de_documento |o--o{ ediciones : "generador_id"
+  ediciones |o--o{ ediciones : "parent_version_id"
+  process_definition_versions ||--o{ vinculos : "process_definition_id"
+  ediciones ||--o{ vinculos : "edicion_id"
 ```
 
 <details>
 <summary>Llegan 8 claves ajenas desde otros diagramas</summary>
 
-`document_versions.template_artifact_id` → `template_artifacts` · `fill_flow_templates.template_artifact_id` → `template_artifacts` · `fill_flow_templates.process_definition_template_id` → `process_definition_templates` · `process_definition_period_types.term_type_id` → `term_types` · `signature_flow_templates.template_artifact_id` → `template_artifacts` · `signature_flow_templates.process_definition_template_id` → `process_definition_templates` · `task_items.process_definition_template_id` → `process_definition_templates` · `terms.term_type_id` → `term_types`
+`document_versions.edicion_id` → `ediciones` · `fill_flow_templates.edicion_id` → `ediciones` · `fill_flow_templates.vinculo_id` → `vinculos` · `process_definition_period_types.term_type_id` → `term_types` · `signature_flow_templates.edicion_id` → `ediciones` · `signature_flow_templates.vinculo_id` → `vinculos` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
 
 </details>
 
@@ -351,7 +351,7 @@ erDiagram
 
 ## Lo que ocurre (2 de 3)
 
-**3 tablas** · 45 columnas · 14 claves ajenas propias. Apunta a `persons`, `process_definition_templates`, `tasks`, `template_artifacts`, `unit_positions`, `units`, que salen como caja vacía.
+**3 tablas** · 45 columnas · 14 claves ajenas propias. Apunta a `ediciones`, `persons`, `tasks`, `unit_positions`, `units`, `vinculos`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -359,7 +359,7 @@ erDiagram
   task_items {
     int id PK
     int task_id FK
-    int process_definition_template_id FK
+    int vinculo_id FK
     text origin_kind
     varchar title
     int sort_order
@@ -397,7 +397,7 @@ erDiagram
     int version
     int version_minor
     text version_label
-    int template_artifact_id FK
+    int edicion_id FK
     varchar payload_hash
     varchar payload_object_path
     varchar working_file_path
@@ -407,7 +407,7 @@ erDiagram
     varchar status
     timestamp created_at
   }
-  template_artifacts |o--o{ document_versions : "template_artifact_id"
+  ediciones |o--o{ document_versions : "edicion_id"
   task_items ||--o{ document_versions : "task_item_id"
   task_items ||--o{ task_item_tenures : "task_item_id"
   persons |o--o{ task_item_tenures : "person_id"
@@ -415,11 +415,11 @@ erDiagram
   persons |o--o{ task_items : "assigned_person_id"
   persons |o--o{ task_items : "created_by_person_id"
   units |o--o{ task_items : "origin_unit_id"
-  process_definition_templates ||--o{ task_items : "process_definition_template_id"
   unit_positions ||--o{ task_items : "responsible_position_id"
   task_items |o--o{ task_items : "source_task_item_id"
   units |o--o{ task_items : "target_unit_id"
   tasks ||--o{ task_items : "task_id"
+  vinculos ||--o{ task_items : "vinculo_id"
   persons |o--o{ task_item_tenures : "performed_by_person_id"
 ```
 
@@ -470,16 +470,16 @@ erDiagram
 
 ## Flujo de entrega
 
-**4 tablas** · 41 columnas · 15 claves ajenas propias. Apunta a `cargos`, `document_versions`, `persons`, `process_definition_templates`, `relation_unit_types`, `task_items`, `template_artifacts`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
+**4 tablas** · 41 columnas · 15 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `relation_unit_types`, `task_items`, `unit_positions`, `unit_types`, `units`, `vinculos`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
   %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   fill_flow_templates {
     int id PK
-    int process_definition_template_id FK
+    int vinculo_id FK
     int task_item_id FK
-    int template_artifact_id FK
+    int edicion_id FK
     varchar name
     varchar description
     smallint is_active
@@ -533,8 +533,8 @@ erDiagram
   fill_flow_templates ||--o{ fill_flow_steps : "fill_flow_template_id"
   unit_types |o--o{ fill_flow_steps : "unit_type_id"
   units |o--o{ fill_flow_steps : "unit_id"
-  template_artifacts |o--o{ fill_flow_templates : "template_artifact_id"
-  process_definition_templates |o--o{ fill_flow_templates : "process_definition_template_id"
+  ediciones |o--o{ fill_flow_templates : "edicion_id"
+  vinculos |o--o{ fill_flow_templates : "vinculo_id"
   task_items |o--o{ fill_flow_templates : "task_item_id"
   document_fill_flows ||--o{ fill_requests : "document_fill_flow_id"
   persons |o--o{ fill_requests : "assigned_person_id"
@@ -550,16 +550,16 @@ erDiagram
 
 ## Flujo de firma (1 de 2)
 
-**4 tablas** · 43 columnas · 16 claves ajenas propias. Apunta a `cargos`, `document_versions`, `persons`, `process_definition_templates`, `signature_request_statuses`, `task_items`, `template_artifacts`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
+**4 tablas** · 43 columnas · 16 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `signature_request_statuses`, `task_items`, `unit_positions`, `unit_types`, `units`, `vinculos`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
   %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   signature_flow_templates {
     int id PK
-    int process_definition_template_id FK
+    int vinculo_id FK
     int task_item_id FK
-    int template_artifact_id FK
+    int edicion_id FK
     varchar name
     varchar description
     smallint is_active
@@ -615,8 +615,8 @@ erDiagram
   signature_flow_templates ||--o{ signature_flow_steps : "template_id"
   unit_types |o--o{ signature_flow_steps : "unit_type_id"
   units |o--o{ signature_flow_steps : "unit_id"
-  template_artifacts |o--o{ signature_flow_templates : "template_artifact_id"
-  process_definition_templates |o--o{ signature_flow_templates : "process_definition_template_id"
+  ediciones |o--o{ signature_flow_templates : "edicion_id"
+  vinculos |o--o{ signature_flow_templates : "vinculo_id"
   task_items |o--o{ signature_flow_templates : "task_item_id"
   signature_flow_instances ||--o{ signature_requests : "instance_id"
   persons |o--o{ signature_requests : "assigned_person_id"

@@ -159,18 +159,18 @@ test("GET /users/:id/flow-catalog -> catálogo de flujos", async () => {
   matchSnapshot(SUITE, "flow_catalog_usuario", snapshotShape(res, OBJ_OPTS));
 });
 
-test("GET /users/:id/addable-deliverables?definition_id -> entregables añadibles", async () => {
+test("GET /users/:id/addable-catalogo_documental?definition_id -> entregables añadibles", async () => {
   const token = await tokenFor("usuario");
   const res = await get(
-    `/users/${USER_ID}/addable-deliverables?definition_id=${DEFINITION_ID}`,
+    `/users/${USER_ID}/addable-catalogo_documental?definition_id=${DEFINITION_ID}`,
     { token }
   );
   matchSnapshot(SUITE, "addable_deliverables_usuario", snapshotShape(res, OBJ_OPTS));
 });
 
-test("GET /users/:id/addable-deliverables sin task_id ni definition_id -> 400", async () => {
+test("GET /users/:id/addable-catalogo_documental sin task_id ni definition_id -> 400", async () => {
   const token = await tokenFor("usuario");
-  const res = await get(`/users/${USER_ID}/addable-deliverables`, { token });
+  const res = await get(`/users/${USER_ID}/addable-catalogo_documental`, { token });
   matchSnapshot(SUITE, "addable_deliverables_sin_filtro", snapshotShape(res, OBJ_OPTS));
 });
 

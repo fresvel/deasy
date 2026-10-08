@@ -391,8 +391,8 @@ const SECTION_KEY_BY_SLUG = Object.fromEntries(GROUP_DEFS.map((group) => [slugif
 
 const TABLE_TAB_LABEL_OVERRIDES = {
   generadores_de_documento: "Generadores",
-  template_artifacts: "Plantillas",
-  process_definition_templates: "Procesos asignados"
+  ediciones: "Plantillas",
+  vinculos: "Procesos asignados"
 };
 
 const hiddenTables = new Set([]);

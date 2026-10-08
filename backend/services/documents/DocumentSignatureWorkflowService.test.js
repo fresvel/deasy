@@ -3,7 +3,7 @@
 // Gemelo del de entrega (`services/admin/generation/queries.test.js`) y con el mismo motivo: lo que
 // se vigila no es «qué columna está rellena», sino el ORDEN de los tres escalones y las guardas
 // `IS NULL` que los separan. El flujo de firma que `materializeRuntimeFlowForTaskItem` escribe al
-// enviar (generation/documents.js:278) rellena `process_definition_template_id` Y `task_item_id` en
+// enviar (generation/documents.js:278) rellena `vinculo_id` Y `task_item_id` en
 // el MISMO INSERT: sin `task_item_id IS NULL` en el escalón del vínculo, esa fila se serviría como
 // flujo del vínculo a cualquier otro entregable.
 //
@@ -17,14 +17,14 @@ import {
   resolvePersonsForCargoInScope,
 } from "./DocumentSignatureWorkflowService.js";
 
-const VINCULO = 7; // process_definition_templates.id
+const VINCULO = 7; // vinculos.id
 const OTRO_VINCULO = 8;
-const PLANTILLA = 55; // template_artifacts.id que enlaza VINCULO
+const PLANTILLA = 55; // ediciones.id que enlaza VINCULO
 const OTRA_PLANTILLA = 99; // el que enlaza OTRO_VINCULO
 const VINCULO_SIN_PLANTILLA = 9;
 const ENTREGABLE = 300; // task_items.id
 
-// `process_definition_templates`: qué edición enlaza cada vínculo.
+// `vinculos`: qué edición enlaza cada vínculo.
 const VINCULOS = new Map([
   [VINCULO, PLANTILLA],
   [OTRO_VINCULO, OTRA_PLANTILLA],
@@ -33,9 +33,9 @@ const VINCULOS = new Map([
 
 const fila = ({ id, vinculo = null, entregable = null, plantilla = null, activo = 1 }) => ({
   id,
-  process_definition_template_id: vinculo,
+  vinculo_id: vinculo,
   task_item_id: entregable,
-  template_artifact_id: plantilla,
+  edicion_id: plantilla,
   is_active: activo,
 });
 
@@ -54,16 +54,16 @@ const conexionDeFlujos = (filas, tabla = "signature_flow_templates") => {
 
       let portador;
       let valor;
-      if (/template_artifact_id = \(\s*SELECT template_artifact_id/.test(sql)) {
-        portador = "template_artifact_id";
+      if (/edicion_id = \(\s*SELECT edicion_id/.test(sql)) {
+        portador = "edicion_id";
         // La subconsulta: NULL si el vínculo no existe o no enlaza edición. `columna = NULL`
         // no casa con nada, ni siquiera con las filas que tienen NULL.
         valor = VINCULOS.has(Number(params[0])) ? VINCULOS.get(Number(params[0])) : null;
       } else if (/\btask_item_id = \?/.test(sql)) {
         portador = "task_item_id";
         valor = Number(params[0]);
-      } else if (/\bprocess_definition_template_id = \?/.test(sql)) {
-        portador = "process_definition_template_id";
+      } else if (/\bvinculo_id = \?/.test(sql)) {
+        portador = "vinculo_id";
         valor = Number(params[0]);
       } else {
         throw new Error(`consulta no reconocida: ${sql}`);

@@ -6,12 +6,12 @@ sidebar:
   order: 6
 ---
 
-El **vínculo** (`process_definition_templates`) es la frase que cierra la mitad declarativa: *«en
+El **vínculo** (`vinculos`) es la frase que cierra la mitad declarativa: *«en
 esta configuración del proceso, se entrega este documento, usando esta edición de la plantilla, de
 esta manera»*.
 
 Es una tabla pequeña y hace mucho. Además de unir configuración (`process_definition_id`) con
-edición (`template_artifact_id`), guarda el **orden** en que aparecen los documentos de un proceso
+edición (`edicion_id`), guarda el **orden** en que aparecen los documentos de un proceso
 (`sort_order`) y, sobre todo, el **modo** (`item_mode`).
 
 ## Los tres modos, que no son variantes técnicas sino tres formas de trabajar
@@ -38,8 +38,8 @@ edición (`template_artifact_id`), guarda el **orden** en que aparecen los docum
 
 :::note[El modo es del vínculo, no de la plantilla]
 
-`item_mode` es una columna de la tabla que **une**, no de `template_artifacts`. Su único índice
-único es `uq_process_definition_templates (process_definition_id, template_artifact_id)`: la misma
+`item_mode` es una columna de la tabla que **une**, no de `ediciones`. Su único índice
+único es `uq_vinculos (process_definition_id, edicion_id)`: la misma
 edición puede vincularse a varias configuraciones, y **cada vínculo lleva su propio modo**.
 
 O sea que una misma plantilla puede usarse de forma rígida en un proceso y de forma abierta en otro
@@ -63,13 +63,13 @@ Si se cruza, el `INSERT` muere con un mensaje escrito para una persona, y la API
 configuración. Crea o usa un entregable propio de esta línea.»*
 
 **Por qué un disparador y no un índice único.** Se intentó con
-`UNIQUE (template_artifact_id)` y rompía el versionado de configuraciones: ese índice prohíbe el
+`UNIQUE (edicion_id)` y rompía el versionado de configuraciones: ese índice prohíbe el
 mismo artefacto en dos *definiciones*, cuando la regla habla de dos *líneas*, y una línea contiene
 muchas versiones de definición. Y la regla no cabe en un índice de esta tabla, porque la línea se
 identifica con `process_definition_versions.(process_id, series_id)`: pedirla en un índice obligaría
 a copiar esa columna aquí, que es la duplicación que este frente vino a quitar.
 
-Antes lo intentaba un guardia de JavaScript que comparaba dos columnas copiadas en `deliverables`.
+Antes lo intentaba un guardia de JavaScript que comparaba dos columnas copiadas en `catalogo_documental`.
 Comprobaba la regla entera, pero solo en el alta por el CRUD de administración: el clon, los scripts
 de siembra y un `INSERT` a mano se lo saltaban. El disparador no se lo salta nadie.
 
@@ -93,19 +93,19 @@ explícitamente. Si añades una columna de datos a esta tabla, añádela tambié
 ## Qué cuelga del vínculo aguas abajo
 
 El vínculo no desaparece al dispararse el proceso: cada entregable concreto guarda de qué vínculo
-nació (`task_items.process_definition_template_id`), y esa referencia forma parte de su identidad.
+nació (`task_items.vinculo_id`), y esa referencia forma parte de su identidad.
 El detalle está en [El entregable concreto](/modelo/entregable-concreto/).
 
 ```mermaid
 erDiagram
-  process_definition_versions ||--o{ process_definition_templates : "declara que se entrega"
-  template_artifacts ||--o{ process_definition_templates : "con esta edicion"
-  process_definition_templates ||--o{ task_items : "materializa"
+  process_definition_versions ||--o{ vinculos : "declara que se entrega"
+  ediciones ||--o{ vinculos : "con esta edicion"
+  vinculos ||--o{ task_items : "materializa"
 
-  process_definition_templates {
+  vinculos {
     int id PK "EL VINCULO"
     int process_definition_id FK "que configuracion"
-    int template_artifact_id FK "que edicion de la plantilla"
+    int edicion_id FK "que edicion de la plantilla"
     int sort_order "orden entre los documentos del proceso"
     text item_mode "single, replicated, routed -- CHECK, default single"
     timestamp created_at

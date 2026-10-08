@@ -27,7 +27,7 @@ System/tpl_informe_general/1.1.0/   ← storage_version 1.1.0, lifecycle_state '
 ```
 
 Es un versionado **lógico y explícito**: cada versión tiene su carpeta, su fila en
-`template_artifacts` y su estado de ciclo de vida. **Funciona, y tiene ventajas reales** sobre el
+`ediciones` y su estado de ciclo de vida. **Funciona, y tiene ventajas reales** sobre el
 versionado del almacén:
 
 | | Sub-ruta (hoy) | Versionado de MinIO |

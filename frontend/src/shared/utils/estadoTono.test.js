@@ -172,7 +172,7 @@ describe("los ejes nuevos tampoco dejan una pastilla sin tono", () => {
 describe("las columnas `Estado` de admin están cubiertas ENTERAS", () => {
   const VOCABULARIOS = {
     "process_definition_versions.status": [tonoCicloVida, ["draft", "active", "retired"]],
-    "template_artifacts.lifecycle_state": [tonoCicloVida, ["draft", "published", "retired"]],
+    "ediciones.lifecycle_state": [tonoCicloVida, ["draft", "published", "retired"]],
     "process_runs.status": [tonoCorrida, ["pending", "active", "completed", "cancelled"]],
     "tasks.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
     "task_items.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
@@ -319,7 +319,7 @@ describe("el registro de columnas de admin — qué celda es una pastilla", () =
     /* El criterio es SER un estado, no llamarse `status`: `is_active` es un booleano de
        habilitación y `item_mode` es un tipo, no un ciclo. */
     expect(esColumnaDeEstado("persons", "is_active")).toBe(false);
-    expect(esColumnaDeEstado("process_definition_templates", "item_mode")).toBe(false);
+    expect(esColumnaDeEstado("vinculos", "item_mode")).toBe(false);
     expect(esColumnaDeEstado("process_runs", "run_mode")).toBe(false);
     expect(esColumnaDeEstado("signature_requests", "status_id")).toBe(false);
     expect(esColumnaDeEstado("units", "name")).toBe(false);
@@ -327,12 +327,12 @@ describe("el registro de columnas de admin — qué celda es una pastilla", () =
 
   it("EL DEFECTO QUE ABRIÓ ESTO: las dos tablas del ciclo de vida ya dicen lo mismo", () => {
     /* `process_definition_versions` pintaba «Retirada» en pastilla y en español;
-       `template_artifacts` pintaba `retired` en texto plano y en inglés crudo. */
-    expect(etiquetaDeColumna("template_artifacts", "lifecycle_state", "retired")).toBe("Retirada");
+       `ediciones` pintaba `retired` en texto plano y en inglés crudo. */
+    expect(etiquetaDeColumna("ediciones", "lifecycle_state", "retired")).toBe("Retirada");
     expect(etiquetaDeColumna("process_definition_versions", "status", "retired")).toBe("Retirada");
-    expect(tonoDeColumna("template_artifacts", "lifecycle_state", "retired"))
+    expect(tonoDeColumna("ediciones", "lifecycle_state", "retired"))
       .toBe(tonoDeColumna("process_definition_versions", "status", "retired"));
-    expect(etiquetaDeColumna("template_artifacts", "lifecycle_state", "published")).toBe("Publicada");
+    expect(etiquetaDeColumna("ediciones", "lifecycle_state", "published")).toBe("Publicada");
   });
 
   it("las columnas en español se presentan, no se traducen dos veces", () => {
@@ -388,12 +388,12 @@ describe("la clasificación — no tiene eje bueno/malo, y su paleta lo respeta"
     expect(tonoClasificacion("process_runs", "run_mode", "manual")).toBe(TONOS.INFO);
     expect(tonoClasificacion("task_items", "origin_kind", "process_defined")).toBe(TONOS.PRIMARY);
     expect(tonoClasificacion("role_assignments", "source", "derived")).toBe(TONOS.PRIMARY);
-    expect(tonoClasificacion("template_artifacts", "template_scope", "official")).toBe(TONOS.PRIMARY);
+    expect(tonoClasificacion("ediciones", "template_scope", "official")).toBe(TONOS.PRIMARY);
   });
 
   it("un vocabulario de valores PARES sale entero en neutral: la pastilla agrupa, no puntúa", () => {
     for (const v of ["single", "replicated", "routed"]) {
-      expect(tonoClasificacion("process_definition_templates", "item_mode", v)).toBe(TONOS.NEUTRAL);
+      expect(tonoClasificacion("vinculos", "item_mode", v)).toBe(TONOS.NEUTRAL);
     }
     for (const v of ["TC", "MT", "TP"]) {
       expect(tonoClasificacion("vacancies", "dedication", v)).toBe(TONOS.NEUTRAL);
@@ -420,7 +420,7 @@ describe("los 32 booleanos del esquema, cada uno con su eje", () => {
     "unit_types.is_active", "relation_unit_types.is_active", "units.is_active",
     "processes.is_active", "process_definition_series.is_active", "process_target_rules.is_active",
     "term_types.is_active", "terms.is_active", "process_definition_period_types.is_active",
-    "generadores_de_documento.is_active", "template_artifacts.is_active", "persons.is_active",
+    "generadores_de_documento.is_active", "ediciones.is_active", "persons.is_active",
     "roles.is_active", "cargos.is_active", "unit_positions.is_active",
     "fill_flow_templates.is_active", "signature_statuses.is_active",
     "signature_request_statuses.is_active", "signature_flow_templates.is_active",

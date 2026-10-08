@@ -30,7 +30,7 @@
 //
 //   · **Suelo — YA NO, y conviene saber por qué lo hubo.** `zz_template_lifecycle` ejecuta el UPDATE
 //     GUIADO del Proceso por defecto: clona la configuración v1.0.0 en una v1.1.0, la activa y JUBILA
-//     la anterior. Y `cloneProcessDefinitionChildren` copiaba del vínculo solo `template_artifact_id`
+//     la anterior. Y `cloneProcessDefinitionChildren` copiaba del vínculo solo `edicion_id`
 //     y `sort_order`, así que **`item_mode` no viajaba y la columna caía a su `DEFAULT 'single'`**:
 //     a partir de ese flow la configuración ACTIVA del Proceso por defecto no tenía ya ningún vínculo
 //     `routed`, el modo derivado respondía «Este entregable es de instancia única: no admite réplicas
@@ -63,10 +63,10 @@
 //
 // LAS CUATRO PROPIEDADES QUE SE FIJAN, y por qué esas:
 //
-//   1. **El flujo cuelga del ENTREGABLE.** `task_item_id` relleno y `template_artifact_id` en NULL.
+//   1. **El flujo cuelga del ENTREGABLE.** `task_item_id` relleno y `edicion_id` en NULL.
 //      Es LA definición de `routed`: un flujo que colgara de la plantilla sería `single`, y uno que
 //      colgara solo del vínculo sería el flujo predefinido que `routed` promete no tener.
-//      `process_definition_template_id` va relleno TAMBIÉN, y no es un descuido: la fila lleva los
+//      `vinculo_id` va relleno TAMBIÉN, y no es un descuido: la fila lleva los
 //      dos portadores porque el segundo AFINA al primero («soy del vínculo 1 **y además**
 //      específicamente de este entregable»). El §0.8 lo corrigió por escrito tras medirlo, y por eso
 //      la resolución es por PRIORIDAD y no por «qué columna está rellena».
@@ -154,7 +154,7 @@ const MASK_OPTS = {
 // --- Lectura del oráculo -------------------------------------------------------------------------
 
 const FILL_TEMPLATE_COLUMNS = `
-  id, process_definition_template_id, task_item_id, template_artifact_id, name, description, is_active`;
+  id, vinculo_id, task_item_id, edicion_id, name, description, is_active`;
 const SIGNATURE_TEMPLATE_COLUMNS = FILL_TEMPLATE_COLUMNS;
 
 const FILL_STEP_COLUMNS = `
@@ -198,17 +198,17 @@ async function readRuntimeSignatureFlow(taskItemId) {
 // El entregable tal como queda: la fila del `task_item`, su documento, su versión, la instancia de
 // flujo de llenado y las solicitudes abiertas. Es el «estado resultante» del punto 4.
 async function readEntregable(taskItemId) {
-  // `template_artifact_id` sale del VINCULO desde el 2026-10-04 (frente 23, F2.1): `task_items` ya
+  // `edicion_id` sale del VINCULO desde el 2026-10-04 (frente 23, F2.1): `task_items` ya
   // no guarda su copia. Se proyecta con el MISMO nombre para que el golden no se mueva — y que no
   // se mueva es justo la prueba de que la columna era una copia.
   const [item] = await query(
-    `SELECT ti.id, ti.task_id, ti.process_definition_template_id, pdt.template_artifact_id,
+    `SELECT ti.id, ti.task_id, ti.vinculo_id, pdt.edicion_id,
             ti.origin_kind, ti.title,
             ti.sort_order, ti.created_by_person_id, ti.source_task_item_id, ti.target_unit_id,
             ti.responsible_position_id, ti.assigned_person_id, ti.document_status, ti.origin_unit_id,
             ti.start_date, ti.end_date, ti.user_started_at
        FROM task_items ti
-       LEFT JOIN process_definition_templates pdt ON pdt.id = ti.process_definition_template_id
+       LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
       WHERE ti.id = $1`,
     [taskItemId],
   );
@@ -219,7 +219,7 @@ async function readEntregable(taskItemId) {
   const document = item ? { id: item.id, task_item_id: item.id } : null;
   const versions = document
     ? await query(
-        `SELECT id, task_item_id, version, version_minor, version_label, template_artifact_id, payload_object_path, working_file_path,
+        `SELECT id, task_item_id, version, version_minor, version_label, edicion_id, payload_object_path, working_file_path,
                 final_file_path, format, status
            FROM document_versions WHERE task_item_id = $1 ORDER BY version, id`,
         [document.id],
@@ -265,7 +265,7 @@ const sinAutoincrementalEnElTitulo = (resultado) => resultado;
 async function readVinculoCompetidor(linkId) {
   const headers = await query(
     `SELECT ${FILL_TEMPLATE_COLUMNS} FROM fill_flow_templates
-      WHERE process_definition_template_id = $1 AND task_item_id IS NULL
+      WHERE vinculo_id = $1 AND task_item_id IS NULL
       ORDER BY id`,
     [linkId],
   );
@@ -289,13 +289,13 @@ async function readVinculoCompetidor(linkId) {
 
 // Punto 1: la propiedad que DEFINE `routed`. Se comprueba sobre la fila CRUDA, antes de normalizar:
 // `normalize` enmascara las claves de id **aunque valgan null**, así que en el golden no se
-// distingue un `template_artifact_id` vacío de uno relleno.
+// distingue un `edicion_id` vacío de uno relleno.
 const cuelgaDelEntregable = (flow, { taskItemId, linkId }, lado) => {
   assert.ok(flow, `${lado}: el envío routed debe materializar un flujo`);
   assert.equal(Number(flow.task_item_id), Number(taskItemId), `${lado}: el flujo cuelga del ENTREGABLE`);
-  assert.equal(flow.template_artifact_id, null, `${lado}: y NO de la plantilla — eso sería 'single'`);
+  assert.equal(flow.edicion_id, null, `${lado}: y NO de la plantilla — eso sería 'single'`);
   assert.equal(
-    Number(flow.process_definition_template_id),
+    Number(flow.vinculo_id),
     Number(linkId),
     `${lado}: el vínculo va relleno TAMBIÉN — el portador del entregable lo AFINA, no lo cancela`,
   );
@@ -364,12 +364,12 @@ after(async () => {
 
 test("el Proceso por defecto ofrece su vínculo ROUTED como entregable agregable", async () => {
   const token = await tokenFor("usuario");
-  const res = await get(`/users/${USUARIO}/addable-deliverables?definition_id=${DEFINITION_ID}`, { token });
-  assert.equal(res.status, 200, `addable-deliverables debe responder 200: ${JSON.stringify(res.body)}`);
-  const routed = (res.body?.deliverables ?? []).filter((row) => row.item_mode === "routed");
+  const res = await get(`/users/${USUARIO}/addable-catalogo_documental?definition_id=${DEFINITION_ID}`, { token });
+  assert.equal(res.status, 200, `addable-catalogo_documental debe responder 200: ${JSON.stringify(res.body)}`);
+  const routed = (res.body?.catalogo_documental ?? []).filter((row) => row.item_mode === "routed");
   assert.equal(routed.length, 1, "el Proceso por defecto tiene exactamente un vínculo routed");
   estado.linkId = Number(routed[0].id);
-  estado.artifactId = Number(routed[0].template_artifact_id);
+  estado.artifactId = Number(routed[0].edicion_id);
   matchSnapshot(SUITE, "vinculo_routed", snapshotShape(res, MASK_OPTS));
 });
 
@@ -463,7 +463,7 @@ test("free · el flujo de FIRMA cuelga del ENTREGABLE y es el que definió el us
 test("free · el entregable resultante: documento, versión y solicitudes de llenado", async () => {
   assert.ok(estado.freeItemId, "depende del paso anterior");
   const resultado = await readEntregable(estado.freeItemId);
-  assert.equal(Number(resultado.task_item.template_artifact_id), estado.artifactId, "instancia la plantilla del vínculo");
+  assert.equal(Number(resultado.task_item.edicion_id), estado.artifactId, "instancia la plantilla del vínculo");
   // EL DOCUMENTO YA NO TIENE PROPIETARIO PROPIO, y la historia de esa columna cabe en dos pasos.
   // Primero dejó de ser el destinatario: su cascada empezaba en el «Para:», o sea que respondía del
   // documento QUIEN LO RECIBE. Y después desapareció entera (2026-08-23), porque una vez que
@@ -534,7 +534,7 @@ test("derived · POST /users/:id/general-tasks añade el entregable routed a la 
       mode: "derived",
       title: DERIVED_TITLE,
       source_task_id: estado.freeTaskId,
-      process_definition_template_id: estado.linkId,
+      vinculo_id: estado.linkId,
       recipient_person_id: ADMIN,
       flow: {
         entrega: DERIVED_ENTREGA.map((personId) => ({ person_id: personId })),

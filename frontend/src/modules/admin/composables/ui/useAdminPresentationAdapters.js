@@ -48,13 +48,13 @@ export function useAdminPresentationAdapters({
       });
       return expandedFields;
     }
-    if (tableMeta.table === "template_artifacts") {
+    if (tableMeta.table === "ediciones") {
       return fields.map((field) => formatTemplateArtifactFieldLabel(field));
     }
     if (tableMeta.table === "process_definition_versions") {
       return fields.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
     }
-    if (tableMeta.table === "process_definition_templates" && includeVirtual) {
+    if (tableMeta.table === "vinculos" && includeVirtual) {
       const expandedFields = [];
       fields.forEach((field) => {
         expandedFields.push(field);

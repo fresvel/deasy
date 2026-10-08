@@ -60,8 +60,8 @@ const conexionDeMaterializacion = ({ itemPositionId, taskPositionId }) => {
         return [[{
           id: 1,
           task_id: 10,
-          process_definition_template_id: 3,
-          template_artifact_id: 5,
+          vinculo_id: 3,
+          edicion_id: 5,
           assigned_person_id: null,
           target_unit_id: null,
           target_position_id: itemPositionId,

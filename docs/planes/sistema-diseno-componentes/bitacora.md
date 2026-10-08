@@ -60,7 +60,7 @@ Ninguno lo habría encontrado leyendo código, porque los tres renderizan perfec
 
 - Un `variant="info"` **fijo** con el texto «Estado: **pending**» en inglés crudo, en la pantalla
   más usada de la aplicación — el mismo defecto que la auditoría de F9 había encontrado en
-  `template_artifacts`, y nadie lo buscó en home.
+  `ediciones`, y nadie lo buscó en home.
 - Una pastilla cuyo **texto decía el estado** y cuyo **color decía si puedes operar**: un
   documento «En llenado» salía en ámbar, que en este sistema significa «retirado». La capacidad
   ya la anunciaba otra pastilla tres líneas más abajo.

@@ -12,9 +12,9 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
 3.  **`amqplib` esta en `package.json` pero no se importa en ningun sitio.** Es una dependencia muerta: la integración real con RabbitMQ es por su API HTTP de gestion.
 
-4.  **`sqlTables.js` declara campos de `template_artifacts` que ya no son columnas de esa tabla** (`template_code`, `display_name`, `description`, `template_scope`, `owner_person_id`). **No es un bug**: `SqlAdminService` los rutea por JOIN a `deliverables`, exponiendolos con los mismos nombres (`d.code AS template_code`). Es una fachada deliberada. Ojo: **`generador_id` ya NO es parte de esa fachada** — estaba en la lista hasta el frente 23 y hoy es columna física de `template_artifacts`, que era el sitio al que la fachada apuntaba.
+4.  **`sqlTables.js` declara campos de `ediciones` que ya no son columnas de esa tabla** (`template_code`, `display_name`, `description`, `template_scope`, `owner_person_id`). **No es un bug**: `SqlAdminService` los rutea por JOIN a `catalogo_documental`, exponiendolos con los mismos nombres (`d.code AS template_code`). Es una fachada deliberada. Ojo: **`generador_id` ya NO es parte de esa fachada** — estaba en la lista hasta el frente 23 y hoy es columna física de `ediciones`, que era el sitio al que la fachada apuntaba.
 
-5.  **“Entregable” significa dos cosas** según el contexto: `task_items` (la instancia) y `deliverables` (la identidad de la plantilla).
+5.  **“Entregable” significa dos cosas** según el contexto: `task_items` (la instancia) y `catalogo_documental` (la identidad de la plantilla).
 
 6.  **Las fases del plan de calidad se llaman A, B, C... por el orden en que se descubrieron**, no por prioridad ni por tema.
 
@@ -24,7 +24,7 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
 9.  **La contraseña del gestor no sigue el patrón de las otras dos.** Está en `CLAUDE.md`, que no se publica.
 
-10. **No existe `artifact_stage`** pese a estar descrito en la documentación de arquitectura. La realidad es `template_artifacts.lifecycle_state` con tres valores.
+10. **No existe `artifact_stage`** pese a estar descrito en la documentación de arquitectura. La realidad es `ediciones.lifecycle_state` con tres valores.
 
 11. **No hay tabla de auditoria transversal.** Solo bitacoras especificas por dominio.
 

@@ -917,7 +917,7 @@
 <!-- documentos_legales -->
 <g id="documentos_legales" class="node">
 <title>documentos_legales</title>
-<g id="a_documentos_legales"><a xlink:title="documentos_legales&#10;Los textos legales que una persona acepta, VERSION A VERSION. Sigue el patron de `template_artifacts`: version, estado de ciclo de vida y huella del contenido. El BORRADOR vive en la columna `texto` de esta tabla y el PUBLICADO en el archivo inmutable, porque una errata publicada en un almacen con bloqueo de objetos quedaria diez años sin poder quitarse. Publicar es lo que mueve el texto de un sitio al otro, y es irreversible. `retired` NO es borrar: hay gente cuya prueba de consentimiento apunta a esa version.">
+<g id="a_documentos_legales"><a xlink:title="documentos_legales&#10;Los textos legales que una persona acepta, VERSION A VERSION. Sigue el patron de `ediciones`: version, estado de ciclo de vida y huella del contenido. El BORRADOR vive en la columna `texto` de esta tabla y el PUBLICADO en el archivo inmutable, porque una errata publicada en un almacen con bloqueo de objetos quedaria diez años sin poder quitarse. Publicar es lo que mueve el texto de un sitio al otro, y es irreversible. `retired` NO es borrar: hay gente cuya prueba de consentimiento apunta a esa version.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="347.19" cy="-12938.67" rx="347.38" ry="469.54"/>
 <polygon fill="#1d71b8" stroke="transparent" points="104.19,-13208.67 104.19,-13268.67 591.19,-13268.67 591.19,-13208.67 104.19,-13208.67"/>
 <polygon fill="none" stroke="#29235c" points="104.19,-13208.67 104.19,-13268.67 591.19,-13268.67 591.19,-13208.67 104.19,-13208.67"/>

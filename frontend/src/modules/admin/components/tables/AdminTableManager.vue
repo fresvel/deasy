@@ -328,7 +328,7 @@
       @debounced-search="debouncedUnassignedTemplateArtifactSearch"
       @clear-filters="clearUnassignedTemplateArtifactFilters"
       @load="loadUnassignedTemplateArtifacts"
-      @view="openRecordViewer($event, allTablesMap.template_artifacts)"
+      @view="openRecordViewer($event, allTablesMap.ediciones)"
       @link="startProcessDefinitionTemplateFromArtifact"
       :title="tableHeaderTitle"
     >
@@ -556,7 +556,7 @@
       @open-fk-search="openDefinitionArtifactFkSearch"
       @submit="submitDefinitionArtifact"
       @reset="resetDefinitionArtifactsForm"
-      @view-row="openRecordViewer($event, allTablesMap.process_definition_templates)"
+      @view-row="openRecordViewer($event, allTablesMap.vinculos)"
       @edit-row="openDefinitionArtifactTemplateEditor"
       @delete-row="deleteDefinitionArtifact"
       @set-item-mode="setDefinitionArtifactItemMode($event.row, $event.itemMode)"
@@ -691,7 +691,7 @@
           @open-fk-search="openDefinitionArtifactFkSearch"
           @submit="wizardSubmitArtifact"
           @reset="resetDefinitionArtifactsForm"
-          @view-row="handleWizardViewRow($event, allTablesMap.process_definition_templates)"
+          @view-row="handleWizardViewRow($event, allTablesMap.vinculos)"
           @edit-row="openDefinitionArtifactTemplateEditor"
           @delete-row="deleteDefinitionArtifact"
           @set-item-mode="setDefinitionArtifactItemMode($event.row, $event.itemMode)"
@@ -1414,11 +1414,11 @@ const definitionArtifactsLoading = ref(false);
 const definitionArtifactsError = ref("");
 const definitionArtifactsEditId = ref("");
 const definitionArtifactsForm = ref({
-  template_artifact_id: "",
+  edicion_id: "",
   sort_order: ""
 });
 const definitionArtifactsLabels = ref({
-  template_artifact_id: ""
+  edicion_id: ""
 });
 const definitionArtifactsPromptContext = ref(null);
 const draftArtifactSeedOptions = ref([]);
@@ -1648,7 +1648,7 @@ const tableListFields = computed(() => {
   if (props.table.table === "process_definition_versions") {
     normalizedFields = normalizedFields.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
   }
-  if (props.table.table === "template_artifacts") {
+  if (props.table.table === "ediciones") {
     const preferredOrder = [
       "id",
       "display_name",
@@ -1720,7 +1720,7 @@ const fkFilterFields = computed(() => {
   if (fkTable.value.table === "process_definition_versions") {
     return [];
   }
-  if (fkTable.value.table === "template_artifacts") {
+  if (fkTable.value.table === "ediciones") {
     return [];
   }
   return fkTable.value.fields.filter((field) => !field.virtual);
@@ -1732,7 +1732,7 @@ const fkPrimaryListField = computed(() => {
   if (fkTable.value.table === "process_definition_versions") {
     return fkTable.value.fields.find((field) => field.name === "process_id") || null;
   }
-  if (fkTable.value.table === "template_artifacts") {
+  if (fkTable.value.table === "ediciones") {
     return fkTable.value.fields.find((field) => field.name === "display_name") || null;
   }
   const displayFieldName = resolveDisplayField(fkTable.value);
@@ -1751,7 +1751,7 @@ const fkListExtraFields = computed(() => {
   if (fkTable.value.table === "units") {
     return fkTable.value.fields.filter((field) => ["unit_type_id"].includes(field.name));
   }
-  if (fkTable.value.table === "template_artifacts") {
+  if (fkTable.value.table === "ediciones") {
     return fkTable.value.fields
       .filter((field) =>
         ["template_code", "storage_version", "available_formats", "is_active"].includes(field.name)
@@ -1790,8 +1790,8 @@ const fkSearchTableFields = computed(() => [
 ]);
 const canCreateFkReference = computed(() =>
   Boolean(fkTable.value)
-  && (fkTable.value.table === "template_artifacts"
-    ? canCreateAdminTable("template_artifacts")
+  && (fkTable.value.table === "ediciones"
+    ? canCreateAdminTable("ediciones")
     : fkCreateFields.value.length > 0)
 );
 const canOpenFkFilterModal = computed(() =>
@@ -1801,7 +1801,7 @@ const canOpenFkFilterModal = computed(() =>
 const isFkUnitPositions = computed(() => fkTable.value?.table === "unit_positions");
 const isFkUnits = computed(() => fkTable.value?.table === "units");
 const isFkProcessDefinitions = computed(() => fkTable.value?.table === "process_definition_versions");
-const isFkTemplateArtifacts = computed(() => fkTable.value?.table === "template_artifacts");
+const isFkTemplateArtifacts = computed(() => fkTable.value?.table === "ediciones");
 const hasFkProcessDefinitionFilters = computed(() =>
   Boolean(
     fkFilters.value.process_id
@@ -1817,7 +1817,7 @@ const hasFkTemplateArtifactFilters = computed(() =>
 
 const isProcessDefinitionFilterTable = computed(() => props.table?.table === "process_definition_versions");
 const isGeneradoresTable = computed(() => props.table?.table === "generadores_de_documento");
-const isTemplateArtifactsTable = computed(() => props.table?.table === "template_artifacts");
+const isTemplateArtifactsTable = computed(() => props.table?.table === "ediciones");
 const isPersonTable = computed(() => props.table?.table === "persons");
 const isUnitsTable = computed(() => props.table?.table === "units");
 // El modo grafo lo activa la pestaña hermana "Organigrama" (prop forceGraph).
@@ -1847,7 +1847,7 @@ const positionAssignmentsTabs = computed(() => [
   { key: "vacantes", label: "Puestos sin ocupacion", count: vacantPositionRows.value?.length || 0 }
 ]);
 
-const isProcessDefinitionTemplatesTable = computed(() => props.table?.table === "process_definition_templates");
+const isProcessDefinitionTemplatesTable = computed(() => props.table?.table === "vinculos");
 
 // Subpestañas de la vista de plantillas de procesos configurados (plantillas vinculadas / plantillas sin configuracion).
 const definitionTemplatesView = ref("plantillas");
@@ -1892,7 +1892,7 @@ const canManageDefinitionTriggers = computed(() =>
   )
 );
 const canSubmitDefinitionArtifact = computed(() =>
-  canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.template_artifact_id)
+  canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.edicion_id)
 );
 const canSubmitDefinitionRule = computed(() => {
   if (!canManageDefinitionRules.value) {
@@ -2371,7 +2371,7 @@ const resolveDisplayField = (tableMeta) => {
   if (!tableMeta) {
     return null;
   }
-  if (tableMeta.table === "template_artifacts") {
+  if (tableMeta.table === "ediciones") {
     return "display_name";
   }
   if (tableMeta.table === "generadores_de_documento") {
@@ -2857,13 +2857,13 @@ const openFkCreate = async () => {
 // Se preserva el modal de paquetes vía el origen "definitionArtifacts" para volver a él al cerrar/guardar.
 const draftArtifactReturnToPackages = ref(false);
 const openDefinitionArtifactTemplateEditor = async (row, { fromPackages = true } = {}) => {
-  const artifactId = row?.template_artifact_id;
+  const artifactId = row?.edicion_id;
   if (!artifactId) {
     return;
   }
   let artifactRow = null;
   try {
-    const { data } = await adminSqlService.list("template_artifacts", { filter_id: artifactId, limit: 1 });
+    const { data } = await adminSqlService.list("ediciones", { filter_id: artifactId, limit: 1 });
     artifactRow = Array.isArray(data) ? data[0] : (data?.rows?.[0] || data?.data?.[0] || null);
   } catch {
     artifactRow = null;
@@ -2877,12 +2877,12 @@ const openDefinitionArtifactTemplateEditor = async (row, { fromPackages = true }
   // Advertencia de impacto multi-config solo cuando se va a editar (borrador): afecta a todas las configuraciones.
   if (isDraft) {
     try {
-      const { data } = await adminSqlService.list("process_definition_templates", {
+      const { data } = await adminSqlService.list("vinculos", {
         filter_template_artifact_id: artifactId,
         limit: 500
       });
       const rows = Array.isArray(data) ? data : (data?.rows || data?.data || []);
-      const usageCount = rows.filter((r) => String(r.template_artifact_id) === String(artifactId)).length;
+      const usageCount = rows.filter((r) => String(r.edicion_id) === String(artifactId)).length;
       if (usageCount > 1) {
         const ok = window.confirm(
           `Esta plantilla está vinculada a ${usageCount} configuraciones. Si editas su contenido, los cambios `
@@ -2904,7 +2904,7 @@ const openDefinitionArtifactTemplateEditor = async (row, { fromPackages = true }
   } else {
     draftArtifactReturnToPackages.value = false;
   }
-  // force: estamos en el contexto de process_definition_versions, no de template_artifacts; sin force el
+  // force: estamos en el contexto de process_definition_versions, no de ediciones; sin force el
   // editor abortaría por el guard de tabla.
   await openDraftArtifactModal(artifactRow, { force: true });
 };
@@ -2912,7 +2912,7 @@ const openDefinitionArtifactTemplateEditor = async (row, { fromPackages = true }
 // Click en un nodo de entregable en el grafo → abre el editor del entregable directamente (no el wizard de config).
 const openTemplateEditorFromGraph = ({ templateArtifactId } = {}) => {
   if (!templateArtifactId) return;
-  openDefinitionArtifactTemplateEditor({ template_artifact_id: templateArtifactId }, { fromPackages: false });
+  openDefinitionArtifactTemplateEditor({ edicion_id: templateArtifactId }, { fromPackages: false });
 };
 
 const returnToDefinitionArtifactsAfterEdit = async () => {
@@ -2966,7 +2966,7 @@ const handleDownloadRecordArchive = async () => {
     return;
   }
   let url = null;
-  if (tableName === "template_artifacts") {
+  if (tableName === "ediciones") {
     url = API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_DOWNLOAD(row.id);
   } else if (tableName === "generadores_de_documento") {
     url = API_ROUTES.ADMIN_SQL_GENERADOR_DOWNLOAD(row.id);
@@ -3639,13 +3639,13 @@ const guidedEditorConfigId = computed(() => {
 });
 
 const openTemplateVersionDialog = (template) => {
-  if (!template?.id && !template?.template_artifact_id) return;
+  if (!template?.id && !template?.edicion_id) return;
   templateVersionDialog.value = {
     open: true,
     mode: "version",
     definitionId: null,
     template: {
-      id: template.id || template.template_artifact_id,
+      id: template.id || template.edicion_id,
       template_code: template.template_code,
       display_name: template.display_name,
       storage_version: template.storage_version
@@ -3695,7 +3695,7 @@ const confirmTemplateVersion = async (level) => {
     const newId = data?.id;
     if (newId) {
       try {
-        const { data: rowData } = await adminSqlService.list("template_artifacts", { filter_id: newId, limit: 1 });
+        const { data: rowData } = await adminSqlService.list("ediciones", { filter_id: newId, limit: 1 });
         const row = Array.isArray(rowData) ? rowData[0] : (rowData?.rows?.[0] || rowData?.data?.[0] || null);
         if (row?.id) {
           await openDraftArtifactModal(row, { force: true });
@@ -3746,7 +3746,7 @@ const confirmGuidedTemplateUpdateStart = async (level) => {
     const newId = guidedUpdateContext.value.templateDraftId;
     if (newId) {
       try {
-        const { data: rowData } = await adminSqlService.list("template_artifacts", { filter_id: newId, limit: 1 });
+        const { data: rowData } = await adminSqlService.list("ediciones", { filter_id: newId, limit: 1 });
         const row = Array.isArray(rowData) ? rowData[0] : (rowData?.rows?.[0] || rowData?.data?.[0] || null);
         if (row?.id) {
           await openDraftArtifactModal(row, { force: true });
@@ -3835,7 +3835,7 @@ const cloneTemplateFromGraph = async ({ templateArtifactId, definitionId } = {})
   if (!templateArtifactId) return;
   let source = null;
   try {
-    const { data } = await adminSqlService.list("template_artifacts", { filter_id: templateArtifactId, limit: 1 });
+    const { data } = await adminSqlService.list("ediciones", { filter_id: templateArtifactId, limit: 1 });
     source = Array.isArray(data) ? data[0] : (data?.rows?.[0] || data?.data?.[0] || null);
   } catch {
     source = null;
@@ -3931,7 +3931,7 @@ const handleOpenRecordViewer = async (row, tableRef) => {
     return;
   }
   await openRecordViewer(row, tableRef);
-  if (tableRef?.table === "template_artifacts") {
+  if (tableRef?.table === "ediciones") {
     await loadRecordViewerSyncStatus(row?.id);
   }
 };

@@ -183,9 +183,9 @@ Los campos de las siguientes tablas tienen uso efectivo en configuracion, vigenc
 - `process_definition_versions`;
 - `process_definition_triggers`;
 - `process_target_rules`;
-- `process_definition_templates`;
+- `vinculos`;
 - `template_seeds`;
-- `template_artifacts`;
+- `ediciones`;
 - `terms`, `term_types`.
 
 No son ruido:
@@ -207,7 +207,7 @@ Mejora propuesta:
 2. Migrar consultas e indices.
 3. Eliminar `variation_key` solo cuando deje de participar en contratos.
 
-`template_artifacts.owner_ref` se superpone con `owner_person_id`, pero aun decide si una plantilla es oficial o editable y se escribe en manifiestos. Es una redundancia transitoria, no un campo muerto.
+`ediciones.owner_ref` se superpone con `owner_person_id`, pero aun decide si una plantilla es oficial o editable y se escribe en manifiestos. Es una redundancia transitoria, no un campo muerto.
 
 Mejora propuesta:
 
@@ -224,7 +224,7 @@ Mejora propuesta:
 
 Aunque parezcan duplicados, deben conservarse:
 
-- `task_items.template_artifact_id`: fija el artifact usado por el entregable.
+- `task_items.edicion_id`: fija el artifact usado por el entregable.
 - `task_items.responsible_position_id` y `assigned_person_id`: fijan el responsable del item.
 - `tasks.responsible_position_id`: fija la unidad/puesto que origino la tarea.
 - `tasks.parent_task_id`: soporta tareas manuales derivadas.
@@ -259,7 +259,7 @@ Se usan activamente:
 
 - `documents.task_item_id`, `owner_person_id`, `origin_unit_id`, `title`, `status`;
   *(La lista incluía también `instance_no` y `origin_type`. **Ninguna de las dos existe hoy**: `documents` tiene nueve columnas y no están entre ellas. `origin_type` —el discriminador `task_item | standalone | imported | generated`— se retiró el 2026-08-10 al resolverse el «documento suelto» por el Proceso por defecto; ver `docs/arquitecturas/modelo-templates-entregables-limpio.md` §4.)*
-- `document_versions.document_id`, `version`, `template_artifact_id`, `working_file_path`, `final_file_path`, `status`;
+- `document_versions.document_id`, `version`, `edicion_id`, `working_file_path`, `final_file_path`, `status`;
 - todos los campos de `document_attachments`;
 - todos los campos de `document_signatures`.
 
@@ -381,7 +381,7 @@ Los siguientes campos pueden parecer ruido en el CRUD, pero sostienen restriccio
 - `current_flag`, `open_flag`, `selected_flag`, `active_flag`;
 - `automatic_flag`, `manual_user_flag`;
 - `normalized_term_type_id`, `active_series_flag`;
-- hashes de artifacts que si se calculan, como `template_artifacts.content_hash`;
+- hashes de artifacts que si se calculan, como `ediciones.content_hash`;
 - rutas de almacenamiento que si se consumen;
 - snapshots de responsable, artifact, unidad y version.
 
@@ -391,7 +391,7 @@ La mejora correcta para estos campos es ocultarlos en formularios normales y mos
 
 ### Conservar sin cambios estructurales inmediatos
 
-`actions`, `aplications`, `cargos`, `cargo_role_map`, `contracts`, `contract_origins`, `contract_origin_recruitment`, `contract_origin_renewal`, `document_attachments`, `document_fill_flows`, `document_signatures`, `fill_flow_steps`, `fill_flow_templates`, `fill_requests`, `offers`, `permissions`, `person_certificates`, `position_assignments`, `processes`, `process_definition_series`, `process_definition_templates`, `process_definition_triggers`, `process_target_rules`, `resources`, `roles`, `role_permissions`, `signature_batch_jobs`, `signature_flow_instances`, `signature_flow_steps`, `signature_flow_templates`, `signature_request_statuses`, `signature_statuses`, `signature_types`, `task_items`, `template_seeds`, `terms`, `term_types`, `units`, `unit_relations`, `unit_types`, `vacancy_visibility`.
+`actions`, `aplications`, `cargos`, `cargo_role_map`, `contracts`, `contract_origins`, `contract_origin_recruitment`, `contract_origin_renewal`, `document_attachments`, `document_fill_flows`, `document_signatures`, `fill_flow_steps`, `fill_flow_templates`, `fill_requests`, `offers`, `permissions`, `person_certificates`, `position_assignments`, `processes`, `process_definition_series`, `vinculos`, `process_definition_triggers`, `process_target_rules`, `resources`, `roles`, `role_permissions`, `signature_batch_jobs`, `signature_flow_instances`, `signature_flow_steps`, `signature_flow_templates`, `signature_request_statuses`, `signature_statuses`, `signature_types`, `task_items`, `template_seeds`, `terms`, `term_types`, `units`, `unit_relations`, `unit_types`, `vacancy_visibility`.
 
 ### Conservar con simplificacion de campos
 
@@ -402,7 +402,7 @@ La mejora correcta para estos campos es ocultarlos en formularios normales y mos
 - `process_runs`
 - `tasks`
 - `task_assignments`
-- `template_artifacts`
+- `ediciones`
 - `documents`
 - `document_versions`
 - `signature_requests`

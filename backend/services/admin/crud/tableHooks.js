@@ -183,7 +183,7 @@ const syncProgressHooks = (syncProgress) => ({
   }
 });
 
-// Las tres tablas HIJAS de una configuración (`process_definition_templates`, `process_target_rules`
+// Las tres tablas HIJAS de una configuración (`vinculos`, `process_target_rules`
 // y `process_definition_period_types`) comparten dos reglas: solo se tocan con la configuración en
 // BORRADOR, y la configuración a la que cuelgan es inmutable. Solo cambia la etiqueta del mensaje.
 const definitionChildGuards = (entityLabel) => ({
@@ -655,12 +655,12 @@ export const TABLE_HOOKS = {
     }
   },
 
-  process_definition_templates: {
+  vinculos: {
     async beforeCreate(ctx) {
       await TEMPLATE_CHILD_GUARDS.beforeCreate(ctx);
       // AQUI LLAMABA A `assertDeliverableBelongsToConfigLine` —"la pared"— hasta el 2026-10-04
       // (frente 23, F1.3). Rechazaba con 422 el vinculo cuyo entregable fuera de otra linea,
-      // comparando `deliverables.owner_process_id` / `owner_variation_key` con la definicion. Esas
+      // comparando `catalogo_documental.owner_process_id` / `owner_variation_key` con la definicion. Esas
       // dos columnas se retiraron en F1.2 porque este guardia era su UNICO lector, asi que la
       // comprobacion se va con ellas.
       //
@@ -672,18 +672,18 @@ export const TABLE_HOOKS = {
       //
       // Vínculo idempotente: si la plantilla ya está en esta configuración (p. ej. porque al crearla desde el
       // wizard ya se enlazó), no se duplica el registro (evita el conflicto de clave unica de
-      // uq_process_definition_templates); se devuelve el vínculo existente. `shortCircuit` corta el
+      // uq_vinculos); se devuelve el vínculo existente. `shortCircuit` corta el
       // create() sin llegar al INSERT.
       const [existingLinkRows] = await ctx.pool.query(
-        `SELECT id, sort_order FROM process_definition_templates
-         WHERE process_definition_id = ? AND template_artifact_id = ? LIMIT 1`,
-        [ctx.payload.process_definition_id, ctx.payload.template_artifact_id]
+        `SELECT id, sort_order FROM vinculos
+         WHERE process_definition_id = ? AND edicion_id = ? LIMIT 1`,
+        [ctx.payload.process_definition_id, ctx.payload.edicion_id]
       );
       if (existingLinkRows?.length) {
         ctx.shortCircuit = {
           id: existingLinkRows[0].id,
           process_definition_id: Number(ctx.payload.process_definition_id),
-          template_artifact_id: Number(ctx.payload.template_artifact_id),
+          edicion_id: Number(ctx.payload.edicion_id),
           sort_order: existingLinkRows[0].sort_order,
           __notice: "La plantilla ya estaba vinculada a esta configuración."
         };
@@ -693,7 +693,7 @@ export const TABLE_HOOKS = {
       // el usuario no debe elegirlo.
       if (ctx.payload.sort_order === undefined || ctx.payload.sort_order === null || ctx.payload.sort_order === "") {
         const [countRows] = await ctx.pool.query(
-          "SELECT COUNT(*) AS c FROM process_definition_templates WHERE process_definition_id = ?",
+          "SELECT COUNT(*) AS c FROM vinculos WHERE process_definition_id = ?",
           [ctx.payload.process_definition_id]
         );
         ctx.payload.sort_order = Number(countRows?.[0]?.c || 0) + 1;
@@ -720,25 +720,25 @@ export const TABLE_HOOKS = {
     async beforeRemoveTx(ctx) {
       const templateId = Number(ctx.keyPayload.id);
       const [fillTemplates] = await ctx.connection.query(
-        "SELECT id FROM fill_flow_templates WHERE process_definition_template_id = ?",
+        "SELECT id FROM fill_flow_templates WHERE vinculo_id = ?",
         [templateId]
       );
       for (const template of fillTemplates) {
         await ctx.connection.query("DELETE FROM fill_flow_steps WHERE fill_flow_template_id = ?", [template.id]);
       }
       await ctx.connection.query(
-        "DELETE FROM fill_flow_templates WHERE process_definition_template_id = ?",
+        "DELETE FROM fill_flow_templates WHERE vinculo_id = ?",
         [templateId]
       );
       const [signatureTemplates] = await ctx.connection.query(
-        "SELECT id FROM signature_flow_templates WHERE process_definition_template_id = ?",
+        "SELECT id FROM signature_flow_templates WHERE vinculo_id = ?",
         [templateId]
       );
       for (const template of signatureTemplates) {
         await ctx.connection.query("DELETE FROM signature_flow_steps WHERE template_id = ?", [template.id]);
       }
       await ctx.connection.query(
-        "DELETE FROM signature_flow_templates WHERE process_definition_template_id = ?",
+        "DELETE FROM signature_flow_templates WHERE vinculo_id = ?",
         [templateId]
       );
     },
@@ -781,7 +781,7 @@ export const TABLE_HOOKS = {
     beforeRemove: PERIOD_CHILD_GUARDS.beforeRemove
   },
 
-  template_artifacts: {
+  ediciones: {
     // Los artifacts no se crean por CRUD admin: entran por sincronización desde MinIO o por el
     // flujo de plantilla de documento.
     beforeCreate() {
@@ -894,10 +894,10 @@ export const TABLE_HOOKS = {
   task_items: {
     // Los datos que no se piden se HEREDAN de la plantilla y de la tarea.
     async beforeCreate(ctx) {
-      if (!ctx.payload.process_definition_template_id) {
+      if (!ctx.payload.vinculo_id) {
         return;
       }
-      const template = await ctx.service.getTaskTemplate(ctx.payload.process_definition_template_id);
+      const template = await ctx.service.getTaskTemplate(ctx.payload.vinculo_id);
       if (!template) {
         throw new Error("La plantilla de proceso configurado seleccionada no existe.");
       }
@@ -908,7 +908,7 @@ export const TABLE_HOOKS = {
       if (Number(task.process_definition_id) !== Number(template.process_definition_id)) {
         throw new Error("La plantilla seleccionada no pertenece a la configuracion de proceso de la tarea.");
       }
-      // Aqui se copiaba `template.template_artifact_id` al payload. La columna se retiro el
+      // Aqui se copiaba `template.edicion_id` al payload. La columna se retiro el
       // 2026-10-04 (frente 23, F2.1): el vinculo que ya lleva el payload lo dice.
       if (!ctx.payload.start_date) {
         ctx.payload.start_date = task.start_date;
@@ -940,13 +940,13 @@ export const TABLE_HOOKS = {
         }
         delete updates.task_id;
       }
-      if (Object.hasOwn(updates, "process_definition_template_id")) {
-        if (Number(updates.process_definition_template_id) !== Number(existing.process_definition_template_id)) {
+      if (Object.hasOwn(updates, "vinculo_id")) {
+        if (Number(updates.vinculo_id) !== Number(existing.vinculo_id)) {
           throw new Error("No se puede cambiar la plantilla asociada de un item.");
         }
-        delete updates.process_definition_template_id;
+        delete updates.vinculo_id;
       }
-      // El guard gemelo de `template_artifact_id` —"No se puede cambiar el paquete asociado de un
+      // El guard gemelo de `edicion_id` —"No se puede cambiar el paquete asociado de un
       // item"— murio con la columna el 2026-10-04 (frente 23, F2.1). Era la misma regla dicha dos
       // veces: la de arriba ya impide cambiar el vinculo, y el paquete lo decide el vinculo.
     }
@@ -967,8 +967,8 @@ export const TABLE_HOOKS = {
       if (!taskItem) {
         throw new Error("El entregable seleccionado no existe.");
       }
-      if (!ctx.payload.template_artifact_id && taskItem.template_artifact_id) {
-        ctx.payload.template_artifact_id = taskItem.template_artifact_id;
+      if (!ctx.payload.edicion_id && taskItem.edicion_id) {
+        ctx.payload.edicion_id = taskItem.edicion_id;
       }
     },
 
@@ -1012,10 +1012,10 @@ export const TABLE_HOOKS = {
     // `sqlTables.js`, así que `pickPayload` nunca lo pone en el payload y el delete no borraba
     // nada. No se traslada.
     async beforeCreate(ctx) {
-      if (!ctx.payload.process_definition_template_id) {
+      if (!ctx.payload.vinculo_id) {
         return;
       }
-      const template = await ctx.service.getTaskTemplate(ctx.payload.process_definition_template_id);
+      const template = await ctx.service.getTaskTemplate(ctx.payload.vinculo_id);
       if (!template) {
         throw new Error("La plantilla de proceso configurado seleccionada no existe.");
       }
@@ -1026,13 +1026,13 @@ export const TABLE_HOOKS = {
     },
 
     async beforeUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "process_definition_template_id")) {
-        if (Number(ctx.updates.process_definition_template_id) !== Number(ctx.existing.process_definition_template_id)) {
+      if (Object.hasOwn(ctx.updates, "vinculo_id")) {
+        if (Number(ctx.updates.vinculo_id) !== Number(ctx.existing.vinculo_id)) {
           throw new Error("No se puede cambiar la plantilla asociada de un flujo de entrega.");
         }
-        delete ctx.updates.process_definition_template_id;
+        delete ctx.updates.vinculo_id;
       }
-      const template = await ctx.service.getTaskTemplate(ctx.existing.process_definition_template_id);
+      const template = await ctx.service.getTaskTemplate(ctx.existing.vinculo_id);
       if (template) {
         await ctx.service.ensureDraftDefinitionContext(
           template.process_definition_id,
@@ -1051,7 +1051,7 @@ export const TABLE_HOOKS = {
       if (!fillFlowTemplate) {
         throw new Error("La plantilla de entrega seleccionada no existe.");
       }
-      const template = await ctx.service.getTaskTemplate(fillFlowTemplate.process_definition_template_id);
+      const template = await ctx.service.getTaskTemplate(fillFlowTemplate.vinculo_id);
       if (!template) {
         throw new Error("La plantilla de proceso definida asociada no existe.");
       }
@@ -1070,7 +1070,7 @@ export const TABLE_HOOKS = {
       }
       const fillFlowTemplate = await ctx.service.getFillFlowTemplate(ctx.existing.fill_flow_template_id);
       if (fillFlowTemplate) {
-        const template = await ctx.service.getTaskTemplate(fillFlowTemplate.process_definition_template_id);
+        const template = await ctx.service.getTaskTemplate(fillFlowTemplate.vinculo_id);
         if (template) {
           await ctx.service.ensureDraftDefinitionContext(
             template.process_definition_id,
@@ -1083,10 +1083,10 @@ export const TABLE_HOOKS = {
 
   signature_flow_templates: {
     async beforeCreate(ctx) {
-      if (!ctx.payload.process_definition_template_id) {
+      if (!ctx.payload.vinculo_id) {
         return;
       }
-      const template = await ctx.service.getTaskTemplate(ctx.payload.process_definition_template_id);
+      const template = await ctx.service.getTaskTemplate(ctx.payload.vinculo_id);
       if (!template) {
         throw new Error("La plantilla de proceso configurado seleccionada no existe.");
       }
@@ -1099,13 +1099,13 @@ export const TABLE_HOOKS = {
     // Ojo a la asimetría con fill_flow_templates: aquí la plantilla ausente es ERROR, allí se
     // ignora en silencio. Es comportamiento preexistente, se preserva tal cual.
     async beforeUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "process_definition_template_id")) {
-        if (Number(ctx.updates.process_definition_template_id) !== Number(ctx.existing.process_definition_template_id)) {
+      if (Object.hasOwn(ctx.updates, "vinculo_id")) {
+        if (Number(ctx.updates.vinculo_id) !== Number(ctx.existing.vinculo_id)) {
           throw new Error("No se puede cambiar la plantilla asociada de un flujo de firma.");
         }
-        delete ctx.updates.process_definition_template_id;
+        delete ctx.updates.vinculo_id;
       }
-      const template = await ctx.service.getTaskTemplate(ctx.existing.process_definition_template_id);
+      const template = await ctx.service.getTaskTemplate(ctx.existing.vinculo_id);
       if (!template) {
         throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
       }
@@ -1122,7 +1122,7 @@ export const TABLE_HOOKS = {
       if (!existing) {
         throw new Error("Registro no encontrado.");
       }
-      const template = await ctx.service.getTaskTemplate(existing.process_definition_template_id);
+      const template = await ctx.service.getTaskTemplate(existing.vinculo_id);
       if (!template) {
         throw new Error("La plantilla de proceso configurado asociada al flujo ya no existe.");
       }

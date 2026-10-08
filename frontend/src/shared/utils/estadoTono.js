@@ -33,7 +33,7 @@ export const TONOS = Object.freeze({
  *
  * Cubre DOS ejes con un solo diccionario, porque son el mismo concepto con distinto nombre de
  * campo: `process_definition_versions.status` (draft/active/retired) y
- * `template_artifacts.lifecycle_state` (draft/published/retired).
+ * `ediciones.lifecycle_state` (draft/published/retired).
  *
  * ⚠️ EL ESQUEMA LO DECIDIÓ EL DUEÑO EL 2026-08-15, y corrige una contradicción dura: hasta
  * entonces `UnitGraphView.processStatusClass` y `ProcessGraphView.configStatusClass` leían **el
@@ -461,7 +461,7 @@ export const etiquetaFlujo = (valor) => {
    que lo daba por deliberado: «el resto de columnas status siguen como texto plano».
 
    Medido en pantalla, eso significaba que **`process_definition_versions` pintaba «Retirada» y
-   «Borrador» en pastilla y en español, mientras `template_artifacts` pintaba EL MISMO ciclo de
+   «Borrador» en pastilla y en español, mientras `ediciones` pintaba EL MISMO ciclo de
    vida como texto plano y EN INGLES CRUDO** (`retired`, `published`) — con `tonoCicloVida` y
    `etiquetaCicloVida` ya escritas y sabiendo traducirlo.
 
@@ -498,7 +498,7 @@ const presenta = (valor) => {
 const COLUMNA_ESTADO = Object.freeze({
   "processes.active_definition_status": [tonoCicloVida, etiquetaCicloVida],
   "process_definition_versions.status": [tonoCicloVida, etiquetaCicloVida],
-  "template_artifacts.lifecycle_state": [tonoCicloVida, etiquetaCicloVida],
+  "ediciones.lifecycle_state": [tonoCicloVida, etiquetaCicloVida],
   "process_runs.status": [tonoCorrida, etiquetaCorrida],
   "tasks.status": [tonoTarea, etiquetaTarea],
   "task_items.status": [tonoTarea, etiquetaTarea],
@@ -605,7 +605,7 @@ const CLASIFICACION = Object.freeze({
   "process_runs.run_mode": PROCEDENCIA_SISTEMA,
   "task_items.origin_kind": { process_defined: TONOS.PRIMARY, user_added: TONOS.INFO },
   "role_assignments.source": { derived: TONOS.PRIMARY, manual: TONOS.INFO },
-  "template_artifacts.template_scope": { official: TONOS.PRIMARY, ad_hoc: TONOS.INFO },
+  "ediciones.template_scope": { official: TONOS.PRIMARY, ad_hoc: TONOS.INFO },
   "fill_flow_steps.selection_mode": { auto_one: TONOS.PRIMARY, auto_all: TONOS.PRIMARY, manual: TONOS.INFO },
   "signature_flow_steps.selection_mode": { auto_one: TONOS.PRIMARY, auto_all: TONOS.PRIMARY, manual: TONOS.INFO },
 
@@ -613,7 +613,7 @@ const CLASIFICACION = Object.freeze({
   "process_definition_series.source_type": null,
   "process_target_rules.unit_scope_type": null,
   "process_target_rules.recipient_policy": null,
-  "process_definition_templates.item_mode": null,
+  "vinculos.item_mode": null,
   "unit_positions.position_type": null,
   "fill_flow_steps.resolver_type": null,
   "fill_flow_steps.unit_scope_type": null,

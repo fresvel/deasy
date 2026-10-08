@@ -13,7 +13,7 @@ import assert from "node:assert/strict";
 
 import { ensureTaskItemsForTaskTargets } from "./taskitems.js";
 
-const PLANTILLA_SINGLE = { id: 3, template_artifact_id: 5, item_mode: "single", sort_order: 1 };
+const PLANTILLA_SINGLE = { id: 3, edicion_id: 5, item_mode: "single", sort_order: 1 };
 
 const conexionFalsa = () => {
   const queries = [];

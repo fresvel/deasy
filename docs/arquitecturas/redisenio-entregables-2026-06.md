@@ -84,7 +84,7 @@ idempotente con `backend/scripts/seed_general_process.mjs` — **script retirado
 
 - `processes(slug='general')` → `process_definition_versions` "Tarea general" (active, `has_document=0`)
 - artifact contenedor `tpl_general_tarea_libre` (`artifact_origin='general'`, sin render real)
-- `process_definition_templates` (creates_task=1) · trigger `manual_custom_term` · target rule `all_units`
+- `vinculos` (creates_task=1) · trigger `manual_custom_term` · target rule `all_units`
 
 ### Backend
 - `hydrateGeneralTask(...)` en `TaskGenerationService.js`: materializa el `task_item` contenedor +
@@ -132,7 +132,7 @@ seed o de un archivo subido.
   `buildWorkflowsDocument`, y su salida es **la entrada del escritor**, no un fichero.
 - `saveTemplateArtifactDraft` sigue aceptando `fill_workflow` y `signature_workflow`, pero **no dispara
   ninguna sincronización**: `syncArtifactWorkflowsForTemplateArtifactId` y el resto de
-  `WorkflowSyncService` se borraron. El portador del flujo es el propio `template_artifact_id`.
+  `WorkflowSyncService` se borraron. El portador del flujo es el propio `edicion_id`.
 - Llenado: pasos con `resolver_type` — y hoy solo hay **tres**: `task_assignee`, `cargo_in_scope` y
   `specific_person`. `document_owner`, `position` y `manual_pick` salieron del `CHECK`; la base rechaza
   la fila. Siguen valiendo `selection_mode`, `cargo_code` + `unit_scope_type` y `can_reject`.
@@ -144,17 +144,17 @@ seed o de un archivo subido.
 ### Gobierno del ciclo de vida
 
 - El gobierno **no es** `artifact_stage` con cinco estados. Esa columna nunca llegó a existir: hoy es
-  `template_artifacts.lifecycle_state` con **tres** — `draft`, `published`, `retired` — y por defecto
+  `ediciones.lifecycle_state` con **tres** — `draft`, `published`, `retired` — y por defecto
   `draft`. `updateTemplateArtifactStage` y `ARTIFACT_STAGE_TRANSITIONS` no existen.
 - `createTemplateArtifactVersion(id)` — clona el artifact a la siguiente `storage_version` (copia objetos
   MinIO + nuevo registro en BD en `draft`). Desde el §0.8 **copia también las filas de flujo**: antes solo
   copiaba MinIO, y la versión nueva nacía sin flujo.
 
 ### Endpoints admin (sql_admin_router.js)
-- `GET   /admin/sql/template_artifacts/:id/schema` — lee campos + flujo.
-- `POST  /admin/sql/template_artifacts/:id/publish` y `.../retire` — las transiciones de ciclo de vida.
-- `POST  /admin/sql/template_artifacts/:id/version`
-- (existentes) `POST/PUT /admin/sql/template_artifacts/draft[/:id]` — alta/edición del artifact general.
+- `GET   /admin/sql/ediciones/:id/schema` — lee campos + flujo.
+- `POST  /admin/sql/ediciones/:id/publish` y `.../retire` — las transiciones de ciclo de vida.
+- `POST  /admin/sql/ediciones/:id/version`
+- (existentes) `POST/PUT /admin/sql/ediciones/draft[/:id]` — alta/edición del artifact general.
 
 ### Frontend
 Editor integrado en `AdminDraftArtifactModal.vue`: secciones "Campos del formulario",
