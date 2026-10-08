@@ -155,6 +155,7 @@ stateDiagram-v2
     PendienteLlenado --> ListoFirma
     EnProceso --> ListoFirma
     ListoFirma --> PendienteFirma
+    PendienteFirma --> Observado: una firma rechazada, sin ninguna dada aún
     PendienteFirma --> FirmadoParcial
     FirmadoParcial --> PendienteFirma
     PendienteFirma --> FirmadoCompleto
@@ -171,6 +172,24 @@ stateDiagram-v2
     FirmadoParcial: Firmado parcial
     FirmadoCompleto: Firmado completo
 ```
+
+:::note[La única salida hacia atrás desde la fase de firma, y por qué sólo hay una]
+
+`Pendiente de firma → Observado` es lo que pasa cuando **alguien rechaza una firma y todavía no hay
+ninguna estampada**: el documento vuelve a revisión, se corrige, y al regresar a la fase de firma se
+convoca otra vez.
+
+**Desde `Firmado parcial` esa salida no existe, y no es una omisión.** Una firma se estampa sobre un
+PDF concreto; si el documento se corrige después, esa firma habría firmado otro documento. Cuando ya
+hay una, lo que corresponde es una **ronda nueva** —cancelar la versión y abrir la siguiente—, que es
+lo que hace el reinicio del documento.
+
+Antes del **2026-10-08** no había ninguna de las dos: un rechazo dejaba la *instancia* del recorrido
+en `rechazado` pero **el documento no se movía**, y como el recorrido sirve siempre el primer paso no
+aprobado, el paso rechazado se quedaba de actual indefinidamente. La única salida era tirar la ronda
+entera, también cuando no había nada que invalidar.
+
+:::
 
 **`Archivado` es alcanzable desde todos los estados** salvo desde sí mismo y desde `Cancelado`.
 **`Cancelado` casi**: es alcanzable desde todos menos desde `Firmado completo`, `Final` y `Archivado`

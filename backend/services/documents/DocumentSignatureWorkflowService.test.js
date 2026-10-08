@@ -25,6 +25,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  ensureSignatureFlowForDocumentVersion,
   getActiveSignatureFlowTemplateForDefinitionTemplate,
   resolvePersonsForCargoInScope,
 } from "./DocumentSignatureWorkflowService.js";
@@ -254,4 +255,61 @@ test("context_ancestor_type sin tipo de unidad no consulta: devuelve vacío", as
 test("sin cargo no hay nada que resolver", async () => {
   const conexion = { async query() { throw new Error("no debe consultar"); } };
   assert.deepEqual(await resolvePersonsForCargoInScope(conexion, { unitScopeType: "all_units" }), []);
+});
+
+/* ── REABRIR UN RECORRIDO RECHAZADO (frente 24, §11) ──────────────────────────────────────────
+   La otra mitad del arreglo del atasco. El rechazo devolvió el documento a «Observado», alguien lo
+   corrigió, y al volver a la fase de firma hay que CONVOCAR OTRA VEZ. Antes esta función salía por
+   `alreadyExists` sin mirar nada, así que el paso rechazado seguía rechazado y el documento se
+   atascaba en el mismo sitio: cambiar un atasco por otro.
+
+   Se reabre la instancia que hay y no se crea otra porque `uq_signature_flow_instances_document`
+   admite UNA por versión de documento. */
+
+const conexionDeInstancia = (status) => {
+  const consultas = [];
+  return {
+    consultas,
+    async query(sql, params = []) {
+      consultas.push({ sql: sql.replace(/\s+/g, " ").trim(), params });
+      if (/FROM signature_flow_instances/.test(sql) && /SELECT id, status/.test(sql)) {
+        return [status === null ? [] : [{ id: 77, status }]];
+      }
+      return [[]];
+    },
+  };
+};
+
+test("firma: un recorrido RECHAZADO se reabre al volver a la fase de firma", async () => {
+  const conexion = conexionDeInstancia("rechazado");
+
+  const res = await ensureSignatureFlowForDocumentVersion(conexion, 500);
+
+  assert.deepEqual(res, { ok: true, alreadyExists: true, signatureFlowInstanceId: 77 });
+
+  const updates = conexion.consultas.filter((c) => c.sql.startsWith("UPDATE"));
+  assert.equal(updates.length, 2, "se reabren las solicitudes Y la instancia");
+
+  // Las solicitudes rechazadas vuelven a pendiente y pierden su respuesta: a quien rechazó se le
+  // pregunta otra vez, que es el sentido de haber corregido el documento.
+  assert.match(updates[0].sql, /UPDATE signature_requests/);
+  assert.match(updates[0].sql, /status = 'rechazado'/);
+  assert.match(updates[0].sql, /responded_at = NULL/);
+  assert.deepEqual(updates[0].params, ["pendiente", 77]);
+
+  assert.match(updates[1].sql, /UPDATE signature_flow_instances/);
+  assert.deepEqual(updates[1].params, ["pendiente", 77]);
+});
+
+test("firma: un recorrido que NO está rechazado se deja intacto", async () => {
+  for (const estado of ["pendiente", "en_progreso", "completado"]) {
+    const conexion = conexionDeInstancia(estado);
+    const res = await ensureSignatureFlowForDocumentVersion(conexion, 500);
+    assert.equal(res.alreadyExists, true, `${estado}: sigue siendo el mismo recorrido`);
+    assert.equal(
+      conexion.consultas.filter((c) => c.sql.startsWith("UPDATE")).length,
+      0,
+      `${estado}: no se toca nada`
+    );
+  }
 });

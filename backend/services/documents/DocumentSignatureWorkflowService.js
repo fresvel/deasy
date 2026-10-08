@@ -8,6 +8,7 @@ import {
   SIGNATURE_STATUS,
   getSignatureStatusIdByCode,
 } from "./DocumentWorkflowCatalog.js";
+import { reabrirRecorridoDeFirma } from "../../dominios/firmas/datos/flujoDeFirma.js";
 
 const normalizeCode = (value) => String(value || "").trim().toLowerCase();
 const SIGN_ACTIVE = new Set([ESTADO_RECORRIDO.EN_PROGRESO]);
@@ -627,13 +628,13 @@ export const assertSignatureRequestCanBeSigned = async ({ connection, context })
 
 const getExistingSignatureFlowInstance = async (connection, documentVersionId) => {
   const [rows] = await connection.query(
-    `SELECT id
+    `SELECT id, status
      FROM signature_flow_instances
      WHERE document_version_id = ?
      LIMIT 1`,
     [documentVersionId]
   );
-  return rows?.[0] ? Number(rows[0].id) : null;
+  return rows?.[0] || null;
 };
 
 const summarizeSignatureRequests = (rows) => {
@@ -753,10 +754,11 @@ export const inspectDocumentVersionSignatureReadiness = async (connection, docum
 };
 
 export const resolveCurrentSignatureStep = async (connection, documentVersionId) => {
-  const instanceId = await getExistingSignatureFlowInstance(connection, documentVersionId);
-  if (!instanceId) {
+  const instancia = await getExistingSignatureFlowInstance(connection, documentVersionId);
+  if (!instancia) {
     return null;
   }
+  const instanceId = Number(instancia.id);
 
   const [rows] = await connection.query(
     `SELECT
@@ -790,12 +792,22 @@ export const resolveCurrentSignatureStep = async (connection, documentVersionId)
 };
 
 export const ensureSignatureFlowForDocumentVersion = async (connection, documentVersionId) => {
-  const existingInstanceId = await getExistingSignatureFlowInstance(connection, documentVersionId);
-  if (existingInstanceId) {
+  const existing = await getExistingSignatureFlowInstance(connection, documentVersionId);
+  if (existing) {
+    // UN RECORRIDO RECHAZADO SE REABRE, no se ignora. Es la otra mitad del arreglo del atasco
+    // (frente 24, §11): el rechazo devolvio el documento a «Observado», se corrigio, y al volver a
+    // la fase de firma hay que convocar otra vez. Sin esto la funcion salia por `alreadyExists` y
+    // el paso rechazado seguia rechazado: el documento volvia a atascarse en el mismo sitio.
+    //
+    // Se REABRE la instancia que hay en vez de crear otra porque
+    // `uq_signature_flow_instances_document` admite UNA por version.
+    if (String(existing.status) === ESTADO_RECORRIDO.RECHAZADO) {
+      await reabrirRecorridoDeFirma(connection, Number(existing.id), ESTADO_RECORRIDO.PENDIENTE);
+    }
     return {
       ok: true,
       alreadyExists: true,
-      signatureFlowInstanceId: existingInstanceId,
+      signatureFlowInstanceId: Number(existing.id),
     };
   }
 
@@ -1166,10 +1178,14 @@ export const syncDocumentProgressFromSignatureRequest = async (connection, signa
   const anyApproved = stepSummaries.some((item) => item.approved);
   const anyActive = stepSummaries.some((item) => item.hasActive);
 
+  // EL RECHAZO VA PRIMERO, y antes iba el ULTIMO. Un paso rechazado PARA el recorrido —
+  // `resolveCurrentSignatureStep` lo devuelve como actual y nada avanza—, asi que con un rechazo y
+  // una firma ya dada la instancia decia `en_progreso`: el rechazo quedaba invisible justo en el
+  // caso en que hay que actuar. (Frente 24, §11.)
   let instanceStatusCode = ESTADO_RECORRIDO.PENDIENTE;
-  if (allApproved) instanceStatusCode = ESTADO_RECORRIDO.COMPLETADO;
+  if (anyRejected) instanceStatusCode = ESTADO_RECORRIDO.RECHAZADO;
+  else if (allApproved) instanceStatusCode = ESTADO_RECORRIDO.COMPLETADO;
   else if (anyActive || anyApproved) instanceStatusCode = ESTADO_RECORRIDO.EN_PROGRESO;
-  else if (anyRejected) instanceStatusCode = ESTADO_RECORRIDO.RECHAZADO;
 
   // Aqui habia una CONSULTA al catalogo para traducir el codigo a id, y un `if` que se saltaba el
   // UPDATE en silencio si no lo encontraba. Sin catalogo, el estado se escribe (fase 3, frente 24).
@@ -1183,6 +1199,16 @@ export const syncDocumentProgressFromSignatureRequest = async (connection, signa
   if (allApproved) {
     await transitionDocumentVersionState(connection, Number(context.document_version_id), "Firmado completo");
     await finalizeDocumentVersionIfComplete(connection, Number(context.document_version_id));
+  } else if (anyRejected && !anyApproved) {
+    // EL RECHAZO SIN FIRMAS DADAS devuelve el documento a «Observado», la misma salida que el
+    // rechazo de entrega. Antes el documento NO SE MOVIA y el paso rechazado se quedaba de actual
+    // para siempre: el atasco del §11.
+    //
+    // La condicion `!anyApproved` no es prudencia, es lo unico que se puede hacer: si ya hay una
+    // firma estampada, corregir el documento la dejaria firmando otro. Ese caso necesita una RONDA
+    // NUEVA (`rehacerDocumento`), y por eso se queda en «Firmado parcial» — con la instancia en
+    // `rechazado`, que es lo que lo hace visible.
+    await transitionDocumentVersionState(connection, Number(context.document_version_id), "Observado");
   } else if (anyApproved || anyActive) {
     await transitionDocumentVersionState(connection, Number(context.document_version_id), "Firmado parcial");
   } else {

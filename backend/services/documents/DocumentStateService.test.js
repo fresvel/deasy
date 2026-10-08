@@ -183,3 +183,30 @@ test("sin estado todavía se releva: aún no ha empezado nada", () => {
   assert.ok(isDocumentRelayable(null));
   assert.ok(isDocumentRelayable(""));
 });
+
+/* ── LA SALIDA DE UN RECHAZO DE FIRMA (frente 24, §11) ────────────────────────────────────────
+   Hasta el 2026-10-08 un rechazo en firma dejaba el documento DONDE ESTABA: la instancia pasaba a
+   `rechazado` y el documento no se movía, así que `resolveCurrentSignatureStep` —que devuelve el
+   primer paso no aprobado— se quedaba con el paso rechazado de actual PARA SIEMPRE. La única salida
+   era tirar la ronda entera.
+
+   La asimetría de estos dos tests ES la regla, y no es prudencia: desde «Pendiente de firma» no hay
+   ninguna firma estampada y el documento se puede corregir; desde «Firmado parcial» sí la hay, y
+   corregir dejaría esa firma firmando otro documento. Ese caso necesita una RONDA NUEVA. */
+
+test("un rechazo puede devolver a «Observado» desde «Pendiente de firma», en las dos matrices", () => {
+  assert.equal(canTransitionDocumentStatus("Pendiente de firma", "Observado"), true);
+  assert.equal(canTransitionDocumentVersionStatus("Pendiente de firma", "Observado"), true);
+});
+
+test("pero NO desde «Firmado parcial»: ahí ya hay una firma que se invalidaría", () => {
+  assert.equal(canTransitionDocumentStatus("Firmado parcial", "Observado"), false);
+  assert.equal(canTransitionDocumentVersionStatus("Firmado parcial", "Observado"), false);
+});
+
+test("y el camino de vuelta existe: de «Observado» se sale al llenado y se puede volver a firma", () => {
+  // Sin esto, «Observado» sería un destino sin retorno y el arreglo cambiaría un atasco por otro.
+  assert.equal(canTransitionDocumentVersionStatus("Observado", "En llenado"), true);
+  assert.equal(canTransitionDocumentVersionStatus("En llenado", "Listo para firma"), true);
+  assert.equal(canTransitionDocumentVersionStatus("Listo para firma", "Pendiente de firma"), true);
+});

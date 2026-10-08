@@ -37,7 +37,18 @@ const DOCUMENT_STATUS_TRANSITIONS = Object.freeze({
   "En proceso": ["Pendiente de llenado", "Observado", "Listo para firma", "Cancelado", "Archivado"],
   Observado: ["En proceso", "Pendiente de llenado", "Cancelado", "Archivado"],
   "Listo para firma": ["Pendiente de firma", "Cancelado", "Archivado"],
-  "Pendiente de firma": ["Firmado parcial", "Firmado completo", "Cancelado", "Archivado"],
+  // ⚠️ «Pendiente de firma» -> «Observado» ES LA SALIDA DE UN RECHAZO, y hasta el 2026-10-08 no
+  // existia. Al rechazar una firma, la INSTANCIA pasaba a `rechazado` y el DOCUMENTO no se movia:
+  // el bloque que lo transiciona solo tenia tres ramas --«Firmado completo», «Firmado parcial» y
+  // «Pendiente de firma»--, ninguna para el rechazo. Y como `resolveCurrentSignatureStep` devuelve
+  // el primer paso no aprobado, el paso rechazado se quedaba de ACTUAL PARA SIEMPRE. La unica
+  // salida era `rehacerDocumento`, que cancela la ronda entera.
+  //
+  // SOLO DESDE «Pendiente de firma», y el motivo es criptografico: ahi todavia no hay ninguna firma
+  // estampada, asi que el documento se puede corregir sin invalidar nada. En cuanto hay una
+  // --«Firmado parcial»-- volver atras significaria que esa firma firmo OTRO documento, y lo que
+  // corresponde entonces es una RONDA NUEVA. Por eso «Firmado parcial» NO gana esta salida.
+  "Pendiente de firma": ["Firmado parcial", "Firmado completo", "Observado", "Cancelado", "Archivado"],
   "Firmado parcial": ["Pendiente de firma", "Firmado completo", "Cancelado", "Archivado"],
   "Firmado completo": ["Final", "Archivado"],
   Final: ["Archivado"],
@@ -111,7 +122,8 @@ const DOCUMENT_VERSION_STATUS_TRANSITIONS = Object.freeze({
   "En revisión de llenado": ["Pendiente de llenado", "En llenado", "Observado", "Listo para firma", "Cancelado", "Archivado"],
   Observado: ["En llenado", "Pendiente de llenado", "Cancelado", "Archivado"],
   "Listo para firma": ["Pendiente de firma", "Cancelado", "Archivado"],
-  "Pendiente de firma": ["Firmado parcial", "Firmado completo", "Cancelado", "Archivado"],
+  // La misma salida de rechazo que arriba, en la matriz de la RONDA, que es quien de verdad avanza.
+  "Pendiente de firma": ["Firmado parcial", "Firmado completo", "Observado", "Cancelado", "Archivado"],
   "Firmado parcial": ["Pendiente de firma", "Firmado completo", "Cancelado", "Archivado"],
   "Firmado completo": ["Final", "Archivado"],
   Final: ["Archivado"],
