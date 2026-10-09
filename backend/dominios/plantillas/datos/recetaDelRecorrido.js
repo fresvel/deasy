@@ -138,3 +138,105 @@ export const reemplazarReceta = async (connection, { origen, origenId, accion, p
 
   return pasos.length;
 };
+
+import { leerRecetaPorVinculo } from "./consulta/recetaPorVinculo.js";
+
+// ── LECTURA ──────────────────────────────────────────────────────────────────────────────────────
+//
+// DOS ESCALONES, Y YA NO HAY CABECERA QUE BUSCAR. Antes se resolvia en dos consultas: primero la
+// cabecera del origen y despues sus pasos. Sin cabecera, el paso lleva su propio origen y la receta
+// se lee de una:
+//
+//   1. la del ENTREGABLE  -> lo que el usuario definio al enviar (modo `routed`)
+//   2. la de la EDICION   -> lo autorado, que el vinculo alcanza por su edicion
+//
+// El orden es por PRIORIDAD, no por "que columna esta rellena": si el entregable tiene receta
+// propia, manda, y la de la edicion ni se mira.
+const SELECT_PASOS = `
+  SELECT p.id, p.orden, p.code, p.nombre,
+         pa.id AS participante_id, pa.orden AS participante_orden,
+         pa.resolver_type, pa.persona_id, pa.cargo_id, pa.unit_scope_type, pa.unit_id, pa.slot
+    FROM pasos_declarados p
+    INNER JOIN participantes_declarados pa ON pa.paso_id = p.id`;
+
+// Agrupa las filas planas en pasos con su lista de participantes, conservando los dos ordenes.
+const agrupar = (filas) => {
+  const porPaso = new Map();
+  for (const f of filas) {
+    if (!porPaso.has(f.id)) {
+      porPaso.set(f.id, {
+        id: Number(f.id),
+        orden: Number(f.orden),
+        code: f.code ?? null,
+        nombre: f.nombre ?? null,
+        participantes: [],
+      });
+    }
+    porPaso.get(f.id).participantes.push({
+      id: Number(f.participante_id),
+      orden: Number(f.participante_orden),
+      resolverType: f.resolver_type,
+      personaId: f.persona_id ?? null,
+      cargoId: f.cargo_id ?? null,
+      unitScopeType: f.unit_scope_type,
+      unitId: f.unit_id ?? null,
+      slot: f.slot ?? null,
+    });
+  }
+  return [...porPaso.values()];
+};
+
+export const leerRecetaDeEntregable = async (connection, taskItemId, accion) => {
+  const [filas] = await connection.query(
+    `${SELECT_PASOS}
+     WHERE p.task_item_id = ? AND p.accion = ?
+     ORDER BY p.orden ASC, pa.orden ASC`,
+    [taskItemId, accion]
+  );
+  return agrupar(filas);
+};
+
+export const leerRecetaDeEdicion = async (connection, edicionId, accion) => {
+  const [filas] = await connection.query(
+    `${SELECT_PASOS}
+     WHERE p.edicion_id = ? AND p.accion = ?
+     ORDER BY p.orden ASC, pa.orden ASC`,
+    [edicionId, accion]
+  );
+  return agrupar(filas);
+};
+
+// LA RESOLUCION, en una funcion y para los dos lados. Sustituye a las dos de ~50 lineas que eran
+// 44 identicas entre si, una en `generation/queries.js` y otra en `DocumentSignatureWorkflowService`.
+//
+// `vinculoId` puede venir nulo --un entregable de usuario no nace de un vinculo-- y entonces solo
+// hay primer escalon.
+export const resolverReceta = async (connection, { accion, taskItemId, vinculoId }) => {
+  if (taskItemId) {
+    const propia = await leerRecetaDeEntregable(connection, taskItemId, accion);
+    if (propia.length) {
+      return { origen: "entregable", pasos: propia };
+    }
+  }
+  if (!vinculoId) {
+    return { origen: null, pasos: [] };
+  }
+  // El segundo escalon CRUZA a `procesos` --hay que saber que edicion enlaza el vinculo--, asi que
+  // su consulta vive en `datos/consulta/`. Es la regla E del mapa de tablas.
+  const pasos = agrupar(await leerRecetaPorVinculo(connection, vinculoId, accion, SELECT_PASOS));
+  return { origen: pasos.length ? "edicion" : null, pasos };
+};
+
+// LA PUERTA DE PUBLICACION: ¿esta edicion declara recorrido de este lado? Lo que decide es que
+// EXISTA un paso, no que este "activo": sin cabecera no hay `is_active` que mirar, y cero pasos
+// significa exactamente «el autor no declaro este lado».
+export const hayRecetaDeclarada = async (connection, edicionId, accion) => {
+  const [filas] = await connection.query(
+    `SELECT EXISTS(
+       SELECT 1 FROM pasos_declarados
+        WHERE edicion_id = ? AND accion = ?
+     ) AS hay`,
+    [edicionId, accion]
+  );
+  return Boolean(Number(filas?.[0]?.hay || 0));
+};

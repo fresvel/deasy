@@ -1,4 +1,4 @@
-// Red unitaria de la máquina de estados de `fill_requests`.
+// Red unitaria de la máquina de estados del TURNO de entrega (antes `fill_requests`).
 //
 // Lo que la caracterización NO puede ver desde HTTP y aquí sí: el CÓDIGO que lleva cada error de
 // negocio (`statusCode`), que un fallo de infraestructura NO se disfrace de 4xx, y las ramas que la
@@ -129,39 +129,41 @@ test("en el primer paso no hay nada que reactivar y no se consulta nada", async 
   assert.equal(connection.queries.length, 0);
 });
 
-test("con dos pasos, devolver reactiva el paso anterior y lo deja en pending", async () => {
-  const connection = fakeConnection((sql) => {
-    if (sql.includes("SELECT ffs.id")) return [[{ id: 55 }]];
-    return [{ affectedRows: 1 }];
-  });
+// SIGUEN SIENDO DOS CONSULTAS, y ahora por una razon de ARQUITECTURA y no de implementacion: saber
+// QUE turnos son cruza a `plantillas` --hay que mirar el paso declarado-- y eso es una lectura, que
+// vive en `datos/consulta/`; la escritura recibe ids y no cruza nada. Es la regla E del mapa.
+test("con dos pasos, devolver reactiva el paso anterior y lo deja en pendiente", async () => {
+  const connection = fakeConnection((sql) => (sql.startsWith("SELECT") ? [[{ id: 90 }]] : [{}]));
   const reactivado = await reactivatePreviousFillStepIfNeeded(connection, {
     step_order: 2,
     document_fill_flow_id: 3,
   });
   assert.equal(reactivado, 1);
-  const update = connection.queries.at(-1);
-  assert.match(update.sql, /UPDATE fill_requests/);
-  assert.deepEqual(update.params, ["pendiente", 3, 55]);
+  const [lectura, escritura] = connection.queries;
+  assert.match(lectura.sql, /FROM turnos t/);
+  assert.deepEqual(lectura.params, [3, 1], "los turnos del paso ANTERIOR");
+  assert.match(escritura.sql, /UPDATE turnos/);
+  assert.deepEqual(escritura.params, [90], "la escritura recibe ids, no un join");
 });
 
-test("si el paso anterior no existe en la plantilla, no se actualiza nada", async () => {
-  const connection = fakeConnection((sql) => (sql.includes("SELECT ffs.id") ? [[]] : [{}]));
+test("si el paso anterior no tiene turnos, no se reactiva nada y no se escribe", async () => {
+  const connection = fakeConnection(() => [[]]);
   assert.equal(await reactivatePreviousFillStepIfNeeded(connection, { step_order: 3, document_fill_flow_id: 3 }), null);
-  assert.equal(connection.queries.length, 1, "solo la consulta de búsqueda");
+  assert.equal(connection.queries.length, 1, "solo la lectura: no hay nada que escribir");
 });
 
 // --- requiresSignaturePdfForFinalFillApproval ---------------------------------------------------
 
 const contextoFinal = (overrides = {}) => ({
   vinculo_id: 10,
-  fill_flow_template_id: 20,
+  document_fill_flow_id: 3,
   step_order: 2,
   working_file_path: "Unidades/x/entregable.docx",
   ...overrides,
 });
 
 const conPasosYFirmas = (maxStepOrder, totalFirmas) => fakeConnection((sql) => {
-  if (sql.includes("MAX(step_order)")) return [[{ max_step_order: maxStepOrder }]];
+  if (sql.includes("MAX(p.orden)")) return [[{ max_step_order: maxStepOrder }]];
   if (sql.includes("signature_flow_templates")) return [[{ total: totalFirmas }]];
   throw new Error(`consulta inesperada: ${sql.slice(0, 40)}`);
 });
@@ -169,7 +171,7 @@ const conPasosYFirmas = (maxStepOrder, totalFirmas) => fakeConnection((sql) => {
 test("sin plantilla de proceso o sin flujo de entrega no se exige PDF", async () => {
   const connection = fakeConnection(() => { throw new Error("no debería consultar"); });
   assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ vinculo_id: null })), false);
-  assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ fill_flow_template_id: null })), false);
+  assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ document_fill_flow_id: null })), false);
 });
 
 test("si no es el ÚLTIMO paso, no se exige PDF", async () => {
@@ -330,7 +332,7 @@ test("in_progress no sella responded_at; los estados de respuesta sí", async ()
     { userId: 9, requestId: 1, action: "start", nextStatus: IN_PROGRESS },
     { pool: poolCon(enCurso), findUserById: usuario },
   );
-  const updateEnCurso = enCurso.queries.find((q) => q.sql.includes("UPDATE fill_requests"));
+  const updateEnCurso = enCurso.queries.find((q) => q.sql.includes("UPDATE turnos"));
   assert.equal(updateEnCurso.params[2], null);
 
   const rechazo = conexionDeFlujo(contextoDe());
@@ -338,7 +340,7 @@ test("in_progress no sella responded_at; los estados de respuesta sí", async ()
     { userId: 9, requestId: 1, action: "reject", nextStatus: "rechazado" },
     { pool: poolCon(rechazo), findUserById: usuario },
   );
-  const updateRechazo = rechazo.queries.find((q) => q.sql.includes("UPDATE fill_requests"));
+  const updateRechazo = rechazo.queries.find((q) => q.sql.includes("UPDATE turnos"));
   assert.ok(updateRechazo.params[2] instanceof Date);
 });
 
@@ -348,21 +350,25 @@ test("una solicitud manual sin responsable se auto-asigna a quien la opera", asy
     { userId: 4, requestId: 1, action: "start", nextStatus: IN_PROGRESS },
     { pool: poolCon(connection), findUserById: usuario },
   );
-  const update = connection.queries.find((q) => q.sql.includes("UPDATE fill_requests"));
+  const update = connection.queries.find((q) => q.sql.includes("UPDATE turnos"));
   assert.equal(update.params[0], 4, "el UPDATE debe poner al operador como responsable");
 });
 
 test("aprobar el último paso sin PDF en working es 409, no 500, y deshace la transacción", async () => {
   const connection = fakeConnection((sql) => {
-    if (sql.includes("FROM fill_requests fr")) {
+    // ⚠️ EL ORDEN DE ESTAS RAMAS IMPORTA, y antes no: desde la fase 4 del frente 24 la consulta del
+    // ultimo paso TAMBIEN lee `FROM turnos t`, asi que la rama del contexto se la tragaba y
+    // `max_step_order` llegaba `undefined` --o sea, «no es el ultimo paso»--. Lo mas especifico va
+    // primero.
+    if (sql.includes("MAX(p.orden)")) return [[{ max_step_order: 2 }]];
+    if (sql.includes("FROM turnos t")) {
       return [[contextoDe({
         vinculo_id: 10,
-        fill_flow_template_id: 20,
+        document_fill_flow_id: 3,
         step_order: 2,
         working_file_path: "Unidades/x/e.docx",
       })]];
     }
-    if (sql.includes("MAX(step_order)")) return [[{ max_step_order: 2 }]];
     if (sql.includes("signature_flow_templates")) return [[{ total: 1 }]];
     throw new Error(`consulta inesperada: ${sql.slice(0, 40)}`);
   });
@@ -381,7 +387,7 @@ test("aprobar el último paso sin PDF en working es 409, no 500, y deshace la tr
 
 test("un fallo a mitad de la escritura deshace la transacción y propaga el error tal cual", async () => {
   const connection = fakeConnection((sql) => {
-    if (sql.includes("FROM fill_requests fr")) return [[contextoDe()]];
+    if (sql.includes("FROM turnos t")) return [[contextoDe()]];
     throw new Error("se cayó la base");
   });
   await assert.rejects(

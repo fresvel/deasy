@@ -8,20 +8,17 @@
 import {
   participantesDeUnPasoDeEntrega,
   participantesDeUnPasoDeFirma,
-  reemplazarReceta
+  reemplazarReceta,
+  resolverReceta
 } from "../../../dominios/plantillas/index.js";
+import { abrirRecorrido, abrirTurno, buscarRecorrido } from "../../../dominios/tareas/index.js";
+import { repararTurnos, resolverPasoCompleto } from "./assignees.js";
 import { transitionDocumentVersionState } from "../../documents/DocumentStateService.js";
 import { ensureSignatureFlowForDocumentVersion as ensureDocumentSignatureWorkflowForDocumentVersion } from "../../documents/DocumentSignatureWorkflowService.js";
 import {
   getDocumentVersionFillContext,
-  getActiveFillFlowTemplateForDefinitionTemplate,
-  getFillFlowSteps,
   getTaskItemsForDocumentMaterialization
 } from "./queries.js";
-import {
-  resolveFillStepAssignees,
-  repairFillRequestsForFlow
-} from "./assignees.js";
 
 export const ensureSignatureFlowForDocumentVersion = async (connection, documentVersionId) => {
   return ensureDocumentSignatureWorkflowForDocumentVersion(connection, documentVersionId);
@@ -32,87 +29,40 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
     return null;
   }
 
-  const existingFlow = await connection.query(
-    `SELECT id
-     FROM document_fill_flows
-     WHERE document_version_id = ?
-     LIMIT 1`,
-    [documentVersionId]
-  );
-  if (existingFlow?.[0]?.length) {
-    const flowId = Number(existingFlow[0][0].id);
-    const fillFlowTemplate = await getActiveFillFlowTemplateForDefinitionTemplate(
-      connection,
-      context.vinculo_id,
-      context.task_item_id
-    );
-    if (fillFlowTemplate?.id) {
-      const steps = await getFillFlowSteps(connection, fillFlowTemplate.id);
-      await repairFillRequestsForFlow(connection, flowId, steps, context);
+  // LA RECETA SE RESUELVE DE UNA, sin buscar cabecera: el paso lleva su origen. Dos escalones, el
+  // del entregable y el de la edicion, en `resolverReceta` (frente 24, fase 4).
+  const receta = await resolverReceta(connection, {
+    accion: "entrega",
+    taskItemId: context.task_item_id,
+    vinculoId: context.vinculo_id,
+  });
+
+  const abierto = await buscarRecorrido(connection, documentVersionId, "entrega");
+  if (abierto) {
+    if (receta.pasos.length) {
+      await repararTurnos(connection, {
+        recorridoId: Number(abierto.id), accion: "entrega", pasos: receta.pasos, context,
+      });
     }
     await ensureSignatureFlowForDocumentVersion(connection, documentVersionId);
-    return flowId;
+    return Number(abierto.id);
   }
 
-  const fillFlowTemplate = await getActiveFillFlowTemplateForDefinitionTemplate(
-    connection,
-    context.vinculo_id,
-    context.task_item_id
-  );
-
-  if (!fillFlowTemplate?.id) {
+  if (!receta.pasos.length) {
     await transitionDocumentVersionState(connection, Number(documentVersionId), "Listo para firma");
     await ensureSignatureFlowForDocumentVersion(connection, documentVersionId);
     return null;
   }
 
-  const steps = await getFillFlowSteps(connection, fillFlowTemplate.id);
-  const firstStepOrder = steps.length ? Number(steps[0].step_order) : null;
+  const documentFillFlowId = await abrirRecorrido(connection, {
+    documentVersionId,
+    accion: "entrega",
+    pasoActual: Number(receta.pasos[0].orden),
+  });
 
-  const [insertFlowResult] = await connection.query(
-    `INSERT INTO document_fill_flows (
-       fill_flow_template_id,
-       document_version_id,
-       status,
-       current_step_order
-     ) VALUES (?, ?, ?, ?)`,
-    [
-      fillFlowTemplate.id,
-      documentVersionId,
-      "pendiente",
-      firstStepOrder
-    ]
-  );
-
-  const documentFillFlowId = Number(insertFlowResult.insertId);
-
-  for (const step of steps) {
-    const assignees = await resolveFillStepAssignees(connection, step, context);
-    if (!assignees.length) {
-      await connection.query(
-        `INSERT INTO fill_requests (
-           document_fill_flow_id,
-           fill_flow_step_id,
-           assigned_person_id,
-           status,
-           is_manual
-         ) VALUES (?, ?, ?, ?, ?)`,
-        [documentFillFlowId, step.id, null, "pendiente", 1]
-      );
-      continue;
-    }
-
-    for (const assignedPersonId of assignees) {
-      await connection.query(
-        `INSERT INTO fill_requests (
-           document_fill_flow_id,
-           fill_flow_step_id,
-           assigned_person_id,
-           status,
-           is_manual
-         ) VALUES (?, ?, ?, ?, ?)`,
-        [documentFillFlowId, step.id, assignedPersonId, "pendiente", 0]
-      );
+  for (const paso of receta.pasos) {
+    for (const turno of await resolverPasoCompleto(connection, paso, context)) {
+      await abrirTurno(connection, { recorridoId: documentFillFlowId, accion: "entrega", ...turno });
     }
   }
 

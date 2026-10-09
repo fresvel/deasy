@@ -24,8 +24,10 @@ primero que hay que tener claro, así que va explícita.
 | Ámbito del paso | `unit_scope_type` en los dos flujos | `unit_exact` · `unit_subtree` · `unit_type` · `all_units` · `context_exact` | **Sí** |
 | Elección del paso de entrega | `fill_flow_steps.selection_mode` | `auto_one` · `auto_all` · `manual` | **Sí** |
 | Elección del paso de firma | `signature_flow_steps.selection_mode` | los mismos, por convenio | **No.** Es la asimetría que delata la deuda |
-| Instancia de entrega | `document_fill_flows.status` | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` | **Sí** |
-| Solicitud de entrega | `fill_requests.status` | los cinco anteriores más `devuelto` | **Sí** |
+| Recorrido (entrega y firma) | `recorridos.estado` | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` | **Sí** |
+| Turno (a quién le toca) | `turnos.estado` | los cinco anteriores más `devuelto`, y un `CHECK` lo limita a la entrega | **Sí** |
+| Instancia de entrega *(en retirada)* | `document_fill_flows.status` | los mismos cinco | **Sí**, pero ya no la escribe nadie |
+| Solicitud de entrega *(en retirada)* | `fill_requests.status` | los seis | **Sí**, pero ya no la escribe nadie |
 | Instancia de firma | `signature_flow_instances.status` | los mismos cinco de la instancia de entrega | **Sí** |
 | Solicitud de firma | `signature_requests.status` | los mismos cinco | **Sí** |
 | Resultado de firmar | `signature_statuses` | catálogo de 4 códigos | **Es una tabla**, consultable y ampliable sin tocar el esquema |

@@ -181,73 +181,14 @@ export const getDocumentVersionFillContext = async (connection, documentVersionI
   return rows?.[0] || null;
 };
 
-// Tres escalones, por PRIORIDAD y no por «qué columna está rellena». El orden importa porque una
-// misma fila puede llevar dos portadores a la vez: el flujo de runtime que escribe
-// `materializeRuntimeFlowForTaskItem` (documents.js:248) lleva `vinculo_id` Y
-// `task_item_id`. Por eso cada escalón exige NULL en los portadores de los escalones anteriores: sin
-// ese `IS NULL`, el flujo privado de un envío se le serviría a cualquier otro entregable del mismo
-// vínculo. Los escalones:
-//   1. del ENTREGABLE   (`task_item_id`)                — flujo definido en runtime
-//   2. del VÍNCULO      (`vinculo_id`) — flujo autorado para esa configuración
-//   3. de la PLANTILLA  (`edicion_id`)        — flujo del entregable, compartido por todas
-//      las configuraciones donde esté enlazado (§0.8 del plan maestro)
-export const getActiveFillFlowTemplateForDefinitionTemplate = async (
-  connection,
-  processDefinitionTemplateId,
-  taskItemId = null
-) => {
-  // routed: flujo POR INSTANCIA (definido en runtime) tiene prioridad.
-  if (taskItemId) {
-    const [inst] = await connection.query(
-      `SELECT id FROM fill_flow_templates
-       WHERE task_item_id = ? AND is_active = 1
-       ORDER BY id DESC LIMIT 1`,
-      [taskItemId]
-    );
-    if (inst?.[0]) {
-      return inst[0];
-    }
-  }
-  // Flujo de la PLANTILLA que el vínculo enlaza. La subconsulta devuelve NULL si el vínculo no
-  // existe o no tiene artifact, y `columna = NULL` no casa con nada: no hace falta guarda extra.
-  const [byArtifact] = await connection.query(
-    `SELECT id
-     FROM fill_flow_templates
-     WHERE edicion_id = (
-             SELECT edicion_id
-             FROM vinculos
-             WHERE id = ?
-           )
-       AND task_item_id IS NULL
-       AND is_active = 1
-     ORDER BY id DESC
-     LIMIT 1`,
-    [processDefinitionTemplateId]
-  );
-  return byArtifact?.[0] || null;
-};
-
-export const getFillFlowSteps = async (connection, fillFlowTemplateId) => {
-  const [rows] = await connection.query(
-    `SELECT
-       id,
-       step_order,
-       resolver_type,
-       assigned_person_id,
-       unit_scope_type,
-       unit_id,
-       unit_type_id,
-       relation_type_id,
-       cargo_id,
-       position_id,
-       selection_mode
-     FROM fill_flow_steps
-     WHERE fill_flow_template_id = ?
-     ORDER BY step_order ASC, id ASC`,
-    [fillFlowTemplateId]
-  );
-  return rows;
-};
+// AQUI VIVIAN `getActiveFillFlowTemplateForDefinitionTemplate` y `getFillFlowSteps`, los DOS pasos
+// con que se resolvia la receta de entrega: primero la cabecera del origen, despues sus pasos. Las
+// dos murieron en la fase 4 del frente 24.
+//
+// Sin cabecera, el paso lleva su propio origen y la receta se lee de UNA consulta. Y la resolucion
+// por escalones --la del entregable primero, la de la edicion despues-- ya no esta duplicada entre
+// este fichero y `DocumentSignatureWorkflowService`: vive una sola vez, en `resolverReceta`
+// (`dominios/plantillas/datos/recetaDelRecorrido.js`), y sirve a los dos lados.
 
 export const resolveCurrentPersonsForPosition = async (connection, positionId) => {
   if (!positionId) {

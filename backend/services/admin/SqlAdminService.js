@@ -263,7 +263,7 @@ export default class SqlAdminService {
       groupByStatus("SELECT status, COUNT(*) AS c FROM tasks GROUP BY status"),
       scalar("SELECT COUNT(*) AS c FROM tasks WHERE status NOT IN ('completada','cancelada') AND end_date IS NOT NULL AND end_date < CURDATE()"),
       groupByStatus("SELECT document_status AS status, COUNT(*) AS c FROM task_items GROUP BY document_status"),
-      groupByStatus("SELECT status, COUNT(*) AS c FROM fill_requests GROUP BY status"),
+      groupByStatus("SELECT estado AS status, COUNT(*) AS c FROM turnos WHERE accion = 'entrega' GROUP BY estado"),
       groupByStatus("SELECT status, COUNT(*) AS c FROM signature_flow_instances GROUP BY status")
     ]);
     return {

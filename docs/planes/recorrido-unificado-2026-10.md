@@ -11,7 +11,7 @@
 | **2** | Muere el escalón 2 | fuera `vinculo_id` de las dos cabeceras **y su `CHECK` de un solo portador**, fuera su campo en `/admin`, fuera el escalón de los dos resolvedores | el resolvedor baja de 3 escalones a 2 (**2 consultas, no 3**, afirmado por unitario); 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320**; migración probada en sus **tres** rutas (mueve 1 cabecera, para con mensaje y **deshace el `DROP COLUMN`**, idempotente); goldens movidos en 5 ficheros y **revisado uno a uno**; `check-mapa-tablas` 100/77/0, `check-doc-modelo` y `check-enlaces-internos` en verde | ✅ |
 | **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; muertas `signature_request_statuses` y las dos `status_id`; un mapa de tonos en vez de dos y un predicado en vez de dos | 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320** + frontend lint y **498** vitest; el diff del golden es **sólo** vocabulario (60 líneas, cada valor retirado con su equivalente y los recuentos cuadrando) más 11 claves renombradas; migración probada en sus tres rutas; de 92 tablas a **91** y de 100 a **98** claves ajenas | ✅ |
 | **3-bis** | El atasco del rechazo en firma | el rechazo sin firmas dadas devuelve el documento a «Observado»; al volver, el recorrido rechazado **se reabre** en vez de ignorarse; y el rechazo manda sobre el estado de la instancia | 5 puertas + `test:unit` **904/904** (5 unitarios nuevos: la transición en las dos matrices, el camino de vuelta, y las dos ramas del reabrir) + `test:char:run` 320/320 **sin mover un golden** — y eso ES el hallazgo: ningún flow rechaza una firma (§11) | ✅ |
-| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10), en cuatro pasos: **1 · el esquema ✅** · **2 · la receta ✅** · 3 · la ejecución ⬜ · 4 · lo que cuelga ⬜ | paso 1: 11 restricciones en vivo. Paso 2: los 3 escritores llenan la forma nueva **en paralelo** y la comprobación cruzada da **0 diferencias** sobre una receta rica (§13); 5 puertas + `test:unit` **920/920** + `test:char:run` 320/320 | 🔸 |
+| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10): **1 · esquema ✅** · **2 · receta ✅** · **3a · ejecución de ENTREGA ✅** · 3b · ejecución de FIRMA ⬜ · 4 · lo que cuelga ⬜ | paso 3a: la entrega entera sobre `recorridos`/`turnos`, **un resolutor en vez de dos**, la deuda de escritura de `fill_requests` **cerrada** y un flujo menos que cruza dominios (§14); 5 puertas + `test:unit` **919/919** + `test:char:run` 320/320 + frontend 498 | 🔸 |
 | **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
 
 ## 1 · Por qué, en una frase
@@ -452,3 +452,59 @@ castiga al que explica.
 
 **Probado por mutación**, que es el estándar que esa puerta se puso: con el ensanche puesto, un alias
 huérfano de verdad sigue reportándose, tanto en una consulta sin cualificar como en una cualificada.
+
+
+## 14 · Fase 4, paso 3a — la ejecución de la ENTREGA
+
+**Partido en dos mitades, y eso lo hizo posible:** las dos ejecuciones todavía eran tablas
+independientes, así que la de entrega se pudo mudar entera dejando la de firma sobre lo viejo. Dos
+entregas verdes en vez de una grande y roja.
+
+### Lo que se unificó de verdad
+
+| Antes | Ahora |
+|---|---|
+| dos resolutores de paso, **44 líneas idénticas de 50** en dominios distintos | **uno**, `resolverParticipante`, que sirve a los dos lados |
+| la resolución por escalones, duplicada en `queries.js` y en el servicio de firma | **una**, `resolverReceta`, y sin buscar cabecera |
+| `plantillas/datos/flujoDeLlenado.js`, cinco funciones de ejecución de entrega | **disuelto**: las cinco preguntas eran las mismas que las de firma |
+| `document_fill_flows` + `fill_requests` | `recorridos` + `turnos`, con el turno apuntando al **participante** |
+
+Y el resolutor resuelve un **participante**, no un paso: antes el resolutor vivía en las columnas del
+paso —y en firma, duplicado dentro del JSONB, que ganaba—, así que un paso sólo sabía expresar **una**
+forma de encontrar a alguien.
+
+### Lo que la puerta de arquitectura obligó a corregir, y tenía razón
+
+`check-mapa-tablas` falló **tres veces** y las tres eran de fondo:
+
+1. **`recetaDelRecorrido.js` nombraba `vinculos`**, que es de `procesos`. El segundo escalón cruza, así
+   que su consulta se fue a `datos/consulta/`.
+2. **`recorrido.js` nombraba `pasos_declarados`**: un turno se lee **siempre** con lo que su paso
+   declara. Tres funciones a `consulta/`.
+3. **`turnos` lo escribían dos sitios** — el dominio y el servicio de acciones. Al llevar esas
+   escrituras a la puerta apareció un caso que merece la pena contar: «reabrir el paso anterior» es
+   una escritura **cuya condición cruza de dominio**. No cabe ni en `datos/` (nombraría otra tabla) ni
+   en `consulta/` (es un `UPDATE`). Se parte en dos: la **lectura de ids** cruza y vive en `consulta/`,
+   y la **escritura recibe ids** y no cruza nada.
+
+### Dos deudas que se cierran solas
+
+- **`fill_requests` deja de tener dos escritores**: su línea de `_deuda_escritura` se quita, y las
+  declaradas bajan de 2 a 1.
+- **`FillRequestWorkflowService` deja de ser un flujo**: ya sólo escribe `tareas`. Los flujos que
+  cruzan dominios bajan de 7 a 6. Y `rehacerDocumento` pasa de declarar tres dominios a dos.
+
+### Lo que costó
+
+**1 · El golden cazó una fusión mal hecha.** Hay **dos** reaperturas de turnos y no significan lo
+mismo: al **devolver** se reabre el paso *anterior* y su nota se limpia; cuando **todos** los turnos
+del paso actual quedan devueltos se reabre *ese* paso, y ahí la nota **es el motivo** por el que
+volvió. Las fundí en una función que borraba siempre, y `return_efecto` lo detectó: *«faltan datos en
+el formulario»* se perdía.
+
+**2 · El doble de conexión de un test empezó a tragarse la consulta equivocada.** La del último paso
+ahora también lee `FROM turnos t`, igual que la del contexto, y la rama genérica iba primero. El
+síntoma no se parecía a la causa: `max_step_order` llegaba `undefined`, o sea «no es el último paso».
+
+**3 · Y el hueco de siempre: que un módulo EXPORTE lo que le importan.** Retirar cuatro funciones dejó
+**18 suites en rojo** por un solo import roto; `check:imports` da verde porque mira lo contrario.

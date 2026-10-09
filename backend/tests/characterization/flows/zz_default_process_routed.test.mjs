@@ -229,19 +229,21 @@ async function readEntregable(taskItemId) {
   const versionIds = versions.map((row) => row.id);
   const fillFlows = versionIds.length
     ? await query(
-        `SELECT id, fill_flow_template_id, document_version_id, status, current_step_order
-           FROM document_fill_flows WHERE document_version_id = ANY($1::int[]) ORDER BY id`,
+        `SELECT id, document_version_id, estado AS status, paso_actual AS current_step_order
+           FROM recorridos WHERE document_version_id = ANY($1::int[]) AND accion = 'entrega' ORDER BY id`,
         [versionIds],
       )
     : [];
   const requests = fillFlows.length
     ? await query(
-        `SELECT fr.id, fr.document_fill_flow_id, fr.fill_flow_step_id, fr.assigned_person_id,
-                fr.status, fr.is_manual, ffs.step_order
-           FROM fill_requests fr
-           INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
-          WHERE fr.document_fill_flow_id = ANY($1::int[])
-          ORDER BY ffs.step_order, fr.id`,
+        `SELECT tu.id, tu.recorrido_id AS document_fill_flow_id, tu.participante_id,
+                tu.persona_id AS assigned_person_id, tu.estado AS status, tu.manual AS is_manual,
+                p.orden AS step_order
+           FROM turnos tu
+           INNER JOIN participantes_declarados pa ON pa.id = tu.participante_id
+           INNER JOIN pasos_declarados p ON p.id = pa.paso_id
+          WHERE tu.recorrido_id = ANY($1::int[])
+          ORDER BY p.orden, tu.id`,
         [fillFlows.map((row) => row.id)],
       )
     : [];
@@ -299,11 +301,16 @@ const pasosDeEntregaSegunLoEnviado = (flow, personIds, lado) => {
 // Punto 3: el documento se gobierna por el flujo de RUNTIME, no por el del vínculo. Es la propiedad
 // que el sub-paso 7 puede romper sin que se caiga nada más, y se comprueba en las dos direcciones.
 const gobiernaElFlujoDeRuntime = (estado, flow, lado) => {
-  assert.equal(estado.fill_flows.length, 1, `${lado}: una instancia de flujo de llenado`);
-  assert.equal(
-    Number(estado.fill_flows[0].fill_flow_template_id),
-    Number(flow.id),
-    `${lado}: el documento se gobierna por el flujo que definió el usuario`,
+  assert.equal(estado.fill_flows.length, 1, `${lado}: un recorrido de entrega`);
+  // ⚠️ EL RECORRIDO YA NO APUNTA A UNA CABECERA, y por eso esto cambio de forma en la fase 4 del
+  // frente 24: antes se comparaba `document_fill_flows.fill_flow_template_id` con la cabecera que
+  // el usuario definio. Sin cabecera, lo que demuestra lo mismo --y mejor-- es que los TURNOS
+  // cuelguen de participantes cuyo paso tiene por origen ESTE entregable: si se gobernara por la
+  // receta de la edicion, el origen seria otro.
+  assert.ok(estado.fill_requests.length, `${lado}: el recorrido tiene turnos`);
+  assert.ok(
+    estado.fill_requests.every((t) => Number(t.document_fill_flow_id) === Number(estado.fill_flows[0].id)),
+    `${lado}: todos los turnos son de ese recorrido`,
   );
 };
 

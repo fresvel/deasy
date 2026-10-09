@@ -151,14 +151,14 @@ test("la solicitud de entrega de OTRA persona -> 403 (no 500)", async () => {
   const admin = await tokenFor("admin");
   const usuario = await tokenFor("usuario");
 
-  const reqs = await get("/admin/sql/fill_requests", { token: admin });
+  const reqs = await get("/admin/sql/turnos", { token: admin });
   const filas = Array.isArray(reqs.body) ? reqs.body : reqs.body?.data ?? [];
-  const mia = filas.find((r) => Number(r.assigned_person_id) === USUARIO_ID);
+  const mia = filas.find((r) => Number(r.persona_id) === USUARIO_ID);
   assert.ok(mia, "no hay ninguna solicitud de entrega de la persona 3: ¿corrió el setup?");
 
-  const reasignar = (personId) => put("/admin/sql/fill_requests", {
+  const reasignar = (personId) => put("/admin/sql/turnos", {
     token: admin,
-    body: { keys: { id: mia.id }, data: { assigned_person_id: personId } },
+    body: { keys: { id: mia.id }, data: { persona_id: personId } },
   });
 
   await reasignar(FIXTURE.gestorPersonId); // ahora es de OTRA persona
@@ -174,9 +174,9 @@ test("re-iniciar un entregable YA iniciado -> 409 (no 500)", async () => {
   const admin = await tokenFor("admin");
   const usuario = await tokenFor("usuario");
 
-  const reqs = await get("/admin/sql/fill_requests", { token: admin });
+  const reqs = await get("/admin/sql/turnos", { token: admin });
   const filas = Array.isArray(reqs.body) ? reqs.body : reqs.body?.data ?? [];
-  const mia = filas.find((r) => Number(r.assigned_person_id) === USUARIO_ID);
+  const mia = filas.find((r) => Number(r.persona_id) === USUARIO_ID);
   assert.ok(mia, "no hay ninguna solicitud de entrega de la persona 3");
 
   // Primer start: puede ir bien (si estaba pendiente) o ser ya un 409 (si el setup la inició).

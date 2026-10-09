@@ -106,11 +106,12 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
      LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
      LEFT JOIN (
        SELECT
-         dff.document_version_id,
-         SUM(CASE WHEN fr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_fill_count
-       FROM document_fill_flows dff
-       LEFT JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
-       GROUP BY dff.document_version_id
+         r.document_version_id,
+         SUM(CASE WHEN t.respondido IS NULL THEN 1 ELSE 0 END) AS pending_fill_count
+       FROM recorridos r
+       LEFT JOIN turnos t ON t.recorrido_id = r.id
+       WHERE r.accion = 'entrega'
+       GROUP BY r.document_version_id
      ) fill_stats ON fill_stats.document_version_id = dv.id
      LEFT JOIN (
        SELECT
@@ -435,10 +436,10 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
            SELECT 1
            FROM task_items ti
            INNER JOIN document_versions dv ON dv.task_item_id = ti.id
-           INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
-           INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+           INNER JOIN recorridos r ON r.document_version_id = dv.id AND r.accion = 'entrega'
+           INNER JOIN turnos tu ON tu.recorrido_id = r.id
            WHERE ti.task_id = t.id
-             AND fr.assigned_person_id = ?
+             AND tu.persona_id = ?
          )
          OR EXISTS (
            SELECT 1
@@ -579,13 +580,13 @@ export const getUserTaskItemParticipationSummary = async (pool, userId, taskItem
      FROM (
        SELECT
          dv.task_item_id,
-         CASE WHEN fr.responded_at IS NOT NULL THEN 1 ELSE 0 END AS has_past_fill,
+         CASE WHEN tu.respondido IS NOT NULL THEN 1 ELSE 0 END AS has_past_fill,
          0 AS has_past_signature
        FROM document_versions dv
-       INNER JOIN document_fill_flows dff ON dff.document_version_id = dv.id
-       INNER JOIN fill_requests fr ON fr.document_fill_flow_id = dff.id
+       INNER JOIN recorridos r ON r.document_version_id = dv.id AND r.accion = 'entrega'
+       INNER JOIN turnos tu ON tu.recorrido_id = r.id
        WHERE dv.task_item_id IN (${placeholders})
-         AND fr.assigned_person_id = ?
+         AND tu.persona_id = ?
 
        UNION ALL
 
@@ -874,30 +875,31 @@ export const getSignatureWorkflowStepsForDocumentVersions = async (pool, documen
 export const getUserPendingFillRequestsForDefinition = async (pool, userId, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
-       fr.id,
-       fr.requested_at,
-       fr.responded_at,
+       tu.id,
+       tu.solicitado AS requested_at,
+       tu.respondido AS responded_at,
        -- SE LLAMABA status_name, Y ERA UNA MENTIRA COMPARTIDA: aqui traia el CODIGO y en el lado
        -- de firma la misma clave traia la ETIQUETA del catalogo. El frontend la leia primero como
        -- codigo, asi que "En progreso" llegaba como "en progreso" y no coincidia con nada --por eso
        -- habia una entrada "en progreso" con espacio en el mapa de tonos--. Una clave, dos
        -- significados. Hoy es lo que es (fase 3 del frente 24).
-       fr.status,
-       ffs.step_order,
+       tu.estado AS status,
+       pd.orden AS step_order,
        tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
        dv.id AS document_version_id,
        dv.version_label AS document_version
-     FROM fill_requests fr
-     INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-     INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
-     INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+     FROM turnos tu
+     INNER JOIN recorridos r ON r.id = tu.recorrido_id AND r.accion = 'entrega'
+     INNER JOIN participantes_declarados pr ON pr.id = tu.participante_id
+     INNER JOIN pasos_declarados pd ON pd.id = pr.paso_id
+     INNER JOIN document_versions dv ON dv.id = r.document_version_id
      INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
      LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
-     WHERE fr.assigned_person_id = ?
+     WHERE tu.persona_id = ?
        AND t.process_definition_id = ?
        AND LOWER(COALESCE(dv.status, '')) IN (
          'pendiente de llenado',
@@ -905,7 +907,7 @@ export const getUserPendingFillRequestsForDefinition = async (pool, userId, defi
          'en revisión de llenado',
          'observado'
        )
-     ORDER BY fr.responded_at IS NOT NULL ASC, fr.requested_at DESC, fr.id DESC
+     ORDER BY tu.respondido IS NOT NULL ASC, tu.solicitado DESC, tu.id DESC
      LIMIT 12`,
     [userId, definitionId]
   );
@@ -934,40 +936,43 @@ export const getFillWorkflowStepsForDocumentVersions = async (pool, documentVers
   }
   const placeholders = documentVersionIds.map(() => "?").join(", ");
   const [rows] = await pool.query(
+    // ⚠️ `selection_mode`, `is_required`, `can_reject`, `position_id` y `unit_type_id` NO SALEN, y
+    // no es un olvido: se retiraron en la fase 4 del frente 24 --ver §10 del plan--. Las claves que
+    // el frontend consume conservan su nombre; lo que cambia es de donde salen.
     `SELECT
-       dff.document_version_id,
-       dff.status AS fill_flow_status,
-       dff.current_step_order,
-       ffs.id AS fill_flow_step_id,
-       ffs.step_order,
-       ffs.resolver_type,
-       ffs.selection_mode,
-       ffs.is_required,
-       ffs.can_reject,
-       fr.id AS fill_request_id,
-       fr.assigned_person_id,
-       fr.is_manual,
-       fr.status AS request_status,
-       fr.requested_at,
-       fr.responded_at,
-       fr.response_note,
+       r.document_version_id,
+       r.estado AS fill_flow_status,
+       r.paso_actual AS current_step_order,
+       pd.id AS fill_flow_step_id,
+       pd.orden AS step_order,
+       pr.resolver_type,
+       tu.id AS fill_request_id,
+       tu.persona_id AS assigned_person_id,
+       tu.manual AS is_manual,
+       tu.estado AS request_status,
+       tu.solicitado AS requested_at,
+       tu.respondido AS responded_at,
+       tu.nota_respuesta AS response_note,
        TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS assigned_person_name,
        c.name AS cargo_name,
-       up.title AS position_title,
-       u.name AS unit_name,
-       ut.name AS unit_type_name
-     FROM document_fill_flows dff
-     INNER JOIN fill_flow_steps ffs ON ffs.fill_flow_template_id = dff.fill_flow_template_id
-     LEFT JOIN fill_requests fr
-       ON fr.document_fill_flow_id = dff.id
-      AND fr.fill_flow_step_id = ffs.id
-     LEFT JOIN persons p ON p.id = COALESCE(fr.assigned_person_id, ffs.assigned_person_id)
-     LEFT JOIN cargos c ON c.id = ffs.cargo_id
-     LEFT JOIN unit_positions up ON up.id = ffs.position_id
-     LEFT JOIN units u ON u.id = ffs.unit_id
-     LEFT JOIN unit_types ut ON ut.id = ffs.unit_type_id
-     WHERE dff.document_version_id IN (${placeholders})
-     ORDER BY dff.document_version_id ASC, ffs.step_order ASC, fr.id ASC`,
+       u.name AS unit_name
+     FROM recorridos r
+     INNER JOIN pasos_declarados pd
+       ON (pd.task_item_id = (SELECT task_item_id FROM document_versions WHERE id = r.document_version_id)
+           OR pd.edicion_id = (
+             SELECT pdt.edicion_id FROM document_versions dv2
+              INNER JOIN task_items ti2 ON ti2.id = dv2.task_item_id
+              INNER JOIN vinculos pdt ON pdt.id = ti2.vinculo_id
+              WHERE dv2.id = r.document_version_id))
+      AND pd.accion = r.accion
+     INNER JOIN participantes_declarados pr ON pr.paso_id = pd.id
+     LEFT JOIN turnos tu ON tu.recorrido_id = r.id AND tu.participante_id = pr.id
+     LEFT JOIN persons p ON p.id = COALESCE(tu.persona_id, pr.persona_id)
+     LEFT JOIN cargos c ON c.id = pr.cargo_id
+     LEFT JOIN units u ON u.id = pr.unit_id
+     WHERE r.accion = 'entrega'
+       AND r.document_version_id IN (${placeholders})
+     ORDER BY r.document_version_id ASC, pd.orden ASC, pr.orden ASC, tu.id ASC`,
     documentVersionIds
   );
   return rows;
@@ -1074,10 +1079,10 @@ export const findRoutedItemsCreatedBy = async (ejecutor, personId) => {
 
 // Subconsultas EXISTS reutilizables: ¿la persona es asignada de llenado / firma del documento del item?
 const FILL_EXISTS = `EXISTS (
-  SELECT 1 FROM fill_requests fr
-    JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-    JOIN document_versions dv ON dv.id = dff.document_version_id
-   WHERE dv.task_item_id = ti.id AND fr.assigned_person_id = ?
+  SELECT 1 FROM turnos tu
+    JOIN recorridos r ON r.id = tu.recorrido_id AND r.accion = 'entrega'
+    JOIN document_versions dv ON dv.id = r.document_version_id
+   WHERE dv.task_item_id = ti.id AND tu.persona_id = ?
 )`;
 const SIGN_EXISTS = `EXISTS (
   SELECT 1 FROM signature_requests sr

@@ -424,7 +424,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `id` | int | sí | — | — |
 | `task_item_id` | int | sí | `task_items.id` · impide borrar | — |
 | `document_version_id` | int | sí | `document_versions.id` · impide borrar | — |
-| `fill_request_id` | int | no | `fill_requests.id` · impide borrar | — |
+| `fill_request_id` | int | no | `turnos.id` · impide borrar | — |
 | `signature_request_id` | int | no | `signature_requests.id` · impide borrar | — |
 | `phase` | text | sí | — | `review` · `signature` |
 | `kind` | text | sí | — | `observation` · `return_reason` · `rejection_reason` · `internal_note` |

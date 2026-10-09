@@ -106,13 +106,6 @@
       ],
       "motivo": "Firmar avanza el recorrido de firma y mueve el estado de la versión documental en el mismo paso."
     },
-    "services/documents/FillRequestWorkflowService.js": {
-      "dominios": [
-        "plantillas",
-        "tareas"
-      ],
-      "motivo": "Aprobar o devolver una entrega mueve la solicitud y el entregable juntos."
-    },
     "services/tasks/GeneralTaskService.js": {
       "dominios": [
         "procesos",
@@ -123,10 +116,9 @@
     "flujos/rehacerDocumento.js": {
       "dominios": [
         "firmas",
-        "plantillas",
         "tareas"
       ],
-      "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto de F7, y el PRIMERO que vive en `flujos/` con CERO consultas: su SQL esta en el `datos/` de cada dominio."
+      "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto de F7, y el PRIMERO que vive en `flujos/` con CERO consultas: su SQL esta en el `datos/` de cada dominio. Declaraba tambien `plantillas` y dejo de escribirlo en la fase 4 del frente 24: la EJECUCION de entrega paso a `tareas` --`recorridos` y `turnos`--, asi que lo que cruza ya son dos dominios y no tres."
     }
   },
   "_deuda_escritura": {
@@ -148,8 +140,7 @@
       "'services/documents/DeliverableUploadService.js'. LA PUERTA AVISÓ SOLA --«ya sólo tiene un",
       "escritor: quita su línea»--, que es como se cierran: quitando líneas, nunca añadiéndolas."
     ],
-    "task_items": "services/tasks lo INSERTA al crear una tarea general y services/documents lo toca en el camino del documento. Son dos duenos de la misma identidad (tarea, plantilla, puesto), y se cierra cuando `tareas` se mueva a su dominio: F7.5. Hasta entonces, no anadas un tercero.",
-    "fill_requests": "LA DESTAPO F7.1 el 2026-10-07 al estrechar la exencion de carpeta a fichero: estaba oculta, no es nueva. Y OJO, no es el caso de «la misma regla dos veces»: son dos operaciones distintas sobre la misma tabla -crear la solicitud y responderla-, asi que se cierra decidiendo de quien es el flujo de entrega (decision 1 de F7.0), no moviendo una linea."
+    "task_items": "services/tasks lo INSERTA al crear una tarea general y services/documents lo toca en el camino del documento. Son dos duenos de la misma identidad (tarea, plantilla, puesto), y se cierra cuando `tareas` se mueva a su dominio: F7.5. Hasta entonces, no anadas un tercero."
   },
   "identidad": {
     "titulo": "Identidad, personas y RBAC",

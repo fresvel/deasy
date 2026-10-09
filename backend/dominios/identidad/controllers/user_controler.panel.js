@@ -179,9 +179,9 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
       id: Number(step.fill_flow_step_id),
       step_order: Number(step.step_order),
       resolver_type: step.resolver_type,
-      selection_mode: step.selection_mode,
-      is_required: Boolean(step.is_required),
-      can_reject: Boolean(step.can_reject),
+      // `selection_mode`, `is_required` y `can_reject` NO viajan desde la fase 4 del frente 24: las
+      // tres se retiraron del paso (§10 del plan). Enviarlas en `false` seria peor que no enviarlas
+      // --afirmaria algo-- y el frontend ya las lee a la defensiva.
       request_id: step.fill_request_id ? Number(step.fill_request_id) : null,
       assigned_person_id: step.assigned_person_id ? Number(step.assigned_person_id) : null,
       is_manual: Boolean(step.is_manual),

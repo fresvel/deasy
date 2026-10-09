@@ -7,6 +7,7 @@ import {
   participantesDeUnPasoDeEntrega,
   participantesDeUnPasoDeFirma,
   reemplazarReceta,
+  resolverReceta,
 } from "./recetaDelRecorrido.js";
 
 const ctx = "prueba";
@@ -127,4 +128,79 @@ test("el ambito por defecto REPRODUCE el de la columna vieja, que era distinto p
     participantesDeUnPasoDeFirma({ signers: [{ type: "specific_person", person_id: 3 }] }, ctx)[0].unitScopeType,
     "context_exact"
   );
+});
+
+/* ── LA RESOLUCION POR ESCALONES ──────────────────────────────────────────────────────────────
+   Vino de `services/admin/generation/queries.test.js`, que murio con su sujeto: ahi habia DOS
+   funciones de resolucion --una por mitad, 44 lineas identicas de 50-- y aqui hay una para los dos
+   lados.
+
+   Lo que se vigila no es «que columna esta rellena» sino el ORDEN: si el entregable tiene receta
+   propia manda, y la de la edicion NI SE PREGUNTA. La conexion falsa interpreta el SQL --por que
+   origen filtra-- en vez de devolver respuestas pregrabadas: asi, cambiar la consulta tira el test. */
+
+const ENTREGABLE = 300;
+const VINCULO = 7;
+
+const filaDePaso = ({ id = 1, orden = 1, participante = 10 }) => ({
+  id, orden, code: null, nombre: null,
+  participante_id: participante, participante_orden: 1,
+  resolver_type: "task_assignee", persona_id: null, cargo_id: null,
+  unit_scope_type: "unit_exact", unit_id: null, slot: null,
+});
+
+const conexionDeReceta = ({ delEntregable = [], deLaEdicion = [] } = {}) => {
+  const consultas = [];
+  return {
+    consultas,
+    async query(sql, params = []) {
+      consultas.push({ sql: sql.replace(/\s+/g, " ").trim(), params });
+      if (/p\.task_item_id = \?/.test(sql)) return [delEntregable];
+      if (/SELECT edicion_id FROM vinculos/.test(sql)) return [deLaEdicion];
+      throw new Error(`consulta no reconocida: ${sql}`);
+    },
+  };
+};
+
+test("resolverReceta: con receta del ENTREGABLE gana esa, y no se pregunta nada mas", async () => {
+  const cx = conexionDeReceta({ delEntregable: [filaDePaso({ id: 1 })], deLaEdicion: [filaDePaso({ id: 9 })] });
+  const r = await resolverReceta(cx, { accion: "entrega", taskItemId: ENTREGABLE, vinculoId: VINCULO });
+  assert.equal(r.origen, "entregable");
+  assert.deepEqual(r.pasos.map((p) => p.id), [1]);
+  assert.equal(cx.consultas.length, 1, "una consulta: el segundo escalon ni se pregunta");
+});
+
+test("resolverReceta: sin receta del entregable gana la de la EDICION que el vinculo enlaza", async () => {
+  const cx = conexionDeReceta({ deLaEdicion: [filaDePaso({ id: 9 })] });
+  const r = await resolverReceta(cx, { accion: "firma", taskItemId: ENTREGABLE, vinculoId: VINCULO });
+  assert.equal(r.origen, "edicion");
+  assert.deepEqual(r.pasos.map((p) => p.id), [9]);
+  assert.equal(cx.consultas.length, 2, "dos escalones, dos consultas: ni una mas");
+});
+
+test("resolverReceta: sin vinculo solo hay primer escalon", async () => {
+  // Un entregable de usuario no nace de un vinculo: no hay edicion a la que subir.
+  const cx = conexionDeReceta({});
+  const r = await resolverReceta(cx, { accion: "entrega", taskItemId: ENTREGABLE, vinculoId: null });
+  assert.deepEqual(r, { origen: null, pasos: [] });
+  assert.equal(cx.consultas.length, 1);
+});
+
+test("resolverReceta: sin receta en ninguno de los dos escalones, no hay origen", async () => {
+  const cx = conexionDeReceta({});
+  const r = await resolverReceta(cx, { accion: "firma", taskItemId: ENTREGABLE, vinculoId: VINCULO });
+  assert.deepEqual(r, { origen: null, pasos: [] });
+});
+
+test("las filas planas se agrupan en pasos con SUS participantes, conservando los dos ordenes", async () => {
+  // Es lo que sustituye al JSONB: un paso con tres firmantes llega como tres filas.
+  const cx = conexionDeReceta({ delEntregable: [
+    { ...filaDePaso({ id: 5, orden: 1, participante: 50 }), participante_orden: 1 },
+    { ...filaDePaso({ id: 5, orden: 1, participante: 51 }), participante_orden: 2 },
+    { ...filaDePaso({ id: 6, orden: 2, participante: 60 }), participante_orden: 1 },
+  ] });
+  const r = await resolverReceta(cx, { accion: "firma", taskItemId: ENTREGABLE, vinculoId: VINCULO });
+  assert.equal(r.pasos.length, 2, "dos pasos, no tres filas");
+  assert.deepEqual(r.pasos[0].participantes.map((p) => p.orden), [1, 2]);
+  assert.equal(r.pasos[1].participantes.length, 1);
 });

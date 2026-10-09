@@ -18,6 +18,7 @@
 
 import { UserRepository } from "../../dominios/identidad/index.js";
 import { badRequest, conflict, forbidden, notFound } from "../../errors/HttpError.js";
+import { idsDeTurnosDelPaso, reabrirTurnos, responderTurno } from "../../dominios/tareas/index.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import { ESTADO_RECORRIDO } from "./DocumentWorkflowCatalog.js";
 import { syncDocumentProgressFromFillRequest } from "./DocumentProgressService.js";
@@ -38,28 +39,32 @@ const getCurrentUser = async (rawUserId, findUserById) => {
   return user;
 };
 
+// EL CONTEXTO DE UN TURNO. Las claves conservan su nombre --`document_fill_flow_id`,
+// `step_order`...-- a proposito: las consume media docena de sitios y el guard las nombra en sus
+// mensajes. Lo que cambia es de DONDE salen: el estado del turno, el orden del PASO DECLARADO.
 export const getFillRequestContext = async (connection, fillRequestId) => {
   const [rows] = await connection.query(
     `SELECT
-       fr.id,
-       fr.fill_flow_step_id,
-       fr.assigned_person_id,
-       fr.status,
-       fr.is_manual,
-       dff.id AS document_fill_flow_id,
-       dff.fill_flow_template_id,
-       dff.document_version_id,
-       ffs.step_order,
+       t.id,
+       t.participante_id,
+       t.persona_id AS assigned_person_id,
+       t.estado AS status,
+       t.manual AS is_manual,
+       r.id AS document_fill_flow_id,
+       r.document_version_id,
+       p.orden AS step_order,
+       p.id AS paso_id,
        dv.working_file_path,
        ti.id AS task_item_id,
        ti.vinculo_id,
        ti.user_started_at
-     FROM fill_requests fr
-     INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-     INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
-     INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+     FROM turnos t
+     INNER JOIN recorridos r ON r.id = t.recorrido_id
+     INNER JOIN participantes_declarados pa ON pa.id = t.participante_id
+     INNER JOIN pasos_declarados p ON p.id = pa.paso_id
+     INNER JOIN document_versions dv ON dv.id = r.document_version_id
      LEFT JOIN task_items ti ON ti.id = dv.task_item_id
-     WHERE fr.id = ?
+     WHERE t.id = ?
      LIMIT 1`,
     [fillRequestId]
   );
@@ -72,44 +77,31 @@ export const reactivatePreviousFillStepIfNeeded = async (connection, context) =>
     return null;
   }
 
+  // DOS PASOS Y NO UNO, y es la regla de propiedad: saber QUE turnos son cruza a `plantillas` --hay
+  // que mirar el paso declarado-- y eso es una lectura, asi que vive en `datos/consulta/`. La
+  // escritura recibe ids y no cruza nada.
   const previousStepOrder = currentStepOrder - 1;
-  const [previousStepRows] = await connection.query(
-    `SELECT ffs.id
-     FROM document_fill_flows dff
-     INNER JOIN fill_flow_steps ffs ON ffs.fill_flow_template_id = dff.fill_flow_template_id
-     WHERE dff.id = ?
-       AND ffs.step_order = ?
-     LIMIT 1`,
-    [context.document_fill_flow_id, previousStepOrder]
-  );
-  const previousStep = previousStepRows?.[0];
-  if (!previousStep?.id) {
+  const ids = await idsDeTurnosDelPaso(connection, context.document_fill_flow_id, previousStepOrder);
+  if (!ids.length) {
     return null;
   }
-
-  await connection.query(
-    `UPDATE fill_requests
-     SET status = ?,
-         responded_at = NULL,
-         response_note = NULL
-     WHERE document_fill_flow_id = ?
-       AND fill_flow_step_id = ?`,
-    [ESTADO_RECORRIDO.PENDIENTE, context.document_fill_flow_id, Number(previousStep.id)]
-  );
+  await reabrirTurnos(connection, ids);
 
   return previousStepOrder;
 };
 
 export const requiresSignaturePdfForFinalFillApproval = async (connection, context) => {
-  if (!context?.vinculo_id || !context?.fill_flow_template_id) {
+  if (!context?.vinculo_id || !context?.document_fill_flow_id) {
     return false;
   }
 
   const [fillRows] = await connection.query(
-    `SELECT MAX(step_order) AS max_step_order
-     FROM fill_flow_steps
-     WHERE fill_flow_template_id = ?`,
-    [context.fill_flow_template_id]
+    `SELECT MAX(p.orden) AS max_step_order
+       FROM turnos t
+       INNER JOIN participantes_declarados pa ON pa.id = t.participante_id
+       INNER JOIN pasos_declarados p ON p.id = pa.paso_id
+      WHERE t.recorrido_id = ?`,
+    [context.document_fill_flow_id]
   );
   const maxStepOrder = Number(fillRows?.[0]?.max_step_order || 0);
   if (!maxStepOrder || Number(context.step_order) !== maxStepOrder) {
@@ -251,21 +243,12 @@ export const updateFillRequestStatus = async (
 
     const shouldRespondNow = nextStatus !== ESTADO_RECORRIDO.EN_PROGRESO;
     const assignedPersonId = context.assigned_person_id || (context.is_manual ? Number(user.id) : null);
-    await connection.query(
-      `UPDATE fill_requests
-       SET assigned_person_id = ?,
-           status = ?,
-           responded_at = ?,
-           response_note = ?
-       WHERE id = ?`,
-      [
-        assignedPersonId,
-        nextStatus,
-        shouldRespondNow ? new Date() : null,
-        note,
-        fillRequestId,
-      ]
-    );
+    await responderTurno(connection, fillRequestId, {
+      personaId: assignedPersonId,
+      estado: nextStatus,
+      respondido: shouldRespondNow ? new Date() : null,
+      nota: note,
+    });
 
     if (action === "return") {
       await reactivatePreviousFillStepIfNeeded(connection, context);

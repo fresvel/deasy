@@ -181,7 +181,6 @@ Ref "fk_pasos_declarados_edicion":"ediciones"."id" ?<? "pasos_declarados"."edici
 //   persons -> catalogo_documental   [identidad]
 //   document_versions -> document_fill_flows   [tareas]
 //   ediciones -> document_versions   [tareas]
-//   fill_requests -> document_workflow_observations   [tareas]
 //   cargos -> fill_flow_steps   [identidad]
 //   persons -> fill_flow_steps   [identidad]
 //   unit_positions -> fill_flow_steps   [organizacion]

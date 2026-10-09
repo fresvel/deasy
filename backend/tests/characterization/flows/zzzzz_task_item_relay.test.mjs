@@ -238,11 +238,11 @@ test("relevo · la solicitud de `task_assignee` sigue al nuevo responsable; la d
   // mutacion, dos veces, y las dos quedaron sin detectar. Un `return` que se traga el caso es peor
   // que no tener la prueba, porque ademas la cuenta como aprobada.
   const solicitudes = await query(
-    `SELECT fr.id, fr.fill_flow_step_id, fr.assigned_person_id, dv.task_item_id
-       FROM fill_requests fr
-       JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-       JOIN document_versions dv ON dv.id = dff.document_version_id
-      WHERE fr.responded_at IS NULL
+    `SELECT tu.id, tu.participante_id, tu.persona_id AS assigned_person_id, dv.task_item_id
+       FROM turnos tu
+       JOIN recorridos r ON r.id = tu.recorrido_id AND r.accion = 'entrega'
+       JOIN document_versions dv ON dv.id = r.document_version_id
+      WHERE tu.respondido IS NULL
       LIMIT 1`,
   );
   assert.ok(solicitudes.length, "la fixture debe dejar alguna solicitud de entrega abierta");
@@ -255,8 +255,10 @@ test("relevo · la solicitud de `task_assignee` sigue al nuevo responsable; la d
   const otro = original === 1 ? 2 : 1;
 
   // Mitad A: el paso se resuelve por el RESPONSABLE del entregable.
-  await query("UPDATE fill_flow_steps SET resolver_type = 'task_assignee' WHERE id = $1", [
-    solicitudes[0].fill_flow_step_id,
+  // El `resolver_type` lo lleva el PARTICIPANTE desde la fase 4 del frente 24, no el paso: un paso
+  // puede pedir a varias personas y cada una tiene su forma de ser encontrada.
+  await query("UPDATE participantes_declarados SET resolver_type = 'task_assignee' WHERE id = $1", [
+    solicitudes[0].participante_id,
   ]);
   const cambio = await post(`/admin/sql/task-items/${item.id}/handover`, {
     token,
@@ -264,7 +266,7 @@ test("relevo · la solicitud de `task_assignee` sigue al nuevo responsable; la d
   });
   assert.equal(cambio.status, 200, `no se pudo preparar: ${JSON.stringify(cambio.body)}`);
 
-  const [tras] = await query("SELECT assigned_person_id FROM fill_requests WHERE id = $1", [solicitudes[0].id]);
+  const [tras] = await query("SELECT persona_id AS assigned_person_id FROM turnos WHERE id = $1", [solicitudes[0].id]);
   assert.equal(
     Number(tras.assigned_person_id),
     otro,
@@ -272,17 +274,17 @@ test("relevo · la solicitud de `task_assignee` sigue al nuevo responsable; la d
   );
 
   // Mitad B: el paso nombra a una PERSONA CONCRETA. Heredarlo sería falsearlo.
-  await query("UPDATE fill_flow_steps SET resolver_type = 'specific_person' WHERE id = $1", [
-    solicitudes[0].fill_flow_step_id,
+  await query("UPDATE participantes_declarados SET resolver_type = 'specific_person' WHERE id = $1", [
+    solicitudes[0].participante_id,
   ]);
-  await query("UPDATE fill_requests SET assigned_person_id = $1 WHERE id = $2", [otro, solicitudes[0].id]);
+  await query("UPDATE turnos SET persona_id = $1 WHERE id = $2", [otro, solicitudes[0].id]);
   const vuelta = await post(`/admin/sql/task-items/${item.id}/handover`, {
     token,
     body: { to_person_id: original, reason: "D3: la de persona concreta NO debe moverse" },
   });
   assert.equal(vuelta.status, 200);
 
-  const [trasB] = await query("SELECT assigned_person_id FROM fill_requests WHERE id = $1", [solicitudes[0].id]);
+  const [trasB] = await query("SELECT persona_id AS assigned_person_id FROM turnos WHERE id = $1", [solicitudes[0].id]);
   assert.equal(
     Number(trasB.assigned_person_id),
     otro,
@@ -290,10 +292,10 @@ test("relevo · la solicitud de `task_assignee` sigue al nuevo responsable; la d
   );
 
   // Autolimpieza: se devuelve el paso y la solicitud a su estado original.
-  await query("UPDATE fill_flow_steps SET resolver_type = $1 WHERE id = $2", [
-    "specific_person", solicitudes[0].fill_flow_step_id,
+  await query("UPDATE participantes_declarados SET resolver_type = $1 WHERE id = $2", [
+    "specific_person", solicitudes[0].participante_id,
   ]);
-  await query("UPDATE fill_requests SET assigned_person_id = $1 WHERE id = $2", [
+  await query("UPDATE turnos SET persona_id = $1 WHERE id = $2", [
     solicitudes[0].assigned_person_id, solicitudes[0].id,
   ]);
 });

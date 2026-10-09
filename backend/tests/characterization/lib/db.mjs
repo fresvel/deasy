@@ -185,14 +185,17 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
   const versionIds = versionRows.map((row) => Number(row.id));
 
   if (versionIds.length) {
+    // La EJECUCION de entrega, en su forma nueva (frente 24, fase 4): los turnos caen con su
+    // recorrido por ON DELETE CASCADE, pero se borran explicitos para que el teardown diga lo que
+    // hace. La forma vieja ya no la escribe nadie.
     await query(
-      `DELETE FROM fill_requests
-        WHERE document_fill_flow_id IN (
-          SELECT id FROM document_fill_flows WHERE document_version_id = ANY($1::int[])
+      `DELETE FROM turnos
+        WHERE recorrido_id IN (
+          SELECT id FROM recorridos WHERE document_version_id = ANY($1::int[]) AND accion = 'entrega'
         )`,
       [versionIds],
     );
-    await query("DELETE FROM document_fill_flows WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM recorridos WHERE document_version_id = ANY($1::int[]) AND accion = 'entrega'", [versionIds]);
     // Firma: hoy este camino no llega a instanciarla (hace falta subir y aprobar), pero el borrado
     // va igual — un teardown que solo funciona mientras el flujo no avance no es un teardown.
     await query(
@@ -326,12 +329,13 @@ export async function countSignatureBatchJobs() {
 // aprobación.
 export async function captureFillRequestFixture(fillRequestId) {
   const rows = await query(
-    `SELECT fr.id, fr.assigned_person_id, fr.status, fr.is_manual, fr.responded_at, fr.response_note,
+    `SELECT tu.id, tu.persona_id AS assigned_person_id, tu.estado AS status, tu.manual AS is_manual,
+            tu.respondido AS responded_at, tu.nota_respuesta AS response_note,
             dv.id AS document_version_id, dv.status AS dv_status, dv.working_file_path
-       FROM fill_requests fr
-       INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-       INNER JOIN document_versions dv ON dv.id = dff.document_version_id
-      WHERE fr.id = $1`,
+       FROM turnos tu
+       INNER JOIN recorridos r ON r.id = tu.recorrido_id
+       INNER JOIN document_versions dv ON dv.id = r.document_version_id
+      WHERE tu.id = $1`,
     [fillRequestId],
   );
   return rows[0] ?? null;
@@ -340,8 +344,8 @@ export async function captureFillRequestFixture(fillRequestId) {
 export async function restoreFillRequestFixture(snapshot) {
   if (!snapshot) return;
   await query(
-    `UPDATE fill_requests
-        SET assigned_person_id = $2, status = $3, is_manual = $4, responded_at = $5, response_note = $6
+    `UPDATE turnos
+        SET persona_id = $2, estado = $3, manual = $4, respondido = $5, nota_respuesta = $6
       WHERE id = $1`,
     [
       snapshot.id,

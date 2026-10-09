@@ -89,6 +89,22 @@ venir del JSONB `signers`, que ningún `CHECK` cubre.
 
 ## Cuando el documento echa a andar
 
+:::caution[La EJECUCIÓN de la entrega ya no vive aquí]
+
+Desde el **2026-10-08** lo que se pone en marcha es un **recorrido** (`recorridos`) con sus **turnos**
+(`turnos`), las dos tablas unificadas que sirven igual a la entrega y a la firma. `document_fill_flows`
+y `fill_requests` **siguen existiendo** y esta sección las describe, pero ya no las escribe ni las lee
+nadie: se retiran cuando el lado de firma termine de mudarse.
+
+Lo que cambia, además del nombre de la tabla:
+
+- un turno apunta al **participante declarado** que lo produjo, no sólo al paso — así se sabe de qué
+  declaración salió;
+- el estado vive en `turnos.estado`, con el mismo vocabulario de siempre;
+- y la receta se resuelve **sin cabecera**: el paso lleva su propio origen.
+
+:::
+
 Al ponerse en marcha, el flujo declarado se convierte en una **instancia** (`document_fill_flows`)
 pegada a la ronda concreta, que lleva la cuenta de por qué paso va en `current_step_order`. Un índice
 único sobre `document_version_id` garantiza **una sola instancia de entrega por ronda**.

@@ -539,13 +539,6 @@ erDiagram
   fill_flow_steps ||--o{ fill_requests : "fill_flow_step_id"
 ```
 
-<details>
-<summary>Llega 1 clave ajena desde otros diagramas</summary>
-
-`document_workflow_observations.fill_request_id` → `fill_requests`
-
-</details>
-
 ## Recorrido unificado — sustituye a los dos de abajo
 
 **4 tablas** · 36 columnas · 10 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `task_items`, `units`, que salen como caja vacía.
@@ -608,6 +601,13 @@ erDiagram
   persons |o--o{ turnos : "persona_id"
   recorridos |o--o{ turnos : "accion, recorrido_id"
 ```
+
+<details>
+<summary>Llega 1 clave ajena desde otros diagramas</summary>
+
+`document_workflow_observations.fill_request_id` → `turnos`
+
+</details>
 
 ## Flujo de firma
 
@@ -713,7 +713,7 @@ erDiagram
 
 ## Fuera de los subgrupos
 
-**1 tabla** · 12 columnas · 6 claves ajenas propias. Apunta a `document_versions`, `fill_requests`, `persons`, `signature_requests`, `task_items`, que salen como caja vacía.
+**1 tabla** · 12 columnas · 6 claves ajenas propias. Apunta a `document_versions`, `persons`, `signature_requests`, `task_items`, `turnos`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -733,7 +733,7 @@ erDiagram
     timestamp created_at
   }
   persons ||--o{ document_workflow_observations : "author_person_id"
-  fill_requests |o--o{ document_workflow_observations : "fill_request_id"
+  turnos |o--o{ document_workflow_observations : "fill_request_id"
   task_items ||--o{ document_workflow_observations : "task_item_id"
   persons |o--o{ document_workflow_observations : "resolved_by_person_id"
   signature_requests |o--o{ document_workflow_observations : "signature_request_id"

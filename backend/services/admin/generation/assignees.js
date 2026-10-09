@@ -1,42 +1,50 @@
-// Resolución de RESPONSABLES de los pasos de flujo, y reparación de las solicitudes de
-// llenado cuando el flujo cambia. Extraído de TaskGenerationService en la Fase 3.
-// Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-2026-07.md
+// QUIEN HACE EL PASO: traduce un PARTICIPANTE declarado --cargo en tal ambito, responsable del
+// entregable, persona concreta-- a personas de carne y hueso. Si esto se equivoca, el trabajo le
+// llega a quien no toca.
 //
-// Es el "quién hace el paso": traduce la declaración de un paso (cargo en tal ámbito,
-// responsable de la tarea, persona concreta) a personas de carne y hueso. Si esto se
-// equivoca, la tarea le llega a quien no toca.
+// ── UNA SOLA FUNCION PARA LOS DOS LADOS (frente 24, fase 4, paso 3) ─────────────────────────────
 //
-// ── LO QUE YA NO ESTÁ, y por qué (§0.6, cierre del censo de fósiles) ─────────────────────────────
-// Este fichero resuelve SOLO pasos de ENTREGA, y todos le llegan de una única consulta —
-// `getFillFlowSteps` (`queries.js`)—, que lee `fill_flow_steps` columna a columna. Sus dos columnas
-// de política están cerradas por un `CHECK` desde el sub-paso 8 del §0.8:
+// Habia DOS resolutores, uno por mitad, y eran 44 lineas identicas de 50 en dominios distintos. La
+// duplicacion no era el problema: era el SINTOMA de que las dos mitades son el mismo mecanismo. Con
+// un solo recorrido, la pregunta «¿a quien le toca este turno?» tiene una sola respuesta.
 //
-//   resolver_type    IN (task_assignee, specific_person, cargo_in_scope)
-//   unit_scope_type  IN (unit_exact, unit_subtree, unit_type, all_units, context_exact)
+// Y resuelve un PARTICIPANTE, no un paso. Esa es la otra mitad del cambio: antes el resolutor vivia
+// en las columnas del paso --y en firma, ademas, duplicado dentro del JSONB `signers`, que ganaba--,
+// asi que un paso solo sabia expresar UN modo de encontrar a alguien. Ahora un paso tiene 1..N
+// participantes y cada uno trae el suyo.
 //
-// Así que los `case` de `document_owner`, `position` y `manual_pick`, y las ramas de ámbito
-// `context_subtree` y `context_ancestor_type`, no eran «poco usados»: eran INALCANZABLES —ninguna
-// fila puede llevar ese valor—. Medido antes de retirarlos: `test:char:run` en 281/281 y **ningún
-// golden movido**, que es la prueba de que estaban muertos.
+// ── LO QUE YA NO ESTA, y por que ────────────────────────────────────────────────────────────────
 //
-// QUÉ LOS RESUCITARÍA: ampliar el `CHECK` de `fill_flow_steps` (bloque `DO $$` de
-// `postgres_schema.sql`) y volver a admitir el tipo en `FILL_RESOLVER_TYPES` /
-// `FILL_UNIT_SCOPE_TYPES` (`templates/workflows.js`). Mientras esas dos puertas sigan cerradas,
-// añadir aquí un `case` es escribir código que nadie puede ejecutar.
-//
-// ⚠️ NO COPIES ESTE RECORTE A `DocumentSignatureWorkflowService.js`. Su gemela de FIRMA conserva
-// `document_owner`, `position` y los dos `context_*` a propósito: allí el resolutor no siempre viene
-// de la columna, puede venir del JSONB `signers`, que ningún `CHECK` cubre y que `parseStepSigners`
-// no filtra contra catálogo. Ver la nota en ese fichero.
+//   · `document_owner`, `position`, `manual_pick` y los ambitos `context_subtree` /
+//     `context_ancestor_type`: INALCANZABLES. Sobrevivian porque el JSONB `signers` no pasaba por
+//     ningun CHECK; a filas, pasa.
+//   · `unit_subtree` y `unit_type`: ninguna pantalla los produce. El editor de pasos ofrece dos
+//     ambitos y el constructor de runtime emite `unit_exact` o `all_units`.
+//   · `selection_mode`, y con el `auto_one`. Era «quedate con UNO», implementado como
+//     `ORDER BY person_id ASC` + `slice(0, 1)`: o sea, el id mas bajo. No es una regla de negocio
+//     --es la misma arbitrariedad que el repositorio ya retiro en `one_per_unit`-- y el dueno
+//     decidio quitarla. CONSECUENCIA MEDIBLE: un participante por cargo convoca ahora a TODOS los
+//     que encuentre, no a uno.
 import { resolveScopeForStep } from "./primitives.js";
+import {
+  abrirTurno,
+  actualizarTurno,
+  borrarTurnos,
+  leerTurnosDelRecorrido
+} from "../../../dominios/tareas/index.js";
 
-export const resolvePersonsForCargoInScope = async (connection, step, context = null) => {
-  if (!step?.cargo_id) {
+// Las personas que ocupan un cargo dentro de un ambito. Tres ambitos, no cinco.
+export const resolverPersonasPorCargo = async (connection, participante, context = null) => {
+  if (!participante?.cargoId) {
     return [];
   }
 
-  const scope = resolveScopeForStep(step, context);
-  const params = [step.cargo_id];
+  // `resolveScopeForStep` habla en snake_case porque lo compartia con las columnas del paso.
+  const scope = resolveScopeForStep(
+    { unit_scope_type: participante.unitScopeType, unit_id: participante.unitId },
+    context
+  );
+  const params = [participante.cargoId];
   let query = `
     SELECT DISTINCT pa.person_id
     FROM unit_positions up
@@ -48,64 +56,32 @@ export const resolvePersonsForCargoInScope = async (connection, step, context = 
       AND pa.person_id IS NOT NULL
       AND up.cargo_id = ?`;
 
-  if (scope.unitScopeType === "unit_subtree") {
-    if (!scope.unitId) {
-      return [];
-    }
-    query = `
-      WITH RECURSIVE scoped_units AS (
-        SELECT id
-        FROM units
-        WHERE id = ?
-        UNION ALL
-        SELECT ur.child_unit_id
-        FROM unit_relations ur
-        INNER JOIN relation_unit_types rt
-          ON rt.id = ur.relation_type_id
-         AND rt.code = 'org'
-        INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
-      )
-      ${query}
-        AND up.unit_id IN (SELECT id FROM scoped_units)`;
-    params.unshift(scope.unitId);
-  } else if (scope.unitScopeType === "unit_exact") {
-    if (!scope.unitId) {
-      return [];
-    }
-    query += "\n      AND up.unit_id = ?";
-    params.push(scope.unitId);
-  } else if (scope.unitScopeType === "unit_type") {
-    if (!scope.unitTypeId) {
-      return [];
-    }
-    query += "\n      AND u.unit_type_id = ?";
-    params.push(scope.unitTypeId);
-  } else if (scope.unitScopeType === "context_exact") {
+  // `unit_exact` y `context_exact` producen EL MISMO filtro; lo que cambia es de donde sale la
+  // unidad: la escrita en el participante, o la del documento. Lo resuelve `resolveScopeForStep`.
+  if (scope.unitScopeType === "unit_exact" || scope.unitScopeType === "context_exact") {
     if (!scope.unitId) {
       return [];
     }
     query += "\n      AND up.unit_id = ?";
     params.push(scope.unitId);
   }
+  // `all_units` no acota: cae aqui sin anadir filtro.
 
   query += "\n    ORDER BY pa.person_id ASC";
 
   const [rows] = await connection.query(query, params);
-  const people = rows.map((row) => Number(row.person_id)).filter(Boolean);
-  if (step.selection_mode === "auto_one") {
-    return people.slice(0, 1);
-  }
-  return people;
+  return rows.map((row) => Number(row.person_id)).filter(Boolean);
 };
 
-export const resolveFillStepAssignees = async (connection, step, context) => {
-  if (!step || !context) {
+// EL RESOLUTOR. Tres formas de nombrar a alguien, cerradas por CHECK en la base.
+export const resolverParticipante = async (connection, participante, context) => {
+  if (!participante || !context) {
     return [];
   }
 
-  switch (step.resolver_type) {
+  switch (participante.resolverType) {
     case "specific_person":
-      return step.assigned_person_id ? [Number(step.assigned_person_id)] : [];
+      return participante.personaId ? [Number(participante.personaId)] : [];
     case "task_assignee": {
       // La reserva era el creador de la TAREA (`tasks.created_by_user_id`), retirado el
       // 2026-08-23: estaba NULL en 12 de 13 tareas, asi que como reserva casi nunca respondia.
@@ -114,127 +90,95 @@ export const resolveFillStepAssignees = async (connection, step, context) => {
       return assignee ? [Number(assignee)] : [];
     }
     case "cargo_in_scope":
-      return resolvePersonsForCargoInScope(connection, step, context);
+      return resolverPersonasPorCargo(connection, participante, context);
     default:
       return [];
   }
 };
 
-export const repairFillRequestsForFlow = async (connection, documentFillFlowId, steps, context) => {
-  const [existingRows] = await connection.query(
-    `SELECT
-       fr.id,
-       fr.fill_flow_step_id,
-       fr.assigned_person_id,
-       fr.status,
-       fr.is_manual
-     FROM fill_requests fr
-     WHERE fr.document_fill_flow_id = ?
-     ORDER BY fr.fill_flow_step_id ASC, fr.id ASC`,
-    [documentFillFlowId]
-  );
-
-  const existingByStepId = new Map();
-  existingRows.forEach((row) => {
-    const key = Number(row.fill_flow_step_id);
-    if (!existingByStepId.has(key)) {
-      existingByStepId.set(key, []);
-    }
-    existingByStepId.get(key).push(row);
-  });
-
-  for (const step of steps) {
-    const stepId = Number(step.id);
-    const existingForStep = existingByStepId.get(stepId) || [];
-    const manualRows = existingForStep.filter((row) => Number(row.is_manual) === 1);
-    const resolvedRows = existingForStep.filter((row) => Number(row.assigned_person_id) > 0);
-    const assignees = [...new Set((await resolveFillStepAssignees(connection, step, context)).map(Number).filter(Boolean))];
-
-    if (!assignees.length) {
-      if (!existingForStep.length) {
-        await connection.query(
-          `INSERT INTO fill_requests (
-             document_fill_flow_id,
-             fill_flow_step_id,
-             assigned_person_id,
-             status,
-             is_manual
-           ) VALUES (?, ?, ?, ?, ?)`,
-          [documentFillFlowId, stepId, null, "pendiente", 1]
-        );
-      }
+// Todas las personas de un PASO: la union de lo que resuelve cada uno de sus participantes, sin
+// repetir. Devuelve pares (participante, persona) porque el turno apunta al participante.
+export const resolverPasoCompleto = async (connection, paso, context) => {
+  const turnos = [];
+  for (const participante of paso.participantes) {
+    const personas = await resolverParticipante(connection, participante, context);
+    if (!personas.length) {
+      // Sin nadie resoluble: un turno APARCADO, sin persona y marcado manual. Es lo que permite el
+      // auto-reclamo en entrega, y lo que avisa de que falta alguien en firma.
+      turnos.push({ participanteId: participante.id, personaId: null, manual: 1 });
       continue;
     }
-
-    const existingAssignedIds = new Set(resolvedRows.map((row) => Number(row.assigned_person_id)).filter(Boolean));
-    const replaceableRows = [
-      ...manualRows,
-      ...resolvedRows.filter((row) => !assignees.includes(Number(row.assigned_person_id))),
-    ];
-    const usedReplaceableIds = new Set();
-
-    for (const assignedPersonId of assignees) {
-      if (existingAssignedIds.has(assignedPersonId)) {
-        continue;
-      }
-      const rowToPromote = replaceableRows.find((row) => !usedReplaceableIds.has(Number(row.id)));
-      if (rowToPromote) {
-        usedReplaceableIds.add(Number(rowToPromote.id));
-        await connection.query(
-          `UPDATE fill_requests
-           SET assigned_person_id = ?,
-               is_manual = 0,
-               status = 'pendiente',
-               responded_at = NULL,
-               response_note = NULL
-           WHERE id = ?`,
-          [assignedPersonId, Number(rowToPromote.id)]
-        );
-      } else {
-        await connection.query(
-          `INSERT INTO fill_requests (
-             document_fill_flow_id,
-             fill_flow_step_id,
-             assigned_person_id,
-             status,
-             is_manual
-           ) VALUES (?, ?, ?, ?, ?)`,
-          [documentFillFlowId, stepId, assignedPersonId, "pendiente", 0]
-        );
-      }
+    for (const personaId of personas) {
+      turnos.push({ participanteId: participante.id, personaId, manual: 0 });
     }
+  }
+  return turnos;
+};
 
-    if (assignees.length > 0) {
-      const [currentRows] = await connection.query(
-        `SELECT id, assigned_person_id, is_manual
-         FROM fill_requests
-         WHERE document_fill_flow_id = ?
-           AND fill_flow_step_id = ?`,
-        [documentFillFlowId, stepId]
-      );
+// LA REPARACION. Corre cuando la receta cambia debajo de un recorrido YA ABIERTO: reconcilia los
+// turnos con lo que los participantes resuelven AHORA.
+//
+// El criterio es el mismo que tenia la version por solicitudes, y conviene no perderlo: un turno ya
+// RESPONDIDO no se toca --ni se mueve ni se borra--, porque es un hecho. Lo que se reconcilia es lo
+// que sigue abierto; un turno aparcado (sin persona) se REUTILIZA para la primera persona que ahora
+// si resuelve, en vez de crear uno nuevo y dejar basura.
+export const repararTurnos = async (connection, { recorridoId, accion, pasos, context }) => {
+  const existentes = await leerTurnosDelRecorrido(connection, recorridoId);
+  const porParticipante = new Map();
+  for (const t of existentes) {
+    if (!porParticipante.has(t.participante_id)) porParticipante.set(t.participante_id, []);
+    porParticipante.get(t.participante_id).push(t);
+  }
 
-      const staleIds = currentRows
-        .filter((row) => {
-          const assignedPersonId = Number(row.assigned_person_id || 0);
-          const isManual = Number(row.is_manual) === 1;
-          if (!isManual) {
-            return false;
-          }
-          if (!assignedPersonId) {
-            return true;
-          }
-          return !assignees.includes(assignedPersonId);
-        })
-        .map((row) => Number(row.id))
-        .filter(Boolean);
+  const sobran = [];
+  for (const paso of pasos) {
+    for (const participante of paso.participantes) {
+      const deEste = porParticipante.get(participante.id) || [];
+      const respondidos = deEste.filter((t) => t.respondido);
+      const abiertos = deEste.filter((t) => !t.respondido);
+      const personas = await resolverParticipante(connection, participante, context);
 
-      if (staleIds.length) {
-        await connection.query(
-          `DELETE FROM fill_requests
-           WHERE id IN (${staleIds.map(() => "?").join(", ")})`,
-          staleIds
-        );
+      // Lo que ya respondio se queda, y su persona no vuelve a convocarse.
+      const yaConvocadas = new Set(respondidos.map((t) => Number(t.persona_id)).filter(Boolean));
+      const pendientesDeConvocar = personas.filter((p) => !yaConvocadas.has(Number(p)));
+
+      const reutilizables = [...abiertos];
+      for (const personaId of pendientesDeConvocar) {
+        const mismo = reutilizables.find((t) => Number(t.persona_id) === Number(personaId));
+        if (mismo) {
+          reutilizables.splice(reutilizables.indexOf(mismo), 1);
+          continue;
+        }
+        const aReutilizar = reutilizables.shift();
+        if (aReutilizar) {
+          await actualizarTurno(connection, aReutilizar.id, {
+            estado: "pendiente", personaId, manual: 0, respondido: null, nota: null,
+          });
+        } else {
+          await abrirTurno(connection, {
+            recorridoId, accion, participanteId: participante.id, personaId, manual: 0,
+          });
+        }
+      }
+
+      // Lo que sobra: turnos abiertos que ya no corresponden a nadie. Si NO resuelve nadie, se deja
+      // UNO aparcado --es la senal de que falta responsable-- y se tira el resto.
+      if (!personas.length) {
+        if (!deEste.length) {
+          await abrirTurno(connection, {
+            recorridoId, accion, participanteId: participante.id, personaId: null, manual: 1,
+          });
+        }
+        sobran.push(...reutilizables.slice(1).map((t) => t.id));
+      } else {
+        sobran.push(...reutilizables.map((t) => t.id));
       }
     }
   }
+
+  // Y los turnos de participantes que ya no existen en la receta.
+  const vigentes = new Set(pasos.flatMap((p) => p.participantes.map((x) => x.id)));
+  sobran.push(...existentes.filter((t) => !vigentes.has(t.participante_id) && !t.respondido).map((t) => t.id));
+
+  await borrarTurnos(connection, [...new Set(sobran)]);
 };

@@ -72,7 +72,7 @@ las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:
 
 Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables
 (`task_items`) y los documentos producidos. Es donde converge todo: tiene
-**<!-- gen:relaciones-fuera:tareas -->32<!-- /gen --> relaciones con otros dominios**.
+**<!-- gen:relaciones-fuera:tareas -->31<!-- /gen --> relaciones con otros dominios**.
 **<!-- gen:tablas-dominio:tareas -->11<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de tareas](/diagramas/tareas.svg)

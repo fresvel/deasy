@@ -247,6 +247,7 @@ Ref "fk_document_attachments_version":"document_versions"."id" <? "document_atta
 Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
 Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_version_uploads"."document_version_id" [delete: cascade]
 Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: cascade]
+Ref "fk_document_workflow_observations_fill_request":"turnos"."id" ?<? "document_workflow_observations"."fill_request_id"
 Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
 Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
@@ -266,7 +267,6 @@ Ref "fk_turnos_recorrido":"recorridos".("accion", "id") <? "turnos".("accion", "
 //   persons -> document_version_uploads   [identidad]
 //   ediciones -> document_versions   [plantillas]
 //   persons -> document_workflow_observations   [identidad]
-//   fill_requests -> document_workflow_observations   [plantillas]
 //   persons -> document_workflow_observations   [identidad]
 //   signature_requests -> document_workflow_observations   [firmas]
 //   task_items -> fill_flow_templates   [plantillas]

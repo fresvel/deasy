@@ -2631,7 +2631,10 @@ CREATE TABLE IF NOT EXISTS tareas.document_workflow_observations (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_document_workflow_observations_item FOREIGN KEY (task_item_id) REFERENCES task_items(id),
   CONSTRAINT fk_document_workflow_observations_version FOREIGN KEY (document_version_id) REFERENCES document_versions(id),
-  CONSTRAINT fk_document_workflow_observations_fill_request FOREIGN KEY (fill_request_id) REFERENCES fill_requests(id),
+  -- APUNTA A `turnos` DESDE LA FASE 4 DEL FRENTE 24. La columna conserva su nombre --la consume el
+  -- hilo de observaciones y viaja en la API-- pero lo que referencia es el turno, que es donde vive
+  -- hoy «a quien le toco». Renombrarla es cosa del paso 4.
+  CONSTRAINT fk_document_workflow_observations_fill_request FOREIGN KEY (fill_request_id) REFERENCES turnos(id),
   CONSTRAINT fk_document_workflow_observations_signature_request FOREIGN KEY (signature_request_id) REFERENCES signature_requests(id),
   CONSTRAINT fk_document_workflow_observations_author FOREIGN KEY (author_person_id) REFERENCES persons(id),
   CONSTRAINT fk_document_workflow_observations_resolver FOREIGN KEY (resolved_by_person_id) REFERENCES persons(id)
@@ -3045,16 +3048,20 @@ BEGIN
     -- otro puesto— y no tiene que ver con este relevo; uno de `specific_person` nombra a alguien a
     -- proposito y heredarlo seria falsearlo. Y no se hereda una firma YA DADA: solo viajan las
     -- solicitudes SIN RESPONDER.
-    UPDATE fill_requests fr
-       SET assigned_person_id = NEW.person_id
-      FROM fill_flow_steps ffs, document_fill_flows dff, document_versions dv
-     WHERE ffs.id = fr.fill_flow_step_id
-       AND dff.id = fr.document_fill_flow_id
-       AND dv.id = dff.document_version_id
+    -- Sobre `turnos` desde la fase 4 del frente 24, y el `resolver_type` lo trae ahora el
+    -- PARTICIPANTE declarado, no el paso: un paso puede pedir a varias personas y cada una tiene su
+    -- forma de ser encontrada. Solo viaja la del responsable.
+    UPDATE turnos tu
+       SET persona_id = NEW.person_id
+      FROM participantes_declarados pa, recorridos r, document_versions dv
+     WHERE pa.id = tu.participante_id
+       AND r.id = tu.recorrido_id
+       AND r.accion = 'entrega'
+       AND dv.id = r.document_version_id
        AND dv.task_item_id = NEW.task_item_id
-       AND fr.responded_at IS NULL
-       AND ffs.resolver_type = 'task_assignee'
-       AND fr.assigned_person_id IS DISTINCT FROM NEW.person_id;
+       AND tu.respondido IS NULL
+       AND pa.resolver_type = 'task_assignee'
+       AND tu.persona_id IS DISTINCT FROM NEW.person_id;
 
     -- En firma, ademas del `resolver_type` hay que mirar el JSONB `signers`: puede traer resolutores
     -- por firmante que la columna no refleja (es el agujero conocido de `parseStepSigners`). Ante la

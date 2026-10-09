@@ -1279,6 +1279,105 @@ export const SQL_TABLES = [
     ],
     searchFields: ["status"]
   },
+  // ── EL RECORRIDO UNIFICADO (frente 24, fase 4) ────────────────────────────────────────────────
+  // Las cuatro que sustituyen a las ocho. Se exponen en el editor generico por el mismo motivo que
+  // las viejas: son registros tecnicos que hay que poder consultar y, en soporte, corregir.
+  {
+    table: "pasos_declarados",
+    label: "Pasos declarados",
+    category: "Recorrido",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "accion", label: "Accion", type: "select", options: ["entrega", "firma"], required: true },
+      { name: "edicion_id", label: "Edicion", type: "number" },
+      { name: "task_item_id", label: "Entregable", type: "number" },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text" },
+      { name: "nombre", label: "Nombre", type: "text" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "nombre"]
+  },
+  {
+    table: "participantes_declarados",
+    label: "Participantes declarados",
+    category: "Recorrido",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "paso_id", label: "Paso", type: "number", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true, defaultValue: 1 },
+      {
+        name: "resolver_type",
+        label: "Resolucion",
+        type: "select",
+        options: ["task_assignee", "specific_person", "cargo_in_scope"],
+        defaultValue: "task_assignee"
+      },
+      { name: "persona_id", label: "Persona", type: "number" },
+      { name: "cargo_id", label: "Cargo", type: "number" },
+      {
+        name: "unit_scope_type",
+        label: "Alcance de unidad",
+        type: "select",
+        options: ["unit_exact", "context_exact", "all_units"],
+        defaultValue: "context_exact"
+      },
+      { name: "unit_id", label: "Unidad", type: "number" },
+      { name: "slot", label: "Hueco de firma", type: "text" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["slot"]
+  },
+  {
+    table: "recorridos",
+    label: "Recorridos",
+    category: "Recorrido",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "document_version_id", label: "Version documento", type: "number", required: true },
+      { name: "accion", label: "Accion", type: "select", options: ["entrega", "firma"], required: true },
+      {
+        name: "estado",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"],
+        defaultValue: "pendiente"
+      },
+      { name: "paso_actual", label: "Paso actual", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["estado"]
+  },
+  {
+    table: "turnos",
+    label: "Turnos",
+    category: "Recorrido",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "recorrido_id", label: "Recorrido", type: "number", required: true },
+      { name: "accion", label: "Accion", type: "select", options: ["entrega", "firma"], required: true },
+      { name: "participante_id", label: "Participante", type: "number", required: true },
+      { name: "persona_id", label: "Persona", type: "number" },
+      {
+        name: "estado",
+        label: "Estado",
+        type: "select",
+        options: ["pendiente", "en_progreso", "completado", "rechazado", "devuelto", "cancelado"],
+        defaultValue: "pendiente"
+      },
+      { name: "manual", label: "Manual", type: "boolean", defaultValue: 0 },
+      { name: "solicitado", label: "Solicitado", type: "datetime", readOnly: true },
+      { name: "notificado", label: "Notificado", type: "datetime" },
+      { name: "respondido", label: "Respondido", type: "datetime" },
+      { name: "nota_respuesta", label: "Respuesta", type: "textarea" }
+    ],
+    searchFields: ["estado"]
+  },
   {
     table: "fill_requests",
     label: "Solicitudes de entrega",

@@ -18,11 +18,11 @@ import {
 // al integrar este piloto, porque esa regla llegó después de escribirlo.
 import { getLatestDocumentVersionForTaskItem } from "../dominios/tareas/datos/consulta/ultimaVersionDelEntregable.js";
 import {
-  cancelFillFlow,
-  cancelFillRequestsOfFlow,
-  findFillFlowIdByDocumentVersion,
-  getCurrentFillOwnership,
-} from "../dominios/plantillas/datos/flujoDeLlenado.js";
+  buscarRecorrido,
+  cancelarRecorrido,
+  cancelarTurnosAbiertos,
+  turnoAbiertoDelUsuarioEnPasoActual,
+} from "../dominios/tareas/index.js";
 import {
   cancelSignatureInstance,
   cancelSignatureRequestsOfInstance,
@@ -40,13 +40,15 @@ const getCurrentSignatureOwnership = async (connection, documentVersionId, userI
   return getSignatureOwnershipAtStep(connection, documentVersionId, Number(currentStep.stepOrder), userId);
 };
 
-const cancelOpenFillRequests = async (connection, documentVersionId) => {
-  const flowId = await findFillFlowIdByDocumentVersion(connection, documentVersionId);
-  if (!flowId) {
+// UNA FUNCION PARA LOS DOS LADOS desde la fase 4 del frente 24: cancelar un recorrido es cancelar
+// sus turnos abiertos y marcarlo. Eran dos, una por mitad, con el mismo cuerpo.
+const cancelarRecorridoAbierto = async (connection, documentVersionId, accion) => {
+  const recorrido = await buscarRecorrido(connection, documentVersionId, accion);
+  if (!recorrido) {
     return;
   }
-  await cancelFillRequestsOfFlow(connection, flowId, RESET_NOTE);
-  await cancelFillFlow(connection, flowId);
+  await cancelarTurnosAbiertos(connection, Number(recorrido.id), ESTADO_RECORRIDO.CANCELADO, RESET_NOTE);
+  await cancelarRecorrido(connection, Number(recorrido.id), ESTADO_RECORRIDO.CANCELADO);
 };
 
 const cancelOpenSignatureRequests = async (connection, documentVersionId) => {
@@ -111,7 +113,7 @@ export const resetDocumentWorkflowForTaskItem = async ({
   // se salta este y no se relaja: son dos permisos distintos, no uno mas laxo.
   const fillOwnership = bypassStepOwnership
     ? null
-    : await getCurrentFillOwnership(connection, documentVersionId, userId);
+    : await turnoAbiertoDelUsuarioEnPasoActual(connection, documentVersionId, "entrega", userId);
   const signatureOwnership = bypassStepOwnership
     ? null
     : await getCurrentSignatureOwnership(connection, documentVersionId, userId);
@@ -123,7 +125,7 @@ export const resetDocumentWorkflowForTaskItem = async ({
     throw error;
   }
 
-  await cancelOpenFillRequests(connection, documentVersionId);
+  await cancelarRecorridoAbierto(connection, documentVersionId, "entrega");
   await cancelOpenSignatureRequests(connection, documentVersionId);
   await transitionDocumentVersionState(connection, documentVersionId, "Cancelado");
 

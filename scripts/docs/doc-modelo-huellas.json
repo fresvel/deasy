@@ -343,7 +343,7 @@
     ]
   },
   "document_workflow_observations": {
-    "huella": "c6791807de744c34",
+    "huella": "39f284d5e6ca99d2",
     "paginas": [
       "datos/firmas-y-dominios.md",
       "modelo/cierre.md",
@@ -597,6 +597,20 @@
       "orden-de-lectura.md"
     ]
   },
+  "participantes_declarados": {
+    "huella": "5d80a1fe1ff10a70",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md"
+    ]
+  },
+  "pasos_declarados": {
+    "huella": "53e3ea3776eedf70",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md"
+    ]
+  },
   "password_reset_codes": {
     "huella": "cd00af5e18d552e8",
     "paginas": [
@@ -797,6 +811,15 @@
       "complemento/mapa-con-campos.md",
       "modelo/organizacion.md",
       "orden-de-lectura.md"
+    ]
+  },
+  "recorridos": {
+    "huella": "c6e4f96d8bbc0e23",
+    "paginas": [
+      "modelo/flujo-de-entrega.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/vocabularios-de-estado.md"
     ]
   },
   "relation_unit_types": {
@@ -1082,6 +1105,18 @@
       "complemento/mapa-con-campos.md",
       "modelo/organizacion.md",
       "orden-de-lectura.md"
+    ]
+  },
+  "turnos": {
+    "huella": "b12cb45204c5c6fe",
+    "paginas": [
+      "modelo/flujo-de-entrega.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/tenencias-y-relevo.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
     ]
   },
   "unit_positions": {

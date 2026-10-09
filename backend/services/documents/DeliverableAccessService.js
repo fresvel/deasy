@@ -198,12 +198,12 @@ export const ACCESS_SOURCES = Object.freeze([
     key: "flujo_entrega",
     grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Participó en el flujo de entrega",
-    sql: `SELECT fr.assigned_person_id AS person_id
-          FROM fill_requests fr
-          INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-          INNER JOIN document_versions dv ON dv.id = dff.document_version_id
+    sql: `SELECT tu.persona_id AS person_id
+          FROM turnos tu
+          INNER JOIN recorridos r ON r.id = tu.recorrido_id AND r.accion = 'entrega'
+          INNER JOIN document_versions dv ON dv.id = r.document_version_id
           INNER JOIN alcance a ON a.task_item_id = dv.task_item_id
-          WHERE fr.assigned_person_id IS NOT NULL`,
+          WHERE tu.persona_id IS NOT NULL`,
   },
   {
     key: "flujo_firma",

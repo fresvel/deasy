@@ -3,7 +3,12 @@ import {
   normalizeDocumentVersionStatus,
 } from "./DocumentStateService.js";
 import { ensureSignatureFlowForDocumentVersion } from "./DocumentSignatureWorkflowService.js";
-import { actualizarAvanceDelFlujo } from "../../dominios/plantillas/index.js";
+import {
+  actualizarAvanceDelRecorrido,
+  idsDeTurnosDelPaso,
+  leerTurnosDelRecorrido,
+  reabrirTurnos,
+} from "../../dominios/tareas/index.js";
 export {
   syncDocumentProgressFromDocumentSignature,
   syncDocumentProgressFromDocumentVersionSignatureSummary,
@@ -27,10 +32,12 @@ const arePreviousStepsApproved = (stepSummaries, stepOrder) =>
     .filter((item) => Number(item.stepOrder) < Number(stepOrder))
     .every((item) => item.approved);
 
+// El resumen POR PASO: cuantos turnos lleva y como van. Lee `turnos` --la tabla unificada-- y el
+// orden lo trae el paso declarado, no la solicitud.
 const summarizeFillRequests = (rows) => {
   const byStep = new Map();
   for (const row of rows) {
-    const stepOrder = Number(row.step_order);
+    const stepOrder = Number(row.paso_orden);
     if (!byStep.has(stepOrder)) {
       byStep.set(stepOrder, {
         stepOrder,
@@ -43,7 +50,7 @@ const summarizeFillRequests = (rows) => {
     }
     const summary = byStep.get(stepOrder);
     summary.total += 1;
-    const code = normalizeCode(row.request_status);
+    const code = normalizeCode(row.estado);
     if (FILL_APPROVED.has(code)) summary.approvedCount += 1;
     else if (FILL_REJECTED.has(code)) summary.rejectedCount += 1;
     else if (FILL_ACTIVE.has(code)) summary.activeCount += 1;
@@ -73,67 +80,34 @@ const getCurrentDocumentVersionStatus = async (connection, documentVersionId) =>
 
 export const syncDocumentProgressFromFillRequest = async (connection, fillRequestId) => {
   const [contextRows] = await connection.query(
-    `SELECT
-       fr.id,
-       fr.document_fill_flow_id,
-       dff.document_version_id
-     FROM fill_requests fr
-     INNER JOIN document_fill_flows dff ON dff.id = fr.document_fill_flow_id
-     WHERE fr.id = ?
-     LIMIT 1`,
+    `SELECT t.id, t.recorrido_id, r.document_version_id
+       FROM turnos t
+       INNER JOIN recorridos r ON r.id = t.recorrido_id
+      WHERE t.id = ?
+      LIMIT 1`,
     [fillRequestId]
   );
   const context = contextRows?.[0];
   if (!context) return null;
 
-  const [rows] = await connection.query(
-    `SELECT
-       fr.id,
-       fr.status AS request_status,
-       ffs.step_order
-     FROM fill_requests fr
-     INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
-     WHERE fr.document_fill_flow_id = ?
-     ORDER BY ffs.step_order ASC, fr.id ASC`,
-    [context.document_fill_flow_id]
-  );
+  let rows = await leerTurnosDelRecorrido(connection, Number(context.recorrido_id));
   if (!rows.length) return null;
 
   let stepSummaries = summarizeFillRequests(rows);
   let nextStepOrder = firstPendingStepOrder(stepSummaries);
 
   if (nextStepOrder && arePreviousStepsApproved(stepSummaries, nextStepOrder)) {
-    const currentStepRows = rows.filter((row) => Number(row.step_order) === Number(nextStepOrder));
-    const allReturned = currentStepRows.length > 0 && currentStepRows.every((row) => normalizeCode(row.request_status) === "devuelto");
+    const currentStepRows = rows.filter((row) => Number(row.paso_orden) === Number(nextStepOrder));
+    const allReturned = currentStepRows.length > 0 && currentStepRows.every((row) => normalizeCode(row.estado) === "devuelto");
     if (allReturned) {
-      await connection.query(
-        // PostgreSQL no admite `UPDATE ... INNER JOIN ... SET` (eso es multi-tabla de MySQL): usa
-        // `UPDATE ... SET ... FROM ... WHERE`, y las columnas del SET van SIN cualificar.
-        // Estuvo con la sintaxis vieja desde la migracion y reventaba con
-        // `syntax error at or near "INNER"`, dejando `return` inservible. Ver zzzz_sign_workflow.
-        `UPDATE fill_requests fr
-            SET status = 'pendiente',
-                responded_at = NULL
-           FROM fill_flow_steps ffs
-          WHERE ffs.id = fr.fill_flow_step_id
-            AND fr.document_fill_flow_id = ?
-            AND ffs.step_order = ?
-            AND fr.status = 'devuelto'`,
-        [context.document_fill_flow_id, nextStepOrder]
+      // Dos pasos: los ids los resuelve la consulta que cruza, la escritura recibe ids.
+      await reabrirTurnos(
+        connection,
+        await idsDeTurnosDelPaso(connection, Number(context.recorrido_id), nextStepOrder, { soloDevueltos: true }),
+        // La nota se CONSERVA: es el motivo por el que el paso volvio, y quien lo rehaga lo necesita.
+        { conservarNota: true }
       );
-
-      const [refreshedRows] = await connection.query(
-        `SELECT
-           fr.id,
-           fr.status AS request_status,
-           ffs.step_order
-         FROM fill_requests fr
-         INNER JOIN fill_flow_steps ffs ON ffs.id = fr.fill_flow_step_id
-         WHERE fr.document_fill_flow_id = ?
-         ORDER BY ffs.step_order ASC, fr.id ASC`,
-        [context.document_fill_flow_id]
-      );
-      rows.splice(0, rows.length, ...refreshedRows);
+      rows = await leerTurnosDelRecorrido(connection, Number(context.recorrido_id));
       stepSummaries = summarizeFillRequests(rows);
       nextStepOrder = firstPendingStepOrder(stepSummaries);
     }
@@ -152,7 +126,7 @@ export const syncDocumentProgressFromFillRequest = async (connection, fillReques
   else if (allApproved) flowStatus = "completado";
   else if (anyActive) flowStatus = "en_progreso";
 
-  await actualizarAvanceDelFlujo(connection, context.document_fill_flow_id, flowStatus, nextStepOrder);
+  await actualizarAvanceDelRecorrido(connection, Number(context.recorrido_id), flowStatus, nextStepOrder);
 
   if (anyRejected) {
     await transitionDocumentVersionState(connection, Number(context.document_version_id), "Observado");
@@ -178,7 +152,7 @@ export const syncDocumentProgressFromFillRequest = async (connection, fillReques
 
   return {
     documentVersionId: Number(context.document_version_id),
-    documentFillFlowId: Number(context.document_fill_flow_id),
+    documentFillFlowId: Number(context.recorrido_id),
     flowStatus,
     nextStepOrder,
   };

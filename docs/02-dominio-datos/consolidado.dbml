@@ -1583,7 +1583,7 @@ Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_
 Ref "fk_document_versions_artifact":"ediciones"."id" ?<? "document_versions"."edicion_id"
 Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: cascade]
 Ref "fk_document_workflow_observations_author":"persons"."id" <? "document_workflow_observations"."author_person_id"
-Ref "fk_document_workflow_observations_fill_request":"fill_requests"."id" ?<? "document_workflow_observations"."fill_request_id"
+Ref "fk_document_workflow_observations_fill_request":"turnos"."id" ?<? "document_workflow_observations"."fill_request_id"
 Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
 Ref "fk_document_workflow_observations_resolver":"persons"."id" ?<? "document_workflow_observations"."resolved_by_person_id"
 Ref "fk_document_workflow_observations_signature_request":"signature_requests"."id" ?<? "document_workflow_observations"."signature_request_id"

@@ -95,7 +95,7 @@ const ruta = (id, accion) => `/sign/fill-requests/${id}/${accion}`;
 
 const listarSolicitudes = async () => {
   const admin = await tokenFor("admin");
-  const res = await get("/admin/sql/fill_requests", { token: admin });
+  const res = await get("/admin/sql/turnos", { token: admin });
   return Array.isArray(res.body) ? res.body : res.body?.data ?? [];
 };
 
@@ -103,7 +103,7 @@ const listarSolicitudes = async () => {
 // SQL: es la misma vía que ya usa zz_task_generation para reasignar el responsable.
 const ponerEnEstado = async (data) => {
   const admin = await tokenFor("admin");
-  const res = await put("/admin/sql/fill_requests", {
+  const res = await put("/admin/sql/turnos", {
     token: admin,
     body: { keys: { id: miSolicitud }, data },
   });
@@ -121,7 +121,7 @@ const estadoActual = async () => {
 before(async () => {
   await waitForReady();
   const filas = await listarSolicitudes();
-  const mia = filas.find((fila) => Number(fila.assigned_person_id) === USUARIO_ID);
+  const mia = filas.find((fila) => Number(fila.persona_id) === USUARIO_ID);
   assert.ok(
     mia,
     "no hay ninguna solicitud de entrega de la persona usuario: ¿corrió setup/seed_execution.mjs?",
@@ -193,7 +193,7 @@ test("POST .../start de una solicitud ajena, con el gestor -> 403 (es propiedad,
 // ─── 2. Transiciones válidas e inválidas, conducidas por el responsable ─────────────────────────
 
 test("pendiente -> start -> 200 en_progreso", async () => {
-  await ponerEnEstado({ status: "pendiente", responded_at: null, response_note: null });
+  await ponerEnEstado({ estado: "pendiente", respondido: null, nota_respuesta: null });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "start"), { token });
   assert.equal(res.status, 200, `start desde pendiente debe funcionar: ${JSON.stringify(res.body)}`);
@@ -228,8 +228,8 @@ test("en_progreso -> return con motivo -> 200", async () => {
 test("tras el return, el paso se reactiva y el motivo queda guardado", async () => {
   const fila = await estadoActual();
   matchSnapshot(SUITE, "return_efecto", {
-    status: fila?.status ?? null,
-    response_note: fila?.response_note ?? null,
+    status: fila?.estado ?? null,
+    response_note: fila?.nota_respuesta ?? null,
   });
 });
 
@@ -253,7 +253,7 @@ for (const accion of ACCIONES) {
 }
 
 test("pendiente -> cancel -> 200 cancelado (y el flujo del documento vuelve a pendiente)", async () => {
-  await ponerEnEstado({ status: "pendiente", responded_at: null, response_note: null });
+  await ponerEnEstado({ estado: "pendiente", respondido: null, nota_respuesta: null });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "cancel"), { token });
   assert.equal(res.status, 200, `cancel desde pending debe funcionar: ${JSON.stringify(res.body)}`);
@@ -273,7 +273,7 @@ test("cancelado -> approve -> 409 (cancelar también es terminal)", async () => 
 // firma y el archivo de trabajo no es un PDF" salía como 500. Ahora hay `assert`: el contrato dejó de
 // ser "revienta" y pasó a ser el mismo 409 que la transición ilegal y que "sin responsable resoluble".
 test("approve del último paso sin PDF en working -> 409 (no 500: es regla de negocio)", async () => {
-  await ponerEnEstado({ status: "pendiente", responded_at: null, response_note: null });
+  await ponerEnEstado({ estado: "pendiente", respondido: null, nota_respuesta: null });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "approve"), { token });
   assert.equal(res.status, 409, "aprobar sin PDF es un conflicto de estado, no un fallo del servidor");
@@ -282,7 +282,7 @@ test("approve del último paso sin PDF en working -> 409 (no 500: es regla de ne
 
 test("el approve fallido no cambió el estado de la solicitud", async () => {
   const fila = await estadoActual();
-  matchSnapshot(SUITE, "approve_sin_pdf_rollback", { status: fila?.status ?? null });
+  matchSnapshot(SUITE, "approve_sin_pdf_rollback", { status: fila?.estado ?? null });
 });
 
 // ─── 4. Solicitudes sin responsable resoluble ───────────────────────────────────────────────────
@@ -297,7 +297,7 @@ test("el approve fallido no cambió el estado de la solicitud", async () => {
 // existencia de la solicitud ya la revela el par 404/403 de la sección 1, así que responder lo
 // mismo a los dos no filtra nada nuevo.
 test("sin responsable y sin modo manual -> 409 para el responsable original", async () => {
-  await ponerEnEstado({ assigned_person_id: null, status: "pendiente" });
+  await ponerEnEstado({ persona_id: null, estado: "pendiente" });
   const token = await tokenFor("usuario");
   const res = await post(ruta(miSolicitud, "start"), { token });
   assert.equal(res.status, 409, "una solicitud sin responsable es un conflicto de estado, no un 500");
@@ -314,7 +314,7 @@ test("sin responsable y sin modo manual -> el MISMO 409 para un tercero (no hay 
 // 🔴 DEFECTO 4 — la solicitud manual se la queda quien la inicie. Es el comportamiento buscado para
 // pasos "manuales", pero hoy no hay ninguna restricción de quién puede reclamarlos.
 test("sin responsable pero manual -> un tercero la INICIA y se la auto-asigna", async () => {
-  await ponerEnEstado({ assigned_person_id: null, status: "pendiente", is_manual: 1 });
+  await ponerEnEstado({ persona_id: null, estado: "pendiente", manual: 1 });
   const token = await tokenFor("gestor");
   const res = await post(ruta(miSolicitud, "start"), { token });
   assert.equal(res.status, 200, `manual + sin responsable debe permitir el auto-reclamo: ${JSON.stringify(res.body)}`);
@@ -324,8 +324,8 @@ test("sin responsable pero manual -> un tercero la INICIA y se la auto-asigna", 
 test("tras el auto-reclamo, el responsable de la solicitud es quien la inició", async () => {
   const fila = await estadoActual();
   matchSnapshot(SUITE, "manual_autoasignacion_efecto", {
-    reclamada_por_el_gestor: Number(fila?.assigned_person_id) === FIXTURE.gestorPersonId,
-    status: fila?.status ?? null,
+    reclamada_por_el_gestor: Number(fila?.persona_id) === FIXTURE.gestorPersonId,
+    status: fila?.estado ?? null,
   });
 });
 
@@ -334,9 +334,9 @@ test("tras el auto-reclamo, el responsable de la solicitud es quien la inició",
 test("con PDF en working, el responsable aprueba -> 200 completado (flowStatus=completado)", async () => {
   const admin = await tokenFor("admin");
   await ponerEnEstado({
-    assigned_person_id: USUARIO_ID,
-    is_manual: 0,
-    status: "pendiente",
+    persona_id: USUARIO_ID,
+    manual: 0,
+    estado: "pendiente",
     responded_at: null,
     response_note: null,
   });
