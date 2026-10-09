@@ -191,9 +191,24 @@ atada a las páginas donde vale.** Perdonar `tipos_documento` en la página que 
 correcto; que aparezca en una página nueva, no — y el gate lo dice. **No añadas una excepción para
 callar el gate**: si no puedes escribir el motivo, la página está mal.
 
-⚠️ **Un diagrama mermaid también es documentación.** Los `erDiagram` y los `flowchart` del sitio
-nombran tablas y columnas: si borras una, el diagrama queda mintiendo igual que el texto, y **ahí el
-`grep` sí te ayuda**.
+⚠️ **Un diagrama mermaid también es documentación, y TIENE SU PROPIA PUERTA — que no es ninguna de
+las tres de arriba.** Los `erDiagram` y los `flowchart` del sitio nombran tablas y columnas: si
+borras una, el diagrama queda mintiendo igual que el texto.
+
+```bash
+node scripts/docs/check-diagramas-coherentes.mjs   # que la MISMA tabla no se dibuje de dos formas
+```
+
+**Córrela con las otras.** Corre en CI (`docs-links.yml`) y **dejó `develop` en rojo durante dos
+días** sin que nadie lo viera: al cerrar la fase 4 del frente 24 se reescribió
+`modelo/flujo-de-firma.md` dibujando `turnos` con 5 de sus 11 columnas, se pasaron
+`check-doc-modelo` y `check-enlaces-internos` —que son las dos que este fichero nombraba— y **ésta
+no se ejecutó**. La frase «un diagrama es documentación» ya estaba escrita aquí; lo que faltaba era
+el comando al lado.
+
+**Dibujar sólo unas columnas es legítimo** —una página puede querer enseñar nada más lo suyo— y se
+declara poniendo **`%% parcial`** dentro del bloque, con el motivo y un enlace a donde esté la tabla
+completa. Lo que la puerta no acepta es la contradicción silenciosa.
 
 ⚠️ **No confundas el modelo generado con la prosa.** `docs/02-dominio-datos/` y
 `docs/public/diagramas/` los regenera `gen-dbml.sh` y tienen su gate; las páginas de
