@@ -16,7 +16,7 @@ incompatibles.**
 | **F4** · Cuadrar los otros tres caminos | F4.1 ✅ · F4.2 ✅ | ✅ **2 de 2** |
 | **F5** · Cerrar la deuda de escritura | F5.1 ✅ · F5.2 ✅ · F5.3 ✅ · F5.4 ⬜ · F5.5 ✅ · F5.6 ✅ | 🟡 **5 de 6** |
 | **F6** · El dominio, dentro de la base | F6.1 ✅ · F6.2 ✅ · F6.3 ✅ · F6.4 ✅ · F6.5 ⛔ | ✅ **4 de 4** |
-| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⛔ · F7.4 ✅ · F7.5 ⬜ | 🟡 **3 de 5** |
+| **F7** · Reordenar el backend por dominios | F7.0 🟡 · F7.1 ✅ · F7.2 ✅ · F7.3 ⛔ · F7.4 ✅ · F7.5 🟡 **4/26 tablas** | 🟡 **3 de 5** |
 
 ## F6 · El dominio, dentro de la base — 4 de 5
 
@@ -124,7 +124,7 @@ de la ingeniería es explícito.
 | **F5.1** | `telefono_verification_keys` — y con ella la verificación por canal, que sobrevivía a un cambio de número | ✅ |
 | **F5.2** | ✅ `emails` — `emailVerification.js` llama a `marcarVerificado` del `datos/` de `identidad` por su puerta | ✅ |
 | **F5.3** | ✅ `persons` — las DOS escrituras de `services/mail` (`password_hash` y `status`) pasan por la puerta de `identidad` | ✅ |
-| **F5.4** | `task_items` — `services/tasks` lo inserta y `services/documents` lo toca. **Se cierra con F7.5**, cuando `tareas` se mueva a su dominio | ⬜ |
+| **F5.4** | `task_items` — `services/tasks` lo inserta y `services/documents` lo toca. **Se cierra con F7.5**, cuando `tareas` se mueva a su dominio. **Es la ÚNICA línea que queda en `_deuda_escritura`**: la otra, `fill_requests`, se cerró sola el 2026-10-09 porque la tabla murió con el frente 24 | ⬜ |
 | **F5.5** | `document_versions` — `user_controler.js:727` hace un `UPDATE` que es de `services/documents` | ✅ **la cerró F7.2**: el `UPDATE` se fue a `DeliverableUploadService.js` y **la puerta avisó sola** |
 | **F5.6** | ✅ `chat_notifications` — `AvisoDeCanalCaido` usa `crearNotificacion` por la puerta de `chat`. **No hizo falta el módulo de avisos** | ✅ |
 
@@ -625,8 +625,13 @@ Y de ahí sale la conclusión que reordena el trabajo:
 
 Por eso el piloto vive en la rama **`f7-flujo-piloto`** y **no se fusiona**: `develop` tiene que
 quedarse con la puerta en verde. Y por eso F7.5 va **tabla por tabla**, no fichero por fichero —
-`signature_requests` y `signature_flow_instances` las escriben 2 ficheros cada una, `fill_requests`
-cinco, y hasta que se muevan los cinco la tabla tiene dos dueños.
+`signature_requests` y `signature_flow_instances` las escribían 2 ficheros cada una, `fill_requests`
+cinco, y hasta que se movieran los cinco la tabla tenía dos dueños.
+
+⚠️ **Esas tres tablas YA NO EXISTEN**, y el ejemplo se queda a propósito porque el razonamiento sigue
+valiendo. Las mató la fase 4 del **frente 24** (el recorrido unificado), que al colapsarlas en
+`recorridos` + `turnos` **movió su escritura a `dominios/tareas/datos/`** — o sea, hizo el trabajo de
+F7.5 para ellas sin llamarlo así. Ver «La re-medida de F7.5».
 
 ⚠️ **Segundo hallazgo, sin resolver: un flujo depende de otro flujo.** `rehacerDocumento.js` necesita
 `resolveCurrentSignatureStep`, que vive en `DocumentSignatureWorkflowService.js` — otro de los siete.
@@ -643,7 +648,66 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
 | **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · **`organizacion` ✅** · **`identidad` ✅** (la PERSONA, con su subcapa; los otros cuatro asuntos son decisión de F7.0) | ✅ **4 de 4** |
-| **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto), en este orden: `procesos` (4 escritores ajenos) → `firmas` (5) → `plantillas` (7) → `tareas` (7). Sus escritores ajenos son casi los mismos ficheros que F7.1 y F7.2 ya tocaron | ⬜ |
+| **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto). **RE-MEDIDA el 2026-10-09** tras cerrar el frente 24, que adelantó parte: hoy son **4 de 26 tablas con dueño único** y el orden cambia a `firmas` (1 tabla repartida) → `plantillas` (3) → `tareas` (9) → `procesos` (7, y sin empezar). Detalle en «La re-medida de F7.5» | 🟡 **4 de 26 tablas** |
+
+## La re-medida de F7.5 (2026-10-09) — lo que el frente 24 adelantó, y lo que destapó
+
+Este plan daba F7.5 por **no empezada**, con cuatro dominios intactos y un orden razonado sobre
+tablas que entonces existían. **Tres de las que nombraba están muertas** y la cuenta ya no es cero.
+Medido con la misma forma que la comprobación C —quitando los comentarios antes de buscar, y sin
+contar el harness ni los `scripts/`, que no son dueños—:
+
+| Dominio | Tablas | Con **dueño único** | Repartidas | Qué hay ya en `dominios/` |
+|---|--:|--:|--:|---|
+| **`firmas`** | 2 | 0 | **1** (`signature_batch_jobs`, en `services/sign`) | sólo el `index.js` |
+| **`plantillas`** | 5 | **2** | 3 | `index.js` + `datos/` + `datos/consulta/` |
+| **`tareas`** | 11 | **2** | 9 | `index.js` + `datos/` (2) + `datos/consulta/` (2) |
+| **`procesos`** | 8 | 0 | **7** | ⛔ **la carpeta no existe** |
+| | **26** | **4** | **20** | |
+
+**`signature_statuses` y `term_types` no tienen escritor localizable**: son catálogos que siembra el
+esquema, así que no son trabajo de F7.5 — y conviene no contarlas como pendientes.
+
+### Tres cosas que cambian el plan, no sólo las cifras
+
+**1 · El orden se invierte en los extremos.** Era `procesos` → `firmas` → `plantillas` → `tareas`,
+contando *escritores ajenos por dominio*. Contando **tablas repartidas**, que es la unidad que el
+piloto demostró, sale al revés en las puntas: **`firmas` es hoy casi gratis** (una tabla, un escritor,
+`services/sign`) y **`procesos` es el más caro** (7 de 8 repartidas, cero adelantado, y sus escritores
+son `services/admin` y `services/system`, que son los dos transversales declarados — así que mover
+`procesos` obliga a decidir antes qué pasa con ellos, o sea **depende de F7.0**).
+
+**2 · Los 4 ya cerrados los cerró el frente 24, y no por este plan.** `recorridos` y `turnos` nacieron
+con su escritura en `dominios/tareas/datos/`, y `pasos_declarados` y `participantes_declarados` en
+`dominios/plantillas/datos/`. Es la demostración de algo que este plan ya sospechaba al revés: **es
+más barato colocar bien una tabla NUEVA que mover una vieja**. Cuando un frente vaya a crear tablas,
+que las cree en su dominio — sale gratis y descuenta F7.5.
+
+**3 · El «flujo depende de flujo» se disolvió, y no hace falta decidirlo.** Este plan lo dejó abierto
+como segundo hallazgo: `rehacerDocumento.js` importaba `resolveCurrentSignatureStep` de
+`DocumentSignatureWorkflowService.js`, otro de los siete flujos. **Ya no**: el paso 3b del frente 24
+le dejó **cero consultas**, y hoy `rehacerDocumento.js` sólo importa de `dominios/tareas/`, de
+`config/` y de dos servicios de documentos. La pregunta *«¿puede un flujo importar de otro?»* sigue
+sin respuesta en F7.0, pero **ya no bloquea a nadie**.
+
+### Y una consecuencia que la puerta grita y nadie ha atendido
+
+`check-mapa-tablas.mjs` emite **tres avisos D** que son trabajo de F7.5 creado por el frente 24:
+
+```
+⚠ D · 'services/admin/generation/documents.js' ya sólo escribe un dominio: deja de ser un flujo y se mueve a él
+⚠ D · 'services/documents/DocumentSignatureWorkflowService.js' ya sólo escribe un dominio: deja de ser un flujo y se mueve a él
+⚠ D · 'flujos/rehacerDocumento.js' ya sólo escribe un dominio: deja de ser un flujo y se mueve a él
+```
+
+Los tres escriben **sólo `tareas`**, porque unificar el recorrido eliminó el cruce. `_flujos` bajó de
+**7 declarados a 5**, y de esos 5 sólo **2 cruzan de verdad** (`templateLifecycle.js` y
+`GeneralTaskService.js`). Así que la lista de flujos, que es cerrada por diseño, está hoy **más que
+duplicada respecto a lo que hace falta** — y eso se arregla moviendo los tres a `dominios/tareas/`,
+que es exactamente el primer tramo de F7.5 sobre ese dominio.
+
+⚠️ **Es un aviso, no un fallo**, así que CI sigue en verde y puede quedarse ahí indefinidamente. Esa
+es la forma en que esta deuda se hace invisible: la puerta la dice en cada corrida y nadie la lee.
 
 ### F7.1 ✅ — declarado, y lo que destapó
 
