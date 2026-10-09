@@ -90,13 +90,13 @@ const categoriasConPresentacion = () => {
 const declaradas = categoriasDeclaradas();
 const enseñadas = categoriasEnseñadas();
 const presentacion = categoriasConPresentacion();
-const invisibles = [...declaradas].filter((c) => !enseñadas.has(c)).sort();
-const fantasmas = [...enseñadas].filter((c) => !declaradas.has(c)).sort();
+const invisibles = [...declaradas].filter((c) => !enseñadas.has(c)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+const fantasmas = [...enseñadas].filter((c) => !declaradas.has(c)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 // Solo se exige presentacion a lo que de verdad se enseña: una categoria declarada que ningun grupo
 // lista ya la denuncia `invisibles`, y pedirle encima un icono seria contarlo dos veces.
-const sinPresentacion = [...enseñadas].filter((c) => !presentacion.has(c)).sort();
-const sinDescripcion = [...enseñadas].filter((c) => presentacion.get(c) === "").sort();
-const presentacionHuerfana = [...presentacion.keys()].filter((c) => !enseñadas.has(c)).sort();
+const sinPresentacion = [...enseñadas].filter((c) => !presentacion.has(c)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+const sinDescripcion = [...enseñadas].filter((c) => presentacion.get(c) === "").sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+const presentacionHuerfana = [...presentacion.keys()].filter((c) => !enseñadas.has(c)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
 const fallos = invisibles.length + fantasmas.length + sinPresentacion.length
   + sinDescripcion.length + presentacionHuerfana.length;

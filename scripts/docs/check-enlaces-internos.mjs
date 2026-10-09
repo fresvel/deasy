@@ -94,7 +94,7 @@ if (rotos.length) {
   console.error(`\n✗ ${rotos.length} enlace(s) interno(s) roto(s):\n`);
   for (const r of rotos) console.error(`  ${r.fichero}:${r.linea}  ->  ${r.destino}`);
   console.error(`\n  Paginas que SI existen (${validas.size}):`);
-  console.error([...validas].sort().map((p) => `    ${p}`).join('\n'));
+  console.error([...validas].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).map((p) => `    ${p}`).join('\n'));
   process.exit(1);
 }
 

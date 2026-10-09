@@ -44,7 +44,7 @@ export const entradasDeLectura = ({ actorId, recurso, tabla, filas }) => {
 // convertiria la bitacora en otra copia del dato que protege -- y esta copia la lee Auditor.
 export const entradasDeEscritura = ({ recurso, tabla, accion, fila, campos = [] }) => {
   if (!esRecursoSensible(recurso) || !fila) return [];
-  const nombres = [...new Set(campos)].filter((campo) => campo !== COLUMNA_TITULAR).sort();
+  const nombres = [...new Set(campos)].filter((campo) => campo !== COLUMNA_TITULAR).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   return [{
     titular: titularDe(fila, tabla),
     registro: idDe(fila),

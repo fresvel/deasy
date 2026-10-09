@@ -52,9 +52,9 @@ for (const pagina of paginas) {
 }
 
 let incoherentes = 0;
-for (const [tabla, apariciones] of [...declaraciones].sort()) {
+for (const [tabla, apariciones] of [...declaraciones].sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))) {
   if (apariciones.length < 2) continue;
-  const firmas = new Set(apariciones.map((a) => [...a.columnas].sort().join(",")));
+  const firmas = new Set(apariciones.map((a) => [...a.columnas].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(",")));
   if (firmas.size === 1) continue;
   incoherentes++;
   console.log(`\n✖ ${tabla} — dibujada ${apariciones.length} veces con columnas DISTINTAS`);

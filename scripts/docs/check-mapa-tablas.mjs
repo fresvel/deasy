@@ -153,7 +153,7 @@ for (const tabla of tablas) {
   }
   if (deuda[tabla]) continue;
   fallos.push(
-    `C · '${tabla}' la escriben ${sitios.size} sitios: ${[...sitios].sort().join(" · ")}. ` +
+    `C · '${tabla}' la escriben ${sitios.size} sitios: ${[...sitios].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).join(" · ")}. ` +
       `Una tabla tiene un dominio dueño; el invariante va donde no se pueda esquivar, no en cada llamador`
   );
 }

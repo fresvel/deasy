@@ -137,7 +137,7 @@ const recorrer = async (dir) => {
   }
 };
 await recorrer(RAIZ_DOCS);
-paginas.sort();
+paginas.sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
 // Un identificador con forma de objeto de base: snake_case entre acentos graves, o un nombre
 // que sabemos que existe. Se mira TAMBIEN dentro de los bloques mermaid: un `erDiagram` que
@@ -186,7 +186,7 @@ huerfanos.sort((a, b) => b[1].size - a[1].size);
 // ── B · COBERTURA ────────────────────────────────────────────────────────────────────────────
 const sinDocumentar = [...tablas]
   .filter((t) => !citas.has(t) && !(excepciones.tablas_sin_pagina ?? {})[t])
-  .sort();
+  .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 
 // ── C · HUELLAS ──────────────────────────────────────────────────────────────────────────────
 // La definicion de una tabla es su CREATE TABLE mas todo lo que la nombra despues: indices,
@@ -212,15 +212,15 @@ const huellaDe = (tabla) => createHash('sha256').update(definicionDe(tabla)).dig
 // La pagina DESCRIBE una tabla si la nombra. Se deriva sola: no hay manifiesto que mantener a
 // mano, y por tanto no hay manifiesto que se quede viejo.
 const huellasActuales = {};
-for (const tabla of [...tablas].sort()) {
-  const donde = [...(citas.get(tabla) ?? [])].sort();
+for (const tabla of [...tablas].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))) {
+  const donde = [...(citas.get(tabla) ?? [])].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   if (donde.length) huellasActuales[tabla] = { huella: huellaDe(tabla), paginas: donde };
 }
 
 if (actualizar) {
   // Cada excepcion recuerda DONDE vale hoy. Si manana aparece en otra pagina, el gate lo dice.
   for (const [n, e] of Object.entries(excepciones.nombres ?? {})) {
-    if (citas.has(n)) e.paginas = [...citas.get(n)].sort();
+    if (citas.has(n)) e.paginas = [...citas.get(n)].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   }
   writeFileSync(EXCEPCIONES, `${JSON.stringify(excepciones, null, 2)}\n`);
   writeFileSync(HUELLAS, `${JSON.stringify(huellasActuales, null, 2)}\n`);

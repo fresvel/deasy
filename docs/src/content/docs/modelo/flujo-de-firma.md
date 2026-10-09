@@ -147,6 +147,10 @@ la duda no se mueve»— que existía exactamente por esto. Hoy es **un** `UPDAT
 :::
 
 ```mermaid
+%% parcial — de `participantes_declarados` y `turnos` se dibujan SOLO las columnas que importan
+%% firmando: el hueco en el papel y el eje de si la firma vale. Las dos tablas son del RECORRIDO y
+%% ahi estan completas: [el recorrido del documento](/modelo/flujo-de-entrega/) y el mapa con todos
+%% los campos. Dibujarlas enteras aqui repetiria once columnas para que se vieran dos.
 erDiagram
   participantes_declarados ||--o{ turnos : "de esta declaracion"
   turnos ||--o{ document_signatures : "produce la firma"

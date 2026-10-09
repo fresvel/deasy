@@ -240,7 +240,7 @@ for (const t of tablas.keys()) {
 const refsOrdenadas = [...refs].sort((a, b) => a.texto.localeCompare(b.texto));
 
 // ── Consolidado ────────────────────────────────────────────────────────────────────────────
-const nombresOrdenados = [...tablas.keys()].sort();
+const nombresOrdenados = [...tablas.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 let consolidado = CABECERA(`Diagramas por dominio: docs/02-dominio-datos/dominios/`);
 consolidado += `Project deasy {\n  database_type: 'PostgreSQL'\n  Note: '''Modelo de datos de Deasy. ${tablas.size} tablas. El color de cabecera indica el dominio.'''\n}\n\n`;
 consolidado += nombresOrdenados.map(bloqueTabla).join('\n');
@@ -266,7 +266,7 @@ for (const [clave, dom] of Object.entries(dominios)) {
 
   let txt = CABECERA(`Dominio: ${dom.titulo}. Reparto: scripts/docs/dominios.json`);
   txt += `Project ${clave} {\n  database_type: 'PostgreSQL'\n  Note: '''${esc(dom.titulo)} — ${esc(dom.descripcion)}'''\n}\n\n`;
-  txt += dom.tablas.slice().sort().map(bloqueTabla).join('\n');
+  txt += dom.tablas.slice().sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)).map(bloqueTabla).join('\n');
   txt += '\n' + internos.map(r => r.texto).join('\n') + '\n';
 
   // Las relaciones que SALEN del dominio se listan como comentario. Si no, el diagrama

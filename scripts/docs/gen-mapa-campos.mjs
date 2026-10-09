@@ -213,7 +213,7 @@ function diagrama(grupo, modelo, fks, direccion = "TB") {
     lineas.push(`  ${r.padre} ${lado}--${unoAUno ? "o|" : "o{"} ${r.hija} : "${r.columna}"`);
   }
   lineas.push("```");
-  const apunta = [...new Set(propias.map((r) => r.padre).filter((t) => !dentro.has(t)))].sort();
+  const apunta = [...new Set(propias.map((r) => r.padre).filter((t) => !dentro.has(t)))].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   const columnas = grupo.reduce((n, t) => n + modelo.tablas.get(t).length, 0);
   return { bloque: lineas.join("\n"), propias, entrantes, apunta, columnas };
 }
@@ -332,8 +332,8 @@ const esquema = new Set(modelo.tablas.keys());
 
 const leidos = MAPAS.map((mapa) => ({ mapa, ...leerMapa(readFileSync(join(DOCS, mapa.origen), "utf8"), esquema) }));
 const union = new Set(leidos.flatMap((l) => [...l.tablas]));
-const enNinguno = [...esquema].filter((t) => !union.has(t)).sort();
-const enLosDos = [...leidos[0].tablas].filter((t) => leidos[1].tablas.has(t)).sort();
+const enNinguno = [...esquema].filter((t) => !union.has(t)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+const enLosDos = [...leidos[0].tablas].filter((t) => leidos[1].tablas.has(t)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
 if (enNinguno.length) {
   falla(`${enNinguno.length} tabla(s) del esquema no estan en ningun mapa: ${enNinguno.join(", ")}.\n` +
     "  Dibujala en complemento/mapa-completo.md o en modelo/mapa-completo.md, dentro del subgrupo que le toque.");
