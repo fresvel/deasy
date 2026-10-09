@@ -293,16 +293,13 @@ Notas: **mantenibilidad A · fiabilidad D · seguridad E**. Abiertas (`resolved=
 | | |
 |---|---|
 | **La cobertura casi se duplica** | 23,3 % → **34,7 %**. Parte es trabajo real (894 unitarios de backend, 495 de frontend, 266 del signer) y **parte es que el informe del signer volvió a existir**: llevaba roto y publicaba `app.py` al 0 % estando al 89 %. No se puede atribuir el reparto sin los informes viejos, así que **no se afirma** |
-| **La densidad de incidencias SUBE un 40 %** | de 5,3 a **7,4 por mil líneas** (420/79 625 → 645/86 776). El código creció un 9 % y las incidencias un 53 %: no es dilución, es deuda nueva |
-| **La seguridad pasa de C a E** | el plan maestro decía «8 vulnerabilidades» (2026-08-09) y hoy son **21**, con **3 BLOCKER** |
+| **La densidad de incidencias sube un 18 %, no un 40 %** | el bruto dice de 5,3 a 7,4 por mil líneas, y **es engañoso**: 122 de las 645 son `S1135`, la palabra española **«todo»** en comentarios en prosa, y 85 de ellas son nuevas. Descontadas —§7 explica por qué no son defectos— queda **de 5,1 a 6,0 por mil** (+18 %). El aumento es real; es menos de la mitad de lo que el número bruto aparenta |
+| **La seguridad pasó de C a E, y volvió a C el mismo día** | hoy son **18** vulnerabilidades abiertas (el maestro citaba «8» del 2026-08-09; la línea base del 08-08 tenía **34**). Las **4 BLOCKER eran falsos positivos** —alfabetos de `TOKEN_CHARS` y la contraseña de un PostgreSQL desechable—, marcadas con su motivo el 2026-10-09: ver §7 |
 
-⚠️ **Las 3 BLOCKER son las tres del tipo que §7 dice no tocar, y conviene mirarlas antes de
-«arreglarlas»:** dos son **alfabetos de caracteres** para generar tokens —`TOKEN_CHARS` en
-`SystemBootstrapService.js:31` y `PERSON_TOKEN_CHARS` en `crud/tableHooks.js:135`—, que no son
-secretos sino el conjunto del que se sortea; la tercera es la contraseña del **PostgreSQL
-desechable** que levanta `scripts/docs/gen-dbml.sh:99`, un contenedor sin puertos publicados que
-muere al terminar el generador. Lo que corresponde es **marcarlas en Sonar con justificación**, no
-reescribirlas — y hasta que se marquen, la nota de seguridad seguirá en E diciendo algo que no es.
+✅ **Las BLOCKER eran 4, no 3, y las cuatro se marcaron el 2026-10-09** con su motivo escrito: el
+detalle fichero a fichero está en **§7**. La cuarta no salía en el recuento de abiertas porque ya
+estaba marcada... **como `WONTFIX` y sin un solo comentario**, que es lo que §7 prohíbe. La nota de
+seguridad bajó de **E a C** al marcarlas, y ése es el valor que de verdad corresponde al resto.
 
 ⚠️ **Y esto desbloquea la lectura de dos frentes del maestro**, que describían agosto porque la
 medición había caducado: el **2** (seguridad) y el **5** (cobertura).
@@ -1541,6 +1538,23 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 - **`useDeliverableView.js`**: proyección read-only, medido. Convertirlo en dueño de su estado
   **invertiría** el acoplamiento.
 - **El núcleo CRUD de `SqlAdminService`** (~460 L): es el buen diseño que sostiene el registro de hooks.
+- **Las CUATRO `S6418` de alfabetos de tokens — marcadas el 2026-10-09, y aquí está el motivo por
+  escrito** porque la marca de Sonar vive en un volumen de Docker y no viaja con el repositorio:
+
+  | Fichero · línea | Por qué la regla se equivoca |
+  |---|---|
+  | `services/system/SystemBootstrapService.js:31` | `TOKEN_CHARS` es el **alfabeto** (62 letras y cifras) del que se sortea la marca de firma, no la marca. Comprobado que el sorteo es seguro: `generateRawToken` usa `crypto.randomBytes`, no `Math.random` |
+  | `services/admin/crud/tableHooks.js:135` | lo mismo con `PERSON_TOKEN_CHARS`; `generatePersonToken` usa `crypto.randomBytes(10)` |
+  | `utils/tokenGenerator.js:4` | la **cuarta copia** del mismo alfabeto, con el mismo `crypto.randomBytes` |
+  | `scripts/docs/gen-dbml.sh:99` | `dbmlgen` es la contraseña de un PostgreSQL **desechable**: se inventa en la misma línea que lo crea, **no publica ningún puerto**, vive en una red creada para esa ejecución y lo destruye el `trap limpiar EXIT`. No da acceso a nada que exista antes ni después |
+
+  **Las cuatro bajaron la nota de seguridad de E a C**, que es lo que de verdad corresponde al resto.
+
+  ⚠️ **La de `tokenGenerator.js` estaba marcada y MAL**: como `WONTFIX` —«no se va a corregir», que
+  **admite que hay un problema**— y **sin ningún comentario**. Una marca sin motivo es indistinguible
+  de un problema ignorado, y es justo lo que esta sección prohíbe. Pasada a `FALSE-POSITIVE` con su
+  razón. **Si marcas algo, el comentario no es opcional.**
+
 - **Los falsos positivos de §4.1** (`S6418` de alfabetos de tokens): marcar en Sonar, no "arreglar".
   `S2871` en particular rompería los golden-master — aunque **su marca ya no figura**, porque la Fase A
   convirtió esos ficheros en tests (§4.4-R1). El censo real de marcas vivas, **28**, está en §4.4-R1 y
@@ -1548,10 +1562,21 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
 - **`S5693` (límite de tamaño de subida) y `S2245` (`Math.random`)**: verificado en §5-H que los 7
   límites existen y que los `Math.random` generan ids de DOM, no secretos. **Marcar, no "arreglar"** —
   salvo `SInput.vue:64`, que sí conviene pasar a `useId()` por coherencia con la Fase B.
-- **`S1135` («TODO») al completo.** Las 21 son la palabra española «todo» en comentarios en prosa; no
-  existe ni un marcador de tarea real en el repo. Están marcadas como FALSE-POSITIVE. **No reescribas
-  comentarios en castellano para silenciar la regla.** Si vuelven a aparecer al escribir comentarios
-  nuevos, márcalas otra vez o desactiva la regla en el perfil de calidad (§5-G).
+- **`S1135` («TODO») al completo, y RE-MEDIDO el 2026-10-09: son 122, no 21.** Siguen siendo la
+  palabra española «todo» en comentarios en prosa —sondeadas diez una a una: *«todo lo que aparece»*,
+  *«Todo dentro de la MISMA transacción»*, *«todo `INSERT` en turnos»*, *«en todo el sistema»*— y sigue
+  sin existir **ni un** marcador de tarea real en el repo. **No reescribas comentarios en castellano
+  para silenciar la regla.**
+
+  ⚠️ **Y esto desmiente la lectura obvia del §2.-1.** Las 122 son **el 19 % de las 645 incidencias**, y
+  **85 de ellas aparecieron desde agosto** — o sea el 30 % del aumento es literalmente haber escrito
+  más comentarios en castellano. Descontándolas, la densidad real pasa de 5,1 a **6,0 por mil líneas**
+  (+18 %), no de 5,4 a 7,4 (+39 %). El aumento existe; es menos de la mitad de lo que parecía.
+
+  ⚠️ **Marcarlas una a una ya no es viable, y la propia sección lo preveía:** la alternativa que deja
+  escrita es **desactivar la regla en el perfil de calidad** (§5-G). Con 122 y creciendo con cada
+  comentario que alguien escriba en español, mantener una lista de 122 marcas es exactamente el
+  cementerio que estos planes evitan. **Es una decisión del dueño y está pendiente.**
 - **`UnitGraphView` / `ProcessGraphView`**: 17 % de similitud, dominio irreducible. Solo extraer
   fontanería y arreglar el selector global de `ProcessGraphView.vue:1098`, que apunta a
   `.unit-graph-canvas` ajeno.
