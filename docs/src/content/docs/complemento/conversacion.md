@@ -38,8 +38,9 @@ hoy**, el hilo es el mismo y se sabe su historia.
 
 Y `stable_key` es lo que permite pedir *«el hilo de este proceso en esta unidad»* sin conocer su
 identificador. Lleva un índice único **parcial** —`WHERE stable_key IS NOT NULL`—, que es la forma
-idiomática de PostgreSQL para la unicidad condicional y que el esquema usa **sólo dos veces**: aquí y
-en `uq_signature_flow_steps_slot`. Las otras **doce** unicidades condicionales se emulan con una
+idiomática de PostgreSQL para la unicidad condicional y que el esquema usa **una sola vez**: aquí.
+Era **dos** hasta el 2026-10-09 —la otra, `uq_signature_flow_steps_slot`, se fue con su tabla en la
+fase 4 del recorrido unificado—. Las otras **catorce** unicidades condicionales se emulan con una
 columna generada más un índice único encima, que es el idioma heredado de MySQL — el mismo que usan
 las tres invariantes de [empleo](/complemento/empleo/) y el jefe de unidad del organigrama.
 

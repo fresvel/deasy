@@ -25,7 +25,7 @@ edición (`edicion_id`), guarda el **orden** en que aparecen los documentos de u
 | `routed` | **no hay** | los que se creen a mano | **al instanciar**, en runtime |
 
 - **Único** (`single`) — el documento y su recorrido están decididos de antemano. Al dispararse el
-  proceso aparece *un* entregable por puesto alcanzado, ya con su flujo de entrega y de firma
+  proceso aparece *un* entregable por puesto alcanzado, ya con su recorrido de entrega y de firma
   puestos. Es el caso del informe que todos los coordinadores deben entregar igual. **Es el único
   modo que el lanzamiento materializa solo**: `ensureTaskItemsForTaskTargets()` filtra
   explícitamente por `item_mode === 'single'`.
@@ -78,7 +78,7 @@ de siembra y un `INSERT` a mano se lo saltaban. El disparador no se lo salta nad
 ## Dos consecuencias del modo que no se ven en la tabla
 
 **Publicar exige flujo, salvo en `routed`.** Al publicar una edición se comprueba que tenga al menos
-un paso de flujo de entrega; la comprobación se omite si la edición está vinculada **solo** en modo
+un paso de entrega en su recorrido; la comprobación se omite si la edición está vinculada **solo** en modo
 `routed`, porque en ese modo el flujo no se autora, se define al enviar.
 
 **El modo viaja con el clon, y hubo que arreglarlo.** Versionar una configuración copia sus

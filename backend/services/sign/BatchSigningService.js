@@ -63,7 +63,7 @@ export const parseBatchDocumentContexts = (rawDocumentContexts) => {
       // Ruta relativa multinivel del PDF dentro de la carpeta cargada (preserva la estructura en la descarga).
       relativePath: String(entry?.relativePath || "").trim() || null,
       metadata: {
-        signatureRequestId: metadata?.signatureRequestId ? Number(metadata.signatureRequestId) : null,
+        turnoId: metadata?.turnoId ? Number(metadata.turnoId) : null,
         documentVersionId: metadata?.documentVersionId ? Number(metadata.documentVersionId) : null,
         documentId: metadata?.documentId ? Number(metadata.documentId) : null,
         processName: String(metadata?.processName || "").trim(),
@@ -254,7 +254,7 @@ export const startBatchSigningLoop = ({ job, files, context, batchDocumentFields
         const documentContext =
           {
             ...context,
-            signatureRequestId: documentContextConfig.signatureRequestId || null,
+            turnoId: documentContextConfig.turnoId || null,
             documentVersionId: documentContextConfig.documentVersionId || null,
             fields: context.signMode === "coordinates" && documentFieldConfig?.fields?.length
               ? documentFieldConfig.fields
@@ -271,10 +271,10 @@ export const startBatchSigningLoop = ({ job, files, context, batchDocumentFields
             status: "success",
             ...result,
             workflow: workflow || null,
-            signatureRequestId: Number(
-              workflow?.signatureRequestId
-              || documentContext.signatureRequestId
-              || documentContextConfig.signatureRequestId
+            turnoId: Number(
+              workflow?.turnoId
+              || documentContext.turnoId
+              || documentContextConfig.turnoId
               || 0
             ) || null,
             documentVersionId: Number(
@@ -304,7 +304,7 @@ export const startBatchSigningLoop = ({ job, files, context, batchDocumentFields
             relativePath: documentRelativePath,
             status: "error",
             error: error.message || "No se pudo firmar el documento.",
-            signatureRequestId: documentContextConfig.signatureRequestId || null,
+            turnoId: documentContextConfig.turnoId || null,
             documentVersionId: documentContextConfig.documentVersionId || null,
           };
           return {

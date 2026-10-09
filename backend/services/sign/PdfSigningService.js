@@ -113,7 +113,7 @@ export const buildSignContext = async (
     use_timestamp: useTimestampRaw,
     tsa_url: tsaUrlRaw,
     allow_untrusted_signer: allowUntrustedSignerRaw,
-    signature_request_id: signatureRequestIdRaw,
+    turno_id: turnoIdRaw,
     document_version_id: documentVersionIdRaw,
   } = body;
   const certificateId = Number(certificateIdRaw);
@@ -189,7 +189,7 @@ export const buildSignContext = async (
     useTimestamp: asBoolean(useTimestampRaw),
     allowUntrustedSigner: asBoolean(allowUntrustedSignerRaw),
     tsaUrl: String(tsaUrlRaw || "").trim() || undefined,
-    signatureRequestId: signatureRequestIdRaw ? Number(signatureRequestIdRaw) : null,
+    turnoId: turnoIdRaw ? Number(turnoIdRaw) : null,
     documentVersionId: documentVersionIdRaw ? Number(documentVersionIdRaw) : null,
   };
 };
@@ -339,7 +339,7 @@ export const processSinglePdfSigning = async ({ file, context }) => {
 };
 
 export const assertSignContextBeforeSigning = async (context) => {
-  if (!context?.signatureRequestId) {
+  if (!context?.turnoId) {
     return null;
   }
   if (!pool) {
@@ -401,7 +401,7 @@ const asBoolean = (value) =>
   String(value ?? "").trim().toLowerCase() === "true" || String(value ?? "").trim() === "1";
 
 export const persistSignatureWorkflowResult = async ({ context, result }) => {
-  if (!pool || (!context.signatureRequestId && !context.documentVersionId)) {
+  if (!pool || (!context.turnoId && !context.documentVersionId)) {
     return null;
   }
 

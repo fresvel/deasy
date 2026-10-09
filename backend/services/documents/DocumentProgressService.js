@@ -78,14 +78,14 @@ const getCurrentDocumentVersionStatus = async (connection, documentVersionId) =>
   return normalizeDocumentVersionStatus(rows?.[0]?.status);
 };
 
-export const syncDocumentProgressFromFillRequest = async (connection, fillRequestId) => {
+export const syncDocumentProgressFromFillRequest = async (connection, turnoId) => {
   const [contextRows] = await connection.query(
     `SELECT t.id, t.recorrido_id, r.document_version_id
        FROM turnos t
        INNER JOIN recorridos r ON r.id = t.recorrido_id
       WHERE t.id = ?
       LIMIT 1`,
-    [fillRequestId]
+    [turnoId]
   );
   const context = contextRows?.[0];
   if (!context) return null;
@@ -152,7 +152,7 @@ export const syncDocumentProgressFromFillRequest = async (connection, fillReques
 
   return {
     documentVersionId: Number(context.document_version_id),
-    documentFillFlowId: Number(context.recorrido_id),
+    recorridoId: Number(context.recorrido_id),
     flowStatus,
     nextStepOrder,
   };

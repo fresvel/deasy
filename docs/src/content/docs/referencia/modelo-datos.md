@@ -11,7 +11,7 @@ generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **<!-- gen:total-tablas -->87<!-- /gen --> tablas y <!-- gen:total-relaciones -->158<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+Son **<!-- gen:total-tablas -->87<!-- /gen --> tablas y <!-- gen:total-relaciones -->157<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
 de <!-- gen:total-tablas -->87<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
@@ -134,7 +134,7 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **nivel*
 | **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
 
 **La regla es una sola: una clave ajena puede apuntar a su propio nivel o a uno inferior, nunca a una
-superior.** Medido sobre las <!-- gen:total-relaciones -->158<!-- /gen --> relaciones del esquema: 102 bajan de nivel, 77 se quedan
+superior.** Medido sobre las <!-- gen:total-relaciones -->157<!-- /gen --> relaciones del esquema: 86 bajan de nivel, 71 se quedan
 en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
 Dos cosas que los niveles enseñan y que ningún diagrama por dominio decía:
@@ -159,20 +159,19 @@ esquema es, literalmente, una carpeta dentro de la base de datos:
 |---|---|
 | `identidad.persons` | la persona |
 | `organizacion.units` | las unidades |
-| `firmas.signature_requests` | las peticiones de firma |
+| `firmas.signature_batch_jobs` | los lotes de firma |
 | `plantillas.ediciones` | las ediciones de una plantilla |
 
 Son ocho —uno por dominio— y en `public` no queda ninguna tabla: solo las doce funciones que usan los
 disparadores.
 
-**Y las consultas del sistema no cambiaron.** Las 555 siguen escribiendo `signature_requests` sin
-decir de qué dominio es, porque la conexión declara los ocho esquemas y PostgreSQL resuelve el nombre
-igual que antes. Lo que se gana es otra cosa:
+**Y las consultas del sistema no cambiaron.** Siguen escribiendo `turnos` sin decir de qué dominio
+es, porque la conexión declara los ocho esquemas y PostgreSQL resuelve el nombre igual que antes. Lo que se gana es otra cosa:
 
 - una consulta **puede** decir de qué dominio es, cuando eso ayude a leerla;
 - `pg_dump -n firmas` saca **un dominio entero**, para inspeccionarlo o copiarlo aparte;
 - y, lo que más vale: **el dominio de una tabla dejó de ser una afirmación en un fichero.** Antes un
-  JSON decía «`signature_requests` es de firmas» y había que creérselo. Ahora lo dice la propia base
+  JSON decía «`turnos` es de tareas» y había que creérselo. Ahora lo dice la propia base
   de datos, y si alguien crea una tabla en el esquema equivocado, falla una puerta de CI.
 
 :::note[Lo que esto NO resuelve]

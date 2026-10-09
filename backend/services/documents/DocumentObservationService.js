@@ -21,8 +21,10 @@ export const getCurrentDocumentVersionId = async (connection, taskItemId) => {
 export const addDocumentObservation = async (connection, {
   taskItemId,
   documentVersionId = null,
-  fillRequestId = null,
-  signatureRequestId = null,
+  // UN turno, no dos. Eran `turnoId` y `turnoId`, y los dos llegaban del mismo
+  // sitio desde el 3b: cual venia relleno lo decidia `phase`, que sigue siendo el parametro que lo
+  // dice. Colapsados con su columna el 2026-10-09.
+  turnoId = null,
   phase,
   kind = "observation",
   message,
@@ -60,14 +62,13 @@ export const addDocumentObservation = async (connection, {
   }
   const [result] = await connection.query(
     `INSERT INTO document_workflow_observations
-       (task_item_id, document_version_id, fill_request_id, signature_request_id,
+       (task_item_id, document_version_id, turno_id,
         phase, kind, message, author_person_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [
       resolvedTaskItemId,
       versionId,
-      fillRequestId ? Number(fillRequestId) : null,
-      signatureRequestId ? Number(signatureRequestId) : null,
+      turnoId ? Number(turnoId) : null,
       phase,
       normalizedKind,
       normalizedMessage,
@@ -95,8 +96,7 @@ export const listDocumentObservations = async (taskItemId, connection = null) =>
        o.id,
        o.task_item_id,
        o.document_version_id,
-       o.fill_request_id,
-       o.signature_request_id,
+       o.turno_id,
        o.phase,
        o.kind,
        o.message,

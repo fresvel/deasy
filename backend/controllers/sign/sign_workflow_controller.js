@@ -13,11 +13,11 @@ const runFillRequestAction = async (req, res, action, nextStatus) => {
       nextStatus,
       note: String(req.body?.note || req.body?.response_note || "").trim() || null,
     });
-    return res.json({ message: "Solicitud de entrega actualizada.", ...result });
+    return res.json({ message: "Turno de entrega actualizado.", ...result });
   } catch (error) {
     console.error("[sign_workflow_controller] Error fill request:", error);
     // Respeta el codigo de negocio (400/403/404/409/...). Sin statusCode -> 500 de verdad.
-    return res.status(error.statusCode ?? 500).json({ error: error.message || "No se pudo actualizar la solicitud de entrega." });
+    return res.status(error.statusCode ?? 500).json({ error: error.message || "No se pudo actualizar el turno de entrega." });
   }
 };
 

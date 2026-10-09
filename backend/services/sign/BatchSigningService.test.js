@@ -163,14 +163,14 @@ test("la metadata se normaliza: ids numéricos o null, textos recortados y relat
     name: "a.pdf",
     relativePath: "  carpeta/a.pdf  ",
     metadata: {
-      signatureRequestId: "5",
+      turnoId: "5",
       documentVersionId: 0,
       processName: "  Silabo  ",
       termYear: 2026,
     },
   }]));
   assert.equal(entrada.relativePath, "carpeta/a.pdf");
-  assert.equal(entrada.metadata.signatureRequestId, 5);
+  assert.equal(entrada.metadata.turnoId, 5);
   assert.equal(entrada.metadata.documentVersionId, null, "el cero no es un id");
   assert.equal(entrada.metadata.processName, "Silabo");
   assert.equal(entrada.metadata.termYear, "2026");

@@ -161,17 +161,17 @@
     "status": 200,
     "body": {
       "canOperate": false,
-      "currentSignatureStepOrder": null,
       "currentStatus": "Borrador",
       "documentVersionId": "<normalized>",
+      "pasoActual": null,
+      "pasos": [],
       "readiness": {
         "ok": false,
         "reason": "document_version_not_found"
       },
+      "recorrido": null,
       "responsableActual": null,
-      "signatureFlow": null,
-      "signatureRequests": [],
-      "signatureSteps": []
+      "turnos": []
     }
   },
   "sin_token_GET__sign_batch_cualquiera": {

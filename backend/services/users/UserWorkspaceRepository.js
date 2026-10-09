@@ -139,7 +139,7 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
 export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
   const [rows] = await pool.query(
     `SELECT DISTINCT
-       sr.id AS signature_request_id,
+       sr.id AS turno_id,
        sr.solicitado AS requested_at,
        sr.estado AS signature_request_status_code,
        sfs.orden AS step_order,
@@ -745,7 +745,7 @@ export const getUserPendingSignaturesForDefinition = async (pool, userId, defini
        sr.id,
        sr.solicitado AS requested_at,
        sr.respondido AS responded_at,
-       sr.estado AS request_status_code,
+       sr.estado AS estado,
        sfs.orden AS step_order,
        tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
@@ -789,7 +789,7 @@ export const getSignatureWorkflowRequestsForDocumentVersions = async (pool, docu
        sr.persona_id AS assigned_person_id,
        sr.solicitado AS requested_at,
        sr.respondido AS responded_at,
-       sr.estado AS request_status_code,
+       sr.estado AS estado,
        sfs.orden AS step_order,
        c.name AS cargo_name,
        tar_dl.display_name AS template_artifact_name,
@@ -974,12 +974,12 @@ export const getFillWorkflowStepsForDocumentVersions = async (pool, documentVers
     // duplicados. Hoy lo resuelve `PASOS_DE_LA_RECETA`, una sola vez para los dos lectores.
     `SELECT
        r.document_version_id,
-       r.estado AS fill_flow_status,
+       r.estado AS recorrido_estado,
        r.paso_actual AS current_step_order,
        pd.id AS fill_flow_step_id,
        pd.orden AS step_order,
        pr.resolver_type,
-       tu.id AS fill_request_id,
+       tu.id AS turno_id,
        tu.persona_id AS assigned_person_id,
        tu.manual AS is_manual,
        tu.estado AS request_status,

@@ -38,6 +38,25 @@ import {
   getFillWorkflowStepsForDocumentVersions
 } from "../../../services/users/UserWorkspaceRepository.js";
 
+// ── EL OBJETO `workflow` HABLA EL VOCABULARIO DEL MODELO (frente 24, fase 4, paso 4-bis) ────────
+//
+// Sus ocho claves se llamaban como las OCHO TABLAS que el recorrido unificado retiro --`fill_flow`,
+// `fill_requests`, `fill_steps`, `signature_requests`...--, asi que el frontend leia un contrato
+// bautizado con nombres que ya no existian en ninguna parte. El nombre de una clave de API no tiene
+// que seguir al de su tabla, pero SI tiene que nombrar algo: estos nombraban fosiles.
+//
+//   fill_flow      -> recorrido_entrega      signature_steps              -> pasos_firma
+//   fill_requests  -> turnos_entrega         signature_requests           -> turnos_firma
+//   fill_steps     -> pasos_entrega          total_signature_steps        -> total_pasos_firma
+//   current_fill_step_order -> paso_actual_entrega
+//   current_signature_step_order -> paso_actual_firma
+//
+// Y el objeto del recorrido lleva dentro las de SU tabla: `estado`, `paso_actual`, `pasos`.
+//
+// ⚠️ LAS CLAVES DE CADA FILA NO SE TOCAN --`step_order`, `assigned_person_id`, `responded_at`...--,
+// y la linea esta donde debe: esas nombran un hecho (el orden de un paso, a quien se le asigno), no
+// una tabla muerta. Renombrarlas es otra decision, y mas grande.
+
 export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId, scopeUnitId = null) => {
   const definition = await getDefinitionContext(pool, definitionId);
   if (!definition || definition.status !== "active") {
@@ -166,7 +185,7 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
       //     pantalla.
       //   · `resolver_type`, `cargo_code` y `cargo_name` — son hechos DE CADA FIRMANTE, no del paso.
       //     La columna del paso traía el del primero y los demás no tenían reflejo; quien los
-      //     necesita lee `signature_requests`, que trae una fila por turno con SU cargo.
+      //     necesita lee `turnos_firma`, que trae una fila por turno con SU cargo.
       signer_count: Number(step.signer_count || 0)
     });
   });
@@ -175,22 +194,22 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
     const key = Number(step.document_version_id);
     if (!fillWorkflowByDocumentVersion.has(key)) {
       fillWorkflowByDocumentVersion.set(key, {
-        status: step.fill_flow_status,
-        current_step_order: step.current_step_order ? Number(step.current_step_order) : null,
-        steps: []
+        estado: step.recorrido_estado,
+        paso_actual: step.current_step_order ? Number(step.current_step_order) : null,
+        pasos: []
       });
     }
-    fillWorkflowByDocumentVersion.get(key).steps.push({
+    fillWorkflowByDocumentVersion.get(key).pasos.push({
       id: Number(step.fill_flow_step_id),
       step_order: Number(step.step_order),
       resolver_type: step.resolver_type,
       // `selection_mode`, `is_required` y `can_reject` NO viajan desde la fase 4 del frente 24: las
       // tres se retiraron del paso (§10 del plan). Enviarlas en `false` seria peor que no enviarlas
       // --afirmaria algo-- y el frontend ya las lee a la defensiva.
-      request_id: step.fill_request_id ? Number(step.fill_request_id) : null,
+      turno_id: step.turno_id ? Number(step.turno_id) : null,
       assigned_person_id: step.assigned_person_id ? Number(step.assigned_person_id) : null,
       is_manual: Boolean(step.is_manual),
-      request_status: step.request_status || "pendiente",
+      estado: step.request_status || "pendiente",
       requested_at: step.requested_at || null,
       responded_at: step.responded_at || null,
       response_note: step.response_note || null,
@@ -226,11 +245,11 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
       const relatedAttachments = attachmentsByDocumentVersion.get(documentVersionId) || [];
       const currentSignatureStepOrder = getCurrentSignatureStepOrder(relatedSignatureRequests);
       const fillWorkflow = fillWorkflowByDocumentVersion.get(documentVersionId) || {
-        status: null,
-        current_step_order: null,
-        steps: []
+        estado: null,
+        paso_actual: null,
+        pasos: []
       };
-      const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
+      const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.pasos.length);
       const canSign = relatedUserSignatures.some((request) => !request.responded_at);
       // Todo entregable de proceso admite carga manual (usage_role deprecado, siempre 'primary').
       const canUploadDeliverable = true;
@@ -264,14 +283,14 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
         attachments: relatedAttachments,
         attachment_count: relatedAttachments.length,
         workflow: {
-          fill_requests: relatedFillRequests,
-          fill_flow: fillWorkflow,
-          fill_steps: fillWorkflow.steps,
-          signature_steps: relatedSignatureSteps,
-          signature_requests: relatedSignatureRequests,
-          total_signature_steps: relatedSignatureSteps.length,
-          current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
-          current_signature_step_order: currentSignatureStepOrder
+          turnos_entrega: relatedFillRequests,
+          recorrido_entrega: fillWorkflow,
+          pasos_entrega: fillWorkflow.pasos,
+          pasos_firma: relatedSignatureSteps,
+          turnos_firma: relatedSignatureRequests,
+          total_pasos_firma: relatedSignatureSteps.length,
+          paso_actual_entrega: fillWorkflow.paso_actual || relatedFillRequests[0]?.step_order || null,
+          paso_actual_firma: currentSignatureStepOrder
         },
         actions: {
           can_upload_deliverable: canUploadDeliverable,
@@ -327,9 +346,9 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
       const relatedUserSignatures = documentVersionId ? (userSignaturesByDocumentVersion.get(documentVersionId) || []) : [];
       const currentSignatureStepOrder = getCurrentSignatureStepOrder(relatedSignatureRequests);
       const fillWorkflow = documentVersionId
-        ? (fillWorkflowByDocumentVersion.get(documentVersionId) || { status: null, current_step_order: null, steps: [] })
-        : { status: null, current_step_order: null, steps: [] };
-      const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.steps.length);
+        ? (fillWorkflowByDocumentVersion.get(documentVersionId) || { estado: null, paso_actual: null, pasos: [] })
+        : { estado: null, paso_actual: null, pasos: [] };
+      const canManageFill = Boolean(item.document_id || relatedFillRequests.length || fillWorkflow.pasos.length);
       const canSign = relatedUserSignatures.some((request) => !request.responded_at);
       // Todo entregable de proceso admite carga manual (usage_role deprecado, siempre 'primary').
       const canUploadDeliverable = true;
@@ -378,14 +397,14 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
         pending_fill_count: relatedDocument?.pending_fill_count ?? relatedFillRequests.filter((request) => !request.responded_at).length,
         total_fill_count: relatedDocument?.total_fill_count ?? relatedFillRequests.length,
         workflow: relatedDocument?.workflow || {
-          fill_requests: relatedFillRequests,
-          fill_flow: fillWorkflow,
-          fill_steps: fillWorkflow.steps,
-          signature_steps: relatedSignatureSteps,
-          signature_requests: relatedSignatureRequests,
-          total_signature_steps: relatedSignatureSteps.length,
-          current_fill_step_order: fillWorkflow.current_step_order || relatedFillRequests[0]?.step_order || null,
-          current_signature_step_order: currentSignatureStepOrder
+          turnos_entrega: relatedFillRequests,
+          recorrido_entrega: fillWorkflow,
+          pasos_entrega: fillWorkflow.pasos,
+          pasos_firma: relatedSignatureSteps,
+          turnos_firma: relatedSignatureRequests,
+          total_pasos_firma: relatedSignatureSteps.length,
+          paso_actual_entrega: fillWorkflow.paso_actual || relatedFillRequests[0]?.step_order || null,
+          paso_actual_firma: currentSignatureStepOrder
         },
         actions,
         document: relatedDocument,
@@ -432,7 +451,10 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
       tasks_pending: enrichedTasks.filter((task) => task.status !== "completada" && task.status !== "cancelada").length,
       task_items_pending: taskItems.filter((item) => isDocumentPending(documentStatusByTaskItemId.get(Number(item.id)))).length,
       documents_total: documents.length,
-      fill_requests_pending: fillRequests.filter((request) => !request.responded_at).length,
+      // Ultimo nombre muerto del resumen: `fill_requests_pending`. Lo lee NADIE en el frontend
+      // --comprobado-- pero viaja en la API, asi que se renombra con los demas y no se retira:
+      // retirar una cifra del resumen es otra decision.
+      turnos_entrega_pendientes: fillRequests.filter((request) => !request.responded_at).length,
       signatures_pending: signatures.filter((signature) => !signature.responded_at).length,
       user_packages_total: userPackages.length
     },
@@ -444,7 +466,12 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
     },
     tasks: enrichedTasks,
     documents,
-    fill_requests: fillRequests,
+    // ⚠️ `turnos_entrega_pendientes` SE LLAMABA `fill_requests`, y al renombrarla aparecio que NO LA
+    // LEE NADIE en el frontend --ni ella ni su hermana `signatures`, que viene de otro endpoint--.
+    // Se renombra en vez de quitarse: retirar una clave de una respuesta es otra decision, y aqui lo
+    // que tocaba era que el nombre dejara de apuntar a una tabla que no existe. Lo que si la usa es
+    // el propio panel, para decidir `hasOperationalAccess`.
+    turnos_entrega_pendientes: fillRequests,
     signatures,
     dependencies: {
       rules: matchingRules.map((rule) => ({

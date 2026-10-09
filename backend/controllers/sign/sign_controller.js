@@ -55,7 +55,7 @@ export const requestSign = async (req, res) => {
     console.info("[sign_controller] requestSign payload", {
       certificate_id: req.body?.certificate_id ?? null,
       allow_untrusted_signer: req.body?.allow_untrusted_signer ?? null,
-      signature_request_id: req.body?.signature_request_id ?? null,
+      turno_id: req.body?.turno_id ?? null,
       document_version_id: req.body?.document_version_id ?? null,
     });
     const context = await buildSignContext({ body: req.body, userId: req.user?.uid });

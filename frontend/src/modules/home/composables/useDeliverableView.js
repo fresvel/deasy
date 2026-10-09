@@ -60,19 +60,19 @@ export function useDeliverableView({
   };
 
   const getCurrentSignatureStepOrder = (snapshot) => {
-    const explicit = Number(snapshot?.currentSignatureStepOrder || 0);
+    const explicit = Number(snapshot?.pasoActual || 0);
     if (explicit > 0) return explicit;
 
-    const requests = Array.isArray(snapshot?.signatureRequests) ? snapshot.signatureRequests : [];
+    const requests = Array.isArray(snapshot?.turnos) ? snapshot.turnos : [];
     const pendingLike = requests
-      .filter((request) => ['pendiente', 'en_progreso'].includes(String(request?.requestStatusCode || '').trim().toLowerCase()))
+      .filter((request) => ['pendiente', 'en_progreso'].includes(String(request?.estado || '').trim().toLowerCase()))
       .sort((a, b) => Number(a?.stepOrder || 0) - Number(b?.stepOrder || 0));
     if (pendingLike.length) {
       return Number(pendingLike[0]?.stepOrder || 0) || null;
     }
 
     const completed = requests
-      .filter((request) => String(request?.requestStatusCode || '').trim().toLowerCase() === 'completado')
+      .filter((request) => String(request?.estado || '').trim().toLowerCase() === 'completado')
       .sort((a, b) => Number(b?.stepOrder || 0) - Number(a?.stepOrder || 0));
     if (completed.length) {
       return Number(completed[0]?.stepOrder || 0) || null;
@@ -133,23 +133,23 @@ export function useDeliverableView({
   const getCurrentFillStepCandidates = (payload) => {
     const subject = getDeliverableSubject(payload);
     const currentStepOrder = Number(
-      subject.workflow?.fill_flow?.current_step_order
-      || subject.workflow?.fill_flow?.currentStepOrder
-      || subject.workflow?.current_fill_step_order
+      subject.workflow?.recorrido_entrega?.paso_actual
+      || subject.workflow?.recorrido_entrega?.paso_actual
+      || subject.workflow?.paso_actual_entrega
       || subject.workflow?.currentFillStepOrder
       || 0
     );
     if (!currentStepOrder) {
-      const pendingRequests = (subject.workflow?.fill_requests || []).filter((item) => !(item?.responded_at || item?.respondedAt));
+      const pendingRequests = (subject.workflow?.turnos_entrega || []).filter((item) => !(item?.responded_at || item?.respondedAt));
       if (pendingRequests.length) {
         return pendingRequests;
       }
     }
-    const stepCandidates = (subject.workflow?.fill_steps || []).filter((item) => Number(item.step_order || item.stepOrder || 0) === currentStepOrder);
+    const stepCandidates = (subject.workflow?.pasos_entrega || []).filter((item) => Number(item.step_order || item.stepOrder || 0) === currentStepOrder);
     if (stepCandidates.length) {
       return stepCandidates;
     }
-    return (subject.workflow?.fill_requests || []).filter((item) => Number(item.step_order || item.stepOrder || 0) === currentStepOrder);
+    return (subject.workflow?.turnos_entrega || []).filter((item) => Number(item.step_order || item.stepOrder || 0) === currentStepOrder);
   };
 
   const getCurrentFillWorkflowRequest = (payload) => {
@@ -166,15 +166,15 @@ export function useDeliverableView({
 
     return (
       preferredCurrentStepRequest
-      || (subject.workflow?.fill_requests || []).find((item) => !(item?.responded_at || item?.respondedAt) && Number(item.assigned_person_id || item.assignedPersonId || 0) === currentUser)
-      || (subject.workflow?.fill_requests || []).find((item) => !(item?.responded_at || item?.respondedAt))
-      || subject.workflow?.fill_steps?.[0]
-      || subject.workflow?.fill_requests?.[0]
+      || (subject.workflow?.turnos_entrega || []).find((item) => !(item?.responded_at || item?.respondedAt) && Number(item.assigned_person_id || item.assignedPersonId || 0) === currentUser)
+      || (subject.workflow?.turnos_entrega || []).find((item) => !(item?.responded_at || item?.respondedAt))
+      || subject.workflow?.pasos_entrega?.[0]
+      || subject.workflow?.turnos_entrega?.[0]
       || null
     );
   };
 
-  const getFillRequestId = (request) => Number(request?.request_id || request?.id || 0) || null;
+  const getFillRequestId = (request) => Number(request?.turno_id || request?.id || 0) || null;
 
   const getDeliverableAccessSource = (payload) => {
     const selectedAccessSource =
@@ -200,7 +200,7 @@ export function useDeliverableView({
       return 'Directo';
     }
 
-    const currentUserPendingSignature = (subject.workflow?.signature_requests || []).some((request) => {
+    const currentUserPendingSignature = (subject.workflow?.turnos_firma || []).some((request) => {
       const assignedPersonId = Number(request?.assigned_person_id || 0);
       return assignedPersonId === currentUser && !request.responded_at;
     });
@@ -329,24 +329,24 @@ export function useDeliverableView({
 
   const hasPendingFillWorkflow = (payload) => {
     const subject = getDeliverableSubject(payload);
-    const requests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
-    const steps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
-    const flowSteps = Array.isArray(subject.workflow?.fill_flow?.steps) ? subject.workflow.fill_flow.steps : [];
+    const requests = Array.isArray(subject.workflow?.turnos_entrega) ? subject.workflow.turnos_entrega : [];
+    const steps = Array.isArray(subject.workflow?.pasos_entrega) ? subject.workflow.pasos_entrega : [];
+    const flowSteps = Array.isArray(subject.workflow?.recorrido_entrega?.pasos) ? subject.workflow.recorrido_entrega.pasos : [];
     return requests.some((request) => !(request?.responded_at || request?.respondedAt))
-      || steps.some((step) => ['pendiente', 'en_progreso', 'devuelto'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()))
-      || flowSteps.some((step) => ['pendiente', 'en_progreso', 'devuelto'].includes(String(step?.request_status || step?.requestStatus || step?.status || '').trim().toLowerCase()));
+      || steps.some((step) => ['pendiente', 'en_progreso', 'devuelto'].includes(String(step?.estado || step?.status || '').trim().toLowerCase()))
+      || flowSteps.some((step) => ['pendiente', 'en_progreso', 'devuelto'].includes(String(step?.estado || step?.status || '').trim().toLowerCase()));
   };
 
   const hasFillWorkflowActivity = (payload) => {
     const subject = getDeliverableSubject(payload);
-    const steps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
-    const requests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
+    const steps = Array.isArray(subject.workflow?.pasos_entrega) ? subject.workflow.pasos_entrega : [];
+    const requests = Array.isArray(subject.workflow?.turnos_entrega) ? subject.workflow.turnos_entrega : [];
     return steps.length > 0
       || requests.length > 0
       || Number(
-        subject.workflow?.fill_flow?.current_step_order
-        || subject.workflow?.fill_flow?.currentStepOrder
-        || subject.workflow?.current_fill_step_order
+        subject.workflow?.recorrido_entrega?.paso_actual
+        || subject.workflow?.recorrido_entrega?.paso_actual
+        || subject.workflow?.paso_actual_entrega
         || subject.workflow?.currentFillStepOrder
         || 0
       ) > 0;
@@ -366,14 +366,14 @@ export function useDeliverableView({
 
   const hasSignatureWorkflowActivity = (payload) => {
     const subject = getDeliverableSubject(payload);
-    const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+    const requests = Array.isArray(subject.workflow?.turnos_firma) ? subject.workflow.turnos_firma : [];
     return requests.length > 0
-      || Number(subject.workflow?.signature_flow?.current_step_order || subject.workflow?.current_signature_step_order || 0) > 0;
+      || Number(subject.workflow?.signature_flow?.current_step_order || subject.workflow?.paso_actual_firma || 0) > 0;
   };
 
   const getSignatureStepsFromSubject = (payload) => {
     const subject = getDeliverableSubject(payload);
-    return Array.isArray(subject.workflow?.signature_steps) ? subject.workflow.signature_steps : [];
+    return Array.isArray(subject.workflow?.pasos_firma) ? subject.workflow.pasos_firma : [];
   };
 
   const shouldShowResetWorkflow = (payload) => {
@@ -383,15 +383,15 @@ export function useDeliverableView({
 
   const getCurrentSignatureStepOrderFromSubject = (payload) => {
     const subject = getDeliverableSubject(payload);
-    const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+    const requests = Array.isArray(subject.workflow?.turnos_firma) ? subject.workflow.turnos_firma : [];
     const explicit = Number(
       subject.workflow?.signature_flow?.current_step_order
-      || subject.workflow?.current_signature_step_order
+      || subject.workflow?.paso_actual_firma
       || 0
     );
     if (explicit > 0) {
       const matchesExplicitPendingStep = requests.some((request) => {
-        const code = String(request?.request_status_code || request?.status || '').trim().toLowerCase();
+        const code = String(request?.estado || request?.status || '').trim().toLowerCase();
         return ['pendiente', 'en_progreso'].includes(code)
           && !request?.responded_at
           && Number(request?.step_order || 0) === explicit;
@@ -401,7 +401,7 @@ export function useDeliverableView({
 
     const pendingLike = requests
       .filter((request) => {
-        const code = String(request?.request_status_code || request?.status || '').trim().toLowerCase();
+        const code = String(request?.estado || request?.status || '').trim().toLowerCase();
         return ['pendiente', 'en_progreso'].includes(code) && !request?.responded_at;
       })
       .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
@@ -415,7 +415,7 @@ export function useDeliverableView({
   const getCurrentSignatureRequestsFromSubject = (payload) => {
     const subject = getDeliverableSubject(payload);
     const currentStepOrder = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0);
-    const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+    const requests = Array.isArray(subject.workflow?.turnos_firma) ? subject.workflow.turnos_firma : [];
     if (!currentStepOrder) {
       return requests.filter((request) => !request?.responded_at);
     }
@@ -428,7 +428,7 @@ export function useDeliverableView({
 
     const requests = getCurrentSignatureRequestsFromSubject(payload);
     return requests.some((request) => {
-      const code = String(request?.request_status_code || request?.status || '').trim().toLowerCase();
+      const code = String(request?.estado || request?.status || '').trim().toLowerCase();
       const isPendingLike = ['pendiente', 'en_progreso'].includes(code);
       return isPendingLike
         && !request?.responded_at
@@ -485,14 +485,14 @@ export function useDeliverableView({
 
   const isDeliverableSignatureFlowCompleted = (payload) => {
     const subject = getDeliverableSubject(payload);
-    const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+    const requests = Array.isArray(subject.workflow?.turnos_firma) ? subject.workflow.turnos_firma : [];
     const steps = getSignatureStepsFromSubject(payload);
     if (!requests.length && !steps.length) {
       return false;
     }
 
     const hasPendingLikeRequests = requests.some((request) => {
-      const code = String(request?.request_status_code || request?.requestStatusCode || request?.status || '').trim().toLowerCase();
+      const code = String(request?.estado || request?.status || '').trim().toLowerCase();
       return ['pendiente', 'en_progreso'].includes(code) && !request?.responded_at;
     });
     if (hasPendingLikeRequests) {
@@ -526,7 +526,7 @@ export function useDeliverableView({
       const relatedRequests = requests.filter((request) => Number(request?.step_order || request?.stepOrder || 0) === stepOrder);
       return relatedRequests.length > 0 && relatedRequests.every((request) =>
         isCompletedSignatureRequestStatus(
-          request?.request_status_code || request?.requestStatusCode || request?.status
+          request?.estado || request?.status
         )
       );
     });
@@ -540,11 +540,11 @@ export function useDeliverableView({
 
     const subject = getDeliverableSubject(payload);
     const historicalParticipation = payload?.participation || subject?.participation || {};
-    const fillRequests = Array.isArray(subject.workflow?.fill_requests) ? subject.workflow.fill_requests : [];
-    const signatureRequests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+    const fillRequests = Array.isArray(subject.workflow?.turnos_entrega) ? subject.workflow.turnos_entrega : [];
+    const signatureRequests = Array.isArray(subject.workflow?.turnos_firma) ? subject.workflow.turnos_firma : [];
     const currentFillStepOrder = Number(
-      subject.workflow?.fill_flow?.current_step_order
-      || subject.workflow?.current_fill_step_order
+      subject.workflow?.recorrido_entrega?.paso_actual
+      || subject.workflow?.paso_actual_entrega
       || getCurrentFillWorkflowRequest(payload)?.step_order
       || 0
     );
@@ -566,7 +566,7 @@ export function useDeliverableView({
     );
 
     const futureSignature = signatureRequests.some((request) => {
-      const code = String(request?.request_status_code || request?.requestStatusCode || request?.status || '').trim().toLowerCase();
+      const code = String(request?.estado || request?.status || '').trim().toLowerCase();
       return Number(request?.assigned_person_id || 0) === currentUser
         && !request?.responded_at
         && ['pendiente', 'en_progreso'].includes(code)
@@ -583,7 +583,7 @@ export function useDeliverableView({
       && (
         Boolean(request?.responded_at)
         || isCompletedSignatureRequestStatus(
-          request?.request_status_code || request?.requestStatusCode || request?.status
+          request?.estado || request?.status
         )
       )
     );
@@ -716,7 +716,7 @@ export function useDeliverableView({
     const subject = getDeliverableSubject(payload);
 
     if (hasSignatureWorkflowActivity(payload)) {
-      const requests = Array.isArray(subject.workflow?.signature_requests) ? subject.workflow.signature_requests : [];
+      const requests = Array.isArray(subject.workflow?.turnos_firma) ? subject.workflow.turnos_firma : [];
       const signatureSteps = getSignatureStepsFromSubject(payload);
       const templateStepOrders = [...new Set(
         signatureSteps
@@ -729,19 +729,19 @@ export function useDeliverableView({
           .filter((value) => value > 0)
       )].sort((a, b) => a - b);
       const stepOrders = templateStepOrders.length ? templateStepOrders : requestStepOrders;
-      const total = Number(subject.workflow?.total_signature_steps || 0) || stepOrders.length || Number(subject.pendingSignatureCount || 0) || 0;
+      const total = Number(subject.workflow?.total_pasos_firma || 0) || stepOrders.length || Number(subject.pendingSignatureCount || 0) || 0;
       if (!total) return null;
       const current = Number(getCurrentSignatureStepOrderFromSubject(payload) || 0) || total;
       const completedSteps = stepOrders.filter((stepOrder) => {
         const relatedRequests = requests.filter((request) => Number(request?.step_order || request?.stepOrder || 0) === stepOrder);
         if (!relatedRequests.length) return false;
         return relatedRequests.every((request) => {
-          const code = String(request?.request_status_code || request?.requestStatusCode || request?.status || '').trim().toLowerCase();
+          const code = String(request?.estado || request?.status || '').trim().toLowerCase();
           return ['completado', 'completed'].includes(code);
         });
       }).length;
       const hasActivePendingStep = requests.some((request) => {
-        const code = String(request?.request_status_code || request?.requestStatusCode || request?.status || '').trim().toLowerCase();
+        const code = String(request?.estado || request?.status || '').trim().toLowerCase();
         return ['pendiente', 'en_progreso'].includes(code) && !request?.responded_at;
       });
       const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));
@@ -753,16 +753,16 @@ export function useDeliverableView({
       };
     }
 
-    const fillSteps = Array.isArray(subject.workflow?.fill_steps) ? subject.workflow.fill_steps : [];
+    const fillSteps = Array.isArray(subject.workflow?.pasos_entrega) ? subject.workflow.pasos_entrega : [];
     const total = fillSteps.length || Number(subject.pendingFillCount || 0) || 0;
     if (!total) return null;
-    const current = Number(subject.workflow?.fill_flow?.current_step_order || subject.workflow?.current_fill_step_order || getCurrentFillWorkflowRequest(payload)?.step_order || 0) || total;
+    const current = Number(subject.workflow?.recorrido_entrega?.paso_actual || subject.workflow?.paso_actual_entrega || getCurrentFillWorkflowRequest(payload)?.step_order || 0) || total;
     const completedSteps = fillSteps.filter((step) => {
-      const code = String(step?.request_status || '').trim().toLowerCase();
+      const code = String(step?.estado || '').trim().toLowerCase();
       return code === 'completado';
     }).length;
     const hasActivePendingStep = fillSteps.some((step) => {
-      const code = String(step?.request_status || '').trim().toLowerCase();
+      const code = String(step?.estado || '').trim().toLowerCase();
       return ['pendiente', 'en_progreso', 'devuelto'].includes(code);
     });
     const progressUnits = Math.min(total, completedSteps + (hasActivePendingStep ? 0.5 : 0));

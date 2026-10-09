@@ -98,9 +98,8 @@ La **firma en sí** queda registrada en `document_signatures`: quién firmó, co
 y en qué archivo quedó el documento ya firmado. Dos detalles de nombre:
 
 - `signer_user_id` apunta a `persons` — el `user` es un fósil de la tabla `users`, que ya no existe;
-- `signature_request_id` apunta a **`turnos`**. La columna conserva su nombre porque la lee el
-  firmador y viaja en la API, y lo que referencia es el turno de firma: es literalmente el enganche
-  entre los dos ejes.
+- `turno_id` apunta a **`turnos`**, y es literalmente el enganche entre los dos ejes. Se llamó
+  `signature_request_id` hasta el 2026-10-09, por la tabla `signature_requests` que ya no existe.
 
 ## Un paso puede pedir varias firmas
 
@@ -170,7 +169,7 @@ erDiagram
   }
   document_signatures {
     int id PK "LA FIRMA"
-    int signature_request_id FK "apunta a turnos"
+    int turno_id FK "apunta a turnos"
     int document_version_id FK
     int signer_user_id FK "apunta a persons"
     int signature_status_id FK "eje 2, vale o no"

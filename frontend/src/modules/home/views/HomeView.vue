@@ -1553,15 +1553,15 @@
 
           <div class="deasy-card p-4">
             <h3 class="deasy-title deasy-title--section mb-3">Secuencia del flujo</h3>
-            <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-muted">
+            <div v-if="!fillWorkflowState.subject?.workflow?.pasos_entrega?.length" class="text-sm text-muted">
               Este entregable todavía no tiene una secuencia de entrega visible.
             </div>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
-                v-for="step in fillWorkflowState.subject.workflow.fill_steps"
-                :key="`fill-step-${step.id}-${step.request_id || 'na'}`"
+                v-for="step in fillWorkflowState.subject.workflow.pasos_entrega"
+                :key="`fill-step-${step.id}-${step.turno_id || 'na'}`"
                 class="deasy-flow-step"
-                :class="`deasy-flow-step--${getFillStepTono(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)}`"
+                :class="`deasy-flow-step--${getFillStepTono(step, fillWorkflowState.subject.workflow.recorrido_entrega?.paso_actual)}`"
               >
                 <div class="deasy-flow-step__accent"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
@@ -1575,11 +1575,11 @@
                     </div>
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
-                    <AppTag :variant="tonoRecorrido(step.request_status)">
-                      {{ etiquetaRecorrido(step.request_status) }}
+                    <AppTag :variant="tonoRecorrido(step.estado)">
+                      {{ etiquetaRecorrido(step.estado) }}
                     </AppTag>
                     <AppTag
-                      v-if="fillWorkflowState.subject.workflow.fill_flow?.current_step_order === step.step_order"
+                      v-if="fillWorkflowState.subject.workflow.recorrido_entrega?.paso_actual === step.step_order"
                       variant="accent"
                     >
                       Actual
@@ -1745,8 +1745,8 @@
                      en este sistema significa «retirado». Y la capacidad ya la anuncia la
                      pastilla «Listo para operar» / «Acceso en modo lectura» de mas abajo, asi
                      que el color aqui solo podia confundir. -->
-                <AppTag :variant="tonoFlujo(signatureFlowState.snapshot?.signatureFlow?.statusCode || signatureFlowState.snapshot?.currentStatus)">
-                  {{ etiquetaFlujo(signatureFlowState.snapshot?.signatureFlow?.statusCode || signatureFlowState.snapshot?.currentStatus) }}
+                <AppTag :variant="tonoFlujo(signatureFlowState.snapshot?.recorrido?.statusCode || signatureFlowState.snapshot?.currentStatus)">
+                  {{ etiquetaFlujo(signatureFlowState.snapshot?.recorrido?.statusCode || signatureFlowState.snapshot?.currentStatus) }}
                 </AppTag>
               </div>
               <p class="text-xs text-muted">
@@ -1772,9 +1772,9 @@
             </section>
             <section class="deasy-card p-4 flex flex-col gap-2">
               <p class="deasy-overline">Secuencia</p>
-              <p class="text-sm font-semibold text-strong mb-0">{{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos sincronizados</p>
+              <p class="text-sm font-semibold text-strong mb-0">{{ (signatureFlowState.snapshot.pasos || []).length }} pasos sincronizados</p>
               <p class="text-xs text-muted">
-                {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} solicitudes registradas
+                {{ signatureFlowState.snapshot.turnos?.length || 0 }} solicitudes registradas
               </p>
               <p v-if="signatureFlowState.snapshot.readiness?.unresolvedRequiredSteps?.length" class="text-xs text-danger">
                 Pasos sin firmantes: {{ signatureFlowState.snapshot.readiness.unresolvedRequiredSteps.map((step) => step.stepOrder).join(', ') }}
@@ -1786,18 +1786,18 @@
             <div class="flex items-center justify-between gap-2">
               <h3 class="deasy-title deasy-title--section">Pasos del flujo</h3>
               <AppTag variant="neutral">
-                {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
+                {{ (signatureFlowState.snapshot.pasos || []).length }} pasos
               </AppTag>
             </div>
-            <AppEmpty v-if="!signatureFlowState.snapshot.signatureSteps?.length">
+            <AppEmpty v-if="!signatureFlowState.snapshot.pasos?.length">
               Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
             </AppEmpty>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
-                v-for="step in signatureFlowState.snapshot.signatureSteps"
+                v-for="step in signatureFlowState.snapshot.pasos"
                 :key="`signature-step-${step.id || step.step_order}`"
                 class="deasy-flow-step"
-                :class="`deasy-flow-step--${tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
+                :class="`deasy-flow-step--${tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
               >
                 <div class="deasy-flow-step__accent"></div>
                 <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
@@ -1812,9 +1812,9 @@
                   </div>
                   <div class="flex flex-wrap gap-2 justify-end">
                     <AppTag
-                      :variant="tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
+                      :variant="tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
                     >
-                      {{ getSignatureStepStatusLabel(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))) }}
+                      {{ getSignatureStepStatusLabel(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot))) }}
                     </AppTag>
                     <AppTag :variant="step.assignees?.length ? 'success' : 'warning'">
                       {{ step.assignees?.length ? `${step.assignees.length} firmante(s)` : 'Sin responsables' }}
@@ -1824,7 +1824,7 @@
                 <div class="deasy-card mt-4 px-4 py-3">
                   <p class="deasy-overline">Firmante</p>
                   <p class="mt-1 text-sm font-semibold text-body m-0 leading-snug">
-                    {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
+                    {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.turnos) }}
                   </p>
                 </div>
                 <div class="mt-3 rounded-2xl bg-surface/60 px-4 py-3">
@@ -1841,22 +1841,22 @@
             <div class="flex items-center justify-between gap-2">
               <h3 class="deasy-title deasy-title--section">Historial y trazabilidad</h3>
               <AppTag variant="neutral">
-                {{ signatureFlowState.snapshot.signatureRequests?.length || 0 }} registros
+                {{ signatureFlowState.snapshot.turnos?.length || 0 }} registros
               </AppTag>
             </div>
-            <AppEmpty v-if="!signatureFlowState.snapshot.signatureRequests?.length">
+            <AppEmpty v-if="!signatureFlowState.snapshot.turnos?.length">
               Aún no se ha registrado actividad sobre este flujo.
             </AppEmpty>
             <div v-else class="flex flex-col gap-3">
               <div
-                v-for="request in signatureFlowState.snapshot.signatureRequests"
+                v-for="request in signatureFlowState.snapshot.turnos"
                 :key="`flow-request-${request.id}`"
                 class="deasy-card p-3 flex flex-col gap-2"
               >
                 <div class="flex flex-wrap items-center justify-between gap-2">
                   <p class="text-sm font-semibold text-strong m-0">Paso {{ request.stepOrder }}</p>
-                  <AppTag :variant="tonoRecorrido(request.requestStatusCode)">
-                    {{ signatureRequestStatusLabel(request.requestStatusCode) }}
+                  <AppTag :variant="tonoRecorrido(request.estado)">
+                    {{ signatureRequestStatusLabel(request.estado) }}
                   </AppTag>
                 </div>
                 <p class="text-xs text-muted m-0">
@@ -1889,7 +1889,7 @@
           </section>
         </div>
         <div v-else class="deasy-card p-6 text-sm font-semibold text-icon text-center">
-          Selecciona una solicitud de firma para revisar su flujo.
+          Selecciona un turno de firma para revisar su recorrido.
         </div>
       </div>
       <template #footer>
@@ -3517,7 +3517,7 @@ const signatureRequestStatusLabel = (statusCode) => {
 };
 
 /* `signatureRequestTagVariant` murio el 2026-08-20 (F9-bis). Era la TERCERA traduccion del
-   mismo estado de solicitud de firma —y la que mas discrepaba: `en_progreso` en ambar donde el
+   mismo estado de turno de firma —y la que mas discrepaba: `en_progreso` en ambar donde el
    resto lo daba en azul, `cancelado` en rojo donde la doctrina lo da en gris—. Es
    `tonoRecorrido` de `estadoTono.js`. */
 
@@ -4275,7 +4275,7 @@ const canOperateCurrentFillRequest = computed(() =>
   || isFillRequestActionableByCurrentUser(fillWorkflowState.value.request)
 );
 const fillWorkflowNotes = computed(() => {
-  const steps = fillWorkflowState.value.subject?.workflow?.fill_steps || [];
+  const steps = fillWorkflowState.value.subject?.workflow?.pasos_entrega || [];
   return steps
     .filter((step) => String(step?.response_note || '').trim())
     .map((step) => ({
@@ -4284,7 +4284,7 @@ const fillWorkflowNotes = computed(() => {
       stepOrder: Number(step.step_order || 0),
       label: step.display_label || 'Responsable no resuelto',
       note: String(step.response_note || '').trim(),
-      statusLabel: etiquetaRecorrido(step.request_status),
+      statusLabel: etiquetaRecorrido(step.estado),
       respondedAt: step.responded_at || null,
       respondedAtLabel: formatWorkflowDateTime(step.responded_at)
     }))
@@ -4555,7 +4555,7 @@ const submitFillWorkflowAction = async (action) => {
   const request = fillWorkflowState.value.request;
   const requestId = getFillRequestId(request);
   if (!subject || !requestId) {
-    fillWorkflowState.value.error = 'No se encontró una solicitud de entrega válida.';
+    fillWorkflowState.value.error = 'No se encontró un turno de entrega válido.';
     return;
   }
   if (action === 'approve' && !subject.preloadFilePath) {
@@ -4628,7 +4628,7 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
   const request = getCurrentFillWorkflowRequest(payload);
   const requestId = getFillRequestId(request);
   if (!subject || !requestId) {
-    setProcessActionInfo('No se encontró una solicitud de entrega válida.', 'error');
+    setProcessActionInfo('No se encontró un turno de entrega válido.', 'error');
     return;
   }
   if (action === 'approve' && !subject.preloadFilePath) {
@@ -4803,14 +4803,14 @@ const openDocumentSignFlow = (payload) => {
     return;
   }
   const pendingSignatureRequest = getCurrentSignatureRequestsFromSubject(doc).find((request) => {
-    const code = String(request?.request_status_code || request?.status || '').trim().toLowerCase();
+    const code = String(request?.estado || request?.status || '').trim().toLowerCase();
     return ['pendiente', 'en_progreso'].includes(code)
       && !request?.responded_at
       && Number(request?.assigned_person_id || 0) === Number(currentUserId.value || 0);
   });
   if (!pendingSignatureRequest?.id || !doc.documentVersionId) {
     setProcessActionInfo(
-      `No se encontró una solicitud de firma pendiente para ${doc.title}.`,
+      `No se encontró un turno de firma pendiente para ${doc.title}.`,
       'error'
     );
     return;
@@ -4823,7 +4823,7 @@ const openDocumentSignFlow = (payload) => {
   nextTick(() => {
     embeddedSignerRef.value?.resetToStart?.();
     embeddedSignerRef.value?.initializeWorkflowSignatureSession?.({
-      signatureRequestId: pendingSignatureRequest.id,
+      turnoId: pendingSignatureRequest.id,
       documentVersionId: doc.documentVersionId,
       taskItemId: doc.itemId,
       processDefinitionId: Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value),
@@ -4858,8 +4858,8 @@ const prepareSignatureSession = async () => {
     signatureFlowSignerRef.value?.resetToStart?.();
     return;
   }
-  const pendingRequest = (snapshot.signatureRequests || []).find((request) => {
-    const code = String(request.requestStatusCode || "").trim().toLowerCase();
+  const pendingRequest = (snapshot.turnos || []).find((request) => {
+    const code = String(request.estado || "").trim().toLowerCase();
     return signatureRequestPendingCodes.has(code);
   });
   if (!pendingRequest) {
@@ -4869,7 +4869,7 @@ const prepareSignatureSession = async () => {
   await nextTick(() => {
     signatureFlowSignerRef.value?.resetToStart?.();
     signatureFlowSignerRef.value?.initializeWorkflowSignatureSession?.({
-      signatureRequestId: pendingRequest.id,
+      turnoId: pendingRequest.id,
       documentVersionId: signatureFlowState.value.documentVersionId,
       taskItemId: signatureFlowState.value.subject?.itemId,
       processDefinitionId: Number(selectedProcessContext.value?.process_definition_id || selectedProcessKey.value || 0),

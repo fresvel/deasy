@@ -219,16 +219,23 @@ export const buildFillStepDisplayLabel = (step) => {
 export const estaAbiertoElTurno = (value) =>
   ["pendiente", "en_progreso"].includes(String(value || "").trim().toLowerCase());
 
+/* ⚠️ LEE LAS CLAVES QUE EL PANEL EMITE HOY, y esto costo una regresion silenciosa el 2026-10-09:
+   el paso 4-bis renombro el recorrido del panel (`current_step_order`->`paso_actual`,
+   `steps`->`pasos`, `request_status`->`estado`) y esta funcion seguia preguntando por las viejas,
+   asi que `can_reset_workflow` salia SIEMPRE false --sin error, sin aviso, con el boton de rehacer
+   desaparecido--. Lo cazo el golden del panel; sus pruebas unitarias NO, porque se fabrican el
+   fillWorkflow a mano y se lo dieron con la forma vieja. La leccion: un test que construye su
+   propio fixture no nota que el productor cambio de forma. */
 export const canCurrentUserResetWorkflow = ({ userId, fillWorkflow, signatureRequests }) => {
   const normalizedUserId = Number(userId || 0);
   if (!normalizedUserId) return false;
 
-  const currentFillStepOrder = Number(fillWorkflow?.current_step_order || 0);
+  const currentFillStepOrder = Number(fillWorkflow?.paso_actual || 0);
   if (currentFillStepOrder > 0) {
-    const canResetFromFill = (fillWorkflow?.steps || []).some((step) =>
+    const canResetFromFill = (fillWorkflow?.pasos || []).some((step) =>
       Number(step?.step_order || 0) === currentFillStepOrder
       && Number(step?.assigned_person_id || 0) === normalizedUserId
-      && estaAbiertoElTurno(step?.request_status)
+      && estaAbiertoElTurno(step?.estado)
       && !step?.responded_at
     );
     if (canResetFromFill) {
@@ -237,7 +244,7 @@ export const canCurrentUserResetWorkflow = ({ userId, fillWorkflow, signatureReq
   }
 
   const pendingSignatureRequests = (Array.isArray(signatureRequests) ? signatureRequests : [])
-    .filter((request) => estaAbiertoElTurno(request?.request_status_code || request?.status))
+    .filter((request) => estaAbiertoElTurno(request?.estado || request?.status))
     .filter((request) => !request?.responded_at)
     .sort((a, b) => Number(a?.step_order || 0) - Number(b?.step_order || 0));
 

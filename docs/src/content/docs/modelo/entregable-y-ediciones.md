@@ -62,7 +62,7 @@ en `ediciones`**.
 :::
 
 Publicar además tiene una puerta: si la edición no se usa **solo** en modo `routed`, se exige que
-tenga al menos un paso de flujo de entrega definido, y si no lo tiene la publicación falla. Las
+tenga al menos un paso de entrega declarado en su recorrido, y si no lo tiene la publicación falla. Las
 `routed` se saltan esa comprobación porque no autoran flujo: lo definen al instanciarse.
 
 ## El ámbito: oficial o personal

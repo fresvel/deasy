@@ -221,7 +221,7 @@ test("un entregable avanzado pero ANTES de la firma SÍ vuelve a su ocupante", a
 // ── D3: LAS SOLICITUDES SIGUEN AL RESPONSABLE (2026-08-23) ─────────────────────────────────
 //
 // Sin esto el entregable cambiaba de manos pero el trabajo no: el guard de la solicitud responde
-// «No puedes operar una solicitud de entrega asignada a otro usuario», así que quien llegaba
+// «No puedes operar un turno de entrega asignado a otro usuario», así que quien llegaba
 // recibía un 403 sobre su propio entregable y quien se fue era el único que técnicamente podía
 // actuar. Se midió, no se supuso.
 //

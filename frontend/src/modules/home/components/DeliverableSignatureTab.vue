@@ -13,7 +13,7 @@
         <p class="text-xs text-muted m-0">Documento y estado actual de firmas.</p>
       </div>
       <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
-        {{ signatureFlowState.snapshot?.signatureFlow?.statusCode ? signatureFlowState.snapshot.signatureFlow.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
+        {{ signatureFlowState.snapshot?.recorrido?.statusCode ? signatureFlowState.snapshot.recorrido.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
       </AppTag>
     </div>
     <div class="grid gap-3 md:grid-cols-3">
@@ -27,7 +27,7 @@
       </div>
       <div class="deasy-card p-4">
         <p class="deasy-overline mb-1">Solicitudes</p>
-        <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.snapshot.signatureRequests?.length || 0 }}</p>
+        <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.snapshot.turnos?.length || 0 }}</p>
       </div>
     </div>
   </section>
@@ -36,18 +36,18 @@
     <div class="flex items-center justify-between gap-2">
       <h3 class="deasy-title deasy-title--section">Pasos del flujo</h3>
       <AppTag variant="neutral">
-        {{ (signatureFlowState.snapshot.signatureSteps || []).length }} pasos
+        {{ (signatureFlowState.snapshot.pasos || []).length }} pasos
       </AppTag>
     </div>
-    <AppEmpty v-if="!signatureFlowState.snapshot.signatureSteps?.length">
+    <AppEmpty v-if="!signatureFlowState.snapshot.pasos?.length">
       Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
     </AppEmpty>
     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div
-        v-for="step in signatureFlowState.snapshot.signatureSteps"
+        v-for="step in signatureFlowState.snapshot.pasos"
         :key="`combined-signature-step-${step.id || step.step_order}`"
         class="deasy-flow-step"
-        :class="`deasy-flow-step--${tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
+        :class="`deasy-flow-step--${tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
       >
         <div class="deasy-flow-step__accent"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
@@ -62,9 +62,9 @@
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
             <AppTag
-              :variant="tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
+              :variant="tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
             >
-              {{ getSignatureStepStatusLabel(getSignatureStepStatusCode(step, signatureFlowState.snapshot.signatureRequests, getCurrentSignatureStepOrder(signatureFlowState.snapshot))) }}
+              {{ getSignatureStepStatusLabel(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot))) }}
             </AppTag>
             <AppTag :variant="step.assignees?.length ? 'success' : 'warning'">
               {{ step.assignees?.length ? `${step.assignees.length} firmante(s)` : 'Sin responsables' }}
@@ -74,7 +74,7 @@
         <div class="mt-3 flex flex-col gap-2">
           <p class="deasy-overline">Firmante</p>
           <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">
-            {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.signatureRequests) }}
+            {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.turnos) }}
           </p>
         </div>
       </div>

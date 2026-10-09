@@ -386,33 +386,64 @@
           "unit_label": "Carrera de Tecnologías de la Información",
           "user_started_at": null,
           "workflow": {
-            "current_fill_step_order": 1,
-            "current_signature_step_order": null,
-            "fill_flow": {
-              "current_step_order": 1,
-              "status": "pendiente",
-              "steps": [
+            "paso_actual_entrega": 1,
+            "paso_actual_firma": null,
+            "pasos_entrega": [
+              {
+                "assigned_person_id": "<normalized>",
+                "assigned_person_name": "Usuario Prueba",
+                "cargo_name": null,
+                "display_label": "Usuario Prueba",
+                "estado": "pendiente",
+                "id": "<normalized>",
+                "is_manual": false,
+                "position_title": null,
+                "requested_at": "<normalized>",
+                "resolver_type": "specific_person",
+                "responded_at": null,
+                "response_note": null,
+                "step_order": 1,
+                "turno_id": "<normalized>",
+                "unit_name": null,
+                "unit_type_name": null
+              }
+            ],
+            "pasos_firma": [
+              {
+                "code": "firma_1",
+                "id": "<normalized>",
+                "name": "Firma 1",
+                "signer_count": 1,
+                "slot": "firma_1",
+                "step_order": 1
+              }
+            ],
+            "recorrido_entrega": {
+              "estado": "pendiente",
+              "paso_actual": 1,
+              "pasos": [
                 {
                   "assigned_person_id": "<normalized>",
                   "assigned_person_name": "Usuario Prueba",
                   "cargo_name": null,
                   "display_label": "Usuario Prueba",
+                  "estado": "pendiente",
                   "id": "<normalized>",
                   "is_manual": false,
                   "position_title": null,
-                  "request_id": "<normalized>",
-                  "request_status": "pendiente",
                   "requested_at": "<normalized>",
                   "resolver_type": "specific_person",
                   "responded_at": null,
                   "response_note": null,
                   "step_order": 1,
+                  "turno_id": "<normalized>",
                   "unit_name": null,
                   "unit_type_name": null
                 }
               ]
             },
-            "fill_requests": [
+            "total_pasos_firma": 1,
+            "turnos_entrega": [
               {
                 "document_id": "<normalized>",
                 "document_version": "1.0",
@@ -425,53 +456,9 @@
                 "template_artifact_name": "Informe general"
               }
             ],
-            "fill_steps": [
-              {
-                "assigned_person_id": "<normalized>",
-                "assigned_person_name": "Usuario Prueba",
-                "cargo_name": null,
-                "display_label": "Usuario Prueba",
-                "id": "<normalized>",
-                "is_manual": false,
-                "position_title": null,
-                "request_id": "<normalized>",
-                "request_status": "pendiente",
-                "requested_at": "<normalized>",
-                "resolver_type": "specific_person",
-                "responded_at": null,
-                "response_note": null,
-                "step_order": 1,
-                "unit_name": null,
-                "unit_type_name": null
-              }
-            ],
-            "signature_requests": [],
-            "signature_steps": [
-              {
-                "code": "firma_1",
-                "id": "<normalized>",
-                "name": "Firma 1",
-                "signer_count": 1,
-                "slot": "firma_1",
-                "step_order": 1
-              }
-            ],
-            "total_signature_steps": 1
+            "turnos_firma": []
           },
           "working_file_path": "<normalized>"
-        }
-      ],
-      "fill_requests": [
-        {
-          "document_id": "<normalized>",
-          "document_version": "1.0",
-          "document_version_id": "<normalized>",
-          "id": "<normalized>",
-          "requested_at": "<normalized>",
-          "responded_at": null,
-          "status": "pendiente",
-          "step_order": 1,
-          "template_artifact_name": "Informe general"
         }
       ],
       "permissions": {
@@ -483,11 +470,11 @@
       "signatures": [],
       "summary": {
         "documents_total": 1,
-        "fill_requests_pending": 1,
         "signatures_pending": 0,
         "task_items_pending": 1,
         "tasks_pending": 1,
         "tasks_total": 1,
+        "turnos_entrega_pendientes": 1,
         "user_packages_total": 0
       },
       "tasks": [
@@ -561,33 +548,64 @@
                 "unit_label": "Carrera de Tecnologías de la Información",
                 "user_started_at": null,
                 "workflow": {
-                  "current_fill_step_order": 1,
-                  "current_signature_step_order": null,
-                  "fill_flow": {
-                    "current_step_order": 1,
-                    "status": "pendiente",
-                    "steps": [
+                  "paso_actual_entrega": 1,
+                  "paso_actual_firma": null,
+                  "pasos_entrega": [
+                    {
+                      "assigned_person_id": "<normalized>",
+                      "assigned_person_name": "Usuario Prueba",
+                      "cargo_name": null,
+                      "display_label": "Usuario Prueba",
+                      "estado": "pendiente",
+                      "id": "<normalized>",
+                      "is_manual": false,
+                      "position_title": null,
+                      "requested_at": "<normalized>",
+                      "resolver_type": "specific_person",
+                      "responded_at": null,
+                      "response_note": null,
+                      "step_order": 1,
+                      "turno_id": "<normalized>",
+                      "unit_name": null,
+                      "unit_type_name": null
+                    }
+                  ],
+                  "pasos_firma": [
+                    {
+                      "code": "firma_1",
+                      "id": "<normalized>",
+                      "name": "Firma 1",
+                      "signer_count": 1,
+                      "slot": "firma_1",
+                      "step_order": 1
+                    }
+                  ],
+                  "recorrido_entrega": {
+                    "estado": "pendiente",
+                    "paso_actual": 1,
+                    "pasos": [
                       {
                         "assigned_person_id": "<normalized>",
                         "assigned_person_name": "Usuario Prueba",
                         "cargo_name": null,
                         "display_label": "Usuario Prueba",
+                        "estado": "pendiente",
                         "id": "<normalized>",
                         "is_manual": false,
                         "position_title": null,
-                        "request_id": "<normalized>",
-                        "request_status": "pendiente",
                         "requested_at": "<normalized>",
                         "resolver_type": "specific_person",
                         "responded_at": null,
                         "response_note": null,
                         "step_order": 1,
+                        "turno_id": "<normalized>",
                         "unit_name": null,
                         "unit_type_name": null
                       }
                     ]
                   },
-                  "fill_requests": [
+                  "total_pasos_firma": 1,
+                  "turnos_entrega": [
                     {
                       "document_id": "<normalized>",
                       "document_version": "1.0",
@@ -600,38 +618,7 @@
                       "template_artifact_name": "Informe general"
                     }
                   ],
-                  "fill_steps": [
-                    {
-                      "assigned_person_id": "<normalized>",
-                      "assigned_person_name": "Usuario Prueba",
-                      "cargo_name": null,
-                      "display_label": "Usuario Prueba",
-                      "id": "<normalized>",
-                      "is_manual": false,
-                      "position_title": null,
-                      "request_id": "<normalized>",
-                      "request_status": "pendiente",
-                      "requested_at": "<normalized>",
-                      "resolver_type": "specific_person",
-                      "responded_at": null,
-                      "response_note": null,
-                      "step_order": 1,
-                      "unit_name": null,
-                      "unit_type_name": null
-                    }
-                  ],
-                  "signature_requests": [],
-                  "signature_steps": [
-                    {
-                      "code": "firma_1",
-                      "id": "<normalized>",
-                      "name": "Firma 1",
-                      "signer_count": 1,
-                      "slot": "firma_1",
-                      "step_order": 1
-                    }
-                  ],
-                  "total_signature_steps": 1
+                  "turnos_firma": []
                 },
                 "working_file_path": "<normalized>"
               },
@@ -679,33 +666,64 @@
                   "unit_label": "Carrera de Tecnologías de la Información",
                   "user_started_at": null,
                   "workflow": {
-                    "current_fill_step_order": 1,
-                    "current_signature_step_order": null,
-                    "fill_flow": {
-                      "current_step_order": 1,
-                      "status": "pendiente",
-                      "steps": [
+                    "paso_actual_entrega": 1,
+                    "paso_actual_firma": null,
+                    "pasos_entrega": [
+                      {
+                        "assigned_person_id": "<normalized>",
+                        "assigned_person_name": "Usuario Prueba",
+                        "cargo_name": null,
+                        "display_label": "Usuario Prueba",
+                        "estado": "pendiente",
+                        "id": "<normalized>",
+                        "is_manual": false,
+                        "position_title": null,
+                        "requested_at": "<normalized>",
+                        "resolver_type": "specific_person",
+                        "responded_at": null,
+                        "response_note": null,
+                        "step_order": 1,
+                        "turno_id": "<normalized>",
+                        "unit_name": null,
+                        "unit_type_name": null
+                      }
+                    ],
+                    "pasos_firma": [
+                      {
+                        "code": "firma_1",
+                        "id": "<normalized>",
+                        "name": "Firma 1",
+                        "signer_count": 1,
+                        "slot": "firma_1",
+                        "step_order": 1
+                      }
+                    ],
+                    "recorrido_entrega": {
+                      "estado": "pendiente",
+                      "paso_actual": 1,
+                      "pasos": [
                         {
                           "assigned_person_id": "<normalized>",
                           "assigned_person_name": "Usuario Prueba",
                           "cargo_name": null,
                           "display_label": "Usuario Prueba",
+                          "estado": "pendiente",
                           "id": "<normalized>",
                           "is_manual": false,
                           "position_title": null,
-                          "request_id": "<normalized>",
-                          "request_status": "pendiente",
                           "requested_at": "<normalized>",
                           "resolver_type": "specific_person",
                           "responded_at": null,
                           "response_note": null,
                           "step_order": 1,
+                          "turno_id": "<normalized>",
                           "unit_name": null,
                           "unit_type_name": null
                         }
                       ]
                     },
-                    "fill_requests": [
+                    "total_pasos_firma": 1,
+                    "turnos_entrega": [
                       {
                         "document_id": "<normalized>",
                         "document_version": "1.0",
@@ -718,38 +736,7 @@
                         "template_artifact_name": "Informe general"
                       }
                     ],
-                    "fill_steps": [
-                      {
-                        "assigned_person_id": "<normalized>",
-                        "assigned_person_name": "Usuario Prueba",
-                        "cargo_name": null,
-                        "display_label": "Usuario Prueba",
-                        "id": "<normalized>",
-                        "is_manual": false,
-                        "position_title": null,
-                        "request_id": "<normalized>",
-                        "request_status": "pendiente",
-                        "requested_at": "<normalized>",
-                        "resolver_type": "specific_person",
-                        "responded_at": null,
-                        "response_note": null,
-                        "step_order": 1,
-                        "unit_name": null,
-                        "unit_type_name": null
-                      }
-                    ],
-                    "signature_requests": [],
-                    "signature_steps": [
-                      {
-                        "code": "firma_1",
-                        "id": "<normalized>",
-                        "name": "Firma 1",
-                        "signer_count": 1,
-                        "slot": "firma_1",
-                        "step_order": 1
-                      }
-                    ],
-                    "total_signature_steps": 1
+                    "turnos_firma": []
                   },
                   "working_file_path": "<normalized>"
                 }
@@ -780,33 +767,64 @@
               "user_started_at": null,
               "vinculo_id": "<normalized>",
               "workflow": {
-                "current_fill_step_order": 1,
-                "current_signature_step_order": null,
-                "fill_flow": {
-                  "current_step_order": 1,
-                  "status": "pendiente",
-                  "steps": [
+                "paso_actual_entrega": 1,
+                "paso_actual_firma": null,
+                "pasos_entrega": [
+                  {
+                    "assigned_person_id": "<normalized>",
+                    "assigned_person_name": "Usuario Prueba",
+                    "cargo_name": null,
+                    "display_label": "Usuario Prueba",
+                    "estado": "pendiente",
+                    "id": "<normalized>",
+                    "is_manual": false,
+                    "position_title": null,
+                    "requested_at": "<normalized>",
+                    "resolver_type": "specific_person",
+                    "responded_at": null,
+                    "response_note": null,
+                    "step_order": 1,
+                    "turno_id": "<normalized>",
+                    "unit_name": null,
+                    "unit_type_name": null
+                  }
+                ],
+                "pasos_firma": [
+                  {
+                    "code": "firma_1",
+                    "id": "<normalized>",
+                    "name": "Firma 1",
+                    "signer_count": 1,
+                    "slot": "firma_1",
+                    "step_order": 1
+                  }
+                ],
+                "recorrido_entrega": {
+                  "estado": "pendiente",
+                  "paso_actual": 1,
+                  "pasos": [
                     {
                       "assigned_person_id": "<normalized>",
                       "assigned_person_name": "Usuario Prueba",
                       "cargo_name": null,
                       "display_label": "Usuario Prueba",
+                      "estado": "pendiente",
                       "id": "<normalized>",
                       "is_manual": false,
                       "position_title": null,
-                      "request_id": "<normalized>",
-                      "request_status": "pendiente",
                       "requested_at": "<normalized>",
                       "resolver_type": "specific_person",
                       "responded_at": null,
                       "response_note": null,
                       "step_order": 1,
+                      "turno_id": "<normalized>",
                       "unit_name": null,
                       "unit_type_name": null
                     }
                   ]
                 },
-                "fill_requests": [
+                "total_pasos_firma": 1,
+                "turnos_entrega": [
                   {
                     "document_id": "<normalized>",
                     "document_version": "1.0",
@@ -819,38 +837,7 @@
                     "template_artifact_name": "Informe general"
                   }
                 ],
-                "fill_steps": [
-                  {
-                    "assigned_person_id": "<normalized>",
-                    "assigned_person_name": "Usuario Prueba",
-                    "cargo_name": null,
-                    "display_label": "Usuario Prueba",
-                    "id": "<normalized>",
-                    "is_manual": false,
-                    "position_title": null,
-                    "request_id": "<normalized>",
-                    "request_status": "pendiente",
-                    "requested_at": "<normalized>",
-                    "resolver_type": "specific_person",
-                    "responded_at": null,
-                    "response_note": null,
-                    "step_order": 1,
-                    "unit_name": null,
-                    "unit_type_name": null
-                  }
-                ],
-                "signature_requests": [],
-                "signature_steps": [
-                  {
-                    "code": "firma_1",
-                    "id": "<normalized>",
-                    "name": "Firma 1",
-                    "signer_count": 1,
-                    "slot": "firma_1",
-                    "step_order": 1
-                  }
-                ],
-                "total_signature_steps": 1
+                "turnos_firma": []
               }
             }
           ],
@@ -865,6 +852,19 @@
           "term_name": "<normalized>",
           "term_type_code": "CUS",
           "term_type_name": "Custom"
+        }
+      ],
+      "turnos_entrega_pendientes": [
+        {
+          "document_id": "<normalized>",
+          "document_version": "1.0",
+          "document_version_id": "<normalized>",
+          "id": "<normalized>",
+          "requested_at": "<normalized>",
+          "responded_at": null,
+          "status": "pendiente",
+          "step_order": 1,
+          "template_artifact_name": "Informe general"
         }
       ],
       "user_packages": []

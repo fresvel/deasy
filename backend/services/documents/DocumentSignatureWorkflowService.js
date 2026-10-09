@@ -173,15 +173,15 @@ const leerTurnosConSuFirma = async (connection, recorridoId) => {
      INNER JOIN participantes_declarados pr ON pr.id = tu.participante_id
      INNER JOIN pasos_declarados pd ON pd.id = pr.paso_id
      LEFT JOIN (
-       SELECT ds1.signature_request_id, ds1.signature_status_id
+       SELECT ds1.turno_id, ds1.signature_status_id
        FROM document_signatures ds1
        INNER JOIN (
-         SELECT signature_request_id, MAX(id) AS max_id
+         SELECT turno_id, MAX(id) AS max_id
          FROM document_signatures
-         WHERE signature_request_id IS NOT NULL
-         GROUP BY signature_request_id
+         WHERE turno_id IS NOT NULL
+         GROUP BY turno_id
        ) latest ON latest.max_id = ds1.id
-     ) latest_ds ON latest_ds.signature_request_id = tu.id
+     ) latest_ds ON latest_ds.turno_id = tu.id
      LEFT JOIN signature_statuses ss ON ss.id = latest_ds.signature_status_id
      WHERE tu.recorrido_id = ?
      ORDER BY pd.orden ASC, tu.id ASC`,
@@ -190,11 +190,13 @@ const leerTurnosConSuFirma = async (connection, recorridoId) => {
   return rows;
 };
 
+// Leen de las DOS formas porque `summarizeSignatureRequests` recibe o filas de SQL --con sus alias
+// en snake-- o las del snapshot, ya proyectadas. La camel cambio de nombre en el paso 4-bis.
 const readRequestStatusCode = (row) =>
-  normalizeCode(row?.request_status_code ?? row?.requestStatusCode);
+  normalizeCode(row?.request_status_code ?? row?.estado);
 
 const readSignatureStatusCode = (row) =>
-  normalizeCode(row?.signature_status_code ?? row?.signatureStatusCode);
+  normalizeCode(row?.signature_status_code ?? row?.resultadoFirma);
 
 const readStepOrder = (row) => Number(row?.step_order ?? row?.stepOrder);
 
@@ -257,7 +259,7 @@ const summarizeSignatureRequests = (rows) => {
 // EL CONTEXTO DE UN TURNO DE FIRMA. Las claves conservan su nombre --`instance_id`, `step_id`,
 // `step_order`, `assigned_person_id`-- porque las consume `PdfSigningService` y el propio registro de
 // evidencia; lo que cambia es de donde salen.
-export const getSignatureRequestContext = async (connection, signatureRequestId) => {
+export const getSignatureRequestContext = async (connection, turnoId) => {
   const [rows] = await connection.query(
     `SELECT
        tu.id,
@@ -272,19 +274,19 @@ export const getSignatureRequestContext = async (connection, signatureRequestId)
      INNER JOIN pasos_declarados pd ON pd.id = pr.paso_id
      WHERE tu.id = ?
      LIMIT 1`,
-    [signatureRequestId]
+    [turnoId]
   );
   return rows?.[0] || null;
 };
 
 export const assertSignatureRequestCanBeSigned = async ({ connection, context }) => {
-  if (!context?.signatureRequestId) {
+  if (!context?.turnoId) {
     return null;
   }
 
-  const signatureRequest = await getSignatureRequestContext(connection, Number(context.signatureRequestId));
+  const signatureRequest = await getSignatureRequestContext(connection, Number(context.turnoId));
   if (!signatureRequest) {
-    throw new Error("La solicitud de firma indicada no existe.");
+    throw new Error("El turno de firma indicado no existe.");
   }
   if (Number(signatureRequest.assigned_person_id || 0) !== Number(context.user?.id || 0)) {
     throw new Error("No puedes registrar una firma para una solicitud asignada a otro usuario.");
@@ -293,12 +295,12 @@ export const assertSignatureRequestCanBeSigned = async ({ connection, context })
     context.documentVersionId
     && Number(signatureRequest.document_version_id) !== Number(context.documentVersionId)
   ) {
-    throw new Error("La solicitud de firma no pertenece a la versión documental indicada.");
+    throw new Error("El turno de firma no pertenece a la versión documental indicada.");
   }
 
   const currentStep = await resolveCurrentSignatureStep(connection, Number(signatureRequest.document_version_id));
   if (currentStep && Number(currentStep.stepOrder || 0) !== Number(signatureRequest.step_order || 0)) {
-    throw new Error("La solicitud de firma no pertenece al paso actual del flujo.");
+    throw new Error("El turno de firma no pertenece al paso actual del recorrido.");
   }
 
   return signatureRequest;
@@ -489,7 +491,7 @@ export const registerSignatureEvidence = async ({ connection, context, result })
 
   const [insertResult] = await connection.query(
     `INSERT INTO document_signatures (
-       signature_request_id,
+       turno_id,
        document_version_id,
        signer_user_id,
        signature_status_id,
@@ -514,7 +516,7 @@ export const registerSignatureEvidence = async ({ connection, context, result })
   if (!DOC_SIGNATURE_SUCCESS.has(signatureStatusCode)) {
     await addDocumentObservation(connection, {
       documentVersionId,
-      signatureRequestId: signatureRequest?.id ? Number(signatureRequest.id) : null,
+      turnoId: signatureRequest?.id ? Number(signatureRequest.id) : null,
       phase: "signature",
       kind: "rejection_reason",
       message: noteShort || "Firma rechazada.",
@@ -525,7 +527,7 @@ export const registerSignatureEvidence = async ({ connection, context, result })
   return {
     documentSignatureId: Number(insertResult.insertId),
     documentVersionId,
-    signatureRequestId: signatureRequest?.id ? Number(signatureRequest.id) : null,
+    turnoId: signatureRequest?.id ? Number(signatureRequest.id) : null,
     signatureStatusCode,
   };
 };
@@ -541,13 +543,24 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
       steps: [],
     }
     : await inspectDocumentVersionSignatureReadiness(connection, documentVersionId);
+  // ── LAS CLAVES DEL SNAPSHOT HABLAN EL VOCABULARIO DEL MODELO (paso 4-bis) ──────────────────────
+  //
+  //   signatureFlow             -> recorrido        requestStatusCode   -> estado
+  //   signatureSteps            -> pasos            signatureStatusCode -> resultadoFirma
+  //   signatureRequests         -> turnos
+  //   currentSignatureStepOrder -> pasoActual
+  //
+  // Este endpoint es el del RECORRIDO DE FIRMA, asi que el prefijo `signature` no distinguia nada:
+  // lo decia ya la ruta. Lo que si hacia falta es que `signatureRequests` dejara de nombrar una
+  // tabla retirada, y que `requestStatusCode` --que es el estado del TURNO-- se llame igual aqui que
+  // en el panel. Eran dos nombres para la misma columna.
   const snapshot = {
     documentVersionId,
     readiness,
-    signatureFlow: null,
-    signatureSteps: readiness.steps || [],
-    signatureRequests: [],
-    currentSignatureStepOrder: null,
+    recorrido: null,
+    pasos: readiness.steps || [],
+    turnos: [],
+    pasoActual: null,
     responsableActual: null,
     canOperate: false,
     currentStatus: readiness.currentStatus || currentStatus || null,
@@ -560,7 +573,7 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
 
   // `templateId` se queda en null: no hay cabecera. El recorrido ya no apunta a una plantilla de
   // flujo --la receta la lleva el paso-- y la clave se conserva porque viaja en la API.
-  snapshot.signatureFlow = {
+  snapshot.recorrido = {
     id: Number(recorrido.id),
     templateId: null,
     statusCode: recorrido.estado,
@@ -578,7 +591,7 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
     // (participante, persona) que hay que abrir-- y exponerla invita a que alguien dependa de ella.
     // Lo que el consumidor necesita de un paso es `assignees`, que es la union sin repetir.
     const pasos = resuelto.steps.map(({ turnos, ...paso }) => paso);
-    snapshot.signatureSteps = pasos;
+    snapshot.pasos = pasos;
     snapshot.readiness = {
       ok: true,
       context,
@@ -589,7 +602,7 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
     };
   } else if (!snapshot.readiness?.reason) {
     snapshot.readiness = await inspectDocumentVersionSignatureReadiness(connection, documentVersionId);
-    snapshot.signatureSteps = snapshot.readiness?.steps || [];
+    snapshot.pasos = snapshot.readiness?.steps || [];
     snapshot.currentStatus = snapshot.readiness?.currentStatus || snapshot.currentStatus;
   }
 
@@ -611,15 +624,15 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
      INNER JOIN participantes_declarados pr ON pr.id = tu.participante_id
      INNER JOIN pasos_declarados pd ON pd.id = pr.paso_id
      LEFT JOIN (
-       SELECT ds1.signature_request_id, ds1.signature_status_id
+       SELECT ds1.turno_id, ds1.signature_status_id
        FROM document_signatures ds1
        INNER JOIN (
-         SELECT signature_request_id, MAX(id) AS max_id
+         SELECT turno_id, MAX(id) AS max_id
          FROM document_signatures
-         WHERE signature_request_id IS NOT NULL
-         GROUP BY signature_request_id
+         WHERE turno_id IS NOT NULL
+         GROUP BY turno_id
        ) latest ON latest.max_id = ds1.id
-     ) latest_ds ON latest_ds.signature_request_id = tu.id
+     ) latest_ds ON latest_ds.turno_id = tu.id
      LEFT JOIN signature_statuses ss ON ss.id = latest_ds.signature_status_id
      LEFT JOIN persons p ON p.id = tu.persona_id
      LEFT JOIN cargos c ON c.id = pr.cargo_id
@@ -642,13 +655,13 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
         lastName: String(row.last_name || "").trim() || null,
       }
       : null;
-    const requestStatusCode = String(row.request_status_code || "").trim().toLowerCase();
-    snapshot.signatureRequests.push({
+    const estado = String(row.request_status_code || "").trim().toLowerCase();
+    snapshot.turnos.push({
       id: Number(row.id),
       stepId: Number(row.step_id),
       stepOrder: Number(row.step_order),
-      requestStatusCode,
-      signatureStatusCode: String(row.signature_status_code || "").trim() || null,
+      estado,
+      resultadoFirma: String(row.signature_status_code || "").trim() || null,
       isManual: Boolean(Number(row.is_manual || 0)),
       assignedPerson,
       cargoName: String(row.cargo_name || "").trim() || null,
@@ -657,21 +670,21 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
     });
   }
 
-  const stepSummaries = summarizeSignatureRequests(snapshot.signatureRequests);
+  const stepSummaries = summarizeSignatureRequests(snapshot.turnos);
   const currentStep = stepSummaries.find((item) => !item.approved && !item.hasRejected)
     || stepSummaries.find((item) => !item.approved)
     || null;
-  snapshot.currentSignatureStepOrder = currentStep ? Number(currentStep.stepOrder) : null;
+  snapshot.pasoActual = currentStep ? Number(currentStep.stepOrder) : null;
 
-  for (const request of snapshot.signatureRequests) {
-    if (Number(request.stepOrder) !== Number(snapshot.currentSignatureStepOrder || 0)) {
+  for (const request of snapshot.turnos) {
+    if (Number(request.stepOrder) !== Number(snapshot.pasoActual || 0)) {
       continue;
     }
-    if (!snapshot.responsableActual && pendingStatusCodes.has(request.requestStatusCode) && request.assignedPerson) {
+    if (!snapshot.responsableActual && pendingStatusCodes.has(request.estado) && request.assignedPerson) {
       snapshot.responsableActual = request.assignedPerson;
     }
     if (
-      pendingStatusCodes.has(request.requestStatusCode)
+      pendingStatusCodes.has(request.estado)
       && Number(userId || 0) === Number(request.assignedPerson?.id || 0)
     ) {
       snapshot.canOperate = true;
@@ -681,8 +694,8 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
   return snapshot;
 };
 
-export const syncDocumentProgressFromSignatureRequest = async (connection, signatureRequestId) => {
-  const context = await getSignatureRequestContext(connection, signatureRequestId);
+export const syncDocumentProgressFromSignatureRequest = async (connection, turnoId) => {
+  const context = await getSignatureRequestContext(connection, turnoId);
   if (!context) return null;
 
   const rows = await leerTurnosConSuFirma(connection, Number(context.instance_id));
@@ -834,7 +847,7 @@ export const syncDocumentProgressFromDocumentSignature = async (connection, docu
     `SELECT
        ds.id,
        ds.document_version_id,
-       ds.signature_request_id,
+       ds.turno_id,
        ss.code AS signature_status_code
      FROM document_signatures ds
      LEFT JOIN signature_statuses ss ON ss.id = ds.signature_status_id
@@ -845,8 +858,8 @@ export const syncDocumentProgressFromDocumentSignature = async (connection, docu
   const signature = rows?.[0];
   if (!signature) return null;
 
-  if (signature.signature_request_id) {
-    await syncDocumentProgressFromSignatureRequest(connection, Number(signature.signature_request_id));
+  if (signature.turno_id) {
+    await syncDocumentProgressFromSignatureRequest(connection, Number(signature.turno_id));
   }
 
   if (DOC_SIGNATURE_SUCCESS.has(normalizeCode(signature.signature_status_code))) {
@@ -855,6 +868,6 @@ export const syncDocumentProgressFromDocumentSignature = async (connection, docu
 
   return {
     documentVersionId: Number(signature.document_version_id),
-    signatureRequestId: signature.signature_request_id ? Number(signature.signature_request_id) : null,
+    turnoId: signature.turno_id ? Number(signature.turno_id) : null,
   };
 };

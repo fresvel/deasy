@@ -1176,7 +1176,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "signature_request_id", label: "Solicitud", type: "number" },
+      { name: "turno_id", label: "Turno", type: "number" },
       { name: "document_version_id", label: "Version documento", type: "number", required: true },
       { name: "signer_user_id", label: "Firmante", type: "number", required: true },
       { name: "signature_status_id", label: "Estado firma", type: "number", required: true },

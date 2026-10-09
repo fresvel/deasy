@@ -110,8 +110,8 @@ gana el esquema.
 | 8 | [El entregable concreto](/modelo/entregable-concreto/) | La unidad de trabajo real |
 | 9 | [Quién lo debe](/modelo/tenencias-y-relevo/) | Las tenencias y el relevo |
 | 10 | [Rondas y correcciones](/modelo/documento/) | Qué se produjo, y quién subió cada archivo |
-| 11 | [El flujo de entrega](/modelo/flujo-de-entrega/) | Quién lo rellena y quién lo revisa |
-| 12 | [El flujo de firma](/modelo/flujo-de-firma/) | Quién firma, en qué orden y en qué sitio del papel |
+| 11 | [El recorrido del documento](/modelo/flujo-de-entrega/) | Quién hace cada paso, entregando y firmando |
+| 12 | [La firma](/modelo/flujo-de-firma/) | El hueco en el papel, y si la firma vale |
 | 13 | [El documento final](/modelo/cierre/) | El archivo sellado y lo que se dijo por el camino |
 | · | [Vocabularios de estado](/modelo/vocabularios-de-estado/) | Qué estados existen y cuáles protege la base |
 | · | [Mapa completo](/modelo/mapa-completo/) | Todo junto, de un vistazo |

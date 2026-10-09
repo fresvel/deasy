@@ -19,16 +19,16 @@ const IN_PROGRESS = "en_progreso";
 
 // --- assertFillActionAllowed: los tres guards y su ORDEN ---------------------------------------
 
-test("operar la solicitud de otro es 403", () => {
+test("operar el turno de otro es 403", () => {
   assert.throws(
     () => assertFillActionAllowed({
       action: "start", currentStatus: PENDING, assignedPersonId: 7, currentUserId: 9, isManual: false,
     }),
-    (error) => error.statusCode === 403 && /asignada a otro usuario/.test(error.message),
+    (error) => error.statusCode === 403 && /asignado a otro usuario/.test(error.message),
   );
 });
 
-test("el guard de propiedad va ANTES que el de transición: una solicitud ajena en estado terminal sigue siendo 403", () => {
+test("el guard de propiedad va ANTES que el de transición: un turno ajeno en estado terminal sigue siendo 403", () => {
   assert.throws(
     () => assertFillActionAllowed({
       action: "start", currentStatus: "completado", assignedPersonId: 7, currentUserId: 9, isManual: false,
@@ -136,7 +136,7 @@ test("con dos pasos, devolver reactiva el paso anterior y lo deja en pendiente",
   const connection = fakeConnection((sql) => (sql.startsWith("SELECT") ? [[{ id: 90 }]] : [{}]));
   const reactivado = await reactivatePreviousFillStepIfNeeded(connection, {
     step_order: 2,
-    document_fill_flow_id: 3,
+    recorrido_id: 3,
   });
   assert.equal(reactivado, 1);
   const [lectura, escritura] = connection.queries;
@@ -148,7 +148,7 @@ test("con dos pasos, devolver reactiva el paso anterior y lo deja en pendiente",
 
 test("si el paso anterior no tiene turnos, no se reactiva nada y no se escribe", async () => {
   const connection = fakeConnection(() => [[]]);
-  assert.equal(await reactivatePreviousFillStepIfNeeded(connection, { step_order: 3, document_fill_flow_id: 3 }), null);
+  assert.equal(await reactivatePreviousFillStepIfNeeded(connection, { step_order: 3, recorrido_id: 3 }), null);
   assert.equal(connection.queries.length, 1, "solo la lectura: no hay nada que escribir");
 });
 
@@ -156,7 +156,7 @@ test("si el paso anterior no tiene turnos, no se reactiva nada y no se escribe",
 
 const contextoFinal = (overrides = {}) => ({
   vinculo_id: 10,
-  document_fill_flow_id: 3,
+  recorrido_id: 3,
   step_order: 2,
   working_file_path: "Unidades/x/entregable.docx",
   ...overrides,
@@ -183,7 +183,7 @@ const conPasosYFirmas = (maxStepOrder, totalFirmas) => fakeConnection((sql) => {
 test("sin plantilla de proceso o sin flujo de entrega no se exige PDF", async () => {
   const connection = fakeConnection(() => { throw new Error("no debería consultar"); });
   assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ vinculo_id: null })), false);
-  assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ document_fill_flow_id: null })), false);
+  assert.equal(await requiresSignaturePdfForFinalFillApproval(connection, contextoFinal({ recorrido_id: null })), false);
 });
 
 test("si no es el ÚLTIMO paso, no se exige PDF", async () => {
@@ -291,7 +291,7 @@ const contextoDe = (overrides = {}) => ({
   assigned_person_id: 9,
   status: PENDING,
   is_manual: 0,
-  document_fill_flow_id: 3,
+  recorrido_id: 3,
   document_version_id: 77,
   step_order: 1,
   working_file_path: "Unidades/x/e.pdf",
@@ -319,7 +319,7 @@ test("start marca in_progress, sella user_started_at y confirma la transacción"
     { pool: poolCon(connection), findUserById: usuario },
   );
   assert.deepEqual(resultado.status, IN_PROGRESS);
-  assert.equal(resultado.fillRequestId, 1);
+  assert.equal(resultado.turnoId, 1);
   // Sin progreso resuelto, la versión documental sale del contexto y el estado del flujo es null.
   assert.equal(resultado.documentVersionId, 77);
   assert.equal(resultado.flowStatus, null);
@@ -376,7 +376,7 @@ test("aprobar el último paso sin PDF en working es 409, no 500, y deshace la tr
     if (sql.includes("FROM turnos t")) {
       return [[contextoDe({
         vinculo_id: 10,
-        document_fill_flow_id: 3,
+        recorrido_id: 3,
         step_order: 2,
         working_file_path: "Unidades/x/e.docx",
       })]];

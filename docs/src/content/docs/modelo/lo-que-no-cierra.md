@@ -35,7 +35,7 @@ El valor retirado no se filtra — **no se puede ni insertar**. Con eso cayeron 
 (`document_owner`, `position`) y cuatro de los seis ámbitos, y la guarda defensiva que el disparador
 del relevo llevaba por este mismo motivo.
 
-Está contado en [el flujo de firma](/modelo/flujo-de-firma/).
+Está contado en [la firma](/modelo/flujo-de-firma/).
 
 :::
 

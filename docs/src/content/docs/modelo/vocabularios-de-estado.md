@@ -142,7 +142,7 @@ código.
 stateDiagram-v2
     direction LR
     [*] --> Inicial
-    Inicial --> PendienteLlenado: hay flujo de entrega
+    Inicial --> PendienteLlenado: hay recorrido de entrega
     Inicial --> ListoFirma: no lo hay
     PendienteLlenado --> EnProceso
     EnProceso --> PendienteLlenado

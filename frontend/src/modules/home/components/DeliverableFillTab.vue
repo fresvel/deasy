@@ -5,15 +5,15 @@
       <h3 class="deasy-title deasy-title--section">Secuencia del flujo</h3>
       <AppTag variant="neutral">Vista operativa</AppTag>
     </div>
-    <div v-if="!fillWorkflowState.subject?.workflow?.fill_steps?.length" class="text-sm text-muted">
+    <div v-if="!fillWorkflowState.subject?.workflow?.pasos_entrega?.length" class="text-sm text-muted">
       Este entregable todavía no tiene una secuencia de entrega visible.
     </div>
     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div
-        v-for="step in fillWorkflowState.subject.workflow.fill_steps"
-        :key="`fill-step-combined-${step.id}-${step.request_id || 'na'}`"
+        v-for="step in fillWorkflowState.subject.workflow.pasos_entrega"
+        :key="`fill-step-combined-${step.id}-${step.turno_id || 'na'}`"
         class="deasy-flow-step"
-        :class="`deasy-flow-step--${getFillStepTono(step, fillWorkflowState.subject.workflow.fill_flow?.current_step_order)}`"
+        :class="`deasy-flow-step--${getFillStepTono(step, fillWorkflowState.subject.workflow.recorrido_entrega?.paso_actual)}`"
       >
         <div class="deasy-flow-step__accent"></div>
         <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
@@ -27,11 +27,11 @@
             </div>
           </div>
           <div class="flex flex-wrap gap-2 justify-end">
-            <AppTag :variant="tonoRecorrido(step.request_status)">
-              {{ etiquetaRecorrido(step.request_status) }}
+            <AppTag :variant="tonoRecorrido(step.estado)">
+              {{ etiquetaRecorrido(step.estado) }}
             </AppTag>
             <AppTag
-              v-if="fillWorkflowState.subject.workflow.fill_flow?.current_step_order === step.step_order"
+              v-if="fillWorkflowState.subject.workflow.recorrido_entrega?.paso_actual === step.step_order"
               variant="accent"
             >
               Actual

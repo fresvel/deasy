@@ -38,7 +38,7 @@ Si algo se te atraviesa, casi seguro es una de estas tres:
 
 1.  **El motor de procesos** (serie → regla → flujo, y los tres `item_mode`). Capitulo 5 de este documento.
 
-2.  **El flujo de firma completo**, desde el clic hasta el PDF firmado en MinIO, pasando por la cola. Capitulos 4 y 7.
+2.  **La firma de punta a punta**, desde el clic hasta el PDF firmado en MinIO, pasando por la cola. Capitulos 4 y 7.
 
 3.  **El panel de administración genérico** (`sqlTables.js` + `SqlAdminService.js` + `tableHooks.js`, y su contraparte `AdminTableManager.vue`). Capitulos 4 y 6.
 

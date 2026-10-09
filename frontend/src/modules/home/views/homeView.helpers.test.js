@@ -72,29 +72,29 @@ describe('getSignatureStepStatusCode', () => {
   const step = { step_order: 2 };
   test('sin solicitudes relacionadas -> unresolved', () => {
     expect(getSignatureStepStatusCode(step, [])).toBe('unresolved');
-    expect(getSignatureStepStatusCode(step, [{ stepOrder: 9, requestStatusCode: 'completado' }])).toBe('unresolved');
+    expect(getSignatureStepStatusCode(step, [{ stepOrder: 9, estado: 'completado' }])).toBe('unresolved');
   });
   test('rechazado o cancelado -> rejected (tiene prioridad)', () => {
-    expect(getSignatureStepStatusCode(step, [{ stepOrder: 2, requestStatusCode: 'rechazado' }])).toBe('rejected');
+    expect(getSignatureStepStatusCode(step, [{ stepOrder: 2, estado: 'rechazado' }])).toBe('rejected');
     expect(getSignatureStepStatusCode(step, [
-      { stepOrder: 2, requestStatusCode: 'completado' },
-      { stepOrder: 2, requestStatusCode: 'cancelado' },
+      { stepOrder: 2, estado: 'completado' },
+      { stepOrder: 2, estado: 'cancelado' },
     ])).toBe('rejected');
   });
   test('todas completadas -> completed', () => {
     expect(getSignatureStepStatusCode(step, [
-      { stepOrder: 2, requestStatusCode: 'completado' },
-      { stepOrder: 2, requestStatusCode: 'completado' },
+      { stepOrder: 2, estado: 'completado' },
+      { stepOrder: 2, estado: 'completado' },
     ])).toBe('completed');
   });
   test('el paso actual -> current', () => {
-    expect(getSignatureStepStatusCode(step, [{ stepOrder: 2, requestStatusCode: 'pendiente' }], 2)).toBe('current');
+    expect(getSignatureStepStatusCode(step, [{ stepOrder: 2, estado: 'pendiente' }], 2)).toBe('current');
   });
   test('en_progreso -> current aunque no sea el paso marcado como actual', () => {
-    expect(getSignatureStepStatusCode(step, [{ stepOrder: 2, requestStatusCode: 'en_progreso' }])).toBe('current');
+    expect(getSignatureStepStatusCode(step, [{ stepOrder: 2, estado: 'en_progreso' }])).toBe('current');
   });
   test('resto -> pending', () => {
-    expect(getSignatureStepStatusCode(step, [{ stepOrder: 2, requestStatusCode: 'pendiente' }])).toBe('pending');
+    expect(getSignatureStepStatusCode(step, [{ stepOrder: 2, estado: 'pendiente' }])).toBe('pending');
   });
 });
 
@@ -117,7 +117,7 @@ describe('getSignatureStepStatusLabel / Variant', () => {
    de que el CSS se llame de una forma u otra. */
 describe('getSignatureStepStatusCode (el estado y el turno mandan)', () => {
   const paso = { step_order: 1 };
-  const conEstado = (code) => [{ stepOrder: 1, requestStatusCode: code }];
+  const conEstado = (code) => [{ stepOrder: 1, estado: code }];
 
   test('estados distintos dan codigos distintos', () => {
     expect(getSignatureStepStatusCode(paso, conEstado('completado')))
@@ -166,11 +166,14 @@ describe('mapSigner', () => {
 
 describe('getFillRequestStatusCode', () => {
   test('normaliza desde cualquiera de los alias de estado', () => {
+    expect(getFillRequestStatusCode({ estado: ' COMPLETADO ' })).toBe('completado');
     expect(getFillRequestStatusCode({ status: 'En_Progreso' })).toBe('en_progreso');
-    expect(getFillRequestStatusCode({ requestStatus: ' COMPLETADO ' })).toBe('completado');
     expect(getFillRequestStatusCode({})).toBe('');
     // `status_name` ya no es alias: traia la etiqueta del catalogo, no el codigo.
     expect(getFillRequestStatusCode({ status_name: 'En progreso' })).toBe('');
+    /* Y `request_status_code` tampoco, desde el 4-bis del frente 24: nombraba la tabla `*_requests`,
+       que ya no existe. Afirmarlo aqui es lo que impide que vuelva de tapadillo como tercer alias. */
+    expect(getFillRequestStatusCode({ request_status_code: 'completado' })).toBe('');
   });
 });
 
@@ -192,7 +195,7 @@ describe('isCompletedSignatureRequestStatus', () => {
    Reescritas el 2026-08-13 para afirmar lo que sus propios nombres dicen —que el turno manda sobre
    el estado, y que cada estado se distingue del resto—, que sobrevive a repintar la aplicacion. */
 describe('getFillStepTono', () => {
-  const tono = (estado, actual) => getFillStepTono({ step_order: 2, request_status: estado }, actual);
+  const tono = (estado, actual) => getFillStepTono({ step_order: 2, estado }, actual);
 
   test('el paso ACTUAL manda sobre el estado', () => {
     /* Mismo estado, distinto turno: si el turno no mandara, los dos saldrian iguales. */

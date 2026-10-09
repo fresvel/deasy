@@ -68,7 +68,7 @@ const escenario = async (codigoDeFirma) => {
         await actualizarTurno(cx, Number(turno.id), { estado: "completado", respondido: new Date() });
         await cx.query(
           `INSERT INTO tareas.document_signatures
-             (signature_request_id, document_version_id, signer_user_id, signature_status_id, signed_at)
+             (turno_id, document_version_id, signer_user_id, signature_status_id, signed_at)
            VALUES (?, ?, ?, ?, NOW())`,
           [turno.id, recorrido.document_version_id, turno.persona_id, estadoId]
         );

@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**32 tablas · 303 columnas · 77 claves ajenas · 9 diagramas.**
+**32 tablas · 302 columnas · 76 claves ajenas · 9 diagramas.**
 
 ## Cómo leerla
 
@@ -532,9 +532,9 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 3 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 2 claves ajenas desde otros diagramas</summary>
 
-`document_signatures.signature_request_id` → `turnos` · `document_workflow_observations.fill_request_id` → `turnos` · `document_workflow_observations.signature_request_id` → `turnos`
+`document_signatures.turno_id` → `turnos` · `document_workflow_observations.turno_id` → `turnos`
 
 </details>
 
@@ -547,7 +547,7 @@ erDiagram
   %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   document_signatures {
     int id PK
-    int signature_request_id FK
+    int turno_id FK
     int document_version_id FK
     int signer_user_id FK
     int signature_status_id FK
@@ -565,14 +565,14 @@ erDiagram
     timestamp created_at
   }
   document_versions ||--o{ document_signatures : "document_version_id"
-  turnos |o--o{ document_signatures : "signature_request_id"
   persons ||--o{ document_signatures : "signer_user_id"
   signature_statuses ||--o{ document_signatures : "signature_status_id"
+  turnos |o--o{ document_signatures : "turno_id"
 ```
 
 ## Fuera de los subgrupos
 
-**1 tabla** · 12 columnas · 6 claves ajenas propias. Apunta a `document_versions`, `persons`, `task_items`, `turnos`, que salen como caja vacía.
+**1 tabla** · 11 columnas · 5 claves ajenas propias. Apunta a `document_versions`, `persons`, `task_items`, `turnos`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -581,8 +581,7 @@ erDiagram
     int id PK
     int task_item_id FK
     int document_version_id FK
-    int fill_request_id FK
-    int signature_request_id FK
+    int turno_id FK
     text phase
     text kind
     text message
@@ -592,9 +591,8 @@ erDiagram
     timestamp created_at
   }
   persons ||--o{ document_workflow_observations : "author_person_id"
-  turnos |o--o{ document_workflow_observations : "fill_request_id"
   task_items ||--o{ document_workflow_observations : "task_item_id"
   persons |o--o{ document_workflow_observations : "resolved_by_person_id"
-  turnos |o--o{ document_workflow_observations : "signature_request_id"
+  turnos |o--o{ document_workflow_observations : "turno_id"
   document_versions ||--o{ document_workflow_observations : "document_version_id"
 ```

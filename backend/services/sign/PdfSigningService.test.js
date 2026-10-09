@@ -224,10 +224,10 @@ test("sin `document_fields`, unos `fields` ilegibles sí son 400", async () => {
 
 test("los ids de workflow llegan como número o como null, nunca como cadena", async () => {
   const context = await buildSignContext({
-    body: cuerpoValido({ signature_request_id: "12", document_version_id: "" }),
+    body: cuerpoValido({ turno_id: "12", document_version_id: "" }),
     userId: 7,
   }, deps());
-  assert.equal(context.signatureRequestId, 12);
+  assert.equal(context.turnoId, 12);
   assert.equal(context.documentVersionId, null);
 });
 

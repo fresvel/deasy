@@ -390,6 +390,13 @@ el catálogo de PostgreSQL. Se regenera con `bash scripts/docs/gen-campos.sh <pi
 trabajo **`campos-al-dia`** de `docs-dbml.yml`, que le aplica el esquema a un PostgreSQL vacío — la
 página se deriva del esquema y no necesita ni una fila sembrada.
 
+⚠️ **Y LEE LA BASE VIVA, no el fichero del esquema: corre DESPUÉS de aplicarlo, no después de
+editarlo.** Costó una página caducada el 2026-10-09: se regeneró justo tras cambiar
+`postgres_schema.sql`, cuando la pila todavía tenía las columnas viejas, y la página salió con
+**311 columnas y 78 referencias** donde eran 310 y 77 — citando dos columnas que ya no existían. No
+falló nada; lo cazó la comprobación **A** de `check-doc-modelo.mjs` tres pasos después. El orden es
+`reset` (o `test:char:run`) **y luego** `gen-campos.sh`.
+
 Era **el único generador de página sin puerta**, y se rompió en silencio el mismo 2026-10-04: al
 repartir las tablas en esquemas por dominio, su consulta filtraba `information_schema.columns` por
 `table_schema = 'public'` y **dejó de encontrar nada**. Sus otras dos consultas resuelven por
@@ -429,8 +436,8 @@ Cada tabla aparece **una vez**, dentro de su **dominio**, y su valor es su **niv
 | **dominio** | de qué trata | 8, los de siempre. De aquí salen los 8 diagramas, y es **donde debería vivir su código** |
 | **nivel** | de qué depende | 0 (abajo) a 7 (arriba). De aquí sale el **orden de lectura** |
 
-**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: **98 bajan,
-77 se quedan, 0 suben** de 175. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
+**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: **86 bajan,
+71 se quedan, 0 suben** de 157. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
 transversales declarados por nombre (el bootstrap y el editor genérico de `/admin`).
 
 ```bash

@@ -179,7 +179,7 @@ export const FK_TABLE_MAP = {
   role_assignment_id: "role_assignments",
   // La columna conserva su nombre y lo que referencia es un TURNO (paso 3b de la fase 4): la lee el
   // firmador y viaja en la API, asi que renombrarla es otro cambio.
-  signature_request_id: "turnos",
+  turno_id: "turnos",
   signature_status_id: "signature_statuses"
 };
 

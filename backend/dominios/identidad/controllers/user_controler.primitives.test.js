@@ -213,14 +213,19 @@ test("estaAbiertoElTurno normaliza, y vale para los DOS lados", () => {
   assert.equal(estaAbiertoElTurno("firmado"), false);
 });
 
+/* ⚠️ ESTOS FIXTURES SE ESCRIBEN CON LA FORMA QUE EL PANEL EMITE, no con una inventada: son la
+   forma de `fillWorkflow` que construye `user_controler.panel.js` (`paso_actual`, `pasos`, y el
+   `estado` de cada paso). Lo dice aqui porque el 2026-10-09 estas tres pruebas SIGUIERON EN VERDE
+   mientras la funcion devolvia false para todo el mundo: el panel habia renombrado sus claves y el
+   fixture, al ser propio, no se enteraba. Si cambias la forma del panel, cambia esto. */
 test("canCurrentUserResetWorkflow: permite si el usuario es el responsable del paso de llenado actual", () => {
   const ok = canCurrentUserResetWorkflow({
     userId: 7,
     fillWorkflow: {
-      current_step_order: 2,
-      steps: [
-        { step_order: 1, assigned_person_id: 5, request_status: "en_progreso" },
-        { step_order: 2, assigned_person_id: 7, request_status: "pendiente", responded_at: null }
+      paso_actual: 2,
+      pasos: [
+        { step_order: 1, assigned_person_id: 5, estado: "en_progreso" },
+        { step_order: 2, assigned_person_id: 7, estado: "pendiente", responded_at: null }
       ]
     },
     signatureRequests: []
@@ -232,8 +237,8 @@ test("canCurrentUserResetWorkflow: niega si el paso actual ya fue respondido o e
   const respondido = canCurrentUserResetWorkflow({
     userId: 7,
     fillWorkflow: {
-      current_step_order: 2,
-      steps: [{ step_order: 2, assigned_person_id: 7, request_status: "pendiente", responded_at: "2024-01-01" }]
+      paso_actual: 2,
+      pasos: [{ step_order: 2, assigned_person_id: 7, estado: "pendiente", responded_at: "2024-01-01" }]
     },
     signatureRequests: []
   });
@@ -241,7 +246,7 @@ test("canCurrentUserResetWorkflow: niega si el paso actual ya fue respondido o e
 
   const deOtro = canCurrentUserResetWorkflow({
     userId: 7,
-    fillWorkflow: { current_step_order: 1, steps: [{ step_order: 1, assigned_person_id: 99, request_status: "pendiente" }] },
+    fillWorkflow: { paso_actual: 1, pasos: [{ step_order: 1, assigned_person_id: 99, estado: "pendiente" }] },
     signatureRequests: []
   });
   assert.equal(deOtro, false);
@@ -250,7 +255,7 @@ test("canCurrentUserResetWorkflow: niega si el paso actual ya fue respondido o e
 test("canCurrentUserResetWorkflow: cae a firmas cuando no hay paso de llenado y respeta el orden mínimo pendiente", () => {
   const ok = canCurrentUserResetWorkflow({
     userId: 7,
-    fillWorkflow: { current_step_order: 0, steps: [] },
+    fillWorkflow: { paso_actual: 0, pasos: [] },
     signatureRequests: [
       { step_order: 3, assigned_person_id: 7, status: "pendiente" },
       { step_order: 2, assigned_person_id: 7, status: "pendiente" }
@@ -260,7 +265,7 @@ test("canCurrentUserResetWorkflow: cae a firmas cuando no hay paso de llenado y 
 
   const noEsElPrimero = canCurrentUserResetWorkflow({
     userId: 7,
-    fillWorkflow: { current_step_order: 0, steps: [] },
+    fillWorkflow: { paso_actual: 0, pasos: [] },
     signatureRequests: [
       { step_order: 2, assigned_person_id: 99, status: "pendiente" },
       { step_order: 3, assigned_person_id: 7, status: "pendiente" }

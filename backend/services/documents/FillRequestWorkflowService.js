@@ -40,10 +40,10 @@ const getCurrentUser = async (rawUserId, findUserById) => {
   return user;
 };
 
-// EL CONTEXTO DE UN TURNO. Las claves conservan su nombre --`document_fill_flow_id`,
+// EL CONTEXTO DE UN TURNO. Las claves conservan su nombre --`recorrido_id`,
 // `step_order`...-- a proposito: las consume media docena de sitios y el guard las nombra en sus
 // mensajes. Lo que cambia es de DONDE salen: el estado del turno, el orden del PASO DECLARADO.
-export const getFillRequestContext = async (connection, fillRequestId) => {
+export const getFillRequestContext = async (connection, turnoId) => {
   const [rows] = await connection.query(
     `SELECT
        t.id,
@@ -51,7 +51,7 @@ export const getFillRequestContext = async (connection, fillRequestId) => {
        t.persona_id AS assigned_person_id,
        t.estado AS status,
        t.manual AS is_manual,
-       r.id AS document_fill_flow_id,
+       r.id AS recorrido_id,
        r.document_version_id,
        p.orden AS step_order,
        p.id AS paso_id,
@@ -67,7 +67,7 @@ export const getFillRequestContext = async (connection, fillRequestId) => {
      LEFT JOIN task_items ti ON ti.id = dv.task_item_id
      WHERE t.id = ?
      LIMIT 1`,
-    [fillRequestId]
+    [turnoId]
   );
   return rows?.[0] || null;
 };
@@ -82,7 +82,7 @@ export const reactivatePreviousFillStepIfNeeded = async (connection, context) =>
   // que mirar el paso declarado-- y eso es una lectura, asi que vive en `datos/consulta/`. La
   // escritura recibe ids y no cruza nada.
   const previousStepOrder = currentStepOrder - 1;
-  const ids = await idsDeTurnosDelPaso(connection, context.document_fill_flow_id, previousStepOrder);
+  const ids = await idsDeTurnosDelPaso(connection, context.recorrido_id, previousStepOrder);
   if (!ids.length) {
     return null;
   }
@@ -92,7 +92,7 @@ export const reactivatePreviousFillStepIfNeeded = async (connection, context) =>
 };
 
 export const requiresSignaturePdfForFinalFillApproval = async (connection, context) => {
-  if (!context?.vinculo_id || !context?.document_fill_flow_id) {
+  if (!context?.vinculo_id || !context?.recorrido_id) {
     return false;
   }
 
@@ -102,7 +102,7 @@ export const requiresSignaturePdfForFinalFillApproval = async (connection, conte
        INNER JOIN participantes_declarados pa ON pa.id = t.participante_id
        INNER JOIN pasos_declarados p ON p.id = pa.paso_id
       WHERE t.recorrido_id = ?`,
-    [context.document_fill_flow_id]
+    [context.recorrido_id]
   );
   const maxStepOrder = Number(fillRows?.[0]?.max_step_order || 0);
   if (!maxStepOrder || Number(context.step_order) !== maxStepOrder) {
@@ -167,7 +167,7 @@ export const assertFillActionAllowed = ({ action, currentStatus, assignedPersonI
   const normalizedStatus = String(currentStatus || "").trim().toLowerCase();
 
   if (assignedPersonId && Number(assignedPersonId) !== Number(currentUserId)) {
-    throw forbidden("No puedes operar una solicitud de entrega asignada a otro usuario.");
+    throw forbidden("No puedes operar un turno de entrega asignado a otro usuario.");
   }
 
   // Sin responsable y sin modo manual no hay a quién comparar: el guard de propiedad de arriba no
@@ -176,7 +176,7 @@ export const assertFillActionAllowed = ({ action, currentStatus, assignedPersonI
   // configurada y no se puede operar hasta que alguien le asigne responsable. Por eso 409 y no 500
   // (antes era 500 y se lo llevaba cualquier usuario autenticado; ver `sin_responsable_*`).
   if (!assignedPersonId && !isManual) {
-    throw conflict("La solicitud de entrega no tiene un responsable resoluble.");
+    throw conflict("El turno de entrega no tiene un responsable resoluble.");
   }
 
   if (!ALLOWED_STATUSES_BY_ACTION.get(action)?.has(normalizedStatus)) {
@@ -197,15 +197,15 @@ export const updateFillRequestStatus = async (
   const connection = await pool.getConnection();
   try {
     const user = await getCurrentUser(userId, findUserById);
-    const fillRequestId = Number(requestId);
-    if (!fillRequestId || Number.isNaN(fillRequestId)) {
-      throw badRequest("Solicitud de entrega inválida.");
+    const turnoId = Number(requestId);
+    if (!turnoId || Number.isNaN(turnoId)) {
+      throw badRequest("Turno de entrega inválido.");
     }
 
     await connection.beginTransaction();
-    const context = await getFillRequestContext(connection, fillRequestId);
+    const context = await getFillRequestContext(connection, turnoId);
     if (!context) {
-      throw notFound("Solicitud de entrega no encontrada.");
+      throw notFound("Turno de entrega no encontrado.");
     }
 
     assertFillActionAllowed({
@@ -232,7 +232,7 @@ export const updateFillRequestStatus = async (
 
     const shouldRespondNow = nextStatus !== ESTADO_RECORRIDO.EN_PROGRESO;
     const assignedPersonId = context.assigned_person_id || (context.is_manual ? Number(user.id) : null);
-    await responderTurno(connection, fillRequestId, {
+    await responderTurno(connection, turnoId, {
       personaId: assignedPersonId,
       estado: nextStatus,
       respondido: shouldRespondNow ? new Date() : null,
@@ -248,7 +248,7 @@ export const updateFillRequestStatus = async (
       await addDocumentObservation(connection, {
         taskItemId: context.task_item_id,
         documentVersionId: context.document_version_id,
-        fillRequestId,
+        turnoId,
         phase: "review",
         kind: action === "reject" ? "rejection_reason" : "return_reason",
         message: note,
@@ -266,11 +266,11 @@ export const updateFillRequestStatus = async (
       );
     }
 
-    const progress = await syncDocumentProgressFromFillRequest(connection, fillRequestId);
+    const progress = await syncDocumentProgressFromFillRequest(connection, turnoId);
     await connection.commit();
 
     return {
-      fillRequestId,
+      turnoId,
       status: nextStatus,
       documentVersionId: progress?.documentVersionId ?? Number(context.document_version_id),
       flowStatus: progress?.flowStatus ?? null,

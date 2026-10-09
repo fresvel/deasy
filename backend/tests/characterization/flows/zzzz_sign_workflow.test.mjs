@@ -9,8 +9,8 @@
 // EL ORDEN DE GUARDS QUE ESTE FICHERO CONGELA (de fuera hacia dentro):
 //   1. `authMiddleware`                        -> 401  "Token requerido"
 //   2. `requirePermissions("fill_flows.update")` -> 403 (NO alcanzable, ver limitaciones)
-//   3. id de la solicitud no numérico o cero   -> 400  "Solicitud de entrega inválida."
-//   4. la solicitud no existe                  -> 404  "Solicitud de entrega no encontrada."
+//   3. id del turno no numérico o cero         -> 400  "Turno de entrega inválido."
+//   4. el turno no existe                      -> 404  "Turno de entrega no encontrado."
 //   5. el actor no es el asignado              -> 403  "No puedes operar una solicitud ... otro usuario."
 //   6. sin responsable y no manual             -> 409  "...no tiene un responsable resoluble."
 //   7. la transición no está permitida         -> 409  "La solicitud no puede pasar de X usando Y."

@@ -629,7 +629,7 @@ const emitHeaderState = () => {
 };
 
 const normalizeMetadata = (metadata = {}) => ({
-  signatureRequestId: metadata.signatureRequestId || null,
+  turnoId: metadata.turnoId || null,
   documentId: metadata.documentId || null,
   documentVersionId: metadata.documentVersionId || null,
   processName: metadata.processName || "",

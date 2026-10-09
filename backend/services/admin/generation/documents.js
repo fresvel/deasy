@@ -54,7 +54,7 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
     return null;
   }
 
-  const documentFillFlowId = await abrirRecorrido(connection, {
+  const recorridoId = await abrirRecorrido(connection, {
     documentVersionId,
     accion: "entrega",
     pasoActual: Number(receta.pasos[0].orden),
@@ -62,14 +62,14 @@ export const ensureFillFlowForDocumentVersion = async (connection, documentVersi
 
   for (const paso of receta.pasos) {
     for (const turno of await resolverPasoCompleto(connection, paso, context)) {
-      await abrirTurno(connection, { recorridoId: documentFillFlowId, accion: "entrega", ...turno });
+      await abrirTurno(connection, { recorridoId: recorridoId, accion: "entrega", ...turno });
     }
   }
 
   await transitionDocumentVersionState(connection, Number(documentVersionId), "Pendiente de llenado");
   await ensureSignatureFlowForDocumentVersion(connection, documentVersionId);
 
-  return documentFillFlowId;
+  return recorridoId;
 };
 // `resolveOwnerPersonIdForTaskItem` VIVIO AQUI hasta el 2026-08-23, y su historia entera cabe en un
 // parrafo: empezo siendo una cascada de CUATRO escalones —el «Para:», el puesto del entregable, el

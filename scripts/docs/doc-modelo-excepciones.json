@@ -205,15 +205,13 @@
     "context_ancestor_type": {
       "motivo": "MEMORIA · ambito retirado de unit_scope_type.",
       "paginas": [
-        "modelo/flujo-de-entrega.md",
-        "modelo/flujo-de-firma.md"
+        "modelo/flujo-de-entrega.md"
       ]
     },
     "context_subtree": {
       "motivo": "MEMORIA · ambito retirado de unit_scope_type.",
       "paginas": [
-        "modelo/flujo-de-entrega.md",
-        "modelo/flujo-de-firma.md"
+        "modelo/flujo-de-entrega.md"
       ]
     },
     "data_key": {
@@ -245,7 +243,6 @@
       "paginas": [
         "datos/modos-y-plantillas.md",
         "modelo/flujo-de-entrega.md",
-        "modelo/flujo-de-firma.md",
         "modelo/lo-que-no-cierra.md"
       ]
     },
@@ -843,6 +840,12 @@
       "paginas": [
         "backend/auth.md",
         "complemento/permisos.md"
+      ]
+    },
+    "signature_request_id": {
+      "motivo": "LAPIDA · columna de `document_signatures` renombrada a `turno_id` el 2026-10-09 (paso 4-bis del frente 24), por la tabla `signature_requests` que murio en el 3b. La pagina lo cuenta para que el nombre no vuelva por inercia: si reaparece en el esquema, hay que quitar esta excepcion.",
+      "paginas": [
+        "modelo/flujo-de-firma.md"
       ]
     },
     "signature_request_statuses": {

@@ -227,7 +227,7 @@ async function readEntregable(taskItemId) {
     : [];
   const requests = fillFlows.length
     ? await query(
-        `SELECT tu.id, tu.recorrido_id AS document_fill_flow_id, tu.participante_id,
+        `SELECT tu.id, tu.recorrido_id AS recorrido_id, tu.participante_id,
                 tu.persona_id AS assigned_person_id, tu.estado AS status, tu.manual AS is_manual,
                 p.orden AS step_order
            FROM turnos tu
@@ -312,7 +312,7 @@ const gobiernaElFlujoDeRuntime = (estado, flow, lado) => {
   // receta de la edicion, el origen seria otro.
   assert.ok(estado.fill_requests.length, `${lado}: el recorrido tiene turnos`);
   assert.ok(
-    estado.fill_requests.every((t) => Number(t.document_fill_flow_id) === Number(estado.fill_flows[0].id)),
+    estado.fill_requests.every((t) => Number(t.recorrido_id) === Number(estado.fill_flows[0].id)),
     `${lado}: todos los turnos son de ese recorrido`,
   );
 };

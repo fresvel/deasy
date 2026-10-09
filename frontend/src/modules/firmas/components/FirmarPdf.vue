@@ -1212,7 +1212,7 @@ const fieldId = (name) => `${uid}-${name}`;
   });
   const isEmbeddedWorkflowMode = computed(() =>
     props.embedded
-      && Boolean(workflowSignContext.value?.documentVersionId || workflowSignContext.value?.signatureRequestId)
+      && Boolean(workflowSignContext.value?.documentVersionId || workflowSignContext.value?.turnoId)
   );
 
   const handleDatabaseEntry = () => {
@@ -1979,7 +1979,7 @@ const fieldId = (name) => `${uid}-${name}`;
 
     const submitAction = () => {
       if (requestMode.value) {
-        console.log('Enviar solicitud de firmas');
+        console.log('Enviar turnos de firma');
         return;
       }
       signMode.value = 'coordinates';
@@ -2220,12 +2220,12 @@ const fieldId = (name) => `${uid}-${name}`;
         ?? workflowSignContext.value?.documentVersionId
         ?? 0
       );
-      const signatureRequestId = Number(
-        fallbackContext?.signatureRequestId
-        ?? workflowSignContext.value?.signatureRequestId
+      const turnoId = Number(
+        fallbackContext?.turnoId
+        ?? workflowSignContext.value?.turnoId
         ?? 0
       );
-      if (!documentVersionId || !signatureRequestId) {
+      if (!documentVersionId || !turnoId) {
         return null;
       }
 
@@ -2238,16 +2238,16 @@ const fieldId = (name) => `${uid}-${name}`;
           return null;
         }
 
-        const request = Array.isArray(snapshot?.signatureRequests)
-          ? snapshot.signatureRequests.find((item) => Number(item?.id || 0) === signatureRequestId)
+        const request = Array.isArray(snapshot?.turnos)
+          ? snapshot.turnos.find((item) => Number(item?.id || 0) === turnoId)
           : null;
 
-        const requestStatusCode = String(request?.requestStatusCode || '').trim().toLowerCase();
+        const estado = String(request?.estado || '').trim().toLowerCase();
         const completed =
-          requestStatusCode === 'completado'
-          || requestStatusCode === 'completed'
+          estado === 'completado'
+          || estado === 'completed'
           || Boolean(request?.respondedAt);
-        const currentStepOrder = Number(snapshot?.currentSignatureStepOrder || 0);
+        const currentStepOrder = Number(snapshot?.pasoActual || 0);
         const requestStepOrder = Number(request?.stepOrder || 0);
         const workflowAdvanced = Boolean(currentStepOrder && requestStepOrder && currentStepOrder > requestStepOrder);
 
@@ -2257,7 +2257,7 @@ const fieldId = (name) => `${uid}-${name}`;
 
         return {
           documentVersionId,
-          signatureRequestId,
+          turnoId,
           signedPath: '',
           workflow: snapshot,
           message: 'La firma del flujo se registró correctamente.'
@@ -2488,7 +2488,7 @@ const fieldId = (name) => `${uid}-${name}`;
               name: doc.name,
               relativePath: doc.relativePath || doc.name,
               metadata: {
-                signatureRequestId: Number(doc?.metadata?.signatureRequestId || 0) || null,
+                turnoId: Number(doc?.metadata?.turnoId || 0) || null,
                 documentVersionId: Number(doc?.metadata?.documentVersionId || 0) || null,
                 documentId: Number(doc?.metadata?.documentId || 0) || null,
                 processName: doc?.metadata?.processName || '',
@@ -2567,7 +2567,7 @@ const fieldId = (name) => `${uid}-${name}`;
       const embeddedWorkflowContext = {
         embedded: props.embedded && isEmbeddedWorkflowMode.value,
         documentVersionId: Number(workflowSignContext.value?.documentVersionId || 0),
-        signatureRequestId: Number(workflowSignContext.value?.signatureRequestId || 0)
+        turnoId: Number(workflowSignContext.value?.turnoId || 0)
       };
       try {
         const allFields = fields.value.map((field) => ({
@@ -2586,8 +2586,8 @@ const fieldId = (name) => `${uid}-${name}`;
         } else {
           formData.append('token', currentSignatureMarker.value);
         }
-        if (workflowSignContext.value?.signatureRequestId) {
-          formData.append('signature_request_id', String(workflowSignContext.value.signatureRequestId));
+        if (workflowSignContext.value?.turnoId) {
+          formData.append('turno_id', String(workflowSignContext.value.turnoId));
         }
         if (workflowSignContext.value?.documentVersionId) {
           formData.append('document_version_id', String(workflowSignContext.value.documentVersionId));
@@ -2623,7 +2623,7 @@ const fieldId = (name) => `${uid}-${name}`;
         if (props.embedded && isEmbeddedWorkflowMode.value) {
           emit('workflow-signed', {
             documentVersionId: embeddedWorkflowContext.documentVersionId || null,
-            signatureRequestId: embeddedWorkflowContext.signatureRequestId || null,
+            turnoId: embeddedWorkflowContext.turnoId || null,
             signedPath: data.signedPath || '',
             workflow: data.workflow || null,
             message: signResultMessage.value,
@@ -2748,7 +2748,7 @@ const fieldId = (name) => `${uid}-${name}`;
     const initializeWorkflowSignatureSession = (payload = {}) => {
       allowUntrustedSigner.value = true;
       workflowSignContext.value = {
-        signatureRequestId: payload.signatureRequestId ? Number(payload.signatureRequestId) : null,
+        turnoId: payload.turnoId ? Number(payload.turnoId) : null,
         documentVersionId: payload.documentVersionId ? Number(payload.documentVersionId) : null,
         taskItemId: payload.taskItemId ? Number(payload.taskItemId) : null,
         processDefinitionId: payload.processDefinitionId ? Number(payload.processDefinitionId) : null,

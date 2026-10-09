@@ -172,7 +172,8 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
   if (versionIds.length) {
     // ⚠️ EL ORDEN DE ESTE BLOQUE ES UNA CADENA DE CLAVES AJENAS, y desde el paso 3b de la fase 4 del
     // frente 24 las DOS que apuntaban a las tablas viejas apuntan a `turnos`:
-    // `document_workflow_observations` (por sus dos columnas) y `document_signatures`. Asi que lo que
+    // `document_workflow_observations` y `document_signatures` --la primera por DOS columnas hasta el
+    // 4-bis, que las colapso en `turno_id`--. Asi que lo que
     // cuelga del turno se borra ANTES que el turno; antes el orden entre bloques daba igual porque
     // cada mitad tenia sus propias tablas.
     await query("DELETE FROM document_workflow_observations WHERE document_version_id = ANY($1::int[])", [versionIds]);
@@ -300,7 +301,7 @@ export async function countSignatureBatchJobs() {
 // debe seguir corriendo el último: `document_observations`, `task_items.user_started_at`,
 // `document_fill_flows.status/current_step_order` y las instancias de flujo de firma que crea una
 // aprobación.
-export async function captureFillRequestFixture(fillRequestId) {
+export async function captureFillRequestFixture(turnoId) {
   const rows = await query(
     `SELECT tu.id, tu.persona_id AS assigned_person_id, tu.estado AS status, tu.manual AS is_manual,
             tu.respondido AS responded_at, tu.nota_respuesta AS response_note,
@@ -309,7 +310,7 @@ export async function captureFillRequestFixture(fillRequestId) {
        INNER JOIN recorridos r ON r.id = tu.recorrido_id
        INNER JOIN document_versions dv ON dv.id = r.document_version_id
       WHERE tu.id = $1`,
-    [fillRequestId],
+    [turnoId],
   );
   return rows[0] ?? null;
 }

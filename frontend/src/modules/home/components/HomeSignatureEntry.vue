@@ -214,7 +214,7 @@
         <AppDataTable
           :fields="tableFields"
           :rows="filteredItems"
-          :row-key="(row) => `home-signature-${row.signature_request_id}`"
+          :row-key="(row) => `home-signature-${row.turno_id}`"
           empty-text="No hay documentos pendientes por firma."
           actions-label="Acciones"
         >
@@ -244,10 +244,10 @@
           </template>
           <template #actions="{ row }">
             <div class="flex flex-wrap justify-end gap-2">
-              <AppButton variant="neutral-soft" :disabled="rowActionLoading[row.signature_request_id] === 'preview'" @click="previewItem(row)">
+              <AppButton variant="neutral-soft" :disabled="rowActionLoading[row.turno_id] === 'preview'" @click="previewItem(row)">
                 Ver PDF
               </AppButton>
-              <AppButton variant="primary-soft" :disabled="rowActionLoading[row.signature_request_id] === 'download'" @click="downloadItem(row)">
+              <AppButton variant="primary-soft" :disabled="rowActionLoading[row.turno_id] === 'download'" @click="downloadItem(row)">
                 Descargar
               </AppButton>
             </div>
@@ -432,7 +432,7 @@ const filteredItems = computed(() => {
 
 const selectedItems = computed(() => {
   const selected = new Set(selectedIds.value.map((value) => Number(value)));
-  return filteredItems.value.filter((item) => selected.has(Number(item.signature_request_id)));
+  return filteredItems.value.filter((item) => selected.has(Number(item.turno_id)));
 });
 
 const readCurrentUser = () => {
@@ -497,14 +497,14 @@ const loadSignatureCenter = async () => {
   }
 };
 
-const isSelected = (row) => selectedIds.value.includes(Number(row.signature_request_id));
+const isSelected = (row) => selectedIds.value.includes(Number(row.turno_id));
 
 const toggleSelection = (row) => {
   const next = new Set(selectedIds.value.map((value) => Number(value)));
-  const signatureRequestId = Number(row.signature_request_id);
-  if (!signatureRequestId) return;
-  if (next.has(signatureRequestId)) next.delete(signatureRequestId);
-  else next.add(signatureRequestId);
+  const turnoId = Number(row.turno_id);
+  if (!turnoId) return;
+  if (next.has(turnoId)) next.delete(turnoId);
+  else next.add(turnoId);
   selectedIds.value = Array.from(next);
 };
 
@@ -514,7 +514,7 @@ const buildDownloadContext = (item) => ({
   documentId: Number(item.document_id || 0) || null,
   preloadFilePath: item.preloadFilePath || item.preload_file_path || item.final_file_path || item.working_file_path || "",
   finalFilePath: item.final_file_path || "",
-  name: item.template_artifact_name || item.definition_name || `documento-${item.document_id || item.signature_request_id}`,
+  name: item.template_artifact_name || item.definition_name || `documento-${item.document_id || item.turno_id}`,
 });
 
 const getFileNameFromPath = (filePath = "", fallback = "documento.pdf") => {
@@ -543,21 +543,21 @@ const downloadBlob = (blob, fileName) => {
   URL.revokeObjectURL(objectUrl);
 };
 
-const setRowActionLoading = (signatureRequestId, action) => {
+const setRowActionLoading = (turnoId, action) => {
   rowActionLoading.value = {
     ...rowActionLoading.value,
-    [signatureRequestId]: action,
+    [turnoId]: action,
   };
 };
 
-const clearRowActionLoading = (signatureRequestId) => {
+const clearRowActionLoading = (turnoId) => {
   const next = { ...rowActionLoading.value };
-  delete next[signatureRequestId];
+  delete next[turnoId];
   rowActionLoading.value = next;
 };
 
 const previewItem = async (item) => {
-  const key = Number(item.signature_request_id || 0);
+  const key = Number(item.turno_id || 0);
   try {
     setRowActionLoading(key, "preview");
     const blob = await fetchItemBlob(item);
@@ -572,7 +572,7 @@ const previewItem = async (item) => {
 };
 
 const downloadItem = async (item) => {
-  const key = Number(item.signature_request_id || 0);
+  const key = Number(item.turno_id || 0);
   const context = buildDownloadContext(item);
   try {
     setRowActionLoading(key, "download");
@@ -592,7 +592,7 @@ const buildMultiSignerDocument = async (item) => {
   return {
     file: new File([blob], fileName, { type: "application/pdf" }),
     metadata: {
-      signatureRequestId: Number(item.signature_request_id || 0) || null,
+      turnoId: Number(item.turno_id || 0) || null,
       documentId: Number(item.document_id || 0) || null,
       documentVersionId: Number(item.document_version_id || 0) || null,
       processName: item.process_name || "",

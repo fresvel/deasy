@@ -424,7 +424,7 @@ export const getUserGlobalSignatureCenter = async (req, res) => {
         .map((value) => String(value || "").trim())
         .find((value) => value.toLowerCase().endsWith(".pdf")) || null;
       return {
-        signature_request_id: Number(row.signature_request_id),
+        turno_id: Number(row.turno_id),
         document_id: Number(row.document_id),
         task_item_id: Number(row.task_item_id),
         task_id: Number(row.task_id),

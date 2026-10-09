@@ -2,47 +2,47 @@
   "ajena_admin_approve": {
     "status": 403,
     "body": {
-      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
     }
   },
   "ajena_admin_cancel": {
     "status": 403,
     "body": {
-      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
     }
   },
   "ajena_admin_reject": {
     "status": 403,
     "body": {
-      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
     }
   },
   "ajena_admin_return": {
     "status": 403,
     "body": {
-      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
     }
   },
   "ajena_admin_start": {
     "status": 403,
     "body": {
-      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
     }
   },
   "ajena_gestor_start": {
     "status": 403,
     "body": {
-      "error": "No puedes operar una solicitud de entrega asignada a otro usuario."
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
     }
   },
   "approve_ok": {
     "status": 200,
     "body": {
       "documentVersionId": "<normalized>",
-      "fillRequestId": "<normalized>",
       "flowStatus": "completado",
-      "message": "Solicitud de entrega actualizada.",
-      "status": "completado"
+      "message": "Turno de entrega actualizado.",
+      "status": "completado",
+      "turnoId": "<normalized>"
     }
   },
   "approve_sin_pdf": {
@@ -58,86 +58,86 @@
     "status": 200,
     "body": {
       "documentVersionId": "<normalized>",
-      "fillRequestId": "<normalized>",
       "flowStatus": "pendiente",
-      "message": "Solicitud de entrega actualizada.",
-      "status": "cancelado"
+      "message": "Turno de entrega actualizado.",
+      "status": "cancelado",
+      "turnoId": "<normalized>"
     }
   },
   "id_cero": {
     "status": 400,
     "body": {
-      "error": "Solicitud de entrega inválida."
+      "error": "Turno de entrega inválido."
     }
   },
   "id_no_numerico_approve": {
     "status": 400,
     "body": {
-      "error": "Solicitud de entrega inválida."
+      "error": "Turno de entrega inválido."
     }
   },
   "id_no_numerico_cancel": {
     "status": 400,
     "body": {
-      "error": "Solicitud de entrega inválida."
+      "error": "Turno de entrega inválido."
     }
   },
   "id_no_numerico_reject": {
     "status": 400,
     "body": {
-      "error": "Solicitud de entrega inválida."
+      "error": "Turno de entrega inválido."
     }
   },
   "id_no_numerico_return": {
     "status": 400,
     "body": {
-      "error": "Solicitud de entrega inválida."
+      "error": "Turno de entrega inválido."
     }
   },
   "id_no_numerico_start": {
     "status": 400,
     "body": {
-      "error": "Solicitud de entrega inválida."
+      "error": "Turno de entrega inválido."
     }
   },
   "inexistente_approve": {
     "status": 404,
     "body": {
-      "error": "Solicitud de entrega no encontrada."
+      "error": "Turno de entrega no encontrado."
     }
   },
   "inexistente_cancel": {
     "status": 404,
     "body": {
-      "error": "Solicitud de entrega no encontrada."
+      "error": "Turno de entrega no encontrado."
     }
   },
   "inexistente_reject": {
     "status": 404,
     "body": {
-      "error": "Solicitud de entrega no encontrada."
+      "error": "Turno de entrega no encontrado."
     }
   },
   "inexistente_return": {
     "status": 404,
     "body": {
-      "error": "Solicitud de entrega no encontrada."
+      "error": "Turno de entrega no encontrado."
     }
   },
   "inexistente_start": {
     "status": 404,
     "body": {
-      "error": "Solicitud de entrega no encontrada."
+      "error": "Turno de entrega no encontrado."
     }
   },
   "manual_autoasignacion": {
     "status": 200,
     "body": {
       "documentVersionId": "<normalized>",
-      "fillRequestId": "<normalized>",
       "flowStatus": "en_progreso",
-      "message": "Solicitud de entrega actualizada.",
-      "status": "en_progreso"
+      "message": "Turno de entrega actualizado.",
+      "status": "en_progreso",
+      "turnoId": "<normalized>"
     }
   },
   "manual_autoasignacion_efecto": {
@@ -148,10 +148,10 @@
     "status": 200,
     "body": {
       "documentVersionId": "<normalized>",
-      "fillRequestId": "<normalized>",
       "flowStatus": "rechazado",
-      "message": "Solicitud de entrega actualizada.",
-      "status": "rechazado"
+      "message": "Turno de entrega actualizado.",
+      "status": "rechazado",
+      "turnoId": "<normalized>"
     }
   },
   "return_efecto": {
@@ -162,22 +162,22 @@
     "status": 200,
     "body": {
       "documentVersionId": "<normalized>",
-      "fillRequestId": "<normalized>",
       "flowStatus": "pendiente",
-      "message": "Solicitud de entrega actualizada.",
-      "status": "devuelto"
+      "message": "Turno de entrega actualizado.",
+      "status": "devuelto",
+      "turnoId": "<normalized>"
     }
   },
   "sin_responsable_gestor": {
     "status": 409,
     "body": {
-      "error": "La solicitud de entrega no tiene un responsable resoluble."
+      "error": "El turno de entrega no tiene un responsable resoluble."
     }
   },
   "sin_responsable_usuario": {
     "status": 409,
     "body": {
-      "error": "La solicitud de entrega no tiene un responsable resoluble."
+      "error": "El turno de entrega no tiene un responsable resoluble."
     }
   },
   "sin_token_approve": {
@@ -214,10 +214,10 @@
     "status": 200,
     "body": {
       "documentVersionId": "<normalized>",
-      "fillRequestId": "<normalized>",
       "flowStatus": "en_progreso",
-      "message": "Solicitud de entrega actualizada.",
-      "status": "en_progreso"
+      "message": "Turno de entrega actualizado.",
+      "status": "en_progreso",
+      "turnoId": "<normalized>"
     }
   },
   "start_repetido_409": {

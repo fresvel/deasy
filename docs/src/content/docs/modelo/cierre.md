@@ -26,8 +26,12 @@ motivo por el que se devolvió, el motivo del rechazo, una nota interna. Todo es
 tabla, `document_workflow_observations`, y está bien pensada por tres motivos:
 
 - Guarda **en qué fase** se dijo, en `phase`, cerrado por `CHECK`: `review` o `signature`.
-- Guarda **de qué solicitud concreta** salió — `fill_request_id` o `signature_request_id`, ambos
-  opcionales, porque no toda observación nace de una solicitud.
+- Guarda **de qué turno concreto** salió, en `turno_id`, opcional porque no toda observación nace
+  de un turno: la que escribe el hilo manual comenta el entregable, no un paso. Fueron **dos**
+  columnas —una por mitad del recorrido— mientras entrega y firma tenían cada una su tabla de
+  solicitudes; desde el 2026-10-09 son una, porque las dos apuntaban ya a `turnos` —o sea, eran la
+  misma clave ajena escrita dos veces— y cuál de las dos valía lo decía `phase`, que sigue aquí y
+  sigue siendo quien lo dice.
 - Guarda **si se resolvió**, quién y cuándo (`resolved_by_person_id`, `resolved_at`). Una observación
   no es solo un comentario: es algo que hay que cerrar.
 
@@ -63,8 +67,7 @@ erDiagram
     int id PK
     int task_item_id FK "NOT NULL"
     int document_version_id FK "NOT NULL"
-    int fill_request_id FK "opcional"
-    int signature_request_id FK "opcional"
+    int turno_id FK "opcional: de entrega o de firma"
     text phase "CHECK: review, signature"
     text kind "CHECK: 4 valores"
     text message

@@ -15,7 +15,7 @@ flowchart LR
 
 Un paso de firma soporta **múltiples firmantes**, y desde el **2026-10-08** los soporta en filas: una por firmante, en `participantes_declarados`, con su resolutor, su ámbito y su hueco. Antes era una lista libre en el JSONB `signers`, que **no validaba nadie** y que mandaba sobre las columnas que sí tenían `CHECK` — el defecto **1.19**, cerrado aquí.
 
-**Un paso está aprobado cuando firman todos los suyos.** El quorum configurable que había (`approval_mode`: `and` · `or` · `at_least`, con `required_signers_min` y `required_signers_max`) se retiró entero: el máximo no decidía nada, `or` dejaba las solicitudes hermanas abiertas e inoperables, y el cupo sólo existía porque el conjunto de firmantes era indeterminado — que es justo lo que se quitó. El detalle, con sus medidas, en [el flujo de firma](/modelo/flujo-de-firma/).
+**Un paso está aprobado cuando firman todos los suyos.** El quorum configurable que había (`approval_mode`: `and` · `or` · `at_least`, con `required_signers_min` y `required_signers_max`) se retiró entero: el máximo no decidía nada, `or` dejaba las solicitudes hermanas abiertas e inoperables, y el cupo sólo existía porque el conjunto de firmantes era indeterminado — que es justo lo que se quitó. El detalle, con sus medidas, en [la firma](/modelo/flujo-de-firma/).
 
 Quien decide **dónde se dibuja la firma** es el `slot`, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}` y que desde el 2026-10-08 es **de cada firmante** y no del paso: con N firmantes y un solo hueco, los N−1 restantes no tenían marca en el papel.
 
@@ -23,7 +23,7 @@ El paso llevaba además un JSONB `anchor_refs` que **era un fósil**: el escrito
 
 El catalogo de estado se siembra en el propio esquema: `signature_statuses` (`firmado`, `fallido`, `invalido`, `cancelado`), que es el resultado del **hecho** de firmar. El estado de **a quién le toca** era un segundo catalogo, `signature_request_statuses`, y dejo de serlo el 2026-10-08: hoy es `turnos.estado`, con el mismo `CHECK` y el mismo vocabulario que el lado de entrega ([los vocabularios de estado](/modelo/vocabularios-de-estado/)). Los dos ejes no son redundantes: el turno dice si alguien respondio, el catalogo dice si la firma **vale**, y un turno completado con una firma invalida cuenta como rechazo.
 
-### El flujo de firma en lote
+### La firma en lote
 
 | **Endpoint**                      | **Función**                                               |
 |:----------------------------------|:----------------------------------------------------------|
@@ -38,7 +38,7 @@ El estado se persiste en `signature_batch_jobs` (clave `job_id`, mas `status`, `
 
 Separación de responsabilidades: `BatchSigningService.js` gestiona el ciclo del trabajo y el bucle en segundo plano, pero **no** decide donde se guarda el PDF ni habla con el firmante — eso es de `PdfSigningService.js`, que llama documento a documento. El ZIP se empaqueta con `/usr/bin/zip` (ruta absoluta a propósito).
 
-Además del PDF, cada documento del lote lleva metadatos de contexto (`signatureRequestId`, `documentVersionId`, `processName`, `unitLabel`, `termName`, `stepName`), que es lo que permite persistir la evidencia del flujo de trabajo y no limitarse a firmar ficheros sueltos.
+Además del PDF, cada documento del lote lleva metadatos de contexto (`turnoId`, `documentVersionId`, `processName`, `unitLabel`, `termName`, `stepName`), que es lo que permite persistir la evidencia del flujo de trabajo y no limitarse a firmar ficheros sueltos.
 
 ## El dossier (ex-MongoDB)
 

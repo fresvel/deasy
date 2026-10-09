@@ -50,7 +50,7 @@ export const getSignatureStepStatusCode = (step, requests = [], currentStepOrder
     return 'unresolved';
   }
 
-  const codes = relatedRequests.map((request) => String(request?.requestStatusCode || '').trim().toLowerCase());
+  const codes = relatedRequests.map((request) => String(request?.estado || '').trim().toLowerCase());
   if (codes.some((code) => ['rechazado', 'cancelado'].includes(code))) {
     return 'rejected';
   }
@@ -110,7 +110,7 @@ export const mapSigner = (s) => (s.kind === 'cargo'
    `en_progreso` llegaba como `en progreso` y no coincidia con nada. Muerto el catalogo (fase 3 del
    frente 24) viaja el codigo, y la clave ya no existe. */
 export const getFillRequestStatusCode = (request) =>
-  String(request?.status || request?.request_status || request?.requestStatus || '').trim().toLowerCase();
+  String(request?.estado || request?.status || '').trim().toLowerCase();
 
 /* `completed` en ingles se mantiene a proposito: no es vocabulario de columna sino texto libre que
    puede llegar de un origen antiguo. El de la columna es `completado`. */
@@ -124,7 +124,7 @@ export const isCompletedSignatureRequestStatus = (value) =>
 /* `getDeliverableAccessTagVariant` murio el 2026-08-20 (F9-bis): es `tonoAcceso`. */
 
 /* `getFillStepStatusLabel` y `getFillStepStatusTagVariant` murieron el 2026-08-20 (F9-bis):
-   son `etiquetaRecorrido` y `tonoRecorrido`, el eje de `fill_requests.status`. El segundo dejaba
+   son `etiquetaRecorrido` y `tonoRecorrido`, el eje de `turnos.estado`. El segundo dejaba
    `pending` sin caso y caia a NEUTRAL; el eje lo pinta SALMON, como el resto del sistema. */
 
 export const formatWorkflowDateTime = (value) => {
@@ -151,7 +151,7 @@ export const formatWorkflowDateTime = (value) => {
    `returned` -> `warning` es el unico tono que el flujo de firma no gasta: un paso de llenado
    puede estar DEVUELTO, y eso no existe firmando. */
 export const getFillStepTono = (step, currentStepOrder) => tonoPasoLlenado(
-  step?.request_status,
+  step?.estado,
   Number(currentStepOrder || 0) === Number(step?.step_order || 0)
 );
 

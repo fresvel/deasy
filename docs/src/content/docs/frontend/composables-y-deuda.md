@@ -44,7 +44,7 @@ Se alcanzan por URL: `/admin/academia/unidades/organigrama` y `/admin/gestiones/
 
 :::note
 
-**Nota** El constructor de flujos de firma **no** usa Vue Flow: es un formulario de listas (`useFlowBuilder.js`).
+**Nota** El constructor del recorrido de firma **no** usa Vue Flow: es un formulario de listas (`useFlowBuilder.js`).
 
 :::
 

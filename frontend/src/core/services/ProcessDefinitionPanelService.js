@@ -258,12 +258,12 @@ class ProcessDefinitionPanelService {
     };
   }
 
-  async approveFillRequest(fillRequestId, payload = {}) {
-    if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de entrega.");
+  async approveFillRequest(turnoId, payload = {}) {
+    if (!turnoId) {
+      throw new Error("Se requiere el turno de entrega.");
     }
     const { data } = await axios.post(
-      API_ROUTES.SIGN_FILL_REQUEST_APPROVE(fillRequestId),
+      API_ROUTES.SIGN_FILL_REQUEST_APPROVE(turnoId),
       payload,
       {
         headers: {
@@ -274,12 +274,12 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
-  async startFillRequest(fillRequestId, payload = {}) {
-    if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de entrega.");
+  async startFillRequest(turnoId, payload = {}) {
+    if (!turnoId) {
+      throw new Error("Se requiere el turno de entrega.");
     }
     const { data } = await axios.post(
-      API_ROUTES.SIGN_FILL_REQUEST_START(fillRequestId),
+      API_ROUTES.SIGN_FILL_REQUEST_START(turnoId),
       payload,
       {
         headers: {
@@ -290,12 +290,12 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
-  async returnFillRequest(fillRequestId, payload = {}) {
-    if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de entrega.");
+  async returnFillRequest(turnoId, payload = {}) {
+    if (!turnoId) {
+      throw new Error("Se requiere el turno de entrega.");
     }
     const { data } = await axios.post(
-      API_ROUTES.SIGN_FILL_REQUEST_RETURN(fillRequestId),
+      API_ROUTES.SIGN_FILL_REQUEST_RETURN(turnoId),
       payload,
       {
         headers: {
@@ -306,12 +306,12 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
-  async rejectFillRequest(fillRequestId, payload = {}) {
-    if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de entrega.");
+  async rejectFillRequest(turnoId, payload = {}) {
+    if (!turnoId) {
+      throw new Error("Se requiere el turno de entrega.");
     }
     const { data } = await axios.post(
-      API_ROUTES.SIGN_FILL_REQUEST_REJECT(fillRequestId),
+      API_ROUTES.SIGN_FILL_REQUEST_REJECT(turnoId),
       payload,
       {
         headers: {
@@ -322,12 +322,12 @@ class ProcessDefinitionPanelService {
     return data;
   }
 
-  async cancelFillRequest(fillRequestId, payload = {}) {
-    if (!fillRequestId) {
-      throw new Error("Se requiere la solicitud de entrega.");
+  async cancelFillRequest(turnoId, payload = {}) {
+    if (!turnoId) {
+      throw new Error("Se requiere el turno de entrega.");
     }
     const { data } = await axios.post(
-      API_ROUTES.SIGN_FILL_REQUEST_CANCEL(fillRequestId),
+      API_ROUTES.SIGN_FILL_REQUEST_CANCEL(turnoId),
       payload,
       {
         headers: {

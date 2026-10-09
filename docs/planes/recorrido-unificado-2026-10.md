@@ -11,8 +11,8 @@
 | **2** | Muere el escalón 2 | fuera `vinculo_id` de las dos cabeceras **y su `CHECK` de un solo portador**, fuera su campo en `/admin`, fuera el escalón de los dos resolvedores | el resolvedor baja de 3 escalones a 2 (**2 consultas, no 3**, afirmado por unitario); 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320**; migración probada en sus **tres** rutas (mueve 1 cabecera, para con mensaje y **deshace el `DROP COLUMN`**, idempotente); goldens movidos en 5 ficheros y **revisado uno a uno**; `check-mapa-tablas` 100/77/0, `check-doc-modelo` y `check-enlaces-internos` en verde | ✅ |
 | **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; muertas `signature_request_statuses` y las dos `status_id`; un mapa de tonos en vez de dos y un predicado en vez de dos | 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320** + frontend lint y **498** vitest; el diff del golden es **sólo** vocabulario (60 líneas, cada valor retirado con su equivalente y los recuentos cuadrando) más 11 claves renombradas; migración probada en sus tres rutas; de 92 tablas a **91** y de 100 a **98** claves ajenas | ✅ |
 | **3-bis** | El atasco del rechazo en firma | el rechazo sin firmas dadas devuelve el documento a «Observado»; al volver, el recorrido rechazado **se reabre** en vez de ignorarse; y el rechazo manda sobre el estado de la instancia | 5 puertas + `test:unit` **904/904** (5 unitarios nuevos: la transición en las dos matrices, el camino de vuelta, y las dos ramas del reabrir) + `test:char:run` 320/320 **sin mover un golden** — y eso ES el hallazgo: ningún flow rechaza una firma (§11) | ✅ |
-| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10): **1 · esquema ✅** · **2 · receta ✅** · **3a · ENTREGA ✅** · **3b · FIRMA ✅** · **4 · lo que cuelga ✅** | paso 3b: la firma entera sobre `recorridos`/`turnos`, el **defecto 1.19 cerrado** (el JSONB `signers` a filas bajo `CHECK`, y con él 2 resolutores, 4 ámbitos y el cupo), el servicio de **1.338 a 856 líneas**, `flujoDeFirma.js` disuelto, 2 claves ajenas que dejan de cruzar (`tareas` 31→29 relaciones hacia fuera) y **2 flujos** que dejan de cruzar dominios (§15); 5 puertas + `test:unit` **919/919** —los mismos que antes, y es casualidad aritmética: el fichero de firma baja de 15 casos a 10 (seis escalones y seis ámbitos se fueron **con su sujeto**) y `assignees` sube de 8 a 13— + `test:char:run` 320/320 + frontend lint y 498; golden de 41 líneas fuera y 8 dentro, revisado línea a línea; y `verificar_firma_nueva.mjs` para los dos ejes, que char no cubre. Paso 4: de **95 tablas a 87** y de **185 claves ajenas a 158**; `flowRows.js` de 662 líneas a 224 y el escritor de runtime de 132 a 60; seis fósiles encontrados sin buscarlos —dos pestañas de `/admin` que pedían tablas inexistentes entre ellos—; 5 puertas + `test:unit` **896/896** + `test:char:run` **320/320** + frontend lint, build y **495** vitest; golden auditado (+417/−497) y 17 menciones históricas declaradas con su motivo (§16) | ✅ |
-| **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
+| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10): **1 · esquema ✅** · **2 · receta ✅** · **3a · ENTREGA ✅** · **3b · FIRMA ✅** · **4 · lo que cuelga ✅** · **4-bis · los NOMBRES ✅** | paso 3b: la firma entera sobre `recorridos`/`turnos`, el **defecto 1.19 cerrado** (el JSONB `signers` a filas bajo `CHECK`, y con él 2 resolutores, 4 ámbitos y el cupo), el servicio de **1.338 a 856 líneas**, `flujoDeFirma.js` disuelto, 2 claves ajenas que dejan de cruzar (`tareas` 31→29 relaciones hacia fuera) y **2 flujos** que dejan de cruzar dominios (§15); 5 puertas + `test:unit` **919/919** —los mismos que antes, y es casualidad aritmética: el fichero de firma baja de 15 casos a 10 (seis escalones y seis ámbitos se fueron **con su sujeto**) y `assignees` sube de 8 a 13— + `test:char:run` 320/320 + frontend lint y 498; golden de 41 líneas fuera y 8 dentro, revisado línea a línea; y `verificar_firma_nueva.mjs` para los dos ejes, que char no cubre. Paso 4: de **95 tablas a 87** y de **185 claves ajenas a 158**; `flowRows.js` de 662 líneas a 224 y el escritor de runtime de 132 a 60; seis fósiles encontrados sin buscarlos —dos pestañas de `/admin` que pedían tablas inexistentes entre ellos—; 5 puertas + `test:unit` **896/896** + `test:char:run` **320/320** + frontend lint, build y **495** vitest; golden auditado (+417/−497) y 17 menciones históricas declaradas con su motivo (§16). Paso 4-bis: **147 ocurrencias** de los seis identificadores de id, las claves del panel y del snapshot, 2 columnas de observación **colapsadas en una** (158→**157** claves ajenas) y 9 mensajes de cara al usuario; **una regresión mía encontrada por el golden** —`canCurrentUserResetWorkflow` leía las claves viejas y devolvía `false` en silencio, con sus unitarios en verde— y **dos roturas del contrato #1** que el grep de verificación destapó antes de llegar a char (§17); 5 puertas + `test:unit` **894/894** + `test:char:run` **320/320** + frontend lint, build y **495** vitest + `verificar_firma_nueva.mjs`; golden revisado línea a línea y **probado que no queda un solo valor cambiado** | ✅ |
+| **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y **13 páginas de prosa** barridas una a una | `check-doc-modelo` (87 tablas, las 2 cambiadas revisadas y re-grabadas), `check-enlaces-internos` (0 roto sobre 54 páginas), `check-mapa-tablas` (86/71/0) y `gen-dbml --check` en verde; build del sitio **55 páginas**; **dos cifras caducadas corregidas** —el reparto por niveles decía 102/77 y es 86/71— y **tres excepciones estrechadas** por el propio `--update` | ✅ |
 
 ## 1 · Por qué, en una frase
 
@@ -802,14 +802,83 @@ la puerta: son las lápidas que cuentan por qué cada cosa se fue, y eso es lo q
 inercia. Cada motivo dice además cuándo deja de valer: *si el nombre reaparece en el esquema, hay que
 quitar la excepción*.
 
+## 17 · Fase 4, paso 4-bis — los NOMBRES, y lo que el renombre destapó
+
+El paso 4 dejó el modelo unificado y **el vocabulario partido**: `turnos` y `recorridos` en la base,
+`fill_requests` y `signature_flow` en la API. Lo dijo el dueño mirando el navegador —*«en front veo
+que aún se usan nombres obsoletos, ¿esos nombres vienen desde back?»*— y la respuesta era sí.
+
+**Cuatro contratos, porque son cuatro superficies y cada una tiene su consumidor**:
+
+| | Contrato | Qué cambia |
+|---|---|---|
+| **#1** | el **panel** (`/users/:id/process-definitions/:def/panel`) | `fill_requests`→`turnos_entrega`, `fill_flow`→`recorrido_entrega`, `fill_steps`→`pasos_entrega`, `signature_steps`→`pasos_firma`, `signature_requests`→`turnos_firma`, los dos `current_*_step_order`→`paso_actual_*`, y dentro del recorrido `status`/`current_step_order`/`steps`→`estado`/`paso_actual`/`pasos` |
+| **#2** | el **snapshot de firma** (`/sign/documents/:dv/signature-flow`) | `signatureFlow`→`recorrido`, `signatureSteps`→`pasos`, `signatureRequests`→`turnos`, `currentSignatureStepOrder`→`pasoActual` |
+| **#3** | `signature_request_id` · `signatureRequestId` | → `turno_id` · `turnoId`, **columna incluida** |
+| **#4** | `fill_request_id` · `document_fill_flow_id` y sus camellos | → `turno_id` · `recorrido_id`, y **las dos columnas de observación colapsadas en una** |
+
+**147 ocurrencias** de los seis identificadores, en 27 ficheros. Más las claves de fila, los mensajes
+de cara al usuario y la etiqueta «Solicitud» del editor de `/admin`.
+
+### La regresión que el golden cazó y el unitario NO
+
+`canCurrentUserResetWorkflow` —la que decide si aparece el botón de rehacer— leía
+`fillWorkflow.current_step_order`, `fillWorkflow.steps` y `step.request_status`. El contrato #1 había
+renombrado las tres. La función no fallaba: **devolvía `false` para todo el mundo, en silencio**, con
+el botón simplemente ausente.
+
+Sus **tres pruebas unitarias siguieron en verde**, y el motivo es la lección:
+
+> **Un test que construye su propio fixture no se entera de que el productor cambió de forma.**
+
+Lo cazó el golden del panel, donde `can_reset_workflow` pasó de `true` a `false` — **la única línea
+del diff que no era un renombre**, entre 229 que sí lo eran. Está arreglado, con el aviso escrito en
+la función y en sus fixtures, que ahora dicen de dónde sale su forma.
+
+⚠️ **Y por eso el diff del golden se audita por VALORES, no por tamaño.** La forma de mirarlo que
+funcionó: agrupar las líneas `+`/`-` y comprobar que **cada retirada tiene su equivalente**, dejando
+sólo las que no emparejan. Quedaron tres grupos: las claves nuevas, los nueve mensajes, y un bloque
+de **reordenación alfabética** —renombrar `request_status` a `estado` mueve su posición y arrastra a
+sus vecinas sin tocar un valor—. Y en medio, el `can_reset_workflow`.
+
+### Dos roturas del contrato #1 que no habían llegado a char todavía
+
+El grep de verificación, antes de lanzar nada, encontró que el paso anterior había dejado:
+
+1. **Los tres literales de reserva con las claves viejas** (`{ status, current_step_order, steps }`),
+   así que un entregable sin pasos emitía una forma y uno con pasos emitía otra.
+2. **`fillWorkflow.steps.length` dos veces**, que con el mapa relleno es `undefined.length` — un
+   `TypeError` en el panel entero.
+
+Las dos eran mías, del contrato #1, y **ninguna habría sobrevivido a char**; lo que importa es que
+las encontró *mirar lo que el renombre dejó atrás*, no la corrida. **Después de renombrar por script,
+el grep de las claves viejas es parte del trabajo, no una comprobación opcional.** Igual pasó con las
+**11 lecturas del frontend** que seguían pidiendo `recorrido_entrega?.current_step_order` y
+`?.steps`.
+
+### Y una clave que resultó ser DOS columnas para la misma cosa
+
+`document_workflow_observations` tenía `fill_request_id` **y** `signature_request_id`, y desde el paso
+3b las dos apuntaban a `turnos`: era **la misma clave ajena escrita dos veces**, con `phase` diciendo
+cuál valía. Hoy es `turno_id`, `phase` sigue siendo quien lo dice, y el esquema baja de 158 a **157**
+claves ajenas sin perder un solo hecho. Comprobado en la base viva: las dos observaciones sembradas
+resuelven su turno y su `accion` es `entrega`, que es lo que su `phase = review` afirma.
+
+### Lo que SIGUE sin hacerse, y es a propósito
+
+- **Los identificadores compuestos**: `updateFillRequestStatus`, `getFillRequestContext`,
+  `syncDocumentProgressFromSignatureRequest`, `FillRequestWorkflowService`… son **~570 ocurrencias**
+  en unos 60 nombres, y son **invisibles para quien usa la aplicación**. Van en una tanda aparte de
+  puro renombre, donde el golden que **no** se mueve es la prueba — al contrario que aquí.
+- **Las etiquetas de pantalla «Flujo de entrega» y «Flujo de firmas»** siguen en
+  `AdminDraftArtifactModal.vue` y en `HomeView.vue`. Cómo se llaman de cara a la persona es decisión
+  del dueño, no de un `sed`: en la prosa publicada ya son *el recorrido* y *la firma*, y la pantalla
+  debería decir lo mismo, pero eso se pregunta antes de hacerlo.
+
 ### Lo que NO se hizo, y queda dicho
 
-- **`document_workflow_observations` sigue con DOS columnas** —`fill_request_id` y
-  `signature_request_id`— apuntando las dos a `turnos`. Colapsarlas en una, con `phase` diciendo de
-  qué lado es, es un cambio de contrato de la API del hilo de observaciones: va aparte.
-- **Las claves de la API conservan sus nombres**: `workflow.fill_requests`,
-  `workflow.signature_requests`, `document_signatures.signature_request_id`. Las lee el frontend y el
-  firmador; renombrarlas es otro cambio.
+- ~~**`document_workflow_observations` sigue con DOS columnas**~~ y ~~**las claves de la API conservan
+  sus nombres**~~ — **los dos se hicieron en el paso 4-bis** (§17), que es justo «ese cambio aparte».
 - **`useFlowBuilder.js` sigue enviando `approval_mode` y `required_min`**, que el backend ignora. Lo
   que las mata es quitarlas del formulario.
 - **`field_refs` sigue en el contrato HTTP del editor** como literal `[]`, fijado por el golden

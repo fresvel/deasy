@@ -47,9 +47,10 @@
     "status": 200,
     "body": {
       "canOperate": false,
-      "currentSignatureStepOrder": null,
       "currentStatus": "Pendiente de llenado",
       "documentVersionId": "<normalized>",
+      "pasoActual": null,
+      "pasos": [],
       "readiness": {
         "context": {
           "document_version_id": "<normalized>",
@@ -68,10 +69,9 @@
         "ok": false,
         "steps": []
       },
+      "recorrido": null,
       "responsableActual": null,
-      "signatureFlow": null,
-      "signatureRequests": [],
-      "signatureSteps": []
+      "turnos": []
     }
   },
   "sql_document_versions": {

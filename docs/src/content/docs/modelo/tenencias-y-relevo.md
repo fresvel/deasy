@@ -96,11 +96,11 @@ Y hay una excepción más dentro de la lista: el relevo por ocupación no toca u
 ## Las solicitudes siguen al responsable
 
 Cuando se abre un turno, el trigger `trg_task_item_tenures_sync` hace tres cosas en la misma
-transacción: realinea las solicitudes de entrega pendientes, realinea las de firma pendientes, y
+transacción: realinea los turnos de entrega pendientes, realinea los de firma pendientes, y
 actualiza la caché `task_items.assigned_person_id`.
 
 Sin eso el entregable cambiaba de manos pero el trabajo no: el guard de la solicitud dice
-literalmente «No puedes operar una solicitud de entrega asignada a otro usuario», así que quien
+literalmente «No puedes operar un turno de entrega asignado a otro usuario», así que quien
 llegaba recibía un 403 sobre su propio entregable y quien se fue era el único que técnicamente podía
 actuar.
 
