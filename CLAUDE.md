@@ -1045,6 +1045,15 @@ pendiente de una decisión de infraestructura (publicarlo con TLS o migrar a Son
 El workflow ya está escrito y hace *skip* en verde mientras falten los secrets `SONAR_HOST_URL` y
 `SONAR_TOKEN`.
 
+**Lo pendiente se marca `FIXME`, NO `TODO`.** Y no es gusto: `TODO` **no se puede usar aquí** porque
+en castellano es una palabra corriente —349 líneas la llevan— y la regla que la busca (`S1135`) no
+tiene forma de distinguirla. Medido el 2026-10-09: **123 incidencias y ni una era un marcador**,
+32 de ellas en mayúsculas porque este repositorio grita palabras para enfatizar («reescribe TODO el
+SQL», «TODO MENOS LO SENSIBLE»). Así que la regla está **excluida en `sonar-project.properties`**
+—ahí, y no en el perfil del servidor, para que el motivo viaje con el código y sobreviva a un
+`docker volume rm`— y el trabajo pendiente se marca con **`FIXME`**, que es `S1134` y pesa **MAJOR**
+en vez de INFO. No se pierde la señal: pasa a valer más.
+
 **Marcar no es arreglar.** Los falsos positivos se marcan en Sonar con justificación; hay varios que
 **no** hay que "corregir" (§7 del plan). Sonar rastrea la incidencia por el **hash de la línea**: un
 rename puro conserva la marca, reescribir la línea la pierde.
