@@ -3,6 +3,7 @@ import {
   transitionDocumentVersionState,
 } from "./DocumentStateService.js";
 import { addDocumentObservation } from "./DocumentObservationService.js";
+import { getPostgresPool } from "../../config/postgres.js";
 import {
   ESTADO_RECORRIDO,
   SIGNATURE_STATUS,
@@ -532,7 +533,15 @@ export const registerSignatureEvidence = async ({ connection, context, result })
   };
 };
 
-export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, userId }) => {
+// ⚠️ `connection` TIENE VALOR POR DEFECTO desde el 2026-10-09, y el detalle importa: un parametro
+// por defecto se evalua AL LLAMAR, no al cargar el modulo, asi que esto NO reintroduce el fallo del
+// pool capturado al importar. Antes la conexion la pasaba el controlador --que para eso tenia un
+// pool a nivel de modulo-- y un controlador no tiene pool: si necesita datos, llama a un servicio.
+export const getSignatureFlowSnapshot = async ({
+  connection = getPostgresPool(),
+  documentVersionId,
+  userId,
+}) => {
   const context = await getDocumentVersionSignatureContext(connection, documentVersionId);
   const currentStatus = normalizeDocumentVersionStatus(context?.document_version_status);
   const readiness = context

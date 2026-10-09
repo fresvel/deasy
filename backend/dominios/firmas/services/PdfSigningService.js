@@ -17,26 +17,37 @@
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import { getPostgresPool } from "../../config/postgres.js";
-import { UserRepository, UserCertificateRepository } from "../../dominios/identidad/index.js";
-import { badRequest, notFound } from "../../errors/HttpError.js";
-import { requestSignerJob } from "../infrastructure/rabbit_signer.js";
-import { formatTokenForSigner } from "../../utils/tokenGenerator.js";
+import { conTransaccion, getPostgresPool } from "../../../config/postgres.js";
+
+// ⚠️ AL PRIMER USO, NUNCA AL IMPORTAR. Aqui habia `const pool = getPostgresPool();` en la columna
+// cero, capturando el valor del momento del import: si el modulo entra antes de que exista la
+// conexion, queda `undefined` para siempre. Funcionaba por orden de carga, y meter el dominio tras
+// una puerta es exactamente lo que cambia ese orden.
+import { puedeAccederAlDocumento, rutasDeLaRonda } from "../datos/consulta/documentos.js";
+
+const pool = () => {
+  const p = getPostgresPool();
+  if (!p) throw new Error("La conexión a PostgreSQL no está disponible.");
+  return p;
+};
+import { UserRepository, UserCertificateRepository } from "../../identidad/index.js";
+import { badRequest, notFound } from "../../../errors/HttpError.js";
+import { requestSignerJob } from "../../../services/infrastructure/rabbit_signer.js";
+import { formatTokenForSigner } from "../../../utils/tokenGenerator.js";
 import {
   assertSignatureRequestCanBeSigned,
   registerSignatureEvidence,
-} from "../documents/DocumentSignatureWorkflowService.js";
+} from "../../../services/documents/DocumentSignatureWorkflowService.js";
 import {
   ensureBucketExists,
   statMinioObject,
   uploadFileToMinio
-} from "../storage/minio_service.js";
+} from "../../../services/storage/minio_service.js";
 
 let _userRepository = null;
 const userRepository = () => (_userRepository ??= new UserRepository());
 let _certificateRepository = null;
 const certificateRepository = () => (_certificateRepository ??= new UserCertificateRepository());
-const pool = getPostgresPool();
 
 export const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
 const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
@@ -194,19 +205,8 @@ export const buildSignContext = async (
   };
 };
 
-const getDocumentVersionStorageContext = async (documentVersionId) => {
-  if (!pool) {
-    throw new Error("La conexión a PostgreSQL no está disponible.");
-  }
-  const [rows] = await pool.query(
-    `SELECT id, working_file_path, final_file_path
-     FROM document_versions
-     WHERE id = ?
-     LIMIT 1`,
-    [Number(documentVersionId)]
-  );
-  return rows?.[0] || null;
-};
+// La consulta vive en `datos/consulta/documentos.js`: lee `document_versions`, que es de `tareas`.
+const getDocumentVersionStorageContext = (documentVersionId) => rutasDeLaRonda(documentVersionId);
 
 export const buildStandaloneUserSignedPath = (user, sessionId, originalName = "documento.pdf") => {
   const safeName = sanitizeStorageSegment(originalName, "documento.pdf");
@@ -342,16 +342,10 @@ export const assertSignContextBeforeSigning = async (context) => {
   if (!context?.turnoId) {
     return null;
   }
-  if (!pool) {
-    throw new Error("La conexión a PostgreSQL no está disponible.");
-  }
-
-  const connection = await pool.getConnection();
-  try {
-    return await assertSignatureRequestCanBeSigned({ connection, context });
-  } finally {
-    connection.release();
-  }
+  // Una LECTURA, asi que basta el pool: pedir una conexion dedicada sin `beginTransaction` no
+  // protegia nada y se podia quedar sin soltar por cualquier camino que no pasara por el `finally`.
+  // Habia siete asi en el backend y las cerro F7.2; esta se quedo fuera del barrido.
+  return assertSignatureRequestCanBeSigned({ connection: pool(), context });
 };
 
 export const parseFields = (rawFields) => {
@@ -401,22 +395,13 @@ const asBoolean = (value) =>
   String(value ?? "").trim().toLowerCase() === "true" || String(value ?? "").trim() === "1";
 
 export const persistSignatureWorkflowResult = async ({ context, result }) => {
-  if (!pool || (!context.turnoId && !context.documentVersionId)) {
+  if (!context.turnoId && !context.documentVersionId) {
     return null;
   }
-
-  const connection = await pool.getConnection();
-  try {
-    await connection.beginTransaction();
-    const workflow = await registerSignatureEvidence({ connection, context, result });
-    await connection.commit();
-    return workflow;
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  // Era el patron de transaccion COPIADO A MANO --`getConnection` + `beginTransaction` + `commit` +
+  // `rollback` + `release`--, que vivia duplicado en 19 ficheros hasta que F7.2 construyo
+  // `conTransaccion`. Este se quedo fuera de aquel barrido.
+  return conTransaccion((connection) => registerSignatureEvidence({ connection, context, result }));
 };
 
 // ¿Puede esta persona leer un documento firmado que NO está en su espacio personal? Lo autoriza
@@ -428,35 +413,6 @@ export const persistSignatureWorkflowResult = async ({ context, result }) => {
 // La versión cuelga DIRECTAMENTE del entregable desde el 2026-08-23: la tabla `documents` que había
 // en medio era una cascara 1:1 sin ni una columna propia, y se retiró con ella el JOIN que hacía
 // falta para saltarla.
-export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => {
-  if (!pool) {
-    throw new Error("La conexión a PostgreSQL no está disponible.");
-  }
-  const [rows] = await pool.query(
-    `SELECT dv.id
-     FROM document_versions dv
-     LEFT JOIN task_items ti ON ti.id = dv.task_item_id
-     LEFT JOIN tasks t ON t.id = ti.task_id
-     LEFT JOIN recorridos r ON r.document_version_id = dv.id AND r.accion = 'firma'
-     LEFT JOIN turnos sr ON sr.recorrido_id = r.id
-     WHERE (
-       dv.working_file_path = ?
-       OR dv.final_file_path = ?
-     )
-       AND (
-         -- El d.owner_person_id = ? que abria este OR se retiro el 2026-08-23: era una COPIA de
-         -- ti.assigned_person_id, el termino de al lado, tomada al crear el documento y
-         -- refrescada por uno solo de los cuatro relevos. O sea que aportaba exactamente cero
-         -- casos nuevos y podia dar acceso a quien ya no responde del entregable.
-         ti.assigned_person_id = ?
-         -- Quien ENCARGO el entregable. Antes era el creador de la TAREA, retirado el 2026-08-23:
-         -- estaba NULL en el camino automatico, asi que como predicado de propiedad casi nunca
-         -- respondia. El dato equivalente vive en la misma fila del entregable.
-         OR ti.created_by_person_id = ?
-         OR sr.persona_id = ?
-       )
-     LIMIT 1`,
-    [requestedPath, requestedPath, Number(userId), Number(userId), Number(userId)]
-  );
-  return Boolean(rows?.length);
-};
+export const userCanAccessStoredDocument = ({ userId, requestedPath }) =>
+  puedeAccederAlDocumento({ userId, requestedPath });
+

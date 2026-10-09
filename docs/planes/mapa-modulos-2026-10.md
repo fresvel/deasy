@@ -648,7 +648,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
 | **F7.4** | **Los cuatro sin escritores ajenos**: **`chat` ✅** · **`empleo` ✅** (carpeta reservada) · **`organizacion` ✅** · **`identidad` ✅** (la PERSONA, con su subcapa; los otros cuatro asuntos son decisión de F7.0) | ✅ **4 de 4** |
-| **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto). **RE-MEDIDA el 2026-10-09** tras cerrar el frente 24, que adelantó parte: hoy son **4 de 26 tablas con dueño único** y el orden cambia a `firmas` (1 tabla repartida) → `plantillas` (3) → `tareas` (9) → `procesos` (7, y sin empezar). Detalle en «La re-medida de F7.5» | 🟡 **4 de 26 tablas** |
+| **F7.5** | **Los cuatro entrelazados, TABLA POR TABLA** (no fichero por fichero: lo probó el piloto). **RE-MEDIDA el 2026-10-09** tras cerrar el frente 24, que adelantó parte. **`firmas` ✅ cerrado** ese mismo día (ver abajo); quedan `plantillas` (3 repartidas) → `tareas` (9) → `procesos` (7, y depende de F7.0). Detalle en «La re-medida de F7.5» | 🟡 **5 de 26 tablas · `firmas` ✅** |
 
 ## La re-medida de F7.5 (2026-10-09) — lo que el frente 24 adelantó, y lo que destapó
 
@@ -659,11 +659,11 @@ contar el harness ni los `scripts/`, que no son dueños—:
 
 | Dominio | Tablas | Con **dueño único** | Repartidas | Qué hay ya en `dominios/` |
 |---|--:|--:|--:|---|
-| **`firmas`** | 2 | 0 | **1** (`signature_batch_jobs`, en `services/sign`) | sólo el `index.js` |
+| **`firmas`** ✅ | 2 | **1** | **0** | las **cuatro capas** + `datos/consulta/` |
 | **`plantillas`** | 5 | **2** | 3 | `index.js` + `datos/` + `datos/consulta/` |
 | **`tareas`** | 11 | **2** | 9 | `index.js` + `datos/` (2) + `datos/consulta/` (2) |
 | **`procesos`** | 8 | 0 | **7** | ⛔ **la carpeta no existe** |
-| | **26** | **4** | **20** | |
+| | **26** | **5** | **19** | |
 
 **`signature_statuses` y `term_types` no tienen escritor localizable**: son catálogos que siembra el
 esquema, así que no son trabajo de F7.5 — y conviene no contarlas como pendientes.
@@ -708,6 +708,92 @@ que es exactamente el primer tramo de F7.5 sobre ese dominio.
 
 ⚠️ **Es un aviso, no un fallo**, así que CI sigue en verde y puede quedarse ahí indefinidamente. Esa
 es la forma en que esta deuda se hace invisible: la puerta la dice en cada corrida y nadie la lee.
+
+
+### `firmas` ✅ — cerrado el 2026-10-09, y lo que destapó vale más que el movimiento
+
+**Es el primer dominio de F7.5, y salió por barato: 1 tabla propia, 5 consultas, 0 goldens movidos.**
+Pero delimitarlo fue la mitad del trabajo, y arreglar lo que apareció fue la otra.
+
+#### El dominio no era lo que su nombre dice
+
+`firmas` **no es «el flujo de firma»**: es el **mecanismo** de firmar un PDF —poner la rúbrica,
+comprobar que vale, hacerlo en lote— más el estado técnico del resultado. Dos tablas:
+`signature_statuses` (nivel 0, catálogo que siembra el esquema y **nadie escribe**) y
+`signature_batch_jobs` (nivel 6, los lotes).
+
+Y eso partió la superficie HTTP en dos, porque `/sign` mezclaba dominios:
+
+| | |
+|---|---|
+| `POST /` · `/validate` · `/batch` · `/batch/start` · `GET /batch/:id` · `/batch/:id/download` · `/download` | **`firmas`** → `dominios/firmas/routes/` |
+| `POST /fill-requests/:id/{start,approve,return,reject,cancel}` · `GET /documents/:dv/signature-flow` | **`tareas`** → se queda, se va con su tanda |
+
+⚠️ **`routes/sign_router.js` sigue siendo el punto de montaje a propósito**, encadenando el router
+del dominio con `router.use`. Así **las URL no cambian** y el contrato HTTP no se mueve: 320/320 sin
+un golden tocado. Un refactor no cambia un golden, y aquí se podía demostrar.
+
+⚠️ **La puerta exporta UNA sola cosa, y es un hallazgo.** Al medir quién necesitaba los servicios de
+`firmas` desde fuera salió que **nadie**: `buildSignContext`, `processSinglePdfSigning` y
+`persistSignatureWorkflowResult` sólo las usaba el controlador que se movió con ellas. El dominio
+queda **cerrado**.
+
+⚠️ **Y `sign_controller.js` dejó de existir.** De sus ocho manejadores, siete se fueron al dominio y
+**uno no era de aquí**: `getSignatureFlow` devuelve el recorrido de un documento, que es un hecho de
+`tareas`. Se fue con los otros seis del recorrido, a `sign_workflow_controller.js`.
+
+#### Lo que destapó: TRES `pool` capturados al importar
+
+`PdfSigningService`, `BatchSigningService` y `sign_controller` hacían
+**`const pool = getPostgresPool();` en la columna cero**. Captura el valor del momento del import: si
+el módulo entra antes de que exista la conexión, queda `undefined` **para siempre**, y dos endpoints
+—bajar un documento firmado y el snapshot del recorrido— contestarían *«La conexión a PostgreSQL no
+está disponible»* mandando a buscar un problema de base de datos que no existe.
+
+**Funcionaba por orden de carga. Y meter el dominio tras una puerta es exactamente lo que cambia ese
+orden** — «la puerta sólo decide quién entra primero», que es la lección que mordió cuatro veces el
+2026-10-07. O sea: este movimiento habría activado el fallo si no se arregla con él.
+
+⚠️ **Y `check:instancias` no lo ve**: busca `new` y esto es una **llamada de función**. Es la misma
+forma de fallo una llamada más allá del alcance de la puerta. **Queda apuntado como hueco medido**,
+junto al de los campos de clase que esa puerta ya tiene declarado.
+
+#### Y tres cosas más que estaban mal por el camino
+
+| | |
+|---|---|
+| **Un `if (!pool)` que no comprobaba nada** | en `downloadSigned`, vigilaba el pool **del controlador** para proteger una función que usa **el suyo**. Retirado: la comprobación vive donde está la conexión |
+| **Una conexión dedicada sin transacción** | `assertSignContextBeforeSigning` pedía `getConnection()` sin `beginTransaction`: no protegía nada y podía quedarse sin soltar. Había **siete** así y las cerró F7.2; ésta se quedó fuera del barrido |
+| **Una transacción copiada a mano** | `persistSignatureWorkflowResult` repetía `getConnection`+`beginTransaction`+`commit`+`rollback`+`release`. Pasa a `conTransaccion`, que F7.2 construyó para esto |
+
+Resultado: los dos servicios con **cero** `.query(`, **cero** `getConnection` y **cero**
+`beginTransaction`; `PdfSigningService` de 463 a 419 líneas y `BatchSigningService` de 354 a 326.
+
+⚠️ **Un susto que no lo era:** `guardarLote` usa `ON DUPLICATE KEY UPDATE`, sintaxis de MySQL que
+PostgreSQL rechaza — y es **la quinta aparición de la familia** que dejó roto
+`POST /sign/fill-requests/:id/return` durante meses. **Aquí no:** `translateDialect` la reescribe a
+`ON CONFLICT (job_id) DO UPDATE SET … = EXCLUDED.…`, infiriendo el target de la clave primaria. Lo
+que estaba mal era **el comentario de `config/postgres.js`**, que decía *«NO cubre ON DUPLICATE KEY
+UPDATE»* cuando sí lo cubre desde hace tiempo. Corregido: un comentario caducado así manda a alguien
+a «arreglar» código que funciona.
+
+#### Las dos consultas que cruzan, y por qué están aparte
+
+`datos/` se queda **sólo con los lotes**. Las dos de `PdfSigningService` leen `document_versions`,
+`task_items`, `tasks`, `recorridos` y `turnos` —todo `tareas`— así que van a `datos/consulta/`:
+firmar un PDF necesita saber **dónde está el archivo** y **quién puede bajarlo**, y las dos cosas son
+hechos de la tarea.
+
+⚠️ Y una de ellas, `puedeAccederAlDocumento`, **es un guardia de acceso y no un detalle de
+almacenamiento**: aquí vivió un IDOR —el guardia miraba la TAREA y no el ENTREGABLE, así que un
+docente bajaba el documento de su compañero—. Va con el aviso escrito encima.
+
+#### Y el `index.js` del dominio decía una cosa falsa
+
+Afirmaba que `user_certificates` era de `firmas`. **No lo es**: el mapa dice `person_certificates`,
+en **`identidad`** (nivel 1) — y el nombre que citaba **no existe en el esquema**. Misma lección que
+`cargos`, que es de `identidad` y no de `organizacion`: **el dominio de una tabla se le pregunta al
+mapa, no se adivina por el nombre.**
 
 ### F7.1 ✅ — declarado, y lo que destapó
 

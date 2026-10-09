@@ -14,9 +14,9 @@ import os from "node:os";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { pipeline } from "node:stream/promises";
-import { getPostgresPool } from "../../config/postgres.js";
-import { getMinioObjectStream } from "../storage/minio_service.js";
-import { badRequest } from "../../errors/HttpError.js";
+import { guardarLote, leerLoteCrudo } from "../datos/lotes.js";
+import { getMinioObjectStream } from "../../../services/storage/minio_service.js";
+import { badRequest } from "../../../errors/HttpError.js";
 import {
   assertSignContextBeforeSigning,
   MINIO_USERS_BUCKET,
@@ -24,7 +24,6 @@ import {
   processSinglePdfSigning,
 } from "./PdfSigningService.js";
 
-const pool = getPostgresPool();
 
 // Ruta absoluta a propósito (`S4036`): con el nombre corto, el binario que se ejecuta depende del
 // PATH del proceso. Mismo criterio que `utils/templateArchive.js` y `services/admin/kernel/storage.js`.
@@ -105,29 +104,6 @@ export const rowToBatchJob = (row) => {
   };
 };
 
-const persistBatchJob = async (job) => {
-  await pool.query(
-    `INSERT INTO signature_batch_jobs
-       (job_id, user_id, sign_mode, status, total, processed, success_count, failed_count, results)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-     ON DUPLICATE KEY UPDATE
-       user_id = VALUES(user_id), sign_mode = VALUES(sign_mode), status = VALUES(status),
-       total = VALUES(total), processed = VALUES(processed), success_count = VALUES(success_count),
-       failed_count = VALUES(failed_count), results = VALUES(results)`,
-    [
-      job.jobId,
-      job.userId ?? null,
-      job.signMode ?? null,
-      job.status,
-      job.total ?? 0,
-      job.processed ?? 0,
-      job.successCount ?? 0,
-      job.failedCount ?? 0,
-      JSON.stringify(job.results || [])
-    ]
-  );
-};
-
 export const createBatchJob = async ({ userId, fileNames, signMode }) => {
   const job = {
     jobId: randomUUID(),
@@ -140,25 +116,21 @@ export const createBatchJob = async ({ userId, fileNames, signMode }) => {
     failedCount: 0,
     results: fileNames.map((fileName) => ({ fileName, status: "pending" }))
   };
-  await persistBatchJob(job);
+  await guardarLote(job);
   return job;
 };
 
 export const updateBatchJob = async (jobId, updater) => {
-  const [rows] = await pool.query("SELECT * FROM signature_batch_jobs WHERE job_id = ? LIMIT 1", [jobId]);
-  const current = rowToBatchJob(rows?.[0]);
+  const current = rowToBatchJob(await leerLoteCrudo(jobId));
   if (!current) return null;
   const next = typeof updater === "function" ? updater(current) : current;
-  await persistBatchJob(next);
+  await guardarLote(next);
   return next;
 };
 
 // SIN exportar a propósito: leer un lote por id y sin dueño es justo lo que abría el oráculo de
 // existencia. Fuera del módulo solo se ofrece `getOwnedBatchJob`.
-const getBatchJob = async (jobId) => {
-  const [rows] = await pool.query("SELECT * FROM signature_batch_jobs WHERE job_id = ? LIMIT 1", [jobId]);
-  return rowToBatchJob(rows?.[0]);
-};
+const getBatchJob = async (jobId) => rowToBatchJob(await leerLoteCrudo(jobId));
 
 // El job de OTRO usuario y un job INEXISTENTE valen lo mismo: null.
 //

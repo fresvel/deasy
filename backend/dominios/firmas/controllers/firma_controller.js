@@ -1,20 +1,28 @@
-// Transporte del dominio de firma. Aquí solo se lee la petición, se llama a UN servicio y se
-// traduce el resultado a HTTP. La lógica vive en:
-//   · `services/sign/PdfSigningService.js`   — contexto de firma, plan de almacenamiento, firma
-//   · `services/sign/BatchSigningService.js` — jobs de lote, bucle de firma masiva y ZIP
+// TRANSPORTE DEL DOMINIO `firmas`: leer la peticion, llamar a UN servicio y traducir a HTTP.
 //
-// CONTRATO DE ERRORES: los errores de negocio traen `statusCode` (`errors/HttpError.js`) y aquí se
-// honran; los que no lo traen son fallos de verdad y salen como 500. Antes toda la validación de
-// entrada de `requestSign` salía 500 —el cliente se llevaba un "error de servidor" por olvidarse la
-// contraseña—; el orden de los guards y sus códigos están congelados en
+// VINO DE `controllers/sign/sign_controller.js` al mover el dominio (F7.5 del frente 22), y de aquel
+// fichero se quedo fuera UN manejador --`getSignatureFlow`-- que NO es de este dominio: devuelve el
+// recorrido de un documento, y un recorrido en marcha es un hecho de `tareas`. Vive con los demas
+// del recorrido, en `controllers/sign/sign_workflow_controller.js`.
+//
+// ⚠️ Y AQUI HABIA UN `const pool = getPostgresPool();` EN LA COLUMNA CERO, que ya no esta por dos
+// motivos. El primero es de capas: un controlador no tiene pool --si necesita datos, llama a un
+// servicio-- y F7.2 dejo `controllers/` y `routes/` con cero consultas, pero su medida no incluia
+// esta forma. El segundo es un bug latente: capturaba el valor del momento del import, asi que si el
+// modulo entraba antes de que existiera la conexion quedaba `undefined` para siempre y dos endpoints
+// contestaban «La conexion a PostgreSQL no esta disponible» mandandote a buscar un problema de base
+// de datos que no existe. Meter el dominio tras una puerta es justo lo que cambia el orden de carga.
+//
+// CONTRATO DE ERRORES: los errores de negocio traen `statusCode` (`errors/HttpError.js`) y aqui se
+// honran; los que no lo traen son fallos de verdad y salen como 500. Antes toda la validacion de
+// entrada de `requestSign` salia 500 --el cliente se llevaba un "error de servidor" por olvidarse la
+// contrasena--; el orden de los guards y sus codigos estan congelados en
 // `tests/characterization/flows/zzzz_sign_batch.test.mjs`.
 import fs from "node:fs";
 import { randomUUID } from "node:crypto";
-import { getPostgresPool } from "../../config/postgres.js";
 import {
   requestSignerValidationJob
-} from "../../services/infrastructure/rabbit_signer.js";
-import { getSignatureFlowSnapshot } from "../../services/documents/DocumentSignatureWorkflowService.js";
+} from "../../../services/infrastructure/rabbit_signer.js";
 import {
   assertSignContextBeforeSigning,
   buildSignContext,
@@ -26,7 +34,7 @@ import {
   resolveSigningUser,
   resolveStoredDocumentObject,
   userCanAccessStoredDocument,
-} from "../../services/sign/PdfSigningService.js";
+} from "../services/PdfSigningService.js";
 import {
   buildSignedBatchArchive,
   createBatchJob,
@@ -36,16 +44,14 @@ import {
   selectSignedResults,
   startBatchSigningLoop,
   updateBatchJob,
-} from "../../services/sign/BatchSigningService.js";
+} from "../services/BatchSigningService.js";
 import {
   ensureBucketExists,
   getMinioObjectStream,
   removeMinioObject,
   statMinioObject,
   uploadFileToMinio
-} from "../../services/storage/minio_service.js";
-
-const pool = getPostgresPool();
+} from "../../../services/storage/minio_service.js";
 
 export const requestSign = async (req, res) => {
   try {
@@ -241,9 +247,9 @@ export const downloadSigned = async (req, res) => {
       bucket = MINIO_USERS_BUCKET;
       objectPath = requestedPath;
     } else {
-      if (!pool) {
-        return res.status(500).json({ error: "La conexión a PostgreSQL no está disponible." });
-      }
+      // Aqui habia un `if (!pool)` que vigilaba el pool DEL CONTROLADOR para proteger una funcion
+      // que usa el SUYO: no comprobaba nada util. Hoy la comprobacion vive donde esta la conexion,
+      // en `datos/consulta/documentos.js`, que lanza si no hay.
       const permitido = await userCanAccessStoredDocument({ userId: user.id, requestedPath });
       if (!permitido) {
         return res.status(403).json({ error: "No tienes acceso a este documento firmado." });
@@ -273,29 +279,5 @@ export const downloadSigned = async (req, res) => {
   } catch (error) {
     console.error("[sign_controller] Error descarga:", error);
     res.status(404).json({ error: "Archivo firmado no encontrado." });
-  }
-};
-
-export const getSignatureFlow = async (req, res) => {
-  try {
-    const documentVersionId = Number(req.params?.documentVersionId);
-    if (!documentVersionId || Number.isNaN(documentVersionId)) {
-      return res.status(400).json({ error: "Versión documental inválida." });
-    }
-    if (!pool) {
-      return res.status(500).json({ error: "La conexión a PostgreSQL no está disponible." });
-    }
-
-    // Una conexión dedicada del pool y sin transacción: el `getConnection()` que había aquí no
-    // protegía nada y se podía quedar sin soltar por cualquier camino que no pasara por el `finally`.
-    const snapshot = await getSignatureFlowSnapshot({
-      connection: pool,
-      documentVersionId,
-      userId: Number(req.user?.uid || 0),
-    });
-    return res.json(snapshot);
-  } catch (error) {
-    console.error("[sign_controller] Error signature flow:", error);
-    return res.status(500).json({ error: error.message || "No se pudo obtener el flujo de firmas." });
   }
 };

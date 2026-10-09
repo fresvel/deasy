@@ -794,6 +794,31 @@ escribes una puerta que busca nombres en el código, quítale los comentarios **
 estuviera dentro — y `UserRepository` tiene uno. Hoy es **latente y no un fallo**, porque nadie
 instancia esa clase a nivel de módulo; si algún día alguien lo hace, este campo corre al importar.
 
+⚠️ **Y SEGUNDO punto ciego, encontrado el 2026-10-09 al mover `firmas`: tampoco ve un
+`const pool = getPostgresPool();` en la columna cero.** La puerta busca `new` y esto es una
+**llamada de función**, así que es la misma forma del fallo una llamada más allá de su alcance — y el
+efecto es peor que el del `new`, porque no revienta: `getPostgresPool()` devuelve el valor del
+momento del import, así que si el módulo entra antes de que exista la conexión queda `undefined`
+**para siempre** y los endpoints que la usan contestan *«La conexión a PostgreSQL no está
+disponible»*, mandándote a buscar un problema de base de datos que no existe.
+
+Había **tres** (`PdfSigningService`, `BatchSigningService`, `sign_controller`), funcionando sólo por
+orden de carga, y **meter el dominio tras una puerta es exactamente lo que cambia ese orden**. Se
+arreglaron con él. Se escribe así, y vale para cualquier recurso que se resuelva al cargar:
+
+```js
+const pool = () => {
+  const p = getPostgresPool();
+  if (!p) throw new Error("La conexión a PostgreSQL no está disponible.");
+  return p;
+};
+// ...y cada uso pasa de `pool.` a `pool().`
+```
+
+⚠️ **Un parámetro por defecto NO es este fallo**: `({ connection = getPostgresPool() })` se evalúa
+**al llamar**, no al cargar. Es la forma correcta de que un servicio resuelva su propia conexión — y
+es lo que permite que un controlador no tenga pool.
+
 **Por qué la asimetría, medido:** el **3 %** de las escrituras del backend cruza dominios; el **29 %**
 de las lecturas. Prohibir que una lectura cruce sería absurdo —`units` se relaciona con los ocho
 dominios—, y dejarla mezclada con el `datos/` propio hace que **nada distinga una lectura legítima de
