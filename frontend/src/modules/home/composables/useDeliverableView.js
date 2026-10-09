@@ -192,7 +192,9 @@ export function useDeliverableView({
     const fillResolverType = String(currentFillRequest?.resolver_type || currentFillRequest?.resolverType || '').trim().toLowerCase();
 
     if (fillAssignedPersonId > 0 && fillAssignedPersonId === currentUser) {
-      if (['cargo_in_scope', 'position', 'specific_person', 'manual_pick'].includes(fillResolverType)) {
+      // Eran cinco valores y son los TRES del vocabulario: `position` y `manual_pick` salieron del
+      // CHECK hace meses, y desde el 2026-10-09 no hay por donde colarlos.
+      if (['cargo_in_scope', 'specific_person', 'task_assignee'].includes(fillResolverType)) {
         return 'Derivado';
       }
       return 'Directo';

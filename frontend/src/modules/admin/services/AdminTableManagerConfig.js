@@ -172,7 +172,6 @@ export const FK_TABLE_MAP = {
   resource_id: "resources",
   action_id: "actions",
   cargo_id: "cargos",
-  required_cargo_id: "cargos",
   signer_user_id: "persons",
   position_id: "unit_positions",
   assigned_person_id: "persons",

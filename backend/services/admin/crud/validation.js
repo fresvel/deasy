@@ -304,10 +304,13 @@ const TABLE_RULES = {
     requires(["vinculo_id", "Selecciona el entregable definido por proceso."]),
     datesInOrder("items de tarea"),
   ],
-  documents: [
-    requires(["task_item_id", "Selecciona el item de tarea del documento."]),
-    documentStatusValue,
-  ],
+  // AQUI HABIA UNA REGLA PARA `documents`, y la tabla murio el 2026-08-23 --una cascara 1:1 sobre el
+  // entregable, sin ni una columna propia--. `sqlTables.js` no la expone, asi que la regla era
+  // INALCANZABLE: nadie podia llegar a validarla, y su propio test la mantenia en verde. Se retiro el
+  // 2026-10-09, al pasar por aqui limpiando los nombres de las ocho tablas del recorrido.
+  //
+  // Lo que SI habia que conservar es `documentStatusValue`, que no solo valida: NORMALIZA el estado en
+  // el candidato. Sigue vivo en `document_versions`, que es donde vive hoy el estado del documento.
   document_versions: [
     documentVersionNumberAndStatus,
   ],

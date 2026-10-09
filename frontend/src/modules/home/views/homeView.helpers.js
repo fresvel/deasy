@@ -155,17 +155,9 @@ export const getFillStepTono = (step, currentStepOrder) => tonoPasoLlenado(
   Number(currentStepOrder || 0) === Number(step?.step_order || 0)
 );
 
-export const getFillStepResolverLabel = (step) => {
-  const bits = [];
-  if (step.resolver_type) bits.push(step.resolver_type);
-  if (step.selection_mode) bits.push(step.selection_mode);
-  return bits.join(' · ');
-};
+// Las dos componian «resolutor · modo», y el segundo termino era `selection_mode`, retirado el
+// 2026-10-09 con su columna. Queda el resolutor, que es lo unico que el paso declara hoy.
+export const getFillStepResolverLabel = (step) => String(step?.resolver_type || '');
 
-export const getSignatureStepResolverLabel = (step) => {
-  const bits = [];
-  if (step?.resolverType) bits.push(step.resolverType);
-  if (step?.selection_mode) bits.push(step.selection_mode);
-  if (step?.selectionMode) bits.push(step.selectionMode);
-  return bits.join(' · ') || 'cargo_in_scope';
-};
+export const getSignatureStepResolverLabel = (step) =>
+  String(step?.resolverType || step?.resolver_type || '') || 'cargo_in_scope';

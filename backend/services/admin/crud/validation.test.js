@@ -285,31 +285,25 @@ test("validateTableRules exige el vinculo venga el item de donde venga", () => {
 // Estas dos ramas no solo validan: MUTAN el candidato. Un refactor que las mueva
 // sin preservar la mutación rompería la escritura sin que ningún error lo delate.
 
-test("validateTableRules normaliza el estado del documento in-place", () => {
-  const candidate = { task_item_id: 1, status: "rechazado" };
-  validateTableRules("documents", candidate);
-  assert.equal(candidate.status, "Observado", "el estado legacy debe quedar normalizado en el candidato");
-});
-
-test("validateTableRules no inventa un estado si el candidato no lo trae", () => {
-  const candidate = { task_item_id: 1 };
-  validateTableRules("documents", candidate);
-  assert.equal("status" in candidate, false);
-});
-
+// Los dos primeros casos iban sobre `documents`, cuya regla era INALCANZABLE desde que la tabla murió
+// el 2026-08-23: `sqlTables.js` no la expone, así que nadie podía llegar a validarla y este test la
+// mantenía en verde. La normalización in-place —lo que de verdad había que no perder— vive en
+// `document_versions`, y es lo que estos dos casos afirman ahora.
 test("validateTableRules normaliza el estado de la versión documental in-place", () => {
   const candidate = { status: "aprobado" };
   validateTableRules("document_versions", candidate);
   assert.equal(candidate.status, "Final");
 });
 
-// El "documento suelto" (con propietario y sin entregable) se retiró: `task_item_id` es
-// obligatorio y un propietario ya no lo sustituye.
-test("validateTableRules exige el item de tarea del documento", () => {
-  throwsWith(() => validateTableRules("documents", {}), "Selecciona el item de tarea del documento.");
-  throwsWith(() => validateTableRules("documents", { owner_person_id: 3 }), "Selecciona el item de tarea del documento.");
-  assert.doesNotThrow(() => validateTableRules("documents", { task_item_id: 1 }));
+test("validateTableRules no inventa un estado si el candidato no lo trae", () => {
+  const candidate = { version: 1 };
+  validateTableRules("document_versions", candidate);
+  assert.equal("status" in candidate, false);
 });
+
+// Y AQUI SE EXIGIA el item de tarea del documento, sobre esa misma tabla muerta. Lo que el caso
+// protegia --que el «documento suelto», con propietario y sin entregable, no volviera-- lo protege hoy
+// el modelo: no hay tabla donde ponerlo.
 
 test("la versión documental es la RONDA: un entero mayor o igual a 1", () => {
   // Era `>= 0.1` con decimales. El número mentía: la 0.1 y la 0.2 parecían dos correcciones del

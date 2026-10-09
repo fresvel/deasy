@@ -71,15 +71,11 @@
         <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
           <div class="flex items-center justify-between gap-2">
             <span class="deasy-overline">Paso {{ si + 1 }}</span>
+            <!-- Aquí salían, sólo cuando el paso tenía más de un firmante, un selector de aprobación
+                 («Firman todas» / «Cualquiera» / «Mínimo») y su número. El cupo se retiró el 2026-10-09
+                 (§10 del plan): «Cualquiera» cerraba el paso con una firma y dejaba los turnos hermanos
+                 ABIERTOS e inoperables. Firman todos los del paso. -->
             <div class="flex items-center gap-2">
-              <template v-if="step.signers.length > 1">
-                <select v-model="step.approval_mode" aria-label="Modo de aprobación del paso" class="deasy-control deasy-control--select">
-                  <option value="and">Firman todas</option>
-                  <option value="or">Cualquiera</option>
-                  <option value="at_least">Mínimo</option>
-                </select>
-                <input v-if="step.approval_mode === 'at_least'" v-model.number="step.required_min" type="number" min="1" :max="step.signers.length" aria-label="Número mínimo de firmas del paso" class="deasy-control w-14" />
-              </template>
               <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="removeFirmaStep(si)">Quitar</button>
             </div>
           </div>

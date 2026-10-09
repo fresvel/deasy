@@ -137,11 +137,10 @@ export function useGeneralTask({
               entrega: flowEntrega.value.map(mapSigner),
               firma: flowFirma.value
                 .filter((s) => s.signers.length)
-                .map((s) => ({
-                  signers: s.signers.map(mapSigner),
-                  approval_mode: s.signers.length > 1 ? s.approval_mode : 'and',
-                  required_min: (s.signers.length > 1 && s.approval_mode === 'at_least') ? Number(s.required_min || 1) : null,
-                })),
+                // `approval_mode` y `required_min` viajaban aquí y el backend los IGNORA desde el
+                // 2026-10-09: el cupo se retiró (§10 del plan) y el convertidor de la receta no los mira.
+                // Se dejan de enviar en el mismo commit que se quitan del formulario.
+                .map((s) => ({ signers: s.signers.map(mapSigner) })),
             }
           : null,
         custom_term: {

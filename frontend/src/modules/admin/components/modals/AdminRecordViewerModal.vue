@@ -243,10 +243,11 @@ const RELATED_FIELD_PRIORITY = {
   tasks: ["title", "name", "status", "due_at", "created_at"],
   task_items: ["vinculo_id", "status", "sort_order", "created_at"],
   task_item_tenures: ["person_id", "position_id", "opened_by", "started_at", "ended_at"],
-  documents: ["title", "name", "status", "current_version_id", "created_at"],
   document_versions: ["version_number", "status", "created_at"],
-  document_fill_flows: ["status", "created_at"],
-  signature_flow_instances: ["status", "created_at"],
+  // Aqui habia tres entradas mas: `documents` --retirada el 2026-08-23-- y las dos instancias de flujo,
+  // retiradas el 2026-10-09. La ejecucion es UNA tabla para los dos lados, con su `accion`.
+  recorridos: ["accion", "estado", "paso_actual", "created_at"],
+  turnos: ["accion", "estado", "persona_id", "solicitado", "respondido"],
   position_assignments: ["position_id", "cargo_id", "start_date", "end_date", "is_active"],
   role_assignments: ["role_id", "assigned_at", "is_active"],
   contracts: ["contract_type", "start_date", "end_date", "is_active"]

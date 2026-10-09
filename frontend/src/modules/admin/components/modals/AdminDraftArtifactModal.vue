@@ -320,19 +320,16 @@
                 <label :for="fieldId(`fill-name-${index}`)" class="deasy-form-label">Nombre</label>
                 <input :id="fieldId(`fill-name-${index}`)" :value="step.name" placeholder="ej. Entrega del docente" class="deasy-control" @input="updateFillStep(index, 'name', $event.target.value)" />
               </div>
-              <div class="col-span-3">
+              <!-- Aquí había un tercer control, «Modo» (`selection_mode`), que sólo salía para «Por cargo» y
+                   ofrecía «Uno cualquiera» / «Todas». Se retiró con la columna el 2026-10-09 (§10 del plan):
+                   «uno cualquiera» era `ORDER BY person_id` + quedarse el primero, o sea EL ID MÁS BAJO, que
+                   no es una regla de negocio. Hoy un paso por cargo convoca a TODOS los que encuentre. -->
+              <div class="col-span-6">
                 <label :for="fieldId(`fill-who-mode-${index}`)" class="deasy-form-label">Quién hace el paso</label>
                 <select :id="fieldId(`fill-who-mode-${index}`)" :value="stepWhoMode(step)" class="deasy-control deasy-control--select" @change="updateFillStepWho(index, $event.target.value)">
                   <option value="task_assignee">Responsable del entregable</option>
                   <option value="scope">Por cargo</option>
                   <option v-if="isAdHoc" value="person">Persona concreta</option>
-                </select>
-              </div>
-              <div v-if="fillStepShowsMode(step)" class="col-span-3">
-                <label :for="fieldId(`fill-selection-mode-${index}`)" class="deasy-form-label">Modo</label>
-                <select :id="fieldId(`fill-selection-mode-${index}`)" :value="step.selection_mode" class="deasy-control deasy-control--select" @change="updateFillStep(index, 'selection_mode', $event.target.value)">
-                  <option value="auto_one">Uno cualquiera</option>
-                  <option value="auto_all">Todas</option>
                 </select>
               </div>
             </div>
@@ -448,28 +445,18 @@
           <!-- Editor (expandido). El orden lo define el arrastre; aquí no se edita el número. -->
           <div v-show="expandedSignatureStep === index" class="border-t border-line px-3 py-2.5">
           <div class="grid grid-cols-12 items-end gap-2">
-            <div class="col-span-7">
+            <!-- Aquí había un segundo control, «Aprobación» (`approval_mode`: Todas / Cualquiera / Al
+                 menos N) y, bajo él, «Mínimo de firmas». El cupo se retiró entero el 2026-10-09 (§10 del
+                 plan): «Cualquiera» cerraba el paso con una firma y dejaba los turnos hermanos ABIERTOS —se
+                 listaban en el espacio de trabajo de quienes no firmaron y al pincharlos respondían «no
+                 pertenece al paso actual»—, y «Al menos N» tenía el mismo defecto con un umbral. Un paso
+                 está aprobado cuando firman todos los suyos. -->
+            <div class="col-span-12">
               <label :for="fieldId(`sig-name-${index}`)" class="deasy-form-label">Nombre</label>
               <input :id="fieldId(`sig-name-${index}`)" :value="step.name" placeholder="ej. Firma de dirección" class="deasy-control" @input="updateSignatureStep(index, 'name', $event.target.value)" />
             </div>
-            <div class="col-span-5">
-              <label :for="fieldId(`sig-approval-mode-${index}`)" class="deasy-form-label deasy-form-label--inline">Aprobación <AppInfoTip>Cómo se cierra el paso entre sus firmantes: Todas (todos firman), Cualquiera (basta uno) o Al menos N.</AppInfoTip></label>
-              <select :id="fieldId(`sig-approval-mode-${index}`)" :value="step.approval_mode || 'and'" class="deasy-control deasy-control--select" @change="updateSignatureStep(index, 'approval_mode', $event.target.value)">
-                <option value="and">Todas</option>
-                <option value="or">Cualquiera</option>
-                <option value="at_least">Al menos…</option>
-              </select>
-            </div>
           </div>
-          <!-- "Al menos N": mínimo de firmas requerido del conjunto de firmantes del paso. -->
-          <div v-if="step.approval_mode === 'at_least'" class="mt-2 grid grid-cols-12 gap-2">
-            <div class="col-span-3">
-              <label :for="fieldId(`sig-required-signers-min-${index}`)" class="deasy-form-label">Mínimo de firmas</label>
-              <input :id="fieldId(`sig-required-signers-min-${index}`)" type="number" min="1" :value="step.required_signers_min || 1" class="deasy-control" @input="updateSignatureStep(index, 'required_signers_min', Number($event.target.value) || 1)" />
-            </div>
-          </div>
-
-          <!-- Firmantes del paso: cada uno con su propio resolutor; el cupo entre ellos lo define "Aprobación". -->
+          <!-- Firmantes del paso: cada uno con su propio resolutor, y todos tienen que firmar. -->
           <div class="mt-3 border-t border-line pt-2">
             <div class="flex items-center justify-between">
               <span class="deasy-overline inline-flex items-center gap-2">Firmantes <AppInfoTip>Varias personas pueden firmar en este paso. Configura cada firmante; el orden entre pasos es secuencial, los firmantes de un mismo paso van en paralelo.</AppInfoTip></span>
@@ -878,7 +865,6 @@ const addFillStep = () => {
     order: newIndex + 1,
     name: "",
     resolver_type: "task_assignee",
-    selection_mode: "auto_one",
     cargo_id: null,
     cargo_code: "",
     unit_scope_type: "context_exact",
@@ -887,6 +873,9 @@ const addFillStep = () => {
     filter_unit_type_id: null,
     person_id: null,
     position_id: null,
+    // `field_refs` SE QUEDA, y es el unico de los cinco que no se va: no tiene columna --nunca la tuvo--
+    // pero SI esta en el contrato HTTP del editor, fijado por el golden `schema_flow_reread`. Lo que lo
+    // mataria es retirarlo tambien del aplanado del endpoint, en el mismo commit.
     field_refs: [],
     required: true
   }]);
@@ -945,11 +934,11 @@ const whoSummary = (obj) => {
   return `${cargo ? `Cargo: ${cargo}` : "Por cargo"} · ${scopeSummary(obj)}`;
 };
 const fillWhoSummary = (step) => whoSummary(step);
-const APPROVAL_LABEL = { and: "Todas", or: "Cualquiera", at_least: "Al menos N" };
+// El resumen del paso plegado decia «N firmantes · Todas», y el segundo termino era el cupo. Sin cupo,
+// lo unico que hay que decir es cuantos firman: todos.
 const signatureSummary = (step) => {
   const n = stepSigners(step).length;
-  const approval = APPROVAL_LABEL[String(step?.approval_mode || "and")] || "Todas";
-  return `${n} firmante${n === 1 ? "" : "s"} · ${approval}`;
+  return `${n} firmante${n === 1 ? "" : "s"}`;
 };
 
 // Reordenar pasos por drag (DnD nativo). Renumera `order` para mantener 1..N.
@@ -1023,7 +1012,6 @@ const onUnitTypeScopeChange = (index, value) => {
   if (value) loadResolvableCargos({ unitTypeId: value });
 };
 // El "Modo" (uno cualquiera / todas) solo aplica con cargo (puede resolver varias personas).
-const fillStepShowsMode = (step) => String(step?.resolver_type || "") === "cargo_in_scope";
 const fillStepNeedsUnit = (step) => String(step?.unit_scope_type || "") === "unit_exact";
 const fillStepNeedsUnitType = (step) => String(step?.unit_scope_type || "") === "unit_type";
 
@@ -1149,8 +1137,8 @@ const processHasRules = computed(() => Boolean(processScope.value?.has_rules));
 // para que processHasRules ya esté declarado al ejecutarse de inmediato.
 watch([fillSteps, processHasRules], ensureResolvableCargosLoaded, { immediate: true });
 
-// ── Flujo de firmas ── Mismo modelo que entrega (resolver "Quién firma"). Sin anclas: el slot de token por
-// paso se deriva del code. selection_mode siempre auto_all (resuelve candidatos); el quórum lo da approval_mode.
+// ── Flujo de firmas ── Mismo modelo que entrega (resolver "Quién firma"). Sin anclas: el hueco del token
+// lo acuña el convertidor de la receta, uno por FIRMANTE.
 const signatureSteps = computed(() => props.draftArtifactForm.signature_workflow?.steps || []);
 watch(signatureSteps, ensureResolvableCargosLoaded);
 const commitSignature = (patch) => {
@@ -1167,7 +1155,6 @@ const commitSignature = (patch) => {
 // Firmante por defecto (resolutor inicial = responsable del entregable).
 const newSignatureSigner = () => ({
   resolver_type: "task_assignee",
-  selection_mode: "auto_all",
   cargo_id: null,
   unit_scope_type: "context_exact",
   unit_id: null,
@@ -1183,8 +1170,6 @@ const addSignatureStep = () => {
   commitSignature({ steps: [...signatureSteps.value, {
     order: newIndex + 1,
     name: "",
-    approval_mode: "and",
-    required_signers_min: 1,
     required: true,
     signers: [newSignatureSigner()]
   }] });

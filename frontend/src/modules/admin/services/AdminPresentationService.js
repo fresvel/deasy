@@ -85,19 +85,18 @@ class AdminPresentationService {
     item_mode: { single: "Simple", replicated: "Replicado", routed: "Ruteado" },
     source: { manual: "Manual", derived: "Derivado" },
     position_type: { real: "Real", promocion: "Promoción", simbolico: "Simbólico" },
-    /* ⚠️ SOLO LOS TRES VIVOS, Y ES DELIBERADO. `document_owner`, `position` y `manual_pick`
-       estan RETIRADOS: `postgres_schema.sql` los excluye del CHECK. Si alguno aparece en la
-       tabla saldra con su codigo crudo, y eso es la señal correcta — una base sin re-bootstrap.
-       Medido el 2026-08-20 en la pila B: su CHECK es el LEGACY de seis valores (se llama
-       `fill_flow_steps_resolver_type_check`, no `chk_…`) y tiene 3 filas con `document_owner`.
-       Darles etiqueta bonita habria disfrazado de normal un dato que no deberia existir. */
+    /* ⚠️ SOLO LOS TRES VIVOS, Y ES DELIBERADO. Los tres retirados --`document_owner`, `position` y
+       `manual_pick`-- saldrian con su codigo crudo si aparecieran, y esa es la señal correcta: darles
+       etiqueta bonita habria disfrazado de normal un dato que no deberia existir.
+       Y desde el 2026-10-09 NO PUEDEN APARECER: los firmantes pasaron del JSONB a filas bajo CHECK, que
+       era la via por la que un valor retirado se colaba sin que la base lo rechazara. */
     resolver_type: {
       task_assignee: "Responsable del entregable",
       cargo_in_scope: "Por cargo",
       specific_person: "Persona concreta"
     },
-    selection_mode: { auto_one: "Uno cualquiera", auto_all: "Todas", manual: "Manual" },
-    approval_mode: { and: "Todas", or: "Cualquiera", at_least: "Al menos N" },
+    /* Aqui habia dos diccionarios mas, `selection_mode` y `approval_mode`. Se fueron con sus columnas
+       el 2026-10-09 (§10 del plan): el primero elegia «el id mas bajo» y el segundo era el cupo. */
     dedication: { TC: "Tiempo completo", MT: "Medio tiempo", TP: "Tiempo parcial" },
     relation_type: { dependencia: "Dependencia", servicios: "Servicios", promocion: "Promoción" }
   };

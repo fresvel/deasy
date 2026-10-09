@@ -217,15 +217,19 @@ describe('getFillStepTono', () => {
   });
 });
 
+// Las dos etiquetas unian «resolutor · modo». El modo era `selection_mode`, retirado el 2026-10-09 con
+// su columna (§10 del plan: `auto_one` era «el id mas bajo»), asi que ya no hay segundo termino que
+// unir. Lo que estos casos afirman ahora es que el modo NO VUELVE: si alguien lo reintroduce, la
+// etiqueta deja de ser el resolutor a secas y el test lo dice.
 describe('getFillStepResolverLabel / getSignatureStepResolverLabel', () => {
-  test('une resolver y modo con separador', () => {
+  test('entrega: la etiqueta es el resolutor, y el modo retirado NO se cuela', () => {
     expect(getFillStepResolverLabel({ resolver_type: 'task_assignee', selection_mode: 'auto_one' }))
-      .toBe('task_assignee · auto_one');
+      .toBe('task_assignee');
     expect(getFillStepResolverLabel({})).toBe('');
   });
-  test('firma: fallback a cargo_in_scope cuando no hay datos', () => {
+  test('firma: igual, con su reserva a cargo_in_scope cuando no hay datos', () => {
     expect(getSignatureStepResolverLabel({ resolverType: 'cargo_in_scope', selectionMode: 'auto_all' }))
-      .toBe('cargo_in_scope · auto_all');
+      .toBe('cargo_in_scope');
     expect(getSignatureStepResolverLabel({})).toBe('cargo_in_scope');
   });
 });

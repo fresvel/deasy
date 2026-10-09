@@ -35,7 +35,7 @@ export function useFlowBuilder({ clearRecipientSearch, currentUserId, processPan
     if (t === 'entrega') {
       if (!flowEntrega.value.some((p) => sameSigner(p, signer))) flowEntrega.value.push(signer);
     } else if (t === 'firma:new') {
-      flowFirma.value.push({ signers: [signer], approval_mode: 'and', required_min: 1 });
+      flowFirma.value.push({ signers: [signer] });
     } else if (typeof t === 'string' && t.startsWith('firma:')) {
       const step = flowFirma.value[Number(t.split(':')[1])];
       if (step && !step.signers.some((p) => sameSigner(p, signer))) step.signers.push(signer);
