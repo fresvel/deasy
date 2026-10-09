@@ -20,16 +20,15 @@ primero que hay que tener claro, así que va explícita.
 | Modo del vínculo | `vinculos.item_mode` | `single` · `replicated` · `routed` | **Sí** |
 | Origen del entregable | `task_items.origin_kind` | `process_defined` · `user_added` | **Sí** |
 | Causa del turno | `task_item_tenures.opened_by` | `original` · `occupancy_start` · `occupancy_end` · `position_deactivated` · `reconcile` · `manual` | **Sí** |
-| Cómo se encuentra a quien entrega o firma | `resolver_type` en los dos flujos | `task_assignee` · `cargo_in_scope` · `specific_person` | **Sí**, pero solo en la columna: el JSONB `signers` se salta esta protección |
+| Cómo se encuentra a quien entrega o firma | `participantes_declarados.resolver_type` | `task_assignee` · `cargo_in_scope` · `specific_person` | **Sí**, y desde el 2026-10-08 **sin escapatoria**: el JSONB `signers` que se la saltaba pasó a filas |
 | Ámbito del paso | `unit_scope_type` en los dos flujos | `unit_exact` · `unit_subtree` · `unit_type` · `all_units` · `context_exact` | **Sí** |
-| Elección del paso de entrega | `fill_flow_steps.selection_mode` | `auto_one` · `auto_all` · `manual` | **Sí** |
-| Elección del paso de firma | `signature_flow_steps.selection_mode` | los mismos, por convenio | **No.** Es la asimetría que delata la deuda |
+| Ámbito del que se saca a la gente | `participantes_declarados.unit_scope_type` | `unit_exact` · `context_exact` · `all_units` | **Sí**. Eran seis valores y cuatro llegaban sólo por el JSONB |
 | Recorrido (entrega y firma) | `recorridos.estado` | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` | **Sí** |
 | Turno (a quién le toca) | `turnos.estado` | los cinco anteriores más `devuelto`, y un `CHECK` lo limita a la entrega | **Sí** |
 | Instancia de entrega *(en retirada)* | `document_fill_flows.status` | los mismos cinco | **Sí**, pero ya no la escribe nadie |
 | Solicitud de entrega *(en retirada)* | `fill_requests.status` | los seis | **Sí**, pero ya no la escribe nadie |
-| Instancia de firma | `signature_flow_instances.status` | los mismos cinco de la instancia de entrega | **Sí** |
-| Solicitud de firma | `signature_requests.status` | los mismos cinco | **Sí** |
+| Instancia de firma *(en retirada)* | `signature_flow_instances.status` | los mismos cinco | **Sí**, pero ya no la escribe nadie |
+| Solicitud de firma *(en retirada)* | `signature_requests.status` | los mismos cinco | **Sí**, pero ya no la escribe nadie |
 | Resultado de firmar | `signature_statuses` | catálogo de 4 códigos | **Es una tabla**, consultable y ampliable sin tocar el esquema |
 | **Documento** | `task_items.document_status` | **11 valores** | **No.** Solo en el código |
 | **Ronda** | `document_versions.status` | **12 valores** | **No.** Solo en el código |

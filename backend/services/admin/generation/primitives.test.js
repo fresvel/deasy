@@ -20,7 +20,6 @@ test("resolveScopeForStep: por defecto el ámbito es context_exact y hereda la u
   const scope = resolveScopeForStep({}, { scope_unit_id: 8 });
   assert.equal(scope.unitScopeType, "context_exact");
   assert.equal(scope.unitId, 8, "sin unit_id propio, hereda la del contexto");
-  assert.equal(scope.unitTypeId, null);
 });
 
 test("resolveScopeForStep: el unit_id del paso MANDA sobre el del contexto", () => {
@@ -48,17 +47,22 @@ test("resolveScopeForStep: un ámbito NO context_* no hereda la unidad del conte
   assert.equal(scope.unitId, null, "all_units no debe heredar la unidad");
 });
 
-test("resolveScopeForStep: unit_type hereda el tipo de unidad del contexto", () => {
-  const scope = resolveScopeForStep({ unit_scope_type: "unit_type" }, { scope_unit_type_id: 2 });
-  assert.equal(scope.unitTypeId, 2);
+// El ámbito `unit_type` se retiró en el paso 3b de la fase 4 del frente 24 (su único productor era
+// el JSONB `signers`, que ningún CHECK cubría), y con él `unitTypeId`: hoy el vocabulario son TRES
+// ámbitos y ninguno mira el tipo de unidad. Este test fija que la clave YA NO SALE — devolverla
+// afirmaría que algo la usa.
+test("resolveScopeForStep: ya no resuelve tipo de unidad, ni heredado ni declarado", () => {
+  const heredado = resolveScopeForStep({ unit_scope_type: "unit_type" }, { scope_unit_type_id: 2 });
+  assert.equal(heredado.unitTypeId, undefined);
 
   const propio = resolveScopeForStep({ unit_scope_type: "unit_type", unit_type_id: 9 }, { scope_unit_type_id: 2 });
-  assert.equal(propio.unitTypeId, 9, "lo declarado en el paso gana");
+  assert.equal(propio.unitTypeId, undefined);
+  assert.deepEqual(Object.keys(propio).sort(), ["unitId", "unitScopeType"]);
 });
 
 test("resolveScopeForStep tolera paso y contexto vacíos", () => {
   const scope = resolveScopeForStep(null, null);
-  assert.deepEqual(scope, { unitScopeType: "context_exact", unitId: null, unitTypeId: null });
+  assert.deepEqual(scope, { unitScopeType: "context_exact", unitId: null });
 });
 
 // --- applyRecipientPolicy ---

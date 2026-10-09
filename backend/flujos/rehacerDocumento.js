@@ -1,7 +1,15 @@
 // EXPERIMENTO F7 (2026-10-06) · FLUJO: rehacer un documento desde cero.
-// Cruza TRES dominios y por eso no vive en ninguno: cancela el llenado (`plantillas`), cancela la
-// firma (`firmas`) y abre una ronda nueva (`tareas`). Todo dentro de la MISMA transaccion, que abre
-// quien llama y llega por parametro.
+//
+// ⚠️ NACIO CRUZANDO TRES DOMINIOS --`plantillas` por el llenado, `firmas` por la firma y `tareas`
+// por la ronda nueva-- Y HOY CRUZA UNO. No se arreglo nada aqui: la fase 4 del frente 24 unifico las
+// dos EJECUCIONES en `recorridos` y `turnos`, que son de `tareas`, asi que lo que antes eran dos
+// mecanismos de dos dominios es ahora el mismo mecanismo con dos valores de `accion`.
+//
+// Por la regla del mapa, un flujo que escribe un solo dominio deja de ser un flujo y se mueve a el
+// --y la puerta lo avisa--. DONDE va es la decision de F7.5, que es la que mueve `tareas` a su
+// dominio; mientras tanto se queda aqui y la declaracion de `_flujos` dice la verdad.
+//
+// Todo dentro de la MISMA transaccion, que abre quien llama y llega por parametro.
 //
 // REGLA DEL EXPERIMENTO: aqui NO hay SQL. Cada consulta vive en el `datos/` de su dominio y este
 // fichero solo decide el orden y las reglas.
@@ -9,7 +17,6 @@ import { conTransaccion } from "../config/postgres.js";
 import { ensureFillFlowForDocumentVersion } from "../services/admin/TaskGenerationService.js";
 import { transitionDocumentVersionState } from "../services/documents/DocumentStateService.js";
 import { ESTADO_RECORRIDO } from "../services/documents/DocumentWorkflowCatalog.js";
-import { resolveCurrentSignatureStep } from "../services/documents/DocumentSignatureWorkflowService.js";
 import {
   getMaxDocumentVersionForTaskItem,
   insertDocumentVersion,
@@ -23,22 +30,14 @@ import {
   cancelarTurnosAbiertos,
   turnoAbiertoDelUsuarioEnPasoActual,
 } from "../dominios/tareas/index.js";
-import {
-  cancelSignatureInstance,
-  cancelSignatureRequestsOfInstance,
-  findSignatureInstanceIdByDocumentVersion,
-  getSignatureOwnershipAtStep,
-} from "../dominios/firmas/datos/flujoDeFirma.js";
+// AQUI SE IMPORTABA `dominios/firmas/datos/flujoDeFirma.js`, con las cuatro funciones de la
+// ejecucion de FIRMA. Se disolvio en el paso 3b de la fase 4: la ejecucion ya no es de ese dominio
+// --`recorridos` y `turnos` son de `tareas`-- y sus cuatro preguntas eran las mismas que las de
+// entrega. Viven una sola vez, arriba.
+//
+// Y con eso este flujo deja de cruzar `firmas`: cancela DOS RECORRIDOS del mismo dominio.
 
 const RESET_NOTE = "Reset manual del flujo";
-
-const getCurrentSignatureOwnership = async (connection, documentVersionId, userId) => {
-  const currentStep = await resolveCurrentSignatureStep(connection, documentVersionId);
-  if (!currentStep?.stepOrder) {
-    return null;
-  }
-  return getSignatureOwnershipAtStep(connection, documentVersionId, Number(currentStep.stepOrder), userId);
-};
 
 // UNA FUNCION PARA LOS DOS LADOS desde la fase 4 del frente 24: cancelar un recorrido es cancelar
 // sus turnos abiertos y marcarlo. Eran dos, una por mitad, con el mismo cuerpo.
@@ -49,18 +48,6 @@ const cancelarRecorridoAbierto = async (connection, documentVersionId, accion) =
   }
   await cancelarTurnosAbiertos(connection, Number(recorrido.id), ESTADO_RECORRIDO.CANCELADO, RESET_NOTE);
   await cancelarRecorrido(connection, Number(recorrido.id), ESTADO_RECORRIDO.CANCELADO);
-};
-
-const cancelOpenSignatureRequests = async (connection, documentVersionId) => {
-  const instanceId = await findSignatureInstanceIdByDocumentVersion(connection, documentVersionId);
-  if (!instanceId) {
-    return;
-  }
-
-  // El codigo se pasa tal cual: ya no hay catalogo que resolver (fase 3 del frente 24), asi que
-  // tampoco hay un "no existe ese estado" que comprobar. Lo valida el CHECK de la columna.
-  await cancelSignatureRequestsOfInstance(connection, instanceId, ESTADO_RECORRIDO.CANCELADO);
-  await cancelSignatureInstance(connection, instanceId, ESTADO_RECORRIDO.CANCELADO);
 };
 
 const createResetDocumentVersion = async (connection, currentVersion) => {
@@ -114,9 +101,12 @@ export const resetDocumentWorkflowForTaskItem = async ({
   const fillOwnership = bypassStepOwnership
     ? null
     : await turnoAbiertoDelUsuarioEnPasoActual(connection, documentVersionId, "entrega", userId);
+  // MISMA FUNCION QUE LA DE ENTREGA, con otra accion. Antes la de firma era un ayudante local que
+  // resolvia el paso actual a mano porque la instancia de firma no guardaba `paso_actual`; el
+  // recorrido unificado lleva esa columna en los dos lados, asi que la pregunta es una.
   const signatureOwnership = bypassStepOwnership
     ? null
-    : await getCurrentSignatureOwnership(connection, documentVersionId, userId);
+    : await turnoAbiertoDelUsuarioEnPasoActual(connection, documentVersionId, "firma", userId);
   if (!bypassStepOwnership && !fillOwnership && !signatureOwnership) {
     const error = new Error(
       "Solo el responsable del paso actual de entrega o firma puede resetear este flujo."
@@ -126,7 +116,7 @@ export const resetDocumentWorkflowForTaskItem = async ({
   }
 
   await cancelarRecorridoAbierto(connection, documentVersionId, "entrega");
-  await cancelOpenSignatureRequests(connection, documentVersionId);
+  await cancelarRecorridoAbierto(connection, documentVersionId, "firma");
   await transitionDocumentVersionState(connection, documentVersionId, "Cancelado");
 
   const nextVersion = await createResetDocumentVersion(connection, currentVersion);

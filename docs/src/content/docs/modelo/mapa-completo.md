@@ -79,7 +79,7 @@ flowchart TB
     SFT --> SFI["signature_flow_instances"]
     SFI --> SR["signature_requests"]
     SFS --> SR
-    SR --> DS["document_signatures"]
+    TUR --> DS["document_signatures"]
     SS["signature_statuses"] --> DS
   end
 
@@ -112,7 +112,17 @@ tenía ni una columna propia y desapareció.
 
 **Los dos flujos son simétricos**, y en el dibujo se ve: cabecera → pasos, cabecera → instancia,
 instancia → solicitudes. Las diferencias reales son dos y están en el detalle, no en la forma: la
-firma añade el `slot` y el `approval_mode`.
+firma añade el `slot`, que desde el 2026-10-08 es **de cada firmante** y no del paso.
+
+:::caution[Las ocho tablas de los dos flujos siguen dibujadas, y ya no gobiernan nada]
+
+Desde el **2026-10-08** la EJECUCIÓN de los dos lados es `recorridos` + `turnos`, y la RECETA es
+`pasos_declarados` + `participantes_declarados`. Las ocho de abajo **siguen en el esquema** —por eso
+siguen en el mapa, que dibuja el esquema y no el código— pero ya no las escribe ni las lee nadie.
+Fíjate en la única flecha que las cruza: `document_signatures` cuelga hoy de `turnos`, no de
+`signature_requests`.
+
+:::
 
 :::note[Y esa simetría es lo que el «recorrido unificado» viene a borrar]
 

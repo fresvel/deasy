@@ -209,12 +209,12 @@ export const ACCESS_SOURCES = Object.freeze([
     key: "flujo_firma",
     grants: ACCESS_LEVELS.ENTREGABLE,
     reason: "Participó en el flujo de firma",
-    sql: `SELECT sr.assigned_person_id AS person_id
-          FROM signature_requests sr
-          INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-          INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
+    sql: `SELECT tu.persona_id AS person_id
+          FROM turnos tu
+          INNER JOIN recorridos r ON r.id = tu.recorrido_id AND r.accion = 'firma'
+          INNER JOIN document_versions dv ON dv.id = r.document_version_id
           INNER JOIN alcance a ON a.task_item_id = dv.task_item_id
-          WHERE sr.assigned_person_id IS NOT NULL`,
+          WHERE tu.persona_id IS NOT NULL`,
   },
   // ── LAS DOS FUENTES DE OBSERVACION SE RETIRARON el 2026-08-23 ─────────────────────────
   // `observacion_autor` era REDUNDANTE: para escribir una observacion hay que haber pasado el

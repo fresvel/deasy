@@ -22,22 +22,20 @@ control de ejecución es la fuente de esta página.
 | `TD7-e` | Estados sin `CHECK` | **Cuatro** columnas de estado no declaran su dominio en la base: `tasks.status`, `task_items.document_status`, `document_versions.status` y `signature_batch_jobs.status`. Un valor mal escrito entra sin resistencia | Decidir cuáles bajan a la base. **Va detrás de D2**, o se cimentaría un vocabulario que aún se está unificando |
 | `TD7-k2` | Silla desactivada | Desactivar un puesto **no cierra su ocupación**. La persona sigue figurando como titular vigente de una silla que ya no existe | Decidir si debe cerrarse, o si es correcto que una silla inactiva conserve a su ocupante |
 | `TD7-r2` | Cadena de contratación | `aplications`, `offers` y las tres tablas de origen de contrato **no las toca ningún código**, y el rol `GestorContratacion` promete tres cosas de las que solo existe una | Decidir si la cadena **se implementa o se retira** |
-| `T1.19-b` | Lista libre de firmantes | El JSONB `signers` **no lo valida nadie** y manda sobre `resolver_type`, que sí está validado. Un paso antiguo puede traer por ahí una forma de resolución retirada | Decidir **qué se hace con los tres valores retirados** que el JSONB puede traer |
 
-:::caution[El caso de la lista de firmantes necesita decisión Y trabajo, y en un orden concreto]
+:::tip[El caso de la lista de firmantes se CERRÓ el 2026-10-08, y en el orden que decía]
 
-Es el defecto **1.19**, y no basta con filtrar. El censo está cerrado: hay tres escritores vivos y los
-tres filtran; lo que queda es legado, y **la copia de versionado lo propaga verbatim**.
+Era el defecto **1.19**: el JSONB `signers` no lo validaba nadie y mandaba sobre `resolver_type`, que
+sí estaba validado, así que un paso antiguo podía traer por ahí una forma de resolución retirada — y
+retirar los `case` que la atendían dejaba el paso **sin firmante y en silencio**.
 
-Sus tareas están encadenadas a propósito:
+Lo cerró la unificación del recorrido, que es la versión fuerte de «filtrar y migrar»: los firmantes
+pasaron a **filas** (`participantes_declarados`), con el mismo `CHECK` que tenía la columna del paso.
+El valor retirado no se filtra — **no se puede ni insertar**. Con eso cayeron los dos `case` legados
+(`document_owner`, `position`) y cuatro de los seis ámbitos, y la guarda defensiva que el disparador
+del relevo llevaba por este mismo motivo.
 
-- **Filtrar solo** dejaría pasos legítimos **sin firmante**, porque hay filas ya desplegadas que
-  dependen del valor legado.
-- **Migrar primero** el JSONB de esas filas es lo que desbloquea el filtro.
-- Y **solo entonces** se pueden retirar los dos `case` legados (`document_owner`, `position`). Hoy
-  borrarlos deja el paso resolviéndose por el `default` sin cargo: **sin firmante y en silencio**.
-
-Por eso dos de sus cinco tareas figuran como bloqueadas, no como pendientes.
+Está contado en [el flujo de firma](/modelo/flujo-de-firma/).
 
 :::
 

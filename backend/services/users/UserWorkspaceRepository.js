@@ -115,11 +115,12 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
      ) fill_stats ON fill_stats.document_version_id = dv.id
      LEFT JOIN (
        SELECT
-         sfi.document_version_id,
-         SUM(CASE WHEN sr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_signature_count
-       FROM signature_flow_instances sfi
-       LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
-       GROUP BY sfi.document_version_id
+         r.document_version_id,
+         SUM(CASE WHEN t.respondido IS NULL THEN 1 ELSE 0 END) AS pending_signature_count
+       FROM recorridos r
+       LEFT JOIN turnos t ON t.recorrido_id = r.id
+       WHERE r.accion = 'firma'
+       GROUP BY r.document_version_id
      ) signature_stats ON signature_stats.document_version_id = dv.id
      WHERE EXISTS (
        -- Sexta y ultima copia del predicado de participacion. El IDOR que llevaba dentro se
@@ -139,10 +140,10 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
   const [rows] = await pool.query(
     `SELECT DISTINCT
        sr.id AS signature_request_id,
-       sr.requested_at,
-       sr.status AS signature_request_status_code,
-       sfs.step_order,
-       sfs.name AS step_name,
+       sr.solicitado AS requested_at,
+       sr.estado AS signature_request_status_code,
+       sfs.orden AS step_order,
+       sfs.nombre AS step_name,
        ti.id AS document_id,
        ti.id AS task_item_id,
        ti.document_status,
@@ -165,8 +166,10 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
        YEAR(trm.start_date) AS term_year,
        tar_dl.display_name AS template_artifact_name,
        COALESCE(trm.start_date, t.created_at) AS sort_date
-     FROM signature_requests sr
-     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+     FROM turnos sr
+     INNER JOIN recorridos sfi ON sfi.id = sr.recorrido_id AND sfi.accion = 'firma'
+     INNER JOIN participantes_declarados spr ON spr.id = sr.participante_id
+     INNER JOIN pasos_declarados sfs ON sfs.id = spr.paso_id
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
      INNER JOIN (
        SELECT task_item_id, MAX(version) AS max_version
@@ -187,15 +190,14 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      LEFT JOIN units origin_unit ON origin_unit.id = ti.origin_unit_id
      LEFT JOIN unit_positions scope_position ON scope_position.id = ti.responsible_position_id
      LEFT JOIN units scope_unit ON scope_unit.id = scope_position.unit_id
-     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     WHERE sr.assigned_person_id = ?
-       AND sr.responded_at IS NULL
+     WHERE sr.persona_id = ?
+       AND sr.respondido IS NULL
        AND LOWER(COALESCE(dv.status, '')) IN (
          'listo para firma',
          'pendiente de firma',
          'firmado parcial'
        )
-     ORDER BY sort_date DESC, sr.requested_at DESC, sr.id DESC`,
+     ORDER BY sort_date DESC, sr.solicitado DESC, sr.id DESC`,
     [userId]
   );
   return rows;
@@ -312,16 +314,19 @@ export const getDefinitionTemplates = async (pool, definitionId) => {
        tar.id AS edicion_id,
        tar_dl.display_name AS template_artifact_name,
        tar.is_active AS template_artifact_active,
-       COUNT(DISTINCT sft.id) AS signature_flow_count
+       COUNT(DISTINCT pd.edicion_id) AS signature_flow_count
      FROM vinculos pdt
      INNER JOIN ediciones tar ON tar.id = pdt.edicion_id
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
      -- El recorrido de un vinculo ES el de su edicion: la cabecera del vinculo --el escalon 2-- no la
      -- escribia nadie y la puerta de publicacion la excluia. Frente 24, fase 2.
-     LEFT JOIN signature_flow_templates sft
-       ON sft.edicion_id = pdt.edicion_id
-      AND sft.task_item_id IS NULL
-      AND sft.is_active = 1
+     -- Y ya no hay cabecera que contar: se cuenta por EDICION, no por paso, asi que sigue dando 0 o
+     -- 1 como antes. Lo que decide es que EXISTA un paso declarado de esta accion, que es justo lo
+     -- que significaba una cabecera activa con pasos.
+     LEFT JOIN pasos_declarados pd
+       ON pd.edicion_id = pdt.edicion_id
+      AND pd.accion = 'firma'
+      AND pd.task_item_id IS NULL
      WHERE pdt.process_definition_id = ?
      GROUP BY
        pdt.id,
@@ -445,10 +450,10 @@ export const getUserAccessibleTasksForDefinition = async (pool, userId, definiti
            SELECT 1
            FROM task_items ti
            INNER JOIN document_versions dv ON dv.task_item_id = ti.id
-           INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-           INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+           INNER JOIN recorridos rf ON rf.document_version_id = dv.id AND rf.accion = 'firma'
+           INNER JOIN turnos tf ON tf.recorrido_id = rf.id
            WHERE ti.task_id = t.id
-             AND sr.assigned_person_id = ?
+             AND tf.persona_id = ?
          )
        )
      ORDER BY t.start_date DESC, t.id DESC`,
@@ -547,11 +552,12 @@ export const getDocumentsForTaskItemIds = async (pool, taskItemIds) => {
        SELECT
          sfi.document_version_id,
          COUNT(sr.id) AS total_signature_count,
-         SUM(CASE WHEN sr.responded_at IS NULL THEN 1 ELSE 0 END) AS pending_signature_count
-       FROM signature_flow_instances sfi
+         SUM(CASE WHEN sr.respondido IS NULL THEN 1 ELSE 0 END) AS pending_signature_count
+       FROM recorridos sfi
        INNER JOIN document_versions dv2 ON dv2.id = sfi.document_version_id
-       LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
-       WHERE LOWER(COALESCE(dv2.status, '')) IN (
+       LEFT JOIN turnos sr ON sr.recorrido_id = sfi.id
+       WHERE sfi.accion = 'firma'
+         AND LOWER(COALESCE(dv2.status, '')) IN (
          'listo para firma',
          'pendiente de firma',
          'firmado',
@@ -593,12 +599,12 @@ export const getUserTaskItemParticipationSummary = async (pool, userId, taskItem
        SELECT
          dv.task_item_id,
          0 AS has_past_fill,
-         CASE WHEN sr.responded_at IS NOT NULL THEN 1 ELSE 0 END AS has_past_signature
+         CASE WHEN sr.respondido IS NOT NULL THEN 1 ELSE 0 END AS has_past_signature
        FROM document_versions dv
-       INNER JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-       INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
+       INNER JOIN recorridos sfi ON sfi.document_version_id = dv.id AND sfi.accion = 'firma'
+       INNER JOIN turnos sr ON sr.recorrido_id = sfi.id
        WHERE dv.task_item_id IN (${placeholders})
-         AND sr.assigned_person_id = ?
+         AND sr.persona_id = ?
      ) participation
      GROUP BY participation.task_item_id`,
     [...taskItemIds, userId, ...taskItemIds, userId]
@@ -737,22 +743,25 @@ export const getUserPendingSignaturesForDefinition = async (pool, userId, defini
   const [rows] = await pool.query(
     `SELECT
        sr.id,
-       sr.requested_at,
-       sr.responded_at,
-       sr.status AS request_status_code,
-       sfs.step_order,       tar_dl.display_name AS template_artifact_name,
+       sr.solicitado AS requested_at,
+       sr.respondido AS responded_at,
+       sr.estado AS request_status_code,
+       sfs.orden AS step_order,
+       tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
        dv.id AS document_version_id,
        dv.version_label AS document_version
-     FROM signature_requests sr
-     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+     FROM turnos sr
+     INNER JOIN recorridos sfi ON sfi.id = sr.recorrido_id AND sfi.accion = 'firma'
+     INNER JOIN participantes_declarados spr ON spr.id = sr.participante_id
+     INNER JOIN pasos_declarados sfs ON sfs.id = spr.paso_id
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
      INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
-     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     WHERE sr.assigned_person_id = ?
+     WHERE sr.persona_id = ?
        AND t.process_definition_id = ?
        AND LOWER(COALESCE(dv.status, '')) IN (
          'listo para firma',
@@ -761,7 +770,7 @@ export const getUserPendingSignaturesForDefinition = async (pool, userId, defini
          'firmado parcial',
          'firmado completo'
        )
-     ORDER BY sr.responded_at IS NOT NULL ASC, sr.requested_at DESC, sr.id DESC
+     ORDER BY sr.respondido IS NOT NULL ASC, sr.solicitado DESC, sr.id DESC
      LIMIT 12`,
     [userId, definitionId]
   );
@@ -777,32 +786,96 @@ export const getSignatureWorkflowRequestsForDocumentVersions = async (pool, docu
     `SELECT
        sfi.document_version_id,
        sr.id,
-       sr.assigned_person_id,
-       sr.requested_at,
-       sr.responded_at,
-       sr.status AS request_status_code,
-       sfs.step_order,       c.name AS cargo_name,
+       sr.persona_id AS assigned_person_id,
+       sr.solicitado AS requested_at,
+       sr.respondido AS responded_at,
+       sr.estado AS request_status_code,
+       sfs.orden AS step_order,
+       c.name AS cargo_name,
        tar_dl.display_name AS template_artifact_name,
        ti.id AS document_id,
        dv.id AS document_version_id,
        dv.version_label AS document_version,
        TRIM(CONCAT(COALESCE(p.first_name, ''), ' ', COALESCE(p.last_name, ''))) AS assigned_person_name
-     FROM signature_flow_instances sfi
+     FROM recorridos sfi
      INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
      INNER JOIN task_items ti ON ti.id = dv.task_item_id
      LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
-     INNER JOIN signature_requests sr ON sr.instance_id = sfi.id
-     LEFT JOIN persons p ON p.id = sr.assigned_person_id
-     LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
-     WHERE sfi.document_version_id IN (${placeholders})
-     ORDER BY sfi.document_version_id ASC, sfs.step_order ASC, sr.id ASC`,
+     INNER JOIN turnos sr ON sr.recorrido_id = sfi.id
+     INNER JOIN participantes_declarados spr ON spr.id = sr.participante_id
+     INNER JOIN pasos_declarados sfs ON sfs.id = spr.paso_id
+     LEFT JOIN persons p ON p.id = sr.persona_id
+     -- EL CARGO LO TRAE EL PARTICIPANTE, no el paso. Es la diferencia que la unificacion hace
+     -- visible: un paso con tres firmantes tenia UN cargo en su columna, el del primero, y los otros
+     -- dos vivian sin reflejo en el JSONB. Ahora cada turno cuelga de su participante y trae el suyo.
+     LEFT JOIN cargos c ON c.id = spr.cargo_id
+     WHERE sfi.accion = 'firma'
+       AND sfi.document_version_id IN (${placeholders})
+     ORDER BY sfi.document_version_id ASC, sfs.orden ASC, spr.orden ASC, sr.id ASC`,
     documentVersionIds
   );
   return rows;
 };
 
+// ── EL ORIGEN DE LA RECETA, EN SQL Y CON PRIORIDAD ──────────────────────────────────────────────
+//
+// Los dos escalones --primero el del ENTREGABLE, despues el de la EDICION-- los resuelve
+// `resolverReceta` en JavaScript, y aqui hacen falta DENTRO de una consulta porque estos dos
+// lectores sirven a VARIAS versiones de documento de una vez.
+//
+// ⚠️ ESTABA ESCRITO DOS VECES Y UNA DE LAS DOS ESTABA MAL. El lector de entrega lo resolvia con un
+// `OR` entre los dos origenes, y un `OR` no es una prioridad: un entregable *routed* con receta
+// propia CUYA EDICION tambien tenga receta autorada casaba con las DOS, y el panel recibia los pasos
+// duplicados. No lo cazo ningun golden porque el proceso por defecto no tiene receta de edicion.
+//
+// Asi que el escalon se escribe una vez. CONTRATO: el llamador declara un `dv_ctx` con
+// `document_version_id`, `task_item_id`, `edicion_id` y `accion`.
+//
+// ⚠️ Y LA PUERTA DE ALIAS SE QUEJO, con razon aparente: el `pd` que trae este fragmento se usa en la
+// lista del SELECT --zona revisada-- y se declaraba dentro de un hueco, que la puerta tapaba. Era un
+// FALSO POSITIVO que empujaba justo a lo contrario de esto: duplicar la regla para callarla. Se
+// arreglo la puerta, no la consulta: `check_sql_aliases.mjs` resuelve ahora los fragmentos que son un
+// `const` sin huecos, y la nota de ese fichero dice exactamente cuanto alcanza.
+const PASOS_DE_LA_RECETA = `
+     INNER JOIN pasos_declarados pd
+       ON pd.accion = dv_ctx.accion
+      AND CASE
+            WHEN EXISTS (
+              SELECT 1
+              FROM pasos_declarados px
+              WHERE px.accion = dv_ctx.accion
+                AND px.task_item_id = dv_ctx.task_item_id
+            )
+            THEN pd.task_item_id = dv_ctx.task_item_id
+            ELSE pd.edicion_id = dv_ctx.edicion_id
+          END`;
+
+// El CONTEXTO de una version de documento para el fragmento de arriba.
+const contextoDeLaReceta = (accion, placeholders) => `
+     SELECT
+       dv.id AS document_version_id,
+       dv.task_item_id,
+       pdt.edicion_id,
+       '${accion}' AS accion
+     FROM document_versions dv
+     LEFT JOIN task_items ti ON ti.id = dv.task_item_id
+     LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+     WHERE dv.id IN (${placeholders})`;
+
+// LOS PASOS DE FIRMA DECLARADOS, uno por paso. Antes salian de la cabecera activa resuelta por
+// COALESCE de tres subconsultas --la ultima de las cuales miraba la instancia-- y hoy salen de la
+// receta, que ya lleva su origen.
+//
+// ⚠️ UNA FILA POR PASO, NO POR FIRMANTE, y eso es deliberado: `total_signature_steps` del panel sale
+// de `length`, asi que agrupar mal INFLA el total que ve el usuario. Lo que un paso con N firmantes
+// añade aqui es `signer_count`; quien lo necesita por firmante lee `signature_requests`, que trae una
+// fila por turno con SU cargo.
+//
+// Y no se exigen ni recorrido ni turnos: el panel enseña los pasos de firma PREVISTOS mientras el
+// documento todavia esta en entrega. Su gemelo de llenado si arranca en `recorridos`, porque alli
+// nunca hubo vista previa.
 export const getSignatureWorkflowStepsForDocumentVersions = async (pool, documentVersionIds) => {
   if (!documentVersionIds.length) {
     return [];
@@ -810,63 +883,19 @@ export const getSignatureWorkflowStepsForDocumentVersions = async (pool, documen
   const placeholders = documentVersionIds.map(() => "?").join(", ");
   const [rows] = await pool.query(
     `SELECT
-       dv_context.document_version_id,
-       sfs.id,
-       sfs.template_id,
-       sfs.step_order,
-       sfs.code,
-       sfs.name,
-       sfs.slot,
-       sfs.resolver_type,
-       sfs.selection_mode,
-       sfs.approval_mode,
-       sfs.required_signers_min,
-       sfs.required_signers_max,
-       sfs.is_required,
-       c.code AS cargo_code,
-       c.name AS cargo_name
-     FROM (
-       SELECT
-         dv.id AS document_version_id,
-         -- ESTO RESOLVIA «POR EL VINCULO», Y ACERTABA PARA routed DE CASUALIDAD: el flujo de
-         -- runtime escribia las DOS anclas, la del entregable y la del vinculo, asi que una busqueda
-         -- por vinculo lo encontraba. El dia que runtime deje de escribir el vinculo --frente 24,
-         -- fase 2-- esto se habria quedado sin encontrar nada para los routed, en silencio y sin que
-         -- ningun test lo dijera. Ahora resuelve de verdad, en el mismo orden que el resolvedor de
-         -- generation/queries.js: primero el del ENTREGABLE, despues el de la EDICION.
-         COALESCE(
-           (
-             SELECT sft.id
-             FROM signature_flow_templates sft
-             WHERE sft.task_item_id = dv.task_item_id
-               AND sft.is_active = 1
-             ORDER BY sft.id DESC
-             LIMIT 1
-           ),
-           (
-             SELECT sft.id
-             FROM signature_flow_templates sft
-             INNER JOIN task_items ti2 ON ti2.id = dv.task_item_id
-             INNER JOIN vinculos pdt ON pdt.id = ti2.vinculo_id
-             WHERE sft.edicion_id = pdt.edicion_id
-               AND sft.task_item_id IS NULL
-               AND sft.is_active = 1
-             ORDER BY sft.id DESC
-             LIMIT 1
-           ),
-           (
-             SELECT sfi.template_id
-             FROM signature_flow_instances sfi
-             WHERE sfi.document_version_id = dv.id
-             ORDER BY sfi.id DESC
-             LIMIT 1
-           )
-         ) AS signature_template_id
-       FROM document_versions dv
-       WHERE dv.id IN (${placeholders})
-     ) dv_context
-     INNER JOIN signature_flow_steps sfs ON sfs.template_id = dv_context.signature_template_id     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
-     ORDER BY dv_context.document_version_id ASC, sfs.step_order ASC, sfs.id ASC`,
+       dv_ctx.document_version_id,
+       pd.id,
+       pd.orden AS step_order,
+       pd.code,
+       pd.nombre AS name,
+       MIN(pr.slot) AS slot,
+       COUNT(pr.id) AS signer_count
+     FROM (${contextoDeLaReceta("firma", placeholders)}
+     ) dv_ctx
+     ${PASOS_DE_LA_RECETA}
+     INNER JOIN participantes_declarados pr ON pr.paso_id = pd.id
+     GROUP BY dv_ctx.document_version_id, pd.id, pd.orden, pd.code, pd.nombre
+     ORDER BY dv_ctx.document_version_id ASC, pd.orden ASC, pd.id ASC`,
     documentVersionIds
   );
   return rows;
@@ -939,6 +968,10 @@ export const getFillWorkflowStepsForDocumentVersions = async (pool, documentVers
     // ⚠️ `selection_mode`, `is_required`, `can_reject`, `position_id` y `unit_type_id` NO SALEN, y
     // no es un olvido: se retiraron en la fase 4 del frente 24 --ver §10 del plan--. Las claves que
     // el frontend consume conservan su nombre; lo que cambia es de donde salen.
+    //
+    // ⚠️ Y EL ORIGEN DE LA RECETA YA NO SE RESUELVE AQUI CON UN `OR`. Lo hacia, y un `OR` no es una
+    // prioridad: con receta del entregable Y de la edicion casaban las dos y los pasos salian
+    // duplicados. Hoy lo resuelve `PASOS_DE_LA_RECETA`, una sola vez para los dos lectores.
     `SELECT
        r.document_version_id,
        r.estado AS fill_flow_status,
@@ -957,21 +990,15 @@ export const getFillWorkflowStepsForDocumentVersions = async (pool, documentVers
        c.name AS cargo_name,
        u.name AS unit_name
      FROM recorridos r
-     INNER JOIN pasos_declarados pd
-       ON (pd.task_item_id = (SELECT task_item_id FROM document_versions WHERE id = r.document_version_id)
-           OR pd.edicion_id = (
-             SELECT pdt.edicion_id FROM document_versions dv2
-              INNER JOIN task_items ti2 ON ti2.id = dv2.task_item_id
-              INNER JOIN vinculos pdt ON pdt.id = ti2.vinculo_id
-              WHERE dv2.id = r.document_version_id))
-      AND pd.accion = r.accion
+     INNER JOIN (${contextoDeLaReceta("entrega", placeholders)}
+     ) dv_ctx ON dv_ctx.document_version_id = r.document_version_id
+     ${PASOS_DE_LA_RECETA}
      INNER JOIN participantes_declarados pr ON pr.paso_id = pd.id
      LEFT JOIN turnos tu ON tu.recorrido_id = r.id AND tu.participante_id = pr.id
      LEFT JOIN persons p ON p.id = COALESCE(tu.persona_id, pr.persona_id)
      LEFT JOIN cargos c ON c.id = pr.cargo_id
      LEFT JOIN units u ON u.id = pr.unit_id
      WHERE r.accion = 'entrega'
-       AND r.document_version_id IN (${placeholders})
      ORDER BY r.document_version_id ASC, pd.orden ASC, pr.orden ASC, tu.id ASC`,
     documentVersionIds
   );
@@ -1085,10 +1112,10 @@ const FILL_EXISTS = `EXISTS (
    WHERE dv.task_item_id = ti.id AND tu.persona_id = ?
 )`;
 const SIGN_EXISTS = `EXISTS (
-  SELECT 1 FROM signature_requests sr
-    JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-    JOIN document_versions dv ON dv.id = sfi.document_version_id
-   WHERE dv.task_item_id = ti.id AND sr.assigned_person_id = ?
+  SELECT 1 FROM turnos tu
+    JOIN recorridos r ON r.id = tu.recorrido_id AND r.accion = 'firma'
+    JOIN document_versions dv ON dv.id = r.document_version_id
+   WHERE dv.task_item_id = ti.id AND tu.persona_id = ?
 )`;
 
 // Lo que esta persona RECIBIÓ: un documento es «recibido» si participas en su ENTREGA o en su FIRMA.

@@ -150,19 +150,24 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
     }
     signatureWorkflowStepsByDocumentVersion.get(key).push({
       id: Number(step.id),
-      template_id: Number(step.template_id),
       step_order: Number(step.step_order),
       code: step.code || null,
       name: step.name || null,
       slot: step.slot || null,
-      resolver_type: step.resolver_type || null,
-      selection_mode: step.selection_mode || null,
-      approval_mode: step.approval_mode || null,
-      required_signers_min: step.required_signers_min !== null ? Number(step.required_signers_min) : null,
-      required_signers_max: step.required_signers_max !== null ? Number(step.required_signers_max) : null,
-      is_required: Boolean(step.is_required),
-      cargo_code: step.cargo_code || null,
-      cargo_name: step.cargo_name || null
+      // CUÁNTOS FIRMANTES TIENE EL PASO, que es lo que de verdad se puede decir de un paso con N.
+      //
+      // Aquí viajaban SIETE claves más y las siete se retiraron en el paso 3b de la fase 4 del
+      // frente 24 (§10 del plan), cada una por su motivo:
+      //   · `template_id` — no hay cabecera: el paso lleva su propio origen.
+      //   · `approval_mode`, `required_signers_min`, `required_signers_max` — el cupo entero. Se
+      //     firma el cupo completo, así que no hay modo que elegir.
+      //   · `is_required` — su variante `0` era un bloqueo silencioso y más tarde, no «opcional».
+      //   · `selection_mode` — `auto_one` era «el id más bajo» y `manual` no lo creaba ninguna
+      //     pantalla.
+      //   · `resolver_type`, `cargo_code` y `cargo_name` — son hechos DE CADA FIRMANTE, no del paso.
+      //     La columna del paso traía el del primero y los demás no tenían reflejo; quien los
+      //     necesita lee `signature_requests`, que trae una fila por turno con SU cargo.
+      signer_count: Number(step.signer_count || 0)
     });
   });
   const fillWorkflowByDocumentVersion = new Map();

@@ -116,7 +116,9 @@ Tres precisiones que importan:
    puesto— y no tiene que ver con este relevo; uno de `specific_person` nombra a alguien a propósito y
    heredarlo sería falsearlo. Y solo viajan las solicitudes **sin responder**.
 3. **En firma se es más conservador todavía.** Además del `resolver_type` hay que mirar el JSONB
-   `signature_flow_steps.signers`, que puede traer resolutores por firmante que la columna no refleja.
+   el JSONB `signers`, que podía traer resolutores por firmante que la columna no reflejaba. **Esa
+   guarda se retiró el 2026-10-08**: con los firmantes en filas bajo `CHECK` la duda no existe, y los
+   dos `UPDATE` del disparador —uno por lado— son **uno**.
    Ante la duda no se mueve: mover mal una firma es peor que no moverla.
 
 ## Desactivar un puesto no es quedarse sin ocupante

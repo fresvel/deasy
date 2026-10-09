@@ -11,7 +11,7 @@
 | **2** | Muere el escalón 2 | fuera `vinculo_id` de las dos cabeceras **y su `CHECK` de un solo portador**, fuera su campo en `/admin`, fuera el escalón de los dos resolvedores | el resolvedor baja de 3 escalones a 2 (**2 consultas, no 3**, afirmado por unitario); 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320**; migración probada en sus **tres** rutas (mueve 1 cabecera, para con mensaje y **deshace el `DROP COLUMN`**, idempotente); goldens movidos en 5 ficheros y **revisado uno a uno**; `check-mapa-tablas` 100/77/0, `check-doc-modelo` y `check-enlaces-internos` en verde | ✅ |
 | **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; muertas `signature_request_statuses` y las dos `status_id`; un mapa de tonos en vez de dos y un predicado en vez de dos | 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320** + frontend lint y **498** vitest; el diff del golden es **sólo** vocabulario (60 líneas, cada valor retirado con su equivalente y los recuentos cuadrando) más 11 claves renombradas; migración probada en sus tres rutas; de 92 tablas a **91** y de 100 a **98** claves ajenas | ✅ |
 | **3-bis** | El atasco del rechazo en firma | el rechazo sin firmas dadas devuelve el documento a «Observado»; al volver, el recorrido rechazado **se reabre** en vez de ignorarse; y el rechazo manda sobre el estado de la instancia | 5 puertas + `test:unit` **904/904** (5 unitarios nuevos: la transición en las dos matrices, el camino de vuelta, y las dos ramas del reabrir) + `test:char:run` 320/320 **sin mover un golden** — y eso ES el hallazgo: ningún flow rechaza una firma (§11) | ✅ |
-| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10): **1 · esquema ✅** · **2 · receta ✅** · **3a · ejecución de ENTREGA ✅** · 3b · ejecución de FIRMA ⬜ · 4 · lo que cuelga ⬜ | paso 3a: la entrega entera sobre `recorridos`/`turnos`, **un resolutor en vez de dos**, la deuda de escritura de `fill_requests` **cerrada** y un flujo menos que cruza dominios (§14); 5 puertas + `test:unit` **919/919** + `test:char:run` 320/320 + frontend 498 | 🔸 |
+| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10): **1 · esquema ✅** · **2 · receta ✅** · **3a · ejecución de ENTREGA ✅** · **3b · ejecución de FIRMA ✅** · 4 · lo que cuelga ⬜ | paso 3b: la firma entera sobre `recorridos`/`turnos`, el **defecto 1.19 cerrado** (el JSONB `signers` a filas bajo `CHECK`, y con él 2 resolutores, 4 ámbitos y el cupo), el servicio de **1.338 a 856 líneas**, `flujoDeFirma.js` disuelto, 2 claves ajenas que dejan de cruzar (`tareas` 31→29 relaciones hacia fuera) y **2 flujos** que dejan de cruzar dominios (§15); 5 puertas + `test:unit` **919/919** —los mismos que antes, y es casualidad aritmética: el fichero de firma baja de 15 casos a 10 (seis escalones y seis ámbitos se fueron **con su sujeto**) y `assignees` sube de 8 a 13— + `test:char:run` 320/320 + frontend lint y 498; golden de 41 líneas fuera y 8 dentro, revisado línea a línea; y `verificar_firma_nueva.mjs` para los dos ejes, que char no cubre | 🔸 |
 | **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
 
 ## 1 · Por qué, en una frase
@@ -508,3 +508,149 @@ síntoma no se parecía a la causa: `max_step_order` llegaba `undefined`, o sea 
 
 **3 · Y el hueco de siempre: que un módulo EXPORTE lo que le importan.** Retirar cuatro funciones dejó
 **18 suites en rojo** por un solo import roto; `check:imports` da verde porque mira lo contrario.
+
+## 15 · Fase 4, paso 3b — la ejecución de la FIRMA, y el cierre del defecto 1.19
+
+La otra mitad. `DocumentSignatureWorkflowService.js` baja de **1.338 a 856 líneas**, y lo que se va no
+es código repetido: es un **segundo motor completo** —su propio resolvedor de receta por escalones, su
+propio resolutor de personas con seis ámbitos, su propio lector de pasos y su propio convertidor del
+JSONB `signers`—.
+
+### Aquí se cierra el defecto 1.19, y lo que lo cierra es el modelo
+
+El resolutor de firma leía `signature_flow_steps.signers`, un JSONB que **ningún `CHECK` cubría** y que
+**mandaba sobre** las columnas que sí lo tenían. Por eso este fichero conservaba resolutores que su
+gemela de entrega ya había retirado: **no eran ramas muertas, eran la única defensa** contra un valor
+que la base no podía rechazar.
+
+Con los firmantes en **filas** (`participantes_declarados`, con sus dos `CHECK`), el valor retirado no
+se puede ni insertar. Se van:
+
+| Qué | Cuánto |
+|---|---|
+| resolutores legados (`document_owner`, `position`) | 2 `case` + 3 funciones de apoyo |
+| ámbitos inalcanzables (`unit_subtree`, `unit_type`, `context_subtree`, `context_ancestor_type`) | 4 ramas, dos con su `WITH RECURSIVE` |
+| el cupo (`approval_mode`, `required_signers_min`/`_max`) | un `switch` de 3 casos y 2 lectores |
+| `selection_mode` y `auto_one` | el recorte «quédate con el id más bajo» |
+
+**El efecto que mejor lo demuestra está fuera del fichero.** El disparador del relevo tenía **dos**
+`UPDATE`, y el de firma llevaba esta guarda:
+
+```sql
+AND (sfs.signers IS NULL OR sfs.signers::text NOT LIKE '%specific_person%')
+```
+
+«Ante la duda no se mueve» — y la duda la creaba exactamente el 1.19. Hoy el disparador es **un**
+`UPDATE` sin guarda defensiva, porque el `resolver_type` del participante es la verdad.
+
+### Lo que se unificó, además
+
+| Antes | Ahora |
+|---|---|
+| `dominios/firmas/datos/flujoDeFirma.js`, 4 funciones de ejecución | **disuelto**: las cuatro preguntas eran las de entrega. `dominios/firmas/` se queda con una puerta vacía y su lápida |
+| `rehacerDocumento` con dos comprobaciones de titularidad y dos cancelaciones | **una de cada**, con `accion` distinta |
+| la instancia de firma **no guardaba `paso_actual`**: se recalculaba en cada lectura | el recorrido lo lleva en los dos lados — y **eso** es lo que permite la línea anterior |
+| el escalón de firma escrito en `FillRequestWorkflowService` con su propio `COALESCE` | `resolverReceta`, la misma de todos |
+| dos injertos del CRUD genérico, uno por tabla de solicitudes | **uno**, en `turnos`, que elige la reconciliación mirando el recorrido |
+
+### Dos claves ajenas cruzan de dominio, y dejan de cruzar
+
+`document_signatures.signature_request_id` y `document_workflow_observations.signature_request_id`
+apuntaban a `signature_requests` (dominio `firmas`) y ahora apuntan a `turnos` (dominio `tareas`).
+Medido: las relaciones de `tareas` **hacia fuera bajan de 31 a 29**.
+
+Y con eso **dos flujos dejan de cruzar dominios**: `DocumentSignatureWorkflowService` y
+`rehacerDocumento` escriben sólo `tareas`. La puerta lo avisa —«deja de ser un flujo y se mueve a
+él»— y el aviso se deja a la vista: **dónde** aterriza un orquestador de `tareas` es la decisión de
+F7.5, no de este paso.
+
+### Lo que la caracterización NO cubre, medido
+
+Tras `test:char:run` hay **1 recorrido y 1 turno con `accion = 'firma'`** —la aprobación de la entrega
+los abre— pero **`document_signatures` se queda a cero**: firmar necesita un certificado y el
+microservicio. Así que los 320 goldens cubren `ensureSignatureFlowForDocumentVersion` y **dejan sin
+tocar** `registerSignatureEvidence` y `syncDocumentProgressFromSignatureRequest`, que son las dos que
+mueven el estado.
+
+Lo cubre **`backend/scripts/verificar_firma_nueva.mjs`**, que ejecuta las dos sobre el recorrido real
+que la caracterización deja abierto y comprueba los **dos ejes**, en transacciones que se deshacen:
+
+```
+turnos del recorrido de firma: 1 · estado de partida: pendiente
+firma VALIDA   -> recorrido completado · paso_actual null · documento "Final"
+firma INVALIDA -> recorrido rechazado · paso_actual 1 · documento "Observado"
+```
+
+El segundo es el que no se podía afirmar sin esto: es el arreglo del §11 corriendo sobre las tablas
+nuevas.
+
+### Lo que costó
+
+**1 · La puerta de alias dio un FALSO POSITIVO, y era del tipo peor.** Los dos lectores del panel
+necesitan resolver los escalones **dentro de una consulta**, y lo hacían dos veces — con un `OR` en el
+de entrega, que **no es una prioridad**: un entregable *routed* con receta propia cuya edición también
+tenga receta autorada casaba con las dos y el panel recibía **los pasos duplicados**. Ningún golden lo
+cazó porque el proceso por defecto no tiene receta de edición.
+
+Al escribir el escalón **una vez**, como fragmento interpolado, `check:sql-aliases` lo reportó: el
+alias que trae el fragmento se usa en la lista del `SELECT` —zona revisada— y se declaraba dentro de un
+hueco, que la puerta sustituía por un espacio. **Eso empuja justo a lo contrario de lo que se quiere:
+duplicar la regla para callar la puerta.** Se arregló la puerta: ahora resuelve los fragmentos que son
+un `const` sin huecos. Probado por mutación por los dos lados, y su nota dice **exactamente** cuánto
+alcanza —los usos del fragmento siguen fuera de la zona revisada, y eso está medido, no supuesto—.
+
+**2 · Un backtick dentro de un comentario `--` de SQL**, séptima vez en el frente. `node --check` lo
+cazó señalando la primera línea de la plantilla, como está escrito que pasa.
+
+**3 · El panel MAPEABA las claves, no las pasaba verbatim.** Asumí que `signature_steps` viajaba tal
+cual y el golden me corrigió: hay un `.push({...})` con las catorce claves escritas a mano. Siete se
+retiran, y una entra —`signer_count`—, porque es lo único que de verdad se puede decir **de un paso**
+con N firmantes: `resolver_type` y `cargo_name` son hechos **de cada firmante**, y la columna del paso
+traía la del primero.
+
+**4 · Y una fila por PASO, no por firmante.** El primer borrador del lector devolvía una fila por
+participante, que es lo natural… y `total_signature_steps` del panel sale de `length`, así que un paso
+con tres firmantes habría enseñado **«3 pasos»**. El golden lo confirma al revés: `total_signature_steps`
+no se movió.
+
+**5 · La puerta del mapa cazó MI PROPIO script de comprobación**, y tenía razón: escribía `turnos` y
+`document_versions` con un `UPDATE` directo, o sea un **segundo escritor** de dos tablas con dueño. Se
+arregló llevándolo por `actualizarTurno` y `actualizarEstado`, los del `datos/` de `tareas`. Escribe a
+mano una sola tabla —`document_signatures`, la evidencia, que es justo lo que no se puede simular—.
+
+**6 · El teardown de caracterización pasó a tener un ORDEN obligatorio.** Con las dos claves ajenas
+apuntando a `turnos`, lo que cuelga del turno hay que borrarlo antes que el turno. Antes el orden entre
+los dos bloques daba igual porque cada mitad tenía sus propias tablas.
+
+### Los unitarios: cinco casos se fueron CON SU SUJETO, y cinco entraron
+
+`DocumentSignatureWorkflowService.test.js` baja de **15 casos a 10**, y los que se van no se borran
+por conveniencia:
+
+- **seis** vigilaban la prioridad de los escalones. Hoy la resuelve `resolverReceta`, que es una para
+  los dos lados y tiene los suyos en `recetaDelRecorrido.test.js`: mantenerlos aquí sería probar dos
+  veces la misma función.
+- **seis** vigilaban el orden de los parámetros del ámbito (el defecto 1.16), y su cabecera decía por
+  qué no podían ser un golden: esos ámbitos llegaban por el JSONB. **Ese era el 1.19.** Cerrado, cuatro
+  de los seis ámbitos no son inalcanzables por descuido — no se pueden ni insertar.
+
+Lo que queda que vigilar se movió a `assignees.test.js`, que sube de 8 a 13: los tres ámbitos vivos con
+la posición de sus parámetros, la guarda de «ámbito que exige unidad sin unidad» y un caso que afirma
+que los **cuatro retirados no traen su filtro de vuelta**.
+
+Y entran cinco en el fichero de firma, todos sobre lo que de verdad es suyo: los **dos ejes** (un turno
+`completado` con firma `invalido` cuenta como rechazo; sin estado técnico no se penaliza), el cupo
+entero (dos firmantes, una firma, el paso no cierra) y la **aptitud** —un paso cuyo cargo no resuelve a
+nadie bloquea el recorrido y dice qué paso y por qué, que es lo único que sobrevive de `is_required`—.
+
+### El diff del golden es exactamente lo que se retiró
+
+41 líneas fuera, 8 dentro, en 2 ficheros:
+
+| Línea | Veces | Qué es |
+|---|--:|---|
+| `approval_mode`, `required_signers_min`, `required_signers_max`, `is_required`, `selection_mode`, `resolver_type`, `cargo_code`, `cargo_name`, `template_id` | 4 | las 9 claves retiradas del paso de firma del panel |
+| `signer_count` | 4 | la que entra |
+| `scope_unit_type_id` | 1 | el tipo de unidad del contexto, que ya no lo lee ningún ámbito |
+
+**Ni un recuento, ni un estado, ni un id se movieron** — `total_signature_steps` incluido.

@@ -448,20 +448,12 @@
             "signature_requests": [],
             "signature_steps": [
               {
-                "approval_mode": "and",
-                "cargo_code": null,
-                "cargo_name": null,
                 "code": "firma_1",
                 "id": "<normalized>",
-                "is_required": true,
                 "name": "Firma 1",
-                "required_signers_max": null,
-                "required_signers_min": null,
-                "resolver_type": "specific_person",
-                "selection_mode": "auto_all",
+                "signer_count": 1,
                 "slot": "firma_1",
-                "step_order": 1,
-                "template_id": "<normalized>"
+                "step_order": 1
               }
             ],
             "total_signature_steps": 1
@@ -631,20 +623,12 @@
                   "signature_requests": [],
                   "signature_steps": [
                     {
-                      "approval_mode": "and",
-                      "cargo_code": null,
-                      "cargo_name": null,
                       "code": "firma_1",
                       "id": "<normalized>",
-                      "is_required": true,
                       "name": "Firma 1",
-                      "required_signers_max": null,
-                      "required_signers_min": null,
-                      "resolver_type": "specific_person",
-                      "selection_mode": "auto_all",
+                      "signer_count": 1,
                       "slot": "firma_1",
-                      "step_order": 1,
-                      "template_id": "<normalized>"
+                      "step_order": 1
                     }
                   ],
                   "total_signature_steps": 1
@@ -757,20 +741,12 @@
                     "signature_requests": [],
                     "signature_steps": [
                       {
-                        "approval_mode": "and",
-                        "cargo_code": null,
-                        "cargo_name": null,
                         "code": "firma_1",
                         "id": "<normalized>",
-                        "is_required": true,
                         "name": "Firma 1",
-                        "required_signers_max": null,
-                        "required_signers_min": null,
-                        "resolver_type": "specific_person",
-                        "selection_mode": "auto_all",
+                        "signer_count": 1,
                         "slot": "firma_1",
-                        "step_order": 1,
-                        "template_id": "<normalized>"
+                        "step_order": 1
                       }
                     ],
                     "total_signature_steps": 1
@@ -866,20 +842,12 @@
                 "signature_requests": [],
                 "signature_steps": [
                   {
-                    "approval_mode": "and",
-                    "cargo_code": null,
-                    "cargo_name": null,
                     "code": "firma_1",
                     "id": "<normalized>",
-                    "is_required": true,
                     "name": "Firma 1",
-                    "required_signers_max": null,
-                    "required_signers_min": null,
-                    "resolver_type": "specific_person",
-                    "selection_mode": "auto_all",
+                    "signer_count": 1,
                     "slot": "firma_1",
-                    "step_order": 1,
-                    "template_id": "<normalized>"
+                    "step_order": 1
                   }
                 ],
                 "total_signature_steps": 1

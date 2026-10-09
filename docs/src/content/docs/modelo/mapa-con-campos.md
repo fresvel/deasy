@@ -603,15 +603,15 @@ erDiagram
 ```
 
 <details>
-<summary>Llega 1 clave ajena desde otros diagramas</summary>
+<summary>Llegan 3 claves ajenas desde otros diagramas</summary>
 
-`document_workflow_observations.fill_request_id` → `turnos`
+`document_signatures.signature_request_id` → `turnos` · `document_workflow_observations.fill_request_id` → `turnos` · `document_workflow_observations.signature_request_id` → `turnos`
 
 </details>
 
 ## Flujo de firma
 
-**6 tablas** · 57 columnas · 17 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `task_items`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
+**6 tablas** · 57 columnas · 17 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `task_items`, `turnos`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -686,7 +686,7 @@ erDiagram
     timestamp created_at
   }
   document_versions ||--o{ document_signatures : "document_version_id"
-  signature_requests |o--o{ document_signatures : "signature_request_id"
+  turnos |o--o{ document_signatures : "signature_request_id"
   persons ||--o{ document_signatures : "signer_user_id"
   signature_statuses ||--o{ document_signatures : "signature_status_id"
   document_versions ||--o| signature_flow_instances : "document_version_id"
@@ -704,16 +704,9 @@ erDiagram
   signature_flow_steps ||--o{ signature_requests : "step_id"
 ```
 
-<details>
-<summary>Llega 1 clave ajena desde otros diagramas</summary>
-
-`document_workflow_observations.signature_request_id` → `signature_requests`
-
-</details>
-
 ## Fuera de los subgrupos
 
-**1 tabla** · 12 columnas · 6 claves ajenas propias. Apunta a `document_versions`, `persons`, `signature_requests`, `task_items`, `turnos`, que salen como caja vacía.
+**1 tabla** · 12 columnas · 6 claves ajenas propias. Apunta a `document_versions`, `persons`, `task_items`, `turnos`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -736,6 +729,6 @@ erDiagram
   turnos |o--o{ document_workflow_observations : "fill_request_id"
   task_items ||--o{ document_workflow_observations : "task_item_id"
   persons |o--o{ document_workflow_observations : "resolved_by_person_id"
-  signature_requests |o--o{ document_workflow_observations : "signature_request_id"
+  turnos |o--o{ document_workflow_observations : "signature_request_id"
   document_versions ||--o{ document_workflow_observations : "document_version_id"
 ```

@@ -111,14 +111,18 @@ test("validateTableRules exige plantilla y version en una instancia de entrega",
   );
 });
 
-test("validateTableRules exige instancia y paso en una solicitud de entrega", () => {
-  throwsWith(() => validateTableRules("fill_requests", {}), "Selecciona la instancia de entrega.");
+// Era «instancia y paso en una solicitud de ENTREGA», sobre `fill_requests`. Hoy es un TURNO, de
+// cualquiera de las dos acciones, y lo que se exige cambia con el modelo: el recorrido y el
+// PARTICIPANTE. No es un renombrado: un turno apunta a la declaración que lo produjo, no al paso, y
+// por eso un paso con tres firmantes da tres turnos distinguibles.
+test("validateTableRules exige recorrido y participante en un turno", () => {
+  throwsWith(() => validateTableRules("turnos", {}), "Selecciona el recorrido.");
   throwsWith(
-    () => validateTableRules("fill_requests", { document_fill_flow_id: 2 }),
-    "Selecciona el paso de entrega.",
+    () => validateTableRules("turnos", { recorrido_id: 2 }),
+    "Selecciona el participante declarado.",
   );
   assert.doesNotThrow(() =>
-    validateTableRules("fill_requests", { document_fill_flow_id: 2, fill_flow_step_id: 5 }),
+    validateTableRules("turnos", { recorrido_id: 2, participante_id: 5 }),
   );
 });
 

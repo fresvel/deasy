@@ -20,7 +20,7 @@ export const abrirRecorrido = async (connection, { documentVersionId, accion, pa
 
 export const buscarRecorrido = async (connection, documentVersionId, accion) => {
   const [filas] = await connection.query(
-    `SELECT id, estado, paso_actual
+    `SELECT id, estado, paso_actual, created_at
        FROM recorridos
       WHERE document_version_id = ? AND accion = ?
       LIMIT 1`,
@@ -40,6 +40,27 @@ export const cancelarRecorrido = async (connection, recorridoId, estadoCancelado
   await connection.query(
     `UPDATE recorridos SET estado = ? WHERE id = ?`,
     [estadoCancelado, recorridoId]
+  );
+};
+
+// REABRIR UN RECORRIDO RECHAZADO. Vino del lado de firma --era `reabrirRecorridoDeFirma`-- y es
+// generica porque la pregunta no tiene lado: un recorrido rechazado al que se le corrige el
+// documento hay que volver a convocarlo, y los turnos rechazados vuelven a `pendiente` perdiendo su
+// `respondido`. A quien rechazo se le pregunta OTRA VEZ, que es el sentido de haber corregido.
+//
+// ⚠️ SE REABRE EL QUE HAY, no se crea otro: `uq_recorridos` admite UNO por (version, accion).
+export const reabrirRecorridoRechazado = async (connection, recorridoId, estadoPendiente) => {
+  await connection.query(
+    `UPDATE turnos
+        SET estado = ?,
+            respondido = NULL
+      WHERE recorrido_id = ?
+        AND estado = 'rechazado'`,
+    [estadoPendiente, recorridoId]
+  );
+  await connection.query(
+    `UPDATE recorridos SET estado = ? WHERE id = ?`,
+    [estadoPendiente, recorridoId]
   );
 };
 

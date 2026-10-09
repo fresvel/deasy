@@ -162,9 +162,21 @@ const contextoFinal = (overrides = {}) => ({
   ...overrides,
 });
 
+// UNA FILA PLANA DE LA RECETA, que es lo que `resolverReceta` agrupa en pasos con participantes.
+// Antes esto era un `COUNT` y bastaba un número: desde el paso 3b de la fase 4 el guard pregunta por
+// la RECETA de firma --la misma función que usa todo el mundo-- y lo que llega son filas.
+const filaDePasoDeFirma = (orden) => ({
+  id: orden, orden, code: `firma_${orden}`, nombre: `Firma ${orden}`,
+  participante_id: 100 + orden, participante_orden: 1,
+  resolver_type: "cargo_in_scope", persona_id: null, cargo_id: 7,
+  unit_scope_type: "context_exact", unit_id: null, slot: `firma_${orden}`,
+});
+
 const conPasosYFirmas = (maxStepOrder, totalFirmas) => fakeConnection((sql) => {
   if (sql.includes("MAX(p.orden)")) return [[{ max_step_order: maxStepOrder }]];
-  if (sql.includes("signature_flow_templates")) return [[{ total: totalFirmas }]];
+  if (sql.includes("FROM pasos_declarados p")) {
+    return [Array.from({ length: totalFirmas }, (_, i) => filaDePasoDeFirma(i + 1))];
+  }
   throw new Error(`consulta inesperada: ${sql.slice(0, 40)}`);
 });
 
@@ -369,7 +381,7 @@ test("aprobar el último paso sin PDF en working es 409, no 500, y deshace la tr
         working_file_path: "Unidades/x/e.docx",
       })]];
     }
-    if (sql.includes("signature_flow_templates")) return [[{ total: 1 }]];
+    if (sql.includes("FROM pasos_declarados p")) return [[filaDePasoDeFirma(1)]];
     throw new Error(`consulta inesperada: ${sql.slice(0, 40)}`);
   });
   await assert.rejects(

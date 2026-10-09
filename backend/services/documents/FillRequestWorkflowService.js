@@ -19,6 +19,7 @@
 import { UserRepository } from "../../dominios/identidad/index.js";
 import { badRequest, conflict, forbidden, notFound } from "../../errors/HttpError.js";
 import { idsDeTurnosDelPaso, reabrirTurnos, responderTurno } from "../../dominios/tareas/index.js";
+import { resolverReceta } from "../../dominios/plantillas/index.js";
 import { getPostgresPool } from "../../config/postgres.js";
 import { ESTADO_RECORRIDO } from "./DocumentWorkflowCatalog.js";
 import { syncDocumentProgressFromFillRequest } from "./DocumentProgressService.js";
@@ -112,28 +113,16 @@ export const requiresSignaturePdfForFinalFillApproval = async (connection, conte
   // resolvedor: primero el suyo (`routed`), si no el de su edición. Antes contaba sólo los del
   // vínculo —el escalón 2—, que para un `routed` acertaba por accidente: el flujo de runtime
   // escribía las dos anclas. Frente 24, fase 2.
-  const [signatureRows] = await connection.query(
-    `SELECT COUNT(sfs.id) AS total
-     FROM signature_flow_steps sfs
-     WHERE sfs.template_id = COALESCE(
-       (
-         SELECT sft.id FROM signature_flow_templates sft
-          WHERE sft.task_item_id = ? AND sft.is_active = 1
-          ORDER BY sft.id DESC LIMIT 1
-       ),
-       (
-         SELECT sft.id FROM signature_flow_templates sft
-          INNER JOIN vinculos pdt ON pdt.id = ?
-          WHERE sft.edicion_id = pdt.edicion_id
-            AND sft.task_item_id IS NULL
-            AND sft.is_active = 1
-          ORDER BY sft.id DESC LIMIT 1
-       )
-     )`,
-    [context.task_item_id, context.vinculo_id]
-  );
-  const totalSignatureSteps = Number(signatureRows?.[0]?.total || 0);
-  if (!totalSignatureSteps) {
+  //
+  // Y DESDE EL PASO 3b DE LA FASE 4 no lleva su propia copia del escalón: aquí había un `COALESCE`
+  // de dos subconsultas que repetía la prioridad entera. Hoy la resuelve `resolverReceta`, la misma
+  // que usa el resto, y lo que queda es contar.
+  const receta = await resolverReceta(connection, {
+    accion: "firma",
+    taskItemId: context.task_item_id,
+    vinculoId: context.vinculo_id,
+  });
+  if (!receta.pasos.length) {
     return false;
   }
 

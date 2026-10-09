@@ -239,8 +239,8 @@ ronda concreta** de un documento concreto.
 |---|---|
 | `signature_flow_templates` | El recorrido de firma, como plantilla |
 | `signature_flow_steps` | Sus pasos, con cuántas firmas hacen falta y **dónde va cada firma en el papel** |
-| `signature_flow_instances` | Ese recorrido puesto en marcha sobre una ronda |
-| `signature_requests` | Lo que le toca firmar a cada persona |
+| `signature_flow_instances` *(en retirada)* | Ese recorrido puesto en marcha sobre una ronda. Hoy lo es `recorridos` con `accion = 'firma'` |
+| `signature_requests` *(en retirada)* | Lo que le toca firmar a cada persona. Hoy lo es `turnos` |
 | `document_signatures` | **La firma ya puesta**, con el archivo firmado resultante |
 | `signature_batch_jobs` | Los lotes de firma que se mandan al servicio que firma los PDF |
 

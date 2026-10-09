@@ -20,7 +20,10 @@ export const resetPostgres = async () => {
 // Tablas que delatan que la instancia se ha usado de verdad. No pretende ser exhaustiva: es el
 // disparador de la confirmación, no un inventario. Si alguna no existe todavía, el schema aún
 // no está creado y por definición no hay nada que perder.
-const CONTENT_TABLES = ["persons", "process_runs", "tasks", "task_items", "documents", "signature_requests"];
+// `documents` salio de la lista porque la tabla murio el 2026-08-23 --el `try/catch` de abajo la
+// tragaba en silencio, asi que llevaba meses sin delatar nada-- y `signature_requests` porque la
+// ejecucion es `turnos` desde la fase 4 del frente 24. Una entrada que no existe no avisa de nada.
+const CONTENT_TABLES = ["persons", "process_runs", "tasks", "task_items", "turnos"];
 
 const countDatabaseContents = async () => {
   const pool = getPostgresPool();

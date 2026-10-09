@@ -250,10 +250,13 @@ const TABLE_RULES = {
       ["document_version_id", "Selecciona la version de documento."],
     ),
   ],
-  fill_requests: [
+  // UNA ENTRADA PARA LOS DOS LADOS desde el paso 3b de la fase 4 del frente 24. Aquí ponía
+  // `fill_requests`, con la instancia y el paso viejos; `turnos` pide el recorrido y el PARTICIPANTE,
+  // porque un turno sabe de qué declaración salió y no sólo de qué paso.
+  turnos: [
     requires(
-      ["document_fill_flow_id", "Selecciona la instancia de entrega."],
-      ["fill_flow_step_id", "Selecciona el paso de entrega."],
+      ["recorrido_id", "Selecciona el recorrido."],
+      ["participante_id", "Selecciona el participante declarado."],
     ),
   ],
   signature_flow_templates: [

@@ -8,16 +8,53 @@ import {
   SIGNATURE_STATUS,
   getSignatureStatusIdByCode,
 } from "./DocumentWorkflowCatalog.js";
-import { reabrirRecorridoDeFirma } from "../../dominios/firmas/datos/flujoDeFirma.js";
+import { resolverReceta } from "../../dominios/plantillas/index.js";
+import {
+  abrirRecorrido,
+  abrirTurno,
+  actualizarAvanceDelRecorrido,
+  actualizarTurno,
+  buscarRecorrido,
+  reabrirRecorridoRechazado,
+} from "../../dominios/tareas/index.js";
+import { resolverPasoCompleto } from "../admin/generation/assignees.js";
+
+// ── LA EJECUCION DE LA FIRMA, SOBRE `recorridos` Y `turnos` (frente 24, fase 4, paso 3b) ────────
+//
+// Este fichero tenia 1.338 lineas y la mitad era un SEGUNDO motor: su propio resolvedor de receta
+// por escalones, su propio resolutor de personas con seis ambitos, su propio lector de pasos y su
+// propio convertidor del JSONB `signers`. Todo eso existia por duplicado con el lado de entrega.
+//
+// Ahora la receta la resuelve `resolverReceta` y las personas `resolverParticipante`, los mismos que
+// usa la entrega. Lo que queda aqui es lo UNICO que la firma tiene de propio y la entrega no:
+//
+//   · el ESTADO TECNICO de la firma (`document_signatures` + `signature_statuses`), que es un eje
+//     aparte del estado del turno: un turno puede estar `completado` con una firma tecnicamente
+//     INVALIDA, y entonces cuenta como rechazo.
+//   · las transiciones del documento que solo existen aqui: «Firmado parcial», «Firmado completo»,
+//     «Final».
+//
+// ── AQUI SE CIERRA EL DEFECTO 1.19, y conviene decir que era ────────────────────────────────────
+//
+// El resolutor de firma leia el JSONB `signature_flow_steps.signers`, que NINGUN `CHECK` cubria y
+// que MANDABA sobre las columnas que si lo tenian. Por eso este fichero conservaba resolutores que
+// su gemela de entrega ya habia retirado --`document_owner`, `position`, los ambitos `context_*`--:
+// no eran ramas muertas, eran la unica defensa contra un valor que la base no podia rechazar.
+//
+// Con los firmantes EN FILAS (`participantes_declarados`, con sus dos `CHECK`), el valor retirado no
+// se puede ni insertar. Los `case` se van porque ya no hay por donde llegar, y la copia de
+// versionado deja de propagar lo que nadie validaba.
+//
+// EFECTO MEDIBLE Y FUERA DE ESTE FICHERO: el disparador del relevo tenia DOS `UPDATE`, y el de firma
+// llevaba la guarda `signers::text NOT LIKE '%specific_person%'` --«ante la duda no se mueve»--
+// precisamente porque el JSONB podia contradecir a la columna. Hoy el `resolver_type` del
+// participante es la verdad, asi que los dos `UPDATE` son UNO y sin guarda defensiva.
 
 const normalizeCode = (value) => String(value || "").trim().toLowerCase();
 const SIGN_ACTIVE = new Set([ESTADO_RECORRIDO.EN_PROGRESO]);
 const SIGN_APPROVED = new Set([ESTADO_RECORRIDO.COMPLETADO]);
 const SIGN_REJECTED = new Set([ESTADO_RECORRIDO.RECHAZADO, ESTADO_RECORRIDO.CANCELADO]);
 const DOC_SIGNATURE_SUCCESS = new Set([SIGNATURE_STATUS.SIGNED]);
-const SIGNATURE_APPROVAL_AND = "and";
-const SIGNATURE_APPROVAL_OR = "or";
-const SIGNATURE_APPROVAL_AT_LEAST = "at_least";
 
 const getDocumentVersionSignatureContext = async (connection, documentVersionId) => {
   const [rows] = await connection.query(
@@ -32,16 +69,11 @@ const getDocumentVersionSignatureContext = async (connection, documentVersionId)
        ti.responsible_position_id AS task_item_responsible_position_id,
        t.process_definition_id,
        ti.created_by_person_id AS item_created_by_person_id,
-       COALESCE(up_item.unit_id, t.scope_unit_id) AS scope_unit_id,
-       COALESCE(u_item.unit_type_id, u_task_scope.unit_type_id) AS scope_unit_type_id
+       COALESCE(up_item.unit_id, t.scope_unit_id) AS scope_unit_id
      FROM document_versions dv
      LEFT JOIN task_items ti ON ti.id = dv.task_item_id
      LEFT JOIN tasks t ON t.id = ti.task_id
-     LEFT JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-     LEFT JOIN ediciones tar ON tar.id = dv.edicion_id
      LEFT JOIN unit_positions up_item ON up_item.id = ti.responsible_position_id
-     LEFT JOIN units u_item ON u_item.id = up_item.unit_id
-     LEFT JOIN units u_task_scope ON u_task_scope.id = t.scope_unit_id
      WHERE dv.id = ?
      LIMIT 1`,
     [documentVersionId]
@@ -60,500 +92,52 @@ const shouldInferSignatureFlowForContext = (context) => {
   return true;
 };
 
-// Gemelo de `getActiveFillFlowTemplateForDefinitionTemplate` (generation/queries.js): tres escalones
-// por PRIORIDAD, no por «qué columna está rellena». Una misma fila puede llevar dos portadores a la
-// vez —el flujo de runtime que escribe `materializeRuntimeFlowForTaskItem` (generation/documents.js:278)
-// lleva `vinculo_id` Y `task_item_id`—, así que cada escalón exige NULL en los
-// portadores de los anteriores. Los escalones:
-//   1. del ENTREGABLE   (`task_item_id`)                   — flujo definido en runtime
-//   2. del VÍNCULO      (`vinculo_id`) — flujo autorado para esa configuración
-//   3. de la PLANTILLA  (`edicion_id`)           — flujo del entregable, compartido por
-//      todas las configuraciones donde esté enlazado (§0.8 del plan maestro)
-// Se exporta solo para poder probar la prioridad con un unitario; el consumidor real es de aquí.
-export const getActiveSignatureFlowTemplateForDefinitionTemplate = async (
-  connection,
-  processDefinitionTemplateId,
-  taskItemId = null
-) => {
-  // routed: flujo POR INSTANCIA tiene prioridad.
-  if (taskItemId) {
-    const [inst] = await connection.query(
-      `SELECT id FROM signature_flow_templates
-       WHERE task_item_id = ? AND is_active = 1
-       ORDER BY id DESC LIMIT 1`,
-      [taskItemId]
-    );
-    if (inst?.[0]) {
-      return inst[0];
-    }
-  }
-  // Flujo de la PLANTILLA que el vínculo enlaza. La subconsulta devuelve NULL si el vínculo no
-  // existe o no tiene artifact, y `columna = NULL` no casa con nada: no hace falta guarda extra.
-  const [byArtifact] = await connection.query(
-    `SELECT id
-     FROM signature_flow_templates
-     WHERE edicion_id = (
-             SELECT edicion_id
-             FROM vinculos
-             WHERE id = ?
-           )
-       AND task_item_id IS NULL
-       AND is_active = 1
-     ORDER BY id DESC
-     LIMIT 1`,
-    [processDefinitionTemplateId]
-  );
-  return byArtifact?.[0] || null;
-};
-
-// Normaliza la lista de firmantes (columna JSON `signers`) a la forma camelCase que consumen los resolutores.
-// Mantiene `selection_mode` (snake) además de `selectionMode` porque la resolución por cargo lo lee así.
-//
-// ⚠️ ESTE ES EL AGUJERO DEL CATÁLOGO, y explica por qué este fichero conserva resolutores que su
-// gemela de entrega (`admin/generation/assignees.js`) ya retiró. `normaliza` aquí significa cambiar
-// de convención de nombres, NO validar: `resolverType` y `unitScopeType` salen del JSONB tal cual
-// vengan, sin pasar por `SIGNATURE_RESOLVER_TYPES` ni `SIGNATURE_UNIT_SCOPE_TYPES`.
-//
-// El `CHECK` del sub-paso 8 del §0.8 cierra las COLUMNAS `resolver_type` y `unit_scope_type`, y una
-// columna JSONB no la cubre ningún `CHECK`. Además, `copySignatureFlowSteps` (`templates/flowRows.js`)
-// copia `signers` VERBATIM al versionar, así que un valor retirado que ya viviera en una base
-// desplegada no lo para el arranque —el `ADD CONSTRAINT` solo valida las columnas— y se propaga solo
-// a cada versión nueva. Por eso `document_owner`, `position` y los ámbitos `context_subtree` /
-// `context_ancestor_type` siguen resolviéndose más abajo: ahí NO son ramas muertas.
-//
-// Ningún productor VIVO puede emitirlos: los tres escritores de `signers` son `normalizeSignatureSteps`
-// (que sí filtra contra `SIGNATURE_RESOLVER_TYPES`), `materializeRuntimeFlowForTaskItem` (solo emite
-// `cargo_in_scope` y `specific_person`) y la copia de versionado. Lo que queda vivo es el legado.
-//
-// QUÉ CERRARÍA EL AGUJERO —y permitiría entonces recortar los `case`—: filtrar aquí contra los dos
-// catálogos de `templates/workflows.js`, y una migración que reescriba el JSONB de las filas ya
-// desplegadas. Las dos cosas, y en ese orden; solo el filtro dejaría pasos legítimos sin firmante.
-const parseStepSigners = (value) => {
-  let arr = value;
-  if (typeof value === "string") {
-    try { arr = JSON.parse(value); } catch { arr = null; }
-  }
-  if (!Array.isArray(arr)) {
-    return [];
-  }
-  return arr.map((s) => {
-    const selectionMode = String(s?.selectionMode || s?.selection_mode || "auto_all").trim() || "auto_all";
-    return {
-      resolverType: String(s?.resolverType || s?.type || "cargo_in_scope").trim() || "cargo_in_scope",
-      assignedPersonId: s?.assignedPersonId || s?.person_id ? Number(s.assignedPersonId || s.person_id) : null,
-      unitScopeType: String(s?.unitScopeType || s?.unit_scope_type || "context_exact").trim() || "context_exact",
-      unitId: s?.unitId || s?.unit_id ? Number(s.unitId || s.unit_id) : null,
-      unitTypeId: s?.unitTypeId || s?.unit_type_id ? Number(s.unitTypeId || s.unit_type_id) : null,
-      positionId: s?.positionId || s?.position_id ? Number(s.positionId || s.position_id) : null,
-      requiredCargoId: s?.requiredCargoId || s?.cargo_id ? Number(s.requiredCargoId || s.cargo_id) : null,
-      selectionMode,
-      selection_mode: selectionMode
-    };
-  });
-};
-
-// Construye un firmante a partir de las columnas de resolutor del propio paso (pasos legacy sin lista signers).
-const signerFromStepColumns = (step) => ({
-  resolverType: step.resolverType,
-  assignedPersonId: step.assignedPersonId,
-  unitScopeType: step.unitScopeType,
-  unitId: step.unitId,
-  unitTypeId: step.unitTypeId,
-  positionId: step.positionId,
-  requiredCargoId: step.requiredCargoId,
-  selectionMode: step.selectionMode,
-  selection_mode: step.selectionMode
+// El PASO con sus participantes, proyectado a la forma que el frontend ya consumía. Las claves
+// `step_order`/`stepOrder` y `assignees` conservan su nombre a propósito: las lee
+// `DeliverableSignatureTab.vue` y `useDeliverableView.js`. Lo que desaparece es lo que se retiró del
+// paso (§10 del plan): `approval_mode`, `required_signers_min`/`_max`, `is_required`,
+// `selection_mode` y el propio `signers`, que ahora SON los participantes.
+const proyectarPaso = (paso, turnos) => ({
+  id: Number(paso.id),
+  stepOrder: Number(paso.orden),
+  step_order: Number(paso.orden),
+  code: paso.code,
+  name: paso.nombre,
+  participantes: paso.participantes,
+  assignees: [...new Set(turnos.map((t) => Number(t.personaId)).filter(Boolean))],
 });
 
-// `anchor_refs` NO se selecciona, y no es un olvido (§0.6, cierre del censo de fósiles). Era el
-// predecesor muerto de `slot`: se escribe siempre `[]`, y lo que aquí se leía sólo servía para
-// rellenar un campo `anchorRefs` del paso que NADIE aguas abajo consultaba —medido: cero lectores en
-// todo el backend—. Quien coloca hoy la firma es `slot`, vía `{{ signatures.<slot>.token }}`.
+// LA RECETA DE FIRMA, RESUELTA A PERSONAS. Sustituye a `resolveSignatureTemplateStepsForContext`,
+// que hacía esto mismo con su propio lector de pasos y su propio resolutor.
 //
-// La COLUMNA sigue en `signature_flow_steps` a propósito: está expuesta en el CRUD genérico
-// (`config/sqlTables.js`) y su nombre aparece en los goldens de `admin_crud`, así que soltarla es un
-// cambio de contrato —y de esquema— y no la retirada de una rama muerta. Lo que la mataría: quitarla
-// de `sqlTables.js`, recapturar esos goldens y un `ALTER TABLE ... DROP COLUMN IF EXISTS` idempotente,
-// porque un `DROP COLUMN` no se reaplica con `CREATE TABLE IF NOT EXISTS`.
-const getSignatureFlowSteps = async (connection, signatureFlowTemplateId) => {
-  const [rows] = await connection.query(
-    `SELECT
-       id,
-       step_order,
-       code,
-       name,
-       slot,
-       resolver_type,
-       assigned_person_id,
-       unit_scope_type,
-       unit_id,
-       unit_type_id,
-       position_id,
-       required_cargo_id,
-       selection_mode,
-       approval_mode,
-       required_signers_min,
-       required_signers_max,
-       is_required,
-       signers
-     FROM signature_flow_steps
-     WHERE template_id = ?
-     ORDER BY step_order ASC, id ASC`,
-    [signatureFlowTemplateId]
-  );
-  return rows.map((row) => {
-    const step = {
-      id: row.id,
-      stepOrder: Number(row.step_order || 0),
-      code: String(row.code || "").trim() || null,
-      name: String(row.name || "").trim() || null,
-      slot: String(row.slot || "").trim() || null,
-      resolverType: String(row.resolver_type || "cargo_in_scope").trim() || "cargo_in_scope",
-      assignedPersonId: row.assigned_person_id ? Number(row.assigned_person_id) : null,
-      unitScopeType: String(row.unit_scope_type || "context_exact").trim() || "context_exact",
-      unitId: row.unit_id ? Number(row.unit_id) : null,
-      unitTypeId: row.unit_type_id ? Number(row.unit_type_id) : null,
-      positionId: row.position_id ? Number(row.position_id) : null,
-      requiredCargoId: row.required_cargo_id ? Number(row.required_cargo_id) : null,
-      selectionMode: String(row.selection_mode || "auto_all").trim() || "auto_all",
-      approvalMode: String(row.approval_mode || SIGNATURE_APPROVAL_AND).trim().toLowerCase() || SIGNATURE_APPROVAL_AND,
-      requiredSignersMin: row.required_signers_min !== null && row.required_signers_min !== undefined
-        ? Number(row.required_signers_min)
-        : null,
-      requiredSignersMax: row.required_signers_max !== null && row.required_signers_max !== undefined
-        ? Number(row.required_signers_max)
-        : null,
-      isRequired: row.is_required ? Number(row.is_required) : 0
-    };
-    // Multi-firmante: lista de resolutores. Fallback (pasos legacy sin `signers`): el propio paso = 1 firmante.
-    const parsed = parseStepSigners(row.signers);
-    step.signers = parsed.length ? parsed : [signerFromStepColumns(step)];
-    return step;
-  });
-};
-
-const resolveSignatureTemplateStepsForContext = async (connection, signatureFlowTemplateId, context) => {
-  const steps = await getSignatureFlowSteps(connection, signatureFlowTemplateId);
-  if (!steps.length) {
-    return {
-      steps: [],
-      unresolvedRequiredSteps: [],
-    };
-  }
-
+// ⚠️ `unresolvedRequiredSteps` SE QUEDA, y es lo que sobrevive de `is_required` (§10). La columna se
+// retira porque sus dos valores no eran «obligatorio / opcional»: con `1` el recorrido no abre y lo
+// dice; con `0` abría y el paso se quedaba APARCADO con una solicitud sin persona que en firma nadie
+// puede atender --y como el paso actual es el primero no aprobado, ése lo era para siempre--. O sea
+// un bloqueo silencioso y más tarde. Queda el comportamiento de `1` como único, para TODO paso.
+const resolverPasosDeFirma = async (connection, pasos, context) => {
   const unresolvedRequiredSteps = [];
   const resolvedSteps = [];
-  for (const step of steps) {
-    const resolverType = String(step.resolverType || "cargo_in_scope").trim();
-    const assignees = await resolveSignatureStepAssignees(connection, step, context);
-    if (
-      Number(step.isRequired) === 1
-      && !assignees.length
-      && resolverType !== "manual_pick"
-      && resolverType !== "manual"
-    ) {
-      unresolvedRequiredSteps.push({
-        stepOrder: Number(step.stepOrder),
-        resolverType,
-        reason: "no_assignees",
-      });
+  for (const paso of pasos) {
+    const turnos = await resolverPasoCompleto(connection, paso, context);
+    for (const participante of paso.participantes) {
+      const suyos = turnos.filter((t) => t.participanteId === participante.id && t.personaId);
+      if (!suyos.length) {
+        unresolvedRequiredSteps.push({
+          stepOrder: Number(paso.orden),
+          resolverType: participante.resolverType,
+          reason: "no_assignees",
+        });
+      }
     }
-    resolvedSteps.push({
-      ...step,
-      step_order: Number(step.stepOrder || 0),
-      selection_mode: step.selectionMode || null,
-      resolverType,
-      assignees,
-    });
+    resolvedSteps.push({ ...proyectarPaso(paso, turnos), turnos });
   }
-
-  return {
-    steps: resolvedSteps,
-    unresolvedRequiredSteps,
-  };
+  return { steps: resolvedSteps, unresolvedRequiredSteps };
 };
 
-const resolveScopeForStep = (step, context) => {
-  const unitScopeType = String(step?.unitScopeType || "context_exact");
-  const contextUnitId = context?.scope_unit_id ? Number(context.scope_unit_id) : null;
-  const contextUnitTypeId = context?.scope_unit_type_id ? Number(context.scope_unit_type_id) : null;
-  const explicitUnitId = step?.unitId ? Number(step.unitId) : null;
-  const explicitUnitTypeId = step?.unitTypeId ? Number(step.unitTypeId) : null;
-
-  return {
-    unitScopeType,
-    unitId:
-      explicitUnitId
-      || (unitScopeType === "context_exact" || unitScopeType === "context_subtree" || unitScopeType === "context_ancestor_type"
-        ? contextUnitId
-        : null),
-    unitTypeId:
-      explicitUnitTypeId
-      || (unitScopeType === "unit_type" ? contextUnitTypeId : null),
-    cargoId: step?.requiredCargoId ? Number(step.requiredCargoId) : null,
-  };
-};
-
-const resolveCurrentPersonsForPosition = async (connection, positionId) => {
-  if (!positionId) {
-    return [];
-  }
-  const [rows] = await connection.query(
-    `SELECT DISTINCT pa.person_id
-     FROM position_assignments pa
-     WHERE pa.position_id = ?
-       AND pa.is_current = 1
-       AND pa.person_id IS NOT NULL
-     ORDER BY pa.person_id ASC`,
-    [positionId]
-  );
-  return rows.map((row) => Number(row.person_id)).filter(Boolean);
-};
-
-// Se exporta solo para poder probar el ORDEN de los parámetros con un unitario, mismo criterio que
-// `getActiveSignatureFlowTemplateForDefinitionTemplate`; el consumidor real es de aquí. Y hace falta:
-// el `CHECK` de `signature_flow_steps.unit_scope_type` no admite `context_ancestor_type`, así que la
-// caracterización **no puede sembrar esa rama por CRUD** — un unitario es su único guardián posible.
-export const resolvePersonsForCargoInScope = async (connection, step, context = null) => {
-  const scope = resolveScopeForStep(step, context);
-  if (!scope.cargoId) {
-    return [];
-  }
-
-  const params = [scope.cargoId];
-  let query = `
-    SELECT DISTINCT pa.person_id
-    FROM unit_positions up
-    INNER JOIN units u ON u.id = up.unit_id
-    INNER JOIN position_assignments pa
-      ON pa.position_id = up.id
-     AND pa.is_current = 1
-    WHERE up.is_active = 1
-      AND pa.person_id IS NOT NULL
-      AND up.cargo_id = ?`;
-
-  if (scope.unitScopeType === "unit_subtree") {
-    if (!scope.unitId) {
-      return [];
-    }
-    query = `
-      WITH RECURSIVE scoped_units AS (
-        SELECT id
-        FROM units
-        WHERE id = ?
-        UNION ALL
-        SELECT ur.child_unit_id
-        FROM unit_relations ur
-        INNER JOIN relation_unit_types rt
-          ON rt.id = ur.relation_type_id
-         AND rt.code = 'org'
-        INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
-      )
-      ${query}
-        AND up.unit_id IN (SELECT id FROM scoped_units)`;
-    params.unshift(scope.unitId);
-  } else if (scope.unitScopeType === "unit_exact") {
-    if (!scope.unitId) {
-      return [];
-    }
-    query += "\n      AND up.unit_id = ?";
-    params.push(scope.unitId);
-  } else if (scope.unitScopeType === "unit_type") {
-    if (!scope.unitTypeId) {
-      return [];
-    }
-    query += "\n      AND u.unit_type_id = ?";
-    params.push(scope.unitTypeId);
-  } else if (scope.unitScopeType === "context_subtree") {
-    if (!scope.unitId) {
-      return [];
-    }
-    query = `
-      WITH RECURSIVE scoped_units AS (
-        SELECT id
-        FROM units
-        WHERE id = ?
-        UNION ALL
-        SELECT ur.child_unit_id
-        FROM unit_relations ur
-        INNER JOIN relation_unit_types rt
-          ON rt.id = ur.relation_type_id
-         AND rt.code = 'org'
-        INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
-      )
-      ${query}
-        AND up.unit_id IN (SELECT id FROM scoped_units)`;
-    params.unshift(scope.unitId);
-  } else if (scope.unitScopeType === "context_ancestor_type") {
-    if (!scope.unitId || !scope.unitTypeId) {
-      return [];
-    }
-    query = `
-      WITH RECURSIVE ancestor_units AS (
-        SELECT id, unit_type_id
-        FROM units
-        WHERE id = ?
-        UNION ALL
-        SELECT parent_u.id, parent_u.unit_type_id
-        FROM unit_relations ur
-        INNER JOIN relation_unit_types rt
-          ON rt.id = ur.relation_type_id
-         AND rt.code = 'org'
-        INNER JOIN ancestor_units au ON au.id = ur.child_unit_id
-        INNER JOIN units parent_u ON parent_u.id = ur.parent_unit_id
-      )
-      ${query}
-        AND up.unit_id IN (
-          SELECT id
-          FROM ancestor_units
-          WHERE unit_type_id = ?
-        )`;
-    // El orden importa y aquí estaba CRUZADO (defecto 1.16): los dos `unshift` dejaban
-    // `[unitId, unitTypeId, cargoId]`, así que `up.cargo_id` recibía el tipo de unidad y
-    // `unit_type_id` recibía el cargo. Resolvía firmantes equivocados, o ninguno, EN SILENCIO —
-    // `bindParams` no puede verlo porque la CANTIDAD cuadra (3 y 3), solo el orden está mal.
-    //
-    // Los `?` salen así: (1) el del CTE, que va DELANTE de la consulta base; (2) el `up.cargo_id`
-    // de la base; (3) el del `IN` final, que va DETRÁS. Por eso el de cabeza se paga con `unshift`
-    // y el de cola con `push`. Ésta es la única rama del backend que antepone Y añade a la vez
-    // (censo del 2026-08-14: 6 `unshift` en total, y los otros 5 solo anteponen), que es
-    // exactamente por lo que aquí se rompió y en los demás no.
-    params.unshift(scope.unitId);
-    params.push(scope.unitTypeId);
-  } else if (scope.unitScopeType === "context_exact") {
-    if (!scope.unitId) {
-      return [];
-    }
-    query += "\n      AND up.unit_id = ?";
-    params.push(scope.unitId);
-  }
-
-  query += "\n    ORDER BY pa.person_id ASC";
-
-  const [rows] = await connection.query(query, params);
-  const people = rows.map((row) => Number(row.person_id)).filter(Boolean);
-  if (String(step.selection_mode || "auto_all") === "auto_one") {
-    return people.slice(0, 1);
-  }
-  return people;
-};
-
-const collectAssignees = (...sources) => {
-  const seen = new Set();
-  const result = [];
-  for (const id of sources.flat()) {
-    const candidate = Number(id || 0);
-    if (!candidate || seen.has(candidate)) {
-      continue;
-    }
-    seen.add(candidate);
-    result.push(candidate);
-  }
-  return result;
-};
-
-const readRequestStatusCode = (row) =>
-  normalizeCode(row?.request_status_code ?? row?.requestStatusCode);
-
-const readSignatureStatusCode = (row) =>
-  normalizeCode(row?.signature_status_code ?? row?.signatureStatusCode);
-
-const readStepOrder = (row) => Number(row?.step_order ?? row?.stepOrder);
-
-const readApprovalMode = (row) =>
-  String(row?.approval_mode ?? row?.approvalMode ?? SIGNATURE_APPROVAL_AND)
-    .trim()
-    .toLowerCase();
-
-const readRequiredSignersMin = (row) => {
-  const value = row?.required_signers_min ?? row?.requiredSignersMin;
-  return value !== null && value !== undefined ? Number(value) : null;
-};
-
-const resolveSpecificPersonAssignees = (step) => {
-  if (!step?.assignedPersonId) {
-    return [];
-  }
-  return [Number(step.assignedPersonId)];
-};
-
-
-const resolveTaskAssignee = (context) => {
-  const assignees = [];
-  if (context?.task_item_assigned_person_id) {
-    assignees.push(Number(context.task_item_assigned_person_id));
-  }
-  // Misma reserva que en el flujo de entrega, y por el mismo motivo: `tasks.created_by_user_id`
-  // se retiro el 2026-08-23 y su equivalente vive en el entregable.
-  if (context?.item_created_by_person_id) {
-    assignees.push(Number(context.item_created_by_person_id));
-  }
-  return assignees;
-};
-
-// `document_owner` y `task_assignee` resuelven LO MISMO desde el 2026-08-23, y no es un descuido:
-// `documents.owner_person_id` era una copia de `task_items.assigned_person_id` tomada al crear el
-// documento, refrescada por UNO de los cuatro caminos de relevo. Retirada la copia, «el dueño del
-// documento» y «quien responde del entregable» son la misma persona — que es lo que siempre
-// quisieron decir los dos nombres.
-//
-// El `case` se conserva (ver el comentario de `resolveSingleSignerAssignees`): un paso legado puede
-// traer este resolutor por el JSONB `signers`, y quitarlo lo dejaria cayendo al `default` sin cargo,
-// o sea SIN FIRMANTE y en silencio. Ahora al menos resuelve a alguien correcto.
-const resolveDocumentOwnerAssignee = (context) => resolveTaskAssignee(context);
-
-const resolvePositionAssignees = async (connection, step, context) => {
-  return resolveCurrentPersonsForPosition(
-    connection,
-    // El puesto responsable de la TAREA se retiro el 2026-08-23 (era un puesto arbitrario de la
-    // unidad, no un responsable). Queda el del ENTREGABLE, que es el que responde por el.
-    Number(step?.positionId || context?.task_item_responsible_position_id)
-  );
-};
-
-// Resuelve los firmantes de UN solo resolutor (firmante) del paso.
-//
-// `document_owner` y `position` SE CONSERVAN aunque salieran del `CHECK` en el sub-paso 8 del §0.8, y
-// aunque su gemela de entrega los haya retirado (`admin/generation/assignees.js`). El motivo está
-// arriba, en `parseStepSigners`: el `signer` que llega aquí puede venir del JSONB `signers`, que
-// ningún `CHECK` cubre, que la copia de versionado propaga verbatim y que nadie filtra contra
-// catálogo. Borrar estos dos `case` dejaría a un paso legado resolviéndose por el `default` —cargo en
-// ámbito— con `requiredCargoId` a null: no firmaría NADIE, y en silencio.
-// Lo que los mataría: cerrar el agujero de `parseStepSigners` (filtro + migración del JSONB).
-const resolveSingleSignerAssignees = async (connection, signer, context) => {
-  if (!signer || String(signer.selectionMode || signer.selection_mode || "auto_all") === "manual") {
-    return [];
-  }
-  const resolverType = String(signer.resolverType || "cargo_in_scope").trim();
-  switch (resolverType) {
-    case "specific_person":
-      return resolveSpecificPersonAssignees(signer);
-    case "document_owner":
-      return resolveDocumentOwnerAssignee(context);
-    case "task_assignee":
-      return resolveTaskAssignee(context);
-    case "position":
-      return resolvePositionAssignees(connection, signer, context);
-    case "cargo_in_scope":
-    default:
-      return resolvePersonsForCargoInScope(connection, signer, context);
-  }
-};
-
-// Multi-firmante: une (sin duplicados) las personas resueltas por cada firmante del paso. El cupo entre ellas
-// (todas / cualquiera / mínimo N) lo evalúa approval_mode más adelante en el flujo.
-const resolveSignatureStepAssignees = async (connection, step, context) => {
-  if (!step) {
-    return [];
-  }
-  const signers = Array.isArray(step.signers) && step.signers.length
-    ? step.signers
-    : [signerFromStepColumns(step)];
-  const resolved = [];
-  for (const signer of signers) {
-    resolved.push(await resolveSingleSignerAssignees(connection, signer, context));
-  }
-  return collectAssignees(...resolved);
+const truncateNote = (value, max = 255) => {
+  const normalized = String(value || "").trim();
+  return normalized ? normalized.slice(0, max) : null;
 };
 
 const deriveSignatureStatusCode = (result) => {
@@ -575,24 +159,118 @@ const deriveSignatureRequestStatusCode = (signatureStatusCode) =>
     ? ESTADO_RECORRIDO.COMPLETADO
     : ESTADO_RECORRIDO.PENDIENTE;
 
-const truncateNote = (value, max = 255) => {
-  const normalized = String(value || "").trim();
-  return normalized ? normalized.slice(0, max) : null;
+// Los turnos de un recorrido CON SU ESTADO TECNICO. Es la unica consulta de este fichero que no
+// podria vivir en el lado comun: cruza `turnos` con `document_signatures`, que es el eje propio de
+// la firma. `leerTurnosDelRecorrido` no lo trae porque en entrega no existe.
+const leerTurnosConSuFirma = async (connection, recorridoId) => {
+  const [rows] = await connection.query(
+    `SELECT
+       tu.id,
+       pd.orden AS step_order,
+       tu.estado AS request_status_code,
+       ss.code AS signature_status_code
+     FROM turnos tu
+     INNER JOIN participantes_declarados pr ON pr.id = tu.participante_id
+     INNER JOIN pasos_declarados pd ON pd.id = pr.paso_id
+     LEFT JOIN (
+       SELECT ds1.signature_request_id, ds1.signature_status_id
+       FROM document_signatures ds1
+       INNER JOIN (
+         SELECT signature_request_id, MAX(id) AS max_id
+         FROM document_signatures
+         WHERE signature_request_id IS NOT NULL
+         GROUP BY signature_request_id
+       ) latest ON latest.max_id = ds1.id
+     ) latest_ds ON latest_ds.signature_request_id = tu.id
+     LEFT JOIN signature_statuses ss ON ss.id = latest_ds.signature_status_id
+     WHERE tu.recorrido_id = ?
+     ORDER BY pd.orden ASC, tu.id ASC`,
+    [recorridoId]
+  );
+  return rows;
 };
 
+const readRequestStatusCode = (row) =>
+  normalizeCode(row?.request_status_code ?? row?.requestStatusCode);
+
+const readSignatureStatusCode = (row) =>
+  normalizeCode(row?.signature_status_code ?? row?.signatureStatusCode);
+
+const readStepOrder = (row) => Number(row?.step_order ?? row?.stepOrder);
+
+// UN PASO ESTA APROBADO CUANDO FIRMAN TODOS LOS SUYOS. Y ya no hay un `switch`: el cupo
+// (`approval_mode` + `required_signers_min`/`_max`) se retiro entero (§10 del plan).
+//
+// `or` no era una funcionalidad: el paso se cerraba con una firma y las solicitudes hermanas SEGUIAN
+// ABIERTAS --se listaban en el espacio de trabajo de quienes no firmaron y al pincharlas respondian
+// «no pertenece al paso actual»--. `at_least` tenia el mismo defecto con un umbral, y
+// `required_signers_max` no decidia nada: se seleccionaba, se parseaba y no se leia.
+//
+// El cupo existia porque el conjunto de firmantes era INDETERMINADO (un cargo con ambito amplio
+// resolvia a N personas desconocidas de antemano). Lo que se quita es esa indeterminacion: los
+// firmantes son filas declaradas, y se firma el cupo entero.
+const isSignatureStepApproved = (summary) => {
+  if (!summary || summary.total < 1) {
+    return false;
+  }
+  return summary.approvedCount === summary.total;
+};
+
+const summarizeSignatureRequests = (rows) => {
+  const byStep = new Map();
+  for (const row of rows) {
+    const stepOrder = readStepOrder(row);
+    if (!byStep.has(stepOrder)) {
+      byStep.set(stepOrder, {
+        stepOrder,
+        total: 0,
+        approvedCount: 0,
+        rejectedCount: 0,
+        activeCount: 0,
+        pendingCount: 0,
+      });
+    }
+    const summary = byStep.get(stepOrder);
+    summary.total += 1;
+    const code = readRequestStatusCode(row);
+    const signatureCode = readSignatureStatusCode(row);
+    if (SIGN_APPROVED.has(code)) {
+      // DOS EJES: el turno dice «respondio» y la firma dice «vale». Un turno completado con una
+      // firma tecnicamente invalida es un RECHAZO, no un paso dado.
+      if (signatureCode && !DOC_SIGNATURE_SUCCESS.has(signatureCode)) summary.rejectedCount += 1;
+      else summary.approvedCount += 1;
+    } else if (SIGN_REJECTED.has(code)) summary.rejectedCount += 1;
+    else if (SIGN_ACTIVE.has(code)) summary.activeCount += 1;
+    else summary.pendingCount += 1;
+  }
+  return Array.from(byStep.values())
+    .sort((a, b) => a.stepOrder - b.stepOrder)
+    .map((item) => ({
+      ...item,
+      approved: isSignatureStepApproved(item),
+      hasRejected: item.rejectedCount > 0,
+      hasActive: item.activeCount > 0,
+      hasPending: item.pendingCount > 0,
+    }));
+};
+
+// EL CONTEXTO DE UN TURNO DE FIRMA. Las claves conservan su nombre --`instance_id`, `step_id`,
+// `step_order`, `assigned_person_id`-- porque las consume `PdfSigningService` y el propio registro de
+// evidencia; lo que cambia es de donde salen.
 export const getSignatureRequestContext = async (connection, signatureRequestId) => {
   const [rows] = await connection.query(
     `SELECT
-       sr.id,
-       sr.assigned_person_id,
-       sr.instance_id,
-       sr.step_id,
-       sfi.document_version_id,
-       sfs.step_order
-     FROM signature_requests sr
-     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-     INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     WHERE sr.id = ?
+       tu.id,
+       tu.persona_id AS assigned_person_id,
+       tu.recorrido_id AS instance_id,
+       pr.paso_id AS step_id,
+       r.document_version_id,
+       pd.orden AS step_order
+     FROM turnos tu
+     INNER JOIN recorridos r ON r.id = tu.recorrido_id AND r.accion = 'firma'
+     INNER JOIN participantes_declarados pr ON pr.id = tu.participante_id
+     INNER JOIN pasos_declarados pd ON pd.id = pr.paso_id
+     WHERE tu.id = ?
      LIMIT 1`,
     [signatureRequestId]
   );
@@ -626,75 +304,6 @@ export const assertSignatureRequestCanBeSigned = async ({ connection, context })
   return signatureRequest;
 };
 
-const getExistingSignatureFlowInstance = async (connection, documentVersionId) => {
-  const [rows] = await connection.query(
-    `SELECT id, status
-     FROM signature_flow_instances
-     WHERE document_version_id = ?
-     LIMIT 1`,
-    [documentVersionId]
-  );
-  return rows?.[0] || null;
-};
-
-const summarizeSignatureRequests = (rows) => {
-  const byStep = new Map();
-  for (const row of rows) {
-    const stepOrder = readStepOrder(row);
-    if (!byStep.has(stepOrder)) {
-      const approvalMode = readApprovalMode(row);
-      const requiredSignersMin = readRequiredSignersMin(row);
-      byStep.set(stepOrder, {
-        stepOrder,
-        approvalMode,
-        requiredSignersMin,
-        total: 0,
-        approvedCount: 0,
-        rejectedCount: 0,
-        activeCount: 0,
-        pendingCount: 0,
-      });
-    }
-    const summary = byStep.get(stepOrder);
-    summary.total += 1;
-    const code = readRequestStatusCode(row);
-    const signatureCode = readSignatureStatusCode(row);
-    if (SIGN_APPROVED.has(code)) {
-      if (signatureCode && !DOC_SIGNATURE_SUCCESS.has(signatureCode)) summary.rejectedCount += 1;
-      else summary.approvedCount += 1;
-    } else if (SIGN_REJECTED.has(code)) summary.rejectedCount += 1;
-    else if (SIGN_ACTIVE.has(code)) summary.activeCount += 1;
-    else summary.pendingCount += 1;
-  }
-  return Array.from(byStep.values())
-    .sort((a, b) => a.stepOrder - b.stepOrder)
-    .map((item) => ({
-      ...item,
-      approved: isSignatureStepApproved(item),
-      hasRejected: item.rejectedCount > 0,
-      hasActive: item.activeCount > 0,
-      hasPending: item.pendingCount > 0,
-    }));
-};
-
-const isSignatureStepApproved = (summary) => {
-  if (!summary || summary.total < 1) {
-    return false;
-  }
-  switch (summary.approvalMode) {
-    case SIGNATURE_APPROVAL_OR:
-      return summary.approvedCount > 0;
-    case SIGNATURE_APPROVAL_AT_LEAST: {
-      const min = Number(summary.requiredSignersMin || 0);
-      const effectiveMin = min > 0 ? min : 1;
-      return summary.approvedCount >= effectiveMin;
-    }
-    case SIGNATURE_APPROVAL_AND:
-    default:
-      return summary.approvedCount === summary.total;
-  }
-};
-
 export const inspectDocumentVersionSignatureReadiness = async (connection, documentVersionId) => {
   const context = await getDocumentVersionSignatureContext(connection, documentVersionId);
   if (!context) {
@@ -714,95 +323,65 @@ export const inspectDocumentVersionSignatureReadiness = async (connection, docum
     return { ok: false, reason: "working_pdf_missing", context, currentStatus };
   }
 
-  const signatureFlowTemplate = await getActiveSignatureFlowTemplateForDefinitionTemplate(
-    connection,
-    context.vinculo_id,
-    context.task_item_id
-  );
-  if (!signatureFlowTemplate?.id) {
+  // DOS ESCALONES Y UNA CONSULTA, sin cabecera que buscar: el paso lleva su propio origen. La razon
+  // `signature_template_missing` se conserva --viaja en la API y la nombran los goldens-- pero lo que
+  // hoy falta no es una cabecera activa: es que no haya ni un paso declarado de esta accion.
+  const receta = await resolverReceta(connection, {
+    accion: "firma",
+    taskItemId: context.task_item_id,
+    vinculoId: context.vinculo_id,
+  });
+  if (!receta.pasos.length) {
     return { ok: false, reason: "signature_template_missing", context, currentStatus };
   }
 
-  const resolvedTemplate = await resolveSignatureTemplateStepsForContext(
-    connection,
-    signatureFlowTemplate.id,
-    context
-  );
-  if (!resolvedTemplate.steps.length) {
-    return { ok: false, reason: "signature_steps_missing", context, currentStatus, signatureFlowTemplate };
-  }
+  const resuelto = await resolverPasosDeFirma(connection, receta.pasos, context);
 
-  if (resolvedTemplate.unresolvedRequiredSteps.length) {
-      return {
-        ok: false,
-        reason: "required_signers_unresolved",
-        context,
-        currentStatus,
-        signatureFlowTemplate,
-        steps: resolvedTemplate.steps,
-        unresolvedRequiredSteps: resolvedTemplate.unresolvedRequiredSteps,
-      };
+  if (resuelto.unresolvedRequiredSteps.length) {
+    return {
+      ok: false,
+      reason: "required_signers_unresolved",
+      context,
+      currentStatus,
+      steps: resuelto.steps,
+      unresolvedRequiredSteps: resuelto.unresolvedRequiredSteps,
+    };
   }
 
   return {
     ok: true,
     context,
     currentStatus,
-    signatureFlowTemplate,
-    steps: resolvedTemplate.steps,
+    steps: resuelto.steps,
   };
 };
 
 export const resolveCurrentSignatureStep = async (connection, documentVersionId) => {
-  const instancia = await getExistingSignatureFlowInstance(connection, documentVersionId);
-  if (!instancia) {
+  const recorrido = await buscarRecorrido(connection, documentVersionId, "firma");
+  if (!recorrido) {
     return null;
   }
-  const instanceId = Number(instancia.id);
 
-  const [rows] = await connection.query(
-    `SELECT
-       sfs.step_order,
-       sfs.approval_mode,
-       sfs.required_signers_min,
-       sr.status AS request_status_code,
-       ss.code AS signature_status_code
-     FROM signature_requests sr
-     INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     LEFT JOIN (
-       SELECT ds1.signature_request_id, ds1.signature_status_id
-       FROM document_signatures ds1
-       INNER JOIN (
-         SELECT signature_request_id, MAX(id) AS max_id
-         FROM document_signatures
-         WHERE signature_request_id IS NOT NULL
-         GROUP BY signature_request_id
-       ) latest ON latest.max_id = ds1.id
-     ) latest_ds ON latest_ds.signature_request_id = sr.id
-     LEFT JOIN signature_statuses ss ON ss.id = latest_ds.signature_status_id
-     WHERE sr.instance_id = ?
-     ORDER BY sfs.step_order ASC, sr.id ASC`,
-    [instanceId]
+  const stepSummaries = summarizeSignatureRequests(
+    await leerTurnosConSuFirma(connection, Number(recorrido.id))
   );
-
-  const stepSummaries = summarizeSignatureRequests(rows);
   return stepSummaries.find((row) => !row.approved && !row.hasRejected)
     || stepSummaries.find((row) => !row.approved)
     || null;
 };
 
 export const ensureSignatureFlowForDocumentVersion = async (connection, documentVersionId) => {
-  const existing = await getExistingSignatureFlowInstance(connection, documentVersionId);
+  const existing = await buscarRecorrido(connection, documentVersionId, "firma");
   if (existing) {
     // UN RECORRIDO RECHAZADO SE REABRE, no se ignora. Es la otra mitad del arreglo del atasco
     // (frente 24, §11): el rechazo devolvio el documento a «Observado», se corrigio, y al volver a
     // la fase de firma hay que convocar otra vez. Sin esto la funcion salia por `alreadyExists` y
     // el paso rechazado seguia rechazado: el documento volvia a atascarse en el mismo sitio.
     //
-    // Se REABRE la instancia que hay en vez de crear otra porque
-    // `uq_signature_flow_instances_document` admite UNA por version.
-    if (String(existing.status) === ESTADO_RECORRIDO.RECHAZADO) {
-      await reabrirRecorridoDeFirma(connection, Number(existing.id), ESTADO_RECORRIDO.PENDIENTE);
+    // Se REABRE el que hay en vez de abrir otro porque `uq_recorridos` admite UNO por
+    // (version de documento, accion).
+    if (String(existing.estado) === ESTADO_RECORRIDO.RECHAZADO) {
+      await reabrirRecorridoRechazado(connection, Number(existing.id), ESTADO_RECORRIDO.PENDIENTE);
     }
     return {
       ok: true,
@@ -820,49 +399,34 @@ export const ensureSignatureFlowForDocumentVersion = async (connection, document
     };
   }
 
-  const [insertInstanceResult] = await connection.query(
-    `INSERT INTO signature_flow_instances (
-       template_id,
-       document_version_id,
-       status
-     ) VALUES (?, ?, ?)`,
-    [readiness.signatureFlowTemplate.id, documentVersionId, ESTADO_RECORRIDO.PENDIENTE]
-  );
-  const signatureFlowInstanceId = Number(insertInstanceResult.insertId);
+  // ⚠️ AQUI NO SE REPARA, y la entrega SI (`ensureFillFlowForDocumentVersion` llama a
+  // `repararTurnos` cuando el recorrido ya estaba abierto). La asimetria es la de los dos momentos,
+  // no un olvido: el de entrega se asegura en CADA lanzamiento --es idempotente y la receta puede
+  // haber cambiado debajo--, mientras que el de firma se abre UNA vez, cuando la entrega termina y
+  // el documento ya esta «Listo para firma». Si algun dia la firma se asegurara repetidamente, la
+  // reparacion es la misma funcion y entra aqui.
+  const recorridoId = await abrirRecorrido(connection, {
+    documentVersionId,
+    accion: "firma",
+    pasoActual: Number(readiness.steps[0].stepOrder),
+  });
 
   for (const step of readiness.steps) {
-    if (!step.assignees.length) {
-      await connection.query(
-        `INSERT INTO signature_requests (
-           instance_id,
-           step_id,
-           assigned_person_id,
-           status,
-           is_manual
-         ) VALUES (?, ?, ?, ?, ?)`,
-        [signatureFlowInstanceId, step.id, null, ESTADO_RECORRIDO.PENDIENTE, 1]
-      );
-      continue;
-    }
-
-    for (const assignedPersonId of step.assignees) {
-      await connection.query(
-        `INSERT INTO signature_requests (
-           instance_id,
-           step_id,
-           assigned_person_id,
-           status,
-           is_manual
-         ) VALUES (?, ?, ?, ?, ?)`,
-        [signatureFlowInstanceId, step.id, assignedPersonId, ESTADO_RECORRIDO.PENDIENTE, 0]
-      );
+    for (const turno of step.turnos) {
+      await abrirTurno(connection, {
+        recorridoId,
+        accion: "firma",
+        participanteId: turno.participanteId,
+        personaId: turno.personaId,
+        manual: turno.manual,
+      });
     }
   }
 
   await transitionDocumentVersionState(connection, Number(documentVersionId), "Pendiente de firma");
   return {
     ok: true,
-    signatureFlowInstanceId,
+    signatureFlowInstanceId: recorridoId,
     readiness,
   };
 };
@@ -908,13 +472,13 @@ export const registerSignatureEvidence = async ({ connection, context, result })
     // fila del catalogo a mano. Hoy lo valida el CHECK de la columna (fase 3 del frente 24).
     const requestStatusCode = deriveSignatureRequestStatusCode(signatureStatusCode);
     const shouldMarkRequestAsResponded = requestStatusCode === ESTADO_RECORRIDO.COMPLETADO;
-    await connection.query(
-      `UPDATE signature_requests
-       SET status = ?,
-           responded_at = ?
-       WHERE id = ?`,
-      [requestStatusCode, shouldMarkRequestAsResponded ? new Date() : null, Number(signatureRequest.id)]
-    );
+    // `actualizarTurno` y no `responderTurno`: aqui solo se mueven el estado y la fecha, igual que
+    // hacia el `UPDATE` de antes. La persona y la nota van por COALESCE, asi que no se pisan --en
+    // firma la nota del rechazo vive en la observacion del hilo, no en el turno.
+    await actualizarTurno(connection, Number(signatureRequest.id), {
+      estado: requestStatusCode,
+      respondido: shouldMarkRequestAsResponded ? new Date() : null,
+    });
   }
 
   const noteShort = truncateNote(
@@ -989,43 +553,38 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
     currentStatus: readiness.currentStatus || currentStatus || null,
   };
 
-  const [instanceRows] = await connection.query(
-    `SELECT
-       sfi.id,
-       sfi.template_id,
-       sfi.status AS status_code,
-       sfi.created_at
-     FROM signature_flow_instances sfi
-     WHERE sfi.document_version_id = ?
-     LIMIT 1`,
-    [documentVersionId]
-  );
-  if (!instanceRows.length) {
+  const recorrido = await buscarRecorrido(connection, documentVersionId, "firma");
+  if (!recorrido) {
     return snapshot;
   }
 
-  const instance = instanceRows[0];
+  // `templateId` se queda en null: no hay cabecera. El recorrido ya no apunta a una plantilla de
+  // flujo --la receta la lleva el paso-- y la clave se conserva porque viaja en la API.
   snapshot.signatureFlow = {
-    id: Number(instance.id),
-    templateId: Number(instance.template_id),
-    statusCode: instance.status_code,
-    createdAt: instance.created_at,
+    id: Number(recorrido.id),
+    templateId: null,
+    statusCode: recorrido.estado,
+    createdAt: recorrido.created_at ?? null,
   };
 
-  if (context && instance.template_id) {
-    const resolvedTemplate = await resolveSignatureTemplateStepsForContext(
-      connection,
-      Number(instance.template_id),
-      context
-    );
-    snapshot.signatureSteps = resolvedTemplate.steps;
+  if (context) {
+    const receta = await resolverReceta(connection, {
+      accion: "firma",
+      taskItemId: context.task_item_id,
+      vinculoId: context.vinculo_id,
+    });
+    const resuelto = await resolverPasosDeFirma(connection, receta.pasos, context);
+    // `turnos` SE QUEDA FUERA de la respuesta: es fontaneria de `ensureSignatureFlow...` --los pares
+    // (participante, persona) que hay que abrir-- y exponerla invita a que alguien dependa de ella.
+    // Lo que el consumidor necesita de un paso es `assignees`, que es la union sin repetir.
+    const pasos = resuelto.steps.map(({ turnos, ...paso }) => paso);
+    snapshot.signatureSteps = pasos;
     snapshot.readiness = {
       ok: true,
       context,
       currentStatus,
-      signatureFlowTemplate: { id: Number(instance.template_id) },
-      steps: resolvedTemplate.steps,
-      unresolvedRequiredSteps: resolvedTemplate.unresolvedRequiredSteps,
+      steps: pasos,
+      unresolvedRequiredSteps: resuelto.unresolvedRequiredSteps,
       source: "active_instance",
     };
   } else if (!snapshot.readiness?.reason) {
@@ -1036,23 +595,21 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
 
   const [requestRows] = await connection.query(
     `SELECT
-       sr.id,
-       sr.assigned_person_id,
-       sr.is_manual,
-       sr.requested_at,
-       sr.responded_at,
-       sfs.id AS step_id,
-       sfs.step_order,
-       sfs.approval_mode,
-       sfs.required_signers_min,
-       sfs.required_cargo_id,
-       sr.status AS request_status_code,
+       tu.id,
+       tu.persona_id AS assigned_person_id,
+       tu.manual AS is_manual,
+       tu.solicitado AS requested_at,
+       tu.respondido AS responded_at,
+       tu.estado AS request_status_code,
+       pr.paso_id AS step_id,
+       pd.orden AS step_order,
        ss.code AS signature_status_code,
        p.first_name,
        p.last_name,
        c.name AS cargo_name
-     FROM signature_requests sr
-     INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
+     FROM turnos tu
+     INNER JOIN participantes_declarados pr ON pr.id = tu.participante_id
+     INNER JOIN pasos_declarados pd ON pd.id = pr.paso_id
      LEFT JOIN (
        SELECT ds1.signature_request_id, ds1.signature_status_id
        FROM document_signatures ds1
@@ -1062,20 +619,19 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
          WHERE signature_request_id IS NOT NULL
          GROUP BY signature_request_id
        ) latest ON latest.max_id = ds1.id
-     ) latest_ds ON latest_ds.signature_request_id = sr.id
+     ) latest_ds ON latest_ds.signature_request_id = tu.id
      LEFT JOIN signature_statuses ss ON ss.id = latest_ds.signature_status_id
-     LEFT JOIN persons p ON p.id = sr.assigned_person_id
-     LEFT JOIN cargos c ON c.id = sfs.required_cargo_id
-     WHERE sr.instance_id = ?
-     ORDER BY sfs.step_order ASC, sr.id ASC`,
-    [Number(instance.id)]
+     LEFT JOIN persons p ON p.id = tu.persona_id
+     LEFT JOIN cargos c ON c.id = pr.cargo_id
+     WHERE tu.recorrido_id = ?
+     ORDER BY pd.orden ASC, pr.orden ASC, tu.id ASC`,
+    [Number(recorrido.id)]
   );
 
   const pendingStatusCodes = new Set([
     ESTADO_RECORRIDO.PENDIENTE,
     ESTADO_RECORRIDO.EN_PROGRESO,
   ]);
-  const completedStatusCode = ESTADO_RECORRIDO.COMPLETADO;
 
   for (const row of requestRows) {
     const assignedPersonId = Number(row.assigned_person_id || 0);
@@ -1091,10 +647,6 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
       id: Number(row.id),
       stepId: Number(row.step_id),
       stepOrder: Number(row.step_order),
-      approvalMode: String(row.approval_mode || SIGNATURE_APPROVAL_AND).trim().toLowerCase(),
-      requiredSignersMin: row.required_signers_min !== null && row.required_signers_min !== undefined
-        ? Number(row.required_signers_min)
-        : null,
       requestStatusCode,
       signatureStatusCode: String(row.signature_status_code || "").trim() || null,
       isManual: Boolean(Number(row.is_manual || 0)),
@@ -1103,7 +655,6 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
       requestedAt: row.requested_at,
       respondedAt: row.responded_at,
     });
-
   }
 
   const stepSummaries = summarizeSignatureRequests(snapshot.signatureRequests);
@@ -1131,45 +682,10 @@ export const getSignatureFlowSnapshot = async ({ connection, documentVersionId, 
 };
 
 export const syncDocumentProgressFromSignatureRequest = async (connection, signatureRequestId) => {
-  const [contextRows] = await connection.query(
-    `SELECT
-       sr.id,
-       sr.instance_id,
-       sfi.document_version_id
-     FROM signature_requests sr
-     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-     WHERE sr.id = ?
-     LIMIT 1`,
-    [signatureRequestId]
-  );
-  const context = contextRows?.[0];
+  const context = await getSignatureRequestContext(connection, signatureRequestId);
   if (!context) return null;
 
-  const [rows] = await connection.query(
-    `SELECT
-       sr.id,
-       sfs.step_order,
-       sfs.approval_mode,
-       sfs.required_signers_min,
-       sr.status AS request_status_code,
-       ss.code AS signature_status_code
-     FROM signature_requests sr
-     INNER JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
-     LEFT JOIN (
-       SELECT ds1.signature_request_id, ds1.signature_status_id
-       FROM document_signatures ds1
-       INNER JOIN (
-         SELECT signature_request_id, MAX(id) AS max_id
-         FROM document_signatures
-         WHERE signature_request_id IS NOT NULL
-         GROUP BY signature_request_id
-       ) latest ON latest.max_id = ds1.id
-     ) latest_ds ON latest_ds.signature_request_id = sr.id
-     LEFT JOIN signature_statuses ss ON ss.id = latest_ds.signature_status_id
-     WHERE sr.instance_id = ?
-     ORDER BY sfs.step_order ASC, sr.id ASC`,
-    [context.instance_id]
-  );
+  const rows = await leerTurnosConSuFirma(connection, Number(context.instance_id));
   if (!rows.length) return null;
 
   const stepSummaries = summarizeSignatureRequests(rows);
@@ -1187,13 +703,19 @@ export const syncDocumentProgressFromSignatureRequest = async (connection, signa
   else if (allApproved) instanceStatusCode = ESTADO_RECORRIDO.COMPLETADO;
   else if (anyActive || anyApproved) instanceStatusCode = ESTADO_RECORRIDO.EN_PROGRESO;
 
-  // Aqui habia una CONSULTA al catalogo para traducir el codigo a id, y un `if` que se saltaba el
-  // UPDATE en silencio si no lo encontraba. Sin catalogo, el estado se escribe (fase 3, frente 24).
-  await connection.query(
-    `UPDATE signature_flow_instances
-     SET status = ?
-     WHERE id = ?`,
-    [instanceStatusCode, context.instance_id]
+  // Y SE ESCRIBE `paso_actual`, que la firma NO TENIA. La instancia vieja solo guardaba su estado y
+  // «el paso que toca» se recalculaba en cada lectura; el recorrido unificado lleva la columna, igual
+  // que la llevaba la entrega. Lo que esto permite no es un ahorro de consultas: es que
+  // `turnoAbiertoDelUsuarioEnPasoActual` --que pregunta por `paso_actual`-- valga para los dos lados,
+  // y por eso `rehacerDocumento` tiene hoy UNA comprobacion de titularidad en vez de dos.
+  const currentStep = stepSummaries.find((item) => !item.approved && !item.hasRejected)
+    || stepSummaries.find((item) => !item.approved)
+    || null;
+  await actualizarAvanceDelRecorrido(
+    connection,
+    Number(context.instance_id),
+    instanceStatusCode,
+    currentStep ? Number(currentStep.stepOrder) : null
   );
 
   if (allApproved) {
@@ -1206,7 +728,7 @@ export const syncDocumentProgressFromSignatureRequest = async (connection, signa
     //
     // La condicion `!anyApproved` no es prudencia, es lo unico que se puede hacer: si ya hay una
     // firma estampada, corregir el documento la dejaria firmando otro. Ese caso necesita una RONDA
-    // NUEVA (`rehacerDocumento`), y por eso se queda en «Firmado parcial» — con la instancia en
+    // NUEVA (`rehacerDocumento`), y por eso se queda en «Firmado parcial» — con el recorrido en
     // `rechazado`, que es lo que lo hace visible.
     await transitionDocumentVersionState(connection, Number(context.document_version_id), "Observado");
   } else if (anyApproved || anyActive) {
@@ -1280,9 +802,9 @@ export const syncDocumentProgressFromDocumentVersionSignatureSummary = async (co
 
   const [requestRows] = await connection.query(
     `SELECT COUNT(*) AS total
-     FROM signature_requests sr
-     INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
-     WHERE sfi.document_version_id = ?`,
+     FROM turnos tu
+     INNER JOIN recorridos r ON r.id = tu.recorrido_id AND r.accion = 'firma'
+     WHERE r.document_version_id = ?`,
     [documentVersionId]
   );
   const totalRequests = Number(requestRows?.[0]?.total || 0);

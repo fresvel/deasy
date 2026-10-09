@@ -437,8 +437,8 @@ export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => 
      FROM document_versions dv
      LEFT JOIN task_items ti ON ti.id = dv.task_item_id
      LEFT JOIN tasks t ON t.id = ti.task_id
-     LEFT JOIN signature_flow_instances sfi ON sfi.document_version_id = dv.id
-     LEFT JOIN signature_requests sr ON sr.instance_id = sfi.id
+     LEFT JOIN recorridos r ON r.document_version_id = dv.id AND r.accion = 'firma'
+     LEFT JOIN turnos sr ON sr.recorrido_id = r.id
      WHERE (
        dv.working_file_path = ?
        OR dv.final_file_path = ?
@@ -453,7 +453,7 @@ export const userCanAccessStoredDocument = async ({ userId, requestedPath }) => 
          -- estaba NULL en el camino automatico, asi que como predicado de propiedad casi nunca
          -- respondia. El dato equivalente vive en la misma fila del entregable.
          OR ti.created_by_person_id = ?
-         OR sr.assigned_person_id = ?
+         OR sr.persona_id = ?
        )
      LIMIT 1`,
     [requestedPath, requestedPath, Number(userId), Number(userId), Number(userId)]

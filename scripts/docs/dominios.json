@@ -101,10 +101,9 @@
     },
     "services/documents/DocumentSignatureWorkflowService.js": {
       "dominios": [
-        "firmas",
         "tareas"
       ],
-      "motivo": "Firmar avanza el recorrido de firma y mueve el estado de la versión documental en el mismo paso."
+      "motivo": "Firmar avanza el recorrido de firma y mueve el estado de la version documental en el mismo paso. Declaraba tambien `firmas` y dejo de escribirlo en el paso 3b de la fase 4 del frente 24: la EJECUCION de firma paso a `tareas` --`recorridos` y `turnos`--, las mismas dos tablas que la de entrega. Se queda declarado aqui, con un solo dominio, porque DONDE vive un orquestador de `tareas` es la decision de F7.5; la puerta avisa y el aviso dice la verdad."
     },
     "services/tasks/GeneralTaskService.js": {
       "dominios": [
@@ -115,10 +114,9 @@
     },
     "flujos/rehacerDocumento.js": {
       "dominios": [
-        "firmas",
         "tareas"
       ],
-      "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto de F7, y el PRIMERO que vive en `flujos/` con CERO consultas: su SQL esta en el `datos/` de cada dominio. Declaraba tambien `plantillas` y dejo de escribirlo en la fase 4 del frente 24: la EJECUCION de entrega paso a `tareas` --`recorridos` y `turnos`--, asi que lo que cruza ya son dos dominios y no tres."
+      "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto de F7, y el PRIMERO que vive en `flujos/` con CERO consultas: su SQL esta en el `datos/` de cada dominio. Nacio cruzando TRES dominios y hoy cruza UNO: `plantillas` se fue en el paso 3a de la fase 4 del frente 24 y `firmas` en el 3b, porque las dos EJECUCIONES son ahora la misma pareja de tablas de `tareas` con dos valores de `accion`. Lo que antes eran dos mecanismos es uno, asi que este flujo deja de ser un flujo --y la puerta lo avisa--; donde aterriza lo decide F7.5."
     }
   },
   "_deuda_escritura": {

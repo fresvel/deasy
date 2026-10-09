@@ -1142,7 +1142,7 @@ export default class SystemBootstrapService {
                EXISTS(SELECT 1 FROM process_runs LIMIT 1)
                OR EXISTS(SELECT 1 FROM tasks LIMIT 1)
                OR EXISTS(SELECT 1 FROM document_versions LIMIT 1)
-               OR EXISTS(SELECT 1 FROM signature_requests LIMIT 1)
+               OR EXISTS(SELECT 1 FROM turnos LIMIT 1)
                OR EXISTS(SELECT 1 FROM position_assignments LIMIT 1),
                1,
                0

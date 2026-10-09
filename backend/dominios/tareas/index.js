@@ -27,6 +27,7 @@ export {
   buscarRecorrido,
   cancelarRecorrido,
   cancelarTurnosAbiertos,
+  reabrirRecorridoRechazado,
   reabrirTurnos,
   responderTurno,
 } from "./datos/recorrido.js";

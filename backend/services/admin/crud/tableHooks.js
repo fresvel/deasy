@@ -171,9 +171,36 @@ const refreshSeriesNamesOnRename = (foreignKey) => async (ctx) => {
   }
 };
 
-// `fill_requests`, `signature_requests` y `document_signatures` tienen el MISMO injerto en create
-// y en update: escribir y reconciliar el progreso del documento dentro de la misma transacción.
-// Solo cambia la función de reconciliación.
+// `turnos` y `document_signatures` tienen el MISMO injerto en create y en update: escribir y
+// reconciliar el progreso del documento dentro de la misma transacción. Solo cambia la función de
+// reconciliación.
+//
+// ⚠️ ERAN TRES, `fill_requests` y `signature_requests` ENTRE ELLAS, y sus injertos se retiraron en el
+// paso 3b de la fase 4 del frente 24. No por limpieza: esas dos tablas YA NO SON LA EJECUCIÓN, así
+// que su `id` ya no identifica un turno — el injerto habría reconciliado el documento equivocado,
+// que es peor que no reconciliar ninguno.
+// ¿DE QUÉ LADO ES ESTE TURNO? Lo dice su recorrido, y de ahí sale a cuál de las dos
+// reconciliaciones llamar. Es la única consulta que la unificación añade: antes la respuesta estaba
+// en el NOMBRE DE LA TABLA que se acababa de editar.
+const syncProgressFromTurno = async (connection, turnoId) => {
+  const [rows] = await connection.query(
+    `SELECT r.accion
+       FROM turnos t
+       INNER JOIN recorridos r ON r.id = t.recorrido_id
+      WHERE t.id = ?
+      LIMIT 1`,
+    [turnoId]
+  );
+  const accion = String(rows?.[0]?.accion || "");
+  if (accion === "firma") {
+    return syncDocumentProgressFromSignatureRequest(connection, turnoId);
+  }
+  if (accion === "entrega") {
+    return syncDocumentProgressFromFillRequest(connection, turnoId);
+  }
+  return null;
+};
+
 const syncProgressHooks = (syncProgress) => ({
   async afterInsertTx(ctx) {
     await syncProgress(ctx.connection, Number(ctx.insertId));
@@ -1009,10 +1036,12 @@ export const TABLE_HOOKS = {
     }
   },
 
-  // Las tres tablas de solicitudes/firmas comparten forma: escribir y reconciliar el progreso del
+  // Las dos tablas de turnos/firmas comparten forma: escribir y reconciliar el progreso del
   // documento en la misma transacción, tanto al crear como al actualizar.
-  fill_requests: syncProgressHooks(syncDocumentProgressFromFillRequest),
-  signature_requests: syncProgressHooks(syncDocumentProgressFromSignatureRequest),
+  //
+  // Y en `turnos` la reconciliación se ELIGE, porque la tabla sirve a las dos acciones. Antes eran
+  // dos entradas --una por tabla-- y el reparto lo hacía el nombre; hoy lo hace el recorrido.
+  turnos: syncProgressHooks(syncProgressFromTurno),
   document_signatures: syncProgressHooks(syncDocumentProgressFromDocumentSignature),
 
   fill_flow_templates: {

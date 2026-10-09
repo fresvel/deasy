@@ -123,9 +123,7 @@ Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signatu
 Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_requests"."step_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
-//   signature_requests -> document_signatures   [tareas]
 //   signature_statuses -> document_signatures   [tareas]
-//   signature_requests -> document_workflow_observations   [tareas]
 //   document_versions -> signature_flow_instances   [tareas]
 //   cargos -> signature_flow_steps   [identidad]
 //   persons -> signature_flow_steps   [identidad]

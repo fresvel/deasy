@@ -57,7 +57,6 @@
           "item_created_by_person_id": "<normalized>",
           "process_definition_id": "<normalized>",
           "scope_unit_id": "<normalized>",
-          "scope_unit_type_id": "<normalized>",
           "task_id": "<normalized>",
           "task_item_assigned_person_id": "<normalized>",
           "task_item_id": "<normalized>",

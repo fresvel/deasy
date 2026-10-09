@@ -425,7 +425,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `task_item_id` | int | sí | `task_items.id` · impide borrar | — |
 | `document_version_id` | int | sí | `document_versions.id` · impide borrar | — |
 | `fill_request_id` | int | no | `turnos.id` · impide borrar | — |
-| `signature_request_id` | int | no | `signature_requests.id` · impide borrar | — |
+| `signature_request_id` | int | no | `turnos.id` · impide borrar | — |
 | `phase` | text | sí | — | `review` · `signature` |
 | `kind` | text | sí | — | `observation` · `return_reason` · `rejection_reason` · `internal_note` |
 | `message` | text | sí | — | — |
@@ -565,7 +565,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `signature_request_id` | int | no | `signature_requests.id` · impide borrar | — |
+| `signature_request_id` | int | no | `turnos.id` · impide borrar | — |
 | `document_version_id` | int | sí | `document_versions.id` · impide borrar | — |
 | `signer_user_id` | int | sí | `persons.id` · impide borrar | — |
 | `signature_status_id` | int | sí | `signature_statuses.id` · impide borrar | — |

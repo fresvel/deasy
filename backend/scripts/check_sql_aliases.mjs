@@ -85,18 +85,55 @@ const limpiar = (sql) =>
     .replace(/\/\*[\s\S]*?\*\//g, " ") // comentarios de bloque
     .replace(/'(?:[^']|'')*'/g, " ");  // literales de texto
 
+// ── FRAGMENTOS CONSTANTES: se RESUELVEN antes de mirar ──────────────────────────────────────────
+//
+// Este repo compone consultas, y desde el 2026-10-08 compone tambien el TROZO QUE DECLARA LAS
+// TABLAS: un `const FRAGMENTO = \`INNER JOIN ... \`` que varias consultas interpolan para no escribir
+// la misma regla dos veces. Sin resolverlo, el alias que trae el fragmento se usa en la lista del
+// SELECT --antes del hueco, o sea en zona revisada-- y se declara DENTRO del hueco, que esta puerta
+// sustituia por un espacio: FALSO POSITIVO, y del peor tipo, porque empuja a duplicar la regla para
+// callar la puerta.
+//
+// Se resuelven solo los fragmentos que no dejan ninguna duda: un `const` de modulo cuyo valor es una
+// plantilla SIN huecos. Lo que sigue siendo un hueco de verdad --una llamada a funcion, una
+// variable-- se queda como estaba, y con el el corte de la zona revisada.
+//
+// LO QUE ESTO AÑADE SON DECLARACIONES, NO USOS, y conviene decirlo con precision: el fragmento se
+// sustituye en el texto entero --de donde salen las declaraciones-- pero cae DESPUES del primer
+// hueco que no se puede resolver, asi que sus propios usos siguen fuera de la zona revisada. Medido
+// por mutacion: un `qq.accion` huerfano DENTRO del fragmento no se reporta. Es la misma concesion
+// que esta puerta ya tenia --y un fragmento, por serlo, tampoco se revisa por separado--; lo que se
+// arregla aqui es el falso positivo, que es lo que empujaba a duplicar la regla.
+//
+// PROBADO POR MUTACION por el otro lado: un alias huerfano de verdad (`zz.inventado`) en la zona
+// revisada SIGUE reportandose. No ensancha la puerta: le enseña a leer un trozo que antes se tapaba.
+const fragmentosConstantes = (fuente) => {
+  const mapa = new Map();
+  for (const m of fuente.matchAll(/\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*`([^`]*)`/g)) {
+    if (!m[2].includes("${")) mapa.set(m[1], m[2]);
+  }
+  return mapa;
+};
+
+const resolverFragmentos = (cuerpo, mapa) =>
+  cuerpo.replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (todo, nombre) =>
+    mapa.has(nombre) ? mapa.get(nombre) : todo
+  );
+
 // Extrae las plantillas de JavaScript que son una sentencia SQL completa.
 const plantillasSql = (fuente) => {
   const salida = [];
+  const fragmentos = fragmentosConstantes(fuente);
   const re = /`/g;
   let m;
   while ((m = re.exec(fuente))) {
     if (m.index > 0 && fuente[m.index - 1] === "\\") continue;
     const cierre = fuente.indexOf("`", m.index + 1);
     if (cierre === -1) break;
-    const cuerpo = fuente.slice(m.index + 1, cierre);
+    const crudo = fuente.slice(m.index + 1, cierre);
     re.lastIndex = cierre + 1;
-    if (/^\s*(SELECT|WITH|INSERT|UPDATE|DELETE)\b/i.test(cuerpo)) {
+    if (/^\s*(SELECT|WITH|INSERT|UPDATE|DELETE)\b/i.test(crudo)) {
+      const cuerpo = resolverFragmentos(crudo, fragmentos);
       salida.push({ cuerpo, linea: fuente.slice(0, m.index).split("\n").length });
     }
   }

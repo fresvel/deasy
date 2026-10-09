@@ -2635,7 +2635,11 @@ CREATE TABLE IF NOT EXISTS tareas.document_workflow_observations (
   -- hilo de observaciones y viaja en la API-- pero lo que referencia es el turno, que es donde vive
   -- hoy «a quien le toco». Renombrarla es cosa del paso 4.
   CONSTRAINT fk_document_workflow_observations_fill_request FOREIGN KEY (fill_request_id) REFERENCES turnos(id),
-  CONSTRAINT fk_document_workflow_observations_signature_request FOREIGN KEY (signature_request_id) REFERENCES signature_requests(id),
+  -- Y ESTA TAMBIEN APUNTA A `turnos`, desde el paso 3b de la fase 4. Las dos columnas conservan su
+  -- nombre y las dos referencian la misma tabla: `fill_request_id` cuando el turno es de entrega y
+  -- `signature_request_id` cuando es de firma. Que sean DOS columnas para una tabla es lo que el
+  -- paso 4 colapsa en una, con la observacion sabiendo su fase por `phase`.
+  CONSTRAINT fk_document_workflow_observations_signature_request FOREIGN KEY (signature_request_id) REFERENCES turnos(id),
   CONSTRAINT fk_document_workflow_observations_author FOREIGN KEY (author_person_id) REFERENCES persons(id),
   CONSTRAINT fk_document_workflow_observations_resolver FOREIGN KEY (resolved_by_person_id) REFERENCES persons(id)
 );
@@ -2656,7 +2660,10 @@ CREATE TABLE IF NOT EXISTS tareas.document_signatures (
   signed_file_path VARCHAR(255) NULL,
   signed_at TIMESTAMP NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_document_signatures_request FOREIGN KEY (signature_request_id) REFERENCES signature_requests(id),
+  -- APUNTA A `turnos` DESDE EL PASO 3b DE LA FASE 4 DEL FRENTE 24. La columna conserva su nombre
+  -- --la lee el firmador y viaja en la API-- pero lo que referencia es el turno de firma. Es el
+  -- enganche entre los DOS EJES: el turno dice quien respondio y esta tabla dice si la firma VALE.
+  CONSTRAINT fk_document_signatures_request FOREIGN KEY (signature_request_id) REFERENCES turnos(id),
   CONSTRAINT fk_document_signatures_document FOREIGN KEY (document_version_id) REFERENCES document_versions(id),
   CONSTRAINT fk_document_signatures_signer FOREIGN KEY (signer_user_id) REFERENCES persons(id),
   CONSTRAINT fk_document_signatures_status FOREIGN KEY (signature_status_id) REFERENCES signature_statuses(id)
@@ -3051,32 +3058,27 @@ BEGIN
     -- Sobre `turnos` desde la fase 4 del frente 24, y el `resolver_type` lo trae ahora el
     -- PARTICIPANTE declarado, no el paso: un paso puede pedir a varias personas y cada una tiene su
     -- forma de ser encontrada. Solo viaja la del responsable.
+    --
+    -- ⚠️ ERAN DOS `UPDATE`, UNO POR LADO, Y SON UNO DESDE EL PASO 3b. No se quita el filtro por
+    -- accion: NO HAY NINGUNO QUE QUITAR -- la regla es la misma en los dos lados y ahora las dos
+    -- mitades son la misma tabla. El relevo alcanza al turno de entrega y al de firma por igual.
+    --
+    -- Y EL DE FIRMA LLEVABA UNA GUARDA DEFENSIVA QUE AQUI YA NO HACE FALTA:
+    --   AND (sfs.signers IS NULL OR sfs.signers::text NOT LIKE "%specific_person%")
+    -- Estaba porque el JSONB "signers" podia traer un resolutor que la columna no reflejaba --el
+    -- defecto 1.19-- y ante la duda era mejor no mover: mover mal una firma es peor que no moverla.
+    -- Con los firmantes en filas bajo CHECK la duda no existe, asi que la guarda se va. Es el efecto
+    -- mas concreto de cerrar ese defecto: una regla menos escrita "por si acaso".
     UPDATE turnos tu
        SET persona_id = NEW.person_id
       FROM participantes_declarados pa, recorridos r, document_versions dv
      WHERE pa.id = tu.participante_id
        AND r.id = tu.recorrido_id
-       AND r.accion = 'entrega'
        AND dv.id = r.document_version_id
        AND dv.task_item_id = NEW.task_item_id
        AND tu.respondido IS NULL
        AND pa.resolver_type = 'task_assignee'
        AND tu.persona_id IS DISTINCT FROM NEW.person_id;
-
-    -- En firma, ademas del `resolver_type` hay que mirar el JSONB `signers`: puede traer resolutores
-    -- por firmante que la columna no refleja (es el agujero conocido de `parseStepSigners`). Ante la
-    -- duda NO se mueve — mover mal una firma es peor que no moverla.
-    UPDATE signature_requests sr
-       SET assigned_person_id = NEW.person_id
-      FROM signature_flow_steps sfs, signature_flow_instances sfi, document_versions dv
-     WHERE sfs.id = sr.step_id
-       AND sfi.id = sr.instance_id
-       AND dv.id = sfi.document_version_id
-       AND dv.task_item_id = NEW.task_item_id
-       AND sr.responded_at IS NULL
-       AND sfs.resolver_type = 'task_assignee'
-       AND (sfs.signers IS NULL OR sfs.signers::text NOT LIKE '%specific_person%')
-       AND sr.assigned_person_id IS DISTINCT FROM NEW.person_id;
 
     UPDATE task_items ti
        SET assigned_person_id = NEW.person_id

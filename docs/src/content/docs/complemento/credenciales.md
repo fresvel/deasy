@@ -127,7 +127,7 @@ erDiagram
 
 ⚠️ **Fíjate en lo que el diagrama NO tiene: una flecha del certificado a la firma.**
 `document_signatures` guarda `signer_user_id` —**quién** firmó— pero **ninguna columna que diga con
-qué certificado**. Comprobado contra el catálogo: sus cuatro claves ajenas van a `signature_requests`,
+qué certificado**. Comprobado contra el catálogo: sus cuatro claves ajenas van a `turnos`,
 `document_versions`, `persons` y `signature_statuses`.
 
 El certificado se resuelve **en el momento de firmar**, a partir de la persona y de su `is_default`.

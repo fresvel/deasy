@@ -204,12 +204,16 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          pdv.id AS process_definition_id,
          pdv.variation_key,
          pdv.definition_version,
-         COALESCE(sfs.position_id, signature_assignee_position.id) AS source_position_id,
-         COALESCE(signature_position.cargo_id, sfs.required_cargo_id, signature_assignee_position.cargo_id, item_position.cargo_id) AS source_cargo_id,
-         COALESCE(signature_position.unit_id, sfs.unit_id, signature_assignee_position.unit_id, item_position.unit_id, t.scope_unit_id) AS source_unit_id,
-         COALESCE(signature_unit.unit_type_id, sfs.unit_type_id, signature_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
-       FROM signature_requests sr
-       INNER JOIN signature_flow_instances sfi ON sfi.id = sr.instance_id
+         signature_assignee_position.id AS source_position_id,
+         -- signature_position se fue con position_id, que murio en la fase 4 del frente 24: su unico
+         -- lector era el resolutor "position", que no es un valor legal. Mismo recorte que el lado
+         -- de entrega hizo en el paso 3a, y por el mismo motivo.
+         COALESCE(spr.cargo_id, signature_assignee_position.cargo_id, item_position.cargo_id) AS source_cargo_id,
+         COALESCE(spr.unit_id, signature_assignee_position.unit_id, item_position.unit_id, t.scope_unit_id) AS source_unit_id,
+         COALESCE(signature_unit.unit_type_id, signature_assignee_unit.unit_type_id, item_unit.unit_type_id, task_unit.unit_type_id) AS source_unit_type_id
+       FROM turnos sr
+       INNER JOIN recorridos sfi ON sfi.id = sr.recorrido_id AND sfi.accion = 'firma'
+       INNER JOIN participantes_declarados spr ON spr.id = sr.participante_id
        INNER JOIN document_versions dv ON dv.id = sfi.document_version_id
        INNER JOIN (
          SELECT task_item_id, MAX(version) AS max_version
@@ -222,24 +226,22 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
        INNER JOIN processes p ON p.id = pdv.process_id
-       LEFT JOIN signature_flow_steps sfs ON sfs.id = sr.step_id
        LEFT JOIN (
          SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
          FROM position_assignments
          WHERE is_current = 1
          GROUP BY person_id
        ) signature_assignee_ctx
-         ON signature_assignee_ctx.person_id = sr.assigned_person_id
-       LEFT JOIN unit_positions signature_position ON signature_position.id = sfs.position_id
+         ON signature_assignee_ctx.person_id = sr.persona_id
        LEFT JOIN unit_positions signature_assignee_position
          ON signature_assignee_position.id = signature_assignee_ctx.position_id
         AND signature_assignee_ctx.total_positions = 1
-       LEFT JOIN units signature_unit ON signature_unit.id = COALESCE(signature_position.unit_id, sfs.unit_id)
+       LEFT JOIN units signature_unit ON signature_unit.id = spr.unit_id
        LEFT JOIN units signature_assignee_unit ON signature_assignee_unit.id = signature_assignee_position.unit_id
        LEFT JOIN unit_positions item_position ON item_position.id = ti.responsible_position_id
        LEFT JOIN units item_unit ON item_unit.id = item_position.unit_id
         LEFT JOIN units task_unit ON task_unit.id = t.scope_unit_id
-       WHERE sr.assigned_person_id = ?
+       WHERE sr.persona_id = ?
          AND pdv.status = 'active'
          AND pdv.effective_from <= CURDATE()
          AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())

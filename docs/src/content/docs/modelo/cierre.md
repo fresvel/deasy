@@ -57,7 +57,7 @@ erDiagram
   task_items ||--o{ document_workflow_observations : "sobre este entregable"
   document_versions ||--o{ document_workflow_observations : "en esta ronda"
   fill_requests ||--o{ document_workflow_observations : "desde esta solicitud de entrega"
-  signature_requests ||--o{ document_workflow_observations : "o de firma"
+  turnos ||--o{ document_workflow_observations : "de entrega o de firma"
   persons ||--o{ document_workflow_observations : "dicha por"
 
   document_workflow_observations {

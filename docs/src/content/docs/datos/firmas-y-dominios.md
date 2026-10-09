@@ -8,22 +8,18 @@ sidebar:
 %% diagrama 10 — la cadena de firma, de la plantilla de flujo a la firma persistida
 flowchart LR
     TPL["signature_flow_templates"] --> STEPS["signature_flow_steps"]
-    STEPS --> INST["signature_flow_instances"]
-    INST --> REQ["signature_requests"]
+    STEPS --> INST["recorridos (accion = firma)"]
+    INST --> REQ["turnos"]
     REQ --> SIGS["document_signatures"]
 ```
 
-`signature_flow_steps` soporta **múltiples firmantes por paso** (columna `signers` de tipo JSONB) con quorum configurable vía `approval_mode`:
+Un paso de firma soporta **múltiples firmantes**, y desde el **2026-10-08** los soporta en filas: una por firmante, en `participantes_declarados`, con su resolutor, su ámbito y su hueco. Antes era una lista libre en el JSONB `signers`, que **no validaba nadie** y que mandaba sobre las columnas que sí tenían `CHECK` — el defecto **1.19**, cerrado aquí.
 
-- `and`: firman **todos** los del paso.
+**Un paso está aprobado cuando firman todos los suyos.** El quorum configurable que había (`approval_mode`: `and` · `or` · `at_least`, con `required_signers_min` y `required_signers_max`) se retiró entero: el máximo no decidía nada, `or` dejaba las solicitudes hermanas abiertas e inoperables, y el cupo sólo existía porque el conjunto de firmantes era indeterminado — que es justo lo que se quitó. El detalle, con sus medidas, en [el flujo de firma](/modelo/flujo-de-firma/).
 
-- `or`: basta **cualquiera**.
+La columna `anchor_refs` (JSONB) **es un fósil**: no tiene productor ni consumidor. El escritor la serializa siempre como `[]` y el lector la devuelve tal cual; ningún formulario le pone un valor y ningún render la mira. Quien decide **dónde se dibuja la firma** es el `slot`, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}` y que desde el 2026-10-08 es **de cada firmante** y no del paso: con N firmantes y un solo hueco, los N−1 restantes no tenían marca en el papel. Su gemela en el lado de entrega es `fill_flow_steps.field_refs`, con el mismo problema.
 
-- `at_least`: un mínimo de N, indicado en `required_signers_min`.
-
-La columna `anchor_refs` (JSONB) **es un fósil**: no tiene productor ni consumidor. El escritor la serializa siempre como `[]` y el lector la devuelve tal cual; ningún formulario le pone un valor y ningún render la mira. Quien decide **dónde se dibuja la firma** es la columna `slot` del paso, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}`. Su gemela en el lado de entrega es `fill_flow_steps.field_refs`, con el mismo problema.
-
-El catalogo de estado se siembra en el propio esquema: `signature_statuses` (`firmado`, `fallido`, `invalido`, `cancelado`), que es el resultado del **hecho** de firmar. El estado de la **solicitud** era un segundo catalogo, `signature_request_statuses`, y dejo de serlo el 2026-10-08: hoy es la columna `status` con el mismo `CHECK` y el mismo vocabulario que el lado de entrega ([los vocabularios de estado](/modelo/vocabularios-de-estado/)).
+El catalogo de estado se siembra en el propio esquema: `signature_statuses` (`firmado`, `fallido`, `invalido`, `cancelado`), que es el resultado del **hecho** de firmar. El estado de **a quién le toca** era un segundo catalogo, `signature_request_statuses`, y dejo de serlo el 2026-10-08: hoy es `turnos.estado`, con el mismo `CHECK` y el mismo vocabulario que el lado de entrega ([los vocabularios de estado](/modelo/vocabularios-de-estado/)). Los dos ejes no son redundantes: el turno dice si alguien respondio, el catalogo dice si la firma **vale**, y un turno completado con una firma invalida cuenta como rechazo.
 
 ### El flujo de firma en lote
 

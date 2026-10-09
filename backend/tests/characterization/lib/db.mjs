@@ -185,29 +185,29 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
   const versionIds = versionRows.map((row) => Number(row.id));
 
   if (versionIds.length) {
-    // La EJECUCION de entrega, en su forma nueva (frente 24, fase 4): los turnos caen con su
+    // ⚠️ EL ORDEN DE ESTE BLOQUE ES UNA CADENA DE CLAVES AJENAS, y desde el paso 3b de la fase 4 del
+    // frente 24 las DOS que apuntaban a las tablas viejas apuntan a `turnos`:
+    // `document_workflow_observations` (por sus dos columnas) y `document_signatures`. Asi que lo que
+    // cuelga del turno se borra ANTES que el turno; antes el orden entre bloques daba igual porque
+    // cada mitad tenia sus propias tablas.
+    await query("DELETE FROM document_workflow_observations WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM document_signatures WHERE document_version_id = ANY($1::int[])", [versionIds]);
+
+    // LA EJECUCION, en su forma nueva: UNA tabla para los dos lados. Los turnos caen con su
     // recorrido por ON DELETE CASCADE, pero se borran explicitos para que el teardown diga lo que
-    // hace. La forma vieja ya no la escribe nadie.
+    // hace. Las cuatro tablas viejas ya no las escribe nadie.
+    //
+    // Y NO SE FILTRA POR ACCION: eran dos bloques --uno por mitad, con tablas distintas-- y hoy es
+    // uno. Hoy este camino no llega a instanciar la firma (hace falta subir y aprobar), pero el
+    // borrado la alcanza igual, que es lo que un teardown tiene que hacer.
     await query(
       `DELETE FROM turnos
         WHERE recorrido_id IN (
-          SELECT id FROM recorridos WHERE document_version_id = ANY($1::int[]) AND accion = 'entrega'
+          SELECT id FROM recorridos WHERE document_version_id = ANY($1::int[])
         )`,
       [versionIds],
     );
-    await query("DELETE FROM recorridos WHERE document_version_id = ANY($1::int[]) AND accion = 'entrega'", [versionIds]);
-    // Firma: hoy este camino no llega a instanciarla (hace falta subir y aprobar), pero el borrado
-    // va igual — un teardown que solo funciona mientras el flujo no avance no es un teardown.
-    await query(
-      `DELETE FROM signature_requests
-        WHERE instance_id IN (
-          SELECT id FROM signature_flow_instances WHERE document_version_id = ANY($1::int[])
-        )`,
-      [versionIds],
-    );
-    await query("DELETE FROM signature_flow_instances WHERE document_version_id = ANY($1::int[])", [versionIds]);
-    await query("DELETE FROM document_signatures WHERE document_version_id = ANY($1::int[])", [versionIds]);
-    await query("DELETE FROM document_workflow_observations WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM recorridos WHERE document_version_id = ANY($1::int[])", [versionIds]);
     await query("DELETE FROM document_attachments WHERE document_version_id = ANY($1::int[])", [versionIds]);
     await query("DELETE FROM document_versions WHERE id = ANY($1::int[])", [versionIds]);
   }

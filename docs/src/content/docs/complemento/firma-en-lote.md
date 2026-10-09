@@ -84,6 +84,6 @@ erDiagram
   }
 ```
 
-La tabla no se enlaza con `document_signatures` ni con `signature_requests`: el lote es un
+La tabla no se enlaza con `document_signatures` ni con los `turnos` de firma: el lote es un
 **mecanismo de ejecución**, no una pieza del flujo de firma. Quién firma y en qué orden lo decide
 [el flujo de firma](/modelo/flujo-de-firma/); esto sólo lo ejecuta en tanda.

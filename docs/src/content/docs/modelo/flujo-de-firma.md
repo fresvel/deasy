@@ -1,6 +1,6 @@
 ---
 title: "El flujo de firma: quién firma, en qué orden y en qué sitio del papel"
-description: "La misma estructura que la entrega, con dos añadidos: un paso puede tener varios firmantes y decidir qué basta, y cada paso tiene un hueco físico en el papel."
+description: "La misma estructura que la entrega, con dos añadidos: un paso puede tener varios firmantes, y cada firmante tiene un hueco físico en el papel."
 sidebar:
   label: "12 · El flujo de firma"
   order: 12
@@ -16,37 +16,68 @@ enviar), después `edicion_id` (el autorado en la edición), y el segundo exige 
 Su `CHECK` es el mismo: exactamente un portador relleno. El tercer portador que hubo —el del
 vínculo— murió igual aquí que allí, y el porqué está contado en esa página.
 
-:::note[Dos valores por defecto que sí cambian]
+:::caution[La EJECUCIÓN de la firma ya no vive aquí — y con ella se fue media página]
 
-`signature_flow_steps` nace con `resolver_type = 'cargo_in_scope'` y
-`unit_scope_type = 'context_exact'`, mientras su gemela de entrega nace con `task_assignee` y
-`unit_exact`. Tiene sentido: lo normal es que el documento lo rellene su responsable y lo firme un
-cargo de la unidad del documento.
+Desde el **2026-10-08** lo que se pone en marcha es un **recorrido** (`recorridos`) con sus **turnos**
+(`turnos`), las dos tablas unificadas que sirven igual a la entrega y a la firma.
+`signature_flow_instances` y `signature_requests` **siguen existiendo** y esta sección las describe,
+pero ya no las escribe ni las lee nadie: se retiran en el paso siguiente.
 
-Y hay una asimetría que no es de diseño sino deuda: `fill_flow_steps.selection_mode` está cerrado por
-`CHECK`; `signature_flow_steps.selection_mode` es un `VARCHAR(20)` **sin `CHECK`**. Esa asimetría es
-justo lo que se sigue en `TD7-e`.
+Y aquí el cambio va más allá del nombre de la tabla, porque los **firmantes pasaron a filas**:
+
+- un paso de firma tiene **1..N participantes declarados** (`participantes_declarados`), cada uno con
+  su forma de encontrar a alguien y **su propio hueco** en el papel;
+- eso cierra el **defecto 1.19** —la lista libre en JSONB que mandaba sobre columnas con `CHECK`—, y
+  con él se fueron los dos resolutores legados y cuatro de los seis ámbitos;
+- y el **cupo** (`approval_mode`, `required_signers_min`/`_max`) se retiró entero: se firma el cupo
+  completo. El porqué está más abajo.
 
 :::
 
-## Añadido uno: varios firmantes en un paso, y qué basta
+:::note[Dos valores por defecto que sí cambian]
 
-Un paso de firma declara su **modo de aprobación** en `approval_mode`, cerrado por `CHECK`:
+El paso de firma nacía con `resolver_type = 'cargo_in_scope'` y `unit_scope_type = 'context_exact'`,
+mientras su gemelo de entrega nacía con `task_assignee` y `unit_exact`. Tiene sentido: lo normal es
+que el documento lo rellene su responsable y lo firme un cargo de la unidad del documento.
 
-| Valor | Qué significa |
-|---|---|
-| `and` | Tienen que firmar **todos**. Es el valor por defecto |
-| `or` | Basta con que firme **uno cualquiera** |
-| `at_least` | Tienen que firmar **al menos N** |
+La conversión a filas **reproduce esos dos valores por lado**, y no es un descuido: mientras las dos
+formas convivan, la nueva tiene que decir lo mismo que la vieja o la comprobación cruzada marcaría una
+diferencia que no lo es. Para `specific_person` el ámbito es inerte de todos modos —el resolutor
+devuelve la persona sin mirarlo—, así que unificarlos es una limpieza del paso siguiente.
 
-Eso permite modelar un consejo que aprueba por mayoría sin necesitar nombres.
+Había además una asimetría que era deuda: `fill_flow_steps.selection_mode` estaba cerrado por `CHECK`
+y el de firma era un `VARCHAR(20)` **sin `CHECK`**. Se cerró quitando la columna en los dos lados: sus
+tres valores se fueron (`auto_one` era «el id más bajo», `manual` no lo creaba ninguna pantalla), y una
+columna con un solo valor no es una columna.
 
-:::caution[El mínimo se evalúa; el máximo no]
+:::
 
-El paso guarda `required_signers_min` y `required_signers_max`, pero **solo el primero entra en la
-decisión**. El máximo se escribe, se versiona, se proyecta al panel y se lee al hidratar el paso —
-pero **no llega al resumen que decide si un paso está completo**, que solo lleva el modo de aprobación
-y el mínimo. No cierra ni abre ningún paso.
+## Añadido uno: varios firmantes en un paso
+
+Un paso de firma puede pedir **varias firmas**, y desde el **2026-10-08** las pide como lo que son:
+**una fila por firmante** en `participantes_declarados`, con su resolutor, su ámbito y su hueco. Un
+paso con tres firmantes son tres filas, y el `orden` de cada una dice en qué posición va.
+
+**Un paso está aprobado cuando firman todos los suyos.** No hay modo que elegir.
+
+:::caution[Hubo un «cupo», y se retiró entero]
+
+El paso declaraba un **modo de aprobación** (`approval_mode`: `and` · `or` · `at_least`) con un mínimo
+y un máximo. Las tres columnas se fueron, y conviene saber por qué, porque desde fuera parecía una
+funcionalidad:
+
+- `required_signers_max` **ya estaba muerto**: se escribía, se versionaba, se proyectaba al panel y se
+  leía al hidratar el paso, pero **no llegaba al resumen que decide si un paso está completo**. No
+  cerraba ni abría nada.
+- `or` **producía basura medible**: al cerrar el paso con una firma, las solicitudes hermanas **seguían
+  abiertas**, se listaban en el espacio de trabajo de quienes no firmaron y al pincharlas respondían
+  «no pertenece al paso actual». `at_least` tenía el mismo defecto con un umbral.
+- y el cupo existía porque **el conjunto de firmantes era indeterminado** —un cargo con ámbito amplio
+  resolvía a N personas desconocidas de antemano—. Eso es justo lo que se quitó: los firmantes son
+  filas declaradas.
+
+El constructor de flujos en runtime sólo emitía `and`. Si algún día hace falta «basta uno», la forma
+determinista es la **prelación** entre los participantes de un paso, y el `orden` ya está puesto.
 
 :::
 
@@ -55,7 +86,7 @@ y el mínimo. No cierra ni abre ningún paso.
 Aquí es donde encaja el `token` de la persona, y es la parte del modelo que más cuesta ver porque
 cruza tres mundos: la base, la maqueta del documento y el firmador.
 
-Un paso de firma tiene un **hueco** (`slot`): un nombre estable para «la firma del revisor», «la
+**Cada firmante** tiene un **hueco** (`slot`): un nombre estable para «la firma del revisor», «la
 firma del aprobador». La cadena completa es esta:
 
 1. `persons.token` son **diez caracteres únicos** por persona, guardados limpios en la base.
@@ -68,6 +99,18 @@ firma del aprobador». La cadena completa es esta:
 
 Por eso nadie tiene que colocar la firma a mano: la posición ya viaja dentro del documento. Con un
 matiz — el servicio admite **dos modos**, `token` y `coordinates`; lo anterior describe el primero.
+
+:::caution[El hueco era del PASO, y con varios firmantes eso era un fallo que estalla al firmar]
+
+Hasta el **2026-10-08** el `slot` era una columna del paso: **uno** para todo el paso. Con N firmantes,
+la maqueta imprimía el token del primero (`signers[0]`) y **los demás no tenían marca en el papel** —
+el firmador lanzaba `Token marker '<token>' not found in PDF`.
+
+El hueco bajó al **participante**, que es de quien es: un hueco es un sitio físico con el token de
+**una** persona. El primero conserva el del paso y los demás se derivan de él (`firma_1`, `firma_1_2`,
+`firma_1_3`), y que no se repita dentro del documento lo impone un disparador.
+
+:::
 
 :::note[Un slot repetido eran dos firmantes compartiendo un token, y respondía 200]
 
@@ -84,19 +127,26 @@ de flujo de entrega no tienen slot, y un slot ausente no es una colisión.
 
 :::
 
-:::danger[El punto frágil: la lista libre de firmantes]
+:::tip[El punto frágil era la lista libre de firmantes, y se cerró el 2026-10-08]
 
-El paso guarda además una lista de firmantes en JSONB (`signers`). Esa lista **no la valida nadie** y
-**manda sobre** `resolver_type`, que sí está cerrado por `CHECK`. Significa que un paso antiguo puede
-traer por ahí una forma de resolución ya retirada, y si el código dejara de contemplarla, ese paso
-**no lo firmaría nadie, y en silencio**. La copia de versionado lo propaga verbatim.
+El paso guardaba la lista de firmantes en un JSONB (`signers`) que **no validaba nadie** y que
+**mandaba sobre** `resolver_type`, la columna que sí está cerrada por `CHECK`. Un paso antiguo podía
+traer por ahí una forma de resolución ya retirada, y si el código dejaba de contemplarla, ese paso
+**no lo firmaría nadie, y en silencio**. La copia de versionado lo propagaba verbatim. Era el
+**defecto 1.19**.
 
-Por eso hay dos `case` legados —`document_owner` y `position`— que **no se pueden borrar todavía**:
-hacerlo dejaría el paso resolviéndose por el `default` sin cargo. Está registrado como **defecto
-1.19**, y el orden de cierre es filtrar **y** migrar, en ese orden. Ver
-[Lo que hoy no cierra](/modelo/lo-que-no-cierra).
+Se cerró **a filas**, que era el orden que el plan decía —filtrar y migrar—: los firmantes viven en
+`participantes_declarados`, con el mismo `CHECK` que tenía la columna del paso, así que el valor
+retirado **no se puede ni insertar**. Con eso se fueron los dos `case` legados (`document_owner` y
+`position`) y cuatro de los seis ámbitos (`unit_subtree`, `unit_type`, `context_subtree`,
+`context_ancestor_type`), que no eran ramas muertas por descuido: eran la única defensa contra un
+valor que la base no podía rechazar.
 
-Hay un tercer JSONB en la tabla, `anchor_refs`, que es un contrato **sin productor ni consumidor**.
+El efecto más concreto está **fuera** del camino de firma: el disparador del relevo tenía dos
+`UPDATE`, y el de firma llevaba una guarda defensiva —«si el JSONB menciona `specific_person`, ante la
+duda no se mueve»— que existía exactamente por esto. Hoy es **un** `UPDATE` sin guarda.
+
+Queda un tercer JSONB en la tabla, `anchor_refs`, que es un contrato **sin productor ni consumidor**.
 
 :::
 
@@ -107,7 +157,7 @@ tabla el 2026-10-08:
 
 | Dónde | Qué describe | Valores |
 |---|---|---|
-| `signature_requests.status` y `signature_flow_instances.status` | Cómo va **la solicitud** y cómo va la instancia | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado`, cerrados por `CHECK` |
+| `turnos.estado` y `recorridos.estado` | Cómo va **el turno** de quien firma y cómo va el recorrido | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado`, cerrados por `CHECK` (`devuelto` es sólo de la entrega) |
 | `signature_statuses` | Cómo salió **la firma en sí** | `firmado` · `fallido` · `invalido` · `cancelado`, en una tabla de catálogo |
 
 El estado de la solicitud era un catálogo propio, `signature_request_statuses`, y se retiró: es el
@@ -122,74 +172,77 @@ Y al final la **firma en sí** queda registrada en `document_signatures`: quién
 resultado, cuándo, y en qué archivo quedó el documento ya firmado. Un detalle del nombre:
 `signer_user_id` apunta a `persons` — el `user` es un fósil de la tabla `users`, que ya no existe.
 
+**Los dos ejes importan, y no son redundantes.** El turno dice si alguien respondió; esta tabla dice
+si la firma **vale**. Un turno `completado` cuya última firma salió `invalido` o `fallido` cuenta como
+**rechazo**, no como paso dado: por eso el recorrido de firma se lee siempre cruzando las dos.
+
+Desde el 2026-10-08 `document_signatures.signature_request_id` apunta a **`turnos`**. La columna
+conserva su nombre —la lee el firmador y viaja en la API— y lo que referencia es el turno de firma: es
+literalmente el enganche entre los dos ejes.
+
 ```mermaid
 erDiagram
-  ediciones ||--o{ signature_flow_templates : "flujo de la plantilla"
-  task_items ||--o{ signature_flow_templates : "flujo definido en runtime"
-  signature_flow_templates ||--o{ signature_flow_steps : "pasos ordenados"
-  signature_flow_templates ||--o{ signature_flow_instances : "se instancia en"
-  document_versions ||--o{ signature_flow_instances : "para esta ronda"
-  signature_flow_instances ||--o{ signature_requests : "genera solicitudes"
-  signature_flow_steps ||--o{ signature_requests : "de este paso"
-  persons ||--o{ signature_requests : "dirigida a"
-  signature_requests ||--o{ document_signatures : "produce la firma"
+  ediciones ||--o{ pasos_declarados : "receta autorada"
+  task_items ||--o{ pasos_declarados : "receta definida al enviar"
+  pasos_declarados ||--o{ participantes_declarados : "1..N firmantes"
+  cargos ||--o{ participantes_declarados : "por cargo en ambito"
+  persons ||--o{ participantes_declarados : "persona concreta"
+  document_versions ||--o{ recorridos : "para esta ronda"
+  recorridos ||--o{ turnos : "reparte turnos"
+  participantes_declarados ||--o{ turnos : "de esta declaracion"
+  persons ||--o{ turnos : "le toca a"
+  turnos ||--o{ document_signatures : "produce la firma"
   document_versions ||--o{ document_signatures : "sobre esta ronda"
   persons ||--o{ document_signatures : "firmada por"
   signature_statuses ||--o{ document_signatures : "resultado"
 
-  signature_flow_templates {
-    int id PK "LA CABECERA"
-    int task_item_id FK "portador 1: el entregable (runtime)"
-    int edicion_id FK "portador 2: la edicion de plantilla"
-    varchar name
-    varchar description
-    smallint is_active
-    timestamp created_at
-  }
-  signature_flow_steps {
-    int id PK "UN PASO"
-    int template_id FK
-    int step_order
+  pasos_declarados {
+    int id PK "UN PASO, de entrega o de firma"
+    text accion "CHECK: entrega, firma"
+    int edicion_id FK "portador 1: lo autorado"
+    int task_item_id FK "portador 2: lo definido al enviar"
+    int orden
     varchar code
-    varchar name
-    varchar slot "EL HUECO, único por flujo"
-    text resolver_type "CHECK, por defecto cargo_in_scope"
-    int assigned_person_id FK
-    text unit_scope_type "CHECK, por defecto context_exact"
+    varchar nombre
+    timestamp created_at
+  }
+  participantes_declarados {
+    int id PK "UN FIRMANTE del paso"
+    int paso_id FK
+    int orden "su posicion dentro del paso"
+    text resolver_type "CHECK: task_assignee, specific_person, cargo_in_scope"
+    int persona_id FK
+    int cargo_id FK
+    text unit_scope_type "CHECK: unit_exact, context_exact, all_units"
     int unit_id FK
-    int unit_type_id FK
-    int position_id FK
-    int required_cargo_id FK
-    varchar selection_mode "SIN CHECK"
-    text approval_mode "CHECK: and, or, at_least"
-    int required_signers_min "se evalúa"
-    int required_signers_max "no se evalúa"
-    smallint is_required
-    jsonb anchor_refs "sin productor ni consumidor"
-    jsonb signers "lista libre, SIN validar"
+    varchar slot "EL HUECO, uno por firmante"
     timestamp created_at
   }
-  signature_flow_instances {
-    int id PK "LA INSTANCIA"
-    int template_id FK
-    int document_version_id FK "única por ronda"
-    text status "CHECK: 5 valores"
+  recorridos {
+    int id PK "EL RECORRIDO"
+    int document_version_id FK "unico por ronda y accion"
+    text accion "CHECK: entrega, firma"
+    text estado "CHECK: 5 valores"
+    int paso_actual
     timestamp created_at
+    timestamp updated_at
   }
-  signature_requests {
-    int id PK "LA SOLICITUD"
-    int instance_id FK
-    int step_id FK
-    int assigned_person_id FK
-    text status "CHECK: 5 valores"
-    smallint is_manual
-    timestamp requested_at
-    timestamp notified_at
-    timestamp responded_at
+  turnos {
+    int id PK "A QUIEN LE TOCO"
+    int recorrido_id FK
+    text accion "duplicada: la clave ajena es COMPUESTA"
+    int participante_id FK
+    int persona_id FK
+    text estado "CHECK: 6 valores, devuelto solo en entrega"
+    smallint manual
+    timestamp solicitado
+    timestamp notificado
+    timestamp respondido
+    varchar nota_respuesta
   }
   document_signatures {
     int id PK "LA FIRMA"
-    int signature_request_id FK
+    int signature_request_id FK "apunta a turnos"
     int document_version_id FK
     int signer_user_id FK "apunta a persons"
     int signature_status_id FK
@@ -200,10 +253,20 @@ erDiagram
   }
   signature_statuses {
     int id PK
-    varchar code "4 códigos sembrados"
+    varchar code "4 codigos sembrados"
     varchar name
     varchar description
     smallint is_active
     timestamp created_at
   }
 ```
+
+:::note[El diagrama de arriba es el modelo NUEVO]
+
+Las cuatro tablas que esta página describe en prosa —`signature_flow_templates`,
+`signature_flow_steps`, `signature_flow_instances` y `signature_requests`— **siguen en el esquema** y
+el editor genérico todavía las muestra, pero ya no las escribe ni las lee el camino de firma. El
+diagrama dibuja lo que de verdad gobierna hoy; el paso siguiente del frente las retira y entonces esta
+página se queda sólo con esto.
+
+:::

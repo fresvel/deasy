@@ -166,13 +166,15 @@
     "context_ancestor_type": {
       "motivo": "MEMORIA · ambito retirado de unit_scope_type.",
       "paginas": [
-        "modelo/flujo-de-entrega.md"
+        "modelo/flujo-de-entrega.md",
+        "modelo/flujo-de-firma.md"
       ]
     },
     "context_subtree": {
       "motivo": "MEMORIA · ambito retirado de unit_scope_type.",
       "paginas": [
-        "modelo/flujo-de-entrega.md"
+        "modelo/flujo-de-entrega.md",
+        "modelo/flujo-de-firma.md"
       ]
     },
     "data_key": {
@@ -399,6 +401,24 @@
       "motivo": "CLAVE de un payload del signer.",
       "paginas": [
         "signer.md"
+      ]
+    },
+    "firma_1": {
+      "motivo": "VALOR de la columna `slot`, citado en prosa: es el nombre del hueco donde se estampa una firma, no un identificador del esquema. Los tres salen del ejemplo que explica por que el hueco bajo del PASO al PARTICIPANTE (frente 24, fase 4, paso 3b): con N firmantes y un solo hueco, los N-1 restantes no tenian marca en el papel, asi que el primero conserva el del paso y los demas derivan el suyo. Mismo caso que `artifact_stage`.",
+      "paginas": [
+        "modelo/flujo-de-firma.md"
+      ]
+    },
+    "firma_1_2": {
+      "motivo": "VALOR de la columna `slot`, citado en prosa: es el nombre del hueco donde se estampa una firma, no un identificador del esquema. Los tres salen del ejemplo que explica por que el hueco bajo del PASO al PARTICIPANTE (frente 24, fase 4, paso 3b): con N firmantes y un solo hueco, los N-1 restantes no tenian marca en el papel, asi que el primero conserva el del paso y los demas derivan el suyo. Mismo caso que `artifact_stage`.",
+      "paginas": [
+        "modelo/flujo-de-firma.md"
+      ]
+    },
+    "firma_1_3": {
+      "motivo": "VALOR de la columna `slot`, citado en prosa: es el nombre del hueco donde se estampa una firma, no un identificador del esquema. Los tres salen del ejemplo que explica por que el hueco bajo del PASO al PARTICIPANTE (frente 24, fase 4, paso 3b): con N firmantes y un solo hueco, los N-1 restantes no tenian marca en el papel, asi que el primero conserva el del paso y los demas derivan el suyo. Mismo caso que `artifact_stage`.",
+      "paginas": [
+        "modelo/flujo-de-firma.md"
       ]
     },
     "firma_2": {
