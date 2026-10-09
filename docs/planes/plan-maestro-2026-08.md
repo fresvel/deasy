@@ -35,10 +35,10 @@ aquí**; la columna «Control detallado» dice dónde.
 |---|---|---|---|---|
 | **0** · Modelo de dominio | El modelo deja de contradecirse: cero `document_owner`, la base manda y el YAML se fue | ✅ **9 de 9** | [archivado](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) | `30654db` · medido en base · **2026-08-13** |
 | **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **3 abiertos** (1.3, 1.7, 1.19) · **1.10 SUPERSEDIDO** por el modelo de tenencias | [`defectos-conocidos/`](./defectos-conocidos/) — **22 ✅ · 8 ⬜ · 2 ⛔ de 32 tareas** (recontado 2026-08-24) | 1.17 cerrado · **2026-08-14** |
-| **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ 8 vulnerabilidades | aquí, §Frente 2 | Sonar `:9002` · 2026-08-09 |
+| **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ **RE-MEDIDO 2026-10-09: de C a E**, y de 8 vulnerabilidades a **21** (3 BLOCKER). Pero las 3 BLOCKER son del tipo que §7 dice no tocar —dos alfabetos de `TOKEN_CHARS` y la contraseña del PostgreSQL desechable del generador—, así que **lo primero no es código: es marcarlas con justificación**, y hasta entonces la nota dice algo que no es | [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) §2.-1 | Sonar `:9002` · **2026-10-09**, HEAD `b986f9f7` |
 | **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
 | **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 · **el estado está en el sub-plan** (esta columna citaba los «pasos 1-6», numeración muerta que el propio §Frente 4 declara obsoleta) | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
-| **5** · Cobertura | El gate no pide 80 % global: pide 80 % **de lo nuevo** | 🟡 F0 ✅ · F1 y F2 ⬜ | [`referencia/cobertura.md`](./referencia/cobertura.md) | — |
+| **5** · Cobertura | El gate no pide 80 % global: pide 80 % **de lo nuevo** | 🟡 F0 ✅ · F1 y F2 ⬜ · **RE-MEDIDO 2026-10-09: 34,7 %** (línea 40,5 %), desde el 23,3 % de agosto. Parte es trabajo real y parte es que **el informe del signer volvió a existir** tras estar roto: publicaba `app.py` al 0 % estando al 89 % | [`referencia/cobertura.md`](./referencia/cobertura.md) · cifras en [`calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) §2.-1 | Sonar `:9002` · **2026-10-09** |
 | **6** · Signer | Cerrar los riesgos de la auditoría del microservicio de firma | 🟡 **3 hechas · 3 planificadas · 1 bloqueada** (recontado 2026-08-24 contra su propio plan; decía «8 de 12») | [`referencia/signer.md`](./referencia/signer.md) | — |
 | **7** · Método e infraestructura | Lo que evita que el resto se degrade: Sonar en CI, barreras de lint, contenedores vacíos | ⬜ | aquí, §Frente 7 | — |
 | **8** · Deuda de volumen | Los ficheros que el plan no registraba, medidos el 2026-08-09 | ⬜ | aquí, §Frente 8 | remedido · 2026-08-13 |
@@ -61,9 +61,16 @@ aquí**; la columna «Control detallado» dice dónde.
 
 > ⚠️ **Esta tabla se auditó contra el repositorio el 2026-08-24** y cuatro filas eran falsas.
 > Lo medido, fila por fila, está en
-> [`auditoria-repo-2026-08-24.md`](./auditoria-repo-2026-08-24.md). Dos frentes —el **2** y el
-> **5**— **no se pueden verificar hoy** porque su medición caducó: Sonar no está levantado y no hay
-> informes de cobertura generados. Sus filas describen el 2026-08-09, no el presente.
+> [`auditoria-repo-2026-08-24.md`](./auditoria-repo-2026-08-24.md).
+>
+> ✅ **Los frentes 2 y 5 ya se pueden leer**: aquí decía que no, porque Sonar llevaba apagado desde
+> agosto y los informes de cobertura estaban caducados. **Re-medidos el 2026-10-09** (HEAD
+> `b986f9f7`, 710 commits después de la línea base), con el detalle en
+> [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) §2.-1. Para poder medir
+> hubo que arreglar **dos herramientas que fallaban en silencio** —la cobertura del signer no podía
+> correr, y el escáner sube un análisis VACÍO en verde si se lanza desde un worktree—, así que la
+> medición trae su propia puerta: `scan.sh` comprueba que `ncloc` existe antes de dar el escaneo por
+> bueno.
 
 ---
 

@@ -269,6 +269,66 @@ deuda (−37 %)**. Los saltos son identificables uno a uno: el 08-07 16:01 es la
 el 08-08 01:33 la remata (→ 0) junto con la G, el 03:48 son las fases C y D, y el 17:27 recoge la
 limpieza de `backend/scripts/` (−1 927 ncloc, que es el grueso de la caída de NCLOC).
 
+### 2.-1 RE-MEDIDO el 2026-10-09, HEAD `b986f9f7` — 710 commits después de la línea base
+
+La línea base de §2 es del **2026-08-08**. Entre medias cerraron los frentes **14, 15, 17, 22, 23 y
+24** y avanzaron el **20** y el **21**. La serie, con el punto nuevo:
+
+| Fecha | NCLOC | Incidencias | Cobertura |
+|---|---:|---:|---:|
+| 2026-07-09 | 80 506 | 806 | 0,0 % |
+| 2026-07-17 | 79 964 | 812 | 0,0 % |
+| **2026-08-08** ← la base de §2 | 77 672 | 416 | 14,2 % |
+| 2026-08-09 | 77 674 | 373 | 17,7 % |
+| 2026-08-22 | 79 625 | 420 | 23,3 % |
+| **2026-10-09** | **86 776** | **645** | **34,7 %** |
+
+Lo medido ese día, completo: **478 ficheros · 6 058 funciones · complejidad 17 776 · cognitiva
+9 710 · duplicación 2,0 % · cobertura de línea 40,5 % · deuda 3 846 min (ratio 0,1 %)**.
+Notas: **mantenibilidad A · fiabilidad D · seguridad E**. Abiertas (`resolved=false`): **29 bugs ·
+21 vulnerabilidades · 595 code smells · 0 security hotspots**.
+
+**Lo que hay que leer, y no es «subieron las incidencias»:**
+
+| | |
+|---|---|
+| **La cobertura casi se duplica** | 23,3 % → **34,7 %**. Parte es trabajo real (894 unitarios de backend, 495 de frontend, 266 del signer) y **parte es que el informe del signer volvió a existir**: llevaba roto y publicaba `app.py` al 0 % estando al 89 %. No se puede atribuir el reparto sin los informes viejos, así que **no se afirma** |
+| **La densidad de incidencias SUBE un 40 %** | de 5,3 a **7,4 por mil líneas** (420/79 625 → 645/86 776). El código creció un 9 % y las incidencias un 53 %: no es dilución, es deuda nueva |
+| **La seguridad pasa de C a E** | el plan maestro decía «8 vulnerabilidades» (2026-08-09) y hoy son **21**, con **3 BLOCKER** |
+
+⚠️ **Las 3 BLOCKER son las tres del tipo que §7 dice no tocar, y conviene mirarlas antes de
+«arreglarlas»:** dos son **alfabetos de caracteres** para generar tokens —`TOKEN_CHARS` en
+`SystemBootstrapService.js:31` y `PERSON_TOKEN_CHARS` en `crud/tableHooks.js:135`—, que no son
+secretos sino el conjunto del que se sortea; la tercera es la contraseña del **PostgreSQL
+desechable** que levanta `scripts/docs/gen-dbml.sh:99`, un contenedor sin puertos publicados que
+muere al terminar el generador. Lo que corresponde es **marcarlas en Sonar con justificación**, no
+reescribirlas — y hasta que se marquen, la nota de seguridad seguirá en E diciendo algo que no es.
+
+⚠️ **Y esto desbloquea la lectura de dos frentes del maestro**, que describían agosto porque la
+medición había caducado: el **2** (seguridad) y el **5** (cobertura).
+
+#### Lo que costó poder medir, y es la parte reutilizable
+
+**Nada de esto estaba funcionando**, y los dos fallos eran silenciosos:
+
+1. **`scripts/signer-coverage.sh` no podía correr**, por una imagen del signer anterior a la línea
+   del Dockerfile que instala `requirements-dev.txt`. Y tres fallos propios tapaban el diagnóstico:
+   iba a la pila A pase lo que pase (midiendo el worktree de otro), su propio `mkdir signer/coverage`
+   **tapaba el módulo `coverage`** —el error decía «'coverage' is a package and cannot be directly
+   executed», que manda a buscar al sitio equivocado— y dejaba un XML de **0 bytes** al fallar, que
+   Sonar habría leído como cobertura cero. Arreglados los tres el 2026-10-09.
+2. **El escáner no puede analizar un worktree, y no lo dice.** Montando solo la raíz muere con
+   «Unable to open Git repository»; montando también el `.git` principal **arranca, lee bien la
+   revisión SCM y sube un análisis VACÍO** —0 violaciones, sin `ncloc`, las tres notas en «A»—,
+   porque jgit busca el árbol en la ruta del host que guarda `.git/worktrees/<n>/gitdir`. Verde y
+   falso. Se subieron **dos** así antes de darse cuenta, y se borraron del historial para no dejar
+   ceros en la serie. **Se escanea desde el worktree PRINCIPAL**, que es donde la regla de la raíz
+   deja la medición; el script ahora lo rechaza explicándolo.
+
+**Y de ahí sale la guarda que faltaba:** `scan.sh` comprueba después de subir que `ncloc` existe y
+pasa de 1 000. **Un escaneo verde no significa un escaneo hecho** — el escáner considera un éxito no
+tener nada que analizar, y dio «EXECUTION SUCCESS» las dos veces.
+
 ### 2.0 Las dos discontinuidades de la serie — no compares a través de ellas
 
 **(1) El 20:18 del 08-06 rompió los denominadores.** La Fase A sacó 49 ficheros de test del código de
