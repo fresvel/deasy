@@ -91,8 +91,10 @@ y UUID, así que cada subida escribe un objeto nuevo—; lo que se perdía era *
 ficheros anteriores quedaban huérfanos, no borrados.
 
 Se descartó guardar el historial como JSON dentro de `document_versions`, y no por motivos teóricos:
-este repositorio ya tiene un JSONB de ese tipo —`signature_flow_steps.signers`— y es un agujero
-abierto y documentado. Ver [El flujo de firma](/modelo/flujo-de-firma).
+este repositorio tuvo un JSONB de ese tipo —la lista de firmantes de un paso de firma— y fue un
+agujero abierto y documentado durante un año: no lo validaba nadie y **mandaba sobre** las columnas
+que sí tenían `CHECK`. Se cerró pasándolo **a filas** el 2026-10-09. Ver
+[La firma](/modelo/flujo-de-firma/).
 
 :::
 

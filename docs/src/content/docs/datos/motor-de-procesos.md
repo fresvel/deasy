@@ -23,8 +23,8 @@ flowchart TD
     TEN["task_item_tenures<br/>QUIEN lo debe: un turno por relevo"]
     DVER["document_versions<br/>LA RONDA (llenar + firmar)"]
     DVU["document_version_uploads<br/>cada CORRECCION, con su autor"]
-    FILL["document_fill_flows / fill_requests<br/>(entrega)"]
-    SIG["signature_flow_instances / signature_requests<br/>(firma)"]
+    FILL["recorridos / turnos<br/>(accion = entrega)"]
+    SIG["recorridos / turnos<br/>(accion = firma)"]
 
     PROC --> PDV
     PDV -->|"series_id"| PDS

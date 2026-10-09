@@ -1,6 +1,6 @@
 ---
 title: Modelo de datos
-description: Las 95 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
+description: Las 87 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
 sidebar:
   order: 1
 ---
@@ -11,8 +11,8 @@ generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **<!-- gen:total-tablas -->95<!-- /gen --> tablas y <!-- gen:total-relaciones -->185<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
-de <!-- gen:total-tablas -->95<!-- /gen --> tablas impresiona y no se lee.
+Son **<!-- gen:total-tablas -->87<!-- /gen --> tablas y <!-- gen:total-relaciones -->158<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+de <!-- gen:total-tablas -->87<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
 Cada dominio muestra **solo las relaciones internas**. Las que salen hacia otros dominios están
@@ -62,7 +62,7 @@ cosas. **<!-- gen:tablas-dominio:procesos -->8<!-- /gen --> tablas.**
 ## Plantillas y entregables
 
 El modelo «libro y ediciones»: `catalogo_documental` porta la identidad estable y `ediciones`
-las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:tablas-dominio:plantillas -->9<!-- /gen --> tablas.**
+las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:tablas-dominio:plantillas -->5<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de plantillas](/diagramas/plantillas.svg)
 
@@ -72,7 +72,7 @@ las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:
 
 Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables
 (`task_items`) y los documentos producidos. Es donde converge todo: tiene
-**<!-- gen:relaciones-fuera:tareas -->29<!-- /gen --> relaciones con otros dominios**.
+**<!-- gen:relaciones-fuera:tareas -->25<!-- /gen --> relaciones con otros dominios**.
 **<!-- gen:tablas-dominio:tareas -->11<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de tareas](/diagramas/tareas.svg)
@@ -82,7 +82,7 @@ Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, 
 ## Firma electrónica
 
 Plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio
-`signer` por RabbitMQ. **<!-- gen:tablas-dominio:firmas -->6<!-- /gen --> tablas.**
+`signer` por RabbitMQ. **<!-- gen:tablas-dominio:firmas -->2<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de firmas](/diagramas/firmas.svg)
 
@@ -134,7 +134,7 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **nivel*
 | **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
 
 **La regla es una sola: una clave ajena puede apuntar a su propio nivel o a uno inferior, nunca a una
-superior.** Medido sobre las <!-- gen:total-relaciones -->185<!-- /gen --> relaciones del esquema: 102 bajan de nivel, 77 se quedan
+superior.** Medido sobre las <!-- gen:total-relaciones -->158<!-- /gen --> relaciones del esquema: 102 bajan de nivel, 77 se quedan
 en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
 Dos cosas que los niveles enseñan y que ningún diagrama por dominio decía:

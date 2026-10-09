@@ -240,31 +240,36 @@ const PROCESS_INDEX_ITEMS = [
     description: "Administra corridas y tareas del proceso.",
     tables: ["process_runs", "tasks"]
   },
+  // ⚠️ TRES PESTAÑAS PEDIAN TABLAS QUE NO EXISTEN, y eso es lo que el paso 4 de la fase 4 del
+  // frente 24 destapa al mirar aqui:
+  //   · «Documentos» listaba `documents`, retirada el 2026-08-23 --una cascara 1:1 sobre el
+  //     entregable, sin ni una columna propia--. Las versiones cuelgan del entregable.
+  //   · «Firmas» listaba `signature_request_statuses`, un catalogo que murio en la FASE 3 de este
+  //     mismo frente. La pestaña pedia una tabla inexistente y el editor respondia con un error que
+  //     nadie miraba.
+  //   · y «Entrega» y «Firmas» eran DOS cajones para el mismo mecanismo.
   {
     key: "documentos",
     label: "Documentos",
     icon: "info-circle",
-    description: "Consulta y administra documentos.",
-    tables: ["documents"]
+    description: "Consulta las versiones documentales producidas.",
+    tables: ["document_versions", "document_version_uploads"]
   },
+  // UN SOLO CAJON PARA EL RECORRIDO: la receta (`pasos_declarados` + `participantes_declarados`) y
+  // su ejecucion (`recorridos` + `turnos`), con una columna `accion` que vale `entrega` o `firma`.
   {
-    key: "entrega",
-    label: "Entrega",
+    key: "recorrido",
+    label: "Recorrido",
     icon: "check-double",
-    description: "Configura flujos y pasos de entrega documental.",
-    tables: ["fill_flow_templates", "fill_flow_steps"]
+    description: "Configura los pasos del recorrido documental y consulta su ejecución.",
+    tables: ["pasos_declarados", "participantes_declarados", "recorridos", "turnos"]
   },
   {
     key: "firmas",
     label: "Firmas",
     icon: "check",
-    description: "Configura flujos de firma y sus catálogos de estados.",
-    tables: [
-      "signature_flow_templates",
-      "signature_flow_steps",
-      "signature_statuses",
-      "signature_request_statuses"
-    ]
+    description: "Consulta las firmas registradas y su catálogo de resultados.",
+    tables: ["document_signatures", "signature_statuses"]
   }
 ];
 

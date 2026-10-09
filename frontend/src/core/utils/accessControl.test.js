@@ -156,7 +156,7 @@ describe('resolveAdminTableResource', () => {
 
 describe('isTraceabilityTable', () => {
   test('reconoce las tablas de trazabilidad', () => {
-    expect(isTraceabilityTable('fill_requests')).toBe(true)
+    expect(isTraceabilityTable('turnos')).toBe(true)
     expect(isTraceabilityTable('task_items')).toBe(true)
     expect(isTraceabilityTable('cargos')).toBe(false)
   })

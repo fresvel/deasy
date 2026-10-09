@@ -1,138 +1,114 @@
 {
   "autorado_entrega": [
     {
+      "accion": "entrega",
+      "code": null,
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
-      "description": null,
       "id": "<normalized>",
-      "is_active": 1,
       "item_mode": null,
       "lifecycle_state": "draft",
-      "name": "Flujo de entrega - zzzzzz char flujo en base",
-      "process_definition_id": null,
-      "steps": [
+      "nombre": "Entrega del responsable",
+      "orden": 1,
+      "participantes": [
         {
-          "assigned_person_id": null,
-          "can_reject": 0,
           "cargo_id": null,
-          "code": null,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": "Entrega del responsable",
-          "position_id": null,
-          "relation_type_id": null,
+          "orden": 1,
+          "persona_id": "<normalized>",
           "resolver_type": "task_assignee",
-          "selection_mode": "auto_one",
-          "step_order": 1,
+          "slot": null,
           "unit_id": null,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
-        },
-        {
-          "assigned_person_id": null,
-          "can_reject": 1,
-          "cargo_id": 2,
-          "code": null,
-          "id": "<normalized>",
-          "is_required": 1,
-          "name": "Revision por cargo",
-          "position_id": null,
-          "relation_type_id": null,
-          "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_one",
-          "step_order": 2,
-          "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
+          "unit_scope_type": "unit_exact"
         }
       ],
+      "process_definition_id": null,
+      "storage_version": "1.0.0",
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "entrega",
+      "code": null,
+      "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
+      "id": "<normalized>",
+      "item_mode": null,
+      "lifecycle_state": "draft",
+      "nombre": "Revision por cargo",
+      "orden": 2,
+      "participantes": [
+        {
+          "cargo_id": 2,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "cargo_in_scope",
+          "slot": null,
+          "unit_id": 8,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "process_definition_id": null,
       "storage_version": "1.0.0",
       "task_item_id": "<normalized>"
     }
   ],
   "autorado_firma": [
     {
+      "accion": "firma",
+      "code": "firma_cargo",
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
-      "description": null,
       "id": "<normalized>",
-      "is_active": 1,
       "item_mode": null,
       "lifecycle_state": "draft",
-      "name": "Flujo de firma - zzzzzz char flujo en base",
-      "process_definition_id": null,
-      "steps": [
+      "nombre": "Firma por cargo",
+      "orden": 1,
+      "participantes": [
         {
-          "approval_mode": "and",
-          "assigned_person_id": null,
-          "code": "firma_cargo",
+          "cargo_id": 2,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": "Firma por cargo",
-          "position_id": null,
-          "required_cargo_id": 2,
-          "required_signers_max": null,
-          "required_signers_min": 1,
+          "orden": 1,
+          "persona_id": "<normalized>",
           "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_all",
-          "signers": [
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_all",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            }
-          ],
           "slot": "firma_cargo",
-          "step_order": 1,
           "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
-        },
-        {
-          "approval_mode": "at_least",
-          "assigned_person_id": null,
-          "code": "firma_conjunta",
-          "id": "<normalized>",
-          "is_required": 1,
-          "name": "Firma conjunta",
-          "position_id": null,
-          "required_cargo_id": 2,
-          "required_signers_max": null,
-          "required_signers_min": 1,
-          "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_all",
-          "signers": [
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_all",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            },
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_one",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            }
-          ],
-          "slot": "firma_conjunta",
-          "step_order": 2,
-          "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
+          "unit_scope_type": "unit_exact"
         }
       ],
+      "process_definition_id": null,
+      "storage_version": "1.0.0",
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "firma",
+      "code": "firma_conjunta",
+      "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
+      "id": "<normalized>",
+      "item_mode": null,
+      "lifecycle_state": "draft",
+      "nombre": "Firma conjunta",
+      "orden": 2,
+      "participantes": [
+        {
+          "cargo_id": 2,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "cargo_in_scope",
+          "slot": "firma_conjunta",
+          "unit_id": 8,
+          "unit_scope_type": "unit_exact"
+        },
+        {
+          "cargo_id": 2,
+          "id": "<normalized>",
+          "orden": 2,
+          "persona_id": "<normalized>",
+          "resolver_type": "cargo_in_scope",
+          "slot": "firma_conjunta_2",
+          "unit_id": 8,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "process_definition_id": null,
       "storage_version": "1.0.0",
       "task_item_id": "<normalized>"
     }
@@ -148,346 +124,278 @@
   ],
   "runtime_entrega": [
     {
+      "accion": "entrega",
+      "code": null,
       "deliverable_code": "tpl_informe_general",
-      "description": null,
       "id": "<normalized>",
-      "is_active": 1,
       "item_mode": "routed",
       "lifecycle_state": "retired",
-      "name": "Entrega (definida al enviar)",
-      "process_definition_id": 1,
-      "steps": [
+      "nombre": null,
+      "orden": 1,
+      "participantes": [
         {
-          "assigned_person_id": 3,
-          "can_reject": 0,
           "cargo_id": null,
-          "code": null,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": null,
-          "position_id": null,
-          "relation_type_id": null,
+          "orden": 1,
+          "persona_id": "<normalized>",
           "resolver_type": "specific_person",
-          "selection_mode": "auto_one",
-          "step_order": 1,
+          "slot": null,
           "unit_id": null,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
+          "unit_scope_type": "unit_exact"
         }
       ],
+      "process_definition_id": 1,
       "storage_version": "1.0.0",
       "task_item_id": "<normalized>"
     }
   ],
   "runtime_firma": [
     {
+      "accion": "firma",
+      "code": "firma_1",
       "deliverable_code": "tpl_informe_general",
-      "description": null,
       "id": "<normalized>",
-      "is_active": 1,
       "item_mode": "routed",
       "lifecycle_state": "retired",
-      "name": "Firma (definida al enviar)",
-      "process_definition_id": 1,
-      "steps": [
+      "nombre": "Firma 1",
+      "orden": 1,
+      "participantes": [
         {
-          "approval_mode": "and",
-          "assigned_person_id": 1,
-          "code": "firma_1",
+          "cargo_id": null,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": "Firma 1",
-          "position_id": null,
-          "required_cargo_id": null,
-          "required_signers_max": null,
-          "required_signers_min": null,
+          "orden": 1,
+          "persona_id": "<normalized>",
           "resolver_type": "specific_person",
-          "selection_mode": "auto_all",
-          "signers": [
-            {
-              "person_id": 1,
-              "type": "specific_person"
-            }
-          ],
           "slot": "firma_1",
-          "step_order": 1,
           "unit_id": null,
-          "unit_scope_type": "context_exact",
-          "unit_type_id": null
+          "unit_scope_type": "context_exact"
         }
       ],
+      "process_definition_id": 1,
       "storage_version": "1.0.0",
       "task_item_id": "<normalized>"
     }
   ],
   "versionado_entrega": [
     {
+      "accion": "entrega",
+      "code": null,
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
-      "description": null,
       "id": "<normalized>",
-      "is_active": 1,
       "item_mode": null,
       "lifecycle_state": "draft",
-      "name": "Flujo de entrega - zzzzzz char flujo en base",
-      "process_definition_id": null,
-      "steps": [
+      "nombre": "Entrega del responsable",
+      "orden": 1,
+      "participantes": [
         {
-          "assigned_person_id": null,
-          "can_reject": 0,
           "cargo_id": null,
-          "code": null,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": "Entrega del responsable",
-          "position_id": null,
-          "relation_type_id": null,
+          "orden": 1,
+          "persona_id": "<normalized>",
           "resolver_type": "task_assignee",
-          "selection_mode": "auto_one",
-          "step_order": 1,
+          "slot": null,
           "unit_id": null,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
-        },
-        {
-          "assigned_person_id": null,
-          "can_reject": 1,
-          "cargo_id": 2,
-          "code": null,
-          "id": "<normalized>",
-          "is_required": 1,
-          "name": "Revision por cargo",
-          "position_id": null,
-          "relation_type_id": null,
-          "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_one",
-          "step_order": 2,
-          "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
+          "unit_scope_type": "unit_exact"
         }
       ],
+      "process_definition_id": null,
       "storage_version": "1.0.0",
       "task_item_id": "<normalized>"
     },
     {
+      "accion": "entrega",
+      "code": null,
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
-      "description": null,
       "id": "<normalized>",
-      "is_active": 1,
       "item_mode": null,
       "lifecycle_state": "draft",
-      "name": "Flujo de entrega - zzzzzz char flujo en base",
-      "process_definition_id": null,
-      "steps": [
+      "nombre": "Revision por cargo",
+      "orden": 2,
+      "participantes": [
         {
-          "assigned_person_id": null,
-          "can_reject": 0,
-          "cargo_id": null,
-          "code": null,
-          "id": "<normalized>",
-          "is_required": 1,
-          "name": "Entrega del responsable",
-          "position_id": null,
-          "relation_type_id": null,
-          "resolver_type": "task_assignee",
-          "selection_mode": "auto_one",
-          "step_order": 1,
-          "unit_id": null,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
-        },
-        {
-          "assigned_person_id": null,
-          "can_reject": 1,
           "cargo_id": 2,
-          "code": null,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": "Revision por cargo",
-          "position_id": null,
-          "relation_type_id": null,
+          "orden": 1,
+          "persona_id": "<normalized>",
           "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_one",
-          "step_order": 2,
+          "slot": null,
           "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
+          "unit_scope_type": "unit_exact"
         }
       ],
+      "process_definition_id": null,
+      "storage_version": "1.0.0",
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "entrega",
+      "code": null,
+      "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
+      "id": "<normalized>",
+      "item_mode": null,
+      "lifecycle_state": "draft",
+      "nombre": "Entrega del responsable",
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "task_assignee",
+          "slot": null,
+          "unit_id": null,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "process_definition_id": null,
+      "storage_version": "1.1.0",
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "entrega",
+      "code": null,
+      "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
+      "id": "<normalized>",
+      "item_mode": null,
+      "lifecycle_state": "draft",
+      "nombre": "Revision por cargo",
+      "orden": 2,
+      "participantes": [
+        {
+          "cargo_id": 2,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "cargo_in_scope",
+          "slot": null,
+          "unit_id": 8,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "process_definition_id": null,
       "storage_version": "1.1.0",
       "task_item_id": "<normalized>"
     }
   ],
   "versionado_firma": [
     {
+      "accion": "firma",
+      "code": "firma_cargo",
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
-      "description": null,
       "id": "<normalized>",
-      "is_active": 1,
       "item_mode": null,
       "lifecycle_state": "draft",
-      "name": "Flujo de firma - zzzzzz char flujo en base",
-      "process_definition_id": null,
-      "steps": [
+      "nombre": "Firma por cargo",
+      "orden": 1,
+      "participantes": [
         {
-          "approval_mode": "and",
-          "assigned_person_id": null,
-          "code": "firma_cargo",
+          "cargo_id": 2,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": "Firma por cargo",
-          "position_id": null,
-          "required_cargo_id": 2,
-          "required_signers_max": null,
-          "required_signers_min": 1,
+          "orden": 1,
+          "persona_id": "<normalized>",
           "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_all",
-          "signers": [
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_all",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            }
-          ],
           "slot": "firma_cargo",
-          "step_order": 1,
           "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
-        },
-        {
-          "approval_mode": "at_least",
-          "assigned_person_id": null,
-          "code": "firma_conjunta",
-          "id": "<normalized>",
-          "is_required": 1,
-          "name": "Firma conjunta",
-          "position_id": null,
-          "required_cargo_id": 2,
-          "required_signers_max": null,
-          "required_signers_min": 1,
-          "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_all",
-          "signers": [
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_all",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            },
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_one",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            }
-          ],
-          "slot": "firma_conjunta",
-          "step_order": 2,
-          "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
+          "unit_scope_type": "unit_exact"
         }
       ],
+      "process_definition_id": null,
       "storage_version": "1.0.0",
       "task_item_id": "<normalized>"
     },
     {
+      "accion": "firma",
+      "code": "firma_conjunta",
       "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
-      "description": null,
       "id": "<normalized>",
-      "is_active": 1,
       "item_mode": null,
       "lifecycle_state": "draft",
-      "name": "Flujo de firma - zzzzzz char flujo en base",
-      "process_definition_id": null,
-      "steps": [
+      "nombre": "Firma conjunta",
+      "orden": 2,
+      "participantes": [
         {
-          "approval_mode": "and",
-          "assigned_person_id": null,
-          "code": "firma_cargo",
+          "cargo_id": 2,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": "Firma por cargo",
-          "position_id": null,
-          "required_cargo_id": 2,
-          "required_signers_max": null,
-          "required_signers_min": 1,
+          "orden": 1,
+          "persona_id": "<normalized>",
           "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_all",
-          "signers": [
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_all",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            }
-          ],
-          "slot": "firma_cargo",
-          "step_order": 1,
+          "slot": "firma_conjunta",
           "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
+          "unit_scope_type": "unit_exact"
         },
         {
-          "approval_mode": "at_least",
-          "assigned_person_id": null,
-          "code": "firma_conjunta",
+          "cargo_id": 2,
           "id": "<normalized>",
-          "is_required": 1,
-          "name": "Firma conjunta",
-          "position_id": null,
-          "required_cargo_id": 2,
-          "required_signers_max": null,
-          "required_signers_min": 1,
+          "orden": 2,
+          "persona_id": "<normalized>",
           "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_all",
-          "signers": [
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_all",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            },
-            {
-              "assignedPersonId": null,
-              "positionId": null,
-              "requiredCargoId": 2,
-              "resolverType": "cargo_in_scope",
-              "selectionMode": "auto_one",
-              "unitId": 8,
-              "unitScopeType": "unit_exact",
-              "unitTypeId": null
-            }
-          ],
-          "slot": "firma_conjunta",
-          "step_order": 2,
+          "slot": "firma_conjunta_2",
           "unit_id": 8,
-          "unit_scope_type": "unit_exact",
-          "unit_type_id": null
+          "unit_scope_type": "unit_exact"
         }
       ],
+      "process_definition_id": null,
+      "storage_version": "1.0.0",
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "firma",
+      "code": "firma_cargo",
+      "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
+      "id": "<normalized>",
+      "item_mode": null,
+      "lifecycle_state": "draft",
+      "nombre": "Firma por cargo",
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": 2,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "cargo_in_scope",
+          "slot": "firma_cargo",
+          "unit_id": 8,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "process_definition_id": null,
+      "storage_version": "1.1.0",
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "firma",
+      "code": "firma_conjunta",
+      "deliverable_code": "draft_zzzzzz-char-flujo-en-base",
+      "id": "<normalized>",
+      "item_mode": null,
+      "lifecycle_state": "draft",
+      "nombre": "Firma conjunta",
+      "orden": 2,
+      "participantes": [
+        {
+          "cargo_id": 2,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "cargo_in_scope",
+          "slot": "firma_conjunta",
+          "unit_id": 8,
+          "unit_scope_type": "unit_exact"
+        },
+        {
+          "cargo_id": 2,
+          "id": "<normalized>",
+          "orden": 2,
+          "persona_id": "<normalized>",
+          "resolver_type": "cargo_in_scope",
+          "slot": "firma_conjunta_2",
+          "unit_id": 8,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "process_definition_id": null,
       "storage_version": "1.1.0",
       "task_item_id": "<normalized>"
     }

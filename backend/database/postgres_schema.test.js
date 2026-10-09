@@ -120,134 +120,44 @@ test("lifecycle_state sigue admitiendo draft, published y retired", () => {
   );
 });
 
-// --- BLOQUE 2 -------------------------------------------------------------------------------------
+// --- BLOQUE 2: LAS OCHO TABLAS DEL RECORRIDO PARTIDO NO VUELVEN ---------------------------------
 //
-// El sitio donde vivira el flujo autorado de una plantilla (frente 0.8, sub-paso 1). Hoy es un CAJON
-// VACIO: nadie escribe la columna y nadie la lee, asi que NINGUN golden puede vigilarla y ninguna ruta
-// HTTP la ejercita. Lo unico que se puede romper en silencio es el esquema mismo, y son dos piezas:
+// AQUI VIVIAN ONCE PRUEBAS, y se fueron con su sujeto en el paso 4 de la fase 4 del frente 24. Lo que
+// vigilaban era real mientras las tablas lo fueran:
 //
-//   1. la definicion de la tabla —columna, nulabilidad y FK—, que desde `TD7-s` es la UNICA; y
-//   2. el ORDEN: el `CREATE INDEX` va DESPUES de la tabla. Al reves el arranque muere con
-//      «relation does not exist» (precedentes 673f1fb, 8f9f1ad, 99fc7c7, 38c2b56).
+//   · BLOQUE 2 (5 x 2 tablas) · la definicion del portador de las dos cabeceras: `edicion_id`
+//     nulable, su FK a `ediciones`, el `CHECK` de "exactamente un portador", que `vinculo_id` no
+//     volviera, y que el `CREATE INDEX` fuera DESPUES de su tabla.
+//   · BLOQUE 3 (5) · la SIMETRIA de los dos pasos: que `code` y `name` tuvieran el MISMO tipo en
+//     entrega y en firma, que nacieran NULL sin DEFAULT, y que nadie indexara columnas descriptivas.
 //
-// Y lo que aqui SI hay desde la fase 2 del frente 24 es un CHECK de "exactamente un portador".
-// Antes no podia haberlo, y el motivo esta medido: las filas de runtime llevaban `vinculo_id` Y
-// `task_item_id` a la vez en el MISMO INSERT, asi que los tres portadores no eran excluyentes y el
-// CHECK habria sido falso el dia uno. Al morir el escalon del vinculo quedan DOS portadores y cada
-// escritor usa uno: el runtime escribe `task_item_id` (`generation/documents.js:218` y `:248`) y el
-// editor de `/admin` escribe `edicion_id` (`crud/validation.js:239` y `:260`). Una cabecera sin
-// ancla no la resuelve NADIE —los dos resolutores preguntan por un portador—, asi que el CHECK no
-// prohibe un caso legitimo: prohibe basura.
+// Las dos cosas que esas pruebas protegian siguen protegidas, pero en otro sitio y mejor: la de "un
+// solo origen" la vigila `pasos_declarados: un paso cuelga de UN origen y solo de uno` (bloque 5), y
+// la de la SIMETRIA ya no hace falta porque **no hay dos tablas que simetrizar**: hay una, con una
+// columna `accion`. Era una prueba que existia por la duplicacion.
+//
+// Lo que queda es la puerta inversa, el mismo tipo que el bloque 4: que lo retirado SIGA retirado.
+// Hace falta porque un `CREATE TABLE IF NOT EXISTS` reintroducido **no rompe nada visible** —arranca,
+// y la tabla vuelve a existir vacia—, y porque el camino de vuelta es facil: copiar y pegar un bloque
+// de un commit viejo. Mira el SQL SIN COMENTARIOS a proposito: el epitafio de arriba nombra las ocho,
+// como debe.
 
-const bloqueCreate = (tabla) =>
-  SCHEMA.slice(SCHEMA.indexOf(`CREATE TABLE IF NOT EXISTS ${tabla} (`)).split(");")[0];
+const OCHO_RETIRADAS = [
+  "fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests",
+  "signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests",
+];
 
-for (const tabla of ["fill_flow_templates", "signature_flow_templates"]) {
-  const create = bloqueCreate(tabla);
-
-  test(`${tabla}: la definicion declara edicion_id nulable`, () => {
-    const columna = create.split("\n").find((linea) => linea.trim().startsWith("edicion_id"));
-    assert.ok(columna, "la columna debe existir en la definicion de la tabla");
-    assert.match(columna, /edicion_id INT NULL,/);
-  });
-
-  test(`${tabla}: la FK del portador apunta a ediciones(id)`, () => {
-    assert.match(
-      create,
-      new RegExp(
-        `CONSTRAINT fk_${tabla}_artifact FOREIGN KEY \\(edicion_id\\) REFERENCES ediciones\\(id\\)`
-      )
-    );
-  });
-
-  test(`${tabla}: vinculo_id ya no existe en la definicion`, () => {
+for (const tabla of OCHO_RETIRADAS) {
+  test(`${tabla} no vuelve: la sustituyeron las cuatro del recorrido unificado`, () => {
     assert.doesNotMatch(
-      create,
-      /\bvinculo_id\b/,
-      "el escalon del vinculo murio en la fase 2: el ancla es el entregable o la edicion"
-    );
-  });
-
-  test(`${tabla}: el CHECK admite UN portador y solo uno`, () => {
-    assert.match(
-      create,
-      new RegExp(
-        `CONSTRAINT ck_${tabla}_un_portador CHECK \\(num_nonnulls\\(task_item_id, edicion_id\\) = 1\\)`
-      ),
-      "dos portadores excluyentes: ni los dos a la vez, ni ninguno"
-    );
-  });
-
-  test(`${tabla}: el indice del portador se crea DESPUES de la tabla que lo sostiene`, () => {
-    const tablaPos = SCHEMA.indexOf(`CREATE TABLE IF NOT EXISTS ${tabla} (`);
-    const indice = SCHEMA.indexOf(
-      `CREATE INDEX IF NOT EXISTS idx_${tabla}_artifact ON ${tabla} (edicion_id);`
-    );
-    assert.ok(tablaPos > 0, "debe existir la definicion de la tabla");
-    assert.ok(indice > 0, "debe existir el indice del portador");
-    assert.ok(
-      indice > tablaPos,
-      "un indice es una sentencia aparte: colocarlo antes de su tabla tumba el arranque"
+      SIN_COMENTARIOS,
+      new RegExp(`\\b${tabla}\\b`),
+      `${tabla} se retiro en el paso 4 de la fase 4 del frente 24. `
+        + "Si hace falta algo de ella, va en `pasos_declarados` / `participantes_declarados` "
+        + "(la receta) o en `recorridos` / `turnos` (la ejecucion), con su `accion`."
     );
   });
 }
-
-// --- BLOQUE 3 -------------------------------------------------------------------------------------
-//
-// La SIMETRIA de los pasos (frente 0.8, sub-paso 1-bis). `fill_flow_steps` y `signature_flow_steps`
-// son dos tablas espejo del mismo concepto —un paso de un flujo autorado— y la de entrega habia
-// perdido dos columnas por el camino: `code` y `name`. El formulario deja escribir el nombre de cada
-// paso de entrega (`AdminDraftArtifactModal.vue:327`), `buildWorkflowsYaml` lo emite
-// (`workflows.js:167-168`) y el editor lo lee de vuelta (`templateArtifact.js:135-136`) — pero HOY ese
-// texto solo vive dentro del `meta.yaml` de MinIO. Invertir la direccion del flujo sin estas columnas
-// perderia el nombre de todos los pasos de entrega; eso es lo que destapo el primer intento del
-// sub-paso 3.
-//
-// Igual que el bloque 2, aqui es un CAJON VACIO: nadie las escribe y nadie las lee todavia, asi que
-// ningun golden puede vigilarlas y ninguna ruta HTTP las ejercita. Lo unico que se puede romper en
-// silencio es el esquema, y desde `TD7-s` la pieza es UNA: la definicion de la tabla. La base se
-// recrea (`test:char:run` ya lo hace en cada corrida), asi que no hay una segunda forma que mantener.
-//
-// El tipo NO es libre: se copia el de la gemela de firma (`code VARCHAR(120)`, `name VARCHAR(180)`).
-// Si alguien las declara mas cortas, el mismo paso cabria en un lado y no en el otro.
-
-const createFillSteps = SCHEMA.slice(SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS fill_flow_steps (")).split(");")[0];
-const createSignatureSteps = SCHEMA.slice(
-  SCHEMA.indexOf("CREATE TABLE IF NOT EXISTS signature_flow_steps (")
-).split(");")[0];
-
-const declaracion = (create, columna) =>
-  (create.split("\n").find((linea) => linea.trim().startsWith(`${columna} `)) || "").trim();
-
-for (const columna of ["code", "name"]) {
-  test(`fill_flow_steps: la definicion declara ${columna} con el MISMO tipo que signature_flow_steps`, () => {
-    const entrega = declaracion(createFillSteps, columna);
-    const firma = declaracion(createSignatureSteps, columna);
-    assert.ok(firma, `la gemela de firma debe seguir declarando ${columna}`);
-    assert.ok(entrega, `fill_flow_steps debe declarar ${columna}`);
-    assert.equal(entrega, firma, "mismo concepto, mismo tipo: dos tablas espejo");
-  });
-
-  test(`fill_flow_steps: ${columna} nace NULL, sin DEFAULT`, () => {
-    const entrega = declaracion(createFillSteps, columna);
-    // Nulable a proposito: en este sub-paso nadie escribe la columna todavia, y su gemela de firma
-    // tambien la declara NULL. Mismo concepto, misma nulabilidad.
-    assert.match(entrega, new RegExp(`^${columna} VARCHAR\\(\\d+\\) NULL,$`));
-    assert.doesNotMatch(entrega, /DEFAULT/);
-  });
-}
-
-test("fill_flow_steps: no se indexa code ni name — son descriptivas, no de busqueda", () => {
-  // La decision, escrita para que no se cuele un indice por inercia: un paso se localiza por
-  // (fill_flow_template_id, step_order), que ya tiene su indice unico, y nadie filtra por el nombre de
-  // un paso. La gemela de firma tampoco los indexa: sus cinco indices son de clave ajena.
-  const indices = SCHEMA.split("\n").filter(
-    (linea) => linea.startsWith("CREATE") && linea.includes("INDEX") && linea.includes("ON fill_flow_steps (")
-  );
-  assert.deepEqual(indices, [
-    "CREATE UNIQUE INDEX IF NOT EXISTS uq_fill_flow_steps ON fill_flow_steps (fill_flow_template_id, step_order);",
-  ]);
-});
 
 // --- BLOQUE 4: lo que el frente 23 RETIRO, y que no debe volver por inercia --------------------
 //

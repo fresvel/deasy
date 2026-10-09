@@ -823,6 +823,12 @@
       "message": "No se puede editar los flujos de firma: este recorrido se definio al enviar un entregable y pertenece a el, no a una edicion."
     }
   },
+  "remove_guard_paso_de_recorrido_de_configuracion_activa": {
+    "status": 400,
+    "body": {
+      "message": "No se puede editar los pasos del recorrido: este recorrido se definio al enviar un entregable y pertenece a el, no a una edicion."
+    }
+  },
   "remove_guard_plantilla_de_configuracion_activa": {
     "status": 400,
     "body": {

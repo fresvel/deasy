@@ -368,11 +368,9 @@ const createDerivedDeliverable = async (connection, { authenticatedUserId, input
 
   // routed: si el usuario definió el flujo al enviar, se materializa POR INSTANCIA (specific_person).
   if (itemMode === "routed" && input.runtimeFlow) {
-    await materializeRuntimeFlowForTaskItem(connection, {
-      taskItemId,
-      processDefinitionTemplateId: definitionTemplateId,
-      flow: input.runtimeFlow,
-    });
+    // `processDefinitionTemplateId` ya no viaja: lo necesitaban las cabeceras viejas, que se
+    // retiraron en el paso 4 de la fase 4 del frente 24. La receta de runtime cuelga del ENTREGABLE.
+    await materializeRuntimeFlowForTaskItem(connection, { taskItemId, flow: input.runtimeFlow });
   }
   await ensureDocumentForTaskItem(connection, taskItemRow);
 
@@ -545,11 +543,7 @@ const createFreeTask = async (connection, { authenticatedUserId, input, definiti
 
   // Proceso por defecto (routed): flujo definido al enviar → materializado POR INSTANCIA.
   if (input.runtimeFlow) {
-    await materializeRuntimeFlowForTaskItem(connection, {
-      taskItemId: freeItemId,
-      processDefinitionTemplateId: freeTpl.id,
-      flow: input.runtimeFlow,
-    });
+    await materializeRuntimeFlowForTaskItem(connection, { taskItemId: freeItemId, flow: input.runtimeFlow });
   }
   await ensureDocumentForTaskItem(connection, freeItemRow);
 

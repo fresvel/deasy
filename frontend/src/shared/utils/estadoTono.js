@@ -234,10 +234,13 @@ const ETIQUETA_TAREA = Object.freeze({
 export const tonoTarea = (valor) => TAREA[clave(valor)] ?? TONOS.NEUTRAL;
 export const etiquetaTarea = (valor) => ETIQUETA_TAREA[clave(valor)] ?? "Sin estado";
 
-/* ── EL RECORRIDO — LOS DOS LADOS Y LOS DOS NIVELES ────────────────────────────────────────
-   `document_fill_flows.status`, `fill_requests.status`, `signature_flow_instances.status` y
-   `signature_requests.status`. UN mapa, porque desde la fase 3 del frente 24 es UN vocabulario:
-   antes había dos —`LLENADO` en inglés y `SOLICITUD_FIRMA` en español— para el mismo concepto.
+/* ── EL RECORRIDO — LOS DOS NIVELES ────────────────────────────────────────────────────────
+   `recorridos.estado` y `turnos.estado`. UN mapa, porque desde la fase 3 del frente 24 es UN
+   vocabulario: antes había dos —`LLENADO` en inglés y `SOLICITUD_FIRMA` en español— para el mismo
+   concepto.
+
+   Y desde el paso 4 de la fase 4 son DOS columnas y no cuatro: las dos mitades del recorrido
+   —entrega y firma— son la misma pareja de tablas, con una columna `accion`.
 
    `devuelto` es el único tono que el lado de firma no gasta: un paso de entrega puede estar
    DEVUELTO, y eso no existe firmando. Se queda en el mapa único porque un mapa no necesita
@@ -368,8 +371,8 @@ export const tonoObservacion = (clase, resuelta = false) =>
 
 /* ── FLUJO — EL EJE TOLERANTE ──────────────────────────────────────────────────────────────
    El único que no corresponde a una columna: lo consume la tarjeta de entregable, que recibe
-   un estado que puede venir de `documents.status` (español), de `fill_requests.status` (inglés)
-   o de una solicitud de firma, y NO sabe de cuál. Por eso mira en los tres ejes por orden.
+   un estado que puede venir de `document_versions.status` (español) o de `turnos.estado`, y NO sabe
+   de cuál. Por eso mira en los tres ejes por orden.
 
    Sustituye a `getWorkflowStateTagVariant` (lista bilingüe escrita a mano), a
    `signatureRequestTagVariant` (HomeView) y a `statusMeta` (RoutedProcessPanel), que hacían lo
@@ -477,10 +480,11 @@ export const etiquetaFlujo = (valor) => {
        llega como numero: la celda no tiene el nombre que traducir.
    La exclusion es una decision, no un olvido, y por eso esta escrita.
 
-   ⚠️ AQUI SE EXCLUIAN TAMBIEN `signature_flow_instances.status_id` y `signature_requests.status_id`,
-   por el mismo motivo —llegaban como numero—. Dejo de ser cierto en la fase 3 del frente 24: hoy
-   son `status` TEXT con el mismo vocabulario que la entrega, asi que entran en el registro y se
-   pintan como las demas. El motivo de la exclusion desaparecio, y con el la exclusion. */
+   ⚠️ AQUI SE EXCLUIAN TAMBIEN las dos `status_id` del lado de firma, por el mismo motivo —llegaban
+   como numero—. Dejo de ser cierto en la fase 3 del frente 24: pasaron a ser TEXT con el mismo
+   vocabulario que la entrega. Y en el paso 4 de la fase 4 las dos tablas que las llevaban se
+   retiraron: hoy el estado de un turno de firma ES `turnos.estado`, la misma columna que el de
+   entrega. El motivo de la exclusion desaparecio dos veces, y con el la exclusion. */
 
 const ETIQUETA_CORRIDA = Object.freeze({
   pending: "Pendiente",
@@ -506,14 +510,13 @@ const COLUMNA_ESTADO = Object.freeze({
   "process_runs.status": [tonoCorrida, etiquetaCorrida],
   "tasks.status": [tonoTarea, etiquetaTarea],
   "task_items.status": [tonoTarea, etiquetaTarea],
-  "document_fill_flows.status": [tonoRecorrido, etiquetaRecorrido],
-  "fill_requests.status": [tonoRecorrido, etiquetaRecorrido],
-  "signature_flow_instances.status": [tonoRecorrido, etiquetaRecorrido],
-  "signature_requests.status": [tonoRecorrido, etiquetaRecorrido],
+  /* DOS ENTRADAS PARA LOS DOS LADOS. Eran cuatro --instancia y solicitud, por mitad-- y las cuatro
+     tablas se retiraron en el paso 4 de la fase 4 del frente 24. */
+  "recorridos.estado": [tonoRecorrido, etiquetaRecorrido],
+  "turnos.estado": [tonoRecorrido, etiquetaRecorrido],
   "persons.status": [tonoPersona, presenta],
   "vacancies.status": [tonoVacante, presenta],
   "contracts.status": [tonoContrato, presenta],
-  "documents.status": [tonoDocumento, presenta],
   "document_versions.status": [tonoDocumento, presenta]
 });
 
@@ -577,11 +580,14 @@ export const tonoRasgo = (valor) => (esVerdadero(valor) ? TONOS.INFO : TONOS.NEU
 const BOOLEANO_DE_RASGO = new Set([
   "relation_unit_types.is_inheritance_allowed",   /* «Herencia»            */
   "unit_positions.is_unit_head",                  /* «Jefe de la unidad»   */
-  "fill_flow_steps.is_required",                  /* «Obligatorio»         */
-  "fill_flow_steps.can_reject",                   /* «Puede rechazar»      */
-  "fill_requests.is_manual",                      /* «Manual»              */
-  "signature_flow_steps.is_required",             /* «Obligatorio»         */
-  "signature_requests.is_manual",                 /* «Manual»              */
+  /* UNA, Y ERAN CINCO. `is_required` y `can_reject` se retiraron con sus tablas en el paso 4 de la
+     fase 4 del frente 24 (§10 del plan: la primera era un bloqueo silencioso y mas tarde, la segunda
+     una derivada que no leia nadie), y las dos `is_manual` son hoy la misma: `turnos.manual`.
+
+     ⚠️ Y AQUI ESTABA EL SINTOMA que destapo el censo mal hecho de este mapa: las dos columnas
+     «Obligatorio» gemelas --la de llenado y la de firma-- salian una en VERDE y otra en AZUL en el
+     mismo barrido. Ya no hay dos columnas gemelas que puedan discrepar. */
+  "turnos.manual",                                /* «Manual»              */
   /* Los dos verificados: un email SIN verificar es una AUSENCIA, no un fallo. Que
      `tonoPersona("Verificado")` sea PRIMARY no contradice esto — alli es uno de cuatro estados
      de una persona; aqui es un si/no sobre un dato de contacto. */
@@ -612,8 +618,8 @@ const CLASIFICACION = Object.freeze({
   "task_items.origin_kind": { process_defined: TONOS.PRIMARY, user_added: TONOS.INFO },
   "role_assignments.source": { derived: TONOS.PRIMARY, manual: TONOS.INFO },
   "ediciones.template_scope": { official: TONOS.PRIMARY, ad_hoc: TONOS.INFO },
-  "fill_flow_steps.selection_mode": { auto_one: TONOS.PRIMARY, auto_all: TONOS.PRIMARY, manual: TONOS.INFO },
-  "signature_flow_steps.selection_mode": { auto_one: TONOS.PRIMARY, auto_all: TONOS.PRIMARY, manual: TONOS.INFO },
+  /* Las dos entradas de `selection_mode` se fueron con la columna (§10 del plan): `auto_one` era
+     «el id mas bajo» y `manual` no lo creaba ninguna pantalla, asi que quedaba un solo valor. */
 
   /* Pares entre si: sin tono propio, todos NEUTRAL. */
   "process_definition_series.source_type": null,
@@ -621,11 +627,11 @@ const CLASIFICACION = Object.freeze({
   "process_target_rules.recipient_policy": null,
   "vinculos.item_mode": null,
   "unit_positions.position_type": null,
-  "fill_flow_steps.resolver_type": null,
-  "fill_flow_steps.unit_scope_type": null,
-  "signature_flow_steps.resolver_type": null,
-  "signature_flow_steps.unit_scope_type": null,
-  "signature_flow_steps.approval_mode": null,
+  /* DOS ENTRADAS Y ERAN CINCO: los dos vocabularios del participante son uno para los dos lados, y
+     `approval_mode` se retiro con el cupo. */
+  "participantes_declarados.resolver_type": null,
+  "participantes_declarados.unit_scope_type": null,
+  "pasos_declarados.accion": null,
   "vacancies.dedication": null,
   "vacancies.relation_type": null,
   "contracts.dedication": null,

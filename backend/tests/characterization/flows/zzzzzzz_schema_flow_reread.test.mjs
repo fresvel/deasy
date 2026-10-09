@@ -153,12 +153,24 @@ test("relectura · POST draft con los dos flujos -> 200", async () => {
 // la misma forma: lo autorado, más los valores por defecto que el contrato rellena. Que los defectos
 // estén AQUÍ escritos y no calculados es a propósito — si el endpoint deja de ponerlos, este test lo
 // dice; si se calcularan con la misma regla, no diría nada.
-const pasoEsperado = (step, { defaults = {} } = {}) => ({
+//
+// ⚠️ CUATRO CLAVES DEJARON DE IR Y VOLVER en el paso 4 de la fase 4 del frente 24, y este test es el
+// sitio donde eso se ve mejor: `selection_mode`, `required`, `approval_mode` y `required_signers_min`
+// **ya no tienen columna**, así que lo que el editor recibe es el DEFECTO DEL CONTRATO, no lo que el
+// autor escribió. Las cuatro siguen viajando en la respuesta porque el formulario las lee; lo que
+// cambió es que ya no significan nada. Lo que las mataría de verdad es retirarlas del formulario.
+//
+// El por qué de cada una está en el §10 del plan, medido. En una frase: `auto_one` era «el id más
+// bajo», `required: false` era un bloqueo silencioso y más tarde, y `or`/`at_least` dejaban las
+// solicitudes hermanas abiertas e inoperables.
+const SELECTION_MODE_POR_DEFECTO = { paso: "auto_one", firmante: "auto_all" };
+
+const pasoEsperado = (step, { defaults = {}, comoFirmante = false } = {}) => ({
   order: step.order,
   code: step.code || "",
   name: step.name,
   resolver_type: step.resolver_type,
-  selection_mode: step.selection_mode,
+  selection_mode: SELECTION_MODE_POR_DEFECTO[comoFirmante ? "firmante" : "paso"],
   cargo_id: step.cargo_id ?? null,
   cargo_code: "",
   // Un resolutor que no es por cargo no tiene ámbito: el contrato devuelve el neutro.
@@ -181,7 +193,9 @@ test("relectura · el flujo de ENTREGA vuelve equivalente a lo autorado", async 
     steps: estado.fill.steps.map((step) => ({
       ...pasoEsperado(step),
       field_refs: [],
-      required: step.required !== false,
+      // SIEMPRE `true`: ya no hay columna que diga lo contrario. El paso 3 se autora con
+      // `required: false` a proposito, para que este test lo afirme.
+      required: true,
     })),
   };
   assert.deepEqual(res.body?.fill_workflow, esperado, "el flujo de entrega releído debe ser el autorado");
@@ -199,14 +213,16 @@ test("relectura · el flujo de FIRMA vuelve equivalente a lo autorado", async ()
       order: step.order,
       code: step.code,
       name: step.name,
-      approval_mode: step.approval_mode || "and",
-      required_signers_min: step.required_signers_min || 1,
-      required: step.required !== false,
+      // Las tres son el defecto del contrato, no lo autorado. El paso 2 se autora con
+      // `at_least` / `required: false` a proposito, para que este test lo afirme.
+      approval_mode: "and",
+      required_signers_min: 1,
+      required: true,
       // El firmante vuelve con las MISMAS claves que el formulario envía. Es la trampa del JSONB
       // `signers`, que en la base vive en camelCase cuando lo escribe la autoría de plantilla y en
       // snake_case cuando lo escribe el flujo de runtime: si el lector devolviera la fila cruda, el
       // editor recibiría `requiredCargoId` donde espera `cargo_id` y perdería a todos los firmantes.
-      signers: step.signers.map((signer) => pasoEsperado(signer, { defaults: {} })).map(
+      signers: step.signers.map((signer) => pasoEsperado(signer, { comoFirmante: true })).map(
         ({ order: _order, code: _code, name: _name, ...resto }) => resto,
       ),
     })),

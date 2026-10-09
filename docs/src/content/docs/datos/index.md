@@ -26,8 +26,8 @@ No hay `ALTER TABLE` evolutivo, y es deliberado desde el 2026-08-24. Antes los h
 | **Tarea**            | La instancia del proceso para un ámbito concreto (una unidad, un periodo). Es el contenedor.                                                              | `tasks`                                    |
 | **Entregable**       | Cada documento concreto a producir dentro de la tarea, con responsable, vencimiento y estado.                                                             | `task_items`                               |
 | **Plantilla**        | El *molde* del documento: su `schema.json` de campos + cuerpo (Jinja2/LaTeX u ofimatico) + formatos, versionado y almacenado en MinIO. **Son tres tablas, no una**: ver abajo. | `catalogo_documental` + `ediciones` + `vinculos` |
-| **Flujo de entrega** | Cadena de pasos “quien llena y aprueba el documento antes de firmarlo”.                                                                                   | `fill_flow_*` / `fill_requests`            |
-| **Firma**            | Firma electronica PAdES sobre el PDF, con certificado `.p12` del firmante.                                                                                | `signature_flow_*` / `document_signatures` |
+| **Recorrido**        | Cadena de pasos “quien llena, quien aprueba y quien firma”, con su ejecucion. **Uno para los dos lados**, con una columna `accion`.                        | `pasos_declarados` + `participantes_declarados` + `recorridos` + `turnos` |
+| **Firma**            | Firma electronica PAdES sobre el PDF, con certificado `.p12` del firmante.                                                                                | `document_signatures` + `signature_statuses` |
 | **Dossier**          | El **expediente o CV personal** (titulos, experiencia, publicaciones). *No* es el expediente de un proceso.                                               | `dossiers` + `dossier_items`               |
 
 ### Los cuatro eslabones de “entregable”, que son cuatro cosas distintas

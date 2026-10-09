@@ -643,7 +643,6 @@ export default class TemplateLifecycleService {
       await copyAuthoredFlowToArtifact(connection, {
         sourceArtifactId: srcId,
         targetArtifactId: newArtifactId,
-        displayName: src.display_name,
       });
       // AQUI SE COPIABAN LOS CAMPOS a la bifurcacion (`copySchemaFieldsToArtifact`). Se va con
       // `template_artifact_fields` (frente 23, F4.1): la copia binaria de MinIO ya trae el
@@ -1503,15 +1502,11 @@ export default class TemplateLifecycleService {
         itemMode
       });
 
-      // ESCRITURA DOBLE: la otra copia del flujo, la que vive EN LA BASE. Sale del mismo
-      // `workflowsDocument` que ya se serializó al `meta.yaml`.
+      // LA RECETA EN LA BASE, que sale del mismo `workflowsDocument` que ya se serializó al
+      // `meta.yaml`. Se llamaba «escritura doble» por eso, y lo sigue siendo: el `meta.yaml` conserva
+      // su copia hasta que se retire. La de la base es la que gobierna.
       if (workflowsDocument && artifactId) {
-        await this._persistAuthoredFlow({
-          connection,
-          artifactId,
-          displayName: identidad.displayName,
-          workflowsDocument
-        });
+        await this._persistAuthoredFlow({ connection, artifactId, workflowsDocument });
       }
 
       // AQUI IBA LA SEGUNDA COPIA DE LOS CAMPOS, la de `template_artifact_fields`. Se va con la
@@ -1536,7 +1531,7 @@ export default class TemplateLifecycleService {
   // literalmente el predicado del sync menos su término `sync_mode` —la clave del `meta.yaml` que
   // autorizaba la proyección y que ya no existe—. Ver su comentario en `workflows.js`: cambiarlo por
   // una condición escrita a mano aquí es justo lo que dejaría de escribir el flujo sin decir nada.
-  async _persistAuthoredFlow({ connection, artifactId, displayName, workflowsDocument }) {
+  async _persistAuthoredFlow({ connection, artifactId, workflowsDocument }) {
     const fill = workflowsDocument?.workflows?.fill || {};
     const signatures = workflowsDocument?.workflows?.signatures || {};
     const [cargoCodeMap, unitTypeNameMap] = await Promise.all([
@@ -1545,7 +1540,6 @@ export default class TemplateLifecycleService {
     ]);
     return replaceAuthoredFlowForArtifact(connection, {
       artifactId,
-      displayName,
       fillSteps: authoredWorkflowHasSteps(fill)
         ? normalizeFillSteps(fill, { cargoCodeMap })
         : [],

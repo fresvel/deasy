@@ -4,10 +4,11 @@
 // tarea ad-hoc que materializa su propio flujo (entrega + firma) en runtime.
 //
 // Este script, ejecutado por HTTP contra el stack, deja datos deterministas en:
-//   tasks, task_items, documents, document_versions,
-//   fill_flow_templates, fill_flow_steps, document_fill_flows, fill_requests,
-//   signature_flow_templates, signature_flow_steps
-// (signature_flow_instances/requests requieren upload+approve; se abordan aparte)
+//   tasks, task_items, document_versions,
+//   pasos_declarados, participantes_declarados (la receta),
+//   recorridos, turnos (la ejecucion, con `accion = 'entrega'`)
+// El recorrido de FIRMA se abre al aprobar la entrega, y FIRMAR necesita certificado y
+// microservicio: eso se aborda aparte (`scripts/verificar_firma_nueva.mjs`).
 //
 // Orden reproducible:
 //   1) bash scripts/reset-db.sh dev
@@ -139,12 +140,13 @@ async function main() {
   console.log("[setup] dossier titulo/exp/articulo:", dTitulo.status, dExp.status, dArt.status);
 
   // 3) Comprobación de poblado.
+  // Las cuatro del recorrido sustituyeron a ocho en el paso 4 de la fase 4 del frente 24, asi que
+  // esta lista baja de 17 entradas a 9. `documents` salio antes: la tabla murio el 2026-08-23 y
+  // llevaba desde entonces dando 404 en silencio.
   for (const t of [
-    "tasks", "task_items", "task_item_tenures", "documents", "document_versions",
-    "turnos", "recorridos", "participantes_declarados", "pasos_declarados",
-    "fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests",
-    "signature_flow_templates", "signature_flow_steps",
-    "signature_flow_instances", "signature_requests",
+    "tasks", "task_items", "task_item_tenures", "document_versions",
+    "pasos_declarados", "participantes_declarados", "recorridos", "turnos",
+    "document_signatures",
   ]) {
     const res = await get(`/admin/sql/${t}`, { token: admin });
     const rows = Array.isArray(res.body) ? res.body : res.body?.data ?? res.body?.rows ?? res.body;

@@ -7,7 +7,13 @@
     "",
     "Clasificados el 2026-08-29, la unica vez que hay que hacerlo entero.",
     "",
-    "Bloque del FRENTE 18 (2026-09-04): 31 nombres de un DISENO que aun no existe en la base. Son distintos de los demas -- aquellos son menciones historicas, estos son futuras -- y por eso llevan la misma frase de retirada: se borran de aqui en el mismo commit que los cree."
+    "Bloque del FRENTE 18 (2026-09-04): 31 nombres de un DISENO que aun no existe en la base. Son distintos de los demas -- aquellos son menciones historicas, estos son futuras -- y por eso llevan la misma frase de retirada: se borran de aqui en el mismo commit que los cree.",
+    "",
+    "Bloque del FRENTE 24, FASE 4, PASO 4 (2026-10-09): 17 nombres de lo que las OCHO tablas del",
+    "recorrido partido en dos se llevaron consigo -- cuatro cabeceras y pasos, dos instancias, dos",
+    "solicitudes, y las columnas que no decidian nada--. Son menciones HISTORICAS: la pagina los nombra",
+    "para contar por que se fueron, y eso es lo que impide que vuelvan por inercia. Si alguno reaparece",
+    "en el esquema, su excepcion deja de valer y hay que quitarla."
   ],
   "nombres": {
     "academic_terms": {
@@ -35,16 +41,43 @@
         "complemento/expediente.md"
       ]
     },
+    "anchor_refs": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. un JSONB FOSIL del paso de firma: se escribia siempre `[]` y se releia; cero consumidores. Se fue con su tabla. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "datos/firmas-y-dominios.md"
+      ]
+    },
+    "approval_mode": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. el CUPO de firmantes, retirado entero. `or` dejaba los turnos hermanos abiertos e inoperables, y el cupo existia porque el conjunto de firmantes era indeterminado -- que es justo lo que se quito al pasarlos a filas. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "datos/firmas-y-dominios.md",
+        "frontend/composables-y-deuda.md",
+        "modelo/flujo-de-firma.md"
+      ]
+    },
     "artifact_stage": {
       "motivo": "VALOR/eje del modelo de plantillas, citado en prosa.",
       "paginas": [
         "confusiones.md"
       ]
     },
+    "at_least": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. un VALOR del cupo de firmantes, retirado con su columna. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "datos/firmas-y-dominios.md",
+        "modelo/flujo-de-firma.md"
+      ]
+    },
     "audit_log": {
       "motivo": "PROSA · el concepto de bitacora; hoy no hay tabla con ese nombre.",
       "paginas": [
         "datos/firmas-y-dominios.md"
+      ]
+    },
+    "auto_one": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. el valor de `selection_mode` que significaba «quedate con UNO», implementado como el id mas bajo. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/flujo-de-entrega.md"
       ]
     },
     "autoridad_nacional": {
@@ -112,6 +145,12 @@
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [
         "complemento/expediente.md"
+      ]
+    },
+    "can_reject": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. retirada por DERIVADA Y MUERTA: se escribia como `orden > 1` en tres sitios y no la leia nadie. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/flujo-de-entrega.md"
       ]
     },
     "cargo_parentesco": {
@@ -193,6 +232,12 @@
       "motivo": "DIRECTIVA de nginx.",
       "paginas": [
         "infraestructura/nginx.md"
+      ]
+    },
+    "document_fill_flows": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. las dos tablas de INSTANCIA que se retiraron con las ocho: las sustituye `recorridos`. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/mapa-completo.md"
       ]
     },
     "document_owner": {
@@ -390,11 +435,31 @@
         "datos/firmas-y-dominios.md"
       ]
     },
+    "fill_flow_steps": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. las dos tablas de PASOS que se retiraron con las ocho: las sustituyen `pasos_declarados` + `participantes_declarados`, con una columna `accion`. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/index.md",
+        "modelo/mapa-completo.md"
+      ]
+    },
+    "fill_flow_templates": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. las dos CABECERAS de recorrido que se retiraron con las ocho tablas: de sus siete columnas solo se leian `id` e `is_active`, y hoy el paso lleva su propio origen. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/flujo-de-entrega.md",
+        "modelo/mapa-completo.md"
+      ]
+    },
     "fill_flows": {
       "motivo": "RBAC · uno de los 13 RECURSOS de permisos, no una tabla (ver complemento/permisos.md).",
       "paginas": [
         "backend/auth.md",
         "complemento/permisos.md"
+      ]
+    },
+    "fill_requests": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. las dos tablas de SOLICITUD que se retiraron con las ocho: las sustituye `turnos`. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/mapa-completo.md"
       ]
     },
     "final_path": {
@@ -450,6 +515,12 @@
       "motivo": "PROSA · texto explicativo, no un identificador.",
       "paginas": [
         "datos/modos-y-plantillas.md"
+      ]
+    },
+    "is_required": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. retirada porque sus dos valores no eran «obligatorio / opcional»: con `0` el paso quedaba aparcado esperando a alguien que nadie podia resolver -- un bloqueo silencioso y mas tarde. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/flujo-de-entrega.md"
       ]
     },
     "legal_documents": {
@@ -711,6 +782,19 @@
         "frontend/composables-y-deuda.md"
       ]
     },
+    "required_signers_max": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. el maximo del cupo, que YA ESTABA MUERTO antes de retirarse: se escribia, se versionaba y se proyectaba al panel, pero no llegaba al resumen que decide si un paso esta completo. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "datos/firmas-y-dominios.md",
+        "modelo/flujo-de-firma.md"
+      ]
+    },
+    "required_signers_min": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. el minimo del cupo de firmantes, retirado con su columna. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "datos/firmas-y-dominios.md"
+      ]
+    },
     "revocation_mode": {
       "motivo": "OPCION del signer (pyhanko), no del esquema.",
       "paginas": [
@@ -723,10 +807,35 @@
         "modelo/entregable-y-ediciones.md"
       ]
     },
+    "selection_mode": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. retirada con sus dos valores vivos: `auto_one` era «el id mas bajo» --no una regla de negocio-- y `manual` no lo podia crear ninguna pantalla. Con los dos fuera quedaba un valor. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/flujo-de-entrega.md"
+      ]
+    },
     "server_name": {
       "motivo": "DIRECTIVA de nginx.",
       "paginas": [
         "infraestructura/nginx.md"
+      ]
+    },
+    "signature_flow_instances": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. las dos tablas de INSTANCIA que se retiraron con las ocho: las sustituye `recorridos`. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/mapa-completo.md"
+      ]
+    },
+    "signature_flow_steps": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. las dos tablas de PASOS que se retiraron con las ocho: las sustituyen `pasos_declarados` + `participantes_declarados`, con una columna `accion`. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/mapa-completo.md"
+      ]
+    },
+    "signature_flow_templates": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. las dos CABECERAS de recorrido que se retiraron con las ocho tablas: de sus siete columnas solo se leian `id` e `is_active`, y hoy el paso lleva su propio origen. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "modelo/flujo-de-entrega.md",
+        "modelo/mapa-completo.md"
       ]
     },
     "signature_flows": {
@@ -886,6 +995,12 @@
       "motivo": "FRENTE 23 (2026-10-04) · se retiro `template_artifact_fields` porque su UNICO lector era el codigo que copiaba sus filas a la version siguiente: la tabla existia para copiarse a si misma. La pagina la nombra en el aviso \":::caution Aqui habia una tabla, y se retiro\", que explica por que se fue y donde tendra que vivir el contrato de campos el dia que haga falta. La mencion es HISTORICA: sin ella, el lector que busque la tabla no encuentra la explicacion. Aqui, una de las siete columnas que la tabla tenia.",
       "paginas": [
         "modelo/entregable-y-ediciones.md"
+      ]
+    },
+    "uq_signature_flow_steps_slot": {
+      "motivo": "FRENTE 24, FASE 4, PASO 4 (2026-10-09) · MENCION HISTORICA. el indice unico que imponia un hueco de firma por flujo. Al bajar el hueco al PARTICIPANTE la regla pasa a cruzar dos tablas y ya no cabe en un indice: hoy la impone el disparador `trg_participantes_slot_unico`. La pagina lo nombra para contar POR QUE se fue, que es lo que impide que vuelva por inercia; si alguna vez se reintroduce con ese nombre, esta excepcion deja de valer y hay que quitarla de aqui.",
+      "paginas": [
+        "complemento/conversacion.md"
       ]
     },
     "verify_email": {

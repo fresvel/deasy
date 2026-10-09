@@ -1,6 +1,6 @@
 ---
 title: "Campos de la cadena proceso → documento"
-description: "Las 37 tablas del recorrido, con todas sus columnas, tipos, referencias y valores admitidos. Generada del catálogo de PostgreSQL."
+description: "Las 33 tablas del recorrido, con todas sus columnas, tipos, referencias y valores admitidos. Generada del catálogo de PostgreSQL."
 sidebar:
   order: 20
 ---
@@ -22,7 +22,7 @@ y esta página saldría mintiendo. `npm run test:char:run` la recrea.
 
 :::
 
-Son **37 tablas**. El recorrido narrado, con sus diagramas, está en
+Son **33 tablas**. El recorrido narrado, con sus diagramas, está en
 [Del proceso al documento firmado](/modelo/). Esta página es el
 detalle: **cada columna de cada tabla**, en el orden de la cadena y no en orden alfabético.
 
@@ -434,131 +434,65 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `resolved_at` | timestamp | no | — | — |
 | `created_at` | timestamp | sí | — | — |
 
-## El flujo de entrega
+## El recorrido del documento: quien hace cada paso
 
-### `fill_flow_templates`
+### `pasos_declarados`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `task_item_id` | int | no | `task_items.id` · se va con el | — |
+| `accion` | text | sí | — | `entrega` · `firma` |
 | `edicion_id` | int | no | `ediciones.id` · impide borrar | — |
-| `name` | varchar(180) | sí | — | — |
-| `description` | varchar(255) | no | — | — |
-| `is_active` | smallint | sí | — | — |
-| `created_at` | timestamp | sí | — | — |
-
-### `fill_flow_steps`
-
-| Columna | Tipo | Obligatorio | Apunta a | Admite |
-|---|---|---|---|---|
-| `id` | int | sí | — | — |
-| `fill_flow_template_id` | int | sí | `fill_flow_templates.id` · impide borrar | — |
-| `step_order` | int | sí | — | — |
+| `task_item_id` | int | no | `task_items.id` · se va con el | — |
+| `orden` | int | sí | — | — |
 | `code` | varchar(120) | no | — | — |
-| `name` | varchar(180) | no | — | — |
-| `resolver_type` | text | sí | — | `task_assignee` · `specific_person` · `cargo_in_scope` |
-| `assigned_person_id` | int | no | `persons.id` · impide borrar | — |
-| `unit_scope_type` | text | sí | — | `unit_exact` · `unit_subtree` · `unit_type` · `all_units` · `context_exact` |
-| `unit_id` | int | no | `units.id` · impide borrar | — |
-| `unit_type_id` | int | no | `unit_types.id` · impide borrar | — |
-| `relation_type_id` | int | no | `relation_unit_types.id` · impide borrar | — |
-| `cargo_id` | int | no | `cargos.id` · impide borrar | — |
-| `position_id` | int | no | `unit_positions.id` · impide borrar | — |
-| `selection_mode` | text | sí | — | `auto_one` · `auto_all` · `manual` |
-| `is_required` | smallint | sí | — | — |
-| `can_reject` | smallint | sí | — | — |
+| `nombre` | varchar(180) | no | — | — |
 | `created_at` | timestamp | sí | — | — |
 
-### `document_fill_flows`
+### `participantes_declarados`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `fill_flow_template_id` | int | sí | `fill_flow_templates.id` · impide borrar | — |
+| `paso_id` | int | sí | `pasos_declarados.id` · se va con el | — |
+| `orden` | int | sí | — | — |
+| `resolver_type` | text | sí | — | `task_assignee` · `specific_person` · `cargo_in_scope` |
+| `persona_id` | int | no | `persons.id` · impide borrar | — |
+| `cargo_id` | int | no | `cargos.id` · impide borrar | — |
+| `unit_scope_type` | text | sí | — | `unit_exact` · `context_exact` · `all_units` |
+| `unit_id` | int | no | `units.id` · impide borrar | — |
+| `slot` | varchar(80) | no | — | — |
+| `created_at` | timestamp | sí | — | — |
+
+### `recorridos`
+
+| Columna | Tipo | Obligatorio | Apunta a | Admite |
+|---|---|---|---|---|
+| `id` | int | sí | — | — |
 | `document_version_id` | int | sí | `document_versions.id` · impide borrar | — |
-| `status` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
-| `current_step_order` | int | no | — | — |
+| `accion` | text | sí | — | `entrega` · `firma` |
+| `estado` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
+| `paso_actual` | int | no | — | — |
 | `created_at` | timestamp | sí | — | — |
 | `updated_at` | timestamp | sí | — | — |
 
-### `fill_requests`
+### `turnos`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `document_fill_flow_id` | int | sí | `document_fill_flows.id` · impide borrar | — |
-| `fill_flow_step_id` | int | sí | `fill_flow_steps.id` · impide borrar | — |
-| `assigned_person_id` | int | no | `persons.id` · impide borrar | — |
-| `status` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `devuelto` · `cancelado` |
-| `is_manual` | smallint | sí | — | — |
-| `requested_at` | timestamp | sí | — | — |
-| `responded_at` | timestamp | no | — | — |
-| `response_note` | varchar(255) | no | — | — |
+| `recorrido_id` | int | sí | `recorridos.id` · se va con el | — |
+| `accion` | text | sí | `recorridos.accion` · se va con el | `entrega` · `firma` |
+| `participante_id` | int | sí | `participantes_declarados.id` · impide borrar | — |
+| `persona_id` | int | no | `persons.id` · impide borrar | — |
+| `estado` | text | sí | — | `devuelto` · `entrega` |
+| `manual` | smallint | sí | — | — |
+| `solicitado` | timestamp | sí | — | — |
+| `notificado` | timestamp | no | — | — |
+| `respondido` | timestamp | no | — | — |
+| `nota_respuesta` | varchar(255) | no | — | — |
 
-## El flujo de firma
-
-### `signature_flow_templates`
-
-| Columna | Tipo | Obligatorio | Apunta a | Admite |
-|---|---|---|---|---|
-| `id` | int | sí | — | — |
-| `task_item_id` | int | no | `task_items.id` · se va con el | — |
-| `edicion_id` | int | no | `ediciones.id` · impide borrar | — |
-| `name` | varchar(180) | sí | — | — |
-| `description` | varchar(255) | no | — | — |
-| `is_active` | smallint | sí | — | — |
-| `created_at` | timestamp | sí | — | — |
-
-### `signature_flow_steps`
-
-| Columna | Tipo | Obligatorio | Apunta a | Admite |
-|---|---|---|---|---|
-| `id` | int | sí | — | — |
-| `template_id` | int | sí | `signature_flow_templates.id` · impide borrar | — |
-| `step_order` | int | sí | — | — |
-| `code` | varchar(120) | no | — | — |
-| `name` | varchar(180) | no | — | — |
-| `slot` | varchar(80) | no | — | — |
-| `resolver_type` | text | sí | — | `task_assignee` · `specific_person` · `cargo_in_scope` |
-| `assigned_person_id` | int | no | `persons.id` · impide borrar | — |
-| `unit_scope_type` | text | sí | — | `unit_exact` · `unit_subtree` · `unit_type` · `all_units` · `context_exact` |
-| `unit_id` | int | no | `units.id` · impide borrar | — |
-| `unit_type_id` | int | no | `unit_types.id` · impide borrar | — |
-| `position_id` | int | no | `unit_positions.id` · impide borrar | — |
-| `required_cargo_id` | int | no | `cargos.id` · impide borrar | — |
-| `selection_mode` | varchar(20) | sí | — | — |
-| `approval_mode` | text | sí | — | `and` · `or` · `at_least` |
-| `required_signers_min` | int | no | — | — |
-| `required_signers_max` | int | no | — | — |
-| `is_required` | smallint | sí | — | — |
-| `anchor_refs` | jsonb | no | — | — |
-| `signers` | jsonb | no | — | — |
-| `created_at` | timestamp | sí | — | — |
-
-### `signature_flow_instances`
-
-| Columna | Tipo | Obligatorio | Apunta a | Admite |
-|---|---|---|---|---|
-| `id` | int | sí | — | — |
-| `template_id` | int | sí | `signature_flow_templates.id` · impide borrar | — |
-| `document_version_id` | int | sí | `document_versions.id` · impide borrar | — |
-| `status` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
-| `created_at` | timestamp | sí | — | — |
-
-### `signature_requests`
-
-| Columna | Tipo | Obligatorio | Apunta a | Admite |
-|---|---|---|---|---|
-| `id` | int | sí | — | — |
-| `instance_id` | int | sí | `signature_flow_instances.id` · impide borrar | — |
-| `step_id` | int | sí | `signature_flow_steps.id` · impide borrar | — |
-| `assigned_person_id` | int | no | `persons.id` · impide borrar | — |
-| `status` | text | sí | — | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` |
-| `is_manual` | smallint | sí | — | — |
-| `requested_at` | timestamp | sí | — | — |
-| `notified_at` | timestamp | no | — | — |
-| `responded_at` | timestamp | no | — | — |
+## La firma en si
 
 ### `document_signatures`
 
@@ -587,4 +521,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**37 tablas · 357 columnas · 94 referencias.** Leídas del catálogo de PostgreSQL.
+**33 tablas · 311 columnas · 78 referencias.** Leídas del catálogo de PostgreSQL.

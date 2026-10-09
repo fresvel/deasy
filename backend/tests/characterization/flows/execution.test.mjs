@@ -39,9 +39,11 @@ before(async () => {
 
 // --- Contrato de columnas de las tablas de ejecución (admin sql CRUD) ---
 // Cada una debe estar poblada (count>=1) tras el setup.
+// Las dos de firma eran la cabecera y sus pasos; se retiraron en el paso 4 de la fase 4 del frente
+// 24 y lo que de verdad hay que ver poblado es la RECETA, que sirve a los dos lados.
 const EXEC_TABLES = [
   "tasks", "task_items", "document_versions",
-  "signature_flow_templates", "signature_flow_steps",
+  "pasos_declarados", "participantes_declarados",
 ];
 
 for (const table of EXEC_TABLES) {

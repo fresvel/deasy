@@ -58,39 +58,19 @@ flowchart TB
     DV --> DA["document_attachments"]
   end
 
-  subgraph ENT["Flujo de entrega"]
-    direction TB
-    FFT["fill_flow_templates"] --> FFS["fill_flow_steps"]
-    FFT --> DFF["document_fill_flows"]
-    DFF --> FR["fill_requests"]
-    FFS --> FR
-  end
-
-  subgraph REC["Recorrido unificado — sustituye a los dos de abajo"]
+  subgraph REC["El recorrido del documento"]
     direction TB
     PASO["pasos_declarados"] --> PART["participantes_declarados"]
     RECO["recorridos"] --> TUR["turnos"]
     PART --> TUR
   end
 
-  subgraph FIR["Flujo de firma"]
+  subgraph FIR["La firma en sí"]
     direction TB
-    SFT["signature_flow_templates"] --> SFS["signature_flow_steps"]
-    SFT --> SFI["signature_flow_instances"]
-    SFI --> SR["signature_requests"]
-    SFS --> SR
     TUR --> DS["document_signatures"]
     SS["signature_statuses"] --> DS
   end
 
-  TA -.-> FFT
-  PDT -.-> FFT
-  TI -.-> FFT
-  TA -.-> SFT
-  PDT -.-> SFT
-  TI -.-> SFT
-  DV --> DFF
-  DV --> SFI
   TA -.-> PASO
   TI -.-> PASO
   DV --> RECO
@@ -110,47 +90,41 @@ produce, cuelga de él la sucesión de turnos, cuelgan las rondas y cuelgan las 
 2026-08-23 **no hay nada entre el entregable y sus rondas**: la tabla `documents` que había en medio no
 tenía ni una columna propia y desapareció.
 
-**Los dos flujos son simétricos**, y en el dibujo se ve: cabecera → pasos, cabecera → instancia,
-instancia → solicitudes. Las diferencias reales son dos y están en el detalle, no en la forma: la
-firma añade el `slot`, que desde el 2026-10-08 es **de cada firmante** y no del paso.
+**Y el recorrido es UNO**, aunque pida dos cosas distintas. Hasta el **2026-10-09** aquí había dos
+grupos simétricos —«Flujo de entrega» y «Flujo de firma»— con cuatro tablas cada uno: cabecera →
+pasos, cabecera → instancia, instancia → solicitudes. Esa simetría era el síntoma: si los dos lados
+son el mismo mecanismo, mantenerlos en dos juegos de tablas obliga a escribir cada regla dos veces
+—los dos resolutores de paso llegaron a ser **44 líneas idénticas de 50**, en dominios distintos—.
 
-:::caution[Las ocho tablas de los dos flujos siguen dibujadas, y ya no gobiernan nada]
+:::note[Las ocho tablas que había aquí, y qué las sustituye]
 
-Desde el **2026-10-08** la EJECUCIÓN de los dos lados es `recorridos` + `turnos`, y la RECETA es
-`pasos_declarados` + `participantes_declarados`. Las ocho de abajo **siguen en el esquema** —por eso
-siguen en el mapa, que dibuja el esquema y no el código— pero ya no las escribe ni las lee nadie.
-Fíjate en la única flecha que las cruza: `document_signatures` cuelga hoy de `turnos`, no de
-`signature_requests`.
+| Lo que había | Lo que hay |
+|---|---|
+| `fill_flow_templates` · `signature_flow_templates` | *nada*: la cabecera desaparece |
+| `fill_flow_steps` · `signature_flow_steps` | `pasos_declarados` + `participantes_declarados` |
+| `document_fill_flows` · `signature_flow_instances` | `recorridos` |
+| `fill_requests` · `signature_requests` | `turnos` |
 
-:::
-
-:::note[Y esa simetría es lo que el «recorrido unificado» viene a borrar]
-
-Las cuatro tablas de `pasos_declarados` · `participantes_declarados` · `recorridos` · `turnos`
-sustituyen a las **ocho** de los dos flujos. Si los dos lados son el mismo mecanismo —y el dibujo lo
-enseña—, mantenerlos en dos juegos de tablas obliga a escribir cada regla dos veces: hoy los dos
-resolutores de paso son **44 líneas idénticas de 50**, en dominios distintos.
-
-Lo que cambia no es sólo el número de tablas:
+Lo que cambia no es sólo el número:
 
 - **un paso declara una `accion`** (`entrega` o `firma`) en vez de vivir en la tabla de su lado;
-- **la cabecera desaparece**: de sus siete columnas sólo se leían dos, y el paso lleva hoy su propio
-  origen —la edición, o el entregable si el recorrido se definió al enviar;
+- **la cabecera desapareció**: de sus siete columnas sólo se leían dos, y el paso lleva hoy su propio
+  origen —la edición, o el entregable si el recorrido se definió al enviar—;
 - **los firmantes de un paso son filas**, no una lista JSONB sin validar que mandaba sobre columnas
   que sí tenían `CHECK`;
-- y **el hueco de la firma baja al firmante**: con varios firmantes y un solo hueco, sólo el primero
+- y **el hueco de la firma bajó al firmante**: con varios firmantes y un solo hueco, sólo el primero
   tenía marca en el papel.
 
-Nacen vacías y conviven con las ocho mientras dura el cambio; las viejas se retiran cuando ya no las
-referencia nadie. El diseño completo, campo a campo, está en el plan del frente 24.
+Por el camino se fueron **diecisiete columnas** que no decidían nada, cada una con su medida, y el
+censo está en el plan del frente 24.
 
 :::
 
-La tercera diferencia **se cerró**: los estados de la firma eran una **tabla de catálogo**
-(`signature_request_statuses`) donde la entrega usaba un `CHECK`, y por eso aparecía aquí como tabla
-sin equivalente en el flujo de entrega. Hoy los cuatro estados del recorrido son `CHECK` con el mismo
-vocabulario, así que esa tabla ya no existe. La que sigue dibujada, `signature_statuses`, es otra
-cosa: el resultado del **hecho** de firmar.
+Lo que la firma **sí tiene de propio** es su resultado, y por eso sigue en su grupo:
+`signature_statuses` no es el turno de una persona, es cómo salió una operación criptográfica. El
+estado de **a quién le toca** era también una tabla de catálogo —`signature_request_statuses`— donde
+la entrega usaba un `CHECK`; hoy es `turnos.estado`, el mismo `CHECK` y el mismo vocabulario para los
+dos lados.
 
 **Lo que el mapa no dibuja** son las otras **55 tablas** del esquema, y están todas en el
 [mapa del complemento](/complemento/mapa-completo/): la rama de vacantes y contratación (8), el RBAC
@@ -166,4 +140,5 @@ persona*, no de cuántas formas se la puede contactar. Lo que la cadena gana de 
 claves ajenas, y todas salen de `persons`**: dos a `paises` —nacionalidad y país de
 nacimiento—, una a `cantones` —el de nacimiento— y una a `estados_civiles`.
 
-El esquema completo tiene 93 tablas; estas 38 son las que van del proceso al documento firmado.
+El esquema completo tiene **87 tablas** —eran 95 antes de que las ocho del recorrido partido se
+convirtieran en cuatro—; estas 30 son las que van del proceso al documento firmado.

@@ -7,7 +7,7 @@ sidebar:
 ```mermaid
 %% diagrama 10 — la cadena de firma, de la plantilla de flujo a la firma persistida
 flowchart LR
-    TPL["signature_flow_templates"] --> STEPS["signature_flow_steps"]
+    TPL["pasos_declarados<br/>(accion = firma)"] --> STEPS["participantes_declarados"]
     STEPS --> INST["recorridos (accion = firma)"]
     INST --> REQ["turnos"]
     REQ --> SIGS["document_signatures"]
@@ -17,7 +17,9 @@ Un paso de firma soporta **múltiples firmantes**, y desde el **2026-10-08** los
 
 **Un paso está aprobado cuando firman todos los suyos.** El quorum configurable que había (`approval_mode`: `and` · `or` · `at_least`, con `required_signers_min` y `required_signers_max`) se retiró entero: el máximo no decidía nada, `or` dejaba las solicitudes hermanas abiertas e inoperables, y el cupo sólo existía porque el conjunto de firmantes era indeterminado — que es justo lo que se quitó. El detalle, con sus medidas, en [el flujo de firma](/modelo/flujo-de-firma/).
 
-La columna `anchor_refs` (JSONB) **es un fósil**: no tiene productor ni consumidor. El escritor la serializa siempre como `[]` y el lector la devuelve tal cual; ningún formulario le pone un valor y ningún render la mira. Quien decide **dónde se dibuja la firma** es el `slot`, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}` y que desde el 2026-10-08 es **de cada firmante** y no del paso: con N firmantes y un solo hueco, los N−1 restantes no tenían marca en el papel. Su gemela en el lado de entrega es `fill_flow_steps.field_refs`, con el mismo problema.
+Quien decide **dónde se dibuja la firma** es el `slot`, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}` y que desde el 2026-10-08 es **de cada firmante** y no del paso: con N firmantes y un solo hueco, los N−1 restantes no tenían marca en el papel.
+
+El paso llevaba además un JSONB `anchor_refs` que **era un fósil**: el escritor lo serializaba siempre como `[]` y el lector lo devolvía tal cual; ningún formulario le ponía un valor y ningún render lo miraba. Se fue con la tabla el 2026-10-09. Su gemelo del lado de entrega, `field_refs`, nunca llegó a tener columna y **sigue en el contrato HTTP del editor** como literal `[]`: lo que lo mataría es retirarlo del formulario.
 
 El catalogo de estado se siembra en el propio esquema: `signature_statuses` (`firmado`, `fallido`, `invalido`, `cancelado`), que es el resultado del **hecho** de firmar. El estado de **a quién le toca** era un segundo catalogo, `signature_request_statuses`, y dejo de serlo el 2026-10-08: hoy es `turnos.estado`, con el mismo `CHECK` y el mismo vocabulario que el lado de entrega ([los vocabularios de estado](/modelo/vocabularios-de-estado/)). Los dos ejes no son redundantes: el turno dice si alguien respondio, el catalogo dice si la firma **vale**, y un turno completado con una firma invalida cuenta como rechazo.
 

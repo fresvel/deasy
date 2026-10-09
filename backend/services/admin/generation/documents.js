@@ -129,114 +129,49 @@ export const resolveOriginUnitIdForTaskItem = async (connection, taskItem, respo
 
   return null;
 };
+// LA RECETA QUE EL USUARIO DEFINE AL ENVIAR: el modo `routed`. Cuelga del ENTREGABLE, que es el
+// primer escalon de la resolucion.
+//
+// ── DE 132 LINEAS A 60 (frente 24, fase 4, paso 4) ──────────────────────────────────────────────
+//
+// Escribia la receta DOS VECES: primero las cuatro tablas viejas --una cabecera y sus pasos por
+// lado, con 10 y 16 columnas escritas a mano, el JSONB `signers` serializado y un `primary` que
+// duplicaba al primer firmante en las columnas del paso-- y despues la forma nueva. Hoy escribe una.
+//
+// Y con las tablas viejas se va la normalizacion que existia para ellas:
+//   · `approval_mode` y `required_min`: el cupo entero, retirado (§10 del plan). El constructor solo
+//     emitia `and`.
+//   · `unit_type_id` y el ambito `unit_type`: ninguna pantalla los produce, y desde el paso 3b
+//     `unit_type` NO ES UN VALOR LEGAL. Era una mina: el dia que un formulario enviara un tipo de
+//     unidad sin unidad, el convertidor habria reventado con «no esta en el vocabulario».
 export const materializeRuntimeFlowForTaskItem = async (
   connection,
-  { taskItemId, processDefinitionTemplateId, flow }
+  { taskItemId, flow }
 ) => {
-  const APPROVALS = new Set(["and", "or", "at_least"]);
-  // Firmante/responsable → forma que consumen parseStepSigners / resolveFillStepAssignees.
+  // Firmante/responsable -> la forma que consume el convertidor de la receta.
   const normSigner = (raw) => {
     if (raw && raw.cargo_id) {
       const unitId = raw.unit_id ? Number(raw.unit_id) : null;
-      const unitTypeId = raw.unit_type_id ? Number(raw.unit_type_id) : null;
       return {
         type: "cargo_in_scope",
         cargo_id: Number(raw.cargo_id),
         unit_id: unitId,
-        unit_type_id: unitTypeId,
-        unit_scope_type: raw.unit_scope_type || (unitId ? "unit_exact" : unitTypeId ? "unit_type" : "all_units"),
+        unit_scope_type: raw.unit_scope_type || (unitId ? "unit_exact" : "all_units"),
       };
     }
     const pid = Number(raw?.person_id ?? raw) || null;
     return pid ? { type: "specific_person", person_id: pid } : null;
   };
-  // Paso de firma → { signers:[...], approval_mode, required_min }. Acepta { signers:[...] } o un signer suelto.
+  // Paso de firma -> { signers: [...] }. Acepta `{ signers: [...] }` o un firmante suelto.
   const normFirmaStep = (raw) => {
     const rawSigners = Array.isArray(raw?.signers) ? raw.signers : [raw];
     const signers = rawSigners.map(normSigner).filter(Boolean);
-    if (!signers.length) return null;
-    const approval = APPROVALS.has(raw?.approval_mode) ? raw.approval_mode : "and";
-    return {
-      signers,
-      approval_mode: signers.length > 1 ? approval : "and",
-      required_min: signers.length > 1 && approval === "at_least" ? (Number(raw?.required_min) || 1) : null,
-    };
+    return signers.length ? { signers } : null;
   };
 
   const entrega = (Array.isArray(flow?.entrega) ? flow.entrega : []).map(normSigner).filter(Boolean);
   const firma = (Array.isArray(flow?.firma) ? flow.firma : []).map(normFirmaStep).filter(Boolean);
-  let fillSteps = 0;
-  let signatureSteps = 0;
 
-  if (entrega.length) {
-    const [ft] = await connection.query(
-      `INSERT INTO fill_flow_templates (task_item_id, name, is_active)
-       VALUES (?, 'Entrega (definida al enviar)', 1)`,
-      [taskItemId]
-    );
-    const fillTplId = Number(ft.insertId);
-    let order = 1;
-    for (const s of entrega) {
-      const canReject = order > 1 ? 1 : 0;
-      if (s.type === "cargo_in_scope") {
-        await connection.query(
-          `INSERT INTO fill_flow_steps
-             (fill_flow_template_id, step_order, resolver_type, unit_scope_type, unit_id, unit_type_id, cargo_id, selection_mode, is_required, can_reject)
-           VALUES (?, ?, 'cargo_in_scope', ?, ?, ?, ?, 'auto_one', 1, ?)`,
-          [fillTplId, order, s.unit_scope_type, s.unit_id, s.unit_type_id, s.cargo_id, canReject]
-        );
-      } else {
-        await connection.query(
-          `INSERT INTO fill_flow_steps
-             (fill_flow_template_id, step_order, resolver_type, assigned_person_id, selection_mode, is_required, can_reject)
-           VALUES (?, ?, 'specific_person', ?, 'auto_one', 1, ?)`,
-          [fillTplId, order, s.person_id, canReject]
-        );
-      }
-      order += 1;
-      fillSteps += 1;
-    }
-  }
-
-  if (firma.length) {
-    const [st] = await connection.query(
-      `INSERT INTO signature_flow_templates (task_item_id, name, is_active)
-       VALUES (?, 'Firma (definida al enviar)', 1)`,
-      [taskItemId]
-    );
-    const sigTplId = Number(st.insertId);
-    let order = 1;
-    for (const step of firma) {
-      const code = `firma_${order}`;
-      const primary = step.signers[0]; // columnas de resolutor = fallback; el flujo usa `signers` cuando existe.
-      await connection.query(
-        `INSERT INTO signature_flow_steps
-           (template_id, step_order, code, name, slot, resolver_type, assigned_person_id, required_cargo_id, unit_scope_type, unit_id, unit_type_id, selection_mode, approval_mode, required_signers_min, signers, is_required)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'auto_all', ?, ?, ?, 1)`,
-        [
-          sigTplId, order, code, `Firma ${order}`, code,
-          primary.type,
-          primary.type === "specific_person" ? primary.person_id : null,
-          primary.type === "cargo_in_scope" ? primary.cargo_id : null,
-          primary.type === "cargo_in_scope" ? primary.unit_scope_type : "context_exact",
-          primary.type === "cargo_in_scope" ? primary.unit_id : null,
-          primary.type === "cargo_in_scope" ? primary.unit_type_id : null,
-          step.approval_mode,
-          step.required_min,
-          JSON.stringify(step.signers),
-        ]
-      );
-      order += 1;
-      signatureSteps += 1;
-    }
-  }
-
-  // Y LA MISMA RECETA EN SU FORMA NUEVA (frente 24, fase 4, paso 2), en paralelo. Aqui el origen es
-  // el ENTREGABLE: es la receta que el usuario define AL ENVIAR, el modo `routed`.
-  //
-  // El `slot` lo acuña este escritor como `firma_<orden>` y se lo queda el PRIMER firmante del paso;
-  // a los demas el convertidor les deriva el suyo. Antes compartian uno solo y solo el primero tenia
-  // marca en el PDF.
   await reemplazarReceta(connection, {
     origen: "entregable", origenId: Number(taskItemId), accion: "entrega",
     pasos: entrega.map((s, i) => ({
@@ -246,6 +181,10 @@ export const materializeRuntimeFlowForTaskItem = async (
       participantes: participantesDeUnPasoDeEntrega(s, `entregable ${taskItemId}, paso ${i + 1} de entrega`),
     })),
   });
+
+  // EL HUECO LO ACUÑA ESTE ESCRITOR como `firma_<orden>`, y se lo queda el PRIMER firmante del paso;
+  // a los demas el convertidor les deriva el suyo. Antes compartian uno solo y solo el primero tenia
+  // marca en el PDF.
   await reemplazarReceta(connection, {
     origen: "entregable", origenId: Number(taskItemId), accion: "firma",
     pasos: firma.map((step, i) => ({
@@ -259,7 +198,7 @@ export const materializeRuntimeFlowForTaskItem = async (
     })),
   });
 
-  return { fillSteps, signatureSteps };
+  return { fillSteps: entrega.length, signatureSteps: firma.length };
 };
 export const ensureDocumentForTaskItem = async (connection, taskItem) => {
   const originUnitId = await resolveOriginUnitIdForTaskItem(connection, taskItem, taskItem?.assigned_person_id ?? null);

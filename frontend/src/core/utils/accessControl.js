@@ -103,10 +103,10 @@ export const TRACEABILITY_TABLES = new Set([
   "task_items",
   "task_item_tenures",
   "document_versions",
-  "document_fill_flows",
-  "fill_requests",
-  "signature_flow_instances",
-  "signature_requests",
+  // LA EJECUCION DEL RECORRIDO, que son DOS tablas desde el paso 4 de la fase 4 del frente 24.
+  // Eran cuatro --instancia y solicitud, por lado-- y las cuatro se retiraron.
+  "recorridos",
+  "turnos",
   "document_signatures",
   // La bitacora de accesos sensibles: la escribe el sistema, nunca una persona desde /admin.
   "accesos_sensibles"

@@ -258,25 +258,25 @@ const mapOneActivePerSeries = (error) => {
 // El registro. Una entrada por tabla con lógica propia; las demás pasan por el camino genérico.
 // -------------------------------------------------------------------------------------------
 
-// EL ANCLA DE UNA CABECERA DE RECORRIDO decide tambien POR QUE se rechaza editarla. Son dos desde
-// la fase 2 del frente 24, y cada una da una respuesta distinta:
+// EL ORIGEN DE UN PASO DECLARADO decide tambien POR QUE se rechaza editarlo. Son dos, excluyentes
+// por `CHECK`, y cada uno da una respuesta distinta:
 //
 //   · `task_item_id` -> el recorrido se definio AL ENVIAR y pertenece a ese entregable. El editor
 //     generico no lo toca, y lo que hay que decir es ESO.
-//   · `edicion_id`   -> se edita mientras la edicion este en `draft`. Misma puerta que los pasos y
-//     que `templateLifecycle` para publicar.
+//   · `edicion_id`   -> se edita mientras la edicion este en `draft`. Misma puerta que usa
+//     `templateLifecycle` para publicar.
 //
-// ⚠️ EL ANCLA DE RUNTIME NO SE PUEDE LEER DE LA FILA, y conviene saber por que: `sqlTables.js` no
-// cataloga `task_item_id` en estas dos tablas, asi que ni `ctx.existing` ni `getByKeys` lo traen
-// --se comprobo: la rama que lo miraba no se disparo NUNCA--. Se deduce, y la deduccion es
-// solida gracias al `CHECK` `ck_*_un_portador`: si una fila que YA EXISTE no tiene edicion, su
-// portador es por fuerza el entregable, porque no hay un tercero ni se admite ninguno.
+// ⚠️ AQUI HABIA UNA DEDUCCION Y SE FUE con las cabeceras viejas (paso 4 de la fase 4 del frente 24):
+// `sqlTables.js` no catalogaba su `task_item_id`, asi que el portador de runtime no se podia leer de
+// la fila y se deducia por descarte --si una fila que ya existe no tiene edicion, su portador es por
+// fuerza el entregable--. En `pasos_declarados` las dos columnas estan catalogadas: la fila lo dice.
 //
-// En `create` NO se deduce, y el orden de los pasos es el motivo: la cabecera de este fichero lo
-// deja escrito --`beforeCreate -> [requeridos -> validateFieldTypes -> validateTableRules]`--, o sea
-// que este hook corre ANTES de la validacion. Un payload sin edicion se deja pasar para que sea
-// `validateTableRules` quien hable, con su mensaje propio («Selecciona la edicion de la plantilla.»),
-// que es el que el formulario espera. Adelantarse aqui lo unico que haria es empeorarlo.
+// En `create` el payload puede venir sin origen y se DEJA PASAR, y el orden de los pasos es el
+// motivo: la cabecera de este fichero lo deja escrito --`beforeCreate -> [requeridos ->
+// validateFieldTypes -> validateTableRules]`--, o sea que este hook corre ANTES de la validacion.
+// Quien tiene que hablar de un origen ausente es el `CHECK` `ck_pasos_declarados_un_origen`, porque
+// lo que esta mal no es que falte un campo: es que no haya EXACTAMENTE UNO. Adelantarse aqui con un
+// mensaje campo a campo lo unico que haria es empeorarlo.
 const exigirRecorridoEditable = async (ctx, fila, entityLabel, { creando = false } = {}) => {
   if (!fila?.edicion_id) {
     if (creando) {
@@ -287,6 +287,20 @@ const exigirRecorridoEditable = async (ctx, fila, entityLabel, { creando = false
     );
   }
   await ctx.service.ensureDraftEdicionContext(fila.edicion_id, { entityLabel });
+};
+
+
+// La puerta de un PARTICIPANTE es la de su paso. Un paso que no existe lo rechaza aqui y no en la
+// clave ajena: el mensaje de la base nombra una restriccion, no lo que el usuario hizo.
+const exigirPasoEditable = async (ctx, pasoId) => {
+  if (!pasoId) {
+    return;
+  }
+  const paso = await ctx.service.getPasoDeclarado(pasoId);
+  if (!paso) {
+    throw new Error("El paso del recorrido seleccionado no existe.");
+  }
+  await exigirRecorridoEditable(ctx, paso, "los participantes del recorrido");
 };
 
 
@@ -1044,103 +1058,68 @@ export const TABLE_HOOKS = {
   turnos: syncProgressHooks(syncProgressFromTurno),
   document_signatures: syncProgressHooks(syncDocumentProgressFromDocumentSignature),
 
-  fill_flow_templates: {
-    // EL ANCLA ES LA EDICION, y esto cambió con la fase 2 del frente 24. Antes la cabecera colgaba
-    // del vínculo y de ahí se sacaba UNA definición de proceso a la que exigir borrador. Sin esa
-    // columna la pregunta «¿de qué definición es?» no tiene una sola respuesta —una edición puede
-    // estar enlazada a varias configuraciones—, y la que sí la tiene es la propia edición, que
-    // lleva su ciclo de vida. Es la misma puerta que usan los pasos y que usa `templateLifecycle`.
-    //
-    // ⚠️ ESTO GUARDA UN CASO QUE ANTES NO SE GUARDABA, y no es un descuido al trasladar: la
-    // cabecera AUTORADA tenía `vinculo_id` en NULL, así que `getTaskTemplate(null)` devolvía null y
-    // el `if (template)` se saltaba la comprobación entera. Se editaba el recorrido de una edición
-    // publicada sin que nadie dijera nada. Dejar la guarda apagada al quitar la columna habría sido
-    // una regresión silenciosa.
-    //
-    // NOTA: el injerto original hacía `payload.process_definition_id = ...` y lo borraba tres
-    // líneas después. Era código muerto: `process_definition_id` no es campo de esta tabla en
-    // `sqlTables.js`, así que `pickPayload` nunca lo pone en el payload y el delete no borraba
-    // nada. No se traslada.
+  // ── LA RECETA: SE EDITA MIENTRAS LA EDICION ESTE EN BORRADOR ────────────────────────────────
+  //
+  // AQUI HABIA TRES ENTRADAS --`fill_flow_templates`, `fill_flow_steps` y `signature_flow_templates`--
+  // y son DOS, porque la receta es una sola para los dos lados. Y el guard se simplifico de verdad,
+  // no solo de nombre: un paso de entrega tenia que ir a buscar su CABECERA para saber de que edicion
+  // era (`getFillFlowTemplate` -> `edicion_id`), y hoy el paso LLEVA SU ORIGEN. Un salto menos.
+  //
+  // ⚠️ Y LA DEDUCCION QUE `exigirRecorridoEditable` TENIA QUE HACER YA NO HACE FALTA. Su nota decia
+  // que el ancla de runtime no se podia leer de la fila porque `sqlTables.js` no cataloga
+  // `task_item_id` en las cabeceras viejas, asi que se deducia por descarte. En `pasos_declarados`
+  // las DOS columnas de origen estan catalogadas: la fila dice cual es, sin deducir.
+  pasos_declarados: {
     async beforeCreate(ctx) {
-      await exigirRecorridoEditable(ctx, ctx.payload, "los flujos de entrega", { creando: true });
+      await exigirRecorridoEditable(ctx, ctx.payload, "los pasos del recorrido", { creando: true });
     },
 
     async beforeUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "edicion_id")) {
-        if (Number(ctx.updates.edicion_id) !== Number(ctx.existing.edicion_id)) {
-          throw new Error("No se puede cambiar la edicion asociada de un flujo de entrega.");
+      // EL ORIGEN NO SE MUEVE. Cambiarlo no es editar un paso: es trasplantarlo a otra receta, con
+      // los huecos de firma de la de destino ya ocupados. Lo mismo que las cabeceras prohibian.
+      for (const columna of ["edicion_id", "task_item_id", "accion"]) {
+        if (Object.hasOwn(ctx.updates, columna)) {
+          if (String(ctx.updates[columna] ?? "") !== String(ctx.existing[columna] ?? "")) {
+            throw new Error(`No se puede cambiar '${columna}' de un paso del recorrido.`);
+          }
+          delete ctx.updates[columna];
         }
-        delete ctx.updates.edicion_id;
       }
-      await exigirRecorridoEditable(ctx, ctx.existing, "los flujos de entrega");
-    }
-  },
-
-  fill_flow_steps: {
-    async beforeCreate(ctx) {
-      if (!ctx.payload.fill_flow_template_id) {
-        return;
-      }
-      const fillFlowTemplate = await ctx.service.getFillFlowTemplate(ctx.payload.fill_flow_template_id);
-      if (!fillFlowTemplate) {
-        throw new Error("La plantilla de entrega seleccionada no existe.");
-      }
-      // LA EDICION MANDA, NO LA DEFINICION, y esto cambio con el frente 24: la cabecera colgaba del
-      // vinculo (el escalon 2) y de ahi se sacaba UNA definicion de proceso a la que exigir borrador.
-      // Anclada en la edicion, esa pregunta no tiene una sola respuesta --una edicion puede estar
-      // enlazada a varias configuraciones-- y la que si la tiene es la propia edicion, que lleva su
-      // ciclo de vida: los pasos se editan mientras la edicion es `draft`, que es la misma puerta que
-      // usa `templateLifecycle` para publicar.
-      await ctx.service.ensureDraftEdicionContext(
-        fillFlowTemplate.edicion_id,
-        { entityLabel: "los pasos de entrega" }
-      );
+      await exigirRecorridoEditable(ctx, ctx.existing, "los pasos del recorrido");
     },
 
-    async beforeUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "fill_flow_template_id")) {
-        if (Number(ctx.updates.fill_flow_template_id) !== Number(ctx.existing.fill_flow_template_id)) {
-          throw new Error("No se puede cambiar la plantilla asociada de un paso de entrega.");
-        }
-        delete ctx.updates.fill_flow_template_id;
-      }
-      const fillFlowTemplate = await ctx.service.getFillFlowTemplate(ctx.existing.fill_flow_template_id);
-      if (fillFlowTemplate) {
-        await ctx.service.ensureDraftEdicionContext(
-          fillFlowTemplate.edicion_id,
-          { entityLabel: "los pasos de entrega" }
-        );
-      }
-    }
-  },
-
-  signature_flow_templates: {
-    // Mismo cambio que en `fill_flow_templates`: el ancla es la EDICION desde la fase 2 del
-    // frente 24. La asimetría que había entre las dos —aquí el ancla ausente era ERROR, allí se
-    // ignoraba en silencio— se desvanece sola: `ensureDraftEdicionContext` trata el ancla ausente
-    // como error en los dos lados, que es lo que la de firma ya hacía.
-    async beforeCreate(ctx) {
-      await exigirRecorridoEditable(ctx, ctx.payload, "los flujos de firma", { creando: true });
-    },
-
-    async beforeUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "edicion_id")) {
-        if (Number(ctx.updates.edicion_id) !== Number(ctx.existing.edicion_id)) {
-          throw new Error("No se puede cambiar la edicion asociada de un flujo de firma.");
-        }
-        delete ctx.updates.edicion_id;
-      }
-      await exigirRecorridoEditable(ctx, ctx.existing, "los flujos de firma");
-    },
-
-    // Cuelga de la EDICION, no de `process_definition_id` directo, así que no puede reutilizar el
-    // guard compartido de las tres hijas.
     async beforeRemove(ctx) {
       const existing = await ctx.service.getByKeys(ctx.tableName, ctx.keyPayload);
       if (!existing) {
         throw new Error("Registro no encontrado.");
       }
-      await exigirRecorridoEditable(ctx, existing, "los flujos de firma");
+      await exigirRecorridoEditable(ctx, existing, "los pasos del recorrido");
+    }
+  },
+
+  participantes_declarados: {
+    // El participante no lleva origen: lo lleva su paso, y de ahi sale la puerta. Es el unico salto
+    // que queda, y es el que antes daban TAMBIEN los pasos.
+    async beforeCreate(ctx) {
+      await exigirPasoEditable(ctx, ctx.payload.paso_id);
+    },
+
+    async beforeUpdate(ctx) {
+      if (Object.hasOwn(ctx.updates, "paso_id")) {
+        if (Number(ctx.updates.paso_id) !== Number(ctx.existing.paso_id)) {
+          throw new Error("No se puede cambiar el paso asociado de un participante.");
+        }
+        delete ctx.updates.paso_id;
+      }
+      await exigirPasoEditable(ctx, ctx.existing.paso_id);
+    },
+
+    async beforeRemove(ctx) {
+      const existing = await ctx.service.getByKeys(ctx.tableName, ctx.keyPayload);
+      if (!existing) {
+        throw new Error("Registro no encontrado.");
+      }
+      await exigirPasoEditable(ctx, existing.paso_id);
     }
   },
 };

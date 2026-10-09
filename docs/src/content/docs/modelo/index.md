@@ -68,10 +68,13 @@ tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
 | Restricciones `CHECK` del esquema entero | **36** |
 
 Las dos cifras de claves foráneas no son la misma, y la diferencia explica una pregunta que sale
-sola: **tres** de las declaradas en esas 38 apuntan **fuera del mapa** —`persons` a `paises` para la
-nacionalidad, y `unit_relations` y `fill_flow_steps` a `relation_unit_types`—. Por eso la referencia
-generada de [Campos de la cadena](/referencia/campos-proceso-documento/) habla de **39** tablas: sin
+sola: **dos** de las declaradas apuntan **fuera del mapa** —`persons` a `paises` para la nacionalidad, y
+`unit_relations` a `relation_unit_types`—. Por eso la referencia generada de
+[Campos de la cadena](/referencia/campos-proceso-documento/) cuenta una tabla más que el mapa: sin
 `relation_unit_types` las suyas quedarían colgando.
+
+Eran **tres** hasta el 2026-10-09: la tercera era `fill_flow_steps.relation_type_id`, una columna
+huérfana cuyo único lector era un ámbito retirado, y se fue con su tabla.
 
 Los **comportamientos** —qué pasa al publicar, qué mira el lanzamiento, hasta dónde llega el
 relevo— se comprobaron ejecutándolos, no leyéndolos.

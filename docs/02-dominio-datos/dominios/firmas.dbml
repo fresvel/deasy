@@ -35,79 +35,6 @@ Table "signature_batch_jobs" {
   }
 }
 
-Table "signature_flow_instances" {
-  "id" int4 [pk, not null, increment]
-  "template_id" int4 [not null]
-  "document_version_id" int4 [unique, not null]
-  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table "signature_flow_steps" {
-  "id" int4 [pk, not null, increment]
-  "template_id" int4 [not null]
-  "step_order" int4 [not null]
-  "code" varchar(120)
-  "name" varchar(180)
-  "slot" varchar(80)
-  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'cargo_in_scope']
-  "assigned_person_id" int4
-  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text])`, default: 'context_exact']
-  "unit_id" int4
-  "unit_type_id" int4
-  "position_id" int4
-  "required_cargo_id" int4
-  "selection_mode" varchar(20) [not null, default: 'auto_all']
-  "approval_mode" text [not null, check: `approval_mode = ANY (ARRAY['and'::text, 'or'::text, 'at_least'::text])`, default: 'and']
-  "required_signers_min" int4
-  "required_signers_max" int4
-  "is_required" int2 [not null, default: 1]
-  "anchor_refs" jsonb
-  "signers" jsonb
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (template_id, step_order) [type: btree, unique, name: "uq_signature_flow_steps"]
-    (template_id, slot) [type: btree, unique, name: "uq_signature_flow_steps_slot"]
-    assigned_person_id [type: btree, name: "idx_signature_flow_steps_person"]
-    position_id [type: btree, name: "idx_signature_flow_steps_position"]
-    unit_id [type: btree, name: "idx_signature_flow_steps_unit"]
-    unit_type_id [type: btree, name: "idx_signature_flow_steps_unit_type"]
-  }
-}
-
-Table "signature_flow_templates" {
-  "id" int4 [pk, not null, increment]
-  "task_item_id" int4
-  "edicion_id" int4
-  "name" varchar(180) [not null]
-  "description" varchar(255)
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    edicion_id [type: btree, name: "idx_signature_flow_templates_artifact"]
-    task_item_id [type: btree, name: "idx_signature_flow_templates_task_item"]
-  }
-}
-
-Table "signature_requests" {
-  "id" int4 [pk, not null, increment]
-  "instance_id" int4 [not null]
-  "step_id" int4 [not null]
-  "assigned_person_id" int4
-  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
-  "is_manual" int2 [not null, default: 0]
-  "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "notified_at" timestamp
-  "responded_at" timestamp
-
-  Indexes {
-    (instance_id, step_id, assigned_person_id) [type: btree, unique, name: "uq_signature_requests"]
-    (instance_id, step_id) [type: btree, name: "idx_signature_requests_step"]
-  }
-}
-
 Table "signature_statuses" {
   "id" int4 [pk, not null, increment]
   "code" varchar(40) [unique, not null]
@@ -117,20 +44,8 @@ Table "signature_statuses" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
-Ref "fk_signature_flow_instances_template":"signature_flow_templates"."id" <? "signature_flow_instances"."template_id"
-Ref "fk_signature_flow_steps_template":"signature_flow_templates"."id" <? "signature_flow_steps"."template_id"
-Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signature_requests"."instance_id"
-Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_requests"."step_id"
+
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   signature_statuses -> document_signatures   [tareas]
-//   document_versions -> signature_flow_instances   [tareas]
-//   cargos -> signature_flow_steps   [identidad]
-//   persons -> signature_flow_steps   [identidad]
-//   unit_positions -> signature_flow_steps   [organizacion]
-//   unit_types -> signature_flow_steps   [organizacion]
-//   units -> signature_flow_steps   [organizacion]
-//   ediciones -> signature_flow_templates   [plantillas]
-//   task_items -> signature_flow_templates   [tareas]
-//   persons -> signature_requests   [identidad]
 //   persons -> signature_batch_jobs   [identidad]

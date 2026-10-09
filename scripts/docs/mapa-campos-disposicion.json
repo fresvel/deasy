@@ -106,7 +106,7 @@
         16
       ]
     },
-    "modelo/mapa-con-campos.md › — › Flujo de entrega": {
+    "modelo/mapa-con-campos.md › — › El recorrido del documento": {
       "maxTablas": 8,
       "direcciones": [
         "TB"
@@ -115,18 +115,16 @@
         13.27
       ]
     },
-    "modelo/mapa-con-campos.md › — › Flujo de firma": {
-      "maxTablas": 6,
+    "modelo/mapa-con-campos.md › — › Fuera de los subgrupos": {
+      "maxTablas": 8,
       "direcciones": [
-        "TB",
         "TB"
       ],
       "letraEfectiva": [
-        12.22,
         16
       ]
     },
-    "modelo/mapa-con-campos.md › — › Fuera de los subgrupos": {
+    "modelo/mapa-con-campos.md › — › La firma en sí": {
       "maxTablas": 8,
       "direcciones": [
         "TB"

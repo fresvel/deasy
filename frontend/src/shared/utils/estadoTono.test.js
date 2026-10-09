@@ -177,16 +177,11 @@ describe("las columnas `Estado` de admin están cubiertas ENTERAS", () => {
     "process_runs.status": [tonoCorrida, ["pending", "active", "completed", "cancelled"]],
     "tasks.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
     "task_items.status": [tonoTarea, ["pendiente", "en_proceso", "completada", "cancelada"]],
-    "document_fill_flows.status": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"]],
-    "fill_requests.status": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "devuelto", "cancelado"]],
-    "signature_flow_instances.status": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"]],
-    "signature_requests.status": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"]],
+    "recorridos.estado": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"]],
+    "turnos.estado": [tonoRecorrido, ["pendiente", "en_progreso", "completado", "rechazado", "devuelto", "cancelado"]],
     "persons.status": [tonoPersona, ["Inactivo", "Activo", "Verificado", "Reportado"]],
     "vacancies.status": [tonoVacante, ["abierta", "cubierta", "cerrada", "cancelada"]],
     "contracts.status": [tonoContrato, ["activo", "finalizado", "cancelado"]],
-    "documents.status": [tonoDocumento, ["Inicial", "Pendiente de llenado", "En proceso", "Observado",
-      "Listo para firma", "Pendiente de firma", "Firmado parcial", "Firmado completo", "Final",
-      "Archivado", "Cancelado"]],
     "document_versions.status": [tonoDocumento, ["Borrador", "Pendiente de llenado", "En llenado",
       "En revisión de llenado", "Observado", "Listo para firma", "Pendiente de firma",
       "Firmado parcial", "Firmado completo", "Final", "Archivado", "Cancelado"]]
@@ -252,7 +247,7 @@ describe("el eje tolerante `tonoFlujo` — lo que heredó de las tres funciones 
 
   it("resuelve los tres vocabularios reales, que era lo que `includes()` hacía a ojo", () => {
     expect(tonoFlujo("Firmado completo")).toBe(TONOS.SUCCESS);   // documents.status
-    expect(tonoFlujo("completado")).toBe(TONOS.SUCCESS);         // fill_requests.status
+    expect(tonoFlujo("completado")).toBe(TONOS.SUCCESS);         // turnos.estado
     // Y el vocabulario ingles retirado NO se tolera: el eje absorbe texto libre del backend, no
     // un segundo idioma para una columna nuestra. Tolerarlo seria volver a tener dos nombres.
     expect(tonoFlujo("approved", TONOS.NEUTRAL)).toBe(TONOS.NEUTRAL);
@@ -310,11 +305,16 @@ describe("el registro de columnas de admin — qué celda es una pastilla", () =
   // Eran 14 hasta el 2026-08-23: `task_assignments.status` cayó con su tabla, que era una foto del
   // reparto que ningún relevo refrescaba. La columna nunca tuvo escritores fuera del editor
   // genérico, así que su pastilla pintaba siempre el mismo 'pendiente'.
-  // Y pasaron de 13 a 15 en la fase 3 del frente 24: `signature_flow_instances.status` y
-  // `signature_requests.status` estaban EXCLUIDAS por llegar como numero (eran `status_id`, clave
-  // ajena a un catalogo). Hoy son texto con el mismo vocabulario que la entrega, asi que entran.
-  it("las 15 columnas del registro resuelven tono Y etiqueta", () => {
-    expect(COLUMNAS_DE_ESTADO).toHaveLength(15);
+  // Y pasaron de 13 a 15 en la fase 3 del frente 24: las dos `status` del lado de firma estaban
+  // EXCLUIDAS por llegar como numero (eran `status_id`, clave ajena a un catalogo), y pasaron a ser
+  // texto con el mismo vocabulario que la entrega.
+  //
+  // Hoy son DOCE, y la bajada es el modelo: las CUATRO del recorrido --instancia y solicitud, por
+  // mitad-- son DOS (`recorridos.estado` y `turnos.estado`) desde el paso 4 de la fase 4, y
+  // `documents.status` cayo con su tabla, que murio el 2026-08-23 y llevaba desde entonces en este
+  // registro apuntando al vacio.
+  it("las 12 columnas del registro resuelven tono Y etiqueta", () => {
+    expect(COLUMNAS_DE_ESTADO).toHaveLength(12);
     for (const ruta of COLUMNAS_DE_ESTADO) {
       const [tabla, columna] = [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
       expect(esColumnaDeEstado(tabla, columna)).toBe(true);
@@ -367,18 +367,24 @@ describe("el booleano — dos ejes, porque no todo booleano es una habilitación
     expect(tonoDeBooleano("role_assignments", "is_current", 0)).toBe(TONOS.WARNING);
   });
 
-  it("un RASGO apagado no reclama nada: un paso no obligatorio es OPCIONAL, no un aviso", () => {
-    expect(tonoDeBooleano("signature_flow_steps", "is_required", 0)).toBe(TONOS.NEUTRAL);
-    expect(tonoDeBooleano("signature_flow_steps", "is_required", 1)).toBe(TONOS.INFO);
+  it("un RASGO apagado no reclama nada: un turno NO manual es lo normal, no un aviso", () => {
+    // El ejemplo era `is_required` de un paso --«un paso no obligatorio es OPCIONAL»--, y esa
+    // columna se retiro con sus tablas: su variante `0` no era «opcional» sino un bloqueo
+    // silencioso y mas tarde (§10 del plan).
+    expect(tonoDeBooleano("turnos", "manual", 0)).toBe(TONOS.NEUTRAL);
+    expect(tonoDeBooleano("turnos", "manual", 1)).toBe(TONOS.INFO);
     expect(tonoDeBooleano("relation_unit_types", "is_inheritance_allowed", 0)).toBe(TONOS.NEUTRAL);
-    expect(tonoDeBooleano("signature_requests", "is_manual", 0)).toBe(TONOS.NEUTRAL);
     expect(tonoRasgo(1)).toBe(TONOS.INFO);
   });
 });
 
 describe("la clasificación — no tiene eje bueno/malo, y su paleta lo respeta", () => {
-  it("las 20 columnas del registro están, y ninguna toma un tono de juicio", () => {
-    expect(COLUMNAS_DE_CLASIFICACION).toHaveLength(20);
+  // Eran 20 hasta el paso 4 de la fase 4 del frente 24. Bajan a 16: las dos `selection_mode` se
+  // fueron con la columna, `approval_mode` con el cupo, y los dos vocabularios del participante son
+  // UNO para los dos lados en vez de dos por mitad. Entra `pasos_declarados.accion`, el
+  // discriminador nuevo.
+  it("las 16 columnas del registro están, y ninguna toma un tono de juicio", () => {
+    expect(COLUMNAS_DE_CLASIFICACION).toHaveLength(16);
     const PROHIBIDOS = [TONOS.SUCCESS, TONOS.WARNING, TONOS.DANGER, TONOS.SALMON];
     for (const ruta of COLUMNAS_DE_CLASIFICACION) {
       const corte = ruta.lastIndexOf(".");
@@ -432,29 +438,32 @@ describe("los 32 booleanos del esquema, cada uno con su eje", () => {
     "term_types.is_active", "terms.is_active", "process_definition_period_types.is_active",
     "generadores_de_documento.is_active", "ediciones.is_active", "persons.is_active",
     "roles.is_active", "cargos.is_active", "unit_positions.is_active",
-    "fill_flow_templates.is_active", "signature_statuses.is_active",
-    "signature_flow_templates.is_active",
+    "signature_statuses.is_active",
     "role_assignments.is_current", "role_assignments.current_flag",
     "position_assignments.is_current", "position_assignments.current_flag"
   ];
   const RASGO = [
     "relation_unit_types.is_inheritance_allowed", "unit_positions.is_unit_head",
-    "fill_flow_steps.is_required", "fill_flow_steps.can_reject", "fill_requests.is_manual",
-    "signature_flow_steps.is_required", "signature_requests.is_manual",
+    "turnos.manual",
     "persons.verify_email", "persons.verify_whatsapp"
   ];
 
   // Eran 32 hasta la fase 3 del frente 24: `signature_request_statuses.is_active` cayó con su
   // tabla, que era un catálogo de cinco códigos donde bastaba un CHECK.
-  it("son 31 y ni una más: 22 de habilitación y 9 de rasgo", () => {
-    expect(HABILITACION).toHaveLength(22);
-    expect(RASGO).toHaveLength(9);
-    expect(new Set([...HABILITACION, ...RASGO]).size).toBe(31);
+  //
+  // Y SON 25 desde el paso 4 de la fase 4. Se fueron SEIS con las ocho tablas: las dos `is_active`
+  // de las cabeceras, las dos `is_required` --un bloqueo silencioso y más tarde, no «opcional»--,
+  // `can_reject` --una derivada que no leía nadie-- y una de las dos `is_manual`, porque las dos
+  // mitades son hoy la misma columna: `turnos.manual`.
+  it("son 25 y ni una más: 20 de habilitación y 5 de rasgo", () => {
+    expect(HABILITACION).toHaveLength(20);
+    expect(RASGO).toHaveLength(5);
+    expect(new Set([...HABILITACION, ...RASGO]).size).toBe(25);
   });
 
   const parte = (ruta) => [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
 
-  it("las 22 de habilitación avisan cuando están apagadas", () => {
+  it("las 20 de habilitación avisan cuando están apagadas", () => {
     for (const ruta of HABILITACION) {
       const [t, c] = parte(ruta);
       expect(tonoDeBooleano(t, c, 1)).toBe(TONOS.SUCCESS);
@@ -462,7 +471,7 @@ describe("los 32 booleanos del esquema, cada uno con su eje", () => {
     }
   });
 
-  it("las 9 de rasgo NO avisan cuando están apagadas", () => {
+  it("las 5 de rasgo NO avisan cuando están apagadas", () => {
     for (const ruta of RASGO) {
       const [t, c] = parte(ruta);
       expect(tonoDeBooleano(t, c, 1)).toBe(TONOS.INFO);
@@ -470,10 +479,13 @@ describe("los 32 booleanos del esquema, cada uno con su eje", () => {
     }
   });
 
-  it("las dos «Obligatorio» gemelas coinciden — el fallo que destapó el censo corto", () => {
-    expect(tonoDeBooleano("fill_flow_steps", "is_required", 0))
-      .toBe(tonoDeBooleano("signature_flow_steps", "is_required", 0));
-    expect(tonoDeBooleano("fill_requests", "is_manual", 1))
-      .toBe(tonoDeBooleano("signature_requests", "is_manual", 1));
+  // AQUI SE COMPARABAN LAS GEMELAS --«Obligatorio» de llenado contra la de firma, «Manual» contra
+  // «Manual»--, que es el fallo que destapó el censo corto: salían una en VERDE y otra en AZUL en el
+  // mismo barrido. Desde el paso 4 de la fase 4 del frente 24 **no hay gemelas**: las dos mitades
+  // son la misma columna, así que no pueden discrepar. Lo que queda que afirmar es que la que
+  // sobrevive toma el eje de RASGO y no el de habilitación.
+  it("el «Manual» del turno es un rasgo, no una habilitación apagada", () => {
+    expect(tonoDeBooleano("turnos", "manual", 0)).toBe(TONOS.NEUTRAL);
+    expect(tonoDeBooleano("signature_statuses", "is_active", 0)).toBe(TONOS.WARNING);
   });
 });

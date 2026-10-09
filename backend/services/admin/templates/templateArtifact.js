@@ -373,9 +373,8 @@ export default class TemplateArtifactService {
       [templateCode]
     );
     const deliverableId = delivRows?.[0]?.id || null;
-    // Solo para el `name` de las cabeceras de flujo, que `replaceAuthoredFlowForArtifact` compone.
-    // Es el mismo entregable, así que sale el mismo rótulo que llevaba el padre.
-    const displayName = String(delivRows?.[0]?.display_name || artifact.display_name || templateCode);
+    // AQUI SE DERIVABA UN `displayName` para el `name` de las cabeceras de flujo. Las cabeceras se
+    // retiraron en el paso 4 de la fase 4 del frente 24 y ese rotulo no lo consultaba nadie.
     const oldVersion = String(artifact.storage_version || "");
     const oldPrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
     const versionSuffixRe = new RegExp(`${oldVersion.replace(/[.\\]/g, "\\$&")}/?$`);
@@ -438,7 +437,6 @@ export default class TemplateArtifactService {
       await copyAuthoredFlowToArtifact(connection, {
         sourceArtifactId: Number(artifactId),
         targetArtifactId: newArtifactId,
-        displayName,
       });
       // AQUI SE COPIABAN LOS CAMPOS a la version hija (`copySchemaFieldsToArtifact`). Era el UNICO
       // lector de `template_artifact_fields` en todo el sistema —la tabla existia para copiarse a si

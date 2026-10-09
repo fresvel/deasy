@@ -56,7 +56,6 @@ pantalla deja de enseñar. Lo que se ve es el flujo, no un destinatario.
 erDiagram
   task_items ||--o{ document_workflow_observations : "sobre este entregable"
   document_versions ||--o{ document_workflow_observations : "en esta ronda"
-  fill_requests ||--o{ document_workflow_observations : "desde esta solicitud de entrega"
   turnos ||--o{ document_workflow_observations : "de entrega o de firma"
   persons ||--o{ document_workflow_observations : "dicha por"
 

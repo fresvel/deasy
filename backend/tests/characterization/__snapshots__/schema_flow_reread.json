@@ -55,7 +55,7 @@
           "code": "",
           "name": "Visto por cargo en contexto",
           "resolver_type": "cargo_in_scope",
-          "selection_mode": "auto_all",
+          "selection_mode": "auto_one",
           "cargo_id": 2,
           "cargo_code": "",
           "unit_scope_type": "context_exact",
@@ -64,7 +64,7 @@
           "person_id": null,
           "position_id": null,
           "field_refs": [],
-          "required": false
+          "required": true
         }
       ]
     },
@@ -96,9 +96,9 @@
           "order": 2,
           "code": "firma_conjunta",
           "name": "Firma conjunta",
-          "approval_mode": "at_least",
+          "approval_mode": "and",
           "required_signers_min": 1,
-          "required": false,
+          "required": true,
           "signers": [
             {
               "resolver_type": "cargo_in_scope",
@@ -113,7 +113,7 @@
             },
             {
               "resolver_type": "cargo_in_scope",
-              "selection_mode": "auto_one",
+              "selection_mode": "auto_all",
               "cargo_id": 2,
               "cargo_code": "",
               "unit_scope_type": "context_exact",

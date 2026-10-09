@@ -386,6 +386,7 @@
 <!-- recorridos -->
 <g id="recorridos" class="node">
 <title>recorridos</title>
+<g id="a_recorridos"><a xlink:title="recorridos&#10;LA EJECUCION: la ronda en marcha de UNA accion sobre UNA version de documento. Lleva su estado y el `paso_actual`. Sustituye a las dos tablas de instancia que habia, una por lado.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="3775.1" cy="-2494.9" rx="321.97" ry="384.83"/>
 <polygon fill="#1d71b8" stroke="transparent" points="3550.1,-2704.9 3550.1,-2764.9 4001.1,-2764.9 4001.1,-2704.9 3550.1,-2704.9"/>
 <polygon fill="none" stroke="#29235c" points="3550.1,-2704.9 3550.1,-2764.9 4001.1,-2764.9 4001.1,-2704.9 3550.1,-2704.9"/>
@@ -435,6 +436,8 @@
 <polygon fill="none" stroke="#29235c" points="3550.1,-2224.9 3550.1,-2284.9 4001.1,-2284.9 4001.1,-2224.9 3550.1,-2224.9"/>
 <text text-anchor="start" x="3672.45" y="-2246.1" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#1d71b8"> &#160;&#160;&#160;id, accion &#160;&#160;&#160;</text>
 <polygon fill="none" stroke="#29235c" stroke-width="2" points="3548.6,-2223.9 3548.6,-2765.9 4001.6,-2765.9 4001.6,-2223.9 3548.6,-2223.9"/>
+</a>
+</g>
 </g>
 <!-- document_versions&#45;&gt;recorridos -->
 <!-- document_versions&#45;&gt;recorridos -->
@@ -596,6 +599,7 @@
 <!-- turnos -->
 <g id="turnos" class="node">
 <title>turnos</title>
+<g id="a_turnos"><a xlink:title="turnos&#10;A QUIEN LE TOCO: un turno por cada persona convocada en un recorrido. Apunta al PARTICIPANTE declarado que lo produjo &#45;&#45;no solo al paso&#45;&#45;, asi que se sabe de que declaracion salio. Sustituye a las dos tablas de solicitud que habia, una por lado.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="4521.03" cy="-2638.9" rx="327.28" ry="554.24"/>
 <polygon fill="#1d71b8" stroke="transparent" points="4292.03,-2968.9 4292.03,-3028.9 4751.03,-3028.9 4751.03,-2968.9 4292.03,-2968.9"/>
 <polygon fill="none" stroke="#29235c" points="4292.03,-2968.9 4292.03,-3028.9 4751.03,-3028.9 4751.03,-2968.9 4292.03,-2968.9"/>
@@ -663,6 +667,8 @@
 <polygon fill="none" stroke="#29235c" points="4292.03,-2248.9 4292.03,-2308.9 4751.03,-2308.9 4751.03,-2248.9 4292.03,-2248.9"/>
 <text text-anchor="start" x="4346.39" y="-2270.1" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#1d71b8"> &#160;&#160;&#160;recorrido_id, accion &#160;&#160;&#160;</text>
 <polygon fill="none" stroke="#29235c" stroke-width="2" points="4290.53,-2247.9 4290.53,-3029.9 4751.53,-3029.9 4751.53,-2247.9 4290.53,-2247.9"/>
+</a>
+</g>
 </g>
 <!-- recorridos&#45;&gt;turnos -->
 <!-- recorridos&#45;&gt;turnos -->

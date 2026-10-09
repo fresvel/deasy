@@ -144,6 +144,8 @@ Table "recorridos" {
     (id, accion) [type: btree, unique, name: "uq_recorridos_id_accion"]
     (document_version_id, accion) [type: btree, unique, name: "uq_recorridos_version_accion"]
   }
+
+  Note: '''LA EJECUCION: la ronda en marcha de UNA accion sobre UNA version de documento. Lleva su estado y el `paso_actual`. Sustituye a las dos tablas de instancia que habia, una por lado.'''
 }
 
 Table "task_item_tenures" {
@@ -227,7 +229,7 @@ Table "tasks" {
 Table "turnos" {
   "id" int4 [pk, not null, increment]
   "recorrido_id" int4 [not null]
-  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`, note: '''DUPLICADA DEL RECORRIDO a proposito: la clave ajena es COMPUESTA `(recorrido_id, accion)`, y eso es lo que impide que un turno diga una accion distinta de la de su recorrido. Lo necesita el CHECK de `devuelto`, que solo es legal en entrega.''']
   "participante_id" int4 [not null]
   "persona_id" int4
   "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
@@ -241,6 +243,8 @@ Table "turnos" {
     (recorrido_id, participante_id, persona_id) [type: btree, unique, name: "uq_turnos"]
     (recorrido_id, participante_id) [type: btree, name: "idx_turnos_participante"]
   }
+
+  Note: '''A QUIEN LE TOCO: un turno por cada persona convocada en un recorrido. Apunta al PARTICIPANTE declarado que lo produjo --no solo al paso--, asi que se sabe de que declaracion salio. Sustituye a las dos tablas de solicitud que habia, una por lado.'''
 }
 
 Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
@@ -262,20 +266,16 @@ Ref "fk_turnos_recorrido":"recorridos".("accion", "id") <? "turnos".("accion", "
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> document_attachments   [identidad]
-//   document_versions -> document_fill_flows   [plantillas]
 //   persons -> document_signatures   [identidad]
 //   signature_statuses -> document_signatures   [firmas]
 //   persons -> document_version_uploads   [identidad]
 //   ediciones -> document_versions   [plantillas]
 //   persons -> document_workflow_observations   [identidad]
 //   persons -> document_workflow_observations   [identidad]
-//   task_items -> fill_flow_templates   [plantillas]
 //   task_items -> pasos_declarados   [plantillas]
 //   persons -> process_runs   [identidad]
 //   process_definition_versions -> process_runs   [procesos]
 //   terms -> process_runs   [procesos]
-//   document_versions -> signature_flow_instances   [firmas]
-//   task_items -> signature_flow_templates   [firmas]
 //   persons -> task_item_tenures   [identidad]
 //   unit_positions -> task_item_tenures   [organizacion]
 //   persons -> task_items   [identidad]

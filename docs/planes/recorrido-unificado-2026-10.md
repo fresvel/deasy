@@ -11,7 +11,7 @@
 | **2** | Muere el escalón 2 | fuera `vinculo_id` de las dos cabeceras **y su `CHECK` de un solo portador**, fuera su campo en `/admin`, fuera el escalón de los dos resolvedores | el resolvedor baja de 3 escalones a 2 (**2 consultas, no 3**, afirmado por unitario); 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320**; migración probada en sus **tres** rutas (mueve 1 cabecera, para con mensaje y **deshace el `DROP COLUMN`**, idempotente); goldens movidos en 5 ficheros y **revisado uno a uno**; `check-mapa-tablas` 100/77/0, `check-doc-modelo` y `check-enlaces-internos` en verde | ✅ |
 | **3** | El vocabulario de estado | **un** mecanismo y **un** idioma para los 6 estados; muertas `signature_request_statuses` y las dos `status_id`; un mapa de tonos en vez de dos y un predicado en vez de dos | 5 puertas + `test:unit` **899/899** + `test:char:run` **320/320** + frontend lint y **498** vitest; el diff del golden es **sólo** vocabulario (60 líneas, cada valor retirado con su equivalente y los recuentos cuadrando) más 11 claves renombradas; migración probada en sus tres rutas; de 92 tablas a **91** y de 100 a **98** claves ajenas | ✅ |
 | **3-bis** | El atasco del rechazo en firma | el rechazo sin firmas dadas devuelve el documento a «Observado»; al volver, el recorrido rechazado **se reabre** en vez de ignorarse; y el rechazo manda sobre el estado de la instancia | 5 puertas + `test:unit` **904/904** (5 unitarios nuevos: la transición en las dos matrices, el camino de vuelta, y las dos ramas del reabrir) + `test:char:run` 320/320 **sin mover un golden** — y eso ES el hallazgo: ningún flow rechaza una firma (§11) | ✅ |
-| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10): **1 · esquema ✅** · **2 · receta ✅** · **3a · ejecución de ENTREGA ✅** · **3b · ejecución de FIRMA ✅** · 4 · lo que cuelga ⬜ | paso 3b: la firma entera sobre `recorridos`/`turnos`, el **defecto 1.19 cerrado** (el JSONB `signers` a filas bajo `CHECK`, y con él 2 resolutores, 4 ámbitos y el cupo), el servicio de **1.338 a 856 líneas**, `flujoDeFirma.js` disuelto, 2 claves ajenas que dejan de cruzar (`tareas` 31→29 relaciones hacia fuera) y **2 flujos** que dejan de cruzar dominios (§15); 5 puertas + `test:unit` **919/919** —los mismos que antes, y es casualidad aritmética: el fichero de firma baja de 15 casos a 10 (seis escalones y seis ámbitos se fueron **con su sujeto**) y `assignees` sube de 8 a 13— + `test:char:run` 320/320 + frontend lint y 498; golden de 41 líneas fuera y 8 dentro, revisado línea a línea; y `verificar_firma_nueva.mjs` para los dos ejes, que char no cubre | 🔸 |
+| **4** | E1 · la unificación | **8 tablas → 4** (§3 y §10): **1 · esquema ✅** · **2 · receta ✅** · **3a · ENTREGA ✅** · **3b · FIRMA ✅** · **4 · lo que cuelga ✅** | paso 3b: la firma entera sobre `recorridos`/`turnos`, el **defecto 1.19 cerrado** (el JSONB `signers` a filas bajo `CHECK`, y con él 2 resolutores, 4 ámbitos y el cupo), el servicio de **1.338 a 856 líneas**, `flujoDeFirma.js` disuelto, 2 claves ajenas que dejan de cruzar (`tareas` 31→29 relaciones hacia fuera) y **2 flujos** que dejan de cruzar dominios (§15); 5 puertas + `test:unit` **919/919** —los mismos que antes, y es casualidad aritmética: el fichero de firma baja de 15 casos a 10 (seis escalones y seis ámbitos se fueron **con su sujeto**) y `assignees` sube de 8 a 13— + `test:char:run` 320/320 + frontend lint y 498; golden de 41 líneas fuera y 8 dentro, revisado línea a línea; y `verificar_firma_nueva.mjs` para los dos ejes, que char no cubre. Paso 4: de **95 tablas a 87** y de **185 claves ajenas a 158**; `flowRows.js` de 662 líneas a 224 y el escritor de runtime de 132 a 60; seis fósiles encontrados sin buscarlos —dos pestañas de `/admin` que pedían tablas inexistentes entre ellos—; 5 puertas + `test:unit` **896/896** + `test:char:run` **320/320** + frontend lint, build y **495** vitest; golden auditado (+417/−497) y 17 menciones históricas declaradas con su motivo (§16) | ✅ |
 | **5** | La documentación publicada | DBML + 8 diagramas + `campos-*` regenerados, y las páginas de prosa reescritas | `check-doc-modelo` y `gen-dbml --check` en verde | ⬜ |
 
 ## 1 · Por qué, en una frase
@@ -654,3 +654,165 @@ nadie bloquea el recorrido y dice qué paso y por qué, que es lo único que sob
 | `scope_unit_type_id` | 1 | el tipo de unidad del contexto, que ya no lo lee ningún ámbito |
 
 **Ni un recuento, ni un estado, ni un id se movieron** — `total_signature_steps` incluido.
+
+## 16 · Fase 4, paso 4 — lo que cuelga: las ocho tablas se van
+
+**De 95 tablas a 87, y de 185 claves ajenas a 158.** El esquema deja de crear las ocho del recorrido
+partido en dos, y todo lo que colgaba de ellas se retira con ellas.
+
+| Lo que había | Lo que hay |
+|---|---|
+| `fill_flow_templates` · `signature_flow_templates` | *nada*: la cabecera desaparece |
+| `fill_flow_steps` · `signature_flow_steps` | `pasos_declarados` + `participantes_declarados` |
+| `document_fill_flows` · `signature_flow_instances` | `recorridos` |
+| `fill_requests` · `signature_requests` | `turnos` |
+
+### `flowRows.js` de 662 líneas a 224, y lo que se va no es duplicación
+
+Era el escritor, el lector y el copiador de la receta autorada, y la mitad de su tamaño venía de que
+los dos recorridos vivían en cuatro tablas con dos juegos de columnas distintos:
+
+- los **dos escritores de pasos**, con sus 14 y 19 columnas escritas a mano;
+- la **maquinaria de cabeceras**: buscarla, crearla, reutilizarla, reactivarla y desactivarla cuando
+  el autor quita un lado;
+- los **dos lectores Y los dos lectores de copia** —cuatro—, que eran distintos porque la proyección
+  al editor pierde columnas y una copia no puede perder ninguna;
+- y el **parseo del JSONB `signers`**, con sus dos convenciones de nombre vivas en la misma columna.
+
+**La copia pasó a ser una copia de verdad.** Antes se leían las columnas y se volvían a escribir con
+el escritor de siempre —para no tener un segundo escritor—, y eso obligaba a mantener dos lectores
+con listas de columnas distintas. Ahora se leen filas y se escriben filas: si mañana el participante
+gana una columna, la copia la arrastra sola.
+
+Y `materializeRuntimeFlowForTaskItem` baja de **132 líneas a 60**: escribía la receta DOS veces, con
+un `primary` que duplicaba al primer firmante en las columnas del paso.
+
+### El guard de `/admin` se simplificó de verdad, no sólo de nombre
+
+Eran **tres** injertos —las dos cabeceras y los pasos de entrega— y son **dos**. Y un paso de entrega
+tenía que ir a buscar su CABECERA para saber de qué edición era (`getFillFlowTemplate` →
+`edicion_id`); hoy el paso **lleva su origen**. Un salto menos, y la deducción que
+`exigirRecorridoEditable` tenía que hacer —el portador de runtime no se podía leer de la fila, así que
+se deducía por descarte— desaparece: `pasos_declarados` cataloga las dos columnas y la fila lo dice.
+
+### Lo que se encontró roto por el camino, sin buscarlo
+
+Al pasar por cada registro apareció lo que llevaba tiempo apuntando al vacío:
+
+| Dónde | Qué |
+|---|---|
+| `ProcessManagementView.vue` | la pestaña **«Documentos» pedía `documents`**, retirada el 2026-08-23, y **«Firmas» pedía `signature_request_statuses`**, retirado en la fase 3 de *este* frente. Dos pestañas que respondían con un error que nadie miraba |
+| `AdminTableManagerConfig.js` | `document_id: "documents"` en el mapa de claves ajenas —el editor pedía un catálogo inexistente— y `task_items → documents` entre los registros relacionados |
+| `estadoTono.js` | `documents.status` en el registro de columnas de estado, apuntando a la misma tabla muerta |
+| `dependenciasDelPuesto.js` | contaba por `fill_flow_steps.position_id` y `signature_flow_steps.position_id`, una columna cuyo único lector —el resolutor `position`— salió del vocabulario hace meses. **En la receta nueva no hay columna de puesto**, así que un puesto ya no puede estar bloqueado por un paso de recorrido: afirmarlo era contar filas de una regla muerta |
+| `tableHooks.js` | los injertos de `fill_requests` y `signature_requests` seguían ahí tras el paso 3b, y el `id` de esas tablas ya no identifica un turno: habrían reconciliado **el documento equivocado** |
+| `reset_targets.mjs` | `documents` en la lista de tablas que delatan uso real, tragada por un `try/catch` desde agosto |
+
+### Los contadores que bajan, y qué significan
+
+| | Antes | Ahora |
+|---|--:|--:|
+| Tablas del esquema | 95 | **87** |
+| Claves ajenas | 185 | **158** |
+| Consultas vigiladas por `check:sql-aliases` | 626 | **605** |
+| Columnas booleanas del frontend con su eje | 31 | **25** |
+| Columnas de estado del editor genérico | 15 | **12** |
+| Columnas de clasificación del editor | 20 | **16** |
+| Flujos que cruzan dominios (`_flujos`) | 6 | **5**, y tres de los cinco ya no cruzan |
+| Grupos del generador de campos | «entrega» + «firma» | **uno**, más «la firma en sí» |
+
+### Tres flujos dejan de cruzar dominios, y por qué se quedan declarados
+
+`generation/documents.js`, `DocumentSignatureWorkflowService.js` y `rehacerDocumento.js` escriben hoy
+**un solo dominio**, `tareas`. La puerta lo avisa —«deja de ser un flujo y se mueve a él»— y el aviso
+se deja a la vista, con su motivo escrito en `_flujos`.
+
+No se salen de la lista, y la razón es medible: la comprobación C los eximía, y sin la exención
+`document_versions` tendría **dos escritores** —el `datos/` de `tareas` y estos servicios—. Eso no se
+arregla moviendo una declaración: se arregla cuando `tareas` tenga su dominio y esas escrituras entren
+por su puerta, que es **F7.5**.
+
+`flowRows.js` sí salió: se quedó con **cero SQL**, así que no cruza nada.
+
+### Los unitarios: de 919 a 896, y cinco casos se fueron CON SU SUJETO
+
+| Fichero | Antes | Ahora | Qué cambió |
+|---|--:|--:|---|
+| `postgres_schema.test.js` | 44 | 33 | **once** casos vigilaban el portador de las dos cabeceras y la SIMETRÍA de los dos pasos (`code` y `name` con el mismo tipo en los dos lados). Lo primero lo vigila hoy el `CHECK` de un solo origen; lo segundo **ya no hace falta porque no hay dos tablas que simetrizar**. Entran 8: que las ocho no vuelvan |
+| `flowRows.test.js` | 31 | 15 | trece casos eran sobre LA FORMA DE LA CABECERA, y no era paranoia: una cabecera con el portador equivocado dejaba el flujo escrito y **sin lector**, sin error en ningún sitio |
+| `validation.test.js` | 3 de receta | 3 | pedían la cabecera y su paso; piden el paso, su participante y el recorrido. **Y uno afirma que el ORIGEN no se exige aquí**: son dos columnas excluyentes y lo que hay que validar es que haya *exactamente una*, algo que `requires` no sabe decir |
+
+### El diff del golden, auditado
+
+**417 líneas dentro, 497 fuera** en cinco ficheros, y cada línea es una de estas tres cosas:
+
+- **sale** lo retirado: `selection_mode`, `is_required`, `can_reject`, `position_id`, `unit_type_id`,
+  `relation_type_id`, `required_cargo_id`, `approval_mode`, `required_signers_min`/`_max`, `signers`
+  y las ocho claves camelCase de su JSONB, más las de cabecera (`name`, `description`, `is_active`);
+- **entra** la forma nueva: `accion`, `orden`, `nombre`, `participantes`, `persona_id`, `slot`;
+- y **tres claves nuevas** de golden (`sql_pasos_declarados`, `sql_participantes_declarados`,
+  `remove_guard_paso_de_recorrido_de_configuracion_activa`).
+
+Lo único que entra en `schema_flow_reread` y parece contradictorio son `selection_mode`, `required` y
+`approval_mode`: siguen viajando en el contrato del editor, pero ya **no round-trippean**. Lo que el
+editor recibe es el DEFECTO DEL CONTRATO, no lo que el autor escribió, y hay un test que lo afirma
+así de explícito.
+
+### Lo que costó
+
+**1 · El recorte de `sqlTables.js` por llaves, dos veces mal.** Las ocho configuraciones son objetos
+de un array con objetos anidados (los `options` de cada `select`), así que ni «hasta la línea que es
+`},`» ni una regex no codiciosa valen: la primera para en un cierre anidado y la segunda engancha una
+llave de apertura muy anterior. Lo que funciona es **equilibrar llaves contando por línea** desde el
+`{` que abre. Dos intentos, los dos cazados por `node --check`.
+
+**2 · `gen-dbml` falló por el fichero de DISPOSICIÓN, no por el esquema.** Los diagramas con campos
+llevan apuntada la disposición medida de cada subgrupo, y el generador **falla a propósito** si nombra
+un grupo que ya no existe. Al fusionar «Flujo de entrega» y «Flujo de firma» en «El recorrido del
+documento», los dos nombres viejos quedaron huérfanos. Es un acierto del generador: avisa de que un
+grupo se renombró en vez de dibujarlo mal en silencio.
+
+**3 · Y las anotaciones a mano también se validan.** `anotaciones.json` es lo único escrito a mano del
+modelo generado, y el post-procesado falla si nombra algo que no existe. Tenía dos entradas de
+`fill_flow_templates`, y lo correcto no era borrarlas: las cuatro tablas nuevas **no tenían ninguna**.
+Se escribieron las cuatro, más tres notas de columna (`accion`, `slot`, la `accion` duplicada de
+`turnos`).
+
+### La documentación publicada: dos capítulos simétricos pasan a ser uno y medio
+
+`modelo/flujo-de-entrega.md` y `modelo/flujo-de-firma.md` contaban lo mismo dos veces, 459 líneas
+entre las dos. Reescritas:
+
+- el **11** pasa a ser *«El recorrido del documento: quién hace cada paso»* y cuenta el mecanismo una
+  vez: la receta, los tres resolutores, los tres ámbitos y la ejecución;
+- el **12** pasa a ser *«La firma: el hueco en el papel y si la firma vale»* y cuenta **sólo lo que la
+  firma tiene de propio**: la cadena del token y los dos ejes.
+
+Se conservan los dos *slugs* y los dos números de capítulo a propósito: cambiarlos movería los enlaces
+de otras once páginas y la numeración de los siguientes, que es trabajo de la fase 5.
+
+Otras **nueve páginas** nombraban las ocho tablas como hechos vivos y se corrigieron una a una
+(`orden-de-lectura`, `datos/motor-de-procesos`, `datos/index`, `datos/modos-y-plantillas`,
+`datos/firmas-y-dominios`, `modelo/index`, `modelo/documento`, `modelo/cierre`,
+`modelo/entregable-y-ediciones`, `modelo/vocabularios-de-estado`, `modelo/mapa-completo` y
+`frontend/composables-y-deuda`).
+
+⚠️ **Y 17 nombres quedan como EXCEPCIÓN DECLARADA, con su motivo y atados a su página.** No es callar
+la puerta: son las lápidas que cuentan por qué cada cosa se fue, y eso es lo que impide que vuelva por
+inercia. Cada motivo dice además cuándo deja de valer: *si el nombre reaparece en el esquema, hay que
+quitar la excepción*.
+
+### Lo que NO se hizo, y queda dicho
+
+- **`document_workflow_observations` sigue con DOS columnas** —`fill_request_id` y
+  `signature_request_id`— apuntando las dos a `turnos`. Colapsarlas en una, con `phase` diciendo de
+  qué lado es, es un cambio de contrato de la API del hilo de observaciones: va aparte.
+- **Las claves de la API conservan sus nombres**: `workflow.fill_requests`,
+  `workflow.signature_requests`, `document_signatures.signature_request_id`. Las lee el frontend y el
+  firmador; renombrarlas es otro cambio.
+- **`useFlowBuilder.js` sigue enviando `approval_mode` y `required_min`**, que el backend ignora. Lo
+  que las mata es quitarlas del formulario.
+- **`field_refs` sigue en el contrato HTTP del editor** como literal `[]`, fijado por el golden
+  `schema_flow_reread`.
+- Y **`verificar_receta_nueva.mjs` se retiró**: comparaba la forma vieja con la nueva, y sin la vieja
+  no puede ni ejecutarse.

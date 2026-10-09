@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 95 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 87 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -384,16 +384,6 @@ Table "document_attachments" {
   }
 }
 
-Table "document_fill_flows" {
-  "id" int4 [pk, not null, increment]
-  "fill_flow_template_id" int4 [not null]
-  "document_version_id" int4 [unique, not null]
-  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
-  "current_step_order" int4
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-}
-
 Table "document_signatures" {
   "id" int4 [pk, not null, increment]
   "signature_request_id" int4
@@ -609,64 +599,6 @@ Table "estados_civiles" {
   }
 }
 
-Table "fill_flow_steps" {
-  "id" int4 [pk, not null, increment]
-  "fill_flow_template_id" int4 [not null]
-  "step_order" int4 [not null]
-  "code" varchar(120)
-  "name" varchar(180)
-  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'task_assignee']
-  "assigned_person_id" int4
-  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text])`, default: 'unit_exact']
-  "unit_id" int4
-  "unit_type_id" int4
-  "relation_type_id" int4
-  "cargo_id" int4
-  "position_id" int4
-  "selection_mode" text [not null, check: `selection_mode = ANY (ARRAY['auto_one'::text, 'auto_all'::text, 'manual'::text])`, default: 'auto_one']
-  "is_required" int2 [not null, default: 1]
-  "can_reject" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (fill_flow_template_id, step_order) [type: btree, unique, name: "uq_fill_flow_steps"]
-  }
-}
-
-Table "fill_flow_templates" {
-  "id" int4 [pk, not null, increment]
-  "task_item_id" int4
-  "edicion_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
-  "name" varchar(180) [not null]
-  "description" varchar(255)
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    edicion_id [type: btree, name: "idx_fill_flow_templates_artifact"]
-    task_item_id [type: btree, name: "idx_fill_flow_templates_task_item"]
-  }
-
-  Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`vinculo_id`), de runtime (`task_item_id`) o autorado en la plantilla (`edicion_id`, frente 0.8).'''
-}
-
-Table "fill_requests" {
-  "id" int4 [pk, not null, increment]
-  "document_fill_flow_id" int4 [not null]
-  "fill_flow_step_id" int4 [not null]
-  "assigned_person_id" int4
-  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
-  "is_manual" int2 [not null, default: 0]
-  "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "responded_at" timestamp
-  "response_note" varchar(255)
-
-  Indexes {
-    (document_fill_flow_id, fill_flow_step_id, assigned_person_id) [type: btree, unique, name: "uq_fill_requests"]
-    (document_fill_flow_id, fill_flow_step_id) [type: btree, name: "idx_fill_requests_step"]
-  }
-}
-
 Table "generadores_de_documento" {
   "id" int4 [pk, not null, increment]
   "code" varchar(180) [unique, not null]
@@ -807,17 +739,19 @@ Table "participantes_declarados" {
   "cargo_id" int4
   "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'context_exact'::text, 'all_units'::text])`, default: 'context_exact']
   "unit_id" int4
-  "slot" varchar(80)
+  "slot" varchar(80) [note: '''EL HUECO EN EL PAPEL: el nombre con el que la maqueta embebe el token de este firmante (`{{ signatures.<slot>.token }}`), que queda impreso en el PDF y que el firmador busca para estampar en sus coordenadas. Es del PARTICIPANTE y no del paso: con un hueco por paso, un paso de tres firmantes imprimia el token del primero y los otros dos no tenian marca. Nulo en entrega.''']
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
     (paso_id, orden) [type: btree, unique, name: "uq_participantes_declarados_orden"]
   }
+
+  Note: '''QUIEN HACE EL PASO: un participante por cada persona o cargo que el paso convoca, en su `orden`. Un paso de entrega tiene UNO; uno de firma puede tener varios. Antes los firmantes vivian dentro de un JSONB sin validar que mandaba sobre las columnas del paso --el defecto 1.19--; a filas entran bajo los mismos dos CHECK que cierran su vocabulario.'''
 }
 
 Table "pasos_declarados" {
   "id" int4 [pk, not null, increment]
-  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`, note: '''ENTREGA o FIRMA. Es el discriminador que permite que las dos mitades del recorrido sean la misma tabla: lo que cambia entre ellas no es la estructura, es la accion que se pide.''']
   "edicion_id" int4
   "task_item_id" int4
   "orden" int4 [not null]
@@ -829,6 +763,8 @@ Table "pasos_declarados" {
     (edicion_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_edicion"]
     (task_item_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_entregable"]
   }
+
+  Note: '''LA RECETA: un paso del recorrido documental, de ENTREGA o de FIRMA segun su `accion`. Sustituye a las cuatro tablas de receta que habia --dos cabeceras y dos de pasos-- y no tiene cabecera: el paso lleva su propio ORIGEN, que es o la edicion que lo autora (`edicion_id`) o el entregable que lo definio al enviar (`task_item_id`, modo `routed`), con un CHECK que exige exactamente uno.'''
 }
 
 Table "password_reset_codes" {
@@ -1059,6 +995,8 @@ Table "recorridos" {
     (id, accion) [type: btree, unique, name: "uq_recorridos_id_accion"]
     (document_version_id, accion) [type: btree, unique, name: "uq_recorridos_version_accion"]
   }
+
+  Note: '''LA EJECUCION: la ronda en marcha de UNA accion sobre UNA version de documento. Lleva su estado y el `paso_actual`. Sustituye a las dos tablas de instancia que habia, una por lado.'''
 }
 
 Table "relation_unit_types" {
@@ -1148,79 +1086,6 @@ Table "signature_batch_jobs" {
   Indexes {
     status [type: btree, name: "idx_signature_batch_jobs_status"]
     user_id [type: btree, name: "idx_signature_batch_jobs_user"]
-  }
-}
-
-Table "signature_flow_instances" {
-  "id" int4 [pk, not null, increment]
-  "template_id" int4 [not null]
-  "document_version_id" int4 [unique, not null]
-  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-}
-
-Table "signature_flow_steps" {
-  "id" int4 [pk, not null, increment]
-  "template_id" int4 [not null]
-  "step_order" int4 [not null]
-  "code" varchar(120)
-  "name" varchar(180)
-  "slot" varchar(80)
-  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'cargo_in_scope']
-  "assigned_person_id" int4
-  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text])`, default: 'context_exact']
-  "unit_id" int4
-  "unit_type_id" int4
-  "position_id" int4
-  "required_cargo_id" int4
-  "selection_mode" varchar(20) [not null, default: 'auto_all']
-  "approval_mode" text [not null, check: `approval_mode = ANY (ARRAY['and'::text, 'or'::text, 'at_least'::text])`, default: 'and']
-  "required_signers_min" int4
-  "required_signers_max" int4
-  "is_required" int2 [not null, default: 1]
-  "anchor_refs" jsonb
-  "signers" jsonb
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (template_id, step_order) [type: btree, unique, name: "uq_signature_flow_steps"]
-    (template_id, slot) [type: btree, unique, name: "uq_signature_flow_steps_slot"]
-    assigned_person_id [type: btree, name: "idx_signature_flow_steps_person"]
-    position_id [type: btree, name: "idx_signature_flow_steps_position"]
-    unit_id [type: btree, name: "idx_signature_flow_steps_unit"]
-    unit_type_id [type: btree, name: "idx_signature_flow_steps_unit_type"]
-  }
-}
-
-Table "signature_flow_templates" {
-  "id" int4 [pk, not null, increment]
-  "task_item_id" int4
-  "edicion_id" int4
-  "name" varchar(180) [not null]
-  "description" varchar(255)
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    edicion_id [type: btree, name: "idx_signature_flow_templates_artifact"]
-    task_item_id [type: btree, name: "idx_signature_flow_templates_task_item"]
-  }
-}
-
-Table "signature_requests" {
-  "id" int4 [pk, not null, increment]
-  "instance_id" int4 [not null]
-  "step_id" int4 [not null]
-  "assigned_person_id" int4
-  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
-  "is_manual" int2 [not null, default: 0]
-  "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "notified_at" timestamp
-  "responded_at" timestamp
-
-  Indexes {
-    (instance_id, step_id, assigned_person_id) [type: btree, unique, name: "uq_signature_requests"]
-    (instance_id, step_id) [type: btree, name: "idx_signature_requests_step"]
   }
 }
 
@@ -1402,7 +1267,7 @@ Table "tipos_discapacidad" {
 Table "turnos" {
   "id" int4 [pk, not null, increment]
   "recorrido_id" int4 [not null]
-  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`, note: '''DUPLICADA DEL RECORRIDO a proposito: la clave ajena es COMPUESTA `(recorrido_id, accion)`, y eso es lo que impide que un turno diga una accion distinta de la de su recorrido. Lo necesita el CHECK de `devuelto`, que solo es legal en entrega.''']
   "participante_id" int4 [not null]
   "persona_id" int4
   "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
@@ -1416,6 +1281,8 @@ Table "turnos" {
     (recorrido_id, participante_id, persona_id) [type: btree, unique, name: "uq_turnos"]
     (recorrido_id, participante_id) [type: btree, name: "idx_turnos_participante"]
   }
+
+  Note: '''A QUIEN LE TOCO: un turno por cada persona convocada en un recorrido. Apunta al PARTICIPANTE declarado que lo produjo --no solo al paso--, asi que se sabe de que declaracion salio. Sustituye a las dos tablas de solicitud que habia, una por lado.'''
 }
 
 Table "unit_positions" {
@@ -1572,8 +1439,6 @@ Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete:
 Ref "fk_direcciones_provincia":"provincias"."id" ?<? "direcciones"."provincia_id"
 Ref "fk_document_attachments_uploader":"persons"."id" ?<? "document_attachments"."uploaded_by_person_id"
 Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
-Ref "fk_document_fill_flows_document":"document_versions"."id" <? "document_fill_flows"."document_version_id"
-Ref "fk_document_fill_flows_template":"fill_flow_templates"."id" <? "document_fill_flows"."fill_flow_template_id"
 Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
 Ref "fk_document_signatures_request":"turnos"."id" ?<? "document_signatures"."signature_request_id"
 Ref "fk_document_signatures_signer":"persons"."id" <? "document_signatures"."signer_user_id"
@@ -1599,18 +1464,6 @@ Ref "fk_ediciones_parent":"ediciones"."id" ?<? "ediciones"."parent_version_id"
 Ref "fk_email_verification_codes_email":"emails"."id" <? "email_verification_codes"."email_id" [delete: cascade]
 Ref "fk_emails_person":"persons"."id" <? "emails"."person_id" [delete: cascade]
 Ref "fk_estados_civiles_pais":"paises"."id" <? "estados_civiles"."pais_id"
-Ref "fk_fill_flow_steps_cargo":"cargos"."id" ?<? "fill_flow_steps"."cargo_id"
-Ref "fk_fill_flow_steps_person":"persons"."id" ?<? "fill_flow_steps"."assigned_person_id"
-Ref "fk_fill_flow_steps_position":"unit_positions"."id" ?<? "fill_flow_steps"."position_id"
-Ref "fk_fill_flow_steps_relation_type":"relation_unit_types"."id" ?<? "fill_flow_steps"."relation_type_id"
-Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps"."fill_flow_template_id"
-Ref "fk_fill_flow_steps_unit_type":"unit_types"."id" ?<? "fill_flow_steps"."unit_type_id"
-Ref "fk_fill_flow_steps_unit":"units"."id" ?<? "fill_flow_steps"."unit_id"
-Ref "fk_fill_flow_templates_artifact":"ediciones"."id" ?<? "fill_flow_templates"."edicion_id"
-Ref "fk_fill_flow_templates_task_item":"task_items"."id" ?<? "fill_flow_templates"."task_item_id" [delete: cascade]
-Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
-Ref "fk_fill_requests_person":"persons"."id" ?<? "fill_requests"."assigned_person_id"
-Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
 Ref "fk_generos_pais":"paises"."id" <? "generos"."pais_id"
 Ref "fk_nomenclatura_pais":"paises"."id" <? "nomenclatura_territorial"."pais_id"
 Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
@@ -1659,19 +1512,6 @@ Ref "fk_role_assignments_role":"roles"."id" <? "role_assignments"."role_id"
 Ref "fk_role_assignments_unit":"units"."id" <? "role_assignments"."unit_id"
 Ref "fk_role_permissions_permission":"permissions"."id" <? "role_permissions"."permission_id"
 Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
-Ref "fk_signature_flow_instances_document":"document_versions"."id" <? "signature_flow_instances"."document_version_id"
-Ref "fk_signature_flow_instances_template":"signature_flow_templates"."id" <? "signature_flow_instances"."template_id"
-Ref "fk_signature_flow_steps_cargo":"cargos"."id" ?<? "signature_flow_steps"."required_cargo_id"
-Ref "fk_signature_flow_steps_person":"persons"."id" ?<? "signature_flow_steps"."assigned_person_id"
-Ref "fk_signature_flow_steps_position":"unit_positions"."id" ?<? "signature_flow_steps"."position_id"
-Ref "fk_signature_flow_steps_template":"signature_flow_templates"."id" <? "signature_flow_steps"."template_id"
-Ref "fk_signature_flow_steps_unit_type":"unit_types"."id" ?<? "signature_flow_steps"."unit_type_id"
-Ref "fk_signature_flow_steps_unit":"units"."id" ?<? "signature_flow_steps"."unit_id"
-Ref "fk_signature_flow_templates_artifact":"ediciones"."id" ?<? "signature_flow_templates"."edicion_id"
-Ref "fk_signature_flow_templates_task_item":"task_items"."id" ?<? "signature_flow_templates"."task_item_id" [delete: cascade]
-Ref "fk_signature_requests_instance":"signature_flow_instances"."id" <? "signature_requests"."instance_id"
-Ref "fk_signature_requests_person":"persons"."id" ?<? "signature_requests"."assigned_person_id"
-Ref "fk_signature_requests_step":"signature_flow_steps"."id" <? "signature_requests"."step_id"
 Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
 Ref "fk_task_item_tenures_person":"persons"."id" ?<? "task_item_tenures"."person_id"
 Ref "fk_task_item_tenures_position":"unit_positions"."id" ?<? "task_item_tenures"."position_id"

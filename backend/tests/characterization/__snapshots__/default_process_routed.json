@@ -58,97 +58,83 @@
       }
     ]
   },
-  "derived_flujo_entrega": {
-    "description": null,
-    "edicion_id": "<normalized>",
-    "id": "<normalized>",
-    "is_active": 1,
-    "name": "Entrega (definida al enviar)",
-    "steps": [
-      {
-        "assigned_person_id": 1,
-        "can_reject": 0,
-        "cargo_id": null,
-        "code": null,
-        "id": "<normalized>",
-        "is_required": 1,
-        "name": null,
-        "position_id": null,
-        "relation_type_id": null,
-        "resolver_type": "specific_person",
-        "selection_mode": "auto_one",
-        "step_order": 1,
-        "unit_id": null,
-        "unit_scope_type": "unit_exact",
-        "unit_type_id": null
-      }
-    ],
-    "task_item_id": "<normalized>"
-  },
-  "derived_flujo_firma": {
-    "description": null,
-    "edicion_id": "<normalized>",
-    "id": "<normalized>",
-    "is_active": 1,
-    "name": "Firma (definida al enviar)",
-    "steps": [
-      {
-        "approval_mode": "at_least",
-        "assigned_person_id": 2,
-        "code": "firma_1",
-        "id": "<normalized>",
-        "is_required": 1,
-        "name": "Firma 1",
-        "position_id": null,
-        "required_cargo_id": null,
-        "required_signers_max": null,
-        "required_signers_min": 1,
-        "resolver_type": "specific_person",
-        "selection_mode": "auto_all",
-        "signers": [
-          {
-            "person_id": 2,
-            "type": "specific_person"
-          },
-          {
-            "person_id": 3,
-            "type": "specific_person"
-          }
-        ],
-        "slot": "firma_1",
-        "step_order": 1,
-        "unit_id": null,
-        "unit_scope_type": "context_exact",
-        "unit_type_id": null
-      },
-      {
-        "approval_mode": "and",
-        "assigned_person_id": 1,
-        "code": "firma_2",
-        "id": "<normalized>",
-        "is_required": 1,
-        "name": "Firma 2",
-        "position_id": null,
-        "required_cargo_id": null,
-        "required_signers_max": null,
-        "required_signers_min": null,
-        "resolver_type": "specific_person",
-        "selection_mode": "auto_all",
-        "signers": [
-          {
-            "person_id": 1,
-            "type": "specific_person"
-          }
-        ],
-        "slot": "firma_2",
-        "step_order": 2,
-        "unit_id": null,
-        "unit_scope_type": "context_exact",
-        "unit_type_id": null
-      }
-    ],
-    "task_item_id": "<normalized>"
-  },
+  "derived_flujo_entrega": [
+    {
+      "accion": "entrega",
+      "code": null,
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": null,
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": null,
+          "unit_id": null,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    }
+  ],
+  "derived_flujo_firma": [
+    {
+      "accion": "firma",
+      "code": "firma_1",
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": "Firma 1",
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": "firma_1",
+          "unit_id": null,
+          "unit_scope_type": "context_exact"
+        },
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 2,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": "firma_1_2",
+          "unit_id": null,
+          "unit_scope_type": "context_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "firma",
+      "code": "firma_2",
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": "Firma 2",
+      "orden": 2,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": "firma_2",
+          "unit_id": null,
+          "unit_scope_type": "context_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    }
+  ],
   "derived_respuesta": {
     "status": 200,
     "body": {
@@ -231,85 +217,73 @@
       }
     ]
   },
-  "free_flujo_entrega": {
-    "description": null,
-    "edicion_id": "<normalized>",
-    "id": "<normalized>",
-    "is_active": 1,
-    "name": "Entrega (definida al enviar)",
-    "steps": [
-      {
-        "assigned_person_id": 2,
-        "can_reject": 0,
-        "cargo_id": null,
-        "code": null,
-        "id": "<normalized>",
-        "is_required": 1,
-        "name": null,
-        "position_id": null,
-        "relation_type_id": null,
-        "resolver_type": "specific_person",
-        "selection_mode": "auto_one",
-        "step_order": 1,
-        "unit_id": null,
-        "unit_scope_type": "unit_exact",
-        "unit_type_id": null
-      },
-      {
-        "assigned_person_id": 3,
-        "can_reject": 1,
-        "cargo_id": null,
-        "code": null,
-        "id": "<normalized>",
-        "is_required": 1,
-        "name": null,
-        "position_id": null,
-        "relation_type_id": null,
-        "resolver_type": "specific_person",
-        "selection_mode": "auto_one",
-        "step_order": 2,
-        "unit_id": null,
-        "unit_scope_type": "unit_exact",
-        "unit_type_id": null
-      }
-    ],
-    "task_item_id": "<normalized>"
-  },
-  "free_flujo_firma": {
-    "description": null,
-    "edicion_id": "<normalized>",
-    "id": "<normalized>",
-    "is_active": 1,
-    "name": "Firma (definida al enviar)",
-    "steps": [
-      {
-        "approval_mode": "and",
-        "assigned_person_id": 1,
-        "code": "firma_1",
-        "id": "<normalized>",
-        "is_required": 1,
-        "name": "Firma 1",
-        "position_id": null,
-        "required_cargo_id": null,
-        "required_signers_max": null,
-        "required_signers_min": null,
-        "resolver_type": "specific_person",
-        "selection_mode": "auto_all",
-        "signers": [
-          {
-            "person_id": 1,
-            "type": "specific_person"
-          }
-        ],
-        "slot": "firma_1",
-        "step_order": 1,
-        "unit_id": null,
-        "unit_scope_type": "context_exact",
-        "unit_type_id": null
-      }
-    ],
-    "task_item_id": "<normalized>"
-  },
+  "free_flujo_entrega": [
+    {
+      "accion": "entrega",
+      "code": null,
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": null,
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": null,
+          "unit_id": null,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "entrega",
+      "code": null,
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": null,
+      "orden": 2,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": null,
+          "unit_id": null,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    }
+  ],
+  "free_flujo_firma": [
+    {
+      "accion": "firma",
+      "code": "firma_1",
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": "Firma 1",
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": "firma_1",
+          "unit_id": null,
+          "unit_scope_type": "context_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    }
+  ],
   "free_respuesta": {
     "status": 200,
     "body": {

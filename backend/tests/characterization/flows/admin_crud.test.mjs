@@ -944,7 +944,9 @@ test("POST/PATCH /admin/sql/processes -> crear con padre, reasignar y rechazar c
 const REMOVE_GUARD_CASES = [
   ["configuracion_activa", "process_definition_versions", 1],
   ["plantilla_de_configuracion_activa", "vinculos", 1],
-  ["flujo_de_firma_de_configuracion_activa", "signature_flow_templates", 1],
+  // El tercer caso era `signature_flow_templates`, la cabecera del flujo de firma. Se retiro en el
+  // paso 4 de la fase 4 del frente 24 y el guard equivalente vive hoy en `pasos_declarados`.
+  ["paso_de_recorrido_de_configuracion_activa", "pasos_declarados", 1],
 ];
 
 for (const [key, table, id] of REMOVE_GUARD_CASES) {
@@ -967,7 +969,7 @@ for (const [key, table, id] of REMOVE_GUARD_CASES) {
 //
 // Por eso ya no se fabrica nada: el sujeto de la cascada no existe. Lo que queda —que el vínculo se
 // borre y con qué respuesta— sigue siendo el golden. Que el recorrido de la edición sólo se edite
-// en borrador lo cubren los hooks de `fill_flow_templates`/`signature_flow_templates` y el unitario
+// en borrador lo cubren los hooks de `pasos_declarados`/`participantes_declarados` y el unitario
 // de `flowRows`; que un vínculo con entregables no se pueda borrar lo cubre su clave ajena.
 test("DELETE /admin/sql/vinculos -> desenlaza la plantilla de la configuración", async () => {
   const token = await tokenFor("admin");
@@ -1000,7 +1002,7 @@ test("DELETE /admin/sql/vinculos -> desenlaza la plantilla de la configuración"
 
   // El efecto observable: el vínculo se va, y el recorrido autorado de la edición NO, porque no era
   // suyo. Se comprueba contra la edición que el vínculo enlazaba.
-  const recorridos = ((await get("/admin/sql/fill_flow_templates", { token })).body || [])
+  const recorridos = ((await get("/admin/sql/pasos_declarados", { token })).body || [])
     .filter((row) => Number(row.edicion_id) === Number(link.edicion_id));
   const vinculosAhora = (await get("/admin/sql/vinculos", { token })).body || [];
   assert.equal(

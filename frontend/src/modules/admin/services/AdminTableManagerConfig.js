@@ -113,8 +113,13 @@ export const FK_TABLE_MAP = {
   process_run_id: "process_runs",
   source_run_id: "process_runs",
   vinculo_id: "vinculos",
-  fill_flow_template_id: "fill_flow_templates",
-  fill_flow_step_id: "fill_flow_steps",
+  // LA RECETA Y LA EJECUCION DEL RECORRIDO. Aqui habia SEIS entradas --dos cabeceras, dos pasos, la
+  // instancia de entrega y las dos de firma-- y son cuatro, porque las dos mitades son la misma
+  // pareja de tablas (paso 4 de la fase 4 del frente 24).
+  paso_id: "pasos_declarados",
+  participante_id: "participantes_declarados",
+  recorrido_id: "recorridos",
+  persona_id: "persons",
   generador_id: "generadores_de_documento",
   term_type_id: "term_types",
   term_id: "terms",
@@ -149,12 +154,12 @@ export const FK_TABLE_MAP = {
   // los campos virtuales del alta de persona. Se fueron con ellos el 2026-08-28: no son columnas de
   // ninguna tabla, así que sin el formulario que las inventaba no las pedía nadie.
   nacionalidad_pais_id: "paises",
-  template_id: "signature_flow_templates",
   edicion_id: "ediciones",
   task_item_id: "task_items",
-  document_id: "documents",
+  // `document_id: "documents"` vivio aqui hasta el paso 4 de la fase 4 del frente 24. La tabla
+  // murio el 2026-08-23 --era una cascara 1:1 sobre el entregable, sin ni una columna propia-- y
+  // esta entrada se quedo apuntando al vacio: el editor pedia un catalogo que no existe.
   document_version_id: "document_versions",
-  document_fill_flow_id: "document_fill_flows",
   owner_person_id: "persons",
   created_by_user_id: "persons",
   person_id: "persons",
@@ -173,10 +178,10 @@ export const FK_TABLE_MAP = {
   assigned_person_id: "persons",
   vacancy_id: "vacancies",
   role_assignment_id: "role_assignments",
-  signature_request_id: "signature_requests",
-  signature_status_id: "signature_statuses",
-  step_id: "signature_flow_steps",
-  instance_id: "signature_flow_instances"
+  // La columna conserva su nombre y lo que referencia es un TURNO (paso 3b de la fase 4): la lee el
+  // firmador y viaja en la API, asi que renombrarla es otro cambio.
+  signature_request_id: "turnos",
+  signature_status_id: "signature_statuses"
 };
 
 export const RELATED_RECORD_CONFIG = {
@@ -201,32 +206,30 @@ export const RELATED_RECORD_CONFIG = {
   // Los recorridos autorados cuelgan de la EDICIÓN, no del vínculo: el escalón del vínculo murió en
   // la fase 2 del frente 24 y su columna ya no existe. Un vínculo alcanza su recorrido A TRAVÉS de
   // la edición que enlaza, así que aquí no hay nada que listar.
+  // UNA ENTRADA PARA LOS DOS LADOS: los pasos de entrega y de firma de una edicion son la misma
+  // tabla, con su columna `accion`.
   ediciones: [
-    { table: "fill_flow_templates", label: "Flujos de entrega", foreignKey: "edicion_id", orderBy: "created_at", order: "desc" },
-    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "edicion_id", orderBy: "created_at", order: "desc" }
+    { table: "pasos_declarados", label: "Pasos del recorrido", foreignKey: "edicion_id", orderBy: "orden", order: "asc" }
   ],
-  fill_flow_templates: [
-    { table: "fill_flow_steps", label: "Pasos de entrega", foreignKey: "fill_flow_template_id", orderBy: "step_order", order: "asc" }
+  pasos_declarados: [
+    { table: "participantes_declarados", label: "Participantes", foreignKey: "paso_id", orderBy: "orden", order: "asc" }
   ],
   tasks: [
     { table: "task_items", label: "Items", foreignKey: "task_id", orderBy: "sort_order", order: "asc" }
   ],
   task_items: [
-    { table: "documents", label: "Documentos", foreignKey: "task_item_id", orderBy: "created_at", order: "desc" },
+    // Aqui ponia `documents`, la tabla que murio el 2026-08-23: las versiones cuelgan del ENTREGABLE.
+    { table: "document_versions", label: "Versiones", foreignKey: "task_item_id", orderBy: "created_at", order: "desc" },
     // Sustituye a las «Asignaciones» (`task_assignments`), que colgaban de la TAREA. La tenencia
     // cuelga del ENTREGABLE, que es el grano al que de verdad se responde: una tarea reparte varios
     // entregables y cada uno tiene su propio responsable y su propia sucesión.
     { table: "task_item_tenures", label: "Tenencias", foreignKey: "task_item_id", orderBy: "started_at", order: "desc" }
   ],
-  documents: [
-    { table: "document_versions", label: "Versiones del documento", foreignKey: "document_id", orderBy: "created_at", order: "desc" }
-  ],
   document_versions: [
-    { table: "document_fill_flows", label: "Flujos de entrega", foreignKey: "document_version_id", orderBy: "created_at", order: "desc" },
-    { table: "signature_flow_instances", label: "Flujos de firma", foreignKey: "document_version_id", orderBy: "created_at", order: "desc" }
+    { table: "recorridos", label: "Recorridos", foreignKey: "document_version_id", orderBy: "created_at", order: "desc" }
   ],
-  document_fill_flows: [
-    { table: "fill_requests", label: "Solicitudes de entrega", foreignKey: "document_fill_flow_id", orderBy: "requested_at", order: "desc" }
+  recorridos: [
+    { table: "turnos", label: "Turnos", foreignKey: "recorrido_id", orderBy: "solicitado", order: "desc" }
   ],
   units: [
     { table: "unit_positions", label: "Puestos", foreignKey: "unit_id", orderBy: "created_at", order: "desc" },

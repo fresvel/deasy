@@ -160,122 +160,101 @@ const REFERENCE_PDF = {
 // El origen se elige por `task_item_id`. `esRuntime=false` trae además la identidad de negocio del
 // portador (configuración + entregable + versión), que es lo que sustituye a los ids enmascarados.
 
-const FILL_TEMPLATE_COLUMNS = `
-  fft.id,
-  fft.task_item_id,
-  fft.name,
-  fft.description,
-  fft.is_active,
+// ── UNA SOLA PAREJA DE TABLAS PARA LOS DOS LADOS (frente 24, fase 4, paso 4) ────────────────────
+//
+// Aqui habia DOS lectores de ~30 lineas cada uno, con dos juegos de columnas que «no se solapaban
+// del todo» --entrega tenia `relation_type_id`/`can_reject`, firma tenia
+// `slot`/`approval_mode`/`required_signers_*`/`signers`-- y dos cabeceras que habia que juntar con
+// sus pasos. Hoy es UNA consulta con un `accion`.
+//
+// LO QUE SE VA CON ELLAS, y por que el golden de este fichero SE MUEVE a proposito:
+//
+//   · las CABECERAS. Sus 10 columnas (`name`, `description`, `is_active`...) no las consultaba nadie
+//     salvo `id` e `is_active`. El paso lleva su propio origen.
+//   · DIECISIETE columnas de paso que no decidian nada (§10 del plan).
+//   · Y LA TRAMPA DEL JSONB `signers`, que este fichero documentaba con una nota de doce lineas: dos
+//     productores, dos convenciones de nombre en la MISMA columna, y un golden que decia «alguien»
+//     donde tenia que decir quien porque la mascara solo conocia una de las dos familias. A filas,
+//     la pregunta no existe: un firmante es una fila con columnas tipadas.
+//
+// EL ORIGEN SIGUE ELIGIENDOSE IGUAL, que es lo que mantiene las cinco claves del golden: `edicion_id`
+// es lo AUTORADO y `task_item_id` lo definido AL ENVIAR, con un `CHECK` que exige exactamente uno.
+
+const PASO_COLUMNAS = `
+  p.id,
+  p.accion,
+  p.task_item_id,
+  p.orden,
+  p.code,
+  p.nombre,
   pdt.process_definition_id,
   pdt.item_mode,
   d.code AS deliverable_code,
   ta.storage_version,
   ta.lifecycle_state`;
 
-const SIGNATURE_TEMPLATE_COLUMNS = FILL_TEMPLATE_COLUMNS.replaceAll("fft.", "sft.");
+const PARTICIPANTE_COLUMNAS = `
+  pa.id, pa.paso_id, pa.orden, pa.resolver_type, pa.persona_id, pa.cargo_id,
+  pa.unit_scope_type, pa.unit_id, pa.slot`;
 
-// Los pasos: TODO lo que lleva significado. Las columnas son distintas en cada lado y no se
-// solapan del todo (entrega tiene `relation_type_id`/`can_reject`; firma tiene
-// `code`/`name`/`slot`/`approval_mode`/`required_signers_*`/`signers`).
-const FILL_STEP_COLUMNS = `
-  id, fill_flow_template_id, step_order, code, name, resolver_type, assigned_person_id,
-  unit_scope_type, unit_id, unit_type_id, relation_type_id, cargo_id, position_id,
-  selection_mode, is_required, can_reject`;
-
-const SIGNATURE_STEP_COLUMNS = `
-  id, template_id, step_order, code, name, slot, resolver_type, assigned_person_id,
-  unit_scope_type, unit_id, unit_type_id, position_id, required_cargo_id,
-  selection_mode, approval_mode, required_signers_min, required_signers_max,
-  is_required, signers`;
-
-// LEFT JOIN a propósito: si un vínculo se quedara sin artifact, la fila debe SALIR en el golden
-// (con nulos) en vez de desaparecer en silencio.
+// LEFT JOIN a proposito: si un vinculo se quedara sin edicion, la fila debe SALIR en el golden (con
+// nulos) en vez de desaparecer en silencio.
 //
-// El `COALESCE` de los dos portadores es lo que hace legibles las cabeceras nuevas del sub-paso 3.
-// Sin él, un flujo colgado de `edicion_id` llega al golden con la identidad entera en
-// `null` —no se sabría de qué entregable es—, y además no casaría con el filtro por `d.code`, así
-// que la prueba del sub-paso se quedaría fuera de la clave que tiene que probarlo. No mueve nada de
-// lo anterior: para una fila del vínculo, `fft.edicion_id` es `NULL` y el `COALESCE`
-// devuelve exactamente el mismo artifact que antes.
-//
-// ⚠️ EL VÍNCULO SE ALCANZA POR EL ENTREGABLE, no por la cabecera. La fase 2 del frente 24 borró
-// `vinculo_id` de las dos cabeceras, así que `pdt` entra por `task_items.vinculo_id` — el entregable
-// sí sabe de qué vínculo nació. Las formas de fila que quedan salen igual que antes: la de runtime
-// recupera su configuración por ese camino y la autorada sigue con `pdt` en NULL y su artifact por
-// `edicion_id`. La del vínculo ya no existe.
-async function readFillFlows({ runtime, deliverableCode = null }) {
-  const templates = await query(
-    `SELECT ${FILL_TEMPLATE_COLUMNS}
-       FROM fill_flow_templates fft
-       LEFT JOIN task_items ti ON ti.id = fft.task_item_id
+// ⚠️ EL VINCULO SE ALCANZA POR EL ENTREGABLE, no por el paso. La fase 2 del frente 24 borro
+// `vinculo_id` de la receta, asi que `pdt` entra por `task_items.vinculo_id` --el entregable si sabe
+// de que vinculo nacio--. La receta autorada sigue con `pdt` en NULL y su edicion por `edicion_id`.
+async function readReceta({ runtime, accion, deliverableCode = null }) {
+  const pasos = await query(
+    `SELECT ${PASO_COLUMNAS}
+       FROM pasos_declarados p
+       LEFT JOIN task_items ti ON ti.id = p.task_item_id
        LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
        LEFT JOIN ediciones ta
-              ON ta.id = COALESCE(pdt.edicion_id, fft.edicion_id)
+              ON ta.id = COALESCE(pdt.edicion_id, p.edicion_id)
        LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
-      WHERE fft.task_item_id IS ${runtime ? "NOT NULL" : "NULL"}
-        AND ($1::text IS NULL OR d.code = $1::text)
-      ORDER BY d.code, ta.storage_version, pdt.process_definition_id, fft.id`,
-    [deliverableCode],
+      WHERE p.accion = $1::text
+        AND p.task_item_id IS ${runtime ? "NOT NULL" : "NULL"}
+        AND ($2::text IS NULL OR d.code = $2::text)
+      ORDER BY d.code, ta.storage_version, pdt.process_definition_id, p.orden, p.id`,
+    [accion, deliverableCode],
   );
-  const ids = templates.map((row) => row.id);
-  const steps = ids.length
+  const ids = pasos.map((row) => row.id);
+  const participantes = ids.length
     ? await query(
-        `SELECT ${FILL_STEP_COLUMNS}
-           FROM fill_flow_steps
-          WHERE fill_flow_template_id = ANY($1::int[])
-          ORDER BY fill_flow_template_id, step_order`,
+        `SELECT ${PARTICIPANTE_COLUMNAS}
+           FROM participantes_declarados pa
+          WHERE pa.paso_id = ANY($1::int[])
+          ORDER BY pa.paso_id, pa.orden`,
         [ids],
       )
     : [];
-  return attachSteps(templates, steps, "fill_flow_template_id");
+  return attachParticipantes(pasos, participantes);
 }
 
-async function readSignatureFlows({ runtime, deliverableCode = null }) {
-  const templates = await query(
-    `SELECT ${SIGNATURE_TEMPLATE_COLUMNS}
-       FROM signature_flow_templates sft
-       LEFT JOIN task_items ti ON ti.id = sft.task_item_id
-       LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
-       LEFT JOIN ediciones ta
-              ON ta.id = COALESCE(pdt.edicion_id, sft.edicion_id)
-       LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
-      WHERE sft.task_item_id IS ${runtime ? "NOT NULL" : "NULL"}
-        AND ($1::text IS NULL OR d.code = $1::text)
-      ORDER BY d.code, ta.storage_version, pdt.process_definition_id, sft.id`,
-    [deliverableCode],
-  );
-  const ids = templates.map((row) => row.id);
-  const steps = ids.length
-    ? await query(
-        `SELECT ${SIGNATURE_STEP_COLUMNS}
-           FROM signature_flow_steps
-          WHERE template_id = ANY($1::int[])
-          ORDER BY template_id, step_order`,
-        [ids],
-      )
-    : [];
-  return attachSteps(templates, steps, "template_id");
-}
-
-// Anida los pasos bajo su plantilla y quita la clave de agrupación de cada paso (ya la lleva el
-// padre). Así el golden se lee como el flujo, no como un volcado de dos tablas.
-function attachSteps(templates, steps, foreignKey) {
-  return templates.map((template) => ({
-    ...template,
-    steps: steps
-      .filter((step) => Number(step[foreignKey]) === Number(template.id))
-      .map(({ [foreignKey]: _fk, ...rest }) => rest),
+// Anida los participantes bajo su paso y les quita la clave de agrupacion (ya la lleva el padre).
+// Asi el golden se lee como la receta, no como un volcado de dos tablas.
+//
+// La clave se llamaba `steps` y es `participantes`: un paso con tres firmantes son tres filas, que es
+// justo lo que el JSONB escondia.
+function attachParticipantes(pasos, participantes) {
+  return pasos.map((paso) => ({
+    ...paso,
+    participantes: participantes
+      .filter((parte) => Number(parte.paso_id) === Number(paso.id))
+      .map(({ paso_id: _pasoId, ...resto }) => resto),
   }));
 }
 
-// El flujo de runtime cuelga de un `task_item`, cuyo id es autoincremental. Se sustituye por su
-// identidad legible para que el golden diga de QUÉ entregable es el flujo.
+const readFillFlows = (opciones) => readReceta({ ...opciones, accion: "entrega" });
+const readSignatureFlows = (opciones) => readReceta({ ...opciones, accion: "firma" });
+
+// La receta de runtime cuelga de un `task_item`, cuyo id es autoincremental. Se sustituye por su
+// identidad legible para que el golden diga de QUE entregable es.
 async function readRuntimeAnchors() {
   return query(
     `SELECT ti.id AS task_item_id, ti.title, ti.origin_kind
        FROM task_items ti
-      WHERE EXISTS (SELECT 1 FROM fill_flow_templates f WHERE f.task_item_id = ti.id)
-         OR EXISTS (SELECT 1 FROM signature_flow_templates s WHERE s.task_item_id = ti.id)
+      WHERE EXISTS (SELECT 1 FROM pasos_declarados p WHERE p.task_item_id = ti.id)
       ORDER BY ti.id`,
   );
 }
@@ -444,30 +423,35 @@ test("autoría · POST draft con flujo de ENTREGA y de FIRMA -> 200", async () =
 // Lo que se comprueba ahora es esa unicidad, y es la prueba positiva del desmontaje: si alguna vez
 // vuelve a aparecer una segunda cabecera colgada del vínculo, es que reapareció un productor fuera
 // del formulario.
-const unicaCabeceraDeLaPlantilla = (flows, lado) => {
-  assert.equal(flows.length, 1, `${lado}: una sola cabecera, la de la plantilla`);
-  const [porPlantilla] = flows;
-  assert.ok(
-    !("vinculo_id" in porPlantilla),
-    `${lado}: cuelga de la EDICION; el portador por vínculo ya no existe (fase 2, frente 24)`,
-  );
-  assert.equal(porPlantilla.task_item_id, null, `${lado}: y nunca de un entregable de runtime`);
+//
+// ⚠️ YA NO SE CUENTAN CABECERAS, porque no hay: se retiraron en el paso 4 de la fase 4 del frente 24.
+// Lo que esta comprobación afirmaba —«una por lado, la del portador `edicion_id`»— se vuelve una
+// propiedad de CADA PASO: todos cuelgan de la edición y ninguno de un entregable de runtime. Es la
+// misma prueba positiva del desmontaje, sobre las filas que de verdad quedan.
+const pasosDeLaPlantilla = (pasos, lado, cuantos) => {
+  assert.equal(pasos.length, cuantos, `${lado}: los pasos autorados deben materializarse`);
+  for (const paso of pasos) {
+    assert.ok(
+      !("vinculo_id" in paso),
+      `${lado}: cuelga de la EDICION; el portador por vínculo ya no existe (fase 2, frente 24)`,
+    );
+    assert.equal(paso.task_item_id, null, `${lado}: y nunca de un entregable de runtime`);
+    assert.ok(paso.participantes.length, `${lado}: un paso sin participantes no pide nada a nadie`);
+  }
 };
 
 test("autoría · flujo de ENTREGA autorado, tal como quedó en la base", async () => {
   assert.ok(autorado.artifactId, "depende del paso anterior");
-  const flows = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  unicaCabeceraDeLaPlantilla(flows, "entrega");
-  assert.equal(flows[0].steps.length, 2, "los dos pasos autorados deben materializarse");
-  matchSnapshot(SUITE, "autorado_entrega", normalize(flows, MASK_OPTS));
+  const pasos = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  pasosDeLaPlantilla(pasos, "entrega", 2);
+  matchSnapshot(SUITE, "autorado_entrega", normalize(pasos, MASK_OPTS));
 });
 
 test("autoría · flujo de FIRMA autorado, tal como quedó en la base", async () => {
   assert.ok(autorado.artifactId, "depende del paso anterior");
-  const flows = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  unicaCabeceraDeLaPlantilla(flows, "firma");
-  assert.equal(flows[0].steps.length, 2, "los dos pasos de firma autorados deben materializarse");
-  matchSnapshot(SUITE, "autorado_firma", normalize(flows, MASK_OPTS));
+  const pasos = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  pasosDeLaPlantilla(pasos, "firma", 2);
+  matchSnapshot(SUITE, "autorado_firma", normalize(pasos, MASK_OPTS));
 });
 
 // --- 4) EL VERSIONADO COPIA FILAS (sub-paso 6 del §0.8) ------------------------------------------
@@ -505,35 +489,64 @@ test("versionado · POST /ediciones/:id/version sobre la plantilla autorada -> 2
 // Compara la copia con su origen: MISMOS pasos, IDS DISTINTOS. Es más fuerte que el snapshot —que
 // enmascara los ids y no podría distinguir «copiado» de «compartido»— y es justo la propiedad que
 // el sub-paso promete.
-const copiaFiel = (flows, lado) => {
-  const [delPadre, deLaHija] = flows;
-  assert.ok(!("vinculo_id" in deLaHija), `${lado}: la hija cuelga de SU artifact, y de nada más`);
-  assert.equal(deLaHija.task_item_id, null, `${lado}: y NUNCA de un entregable de runtime`);
-  assert.equal(deLaHija.is_active, 1, `${lado}: la cabecera copiada nace activa`);
-  const sinIds = (pasos) => pasos.map(({ id: _id, ...resto }) => resto);
-  assert.deepEqual(sinIds(deLaHija.steps), sinIds(delPadre.steps), `${lado}: la hija tiene los mismos pasos`);
-  const idsPadre = delPadre.steps.map((paso) => Number(paso.id));
-  for (const paso of deLaHija.steps) {
-    assert.equal(idsPadre.includes(Number(paso.id)), false, `${lado}: los pasos son filas NUEVAS, no las del padre`);
+//
+// ⚠️ SE AGRUPA POR VERSIÓN, y antes no hacía falta: cada versión tenía SU cabecera, así que la lista
+// traía dos elementos y bastaba desempaquetarlos. Sin cabeceras la lista son pasos de las dos
+// versiones mezclados, ordenados por `storage_version`, y hay que separarlos por ella.
+const copiaFiel = (pasos, lado) => {
+  const versiones = [...new Set(pasos.map((paso) => paso.storage_version))].sort();
+  assert.equal(versiones.length, 2, `${lado}: el padre y la hija, dos versiones`);
+  const [vPadre, vHija] = versiones;
+  const delPadre = pasos.filter((paso) => paso.storage_version === vPadre);
+  const deLaHija = pasos.filter((paso) => paso.storage_version === vHija);
+
+  for (const paso of deLaHija) {
+    assert.ok(!("vinculo_id" in paso), `${lado}: la hija cuelga de SU edición, y de nada más`);
+    assert.equal(paso.task_item_id, null, `${lado}: y NUNCA de un entregable de runtime`);
+  }
+
+  // MISMO CONTENIDO, IDS DISTINTOS. Es más fuerte que el snapshot —que enmascara los ids y no podría
+  // distinguir «copiado» de «compartido»— y es justo la propiedad que la copia promete. Y ahora
+  // alcanza a los PARTICIPANTES, que es donde vive el «quién»: antes el de firma viajaba dentro de un
+  // JSONB que el lector de copia releía tal cual, así que una copia que lo perdiera habría pasado.
+  const sinIds = (lista) => lista.map(({ id: _id, storage_version: _v, participantes, ...resto }) => ({
+    ...resto,
+    participantes: participantes.map(({ id: _pid, ...parte }) => parte),
+  }));
+  assert.deepEqual(sinIds(deLaHija), sinIds(delPadre), `${lado}: la hija tiene los mismos pasos y participantes`);
+
+  const idsPadre = new Set(delPadre.flatMap((paso) => [Number(paso.id), ...paso.participantes.map((x) => Number(x.id))]));
+  for (const paso of deLaHija) {
+    assert.equal(idsPadre.has(Number(paso.id)), false, `${lado}: los pasos son filas NUEVAS, no las del padre`);
+    for (const parte of paso.participantes) {
+      assert.equal(idsPadre.has(Number(parte.id)), false, `${lado}: y sus participantes también`);
+    }
   }
 };
 
 test("versionado · la hija hereda los pasos de ENTREGA como filas propias", async () => {
   assert.ok(versionado.hijaId, "depende del paso anterior");
-  const flows = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  assert.equal(flows.length, 2, "la plantilla del padre y la copia de la hija (el vínculo ya no lleva ninguna)");
-  assert.equal(flows[1].storage_version, "1.1.0", "la segunda es la de la versión nueva");
-  copiaFiel(flows, "entrega");
-  matchSnapshot(SUITE, "versionado_entrega", normalize(flows, MASK_OPTS));
+  const pasos = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  // CUATRO PASOS Y NO DOS CABECERAS: dos del padre y dos de la hija. La cuenta cambia de unidad
+  // --pasos en vez de cabeceras-- pero dice lo mismo: la copia existe y es de la version nueva.
+  assert.equal(pasos.length, 4, "los dos pasos del padre y sus dos copias en la hija");
+  assert.ok(pasos.some((paso) => paso.storage_version === "1.1.0"), "la version nueva tiene los suyos");
+  copiaFiel(pasos, "entrega");
+  matchSnapshot(SUITE, "versionado_entrega", normalize(pasos, MASK_OPTS));
 });
 
 test("versionado · la hija hereda los pasos de FIRMA como filas propias", async () => {
   assert.ok(versionado.hijaId, "depende del paso anterior");
-  const flows = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
-  assert.equal(flows.length, 2, "la plantilla del padre y la copia de la hija (el vínculo ya no lleva ninguna)");
-  assert.equal(flows[1].steps.length, 2, "los dos pasos de firma se copian enteros");
-  copiaFiel(flows, "firma");
-  matchSnapshot(SUITE, "versionado_firma", normalize(flows, MASK_OPTS));
+  const pasos = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  assert.equal(pasos.length, 4, "los dos pasos de firma del padre y sus dos copias en la hija");
+  // Y LOS TRES FIRMANTES VIAJAN: el paso que lleva dos y el que lleva uno. Antes esto no se podia
+  // afirmar aqui --los firmantes vivian dentro del JSONB-- y el golden era lo unico que lo cubria.
+  assert.equal(
+    pasos.reduce((total, paso) => total + paso.participantes.length, 0), 6,
+    "tres firmantes por version: el paso de dos y el de uno",
+  );
+  copiaFiel(pasos, "firma");
+  matchSnapshot(SUITE, "versionado_firma", normalize(pasos, MASK_OPTS));
 });
 
 test("versionado · versionar NO materializa ningún flujo de runtime para el entregable", async () => {

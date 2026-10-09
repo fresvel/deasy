@@ -21,14 +21,9 @@ primero que hay que tener claro, así que va explícita.
 | Origen del entregable | `task_items.origin_kind` | `process_defined` · `user_added` | **Sí** |
 | Causa del turno | `task_item_tenures.opened_by` | `original` · `occupancy_start` · `occupancy_end` · `position_deactivated` · `reconcile` · `manual` | **Sí** |
 | Cómo se encuentra a quien entrega o firma | `participantes_declarados.resolver_type` | `task_assignee` · `cargo_in_scope` · `specific_person` | **Sí**, y desde el 2026-10-08 **sin escapatoria**: el JSONB `signers` que se la saltaba pasó a filas |
-| Ámbito del paso | `unit_scope_type` en los dos flujos | `unit_exact` · `unit_subtree` · `unit_type` · `all_units` · `context_exact` | **Sí** |
 | Ámbito del que se saca a la gente | `participantes_declarados.unit_scope_type` | `unit_exact` · `context_exact` · `all_units` | **Sí**. Eran seis valores y cuatro llegaban sólo por el JSONB |
 | Recorrido (entrega y firma) | `recorridos.estado` | `pendiente` · `en_progreso` · `completado` · `rechazado` · `cancelado` | **Sí** |
 | Turno (a quién le toca) | `turnos.estado` | los cinco anteriores más `devuelto`, y un `CHECK` lo limita a la entrega | **Sí** |
-| Instancia de entrega *(en retirada)* | `document_fill_flows.status` | los mismos cinco | **Sí**, pero ya no la escribe nadie |
-| Solicitud de entrega *(en retirada)* | `fill_requests.status` | los seis | **Sí**, pero ya no la escribe nadie |
-| Instancia de firma *(en retirada)* | `signature_flow_instances.status` | los mismos cinco | **Sí**, pero ya no la escribe nadie |
-| Solicitud de firma *(en retirada)* | `signature_requests.status` | los mismos cinco | **Sí**, pero ya no la escribe nadie |
 | Resultado de firmar | `signature_statuses` | catálogo de 4 códigos | **Es una tabla**, consultable y ampliable sin tocar el esquema |
 | **Documento** | `task_items.document_status` | **11 valores** | **No.** Solo en el código |
 | **Ronda** | `document_versions.status` | **12 valores** | **No.** Solo en el código |
@@ -40,8 +35,9 @@ las ocho que se contaron en su día. La decisión pendiente es cuáles bajan su 
 
 ## El recorrido tiene UN vocabulario, y antes tenía dos
 
-Las cuatro columnas del recorrido —instancia y solicitud, entrega y firma— describen lo mismo: cómo
-va el turno de alguien. Hasta el **2026-10-08** lo describían de **dos maneras distintas**:
+Las columnas del recorrido describen lo mismo: cómo va el turno de alguien. Eran **cuatro** —instancia
+y solicitud, por cada lado— y son **dos** desde el 2026-10-09, porque las dos mitades son la misma
+pareja de tablas. Hasta el **2026-10-08** lo describían además de **dos maneras distintas**:
 
 | | Mecanismo | Idioma |
 |---|---|---|
@@ -53,8 +49,9 @@ Dos mecanismos y dos idiomas para un solo concepto. Hoy son **un `CHECK` y el es
 `pendiente` · `en_progreso` · `completado` · `rechazado` · `devuelto` · `cancelado`
 
 **`devuelto` sólo es legal en la entrega** —un paso de entrega se puede devolver, y firmando eso no
-existe—, y eso no se declara en el código: lo acota el `CHECK` de cada columna. `fill_requests` admite
-los seis; las otras tres, cinco.
+existe—, y desde el 2026-10-08 **eso tampoco se declara en el código**: `turnos` admite los seis
+valores y un `CHECK` propio exige que `devuelto` vaya con `accion = 'entrega'`. Es lo que la clave
+ajena compuesta `(recorrido_id, accion)` hace comprobable: el turno no puede mentir sobre su acción.
 
 :::note[Por qué `CHECK` y no una tabla, que es lo que se retiró]
 

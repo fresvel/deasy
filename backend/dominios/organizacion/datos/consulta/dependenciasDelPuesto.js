@@ -1,9 +1,15 @@
 // LAS OCHO COSAS QUE PUEDEN DEPENDER DE UN PUESTO, y cuántas hay de cada una.
 //
-// ⚠️ `datos/consulta/` porque las ocho tablas son de SEIS dominios: `position_assignments` de
+// ⚠️ `datos/consulta/` porque las SEIS tablas son de CUATRO dominios: `position_assignments` de
 // `organizacion`, `task_items` y `task_item_tenures` de `tareas`, `vacancies` y `contracts` de
-// `empleo`, `process_target_rules` de `procesos`, `fill_flow_steps` de `plantillas` y
-// `signature_flow_steps` de `firmas`. Son ocho `COUNT(*)`: no se escribe nada.
+// `empleo` y `process_target_rules` de `procesos`. Son seis `COUNT(*)`: no se escribe nada.
+//
+// ⚠️ ERAN OCHO, y las dos que faltan contaban por una columna que ya no interpretaba nadie:
+// `fill_flow_steps.position_id` y `signature_flow_steps.position_id`. El resolutor `position` salio
+// del vocabulario hace meses --era su unico lector-- y las dos tablas se retiraron en el paso 4 de la
+// fase 4 del frente 24. En la receta nueva NO HAY columna de puesto: un participante nombra a una
+// persona, a un cargo en un ambito, o al responsable del entregable. Asi que un puesto ya no puede
+// estar bloqueado por un paso de recorrido, y afirmarlo era contar filas de una regla muerta.
 //
 // LA LISTA SE ESCRIBE UNA VEZ y se usa para DECIDIR y para EXPLICAR, y eso es lo que impide que las
 // dos se desincronicen: el mensaje que ve el usuario sale de la misma consulta que toma la decisión.
@@ -24,8 +30,6 @@ export const DEPENDENCIAS_DE_UN_PUESTO = [
   ["vacancies", "position_id", "vacante", "vacantes"],
   ["contracts", "position_id", "contrato", "contratos"],
   ["process_target_rules", "position_id", "regla de proceso", "reglas de proceso"],
-  ["fill_flow_steps", "position_id", "paso de entrega", "pasos de entrega"],
-  ["signature_flow_steps", "position_id", "paso de firma", "pasos de firma"],
 ];
 
 // Devuelve SÓLO lo que bloquea —`{ singular, plural, n }` por tabla con filas—, en el orden de la

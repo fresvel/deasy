@@ -20,11 +20,14 @@ const GRUPOS = [
    ["process_runs", "tasks", "task_items", "task_item_tenures"]],
   ["El documento producido",
    ["document_versions", "document_version_uploads", "document_attachments", "document_workflow_observations"]],
-  ["El flujo de entrega",
-   ["fill_flow_templates", "fill_flow_steps", "document_fill_flows", "fill_requests"]],
-  ["El flujo de firma",
-   ["signature_flow_templates", "signature_flow_steps", "signature_flow_instances", "signature_requests",
-    "document_signatures", "signature_statuses"]],
+  // UN SOLO GRUPO PARA LOS DOS LADOS desde el paso 4 de la fase 4 del frente 24: eran «El flujo de
+  // entrega» y «El flujo de firma», con cuatro tablas cada uno, y son las MISMAS cuatro. Lo que la
+  // firma tiene de propio --el resultado criptografico-- se queda aparte, que es lo que de verdad lo
+  // distingue.
+  ["El recorrido del documento: quien hace cada paso",
+   ["pasos_declarados", "participantes_declarados", "recorridos", "turnos"]],
+  ["La firma en si",
+   ["document_signatures", "signature_statuses"]],
 ];
 
 const tipo = (c) => {

@@ -95,6 +95,38 @@
       "working_file_path"
     ]
   },
+  "sql_participantes_declarados": {
+    "status": 200,
+    "isArray": true,
+    "count": 2,
+    "itemKeys": [
+      "cargo_id",
+      "created_at",
+      "id",
+      "orden",
+      "paso_id",
+      "persona_id",
+      "resolver_type",
+      "slot",
+      "unit_id",
+      "unit_scope_type"
+    ]
+  },
+  "sql_pasos_declarados": {
+    "status": 200,
+    "isArray": true,
+    "count": 2,
+    "itemKeys": [
+      "accion",
+      "code",
+      "created_at",
+      "edicion_id",
+      "id",
+      "nombre",
+      "orden",
+      "task_item_id"
+    ]
+  },
   "sql_signature_flow_steps": {
     "status": 200,
     "isArray": true,

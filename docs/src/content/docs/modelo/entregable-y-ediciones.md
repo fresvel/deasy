@@ -76,7 +76,7 @@ ediciones**. En `official` solo se admiten `task_assignee` («el responsable del
 `cargo_in_scope` («por cargo»); `ad_hoc` añade `specific_person`, o sea nombrar a una persona
 concreta. La lista vive en `WEB_FILL_RESOLVER_TYPES_BY_SCOPE`
 (`backend/services/admin/templates/workflows.js`), y por debajo el `CHECK` de
-`fill_flow_steps.resolver_type` admite exactamente esos tres valores y ninguno más.
+`participantes_declarados.resolver_type` admite exactamente esos tres valores y ninguno más.
 
 ## Los campos: qué le van a pedir a quien lo rellene
 
@@ -86,9 +86,9 @@ MinIO, dentro de `base_object_prefix`. Lo escribe el editor de `/admin` y lo rel
 :::caution[Aquí había una tabla, y se retiró]
 
 Hubo un `template_artifact_fields` con una fila por campo (`field_order`, `data_key`, `field_code`,
-`title`, `ui_component`, `ui_group`, `is_required`). Nació para ser el esqueleto de un generador que
+`title`, `ui_component`, `ui_group` y una bandera de obligatoriedad). Nació para ser el esqueleto de un generador que
 emitiera el Jinja2 con los tokens de firma ya colocados, uniendo `field_code` con
-`signature_flow_steps.slot`.
+`participantes_declarados.slot`.
 
 Se retiró en el frente 23 porque **ese generador no se construyó**, y la tabla se quedó sin ningún
 consumidor: su único lector en todo el sistema era el código que copiaba sus filas a la versión

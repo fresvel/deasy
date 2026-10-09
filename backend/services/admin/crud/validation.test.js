@@ -76,39 +76,55 @@ test("validateTableRules exige configuracion y periodo antes de mirar las fechas
   assert.doesNotThrow(() => validateTableRules("tasks", { process_definition_id: 1, term_id: 3 }));
 });
 
-// El ancla de una cabecera autorada es la EDICION, no el vinculo: el escalon del vinculo murio en la
-// fase 2 del frente 24. Lo que exige el formulario tiene que ser el portador que de verdad resuelve.
-test("validateTableRules exige la EDICION en los dos tipos de flujo", () => {
-  for (const table of ["fill_flow_templates", "signature_flow_templates"]) {
-    throwsWith(() => validateTableRules(table, {}), "Selecciona la edicion de la plantilla.");
-    throwsWith(() => validateTableRules(table, { vinculo_id: 7 }), "Selecciona la edicion de la plantilla.");
-    assert.doesNotThrow(() => validateTableRules(table, { edicion_id: 55 }));
-  }
-});
-
-test("validateTableRules exige plantilla y orden en un paso de entrega", () => {
-  throwsWith(() => validateTableRules("fill_flow_steps", {}), "Selecciona la plantilla de entrega.");
+// ── LA RECETA ──────────────────────────────────────────────────────────────────────────────────
+//
+// AQUI HABIA TRES CASOS y los tres eran sobre tablas que se retiraron en el paso 4 de la fase 4 del
+// frente 24: la EDICION exigida en las dos cabeceras, la plantilla y el orden en un paso de entrega,
+// y la plantilla y la version en la instancia de entrega.
+//
+// ⚠️ EL ORIGEN DE UN PASO YA NO LO EXIGE ESTA CAPA, y es la unica regla que cambia de sitio en vez de
+// desaparecer. Antes el formulario pedia `edicion_id` y punto. Hoy son DOS columnas excluyentes
+// (`edicion_id` / `task_item_id`) y lo que hay que validar es que haya EXACTAMENTE UNA — algo que
+// `requires`, que exige presencia campo a campo, no sabe decir. Lo dice el `CHECK`
+// `ck_pasos_declarados_un_origen`, y por eso este test afirma que un paso SIN origen pasa por aqui:
+// si alguien añadiera un `requires(["edicion_id", ...])` por inercia, rompería la receta de runtime,
+// que cuelga del entregable.
+test("validateTableRules exige accion y orden en un paso declarado, y NO el origen", () => {
+  throwsWith(() => validateTableRules("pasos_declarados", {}), "Indica si el paso es de entrega o de firma.");
   throwsWith(
-    () => validateTableRules("fill_flow_steps", { fill_flow_template_id: 4 }),
+    () => validateTableRules("pasos_declarados", { accion: "firma" }),
     "Define el orden del paso.",
   );
   // Semántica falsy deliberada: el paso 0 NO es un orden válido hoy.
   throwsWith(
-    () => validateTableRules("fill_flow_steps", { fill_flow_template_id: 4, step_order: 0 }),
+    () => validateTableRules("pasos_declarados", { accion: "firma", orden: 0 }),
     "Define el orden del paso.",
   );
-  assert.doesNotThrow(() => validateTableRules("fill_flow_steps", { fill_flow_template_id: 4, step_order: 1 }));
+  // Sin origen NINGUNO: pasa, y lo rechaza el CHECK. Y con cada uno de los dos, también pasa.
+  assert.doesNotThrow(() => validateTableRules("pasos_declarados", { accion: "firma", orden: 1 }));
+  assert.doesNotThrow(() =>
+    validateTableRules("pasos_declarados", { accion: "entrega", orden: 1, edicion_id: 55 }));
+  assert.doesNotThrow(() =>
+    validateTableRules("pasos_declarados", { accion: "entrega", orden: 1, task_item_id: 300 }));
 });
 
-test("validateTableRules exige plantilla y version en una instancia de entrega", () => {
-  throwsWith(() => validateTableRules("document_fill_flows", {}), "Selecciona la plantilla de entrega.");
+test("validateTableRules exige el paso y el orden en un participante declarado", () => {
+  throwsWith(() => validateTableRules("participantes_declarados", {}), "Selecciona el paso declarado.");
   throwsWith(
-    () => validateTableRules("document_fill_flows", { fill_flow_template_id: 4 }),
-    "Selecciona la version de documento.",
+    () => validateTableRules("participantes_declarados", { paso_id: 4 }),
+    "Define el orden del participante dentro del paso.",
+  );
+  assert.doesNotThrow(() => validateTableRules("participantes_declarados", { paso_id: 4, orden: 1 }));
+});
+
+test("validateTableRules exige version y accion en un recorrido", () => {
+  throwsWith(() => validateTableRules("recorridos", {}), "Selecciona la version de documento.");
+  throwsWith(
+    () => validateTableRules("recorridos", { document_version_id: 9 }),
+    "Indica si el recorrido es de entrega o de firma.",
   );
   assert.doesNotThrow(() =>
-    validateTableRules("document_fill_flows", { fill_flow_template_id: 4, document_version_id: 9 }),
-  );
+    validateTableRules("recorridos", { document_version_id: 9, accion: "entrega" }));
 });
 
 // Era «instancia y paso en una solicitud de ENTREGA», sobre `fill_requests`. Hoy es un TURNO, de

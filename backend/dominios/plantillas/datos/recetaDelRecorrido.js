@@ -3,11 +3,9 @@
 // Escribe `pasos_declarados` y `participantes_declarados`, las dos tablas de `plantillas` que
 // sustituyen a las cuatro de receta que habia (dos cabeceras y dos de pasos).
 //
-// ⚠️ DE MOMENTO ESCRIBE EN PARALELO. Los escritores viejos siguen llenando sus tablas porque la
-// EJECUCION todavia apunta a ellas por clave ajena --`fill_requests.fill_flow_step_id` referencia
-// al paso viejo--, asi que receta y ejecucion no se pueden mudar por separado. Este paso demuestra
-// que la forma nueva REPRESENTA lo mismo, sobre datos reales, antes de mover ningun lector; el
-// paso 3 mueve la ejecucion y el 4 retira lo viejo.
+// ⚠️ NACIO ESCRIBIENDO EN PARALELO --los escritores viejos seguian llenando sus tablas-- y desde el
+// paso 4 de la fase 4 es el UNICO escritor de receta que hay. Las cuatro tablas viejas se retiraron
+// del esquema; el porque de cada columna que se quedo por el camino esta en el §10 del plan.
 //
 // LA CONVERSION, que es lo unico interesante de este fichero:
 //
@@ -21,6 +19,11 @@
 // Los dos vocabularios del participante, tal y como los cierra el esquema. Se declaran aqui para
 // poder RECHAZAR con un mensaje util en vez de dejar que reviente el CHECK: si algun dia aparece un
 // valor retirado, lo que hace falta saber es CUAL y de donde vino.
+//
+// ⚠️ Y SIGUEN HACIENDO FALTA aunque las tablas viejas ya no existan: los escritores que alimentan a
+// este convertidor --el editor de plantillas y el constructor de runtime-- normalizan su entrada,
+// pero esa entrada viene de un FORMULARIO. Un valor retirado que llegue por ahi tiene que morir con
+// un mensaje que diga cual y de donde, no con una violacion de CHECK.
 const RESOLUTORES = new Set(["task_assignee", "specific_person", "cargo_in_scope"]);
 const AMBITOS = new Set(["unit_exact", "context_exact", "all_units"]);
 

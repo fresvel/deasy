@@ -27,10 +27,10 @@ const buildService = ({ itemModes = ["single"], hasSteps = 1, fallaElConteo = fa
 
   const responder = async (sql, params = []) => {
     const texto = String(sql).replace(/\s+/g, " ").trim();
-    if (texto.includes("AS has_steps")) {
+    if (texto.includes("AS hay")) {
       events.push(`cuenta-pasos:${params[0]}`);
       if (fallaElConteo) throw new Error("no se pudo contar los pasos: la base no responde");
-      return [[{ has_steps: hasSteps }]];
+      return [[{ hay: hasSteps }]];
     }
     if (texto.startsWith("SELECT item_mode")) {
       events.push("consulta-modos");

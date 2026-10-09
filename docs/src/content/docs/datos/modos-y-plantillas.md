@@ -20,7 +20,9 @@ El **“Proceso por defecto”** (slug `default`, sembrado por el bootstrap) es 
 
 :::note[Resolutores de flujo autorables]
 
-Solo `task_assignee` (“Responsable del entregable”) y `cargo_in_scope` (“Por cargo”) en plantillas *official*; `specific_person` se anade en *ad_hoc*. `document_owner`, `position` y `manual_pick` están **retirados**: ya no son una deprecación blanda de la autoría web, sino que **salieron del `CHECK`** de `fill_flow_steps.resolver_type` y `signature_flow_steps.resolver_type`, que hoy solo admite esos tres valores. El `ALTER` valida las filas existentes, así que una base con un valor retirado **no arranca**.
+Solo `task_assignee` (“Responsable del entregable”) y `cargo_in_scope` (“Por cargo”) en plantillas *official*; `specific_person` se anade en *ad_hoc*. `document_owner`, `position` y `manual_pick` están **retirados**: ya no son una deprecación blanda de la autoría web, sino que **salieron del `CHECK`** de `participantes_declarados.resolver_type`, que hoy solo admite esos tres valores.
+
+Y desde el 2026-10-09 **no hay por dónde colarlos**: sobrevivieron un año en el código porque el lado de la firma guardaba sus firmantes en un JSONB que ningún `CHECK` cubría, y al pasarlos a filas el valor retirado no se puede ni insertar.
 
 El criterio que los mató, y que conviene tener presente al añadir cualquier cosa a estas tablas: **lo que la web no autora, no existe**. Su único productor era el `meta.yaml`; retirado el YAML, se quedaron sin quien los escribiera.
 

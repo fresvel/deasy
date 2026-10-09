@@ -75,7 +75,18 @@
       "deja el flujo con CERO SQL y la orquestación legible --147 líneas, mismos guards, mismo orden--.",
       "879 unitarios y 321 de caracterización en verde, sin mover un golden. El piloto vive en la rama",
       "'f7-flujo-piloto' y NO se fusiona: con él solo, las escrituras de cuatro tablas quedan repartidas",
-      "entre 'dominios/' y el 'services/' viejo, y esta misma puerta lo caza."
+      "entre 'dominios/' y el 'services/' viejo, y esta misma puerta lo caza.",
+      "",
+      "⚠️ TRES DE LOS CINCO YA NO CRUZAN, y la puerta lo avisa. No es deuda nueva: la fase 4 del frente 24",
+      "unifico las dos EJECUCIONES del recorrido en `recorridos`+`turnos` --de `tareas`-- y las dos RECETAS",
+      "en `pasos_declarados`+`participantes_declarados` --de `plantillas`--, asi que lo que antes eran dos",
+      "mecanismos de dos dominios es el mismo mecanismo con dos valores de `accion`.",
+      "",
+      "Se quedan declarados aqui, con un dominio, en vez de salirse: la comprobacion C los eximia, y sin la",
+      "exencion `document_versions` tendria dos escritores --el `datos/` de `tareas` y estos servicios--.",
+      "Eso no se arregla moviendo una declaracion: se arregla cuando `tareas` tenga su dominio y esas",
+      "escrituras entren por su puerta, que es F7.5. Hasta entonces el aviso dice la verdad y la lista no",
+      "miente sobre lo que cada uno escribe."
     ],
     "services/admin/templates/templateLifecycle.js": {
       "dominios": [
@@ -84,20 +95,11 @@
       ],
       "motivo": "Al publicar una versión de plantilla clona la definición de proceso. Es la invariante del frente 23."
     },
-    "services/admin/templates/flowRows.js": {
-      "dominios": [
-        "firmas",
-        "plantillas"
-      ],
-      "motivo": "Guarda los pasos de los DOS recorridos autorados --entrega y firma-- de una misma plantilla."
-    },
     "services/admin/generation/documents.js": {
       "dominios": [
-        "firmas",
-        "plantillas",
         "tareas"
       ],
-      "motivo": "Al lanzar, materializa el entregable y sus dos recorridos de una vez. Es la operación de arranque."
+      "motivo": "Al lanzar, materializa el entregable y sus dos recorridos de una vez. Es la operacion de arranque. Declaraba `firmas` y `plantillas` y dejo de escribirlos en el paso 4 de la fase 4 del frente 24: la receta la escribe por la PUERTA de `plantillas` --no por su `datos/`-- y la ejecucion es `tareas`. Las ocho tablas viejas, que si escribia directo, ya no existen. Se queda declarado con un solo dominio por el mismo motivo que los otros dos: DONDE vive un orquestador de `tareas` lo decide F7.5."
     },
     "services/documents/DocumentSignatureWorkflowService.js": {
       "dominios": [
@@ -218,11 +220,7 @@
     "descripcion": "El modelo 'libro y ediciones': `catalogo_documental` porta la identidad y `ediciones` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.",
     "tablas": {
       "catalogo_documental": 4,
-      "document_fill_flows": 6,
       "ediciones": 4,
-      "fill_flow_steps": 6,
-      "fill_flow_templates": 6,
-      "fill_requests": 6,
       "generadores_de_documento": 4,
       "participantes_declarados": 6,
       "pasos_declarados": 6
@@ -250,11 +248,7 @@
     "descripcion": "El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.",
     "tablas": {
       "signature_statuses": 0,
-      "signature_batch_jobs": 6,
-      "signature_flow_instances": 6,
-      "signature_flow_steps": 6,
-      "signature_flow_templates": 6,
-      "signature_requests": 6
+      "signature_batch_jobs": 6
     }
   },
   "chat": {

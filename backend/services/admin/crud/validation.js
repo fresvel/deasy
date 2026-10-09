@@ -75,7 +75,7 @@ export const ensureDateOrder = (startDate, endDate, label) => {
 
 /**
  * Campos obligatorios, evaluados EN ORDEN. La comprobación es `!valor` a propósito: hoy un 0 o
- * una cadena vacía cuentan como ausentes (`fill_flow_steps.step_order = 0` se rechaza), y eso
+ * una cadena vacía cuentan como ausentes (`pasos_declarados.orden = 0` se rechaza), y eso
  * está fijado por los tests.
  */
 const requires = (...pairs) => (candidate) => {
@@ -235,32 +235,40 @@ const TABLE_RULES = {
     ),
     datesInOrder("tareas"),
   ],
-  fill_flow_templates: [
-    requires(["edicion_id", "Selecciona la edicion de la plantilla."]),
-  ],
-  fill_flow_steps: [
+  // LA RECETA, UNA ENTRADA POR TABLA Y PARA LOS DOS LADOS. Aqui habia CINCO entradas --dos
+  // cabeceras, los pasos de entrega y la instancia de entrega-- y las cinco se fueron con sus
+  // tablas en el paso 4 de la fase 4 del frente 24.
+  //
+  // ⚠️ EL ORIGEN DE UN PASO NO SE EXIGE AQUI, y no es un olvido: son DOS columnas excluyentes
+  // (`edicion_id` / `task_item_id`) y lo que hay que validar es que haya EXACTAMENTE UNA. Eso no lo
+  // sabe decir `requires`, que exige presencia campo a campo, y si lo dijera a medias daria un
+  // mensaje peor que el de la base. Lo impone `ck_pasos_declarados_un_origen`.
+  pasos_declarados: [
     requires(
-      ["fill_flow_template_id", "Selecciona la plantilla de entrega."],
-      ["step_order", "Define el orden del paso."],
+      ["accion", "Indica si el paso es de entrega o de firma."],
+      ["orden", "Define el orden del paso."],
     ),
   ],
-  document_fill_flows: [
+  participantes_declarados: [
     requires(
-      ["fill_flow_template_id", "Selecciona la plantilla de entrega."],
+      ["paso_id", "Selecciona el paso declarado."],
+      ["orden", "Define el orden del participante dentro del paso."],
+    ),
+  ],
+  recorridos: [
+    requires(
       ["document_version_id", "Selecciona la version de documento."],
+      ["accion", "Indica si el recorrido es de entrega o de firma."],
     ),
   ],
-  // UNA ENTRADA PARA LOS DOS LADOS desde el paso 3b de la fase 4 del frente 24. Aquí ponía
-  // `fill_requests`, con la instancia y el paso viejos; `turnos` pide el recorrido y el PARTICIPANTE,
-  // porque un turno sabe de qué declaración salió y no sólo de qué paso.
+  // UNA ENTRADA PARA LOS DOS LADOS desde el paso 3b de la fase 4 del frente 24. Aqui habia dos
+  // --una por mitad-- y pedian la instancia y el paso viejos; `turnos` pide el recorrido y el
+  // PARTICIPANTE, porque un turno sabe de que declaracion salio y no solo de que paso.
   turnos: [
     requires(
       ["recorrido_id", "Selecciona el recorrido."],
       ["participante_id", "Selecciona el participante declarado."],
     ),
-  ],
-  signature_flow_templates: [
-    requires(["edicion_id", "Selecciona la edicion de la plantilla."]),
   ],
   vacancies: [],
   contracts: [

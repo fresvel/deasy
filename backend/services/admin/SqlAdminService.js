@@ -540,14 +540,17 @@ export default class SqlAdminService {
     return rows?.[0] ?? null;
   }
 
-  async getFillFlowTemplate(fillFlowTemplateId, connection = this.pool) {
+  // EL PASO DECLARADO, con su ORIGEN. Sustituye a `getFillFlowTemplate`, que resolvia la cabecera de
+  // un paso de entrega para llegar a su edicion: hoy el paso lleva su origen y no hay cabecera. Lo
+  // usa la puerta de `participantes_declarados`, que es el unico salto que queda.
+  async getPasoDeclarado(pasoId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      `SELECT id, edicion_id
-       FROM fill_flow_templates
+      `SELECT id, accion, edicion_id, task_item_id
+       FROM pasos_declarados
        WHERE id = ?
        LIMIT 1`,
-      [fillFlowTemplateId]
+      [pasoId]
     );
     return rows?.[0] ?? null;
   }

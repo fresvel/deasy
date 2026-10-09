@@ -117,30 +117,15 @@ export async function cleanupDraftArtifactByCode(code) {
       await query("DELETE FROM vinculos WHERE id = ANY($1::int[])", [linkIds]);
     }
 
-    // LA RECETA EN SU FORMA NUEVA (frente 24, fase 4). Va antes que la vieja por el mismo motivo
-    // que ella: `fk_pasos_declarados_edicion` NO es ON DELETE CASCADE --no se borra una edicion que
-    // tenga recorrido-- asi que el `DELETE FROM ediciones` de abajo reventaria. Los participantes
-    // caen con su paso.
+    // LA RECETA. `fk_pasos_declarados_edicion` NO es ON DELETE CASCADE --no se borra una edicion que
+    // tenga recorrido-- asi que sin esto el `DELETE FROM ediciones` de abajo revienta. Los
+    // participantes caen con su paso.
     await query("DELETE FROM pasos_declarados WHERE edicion_id = ANY($1::int[])", [artifactIds]);
 
     // El portador autorado: el flujo que cuelga del propio artifact (§0.8, sub-paso 3).
-    await query(
-      `DELETE FROM fill_flow_steps
-        WHERE fill_flow_template_id IN (
-          SELECT id FROM fill_flow_templates WHERE edicion_id = ANY($1::int[])
-        )`,
-      [artifactIds],
-    );
-    await query(
-      `DELETE FROM signature_flow_steps
-        WHERE template_id IN (
-          SELECT id FROM signature_flow_templates WHERE edicion_id = ANY($1::int[])
-        )`,
-      [artifactIds],
-    );
-    await query("DELETE FROM fill_flow_templates WHERE edicion_id = ANY($1::int[])", [artifactIds]);
-    await query("DELETE FROM signature_flow_templates WHERE edicion_id = ANY($1::int[])", [artifactIds]);
-
+    // AQUI HABIA SEIS DELETE MAS, para las cuatro tablas de receta viejas --dos cabeceras y dos de
+    // pasos, cada una con su subconsulta por el portador--. Se retiraron en el paso 4 de la fase 4
+    // del frente 24, y con ellas el rodeo: hoy el paso cuelga de la edicion directamente.
     await query("DELETE FROM ediciones WHERE id = ANY($1::int[])", [artifactIds]);
   }
 
@@ -212,22 +197,10 @@ export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
     await query("DELETE FROM document_versions WHERE id = ANY($1::int[])", [versionIds]);
   }
   if (itemIds.length) {
-    await query(
-      `DELETE FROM fill_flow_steps
-        WHERE fill_flow_template_id IN (
-          SELECT id FROM fill_flow_templates WHERE task_item_id = ANY($1::int[])
-        )`,
-      [itemIds],
-    );
-    await query(
-      `DELETE FROM signature_flow_steps
-        WHERE template_id IN (
-          SELECT id FROM signature_flow_templates WHERE task_item_id = ANY($1::int[])
-        )`,
-      [itemIds],
-    );
-    await query("DELETE FROM fill_flow_templates WHERE task_item_id = ANY($1::int[])", [itemIds]);
-    await query("DELETE FROM signature_flow_templates WHERE task_item_id = ANY($1::int[])", [itemIds]);
+    // LA RECETA DE RUNTIME, la que el usuario define al enviar: cuelga del ENTREGABLE. Eran seis
+    // DELETE sobre las cuatro tablas viejas y es uno, porque el paso lleva su origen y los
+    // participantes caen con el.
+    await query("DELETE FROM pasos_declarados WHERE task_item_id = ANY($1::int[])", [itemIds]);
     await query("DELETE FROM task_item_tenures WHERE task_item_id = ANY($1::int[])", [itemIds]);
     await query("DELETE FROM task_items WHERE id = ANY($1::int[])", [itemIds]);
   }

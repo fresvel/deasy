@@ -205,40 +205,41 @@ const main = async () => {
     item_mode: "single",
   }, token);
 
-  // 7. Flujo de ENTREGA: lo llena el responsable de la tarea (el docente).
+  // 7. LA RECETA DEL RECORRIDO, anclada en la EDICION. Eran CUATRO altas --dos cabeceras y dos
+  //    pasos, con sus `selection_mode`, `is_required` y `approval_mode`-- y son cuatro sobre dos
+  //    tablas: el paso y su participante, para cada accion. Sin cabeceras no hay nada que nombrar ni
+  //    que activar: un paso lleva su propio origen.
   //
-  // ANCLADO EN LA EDICION, no en el vinculo: el escalon del vinculo murio en el frente 24. Aqui
-  // estaba anclado ahi, y era la UNICA fila de escalon 2 que existia en todo el sistema -- la puso
-  // esta siembra por el editor generico, porque ninguna funcion del dominio lo escribia.
-  const fillTplId = await create("fill_flow_templates", {
+  //    ENTREGA: lo llena el responsable de la tarea (el docente).
+  const pasoEntregaId = await create("pasos_declarados", {
+    accion: "entrega",
     edicion_id: fork.artifact_id,
-    name: "Elaboración del informe",
-    is_active: 1,
+    orden: 1,
+    nombre: "Elaboración del informe",
   }, token);
-  await create("fill_flow_steps", {
-    fill_flow_template_id: fillTplId,
-    step_order: 1,
+  await create("participantes_declarados", {
+    paso_id: pasoEntregaId,
+    orden: 1,
     resolver_type: "task_assignee",   // "Responsable del entregable"
-    selection_mode: "auto_one",
-    is_required: 1,
   }, token);
 
-  // 8. Flujo de FIRMA: lo firma el Coordinador de la misma unidad.
-  const signTplId = await create("signature_flow_templates", {
+  // 8. FIRMA: la firma el Coordinador de la misma unidad. El `slot` es el hueco donde se estampa, y
+  //    va en el PARTICIPANTE: un firmante, un hueco.
+  const pasoFirmaId = await create("pasos_declarados", {
+    accion: "firma",
     edicion_id: fork.artifact_id,
-    name: "Firma del coordinador",
-    is_active: 1,
+    orden: 1,
+    code: "firma_1",
+    nombre: "Coordinador de carrera",
   }, token);
-  await create("signature_flow_steps", {
-    template_id: signTplId,
-    step_order: 1,
-    name: "Coordinador de carrera",
+  await create("participantes_declarados", {
+    paso_id: pasoFirmaId,
+    orden: 1,
     resolver_type: "cargo_in_scope",  // "Por cargo"
-    required_cargo_id: CARGO_COORDINADOR,
+    cargo_id: CARGO_COORDINADOR,
     unit_scope_type: "unit_exact",
     unit_id: UNIT_ID,
-    selection_mode: "auto_all",
-    approval_mode: "and",
+    slot: "firma_1",
   }, token);
 
   // 9. Reglas de reparto: a los Docentes de AMBAS unidades (8 y 9).

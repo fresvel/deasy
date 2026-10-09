@@ -42,7 +42,9 @@ const COLADO_ID = 99;
 const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } = {}) => {
   const events = [];
 
-  // El gate cuenta con `SELECT EXISTS(...) AS has_steps` y pasa el id del artifact dos veces.
+  // El gate pregunta con `SELECT EXISTS(...) AS hay`. Se llamaba `has_steps` y cambio de nombre al
+  // mudarse al `datos/` de `plantillas` (paso 4 de la fase 4 del frente 24): ya no cuenta pasos de una
+  // cabecera, pregunta si la EDICION declara recorrido de entrega.
   // La plantilla versionada (TPL_ID) siempre trae su paso: su readiness se comprueba antes de la
   // transacción y no es lo que estos casos ejercitan. `fillSteps` describe SOLO al borrador colado.
   const respondeAlConteo = (params) => {
@@ -51,7 +53,7 @@ const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } =
       throw new Error("no se pudo contar los pasos: la base no responde");
     }
     const hay = Number(params?.[0]) === TPL_ID ? 1 : (fillSteps ? 1 : 0);
-    return [[{ has_steps: hay }]];
+    return [[{ hay }]];
   };
 
   const connection = {
@@ -60,7 +62,7 @@ const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } =
     rollback: async () => { events.push("rollback"); },
     release: () => { events.push("release"); },
     query: async (sql, params) => {
-      if (sql.includes("AS has_steps")) {
+      if (sql.includes("AS hay")) {
         return respondeAlConteo(params);
       }
       if (sql.includes("ta.lifecycle_state = 'draft'")) {
@@ -87,7 +89,7 @@ const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } =
   const pool = {
     getConnection: async () => connection,
     query: async (sql, params) => {
-      if (sql.includes("AS has_steps")) {
+      if (sql.includes("AS hay")) {
         return respondeAlConteo(params);
       }
       if (sql.includes("FROM process_definition_versions")) {
@@ -252,7 +254,7 @@ const buildDraftService = ({ falla = null } = {}) => {
       if (/^UPDATE catalogo_documental/i.test(texto)) { events.push("update:deliverable"); return [{}]; }
       if (/^SELECT id FROM vinculos/i.test(texto)) return [[]];
       if (/^INSERT INTO vinculos/i.test(texto)) { events.push("insert:vinculo"); return [{ insertId: 9 }]; }
-      if (/flow_templates/i.test(texto) || /flow_steps/i.test(texto)) { events.push("escribe:flujo"); return [[]]; }
+      if (/pasos_declarados/i.test(texto) || /participantes_declarados/i.test(texto)) { events.push("escribe:receta"); return [[]]; }
       return [[]];
     },
   };
@@ -290,14 +292,19 @@ test("el borrador se persiste dentro de UNA transaccion, con el flujo incluido",
   const artifactId = await persistir(service);
 
   assert.equal(artifactId, DRAFT_ARTIFACT_ID);
-  // Las cinco sentencias de flujo son: buscar la cabecera de entrega, crearla, borrar sus pasos,
-  // insertar el paso, y buscar la de firma (que no llega a crearse porque el flujo no trae firmas).
+  // CUATRO SENTENCIAS DE RECETA, y eran CINCO: buscar la cabecera de entrega, crearla, borrar sus
+  // pasos, insertar el paso, y buscar la de firma (que no llegaba a crearse porque el flujo no trae
+  // firmas). Sin cabeceras son: borrar la receta de entrega, insertar su paso, insertar su
+  // participante, y borrar la de firma --que no inserta nada, por lo mismo--.
+  //
+  // Lo que este caso afirma no es el numero: es que TODO cae dentro de la MISMA transaccion, entre
+  // el `begin` y el `commit`. Antes la receta se compensaba a mano si algo fallaba despues.
   assert.deepEqual(events, [
     "begin",
     "insert:deliverable",
     "insert:artifact",
     "insert:vinculo",
-    ...Array(5).fill("escribe:flujo"),
+    ...Array(4).fill("escribe:receta"),
     "commit",
     "release",
   ]);
@@ -309,7 +316,7 @@ test("si falla el VINCULO, la transaccion se deshace y no se escribe el flujo", 
   await assert.rejects(persistir(service), /El proceso destino seleccionado no existe/);
   assert.ok(events.includes("rollback"), "debe deshacerse la transaccion");
   assert.ok(!events.includes("commit"), "no debe confirmarse nada");
-  assert.ok(!events.includes("escribe:flujo"), "el flujo no llega a escribirse");
+  assert.ok(!events.includes("escribe:receta"), "la receta no llega a escribirse");
   assert.equal(events.at(-1), "release", "la conexion vuelve al pool pase lo que pase");
 });
 
@@ -342,7 +349,7 @@ test("sin flujo autorado la transaccion sigue siendo la misma, sin escribir fluj
   const { service, events } = buildDraftService();
   await persistir(service, { workflowsDocument: null });
 
-  assert.ok(!events.includes("escribe:flujo"));
+  assert.ok(!events.includes("escribe:receta"));
   assert.ok(events.includes("commit"));
 });
 

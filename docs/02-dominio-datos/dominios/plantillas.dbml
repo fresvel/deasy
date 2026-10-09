@@ -28,16 +28,6 @@ Table "catalogo_documental" {
   Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `ediciones` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
 }
 
-Table "document_fill_flows" {
-  "id" int4 [pk, not null, increment]
-  "fill_flow_template_id" int4 [not null]
-  "document_version_id" int4 [unique, not null]
-  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
-  "current_step_order" int4
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-}
-
 Table "ediciones" {
   "id" int4 [pk, not null, increment]
   "catalogo_documental_id" int4 [not null]
@@ -58,64 +48,6 @@ Table "ediciones" {
   }
 
   Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `catalogo_documental`, que es quien porta la identidad.'''
-}
-
-Table "fill_flow_steps" {
-  "id" int4 [pk, not null, increment]
-  "fill_flow_template_id" int4 [not null]
-  "step_order" int4 [not null]
-  "code" varchar(120)
-  "name" varchar(180)
-  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'task_assignee']
-  "assigned_person_id" int4
-  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text, 'context_exact'::text])`, default: 'unit_exact']
-  "unit_id" int4
-  "unit_type_id" int4
-  "relation_type_id" int4
-  "cargo_id" int4
-  "position_id" int4
-  "selection_mode" text [not null, check: `selection_mode = ANY (ARRAY['auto_one'::text, 'auto_all'::text, 'manual'::text])`, default: 'auto_one']
-  "is_required" int2 [not null, default: 1]
-  "can_reject" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    (fill_flow_template_id, step_order) [type: btree, unique, name: "uq_fill_flow_steps"]
-  }
-}
-
-Table "fill_flow_templates" {
-  "id" int4 [pk, not null, increment]
-  "task_item_id" int4
-  "edicion_id" int4 [note: '''El flujo AUTORADO de la plantilla (frente 0.8, sub-paso 1). Al escribir esta nota era un cajón abierto y vacío: la columna existe y todavía nadie la lee ni la escribe.''']
-  "name" varchar(180) [not null]
-  "description" varchar(255)
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    edicion_id [type: btree, name: "idx_fill_flow_templates_artifact"]
-    task_item_id [type: btree, name: "idx_fill_flow_templates_task_item"]
-  }
-
-  Note: '''Cabecera de un flujo de entrega. Cuelga de UNO de tres portadores, y NO son excluyentes (por eso no hay CHECK): por vínculo (`vinculo_id`), de runtime (`task_item_id`) o autorado en la plantilla (`edicion_id`, frente 0.8).'''
-}
-
-Table "fill_requests" {
-  "id" int4 [pk, not null, increment]
-  "document_fill_flow_id" int4 [not null]
-  "fill_flow_step_id" int4 [not null]
-  "assigned_person_id" int4
-  "status" text [not null, check: `status = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
-  "is_manual" int2 [not null, default: 0]
-  "requested_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-  "responded_at" timestamp
-  "response_note" varchar(255)
-
-  Indexes {
-    (document_fill_flow_id, fill_flow_step_id, assigned_person_id) [type: btree, unique, name: "uq_fill_requests"]
-    (document_fill_flow_id, fill_flow_step_id) [type: btree, name: "idx_fill_requests_step"]
-  }
 }
 
 Table "generadores_de_documento" {
@@ -142,17 +74,19 @@ Table "participantes_declarados" {
   "cargo_id" int4
   "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'context_exact'::text, 'all_units'::text])`, default: 'context_exact']
   "unit_id" int4
-  "slot" varchar(80)
+  "slot" varchar(80) [note: '''EL HUECO EN EL PAPEL: el nombre con el que la maqueta embebe el token de este firmante (`{{ signatures.<slot>.token }}`), que queda impreso en el PDF y que el firmador busca para estampar en sus coordenadas. Es del PARTICIPANTE y no del paso: con un hueco por paso, un paso de tres firmantes imprimia el token del primero y los otros dos no tenian marca. Nulo en entrega.''']
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
     (paso_id, orden) [type: btree, unique, name: "uq_participantes_declarados_orden"]
   }
+
+  Note: '''QUIEN HACE EL PASO: un participante por cada persona o cargo que el paso convoca, en su `orden`. Un paso de entrega tiene UNO; uno de firma puede tener varios. Antes los firmantes vivian dentro de un JSONB sin validar que mandaba sobre las columnas del paso --el defecto 1.19--; a filas entran bajo los mismos dos CHECK que cierran su vocabulario.'''
 }
 
 Table "pasos_declarados" {
   "id" int4 [pk, not null, increment]
-  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`, note: '''ENTREGA o FIRMA. Es el discriminador que permite que las dos mitades del recorrido sean la misma tabla: lo que cambia entre ellas no es la estructura, es la accion que se pide.''']
   "edicion_id" int4
   "task_item_id" int4
   "orden" int4 [not null]
@@ -164,35 +98,22 @@ Table "pasos_declarados" {
     (edicion_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_edicion"]
     (task_item_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_entregable"]
   }
+
+  Note: '''LA RECETA: un paso del recorrido documental, de ENTREGA o de FIRMA segun su `accion`. Sustituye a las cuatro tablas de receta que habia --dos cabeceras y dos de pasos-- y no tiene cabecera: el paso lleva su propio ORIGEN, que es o la edicion que lo autora (`edicion_id`) o el entregable que lo definio al enviar (`task_item_id`, modo `routed`), con un CHECK que exige exactamente uno.'''
 }
 
-Ref "fk_document_fill_flows_template":"fill_flow_templates"."id" <? "document_fill_flows"."fill_flow_template_id"
 Ref "fk_ediciones_catalogo":"catalogo_documental"."id" <? "ediciones"."catalogo_documental_id"
 Ref "fk_ediciones_generador":"generadores_de_documento"."id" ?<? "ediciones"."generador_id"
 Ref "fk_ediciones_parent":"ediciones"."id" ?<? "ediciones"."parent_version_id"
-Ref "fk_fill_flow_steps_template":"fill_flow_templates"."id" <? "fill_flow_steps"."fill_flow_template_id"
-Ref "fk_fill_flow_templates_artifact":"ediciones"."id" ?<? "fill_flow_templates"."edicion_id"
-Ref "fk_fill_requests_instance":"document_fill_flows"."id" <? "fill_requests"."document_fill_flow_id"
-Ref "fk_fill_requests_step":"fill_flow_steps"."id" <? "fill_requests"."fill_flow_step_id"
 Ref "fk_participantes_declarados_paso":"pasos_declarados"."id" <? "participantes_declarados"."paso_id" [delete: cascade]
 Ref "fk_pasos_declarados_edicion":"ediciones"."id" ?<? "pasos_declarados"."edicion_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> catalogo_documental   [identidad]
-//   document_versions -> document_fill_flows   [tareas]
 //   ediciones -> document_versions   [tareas]
-//   cargos -> fill_flow_steps   [identidad]
-//   persons -> fill_flow_steps   [identidad]
-//   unit_positions -> fill_flow_steps   [organizacion]
-//   relation_unit_types -> fill_flow_steps   [organizacion]
-//   unit_types -> fill_flow_steps   [organizacion]
-//   units -> fill_flow_steps   [organizacion]
-//   task_items -> fill_flow_templates   [tareas]
-//   persons -> fill_requests   [identidad]
 //   cargos -> participantes_declarados   [identidad]
 //   persons -> participantes_declarados   [identidad]
 //   units -> participantes_declarados   [organizacion]
 //   task_items -> pasos_declarados   [tareas]
-//   ediciones -> signature_flow_templates   [firmas]
 //   participantes_declarados -> turnos   [tareas]
 //   ediciones -> vinculos   [procesos]

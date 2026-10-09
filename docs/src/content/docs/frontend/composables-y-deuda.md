@@ -6,7 +6,9 @@ sidebar:
 ---
 El patron comun: una función `useXxx({ deps })` que **declara y devuelve sus propios `ref`**, con dependencias inyectadas de solo lectura. Nada de `provide`/`inject`, nada de singletons reactivos.
 
-`useFlowBuilder.js` (modulo `home`) es el constructor del *flujo routed*: quien elabora (`flowEntrega`) y quien firma (`flowFirma`, con pasos ordenados que llevan `signers`, `approval_mode` y `required_min`). Fue extraido de `HomeView.vue` durante la fase B del refactor del God Object.
+`useFlowBuilder.js` (modulo `home`) es el constructor del *flujo routed*: quien elabora (`flowEntrega`) y quien firma (`flowFirma`, con pasos ordenados que llevan sus firmantes). Fue extraido de `HomeView.vue` durante la fase B del refactor del God Object.
+
+⚠️ **Sigue enviando dos claves que el backend IGNORA**, `approval_mode` y `required_min`: el cupo de firmantes se retiro el 2026-10-09 (un paso esta aprobado cuando firman todos los suyos) y el convertidor de la receta no las mira. Lo que las mataria es quitarlas del formulario, que es lo que convierte una clave ignorada en una clave que no existe.
 
 Otros: `useProcessPanels.js`, `useDeliverableView.js` (38 KB, el mayor), `useDocumentCenter.js`, `useGeneralTask.js`, `useRecipientSearch.js`, `useWorkspaceChrome.js` (estado del *chrome* compartido por las cuatro vistas que montan `AppWorkspaceShell`), y 24 composables en el modulo admin repartidos en seis subcarpetas (`data/`, `fk/`, `forms/`, `modals/`, `processes/`, `ui/`).
 

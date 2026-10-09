@@ -219,29 +219,31 @@ firma, cambiar de responsable no lo arrastra.
 
 ---
 
-## Nivel 6 · Quién lo llena y quién lo firma — 11 tablas
+## Nivel 6 · Quién lo llena y quién lo firma — 7 tablas
 
-El recorrido de un documento. Está encima del nivel 5 porque un paso del recorrido apunta a **una
+El recorrido de un documento. Está encima del nivel 5 porque un turno del recorrido apunta a **una
 ronda concreta** de un documento concreto.
 
-**Llenar:**
+**La receta** — lo que alguien declara que hay que hacer:
 
 | Tabla | Qué guarda |
 |---|---|
-| `fill_flow_templates` | El recorrido de llenado, como plantilla |
-| `fill_flow_steps` | Sus pasos, y **cómo se decide quién hace cada paso**: el responsable del entregable, o quien ocupe cierto puesto en cierto ámbito |
-| `document_fill_flows` | Ese recorrido **puesto en marcha** sobre una ronda de un documento |
-| `fill_requests` | Lo que le toca a cada persona, con su respuesta |
+| `pasos_declarados` | Un paso del recorrido, de **entrega o de firma** según su `accion`, con su origen: la edición que lo autora o el entregable que lo definió al enviar |
+| `participantes_declarados` | **Cómo se decide quién hace cada paso**: el responsable del entregable, una persona concreta, o quien ocupe cierto cargo en cierto ámbito. Un paso de entrega tiene uno; uno de firma puede tener varios, cada uno con su hueco en el papel |
 
-**Firmar:**
+**La ejecución** — la ronda en marcha:
 
 | Tabla | Qué guarda |
 |---|---|
-| `signature_flow_templates` | El recorrido de firma, como plantilla |
-| `signature_flow_steps` | Sus pasos, con cuántas firmas hacen falta y **dónde va cada firma en el papel** |
-| `signature_flow_instances` *(en retirada)* | Ese recorrido puesto en marcha sobre una ronda. Hoy lo es `recorridos` con `accion = 'firma'` |
-| `signature_requests` *(en retirada)* | Lo que le toca firmar a cada persona. Hoy lo es `turnos` |
+| `recorridos` | Esa receta **puesta en marcha** sobre una ronda de un documento, con su estado y por qué paso va |
+| `turnos` | Lo que le toca a cada persona, con su respuesta. Apunta al participante que lo produjo |
+
+**Y la firma, que tiene lo suyo:**
+
+| Tabla | Qué guarda |
+|---|---|
 | `document_signatures` | **La firma ya puesta**, con el archivo firmado resultante |
+| `signature_statuses` | Cómo salió la firma: el segundo eje, aparte del estado del turno |
 | `signature_batch_jobs` | Los lotes de firma que se mandan al servicio que firma los PDF |
 
 **Y el rastro:**

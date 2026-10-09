@@ -19,6 +19,17 @@
 --
 -- Si la base es desechable --dev, qa-- es mas simple resetearla: 'bash scripts/reset-system.sh dev'.
 
+-- ⚠️ NOMBRA OCHO TABLAS QUE EL ESQUEMA DE HOY YA NO CREA, y es correcto: este script CONVERGE una
+-- base ANTERIOR, y una base anterior las tiene. Son `fill_flow_templates`, `fill_flow_steps`,
+-- `document_fill_flows`, `fill_requests` y sus cuatro gemelas de firma, retiradas en el paso 4 de la
+-- fase 4 del frente 24 (2026-10-09) y sustituidas por `pasos_declarados`, `participantes_declarados`,
+-- `recorridos` y `turnos`.
+--
+-- Reubicarlas a su esquema sigue siendo lo correcto: mueve las filas que esa base tenga para que no
+-- queden en `public` cuando el esquema nuevo arranque. Lo que este script NO hace --ni debe-- es
+-- convertir la receta vieja a la nueva: el dueno decidio que no hay datos en produccion y que el
+-- camino es `scripts/reset-system.sh`.
+--
 CREATE SCHEMA IF NOT EXISTS identidad;
 CREATE SCHEMA IF NOT EXISTS organizacion;
 CREATE SCHEMA IF NOT EXISTS procesos;

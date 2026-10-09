@@ -784,8 +784,8 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 3 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 2 claves ajenas desde otros diagramas</summary>
 
-`fill_flow_steps.relation_type_id` → `relation_unit_types` · `role_assignment_relation_types.relation_type_id` → `relation_unit_types` · `unit_relations.relation_type_id` → `relation_unit_types`
+`role_assignment_relation_types.relation_type_id` → `relation_unit_types` · `unit_relations.relation_type_id` → `relation_unit_types`
 
 </details>

@@ -154,47 +154,38 @@ const MASK_OPTS = {
 
 // --- Lectura del oráculo -------------------------------------------------------------------------
 
-const FILL_TEMPLATE_COLUMNS = `
-  id, task_item_id, edicion_id, name, description, is_active`;
-const SIGNATURE_TEMPLATE_COLUMNS = FILL_TEMPLATE_COLUMNS;
+// ── LA RECETA DE RUNTIME, EN UNA PAREJA DE TABLAS (frente 24, fase 4, paso 4) ───────────────────
+//
+// Aqui habia dos lectores de cabecera+pasos con dos juegos de columnas distintos. Hoy un «flujo» de
+// runtime es una LISTA DE PASOS con sus participantes: no hay cabecera que leer, porque el paso
+// lleva su propio origen.
+const PASO_COLUMNAS = `
+  p.id, p.accion, p.edicion_id, p.task_item_id, p.orden, p.code, p.nombre`;
+const PARTICIPANTE_COLUMNAS = `
+  pa.id, pa.orden, pa.resolver_type, pa.persona_id, pa.cargo_id,
+  pa.unit_scope_type, pa.unit_id, pa.slot`;
 
-const FILL_STEP_COLUMNS = `
-  id, fill_flow_template_id, step_order, code, name, resolver_type, assigned_person_id,
-  unit_scope_type, unit_id, unit_type_id, relation_type_id, cargo_id, position_id,
-  selection_mode, is_required, can_reject`;
-
-const SIGNATURE_STEP_COLUMNS = `
-  id, template_id, step_order, code, name, slot, resolver_type, assigned_person_id,
-  unit_scope_type, unit_id, unit_type_id, position_id, required_cargo_id,
-  selection_mode, approval_mode, required_signers_min, required_signers_max,
-  is_required, signers`;
-
-// Cabecera + pasos anidados, para que el golden se lea como el flujo y no como dos tablas.
-async function readRuntimeFillFlow(taskItemId) {
-  const [header] = await query(
-    `SELECT ${FILL_TEMPLATE_COLUMNS} FROM fill_flow_templates WHERE task_item_id = $1 ORDER BY id`,
-    [taskItemId],
+async function readRuntimeReceta(taskItemId, accion) {
+  const pasos = await query(
+    `SELECT ${PASO_COLUMNAS} FROM pasos_declarados p
+      WHERE p.task_item_id = $1 AND p.accion = $2::text
+      ORDER BY p.orden, p.id`,
+    [taskItemId, accion],
   );
-  if (!header) return null;
-  const steps = await query(
-    `SELECT ${FILL_STEP_COLUMNS} FROM fill_flow_steps WHERE fill_flow_template_id = $1 ORDER BY step_order`,
-    [header.id],
-  );
-  return { ...header, steps: steps.map(({ fill_flow_template_id: _fk, ...rest }) => rest) };
+  const salida = [];
+  for (const paso of pasos) {
+    const participantes = await query(
+      `SELECT ${PARTICIPANTE_COLUMNAS} FROM participantes_declarados pa
+        WHERE pa.paso_id = $1 ORDER BY pa.orden, pa.id`,
+      [paso.id],
+    );
+    salida.push({ ...paso, participantes });
+  }
+  return salida;
 }
 
-async function readRuntimeSignatureFlow(taskItemId) {
-  const [header] = await query(
-    `SELECT ${SIGNATURE_TEMPLATE_COLUMNS} FROM signature_flow_templates WHERE task_item_id = $1 ORDER BY id`,
-    [taskItemId],
-  );
-  if (!header) return null;
-  const steps = await query(
-    `SELECT ${SIGNATURE_STEP_COLUMNS} FROM signature_flow_steps WHERE template_id = $1 ORDER BY step_order`,
-    [header.id],
-  );
-  return { ...header, steps: steps.map(({ template_id: _fk, ...rest }) => rest) };
-}
+const readRuntimeFillFlow = (taskItemId) => readRuntimeReceta(taskItemId, "entrega");
+const readRuntimeSignatureFlow = (taskItemId) => readRuntimeReceta(taskItemId, "firma");
 
 // El entregable tal como queda: la fila del `task_item`, su documento, su versión, la instancia de
 // flujo de llenado y las solicitudes abiertas. Es el «estado resultante» del punto 4.
@@ -274,27 +265,39 @@ const sinAutoincrementalEnElTitulo = (resultado) => resultado;
 // Punto 1: la propiedad que DEFINE `routed`. Se comprueba sobre la fila CRUDA, antes de normalizar:
 // `normalize` enmascara las claves de id **aunque valgan null**, así que en el golden no se
 // distingue un `edicion_id` vacío de uno relleno.
-const cuelgaDelEntregable = (flow, { taskItemId }, lado) => {
-  assert.ok(flow, `${lado}: el envío routed debe materializar un flujo`);
-  assert.equal(Number(flow.task_item_id), Number(taskItemId), `${lado}: el flujo cuelga del ENTREGABLE`);
-  assert.equal(flow.edicion_id, null, `${lado}: y NO de la plantilla — eso sería 'single'`);
-  assert.ok(
-    !("vinculo_id" in flow),
-    `${lado}: el portador por vínculo ya no existe — un routed cuelga del entregable y de nada más`,
-  );
-  assert.equal(Number(flow.is_active), 1, `${lado}: la cabecera nace activa`);
+// ⚠️ SE COMPRUEBA SOBRE CADA PASO, no sobre una cabecera. Desde el paso 4 de la fase 4 no hay
+// cabecera: el ORIGEN lo lleva el paso, con un `CHECK` que exige exactamente uno de los dos. Así que
+// lo que antes era una fila que mirar son ahora N, y la propiedad se comprueba en todas. La
+// aserción de `is_active` se fue con la cabecera: vaciar un lado hoy BORRA sus pasos.
+const cuelgaDelEntregable = (pasos, { taskItemId }, lado) => {
+  assert.ok(pasos?.length, `${lado}: el envío routed debe materializar una receta`);
+  for (const paso of pasos) {
+    assert.equal(Number(paso.task_item_id), Number(taskItemId), `${lado}: el paso cuelga del ENTREGABLE`);
+    assert.equal(paso.edicion_id, null, `${lado}: y NO de la plantilla — eso sería 'single'`);
+    assert.ok(
+      !("vinculo_id" in paso),
+      `${lado}: el portador por vínculo ya no existe — un routed cuelga del entregable y de nada más`,
+    );
+  }
 };
 
-// Punto 2: los pasos son los que se mandaron, en su orden. `can_reject` no se manda: lo DERIVA el
-// orden (`generation/documents.js:255`), y por eso el flujo de entrega del modo `free` lleva dos
-// pasos — con uno solo nunca se demostraría.
-const pasosDeEntregaSegunLoEnviado = (flow, personIds, lado) => {
-  assert.equal(flow.steps.length, personIds.length, `${lado}: un paso por persona enviada`);
-  flow.steps.forEach((step, index) => {
-    assert.equal(Number(step.step_order), index + 1, `${lado}: los pasos conservan el orden enviado`);
-    assert.equal(step.resolver_type, "specific_person", `${lado}: persona concreta, elegida al enviar`);
-    assert.equal(Number(step.assigned_person_id), personIds[index], `${lado}: el paso ${index + 1} es de quien se eligió`);
-    assert.equal(Number(step.can_reject), index === 0 ? 0 : 1, `${lado}: can_reject lo deriva el orden`);
+// Punto 2: los pasos son los que se mandaron, en su orden, y cada uno con UN participante —el
+// constructor de entrega es una lista plana de personas y cada una es un paso—.
+//
+// ⚠️ AQUI SE COMPROBABA `can_reject`, que el escritor DERIVABA del orden (`order > 1`). La columna se
+// retiró en el paso 4 de la fase 4: la escribían tres sitios, no la leía nadie, y había TRES reglas
+// distintas para la misma idea —la columna, el guard (que no mira ni el orden ni la columna) y el
+// frontend (que decide por `resolver_type`)—. El modo `free` sigue mandando DOS pasos: ahora lo que
+// demuestran es el orden.
+const pasosDeEntregaSegunLoEnviado = (pasos, personIds, lado) => {
+  assert.equal(pasos.length, personIds.length, `${lado}: un paso por persona enviada`);
+  pasos.forEach((paso, index) => {
+    assert.equal(Number(paso.orden), index + 1, `${lado}: los pasos conservan el orden enviado`);
+    assert.equal(paso.participantes.length, 1, `${lado}: un paso de entrega pide a UNA persona`);
+    const parte = paso.participantes[0];
+    assert.equal(parte.resolver_type, "specific_person", `${lado}: persona concreta, elegida al enviar`);
+    assert.equal(Number(parte.persona_id), personIds[index], `${lado}: el paso ${index + 1} es de quien se eligió`);
+    assert.equal(parte.slot, null, `${lado}: un paso de entrega no tiene hueco en el papel`);
   });
 };
 
@@ -426,19 +429,20 @@ test("free · un envio SIN flujo se rechaza: el destinatario vive en el flujo, n
 
 test("free · el flujo de ENTREGA cuelga del ENTREGABLE y es el que definió el usuario", async () => {
   assert.ok(estado.freeItemId, "depende del paso anterior");
-  const flow = await readRuntimeFillFlow(estado.freeItemId);
-  cuelgaDelEntregable(flow, { taskItemId: estado.freeItemId, linkId: estado.linkId }, "free/entrega");
-  pasosDeEntregaSegunLoEnviado(flow, FREE_ENTREGA, "free/entrega");
-  matchSnapshot(SUITE, "free_flujo_entrega", normalize(flow, MASK_OPTS));
+  const pasos = await readRuntimeFillFlow(estado.freeItemId);
+  cuelgaDelEntregable(pasos, { taskItemId: estado.freeItemId, linkId: estado.linkId }, "free/entrega");
+  pasosDeEntregaSegunLoEnviado(pasos, FREE_ENTREGA, "free/entrega");
+  matchSnapshot(SUITE, "free_flujo_entrega", normalize(pasos, MASK_OPTS));
 });
 
 test("free · el flujo de FIRMA cuelga del ENTREGABLE y es el que definió el usuario", async () => {
   assert.ok(estado.freeItemId, "depende del paso anterior");
-  const flow = await readRuntimeSignatureFlow(estado.freeItemId);
-  cuelgaDelEntregable(flow, { taskItemId: estado.freeItemId, linkId: estado.linkId }, "free/firma");
-  assert.equal(flow.steps.length, FREE_FIRMA.length, "free/firma: un paso por firmante enviado");
-  assert.equal(Number(flow.steps[0].assigned_person_id), ADMIN, "free/firma: firma quien se eligió");
-  matchSnapshot(SUITE, "free_flujo_firma", normalize(flow, MASK_OPTS));
+  const pasos = await readRuntimeSignatureFlow(estado.freeItemId);
+  cuelgaDelEntregable(pasos, { taskItemId: estado.freeItemId, linkId: estado.linkId }, "free/firma");
+  assert.equal(pasos.length, FREE_FIRMA.length, "free/firma: un paso por firmante enviado");
+  assert.equal(Number(pasos[0].participantes[0].persona_id), ADMIN, "free/firma: firma quien se eligió");
+  assert.equal(pasos[0].participantes[0].slot, "firma_1", "free/firma: y su hueco en el papel");
+  matchSnapshot(SUITE, "free_flujo_firma", normalize(pasos, MASK_OPTS));
 });
 
 test("free · el entregable resultante: documento, versión y solicitudes de llenado", async () => {
@@ -531,27 +535,40 @@ test("derived · POST /users/:id/general-tasks añade el entregable routed a la 
 
 test("derived · el flujo de ENTREGA cuelga del ENTREGABLE y es el que definió el usuario", async () => {
   assert.ok(estado.derivedItemId, "depende del paso anterior");
-  const flow = await readRuntimeFillFlow(estado.derivedItemId);
-  cuelgaDelEntregable(flow, { taskItemId: estado.derivedItemId, linkId: estado.linkId }, "derived/entrega");
-  pasosDeEntregaSegunLoEnviado(flow, DERIVED_ENTREGA, "derived/entrega");
-  matchSnapshot(SUITE, "derived_flujo_entrega", normalize(flow, MASK_OPTS));
+  const pasos = await readRuntimeFillFlow(estado.derivedItemId);
+  cuelgaDelEntregable(pasos, { taskItemId: estado.derivedItemId, linkId: estado.linkId }, "derived/entrega");
+  pasosDeEntregaSegunLoEnviado(pasos, DERIVED_ENTREGA, "derived/entrega");
+  matchSnapshot(SUITE, "derived_flujo_entrega", normalize(pasos, MASK_OPTS));
 });
 
 test("derived · el flujo de FIRMA conserva los DOS firmantes del paso y su modo de aprobación", async () => {
   assert.ok(estado.derivedItemId, "depende del paso anterior");
-  const flow = await readRuntimeSignatureFlow(estado.derivedItemId);
-  cuelgaDelEntregable(flow, { taskItemId: estado.derivedItemId, linkId: estado.linkId }, "derived/firma");
-  assert.equal(flow.steps.length, 2, "derived/firma: dos pasos de firma");
-  const [multiple, unico] = flow.steps;
-  assert.equal(multiple.approval_mode, "at_least", "el primer paso conserva su modo de aprobación");
-  assert.equal(Number(multiple.required_signers_min), 1, "y su mínimo de firmantes");
+  const pasos = await readRuntimeSignatureFlow(estado.derivedItemId);
+  cuelgaDelEntregable(pasos, { taskItemId: estado.derivedItemId, linkId: estado.linkId }, "derived/firma");
+  assert.equal(pasos.length, 2, "derived/firma: dos pasos de firma");
+  const [multiple, unico] = pasos;
+
+  // LOS DOS FIRMANTES SON DOS FILAS, y eso es lo que el paso 4 cambia aquí. Antes vivían dentro del
+  // JSONB `signers` —sin `CHECK`, con dos convenciones de nombre vivas y mandando sobre las columnas
+  // del paso— y había que parsearlo para leerlos. Ahora son participantes con columnas tipadas.
   assert.deepEqual(
-    (typeof multiple.signers === "string" ? JSON.parse(multiple.signers) : multiple.signers).map((s) => Number(s.person_id)),
+    multiple.participantes.map((parte) => Number(parte.persona_id)),
     [GESTOR, USUARIO],
     "los dos firmantes del paso son los enviados, en su orden",
   );
-  assert.equal(unico.approval_mode, "and", "un paso de un solo firmante siempre es 'and'");
-  matchSnapshot(SUITE, "derived_flujo_firma", normalize(flow, MASK_OPTS));
+  // Y CADA UNO TIENE SU HUECO. Es el fallo que la bajada del `slot` al participante cierra: con un
+  // hueco por paso, la maqueta imprimía el token del primero y el segundo no tenía marca en el PDF,
+  // así que el firmador lanzaba `Token marker not found`.
+  assert.deepEqual(
+    multiple.participantes.map((parte) => parte.slot),
+    ["firma_1", "firma_1_2"],
+    "un firmante, un hueco: con uno solo el segundo no tendría marca en el papel",
+  );
+  // `approval_mode` y `required_signers_min` se retiraron con el cupo (§10 del plan): un paso está
+  // aprobado cuando firman TODOS los suyos. El envío los sigue mandando y se IGNORAN.
+  assert.equal(unico.participantes.length, 1, "el segundo paso pide a una sola persona");
+  assert.equal(Number(unico.participantes[0].persona_id), ADMIN, "y es quien se eligió");
+  matchSnapshot(SUITE, "derived_flujo_firma", normalize(pasos, MASK_OPTS));
 });
 
 test("derived · el entregable resultante: documento, versión y solicitudes de llenado", async () => {
