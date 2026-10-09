@@ -368,7 +368,14 @@ const GROUP_DEFS = [
   { key: "institucion", label: "Institución", main: ["Estructura", "Geografia", "Calendario"], support: [] },
   { key: "procesos",    label: "Procesos",    main: ["Procesos", "Plantillas"], support: [] },
   { key: "tareas",      label: "Tareas",      main: ["Tareas"], support: [] },
-  { key: "documentos",  label: "Documentos",  main: ["Documentos"], support: ["Entrega", "Firmas"] },
+  // ⚠️ `support` DECIA ["Entrega", "Firmas"], y la primera dejo de existir el 2026-10-09: la categoria
+  // «Entrega» era la de las cuatro tablas del flujo de llenado, retiradas con las ocho del recorrido
+  // partido en dos. Las cuatro que las sustituyen estan en la categoria «Recorrido» --una para los dos
+  // lados-- y, hasta este arreglo, NINGUN grupo la listaba: existian en `sqlTables.js`, el backend las
+  // servia, y en `/admin` no aparecian. Un grupo vacio y cuatro tablas invisibles.
+  //
+  // Se ve en el navegador y en ningun test: esta lista no la cruza nadie con las categorias reales.
+  { key: "documentos",  label: "Documentos",  main: ["Documentos"], support: ["Recorrido", "Firmas"] },
   { key: "usuarios",    label: "Usuarios",    main: ["Personas", "VocabularioPersona"], support: [] },
   { key: "contratos",   label: "Contratos",   main: ["Contratos"], support: [] },
   { key: "seguridad",   label: "Seguridad",   main: ["Seguridad"], support: [] }

@@ -194,6 +194,16 @@ jobs:
       # declarada en scripts/docs/dominios.json con su motivo; la puerta falla con cualquiera nueva.
       - name: Check module map
         run: node scripts/docs/check-mapa-tablas.mjs
+      # Las categorías de tabla de `/admin`: que ninguna quede sin grupo que la enseñe, y que ningún
+      # grupo nombre una que no existe. Son DOS listas en dos lados —`sqlTables.js` y
+      # `AdminView.GROUP_DEFS`— y el fallo es invisible por los dos: una categoría sin grupo deja sus
+      # tablas inalcanzables aunque el backend las sirva, y un grupo sin categoría deja un cajón vacío
+      # con título. Las dos pasaron el 2026-10-09 y se vieron abriendo la pantalla, no en un test.
+      #
+      # Va aquí y no en el lint del frontend porque cruza los dos lados: el contenedor del frontend no
+      # monta `backend/`.
+      - name: Check admin table categories
+        run: node scripts/check-categorias-admin.mjs
       - name: Backend unit tests
         working-directory: backend
         run: npm run test:unit
