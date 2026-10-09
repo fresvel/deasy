@@ -643,7 +643,7 @@ flujo→flujo**, y eso hay que decidirlo en F7.0.
 
 | Tarea | Qué entrega | Estado |
 |---|---|:--:|
-| **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`dominio` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | ⬜ |
+| **F7.0** | **El criterio de dominio y su nombre**: una frase falsable por dominio (*«si cambia X, cambia sólo esto»*), **una sola palabra** —`dominio` o `dominio`— aplicada en `dominios.json`, en la puerta y en la prosa, y las cinco decisiones de abajo resueltas. **Sin mover un fichero** | 🟡 **2 de 5 decisiones** (la 1 la resolvió el frente 24 construyendo; la 4 el dueño el 2026-10-07) |
 | **F7.1** | **Declarar el común y los flujos, sin mover nada**: los transversales y los 7 flujos en el mapa, con su motivo, y la puerta leyendo la **ruta** | ✅ |
 | **F7.2** | **Sacar el SQL y las transacciones de `controllers/` y `routes/`**: de **77 consultas a CERO**, y de 4 transacciones a cero. `user_controler.js`: **1.695 → 1.464 líneas** | ✅ |
 | **F7.3** | ⛔ **DESCARTADA** · partir los ficheros «sin dominio dominante». El criterio no sobrevivió a su propia auditoría: **4 de los 5 que quedaban no escriben nada** | ⛔ |
@@ -1416,12 +1416,15 @@ golden** — que en un merge de 28 commits de divergencia es la única prueba qu
 
 ### Las cinco decisiones que F7.0 tiene que resolver
 
-1. **¿De qué dominio es el flujo de entrega?** `fill_requests` está en **plantillas** y
-   `signature_requests` en **firmas**: las dos mitades del mismo mecanismo, en dominios distintos.
-   Y el flujo vive hoy en cuatro sitios —ruta `routes/sign_router.js:81-85`, controller
-   `controllers/sign/sign_workflow_controller.js:24`, servicio
-   `services/documents/FillRequestWorkflowService.js`, tabla en el esquema `plantillas`—. **Esto
-   parece un defecto del mapa de datos, no del código.**
+1. ✅ **RESUELTA el 2026-10-09 por el frente 24, y no decidiendo sino CONSTRUYENDO.** La pregunta era
+   de qué dominio es el flujo de entrega, con `fill_requests` en **plantillas** y `signature_requests`
+   en **firmas**: las dos mitades del mismo mecanismo en dominios distintos. El frente 24 las unificó
+   en **`recorridos` + `turnos`**, que viven en **`tareas`**, y con eso la pregunta desaparece: no hay
+   dos mitades que repartir. **Era un defecto del mapa de datos, como el plan sospechaba** — y la
+   forma de cerrarlo no fue elegir un dominio, fue quitar la duplicación que obligaba a elegir.
+
+   ⚠️ Esto deja `_deuda_escritura` con **una** línea (`task_items`): la de `fill_requests`, que esta
+   decisión tenía que cerrar, se cerró sola al morir la tabla.
 2. **¿`plantillas` y `procesos` son un dominio o dos?** La decisión del frente 23 los convierte en
    **una sola unidad de cambio**, y el cierre común dice que van juntos. Si siguen separados,
    `templateLifecycle.js` (1.874 líneas) se parte y la invariante cruza una frontera.

@@ -3,8 +3,12 @@
 **Abierto el 2026-10-04**, por una objeción del dueño que resultó correcta: *«lo que yo veo es que aquí
 hay una masa de puro enredo que necesita aclararse y simplificarse a un modelo claro y entendible»*.
 
-Este plan **no se ejecuta hasta que el dueño lo apruebe**. Lo que sigue es lo medido, los dos errores
-que cometí por el camino, y la propuesta.
+**Cerrado el 2026-10-04**, las nueve tareas con evidencia y fecha. Lo que sigue es lo medido, los dos
+errores que cometí por el camino, y la propuesta tal como se aprobó.
+
+⚠️ **Aquí ponía «este plan no se ejecuta hasta que el dueño lo apruebe», y llevaba cinco días
+ejecutado.** La frase es de cuando el plan era una propuesta; se quedó al aprobarse y cerrarse el
+mismo día. Una cabecera que contradice a su propia tabla de control hace dudar de la tabla.
 
 ## Estado general — **9 de 9**
 
@@ -338,7 +342,7 @@ Verificado: los datos ya la cumplen (artefacto 1 → 1 vínculo, artefacto 2 →
 
 ## Las fases
 
-### F1 · La regla de pertenencia, en la base — 2 de 3
+### F1 · La regla de pertenencia, en la base — 3 de 3
 
 | Tarea | Qué entrega | Estado |
 |---|---|---|
