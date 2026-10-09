@@ -3030,9 +3030,9 @@ const handleResyncTemplateWorkflows = async () => {
   try {
     const { data } = await axios.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_RESYNC(row.id));
     recordViewerSyncStatus.value = data;
-    showFeedbackToast({ kind: "success", title: "Flujos sincronizados", message: "La proyección del flujo en la base de datos quedó al día." });
+    showFeedbackToast({ kind: "success", title: "Recorrido sincronizado", message: "La proyección del recorrido en la base de datos quedó al día." });
   } catch (error) {
-    showFeedbackToast({ kind: "error", title: "No se pudo sincronizar", message: error?.response?.data?.message || "No se pudo re-sincronizar el flujo." });
+    showFeedbackToast({ kind: "error", title: "No se pudo sincronizar", message: error?.response?.data?.message || "No se pudo re-sincronizar el recorrido." });
   } finally {
     recordViewerSyncBusy.value = false;
   }

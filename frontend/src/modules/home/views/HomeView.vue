@@ -939,7 +939,7 @@
               </AppTag>
             </div>
             <p class="mt-3 mb-0 text-sm font-medium text-icon">
-              Define el contexto operativo de la tarea. El backend la materializará usando los templates activos de esta configuración.
+              Define el contexto operativo de la tarea. El backend la materializará usando las ediciones activas de esta configuración.
             </p>
           </div>
 
@@ -987,7 +987,7 @@
           <div class="rounded-xl border border-blue-light-200 bg-blue-light-50/70 p-5">
             <h3 class="deasy-title deasy-title--block text-info">Base documental de la tarea</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-info/80">
-              Esta tarea se creará usando los templates activos de la configuración. En este corte, Home informa el alcance documental real antes de confirmar la creación.
+              Esta tarea se creará usando las ediciones activas de la configuración. En este corte, Home informa el alcance documental real antes de confirmar la creación.
             </p>
           </div>
 
@@ -995,7 +995,7 @@
             <article class="deasy-card p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="deasy-title deasy-title--block">Templates operativos</h3>
+                  <h3 class="deasy-title deasy-title--block">Ediciones operativas</h3>
                   <p class="mt-1 mb-0 text-sm font-medium text-muted">Se materializan al crear la tarea.</p>
                 </div>
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
@@ -1010,7 +1010,7 @@
                     <AppTag variant="success">Proceso</AppTag>
                   </div>
                   <div class="flex flex-wrap gap-2">
-                    <AppTag variant="neutral">{{ template.signature_flow_count ? `Firmas: ${template.signature_flow_count}` : 'Sin flujo de firma activo' }}</AppTag>
+                    <AppTag variant="neutral">{{ template.signature_flow_count ? `Firmas: ${template.signature_flow_count}` : 'Sin recorrido de firma activo' }}</AppTag>
                     <AppTag variant="warning">Entregable requerido</AppTag>
                   </div>
                 </article>
@@ -1045,7 +1045,7 @@
           <AppAlert variant="success">
             <h3 class="deasy-title deasy-title--block text-success">Confirmación</h3>
             <p class="mt-2 mb-0 text-sm font-medium text-success/80">
-              Revisa el contexto antes de crear la tarea. La materialización documental se hará con los templates activos del proceso.
+              Revisa el contexto antes de crear la tarea. La materialización documental se hará con las ediciones activas del proceso.
             </p>
           </AppAlert>
 
@@ -1077,8 +1077,8 @@
               </div>
               <ul class="m-0 pl-5 text-sm font-medium text-icon flex flex-col gap-2">
                 <li>La tarea se creará en modo manual dentro de esta configuración.</li>
-                <li>El backend generará entregables y documentos según los templates activos.</li>
-                <li>Los flujos de entrega y firma dependerán de la configuración actual de cada template.</li>
+                <li>El backend generará entregables y documentos según las ediciones activas.</li>
+                <li>El recorrido de entrega y de firma dependerá de la configuración actual de cada edición.</li>
               </ul>
             </article>
           </div>
@@ -1507,7 +1507,7 @@
                  el destinatario se deriva del FLUJO DE FIRMA —quien firma el recibido es quien recibe—.
                  La vista de los routed se rediseña para enseñar ese flujo; hasta entonces, la pastilla
                  marca el hueco en vez de dejar un dato en blanco. -->
-              <AppTag variant="neutral" dot class="self-start">Flujo · futura implementación</AppTag>
+              <AppTag variant="neutral" dot class="self-start">Recorrido · futura implementación</AppTag>
             </div>
             <div class="flex items-center gap-3 text-xs text-muted">
               <span>{{ String(s.created_at || '').slice(0, 10) }}</span>
@@ -1524,7 +1524,7 @@
     <AppModalShell
       ref="fillWorkflowModal"
       labelled-by="fill-workflow-modal-title"
-      title="Flujo de entrega"
+      title="Recorrido de entrega"
       size="lg"
       content-class="shadow border-0"
       body-class="pt-4"
@@ -1552,7 +1552,7 @@
           </div>
 
           <div class="deasy-card p-4">
-            <h3 class="deasy-title deasy-title--section mb-3">Secuencia del flujo</h3>
+            <h3 class="deasy-title deasy-title--section mb-3">Secuencia del recorrido</h3>
             <div v-if="!fillWorkflowState.subject?.workflow?.pasos_entrega?.length" class="text-sm text-muted">
               Este entregable todavía no tiene una secuencia de entrega visible.
             </div>
@@ -1605,7 +1605,7 @@
           <div class="deasy-card p-4">
             <h3 class="deasy-title deasy-title--section mb-3">Historial de notas operativas</h3>
             <div v-if="!fillWorkflowNotes.length" class="text-sm text-muted">
-              Aún no existen notas operativas registradas en este flujo.
+              Aún no existen notas operativas registradas en este recorrido.
             </div>
             <div v-else class="flex flex-col gap-3">
               <div
@@ -1639,7 +1639,7 @@
               v-if="fillWorkflowState.request && !canOperateCurrentFillRequest"
               class="mb-3 text-sm font-medium text-icon"
             >
-              Este paso corresponde a otro responsable. Desde aquí solo puedes revisar el estado del flujo.
+              Este paso corresponde a otro responsable. Desde aquí solo puedes revisar el estado del recorrido.
             </p>
             <div class="flex flex-wrap gap-2">
               <AppButton
@@ -1715,7 +1715,7 @@
     <AppModalShell
       ref="signatureFlowModal"
       labelled-by="signature-flow-modal-title"
-      title="Flujo de firmas"
+      title="Recorrido de firma"
       size="xl"
       content-class="shadow border-0"
       body-class="pt-4"
@@ -1784,13 +1784,13 @@
 
           <section class="deasy-card p-4 flex flex-col gap-3">
             <div class="flex items-center justify-between gap-2">
-              <h3 class="deasy-title deasy-title--section">Pasos del flujo</h3>
+              <h3 class="deasy-title deasy-title--section">Pasos del recorrido</h3>
               <AppTag variant="neutral">
                 {{ (signatureFlowState.snapshot.pasos || []).length }} pasos
               </AppTag>
             </div>
             <AppEmpty v-if="!signatureFlowState.snapshot.pasos?.length">
-              Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
+              Aún no hay pasos de firma: el recorrido de firma se genera al completarse la entrega del documento.
             </AppEmpty>
             <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div
@@ -1845,7 +1845,7 @@
               </AppTag>
             </div>
             <AppEmpty v-if="!signatureFlowState.snapshot.turnos?.length">
-              Aún no se ha registrado actividad sobre este flujo.
+              Aún no se ha registrado actividad sobre este recorrido.
             </AppEmpty>
             <div v-else class="flex flex-col gap-3">
               <div
@@ -1996,7 +1996,7 @@
     <AppModalShell
       ref="deliverableResetModal"
       labelled-by="deliverable-reset-modal-title"
-      title="Resetear flujo del entregable"
+      title="Rehacer el recorrido del entregable"
       size="md"
       content-class="shadow border-0"
       body-class="pt-4"
@@ -2004,7 +2004,7 @@
     >
       <div class="flex flex-col gap-4">
         <AppAlert variant="warning">
-          Este reset cancelará el intento actual y creará una nueva versión documental para volver al inicio del flujo.
+          Rehacer cancelará el intento actual y creará una nueva versión documental para volver al inicio del recorrido.
         </AppAlert>
         <div class="deasy-card px-4 py-3 text-sm text-icon">
           <p class="m-0 font-semibold text-body">
@@ -2023,7 +2023,7 @@
           Cancelar
         </AppButton>
         <AppButton variant="warning-outline" :disabled="deliverableResetState.submitting" @click="submitDeliverableReset">
-          {{ deliverableResetState.submitting ? 'Reseteando...' : 'Resetear flujo' }}
+          {{ deliverableResetState.submitting ? 'Rehaciendo...' : 'Rehacer el recorrido' }}
         </AppButton>
       </template>
     </AppModalShell>
@@ -4485,7 +4485,7 @@ const handleDeliverableFutureAction = (action, payload) => {
     manage_fill: 'La gestión operativa de la entrega',
     download_template: 'La descarga de la plantilla',
     upload_deliverable: 'La subida del archivo del entregable',
-    review_signature_flow: 'La revisión del flujo de firmas',
+    review_signature_flow: 'La revisión del recorrido de firma',
     process_chat: 'El chat del proceso'
   };
   setProcessActionInfo(
@@ -4519,7 +4519,7 @@ const startDeliverableFlow = async (payload) => {
       detail: `Paso ${request.step_order || 1}`
     });
     await processPanelService.startFillRequest(requestId, {
-      note: 'Inicio del flujo desde el panel del entregable.'
+      note: 'Inicio del recorrido desde el panel del entregable.'
     });
     if (selectedProcessContext.value) {
       await refreshActiveProcessPanel();
@@ -4575,7 +4575,7 @@ const submitFillWorkflowAction = async (action) => {
     fillWorkflowSubmitting.value = true;
     fillWorkflowState.value.error = '';
     openDeliverableOperationModal({
-      title: 'Actualizando flujo de entrega',
+      title: 'Actualizando el recorrido de entrega',
       type: 'info',
       message: `Procesando ${actionLabels[action] || 'acción'} para ${subject.title}...`,
       detail: `Paso ${request.step_order || 1}`
@@ -4597,22 +4597,22 @@ const submitFillWorkflowAction = async (action) => {
     }
 
     openDeliverableOperationModal({
-      title: 'Flujo de entrega actualizado',
+      title: 'Recorrido de entrega actualizado',
       type: 'success',
       message: `La ${actionLabels[action] || 'acción'} del entregable ${subject.title} se completó correctamente.`,
       detail: 'El panel se actualizará con el nuevo estado.'
     });
-    setProcessActionInfo(`El flujo de entrega de ${subject.title} se actualizó correctamente.`, 'success');
+    setProcessActionInfo(`El recorrido de entrega de ${subject.title} se actualizó correctamente.`, 'success');
     fillWorkflowModalInstance?.hide();
     closeDeliverableWorkspaceModal();
     if (selectedProcessContext.value) {
       await refreshActiveProcessPanel();
     }
   } catch (error) {
-    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de entrega.';
+    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el recorrido de entrega.';
     fillWorkflowState.value.error = message;
     openDeliverableOperationModal({
-      title: 'Error en flujo de entrega',
+      title: 'Error en el recorrido de entrega',
       type: 'error',
       message,
       detail: subject.title
@@ -4645,7 +4645,7 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
   try {
     fillWorkflowSubmitting.value = true;
     openDeliverableOperationModal({
-      title: 'Actualizando flujo de entrega',
+      title: 'Actualizando el recorrido de entrega',
       type: 'info',
       message: `Procesando ${actionLabels[action] || 'acción'} para ${subject.title}...`,
       detail: `Paso ${request.step_order || 1}`
@@ -4663,20 +4663,20 @@ const submitDeliverableCardFillAction = async (payload, action = 'approve') => {
     }
 
     openDeliverableOperationModal({
-      title: 'Flujo de entrega actualizado',
+      title: 'Recorrido de entrega actualizado',
       type: 'success',
       message: `La ${actionLabels[action] || 'acción'} del entregable ${subject.title} se completó correctamente.`,
       detail: 'El panel se actualizará con el nuevo estado.'
     });
-    setProcessActionInfo(`El flujo de entrega de ${subject.title} se actualizó correctamente.`, 'success');
+    setProcessActionInfo(`El recorrido de entrega de ${subject.title} se actualizó correctamente.`, 'success');
     hideDeliverablePreview();
     if (selectedProcessContext.value) {
       await refreshActiveProcessPanel();
     }
   } catch (error) {
-    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el flujo de entrega.';
+    const message = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'No se pudo actualizar el recorrido de entrega.';
     openDeliverableOperationModal({
-      title: 'Error en flujo de entrega',
+      title: 'Error en el recorrido de entrega',
       type: 'error',
       message,
       detail: subject.title
@@ -4901,7 +4901,7 @@ const loadSignatureFlowState = async (payload) => {
     await prepareSignatureSession();
     return true;
   } catch (error) {
-    signatureFlowState.value.error = error?.response?.data?.message || error?.message || 'No se pudo cargar el flujo de firmas.';
+    signatureFlowState.value.error = error?.response?.data?.message || error?.message || 'No se pudo cargar el recorrido de firmas.';
     return false;
   } finally {
     signatureFlowState.value.loading = false;
@@ -4920,7 +4920,7 @@ const handleEmbeddedWorkflowSigned = async (payload = {}) => {
   const currentSignatureFlowDocumentVersionId = Number(signatureFlowState.value?.documentVersionId || 0);
   const signedPath = String(payload?.signedPath || '').trim();
   const successMessage = sanitizeEmbeddedSignSuccessMessage(payload?.message);
-  const resultFileName = `documento_firmado_${documentVersionId || 'flujo'}.pdf`;
+  const resultFileName = `documento_firmado_${documentVersionId || 'recorrido'}.pdf`;
 
   documentSignModalInstance?.hide();
 
@@ -5060,7 +5060,7 @@ const submitDeliverableReset = async () => {
     }
 
     openDeliverableOperationModal({
-      title: 'Reseteando flujo',
+      title: 'Rehaciendo el recorrido',
       type: 'info',
       message: `Se está creando una nueva versión para ${target.title}...`,
       detail: 'El intento actual quedará cancelado.'
@@ -5082,17 +5082,17 @@ const submitDeliverableReset = async () => {
     }
 
     openDeliverableOperationModal({
-      title: 'Flujo reseteado',
+      title: 'Recorrido rehecho',
       type: 'success',
       message: `Se creó la versión v${result?.new_document_version ?? 'nueva'} para ${target.title}.`,
-      detail: 'La versión anterior quedó cancelada y el flujo volvió al inicio.'
+      detail: 'La versión anterior quedó cancelada y el recorrido volvió al inicio.'
     });
-    setProcessActionInfo(`El flujo de ${target.title} se reseteó correctamente.`, 'success');
+    setProcessActionInfo(`El recorrido de ${target.title} se rehízo correctamente.`, 'success');
   } catch (error) {
-    const message = error?.response?.data?.message || error?.message || 'No se pudo resetear el flujo del entregable.';
+    const message = error?.response?.data?.message || error?.message || 'No se pudo rehacer el recorrido del entregable.';
     deliverableResetState.value.error = message;
     openDeliverableOperationModal({
-      title: 'Error al resetear flujo',
+      title: 'Error al rehacer el recorrido',
       type: 'error',
       message,
       detail: target.title

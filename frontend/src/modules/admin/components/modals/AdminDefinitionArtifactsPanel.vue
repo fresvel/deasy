@@ -52,7 +52,7 @@
           </select>
           <span v-else class="text-xs font-semibold text-icon">{{ itemModeLabel(row.item_mode) }}</span>
           <p v-if="row.item_mode === 'routed'" class="mt-1 m-0 text-theme-xs leading-tight text-warning">
-            El flujo (entrega/firma) se define AL ENVIAR, no aquí.
+            El recorrido (entrega/firma) se define AL ENVIAR, no aquí.
           </p>
         </template>
         <template v-else>

@@ -351,8 +351,13 @@ const CATEGORIA_UI = {
   Plantillas: { label: "Entregables", icon: "file", description: "Generadores, plantillas y su vínculo con cada configuración." },
   Tareas:     { label: "Tareas", icon: "square-check", description: "Corridas, tareas y los entregables instanciados." },
   Documentos: { label: "Documentos", icon: "file", description: "Rondas del documento, sus correcciones y sus firmas." },
-  Entrega:    { label: "Entrega", icon: "file", description: "Flujos de llenado y sus solicitudes." },
-  Firmas:     { label: "Firmas", icon: "certificate", description: "Flujos de firma, sus instancias y sus solicitudes." },
+  // ⚠️ AQUI HABIA UNA ENTRADA `Entrega` Y SOBRABA, mientras la que hacia falta no estaba. La categoria
+  // «Entrega» murio el 2026-10-09 con las cuatro tablas del flujo de llenado, y `GROUP_DEFS` ya no la
+  // nombra: era codigo muerto. La que la sustituye, «Recorrido», NO tenia entrada aqui, asi que caia al
+  // valor por omision de la linea 445 --icono `circle` y descripcion VACIA-- y se veia como la unica
+  // tarjeta de `/admin` sin explicacion. Lo arreglado es la pareja: fuera la muerta, dentro la viva.
+  Recorrido:  { label: "Recorrido", icon: "file", description: "El recorrido del documento: los pasos declarados y el turno de cada uno." },
+  Firmas:     { label: "Firmas", icon: "certificate", description: "El resultado de firmar y los lotes que se mandan al firmador." },
   Seguridad:  { label: "Roles y permisos", icon: "lock", description: "Roles, permisos, sus asignaciones y la bitácora de accesos a datos sensibles." },
   Contratos:  { label: "Vacantes y contratos", icon: "certificate", description: "Vacantes, su visibilidad y los contratos." }
 };
@@ -606,7 +611,7 @@ const HERO_POR_GRUPO = {
   institucion: { icon: "map-marked-alt", description: "Unidades, cargos, geografía y periodos: cómo se describe la institución." },
   procesos:    { icon: "check-double", description: "Lo que se DECLARA: procesos, sus configuraciones y las plantillas que producen." },
   tareas:      { icon: "square-check", description: "Lo que se DISPARA: corridas, tareas y los entregables instanciados." },
-  documentos:  { icon: "file", description: "Lo que se PRODUCE: rondas del documento, y los flujos de entrega y firma." },
+  documentos:  { icon: "file", description: "Lo que se PRODUCE: rondas del documento, su recorrido y sus firmas." },
   usuarios:    { icon: "user", description: "Personas y sus datos: documentos, correos, teléfonos y direcciones." },
   contratos:   { icon: "certificate", description: "Vacantes, su visibilidad y los contratos." },
   seguridad:   { icon: "lock", description: "Roles, permisos y sus asignaciones." }

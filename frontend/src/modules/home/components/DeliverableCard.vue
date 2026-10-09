@@ -103,7 +103,7 @@ const onCardClick = (event) => {
                  La vista de los routed se rediseña para enseñar ese flujo; hasta entonces, la pastilla
                  marca el hueco en vez de dejar un dato en blanco. -->
             <p v-if="deliverable.item.item_mode === 'routed'" class="m-0 mt-0.5">
-              <AppTag variant="neutral" dot>Flujo · futura implementación</AppTag>
+              <AppTag variant="neutral" dot>Recorrido · futura implementación</AppTag>
             </p>
           </div>
           <AppButton

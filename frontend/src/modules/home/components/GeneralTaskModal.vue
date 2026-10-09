@@ -12,7 +12,7 @@
       {{ generalTaskForm.itemMode === 'routed'
         ? 'Crea un envío de este entregable y elige a la persona que lo recibe y firma.'
         : (generalTaskForm.itemMode === 'replicated'
-          ? 'Crea una réplica de este entregable. Hereda su flujo de entrega y firmas; solo cambia la etiqueta.'
+          ? 'Crea una réplica de este entregable. Hereda su recorrido de entrega y de firma; solo cambia la etiqueta.'
           : (generalTaskForm.mode === 'derived'
             ? 'Agrega un entregable adicional dentro de la tarea seleccionada. Heredará su unidad de contexto.'
             : 'Crea un documento ad-hoc y endósalo a una persona (que puede ser tú). Define quién lo elabora y quién lo firma.')) }}
@@ -45,7 +45,7 @@
     <section v-if="isSendFlowModal" class="deasy-card flex flex-col gap-3 p-4">
       <div class="flex items-center gap-2">
         <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconSend class="h-4 w-4" /></span>
-        <h6 class="deasy-title deasy-title--section">Flujo del envío</h6>
+        <h6 class="deasy-title deasy-title--section">Recorrido del envío</h6>
       </div>
       <p class="m-0 -mt-1 text-xs font-medium text-muted">Quién elabora el documento y quién lo firma (en orden).</p>
 

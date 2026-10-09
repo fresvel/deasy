@@ -9,7 +9,7 @@
   <section class="deasy-card p-4 flex flex-col gap-4">
     <div class="flex flex-wrap items-center justify-between gap-2">
       <div>
-        <h3 class="deasy-title deasy-title--section">Resumen del flujo</h3>
+        <h3 class="deasy-title deasy-title--section">Resumen del recorrido</h3>
         <p class="text-xs text-muted m-0">Documento y estado actual de firmas.</p>
       </div>
       <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
@@ -34,13 +34,13 @@
 
   <section class="deasy-card p-4 flex flex-col gap-3">
     <div class="flex items-center justify-between gap-2">
-      <h3 class="deasy-title deasy-title--section">Pasos del flujo</h3>
+      <h3 class="deasy-title deasy-title--section">Pasos del recorrido</h3>
       <AppTag variant="neutral">
         {{ (signatureFlowState.snapshot.pasos || []).length }} pasos
       </AppTag>
     </div>
     <AppEmpty v-if="!signatureFlowState.snapshot.pasos?.length">
-      Aún no hay pasos de firma: el flujo se genera al completarse la entrega del documento.
+      Aún no hay pasos de firma: el recorrido de firma se genera al completarse la entrega del documento.
     </AppEmpty>
     <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
       <div
@@ -89,7 +89,7 @@
     :resolving-id="resolvingObservationId"
     phase="signature"
     title="Observaciones de firma"
-    subtitle="Notas, devoluciones y rechazos del flujo de firmas."
+    subtitle="Notas, devoluciones y rechazos del recorrido de firma."
     empty-text="Sin observaciones de firma."
     @add="$emit('add-observation', $event)"
     @resolve="$emit('resolve-observation', $event)"

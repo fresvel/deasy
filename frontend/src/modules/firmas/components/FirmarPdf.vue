@@ -110,7 +110,7 @@
     <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="deasy-card mt-4 p-6 lg:p-8">
       <div class="flex flex-col gap-6">
         <div class="flex flex-col gap-2">
-          <h3 class="deasy-title deasy-title--panel">PDF del flujo de firma</h3>
+          <h3 class="deasy-title deasy-title--panel">PDF del recorrido de firma</h3>
           <p class="text-sm font-medium leading-snug text-muted m-0">
             Esta sesión pertenece al documento
             <span class="font-semibold text-body">{{ workflowSignContext?.documentTitle || 'seleccionado' }}</span>.
@@ -712,7 +712,7 @@
           <AdminButton variant="primary-outline" @click="downloadSignedDocument">Descargar documento</AdminButton>
         </div>
     </div>
-    <p v-else class="mb-0 text-sm text-danger font-medium">{{ signResultMessage || signError || 'No se pudo completar la firma. Revisa el certificado, la contraseña o el PDF del flujo.' }}</p>
+    <p v-else class="mb-0 text-sm text-danger font-medium">{{ signResultMessage || signError || 'No se pudo completar la firma. Revisa el certificado, la contraseña o el PDF del recorrido.' }}</p>
     <template #footer>
       <AdminButton variant="neutral-outline" data-modal-dismiss>Cerrar</AdminButton>
     </template>
@@ -2137,7 +2137,7 @@ const fieldId = (name) => `${uid}-${name}`;
           type: workflowSignContext.value?.preloadPdfPath ? 'info' : 'error',
           message: workflowSignContext.value?.preloadPdfPath
             ? 'La sesión quedó lista para reintentar la carga del PDF vinculado.'
-            : 'Este flujo no tiene un PDF vinculado para precargar.'
+            : 'Este recorrido no tiene un PDF vinculado para precargar.'
         };
         return;
       }
@@ -2260,7 +2260,7 @@ const fieldId = (name) => `${uid}-${name}`;
           turnoId,
           signedPath: '',
           workflow: snapshot,
-          message: 'La firma del flujo se registró correctamente.'
+          message: 'La firma se registró correctamente.'
         };
       } catch {
         return null;

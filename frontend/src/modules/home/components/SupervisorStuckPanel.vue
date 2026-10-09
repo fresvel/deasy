@@ -67,7 +67,7 @@
               variant="neutral-outline"
               :disabled="busy === item.id"
               @click="reiniciar(item)"
-            >Reiniciar flujo</AppButton>
+            >Rehacer el recorrido</AppButton>
           </div>
         </div>
       </div>

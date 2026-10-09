@@ -170,7 +170,7 @@
         :variant="syncBadge.tono"
         outlined
         class-name="mr-auto"
-        :title="syncStatus?.status === 'no_link' ? 'El flujo existe en la plantilla pero aún no está vinculado a ninguna configuración (no está activo).' : (syncStatus?.status === 'stale' ? 'La proyección del flujo en la base de datos no coincide con la versión actual de la plantilla.' : 'La proyección del flujo está al día con la plantilla.')"
+        :title="syncStatus?.status === 'no_link' ? 'El recorrido existe en la plantilla pero aún no está vinculado a ninguna configuración (no está activo).' : (syncStatus?.status === 'stale' ? 'La proyección del recorrido en la base de datos no coincide con la versión actual de la plantilla.' : 'La proyección del recorrido está al día con la plantilla.')"
       >
         {{ syncBadge.label }}
       </AppTag>
@@ -181,7 +181,7 @@
         @click="$emit('resync-workflows')"
       >
         <font-awesome-icon icon="rotate-right" />
-        <span>{{ syncBusy ? "Sincronizando…" : "Re-sincronizar flujos" }}</span>
+        <span>{{ syncBusy ? "Sincronizando…" : "Re-sincronizar el recorrido" }}</span>
       </AdminButton>
       <AdminButton
         v-if="canDownloadArchive"
@@ -302,9 +302,9 @@ const emit = defineEmits([
    llevaba su cadena de clases —color en JavaScript, invisible a los gates— y ademas era el
    unico sitio del repo que pintaba el tinte al paso `-100` en vez de `-50`. */
 const SYNC_LABELS = {
-  synced: "Flujo sincronizado",
-  stale: "Flujo desincronizado",
-  no_link: "Flujo sin vínculo"
+  synced: "Recorrido sincronizado",
+  stale: "Recorrido desincronizado",
+  no_link: "Recorrido sin vínculo"
 };
 const syncBadge = computed(() => {
   const status = props.syncStatus?.status;

@@ -90,7 +90,7 @@
                  el destinatario se deriva del FLUJO DE FIRMA —quien firma el recibido es quien recibe—.
                  La vista de los routed se rediseña para enseñar ese flujo; hasta entonces, la pastilla
                  marca el hueco en vez de dejar un dato en blanco. -->
-              <AppTag v-if="activeTab === 'sends'" variant="neutral" dot>Flujo · futura implementación</AppTag>
+              <AppTag v-if="activeTab === 'sends'" variant="neutral" dot>Recorrido · futura implementación</AppTag>
               <template v-else>De: <strong class="font-semibold text-icon">{{ personName(item) }}</strong></template>
             </span>
             <span class="text-gray-300">·</span>

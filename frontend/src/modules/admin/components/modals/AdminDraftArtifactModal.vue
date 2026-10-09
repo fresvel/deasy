@@ -170,7 +170,7 @@
           <option value="routed">Ruteado (endosar a alguien)</option>
         </AdminSelectField>
         <p v-if="isRouted" class="mt-1 m-0 text-xs font-medium text-warning">
-          El flujo (entrega/firma) de un routed se define AL ENVIAR, no aquí.
+          El recorrido (entrega/firma) de un routed se define AL ENVIAR, no aquí.
         </p>
       </AdminFieldGroup>
     </div>
@@ -263,7 +263,7 @@
     <div v-show="activeTab === 'entrega'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div class="inline-flex items-center gap-2">
-          <h4 class="deasy-title deasy-title--section">Flujo de entrega</h4>
+          <h4 class="deasy-title deasy-title--section">Recorrido de entrega</h4>
           <AppInfoTip>Dentro de este documento, quién hace cada paso. (A quién le toca el proceso lo deciden las reglas objetivo, no aquí.)</AppInfoTip>
         </div>
         <AdminButton variant="primary-outline" @click="addFillStep">+ Añadir paso</AdminButton>
@@ -394,7 +394,7 @@
     <div v-show="activeTab === 'firmas'" class="mt-4">
       <div class="flex items-center justify-between gap-3">
         <div class="inline-flex items-center gap-2">
-          <h4 class="deasy-title deasy-title--section">Flujo de firmas</h4>
+          <h4 class="deasy-title deasy-title--section">Recorrido de firma</h4>
           <AppInfoTip>Quién firma cada paso (mismo modelo que entrega). Los pasos van en orden; dentro de un paso, la “Aprobación” define si firman todas, cualquiera o un mínimo.</AppInfoTip>
         </div>
         <AdminButton variant="primary-outline" @click="addSignatureStep">+ Añadir paso</AdminButton>
@@ -786,7 +786,7 @@ const submitBlockReason = computed(() => {
   if (!String(props.draftArtifactForm.display_name || "").trim()) missing.push("nombre");
   if (requireProcessLink.value && !props.draftArtifactForm.process_definition_id) missing.push("proceso destino");
   if (!isFormatosComplete.value) missing.push("documento de referencia");
-  if (!isRouted.value && !isEntregaComplete.value) missing.push("al menos un paso de flujo de entrega");
+  if (!isRouted.value && !isEntregaComplete.value) missing.push("al menos un paso de entrega en el recorrido");
   return missing.length ? `Faltan: ${missing.join(", ")}.` : "";
 });
 
