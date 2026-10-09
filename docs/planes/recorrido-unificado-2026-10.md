@@ -1,6 +1,7 @@
 # Frente 24 · El recorrido documental, unificado — y el fin de cuatro «plantillas»
 
-> **Estado**: 🟡 en ejecución · **fase 1 de 5 cerrada** · abierto el **2026-10-08** · worktree `deasy-recorrido`, pila **B**
+> **Estado**: ✅ **CERRADO · 11 de 11 tareas en 6 fases** · abierto el **2026-10-08**, cerrado el
+> **2026-10-09** · worktree `deasy-recorrido`, pila **B**
 > **Decidido por el dueño** el 2026-10-08 tras el análisis de la decisión 1 de F7.0 (frente 22).
 
 ## 0 · Control de ejecución
