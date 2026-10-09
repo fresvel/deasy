@@ -281,19 +281,24 @@ La línea base de §2 es del **2026-08-08**. Entre medias cerraron los frentes *
 | **2026-08-08** ← la base de §2 | 77 672 | 416 | 14,2 % |
 | 2026-08-09 | 77 674 | 373 | 17,7 % |
 | 2026-08-22 | 79 625 | 420 | 23,3 % |
-| **2026-10-09** | **86 776** | **645** | **34,7 %** |
+| **2026-10-09** | **86 776** | **519** | **34,7 %** |
 
 Lo medido ese día, completo: **478 ficheros · 6 058 funciones · complejidad 17 776 · cognitiva
 9 710 · duplicación 2,0 % · cobertura de línea 40,5 % · deuda 3 846 min (ratio 0,1 %)**.
-Notas: **mantenibilidad A · fiabilidad D · seguridad E**. Abiertas (`resolved=false`): **29 bugs ·
-21 vulnerabilidades · 595 code smells · 0 security hotspots**.
+Notas: **mantenibilidad A · fiabilidad D · seguridad C**. Abiertas: **29 bugs · 18 vulnerabilidades ·
+472 code smells · 0 security hotspots**.
+
+⚠️ **Las incidencias bajaron de 645 a 519 el mismo día, y NO tocando código**: 3 vulnerabilidades
+BLOCKER que eran falsos positivos se marcaron con su motivo (§7) y las **123 `S1135`** se excluyeron
+en `sonar-project.properties`, porque son la palabra española «todo». La **deuda no se movió**
+—3 846 min antes y después—, que es la prueba de que esas 123 no eran deuda: pesaban cero minutos.
 
 **Lo que hay que leer, y no es «subieron las incidencias»:**
 
 | | |
 |---|---|
 | **La cobertura casi se duplica** | 23,3 % → **34,7 %**. Parte es trabajo real (894 unitarios de backend, 495 de frontend, 266 del signer) y **parte es que el informe del signer volvió a existir**: llevaba roto y publicaba `app.py` al 0 % estando al 89 %. No se puede atribuir el reparto sin los informes viejos, así que **no se afirma** |
-| **La densidad de incidencias sube un 18 %, no un 40 %** | el bruto dice de 5,3 a 7,4 por mil líneas, y **es engañoso**: 122 de las 645 son `S1135`, la palabra española **«todo»** en comentarios en prosa, y 85 de ellas son nuevas. Descontadas —§7 explica por qué no son defectos— queda **de 5,1 a 6,0 por mil** (+18 %). El aumento es real; es menos de la mitad de lo que el número bruto aparenta |
+| **La densidad de incidencias sube un 12 %, no un 40 %** | el bruto decía de 5,4 a 7,4 por mil líneas, y **era engañoso**: 123 de las 645 eran `S1135`, la palabra española **«todo»** en comentarios en prosa, y 85 de ellas nuevas. Con las dos medidas ya limpias —la base de §2 nunca las contó, estaban marcadas— sale **de 5,36 a 5,98 por mil** (+12 %). El aumento es real y es **menos de un tercio** de lo que el número bruto aparentaba |
 | **La seguridad pasó de C a E, y volvió a C el mismo día** | hoy son **18** vulnerabilidades abiertas (el maestro citaba «8» del 2026-08-09; la línea base del 08-08 tenía **34**). Las **4 BLOCKER eran falsos positivos** —alfabetos de `TOKEN_CHARS` y la contraseña de un PostgreSQL desechable—, marcadas con su motivo el 2026-10-09: ver §7 |
 
 ✅ **Las BLOCKER eran 4, no 3, y las cuatro se marcaron el 2026-10-09** con su motivo escrito: el
@@ -1568,15 +1573,24 @@ bash scripts/docker-env.sh dev logs --tail 15 backend | grep -E "Servidor inicia
   sin existir **ni un** marcador de tarea real en el repo. **No reescribas comentarios en castellano
   para silenciar la regla.**
 
-  ⚠️ **Y esto desmiente la lectura obvia del §2.-1.** Las 122 son **el 19 % de las 645 incidencias**, y
-  **85 de ellas aparecieron desde agosto** — o sea el 30 % del aumento es literalmente haber escrito
-  más comentarios en castellano. Descontándolas, la densidad real pasa de 5,1 a **6,0 por mil líneas**
-  (+18 %), no de 5,4 a 7,4 (+39 %). El aumento existe; es menos de la mitad de lo que parecía.
+  ⚠️ **Y esto desmentía la lectura obvia del §2.-1.** Las 123 eran **el 19 % de las 645**, y **85
+  aparecieron desde agosto** — o sea el 30 % del aumento era haber escrito más comentarios en
+  castellano. Con las dos medidas limpias la densidad va de **5,36 a 5,98 por mil** (+12 %), no de
+  5,4 a 7,4 (+39 %).
 
-  ⚠️ **Marcarlas una a una ya no es viable, y la propia sección lo preveía:** la alternativa que deja
-  escrita es **desactivar la regla en el perfil de calidad** (§5-G). Con 122 y creciendo con cada
-  comentario que alguien escriba en español, mantener una lista de 122 marcas es exactamente el
-  cementerio que estos planes evitan. **Es una decisión del dueño y está pendiente.**
+  ✅ **RESUELTO el 2026-10-09: excluida en `sonar-project.properties`, y la señal se mudó a `FIXME`.**
+  Marcarlas una a una ya no era viable —123 y creciendo con cada comentario en español— y esta misma
+  sección preveía desactivar la regla; se eligió **el fichero y no el perfil del servidor** porque el
+  perfil vive en un volumen de Docker y no viaja con el código. El motivo completo está en el propio
+  `sonar-project.properties`.
+
+  **No se perdió la capacidad: `FIXME` es `S1134` y pesa MAJOR**, así que un pendiente real se caza y
+  además vale más que antes. La convención está en el `CLAUDE.md` de la raíz, y se comprobó que hoy
+  no hay ni un `FIXME` en el repositorio: no tapa nada existente.
+
+  ⚠️ **Y la cifra era 123, no 122**: faltaba `python:S1135` en `signer/app.py:326` —*«Todo lo que
+  sigue responde a la misma pregunta»*—. Las variantes de una regla van por lenguaje, así que al
+  contar hay que pedir las tres (`javascript:`, `Web:`, `python:`) o se cuenta de menos.
 - **`UnitGraphView` / `ProcessGraphView`**: 17 % de similitud, dominio irreducible. Solo extraer
   fontanería y arreglar el selector global de `ProcessGraphView.vue:1098`, que apunta a
   `.unit-graph-canvas` ajeno.
