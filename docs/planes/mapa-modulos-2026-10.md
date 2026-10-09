@@ -1511,9 +1511,30 @@ golden** — que en un merge de 28 commits de divergencia es la única prueba qu
 
    ⚠️ Esto deja `_deuda_escritura` con **una** línea (`task_items`): la de `fill_requests`, que esta
    decisión tenía que cerrar, se cerró sola al morir la tabla.
-2. **¿`plantillas` y `procesos` son un dominio o dos?** La decisión del frente 23 los convierte en
-   **una sola unidad de cambio**, y el cierre común dice que van juntos. Si siguen separados,
-   `templateLifecycle.js` (1.874 líneas) se parte y la invariante cruza una frontera.
+2. 🟡 **¿`plantillas` y `procesos` son un dominio o dos?** — **MEDIDA el 2026-10-09, y la respuesta
+   de hoy es DOS, pero queda CONDICIONADA** al frente 25.
+
+   **Lo que el plan decía y es FALSO:** *«si siguen separados, `templateLifecycle.js` (1.874 líneas)
+   se parte y la invariante cruza una frontera»*. Ni hay que partirlo ni eso es un problema: una
+   invariante que cruza una frontera **es para lo que existen los flujos**, y `templateLifecycle.js`
+   **ya está declarado** en `_flujos` como `["plantillas","procesos"]`. El coste de tenerlos
+   separados es **una línea en una lista declarada**, no partir un fichero de 1.868 líneas.
+
+   **Lo medido, y la primera medida salió mal:** contar commits que tocan «un fichero que escribe
+   `procesos`» da **73 % tocando los dos** — y es un artefacto, porque los dos ficheros más grandes
+   escriben ambos dominios y se tocan constantemente por motivos ajenos. Con **sólo el código propio
+   de cada dominio**, desde julio: **14 commits sólo `plantillas` · 22 sólo `procesos` · 3 los dos**.
+   **92 % cambió uno solo.** Ésa es la prueba de Parnas bien aplicada.
+
+   El grafo de claves ajenas **no decide**: juntarlos sube la cohesión del 52 % al 56 %, o sea cruza
+   **una sola** clave ajena (`vinculos.edicion_id`).
+
+   ⚠️ **Y POR QUÉ QUEDA CONDICIONADA.** El argumento decisivo no fue ninguna de esas cifras: fue que
+   **`ad_hoc` existe** — una plantilla puede ser de una **persona** y de ningún proceso
+   (`catalogo_documental.template_scope`, `owner_person_id`), con su propio resolutor y su propio
+   camino en la pantalla. Si eso es cierto, `plantillas` **no cabe** dentro de `procesos`. Pero si el
+   dueño decide que `ad_hoc` no debe existir, el argumento se cae y la respuesta cambia.
+   **Eso es la pregunta `C` del [frente 25](./plantilla-y-linea-de-proceso-2026-10.md).**
 3. **¿Quién es dueño de `document_versions`?** El mapa dice `tareas`; lo escriben 5 ficheros de 3
    dominios futuros.
 4. ✅ **RESUELTA el 2026-10-07 por el dueño: `empleo` ES un dominio y se le reserva la carpeta.**
