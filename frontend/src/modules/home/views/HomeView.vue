@@ -844,7 +844,7 @@
                 <article class="deasy-card lg:col-span-12 p-5 md:p-6 flex flex-col gap-6">
                   <header class="flex flex-col gap-2">
                     <h2 class="deasy-title deasy-title--panel leading-tight">Dependencias de la configuración</h2>
-                    <p class="text-muted text-sm m-0 font-medium">Resumen de reglas, disparadores y artifacts de proceso que hacen operativa esta configuración.</p>
+                    <p class="text-muted text-sm m-0 font-medium">Resumen de reglas, disparadores y plantillas de proceso que hacen operativa esta configuración.</p>
                   </header>
                   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <section class="deasy-card p-5">
@@ -872,7 +872,7 @@
                     <section class="deasy-card p-5">
                       <h3 class="deasy-title deasy-title--section mb-4 flex items-center gap-2"><IconBuildingMonument class="w-4 h-4 text-muted"/> Paquetes</h3>
                       <div v-if="!selectedProcessPanel.dependencies.templates.length" class="text-sm text-muted font-medium italic">
-                        Sin artifacts vinculados.
+                        Sin plantillas vinculadas.
                       </div>
                       <ul v-else class="flex flex-col gap-3 m-0 p-0 list-none">
                         <li v-for="template in selectedProcessPanel.dependencies.templates" :key="template.id" class="deasy-card text-sm font-bold text-body flex flex-col gap-2 p-3">
@@ -1001,7 +1001,7 @@
                 <AppTag variant="info">{{ taskLaunchSystemTemplates.length }}</AppTag>
               </header>
               <AppEmpty v-if="!taskLaunchSystemTemplates.length">
-                Esta configuración no tiene templates de proceso que generen tarea.
+                Esta configuración no tiene ediciones de proceso que generen tarea.
               </AppEmpty>
               <div v-else class="flex flex-col gap-3">
                 <article v-for="template in taskLaunchSystemTemplates" :key="template.id" class="deasy-card p-4 flex flex-col gap-2">
@@ -1020,13 +1020,13 @@
             <article class="deasy-card p-5 flex flex-col gap-4">
               <header class="flex items-center justify-between gap-3">
                 <div>
-                  <h3 class="deasy-title deasy-title--block">Artifacts generales</h3>
-                  <p class="mt-1 mb-0 text-sm font-medium text-muted">Disponibles para iteraciones posteriores del flujo manual.</p>
+                  <h3 class="deasy-title deasy-title--block">Plantillas propias</h3>
+                  <p class="mt-1 mb-0 text-sm font-medium text-muted">Disponibles para iteraciones posteriores del lanzamiento manual.</p>
                 </div>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.user_packages?.length || 0 }}</AppTag>
               </header>
               <AppEmpty v-if="!selectedProcessPanel?.user_packages?.length">
-                No tienes artifacts generales registrados en esta cuenta.
+                No tienes plantillas propias registradas en esta cuenta.
               </AppEmpty>
               <div v-else class="flex flex-col gap-3">
                 <article v-for="item in selectedProcessPanel.user_packages.slice(0, 4)" :key="item.id" class="deasy-card p-4 flex items-center justify-between gap-3">
@@ -1071,7 +1071,7 @@
             <article class="deasy-card p-5 flex flex-col gap-4">
               <h3 class="deasy-title deasy-title--block">Impacto documental</h3>
               <div class="flex flex-wrap gap-2">
-                <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} templates de proceso</AppTag>
+                <AppTag variant="info">{{ taskLaunchSystemTemplates.length }} ediciones de proceso</AppTag>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.period_types?.length || 0 }} tipos de periodo activos</AppTag>
                 <AppTag variant="neutral">{{ selectedProcessPanel?.dependencies?.rules?.length || 0 }} reglas vigentes</AppTag>
               </div>
@@ -1690,7 +1690,7 @@
                 :disabled="fillWorkflowSubmitting"
                 @click="submitFillWorkflowAction('cancel')"
               >
-                Cancelar solicitud
+                Cancelar el turno
               </AppButton>
             </div>
           </div>
@@ -1774,7 +1774,7 @@
               <p class="deasy-overline">Secuencia</p>
               <p class="text-sm font-semibold text-strong mb-0">{{ (signatureFlowState.snapshot.pasos || []).length }} pasos sincronizados</p>
               <p class="text-xs text-muted">
-                {{ signatureFlowState.snapshot.turnos?.length || 0 }} solicitudes registradas
+                {{ signatureFlowState.snapshot.turnos?.length || 0 }} turnos registrados
               </p>
               <p v-if="signatureFlowState.snapshot.readiness?.unresolvedRequiredSteps?.length" class="text-xs text-danger">
                 Pasos sin firmantes: {{ signatureFlowState.snapshot.readiness.unresolvedRequiredSteps.map((step) => step.stepOrder).join(', ') }}
@@ -4504,7 +4504,7 @@ const startDeliverableFlow = async (payload) => {
   const request = getCurrentFillWorkflowRequest(payload);
   const requestId = getFillRequestId(request);
   if (!requestId) {
-    setProcessActionInfo(`No se encontró una solicitud inicial de entrega para ${subject.title}.`, 'error');
+    setProcessActionInfo(`No se encontró un turno inicial de entrega para ${subject.title}.`, 'error');
     return;
   }
   try {

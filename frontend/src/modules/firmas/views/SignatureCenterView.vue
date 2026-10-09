@@ -80,7 +80,7 @@ const userFullName = computed(() => {
 const sidebarItems = computed(() => [
   { key: "home", label: "Inicio de firmas", icon: IconSignature, tone: "sky", hash: DEFAULT_HASH },
   { key: "request", label: "Solicitar firmas", icon: IconMessages, tone: "sky", hash: "#signature-launcher-request" },
-  { key: "received", label: "Solicitudes recibidas", icon: IconMessages, tone: "sky", hash: "#signature-launcher-received" },
+  { key: "received", label: "Turnos recibidos", icon: IconMessages, tone: "sky", hash: "#signature-launcher-received" },
   { key: "database", label: "Buscar en BD", icon: IconSearch, tone: "sky", hash: "#signature-launcher-database" },
   { key: "pending", label: "Bandeja de pendientes", icon: IconChecklist, tone: "sky", hash: "#signature-launcher-pending" }
 ]);

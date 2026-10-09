@@ -290,7 +290,7 @@ va detrás es literalmente el nombre de la utilidad (`--color-line` → `border-
 un color suelto en el CSS**: si necesitas uno, usa el token; si no existe, decláralo en `tokens.css`
 **con su familia**, no en el sitio donde lo gastas.
 
-Seis cosas que cuestan caro y no son evidentes (decía «cuatro» y ya listaba cinco):
+Siete cosas que cuestan caro y no son evidentes (decía «cuatro» y ya listaba cinco; luego seis):
 
 1. **`pnpm run lint:css` está en CERO errores y ahí se queda.** Si tu cambio lo sube, has metido un
    color suelto. Ojo: la regla `color-no-hex` **no ve** los hex dentro de `@apply` ni los
@@ -320,12 +320,40 @@ Seis cosas que cuestan caro y no son evidentes (decía «cuatro» y ya listaba c
    declarados y duraron dos días — `openProcessWizard()` se llama desde siete sitios a dos
    profundidades, así que cualquier número fijo está mal en algún camino.
    **Y sí hay gate que lo vigila**: `frontend/scripts/check-z-index.mjs`, que corre dentro de
-   `pnpm run lint` — el eslabón 25 de los 27 que encadena. Lo único que no tiene es alias propio en
+   `pnpm run lint` — el eslabón **27 de los 31** que encadena (decía «25 de 27», y la cifra se
+   queda caducada cada vez que entra una puerta: cuéntala, no la copies — `node -e` sobre
+   `scripts.lint` la da en una línea). Lo único que no tiene es alias propio en
    `package.json`, así que `pnpm run check:z-index` no existe: se ejecuta con `pnpm run lint` o con
    `node scripts/check-z-index.mjs`.
    ⚠️ La auditoría del 2026-08-24 dijo que «se documentó tres veces y nunca existió». **Se
    equivocaba**, y de la peor manera: por buscar el alias de npm en vez del fichero. Comprobado el
    2026-08-26. Detalle en `frontend/CLAUDE.md` §5.5.
+
+7. **La pantalla tiene que decir lo que dice el modelo, y hay puerta.** Cuando el frente 24 renombró
+   el modelo, la aplicación siguió diciendo «flujo», «solicitudes», «artifacts» y «templates»: **66
+   cadenas visibles con «flujo» en 15 ficheros**, medidas el 2026-10-09 porque el dueño lo leyó en el
+   navegador y preguntó. No lo veía nadie, y no por descuido: **el build compila, eslint no opina del
+   castellano, y los tests afirman sobre comportamiento, no sobre rótulos.** El sitio de `docs/` ya
+   tenía esto tapado —la comprobación A de `check-doc-modelo.mjs`—; la aplicación no.
+   Lo vigila **`frontend/scripts/check-vocabulario-pantalla.mjs`**, dentro de `pnpm run lint` y con
+   alias propio (`pnpm run check:vocabulario-pantalla`). Mira **sólo lo que se lee**: nodos de texto,
+   los atributos que llevan texto —enlazados o no—, los literales dentro de un `{{ … }}`, y las
+   cadenas del `<script>` que salen por una clave de texto o por `showFeedbackToast`/`new Error`.
+
+   ⚠️ **Lo correcto en castellano NO es un fósil, y por eso hay excepciones con motivo**
+   (`frontend/scripts/vocabulario-pantalla-excepciones.json`, atadas a sus ficheros): «Solicitar
+   firmas» es lo que la persona **hace**; `solicitudes` era el nombre de dos tablas. Y la puerta
+   **también falla si una excepción deja de usarse**, para que la lista no sea un cementerio.
+
+   ⚠️ **Tres trampas del extractor, las tres encontradas provocándolo:** `/<[^>]*>/` **no** quita una
+   etiqueta cuyo atributo lleve una función flecha (el `>` de `=>` la cierra antes) — hace falta un
+   escáner que sepa de comillas; `/\{\{[^}]*\}\}/` **no** quita una interpolación con un `${…}`
+   dentro; y un rótulo escondido en un `{{ ternario }}` se iba con la expresión. Las dos primeras
+   dejaban pasar nombres de clase CSS como si fueran prosa, y una puerta con falsos positivos **se
+   desactiva sola**.
+
+   ⚠️ **Y lo que NO caza:** una frase falsa que no use ninguna palabra retirada. Reduce el hueco; no
+   lo cierra.
 
 **Las reglas completas están en `frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. El plan,
 la bitácora y la auditoría, en **`docs/planes/sistema-diseno-componentes/`**. La primera vuelta

@@ -194,11 +194,16 @@ jobs:
       # declarada en scripts/docs/dominios.json con su motivo; la puerta falla con cualquiera nueva.
       - name: Check module map
         run: node scripts/docs/check-mapa-tablas.mjs
-      # Las categorías de tabla de `/admin`: que ninguna quede sin grupo que la enseñe, y que ningún
-      # grupo nombre una que no existe. Son DOS listas en dos lados —`sqlTables.js` y
-      # `AdminView.GROUP_DEFS`— y el fallo es invisible por los dos: una categoría sin grupo deja sus
-      # tablas inalcanzables aunque el backend las sirva, y un grupo sin categoría deja un cajón vacío
-      # con título. Las dos pasaron el 2026-10-09 y se vieron abriendo la pantalla, no en un test.
+      # Las categorías de tabla de `/admin`. Son TRES listas en dos lados —`sqlTables.js`,
+      # `AdminView.GROUP_DEFS` y `AdminView.CATEGORIA_UI`— y el fallo es invisible por los tres:
+      # una categoría sin grupo deja sus tablas inalcanzables aunque el backend las sirva; un grupo
+      # sin categoría deja un cajón vacío con título; y una categoría sin presentación sale con el
+      # icono genérico y la frase genérica de cualquier sección, que es el peor caso —la tarjeta
+      # parece terminada y no dice nada—. Los tres pasaron el 2026-10-09 y se vieron abriendo la
+      # pantalla, no en un test.
+      #
+      # ⚠️ La puerta nació mirando sólo las dos primeras y daba VERDE con el tercer fallo delante.
+      # Arreglar una desincronización no sincroniza las demás.
       #
       # Va aquí y no en el lint del frontend porque cruza los dos lados: el contenedor del frontend no
       # monta `backend/`.

@@ -26,7 +26,7 @@
         <p class="text-sm font-semibold text-strong m-0">{{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}</p>
       </div>
       <div class="deasy-card p-4">
-        <p class="deasy-overline mb-1">Solicitudes</p>
+        <p class="deasy-overline mb-1">Turnos</p>
         <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.snapshot.turnos?.length || 0 }}</p>
       </div>
     </div>

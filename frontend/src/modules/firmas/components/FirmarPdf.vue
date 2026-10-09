@@ -222,13 +222,13 @@
           class="deasy-tile signature-workspace-card xl:col-start-1"
           @click="emit('open-home-pending')"
         >
-          <h3 class="deasy-title deasy-title--panel mb-4 text-left">Solicitudes recibidas</h3>
+          <h3 class="deasy-title deasy-title--panel mb-4 text-left">Turnos recibidos</h3>
           <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconReceivedRequests />
-              <span class="mt-5 text-base font-semibold text-body">Ver solicitudes</span>
+              <span class="mt-5 text-base font-semibold text-body">Ver turnos</span>
               <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-muted">
-                Revisa solicitudes pendientes por atender.
+                Revisa turnos pendientes por atender.
               </p>
             </div>
           </div>
@@ -252,7 +252,7 @@
               <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-muted">
                 {{ enableHomeShortcuts
                   ? 'Consulta procesos con firma pendiente.'
-                  : 'Consulta solicitudes pendientes de Home.' }}
+                  : 'Consulta turnos pendientes de Home.' }}
               </p>
             </div>
           </div>

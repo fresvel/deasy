@@ -70,7 +70,7 @@ describe('formatDateTime / formatWorkflowDateTime', () => {
 
 describe('getSignatureStepStatusCode', () => {
   const step = { step_order: 2 };
-  test('sin solicitudes relacionadas -> unresolved', () => {
+  test('sin turnos relacionados -> unresolved', () => {
     expect(getSignatureStepStatusCode(step, [])).toBe('unresolved');
     expect(getSignatureStepStatusCode(step, [{ stepOrder: 9, estado: 'completado' }])).toBe('unresolved');
   });
