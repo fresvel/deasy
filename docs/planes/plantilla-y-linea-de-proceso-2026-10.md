@@ -1,8 +1,7 @@
 # Frente 25 · Qué pareja (configuración, plantilla) es legal — y qué es una plantilla sin proceso
 
-> **Estado**: 🟡 **2 de 23 vivas** — 24 filas en el control, una descartada (`P2`); contado con
-> script, no a ojo · abierto el
-> **2026-10-09** · **análisis con dos cambios ya ejecutados**
+> **Estado**: 🟡 **5 de 27 vivas** — 28 filas en el control, una descartada (`P2`); contado con
+> script, no a ojo · abierto el **2026-10-09**
 > **Abierto por una observación del dueño** que corrige al frente 23.
 
 **Nació como análisis puro y ya no lo es.** Son **cinco** preguntas de modelo (`A`…`E`) cuyo
@@ -13,8 +12,13 @@ a que las preguntas se contesten, porque pueden hacer desaparecer columnas enter
 ## 0-bis · DECISIONES YA TOMADAS por el dueño (2026-10-09 / 10-11)
 
 **Esto no es análisis: está decidido y se ejecuta.** Se separa del control de tareas a propósito,
-porque el frente nació como análisis y estas siete salieron de la conversación. Cada una con la
+porque el frente nació como análisis y **todas** salieron de la conversación. Cada una con la
 frase del dueño que la fija.
+
+⚠️ **Aquí ponía «estas siete» y ya eran catorce.** La cifra se escribió el 2026-10-09 y no se
+recontó al añadir las siguientes, que es el mismo fallo que el §0 documenta dos párrafos más abajo
+—el denominador no se recorta ni se deja caducar— cometido en el párrafo que lo precede. Se quita la
+cifra del texto: la tabla se cuenta sola.
 
 | # | Decisión | Cómo lo dijo |
 |---|---|---|
@@ -32,6 +36,11 @@ frase del dueño que la fija.
 | **12** | **Si cambia el cargo que produce el documento, es otra LÍNEA** — no otra versión | *«si se va a otro cargo sería otra línea y debería serlo»* (70 % firme; el 30 % de duda lo resuelve el linaje de la decisión 10) |
 | **13** | **`lineas` sustituye a `process_definition_series`** | *«de acuerdo a mi criterio la línea la sustituye»* |
 | **14** | **NO se permiten ciclos** en `linea_anterior_id` — **ni en `processes.parent_id`** | *«no debería permitir ciclos (en procesos tampoco)»* |
+| **15** | **La casilla ② es NECESARIA**: una obligación institucional se puede encargar a mano con el formato de la institución | *«estaríamos hablando más bien de una extensión/reasignación»* — y la evaluación de mundo real la confirmó |
+| **16** | **La casilla ③ NO se permite**: un formato personal nunca detrás de una obligación institucional | *«esto no debe ser permitido»* |
+| **17** | **La casilla ④ se implementa**: encargar con un formato propio. La vía de adopción se decide después | *«esta implementación era la que buscaba»* · *«la adopción se definiría después»* |
+| **18** | **La matriz NO colapsa**: los dos ejes se quedan, porque son el **papel** y el **encargo**, con vidas distintas | sale de su propia pregunta: *«si esa también se bloquea entonces hay un colapso… que podría simplificarse»* — y se midió que no |
+| **19** | **Los cuatro valores se renombran**, porque describen el modo y no la cosa: `origin_kind`→**`origen`** `(lanzamiento, encargo)` y `template_scope`→**`propiedad`** `(institucional, personal)` | *«evalúa si esos 4 nombres/etiquetas de la matriz pueden mejorarse por algo más entendible»* |
 
 ⚠️ **LA DECISIÓN 14 ES MÁS GRANDE QUE ESTE FRENTE, y eso se midió el 2026-10-11.** El esquema tiene
 **CINCO claves ajenas autorreferenciales y CERO protección de ciclos**:
@@ -84,15 +93,19 @@ numeraciones en el mismo mensaje»):
 | **`P` + número** (`P1`…`P7`) | **un CAMBIO que hay que ejecutar.** Sale de una pregunta ya contestada o de una decisión del dueño | `P1` = el índice de una sola publicada |
 | **`Z`** | la decisión final del dueño sobre las cinco preguntas | |
 
-⚠️ **POR QUÉ SÓLO `P1` y `P7` ESTÁN HECHAS, y no es que las demás se hayan perdido.** Son las dos
-ÚNICAS que no dependen de ninguna pregunta abierta: `P1` sale de una decisión del dueño y `P7` es un
-`CHECK` sobre una columna cuya forma ya la daba por supuesta el código. Las otras cinco **esperan a
-que una pregunta se conteste**, y cuál es se ve de un tirón:
+⚠️ **QUÉ ESTÁ HECHO Y QUÉ ESPERA A QUÉ.** `P1` y `P7` se ejecutaron el 2026-10-11 porque no
+dependían de ninguna pregunta abierta: `P1` sale de una decisión del dueño y `P7` es un `CHECK` sobre
+una columna cuya forma ya la daba por supuesta el código. **La pregunta `C` quedó contestada el mismo
+día** —`C1`, `C2` y con ellas `P3`— y de ella salieron `P13`…`P16`. El resto **espera a que una
+pregunta se conteste**, y cuál es se ve de un tirón:
 
 | Cambio | Espera a |
 |---|---|
 | **`P2-bis`** la línea tiene fila | `D1` (contar lo que depende de `variation_key`) — y **ojo**, no a `A`: dar fila a la línea no implica mover el vínculo a ella |
-| **`P3`** ¿sobreviven `template_scope` y `owner_person_id`? | la prueba falsable de **`C`** |
+| ~~**`P3`** ¿sobreviven `template_scope` y `owner_person_id`?~~ | ✅ **contestada**: la prueba falsable encontró el caso, sobreviven las dos |
+| **`P13`** prohibir la casilla ③ | **nada** — se puede ejecutar ya |
+| **`P14`** abrir la casilla ④ | **`P13`** |
+| **`P15`** renombrar los cuatro valores · **`P16`** atar `propiedad` al dueño | **`P6`**, el renombrado completo |
 | **`P4`** imponer la dirección que falta | **`A`**: no se puede imponer una regla sin saber qué pareja es legal |
 | **`P5`** renombrar `process_target_rules` | **`E`**: si la serie y el alcance solapan, puede que una de las dos no exista |
 | **`P6`** el renombrado completo | **`P2-bis` + `P3` + `P5`**, porque las tres pueden hacer desaparecer columnas |
@@ -118,8 +131,8 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **A2** | **El espacio de diseño de la regla de pertenencia**: las formas posibles de «qué pareja es legal» —línea, versión↔versión, versión↔línea con una activa, y las que aparezcan—, cada una con qué impide, qué permite y qué cuesta imponerla. **Sin elegir** | ⬜ | | |
 | **B1** | **Qué obliga a qué, medido**: los caminos que crean o mueven un `vinculo` (clon, CRUD genérico, asistente, bootstrap, scripts) y, para cada uno, qué hace con la versión de la plantilla y con la de la configuración | ⬜ | | |
 | **B2** | **El espacio de diseño de las dos direcciones**: qué significaría imponer «plantilla nueva → configuración nueva», la contraria, las dos, o ninguna; y qué se rompe en cada caso | ⬜ | | |
-| **C1** | **Qué es hoy `ad_hoc`, medido**: cuántos caminos lo crean, de qué configuración cuelga, qué línea le toca, y qué hace el disparador con dos plantillas `ad_hoc` de personas distintas | ⬜ | | |
-| **C2** | **El espacio de diseño de `ad_hoc`**: si sigue existiendo, con qué pertenencia, y qué pasa con el «Proceso por defecto» en cada opción | ⬜ | | |
+| **C1** | **Qué es hoy `ad_hoc`, medido**: cuántos caminos lo crean, de qué configuración cuelga, qué línea le toca, y qué hace el disparador con dos plantillas `ad_hoc` de personas distintas | ✅ | **cero caminos lo crean**; las cuatro casillas de la matriz probadas en transacciones revertidas: ① `task_items` 4-5, ② `task_items` 1 y el **100 %** de lo ad-hoc, ③ **alcanzable y nadie la valida** (provocada), ④ inalcanzable. §0-quater | 2026-10-11 |
+| **C2** | **El espacio de diseño de `ad_hoc`**: si sigue existiendo, con qué pertenencia, y qué pasa con el «Proceso por defecto» en cada opción | ✅ | la matriz 2×2 con las cuatro casillas analizadas y la evaluación de mundo real de la ②; el «Proceso por defecto» **es** la ② (`getActiveGeneralDefinition` toma el vínculo de una configuración `official`). Decisiones 15-18 | 2026-10-11 |
 | **D1** | **El censo de lo que depende de `variation_key`**: cuántas consultas filtran o agrupan por ella, y qué `JOIN` necesitarían si se retira | ⬜ | | |
 | **D2** | **El espacio de diseño**: quitar la copia (índices sobre `series_id`) **frente a** dar fila a la línea (tabla `lineas`). El dueño ya se inclinó por la segunda; falta medir el coste | 🟡 | el dueño eligió **P2-bis** el 2026-10-11, condicionado a ver el modelo | |
 | **E1** | **Medir el solapamiento serie ↔ alcance**: qué puede expresar cada una, y cuántas reglas reales se podrían escribir desde los dos lados | ⬜ | | |
@@ -128,7 +141,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P7** | **La versión de una edición tiene forma de semver**, impuesto por la base | ✅ | `CHECK (storage_version ~ '^[0-9]+\.[0-9]+\.[0-9]+$')`; provocado con `'v2'` y con `'1.0'`, rechaza las dos | 2026-10-11 |
 | **P2** | ⛔ **DESCARTADA** · quitar `variation_key` dejando los índices sobre `series_id`, sin tabla nueva. La sustituye `P2-bis` | ⛔ | el dueño eligió dar fila a la línea: *«quedemos con P2bis»* | 2026-10-11 |
 | **P2-bis** | **La línea tiene fila**: tabla `lineas` con `(process_id, series_id)` y único sobre la pareja; `ediciones_de_proceso` apunta a ella con **una** columna, y los dos únicos bajan de tres columnas a dos. `variation_key` desaparece | ⬜ | | |
-| **P3** | **Decidir si `template_scope` y `owner_person_id` sobreviven** en `formatos`, según la prueba falsable de `C` | ⬜ | | |
+| **P3** | **Decidir si `template_scope` y `owner_person_id` sobreviven** en `formatos`, según la prueba falsable de `C` | ✅ | **sobreviven las dos**: la prueba **encontró el caso** —la ② es `user_added` + `official`, o sea los dos ejes toman valores independientes— así que no son una copia de `origin_kind`. Cambian de nombre (decisión 19), no de existencia | 2026-10-11 |
 | **P4** | **Imponer en el modelo la dirección que falta** entre los dos ejes de versión (decisiones 2 y 3 del dueño) | ⬜ | | |
 | **P5** | **Renombrar `process_target_rules`** a algo que **no sea `alcances`** —`destinatarios`, `cobertura`, `a_quien_alcanza`—, porque `alcance` y `ambito` están reservados por el frente 18 | ⬜ | | |
 | **P6** | **El renombrado completo**: `catalogo_documental`→`formatos`, `available_formats`→`archivos`, `storage_version`→`version`, `process_definition_versions`→`ediciones_de_proceso` | ⬜ | | |
@@ -137,6 +150,10 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_exact`/`unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna: hoy son **13** | ⬜ | **depende de `P8`** | |
 | **P11** | **Ninguna de las CINCO claves ajenas autorreferenciales admite ciclos**: `processes.parent_id`, `ediciones.parent_version_id`, `process_runs.source_run_id`, `task_items.source_task_item_id`, `chat_messages.reply_to_message_id` — más `lineas.linea_anterior_id` cuando exista | ⬜ | **es más grande que este frente**: decidir si va aquí o en uno propio | |
 | **P12** | **La bifurcación del linaje es DELIBERADA**: se permite que dos líneas sucedan a la misma —una obligación que se parte es real— pero crear el segundo sucesor avisa. Las **fusiones no se pueden declarar** con una sola columna, y queda dicho | ⬜ | **depende de `P8`** | |
+| **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal**. Hoy no existe ni un formato personal, así que **no rompe nada** y se puede ejecutar ya | ⬜ | **no depende de ninguna pregunta abierta** | |
+| **P14** | **La casilla ④ se abre** (decisión 17): el camino que crea un formato **personal** y encarga con él. **La vía de adopción —cómo un formato personal pasa a institucional— se decide aparte**, y es otro frente: parametrizar una tarea que se repite *es* crear un proceso | ⬜ | **depende de `P13`**: primero la prohibición, luego el camino nuevo | |
+| **P15** | **Los cuatro valores se renombran** (decisión 19): `task_items.origin_kind`→`origen` `(lanzamiento, encargo)` y `catalogo_documental.template_scope`→`propiedad` `(institucional, personal)`. **191 ocurrencias en 54 ficheros contados aparte**; toca la fachada de `sqlTables.js` y **dos columnas generadas** que leen `origin_kind` | ⬜ | **va con `P6`**, el renombrado completo, por la misma razón: renombrar dos veces cuesta el doble | |
+| **P16** | **Atar `propiedad` a `owner_person_id`**, que hoy **nada relaciona**: un formato `official` puede tener dueño y uno `ad_hoc` puede no tenerlo. Si la implicación se impone, `propiedad` puede ser una **columna generada** y deja de haber dos verdades | ⬜ | **depende de `P15`** | |
 | **Z** | **La decisión del dueño sobre las cinco preguntas**, registrada aquí con su porqué y con lo que se descarta y por qué | ⬜ | | |
 
 ⚠️ **A1, B1 y C1 son MEDICIÓN; A2, B2 y C2 son ESPACIO DE DISEÑO; D es decisión.** No se mezclan, y
@@ -275,6 +292,136 @@ responsable.**
 
 **Seis mecanismos.** Y la cadena de tres copias —`cargos.name` → `series.code` → `variation_key`— se
 queda en una sola verdad.
+
+## 0-quater · LA MATRIZ DE LOS DOS EJES, y por qué los cuatro nombres cambian (2026-10-11)
+
+**Esto cierra la prueba falsable de `C`**, y el resultado es que la prueba **encontró el caso**: los
+dos ejes son distinciones distintas y las dos columnas se quedan. Lo que no se queda son sus nombres.
+
+### Los dos ejes, y qué clasifica cada uno
+
+```
+el FORMATO vive años          ← un formato, sus versiones, su linaje     ¿de quién es el papel?
+el ENCARGO vive un periodo    ← un entregable, su recorrido, su cierre   ¿de dónde vino la obligación?
+```
+
+| Dónde | Columna | Valores | ¿La escribe alguien? |
+|---|---|---|---|
+| **el entregable** | `task_items.origin_kind` | `process_defined` / `user_added` | **SÍ**, los dos caminos de `GeneralTaskService` |
+| **el formato** | `catalogo_documental.template_scope` | `official` / `ad_hoc` | **NO**: ningún camino escribe `ad_hoc` jamás |
+
+### Las cuatro casillas, probadas una por una
+
+Probado el 2026-10-11 **en transacciones revertidas**, sin tocar datos:
+
+| | `official` | `ad_hoc` |
+|---|---|---|
+| **`process_defined`** | ✅ **①** existe — `task_items` 4 y 5 de la semilla | ⛔ **③** **ALCANZABLE Y NADIE LA VALIDA** |
+| **`user_added`** | ✅ **②** existe — `task_items` 1, y es el **100 %** de lo ad-hoc de hoy | ⬜ **④** **inalcanzable**: ningún camino crea un formato `ad_hoc` |
+
+**La ③ se provocó**: se insertó un `catalogo_documental` con `template_scope='ad_hoc'`, su `edicion`, y
+un `vinculo` de esa edición a una configuración **institucional**. Pasó sin un solo error — ni `CHECK`,
+ni disparador, ni guardia. `trg_pdt_linea_unica` comprueba la **línea**, no la propiedad del formato.
+
+**La ② es el único camino ad-hoc que funciona**, y eso lo decide `GeneralTaskService`:
+`getActiveGeneralDefinition` toma el `vinculo_id` de la **configuración activa del «Proceso por
+defecto»**, cuyo formato es `official`. Así que hoy toda tarea ad-hoc es `user_added` + `official`.
+
+### Por qué la ② hace falta en el mundo real
+
+La alternativa era *«quien encarga algo siempre debe subir la plantilla con la que encarga»*. **El
+problema no es la fricción, es el efecto de segundo orden: bloquear la ② no elimina el uso del
+formato institucional fuera del lanzamiento — lo obliga a pasar por una COPIA.**
+
+| Caso | Qué pasa si la ② está bloqueada |
+|---|---|
+| **La carrera creada tarde.** El Informe de IF se lanzó en marzo; en abril nace una carrera y su coordinador nunca recibió la tarea | el Director **sube una copia del formato institucional como suyo**. A partir de ahí hay **dos papeles** que dicen ser el Informe de IF, y cuando el catálogo saque la v1.1 la copia no se entera |
+| **El acta que ya existe.** *«Para este convenio necesito un Acta de Reunión, la oficial»* | se sube **otra acta**. Y otra el mes siguiente. El catálogo deja de ser la fuente del formato |
+| **La pregunta que nadie podrá responder.** *«¿Cuántos documentos se han producido con el Informe de IF?»* | hay que buscar entre N copias privadas con nombres distintos |
+
+**Y la reformulación del dueño es la correcta: la ② no es «una tarea suelta», es EXTENDER una
+obligación institucional a un caso que el lanzamiento no cubrió.**
+
+| El lanzamiento cubre | La realidad trae |
+|---|---|
+| lo **planificado**: las unidades que existían, los cargos ocupados, el periodo abierto | la unidad nueva, el puesto que se llenó tarde, el caso imprevisto, la entrega que hay que repetir |
+
+Un sistema que sólo permite obligar **por lanzamiento** obliga a mentir para cubrir lo imprevisto: o
+relanzas el proceso entero para una persona, o duplicas el papel.
+
+### Por qué la matriz NO colapsa
+
+La hipótesis del dueño: si se bloquean ② y ③, queda `official ⟺ process_defined` y
+`ad_hoc ⟺ user_added`, y una columna sobra. **El razonamiento es correcto; la premisa no se sostiene,
+por dos medidas:**
+
+1. **La ② es el único camino ad-hoc que existe.** Bloquearla rompe lo que hoy funciona: el entregable
+   1 de la semilla, «Mis envíos», `GeneralTaskService` entero. No es una capacidad teórica que se
+   pueda cerrar.
+2. **Y aun abriendo la ④, siguen haciendo falta las dos**, porque un formato institucional sirve a
+   **miles** de encargos, unos lanzados y otros pedidos a mano. Si el formato llevara pegado «esto se
+   lanza» o «esto se pide», estaríamos metiendo una propiedad del **encargo** dentro del **papel** —
+   y el papel tendría que duplicarse cada vez que cambia el modo de encargarlo. **Es exactamente el
+   error que `owner_process_id` cometía, y que el frente 23 ya quitó.**
+
+**La regla sale en una frase, y es la decisión 16:**
+
+> **Un formato personal nunca puede estar detrás de una obligación institucional.**
+> Todo lo demás vale: la institución obliga con su formato, y una persona encarga con el formato de la
+> institución **o con el suyo**.
+
+### Y los cuatro nombres son el defecto, con prueba
+
+El dueño preguntó si `user_added` y `ad_hoc` son lo mismo. **No lo son** —la ② sería una
+contradicción y es el 100 % de lo real— **pero la pantalla YA los confundió**, y está en el código:
+
+```
+AdminDraftArtifactModal.vue:114
+  {{ isAdHoc ? "De usuario (ad-hoc)" : "De proceso (oficial)" }}
+```
+
+**El eje del formato rotulado con las palabras del eje del encargo.** Quien escribió ese rótulo leyó
+`ad_hoc` y entendió «lo hizo un usuario». Y `AdminPresentationService.js:84` traduce
+`{ official: "Oficial", ad_hoc: "Ad hoc" }` — **uno de los dos no se traduce**, se deja en latín.
+
+| | Qué falla, medido |
+|---|---|
+| **`scope` significa otra cosa** | `template_scope` no dice *alcance*, dice *de quién es*. Y `alcance`/`ambito` están **reservados por el frente 18**, así que ni traducirlo literalmente se puede |
+| **`ad_hoc` es latín** | ni castellano ni inglés; no significa nada para quien usa el sistema |
+| **los cuatro describen el MODO, no la COSA** | «definido por proceso», «añadido por usuario», «oficial», «ad hoc»: los cuatro cuentan *cómo apareció*, ninguno dice *qué se clasifica* |
+| **el precedente ya está en el esquema** | **`emails.tipo IN ('personal','institucional')`** — la misma distinción, ya en castellano. No hay que inventar nada |
+| **y nada ata `owner_person_id` a `template_scope`** | no hay `CHECK`: hoy un formato `official` puede tener dueño y uno `ad_hoc` puede no tenerlo |
+
+**La prueba de que un nombre es mejor no es estética, y se puede comprobar: una buena pareja de
+nombres hace que la casilla ilegal se lea sola como ilegal.**
+
+| | Cómo se lee la ③ |
+|---|---|
+| **Hoy** | «`process_defined` + `ad_hoc`» → **suena razonable**. Por eso la casilla era alcanzable y nadie lo notó en meses |
+| **Con los nombres nuevos** | «lanzamiento + personal» → *la institución obliga a cientos de personas con el papel privado de alguien*. **Se lee mal sin que nadie lo explique** |
+
+| Eje | Qué clasifica | Hoy | **Decisión 19** |
+|---|---|---|---|
+| **el encargo** (`task_items`) | de dónde viene la obligación | `origin_kind ∈ (process_defined, user_added)` | **`origen ∈ (lanzamiento, encargo)`** |
+| **el formato** (`formatos`) | de quién es el papel | `template_scope ∈ (official, ad_hoc)` | **`propiedad ∈ (institucional, personal)`** |
+
+«lanzamiento» ya es la palabra del repositorio (`process_runs`, «al lanzar») y «encargo» es la del
+dueño. Ninguna se inventa. Y con ellas **ningún valor se repite entre ejes**, que es justo lo que hoy
+no pasa:
+
+| | **institucional** | **personal** |
+|---|---|---|
+| **lanzamiento** | ✅ **①** la institución obliga con su formato | ⛔ **③** la institución obliga con el formato de alguien |
+| **encargo** | ✅ **②** alguien encarga con el formato de la institución | ✅ **④** alguien encarga con el suyo |
+
+⚠️ **Coste del renombrado, contado:** `template_scope` 50 ocurrencias en 22 ficheros · `ad_hoc` 55 en
+18 · `origin_kind` 42 en 26 · `user_added` 22 en 17 · `process_defined` 22 en 12. Y **dos trampas**:
+`sqlTables.js` expone `template_scope` como campo de `ediciones` **por fachada** (`confusiones.md` §4),
+así que el renombrado toca el JOIN y no sólo la columna; y `origin_kind` **gobierna dos columnas
+generadas** (`process_definition_template_key`, `responsible_position_key`), que se anulan cuando vale
+`user_added` — renombrar el valor obliga a reescribir las dos expresiones generadas.
+
+---
 
 ## 1 · Por qué, en una frase
 
@@ -415,6 +562,12 @@ predefinido.
   otra vez**: una copia mal colocada de algo que vive un nivel más abajo, y se retiran. La
   distinción se queda donde funciona: en la tarea.
 
+✅ **CONTESTADA el 2026-10-11, y el caso EXISTE: la casilla ②.** `task_items` 1 es `user_added` **+**
+`official`, o sea los dos ejes toman valores independientes sobre la misma fila — y no es un caso de
+laboratorio: es el **100 %** de lo ad-hoc que funciona hoy. **Las dos columnas se quedan**, y lo que
+cambia son sus nombres. La matriz completa, la evaluación de mundo real y el análisis de los cuatro
+nombres están en **§0-quater**.
+
 ⚠️ **Y eso cambia también la pregunta 4a del dueño** («¿cómo pasar de `ad_hoc` a `official`?»). Si la
 distinción es de la tarea, promover no es «ascender una plantilla»: es **parametrizar una tarea que
 se repite**, que es exactamente *crear un proceso*. La pregunta deja de ser de plantillas y pasa a
@@ -432,7 +585,10 @@ ser del motor de procesos.
 
 ## 4 · Lo que este frente NO hace
 
-- **No cambia código ni esquema.** Las seis primeras tareas sólo miden y enumeran.
+- ⚠️ **«No cambia código ni esquema» DEJÓ DE SER CIERTO el 2026-10-11**, y se deja escrito en vez de
+  borrarlo: `P1` y `P7` tocaron `postgres_schema.sql`. El frente nació como análisis y dejó de serlo
+  en cuanto el dueño fijó decisiones. Lo que **sigue** siendo cierto es que las tareas `A1`…`E2` sólo
+  miden y enumeran.
 - **No elige por el dueño.** `A2`, `B2` y `C2` entregan el espacio de diseño **completo**, con el
   coste de cada opción y lo que cada una rompe. La elección es `D`.
 - **No toca datos.** `A1` y `C1` prueban en SQL **dentro de transacciones revertidas**.
@@ -448,8 +604,16 @@ ser del motor de procesos.
 
 El 2026-10-09 se midió que la respuesta de hoy es **dos**, y el argumento decisivo resultó ser que
 `ad_hoc` existe: si una plantilla puede ser de una persona y de ningún proceso, `plantillas` no cabe
-dentro de `procesos`. **Pero ese argumento depende justo de la pregunta `C`.** Así que la decisión 2
-queda **condicionada**, no resuelta.
+dentro de `procesos`. **Ese argumento dependía de la pregunta `C`, y `C` se contestó el 2026-10-11.**
+
+✅ **La condición se levanta, y la respuesta es DOS DOMINIOS.** La prueba falsable encontró el caso
+—la casilla ②, `user_added` + `official`— así que el formato y el encargo son ejes independientes: un
+formato existe y se versiona **sin** que ninguna configuración lo reclame, y con la decisión 17 habrá
+además formatos **personales**. Un `plantillas` metido dentro de `procesos` no podría expresar eso.
+
+⚠️ **Y eso DESBLOQUEA el tramo `plantillas` de `F7.5`**, que llevaba esperando aquí. Lo que sigue
+bloqueado es la **forma** de las tablas —`P2-bis`, `P8`…`P10`, `P13`…`P16`—, no a qué dominio
+pertenecen: mover el código no depende de cómo se llamen las columnas.
 
 ⚠️ **NO bloquea `F7.5` entera.** El tramo `tareas` —9 tablas repartidas, el más grande— no depende de
 nada de aquí. Si este frente tarda, hay trabajo que avanzar al lado.

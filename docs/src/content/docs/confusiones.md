@@ -40,6 +40,8 @@ Esta lista ahorra horas. Son incoherencias reales del repositorio, verificadas.
 
 17. **No hay `.env` dentro de `frontend/` ni de `backend/`**: viven en `docker/`, y el modelo de referencia es `docker/.env_model`.
 
+18. **`ad_hoc` y `user_added` suenan igual y son DOS EJES DISTINTOS.** `catalogo_documental.template_scope` (`official` | `ad_hoc`) dice **de quien es el papel**; `task_items.origin_kind` (`process_defined` | `user_added`) dice **de donde vino la obligacion**. Son independientes, y la combinacion mas comun es justo la que parece contradictoria: **toda** tarea ad-hoc de hoy es `user_added` **con un formato `official`** — alguien encarga a mano un documento con el formato de la institucion. La confusion esta tambien **en la pantalla**: el modal de borrador rotula el eje del formato con las palabras del otro (*«De usuario (ad-hoc)»* / *«De proceso (oficial)»*), y el presentador deja uno de los dos valores en latin. Los cuatro nombres estan decididos para cambiar a `origen` (`lanzamiento` | `encargo`) y `propiedad` (`institucional` | `personal`), que es la distincion que `emails.tipo` ya nombra asi.
+
 ## Usuarios y accesos de referencia
 
 Los crea el **bootstrap** (`/setup` → «usar datos de ejemplo»). **No hay ningún seed SQL
