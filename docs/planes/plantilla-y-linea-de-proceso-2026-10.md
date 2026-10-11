@@ -1,7 +1,8 @@
 # Frente 25 · Qué pareja (configuración, plantilla) es legal — y qué es una plantilla sin proceso
 
-> **Estado**: 🟡 **5 de 27 vivas** — 28 filas en el control, una descartada (`P2`); contado con
-> script, no a ojo · abierto el **2026-10-09**
+> **Estado**: 🟡 **5 de 26 vivas** — 28 filas en el control, dos fuera (`P2` descartada ·
+> `P11` al [frente 26](./ciclos-en-los-grafos-2026-10.md)); contado con script, no a ojo · abierto el
+> **2026-10-09**
 > **Abierto por una observación del dueño** que corrige al frente 23.
 
 **Nació como análisis puro y ya no lo es.** Son **cinco** preguntas de modelo (`A`…`E`) cuyo
@@ -54,14 +55,21 @@ cifra del texto: la tabla se cuenta sola.
 | `chat_messages` | `reply_to_message_id` |
 
 **Y el ciclo se crea sin resistencia.** Provocado en una transacción revertida: dos procesos
-apuntándose mutuamente, insertados sin un solo error. Hoy es **latente y no un fallo** —nada recorre
-esas cadenas de forma recursiva, comprobado— pero `processes.parent_id` está expuesto en `/admin`
-como un campo `number` libre, así que **un humano puede teclear el ciclo a mano**; y el día que
-alguien escriba un recorrido recursivo —un organigrama de procesos, una miga de pan, «todos los
-subprocesos de X»— se cuelga o devuelve basura.
+apuntándose mutuamente, insertados sin un solo error. Y `processes.parent_id` está expuesto en
+`/admin` como un campo `number` libre, así que **un humano puede teclear el ciclo a mano**.
 
-**Decidir si esto es una tarea de este frente o un frente propio es cosa del dueño**, porque toca
-cinco tablas y sólo una es de aquí.
+✅ **DECIDIDO el 2026-10-11: frente propio.** *«Para los ciclos frente propio»* → el
+**[frente 26](./ciclos-en-los-grafos-2026-10.md)**. De aquí sale `P11`, y lo único que queda en este
+frente es que **`lineas.linea_anterior_id` nazca ya protegido** cuando la tabla se cree.
+
+⚠️ **Y DOS COSAS QUE ESTE AVISO DECÍA Y LA MEDICIÓN DESMINTIÓ**, las dos mías, corregidas al abrir el
+frente 26:
+
+| Decía | Lo medido |
+|---|---|
+| «**cero** protección de ciclos» | **cero en el esquema**, sí — pero hay **dos guardias en código**: `wouldCreateProcessCycle` para `processes` y `existeCaminoEntreUnidades` para el organigrama. Lo que comparten es el defecto: `WITH RECURSIVE … UNION ALL` sin `CYCLE` ni límite, o sea **se cuelgan si el ciclo ya existe** |
+| «**nada recorre** esas cadenas de forma recursiva, comprobado» | hay **cinco** CTEs `WITH RECURSIVE` en el backend, y una de ellas es justo el guardia. La comprobación que escribí buscaba lectores de la columna, no recorridos del grafo |
+| «**cinco** claves ajenas autorreferenciales» | **seis grafos**: el censo por `conrelid = confrelid` **no ve `unit_relations`**, que es una tabla de aristas. Buscar «la columna que apunta a su tabla» encuentra los árboles y se le escapan los grafos |
 
 ⚠️ **Y LA DECISIÓN 8 ESTÁ ATADA A LA PREGUNTA `A`, hay que decidirlas juntas.** Si la línea tiene
 fila, `vinculos` **podría** apuntar a la línea en vez de a la versión, y eso contestaría `A` sin
@@ -148,7 +156,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P8** | **La tabla `lineas`**, con los dos ejes (`cargo_id` + `ambito_tipo_id` \| `ambito_unidad_id`), nombre propio, vigencia y `linea_anterior_id`; `ediciones_de_proceso.linea_id` en lugar de `(process_id, series_id, variation_key)`; los dos únicos bajan a dos columnas | ⬜ | | |
 | **P9** | **Retira `process_definition_series`** y sus seis mecanismos (el `XOR`, el `code` derivado, las dos cascadas, `variation_key` y su hook). **65 ocurrencias en 21 ficheros**, 11 del frontend | ⬜ | **depende de `P8`** | |
 | **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_exact`/`unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna: hoy son **13** | ⬜ | **depende de `P8`** | |
-| **P11** | **Ninguna de las CINCO claves ajenas autorreferenciales admite ciclos**: `processes.parent_id`, `ediciones.parent_version_id`, `process_runs.source_run_id`, `task_items.source_task_item_id`, `chat_messages.reply_to_message_id` — más `lineas.linea_anterior_id` cuando exista | ⬜ | **es más grande que este frente**: decidir si va aquí o en uno propio | |
+| **P11** | ⛔ **SALE DE ESTE FRENTE** · los ciclos en las claves ajenas autorreferenciales. Se abre el **[frente 26](./ciclos-en-los-grafos-2026-10.md)**, donde al medirlo resultaron ser **seis** grafos y no cinco | ⛔ | decisión del dueño: *«para los ciclos frente propio»*. Lo que queda aquí es que **`lineas.linea_anterior_id` nazca ya protegido**, lo que el frente 26 deja escrito en su §5 | 2026-10-11 |
 | **P12** | **La bifurcación del linaje es DELIBERADA**: se permite que dos líneas sucedan a la misma —una obligación que se parte es real— pero crear el segundo sucesor avisa. Las **fusiones no se pueden declarar** con una sola columna, y queda dicho | ⬜ | **depende de `P8`** | |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal**. Hoy no existe ni un formato personal, así que **no rompe nada** y se puede ejecutar ya | ⬜ | **no depende de ninguna pregunta abierta** | |
 | **P14** | **La casilla ④ se abre** (decisión 17): el camino que crea un formato **personal** y encarga con él. **La vía de adopción —cómo un formato personal pasa a institucional— se decide aparte**, y es otro frente: parametrizar una tarea que se repite *es* crear un proceso | ⬜ | **depende de `P13`**: primero la prohibición, luego el camino nuevo | |
