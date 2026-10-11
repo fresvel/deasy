@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**32 tablas · 302 columnas · 76 claves ajenas · 9 diagramas.**
+**32 tablas · 303 columnas · 76 claves ajenas · 9 diagramas.**
 
 ## Cómo leerla
 
@@ -220,7 +220,7 @@ erDiagram
 
 ## Lo que se declara (2 de 2)
 
-**5 tablas** · 41 columnas · 6 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
+**5 tablas** · 42 columnas · 6 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -253,6 +253,7 @@ erDiagram
     int generador_id FK
     varchar content_hash
     int parent_version_id FK
+    smallint publicada_flag
     smallint is_active
     timestamp created_at
   }

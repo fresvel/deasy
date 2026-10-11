@@ -1,11 +1,12 @@
 # Frente 25 · Qué pareja (configuración, plantilla) es legal — y qué es una plantilla sin proceso
 
-> **Estado**: ⬜ **0 de 7** · abierto el **2026-10-09** · **ANÁLISIS, no ejecución**
+> **Estado**: 🟡 **2 de 13** · abierto el **2026-10-09** · **análisis con dos cambios ya ejecutados**
 > **Abierto por una observación del dueño** que corrige al frente 23.
 
-**Este frente NO toca una línea de código.** Son tres preguntas de modelo, y lo único que entrega es
-**lo medido y el espacio de diseño de cada una**, para que el dueño decida. Las decisiones van en la
-tarea `D`, con su porqué escrito.
+**Nació como análisis puro y ya no lo es.** Son **cinco** preguntas de modelo (`A`…`E`) cuyo
+entregable es lo medido y el espacio de diseño, para que el dueño decida en `Z`; más los **cambios
+`P`**, que salen de decisiones ya tomadas. `P1` y `P7` están **hechos** (2026-10-11); el resto espera
+a que las preguntas se contesten, porque pueden hacer desaparecer columnas enteras.
 
 ## 0-bis · DECISIONES YA TOMADAS por el dueño (2026-10-09 / 10-11)
 
@@ -22,6 +23,14 @@ frase del dueño que la fija.
 | **5** | `catalogo_documental` → **`formatos`** | *«retomar la idea de formatos»* |
 | **6** | `available_formats` → **`archivos`** (libera la palabra «formato» para lo que de verdad nombra) | *«renombrando la columna de formatos de archivos a archivos»* |
 | **7** | `storage_version` → **`version`** · `process_definition_versions` → **`ediciones_de_proceso`** | *«de acuerdo el cambio de nombres propuesto»* |
+| **8** | **La línea tendrá fila: se elige `P2-bis`** (tabla `lineas`) frente a sólo quitar la copia | *«quedemos con P2bis y veamos esa valoración con vínculos»* |
+| **9** | **`C` cambia de forma**: deja de ser «¿debe existir `ad_hoc`?» y pasa a la prueba falsable de abajo | *«de acuerdo, debemos valorar la nueva pregunta»* |
+
+⚠️ **Y LA DECISIÓN 8 ESTÁ ATADA A LA PREGUNTA `A`, hay que decidirlas juntas.** Si la línea tiene
+fila, `vinculos` **podría** apuntar a la línea en vez de a la versión, y eso contestaría `A` sin
+disparador: sería una clave ajena. **Pero diría lo contrario de lo que el dueño corrigió** —que una
+edición sirve a una *versión* de variación, no a una variación—. Así que dar fila a la línea **no
+implica** mover el vínculo: son dos cosas y la segunda sigue abierta.
 
 ⚠️ **El orden importa y el renombrado va ÚLTIMO.** Renombrar es barato; renombrar dos veces, no. Las
 decisiones 5, 6 y 7 se ejecutan **cuando el modelo ya no vaya a cambiar de forma** — o sea después de
@@ -37,6 +46,21 @@ relacional (el «ámbito» de un título, que es otro significado de la misma pa
 
 ## 0 · Control de ejecución
 
+⚠️ **DOS PREFIJOS, Y AQUÍ ESTÁ QUÉ SIGNIFICA CADA UNO.** Se mezclaron en la conversación sin
+explicarlos y el dueño lo señaló; la norma de esta carpeta lo prohíbe expresamente («no mezcles dos
+numeraciones en el mismo mensaje»):
+
+| Prefijo | Qué es | Ejemplo |
+|---|---|---|
+| **letra + número** (`A1`, `D2`…) | **una PREGUNTA que hay que contestar.** La letra es la pregunta, el número su tarea: `1` mide, `2` enumera el espacio de diseño | `C1` = medir qué es hoy `ad_hoc` |
+| **`P` + número** (`P1`…`P7`) | **un CAMBIO que hay que ejecutar.** Sale de una pregunta ya contestada o de una decisión del dueño | `P1` = el índice de una sola publicada |
+| **`Z`** | la decisión final del dueño sobre las cinco preguntas | |
+
+⚠️ **`Z` se llamaba `D` el 2026-10-09** y hubo que renombrarla: al entrar las preguntas `D` y `E` el
+identificador colisionaba. Se hace constar en vez de borrarlo, porque la norma dice que un
+identificador no se renumera — y éste se renumeró a los dos días, antes de que nadie lo citara en un
+commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no de `variation_key`.
+
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
 |---|---|:--:|---|---|
 | **A1** | **El censo real de parejas**: qué combinaciones `(process_definition_versions, ediciones)` existen hoy y cuáles deja pasar `trg_pdt_linea_unica`, probadas en SQL dentro del contenedor **en transacciones revertidas**. Sin tocar datos | ⬜ | | |
@@ -45,7 +69,13 @@ relacional (el «ámbito» de un título, que es otro significado de la misma pa
 | **B2** | **El espacio de diseño de las dos direcciones**: qué significaría imponer «plantilla nueva → configuración nueva», la contraria, las dos, o ninguna; y qué se rompe en cada caso | ⬜ | | |
 | **C1** | **Qué es hoy `ad_hoc`, medido**: cuántos caminos lo crean, de qué configuración cuelga, qué línea le toca, y qué hace el disparador con dos plantillas `ad_hoc` de personas distintas | ⬜ | | |
 | **C2** | **El espacio de diseño de `ad_hoc`**: si sigue existiendo, con qué pertenencia, y qué pasa con el «Proceso por defecto» en cada opción | ⬜ | | |
-| **D** | **La decisión del dueño sobre las tres**, registrada aquí con su porqué y con lo que se descarta y por qué | ⬜ | | |
+| **D1** | **El censo de lo que depende de `variation_key`**: cuántas consultas filtran o agrupan por ella, y qué `JOIN` necesitarían si se retira | ⬜ | | |
+| **D2** | **El espacio de diseño**: quitar la copia (índices sobre `series_id`) **frente a** dar fila a la línea (tabla `lineas`). El dueño ya se inclinó por la segunda; falta medir el coste | 🟡 | el dueño eligió **P2-bis** el 2026-10-11, condicionado a ver el modelo | |
+| **E1** | **Medir el solapamiento serie ↔ alcance**: qué puede expresar cada una, y cuántas reglas reales se podrían escribir desde los dos lados | ⬜ | | |
+| **E2** | **El espacio de diseño**: si la variación es una **vista** de sus alcances y no una tabla | ⬜ | | |
+| **P1** | **Una sola edición publicada por entregable, garantizado por la BASE** | ✅ | `publicada_flag` + `uq_ediciones_una_publicada`; provocado: rechaza la segunda publicada y deja pasar un borrador; 320/320 char sin mover un golden; 4 puertas de documentación | 2026-10-11 |
+| **P7** | **La versión de una edición tiene forma de semver**, impuesto por la base | ✅ | `CHECK (storage_version ~ '^[0-9]+\.[0-9]+\.[0-9]+$')`; provocado con `'v2'` y con `'1.0'`, rechaza las dos | 2026-10-11 |
+| **Z** | **La decisión del dueño sobre las cinco preguntas**, registrada aquí con su porqué y con lo que se descarta y por qué | ⬜ | | |
 
 ⚠️ **A1, B1 y C1 son MEDICIÓN; A2, B2 y C2 son ESPACIO DE DISEÑO; D es decisión.** No se mezclan, y
 el orden importa: medir qué **hace** el modelo no dice qué **debe** hacer — lo dijo el dueño al abrir
@@ -162,7 +192,42 @@ medida que `A2` tiene que traer, no una opinión.
 | **No se sabe** | si la frase original del dueño era una regla a imponer o una descripción de la intención |
 | **Lo que lo contesta** | `B1` (qué hace cada camino) + `B2` (qué significaría imponer cada dirección) |
 
-### C · ¿Qué es una plantilla que no es de ningún proceso?
+### C · ¿`ad_hoc` dice algo que `origin_kind` no diga ya? — **LA PRUEBA FALSABLE**
+
+**Reformulada el 2026-10-11, y el mérito es del dueño**: *«lo que debemos analizar bien es si es un
+proceso o es una tarea a la que se le carga una plantilla»*. Al medirlo, **el modelo ya tenía la
+respuesta escrita en otra tabla**:
+
+```sql
+task_items.origin_kind TEXT CHECK (origin_kind IN ('process_defined','user_added'))
+```
+
+| Dónde | Columna | Valores | ¿La escribe alguien? |
+|---|---|---|---|
+| **el entregable** | `task_items.origin_kind` | `process_defined` / `user_added` | **SÍ**: los dos caminos de alta de `GeneralTaskService` (líneas 285 y 447) |
+| **la plantilla** | `catalogo_documental.template_scope` | `official` / `ad_hoc` | **NO**: ningún camino escribe `ad_hoc` jamás |
+
+Y la del entregable no es decorativa: **dos columnas generadas dependen de ella** y se anulan cuando
+es `user_added` —`process_definition_template_key` y `responsible_position_key`—, o sea que el modelo
+**ya sabe** que un entregable añadido por una persona no cuelga de un vínculo ni de un puesto
+predefinido.
+
+**La prueba, y por eso es falsable y no una preferencia:**
+
+> **Encontrar UN caso que `origin_kind = 'user_added'` no pueda expresar y `template_scope = 'ad_hoc'`
+> sí.**
+
+- **Si existe** → son dos distinciones distintas y las dos columnas se quedan.
+- **Si no existe** → `template_scope` y `owner_person_id` son **el `owner_process_id` del frente 23
+  otra vez**: una copia mal colocada de algo que vive un nivel más abajo, y se retiran. La
+  distinción se queda donde funciona: en la tarea.
+
+⚠️ **Y eso cambia también la pregunta 4a del dueño** («¿cómo pasar de `ad_hoc` a `official`?»). Si la
+distinción es de la tarea, promover no es «ascender una plantilla»: es **parametrizar una tarea que
+se repite**, que es exactamente *crear un proceso*. La pregunta deja de ser de plantillas y pasa a
+ser del motor de procesos.
+
+### C-viejo · ¿Qué es una plantilla que no es de ningún proceso?
 
 | | |
 |---|---|

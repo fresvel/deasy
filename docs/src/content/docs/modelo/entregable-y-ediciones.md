@@ -41,10 +41,41 @@ la propia tabla). Y tienen el mismo ciclo de tres estados que las configuracione
 —`lifecycle_state` con `draft`, `published` y `retired`— con la misma regla: **una sola publicada por
 entregable**. Publicar una edición retira automáticamente la anterior.
 
-Dos cosas que la base sí impone: `lifecycle_state` tiene un `CHECK` con esos tres valores y **nace
-en `draft` por defecto**, para que un `INSERT` despistado deje una fila que el control de activación
-rechaza en vez de una plantilla publicada que nunca pasó por él. Y `uq_ediciones_storage`
-impide repetir `storage_version` dentro del mismo entregable.
+**Cuatro cosas que la base impone**, y la primera de ellas es de hoy:
+
+| | |
+|---|---|
+| **una sola publicada por entregable** | `uq_ediciones_una_publicada`, sobre la columna generada `publicada_flag` |
+| `lifecycle_state` cerrado | `CHECK` con los tres valores, y **nace en `draft`** por defecto |
+| la versión no se repite | `uq_ediciones_storage (catalogo_documental_id, storage_version)` |
+| la versión **tiene forma de semver** | `CHECK` de tres segmentos: `1.0.0` sí, `1.0` y `v2` no |
+
+El `draft` por defecto es el que falla cerrado: un `INSERT` despistado deja una fila que el control
+de activación **rechaza**, en vez de una plantilla publicada que nunca pasó por él.
+
+### La única publicada: cómo se garantiza, y por qué hizo falta
+
+Hasta el **2026-10-11** esta regla la imponía **sólo el código** —`_retirePriorPublishedSiblings`,
+llamado desde los dos caminos de publicación—, así que un script, un `INSERT` a mano o un camino
+nuevo se la saltaban sin que nada avisara. El lado del **proceso** sí tenía red
+(`uq_process_definition_one_active_series`); el de la plantilla no. Era una asimetría que nadie había
+visto hasta que se buscó.
+
+**El truco está en el `NULL`.** La columna `publicada_flag` vale `1` sólo cuando la edición está
+publicada, y `NULL` en `draft` y en `retired`. Como PostgreSQL **no considera iguales dos `NULL`**,
+el índice único deja convivir muchos borradores y muchas retiradas, y admite **una sola publicada**.
+Es el mismo patrón que sostiene las otras catorce unicidades condicionales del esquema.
+
+Comprobado provocándolo: publicar una segunda edición del mismo entregable responde
+`duplicate key value violates unique constraint "uq_ediciones_una_publicada"`, y un borrador nuevo
+sigue entrando sin problema.
+
+⚠️ **Esto vuelve obligatorio el orden «retirar y luego publicar»** — que ya es el que hay, medido en
+los dos sitios. Lo que cambia es que un camino que publicara primero **fallaría en el acto** en vez
+de dejar dos publicadas.
+
+⚠️ **Y no dice nada sobre a qué configuración está vinculada esa edición publicada, ni a cuántas.**
+Eso lo gobierna `vinculos`, y está abierto en el frente 25. Son dos garantías independientes.
 
 :::caution[Una asimetría que conviene conocer]
 
@@ -143,13 +174,14 @@ erDiagram
   ediciones {
     int id PK "LA EDICION"
     int catalogo_documental_id FK
-    varchar storage_version "1.1.0"
+    varchar storage_version "1.1.0 -- CHECK de semver"
     text lifecycle_state "draft, published, retired -- nace en draft"
     varchar base_object_prefix "carpeta de su paquete"
     jsonb available_formats "pdf, docx, tex"
     int generador_id FK "quien produce el PDF"
     varchar content_hash "huella del paquete"
     int parent_version_id FK "edicion de la que desciende"
+    int publicada_flag "generada: 1 si publicada, NULL si no"
     smallint is_active
     timestamp created_at
   }

@@ -255,13 +255,14 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
 | `catalogo_documental_id` | int | sí | `catalogo_documental.id` · impide borrar | — |
-| `storage_version` | varchar(20) | sí | — | — |
+| `storage_version` | varchar(20) | sí | — | `^[0-9]+\.[0-9]+\.[0-9]+$` |
 | `lifecycle_state` | text | sí | — | `draft` · `published` · `retired` |
 | `base_object_prefix` | varchar(255) | sí | — | — |
 | `available_formats` | jsonb | sí | — | — |
 | `generador_id` | int | no | `generadores_de_documento.id` · impide borrar | — |
 | `content_hash` | varchar(64) | no | — | — |
 | `parent_version_id` | int | no | `ediciones.id` · impide borrar | — |
+| `publicada_flag` | smallint | no | — | — |
 | `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
 
@@ -520,4 +521,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**33 tablas · 310 columnas · 77 referencias.** Leídas del catálogo de PostgreSQL.
+**33 tablas · 311 columnas · 77 referencias.** Leídas del catálogo de PostgreSQL.

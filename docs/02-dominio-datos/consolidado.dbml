@@ -531,18 +531,20 @@ Table "dossiers" {
 Table "ediciones" {
   "id" int4 [pk, not null, increment]
   "catalogo_documental_id" int4 [not null]
-  "storage_version" varchar(20) [not null]
+  "storage_version" varchar(20) [not null, check: `(storage_version)::text ~ '^[0-9]+\.[0-9]+\.[0-9]+$'::text`]
   "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
   "base_object_prefix" varchar(255) [not null]
   "available_formats" jsonb [not null]
   "generador_id" int4 [note: '''QUIEN produce el PDF de esta edicion. Estaba en `catalogo_documental.template_seed_id` y se movio aqui, no se duplico: la fachada del admin ya lo listaba como campo de `ediciones` y lo traia por JOIN. NO sustituye a `document_versions.render_engine`, que dice con que motor se renderizo UNA ronda concreta —un hecho de la ejecucion, no una declaracion de la plantilla.''']
   "content_hash" varchar(64)
   "parent_version_id" int4
+  "publicada_flag" int2 [note: "columna generada (STORED)"]
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
     (catalogo_documental_id, storage_version) [type: btree, unique, name: "uq_ediciones_storage"]
+    (catalogo_documental_id, publicada_flag) [type: btree, unique, name: "uq_ediciones_una_publicada"]
     catalogo_documental_id [type: btree, name: "idx_ediciones_catalogo"]
     lifecycle_state [type: btree, name: "idx_ediciones_state"]
   }

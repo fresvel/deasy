@@ -63,7 +63,7 @@
 <g id="ediciones" class="node">
 <title>ediciones</title>
 <g id="a_ediciones"><a xlink:title="ediciones&#10;Las EDICIONES de un entregable, versionadas. Cuelgan de `catalogo_documental`, que es quien porta la identidad.">
-<ellipse fill="none" stroke="black" stroke-width="0" cx="1215.45" cy="-989.52" rx="388.82" ry="511.89"/>
+<ellipse fill="none" stroke="black" stroke-width="0" cx="1215.45" cy="-959.52" rx="388.82" ry="554.24"/>
 <polygon fill="#1d71b8" stroke="transparent" points="942.45,-1289.52 942.45,-1349.52 1488.45,-1349.52 1488.45,-1289.52 942.45,-1289.52"/>
 <polygon fill="none" stroke="#29235c" points="942.45,-1289.52 942.45,-1349.52 1488.45,-1349.52 1488.45,-1289.52 942.45,-1289.52"/>
 <text text-anchor="start" x="1085.63" y="-1310.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#ffffff"> &#160;&#160;&#160;&#160;&#160;&#160;ediciones &#160;&#160;&#160;&#160;&#160;&#160;</text>
@@ -118,17 +118,21 @@
 <text text-anchor="start" x="1425.88" y="-770.72" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int4</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="942.45,-689.52 942.45,-749.52 1488.45,-749.52 1488.45,-689.52 942.45,-689.52"/>
 <polygon fill="none" stroke="#29235c" points="942.45,-689.52 942.45,-749.52 1488.45,-749.52 1488.45,-689.52 942.45,-689.52"/>
-<text text-anchor="start" x="953.45" y="-709.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">is_active &#160;&#160;&#160;</text>
-<text text-anchor="start" x="1386.79" y="-710.72" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int2</text>
-<text text-anchor="start" x="1438.36" y="-710.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c"> </text>
-<text text-anchor="start" x="1447.26" y="-710.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#29235c">(!)</text>
+<text text-anchor="start" x="953.45" y="-709.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">publicada_flag &#160;&#160;&#160;</text>
+<text text-anchor="start" x="1425.88" y="-710.72" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int2</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="942.45,-629.52 942.45,-689.52 1488.45,-689.52 1488.45,-629.52 942.45,-629.52"/>
 <polygon fill="none" stroke="#29235c" points="942.45,-629.52 942.45,-689.52 1488.45,-689.52 1488.45,-629.52 942.45,-629.52"/>
-<text text-anchor="start" x="953.45" y="-649.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">created_at &#160;&#160;&#160;</text>
-<text text-anchor="start" x="1290.8" y="-650.72" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">timestamp</text>
+<text text-anchor="start" x="953.45" y="-649.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">is_active &#160;&#160;&#160;</text>
+<text text-anchor="start" x="1386.79" y="-650.72" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">int2</text>
 <text text-anchor="start" x="1438.36" y="-650.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c"> </text>
 <text text-anchor="start" x="1447.26" y="-650.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#29235c">(!)</text>
-<polygon fill="none" stroke="#29235c" stroke-width="2" points="941.45,-628.52 941.45,-1350.52 1489.45,-1350.52 1489.45,-628.52 941.45,-628.52"/>
+<polygon fill="#e7e2dd" stroke="transparent" points="942.45,-569.52 942.45,-629.52 1488.45,-629.52 1488.45,-569.52 942.45,-569.52"/>
+<polygon fill="none" stroke="#29235c" points="942.45,-569.52 942.45,-629.52 1488.45,-629.52 1488.45,-569.52 942.45,-569.52"/>
+<text text-anchor="start" x="953.45" y="-589.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">created_at &#160;&#160;&#160;</text>
+<text text-anchor="start" x="1290.8" y="-590.72" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">timestamp</text>
+<text text-anchor="start" x="1438.36" y="-590.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c"> </text>
+<text text-anchor="start" x="1447.26" y="-590.72" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#29235c">(!)</text>
+<polygon fill="none" stroke="#29235c" stroke-width="2" points="941.45,-568.52 941.45,-1350.52 1489.45,-1350.52 1489.45,-568.52 941.45,-568.52"/>
 </a>
 </g>
 </g>
@@ -145,8 +149,8 @@
 <!-- ediciones&#45;&gt;ediciones -->
 <g id="edge6" class="edge">
 <title>ediciones:e&#45;&gt;ediciones:w</title>
-<path fill="none" stroke="#29235c" stroke-width="3" d="M1488.45,-1259.52C1666.95,-1436.17 1666.95,-1519.46 1215.45,-1519.46 769.91,-1519.46 764.03,-970.92 935.49,-786.7"/>
-<polygon fill="#29235c" stroke="#29235c" stroke-width="3" points="938.01,-789.14 942.45,-779.52 932.98,-784.26 938.01,-789.14"/>
+<path fill="none" stroke="#29235c" stroke-width="3" d="M1488.45,-1259.52C1666.95,-1450.31 1666.95,-1531.89 1215.45,-1531.89 769.69,-1531.89 764.03,-984.48 935.74,-786.96"/>
+<polygon fill="#29235c" stroke="#29235c" stroke-width="3" points="938.36,-789.29 942.45,-779.52 933.16,-784.6 938.36,-789.29"/>
 <text text-anchor="middle" x="936.23" y="-750.72" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">*</text>
 <text text-anchor="middle" x="1479.56" y="-1269.12" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">1</text>
 </g>
