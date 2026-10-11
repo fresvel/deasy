@@ -67,7 +67,8 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
        t.term_id,
        pdv.id AS process_definition_id,
        pdv.name AS definition_name,
-       pdv.variation_key,
+       pdv.linea_id,
+       lin.nombre AS linea_nombre,
        pdv.definition_version,
        p.id AS process_id,
        p.name AS process_name,
@@ -95,6 +96,7 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
      ) dv ON dv.task_item_id = ti.id
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     LEFT JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN processes p ON p.id = pdv.process_id
      LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
@@ -181,6 +183,7 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     LEFT JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN processes p ON p.id = pdv.process_id
      LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
@@ -227,7 +230,8 @@ export const getDefinitionContext = async (pool, definitionId) => {
        pdv.id,
        pdv.process_id,
        pdv.series_id,
-       pdv.variation_key,
+       pdv.linea_id,
+       lin.nombre AS linea_nombre,
        pdv.definition_version,
        pdv.name,
        pdv.description,
@@ -244,6 +248,7 @@ export const getDefinitionContext = async (pool, definitionId) => {
          ELSE NULL
        END AS series_source_name
      FROM process_definition_versions pdv
+     LEFT JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN processes p ON p.id = pdv.process_id
      LEFT JOIN process_definition_series pds ON pds.id = pdv.series_id
      LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id

@@ -235,7 +235,7 @@ export default class TemplateLifecycleService {
     getByKeys,
     cloneProcessDefinitionChildren,
     getNextProcessDefinitionVersion,
-    retireActiveDefinitionsInSeries,
+    retireActiveDefinitionsInLinea,
     createTemplateArtifactVersion,
     getNextStorageVersionForTemplateCode,
     retirePriorPublishedSiblings,
@@ -253,7 +253,7 @@ export default class TemplateLifecycleService {
     this._getByKeys = getByKeys;
     this._cloneProcessDefinitionChildren = cloneProcessDefinitionChildren;
     this._getNextProcessDefinitionVersion = getNextProcessDefinitionVersion;
-    this._retireActiveDefinitionsInSeries = retireActiveDefinitionsInSeries;
+    this._retireActiveDefinitionsInLinea = retireActiveDefinitionsInLinea;
     this._createTemplateArtifactVersion = createTemplateArtifactVersion;
     this._getNextStorageVersionForTemplateCode = getNextStorageVersionForTemplateCode;
     this._retirePriorPublishedSiblings = retirePriorPublishedSiblings;
@@ -322,7 +322,7 @@ export default class TemplateLifecycleService {
   async getOrCreateConfigWorkingDraft(definitionId, connection = this.pool) {
     const defId = Number(definitionId);
     const [defRows] = await connection.query(
-      `SELECT id, process_id, series_id, variation_key, definition_version, name, description, status
+      `SELECT id, process_id, series_id, linea_id, definition_version, name, description, status
          FROM process_definition_versions WHERE id = ? LIMIT 1`,
       [defId]
     );
@@ -334,25 +334,25 @@ export default class TemplateLifecycleService {
     if (String(definition.status) !== "active") {
       throw new Error("Solo se puede preparar un borrador desde una configuración activa o borrador.");
     }
-    // ¿Existe ya un borrador de la misma serie (proceso, variación)?
+    // ¿Existe ya un borrador de la misma LINEA?
     const [existingDraft] = await connection.query(
       `SELECT id, definition_version FROM process_definition_versions
-        WHERE process_id = ? AND variation_key = ? AND status = 'draft'
+        WHERE linea_id = ? AND status = 'draft'
         ORDER BY id DESC LIMIT 1`,
-      [definition.process_id, definition.variation_key]
+      [definition.linea_id]
     );
     if (existingDraft?.[0]?.id) {
       return { id: Number(existingDraft[0].id), definition_version: existingDraft[0].definition_version, created: false };
     }
     // Clonar la activa → nuevo borrador (bump minor) con sus hijos.
     const nextVersion = await this._getNextProcessDefinitionVersion(
-      definition.process_id, definition.variation_key, "minor", connection
+      definition.linea_id, "minor", connection
     );
     const [insertResult] = await connection.query(
       `INSERT INTO process_definition_versions
-         (process_id, series_id, variation_key, definition_version, name, description, status, effective_from)
+         (process_id, series_id, linea_id, definition_version, name, description, status, effective_from)
        VALUES (?, ?, ?, ?, ?, ?, 'draft', CURDATE())`,
-      [definition.process_id, definition.series_id, definition.variation_key, nextVersion, definition.name, definition.description]
+      [definition.process_id, definition.series_id, definition.linea_id, nextVersion, definition.name, definition.description]
     );
     const newId = Number(insertResult.insertId);
     await this._cloneProcessDefinitionChildren({
@@ -478,16 +478,16 @@ export default class TemplateLifecycleService {
     this.ensurePool();
     const defId = Number(definitionId);
     const [defRows] = await this.pool.query(
-      "SELECT id, process_id, variation_key, status, definition_version FROM process_definition_versions WHERE id = ? LIMIT 1",
+      "SELECT id, process_id, linea_id, status, definition_version FROM process_definition_versions WHERE id = ? LIMIT 1",
       [defId]
     );
     const draft = defRows?.[0];
     if (!draft) throw new Error("La configuración no existe.");
     const [activeRows] = await this.pool.query(
       `SELECT id, definition_version FROM process_definition_versions
-        WHERE process_id = ? AND variation_key = ? AND status = 'active' AND id <> ?
+        WHERE linea_id = ? AND status = 'active' AND id <> ?
         ORDER BY id DESC LIMIT 1`,
-      [draft.process_id, draft.variation_key, defId]
+      [draft.linea_id, defId]
     );
     const active = activeRows?.[0] || null;
 
@@ -566,7 +566,7 @@ export default class TemplateLifecycleService {
     const src = srcRows?.[0];
     if (!src) throw new Error("La versión de origen no existe.");
     const [defRows] = await this.pool.query(
-      "SELECT process_id, variation_key FROM process_definition_versions WHERE id = ? LIMIT 1",
+      "SELECT process_id FROM process_definition_versions WHERE id = ? LIMIT 1",
       [defId]
     );
     const def = defRows?.[0];
@@ -844,7 +844,7 @@ export default class TemplateLifecycleService {
     }
 
     const [defRows] = await this.pool.query(
-      `SELECT id, process_id, series_id, variation_key, definition_version, name, description, status
+      `SELECT id, process_id, series_id, linea_id, definition_version, name, description, status
          FROM process_definition_versions WHERE id = ? LIMIT 1`,
       [defId]
     );
@@ -882,19 +882,18 @@ export default class TemplateLifecycleService {
     try {
       await connection.beginTransaction();
       const nextConfigVersion = await this._getNextProcessDefinitionVersion(
-        definition.process_id,
-        definition.variation_key,
+        definition.linea_id,
         bumpLevel,
         connection
       );
       const [insertResult] = await connection.query(
         `INSERT INTO process_definition_versions
-           (process_id, series_id, variation_key, definition_version, name, description, status, effective_from)
+           (process_id, series_id, linea_id, definition_version, name, description, status, effective_from)
          VALUES (?, ?, ?, ?, ?, ?, 'draft', CURDATE())`,
         [
           definition.process_id,
           definition.series_id,
-          definition.variation_key,
+          definition.linea_id,
           nextConfigVersion,
           definition.name,
           definition.description
@@ -949,7 +948,7 @@ export default class TemplateLifecycleService {
     }
 
     const [defRows] = await this.pool.query(
-      "SELECT id, process_id, variation_key, definition_version, status FROM process_definition_versions WHERE id = ? LIMIT 1",
+      "SELECT id, process_id, linea_id, definition_version, status FROM process_definition_versions WHERE id = ? LIMIT 1",
       [cfgId]
     );
     const definition = defRows?.[0];
@@ -1011,10 +1010,9 @@ export default class TemplateLifecycleService {
       // Ahora sí, el check de artefactos activos de la config pasa (la nueva plantilla ya está activa).
       await this._ensureDefinitionHasArtifactsForActivation(cfgId, connection);
 
-      // Activar config: retira la activa previa de la serie + activa esta.
-      const retiredCount = await this._retireActiveDefinitionsInSeries({
-        processId: definition.process_id,
-        variationKey: definition.variation_key,
+      // Activar config: retira la activa previa de la LINEA + activa esta.
+      const retiredCount = await this._retireActiveDefinitionsInLinea({
+        lineaId: definition.linea_id,
         excludeId: cfgId,
         connection
       });

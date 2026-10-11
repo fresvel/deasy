@@ -414,9 +414,9 @@ export function useProcessWizard() {
       ) {
         seriesOptions.value.push({
           id: definitionRow.series_id,
-          code: definitionRow.variation_key || `serie-${definitionRow.series_id}`,
-          displayName: buildSeriesDisplayName({ code: definitionRow.variation_key || definitionRow.name || `Variación ${definitionRow.series_id}` }),
-          label: definitionRow.variation_key || `Variación ${definitionRow.series_id}`,
+          code: `serie-${definitionRow.series_id}`,
+          displayName: buildSeriesDisplayName({ code: definitionRow.linea_nombre || definitionRow.name || `Variación ${definitionRow.series_id}` }),
+          label: definitionRow.linea_nombre || `Variación ${definitionRow.series_id}`,
           is_active: 1
         });
       }
@@ -523,7 +523,8 @@ export function useProcessWizard() {
         description: form.description || "",
         status: "draft",
         ...created,
-        variation_key: created.variation_key || series.code,
+        linea_id: created.linea_id ?? null,
+        linea_nombre: created.linea_nombre || created.name || definitionNamePreview.value,
       };
       await refreshStepStatus();
       currentStep.value = "rules";

@@ -90,7 +90,7 @@ export function useAdminFormState({
     if (
       props.table?.table === "process_definition_versions"
       && editorMode.value === "edit"
-      && ["process_id", "variation_key", "definition_version"].includes(field.name)
+      && ["process_id", "linea_id", "definition_version"].includes(field.name)
     ) {
       return true;
     }
@@ -161,7 +161,7 @@ export function useAdminFormState({
       if (
         props.table?.table === "process_definition_versions"
         && editorMode.value === "edit"
-        && ["process_id", "variation_key", "definition_version"].includes(field.name)
+        && ["process_id", "linea_id", "definition_version"].includes(field.name)
       ) {
         return;
       }

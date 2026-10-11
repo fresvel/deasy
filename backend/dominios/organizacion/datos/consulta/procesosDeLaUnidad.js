@@ -19,7 +19,8 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
             p.name AS process_name,
             pdv.name AS definition_name,
             pdv.definition_version,
-            pdv.variation_key,
+            pdv.linea_id,
+            lin.nombre AS linea_nombre,
             pdv.status,
             ptr.unit_scope_type,
             ptr.recipient_policy,
@@ -40,6 +41,7 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
             END AS origin
      FROM process_target_rules ptr
      INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
+       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN processes p ON p.id = pdv.process_id
      LEFT JOIN cargos c ON c.id = ptr.cargo_id
      LEFT JOIN unit_positions up ON up.id = ptr.position_id
@@ -68,11 +70,13 @@ export const listarProcesosEnganchables = async (ejecutor) => {
             p.name AS process_name,
             pdv.name AS definition_name,
             pdv.definition_version,
-            pdv.variation_key,
+            pdv.linea_id,
+            lin.nombre AS linea_nombre,
             pds.source_type AS series_source_type,
             pds.cargo_id AS series_cargo_id,
             c.name AS series_cargo_name
        FROM process_definition_versions pdv
+       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
        INNER JOIN processes p ON p.id = pdv.process_id
        INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
        LEFT JOIN cargos c ON c.id = pds.cargo_id

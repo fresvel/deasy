@@ -64,7 +64,7 @@ Hoy **convive** con la serie: `process_definition_versions.linea_id` ya apunta a
 
 Tiene `status` (`draft`, `active`, `retired`) y vigencia (`effective_from` / `effective_to`). Dos mecanismos de integridad:
 
-- Una **columna generada** `active_series_flag` mas un índice UNIQUE sobre `(process_id, variation_key, active_series_flag)` garantiza **a nivel de base de datos** que solo hay una versión activa por línea.
+- Una **columna generada** `active_series_flag` mas un índice UNIQUE sobre `(linea_id, active_series_flag)` garantiza **a nivel de base de datos** que solo hay una versión activa por línea. Hasta el 2026-10-11 ese índice iba sobre `(process_id, <la etiqueta de la variación>, active_series_flag)`, o sea sobre una copia del código de la serie; hoy va sobre la línea, que es el dato.
 
 - Un **trigger** (`trg_process_definition_versions_before_update`) impide activarla si no tiene al menos una regla activa *y* un tipo de periodo, lanzando una excepción con mensaje en espanol.
 

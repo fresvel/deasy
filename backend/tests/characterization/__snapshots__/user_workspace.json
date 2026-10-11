@@ -150,11 +150,12 @@
               "definition_version": "1.0.0",
               "id": "<normalized>",
               "is_routed": true,
+              "linea_id": "<normalized>",
+              "linea_nombre": "Proceso por defecto",
               "name": "Proceso por defecto",
               "process_definition_id": "<normalized>",
               "slug": "default",
-              "unit_id": "<normalized>",
-              "variation_key": "general"
+              "unit_id": "<normalized>"
             }
           ]
         }
@@ -177,11 +178,12 @@
                       "definition_version": "1.0.0",
                       "id": "<normalized>",
                       "is_routed": true,
+                      "linea_id": "<normalized>",
+                      "linea_nombre": "Proceso por defecto",
                       "name": "Proceso por defecto",
                       "process_definition_id": "<normalized>",
                       "slug": "default",
-                      "unit_id": "<normalized>",
-                      "variation_key": "general"
+                      "unit_id": "<normalized>"
                     }
                   ]
                 }
@@ -207,11 +209,12 @@
                   "definition_version": "1.0.0",
                   "id": "<normalized>",
                   "is_routed": true,
+                  "linea_id": "<normalized>",
+                  "linea_nombre": "Proceso por defecto",
                   "name": "Proceso por defecto",
                   "process_definition_id": "<normalized>",
                   "slug": "default",
-                  "unit_id": "<normalized>",
-                  "variation_key": "general"
+                  "unit_id": "<normalized>"
                 }
               ]
             }
@@ -287,6 +290,8 @@
         "effective_from": "<normalized>",
         "effective_to": "<normalized>",
         "id": "<normalized>",
+        "linea_id": "<normalized>",
+        "linea_nombre": "Proceso por defecto",
         "matching_rules_count": 1,
         "name": "Proceso por defecto",
         "period_types_count": 1,
@@ -299,8 +304,7 @@
         "series_source_name": null,
         "series_source_type": "default",
         "status": "active",
-        "templates_count": 1,
-        "variation_key": "general"
+        "templates_count": 1
       },
       "dependencies": {
         "period_types": [

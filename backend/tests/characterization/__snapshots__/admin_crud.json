@@ -100,11 +100,11 @@
       "definition_version": "2.0.0",
       "effective_from": "2026-02-01",
       "id": "<normalized>",
+      "linea_id": "<normalized>",
       "name": "Proceso cadena caracterización por Jefe",
       "process_id": "<normalized>",
       "series_id": "<normalized>",
-      "status": "draft",
-      "variation_key": "jefe"
+      "status": "draft"
     }
   },
   "graft_pdv_create_draft": {
@@ -113,11 +113,11 @@
       "definition_version": "1.0.0",
       "effective_from": "2026-01-01",
       "id": "<normalized>",
+      "linea_id": "<normalized>",
       "name": "Proceso cadena caracterización por Jefe",
       "process_id": "<normalized>",
       "series_id": "<normalized>",
-      "status": "draft",
-      "variation_key": "jefe"
+      "status": "draft"
     }
   },
   "graft_pdv_update_activacion": {
@@ -422,11 +422,11 @@
       "effective_from",
       "effective_to",
       "id",
+      "linea_id",
       "name",
       "process_id",
       "series_id",
-      "status",
-      "variation_key"
+      "status"
     ]
   },
   "list_process_target_rules": {

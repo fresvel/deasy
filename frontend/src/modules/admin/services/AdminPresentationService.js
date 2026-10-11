@@ -225,7 +225,7 @@ class AdminPresentationService {
       return "—";
     }
     if (tableName === "process_definition_versions") {
-      const parts = [row.variation_key, row.definition_version, row.name]
+      const parts = [row.linea_nombre, row.definition_version, row.name]
         .filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
       if (parts.length) {
         return parts.join(" · ");

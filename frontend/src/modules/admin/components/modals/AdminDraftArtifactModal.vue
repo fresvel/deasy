@@ -591,7 +591,7 @@ const loadProcessDefinitionOptions = async () => {
       .map((r) => {
         const status = String(r.status || "").toLowerCase();
         const statusText = STATUS_LABEL[status] || status || "—";
-        const name = r.name || r.variation_key || `Def ${r.id}`;
+        const name = r.name || r.linea_nombre || `Def ${r.id}`;
         return {
           id: r.id,
           name,

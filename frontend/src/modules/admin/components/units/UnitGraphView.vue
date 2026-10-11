@@ -447,7 +447,7 @@
           <select v-model="processForm.process_definition_id" :disabled="Boolean(processEditingRuleId)" class="deasy-control deasy-control--select">
             <option value="">Selecciona…</option>
             <option v-for="def in attachableProcesses" :key="def.definition_id" :value="def.definition_id">
-              {{ def.process_name }} · {{ def.variation_key }} · v{{ def.definition_version }}
+              {{ def.process_name }} · {{ def.linea_nombre }} · v{{ def.definition_version }}
             </option>
           </select>
           <span v-if="!processEditingRuleId && attachableLoaded && !attachableProcesses.length" class="mt-1 block text-theme-xs text-warning">

@@ -93,7 +93,7 @@ const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } =
         return respondeAlConteo(params);
       }
       if (sql.includes("FROM process_definition_versions")) {
-        return [[{ id: CFG_ID, process_id: 1, variation_key: "general", definition_version: "1.1.0", status: "draft" }]];
+        return [[{ id: CFG_ID, process_id: 1, linea_id: 7, definition_version: "1.1.0", status: "draft" }]];
       }
       if (sql.includes("FROM vinculos")) {
         return [[{ id: 500, item_mode: "single" }]];
@@ -105,7 +105,7 @@ const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } =
   const service = new TemplateLifecycleService(pool, {
     getByKeys: async () => ({ id: TPL_ID, lifecycle_state: "draft", storage_version: "1.1.0" }),
     retirePriorPublishedSiblings: async (_conn, id) => { events.push(`retira-hermanas:${id}`); },
-    retireActiveDefinitionsInSeries: async () => { events.push("retira-config-anterior"); return 1; },
+    retireActiveDefinitionsInLinea: async () => { events.push("retira-config-anterior"); return 1; },
     ensureDefinitionHasActiveRulesForActivation: async () => { events.push("gate:reglas"); },
     ensureDefinitionHasActivePeriodTypesForActivation: async () => { events.push("gate:periodos"); },
     ensureDefinitionHasArtifactsForActivation: async () => { events.push("gate:entregables"); },
@@ -246,7 +246,7 @@ const buildDraftService = ({ falla = null } = {}) => {
     release: () => { events.push("release"); },
     query: async (sql) => {
       const texto = String(sql).replace(/\s+/g, " ").trim();
-      if (/^SELECT process_id/i.test(texto)) return [[{ process_id: 1, variation_key: "general" }]];
+      if (/^SELECT process_id/i.test(texto)) return [[{ process_id: 1, linea_id: 7 }]];
       if (/^SELECT id FROM catalogo_documental/i.test(texto)) return [[]];
       if (/^INSERT INTO catalogo_documental/i.test(texto)) { events.push("insert:deliverable"); return [{ insertId: 5 }]; }
       if (/^INSERT INTO ediciones/i.test(texto)) { events.push("insert:artifact"); return [{ insertId: DRAFT_ARTIFACT_ID }]; }

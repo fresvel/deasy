@@ -241,15 +241,18 @@ const TEMPLATE_CHILD_GUARDS = definitionChildGuards("las plantillas de configura
 const RULE_CHILD_GUARDS = definitionChildGuards("las reglas de alcance");
 const PERIOD_CHILD_GUARDS = definitionChildGuards("los periodos del proceso");
 
-// El remapeo de la unicidad "una sola activa por serie". Se compara `error.constraint`, que el
+// El remapeo de la unicidad "una sola activa por LINEA". Se compara `error.constraint`, que el
 // driver de PostgreSQL da EXACTO, en vez de buscar la subcadena en el mensaje (que era lo que hacía
 // el injerto original, y además contra un código de error de MySQL que ya no llega nunca).
-const mapOneActivePerSeries = (error) => {
+//
+// El indice se llamaba `..._one_active_series` y estaba sobre `(process_id, variation_key,
+// active_series_flag)`: la pareja mas una COPIA. Hoy es `(linea_id, active_series_flag)`.
+const mapOneActivePerLinea = (error) => {
   if (
     isUniqueViolation(error)
-    && violatedConstraint(error) === "uq_process_definition_one_active_series"
+    && violatedConstraint(error) === "uq_process_definition_one_active_linea"
   ) {
-    return conflict("Solo puede existir una configuracion activa por serie dentro del mismo proceso.");
+    return conflict("Solo puede existir una configuracion activa por linea.");
   }
   return null;
 };
@@ -488,18 +491,17 @@ export const TABLE_HOOKS = {
       }
     },
 
-    // Si la identidad cambió, arrastra el `variation_key` de todas sus configuraciones y regenera
-    // sus nombres. No es transaccional (no lo era antes).
+    // Si la identidad cambió, regenera los nombres de sus configuraciones. No es transaccional (no
+    // lo era antes).
+    //
+    // ⚠️ AQUI HABIA UN `UPDATE ... SET variation_key` MASIVO, y se fue con la columna. Arrastraba la
+    // copia de `series.code` a todas las configuraciones de la serie, FUERA DE TRANSACCION y sobre la
+    // columna que sostenia DOS INDICES UNICOS: si se quedaba a medias, los dos unicos pasaban a
+    // vigilar etiquetas viejas. Lo midio `D1`. La linea tiene nombre propio y no se arrastra nada.
     async afterUpdate(ctx) {
       if (!Object.hasOwn(ctx.updates, "code")) {
         return;
       }
-      await ctx.pool.query(
-        `UPDATE process_definition_versions
-         SET variation_key = ?
-         WHERE series_id = ?`,
-        [ctx.updates.code, Number(ctx.existing.id)]
-      );
       await ctx.service.refreshProcessDefinitionVersionNames({ seriesId: Number(ctx.existing.id) });
     }
   },
@@ -525,7 +527,6 @@ export const TABLE_HOOKS = {
         throw new Error("Las nuevas configuraciones solo pueden crearse en estado draft.");
       }
       const series = await ctx.service.resolveProcessDefinitionSeries(ctx.payload);
-      ctx.payload.variation_key = String(series.code || "").trim();
       // El proceso por defecto es especial: SOLO admite la configuración "sin variación"
       // (source_type='default'). Puede versionarse (N versiones), pero no tener otra
       // variación por cargo/tipo de unidad.
@@ -534,6 +535,16 @@ export const TABLE_HOOKS = {
         ctx.payload.process_id,
         ctx.payload.series_id
       );
+      // LA LINEA, no la copia de la serie. Aqui se escribia
+      // `ctx.payload.variation_key = series.code`, que era el escritor de la copia que `D1` midio:
+      // tres columnas para una identidad, una de ellas derivada, y dos indices unicos encima.
+      // Mientras la pantalla siga pidiendo una serie, la linea se deriva de ella; cuando `P9` haga
+      // que pida cargo + alcance, esto recibira la linea directamente.
+      ctx.payload.linea_id = await ctx.service.resolveLineaDeSerie({
+        processId: ctx.payload.process_id,
+        series,
+        nombre: ctx.payload.name
+      });
       ctx.payload.status = "draft";
       await ctx.service.ensureProcessDefinitionVersionAvailable(ctx.payload);
     },
@@ -556,8 +567,8 @@ export const TABLE_HOOKS = {
       }
     },
 
-    mapCreateError: mapOneActivePerSeries,
-    mapUpdateError: mapOneActivePerSeries,
+    mapCreateError: mapOneActivePerLinea,
+    mapUpdateError: mapOneActivePerLinea,
 
     // El injerto más grande del fichero: máquina de estados (draft -> active -> retired) + campos
     // editables por estado + identidad inmutable. Deja decidido en `ctx.state` si el UPDATE necesita
@@ -618,11 +629,14 @@ export const TABLE_HOOKS = {
         }
         delete updates.series_id;
       }
-      if (Object.hasOwn(updates, "variation_key")) {
-        if (!isSameValue("variation_key", updates.variation_key, existing.variation_key)) {
-          throw new Error("No se puede cambiar la serie de una configuracion.");
+      if (Object.hasOwn(updates, "linea_id")) {
+        if (!isSameValue("linea_id", updates.linea_id, existing.linea_id)) {
+          // Y esto es la decision 12 del dueño con otras palabras: si la obligacion cambia de manos
+          // es OTRA LINEA, no otra version de la misma. Mover una configuracion de linea es
+          // exactamente lo que producia la historia falsa que `lineas` vino a cerrar.
+          throw new Error("No se puede cambiar la linea de una configuracion.");
         }
-        delete updates.variation_key;
+        delete updates.linea_id;
       }
       if (Object.hasOwn(updates, "name")) {
         delete updates.name;
@@ -682,9 +696,8 @@ export const TABLE_HOOKS = {
 
       if (currentStatus === "draft" && nextStatus === "active") {
         ctx.state.activateDraftVersion = true;
-        ctx.state.seriesContext = {
-          processId: existing.process_id,
-          variationKey: existing.variation_key,
+        ctx.state.lineaContext = {
+          lineaId: existing.linea_id,
           excludeId: existing.id ?? ctx.keyPayload.id
         };
       }
@@ -716,14 +729,14 @@ export const TABLE_HOOKS = {
       // validar que haya artefactos activos.
       await ctx.service.publishDraftTemplatesForDefinition(definitionId, ctx.connection);
       await ctx.service.ensureDefinitionHasArtifactsForActivation(definitionId, ctx.connection);
-      const retiredCount = await ctx.service.retireActiveDefinitionsInSeries({
-        ...ctx.state.seriesContext,
+      const retiredCount = await ctx.service.retireActiveDefinitionsInLinea({
+        ...ctx.state.lineaContext,
         connection: ctx.connection
       });
       if (retiredCount > 0) {
         // El injerto original fijaba este aviso TRAS el commit; da igual, porque si el commit falla
         // se propaga el error y la respuesta nunca se construye.
-        ctx.notice = "La configuracion activa anterior de la misma serie fue retirada automaticamente.";
+        ctx.notice = "La configuracion activa anterior de la misma linea fue retirada automaticamente.";
       }
     }
   },

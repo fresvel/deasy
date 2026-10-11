@@ -1303,7 +1303,7 @@ const searchTerm = ref("");
 const vacantSearchTerm = ref("");
 const processDefinitionInlineFilters = ref({
   process_id: "",
-  variation_key: "",
+  linea_id: "",
   status: ""
 });
 const processTargetRuleInlineFilters = ref({
@@ -1745,7 +1745,7 @@ const fkListExtraFields = computed(() => {
   }
   if (fkTable.value.table === "process_definition_versions") {
     return fkTable.value.fields.filter((field) =>
-      ["variation_key", "definition_version", "name", "description", "status"].includes(field.name)
+      ["linea_nombre", "definition_version", "name", "description", "status"].includes(field.name)
     );
   }
   if (fkTable.value.table === "units") {
@@ -1805,7 +1805,7 @@ const isFkTemplateArtifacts = computed(() => fkTable.value?.table === "ediciones
 const hasFkProcessDefinitionFilters = computed(() =>
   Boolean(
     fkFilters.value.process_id
-    || fkFilters.value.variation_key?.trim()
+    || fkFilters.value.linea_id?.trim()
   )
 );
 const hasFkTemplateArtifactFilters = computed(() =>
@@ -2014,7 +2014,7 @@ const hasProcessDefinitionInlineFilters = computed(() =>
   Boolean(
     processDefinitionInlineFilters.value.process_id
     || processDefinitionInlineFilters.value.status
-    || processDefinitionInlineFilters.value.variation_key?.trim()
+    || processDefinitionInlineFilters.value.linea_id?.trim()
   )
 );
 const hasProcessTargetRuleInlineFilters = computed(() =>
@@ -2062,7 +2062,7 @@ const canDeleteProcessConfiguration = computed(() => canDeleteAdminTable("proces
 const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
 const processEditorConfigurationTableFields = [
-  { name: "variation_key", label: "Variación" },
+  { name: "linea_nombre", label: "Línea" },
   { name: "definition_version", label: "Version" },
   { name: "name", label: "Nombre" },
   { name: "status", label: "Estado" },
@@ -2530,7 +2530,7 @@ const clearFkProcessDefinitionFilters = async () => {
   fkFilters.value = {
     ...fkFilters.value,
     process_id: "",
-    variation_key: "",
+    linea_id: "",
     status: "active"
   };
   await fetchFkRows();
@@ -3594,7 +3594,7 @@ const editConfigFromGraph = async ({ processId, definition, step = "definition",
       process_id: processId,
       process_name: definition.process_name,
       status: definition.status,
-      variation_key: definition.variation_key,
+      linea_nombre: definition.linea_nombre,
       definition_version: definition.definition_version,
       series_id: definition.series_id
     },
@@ -3620,7 +3620,7 @@ const versionConfigFromGraph = async ({ processId, definition } = {}) => {
     process_id: processId,
     process_name: definition.process_name,
     series_id: definition.series_id,
-    variation_key: definition.variation_key,
+    linea_nombre: definition.linea_nombre,
     definition_version: definition.definition_version
   });
 };
@@ -3803,7 +3803,7 @@ const addTemplateFromGraph = async ({ definition } = {}) => {
       id,
       status: definition?.status,
       name: definition?.definition_name,
-      variation_key: definition?.variation_key,
+      linea_nombre: definition?.linea_nombre,
       definition_version: definition?.definition_version,
       process_id: definition?.process_id,
       process_name: definition?.process_name
@@ -3889,9 +3889,9 @@ const openProcessDefinitionVersionWizard = async (row) => {
   ) {
     processWizardSeriesOptions.value.push({
       id: row.series_id,
-      code: row.variation_key || `variacion-${row.series_id}`,
-      displayName: row.variation_key || `Variación ${row.series_id}`,
-      label: row.variation_key || `Variación ${row.series_id}`,
+      code: row.linea_nombre,
+      displayName: row.linea_nombre,
+      label: row.linea_nombre,
       is_active: 1
     });
   }

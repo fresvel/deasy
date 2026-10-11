@@ -75,9 +75,9 @@
         </AdminFieldGroup>
         <AdminFieldGroup label="Variación" label-class="text-body" group-class="md:col-span-3">
           <AdminInputField
-            :model-value="fkFilters.variation_key"
+            :model-value="fkFilters.linea_id"
             placeholder="Filtrar por variación"
-            @update:model-value="updateFilter('variation_key', $event)"
+            @update:model-value="updateFilter('linea_id', $event)"
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>

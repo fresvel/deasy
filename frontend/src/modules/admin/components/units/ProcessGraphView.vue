@@ -194,7 +194,7 @@
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ seriesLabel(cfg) }}</span>
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.variation_key }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.linea_nombre }}</span>
                     <span>v{{ cfg.definition_version }}</span>
                   </div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-2 text-theme-xs text-muted">

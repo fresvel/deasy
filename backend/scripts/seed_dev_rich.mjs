@@ -154,7 +154,6 @@ const main = async () => {
   const definitionId = await create("process_definition_versions", {
     process_id: processId,
     series_id: seriesId,
-    variation_key: "general",
     definition_version: "1.0.0",
     name: "Informe de Gestión Docente",
     description: "Informe semestral de gestión que elabora cada docente y firma su coordinador.",

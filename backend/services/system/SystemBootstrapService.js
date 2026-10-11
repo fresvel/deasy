@@ -571,7 +571,11 @@ const ensureBootstrapUnit = async (connection) => {
 const DEFAULT_PROCESS_SLUG = "default";
 const DEFAULT_PROCESS_NAME = "Proceso por defecto";
 const DEFAULT_SERIES_CODE = "default";
-const DEFAULT_VARIATION = "general";
+// AQUI HABIA UN SEGUNDO CONSTANTE, `DEFAULT_VARIATION = "general"`, Y ERA UN DEFECTO.
+// Iba a `variation_key` mientras `DEFAULT_SERIES_CODE = "default"` iba a `series.code`: dos
+// constantes para una sola cosa, asi que la configuracion del Proceso por defecto era la UNICA
+// fila del sistema con la copia desincronizada de su origen — y medido el 2026-10-11, con los
+// datos de una base sembrada, lo eran LAS DOS que existian: el 100 %. Se va con la columna.
 const DEFAULT_DEFINITION_VERSION = "1.0.0";
 // Periodo sentinela "de todos los tiempos": ancla los procesos sin ciclo de periodo
 // (p. ej. memorandos) y las tareas sueltas. Obligatorio: se crea en el bootstrap.
@@ -765,7 +769,7 @@ export const ensureDefaultProcess = async (connection) => {
   }
   const defaultDefinitionName = buildProcessDefinitionVersionName({
     processName: DEFAULT_PROCESS_NAME,
-    series: { source_type: "default", code: DEFAULT_VARIATION }
+    series: { source_type: "default", code: DEFAULT_SERIES_CODE }
   });
 
   // 2-bis. LA LINEA (frente 25, P8). La obligacion del proceso por defecto es «cualquier cargo, en
@@ -792,26 +796,21 @@ export const ensureDefaultProcess = async (connection) => {
   // 3. configuración activa
   let definition = await fetchOne(
     connection,
-    "SELECT id, status, name FROM process_definition_versions WHERE process_id = ? AND variation_key = ? AND definition_version = ? LIMIT 1",
-    [processId, DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION]
+    "SELECT id, status, name FROM process_definition_versions WHERE linea_id = ? AND definition_version = ? LIMIT 1",
+    [lineaId, DEFAULT_DEFINITION_VERSION]
   );
   if (!definition) {
     const [r] = await connection.query(
       `INSERT INTO process_definition_versions
-        (process_id, series_id, linea_id, variation_key, definition_version, name, description, status, effective_from)
-       VALUES (?, ?, ?, ?, ?, ?, ?, 'active', CURDATE())`,
-      [processId, Number(series.id), lineaId, DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION,
+        (process_id, series_id, linea_id, definition_version, name, description, status, effective_from)
+       VALUES (?, ?, ?, ?, ?, ?, 'active', CURDATE())`,
+      [processId, Number(series.id), lineaId, DEFAULT_DEFINITION_VERSION,
        defaultDefinitionName, "Tareas libres y no clasificadas."]
     );
     definition = { id: r.insertId, status: "active", name: defaultDefinitionName };
   } else if (definition.status !== "active") {
     await connection.query("UPDATE process_definition_versions SET status = 'active' WHERE id = ?", [definition.id]);
   }
-  // Una configuracion de antes de `P8` no tiene linea: se le pone la suya.
-  await connection.query(
-    "UPDATE process_definition_versions SET linea_id = ? WHERE id = ? AND linea_id IS NULL",
-    [lineaId, Number(definition.id)]
-  );
   if (definition?.id && String(definition.name || "") !== defaultDefinitionName) {
     await connection.query("UPDATE process_definition_versions SET name = ? WHERE id = ?", [defaultDefinitionName, definition.id]);
   }

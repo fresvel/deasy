@@ -20,15 +20,17 @@ export const getTermById = async (connection, termId) => {
 
 export const getActiveAutomaticDefinitions = async (connection, term) => {
   const [rows] = await connection.query(
-    `SELECT ranked.id, ranked.process_id, ranked.variation_key, ranked.definition_version
+    `SELECT ranked.id, ranked.process_id, ranked.linea_id, ranked.definition_version
      FROM (
        SELECT
          pdv.id,
          pdv.process_id,
-         pdv.variation_key,
+         pdv.linea_id,
          pdv.definition_version,
+         -- UNA configuracion activa por LINEA. Particionaba por (process_id, variation_key), que
+         -- es la pareja mas su copia; la linea es una columna y es el dato.
          ROW_NUMBER() OVER (
-           PARTITION BY pdv.process_id, pdv.variation_key
+           PARTITION BY pdv.linea_id
            ORDER BY pdv.effective_from DESC, pdv.id DESC
          ) AS rn
        FROM process_definition_versions pdv
@@ -41,7 +43,7 @@ export const getActiveAutomaticDefinitions = async (connection, term) => {
       AND pdp.is_active = 1
       AND pdp.term_type_id = ?
      WHERE ranked.rn = 1
-     ORDER BY ranked.process_id ASC, ranked.variation_key ASC`,
+     ORDER BY ranked.process_id ASC, ranked.linea_id ASC`,
     [term.end_date, term.start_date, term.term_type_id]
   );
   return rows;

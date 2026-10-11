@@ -79,7 +79,7 @@ function fakeConnection({ definition, templates = [], rules = [], periodTypes = 
   return connection;
 }
 
-const DEFINITION = { id: SOURCE_ID, process_id: PROCESS_ID, variation_key: "default", status: "active" };
+const DEFINITION = { id: SOURCE_ID, process_id: PROCESS_ID, linea_id: 7, status: "active" };
 
 // Una configuración con LOS TRES modos, para que ninguno pueda colarse por el hueco de otro.
 const TEMPLATES = [

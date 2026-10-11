@@ -34,20 +34,21 @@ export default class ProcessDefinitionVersionService {
 
   async ensureProcessDefinitionVersionAvailable(candidate, { excludeId = null } = {}) {
     this.ensurePool();
-    const processId = Number(candidate?.process_id);
-    const variationKey = String(candidate?.variation_key || "").trim();
+    const lineaId = normalizeNumericId(candidate?.linea_id);
     const definitionVersion = String(candidate?.definition_version || "").trim();
 
-    if (!processId || !variationKey || !definitionVersion) {
+    if (!lineaId || !definitionVersion) {
       return;
     }
 
-    const params = [processId, variationKey, definitionVersion];
+    // La identidad de una configuracion es (LINEA, version). Era `(process_id, variation_key,
+    // definition_version)` —tres columnas, una de ellas una COPIA de `series.code`— y el proceso
+    // sobra porque la linea ya es de un proceso.
+    const params = [lineaId, definitionVersion];
     let query = `
       SELECT id
       FROM process_definition_versions
-      WHERE process_id = ?
-        AND variation_key = ?
+      WHERE linea_id = ?
         AND definition_version = ?`;
 
     if (excludeId !== null && excludeId !== undefined && excludeId !== "") {
@@ -209,15 +210,16 @@ export default class ProcessDefinitionVersionService {
   }
 
 
-  async retireActiveDefinitionsInSeries({ processId, variationKey, excludeId = null, connection = this.pool }) {
+  // Retira las configuraciones activas de UNA LINEA. Se llamaba `...InSeries` y recibia
+  // `(processId, variationKey)`: la pareja mas la copia. La linea es una columna.
+  async retireActiveDefinitionsInLinea({ lineaId, excludeId = null, connection = this.pool }) {
     this.ensurePool();
-    const normalizedProcessId = Number(processId);
-    const normalizedVariationKey = String(variationKey || "").trim();
-    if (!normalizedProcessId || !normalizedVariationKey) {
+    const normalizedLineaId = normalizeNumericId(lineaId);
+    if (!normalizedLineaId) {
       return 0;
     }
 
-    const params = [normalizedProcessId, normalizedVariationKey];
+    const params = [normalizedLineaId];
     let excludeSql = "";
     if (excludeId !== null && excludeId !== undefined && excludeId !== "") {
       excludeSql = " AND id <> ?";
@@ -227,8 +229,7 @@ export default class ProcessDefinitionVersionService {
     const [activeRows] = await connection.query(
       `SELECT id
        FROM process_definition_versions
-       WHERE process_id = ?
-         AND variation_key = ?
+       WHERE linea_id = ?
          AND status = 'active'${excludeSql}`,
       params
     );
@@ -241,8 +242,7 @@ export default class ProcessDefinitionVersionService {
       `UPDATE process_definition_versions
        SET status = 'retired',
            effective_to = COALESCE(effective_to, CURDATE())
-       WHERE process_id = ?
-         AND variation_key = ?
+       WHERE linea_id = ?
          AND status = 'active'${excludeSql}`,
       params
     );
@@ -254,7 +254,7 @@ export default class ProcessDefinitionVersionService {
   async getProcessDefinitionVersion(definitionId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      `SELECT id, process_id, variation_key, status
+      `SELECT id, process_id, linea_id, status
        FROM process_definition_versions
        WHERE id = ?
        LIMIT 1`,
@@ -523,12 +523,58 @@ export default class ProcessDefinitionVersionService {
   }
 
 
-  // Próxima versión semver de una configuración dentro de su (proceso, variación).
-  async getNextProcessDefinitionVersion(processId, variationKey, level = "minor", connection = this.pool) {
+  // LA LINEA DE UNA SERIE — puente mientras `P9` no retire `process_definition_series`.
+  //
+  // Traduce la serie (un eje) a la linea (los dos). Hoy la pantalla sigue pidiendo una serie, asi que
+  // al crear una configuracion se busca —o se crea— la linea equivalente del proceso. Cuando `P9`
+  // haga que el asistente pida directamente cargo + alcance, este metodo se va con la serie.
+  async resolveLineaDeSerie({ processId, series, nombre, connection = this.pool }) {
+    this.ensurePool();
+    const normalizedProcessId = normalizeNumericId(processId);
+    if (!normalizedProcessId) {
+      throw new Error("La linea necesita un proceso.");
+    }
+    const sourceType = String(series?.source_type || "default").trim();
+    const cargoId = sourceType === "cargo" ? normalizeNumericId(series?.cargo_id) : null;
+    const unitTypeId = sourceType === "unit_type" ? normalizeNumericId(series?.unit_type_id) : null;
+    const unitScopeType = unitTypeId ? "unit_type" : "all_units";
+
+    const [existentes] = await connection.query(
+      `SELECT id FROM lineas
+        WHERE process_id = ?
+          AND cargo_id IS NOT DISTINCT FROM ?
+          AND unit_scope_type = ?
+          AND unit_type_id IS NOT DISTINCT FROM ?
+          AND unit_id IS NULL
+        LIMIT 1`,
+      [normalizedProcessId, cargoId, unitScopeType, unitTypeId]
+    );
+    if (existentes?.[0]?.id) {
+      return Number(existentes[0].id);
+    }
+
+    const nombreLinea = String(nombre || "").trim() || `Linea ${sourceType}`;
+    const [creada] = await connection.query(
+      `INSERT INTO lineas (process_id, nombre, cargo_id, unit_scope_type, unit_type_id, effective_from)
+       VALUES (?, ?, ?, ?, ?, CURDATE())`,
+      [normalizedProcessId, nombreLinea.slice(0, 180), cargoId, unitScopeType, unitTypeId]
+    );
+    return Number(creada.insertId);
+  }
+
+
+  // Proxima version semver de una configuracion dentro de su LINEA.
+  //
+  // ⚠️ Esto se contaba por `(process_id, variation_key)`, y ahi habia un defecto real que la linea
+  // cierra: `series_id` se elegia EN CADA VERSION, asi que se podia escribir «v1 por Coordinador,
+  // v2 por Director» —dos versiones que obligan a gente distinta sin que nada dijera que hubo un
+  // traspaso— y encima esa «v2» era la PRIMERA version de la linea del Director, numerada 2. El
+  // contador y la realidad dejaban de coincidir y nada lo impedia.
+  async getNextProcessDefinitionVersion(lineaId, level = "minor", connection = this.pool) {
     const [rows] = await connection.query(
       `SELECT definition_version FROM process_definition_versions
-        WHERE process_id = ? AND variation_key = ?`,
-      [Number(processId), String(variationKey || "")]
+        WHERE linea_id = ?`,
+      [normalizeNumericId(lineaId)]
     );
     let maxKey = -1;
     let maxVersion = "";

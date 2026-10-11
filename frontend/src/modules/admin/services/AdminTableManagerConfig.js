@@ -13,7 +13,7 @@ export const PROCESS_INLINE_HIDDEN_FIELDS = new Set([
 ]);
 
 export const PROCESS_DEFINITION_HIDDEN_FIELDS = new Set([
-  "variation_key"
+  "linea_id"
 ]);
 
 export const personCargoTableFields = [

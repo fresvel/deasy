@@ -86,7 +86,8 @@ const getProcessTargetRuleRows = async (pool) => {
        p.name AS process_name,
        p.slug AS process_slug,
        pdv.id AS process_definition_id,
-       pdv.variation_key,
+       pdv.linea_id,
+       lin.nombre AS linea_nombre,
        pdv.definition_version,
        ptr.id AS rule_id,
        ptr.priority,
@@ -106,6 +107,7 @@ const getProcessTargetRuleRows = async (pool) => {
       AND pdv.status = 'active'
       AND pdv.effective_from <= CURDATE()
       AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
+     LEFT JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN process_target_rules ptr
        ON ptr.process_definition_id = pdv.id
       AND ptr.is_active = 1
@@ -130,7 +132,8 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        operational.process_name,
        operational.process_slug,
        operational.process_definition_id,
-       operational.variation_key,
+       operational.linea_id,
+       operational.linea_nombre,
        operational.definition_version,
        operational.source_position_id,
        operational.source_cargo_id,
@@ -142,7 +145,8 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          p.name AS process_name,
          p.slug AS process_slug,
          pdv.id AS process_definition_id,
-         pdv.variation_key,
+         pdv.linea_id,
+         lin.nombre AS linea_nombre,
          pdv.definition_version,
          fill_assignee_position.id AS source_position_id,
          -- fill_position se fue con position_id, que murio en la fase 4 del frente 24: su unico
@@ -164,6 +168,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN task_items ti ON ti.id = dv.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
        INNER JOIN processes p ON p.id = pdv.process_id
        LEFT JOIN (
          SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
@@ -202,7 +207,8 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          p.name AS process_name,
          p.slug AS process_slug,
          pdv.id AS process_definition_id,
-         pdv.variation_key,
+         pdv.linea_id,
+         lin.nombre AS linea_nombre,
          pdv.definition_version,
          signature_assignee_position.id AS source_position_id,
          -- signature_position se fue con position_id, que murio en la fase 4 del frente 24: su unico
@@ -225,6 +231,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN task_items ti ON ti.id = dv.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
        INNER JOIN processes p ON p.id = pdv.process_id
        LEFT JOIN (
          SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
@@ -494,7 +501,8 @@ const attachRuleProcesses = ({ positions, processRuleRows, indexes, getUnitSubtr
         slug: row.process_slug,
         unit_id: position.unit_id,
         process_definition_id: row.process_definition_id,
-        variation_key: row.variation_key,
+        linea_id: row.linea_id,
+        linea_nombre: row.linea_nombre,
         definition_version: row.definition_version,
         is_routed: !!row.is_routed,
         access_source: "process"
@@ -528,7 +536,8 @@ const attachOperationalProcesses = ({ positions, operationalProcessRows, indexes
         slug: row.process_slug,
         unit_id: Number(row.source_unit_id || position.unit_id),
         process_definition_id: row.process_definition_id,
-        variation_key: row.variation_key,
+        linea_id: row.linea_id,
+        linea_nombre: row.linea_nombre,
         definition_version: row.definition_version,
         access_source: "flow"
       };

@@ -3,7 +3,7 @@
     <div v-if="!embedded && context">
       <strong>{{ context.name || `Configuracion #${context.id}` }}</strong>
       <span class="ml-2 text-success/80">
-        Variación {{ context.variation_key || "—" }} | Version {{ context.definition_version || "—" }} | Estado {{ context.status || "—" }}
+        Variación {{ context.linea_nombre || "—" }} | Version {{ context.definition_version || "—" }} | Estado {{ context.status || "—" }}
       </span>
     </div>
 

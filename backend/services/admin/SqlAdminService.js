@@ -162,7 +162,7 @@ export default class SqlAdminService {
   constructor(pool = getPostgresPool()) {
     this.pool = pool;
     this.taskAssignment = new TaskAssignmentService(this.pool);
-    this.templateLifecycle = new TemplateLifecycleService(this.pool, { getByKeys: (...a) => this.getByKeys(...a), cloneProcessDefinitionChildren: (...a) => this.cloneProcessDefinitionChildren(...a), getNextProcessDefinitionVersion: (...a) => this.getNextProcessDefinitionVersion(...a), retireActiveDefinitionsInSeries: (...a) => this.retireActiveDefinitionsInSeries(...a), createTemplateArtifactVersion: (...a) => this.createTemplateArtifactVersion(...a), getNextStorageVersionForTemplateCode: (...a) => this.getNextStorageVersionForTemplateCode(...a), retirePriorPublishedSiblings: (...a) => this.retirePriorPublishedSiblings(...a), getCargoCodeMap: (...a) => this.getCargoCodeMap(...a), getUnitTypeNameMap: (...a) => this.getUnitTypeNameMap(...a), getProcessTargetScope: (...a) => this.getProcessTargetScope(...a), getResolvableCargoIdsByUnit: (...a) => this.getResolvableCargoIdsByUnit(...a), listResolvableCargos: (...a) => this.listResolvableCargos(...a), getWorkflowReferenceIdSets: (...a) => this.getWorkflowReferenceIdSets(...a), ensureDefinitionHasActiveRulesForActivation: (...a) => this.ensureDefinitionHasActiveRulesForActivation(...a), ensureDefinitionHasActivePeriodTypesForActivation: (...a) => this.ensureDefinitionHasActivePeriodTypesForActivation(...a), ensureDefinitionHasArtifactsForActivation: (...a) => this.ensureDefinitionHasArtifactsForActivation(...a) });
+    this.templateLifecycle = new TemplateLifecycleService(this.pool, { getByKeys: (...a) => this.getByKeys(...a), cloneProcessDefinitionChildren: (...a) => this.cloneProcessDefinitionChildren(...a), getNextProcessDefinitionVersion: (...a) => this.getNextProcessDefinitionVersion(...a), retireActiveDefinitionsInLinea: (...a) => this.retireActiveDefinitionsInLinea(...a), createTemplateArtifactVersion: (...a) => this.createTemplateArtifactVersion(...a), getNextStorageVersionForTemplateCode: (...a) => this.getNextStorageVersionForTemplateCode(...a), retirePriorPublishedSiblings: (...a) => this.retirePriorPublishedSiblings(...a), getCargoCodeMap: (...a) => this.getCargoCodeMap(...a), getUnitTypeNameMap: (...a) => this.getUnitTypeNameMap(...a), getProcessTargetScope: (...a) => this.getProcessTargetScope(...a), getResolvableCargoIdsByUnit: (...a) => this.getResolvableCargoIdsByUnit(...a), listResolvableCargos: (...a) => this.listResolvableCargos(...a), getWorkflowReferenceIdSets: (...a) => this.getWorkflowReferenceIdSets(...a), ensureDefinitionHasActiveRulesForActivation: (...a) => this.ensureDefinitionHasActiveRulesForActivation(...a), ensureDefinitionHasActivePeriodTypesForActivation: (...a) => this.ensureDefinitionHasActivePeriodTypesForActivation(...a), ensureDefinitionHasArtifactsForActivation: (...a) => this.ensureDefinitionHasArtifactsForActivation(...a) });
     this.processGraph = new ProcessGraphService(this.pool, { getByKeys: (...a) => this.getByKeys(...a) });
     this.processDefinitionVersion = new ProcessDefinitionVersionService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
     this.templateArtifact = new TemplateArtifactService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
@@ -201,7 +201,7 @@ export default class SqlAdminService {
   ensureDefaultProcessSingleVariation(...args) { return this.processDefinitionVersion.ensureDefaultProcessSingleVariation(...args); }
   resolveProcessDefinitionVersionName(...args) { return this.processDefinitionVersion.resolveProcessDefinitionVersionName(...args); }
   refreshProcessDefinitionVersionNames(...args) { return this.processDefinitionVersion.refreshProcessDefinitionVersionNames(...args); }
-  retireActiveDefinitionsInSeries(...args) { return this.processDefinitionVersion.retireActiveDefinitionsInSeries(...args); }
+  retireActiveDefinitionsInLinea(...args) { return this.processDefinitionVersion.retireActiveDefinitionsInLinea(...args); }
   getProcessDefinitionVersion(...args) { return this.processDefinitionVersion.getProcessDefinitionVersion(...args); }
   ensureDraftDefinitionContext(...args) { return this.processDefinitionVersion.ensureDraftDefinitionContext(...args); }
 
@@ -238,6 +238,7 @@ export default class SqlAdminService {
   getProcessDefinitionSeriesScope(...args) { return this.processDefinitionVersion.getProcessDefinitionSeriesScope(...args); }
   applyTargetRuleSeriesConstraints(...args) { return this.processDefinitionVersion.applyTargetRuleSeriesConstraints(...args); }
   getNextProcessDefinitionVersion(...args) { return this.processDefinitionVersion.getNextProcessDefinitionVersion(...args); }
+  resolveLineaDeSerie(...args) { return this.processDefinitionVersion.resolveLineaDeSerie(...args); }
 
   // Conteos agregados (solo lectura) para los resúmenes de Operación. Cada dominio se calcula de forma
   // independiente; si una consulta falla devuelve null y el frontend omite esa tarjeta.

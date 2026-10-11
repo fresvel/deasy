@@ -39,7 +39,8 @@ export const listTasksForPerson = async (pool, personId, filtros = {}) => {
             -- columna sin escritores, se quedaba en 'pendiente' para siempre.
             te.id AS assignment_id,
             pdv.id AS process_definition_id,
-            pdv.variation_key,
+            pdv.linea_id,
+            lin.nombre AS linea_nombre,
             pdv.definition_version,
             pdv.name AS process_definition_name,
             tis.task_item_count,
@@ -53,6 +54,7 @@ export const listTasksForPerson = async (pool, personId, filtros = {}) => {
      INNER JOIN task_items ti_te ON ti_te.id = te.task_item_id
      INNER JOIN tasks t ON t.id = ti_te.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
      LEFT JOIN (
        SELECT
          ti.task_id,

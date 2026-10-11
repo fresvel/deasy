@@ -146,7 +146,7 @@ export function useAdminPresentationAdapters({
         return "—";
       }
       if (fieldName === "__definition_series") {
-        return definitionMeta.variation_key || "—";
+        return definitionMeta.linea_nombre || "—";
       }
       if (fieldName === "__definition_version") {
         return definitionMeta.definition_version || "—";
@@ -161,7 +161,7 @@ export function useAdminPresentationAdapters({
       if (seriesLabel !== null && seriesLabel !== undefined && seriesLabel !== "") {
         return seriesLabel;
       }
-      return row?.variation_key || value || "—";
+      return row?.linea_nombre || value || "—";
     }
     if (["effective_from", "effective_to"].includes(fieldName)) {
       return formatDateOnly(value);

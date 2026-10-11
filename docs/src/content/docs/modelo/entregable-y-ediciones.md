@@ -58,7 +58,7 @@ de activación **rechaza**, en vez de una plantilla publicada que nunca pasó po
 Hasta el **2026-10-11** esta regla la imponía **sólo el código** —`_retirePriorPublishedSiblings`,
 llamado desde los dos caminos de publicación—, así que un script, un `INSERT` a mano o un camino
 nuevo se la saltaban sin que nada avisara. El lado del **proceso** sí tenía red
-(`uq_process_definition_one_active_series`); el de la plantilla no. Era una asimetría que nadie había
+(`uq_process_definition_one_active_linea`); el de la plantilla no. Era una asimetría que nadie había
 visto hasta que se buscó.
 
 **El truco está en el `NULL`.** La columna `publicada_flag` vale `1` sólo cuando la edición está
@@ -80,7 +80,7 @@ Eso lo gobierna `vinculos`, y está abierto en el frente 25. Son dos garantías 
 :::caution[Una asimetría que conviene conocer]
 
 La regla «una sola configuración activa por línea» **la impone la base**: `active_series_flag` es una
-columna generada y `uq_process_definition_one_active_series` la vuelve imposible de violar. La regla
+columna generada y `uq_process_definition_one_active_linea` la vuelve imposible de violar. La regla
 «una sola edición publicada» **solo la sostiene el código** — `retirePriorPublishedSiblings()`, en
 `backend/services/admin/templates/templateArtifact.js`, que retira las hermanas publicadas dentro de
 la misma transacción en la que publica la nueva.

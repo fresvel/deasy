@@ -4,7 +4,7 @@
       <div class="flex flex-wrap items-center gap-2">
         <strong class="text-sm text-success">{{ context.name || `Configuracion #${context.id}` }}</strong>
         <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
-          {{ context.variation_key || "—" }}
+          {{ context.linea_nombre || "—" }}
         </span>
         <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
           {{ context.definition_version || "—" }}

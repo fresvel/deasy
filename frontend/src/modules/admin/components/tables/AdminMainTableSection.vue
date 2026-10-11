@@ -147,7 +147,7 @@
                 </AdminSelectField>
               </div>
               <div class="md:col-span-12 lg:col-span-3">
-                <AdminSelectField :model-value="processDefinitionInlineFilters.variation_key" select-class="deasy-control" @update:model-value="updateProcessDefinitionFilter('variation_key', $event)" @change="$emit('fetch-rows')">
+                <AdminSelectField :model-value="processDefinitionInlineFilters.linea_id" select-class="deasy-control" @update:model-value="updateProcessDefinitionFilter('linea_id', $event)" @change="$emit('fetch-rows')">
                   <option value="">Variación</option>
                   <option v-for="row in processDefinitionSeriesOptions" :key="row.id" :value="String(row.code || '')">
                     {{ formatFkOptionLabel("process_definition_series", row) }}

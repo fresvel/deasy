@@ -15,10 +15,9 @@ cambian las reglas nace una versión nueva y la anterior se retira. La retirada 
 como registro de cómo se hacían las cosas entonces.
 
 Cada configuración tiene tres estados, cerrados por un `CHECK`: `draft` mientras se prepara, `active`
-cuando rige, y `retired` cuando la sustituyó otra. **Solo puede haber una activa por proceso y
-variación**, y de nuevo es la base quien lo garantiza: la columna generada `active_series_flag` más el
-índice único `uq_process_definition_one_active_series` sobre
-`(process_id, variation_key, active_series_flag)` lo hacen imposible.
+cuando rige, y `retired` cuando la sustituyó otra. **Solo puede haber una activa por línea**, y de
+nuevo es la base quien lo garantiza: la columna generada `active_series_flag` más el índice único
+`uq_process_definition_one_active_linea` sobre `(linea_id, active_series_flag)` lo hacen imposible.
 
 :::caution[Dónde se impone cada mitad de «no se edita, se versiona»]
 
@@ -40,18 +39,32 @@ en el esquema, así que una escritura directa a la base sí podría saltárselo.
 Una configuración no se identifica solo por su proceso. Lleva tres coordenadas más, y cada una
 responde a una pregunta distinta:
 
+- **La línea** (`lineas`) — **de quién es la obligación y dónde vive**, los dos ejes juntos. Es la
+  identidad de la configuración.
 - **La serie** (`process_definition_series`) — por qué criterio se reparte este proceso. Su
-  `source_type` está cerrado a `unit_type`, `cargo` o `default`, y su `code` es único. La serie es
-  también lo que **da nombre** a la configuración: `buildProcessDefinitionVersionName` produce
-  *«\<Proceso\> por \<Serie\>»*, salvo en `default`, donde el nombre es el del proceso a secas —porque
-  ahí no hay eje de variación.
-- **La variación** (`variation_key`) — una etiqueta libre que permite tener configuraciones distintas
-  del mismo proceso conviviendo. Por defecto vale `general`.
+  `source_type` está cerrado a `unit_type`, `cargo` o `default`, y su `code` es único. Hoy es también
+  lo que **da nombre** a la configuración: `buildProcessDefinitionVersionName` produce
+  *«\<Proceso\> por \<Serie\>»*, salvo en `default`, donde el nombre es el del proceso a secas. **La
+  línea la va a sustituir**; sigue aquí porque es lo que la pantalla pide todavía.
 - **La vigencia** (`effective_from`, obligatoria, y `effective_to`, opcional) — desde cuándo rige y
   hasta cuándo.
 
 Junto a ellas va `definition_version`, la etiqueta de versión de las reglas (`1.0.0` en la que siembra
-el arranque). El trío `(proceso, variación, versión)` es único.
+el arranque). **La pareja `(línea, versión)` es única.**
+
+:::note[Aquí había una tercera coordenada, y era una copia]
+
+Hasta el **2026-10-11** había una «variación»: una etiqueta de texto en la configuración, con valor
+`general` por defecto, y la identidad era el trío *(proceso, variación, versión)*. Esa etiqueta era
+**una copia** del `code` de la serie, arrastrada por un gancho del CRUD que **no era transaccional** —
+y los dos índices únicos de la tabla estaban **sobre la copia**, no sobre el dato. Peor: el arranque
+usaba dos constantes para una sola cosa, así que en una base recién sembrada **todas** las
+configuraciones tenían la etiqueta distinta de su origen.
+
+Hoy la identidad es la **línea**, que es una columna y un `id`. El detalle medido está en el frente
+25 del plan.
+
+:::
 
 :::note[La LÍNEA está sustituyendo a la serie, y ya existe en la base]
 
@@ -149,8 +162,7 @@ erDiagram
     int id PK "LA CONFIGURACION"
     int process_id FK
     int series_id FK
-    int linea_id FK "la linea, que va a sustituir a la pareja de arriba"
-    varchar variation_key "general, u otra etiqueta"
+    int linea_id FK "LA IDENTIDAD: la linea a la que pertenece"
     varchar definition_version "1.0.0"
     varchar name
     varchar description

@@ -919,8 +919,7 @@ Table "process_definition_versions" {
   "id" int4 [pk, not null, increment]
   "process_id" int4 [not null]
   "series_id" int4 [not null]
-  "linea_id" int4
-  "variation_key" varchar(120) [not null, default: 'general']
+  "linea_id" int4 [not null]
   "definition_version" varchar(20) [not null]
   "name" varchar(180) [not null]
   "description" varchar(255)
@@ -931,10 +930,10 @@ Table "process_definition_versions" {
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (process_id, variation_key, active_series_flag) [type: btree, unique, name: "uq_process_definition_one_active_series"]
-    (process_id, variation_key, definition_version) [type: btree, unique, name: "uq_process_definition_versions_series"]
+    (linea_id, active_series_flag) [type: btree, unique, name: "uq_process_definition_one_active_linea"]
+    (linea_id, definition_version) [type: btree, unique, name: "uq_process_definition_versions_linea"]
     linea_id [type: btree, name: "idx_process_definition_versions_linea"]
-    (process_id, variation_key, status, effective_from) [type: btree, name: "idx_process_definition_versions_status"]
+    (linea_id, status, effective_from) [type: btree, name: "idx_process_definition_versions_status"]
   }
 }
 
@@ -1517,7 +1516,7 @@ Ref "fk_process_definition_period_types_definition":"process_definition_versions
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
 Ref "fk_process_definition_series_cargo":"cargos"."id" ?<? "process_definition_series"."cargo_id"
 Ref "fk_process_definition_series_unit_type":"unit_types"."id" ?<? "process_definition_series"."unit_type_id"
-Ref "fk_process_definition_versions_linea":"lineas"."id" ?<? "process_definition_versions"."linea_id"
+Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id"
 Ref "fk_process_definition_versions_process":"processes"."id" <? "process_definition_versions"."process_id" [delete: cascade]
 Ref "fk_process_definition_versions_series":"process_definition_series"."id" <? "process_definition_versions"."series_id"
 Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user_id"

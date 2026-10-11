@@ -376,7 +376,7 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_id", label: "Proceso", type: "number", required: true },
       { name: "series_id", label: "Serie", type: "number", required: true },
-      { name: "variation_key", label: "Codigo de serie", type: "text", readOnly: true, defaultValue: "" },
+      { name: "linea_id", label: "Linea", type: "number", readOnly: true, defaultValue: "" },
       { name: "definition_version", label: "Version", type: "text", required: true },
       { name: "name", label: "Nombre generado", type: "text", readOnly: true },
       { name: "description", label: "Descripcion", type: "textarea" },
@@ -391,7 +391,7 @@ export const SQL_TABLES = [
       { name: "effective_to", label: "Vigencia hasta", type: "date" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["variation_key", "definition_version", "name", "status"]
+    searchFields: ["definition_version", "name", "status"]
   },
   {
     table: "process_definition_series",

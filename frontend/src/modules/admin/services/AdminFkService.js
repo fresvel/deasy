@@ -22,7 +22,7 @@ export class AdminFkService {
     });
     if (tableName === "process_definition_versions") {
       payload.process_id = "";
-      payload.variation_key = "";
+      payload.linea_id = "";
       payload.status = "active";
     }
     if (tableName === "ediciones") {

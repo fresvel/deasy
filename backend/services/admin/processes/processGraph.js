@@ -42,14 +42,15 @@ export default class ProcessGraphService {
     // Configuraciones (process_definition_versions) por proceso, para el grafo multinivel expandible.
     const [configs] = await this.pool.query(
       `SELECT pdv.id AS definition_id, pdv.process_id, pdv.name AS definition_name,
-              pdv.variation_key, pdv.definition_version, pdv.status,
+              pdv.linea_id, lin.nombre AS linea_nombre, pdv.definition_version, pdv.status,
               pds.source_type AS series_source_type, pds.code AS series_code,
               sc.name AS series_cargo_name, sut.name AS series_unit_type_name
          FROM process_definition_versions pdv
          INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
+         LEFT JOIN lineas lin ON lin.id = pdv.linea_id
          LEFT JOIN cargos sc ON sc.id = pds.cargo_id
          LEFT JOIN unit_types sut ON sut.id = pds.unit_type_id
-        ORDER BY pdv.process_id, FIELD(pdv.status, 'active', 'draft', 'retired'), pdv.variation_key ASC`
+        ORDER BY pdv.process_id, FIELD(pdv.status, 'active', 'draft', 'retired'), lin.nombre ASC`
     );
     // Entregables (plantillas vinculadas) por configuración, para el 3er nivel del grafo. Una misma plantilla
     // puede estar en varias configuraciones: cada fila pdt es un nodo (duplicado por config) y el template_code
@@ -176,7 +177,8 @@ export default class ProcessGraphService {
     const [configurations] = await this.pool.query(
       `SELECT pdv.id AS definition_id,
               pdv.name AS definition_name,
-              pdv.variation_key,
+              pdv.linea_id,
+              lin.nombre AS linea_nombre,
               pdv.definition_version,
               pdv.status,
               pdv.effective_from,
@@ -191,11 +193,12 @@ export default class ProcessGraphService {
               (SELECT COUNT(*) FROM process_runs pr WHERE pr.process_definition_id = pdv.id) AS runs_count
          FROM process_definition_versions pdv
          INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
+         LEFT JOIN lineas lin ON lin.id = pdv.linea_id
          LEFT JOIN cargos sc ON sc.id = pds.cargo_id
          LEFT JOIN unit_types sut ON sut.id = pds.unit_type_id
         WHERE pdv.process_id = ?
         ORDER BY FIELD(pdv.status, 'active', 'draft', 'retired'),
-                 pdv.variation_key ASC, pdv.definition_version DESC`,
+                 lin.nombre ASC, pdv.definition_version DESC`,
       [id]
     );
 
@@ -211,11 +214,12 @@ export default class ProcessGraphService {
 
     const [runs] = await this.pool.query(
       `SELECT pr.id, pr.process_definition_id, pr.run_mode, pr.status, pr.reason, pr.source_run_id, pr.created_at,
-              pdv.name AS definition_name, pdv.variation_key, pdv.definition_version,
+              pdv.name AS definition_name, pdv.linea_id, lin.nombre AS linea_nombre, pdv.definition_version,
               t.id AS term_id, t.name AS term_name,
               tt.code AS term_type_code, tt.name AS term_type_name
          FROM process_runs pr
          INNER JOIN process_definition_versions pdv ON pdv.id = pr.process_definition_id
+         LEFT JOIN lineas lin ON lin.id = pdv.linea_id
          LEFT JOIN terms t ON t.id = pr.term_id
          LEFT JOIN term_types tt ON tt.id = t.term_type_id
         WHERE pdv.process_id = ?
