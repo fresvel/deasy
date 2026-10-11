@@ -1,6 +1,6 @@
 # Frente 25 · Qué pareja (configuración, plantilla) es legal — y qué es una plantilla sin proceso
 
-> **Estado**: 🟡 **6 de 26 vivas** — 28 filas en el control, dos fuera (`P2` descartada ·
+> **Estado**: 🟡 **8 de 26 vivas** — 28 filas en el control, dos fuera (`P2` descartada ·
 > `P11` al [frente 26](./ciclos-en-los-grafos-2026-10.md)); contado con script, no a ojo · abierto el
 > **2026-10-09**
 > **Abierto por una observación del dueño** que corrige al frente 23.
@@ -109,7 +109,7 @@ pregunta se conteste**, y cuál es se ve de un tirón:
 
 | Cambio | Espera a |
 |---|---|
-| **`P2-bis`** la línea tiene fila | `D1` (contar lo que depende de `variation_key`) — y **ojo**, no a `A`: dar fila a la línea no implica mover el vínculo a ella |
+| ~~**`P2-bis`** la línea tiene fila~~ | ✅ **`D1` contestada** el 2026-10-11 (§7). Se ejecuta con `P8`, que es la misma tabla — y **ojo**, sigue sin depender de `A`: dar fila a la línea no implica mover el vínculo a ella |
 | ~~**`P3`** ¿sobreviven `template_scope` y `owner_person_id`?~~ | ✅ **contestada**: la prueba falsable encontró el caso, sobreviven las dos |
 | ~~**`P13`** prohibir la casilla ③~~ | ✅ **hecha** el 2026-10-11, con dos disparadores |
 | **`P14`** abrir la casilla ④ | **`P13`** |
@@ -141,14 +141,14 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **B2** | **El espacio de diseño de las dos direcciones**: qué significaría imponer «plantilla nueva → configuración nueva», la contraria, las dos, o ninguna; y qué se rompe en cada caso | ⬜ | | |
 | **C1** | **Qué es hoy `ad_hoc`, medido**: cuántos caminos lo crean, de qué configuración cuelga, qué línea le toca, y qué hace el disparador con dos plantillas `ad_hoc` de personas distintas | ✅ | **cero caminos lo crean**; las cuatro casillas de la matriz probadas en transacciones revertidas: ① `task_items` 4-5, ② `task_items` 1 y el **100 %** de lo ad-hoc, ③ **alcanzable y nadie la valida** (provocada), ④ inalcanzable. §0-quater | 2026-10-11 |
 | **C2** | **El espacio de diseño de `ad_hoc`**: si sigue existiendo, con qué pertenencia, y qué pasa con el «Proceso por defecto» en cada opción | ✅ | la matriz 2×2 con las cuatro casillas analizadas y la evaluación de mundo real de la ②; el «Proceso por defecto» **es** la ② (`getActiveGeneralDefinition` toma el vínculo de una configuración `official`). Decisiones 15-18 | 2026-10-11 |
-| **D1** | **El censo de lo que depende de `variation_key`**: cuántas consultas filtran o agrupan por ella, y qué `JOIN` necesitarían si se retira | ⬜ | | |
-| **D2** | **El espacio de diseño**: quitar la copia (índices sobre `series_id`) **frente a** dar fila a la línea (tabla `lineas`). El dueño ya se inclinó por la segunda; falta medir el coste | 🟡 | el dueño eligió **P2-bis** el 2026-10-11, condicionado a ver el modelo | |
+| **D1** | **El censo de lo que depende de `variation_key`**: cuántas consultas filtran o agrupan por ella, y qué `JOIN` necesitarían si se retira | ✅ | **§7**, medido con script: **130 ocurrencias en 36 ficheros** de código (el censo viejo decía 156/43 y contaba la documentación). **28 sentencias SQL**: 8 filtran · 4 escriben · 2 ordenan · 14 sólo la devuelven. **Coste neto: 10 consultas necesitan un `JOIN` nuevo; las otras 18 se simplifican o cambian uno que ya pagan.** Y el hallazgo: **dos índices ÚNICOS están sobre la copia**, que arrastra un gancho **no transaccional** — y la copia **ya está derivada en el 100 % de las filas** | 2026-10-11 |
+| **D2** | **El espacio de diseño**: quitar la copia (índices sobre `series_id`) **frente a** dar fila a la línea (tabla `lineas`). El dueño ya se inclinó por la segunda; falta medir el coste | ✅ | el dueño eligió **`P2-bis`** el 2026-10-11 tras ver el modelo (§0-ter), y `D1` trajo **el coste que faltaba** (§7): 10 `JOIN` nuevos como techo, contra 18 consultas que se simplifican, 3 índices que pierden una columna y una cascada no transaccional que desaparece | 2026-10-11 |
 | **E1** | **Medir el solapamiento serie ↔ alcance**: qué puede expresar cada una, y cuántas reglas reales se podrían escribir desde los dos lados | ⬜ | | |
 | **E2** | **El espacio de diseño**: si la variación es una **vista** de sus alcances y no una tabla | ⬜ | | |
 | **P1** | **Una sola edición publicada por entregable, garantizado por la BASE** | ✅ | `publicada_flag` + `uq_ediciones_una_publicada`; provocado: rechaza la segunda publicada y deja pasar un borrador; 320/320 char sin mover un golden; 4 puertas de documentación | 2026-10-11 |
 | **P7** | **La versión de una edición tiene forma de semver**, impuesto por la base | ✅ | `CHECK (storage_version ~ '^[0-9]+\.[0-9]+\.[0-9]+$')`; provocado con `'v2'` y con `'1.0'`, rechaza las dos | 2026-10-11 |
 | **P2** | ⛔ **DESCARTADA** · quitar `variation_key` dejando los índices sobre `series_id`, sin tabla nueva. La sustituye `P2-bis` | ⛔ | el dueño eligió dar fila a la línea: *«quedemos con P2bis»* | 2026-10-11 |
-| **P2-bis** | **La línea tiene fila**: tabla `lineas` con `(process_id, series_id)` y único sobre la pareja; `ediciones_de_proceso` apunta a ella con **una** columna, y los dos únicos bajan de tres columnas a dos. `variation_key` desaparece | ⬜ | | |
+| **P2-bis** | **La línea tiene fila**: tabla `lineas` con `(process_id, series_id)` y único sobre la pareja; `ediciones_de_proceso` apunta a ella con **una** columna, y los dos únicos bajan de tres columnas a dos. `variation_key` desaparece | ⬜ | ✅ **desbloqueada**: `D1` cerrada el 2026-10-11 con el coste medido (§7). **Se ejecuta junto a `P8`**, que es la misma tabla con sus dos ejes | |
 | **P3** | **Decidir si `template_scope` y `owner_person_id` sobreviven** en `formatos`, según la prueba falsable de `C` | ✅ | **sobreviven las dos**: la prueba **encontró el caso** —la ② es `user_added` + `official`, o sea los dos ejes toman valores independientes— así que no son una copia de `origin_kind`. Cambian de nombre (decisión 19), no de existencia | 2026-10-11 |
 | **P4** | **Imponer en el modelo la dirección que falta** entre los dos ejes de versión (decisiones 2 y 3 del dueño) | ⬜ | | |
 | **P5** | **Renombrar `process_target_rules`** a algo que **no sea `alcances`** —`destinatarios`, `cobertura`, `a_quien_alcanza`—, porque `alcance` y `ambito` están reservados por el frente 18 | ⬜ | | |
@@ -639,3 +639,109 @@ Es cierta al nivel de la **línea** y falsa si se lee como «una sola versión d
 propio plan registró que el índice único se descartó por el clon; lo que no registró es que ese
 cambio de mecanismo **cambiaba el alcance de la regla**. Se anota allí cuando `D` esté decidida — no
 antes, para no dejar dos versiones de la misma afirmación en dos sitios.
+
+
+---
+
+## 7 · `D1` · El censo de `variation_key`, medido (2026-10-11)
+
+**El entregable de `D1`**: cuántas consultas dependen de ella, qué hace cada una, y qué `JOIN`
+necesitaría si se retira. Medido con script sobre el repositorio, no a ojo.
+
+⚠️ **Y la primera corrección es del censo anterior.** El 2026-10-09 se dijo «**156 ocurrencias en 43
+ficheros**». Esa cifra **contaba la documentación y los artefactos generados** (`.dbml`, `dist/`, los
+planes). En **código** son **130 en 36 ficheros**, y el reparto importa más que el total:
+
+| Dónde | Ocurrencias | Ficheros |
+|---|---|---|
+| `backend/database/postgres_schema.sql` | 22 (16 de ellas en prosa) | 1 |
+| Backend (servicios, dominios, config, scripts) | **63** | 12 |
+| Frontend | **34** | 17 |
+| Pruebas y arneses | 11 | 6 |
+
+### Las 28 sentencias SQL, y qué le pide cada una
+
+| Qué hace con ella | Sentencias | ¿Ya traen `series_id` o el `JOIN` a la serie? | Qué pasa al retirarla |
+|---|:--:|:--:|---|
+| **La FILTRA o AGRUPA** | **8** | **0 de 8** | `WHERE process_id = ? AND variation_key = ?` → **`WHERE linea_id = ?`**. **Sin `JOIN` nuevo**, y pierden una columna y un parámetro |
+| **La ESCRIBE** | **4** | **4 de 4** | se cae la columna de la lista: `(process_id, series_id, variation_key, …)` → `(linea_id, …)` |
+| **ORDENA por ella** | **2** | **2 de 2** | `ORDER BY l.nombre` — el `JOIN` se **cambia**, no se añade: ya pagan el de la serie |
+| **SÓLO LA DEVUELVE** | **14** | 4 de 14 | las 4 cambian de `JOIN`; **las otras 10 necesitan uno nuevo** a `lineas` si la pantalla tiene que seguir enseñando la variación |
+
+**El coste neto, que es la respuesta a `D1`: 10 consultas necesitan un `JOIN` que hoy no tienen. Las
+otras 18 se simplifican o cambian un `JOIN` que ya pagan.**
+
+⚠️ **Y 10 es el TECHO, no el suelo.** Esas 10 la devuelven **como rótulo**, y el frontend ya no se lo
+cree: en **7 sitios** escribe ``row.variation_key || `Variación ${row.series_id}` `` —o sea *«usa la etiqueta y, si
+no hay, el id de la línea»*—. Si lo que la pantalla necesita es el **nombre** de la línea, ese `JOIN`
+compra algo que hoy no existe; si le basta un identificador, `linea_id` ya viaja en la fila y **no
+hace falta ningún `JOIN`**. Eso lo decide `P8`, no `D1`.
+
+### Los tres índices están sobre la COPIA, y dos son ÚNICOS
+
+| Índice | Hoy | Con la línea |
+|---|---|---|
+| `uq_process_definition_versions_series` | ÚNICO `(process_id, variation_key, definition_version)` | ÚNICO `(linea_id, definition_version)` — **3 columnas a 2** |
+| `uq_process_definition_one_active_series` | ÚNICO `(process_id, variation_key, active_series_flag)` | ÚNICO `(linea_id, active_series_flag)` — **3 a 2** |
+| `idx_process_definition_versions_status` | `(process_id, variation_key, status, effective_from)` | `(linea_id, status, effective_from)` — **4 a 3** |
+
+⚠️ **Esto no es cosmética, y es EL hallazgo de `D1`: la unicidad de «una versión por línea» y de «una
+sola activa por línea» está impuesta SOBRE UNA COPIA**, no sobre el dato. Y la copia la arrastra un
+gancho que **lo dice de sí mismo en su propio comentario**:
+
+```
+// Si la identidad cambió, arrastra el `variation_key` de todas sus configuraciones y regenera
+// sus nombres. No es transaccional (no lo era antes).
+async afterUpdate(ctx) { … UPDATE process_definition_versions SET variation_key = ? WHERE series_id = ? … }
+```
+
+Renombrar una serie dispara un `UPDATE` masivo **fuera de transacción** sobre la columna que sostiene
+dos índices únicos. Si se queda a medias, los dos únicos quedan vigilando etiquetas viejas.
+
+### Y la copia YA está derivada — en el 100 % de las filas
+
+El esquema avisaba de que el bootstrap usa **dos constantes para una sola cosa**
+(`DEFAULT_SERIES_CODE = "default"` y `DEFAULT_VARIATION = "general"`) y decía que esa configuración
+era *«la ÚNICA fila del sistema con `variation_key <> series.code`»*. Medido en la pila B el
+2026-10-11, sobre una base recién sembrada:
+
+| `pdv.id` | `variation_key` | `series.code` | |
+|---|---|---|---|
+| 1 | `general` | `default` | **deriva** |
+| 6 | `general` | `default` | **deriva** |
+
+**Las dos configuraciones que existen tienen la copia desincronizada de su origen.** No es «una fila
+excepcional»: es el 100 % de lo que hay. La frase del esquema era cierta cuando se escribió y hoy
+engaña — deja de importar con `P8`, que es cuando la columna desaparece.
+
+### Lo que el frontend hace con ella
+
+34 ocurrencias en 17 ficheros, y **ninguna la usa como dato**:
+
+| Uso | Sitios | Qué pasa con la línea |
+|---|:--:|---|
+| **Rótulo** (`Variación {{ … }}`, `label: "Variación"`, `|| "—"`) | 9 | pasa a ser el **nombre** de la línea, escrito, no un `slug` derivado |
+| **Respaldo al id** (``|| `Variación ${row.series_id}` ``) | 7 | **desaparece**: la línea siempre tiene nombre |
+| **Filtro** (buscador de claves ajenas y filtro en línea de la tabla) | 5 | filtra por `linea_id`, que es lo que identifica |
+| **La terna de identidad**, escrita a mano en dos sitios | 2 | `["process_id", "variation_key", "definition_version"]` → `["linea_id", "definition_version"]` |
+| Resto (reinicios, paso de datos) | 11 | mecánico |
+
+⚠️ **Los 7 respaldos son la prueba de que la pantalla ya sabe que la identidad es la línea y no la
+etiqueta.** ``row.variation_key || `Variación ${row.series_id}` `` dice literalmente *«usa la copia; si está
+vacía, usa el id del dato»*.
+
+### Y la fachada del editor genérico
+
+`config/sqlTables.js` la expone como campo **de sólo lectura** con la etiqueta «Codigo de serie» —no
+«Variación»— y la mete en `searchFields`. O sea que **el editor genérico ya la trata como etiqueta
+derivada**: se puede buscar por ella, no se puede escribir.
+
+### Conclusión de `D1`, sin elegir
+
+| | |
+|---|---|
+| **Lo que cuesta** | **10 consultas** necesitan un `JOIN` nuevo a `lineas` — y sólo si la pantalla necesita el **nombre** |
+| **Lo que ahorra** | 8 consultas pierden una columna y un parámetro · 4 inserciones pierden una columna · 3 índices pierden una columna cada uno · **2 índices únicos dejan de depender de una copia** · 7 respaldos del frontend desaparecen · 1 cascada no transaccional desaparece |
+| **Lo que arregla** | la unicidad de «una versión por línea» deja de vigilar una etiqueta que **hoy está derivada en todas las filas** |
+
+**Y con esto `P2-bis` queda desbloqueada**, que era lo único que esperaba a `D1`.
