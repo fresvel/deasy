@@ -1,6 +1,7 @@
 # Frente 25 · Qué pareja (configuración, plantilla) es legal — y qué es una plantilla sin proceso
 
-> **Estado**: 🟡 **2 de 13** · abierto el **2026-10-09** · **análisis con dos cambios ya ejecutados**
+> **Estado**: 🟡 **2 de 18 vivas** — 19 filas en el control, una descartada (`P2`) · abierto el
+> **2026-10-09** · **análisis con dos cambios ya ejecutados**
 > **Abierto por una observación del dueño** que corrige al frente 23.
 
 **Nació como análisis puro y ya no lo es.** Son **cinco** preguntas de modelo (`A`…`E`) cuyo
@@ -56,6 +57,29 @@ numeraciones en el mismo mensaje»):
 | **`P` + número** (`P1`…`P7`) | **un CAMBIO que hay que ejecutar.** Sale de una pregunta ya contestada o de una decisión del dueño | `P1` = el índice de una sola publicada |
 | **`Z`** | la decisión final del dueño sobre las cinco preguntas | |
 
+⚠️ **POR QUÉ SÓLO `P1` y `P7` ESTÁN HECHAS, y no es que las demás se hayan perdido.** Son las dos
+ÚNICAS que no dependen de ninguna pregunta abierta: `P1` sale de una decisión del dueño y `P7` es un
+`CHECK` sobre una columna cuya forma ya la daba por supuesta el código. Las otras cinco **esperan a
+que una pregunta se conteste**, y cuál es se ve de un tirón:
+
+| Cambio | Espera a |
+|---|---|
+| **`P2-bis`** la línea tiene fila | `D1` (contar lo que depende de `variation_key`) — y **ojo**, no a `A`: dar fila a la línea no implica mover el vínculo a ella |
+| **`P3`** ¿sobreviven `template_scope` y `owner_person_id`? | la prueba falsable de **`C`** |
+| **`P4`** imponer la dirección que falta | **`A`**: no se puede imponer una regla sin saber qué pareja es legal |
+| **`P5`** renombrar `process_target_rules` | **`E`**: si la serie y el alcance solapan, puede que una de las dos no exista |
+| **`P6`** el renombrado completo | **`P2-bis` + `P3` + `P5`**, porque las tres pueden hacer desaparecer columnas |
+
+⚠️ **Y UN AVISO SOBRE CÓMO SE CUENTA ESTO.** El 2026-10-11 se enseñó «**2 de 2** ejecutables», y el
+dueño lo cazó: la palabra «ejecutables» **estrechaba el denominador de 7 a 2** para que cuadrara.
+Eso es lo contrario de lo que pide el §6 de la norma de esta carpeta —*el denominador se recuenta,
+no se recorta*—. Y el mismo día, en el mismo fichero, **se volvió a fallar al escribir el aviso**: la
+cabecera decía «el denominador vivo es 17» cuando son **18**. La conclusión práctica no es «tener más
+cuidado»: es **contar la tabla con un script antes de enseñar la cifra**, que es lo que se hizo para
+corregirla. Peor: cinco de los siete cambios **no estaban en esta tabla**, sólo en la
+conversación, así que el plan mentía por omisión. Están todos aquí desde entonces. **Si un cambio no
+tiene fila, no existe.**
+
 ⚠️ **`Z` se llamaba `D` el 2026-10-09** y hubo que renombrarla: al entrar las preguntas `D` y `E` el
 identificador colisionaba. Se hace constar en vez de borrarlo, porque la norma dice que un
 identificador no se renumera — y éste se renumeró a los dos días, antes de que nadie lo citara en un
@@ -75,6 +99,12 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **E2** | **El espacio de diseño**: si la variación es una **vista** de sus alcances y no una tabla | ⬜ | | |
 | **P1** | **Una sola edición publicada por entregable, garantizado por la BASE** | ✅ | `publicada_flag` + `uq_ediciones_una_publicada`; provocado: rechaza la segunda publicada y deja pasar un borrador; 320/320 char sin mover un golden; 4 puertas de documentación | 2026-10-11 |
 | **P7** | **La versión de una edición tiene forma de semver**, impuesto por la base | ✅ | `CHECK (storage_version ~ '^[0-9]+\.[0-9]+\.[0-9]+$')`; provocado con `'v2'` y con `'1.0'`, rechaza las dos | 2026-10-11 |
+| **P2** | ⛔ **DESCARTADA** · quitar `variation_key` dejando los índices sobre `series_id`, sin tabla nueva. La sustituye `P2-bis` | ⛔ | el dueño eligió dar fila a la línea: *«quedemos con P2bis»* | 2026-10-11 |
+| **P2-bis** | **La línea tiene fila**: tabla `lineas` con `(process_id, series_id)` y único sobre la pareja; `ediciones_de_proceso` apunta a ella con **una** columna, y los dos únicos bajan de tres columnas a dos. `variation_key` desaparece | ⬜ | | |
+| **P3** | **Decidir si `template_scope` y `owner_person_id` sobreviven** en `formatos`, según la prueba falsable de `C` | ⬜ | | |
+| **P4** | **Imponer en el modelo la dirección que falta** entre los dos ejes de versión (decisiones 2 y 3 del dueño) | ⬜ | | |
+| **P5** | **Renombrar `process_target_rules`** a algo que **no sea `alcances`** —`destinatarios`, `cobertura`, `a_quien_alcanza`—, porque `alcance` y `ambito` están reservados por el frente 18 | ⬜ | | |
+| **P6** | **El renombrado completo**: `catalogo_documental`→`formatos`, `available_formats`→`archivos`, `storage_version`→`version`, `process_definition_versions`→`ediciones_de_proceso` | ⬜ | | |
 | **Z** | **La decisión del dueño sobre las cinco preguntas**, registrada aquí con su porqué y con lo que se descarta y por qué | ⬜ | | |
 
 ⚠️ **A1, B1 y C1 son MEDICIÓN; A2, B2 y C2 son ESPACIO DE DISEÑO; D es decisión.** No se mezclan, y
