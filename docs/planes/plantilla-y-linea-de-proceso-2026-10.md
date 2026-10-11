@@ -1,6 +1,7 @@
 # Frente 25 · Qué pareja (configuración, plantilla) es legal — y qué es una plantilla sin proceso
 
-> **Estado**: 🟡 **2 de 18 vivas** — 19 filas en el control, una descartada (`P2`) · abierto el
+> **Estado**: 🟡 **2 de 23 vivas** — 24 filas en el control, una descartada (`P2`); contado con
+> script, no a ojo · abierto el
 > **2026-10-09** · **análisis con dos cambios ya ejecutados**
 > **Abierto por una observación del dueño** que corrige al frente 23.
 
@@ -26,6 +27,32 @@ frase del dueño que la fija.
 | **7** | `storage_version` → **`version`** · `process_definition_versions` → **`ediciones_de_proceso`** | *«de acuerdo el cambio de nombres propuesto»* |
 | **8** | **La línea tendrá fila: se elige `P2-bis`** (tabla `lineas`) frente a sólo quitar la copia | *«quedemos con P2bis y veamos esa valoración con vínculos»* |
 | **9** | **`C` cambia de forma**: deja de ser «¿debe existir `ad_hoc`?» y pasa a la prueba falsable de abajo | *«de acuerdo, debemos valorar la nueva pregunta»* |
+| **10** | **La línea lleva `linea_anterior_id`**, el linaje que resuelve la reorganización | *«sí, agreguemos»* |
+| **11** | **`linea_anterior_id` OBLIGA a retirar** la línea anterior, con su `effective_to` | *«sí debería obligar a retirar»* |
+| **12** | **Si cambia el cargo que produce el documento, es otra LÍNEA** — no otra versión | *«si se va a otro cargo sería otra línea y debería serlo»* (70 % firme; el 30 % de duda lo resuelve el linaje de la decisión 10) |
+| **13** | **`lineas` sustituye a `process_definition_series`** | *«de acuerdo a mi criterio la línea la sustituye»* |
+| **14** | **NO se permiten ciclos** en `linea_anterior_id` — **ni en `processes.parent_id`** | *«no debería permitir ciclos (en procesos tampoco)»* |
+
+⚠️ **LA DECISIÓN 14 ES MÁS GRANDE QUE ESTE FRENTE, y eso se midió el 2026-10-11.** El esquema tiene
+**CINCO claves ajenas autorreferenciales y CERO protección de ciclos**:
+
+| Tabla | Columna |
+|---|---|
+| `processes` | `parent_id` |
+| `ediciones` | `parent_version_id` |
+| `process_runs` | `source_run_id` |
+| `task_items` | `source_task_item_id` |
+| `chat_messages` | `reply_to_message_id` |
+
+**Y el ciclo se crea sin resistencia.** Provocado en una transacción revertida: dos procesos
+apuntándose mutuamente, insertados sin un solo error. Hoy es **latente y no un fallo** —nada recorre
+esas cadenas de forma recursiva, comprobado— pero `processes.parent_id` está expuesto en `/admin`
+como un campo `number` libre, así que **un humano puede teclear el ciclo a mano**; y el día que
+alguien escriba un recorrido recursivo —un organigrama de procesos, una miga de pan, «todos los
+subprocesos de X»— se cuelga o devuelve basura.
+
+**Decidir si esto es una tarea de este frente o un frente propio es cosa del dueño**, porque toca
+cinco tablas y sólo una es de aquí.
 
 ⚠️ **Y LA DECISIÓN 8 ESTÁ ATADA A LA PREGUNTA `A`, hay que decidirlas juntas.** Si la línea tiene
 fila, `vinculos` **podría** apuntar a la línea en vez de a la versión, y eso contestaría `A` sin
@@ -105,6 +132,11 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P4** | **Imponer en el modelo la dirección que falta** entre los dos ejes de versión (decisiones 2 y 3 del dueño) | ⬜ | | |
 | **P5** | **Renombrar `process_target_rules`** a algo que **no sea `alcances`** —`destinatarios`, `cobertura`, `a_quien_alcanza`—, porque `alcance` y `ambito` están reservados por el frente 18 | ⬜ | | |
 | **P6** | **El renombrado completo**: `catalogo_documental`→`formatos`, `available_formats`→`archivos`, `storage_version`→`version`, `process_definition_versions`→`ediciones_de_proceso` | ⬜ | | |
+| **P8** | **La tabla `lineas`**, con los dos ejes (`cargo_id` + `ambito_tipo_id` \| `ambito_unidad_id`), nombre propio, vigencia y `linea_anterior_id`; `ediciones_de_proceso.linea_id` en lugar de `(process_id, series_id, variation_key)`; los dos únicos bajan a dos columnas | ⬜ | | |
+| **P9** | **Retira `process_definition_series`** y sus seis mecanismos (el `XOR`, el `code` derivado, las dos cascadas, `variation_key` y su hook). **65 ocurrencias en 21 ficheros**, 11 del frontend | ⬜ | **depende de `P8`** | |
+| **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_exact`/`unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna: hoy son **13** | ⬜ | **depende de `P8`** | |
+| **P11** | **Ninguna de las CINCO claves ajenas autorreferenciales admite ciclos**: `processes.parent_id`, `ediciones.parent_version_id`, `process_runs.source_run_id`, `task_items.source_task_item_id`, `chat_messages.reply_to_message_id` — más `lineas.linea_anterior_id` cuando exista | ⬜ | **es más grande que este frente**: decidir si va aquí o en uno propio | |
+| **P12** | **La bifurcación del linaje es DELIBERADA**: se permite que dos líneas sucedan a la misma —una obligación que se parte es real— pero crear el segundo sucesor avisa. Las **fusiones no se pueden declarar** con una sola columna, y queda dicho | ⬜ | **depende de `P8`** | |
 | **Z** | **La decisión del dueño sobre las cinco preguntas**, registrada aquí con su porqué y con lo que se descarta y por qué | ⬜ | | |
 
 ⚠️ **A1, B1 y C1 son MEDICIÓN; A2, B2 y C2 son ESPACIO DE DISEÑO; D es decisión.** No se mezclan, y
@@ -112,6 +144,137 @@ el orden importa: medir qué **hace** el modelo no dice qué **debe** hacer — 
 el frente, y es el motivo de que las seis primeras tareas no propongan nada.
 
 ---
+
+## 0-ter · EL MODELO AL QUE SE LLEGÓ (2026-10-11)
+
+**Esto es el resultado del análisis, y cambia la forma del frente.** Lo que sigue no es una propuesta
+entre varias: es a lo que se llegó midiendo, con las decisiones del dueño ya tomadas encima.
+
+### La raíz del enredo, medida
+
+El dueño lo planteó así: *«llegábamos a lo mismo desde dos lugares y eso provoca confusión en el
+usuario final»*. Y al medirlo, **la causa no era la que yo creía**.
+
+**Lo que NO era:** la serie y la regla no están duplicadas. `applyTargetRuleSeriesConstraints`
+**encadena** las dos, y lo impone: si la serie fija un cargo, el de la regla se **siembra** si falta y
+se **rechaza** si difiere (*«El cargo de la regla debe coincidir con el cargo de la serie»*); si la
+serie fija un tipo de unidad, el alcance de la regla queda **forzado** a ese tipo (*«El alcance de la
+regla lo fija la serie; no puede cambiarse»*). La pregunta `E` tal como se escribió el 2026-10-09
+**partía de una premisa falsa** y queda corregida.
+
+**Lo que SÍ es:** la serie admite **un eje O el otro, nunca los dos**, y la base lo impone:
+
+```js
+if (source_type === "unit_type" && candidate.cargo_id)     throw «no admite cargo»
+if (source_type === "cargo"     && candidate.unit_type_id) throw «no admite tipo de unidad»
+```
+
+**Y los cargos son genéricos.** Medido en el catálogo: `Coordinador` · `Docente` · `Responsable` ·
+`Director` · `Prorrector` · `Asistente` · `Jefe`. **No existe «Coordinador de Carrera» ni «Director
+de Investigación»**: el «de Carrera» sale de en qué unidad está el puesto (`unit_positions` → `units`
+→ `unit_types`), no del cargo.
+
+Así que **ninguno de los cuatro casos del dueño cabe en un solo eje**:
+
+| Lo que se quiere | Hace falta | ¿Cabe en una serie? |
+|---|---|---|
+| IF de los **Coordinadores de Carrera** | `Coordinador` **+** tipo `Carrera` | ⛔ |
+| IF de los **Directores de Escuela** | `Director` **+** tipo `Escuela` | ⛔ |
+| IF de la **Dirección de Investigación** | `Director` **+** esa **unidad concreta** | ⛔ (y la serie no admite `unit`) |
+| IF de los **Docentes de una Carrera** | `Docente` **+** tipo `Carrera` | ⛔ |
+
+> **De ahí salen las dos formas de llegar a lo mismo: como la serie acepta un solo eje, el otro hay
+> que ponerlo en la regla — y puedes elegir cuál va dónde.** `(Coordinador en la serie, Carrera en la
+> regla)` o `(Carrera en la serie, Coordinador en la regla)`. Las dos pasan, significan cosas
+> ligeramente distintas y al usuario le parecen iguales. **La variación está partida en dos tablas.**
+
+⚠️ **Y dos correcciones a lo que se dijo por el camino, las dos mías:** llamé «hueco» a que la serie
+no admita una unidad concreta —y el hueco real es que falta la **pareja**—; y recomendé que el eje
+fuera **sólo el cargo**, lo que el catálogo de cargos genéricos **demuele**: `cargo = Director`
+confundiría al Director de Escuela con el de Investigación, que es justo el ejemplo del dueño.
+
+### El modelo
+
+```
+processes  1 ──── N  lineas  1 ──── N  ediciones_de_proceso
+```
+
+| Tabla | Qué es | Único |
+|---|---|---|
+| **`lineas`** | la **obligación**: qué documento, de quién, y dónde | `(process_id, cargo_id, ambito_tipo_id, ambito_unidad_id)` |
+| **`ediciones_de_proceso`** | su **historia**: las versiones de esa obligación | `(linea_id, definition_version)` y `(linea_id, activa_flag)` |
+
+```
+lineas
+  id
+  process_id         ──► processes      «Informe de Investigación Formativa»
+  cargo_id           ──► cargos         «Coordinador»                 ◄── el QUIÉN
+  ambito_tipo_id     ──► unit_types     «Carrera»                     ◄── el DÓNDE
+  ambito_unidad_id   ──► units          (alternativo a lo anterior)       estructural
+  nombre             «IF · Coordinadores de Carrera»                  ◄── la etiqueta
+  linea_anterior_id  ──► lineas         ◄── el LINAJE
+  effective_from / effective_to
+  CHECK num_nonnulls(ambito_tipo_id, ambito_unidad_id) = 1
+```
+
+**La cardinalidad ya está decidida en el modelo de hoy y no se invierte:** `series_id` es una sola
+columna `NOT NULL` en la versión, o sea **una versión pertenece a UNA línea y una línea tiene MUCHAS
+versiones**. Eso da la simetría completa con el lado del documento:
+
+```
+formatos  1 ──── N  ediciones              el documento y sus versiones
+lineas    1 ──── N  ediciones_de_proceso    la obligación y su historia
+```
+
+⚠️ **`vinculos` sigue apuntando a la VERSIÓN, no a la línea.** Lo corrigió el dueño y sigue en pie:
+una edición de plantilla sirve a una *versión de variación*, no a una variación.
+
+### Lo que parecía una pérdida y es la mayor ganancia
+
+Se presentó como coste: *«"la versión 2 de esta configuración va a otro cargo" deja de poder
+expresarse»*. **Medido, hoy eso se puede hacer y produce una historia FALSA.**
+
+`series_id` se elige **en cada versión** (`resolveProcessDefinitionSeries` la pide al crearla), así
+que se puede escribir:
+
+```
+Informe de IF
+  v1 · series = Coordinador     ← lo hacían los coordinadores
+  v2 · series = Director        ← ahora los directores
+```
+
+Y el resultado es que *«la configuración del Informe de IF»* tiene dos versiones que **obligan a
+gente distinta**, sin que nada diga que hubo un traspaso: hay que comparar las series de cada versión
+a mano. **Peor:** el número de versión se calcula **por línea**
+(`WHERE process_id = ? AND variation_key = ?`), así que esa `v2` es la **primera** versión de la línea
+del Director… numerada 2. El contador y la realidad dejan de coincidir y nada lo impide.
+
+Con el modelo nuevo eso **no se puede escribir**, y en su lugar queda el hecho declarado:
+
+| Pregunta | Hoy | Con el modelo |
+|---|---|---|
+| ¿quién producía este informe en 2026? | mirar la serie de la versión vigente entonces | la línea lo dice, con su vigencia |
+| ¿cambió de manos alguna vez? | **no se sabe sin comparar versiones** | `linea_anterior_id` lo declara |
+| ¿cuántas versiones ha tenido la obligación de los coordinadores? | el contador miente si alguien cambió la serie | exacto: las de esa línea |
+| ¿es el mismo documento? | ambiguo | **no**: son dos líneas, y una sucede a la otra |
+
+**Es la misma idea que el frente 9 aplicó a las personas** —`task_item_tenures`, «una fila por turno,
+con desde y hasta cuándo»— pero un nivel más arriba: **el relevo de la OBLIGACIÓN, no el del
+responsable.**
+
+### Lo que muere con esto
+
+| | Por qué |
+|---|---|
+| `process_definition_series` | era «(cargo XOR tipo) + un `code` derivado». `lineas` lleva los dos ejes y nombre propio. **65 ocurrencias en 21 ficheros**, 11 de ellos del frontend |
+| `source_type` y su `XOR` | el eje único **era la causa** de las dos formas |
+| `code` derivado por `slugify(cargo.name)` | la línea tiene nombre escrito |
+| `variation_key` | la línea tiene `id` |
+| `resolveProcessDefinitionSeriesIdentity` | no hay identidad que derivar |
+| `refreshSeriesNamesOnRename` ×2 + `refreshProcessDefinitionVersionNames` | **dos cascadas no transaccionales** que se disparaban al renombrar un cargo |
+
+**Seis mecanismos.** Y la cadena de tres copias —`cargos.name` → `series.code` → `variation_key`— se
+queda en una sola verdad.
 
 ## 1 · Por qué, en una frase
 
