@@ -7,6 +7,34 @@
 **lo medido y el espacio de diseño de cada una**, para que el dueño decida. Las decisiones van en la
 tarea `D`, con su porqué escrito.
 
+## 0-bis · DECISIONES YA TOMADAS por el dueño (2026-10-09 / 10-11)
+
+**Esto no es análisis: está decidido y se ejecuta.** Se separa del control de tareas a propósito,
+porque el frente nació como análisis y estas siete salieron de la conversación. Cada una con la
+frase del dueño que la fija.
+
+| # | Decisión | Cómo lo dijo |
+|---|---|---|
+| **1** | **Los dos caminos se quedan**: `official` y `ad_hoc` son necesarios | *«necesitamos los dos caminos»* |
+| **2** | **La regla es asimétrica a propósito**, y el sentido inverso hay que controlarlo | *«creo que la regla sí debe ser asimétrica y el sentido inverso debe controlarse de la mejor manera»* |
+| **3** | **Ese control va en el MODELO**, no en el código | *«creo que debemos implementar este control en el modelo»* |
+| **4** | **Índice de «una sola edición publicada por formato»**, con columna generada + único parcial | se midió que es seguro —el código ya retira antes de publicar en los dos sitios— y no se objetó |
+| **5** | `catalogo_documental` → **`formatos`** | *«retomar la idea de formatos»* |
+| **6** | `available_formats` → **`archivos`** (libera la palabra «formato» para lo que de verdad nombra) | *«renombrando la columna de formatos de archivos a archivos»* |
+| **7** | `storage_version` → **`version`** · `process_definition_versions` → **`ediciones_de_proceso`** | *«de acuerdo el cambio de nombres propuesto»* |
+
+⚠️ **El orden importa y el renombrado va ÚLTIMO.** Renombrar es barato; renombrar dos veces, no. Las
+decisiones 5, 6 y 7 se ejecutan **cuando el modelo ya no vaya a cambiar de forma** — o sea después de
+`C` y `D`, que pueden hacer desaparecer columnas enteras (`template_scope`, `owner_person_id`,
+`variation_key`). Consagrar un nombre para algo que puede morir es trabajo tirado.
+
+⚠️ **Y DOS NOMBRES QUE NO SE PUEDEN USAR, medido:** `alcance` y `ambito` están en la lista de nombres
+muertos de `doc-modelo-excepciones.json`, **reservados por el frente 18** para el expediente
+relacional (el «ámbito» de un título, que es otro significado de la misma palabra). Así que
+`process_target_rules` **no** puede pasar a `alcances`: hay que buscar otro —`destinatarios`,
+`cobertura`, `a_quien_alcanza`—. Comprobado el 2026-10-11, junto con que `formatos`, `archivos`,
+`moldes`, `configuraciones`, `variaciones`, `lineas` y `ediciones_de_proceso` **están libres**.
+
 ## 0 · Control de ejecución
 
 | Tarea | Qué entrega | Estado | Evidencia | Fecha |
