@@ -171,7 +171,8 @@ flujo reparte los pasos.** (El flujo es el nivel 6.)
 | Tabla | Qué guarda |
 |---|---|
 | `processes` | El proceso, por su nombre. Puede colgar de otro |
-| `process_definition_series` | **La serie:** cómo se nombra este proceso, y para qué tipo de unidad o qué puesto |
+| `process_definition_series` | **La serie:** cómo se nombra este proceso, y para qué tipo de unidad o qué puesto. **La está sustituyendo `lineas`** |
+| `lineas` | **La línea:** la obligación en sí — qué documento, **de quién** (`cargo_id`) y **dónde** (`unit_scope_type`, los mismos nombres que la regla), los dos ejes juntos, con nombre propio, vigencia y linaje. La serie admite un eje *o* el otro, y de ahí venía que la variación estuviera partida en dos tablas |
 | `process_definition_versions` | **La definición, versionada.** Un proceso se puede redefinir sin perder lo que ya se lanzó con la versión anterior |
 | `process_target_rules` | **La regla:** a qué unidades y a qué puestos alcanza este proceso |
 | `process_definition_period_types` | En qué tipos de periodo se repite |

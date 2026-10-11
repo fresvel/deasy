@@ -768,6 +768,27 @@ export const ensureDefaultProcess = async (connection) => {
     series: { source_type: "default", code: DEFAULT_VARIATION }
   });
 
+  // 2-bis. LA LINEA (frente 25, P8). La obligacion del proceso por defecto es «cualquier cargo, en
+  //        todas las unidades»: un memo lo escribe quien lo necesita, donde lo necesita. Por eso
+  //        `cargo_id` queda NULL y el alcance se NOMBRA `all_units` —los mismos nombres que
+  //        `process_target_rules`— en vez de deducirse de dos columnas vacias. Convive con la serie
+  //        mientras `P2-bis` no retire la pareja.
+  let linea = await fetchOne(
+    connection,
+    `SELECT id FROM lineas
+      WHERE process_id = ? AND cargo_id IS NULL AND unit_scope_type = 'all_units' LIMIT 1`,
+    [processId]
+  );
+  if (!linea) {
+    const [r] = await connection.query(
+      `INSERT INTO lineas (process_id, nombre, cargo_id, unit_scope_type, effective_from)
+       VALUES (?, ?, NULL, 'all_units', CURDATE())`,
+      [processId, defaultDefinitionName]
+    );
+    linea = { id: r.insertId };
+  }
+  const lineaId = Number(linea.id);
+
   // 3. configuración activa
   let definition = await fetchOne(
     connection,
@@ -777,15 +798,20 @@ export const ensureDefaultProcess = async (connection) => {
   if (!definition) {
     const [r] = await connection.query(
       `INSERT INTO process_definition_versions
-        (process_id, series_id, variation_key, definition_version, name, description, status, effective_from)
-       VALUES (?, ?, ?, ?, ?, ?, 'active', CURDATE())`,
-      [processId, Number(series.id), DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION,
+        (process_id, series_id, linea_id, variation_key, definition_version, name, description, status, effective_from)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'active', CURDATE())`,
+      [processId, Number(series.id), lineaId, DEFAULT_VARIATION, DEFAULT_DEFINITION_VERSION,
        defaultDefinitionName, "Tareas libres y no clasificadas."]
     );
     definition = { id: r.insertId, status: "active", name: defaultDefinitionName };
   } else if (definition.status !== "active") {
     await connection.query("UPDATE process_definition_versions SET status = 'active' WHERE id = ?", [definition.id]);
   }
+  // Una configuracion de antes de `P8` no tiene linea: se le pone la suya.
+  await connection.query(
+    "UPDATE process_definition_versions SET linea_id = ? WHERE id = ? AND linea_id IS NULL",
+    [lineaId, Number(definition.id)]
+  );
   if (definition?.id && String(definition.name || "") !== defaultDefinitionName) {
     await connection.query("UPDATE process_definition_versions SET name = ? WHERE id = ?", [defaultDefinitionName, definition.id]);
   }

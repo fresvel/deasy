@@ -153,7 +153,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P4** | **Imponer en el modelo la dirección que falta** entre los dos ejes de versión (decisiones 2 y 3 del dueño) | ⬜ | | |
 | **P5** | **Renombrar `process_target_rules`** a algo que **no sea `alcances`** —`destinatarios`, `cobertura`, `a_quien_alcanza`—, porque `alcance` y `ambito` están reservados por el frente 18 | ⬜ | | |
 | **P6** | **El renombrado completo**: `catalogo_documental`→`formatos`, `available_formats`→`archivos`, `storage_version`→`version`, `process_definition_versions`→`ediciones_de_proceso` | ⬜ | | |
-| **P8** | **La tabla `lineas`**, con los dos ejes (`cargo_id` + `ambito_tipo_id` \| `ambito_unidad_id`), nombre propio, vigencia y `linea_anterior_id`; `ediciones_de_proceso.linea_id` en lugar de `(process_id, series_id, variation_key)`; los dos únicos bajan a dos columnas | ⬜ | | |
+| **P8** | **La tabla `lineas`**, con los dos ejes (`cargo_id` + `unit_scope_type`/`unit_type_id`/`unit_id`), nombre propio, vigencia y `linea_anterior_id`; `process_definition_versions.linea_id` en lugar de `(process_id, series_id, variation_key)`; los dos únicos bajan a dos columnas | 🟡 | **HECHO**: la tabla con sus **8 garantías provocadas** una por una (el alcance y su columna van juntos ×2, la identidad con `NULLS NOT DISTINCT`, suceder a una vigente, retirar-y-suceder, la autosucesión, la vigencia al revés, y los dos ejes juntos); la columna `linea_id` (NULL-able) con su índice; el arranque crea la línea del «Proceso por defecto». 320/320 char, 894/894 unitarios, 5 puertas del backend, 5 de documentación, 4 páginas del sitio y el modelo regenerado. **DÓNDE ME QUEDÉ**: faltan las 28 sentencias (`P2-bis`) y el camino de creación, que es `P9` — hoy manda la serie | |
 | **P9** | **Retira `process_definition_series`** y sus seis mecanismos (el `XOR`, el `code` derivado, las dos cascadas, `variation_key` y su hook). **65 ocurrencias en 21 ficheros**, 11 del frontend | ⬜ | **depende de `P8`** | |
 | **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_exact`/`unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna: hoy son **13** | ⬜ | **depende de `P8`** | |
 | **P11** | ⛔ **SALE DE ESTE FRENTE** · los ciclos en las claves ajenas autorreferenciales. Se abre el **[frente 26](./ciclos-en-los-grafos-2026-10.md)**, donde al medirlo resultaron ser **seis** grafos y no cinco | ⛔ | decisión del dueño: *«para los ciclos frente propio»*. Lo que queda aquí es que **`lineas.linea_anterior_id` nazca ya protegido**, lo que el frente 26 deja escrito en su §5 | 2026-10-11 |
@@ -241,6 +241,23 @@ lineas
   effective_from / effective_to
   CHECK num_nonnulls(ambito_tipo_id, ambito_unidad_id) = 1
 ```
+
+⚠️ **ESE CROQUIS SE QUEDÓ CORTO EN DOS COSAS, y las dos las descubrió `P8` al construirlo
+(2026-10-11). Se deja tal cual y se corrige aquí, porque es donde está el aprendizaje:**
+
+| Lo que decía el croquis | Lo que la base pide |
+|---|---|
+| `CHECK num_nonnulls(ambito_tipo_id, ambito_unidad_id) = 1` | **haría ilegal el único caso que existe.** La única serie de una base sembrada es `source_type = 'default'` —el «sin variación» de los memos—, que no tiene ni cargo ni tipo de unidad. Hoy es el **100 %** de lo que hay. El alcance se **nombra**: `unit_scope_type` con `all_units` (el DEFAULT), `unit_type` o `unit_exact` |
+| columnas `ambito_tipo_id` / `ambito_unidad_id` | **`ambito` NO SE PUEDE USAR**: está en los nombres muertos de `doc-modelo-excepciones.json`, **reservado por el frente 18**. El `CLAUDE.md` de la raíz lo dice con esas palabras y el croquis lo ignoró. Los nombres correctos **ya existían en el esquema**: `process_target_rules` nombra este mismo concepto `unit_scope_type` + `unit_type_id` + `unit_id`, igual que `participantes_declarados`. Mismo concepto, mismo nombre |
+
+⚠️ **Y cómo se cazó, que es lo que importa:** `check-doc-modelo.mjs --update` **amplió la excepción de
+`ambito` con las cinco páginas nuevas** en vez de quejarse. O sea que el gate se habría callado
+tapando el choque, que es exactamente lo que la norma prohíbe. **Cuando `--update` toca la lista de
+EXCEPCIONES y no sólo las huellas, para y mira qué acabas de hacer.**
+
+Y una tercera, que el croquis no decía y la tabla sí necesita: **`NULLS NOT DISTINCT` en el único.**
+En PostgreSQL `NULL <> NULL`, así que un único corriente dejaría crear **dos** líneas «sin variación»
+del mismo proceso. Disponible desde PostgreSQL 15; aquí corre **17.10**.
 
 **La cardinalidad ya está decidida en el modelo de hoy y no se invierte:** `series_id` es una sola
 columna `NOT NULL` en la versión, o sea **una versión pertenece a UNA línea y una línea tiene MUCHAS

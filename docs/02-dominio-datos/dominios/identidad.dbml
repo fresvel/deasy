@@ -583,6 +583,7 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 //   paises -> documentos_identidad   [organizacion]
 //   paises -> estados_civiles   [organizacion]
 //   paises -> generos   [organizacion]
+//   cargos -> lineas   [procesos]
 //   paises -> parentescos   [organizacion]
 //   cargos -> participantes_declarados   [plantillas]
 //   persons -> participantes_declarados   [plantillas]

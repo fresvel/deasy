@@ -1417,11 +1417,123 @@ CREATE TABLE IF NOT EXISTS procesos.process_definition_series (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_series_code ON process_definition_series (code);
 CREATE INDEX IF NOT EXISTS idx_process_definition_series_state ON process_definition_series (is_active);
 
+-- LA LINEA: la OBLIGACION de un proceso — que documento, DE QUIEN y DONDE (frente 25, P8 — 2026-10-11).
+--
+-- Sustituye a `process_definition_series`, y el motivo es medido: la serie admite UN EJE O EL OTRO
+-- —su `CHECK` lo impone y `validation.js` lo repite— mientras que los cargos son GENERICOS. Medido en
+-- el catalogo: `Coordinador`, `Docente`, `Responsable`, `Director`, `Prorrector`, `Asistente`, `Jefe`.
+-- NO existe «Coordinador de Carrera» ni «Director de Investigacion»: el «de Carrera» sale de en que
+-- unidad esta el puesto, no del cargo. Asi que ninguna de las cuatro obligaciones reales del dueño
+-- cabia en una serie:
+--
+--   «el Informe de IF de los Coordinadores de Carrera»  -> Coordinador + tipo Carrera
+--   «el de los Directores de Escuela»                   -> Director    + tipo Escuela
+--   «el de la Direccion de Investigacion»               -> Director    + ESA unidad
+--   «el de los Docentes de una Carrera»                 -> Docente     + tipo Carrera
+--
+-- Como la serie solo acepta uno, el otro eje habia que ponerlo en `process_target_rules` — y se podia
+-- elegir cual iba donde. `(Coordinador en la serie, Carrera en la regla)` y
+-- `(Carrera en la serie, Coordinador en la regla)` pasan las dos, significan cosas distintas y al
+-- usuario le parecen iguales. ESA era la causa de «llegabamos a lo mismo desde dos lugares»: la
+-- variacion estaba PARTIDA EN DOS TABLAS. Aqui los dos ejes viven juntos.
+--
+-- EL ALCANCE SE NOMBRA, NO SE DEDUCE DE UN NULL, y los nombres NO son nuevos: son exactamente los de
+-- `process_target_rules` —`unit_scope_type` + `unit_type_id` + `unit_id`—, que es la tabla que ya
+-- expresa este mismo concepto en este mismo esquema, y los mismos que usa
+-- `participantes_declarados`. Mismo concepto, mismo nombre, mismo vocabulario. Cuando llegue el
+-- renombrado al castellano, las tres se renombran juntas.
+--
+-- ⚠️ ESTA COLUMNA SE LLAMO `ambito` DURANTE MEDIA HORA, y la puerta lo caz: `ambito` y `alcance`
+-- estan en la lista de nombres muertos de `doc-modelo-excepciones.json`, RESERVADOS POR EL FRENTE 18
+-- para el expediente relacional —el «ambito» de un titulo, que es otro significado de la misma
+-- palabra—. El `CLAUDE.md` de la raiz lo dice con esas palabras y aun asi se uso. Lo delato
+-- `check-doc-modelo.mjs --update`, que al re-grabar AMPLIO la excepcion de `ambito` con las cinco
+-- paginas nuevas: o sea que el gate se habria callado tapando el choque, que es exactamente lo que la
+-- norma prohibe. La leccion: cuando `--update` toca la lista de EXCEPCIONES y no solo las huellas,
+-- para y mira que acabas de hacer.
+--
+-- EL CASO «SIN VARIACION» ES EL QUE MANDA EN LA FORMA. El plan de este frente habia anotado
+-- `CHECK num_nonnulls(...) = 1`, y al medir resulto que eso HACE ILEGAL EL UNICO CASO QUE EXISTE: la
+-- unica serie de una base sembrada es `source_type = 'default'` —el «sin variacion» de los memos y
+-- oficios—, que no tiene ni cargo ni tipo de unidad. No es un caso raro: hoy es el 100 % de lo que
+-- hay. Por eso `all_units` es un valor con nombre y el DEFAULT de la columna.
+--
+-- `cargo_id` SI puede ser NULL, y ahi no hace falta discriminador: «un cargo concreto» o «cualquier
+-- cargo» son DOS estados, y dos estados los distingue un NULL sin ambiguedad. El alcance tiene TRES,
+-- y tres necesitan nombre.
+--
+-- `unit_subtree` NO esta entre los valores, a proposito: el refinamiento «esta unidad y sus
+-- descendientes» es de la REGLA, dentro del alcance de la linea (tarea `P10`). La linea dice DONDE
+-- vive la obligacion; la regla, como se reparte dentro de ahi.
+--
+-- `NULLS NOT DISTINCT` EN EL UNICO, y sin esto la identidad no se sostiene: en PostgreSQL
+-- `NULL <> NULL`, asi que un unico corriente dejaria crear DOS lineas «sin variacion» del mismo
+-- proceso. Disponible desde PostgreSQL 15 y aqui corre 17.
+--
+-- EL LINAJE (`linea_anterior_id`) es la decision 10 del dueño, y resuelve algo que hoy NO SE PUEDE
+-- SABER: si una obligacion cambio de manos. Hoy `series_id` se elige EN CADA VERSION, asi que se
+-- puede escribir «v1 por Coordinador, v2 por Director» y el resultado es una historia FALSA —dos
+-- versiones que obligan a gente distinta sin que nada diga que hubo un traspaso—, con el contador de
+-- version mintiendo ademas, porque se calcula por linea. Con la linea eso no se puede escribir: si
+-- cambia el cargo que produce el documento ES OTRA LINEA (decision 12), y `linea_anterior_id` declara
+-- el relevo. Es la idea de `task_item_tenures` un nivel mas arriba: alli se releva el RESPONSABLE,
+-- aqui la OBLIGACION.
+--
+-- Y NACE PROTEGIDA DE CICLOS, que es lo que pide el §5 del frente 26: `ck_lineas_no_sucede_a_si_misma`
+-- cuesta una linea en una tabla nueva y es la historia entera de las otras cinco claves ajenas
+-- autorreferenciales del esquema, que no lo tienen. La proteccion de ciclos de longitud mayor que uno
+-- es de ese frente, con el mecanismo que elija su `CI2`.
+CREATE TABLE IF NOT EXISTS procesos.lineas (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  process_id INT NOT NULL,
+  nombre VARCHAR(180) NOT NULL,
+  cargo_id INT NULL,
+  unit_scope_type TEXT CHECK (unit_scope_type IN ('all_units', 'unit_type', 'unit_exact')) NOT NULL DEFAULT 'all_units',
+  unit_type_id INT NULL,
+  unit_id INT NULL,
+  linea_anterior_id INT NULL,
+  effective_from DATE NOT NULL,
+  effective_to DATE NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_lineas_process FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE,
+  CONSTRAINT fk_lineas_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id),
+  CONSTRAINT fk_lineas_unit_type FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
+  CONSTRAINT fk_lineas_unit FOREIGN KEY (unit_id) REFERENCES units(id),
+  CONSTRAINT fk_lineas_anterior FOREIGN KEY (linea_anterior_id) REFERENCES lineas(id),
+  -- El alcance y su columna van juntos: cada valor exige exactamente su destino y prohibe el otro.
+  CONSTRAINT ck_lineas_unit_scope CHECK (
+       (unit_scope_type = 'all_units'  AND unit_type_id IS NULL     AND unit_id IS NULL)
+    OR (unit_scope_type = 'unit_type'  AND unit_type_id IS NOT NULL AND unit_id IS NULL)
+    OR (unit_scope_type = 'unit_exact' AND unit_type_id IS NULL     AND unit_id IS NOT NULL)
+  ),
+  -- Lo que el frente 26 va a pedirle a las otras cinco autorreferenciales. En una tabla nueva, gratis.
+  CONSTRAINT ck_lineas_no_sucede_a_si_misma CHECK (id IS DISTINCT FROM linea_anterior_id),
+  CONSTRAINT ck_lineas_vigencia CHECK (effective_to IS NULL OR effective_to >= effective_from)
+);
+-- LA IDENTIDAD de la linea son sus dos ejes dentro de su proceso. `NULLS NOT DISTINCT` porque
+-- «cualquier cargo» y «todas las unidades» son NULL y tienen que colisionar entre si.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_lineas_identidad
+  ON lineas (process_id, cargo_id, unit_scope_type, unit_type_id, unit_id) NULLS NOT DISTINCT;
+-- Y el nombre no se repite dentro de un proceso, porque es lo que se lee en pantalla. OJO: a
+-- diferencia de `uq_process_definition_series_code`, que era UNICO GLOBAL —asi que dos procesos no
+-- podian tener los dos una variacion «Coordinador»—, este es POR PROCESO. La serie era un catalogo
+-- compartido; la linea es de su proceso.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_lineas_nombre_por_proceso ON lineas (process_id, nombre);
+CREATE INDEX IF NOT EXISTS idx_lineas_anterior ON lineas (linea_anterior_id);
+CREATE INDEX IF NOT EXISTS idx_lineas_vigencia ON lineas (process_id, effective_to);
+
 
 CREATE TABLE IF NOT EXISTS procesos.process_definition_versions (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   process_id INT NOT NULL,
   series_id INT NOT NULL,
+  -- LA LINEA a la que pertenece esta version. Entra como NULL-able en `P8` y pasa a NOT NULL en
+  -- `P2-bis`, cuando `series_id` y `variation_key` se retiren: una columna en lugar de la pareja mas
+  -- su copia. Medido en `D1`: de las 28 sentencias que mencionan `variation_key`, 8 la FILTRAN por la
+  -- pareja y se quedan en `WHERE linea_id = ?` —una columna y un parametro menos—, 4 la escriben
+  -- llevando `series_id` en la MISMA lista de columnas, y los tres indices de abajo pierden una
+  -- columna cada uno. Dos de esos indices son UNICOS y hoy vigilan la COPIA, no el dato.
+  linea_id INT NULL,
   variation_key VARCHAR(120) NOT NULL DEFAULT 'general',
   definition_version VARCHAR(20) NOT NULL,
   name VARCHAR(180) NOT NULL,
@@ -1432,8 +1544,10 @@ CREATE TABLE IF NOT EXISTS procesos.process_definition_versions (
   effective_to DATE NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_process_definition_versions_process FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE CASCADE,
-  CONSTRAINT fk_process_definition_versions_series FOREIGN KEY (series_id) REFERENCES process_definition_series(id)
+  CONSTRAINT fk_process_definition_versions_series FOREIGN KEY (series_id) REFERENCES process_definition_series(id),
+  CONSTRAINT fk_process_definition_versions_linea FOREIGN KEY (linea_id) REFERENCES lineas(id)
 );
+CREATE INDEX IF NOT EXISTS idx_process_definition_versions_linea ON process_definition_versions (linea_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_versions_series ON process_definition_versions (process_id, variation_key, definition_version);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_one_active_series ON process_definition_versions (process_id, variation_key, active_series_flag);
 CREATE INDEX IF NOT EXISTS idx_process_definition_versions_status ON process_definition_versions (process_id, variation_key, status, effective_from);
@@ -3429,6 +3543,56 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_formato_vinculado_sigue_oficial
 BEFORE UPDATE ON catalogo_documental
 FOR EACH ROW EXECUTE FUNCTION trg_formato_vinculado_sigue_oficial_fn();
+
+-- 8) SUCEDER A UNA LINEA OBLIGA A HABERLA RETIRADO (frente 25, P8 — 2026-10-11).
+--
+-- Decision 11 del dueño: «si deberia obligar a retirar». `linea_anterior_id` no es un puntero
+-- decorativo: declara que una obligacion PASO A OTRAS MANOS, y dos lineas vigentes a la vez sobre la
+-- misma obligacion significan que la institucion la exige dos veces.
+--
+-- Asi que el orden es «retirar y luego suceder», impuesto por la base — el mismo que `P1` impuso para
+-- publicar una edicion, y por el mismo motivo: si alguien escribe un camino que lo haga al reves,
+-- FALLA EN EL ACTO en vez de dejar el sistema con dos verdades.
+--
+-- LO QUE ESTO NO IMPIDE, Y ES DELIBERADO (tarea `P12`): que DOS lineas sucedan a la MISMA anterior.
+-- Una obligacion que se parte en dos es real —«el informe lo hacian los coordinadores; ahora lo hacen
+-- los de carrera y los de escuela por separado»— asi que la bifurcacion se permite. Lo que no se
+-- puede declarar con una sola columna es la FUSION inversa, y queda dicho aqui para que nadie lo
+-- busque: dos lineas que se juntan en una solo pueden apuntar las dos a la nueva como «anterior» si
+-- se invierte el sentido, que seria otro modelo.
+CREATE OR REPLACE FUNCTION public.trg_linea_anterior_retirada_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  anterior_nombre varchar(180);
+  anterior_hasta date;
+BEGIN
+  IF NEW.linea_anterior_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  -- Un UPDATE que no toca el linaje no tiene nada que comprobar.
+  IF TG_OP = 'UPDATE' AND NEW.linea_anterior_id IS NOT DISTINCT FROM OLD.linea_anterior_id THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT l.nombre, l.effective_to
+    INTO anterior_nombre, anterior_hasta
+    FROM lineas l
+   WHERE l.id = NEW.linea_anterior_id;
+
+  -- Si la fila no existe, la clave ajena rechaza despues. Este disparador no comprueba eso.
+  IF anterior_nombre IS NOT NULL AND anterior_hasta IS NULL THEN
+    RAISE EXCEPTION 'La linea "%" sigue vigente y no puede ser sucedida. Retirala primero poniendo su fecha de fin.', anterior_nombre;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_linea_anterior_retirada
+BEFORE INSERT OR UPDATE ON lineas
+FOR EACH ROW EXECUTE FUNCTION trg_linea_anterior_retirada_fn();
 
 
 -- UN HUECO NO SE REPITE DENTRO DEL MISMO DOCUMENTO (frente 24, fase 4).

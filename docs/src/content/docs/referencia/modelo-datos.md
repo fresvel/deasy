@@ -1,6 +1,6 @@
 ---
 title: Modelo de datos
-description: Las 87 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
+description: Las 88 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
 sidebar:
   order: 1
 ---
@@ -11,8 +11,8 @@ generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **<!-- gen:total-tablas -->87<!-- /gen --> tablas y <!-- gen:total-relaciones -->157<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
-de <!-- gen:total-tablas -->87<!-- /gen --> tablas impresiona y no se lee.
+Son **<!-- gen:total-tablas -->88<!-- /gen --> tablas y <!-- gen:total-relaciones -->163<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+de <!-- gen:total-tablas -->88<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
 Cada dominio muestra **solo las relaciones internas**. Las que salen hacia otros dominios están
@@ -53,7 +53,7 @@ El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y q
 Serie → regla → flujo. La **serie** nombra el proceso, la **regla** reparte su alcance y el
 **flujo** reparte los pasos. Todo esto es **declaración**: nada ha ocurrido todavía. El lanzamiento
 (`process_runs`) se dibuja desde el 2026-10-04 en el dominio de tareas, que es donde ocurren las
-cosas. **<!-- gen:tablas-dominio:procesos -->8<!-- /gen --> tablas.**
+cosas. **<!-- gen:tablas-dominio:procesos -->9<!-- /gen --> tablas.**
 
 ![Diagrama del motor de procesos](/diagramas/procesos.svg)
 
@@ -134,7 +134,7 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **nivel*
 | **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
 
 **La regla es una sola: una clave ajena puede apuntar a su propio nivel o a uno inferior, nunca a una
-superior.** Medido sobre las <!-- gen:total-relaciones -->157<!-- /gen --> relaciones del esquema: 86 bajan de nivel, 71 se quedan
+superior.** Medido sobre las <!-- gen:total-relaciones -->163<!-- /gen --> relaciones del esquema: 86 bajan de nivel, 71 se quedan
 en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
 Dos cosas que los niveles enseñan y que ningún diagrama por dominio decía:

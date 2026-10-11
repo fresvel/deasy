@@ -34,6 +34,8 @@ flowchart TB
   subgraph DECL["Lo que se declara"]
     direction TB
     PR["processes"] --> PDV["process_definition_versions"]
+    PR --> LIN["lineas"]
+    LIN --> PDV
     SER["process_definition_series"] --> PDV
     PDV --> PTR["process_target_rules"]
     PDV --> PDPT["process_definition_period_types"]

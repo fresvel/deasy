@@ -16,6 +16,27 @@ Project procesos {
   Note: '''Motor de procesos — Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. El lanzamiento (`process_runs`) ya no se dibuja aquí: es ejecución y vive en el diagrama de tareas.'''
 }
 
+Table "lineas" {
+  "id" int4 [pk, not null, increment]
+  "process_id" int4 [not null]
+  "nombre" varchar(180) [not null]
+  "cargo_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['all_units'::text, 'unit_type'::text, 'unit_exact'::text])`, default: 'all_units']
+  "unit_type_id" int4
+  "unit_id" int4
+  "linea_anterior_id" int4
+  "effective_from" date [not null]
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, cargo_id, unit_scope_type, unit_type_id, unit_id) [type: btree, unique, name: "uq_lineas_identidad"]
+    (process_id, nombre) [type: btree, unique, name: "uq_lineas_nombre_por_proceso"]
+    linea_anterior_id [type: btree, name: "idx_lineas_anterior"]
+    (process_id, effective_to) [type: btree, name: "idx_lineas_vigencia"]
+  }
+}
+
 Table "process_definition_period_types" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
@@ -48,6 +69,7 @@ Table "process_definition_versions" {
   "id" int4 [pk, not null, increment]
   "process_id" int4 [not null]
   "series_id" int4 [not null]
+  "linea_id" int4
   "variation_key" varchar(120) [not null, default: 'general']
   "definition_version" varchar(20) [not null]
   "name" varchar(180) [not null]
@@ -61,6 +83,7 @@ Table "process_definition_versions" {
   Indexes {
     (process_id, variation_key, active_series_flag) [type: btree, unique, name: "uq_process_definition_one_active_series"]
     (process_id, variation_key, definition_version) [type: btree, unique, name: "uq_process_definition_versions_series"]
+    linea_id [type: btree, name: "idx_process_definition_versions_linea"]
     (process_id, variation_key, status, effective_from) [type: btree, name: "idx_process_definition_versions_status"]
   }
 }
@@ -137,8 +160,11 @@ Table "vinculos" {
   Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
 }
 
+Ref "fk_lineas_anterior":"lineas"."id" ?<? "lineas"."linea_anterior_id"
+Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: cascade]
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
+Ref "fk_process_definition_versions_linea":"lineas"."id" ?<? "process_definition_versions"."linea_id"
 Ref "fk_process_definition_versions_process":"processes"."id" <? "process_definition_versions"."process_id" [delete: cascade]
 Ref "fk_process_definition_versions_series":"process_definition_series"."id" <? "process_definition_versions"."series_id"
 Ref "fk_process_target_rules_definition":"process_definition_versions"."id" <? "process_target_rules"."process_definition_id" [delete: cascade]
@@ -151,6 +177,9 @@ Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."p
 //   process_definition_versions -> chat_conversations   [chat]
 //   process_definition_versions -> chat_conversations   [chat]
 //   processes -> chat_conversations   [chat]
+//   cargos -> lineas   [identidad]
+//   unit_types -> lineas   [organizacion]
+//   units -> lineas   [organizacion]
 //   cargos -> process_definition_series   [identidad]
 //   unit_types -> process_definition_series   [organizacion]
 //   process_definition_versions -> process_runs   [tareas]

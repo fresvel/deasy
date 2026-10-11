@@ -207,7 +207,8 @@
     "tablas": {
       "term_types": 0,
       "process_definition_period_types": 4,
-      "process_definition_series": 4,
+      "lineas": 4,
+        "process_definition_series": 4,
       "vinculos": 4,
       "process_definition_versions": 4,
       "process_target_rules": 4,

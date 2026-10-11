@@ -430,6 +430,7 @@
       "complemento/credenciales.md",
       "complemento/mapa-completo.md",
       "complemento/mapa-con-campos.md",
+      "confusiones.md",
       "datos/firmas-y-dominios.md",
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
@@ -489,6 +490,18 @@
       "complemento/mapa-con-campos.md",
       "modelo/organizacion.md",
       "orden-de-lectura.md"
+    ]
+  },
+  "lineas": {
+    "huella": "fab61ebf11f67d2d",
+    "paginas": [
+      "datos/motor-de-procesos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md",
+      "modelo/siembra.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
     ]
   },
   "nomenclatura_territorial": {
@@ -692,7 +705,7 @@
     ]
   },
   "process_definition_versions": {
-    "huella": "ad8e311597add7f2",
+    "huella": "e948621bf62d9812",
     "paginas": [
       "arquitectura-y-patrones.md",
       "complemento/conversacion.md",

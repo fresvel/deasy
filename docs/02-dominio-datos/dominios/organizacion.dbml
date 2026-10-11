@@ -230,6 +230,8 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 //   paises -> documentos_identidad   [identidad]
 //   paises -> estados_civiles   [identidad]
 //   paises -> generos   [identidad]
+//   unit_types -> lineas   [procesos]
+//   units -> lineas   [procesos]
 //   paises -> parentescos   [identidad]
 //   units -> participantes_declarados   [plantillas]
 //   cantones -> persons   [identidad]

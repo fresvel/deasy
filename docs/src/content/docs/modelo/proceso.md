@@ -53,6 +53,36 @@ responde a una pregunta distinta:
 Junto a ellas va `definition_version`, la etiqueta de versión de las reglas (`1.0.0` en la que siembra
 el arranque). El trío `(proceso, variación, versión)` es único.
 
+:::note[La LÍNEA está sustituyendo a la serie, y ya existe en la base]
+
+Desde el **2026-10-11** hay una tabla **`lineas`** que va a ocupar el sitio de la serie y de la
+variación. No es un sinónimo: una línea lleva **los dos ejes a la vez** —`cargo_id` (el quién) y el
+alcance (el dónde: `unit_scope_type` con `all_units`, `unit_type` o `unit_exact`)— mientras la serie admite **uno
+o el otro**, nunca los dos.
+
+**Y eso era la causa de un problema real.** Los cargos del catálogo son genéricos —`Coordinador`,
+`Docente`, `Director`…: no existe «Coordinador de Carrera»—, así que una obligación como *«el Informe
+de Investigación Formativa de los Coordinadores de Carrera»* necesita cargo **y** tipo de unidad. Al
+no caber en la serie, el otro eje había que ponerlo en la regla de reparto — y se podía elegir cuál
+iba dónde. Las dos formas pasan, significan cosas distintas y en pantalla se ven iguales: **la
+variación estaba partida en dos tablas**.
+
+La línea trae además dos cosas que hoy no se pueden expresar:
+
+- **Nombre propio.** El de la serie se derivaba con `slugify(cargo.name)`, así que renombrar un cargo
+  disparaba dos cascadas.
+- **Linaje y vigencia** (`linea_anterior_id`, `effective_from`/`effective_to`), que contestan *«¿cambió
+  de manos esta obligación?»*. Hoy no se puede saber: la serie se elige **en cada versión**, así que
+  «v1 por Coordinador, v2 por Director» es escribible y produce una historia falsa. Suceder a una
+  línea **obliga a haberla retirado antes**, y lo impone la base.
+
+**En esta primera entrega la línea CONVIVE con la serie**: la tabla existe con sus garantías, el
+arranque crea la del «Proceso por defecto» —`cargo_id` vacío y `unit_scope_type = 'all_units'`, porque un
+memo lo escribe quien lo necesita donde lo necesita— y `process_definition_versions.linea_id` apunta a
+ella. Lo que todavía manda es la serie. El cambio completo está en el frente 25 del plan.
+
+:::
+
 ## El tiempo: periodos y tipos de periodo
 
 Los procesos ocurren dentro de un **periodo** (`terms`): «Semestre 2026-1». Cada periodo es de un
@@ -119,6 +149,7 @@ erDiagram
     int id PK "LA CONFIGURACION"
     int process_id FK
     int series_id FK
+    int linea_id FK "la linea, que va a sustituir a la pareja de arriba"
     varchar variation_key "general, u otra etiqueta"
     varchar definition_version "1.0.0"
     varchar name
