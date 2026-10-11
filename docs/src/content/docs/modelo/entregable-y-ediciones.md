@@ -102,8 +102,15 @@ Un entregable declara en `template_scope` si es **oficial** (`official`) —de l
 **personal** (`ad_hoc`), creado por alguien para su propio uso, y entonces `owner_person_id` dice
 quién.
 
-El ámbito no es decorativo: **decide qué resolutores puede usar el flujo que se autora sobre sus
-ediciones**. En `official` solo se admiten `task_assignee` («el responsable del entregable») y
+**Y desde el 2026-10-11 el ámbito decide algo más: un entregable personal NO puede estar vinculado a
+una configuración de proceso.** Lo impiden dos disparadores —uno en `vinculos` y otro aquí, para que
+no se rodee cambiando el ámbito después de vincular—, y está contado en
+[el vínculo](/modelo/vinculo/). La frase: la institución obliga con su formato, y una persona encarga
+con el formato de la institución o con el suyo; un formato privado nunca detrás de una obligación
+institucional.
+
+El ámbito no es decorativo tampoco para el flujo: **decide qué resolutores puede usar el que se
+autora sobre sus ediciones**. En `official` solo se admiten `task_assignee` («el responsable del entregable») y
 `cargo_in_scope` («por cargo»); `ad_hoc` añade `specific_person`, o sea nombrar a una persona
 concreta. La lista vive en `WEB_FILL_RESOLVER_TYPES_BY_SCOPE`
 (`backend/services/admin/templates/workflows.js`), y por debajo el `CHECK` de

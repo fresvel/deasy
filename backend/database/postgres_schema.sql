@@ -3321,6 +3321,115 @@ CREATE OR REPLACE TRIGGER trg_pdt_linea_unica
 BEFORE INSERT OR UPDATE ON vinculos
 FOR EACH ROW EXECUTE FUNCTION trg_pdt_linea_unica_fn();
 
+-- 7) UN FORMATO PERSONAL NUNCA DETRAS DE UNA OBLIGACION INSTITUCIONAL (frente 25, P13 — 2026-10-11).
+--
+-- La regla, con las palabras del dueño sobre esa combinacion: «esto no debe ser permitido». Y lo que
+-- se prohibe es exactamente una de las cuatro casillas de la matriz de los dos ejes:
+--
+--                         | catalogo_documental.template_scope
+--   task_items.origin_kind|  official                     | ad_hoc
+--   ----------------------+-------------------------------+---------------------------------
+--   process_defined       |  (1) la institucion obliga    |  (3) PROHIBIDA por este disparador
+--                         |      con su formato           |
+--   user_added            |  (2) alguien encarga con el   |  (4) alguien encarga con el suyo
+--                         |      formato de la institucion|      (la abre P14)
+--
+-- POR QUE IMPORTA, y no es teorico: la casilla (3) era ALCANZABLE y no la validaba nadie. Provocado
+-- el 2026-10-11 en una transaccion revertida —un `catalogo_documental` con `template_scope='ad_hoc'`,
+-- su edicion, y un vinculo de esa edicion a una configuracion institucional— y paso sin un solo
+-- error: ni CHECK, ni disparador, ni guardia de JavaScript. `trg_pdt_linea_unica` comprueba la LINEA,
+-- no de quien es el formato, asi que son dos garantias independientes sobre la misma tabla.
+--
+-- Lo que pasaria: la institucion obliga a cientos de personas a entregar un documento cuyo formato
+-- es PRIVADO de alguien. Quien lo tenga puede cambiarlo, versionarlo o quedarse sin acceso, y la
+-- obligacion institucional se queda sin papel.
+--
+-- SON DOS DISPARADORES Y HACEN FALTA LOS DOS, porque la prohibicion tiene dos lados y uno solo se
+-- rodea trivialmente: crear el formato como `official`, vincularlo, y DESPUES hacerle un
+-- `UPDATE ... SET template_scope = 'ad_hoc'`. Esa escritura no toca `vinculos`, asi que el primer
+-- disparador no la ve. El segundo cierra ese camino.
+--
+-- POR QUE UN DISPARADOR Y NO UN CHECK. La regla cruza dos tablas: el vinculo apunta a una EDICION y
+-- la propiedad vive en su CATALOGO. Un CHECK solo ve su propia fila. Y copiar `template_scope` a
+-- `ediciones` para poder exigirlo con una clave ajena compuesta es justo la duplicacion que el frente
+-- 23 quito (`owner_process_id`) y que este frente esta quitando (`variation_key`): la copia obliga a
+-- un guardia que compruebe que coincide, y el guardia acaba siendo su unico lector.
+--
+-- HOY NO RECHAZA NI UNA FILA, y es a proposito: medido el 2026-10-11, no existe ni un formato
+-- `ad_hoc` en el sistema —ningun camino lo crea— y cero vinculos apuntan a uno. Entra sin migrar
+-- nada. Lo que cambia es que el dia que P14 abra la casilla (4), la (3) ya estara cerrada.
+--
+-- ⚠️ CUANDO P15 RENOMBRE los cuatro valores (`template_scope`->`propiedad`, con
+-- `institucional`|`personal`), estos dos disparadores y sus mensajes se renombran con ellos. El
+-- nombre dice `oficial` porque hoy el valor es `official`.
+CREATE OR REPLACE FUNCTION public.trg_vinculo_solo_formato_oficial_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  formato_code varchar(180);
+  formato_scope text;
+BEGIN
+  -- Mover `sort_order`, `item_mode` o la configuracion destino no cambia DE QUIEN es el formato, asi
+  -- que no hay nada que comprobar y no se paga el JOIN. Que el formato de esta misma edicion no se
+  -- vuelva personal por detras lo vigila el otro disparador, no este.
+  IF TG_OP = 'UPDATE' AND NEW.edicion_id = OLD.edicion_id THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT d.code, d.template_scope
+    INTO formato_code, formato_scope
+    FROM ediciones ta
+    INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+   WHERE ta.id = NEW.edicion_id;
+
+  -- Si la edicion no existe, `formato_scope` sale NULL y la clave ajena rechaza la fila despues.
+  -- Este disparador no es el sitio donde se comprueba que la edicion exista.
+  IF formato_scope IS NOT NULL AND formato_scope <> 'official' THEN
+    RAISE EXCEPTION 'El formato "%" es personal y no puede estar detras de una obligacion institucional. Un vinculo solo admite formatos oficiales.', formato_code;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_vinculo_solo_formato_oficial
+BEFORE INSERT OR UPDATE ON vinculos
+FOR EACH ROW EXECUTE FUNCTION trg_vinculo_solo_formato_oficial_fn();
+
+-- El otro lado: un formato que YA esta vinculado no puede volverse personal. Sin esto, la
+-- prohibicion de arriba se rodea en dos pasos.
+CREATE OR REPLACE FUNCTION public.trg_formato_vinculado_sigue_oficial_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  vinculos_vivos int := 0;
+BEGIN
+  -- Solo se vigila el cambio que quita la condicion de oficial. Volverse oficial no rompe nada, y
+  -- un UPDATE que no toca la columna tampoco.
+  IF NEW.template_scope IS NOT DISTINCT FROM OLD.template_scope OR NEW.template_scope = 'official' THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT COUNT(*)
+    INTO vinculos_vivos
+    FROM vinculos pdt
+    INNER JOIN ediciones ta ON ta.id = pdt.edicion_id
+   WHERE ta.catalogo_documental_id = NEW.id;
+
+  IF vinculos_vivos > 0 THEN
+    RAISE EXCEPTION 'El formato "%" esta vinculado a % configuracion(es) y no puede pasar a personal. Desvinculalo primero.', NEW.code, vinculos_vivos;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_formato_vinculado_sigue_oficial
+BEFORE UPDATE ON catalogo_documental
+FOR EACH ROW EXECUTE FUNCTION trg_formato_vinculado_sigue_oficial_fn();
+
 
 -- UN HUECO NO SE REPITE DENTRO DEL MISMO DOCUMENTO (frente 24, fase 4).
 --

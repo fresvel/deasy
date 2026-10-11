@@ -75,6 +75,35 @@ de siembra y un `INSERT` a mano se lo saltaban. El disparador no se lo salta nad
 
 :::
 
+:::caution[Y nunca a un formato PERSONAL: eso lo impiden otros dos disparadores]
+
+Desde el **2026-10-11** un vínculo sólo admite un entregable **oficial**. Si su
+`catalogo_documental.template_scope` es `ad_hoc`, el `INSERT` muere:
+*«El formato "X" es personal y no puede estar detrás de una obligación institucional. Un vínculo
+sólo admite formatos oficiales.»*
+
+**La regla en una frase:** la institución obliga con su formato, y una persona encarga con el formato
+de la institución **o con el suyo** — pero un formato privado nunca está detrás de una obligación
+institucional. Si lo estuviera, la institución obligaría a cientos de personas a entregar un
+documento cuyo papel es de alguien, que puede cambiarlo, versionarlo o perder el acceso.
+
+**Son dos disparadores y hacen falta los dos**, porque con uno solo la prohibición se rodea en dos
+pasos: crear el formato como oficial, vincularlo, y después cambiarlo a personal — una escritura que
+no toca esta tabla. Así que `trg_formato_vinculado_sigue_oficial` cierra el otro lado: un formato ya
+vinculado **no puede volverse personal** sin desvincularlo primero. Uno sin vínculos sí puede.
+
+**No lo cubría `trg_pdt_linea_unica`**, y no es un olvido suyo: ése compara la **línea**, no de quién
+es el formato. Son dos garantías independientes sobre la misma tabla. Hasta esa fecha la combinación
+era **alcanzable y no la validaba nadie** —ni un `CHECK`, ni un disparador, ni un guardia de
+JavaScript—, lo que se comprobó provocándola.
+
+**Por qué disparadores y no un `CHECK`.** La regla cruza dos tablas: el vínculo apunta a una
+**edición** y la propiedad vive en su **catálogo**, y un `CHECK` sólo ve su propia fila. Copiar
+`template_scope` a `ediciones` para exigirlo con una clave ajena compuesta sería la misma duplicación
+que se acaba de quitar dos veces.
+
+:::
+
 ## Dos consecuencias del modo que no se ven en la tabla
 
 **Publicar exige flujo, salvo en `routed`.** Al publicar una edición se comprueba que tenga al menos
