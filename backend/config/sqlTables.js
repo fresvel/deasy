@@ -460,9 +460,8 @@ export const SQL_TABLES = [
         defaultValue: "all_matches"
       },
       { name: "priority", label: "Prioridad", type: "number", defaultValue: 1 },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "effective_from", label: "Vigencia desde", type: "date" },
-      { name: "effective_to", label: "Vigencia hasta", type: "date" },
+      // SIN `is_active` NI VIGENCIA (frente 25, P18-d): la regla nace y muere con su version de
+      // la norma. Si el reparto cambia, es otra configuracion.
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["unit_scope_type", "recipient_policy"]

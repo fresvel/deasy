@@ -126,27 +126,15 @@
 
       <!-- Bloque 2: prioridad, estado y vigencia -->
       <fieldset class="flex flex-col gap-3 border-t border-dashed border-line pt-4">
-        <p class="deasy-overline">Prioridad y vigencia</p>
+        <p class="deasy-overline">Prioridad</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
           <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
             <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
           </AdminFieldGroup>
-          <AdminFieldGroup label="Activo" group-class="md:col-span-2">
-            <SToggle :model-value="Number(form.is_active) === 1" :disabled="!canManage" label-position="end" field-aligned @change="(value) => updateField('is_active', value ? '1' : '0')" />
-          </AdminFieldGroup>
-          <AdminFieldGroup label="Vigencia desde" group-class="md:col-span-5">
-            <div class="flex items-stretch gap-2">
-              <AdminInputField class="flex-1" :model-value="form.effective_from" type="date" :disabled="!canManage" @update:model-value="updateField('effective_from', $event)" />
-              <AdminButton variant="neutral-outline" :disabled="!canManage" title="Usar la fecha de hoy" @click="updateField('effective_from', todayIso)">Hoy</AdminButton>
-              <AdminButton variant="neutral-outline" icon-only :disabled="!canManage || !form.effective_from" title="Quitar fecha" aria-label="Quitar fecha" @click="updateField('effective_from', '')">
-                <font-awesome-icon icon="times" />
-              </AdminButton>
-            </div>
-          </AdminFieldGroup>
-          <AdminFieldGroup label="Vigencia hasta" group-class="md:col-span-3">
-            <AdminInputField :model-value="form.effective_to" type="date" :disabled="!canManage" @update:model-value="updateField('effective_to', $event)" />
-          </AdminFieldGroup>
         </div>
+        <!-- AQUI ESTABAN «Activo», «Vigencia desde» y «Vigencia hasta», y se fueron con las tres
+             columnas (frente 25, P18-d): una regla no se enciende ni caduca por su cuenta — nace y
+             muere con su version de la norma. Si el reparto cambia, se versiona la configuracion. -->
       </fieldset>
 
       </div>
@@ -174,12 +162,7 @@
       scroll-class=""
     >
       <template #cell="{ row, field }">
-        <template v-if="field.name === 'is_active'">
-          {{ Number(row.is_active) === 1 ? "Si" : "No" }}
-        </template>
-        <template v-else>
-          {{ formatCell(row, field.name) }}
-        </template>
+        {{ formatCell(row, field.name) }}
       </template>
       <template #actions="{ row }">
         <AdminTableActions
@@ -206,7 +189,6 @@ import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
-import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
@@ -296,12 +278,8 @@ watch(() => props.error, (val) => {
   }
 });
 
-// Fecha de hoy en formato YYYY-MM-DD respetando la zona horaria local (no UTC).
-const todayIso = computed(() => {
-  const now = new Date();
-  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60000);
-  return local.toISOString().slice(0, 10);
-});
+// AQUI VIVIA `todayIso`, el atajo «Hoy» del campo de vigencia de la regla. Se fue con las fechas
+// (frente 25, P18-d).
 
 const scopeType = computed(() => String(props.form.unit_scope_type || "unit_exact"));
 const recipientPolicy = computed(() => String(props.form.recipient_policy || "all_matches"));

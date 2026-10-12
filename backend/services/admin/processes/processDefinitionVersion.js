@@ -345,10 +345,7 @@ export default class ProcessDefinitionVersionService {
               cargo_id,
               position_id,
               recipient_policy,
-              priority,
-              is_active,
-              effective_from,
-              effective_to
+              priority
        FROM process_target_rules
        WHERE process_definition_id = ?
        ORDER BY priority ASC, id ASC`,
@@ -365,11 +362,8 @@ export default class ProcessDefinitionVersionService {
           cargo_id,
           position_id,
           recipient_policy,
-          priority,
-          is_active,
-          effective_from,
-          effective_to
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          priority
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           normalizedTargetId,
           row.unit_scope_type,
@@ -378,10 +372,7 @@ export default class ProcessDefinitionVersionService {
           row.cargo_id,
           row.position_id,
           row.recipient_policy,
-          row.priority,
-          row.is_active,
-          row.effective_from,
-          row.effective_to
+          row.priority
         ]
       );
     }

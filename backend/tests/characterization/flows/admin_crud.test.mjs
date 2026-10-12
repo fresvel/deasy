@@ -998,7 +998,10 @@ test("DELETE /admin/sql/vinculos -> desenlaza la plantilla de la configuración"
       process_id: source.process_id,
       linea_id: source.linea_id,
       definition_version: "9.9.9",
-      effective_from: "2026-03-01",
+      // DENTRO de la vigencia de su línea: la obligación del «Proceso por defecto» la siembra el
+      // arranque con la fecha de hoy, y una norma no puede regir antes que la obligación que
+      // desarrolla (frente 25, P18-c). Antes esto decía `2026-03-01` y el disparador lo rechaza.
+      effective_from: new Date().toISOString().slice(0, 10),
       source_process_definition_id: source.id,
     },
   });

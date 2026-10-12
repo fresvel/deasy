@@ -34,9 +34,24 @@ export const getActiveAutomaticDefinitions = async (connection, term) => {
            ORDER BY pdv.effective_from DESC, pdv.id DESC
          ) AS rn
        FROM process_definition_versions pdv
+       -- LA OBLIGACION TIENE QUE SEGUIR EN PIE (frente 25, P18-a — 2026-10-12).
+       --
+       -- Esto no estaba, y era el hueco: retirar una linea NO PARABA NADA. Solo impedia crear
+       -- configuraciones nuevas sobre ella y la sacaba de los selectores; las ya activas seguian
+       -- generando tareas. Una vigencia que no detiene es peor que no tenerla, porque alguien la
+       -- pone creyendo que surte efecto.
+       INNER JOIN lineas l ON l.id = pdv.linea_id
        WHERE pdv.status = 'active'
+         -- LA NORMA QUE APLICA A UN PERIODO ES LA VIGENTE AL EMPEZARLO, no la que lo solape
+         -- (frente 25, P18-b). Una institucion dice «hasta 2026-2», no «hasta el 14 de noviembre»,
+         -- y un periodo que empezo bajo una norma TERMINA bajo esa norma. Antes esto era una prueba
+         -- de solapamiento --inicio <= fin del periodo y fin >= inicio del periodo--, asi que una
+         -- configuracion que entraba en vigor el ULTIMO DIA del semestre generaba ese semestre
+         -- entero. Las dos fechas se comparan ahora contra el INICIO del periodo.
          AND pdv.effective_from <= ?
          AND (pdv.effective_to IS NULL OR pdv.effective_to >= ?)
+         AND l.effective_from <= ?
+         AND (l.effective_to IS NULL OR l.effective_to >= ?)
      ) AS ranked
      INNER JOIN process_definition_period_types pdp
        ON pdp.process_definition_id = ranked.id
@@ -44,12 +59,15 @@ export const getActiveAutomaticDefinitions = async (connection, term) => {
       AND pdp.term_type_id = ?
      WHERE ranked.rn = 1
      ORDER BY ranked.process_id ASC, ranked.linea_id ASC`,
-    [term.end_date, term.start_date, term.term_type_id]
+    [term.start_date, term.start_date, term.start_date, term.start_date, term.term_type_id]
   );
   return rows;
 };
 
-export const getTargetRulesMap = async (connection, termStart, termEnd) => {
+// LA REGLA YA NO TIENE VIGENCIA NI INTERRUPTOR (frente 25, P18-d): nace y muere con su version
+// de la norma, y quien decide si esa norma aplica al periodo es `getActiveAutomaticDefinitions`.
+// Por eso esta funcion ya no recibe las fechas del periodo: no tiene nada que comparar con ellas.
+export const getTargetRulesMap = async (connection) => {
   const [rows] = await connection.query(
     `SELECT
        id,
@@ -62,11 +80,7 @@ export const getTargetRulesMap = async (connection, termStart, termEnd) => {
        recipient_policy,
        priority
      FROM process_target_rules
-     WHERE is_active = 1
-       AND (effective_from IS NULL OR effective_from <= ?)
-       AND (effective_to IS NULL OR effective_to >= ?)
-     ORDER BY process_definition_id, priority ASC, id ASC`,
-    [termEnd, termStart]
+     ORDER BY process_definition_id, priority ASC, id ASC`
   );
   const map = new Map();
   rows.forEach((row) => {

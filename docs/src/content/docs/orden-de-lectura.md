@@ -174,7 +174,7 @@ era «la serie», que admitía un eje **o** el otro; la línea lleva los dos.
 | `processes` | El proceso, por su nombre. Puede colgar de otro |
 | `lineas` | **La línea:** la obligación en sí — qué documento, **de quién** (`cargo_id`) y **dónde** (`unit_scope_type`, los mismos nombres que la regla), los dos ejes juntos, con nombre propio, vigencia y linaje |
 | `process_definition_versions` | **La definición, versionada.** Un proceso se puede redefinir sin perder lo que ya se lanzó con la versión anterior |
-| `process_target_rules` | **La regla:** a qué unidades y a qué puestos alcanza este proceso |
+| `process_target_rules` | **La regla:** a qué unidades y a qué puestos alcanza este proceso. **Sin vigencia y sin interruptor**: nace y muere con su versión de la definición |
 | `process_definition_period_types` | En qué tipos de periodo se repite |
 | `terms` | Los periodos concretos: «2026-1», «2026-2», «Permanente», con sus fechas |
 | `catalogo_documental` | **El entregable como obra**: «Informe de Gestión Docente». Es el título, no el archivo |

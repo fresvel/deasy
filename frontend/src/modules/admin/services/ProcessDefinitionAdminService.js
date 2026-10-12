@@ -13,10 +13,7 @@ export class ProcessDefinitionAdminService {
       cargo_id: "",
       position_id: "",
       recipient_policy: "all_matches",
-      priority: "1",
-      is_active: "1",
-      effective_from: "",
-      effective_to: ""
+      priority: "1"
     };
   }
 
@@ -152,10 +149,7 @@ export class ProcessDefinitionAdminService {
       cargo_id: !usesExactPosition && form.cargo_id ? Number(form.cargo_id) : null,
       position_id: usesExactPosition && form.position_id ? Number(form.position_id) : null,
       recipient_policy: recipientPolicy,
-      priority: Number(form.priority || 1) || 1,
-      is_active: Number(form.is_active) === 1 ? 1 : 0,
-      effective_from: form.effective_from || null,
-      effective_to: form.effective_to || null
+      priority: Number(form.priority || 1) || 1
     };
   }
 
@@ -205,10 +199,10 @@ export class ProcessDefinitionAdminService {
     return this.sqlService.remove("process_target_rules", { id: Number(ruleId) });
   }
 
+  // SIN `filter_is_active`: una regla ya no se apaga (frente 25, P18-d). Tener regla es tenerla.
   hasActiveRules(processDefinitionId) {
     return this.sqlService.list("process_target_rules", {
       filter_process_definition_id: processDefinitionId,
-      filter_is_active: 1,
       limit: 1
     });
   }

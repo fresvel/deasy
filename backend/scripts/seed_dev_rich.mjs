@@ -256,7 +256,6 @@ const main = async () => {
       cargo_id: CARGO_DOCENTE,
       recipient_policy: "all_matches",
       priority,
-      is_active: 1,
     }, token);
   }
 

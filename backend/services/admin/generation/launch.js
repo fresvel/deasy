@@ -99,7 +99,7 @@ export const hydrateTaskFromDefinition = async ({
   }
 
   const templatesMap = executableTemplatesMap || await getExecutableTemplatesMap(connection);
-  const rulesMap = targetRulesMap || await getTargetRulesMap(connection, term.start_date, term.end_date);
+  const rulesMap = targetRulesMap || await getTargetRulesMap(connection);
 
   // Los puestos se resuelven y se usan. Hasta el 2026-08-23 esto escribia `task_assignments`, la
   // volvia a LEER en la linea siguiente, y alimentaba con eso la creacion de los entregables: una
@@ -151,7 +151,7 @@ export const launchDefinitionInTerm = async (connection, {
     return { ...empty, status: "no_task_items" };
   }
 
-  const rulesMap = targetRulesMap || await getTargetRulesMap(connection, term.start_date, term.end_date);
+  const rulesMap = targetRulesMap || await getTargetRulesMap(connection);
   const rules = rulesMap.get(definition.id) || [];
   if (!rules.length) {
     return { ...empty, status: "no_target_rules" };
@@ -265,7 +265,7 @@ export const generateTasksForTerm = async (termId) => {
     if (!term) throw notFound("Periodo no encontrado.");
 
     const activeDefinitions = await getActiveAutomaticDefinitions(connection, term);
-    const targetRulesMap = await getTargetRulesMap(connection, term.start_date, term.end_date);
+    const targetRulesMap = await getTargetRulesMap(connection);
     // artifact_origin deprecado: la generación automática toma todas las plantillas vinculadas a la
     // configuración (toda plantilla materializa un entregable), sin filtrar por process/general.
     const executableTemplatesMap = await getExecutableTemplatesMap(connection);

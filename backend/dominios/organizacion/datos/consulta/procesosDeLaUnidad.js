@@ -25,7 +25,6 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
             ptr.unit_scope_type,
             ptr.recipient_policy,
             ptr.priority,
-            ptr.is_active AS rule_active,
             ptr.unit_id,
             ptr.unit_type_id,
             ptr.cargo_id,

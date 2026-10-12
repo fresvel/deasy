@@ -47,7 +47,6 @@ export function useProcessDefinitionManager({
   fetchFkLabel,
   getFkCachedLabel,
   formatCell,
-  formatDateOnly,
   prefetchFkLabelsForRows,
   ensureDefinitionRulesInstance,
   ensureDefinitionTriggersInstance,
@@ -447,10 +446,9 @@ export function useProcessDefinitionManager({
       cargo_id: row.cargo_id ? String(row.cargo_id) : "",
       position_id: row.position_id ? String(row.position_id) : "",
       recipient_policy: row.recipient_policy || "all_matches",
-      priority: row.priority !== null && row.priority !== undefined ? String(row.priority) : "1",
-      is_active: Number(row.is_active) === 1 ? "1" : "0",
-      effective_from: row.effective_from ? formatDateOnly(row.effective_from) : "",
-      effective_to: row.effective_to ? formatDateOnly(row.effective_to) : ""
+      // Sin `is_active` ni vigencia (frente 25, P18-d): la regla ya no las tiene, y `buildRulePayload`
+      // tampoco las manda. Hidratarlas dejaba tres claves muertas en el formulario.
+      priority: row.priority !== null && row.priority !== undefined ? String(row.priority) : "1"
     };
     definitionRulesLabels.value = {
       unit_id: row.unit_id ? String(getFkCachedLabel("units", row.unit_id) || row.unit_id) : "",

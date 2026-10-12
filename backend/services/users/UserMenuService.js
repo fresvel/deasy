@@ -100,12 +100,19 @@ const getProcessTargetRuleRows = async (pool) => {
       AND pdv.status = 'active'
       AND pdv.effective_from <= CURDATE()
       AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
-     LEFT JOIN lineas lin ON lin.id = pdv.linea_id
+     -- LA OBLIGACION TIENE QUE SEGUIR EN PIE para que el proceso aparezca en el menu
+     -- (frente 25, P18-a). Aqui el JOIN es INNER y la vigencia se compara contra HOY, no contra un
+     -- periodo: esta consulta contesta «que puede hacer esta persona AHORA».
+     --
+     -- ⚠️ Y NO se filtra igual en las dos consultas de trabajo pendiente de mas abajo, a proposito:
+     -- derogar una obligacion detiene la GENERACION de trabajo nuevo, no deja a medias lo que ya
+     -- esta en marcha. Un documento en llenado se termina aunque su obligacion se haya derogado.
+     INNER JOIN lineas lin
+       ON lin.id = pdv.linea_id
+      AND lin.effective_from <= CURDATE()
+      AND (lin.effective_to IS NULL OR lin.effective_to >= CURDATE())
      INNER JOIN process_target_rules ptr
        ON ptr.process_definition_id = pdv.id
-      AND ptr.is_active = 1
-      AND (ptr.effective_from IS NULL OR ptr.effective_from <= CURDATE())
-      AND (ptr.effective_to IS NULL OR ptr.effective_to >= CURDATE())
      WHERE p.is_active = 1
      ORDER BY p.name, ptr.priority, ptr.id`
   );

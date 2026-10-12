@@ -91,7 +91,7 @@ export default class TaskAssignmentService {
     const [rules] = await connection.query(
       `SELECT unit_scope_type, unit_id, unit_type_id, cargo_id, position_id
          FROM process_target_rules
-        WHERE process_definition_id = ? AND is_active = 1`,
+        WHERE process_definition_id = ?`,
       [defId]
     );
     if (!rules.length) {

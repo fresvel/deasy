@@ -96,10 +96,7 @@ const RULES = [
     cargo_id: 11,
     position_id: null,
     recipient_policy: "all_matches",
-    priority: 1,
-    is_active: 1,
-    effective_from: "2026-01-01",
-    effective_to: null
+    priority: 1
   }
 ];
 

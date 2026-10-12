@@ -39,10 +39,29 @@ Tres detalles de la resolución que no se ven en la declaración:
 - **`exact_position` se queda con una sola fila**, la del `position_id` declarado. Si la política es
   `exact_position` y no hay `position_id`, la regla no alcanza a nadie.
 
-Una configuración puede tener varias reglas. Llevan **prioridad** (`priority`) y **vigencia propia**
-(`effective_from` / `effective_to`), así que una regla puede entrar o salir sin tocar la configuración
-entera. En el disparo solo se leen las reglas con `is_active = 1` cuya vigencia se solape con el
-periodo.
+Una configuración puede tener varias reglas. Lo único que llevan además de su alcance es la
+**prioridad** (`priority`). **Ni interruptor ni fechas**: una regla no se apaga y no caduca por su
+cuenta.
+
+:::note[La vigencia está en dos niveles, y el reparto no es uno de ellos]
+
+Hasta el 2026-10-12 la regla llevaba `is_active` y dos fechas propias, de modo que el reparto podía
+entrar y salir sin que la configuración cambiara. Se retiraron las tres porque no es así como
+cambia el reparto en una institución: *«desde marzo también las Tecnologías»* no es encender una
+regla, es que **cambió la norma** — y una reforma se aprueba entera.
+
+Así que la vigencia vive donde hay un acto que la respalde:
+
+| | Qué lleva |
+|---|---|
+| **La obligación** ([`lineas`](/modelo/proceso/)) | vigencia (`effective_from` / `effective_to`) y **ningún interruptor**: una obligación no se apaga, se **deroga**, con fecha y casi siempre a futuro |
+| **La norma** (`process_definition_versions`) | **estado** (¿aprobada?) **y** vigencia: aprobar y entrar en vigor son dos actos distintos |
+| **El reparto** (`process_target_rules`) | nada. Nace y muere con su versión de la norma |
+
+Dos disparadores sostienen la jerarquía: la ventana de una norma **cabe dentro** de la de su
+obligación, y una obligación no puede recortarse por debajo de las normas que ya cuelgan de ella.
+
+:::
 
 :::caution[La prioridad desempata sillas, no personas]
 
@@ -104,9 +123,6 @@ erDiagram
     int position_id FK "o un puesto exacto"
     text recipient_policy "all_matches, unit_head, exact_position"
     int priority "cual aporta la silla si dos coinciden"
-    smallint is_active
-    date effective_from
-    date effective_to
     timestamp created_at
   }
 ```

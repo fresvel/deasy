@@ -434,10 +434,7 @@
     "itemKeys": [
       "cargo_id",
       "created_at",
-      "effective_from",
-      "effective_to",
       "id",
-      "is_active",
       "position_id",
       "priority",
       "process_definition_id",

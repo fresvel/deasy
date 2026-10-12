@@ -346,12 +346,12 @@ test("validateTableRules exige al menos un formato disponible en el artifact", (
 // decide qué mensaje ve el usuario — y es lo primero que rompería un refactor que
 // las normalizara a la plantilla declarativa. Estos tests lo clavan.
 
-test("process_target_rules valida las fechas ANTES que su configuracion requerida", () => {
-  // Con ambas cosas mal, gana la fecha: el ensureDateOrder va primero en el cuerpo.
-  throwsWith(
-    () => validateTableRules("process_target_rules", { effective_from: "2026-06-01", effective_to: "2026-01-01" }),
-    "en reglas de alcance",
-  );
+// ⚠️ ESTA PRUEBA MEDÍA UN ORDEN QUE YA NO EXISTE. Se llamaba «valida las fechas ANTES que su
+// configuracion requerida» y clavaba que `ensureDateOrder` iba primero en el cuerpo. La regla
+// perdió su vigencia en el frente 25 (P18-d) —nace y muere con su versión de la norma—, así que no
+// hay fechas que ordenar y el requerido es lo primero. El orden intercalado sigue siendo contrato
+// en las otras tres tablas de este bloque.
+test("process_target_rules exige su configuracion antes que el alcance", () => {
   throwsWith(() => validateTableRules("process_target_rules", {}), "Selecciona una configuracion de proceso.");
   throwsWith(
     () => validateTableRules("process_target_rules", { process_definition_id: 1, unit_scope_type: "unit_type" }),

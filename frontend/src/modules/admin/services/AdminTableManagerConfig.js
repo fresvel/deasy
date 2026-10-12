@@ -96,8 +96,9 @@ export const definitionRulesTableFields = [
   { name: "unit_type_id", label: "Tipo de unidad" },
   { name: "cargo_id", label: "Cargo" },
   { name: "position_id", label: "Puesto" },
-  { name: "recipient_policy", label: "Entrega" },
-  { name: "is_active", label: "Activo" }
+  { name: "recipient_policy", label: "Entrega" }
+  // SIN «Activo» (frente 25, P18-d): la regla perdio `is_active` y sus dos fechas. La columna
+  // quedaba pintando un guion en todas las filas.
 ];
 
 export const recordViewerSummaryTableFields = [

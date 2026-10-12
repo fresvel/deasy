@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**32 tablas · 306 columnas · 79 claves ajenas · 9 diagramas.**
+**32 tablas · 303 columnas · 79 claves ajenas · 9 diagramas.**
 
 ## Cómo leerla
 
@@ -139,7 +139,7 @@ erDiagram
 
 ## Lo que se declara (1 de 2)
 
-**5 tablas** · 46 columnas · 15 claves ajenas propias. Apunta a `cargos`, `term_types`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
+**5 tablas** · 43 columnas · 15 claves ajenas propias. Apunta a `cargos`, `term_types`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -188,9 +188,6 @@ erDiagram
     int position_id FK
     text recipient_policy
     int priority
-    smallint is_active
-    date effective_from
-    date effective_to
     timestamp created_at
   }
   process_definition_period_types {

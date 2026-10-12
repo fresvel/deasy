@@ -82,13 +82,10 @@ Table "process_target_rules" {
   "position_id" int4
   "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text, 'exact_position'::text])`, default: 'all_matches']
   "priority" int4 [not null, default: 1]
-  "is_active" int2 [not null, default: 1]
-  "effective_from" date
-  "effective_to" date
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (process_definition_id, is_active) [type: btree, name: "idx_process_target_rules_definition"]
+    process_definition_id [type: btree, name: "idx_process_target_rules_definition"]
     (unit_scope_type, unit_id, unit_type_id) [type: btree, name: "idx_process_target_rules_scope"]
   }
 

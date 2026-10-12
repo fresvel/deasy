@@ -580,15 +580,14 @@ export default class SqlAdminService {
     const [rows] = await connection.query(
       `SELECT COUNT(*) AS total
        FROM process_target_rules
-       WHERE process_definition_id = ?
-         AND is_active = 1`,
+       WHERE process_definition_id = ?`,
       [normalizedDefinitionId]
     );
 
     const total = Number(rows?.[0]?.total || 0);
     if (total < 1) {
       throw new Error(
-        "No se puede activar una configuracion si no tiene al menos una regla activa en Reglas de alcance."
+        "No se puede activar una configuracion si no tiene al menos una regla en Reglas de alcance."
       );
     }
   }

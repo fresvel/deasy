@@ -1,6 +1,6 @@
 # Frente 25 · Qué pareja (configuración, plantilla) es legal — y qué es una plantilla sin proceso
 
-> **Estado**: 🟡 **13 de 26 vivas** — 33 filas en el control y **7 fuera**:
+> **Estado**: 🟡 **14 de 26 vivas** — 33 filas en el control y **7 fuera**:
 > `P2` y `P17` descartadas · `A1`, `A2`, `E1` y `E2` **sin objeto** (el trabajo las contestó por
 > otra vía) · `P11` se fue al [frente 26](./ciclos-en-los-grafos-2026-10.md).
 > Contado con script sobre la tabla, no a ojo · abierto el **2026-10-09**.
@@ -42,6 +42,7 @@ cifra del texto: la tabla se cuenta sola.
 | **16** | **La casilla ③ NO se permite**: un formato personal nunca detrás de una obligación institucional | *«esto no debe ser permitido»* |
 | **17** | **La casilla ④ se implementa**: encargar con un formato propio. La vía de adopción se decide después | *«esta implementación era la que buscaba»* · *«la adopción se definiría después»* |
 | **18** | **La matriz NO colapsa**: los dos ejes se quedan, porque son el **papel** y el **encargo**, con vidas distintas | sale de su propia pregunta: *«si esa también se bloquea entonces hay un colapso… que podría simplificarse»* — y se midió que no |
+| **21** | **LA VIGENCIA SE REPARTE POR NIVELES, y sale del comportamiento de una institución, no del esquema**: la **obligación** se deroga con fecha y **no tiene interruptor**; la **norma** tiene estado *y* vigencia, porque aprobar y entrar en vigor son dos actos; el **reparto** no tiene ni una cosa ni la otra, porque si cambia, es otra versión de la norma. Y la norma que se aplica a un periodo es **la que estaba vigente cuando el periodo EMPEZÓ**, no la que lo solape | *«me gusta la propuesta»* |
 | **20** | **`trg_pdt_linea_unica` SE RETIRA**: un formato sirve a varias líneas **del mismo proceso**. Rompía la simetría de las dos identidades, y su enunciado espejo es absurdo | *«ya no me interesa esa restricción»* · y antes, eligiendo el límite: *«2»* |
 | **19** | **Los cuatro valores se renombran**, porque describen el modo y no la cosa: `origin_kind`→**`origen`** `(lanzamiento, encargo)` y `template_scope`→**`propiedad`** `(institucional, personal)` | *«evalúa si esos 4 nombres/etiquetas de la matriz pueden mejorarse por algo más entendible»* |
 
@@ -163,7 +164,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P17** | ⛔ **DESCARTADA** · el DÓNDE de una línea como conjunto. La sustituye `P20`: si el formato puede servir a varias líneas del mismo proceso, Carrera y Tecnología son **dos líneas que comparten papel** —cada una con su vigencia y su linaje, que es lo que el conjunto no daba— y la línea conserva **un** ámbito | ⛔ | el dueño eligió quitar la restricción en vez de meter el conjunto. `ck_lineas_unit_scope` y `uq_lineas_identidad` se quedan como están | 2026-10-12 |
 | **P20** | **Fuera `trg_pdt_linea_unica`; el límite es el PROCESO** — y la simetría de las dos identidades deja de depender de que alguien se acuerde | ✅ | `trg_vinculo_formato_un_proceso` lo sustituye, y **tres pruebas de `postgres_schema.test.js`** vigilan la simetría: el formato no declara columna hacia la obligación, la obligación no declara ninguna hacia el papel, y el puente une **versiones**, no identidades. **Provocada**: añadir `owner_process_id` a `catalogo_documental` la pone en rojo con su mensaje. 320/320 char (un golden nuevo, uno huérfano retirado), 891/891 unitarios, 5 puertas del backend, 5 de documentación, y 3 páginas del sitio en el mismo commit | 2026-10-12 |
 | **P21** | **El vocabulario de ámbito del FLUJO está desincronizado con la base**: `FILL_UNIT_SCOPE_TYPES` y `SIGNATURE_UNIT_SCOPE_TYPES` admiten **cinco** valores y el `CHECK` de `participantes_declarados` admite **tres**. Un paso autorado con `unit_type` pasa la validación y **muere en el INSERT**. Hay dos pruebas unitarias que lo dan por válido | ⬜ | **encontrado al hacer `P19`**, y se deja aparte a propósito: es del flujo, no de la regla | |
-| **P18** | **UNA SOLA VIGENCIA, la de la LÍNEA** (§8-bis punto 2): la configuración se queda con `status`, que ya contesta su pregunta, y la regla pierde la suya. **Y la de la línea tiene que DETENER la ejecución** — hoy el generador no mira `lineas`, así que retirarla no para nada | ⬜ | cierra los huecos **2 y 3** del §8 | |
+| **P18** | **LA VIGENCIA, POR NIVELES** (decisión 21, §9). Cuatro cosas: **(a)** la vigencia de la línea **detiene la ejecución**; **(b)** la norma que aplica a un periodo es la vigente **al empezarlo**, no la que lo solape; **(c)** la vigencia de una norma **cabe dentro** de la de su obligación, impuesto por la base; **(d)** la regla pierde `is_active`, `effective_from` y `effective_to` — tres columnas | ✅ | ⚠️ **REESCRITA el 2026-10-12.** Decía «una sola vigencia, la de la línea», y **era falso**: la de la configuración NO está duplicada con `status`. El generador la compara contra el **periodo** y el menú contra **hoy** — dos significados para las mismas columnas, que es lo que hizo fallar el análisis. Cierra los huecos **2 y 3** del §8. **Hecha**: tres columnas fuera del esquema, del editor genérico, del validador, de la siembra, del arranque y del formulario; `trg_norma_dentro_de_su_obligacion` y `trg_linea_no_recorta_sus_normas` imponen la contención; el generador filtra por la vigencia de la línea y compara contra `term.start_date`. 320/320 char con **2 goldens movidos y nada más** —seis líneas, las tres columnas en `list_process_target_rules` y en `panel_usuario`—, 885/885 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, y tres páginas del sitio en el mismo commit. **Verificado en el navegador** (ver abajo) | 2026-10-12 |
 | **P19** | **`unit_subtree` se retira** de `process_target_rules` | ✅ | el `CHECK` baja de 4 valores a 3, y con el valor se van **dos CTE recursivas sin protección de ciclos** (dos de los seis grafos del frente 26) y **dos consultas por petición**: `getOrgTreeRows` del menú y `getOrgChildrenMap` del panel traían el organigrama entero para resolverlo. Y la tubería muerta detrás: `createUnitSubtreeResolver` en dos sitios. **320/320 char sin mover un golden** —cero filas lo usaban—, 885/885 unitarios (−6: cuatro pruebas del resolutor y tres del menú se van con él, una de ellas **la única prueba de ciclos del repositorio**, cuya materia pasa al frente 26), 495/495 de frontend, 5 puertas del backend, 31 del frontend, 5 de documentación | 2026-10-12 |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
 | **P14** | **La casilla ④ se abre** (decisión 17): el camino que crea un formato **personal** y encarga con él. **La vía de adopción —cómo un formato personal pasa a institucional— se decide aparte**, y es otro frente: parametrizar una tarea que se repite *es* crear un proceso | ⬜ | ✅ **`P13` hecha, así que está desbloqueada.** Y la prohibición ya deja sitio: un formato **sin vínculos** sí puede ser personal, comprobado al provocarla | |
@@ -923,3 +924,76 @@ y pasa a ser una retirada**. Lo único que le queda a la regla es el **CÓMO** �
 Tecnología, el Jefe»* son **dos cargos** y por tanto dos líneas. Pero *«en Carrera va a todos los
 que encajen y en Tecnología sólo al que encabeza la unidad»* son dos `recipient_policy` para **una**
 línea — y eso decide si la regla sobrevive como «una fila por ámbito» o desaparece.
+
+---
+
+## 9 · `P18` · La vigencia por niveles (propuesta aprobada, 2026-10-12)
+
+**El dueño pidió una propuesta sacada del comportamiento de instituciones reales, no del esquema.**
+Lo que sigue es esa propuesta, y lo que la justifica son cuatro observaciones, no una medición del
+código.
+
+### Lo que hacen las instituciones
+
+| | Consecuencia para el modelo |
+|---|---|
+| **1 · Una obligación no se apaga: se DEROGA, con fecha y casi siempre a futuro.** Nadie dice «desactivo el Informe de IF»; dicen «desde el próximo periodo ya no se entrega», y eso queda en una resolución | la obligación lleva **fechas** y **no** lleva interruptor. Un interruptor pierde justo lo que alguien preguntará en dos años: **cuándo** dejó de deberse |
+| **2 · Aprobar y entrar en vigor son DOS actos.** Un reglamento se aprueba en noviembre y rige desde enero; en medio existe, está firmado, y no obliga a nadie | la norma lleva **estado** (¿aprobada?) **y** vigencia (¿desde cuándo?). No son lo mismo y las dos hacen falta |
+| **3 · El corte real no es el día: es el PERIODO.** Se dice «hasta 2026-2», no «hasta el 14 de noviembre». Y un periodo que empezó bajo una norma **termina bajo esa norma** | la norma que aplica a un periodo es **la vigente al EMPEZARLO** |
+| **4 · El reparto no tiene vida propia.** «Desde marzo también las Tecnologías» no es encender una regla: es que **cambió la norma**, y una reforma se aprueba entera | la regla **no lleva ni estado ni vigencia**: nace y muere con su versión |
+
+### La forma
+
+```
+LA OBLIGACIÓN     lineas             vigencia (desde/hasta) · SIN interruptor
+LA NORMA          configuraciones    estado (borrador/aprobada/sustituida) + vigencia
+EL REPARTO        reglas             NADA
+```
+
+### Qué cambia
+
+| | Hoy | Con la propuesta |
+|---|---|---|
+| Retirar una línea | **no para nada** — el generador no mira `lineas` | detiene la generación |
+| La regla | `is_active` **+** dos fechas opcionales | **ninguna de las tres** |
+| Contención | nadie la exige | la vigencia de una norma **cabe dentro** de la de su obligación |
+| Qué norma rige un periodo | la que lo **solape** —una que entra el último día del semestre generaría ese semestre entero— | la vigente **al empezarlo** |
+
+**Tres columnas menos, un filtro nuevo, un disparador y un cambio de comparación.**
+
+### Lo que deja fuera a propósito
+
+⚠️ **No permite relanzar un periodo pasado con la norma que regía entonces.** El historial está —las
+versiones sustituidas conservan su ventana— pero el generador sólo mira la vigente. Es defendible
+—relanzar el pasado es raro y auditarlo sólo necesita leer—, y lo que cambia es que **pasa de ser un
+accidente a ser una decisión escrita**.
+
+⚠️ **Y un caso que esta forma no cubre:** *«este año excepcionalmente las Tecnologías no entregan»*.
+Con la propuesta eso son **dos versiones** de la norma —una que excluye y otra que restituye— en vez
+de apagar una regla. El precio se acepta porque una excepción institucional **es** un acto que
+merece quedar escrito; es lo único de la propuesta que se decidió con duda.
+
+### Lo que costó, y lo que ninguna puerta vio (2026-10-12)
+
+**Quitar una columna tiene más sitios de los que una búsqueda de texto encuentra.** Las tres se
+fueron del esquema, del backend, del frontend, del validador, de la siembra y del arranque, y las
+cinco puertas del backend quedaron en verde — y aun así quedaban **tres** restos, cada uno
+encontrado por un instrumento distinto:
+
+| Resto | Quién lo encontró | Por qué no lo vio una puerta |
+|---|---|---|
+| `trg_pdv_before_update_fn()` seguía contando `process_target_rules WHERE is_active = 1` | **el log de PostgreSQL** | es **PL/pgSQL dentro del esquema**, no una plantilla de JavaScript. `check:sql-aliases` y `check:sql-comments` miran el código; nadie mira el cuerpo de una función de disparador |
+| la columna «Activo» de la tabla del panel de reglas | **el navegador** | vivía en `AdminTableManagerConfig.js` como `{ name: "is_active", label: "Activo" }`, lejos del componente. Pintaba un guion en todas las filas |
+| tres claves muertas al hidratar el formulario de regla | el mismo barrido del anterior | `buildRulePayload` ya no las mandaba, así que **no rompían nada**: eran basura silenciosa |
+
+⚠️ **Y el disparador engañaba al depurar.** El error llegaba al cliente como
+`column "is_active" does not exist`, **sin nombre de tabla y sin contexto**, colgado de un
+`UPDATE process_definition_versions SET status = 'active'` que no menciona la columna. Buscarlo en
+el backend no daba nada porque no estaba en el backend. Lo que lo resolvió fue
+`stack.sh b logs postgres`, donde PostgreSQL sí dice `CONTEXT: PL/pgSQL function
+trg_pdv_before_update_fn() line 7`.
+
+⚠️ **Y una trampa del harness que costó una vuelta entera:** `npm run test:char` **no resetea**, y
+una corrida anterior que murió a medias deja residuo. Volver a lanzarlo sin reset dio **49 fallos**
+—entre ellos el `guided-update` entero, por un borrador colado en el primer `vinculos` de la
+lista— que **no eran del cambio**. La corrida que vale es `test:char:run`.

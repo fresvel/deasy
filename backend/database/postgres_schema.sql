@@ -1598,9 +1598,19 @@ CREATE TABLE IF NOT EXISTS procesos.process_target_rules (
   position_id INT NULL,
   recipient_policy TEXT CHECK (recipient_policy IN ('all_matches', 'unit_head', 'exact_position')) NOT NULL DEFAULT 'all_matches',
   priority INT NOT NULL DEFAULT 1,
-  is_active SMALLINT NOT NULL DEFAULT 1,
-  effective_from DATE NULL,
-  effective_to DATE NULL,
+  -- SIN `is_active`, SIN `effective_from` Y SIN `effective_to` (frente 25, P18-d — 2026-10-12).
+  --
+  -- LA REGLA NO TIENE VIDA PROPIA: nace y muere con su version de la norma. «Desde marzo tambien lo
+  -- entregan las Tecnologias» no es encender una regla, es que CAMBIO LA NORMA — y en una
+  -- institucion una reforma se aprueba entera, no se enciende un parrafo suelto. Si el reparto
+  -- cambia, es otra configuracion.
+  --
+  -- Tenia las TRES: un interruptor y dos fechas para la misma pregunta, y las fechas ademas eran
+  -- NULL-ables cuando arriba son obligatorias. En las dos filas reales las dos fechas eran NULL.
+  --
+  -- QUE SE PIERDE, y se acepta: «este año excepcionalmente las Tecnologias no entregan» pasa a ser
+  -- DOS versiones de la norma --una que excluye y otra que restituye-- en vez de apagar una regla.
+  -- El precio es correcto: una excepcion institucional ES un acto que merece quedar escrito.
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_process_target_rules_definition FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
   CONSTRAINT fk_process_target_rules_unit FOREIGN KEY (unit_id) REFERENCES units(id),
@@ -1608,7 +1618,7 @@ CREATE TABLE IF NOT EXISTS procesos.process_target_rules (
   CONSTRAINT fk_process_target_rules_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id),
   CONSTRAINT fk_process_target_rules_position FOREIGN KEY (position_id) REFERENCES unit_positions(id)
 );
-CREATE INDEX IF NOT EXISTS idx_process_target_rules_definition ON process_target_rules (process_definition_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_process_target_rules_definition ON process_target_rules (process_definition_id);
 CREATE INDEX IF NOT EXISTS idx_process_target_rules_scope ON process_target_rules (unit_scope_type, unit_id, unit_type_id);
 
 
@@ -2888,21 +2898,25 @@ CREATE INDEX IF NOT EXISTS idx_dossier_items ON dossier_items (dossier_id, secti
 -- UPDATE t JOIN...->UPDATE t ... FROM..., y sin prefijo de alias en SET.
 -- ============================================================================
 
--- 1) Guard de activación: exige >=1 regla activa y >=1 tipo de periodo activo.
+-- 1) Guard de activación: exige >=1 regla de reparto y >=1 tipo de periodo activo.
+--
+-- ⚠️ La regla NO se filtra por vigencia ni por `is_active`: no los tiene (frente 25, P18-d). Nace y
+-- muere con su version de la obligacion, asi que basta con que exista. El tipo de periodo si: esa
+-- tabla conserva su `is_active`.
 CREATE OR REPLACE FUNCTION public.trg_pdv_before_update_fn() RETURNS trigger
   -- Un disparador no puede depender del search_path de quien lo dispara.
   SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
 AS $$
 DECLARE
-  active_rule_count int := 0;
+  rule_count int := 0;
   active_period_type_count int := 0;
 BEGIN
   IF NEW.status = 'active' AND OLD.status <> 'active' THEN
-    SELECT COUNT(*) INTO active_rule_count
+    SELECT COUNT(*) INTO rule_count
     FROM process_target_rules
-    WHERE process_definition_id = NEW.id AND is_active = 1;
-    IF active_rule_count < 1 THEN
-      RAISE EXCEPTION 'No se puede activar una definicion si no tiene al menos una regla activa en Reglas de alcance.';
+    WHERE process_definition_id = NEW.id;
+    IF rule_count < 1 THEN
+      RAISE EXCEPTION 'No se puede activar una definicion si no tiene al menos una regla en Reglas de alcance.';
     END IF;
 
     SELECT COUNT(*) INTO active_period_type_count
@@ -3601,6 +3615,99 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_linea_anterior_retirada
 BEFORE INSERT OR UPDATE ON lineas
 FOR EACH ROW EXECUTE FUNCTION trg_linea_anterior_retirada_fn();
+
+-- 9) LA VIGENCIA DE UNA NORMA CABE DENTRO DE LA DE SU OBLIGACION (frente 25, P18-c — 2026-10-12).
+--
+-- Habia TRES vigencias apiladas --linea, configuracion y regla-- filtradas cada una por su cuenta y
+-- SIN NINGUNA COMPROBACION que exigiera que la de dentro cupiera en la de fuera. Una configuracion
+-- podia regir mientras su obligacion estaba derogada, que es un sinsentido: la norma desarrolla la
+-- obligacion, no puede sobrevivirla.
+--
+-- La de la REGLA se fue entera con `P18-d`, asi que quedan dos niveles y una sola contencion.
+--
+-- POR QUE UN DISPARADOR Y NO UN CHECK: la regla cruza dos tablas --la ventana de la configuracion
+-- contra la de su linea-- y un CHECK solo ve su propia fila. Mismo motivo que los otros cuatro
+-- disparadores de este frente, y la misma alternativa descartada: copiar las fechas de la linea
+-- aqui seria la duplicacion que este frente lleva una semana quitando.
+--
+-- SE VIGILAN LOS DOS LADOS, porque la contencion se puede romper desde arriba o desde abajo:
+--   · al escribir una configuracion, que su ventana quepa en la de su linea;
+--   · al RECORTAR la linea, que no deje fuera a ninguna de sus configuraciones.
+-- Sin el segundo, retirar una linea con fecha pasada dejaria normas vigentes fuera de su obligacion.
+CREATE OR REPLACE FUNCTION public.trg_norma_dentro_de_su_obligacion_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  linea_nombre varchar(180);
+  linea_desde date;
+  linea_hasta date;
+BEGIN
+  IF TG_OP = 'UPDATE'
+     AND NEW.linea_id IS NOT DISTINCT FROM OLD.linea_id
+     AND NEW.effective_from IS NOT DISTINCT FROM OLD.effective_from
+     AND NEW.effective_to IS NOT DISTINCT FROM OLD.effective_to THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT l.nombre, l.effective_from, l.effective_to
+    INTO linea_nombre, linea_desde, linea_hasta
+    FROM lineas l
+   WHERE l.id = NEW.linea_id;
+
+  -- Si la linea no existe, la clave ajena rechaza la fila despues.
+  IF linea_nombre IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.effective_from < linea_desde THEN
+    RAISE EXCEPTION 'La configuracion no puede regir antes que su linea "%", que empieza el %.', linea_nombre, linea_desde;
+  END IF;
+
+  IF linea_hasta IS NOT NULL AND (NEW.effective_to IS NULL OR NEW.effective_to > linea_hasta) THEN
+    RAISE EXCEPTION 'La configuracion no puede regir despues que su linea "%", que termina el %.', linea_nombre, linea_hasta;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_norma_dentro_de_su_obligacion
+BEFORE INSERT OR UPDATE ON process_definition_versions
+FOR EACH ROW EXECUTE FUNCTION trg_norma_dentro_de_su_obligacion_fn();
+
+-- El otro lado: recortar una linea no puede dejar fuera a sus configuraciones.
+CREATE OR REPLACE FUNCTION public.trg_linea_no_recorta_sus_normas_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  normas_fuera int := 0;
+BEGIN
+  IF NEW.effective_from IS NOT DISTINCT FROM OLD.effective_from
+     AND NEW.effective_to IS NOT DISTINCT FROM OLD.effective_to THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT COUNT(*)
+    INTO normas_fuera
+    FROM process_definition_versions pdv
+   WHERE pdv.linea_id = NEW.id
+     AND (pdv.effective_from < NEW.effective_from
+          OR (NEW.effective_to IS NOT NULL
+              AND (pdv.effective_to IS NULL OR pdv.effective_to > NEW.effective_to)));
+
+  IF normas_fuera > 0 THEN
+    RAISE EXCEPTION 'La linea "%" tiene % configuracion(es) que quedarian fuera de esa vigencia. Ajustalas primero.', NEW.nombre, normas_fuera;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_linea_no_recorta_sus_normas
+BEFORE UPDATE ON lineas
+FOR EACH ROW EXECUTE FUNCTION trg_linea_no_recorta_sus_normas_fn();
 
 
 -- UN HUECO NO SE REPITE DENTRO DEL MISMO DOCUMENTO (frente 24, fase 4).

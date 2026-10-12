@@ -752,7 +752,7 @@ export const TABLE_HOOKS = {
       await ctx.service.applyTargetRuleLineaConstraints(ctx.payload.process_definition_id, ctx.payload);
     },
 
-    // La serie BLINDA el cargo/tipo de unidad de la regla: si la restricción los cambia, ese cambio
+    // La LINEA blinda el cargo/tipo de unidad de la regla: si la restricción los cambia, ese cambio
     // se propaga a los updates (no se pierde).
     async beforeUpdate(ctx) {
       await RULE_CHILD_GUARDS.beforeUpdate(ctx);

@@ -200,9 +200,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `position_id` | int | no | `unit_positions.id` · impide borrar | — |
 | `recipient_policy` | text | sí | — | `all_matches` · `unit_head` · `exact_position` |
 | `priority` | int | sí | — | — |
-| `is_active` | smallint | sí | — | — |
-| `effective_from` | date | no | — | — |
-| `effective_to` | date | no | — | — |
 | `created_at` | timestamp | sí | — | — |
 
 ### `process_definition_period_types`
@@ -524,4 +521,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**33 tablas · 314 columnas · 80 referencias.** Leídas del catálogo de PostgreSQL.
+**33 tablas · 311 columnas · 80 referencias.** Leídas del catálogo de PostgreSQL.

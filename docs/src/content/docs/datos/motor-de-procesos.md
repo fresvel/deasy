@@ -60,7 +60,7 @@ Tiene `status` (`draft`, `active`, `retired`) y vigencia (`effective_from` / `ef
 
 - Una **columna generada** `active_series_flag` mas un índice UNIQUE sobre `(linea_id, active_series_flag)` garantiza **a nivel de base de datos** que solo hay una versión activa por línea. Hasta el 2026-10-11 ese índice iba sobre `(process_id, <la etiqueta de la variación>, active_series_flag)`, o sea sobre una copia del código de la serie; hoy va sobre la línea, que es el dato.
 
-- Un **trigger** (`trg_process_definition_versions_before_update`) impide activarla si no tiene al menos una regla activa *y* un tipo de periodo, lanzando una excepción con mensaje en espanol.
+- Un **trigger** (`trg_process_definition_versions_before_update`) impide activarla si no tiene al menos una regla de reparto *y* un tipo de periodo activo, lanzando una excepción con mensaje en espanol. Hasta el 2026-10-12 exigía que la regla estuviera *activa*; ya no puede, porque la regla no tiene interruptor.
 
 :::tip[Reglas de negocio dentro de la base de datos]
 
@@ -70,7 +70,9 @@ Es poco habitual y merece la pena entender el porque: si la regla “no se puede
 
 ### `process_target_rules` — la regla.
 
-Reparte el alcance con tres piezas: `unit_scope_type` (`unit_exact`, `unit_type`, `all_units`), el `cargo_id` o `position_id` dentro de la unidad, y una `recipient_policy` (`all_matches`, `unit_head`, `exact_position`). Además `priority` y vigencia.
+Reparte el alcance con tres piezas: `unit_scope_type` (`unit_exact`, `unit_type`, `all_units`), el `cargo_id` o `position_id` dentro de la unidad, y una `recipient_policy` (`all_matches`, `unit_head`, `exact_position`). Además `priority`, y **nada más**.
+
+El **2026-10-12** perdió `is_active`, `effective_from` y `effective_to`: el reparto no tiene vida propia, nace y muere con su versión de la configuración. Cambiar a quién alcanza un proceso es reformar la norma, no encender una fila. La vigencia vive dos niveles más arriba — en la configuración y en la línea — y está contada en [el reparto](/modelo/reparto/).
 
 ### `vinculos` — el paquete de entregables.
 

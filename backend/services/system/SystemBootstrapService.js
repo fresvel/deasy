@@ -955,7 +955,7 @@ export const ensureDefaultProcess = async (connection) => {
   );
   if (!rule) {
     await connection.query(
-      "INSERT INTO process_target_rules (process_definition_id, unit_scope_type, recipient_policy, priority, is_active) VALUES (?, 'all_units', 'all_matches', 1, 1)",
+      "INSERT INTO process_target_rules (process_definition_id, unit_scope_type, recipient_policy, priority) VALUES (?, 'all_units', 'all_matches', 1)",
       [definitionId]
     );
   }

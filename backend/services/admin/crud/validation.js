@@ -87,7 +87,7 @@ const requires = (...pairs) => (candidate) => {
 
 /**
  * Orden de fechas. La mayoría de tablas usa `start_date`/`end_date`, pero las que versionan
- * vigencias (`process_definition_versions`, `process_target_rules`) usan `effective_from`/
+ * vigencias (`lineas`, `process_definition_versions`) usan `effective_from`/
  * `effective_to`; de ahí los dos parámetros opcionales.
  */
 const datesInOrder = (label, startField = "start_date", endField = "end_date") => (candidate) => {
@@ -299,7 +299,7 @@ const TABLE_RULES = {
     lineaScopeConsistent,
   ],
   process_target_rules: [
-    datesInOrder("reglas de alcance", "effective_from", "effective_to"),
+    // SIN `datesInOrder`: la regla ya no tiene vigencia (frente 25, P18-d).
     requires(["process_definition_id", "Selecciona una configuracion de proceso."]),
     targetScopeConsistent,
   ],

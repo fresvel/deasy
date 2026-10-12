@@ -257,9 +257,6 @@ export const getActiveDefinitionRules = async (pool, definitionId) => {
        ptr.position_id,
        ptr.recipient_policy,
        ptr.priority,
-       ptr.is_active,
-       ptr.effective_from,
-       ptr.effective_to,
        u.name AS unit_name,
        ut.name AS unit_type_name,
        c.name AS cargo_name,
@@ -270,9 +267,6 @@ export const getActiveDefinitionRules = async (pool, definitionId) => {
      LEFT JOIN cargos c ON c.id = ptr.cargo_id
      LEFT JOIN unit_positions up ON up.id = ptr.position_id
      WHERE ptr.process_definition_id = ?
-       AND ptr.is_active = 1
-       AND (ptr.effective_from IS NULL OR ptr.effective_from <= CURDATE())
-       AND (ptr.effective_to IS NULL OR ptr.effective_to >= CURDATE())
      ORDER BY ptr.priority ASC, ptr.id ASC`,
     [definitionId]
   );
