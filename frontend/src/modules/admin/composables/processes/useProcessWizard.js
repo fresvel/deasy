@@ -13,18 +13,14 @@ export const PROCESS_WIZARD_STEPS = [
   { key: "activate", label: "Activar" },
 ];
 
-const NEW_SERIES_VALUE = "__new__";
+export const NEW_LINEA_VALUE = "__new__";
 
-const SERIES_SOURCE_LABELS = {
-  unit_type: "Tipo de unidad",
-  cargo: "Cargo",
-  default: "Sin variación"
-};
-
-const SERIES_OPTION_PREFIXES = {
+// EL ALCANCE DE UNA LÍNEA: dónde vive la obligación. Son los mismos tres valores y los mismos
+// nombres que `process_target_rules.unit_scope_type`, porque es el mismo concepto.
+export const LINEA_SCOPE_LABELS = {
+  all_units: "Todas las unidades",
   unit_type: "Por tipo de unidad",
-  cargo: "Por cargo",
-  default: "Sin variación"
+  unit_exact: "Una unidad concreta"
 };
 
 const slugify = (value, maxLength = 80) =>
@@ -37,51 +33,16 @@ const slugify = (value, maxLength = 80) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, maxLength);
 
-const buildSeriesCode = ({ sourceType, unitTypeName, cargoName }) => {
-  if (sourceType === "unit_type") {
-    return slugify(unitTypeName, 120);
-  }
-  if (sourceType === "cargo") {
-    return slugify(cargoName, 120);
-  }
-  if (sourceType === "default") {
-    return "general";
-  }
-  return "";
-};
-
-const capitalizeFirst = (value) => {
-  const normalized = String(value || "").trim().replace(/\s+/g, " ");
-  if (!normalized) {
-    return "";
-  }
-  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)}`;
-};
-
-const prettifySeriesCode = (value) =>
-  capitalizeFirst(String(value || "").replaceAll("-", " "));
-
-const buildSeriesDisplayName = ({ sourceType, unitTypeName, cargoName, code } = {}) => {
-  const unitTypeLabel = capitalizeFirst(unitTypeName);
-  const cargoLabel = capitalizeFirst(cargoName);
-
-  if (sourceType === "unit_type" && unitTypeLabel) {
-    return unitTypeLabel;
-  }
-  if (sourceType === "cargo" && cargoLabel) {
-    return cargoLabel;
-  }
-  return prettifySeriesCode(code || "general");
-};
-
 const newDefinitionForm = () => ({
   process_mode: "existing",
   process_id: "",
   new_process_name: "",
   new_process_parent_id: "",
-  series_id: "",
-  series_source_type: "unit_type",
+  linea_id: "",
+  linea_nombre: "",
+  unit_scope_type: "all_units",
   unit_type_id: "",
+  unit_id: "",
   cargo_id: "",
   definition_version: "1.0.0",
   description: "",
@@ -92,7 +53,7 @@ const definitionFormFromRow = (row = {}) => ({
   ...newDefinitionForm(),
   process_mode: "existing",
   process_id: row.process_id ? String(row.process_id) : "",
-  series_id: row.series_id ? String(row.series_id) : "",
+  linea_id: row.linea_id ? String(row.linea_id) : "",
   definition_version: row.definition_version || "1.0.0",
   description: row.description || ""
 });
@@ -108,7 +69,8 @@ export function useProcessWizard() {
   const processOptions = ref([]);
   const unitTypeOptions = ref([]);
   const cargoOptions = ref([]);
-  const seriesOptions = ref([]);
+  const lineaOptions = ref([]);
+  const unitOptions = ref([]);
   const duplicateDefinition = ref(null);
   const creatingDefinition = ref(false);
   const wizardError = ref("");
@@ -118,11 +80,12 @@ export function useProcessWizard() {
 
   const loadProcessOptions = async () => {
     try {
-      const [procRes, unitTypeRes, cargoRes, seriesRes] = await Promise.all([
+      const [procRes, unitTypeRes, cargoRes, lineaRes, unitRes] = await Promise.all([
         adminSqlService.list("processes", { filter_is_active: 1, orderBy: "name", order: "asc", limit: 500 }),
         adminSqlService.list("unit_types", { orderBy: "name", order: "asc", limit: 500 }),
         adminSqlService.list("cargos", { orderBy: "name", order: "asc", limit: 500 }),
-        adminSqlService.list("process_definition_series", { filter_is_active: 1, orderBy: "code", order: "asc", limit: 500 }),
+        adminSqlService.list("lineas", { orderBy: "nombre", order: "asc", limit: 500 }),
+        adminSqlService.list("units", { orderBy: "name", order: "asc", limit: 500 }),
       ]);
       processOptions.value = toRows(procRes.data).map((r) => ({
         id: r.id,
@@ -132,105 +95,70 @@ export function useProcessWizard() {
       }));
       unitTypeOptions.value = toRows(unitTypeRes.data).map((r) => ({ id: r.id, name: r.name || `Tipo ${r.id}` }));
       cargoOptions.value = toRows(cargoRes.data).map((r) => ({ id: r.id, name: r.name || `Cargo ${r.id}` }));
+      unitOptions.value = toRows(unitRes.data).map((r) => ({ id: r.id, name: r.name || `Unidad ${r.id}` }));
       const unitTypeNames = new Map(unitTypeOptions.value.map((row) => [Number(row.id), row.name]));
+      const unitNames = new Map(unitOptions.value.map((row) => [Number(row.id), row.name]));
       const cargoNames = new Map(cargoOptions.value.map((row) => [Number(row.id), row.name]));
-      seriesOptions.value = toRows(seriesRes.data)
-        .filter((row) => SERIES_SOURCE_LABELS[row?.source_type] && Number(row?.is_active))
+      // LA LÍNEA YA TIENE NOMBRE: aquí se componía uno a partir del origen de la serie
+      // (`Por cargo: Docente`) porque la serie no tenía. El único añadido es el contexto —cargo y
+      // alcance— para poder distinguir dos líneas del mismo proceso de un vistazo.
+      lineaOptions.value = toRows(lineaRes.data)
+        .filter((row) => !row?.effective_to)
         .map((row) => {
-          const unitTypeName = unitTypeNames.get(Number(row.unit_type_id)) || "";
           const cargoName = cargoNames.get(Number(row.cargo_id)) || "";
-          const displayName = buildSeriesDisplayName({
-            sourceType: row.source_type,
-            unitTypeName,
-            cargoName,
-            code: row.code
-          });
+          const scope = String(row.unit_scope_type || "all_units");
+          const donde = scope === "unit_type"
+            ? `${LINEA_SCOPE_LABELS.unit_type}: ${unitTypeNames.get(Number(row.unit_type_id)) || "?"}`
+            : scope === "unit_exact"
+              ? `${LINEA_SCOPE_LABELS.unit_exact}: ${unitNames.get(Number(row.unit_id)) || "?"}`
+              : LINEA_SCOPE_LABELS.all_units;
           return {
             ...row,
-            displayName,
-            unit_type_name: row.unit_type_name || unitTypeName,
-            cargo_name: row.cargo_name || cargoName,
-            label: [
-              SERIES_OPTION_PREFIXES[row.source_type] || SERIES_SOURCE_LABELS[row.source_type],
-              displayName
-            ].filter(Boolean).join(": ")
+            displayName: row.nombre || `Línea ${row.id}`,
+            cargo_name: cargoName,
+            label: [row.nombre, [cargoName || "Cualquier cargo", donde].join(" · ")].filter(Boolean).join(" — ")
           };
         });
     } catch {
       processOptions.value = [];
       unitTypeOptions.value = [];
       cargoOptions.value = [];
-      seriesOptions.value = [];
+      lineaOptions.value = [];
+      unitOptions.value = [];
     }
   };
 
-  const findExistingDefinition = async ({ processId, seriesId, definitionVersion }) => {
-    if (!processId || !seriesId || !definitionVersion) {
+  // LA IDENTIDAD DE UNA CONFIGURACIÓN ES (LÍNEA, VERSIÓN). Eran tres columnas —proceso, variación y
+  // versión—, y la variación era una copia del código de la serie.
+  const findExistingDefinition = async ({ lineaId, definitionVersion }) => {
+    if (!lineaId || !definitionVersion) {
       return null;
     }
     const response = await adminSqlService.list("process_definition_versions", {
-      filter_process_id: Number(processId),
-      filter_series_id: Number(seriesId),
+      filter_linea_id: Number(lineaId),
       filter_definition_version: String(definitionVersion),
       limit: 25
     });
     return toRows(response.data).find((row) => (
-      Number(row.process_id) === Number(processId)
-      && Number(row.series_id) === Number(seriesId)
+      Number(row.linea_id) === Number(lineaId)
       && String(row.definition_version || "") === String(definitionVersion || "")
     )) || null;
   };
 
-  const selectedSeriesDisplayName = computed(() => {
+  // EL NOMBRE DE LA LÍNEA. Aquí había TRES computed —`selectedSeriesDisplayName`,
+  // `seriesCodePreview` y `selectedSeriesSourceType`— que reconstruían en el navegador la misma
+  // derivación que el backend hacía con `slugify(cargo.name)`. Con la línea no hay nada que
+  // derivar: o se eligió una, y tiene nombre, o se está escribiendo el de la nueva.
+  const selectedLineaName = computed(() => {
     const form = definitionForm.value;
-    const selectedSeriesId = Number(form.series_id);
-    if (selectedSeriesId) {
-      const selectedSeries = seriesOptions.value.find((row) => Number(row.id) === selectedSeriesId);
-      if (!selectedSeries) {
-        return "";
-      }
-      return selectedSeries.displayName || buildSeriesDisplayName({
-        sourceType: selectedSeries.source_type,
-        unitTypeName: selectedSeries.unit_type_name,
-        cargoName: selectedSeries.cargo_name,
-        code: selectedSeries.code
-      });
+    const selectedLineaId = Number(form.linea_id);
+    if (selectedLineaId) {
+      return lineaOptions.value.find((row) => Number(row.id) === selectedLineaId)?.nombre || "";
     }
-    if (form.series_id !== NEW_SERIES_VALUE) {
+    if (form.linea_id !== NEW_LINEA_VALUE) {
       return "";
     }
-    const unitType = unitTypeOptions.value.find((row) => Number(row.id) === Number(form.unit_type_id));
-    const cargo = cargoOptions.value.find((row) => Number(row.id) === Number(form.cargo_id));
-    if (form.series_source_type === "unit_type" && !unitType) {
-      return "";
-    }
-    if (form.series_source_type === "cargo" && !cargo) {
-      return "";
-    }
-    return buildSeriesDisplayName({
-      sourceType: String(form.series_source_type || ""),
-      unitTypeName: unitType?.name || "",
-      cargoName: cargo?.name || "",
-      code: seriesCodePreview.value
-    });
-  });
-
-  const seriesCodePreview = computed(() => {
-    const form = definitionForm.value;
-    const selectedSeriesId = Number(form.series_id);
-    if (selectedSeriesId) {
-      return seriesOptions.value.find((row) => Number(row.id) === selectedSeriesId)?.code || "";
-    }
-    if (form.series_id !== NEW_SERIES_VALUE) {
-      return "";
-    }
-    const unitType = unitTypeOptions.value.find((row) => Number(row.id) === Number(form.unit_type_id));
-    const cargo = cargoOptions.value.find((row) => Number(row.id) === Number(form.cargo_id));
-    return buildSeriesCode({
-      sourceType: String(form.series_source_type || ""),
-      unitTypeName: unitType?.name || "",
-      cargoName: cargo?.name || ""
-    });
+    return String(form.linea_nombre || "").trim();
   });
 
   const resolveAvailableProcessSlug = (processName) => {
@@ -261,114 +189,54 @@ export function useProcessWizard() {
     return processName ? resolveAvailableProcessSlug(processName) : "";
   });
 
-  const selectedProcessName = computed(() => {
-    const form = definitionForm.value;
-    if (form.process_mode === "new") {
-      return String(form.new_process_name || "").trim();
-    }
-    const selectedProcess = processOptions.value.find((row) => Number(row.id) === Number(form.process_id));
-    return String(selectedProcess?.name || "").trim();
-  });
+  // EL NOMBRE DE LA CONFIGURACIÓN ES EL DE SU LÍNEA. Se componía «<Proceso> por <Serie>» y el del
+  // la serie se derivaba de `slugify(cargo.name)`; eso no podía decir lo que la obligación es,
+  // porque le faltaba un eje: «Informe de IF por Coordinador» no distingue al de Carrera del de
+  // Escuela.
+  const definitionNamePreview = computed(() => selectedLineaName.value.slice(0, 180));
 
-  const selectedSeriesSourceType = computed(() => {
-    const form = definitionForm.value;
-    const selectedSeriesId = Number(form.series_id);
-    if (selectedSeriesId) {
-      return seriesOptions.value.find((row) => Number(row.id) === selectedSeriesId)?.source_type || "";
-    }
-    if (form.series_id === NEW_SERIES_VALUE) {
-      return String(form.series_source_type || "");
-    }
-    return "";
-  });
-
-  const definitionNamePreview = computed(() => {
-    const processName = capitalizeFirst(selectedProcessName.value);
-    if (!processName) {
-      return "";
-    }
-    // Sin variación (default): el nombre es el del proceso (memos/oficios).
-    if (selectedSeriesSourceType.value === "default") {
-      return processName.slice(0, 180);
-    }
-    const seriesName = selectedSeriesDisplayName.value;
-    if (!seriesName) {
-      return "";
-    }
-    return `${processName} por ${seriesName}`.slice(0, 180);
-  });
-
-  // Resuelve la variación existente o crea una nueva serie y devuelve su identidad persistida.
-  const resolveSeries = async (form) => {
-    const selectedSeriesId = Number(form.series_id);
-    if (selectedSeriesId) {
-      const selectedSeries = seriesOptions.value.find((row) => Number(row.id) === selectedSeriesId);
-      if (!selectedSeries) {
-        throw new Error("La variación seleccionada no está disponible.");
+  // Resuelve la línea elegida, o crea la nueva con sus DOS ejes y su nombre escrito.
+  const resolveLinea = async (form, processId) => {
+    const selectedLineaId = Number(form.linea_id);
+    if (selectedLineaId) {
+      const selected = lineaOptions.value.find((row) => Number(row.id) === selectedLineaId);
+      if (!selected) {
+        throw new Error("La línea seleccionada no está disponible.");
       }
-      return { id: selectedSeriesId, code: selectedSeries.code, displayName: selectedSeries.displayName };
+      return { id: selectedLineaId, nombre: selected.nombre };
     }
-    if (form.series_id !== NEW_SERIES_VALUE) {
-      throw new Error("Selecciona una variación existente o crea una nueva.");
-    }
-
-    const sourceType = String(form.series_source_type || "");
-    const validSourceTypes = new Set(["unit_type", "cargo", "default"]);
-    if (!validSourceTypes.has(sourceType)) {
-      throw new Error("Selecciona un origen válido para la serie.");
+    if (form.linea_id !== NEW_LINEA_VALUE) {
+      throw new Error("Selecciona una línea existente o crea una nueva.");
     }
 
-    // Sin variación (default) no requiere tipo de unidad ni cargo.
-    const requiresUnitType = sourceType === "unit_type";
-    const requiresCargo = sourceType === "cargo";
-    const unitTypeId = requiresUnitType ? Number(form.unit_type_id) : null;
-    const cargoId = requiresCargo ? Number(form.cargo_id) : null;
-    if (requiresUnitType && !unitTypeId) {
-      throw new Error("Selecciona un tipo de unidad para la serie.");
+    const nombre = String(form.linea_nombre || "").trim();
+    if (!nombre) {
+      throw new Error("Escribe el nombre de la línea.");
     }
-    if (requiresCargo && !cargoId) {
-      throw new Error("Selecciona un cargo para la serie.");
+    const scope = String(form.unit_scope_type || "all_units");
+    if (!LINEA_SCOPE_LABELS[scope]) {
+      throw new Error("Selecciona un alcance válido para la línea.");
+    }
+    const unitTypeId = scope === "unit_type" ? Number(form.unit_type_id) : null;
+    const unitId = scope === "unit_exact" ? Number(form.unit_id) : null;
+    if (scope === "unit_type" && !unitTypeId) {
+      throw new Error("Selecciona el tipo de unidad de la línea.");
+    }
+    if (scope === "unit_exact" && !unitId) {
+      throw new Error("Selecciona la unidad de la línea.");
     }
 
-    const filters = {
-      filter_source_type: sourceType,
-      ...(unitTypeId ? { filter_unit_type_id: unitTypeId } : {}),
-      ...(cargoId ? { filter_cargo_id: cargoId } : {}),
-      limit: 50
-    };
-    const listRes = await adminSqlService.list("process_definition_series", filters);
-    const existing = toRows(listRes.data).find(
-      (row) => (
-        String(row.source_type) === sourceType
-        && (!requiresUnitType || Number(row.unit_type_id) === unitTypeId)
-        && (!requiresCargo || Number(row.cargo_id) === cargoId)
-      )
-    );
-    if (existing?.id) {
-      return {
-        id: existing.id,
-        code: existing.code,
-        displayName: buildSeriesDisplayName({
-          sourceType: existing.source_type,
-          unitTypeName: unitTypeOptions.value.find((row) => Number(row.id) === Number(existing.unit_type_id))?.name || "",
-          cargoName: cargoOptions.value.find((row) => Number(row.id) === Number(existing.cargo_id))?.name || "",
-          code: existing.code
-        })
-      };
-    }
-    const payload = {
-      source_type: sourceType,
+    const today = new Date().toISOString().slice(0, 10);
+    const lineaRes = await adminSqlService.create("lineas", {
+      process_id: Number(processId),
+      nombre,
+      cargo_id: form.cargo_id ? Number(form.cargo_id) : null,
+      unit_scope_type: scope,
       unit_type_id: unitTypeId,
-      cargo_id: cargoId,
-      is_active: 1
-    };
-    const seriesRes = await adminSqlService.create("process_definition_series", payload);
-    const createdSeries = seriesRes?.data || {};
-    return {
-      id: resolveCreatedId(seriesRes),
-      code: createdSeries.code || seriesCodePreview.value,
-      displayName: selectedSeriesDisplayName.value
-    };
+      unit_id: unitId,
+      effective_from: today
+    });
+    return { id: resolveCreatedId(lineaRes), nombre };
   };
 
   const refreshStepStatus = async () => {
@@ -408,16 +276,18 @@ export function useProcessWizard() {
           slug: ""
         });
       }
+      // La línea de una configuración RETIRADA no viene en el listado (sólo se listan las vigentes),
+      // así que se añade a mano para que el selector pueda mostrarla al reabrir el asistente.
       if (
-        definitionRow.series_id
-        && !seriesOptions.value.some((option) => String(option.id) === String(definitionRow.series_id))
+        definitionRow.linea_id
+        && !lineaOptions.value.some((option) => String(option.id) === String(definitionRow.linea_id))
       ) {
-        seriesOptions.value.push({
-          id: definitionRow.series_id,
-          code: `serie-${definitionRow.series_id}`,
-          displayName: buildSeriesDisplayName({ code: definitionRow.linea_nombre || definitionRow.name || `Variación ${definitionRow.series_id}` }),
-          label: definitionRow.linea_nombre || `Variación ${definitionRow.series_id}`,
-          is_active: 1
+        const nombre = definitionRow.linea_nombre || definitionRow.name || `Línea ${definitionRow.linea_id}`;
+        lineaOptions.value.push({
+          id: definitionRow.linea_id,
+          nombre,
+          displayName: nombre,
+          label: nombre
         });
       }
       currentStep.value = step || "rules";
@@ -485,14 +355,13 @@ export function useProcessWizard() {
       if (!processId) {
         throw new Error("Selecciona o crea un proceso.");
       }
-      const series = await resolveSeries(form);
-      if (!series.id) {
-        throw new Error("No se pudo resolver la serie de la configuración.");
+      const linea = await resolveLinea(form, processId);
+      if (!linea.id) {
+        throw new Error("No se pudo resolver la línea de la configuración.");
       }
       const definitionVersion = form.definition_version || "1.0.0";
       duplicateLookupParams = {
-        processId,
-        seriesId: series.id,
+        lineaId: linea.id,
         definitionVersion
       };
       const existingDefinition = await findExistingDefinition({
@@ -500,13 +369,13 @@ export function useProcessWizard() {
       });
       if (existingDefinition?.id) {
         duplicateDefinition.value = existingDefinition;
-        wizardError.value = "Ya existe una configuración con esa variación y versión para el proceso seleccionado.";
+        wizardError.value = "Ya existe una configuración con esa versión para la línea seleccionada.";
         return null;
       }
       const today = new Date().toISOString().slice(0, 10);
       const definitionRes = await adminSqlService.create("process_definition_versions", {
         process_id: Number(processId),
-        series_id: Number(series.id),
+        linea_id: Number(linea.id),
         definition_version: definitionVersion,
         description: form.description ? String(form.description) : null,
         status: "draft",
@@ -517,14 +386,13 @@ export function useProcessWizard() {
       definitionContext.value = {
         id: resolveCreatedId(definitionRes),
         process_id: Number(processId),
-        series_id: Number(series.id),
+        linea_id: Number(linea.id),
         definition_version: definitionVersion,
         name: created.name || definitionNamePreview.value,
         description: form.description || "",
         status: "draft",
         ...created,
-        linea_id: created.linea_id ?? null,
-        linea_nombre: created.linea_nombre || created.name || definitionNamePreview.value,
+        linea_nombre: created.linea_nombre || linea.nombre,
       };
       await refreshStepStatus();
       currentStep.value = "rules";
@@ -557,8 +425,8 @@ export function useProcessWizard() {
     processOptions,
     unitTypeOptions,
     cargoOptions,
-    seriesOptions,
-    seriesCodePreview,
+    unitOptions,
+    lineaOptions,
     processSlugPreview,
     definitionNamePreview,
     creatingDefinition,

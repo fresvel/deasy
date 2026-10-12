@@ -36,10 +36,10 @@
       </AppAlert>
 
       <!-- Lo que ya fija la serie se muestra como contexto, no como campos editables. -->
-      <div v-if="seriesFixedChips.length" class="flex flex-wrap items-center gap-2 text-xs">
+      <div v-if="lineaFixedChips.length" class="flex flex-wrap items-center gap-2 text-xs">
         <span class="deasy-overline">Fijado por la serie</span>
         <span
-          v-for="chip in seriesFixedChips"
+          v-for="chip in lineaFixedChips"
           :key="chip.label"
           class="inline-flex items-center gap-2 rounded-xl bg-surface px-2 py-0.5 font-medium text-icon ring-1 ring-line"
         >
@@ -221,7 +221,7 @@ const props = defineProps({
   loading: { type: Boolean, default: false },
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
-  seriesScope: { type: Object, default: null },
+  lineaScope: { type: Object, default: null },
   // En el wizard el encabezado del proceso ya lo muestra el shell; evita el banner de contexto duplicado.
   embedded: { type: Boolean, default: false },
   // Mapa fieldName -> proveedor de recomendaciones (combobox). Vacío = lookup clásico.
@@ -308,41 +308,41 @@ const scopeType = computed(() => String(props.form.unit_scope_type || "unit_exac
 const recipientPolicy = computed(() => String(props.form.recipient_policy || "all_matches"));
 const isExactPositionPolicy = computed(() => recipientPolicy.value === "exact_position");
 
-// La serie del proceso ("por Docente", "por Carrera"...) ya fija el cargo y/o el tipo de unidad. Cuando
-// es así, la regla no vuelve a decidirlos: el cargo queda bloqueado y se muestra el de la serie.
-const seriesFixedCargoId = computed(() => {
-  const id = props.seriesScope?.cargo_id;
+// La LÍNEA del proceso («Informe de IF · Coordinadores de Carrera») ya fija el cargo y el alcance.
+// Cuando es así, la regla no vuelve a decidirlos: quedan bloqueados y se muestran como contexto.
+const lineaFixedCargoId = computed(() => {
+  const id = props.lineaScope?.cargo_id;
   return id ? Number(id) : null;
 });
-const seriesFixedCargoName = computed(() => props.seriesScope?.cargo_name || "");
-const cargoLockedBySeries = computed(() => Boolean(seriesFixedCargoId.value));
-// Variación por tipo de unidad: la serie fija el alcance (tipo); la regla solo decide el cargo.
-const seriesFixedUnitTypeName = computed(() => props.seriesScope?.unit_type_name || "");
-const unitTypeLockedBySeries = computed(() =>
-  String(props.seriesScope?.source_type || "") === "unit_type"
-  && Boolean(props.seriesScope?.unit_type_id)
+const lineaFixedCargoName = computed(() => props.lineaScope?.cargo_name || "");
+const cargoLockedByLinea = computed(() => Boolean(lineaFixedCargoId.value));
+// Alcance por tipo de unidad: lo fija la línea; la regla solo decide la entrega.
+const lineaFixedUnitTypeName = computed(() => props.lineaScope?.unit_type_name || "");
+const unitTypeLockedByLinea = computed(() =>
+  String(props.lineaScope?.unit_scope_type || "") === "unit_type"
+  && Boolean(props.lineaScope?.unit_type_id)
 );
-// Resumen compacto de lo que la serie ya fija: se muestra como contexto en vez de campos bloqueados.
-const seriesFixedChips = computed(() => {
+// Resumen compacto de lo que la línea ya fija: se muestra como contexto en vez de campos bloqueados.
+const lineaFixedChips = computed(() => {
   const chips = [];
-  if (unitTypeLockedBySeries.value) {
-    chips.push({ label: "Alcance", value: `Tipo de unidad · ${seriesFixedUnitTypeName.value}` });
+  if (unitTypeLockedByLinea.value) {
+    chips.push({ label: "Alcance", value: `Tipo de unidad · ${lineaFixedUnitTypeName.value}` });
   }
-  if (cargoLockedBySeries.value) {
-    chips.push({ label: "Cargo", value: seriesFixedCargoName.value });
+  if (cargoLockedByLinea.value) {
+    chips.push({ label: "Cargo", value: lineaFixedCargoName.value });
   }
   return chips;
 });
 // "Puesto exacto" es un modo cerrado: el puesto define unidad y cargo, así que el formulario se reduce a
 // elegir el puesto (alcance, unidad, tipo y cargo se ocultan). El resto de entregas usa el alcance.
-const showScopeField = computed(() => !isExactPositionPolicy.value && !unitTypeLockedBySeries.value);
+const showScopeField = computed(() => !isExactPositionPolicy.value && !unitTypeLockedByLinea.value);
 const showUnitField = computed(() =>
   !isExactPositionPolicy.value && (scopeType.value === "unit_exact" || scopeType.value === "unit_subtree")
 );
 const showUnitTypeField = computed(() =>
-  !isExactPositionPolicy.value && scopeType.value === "unit_type" && !unitTypeLockedBySeries.value
+  !isExactPositionPolicy.value && scopeType.value === "unit_type" && !unitTypeLockedByLinea.value
 );
-const showCargoField = computed(() => !isExactPositionPolicy.value && !cargoLockedBySeries.value);
+const showCargoField = computed(() => !isExactPositionPolicy.value && !cargoLockedByLinea.value);
 const showPositionField = computed(() => isExactPositionPolicy.value);
 
 const requirementMessage = computed(() => {

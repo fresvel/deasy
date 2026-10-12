@@ -1,7 +1,7 @@
 // QUÉ PROCESOS LE TOCAN A UNA UNIDAD, y a cuáles se la puede enganchar.
 //
 // ⚠️ `datos/consulta/` porque CRUZA a `procesos` (`process_target_rules`,
-// `process_definition_versions`, `processes`, `process_definition_series`) y a `identidad`
+// `process_definition_versions`, `processes`, `lineas` y `cargos` (antes la series`) y a `identidad`
 // (`cargos`). De `organizacion` sólo nombra `unit_positions`.
 //
 // ⚠️ Y cruza HACIA ARRIBA: `units` es nivel 2 y `process_target_rules` es nivel 4. Eso es legal y no
@@ -72,16 +72,15 @@ export const listarProcesosEnganchables = async (ejecutor) => {
             pdv.definition_version,
             pdv.linea_id,
             lin.nombre AS linea_nombre,
-            pds.source_type AS series_source_type,
-            pds.cargo_id AS series_cargo_id,
-            c.name AS series_cargo_name
+            lin.unit_scope_type,
+            lin.cargo_id AS linea_cargo_id,
+            c.name AS linea_cargo_name
        FROM process_definition_versions pdv
-       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
+       INNER JOIN lineas lin ON lin.id = pdv.linea_id
        INNER JOIN processes p ON p.id = pdv.process_id
-       INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
-       LEFT JOIN cargos c ON c.id = pds.cargo_id
+       LEFT JOIN cargos c ON c.id = lin.cargo_id
       WHERE pdv.status = 'draft'
-        AND pds.source_type <> 'unit_type'
+        AND lin.unit_scope_type <> 'unit_type'
       ORDER BY p.name ASC, pdv.definition_version DESC`
   );
   return filas ?? [];

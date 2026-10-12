@@ -622,7 +622,7 @@ const CLASIFICACION = Object.freeze({
      «el id mas bajo» y `manual` no lo creaba ninguna pantalla, asi que quedaba un solo valor. */
 
   /* Pares entre si: sin tono propio, todos NEUTRAL. */
-  "process_definition_series.source_type": null,
+  "lineas.unit_scope_type": null,
   "process_target_rules.unit_scope_type": null,
   "process_target_rules.recipient_policy": null,
   "vinculos.item_mode": null,

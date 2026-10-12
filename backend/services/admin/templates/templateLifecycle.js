@@ -322,7 +322,7 @@ export default class TemplateLifecycleService {
   async getOrCreateConfigWorkingDraft(definitionId, connection = this.pool) {
     const defId = Number(definitionId);
     const [defRows] = await connection.query(
-      `SELECT id, process_id, series_id, linea_id, definition_version, name, description, status
+      `SELECT id, process_id, linea_id, definition_version, name, description, status
          FROM process_definition_versions WHERE id = ? LIMIT 1`,
       [defId]
     );
@@ -350,9 +350,9 @@ export default class TemplateLifecycleService {
     );
     const [insertResult] = await connection.query(
       `INSERT INTO process_definition_versions
-         (process_id, series_id, linea_id, definition_version, name, description, status, effective_from)
-       VALUES (?, ?, ?, ?, ?, ?, 'draft', CURDATE())`,
-      [definition.process_id, definition.series_id, definition.linea_id, nextVersion, definition.name, definition.description]
+         (process_id, linea_id, definition_version, name, description, status, effective_from)
+       VALUES (?, ?, ?, ?, ?, 'draft', CURDATE())`,
+      [definition.process_id, definition.linea_id, nextVersion, definition.name, definition.description]
     );
     const newId = Number(insertResult.insertId);
     await this._cloneProcessDefinitionChildren({
@@ -844,7 +844,7 @@ export default class TemplateLifecycleService {
     }
 
     const [defRows] = await this.pool.query(
-      `SELECT id, process_id, series_id, linea_id, definition_version, name, description, status
+      `SELECT id, process_id, linea_id, definition_version, name, description, status
          FROM process_definition_versions WHERE id = ? LIMIT 1`,
       [defId]
     );
@@ -888,11 +888,10 @@ export default class TemplateLifecycleService {
       );
       const [insertResult] = await connection.query(
         `INSERT INTO process_definition_versions
-           (process_id, series_id, linea_id, definition_version, name, description, status, effective_from)
-         VALUES (?, ?, ?, ?, ?, ?, 'draft', CURDATE())`,
+           (process_id, linea_id, definition_version, name, description, status, effective_from)
+         VALUES (?, ?, ?, ?, ?, 'draft', CURDATE())`,
         [
           definition.process_id,
-          definition.series_id,
           definition.linea_id,
           nextConfigVersion,
           definition.name,

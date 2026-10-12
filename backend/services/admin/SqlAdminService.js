@@ -195,10 +195,9 @@ export default class SqlAdminService {
   // --- Delegadores a ProcessDefinitionVersionService (Extract Class, cut #4) ----------------------
   // Series/versionado/clonado viven en SqlAdminService.processDefinitionVersion.js. Delegadores con la
   // misma firma: ni el controller ni los grafts de create()/update() se tocan.
-  resolveProcessDefinitionSeriesIdentity(...args) { return this.processDefinitionVersion.resolveProcessDefinitionSeriesIdentity(...args); }
   ensureProcessDefinitionVersionAvailable(...args) { return this.processDefinitionVersion.ensureProcessDefinitionVersionAvailable(...args); }
-  resolveProcessDefinitionSeries(...args) { return this.processDefinitionVersion.resolveProcessDefinitionSeries(...args); }
-  ensureDefaultProcessSingleVariation(...args) { return this.processDefinitionVersion.ensureDefaultProcessSingleVariation(...args); }
+  resolveLinea(...args) { return this.processDefinitionVersion.resolveLinea(...args); }
+  ensureDefaultProcessSingleLinea(...args) { return this.processDefinitionVersion.ensureDefaultProcessSingleLinea(...args); }
   resolveProcessDefinitionVersionName(...args) { return this.processDefinitionVersion.resolveProcessDefinitionVersionName(...args); }
   refreshProcessDefinitionVersionNames(...args) { return this.processDefinitionVersion.refreshProcessDefinitionVersionNames(...args); }
   retireActiveDefinitionsInLinea(...args) { return this.processDefinitionVersion.retireActiveDefinitionsInLinea(...args); }
@@ -235,10 +234,9 @@ export default class SqlAdminService {
     }
   }
   cloneProcessDefinitionChildren(...args) { return this.processDefinitionVersion.cloneProcessDefinitionChildren(...args); }
-  getProcessDefinitionSeriesScope(...args) { return this.processDefinitionVersion.getProcessDefinitionSeriesScope(...args); }
-  applyTargetRuleSeriesConstraints(...args) { return this.processDefinitionVersion.applyTargetRuleSeriesConstraints(...args); }
+  getProcessDefinitionLineaScope(...args) { return this.processDefinitionVersion.getProcessDefinitionLineaScope(...args); }
+  applyTargetRuleLineaConstraints(...args) { return this.processDefinitionVersion.applyTargetRuleLineaConstraints(...args); }
   getNextProcessDefinitionVersion(...args) { return this.processDefinitionVersion.getNextProcessDefinitionVersion(...args); }
-  resolveLineaDeSerie(...args) { return this.processDefinitionVersion.resolveLineaDeSerie(...args); }
 
   // Conteos agregados (solo lectura) para los resúmenes de Operación. Cada dominio se calcula de forma
   // independiente; si una consulta falla devuelve null y el frontend omite esa tarjeta.

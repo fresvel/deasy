@@ -375,8 +375,7 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "series_id", label: "Serie", type: "number", required: true },
-      { name: "linea_id", label: "Linea", type: "number", readOnly: true, defaultValue: "" },
+      { name: "linea_id", label: "Linea", type: "number", required: true },
       { name: "definition_version", label: "Version", type: "text", required: true },
       { name: "name", label: "Nombre generado", type: "text", readOnly: true },
       { name: "description", label: "Descripcion", type: "textarea" },
@@ -394,32 +393,45 @@ export const SQL_TABLES = [
     searchFields: ["definition_version", "name", "status"]
   },
   {
-    table: "process_definition_series",
-    label: "Variaciones de procesos",
+    table: "lineas",
+    label: "Lineas de proceso",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
+      // EL NOMBRE LO ESCRIBE LA PERSONA, y es el cambio que trae la linea. El `code` de la serie se
+      // DERIVABA con `slugify(cargo.name)`, asi que renombrar un cargo disparaba dos cascadas y la
+      // etiqueta nunca decia lo que la obligacion es: «Informe de IF · Coordinadores de Carrera».
+      { name: "nombre", label: "Nombre de la linea", type: "text", required: true },
+      // LOS DOS EJES, JUNTOS. La serie admitia uno O el otro --su CHECK lo imponia-- y como los
+      // cargos son genericos (`Coordinador`, no «Coordinador de Carrera»), el eje que no cabia habia
+      // que ponerlo en la regla de reparto: la variacion estaba PARTIDA EN DOS TABLAS.
+      { name: "cargo_id", label: "Cargo (vacio = cualquiera)", type: "number" },
       {
-        name: "source_type",
-        label: "Origen de serie",
+        name: "unit_scope_type",
+        label: "Alcance",
         type: "select",
-        options: ["unit_type", "cargo"],
-        defaultValue: "",
+        options: ["all_units", "unit_type", "unit_exact"],
+        defaultValue: "all_units",
         required: true
       },
-      // Éstos eran el ÚNICO caso condicional del admin y estaban escritos a mano en
-      // `AdminTableManager.vue`: un `if (table === "process_definition_series")` dentro de
-      // `visibleFormFields` que además les forzaba `required`. Se declaran aquí desde el
-      // 2026-08-28 y el caso especial del frontend desaparece — que es el motivo de que el
-      // mecanismo sea declarativo y no un `if` más.
-      { name: "unit_type_id", label: "Tipo de unidad", type: "number", required: true, showWhen: { field: "source_type", equals: "unit_type" } },
-      { name: "cargo_id", label: "Cargo", type: "number", required: true, showWhen: { field: "source_type", equals: "cargo" } },
-      { name: "code", label: "Codigo", type: "text", readOnly: true },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      // ⚠️ SIN `required: true`, Y NO ES UN OLVIDO. `showWhen` es una pista del FRONTEND: el
+      // backend exige todo campo `required` llegue o no su condición (`SqlAdminService`, «Datos
+      // incompletos»). La serie tenía esta misma forma y pasaba sólo porque su hook rellenaba los
+      // dos a `null` antes de la comprobación; al quitarle el hook, la misma declaración rechazaba
+      // una línea legítima. La obligatoriedad CONDICIONAL vive donde puede ser condicional:
+      // `lineaScopeConsistent` en `validation.js`, que además da el mensaje que explica cuál falta.
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number", showWhen: { field: "unit_scope_type", equals: "unit_type" } },
+      { name: "unit_id", label: "Unidad", type: "number", showWhen: { field: "unit_scope_type", equals: "unit_exact" } },
+      // EL LINAJE: si la obligacion cambia de manos es OTRA linea, y esta columna lo declara.
+      // Suceder a una linea OBLIGA a haberla retirado antes, y lo impone un disparador.
+      { name: "linea_anterior_id", label: "Sucede a la linea", type: "number" },
+      { name: "effective_from", label: "Vigencia desde", type: "date", required: true },
+      { name: "effective_to", label: "Vigencia hasta", type: "date" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["code", "source_type"]
+    searchFields: ["nombre", "unit_scope_type"]
   },
   {
     table: "process_target_rules",

@@ -290,6 +290,8 @@
         "effective_from": "<normalized>",
         "effective_to": "<normalized>",
         "id": "<normalized>",
+        "linea_cargo_name": null,
+        "linea_donde": null,
         "linea_id": "<normalized>",
         "linea_nombre": "Proceso por defecto",
         "matching_rules_count": 1,
@@ -299,12 +301,9 @@
         "process_name": "Proceso por defecto",
         "process_slug": "default",
         "rules_count": 1,
-        "series_code": "default",
-        "series_id": "<normalized>",
-        "series_source_name": null,
-        "series_source_type": "default",
         "status": "active",
-        "templates_count": 1
+        "templates_count": 1,
+        "unit_scope_type": "all_units"
       },
       "dependencies": {
         "period_types": [

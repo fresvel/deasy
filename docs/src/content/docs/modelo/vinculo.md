@@ -66,7 +66,7 @@ configuración. Crea o usa un entregable propio de esta línea.»*
 `UNIQUE (edicion_id)` y rompía el versionado de configuraciones: ese índice prohíbe el
 mismo artefacto en dos *definiciones*, cuando la regla habla de dos *líneas*, y una línea contiene
 muchas versiones de definición. Y la regla no cabe en un índice de esta tabla, porque la línea se
-identifica con `process_definition_versions.(process_id, series_id)`: pedirla en un índice obligaría
+identificaba con una pareja de columnas —hoy es `process_definition_versions.linea_id`, una sola—: pedirla en un índice obligaría
 a copiar esa columna aquí, que es la duplicación que este frente vino a quitar.
 
 Antes lo intentaba un guardia de JavaScript que comparaba dos columnas copiadas en `catalogo_documental`.

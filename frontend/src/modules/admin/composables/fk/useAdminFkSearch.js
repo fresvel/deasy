@@ -161,10 +161,10 @@ export function useAdminFkSearch({
       rowsData = response.data || [];
     }
 
-    if (tableName === "process_definition_series" && field === "series_id") {
-      rowsData = rowsData.filter(
-        (row) => Number(row?.is_active) === 1 && String(row?.source_type || "") !== "legacy"
-      );
+    // Una línea RETIRADA no admite configuraciones nuevas, así que no se ofrece. Antes el filtro
+    // era la bandera `is_active` de la serie; hoy es la vigencia, que es el dato.
+    if (tableName === "lineas" && field === "linea_id") {
+      rowsData = rowsData.filter((row) => !row?.effective_to);
     }
 
     return rowsData;

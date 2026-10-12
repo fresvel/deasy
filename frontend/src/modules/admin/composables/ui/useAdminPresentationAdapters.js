@@ -156,12 +156,13 @@ export function useAdminPresentationAdapters({
     if (["created_at", "updated_at", "created", "updated"].includes(fieldName)) {
       return formatDateTimeHour(value);
     }
-    if (tableMeta?.table === "process_definition_versions" && fieldName === "series_id") {
-      const seriesLabel = getFkCachedLabel("process_definition_series", value);
-      if (seriesLabel !== null && seriesLabel !== undefined && seriesLabel !== "") {
-        return seriesLabel;
+    if (tableMeta?.table === "process_definition_versions" && fieldName === "linea_id") {
+      // La fila ya trae el nombre por JOIN; la caché de claves ajenas es el respaldo.
+      if (row?.linea_nombre) {
+        return row.linea_nombre;
       }
-      return row?.linea_nombre || value || "—";
+      const lineaLabel = getFkCachedLabel("lineas", value);
+      return (lineaLabel !== null && lineaLabel !== undefined && lineaLabel !== "") ? lineaLabel : (value || "—");
     }
     if (["effective_from", "effective_to"].includes(fieldName)) {
       return formatDateOnly(value);

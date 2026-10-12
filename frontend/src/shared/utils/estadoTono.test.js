@@ -431,10 +431,10 @@ describe("la clasificación — no tiene eje bueno/malo, y su paleta lo respeta"
  * Resultado: 11 de 32 columnas invisibles, y dos gemelas («Obligatorio» de llenado y de firma)
  * pintadas de distinto color en producción. Aquí quedan las 32 con su eje, sacadas del esquema
  * con un barrido tolerante, para que la próxima ausencia se vea en rojo y no en pantalla. */
-describe("los 32 booleanos del esquema, cada uno con su eje", () => {
+describe("los 31 booleanos del esquema, cada uno con su eje", () => {
   const HABILITACION = [
     "unit_types.is_active", "relation_unit_types.is_active", "units.is_active",
-    "processes.is_active", "process_definition_series.is_active", "process_target_rules.is_active",
+    "processes.is_active", "process_target_rules.is_active",
     "term_types.is_active", "terms.is_active", "process_definition_period_types.is_active",
     "generadores_de_documento.is_active", "ediciones.is_active", "persons.is_active",
     "roles.is_active", "cargos.is_active", "unit_positions.is_active",
@@ -455,15 +455,19 @@ describe("los 32 booleanos del esquema, cada uno con su eje", () => {
   // de las cabeceras, las dos `is_required` --un bloqueo silencioso y más tarde, no «opcional»--,
   // `can_reject` --una derivada que no leía nadie-- y una de las dos `is_manual`, porque las dos
   // mitades son hoy la misma columna: `turnos.manual`.
-  it("son 25 y ni una más: 20 de habilitación y 5 de rasgo", () => {
-    expect(HABILITACION).toHaveLength(20);
+  // ERAN 25 Y HOY SON 24: `process_definition_series.is_active` se fue con su tabla en el frente 25
+  // (P9). La bandera decía si una serie seguía ofreciéndose; la línea no la necesita, porque lo que
+  // dice si una obligación sigue en pie es su VIGENCIA (`effective_to`), que es un hecho con fecha
+  // y no un interruptor.
+  it("son 24 y ni una más: 19 de habilitación y 5 de rasgo", () => {
+    expect(HABILITACION).toHaveLength(19);
     expect(RASGO).toHaveLength(5);
-    expect(new Set([...HABILITACION, ...RASGO]).size).toBe(25);
+    expect(new Set([...HABILITACION, ...RASGO]).size).toBe(24);
   });
 
   const parte = (ruta) => [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
 
-  it("las 20 de habilitación avisan cuando están apagadas", () => {
+  it("las 19 de habilitación avisan cuando están apagadas", () => {
     for (const ruta of HABILITACION) {
       const [t, c] = parte(ruta);
       expect(tonoDeBooleano(t, c, 1)).toBe(TONOS.SUCCESS);

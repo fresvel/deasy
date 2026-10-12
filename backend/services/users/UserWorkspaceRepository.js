@@ -229,7 +229,6 @@ export const getDefinitionContext = async (pool, definitionId) => {
     `SELECT
        pdv.id,
        pdv.process_id,
-       pdv.series_id,
        pdv.linea_id,
        lin.nombre AS linea_nombre,
        pdv.definition_version,
@@ -240,19 +239,19 @@ export const getDefinitionContext = async (pool, definitionId) => {
        pdv.effective_to,
        p.name AS process_name,
        p.slug AS process_slug,
-       pds.code AS series_code,
-       pds.source_type AS series_source_type,
+       lin.unit_scope_type,
        CASE
-         WHEN pds.source_type = 'unit_type' THEN ut.name
-         WHEN pds.source_type = 'cargo' THEN c.name
+         WHEN lin.unit_scope_type = 'unit_type' THEN ut.name
+         WHEN lin.unit_scope_type = 'unit_exact' THEN u.name
          ELSE NULL
-       END AS series_source_name
+       END AS linea_donde,
+       c.name AS linea_cargo_name
      FROM process_definition_versions pdv
      LEFT JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN processes p ON p.id = pdv.process_id
-     LEFT JOIN process_definition_series pds ON pds.id = pdv.series_id
-     LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
-     LEFT JOIN cargos c ON c.id = pds.cargo_id
+     LEFT JOIN unit_types ut ON ut.id = lin.unit_type_id
+     LEFT JOIN units u ON u.id = lin.unit_id
+     LEFT JOIN cargos c ON c.id = lin.cargo_id
      WHERE pdv.id = ?
      LIMIT 1`,
     [definitionId]

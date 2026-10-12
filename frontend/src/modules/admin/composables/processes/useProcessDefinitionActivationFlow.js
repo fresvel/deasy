@@ -224,7 +224,7 @@ export function useProcessDefinitionActivationFlow({
     formData.value = {
       ...formData.value,
       process_id: sourceRow.process_id ?? formData.value.process_id ?? "",
-      series_id: sourceRow.series_id ?? formData.value.series_id ?? "",
+      linea_id: sourceRow.linea_id ?? formData.value.linea_id ?? "",
       definition_version: nextVersion,
       status: "draft"
     };

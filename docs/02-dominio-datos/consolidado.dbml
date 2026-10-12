@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 88 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 87 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -901,24 +901,9 @@ Table "process_definition_period_types" {
   }
 }
 
-Table "process_definition_series" {
-  "id" int4 [pk, not null, increment]
-  "source_type" text [not null, check: `source_type = ANY (ARRAY['unit_type'::text, 'cargo'::text, 'default'::text])`, default: 'default']
-  "unit_type_id" int4
-  "cargo_id" int4
-  "code" varchar(120) [unique, not null]
-  "is_active" int2 [not null, default: 1]
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    is_active [type: btree, name: "idx_process_definition_series_state"]
-  }
-}
-
 Table "process_definition_versions" {
   "id" int4 [pk, not null, increment]
   "process_id" int4 [not null]
-  "series_id" int4 [not null]
   "linea_id" int4 [not null]
   "definition_version" varchar(20) [not null]
   "name" varchar(180) [not null]
@@ -1514,11 +1499,8 @@ Ref "fk_position_assignments_person":"persons"."id" <? "position_assignments"."p
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
-Ref "fk_process_definition_series_cargo":"cargos"."id" ?<? "process_definition_series"."cargo_id"
-Ref "fk_process_definition_series_unit_type":"unit_types"."id" ?<? "process_definition_series"."unit_type_id"
 Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id"
 Ref "fk_process_definition_versions_process":"processes"."id" <? "process_definition_versions"."process_id" [delete: cascade]
-Ref "fk_process_definition_versions_series":"process_definition_series"."id" <? "process_definition_versions"."series_id"
 Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user_id"
 Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"

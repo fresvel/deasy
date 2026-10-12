@@ -495,6 +495,7 @@
   "lineas": {
     "huella": "fab61ebf11f67d2d",
     "paginas": [
+      "datos/index.md",
       "datos/motor-de-procesos.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
@@ -691,21 +692,8 @@
       "referencia/campos-proceso-documento.md"
     ]
   },
-  "process_definition_series": {
-    "huella": "6c110d358ed5b2c5",
-    "paginas": [
-      "datos/index.md",
-      "datos/motor-de-procesos.md",
-      "modelo/mapa-completo.md",
-      "modelo/mapa-con-campos.md",
-      "modelo/proceso.md",
-      "modelo/siembra.md",
-      "orden-de-lectura.md",
-      "referencia/campos-proceso-documento.md"
-    ]
-  },
   "process_definition_versions": {
-    "huella": "ffa32fae4a7797f9",
+    "huella": "31e3518027087713",
     "paginas": [
       "arquitectura-y-patrones.md",
       "complemento/conversacion.md",

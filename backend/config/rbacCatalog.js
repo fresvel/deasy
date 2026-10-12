@@ -279,7 +279,7 @@ export const TABLE_RESOURCE_MAP = {
   person_certificates: "signature_flows",
   persons: "people",
   position_assignments: "people",
-  process_definition_series: "process_definitions",
+  lineas: "process_definitions",
   vinculos: "templates",
   process_definition_period_types: "process_definitions",
   process_definition_versions: "process_definitions",

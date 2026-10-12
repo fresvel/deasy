@@ -162,50 +162,59 @@ test("validateTableRules valida las fechas de periodos y contratos con su propia
 
 // --- process_definition_series: origen excluyente ----------------------------
 
-test("validateTableRules exige un origen de serie válido", () => {
-  throwsWith(() => validateTableRules("process_definition_series", {}), "origen de la serie");
+const LINEA_BASE = { process_id: 1, nombre: "Informe de IF", effective_from: "2026-01-01" };
+
+test("validateTableRules exige un alcance válido en una línea", () => {
   throwsWith(
-    () => validateTableRules("process_definition_series", { source_type: "inventado" }),
-    "origen de la serie",
+    () => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "inventado" }),
+    "alcance valido",
   );
 });
 
-test("validateTableRules exige el discriminante que corresponde a cada origen", () => {
+test("validateTableRules exige la columna que corresponde a cada alcance", () => {
   throwsWith(
-    () => validateTableRules("process_definition_series", { source_type: "unit_type" }),
-    "requiere seleccionar un tipo de unidad",
+    () => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "unit_type" }),
+    "requiere seleccionar el tipo de unidad",
   );
   throwsWith(
-    () => validateTableRules("process_definition_series", { source_type: "cargo" }),
-    "requiere seleccionar un cargo",
-  );
-});
-
-test("validateTableRules prohíbe mezclar tipo de unidad y cargo en una serie", () => {
-  throwsWith(
-    () => validateTableRules("process_definition_series", { source_type: "unit_type", unit_type_id: 1, cargo_id: 2 }),
-    "no admite cargo",
+    () => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "unit_exact" }),
+    "requiere seleccionar la unidad",
   );
   throwsWith(
-    () => validateTableRules("process_definition_series", { source_type: "cargo", cargo_id: 2, unit_type_id: 1 }),
-    "no admite tipo de unidad",
-  );
-  throwsWith(
-    () => validateTableRules("process_definition_series", { source_type: "default", cargo_id: 2 }),
-    "no admite tipo de unidad ni cargo",
+    () => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "all_units", unit_type_id: 1 }),
+    "Solo una linea por tipo de unidad admite tipo de unidad",
   );
 });
 
-test("validateTableRules acepta las series bien formadas", () => {
-  assert.doesNotThrow(() => validateTableRules("process_definition_series", { source_type: "unit_type", unit_type_id: 1 }));
-  assert.doesNotThrow(() => validateTableRules("process_definition_series", { source_type: "cargo", cargo_id: 2 }));
-  assert.doesNotThrow(() => validateTableRules("process_definition_series", { source_type: "default" }));
+// ESTE CASO ESTABA AL REVÉS, y el cambio de signo ES el frente 25.
+//
+// La prueba que había aquí se llamaba «prohíbe mezclar tipo de unidad y cargo en una serie» y
+// exigía que el XOR saltara. Ese XOR era el problema: los cargos del catálogo son GENÉRICOS
+// —`Coordinador`, no «Coordinador de Carrera»—, así que «el Informe de IF de los Coordinadores de
+// Carrera» necesita los DOS ejes, y al no caber en la serie había que escribir el otro en la regla
+// de reparto. La variación estaba partida en dos tablas.
+test("una línea SÍ admite cargo y tipo de unidad a la vez: es su razón de ser", () => {
+  assert.doesNotThrow(() => validateTableRules("lineas", {
+    ...LINEA_BASE,
+    nombre: "Informe de IF · Coordinadores de Carrera",
+    cargo_id: 7,
+    unit_scope_type: "unit_type",
+    unit_type_id: 3,
+  }));
+});
+
+test("validateTableRules acepta las líneas bien formadas", () => {
+  assert.doesNotThrow(() => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "all_units" }));
+  assert.doesNotThrow(() => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "unit_type", unit_type_id: 1 }));
+  assert.doesNotThrow(() => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "unit_exact", unit_id: 2 }));
+  // Sin cargo = cualquier cargo. Es el caso de los memos, y es el 100 % de lo que hay sembrado.
+  assert.doesNotThrow(() => validateTableRules("lineas", { ...LINEA_BASE, cargo_id: null, unit_scope_type: "all_units" }));
 });
 
 // --- process_definition_versions: semver de tres segmentos -------------------
 
 test("validateTableRules exige un semver de tres segmentos en la configuración", () => {
-  const base = { process_id: 1, series_id: 1, effective_from: "2026-01-01" };
+  const base = { process_id: 1, linea_id: 1, effective_from: "2026-01-01" };
   throwsWith(
     () => validateTableRules("process_definition_versions", { ...base, definition_version: "1.0" }),
     "tres segmentos",
@@ -220,7 +229,7 @@ test("validateTableRules valida el orden de las fechas de vigencia", () => {
     () =>
       validateTableRules("process_definition_versions", {
         process_id: 1,
-        series_id: 1,
+        linea_id: 1,
         definition_version: "1.0.0",
         effective_from: "2026-06-01",
         effective_to: "2026-01-01",
@@ -355,15 +364,15 @@ test("process_definition_versions intercala el semver entre sus requeridos", () 
   throwsWith(() => validateTableRules("process_definition_versions", {}), "Selecciona un proceso base");
   throwsWith(
     () => validateTableRules("process_definition_versions", { process_id: 1 }),
-    "Selecciona una serie de configuracion.",
+    "Selecciona la linea de la configuracion.",
   );
   // El semver se exige ANTES que effective_from, aunque este también falte.
   throwsWith(
-    () => validateTableRules("process_definition_versions", { process_id: 1, series_id: 1 }),
+    () => validateTableRules("process_definition_versions", { process_id: 1, linea_id: 1 }),
     "tres segmentos",
   );
   throwsWith(
-    () => validateTableRules("process_definition_versions", { process_id: 1, series_id: 1, definition_version: "1.0.0" }),
+    () => validateTableRules("process_definition_versions", { process_id: 1, linea_id: 1, definition_version: "1.0.0" }),
     "Selecciona la fecha de vigencia inicial",
   );
 });

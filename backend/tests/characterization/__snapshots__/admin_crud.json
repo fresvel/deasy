@@ -29,16 +29,16 @@
       "message": "Datos incompletos: Nombre"
     }
   },
+  "create_error_linea_sin_datos": {
+    "status": 400,
+    "body": {
+      "message": "Datos incompletos: Proceso, Nombre de la linea, Alcance, Vigencia desde"
+    }
+  },
   "create_error_regla_sin_configuracion": {
     "status": 400,
     "body": {
       "message": "La configuracion de proceso seleccionada no existe."
-    }
-  },
-  "create_error_series_sin_origen": {
-    "status": 400,
-    "body": {
-      "message": "Selecciona un origen de serie valido."
     }
   },
   "create_error_tabla_desconocida": {
@@ -59,10 +59,10 @@
       "message": "Una unidad no puede relacionarse consigo misma."
     }
   },
-  "create_error_version_sin_serie": {
+  "create_error_version_sin_linea": {
     "status": 400,
     "body": {
-      "message": "Selecciona una serie valida para la configuracion."
+      "message": "Selecciona una linea valida para la configuracion."
     }
   },
   "documento_nacional_hereda_pais": {
@@ -87,6 +87,30 @@
       "name": "Cargo caracterización (renombrado)"
     }
   },
+  "graft_linea_create": {
+    "status": 200,
+    "body": {
+      "cargo_id": "<normalized>",
+      "effective_from": "2026-01-01",
+      "id": "<normalized>",
+      "nombre": "Cadena de caracterización · Jefes",
+      "process_id": "<normalized>",
+      "unit_scope_type": "all_units"
+    }
+  },
+  "graft_linea_ejes_duplicados": {
+    "status": 409,
+    "body": {
+      "message": "Ya existe otro registro con esa combinación de «Proceso», «Cargo (vacio = cualquiera)», «Alcance», «Tipo de unidad», «Unidad»."
+    }
+  },
+  "graft_linea_update": {
+    "status": 200,
+    "body": {
+      "id": "<normalized>",
+      "nombre": "Cadena de caracterización · Jefes (renombrada)"
+    }
+  },
   "graft_pdv_create_activa_rechazada": {
     "status": 400,
     "body": {
@@ -101,9 +125,8 @@
       "effective_from": "2026-02-01",
       "id": "<normalized>",
       "linea_id": "<normalized>",
-      "name": "Proceso cadena caracterización por Jefe",
+      "name": "Cadena de caracterización · Jefes",
       "process_id": "<normalized>",
-      "series_id": "<normalized>",
       "status": "draft"
     }
   },
@@ -114,9 +137,8 @@
       "effective_from": "2026-01-01",
       "id": "<normalized>",
       "linea_id": "<normalized>",
-      "name": "Proceso cadena caracterización por Jefe",
+      "name": "Cadena de caracterización · Jefes",
       "process_id": "<normalized>",
-      "series_id": "<normalized>",
       "status": "draft"
     }
   },
@@ -129,7 +151,7 @@
   "graft_pdv_update_serie_inmutable": {
     "status": 400,
     "body": {
-      "message": "No se puede cambiar la serie de una configuracion."
+      "message": "No se puede cambiar la linea de una configuracion."
     }
   },
   "graft_period_types_create": {
@@ -160,33 +182,6 @@
     "body": {
       "id": "<normalized>",
       "name": "Proceso caracterización (renombrado)"
-    }
-  },
-  "graft_series_create": {
-    "status": 200,
-    "body": {
-      "cargo_id": "<normalized>",
-      "code": "jefe",
-      "id": "<normalized>",
-      "source_type": "cargo",
-      "unit_type_id": "<normalized>"
-    }
-  },
-  "graft_series_origen_duplicado": {
-    "status": 400,
-    "body": {
-      "message": "Ya existe una serie con ese origen."
-    }
-  },
-  "graft_series_update": {
-    "status": 200,
-    "body": {
-      "cargo_id": "<normalized>",
-      "code": "jefe",
-      "id": "<normalized>",
-      "is_active": 0,
-      "source_type": "cargo",
-      "unit_type_id": "<normalized>"
     }
   },
   "graft_target_rules_create": {
@@ -349,6 +344,24 @@
       "tipo"
     ]
   },
+  "list_lineas": {
+    "status": 200,
+    "isArray": true,
+    "count": 1,
+    "itemKeys": [
+      "cargo_id",
+      "created_at",
+      "effective_from",
+      "effective_to",
+      "id",
+      "linea_anterior_id",
+      "nombre",
+      "process_id",
+      "unit_id",
+      "unit_scope_type",
+      "unit_type_id"
+    ]
+  },
   "list_permissions": {
     "status": 200,
     "isArray": true,
@@ -397,20 +410,6 @@
       "updated_at"
     ]
   },
-  "list_process_definition_series": {
-    "status": 200,
-    "isArray": true,
-    "count": 1,
-    "itemKeys": [
-      "cargo_id",
-      "code",
-      "created_at",
-      "id",
-      "is_active",
-      "source_type",
-      "unit_type_id"
-    ]
-  },
   "list_process_definition_versions": {
     "status": 200,
     "isArray": true,
@@ -425,7 +424,6 @@
       "linea_id",
       "name",
       "process_id",
-      "series_id",
       "status"
     ]
   },
@@ -659,7 +657,7 @@
   "pertenencia_vinculo_de_otra_linea": {
     "status": 400,
     "body": {
-      "message": "El entregable \"tpl_informe_general\" pertenece a otra línea (proceso/variación) y no se puede vincular a esta configuración. Crea o usa un entregable propio de esta línea."
+      "message": "El entregable \"tpl_informe_general\" pertenece a otra línea y no se puede vincular a esta configuración. Crea o usa un entregable propio de esta línea."
     }
   },
   "principal_emails_degrada_anterior": {
@@ -758,25 +756,26 @@
       ]
     }
   },
-  "read_resolvable_cargos": {
-    "status": 200,
-    "shape": {
-      "isArray": false,
-      "topLevelKeys": [
-        "cargos"
-      ]
-    }
-  },
-  "read_series_scope": {
+  "read_linea_scope": {
     "status": 200,
     "shape": {
       "isArray": false,
       "topLevelKeys": [
         "cargo_id",
         "cargo_name",
-        "source_type",
+        "unit_id",
+        "unit_scope_type",
         "unit_type_id",
         "unit_type_name"
+      ]
+    }
+  },
+  "read_resolvable_cargos": {
+    "status": 200,
+    "shape": {
+      "isArray": false,
+      "topLevelKeys": [
+        "cargos"
       ]
     }
   },

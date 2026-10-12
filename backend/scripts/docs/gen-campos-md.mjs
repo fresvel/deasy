@@ -12,7 +12,7 @@ const GRUPOS = [
   ["La organizacion: quien existe y donde",
    ["unit_types", "units", "relation_unit_types", "unit_relations", "cargos", "unit_positions", "persons", "position_assignments"]],
   ["La declaracion del proceso",
-   ["processes", "process_definition_series", "process_definition_versions", "process_target_rules",
+   ["processes", "lineas", "process_definition_versions", "process_target_rules",
     "process_definition_period_types", "term_types", "terms"]],
   ["Que se produce: entregables y plantillas",
    ["catalogo_documental", "ediciones", "generadores_de_documento", "vinculos"]],

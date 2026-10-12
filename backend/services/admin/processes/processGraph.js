@@ -43,13 +43,12 @@ export default class ProcessGraphService {
     const [configs] = await this.pool.query(
       `SELECT pdv.id AS definition_id, pdv.process_id, pdv.name AS definition_name,
               pdv.linea_id, lin.nombre AS linea_nombre, pdv.definition_version, pdv.status,
-              pds.source_type AS series_source_type, pds.code AS series_code,
-              sc.name AS series_cargo_name, sut.name AS series_unit_type_name
+              lin.unit_scope_type, lin.cargo_id AS linea_cargo_id,
+              sc.name AS linea_cargo_name, sut.name AS linea_unit_type_name
          FROM process_definition_versions pdv
-         INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
-         LEFT JOIN lineas lin ON lin.id = pdv.linea_id
-         LEFT JOIN cargos sc ON sc.id = pds.cargo_id
-         LEFT JOIN unit_types sut ON sut.id = pds.unit_type_id
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+         LEFT JOIN cargos sc ON sc.id = lin.cargo_id
+         LEFT JOIN unit_types sut ON sut.id = lin.unit_type_id
         ORDER BY pdv.process_id, FIELD(pdv.status, 'active', 'draft', 'retired'), lin.nombre ASC`
     );
     // Entregables (plantillas vinculadas) por configuración, para el 3er nivel del grafo. Una misma plantilla
@@ -183,19 +182,17 @@ export default class ProcessGraphService {
               pdv.status,
               pdv.effective_from,
               pdv.effective_to,
-              pds.id AS series_id,
-              pds.source_type AS series_source_type,
-              pds.code AS series_code,
-              sc.name AS series_cargo_name,
-              sut.name AS series_unit_type_name,
+              lin.unit_scope_type,
+              lin.cargo_id AS linea_cargo_id,
+              sc.name AS linea_cargo_name,
+              sut.name AS linea_unit_type_name,
               (SELECT COUNT(*) FROM process_target_rules ptr WHERE ptr.process_definition_id = pdv.id) AS rules_count,
               (SELECT COUNT(*) FROM vinculos pdt WHERE pdt.process_definition_id = pdv.id) AS templates_count,
               (SELECT COUNT(*) FROM process_runs pr WHERE pr.process_definition_id = pdv.id) AS runs_count
          FROM process_definition_versions pdv
-         INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
-         LEFT JOIN lineas lin ON lin.id = pdv.linea_id
-         LEFT JOIN cargos sc ON sc.id = pds.cargo_id
-         LEFT JOIN unit_types sut ON sut.id = pds.unit_type_id
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+         LEFT JOIN cargos sc ON sc.id = lin.cargo_id
+         LEFT JOIN unit_types sut ON sut.id = lin.unit_type_id
         WHERE pdv.process_id = ?
         ORDER BY FIELD(pdv.status, 'active', 'draft', 'retired'),
                  lin.nombre ASC, pdv.definition_version DESC`,

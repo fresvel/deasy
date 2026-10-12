@@ -133,27 +133,30 @@ const main = async () => {
 
   console.log("Creando proceso 'Informe de Gestión Docente' (modo single)...");
 
-  // 1. Serie: nombra el proceso y blinda el cargo de la regla.
-  const seriesId = await create("process_definition_series", {
-    source_type: "cargo",
-    cargo_id: CARGO_DOCENTE,
-    code: SLUG,
-    is_active: 1,
-  }, token);
-
-  // 2. Proceso.
+  // 1. Proceso.
   const processId = await create("processes", {
     name: "Informe de Gestión Docente",
     slug: SLUG,
     is_active: 1,
   }, token);
 
+  // 2. LA LÍNEA: la obligación con sus dos ejes. Aquí se creaba una SERIE —un eje o el otro—, y por
+  //    eso «de los Docentes» tenía que escribirse en la regla de reparto. La línea lo dice entero y
+  //    le pone nombre, que es el que la configuración hereda.
+  const today = new Date().toISOString().slice(0, 10);
+  const lineaId = await create("lineas", {
+    process_id: processId,
+    nombre: "Informe de Gestión Docente",
+    cargo_id: CARGO_DOCENTE,
+    unit_scope_type: "all_units",
+    effective_from: today,
+  }, token);
+
   // 3. Definición. REGLA DE NEGOCIO: sólo puede crearse en `draft`; se activa al final,
   //    cuando ya tiene plantilla, flujos y regla de reparto (SqlAdminService lo exige).
-  const today = new Date().toISOString().slice(0, 10);
   const definitionId = await create("process_definition_versions", {
     process_id: processId,
-    series_id: seriesId,
+    linea_id: lineaId,
     definition_version: "1.0.0",
     name: "Informe de Gestión Docente",
     description: "Informe semestral de gestión que elabora cada docente y firma su coordinador.",

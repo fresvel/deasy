@@ -14,7 +14,7 @@ export function useProcessDefinitionManager({
   definitionRulesEditId,
   definitionRulesForm,
   definitionRulesLabels,
-  definitionRulesSeriesScope,
+  definitionRulesLineaScope,
   definitionTriggersContext,
   definitionTriggersRows,
   definitionTriggersLoading,
@@ -79,7 +79,7 @@ export function useProcessDefinitionManager({
   // cualquier cambio para que no quede estado obsoleto (p. ej. al alternar la entrega). En "puesto exacto"
   // el puesto define unidad y cargo, así que no se siembra (el guard del backend valida el puesto).
   const applyRuleSeriesSeed = (form, labels) => {
-    const scope = definitionRulesSeriesScope?.value;
+    const scope = definitionRulesLineaScope?.value;
     if (!scope) {
       return { form, labels };
     }
@@ -111,18 +111,18 @@ export function useProcessDefinitionManager({
   };
 
   const loadDefinitionRulesSeriesScope = async (definitionId) => {
-    if (!definitionRulesSeriesScope) {
+    if (!definitionRulesLineaScope) {
       return;
     }
     if (!definitionId) {
-      definitionRulesSeriesScope.value = null;
+      definitionRulesLineaScope.value = null;
       return;
     }
     try {
-      const { data } = await axios.get(API_ROUTES.ADMIN_SQL_PROCESS_SERIES_SCOPE(definitionId));
-      definitionRulesSeriesScope.value = data && Object.keys(data).length ? data : null;
+      const { data } = await axios.get(API_ROUTES.ADMIN_SQL_PROCESS_LINEA_SCOPE(definitionId));
+      definitionRulesLineaScope.value = data && Object.keys(data).length ? data : null;
     } catch {
-      definitionRulesSeriesScope.value = null;
+      definitionRulesLineaScope.value = null;
     }
   };
 

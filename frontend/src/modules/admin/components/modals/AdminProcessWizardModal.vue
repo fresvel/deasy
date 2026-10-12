@@ -76,33 +76,54 @@
             {{ processSlugPreview || "Pendiente" }}
           </div>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Variación de proceso" group-class="md:col-span-8">
-          <AdminSelectField :model-value="form.series_id" :disabled="isDefinitionLocked" @update:model-value="updateForm('series_id', $event)">
-            <option value="">Selecciona una variación</option>
-            <option v-for="series in seriesOptions" :key="series.id" :value="String(series.id)">
-              {{ series.label || series.code }}
+        <AdminFieldGroup label="Línea de proceso" group-class="md:col-span-12">
+          <AdminSelectField :model-value="form.linea_id" :disabled="isDefinitionLocked" @update:model-value="updateForm('linea_id', $event)">
+            <option value="">Selecciona una línea</option>
+            <option v-for="linea in lineaOptions" :key="linea.id" :value="String(linea.id)">
+              {{ linea.label || linea.nombre }}
             </option>
-            <option value="__new__">Nueva variación</option>
+            <option value="__new__">Nueva línea</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Código de variación" group-class="md:col-span-4">
-          <div class="deasy-card flex min-h-10 items-center break-all px-3.5 py-2.5 text-sm font-semibold text-body">
-            {{ seriesCodePreview || "Pendiente" }}
-          </div>
+        <AdminFieldGroup
+          v-if="isCreatingLinea"
+          label="Nombre de la línea"
+          group-class="md:col-span-12"
+        >
+          <AdminInputField
+            :model-value="form.linea_nombre"
+            placeholder="Informe de Investigación Formativa · Coordinadores de Carrera"
+            :disabled="isDefinitionLocked"
+            @update:model-value="updateForm('linea_nombre', $event)"
+          />
         </AdminFieldGroup>
         <AdminFieldGroup
-          v-if="isCreatingSeries"
-          label="Origen de serie"
+          v-if="isCreatingLinea"
+          label="Cargo que lo produce"
           group-class="md:col-span-4"
         >
-          <AdminSelectField :model-value="form.series_source_type" :disabled="isDefinitionLocked" @update:model-value="updateForm('series_source_type', $event)">
-            <option value="unit_type">Por tipo de unidad</option>
-            <option value="cargo">Por cargo</option>
-            <option value="default">Sin variación (nombre directo)</option>
+          <AdminSelectField
+            :model-value="form.cargo_id"
+            :disabled="isDefinitionLocked"
+            @update:model-value="updateForm('cargo_id', $event)"
+          >
+            <option value="">Cualquier cargo</option>
+            <option v-for="c in cargoOptions" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
           </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup
-          v-if="isCreatingSeries && form.series_source_type === 'unit_type'"
+          v-if="isCreatingLinea"
+          label="Dónde"
+          group-class="md:col-span-4"
+        >
+          <AdminSelectField :model-value="form.unit_scope_type" :disabled="isDefinitionLocked" @update:model-value="updateForm('unit_scope_type', $event)">
+            <option value="all_units">Todas las unidades</option>
+            <option value="unit_type">Por tipo de unidad</option>
+            <option value="unit_exact">Una unidad concreta</option>
+          </AdminSelectField>
+        </AdminFieldGroup>
+        <AdminFieldGroup
+          v-if="isCreatingLinea && form.unit_scope_type === 'unit_type'"
           label="Tipo de unidad"
           group-class="md:col-span-4"
         >
@@ -116,17 +137,17 @@
           </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup
-          v-if="isCreatingSeries && form.series_source_type === 'cargo'"
-          label="Cargo"
+          v-if="isCreatingLinea && form.unit_scope_type === 'unit_exact'"
+          label="Unidad"
           group-class="md:col-span-4"
         >
           <AdminSelectField
-            :model-value="form.cargo_id"
+            :model-value="form.unit_id"
             :disabled="isDefinitionLocked"
-            @update:model-value="updateForm('cargo_id', $event)"
+            @update:model-value="updateForm('unit_id', $event)"
           >
-            <option value="">Selecciona un cargo</option>
-            <option v-for="c in cargoOptions" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
+            <option value="">Selecciona una unidad</option>
+            <option v-for="u in unitOptions" :key="u.id" :value="String(u.id)">{{ u.name }}</option>
           </AdminSelectField>
         </AdminFieldGroup>
         <AdminFieldGroup label="Versión" group-class="md:col-span-4">
@@ -182,8 +203,8 @@ const props = defineProps({
   processOptions: { type: Array, default: () => [] },
   unitTypeOptions: { type: Array, default: () => [] },
   cargoOptions: { type: Array, default: () => [] },
-  seriesOptions: { type: Array, default: () => [] },
-  seriesCodePreview: { type: String, default: "" },
+  lineaOptions: { type: Array, default: () => [] },
+  unitOptions: { type: Array, default: () => [] },
   processSlugPreview: { type: String, default: "" },
   definitionNamePreview: { type: String, default: "" },
   creatingDefinition: { type: Boolean, default: false },
@@ -194,7 +215,10 @@ const props = defineProps({
 const emit = defineEmits(["close", "go-to-step", "create-definition", "edit-existing-definition", "update:definitionForm"]);
 
 const form = computed(() => props.definitionForm || {});
-const isCreatingSeries = computed(() => form.value.series_id === "__new__");
+// LOS DOS EJES SE PIDEN JUNTOS, que es la diferencia con la serie: ésta ofrecía «por tipo de
+// unidad» O «por cargo», nunca los dos, así que «los Coordinadores DE CARRERA» no cabía y había que
+// partirlo entre esta pantalla y la regla de reparto.
+const isCreatingLinea = computed(() => form.value.linea_id === "__new__");
 
 const hasDefinition = computed(() => Boolean(props.definitionContext?.id));
 const isDefinitionLocked = computed(() => props.readonly || hasDefinition.value);
@@ -208,14 +232,16 @@ const definitionNameLabel = computed(() =>
 
 const updateForm = (field, value) => {
   const nextForm = { ...props.definitionForm, [field]: value };
-  if (field === "series_source_type") {
+  // El alcance limpia SU columna, no la del cargo: el cargo es el otro eje y sobrevive a cualquier
+  // alcance. Con la serie había que borrarlo, porque los dos ejes eran excluyentes.
+  if (field === "unit_scope_type") {
     if (value === "unit_type") {
-      nextForm.cargo_id = "";
-    } else if (value === "cargo") {
+      nextForm.unit_id = "";
+    } else if (value === "unit_exact") {
       nextForm.unit_type_id = "";
     } else {
       nextForm.unit_type_id = "";
-      nextForm.cargo_id = "";
+      nextForm.unit_id = "";
     }
   } else if (field === "process_mode") {
     if (value === "existing") {

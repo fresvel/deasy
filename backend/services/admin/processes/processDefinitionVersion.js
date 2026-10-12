@@ -1,13 +1,9 @@
-// ProcessDefinitionVersionService — series, versionado, clonado y contexto de borrador de las
+// ProcessDefinitionVersionService — lineas, versionado, clonado y contexto de borrador de las
 // process definitions. Extraido de SqlAdminService.js (God #1) por Extract Class (cut #4). El cluster
 // solo depende de this.pool + getByKeys, inyectado;
 // los helpers puros (nombres de version, semver, ids) se importan de los modulos hermanos. SqlAdminService
 // mantiene delegadores; el controller y los grafts de create()/update() (que llaman resolve/ensure/clone/
 // refresh...) no se tocan.
-import {
-  buildProcessDefinitionVersionName,
-  resolveProcessDefinitionSeriesIdentity,
-} from "./processDefinitionSeries.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import { normalizeNumericId } from "../kernel/primitives.js";
 
@@ -24,14 +20,9 @@ export default class ProcessDefinitionVersionService {
   }
 
 
-  async resolveProcessDefinitionSeriesIdentity(candidate) {
-    return resolveProcessDefinitionSeriesIdentity(candidate, {
-      findUnitType: (id) => this._getByKeys("unit_types", { id }),
-      findCargo: (id) => this._getByKeys("cargos", { id })
-    });
-  }
-
-
+  // LA IDENTIDAD DE UNA CONFIGURACION ES (LINEA, version). Era `(process_id, variation_key,
+  // definition_version)` —tres columnas, una de ellas una COPIA de `series.code`— y el proceso
+  // sobra porque la linea ya es de un proceso.
   async ensureProcessDefinitionVersionAvailable(candidate, { excludeId = null } = {}) {
     this.ensurePool();
     const lineaId = normalizeNumericId(candidate?.linea_id);
@@ -41,9 +32,6 @@ export default class ProcessDefinitionVersionService {
       return;
     }
 
-    // La identidad de una configuracion es (LINEA, version). Era `(process_id, variation_key,
-    // definition_version)` —tres columnas, una de ellas una COPIA de `series.code`— y el proceso
-    // sobra porque la linea ya es de un proceso.
     const params = [lineaId, definitionVersion];
     let query = `
       SELECT id
@@ -60,51 +48,67 @@ export default class ProcessDefinitionVersionService {
 
     const [rows] = await this.pool.query(query, params);
     if (rows?.length) {
-      throw new Error("Ya existe una configuracion con esa serie y version para el proceso seleccionado.");
+      throw new Error("Ya existe una configuracion con esa version para la linea seleccionada.");
     }
   }
 
 
-  async resolveProcessDefinitionSeries(candidate, { connection = this.pool } = {}) {
+  // LA LINEA de una configuracion. Sustituye a `resolveProcessDefinitionSeries` (frente 25, P9).
+  //
+  // La serie admitia UN EJE O EL OTRO —su `CHECK` lo imponia y `validation.js` lo repetia—, y como
+  // los cargos del catalogo son GENERICOS (`Coordinador`, no «Coordinador de Carrera»), el eje que
+  // no cabia habia que ponerlo en `process_target_rules`. Se podia elegir cual iba donde, las dos
+  // formas pasaban y significaban cosas distintas: la variacion estaba PARTIDA EN DOS TABLAS. La
+  // linea lleva los dos.
+  async resolveLinea(candidate, { connection = this.pool } = {}) {
     this.ensurePool();
-    const seriesId = Number(candidate?.series_id);
-    if (!seriesId) {
-      throw new Error("Selecciona una serie valida para la configuracion.");
+    const lineaId = normalizeNumericId(candidate?.linea_id);
+    if (!lineaId) {
+      throw new Error("Selecciona una linea valida para la configuracion.");
     }
     const [rows] = await connection.query(
       `SELECT
-         pds.id,
-         pds.source_type,
-         pds.unit_type_id,
-         pds.cargo_id,
-         pds.code,
-         pds.is_active,
+         l.id,
+         l.process_id,
+         l.nombre,
+         l.cargo_id,
+         l.unit_scope_type,
+         l.unit_type_id,
+         l.unit_id,
+         l.effective_to,
          ut.name AS unit_type_name,
+         u.name AS unit_name,
          c.name AS cargo_name
-       FROM process_definition_series pds
-       LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
-       LEFT JOIN cargos c ON c.id = pds.cargo_id
-       WHERE pds.id = ?
+       FROM lineas l
+       LEFT JOIN unit_types ut ON ut.id = l.unit_type_id
+       LEFT JOIN units u ON u.id = l.unit_id
+       LEFT JOIN cargos c ON c.id = l.cargo_id
+       WHERE l.id = ?
        LIMIT 1`,
-      [seriesId]
+      [lineaId]
     );
-    const series = rows?.[0] || null;
-    if (!series) {
-      throw new Error("La serie seleccionada no existe.");
+    const linea = rows?.[0] || null;
+    if (!linea) {
+      throw new Error("La linea seleccionada no existe.");
     }
-    if (!Number(series.is_active)) {
-      throw new Error("La serie seleccionada esta inactiva.");
+    // Una linea RETIRADA ya no admite configuraciones nuevas: si la obligacion paso a otras manos,
+    // lo que sigue viva es su sucesora. Es la mitad en JavaScript de lo que el disparador
+    // `trg_linea_anterior_retirada` impone por el otro lado.
+    if (linea.effective_to) {
+      throw new Error("La linea seleccionada esta retirada y no admite configuraciones nuevas.");
     }
-    // La serie `default` = "sin variación" (nombre directo) es una opción válida para procesos
-    // sin eje de variación (memos/oficios routed); ya no se bloquea para configuraciones nuevas.
-    return series;
+    const processId = normalizeNumericId(candidate?.process_id);
+    if (processId && Number(linea.process_id) !== processId) {
+      throw new Error("La linea seleccionada pertenece a otro proceso.");
+    }
+    return linea;
   }
 
 
-  // El proceso por defecto (slug 'default') es un routed comodín especial: solo puede tener UNA
-  // variación — la "sin variación" (source_type='default'). Se permite versionarla (N versiones),
-  // pero no crear otra variación por cargo o tipo de unidad.
-  async ensureDefaultProcessSingleVariation(processId, series, { connection = this.pool } = {}) {
+  // El proceso por defecto (slug 'default') es un routed comodin especial: solo puede tener UNA
+  // linea — la «sin variacion»: cualquier cargo, todas las unidades. Se permite versionarla (N
+  // configuraciones), pero no crear otra linea por cargo o por alcance.
+  async ensureDefaultProcessSingleLinea(processId, linea, { connection = this.pool } = {}) {
     this.ensurePool();
     if (!processId) {
       return;
@@ -116,50 +120,39 @@ export default class ProcessDefinitionVersionService {
     if (String(rows?.[0]?.slug || "") !== "default") {
       return;
     }
-    if (String(series?.source_type || "") !== "default") {
-      throw new Error("El proceso por defecto solo admite la configuración \"sin variación\". Puedes crear nuevas versiones de ella, pero no otra variación por cargo o tipo de unidad.");
+    const sinVariacion = !linea?.cargo_id && String(linea?.unit_scope_type || "") === "all_units";
+    if (!sinVariacion) {
+      throw new Error("El proceso por defecto solo admite la linea \"sin variacion\" (cualquier cargo, todas las unidades). Puedes crear nuevas versiones de ella, pero no otra linea por cargo o por alcance.");
     }
   }
 
 
-  async resolveProcessDefinitionVersionName(processId, seriesId, { connection = this.pool } = {}) {
+  // EL NOMBRE DE UNA CONFIGURACION ES EL DE SU LINEA, y ese nombre LO ESCRIBE UNA PERSONA.
+  //
+  // Antes se componia: «<Proceso> por <Serie>», con el nombre de la serie derivado de
+  // `slugify(cargo.name)`. Eso obligaba a dos cascadas no transaccionales cuando alguien renombraba
+  // un cargo o un tipo de unidad, y aun asi la etiqueta nunca podia decir lo que la obligacion es,
+  // porque le faltaba un eje: «Informe de IF por Coordinador» no distingue al de Carrera del de
+  // Escuela. La linea lo dice entero y no se deriva de nada.
+  async resolveProcessDefinitionVersionName(processId, lineaId, { connection = this.pool } = {}) {
     this.ensurePool();
-    const normalizedProcessId = Number(processId);
-    const normalizedSeriesId = Number(seriesId);
-    if (!normalizedProcessId || !normalizedSeriesId) {
-      throw new Error("Selecciona proceso y serie para calcular el nombre de la configuracion.");
+    const normalizedLineaId = normalizeNumericId(lineaId);
+    if (!normalizedLineaId) {
+      throw new Error("Selecciona la linea para calcular el nombre de la configuracion.");
     }
     const [rows] = await connection.query(
-      `SELECT
-         p.name AS process_name,
-         pds.source_type,
-         pds.code,
-         ut.name AS unit_type_name,
-         c.name AS cargo_name
-       FROM processes p
-       INNER JOIN process_definition_series pds ON pds.id = ?
-       LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
-       LEFT JOIN cargos c ON c.id = pds.cargo_id
-       WHERE p.id = ?
-       LIMIT 1`,
-      [normalizedSeriesId, normalizedProcessId]
+      "SELECT nombre FROM lineas WHERE id = ? LIMIT 1",
+      [normalizedLineaId]
     );
-    const row = rows?.[0] || null;
-    if (!row) {
+    const nombre = String(rows?.[0]?.nombre || "").trim();
+    if (!nombre) {
       throw new Error("No se pudo calcular el nombre de la configuracion.");
     }
-    const generatedName = buildProcessDefinitionVersionName({
-      processName: row.process_name,
-      series: row
-    });
-    if (!generatedName) {
-      throw new Error("No se pudo calcular el nombre de la configuracion.");
-    }
-    return generatedName;
+    return nombre.slice(0, 180);
   }
 
 
-  async refreshProcessDefinitionVersionNames({ processId = null, seriesId = null, connection = this.pool } = {}) {
+  async refreshProcessDefinitionVersionNames({ processId = null, lineaId = null, connection = this.pool } = {}) {
     this.ensurePool();
     const filters = [];
     const params = [];
@@ -167,36 +160,23 @@ export default class ProcessDefinitionVersionService {
       filters.push("pdv.process_id = ?");
       params.push(Number(processId));
     }
-    if (seriesId !== null && seriesId !== undefined && seriesId !== "") {
-      filters.push("pdv.series_id = ?");
-      params.push(Number(seriesId));
+    if (lineaId !== null && lineaId !== undefined && lineaId !== "") {
+      filters.push("pdv.linea_id = ?");
+      params.push(Number(lineaId));
     }
     if (!filters.length) {
       return 0;
     }
     const [rows] = await connection.query(
-      `SELECT
-         pdv.id,
-         pdv.name,
-         p.name AS process_name,
-         pds.source_type,
-         pds.code,
-         ut.name AS unit_type_name,
-         c.name AS cargo_name
+      `SELECT pdv.id, pdv.name, l.nombre AS nombre_linea
        FROM process_definition_versions pdv
-       INNER JOIN processes p ON p.id = pdv.process_id
-       INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
-       LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
-       LEFT JOIN cargos c ON c.id = pds.cargo_id
+       INNER JOIN lineas l ON l.id = pdv.linea_id
        WHERE ${filters.join(" AND ")}`,
       params
     );
     let updated = 0;
     for (const row of rows || []) {
-      const generatedName = buildProcessDefinitionVersionName({
-        processName: row.process_name,
-        series: row
-      });
+      const generatedName = String(row.nombre_linea || "").trim().slice(0, 180);
       if (!generatedName || String(row.name || "") === generatedName) {
         continue;
       }
@@ -442,18 +422,18 @@ export default class ProcessDefinitionVersionService {
   // objetivo. La regla NO debe volver a decidirlos: se siembran desde la serie y se blindan para que no
   // puedan contradecirla. Así el cargo se decide una sola vez (en la serie) y la regla solo añade el
   // alcance (unidad) y la entrega (recipient_policy).
-  async getProcessDefinitionSeriesScope(processDefinitionId, connection = this.pool) {
+  async getProcessDefinitionLineaScope(processDefinitionId, connection = this.pool) {
     const defId = normalizeNumericId(processDefinitionId);
     if (!defId) {
       return null;
     }
     const [rows] = await connection.query(
-      `SELECT pds.source_type, pds.cargo_id, pds.unit_type_id,
+      `SELECT l.unit_scope_type, l.cargo_id, l.unit_type_id, l.unit_id,
               c.name AS cargo_name, ut.name AS unit_type_name
          FROM process_definition_versions pdv
-         INNER JOIN process_definition_series pds ON pds.id = pdv.series_id
-         LEFT JOIN cargos c ON c.id = pds.cargo_id
-         LEFT JOIN unit_types ut ON ut.id = pds.unit_type_id
+         INNER JOIN lineas l ON l.id = pdv.linea_id
+         LEFT JOIN cargos c ON c.id = l.cargo_id
+         LEFT JOIN unit_types ut ON ut.id = l.unit_type_id
         WHERE pdv.id = ?
         LIMIT 1`,
       [defId]
@@ -462,20 +442,20 @@ export default class ProcessDefinitionVersionService {
   }
 
 
-  async applyTargetRuleSeriesConstraints(processDefinitionId, candidate, connection = this.pool) {
-    const series = await this.getProcessDefinitionSeriesScope(processDefinitionId, connection);
-    if (!series) {
+  async applyTargetRuleLineaConstraints(processDefinitionId, candidate, connection = this.pool) {
+    const linea = await this.getProcessDefinitionLineaScope(processDefinitionId, connection);
+    if (!linea) {
       return;
     }
-    const seriesCargoId = normalizeNumericId(series.cargo_id);
-    const seriesUnitTypeId = normalizeNumericId(series.unit_type_id);
+    const lineaCargoId = normalizeNumericId(linea.cargo_id);
+    const lineaUnitTypeId = normalizeNumericId(linea.unit_type_id);
     const policy = String(candidate.recipient_policy || "all_matches");
 
     // Puesto exacto: el puesto define por sí mismo unidad y cargo, así que no se siembra ningún eje;
     // solo validamos que el puesto pertenezca al eje (cargo o tipo de unidad) que fija la serie.
     if (policy === "exact_position") {
       const positionId = normalizeNumericId(candidate.position_id);
-      if (positionId && (seriesCargoId || seriesUnitTypeId)) {
+      if (positionId && (lineaCargoId || lineaUnitTypeId)) {
         const [posRows] = await connection.query(
           `SELECT up.cargo_id, u.unit_type_id
              FROM unit_positions up
@@ -485,81 +465,41 @@ export default class ProcessDefinitionVersionService {
         );
         const positionCargoId = normalizeNumericId(posRows?.[0]?.cargo_id);
         const positionUnitTypeId = normalizeNumericId(posRows?.[0]?.unit_type_id);
-        if (seriesCargoId && positionCargoId && positionCargoId !== seriesCargoId) {
-          throw new Error("El puesto exacto no corresponde al cargo de la serie del proceso.");
+        if (lineaCargoId && positionCargoId && positionCargoId !== lineaCargoId) {
+          throw new Error("El puesto exacto no corresponde al cargo de la linea del proceso.");
         }
-        if (seriesUnitTypeId && positionUnitTypeId && positionUnitTypeId !== seriesUnitTypeId) {
-          throw new Error("El puesto exacto no pertenece al tipo de unidad de la serie del proceso.");
+        if (lineaUnitTypeId && positionUnitTypeId && positionUnitTypeId !== lineaUnitTypeId) {
+          throw new Error("El puesto exacto no pertenece al tipo de unidad de la linea del proceso.");
         }
       }
       return;
     }
 
-    // Cargo: lo fija la serie; se siembra si la regla no lo trae, o se blinda si difiere.
-    if (seriesCargoId) {
+    // Cargo: lo fija la LINEA; se siembra si la regla no lo trae, o se blinda si difiere.
+    if (lineaCargoId) {
       const candidateCargoId = normalizeNumericId(candidate.cargo_id);
       if (!candidateCargoId) {
-        candidate.cargo_id = seriesCargoId;
-      } else if (candidateCargoId !== seriesCargoId) {
-        throw new Error("El cargo de la regla debe coincidir con el cargo de la serie del proceso.");
+        candidate.cargo_id = lineaCargoId;
+      } else if (candidateCargoId !== lineaCargoId) {
+        throw new Error("El cargo de la regla debe coincidir con el cargo de la linea del proceso.");
       }
     }
 
-    // Tipo de unidad: la variación por tipo fija el alcance de la regla a ese tipo; la regla solo añade
-    // el cargo y la entrega. El despliegue por tipo ya cubre todas las unidades de ese tipo.
-    if (seriesUnitTypeId) {
+    // Tipo de unidad: el alcance de la LINEA fija el de la regla; la regla solo añade la entrega y,
+    // con `P10`, el refinamiento `unit_subtree` DENTRO de ese alcance.
+    if (lineaUnitTypeId) {
       const requestedScope = candidate.unit_scope_type ? String(candidate.unit_scope_type) : "";
       if (requestedScope && requestedScope !== "unit_type") {
-        throw new Error("El alcance de la regla lo fija la serie por tipo de unidad; no puede cambiarse.");
+        throw new Error("El alcance de la regla lo fija la linea; no puede cambiarse.");
       }
       const candidateUnitTypeId = normalizeNumericId(candidate.unit_type_id);
-      if (candidateUnitTypeId && candidateUnitTypeId !== seriesUnitTypeId) {
-        throw new Error("El tipo de unidad de la regla debe coincidir con el tipo de unidad de la serie del proceso.");
+      if (candidateUnitTypeId && candidateUnitTypeId !== lineaUnitTypeId) {
+        throw new Error("El tipo de unidad de la regla debe coincidir con el tipo de unidad de la linea del proceso.");
       }
       candidate.unit_scope_type = "unit_type";
-      candidate.unit_type_id = seriesUnitTypeId;
+      candidate.unit_type_id = lineaUnitTypeId;
       candidate.unit_id = null;
     }
-  }
-
-
-  // LA LINEA DE UNA SERIE — puente mientras `P9` no retire `process_definition_series`.
-  //
-  // Traduce la serie (un eje) a la linea (los dos). Hoy la pantalla sigue pidiendo una serie, asi que
-  // al crear una configuracion se busca —o se crea— la linea equivalente del proceso. Cuando `P9`
-  // haga que el asistente pida directamente cargo + alcance, este metodo se va con la serie.
-  async resolveLineaDeSerie({ processId, series, nombre, connection = this.pool }) {
-    this.ensurePool();
-    const normalizedProcessId = normalizeNumericId(processId);
-    if (!normalizedProcessId) {
-      throw new Error("La linea necesita un proceso.");
-    }
-    const sourceType = String(series?.source_type || "default").trim();
-    const cargoId = sourceType === "cargo" ? normalizeNumericId(series?.cargo_id) : null;
-    const unitTypeId = sourceType === "unit_type" ? normalizeNumericId(series?.unit_type_id) : null;
-    const unitScopeType = unitTypeId ? "unit_type" : "all_units";
-
-    const [existentes] = await connection.query(
-      `SELECT id FROM lineas
-        WHERE process_id = ?
-          AND cargo_id IS NOT DISTINCT FROM ?
-          AND unit_scope_type = ?
-          AND unit_type_id IS NOT DISTINCT FROM ?
-          AND unit_id IS NULL
-        LIMIT 1`,
-      [normalizedProcessId, cargoId, unitScopeType, unitTypeId]
-    );
-    if (existentes?.[0]?.id) {
-      return Number(existentes[0].id);
-    }
-
-    const nombreLinea = String(nombre || "").trim() || `Linea ${sourceType}`;
-    const [creada] = await connection.query(
-      `INSERT INTO lineas (process_id, nombre, cargo_id, unit_scope_type, unit_type_id, effective_from)
-       VALUES (?, ?, ?, ?, ?, CURDATE())`,
-      [normalizedProcessId, nombreLinea.slice(0, 180), cargoId, unitScopeType, unitTypeId]
-    );
-    return Number(creada.insertId);
   }
 
 

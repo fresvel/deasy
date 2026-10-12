@@ -9,7 +9,6 @@ import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.j
 import { PAISES, PROVINCIAS_EC, CANTONES_EC, PARROQUIAS_EC } from "../../dominios/organizacion/index.js";
 import { TelefonoService, EmailService, DocumentoIdentidadService } from "../../dominios/identidad/index.js";
 import DocumentosLegales from "../legal/DocumentosLegales.js";
-import { buildProcessDefinitionVersionName } from "../admin/processes/processDefinitionSeries.js";
 import {
   ACTION_CATALOG,
   ADMIN_ROLE_NAME,
@@ -570,9 +569,9 @@ const ensureBootstrapUnit = async (connection) => {
 // simple (1 paso: el dueño llena) y la firma ad-hoc, para ser robusto en instalación virgen.
 const DEFAULT_PROCESS_SLUG = "default";
 const DEFAULT_PROCESS_NAME = "Proceso por defecto";
-const DEFAULT_SERIES_CODE = "default";
 // AQUI HABIA UN SEGUNDO CONSTANTE, `DEFAULT_VARIATION = "general"`, Y ERA UN DEFECTO.
-// Iba a `variation_key` mientras `DEFAULT_SERIES_CODE = "default"` iba a `series.code`: dos
+// Iba a `variation_key` mientras `DEFAULT_SERIES_CODE = "default"` iba a `series.code` --las dos
+// se han ido con sus columnas--: dos
 // constantes para una sola cosa, asi que la configuracion del Proceso por defecto era la UNICA
 // fila del sistema con la copia desincronizada de su origen — y medido el 2026-10-11, con los
 // datos de una base sembrada, lo eran LAS DOS que existian: el 100 %. Se va con la columna.
@@ -754,29 +753,14 @@ export const ensureDefaultProcess = async (connection) => {
   }
   const processId = Number(process.id);
 
-  // 2. serie
-  let series = await fetchOne(
-    connection,
-    "SELECT id, source_type, code FROM process_definition_series WHERE code = ? LIMIT 1",
-    [DEFAULT_SERIES_CODE]
-  );
-  if (!series) {
-    const [r] = await connection.query(
-      "INSERT INTO process_definition_series (source_type, unit_type_id, cargo_id, code, is_active) VALUES ('default', NULL, NULL, ?, 1)",
-      [DEFAULT_SERIES_CODE]
-    );
-    series = { id: r.insertId, source_type: "default", code: DEFAULT_SERIES_CODE };
-  }
-  const defaultDefinitionName = buildProcessDefinitionVersionName({
-    processName: DEFAULT_PROCESS_NAME,
-    series: { source_type: "default", code: DEFAULT_SERIES_CODE }
-  });
-
-  // 2-bis. LA LINEA (frente 25, P8). La obligacion del proceso por defecto es «cualquier cargo, en
-  //        todas las unidades»: un memo lo escribe quien lo necesita, donde lo necesita. Por eso
-  //        `cargo_id` queda NULL y el alcance se NOMBRA `all_units` —los mismos nombres que
-  //        `process_target_rules`— en vez de deducirse de dos columnas vacias. Convive con la serie
-  //        mientras `P2-bis` no retire la pareja.
+  // 2. LA LINEA (frente 25, P8/P9). Aqui se sembraba antes `process_definition_series`, que se
+  //    retiro con la serie: el nombre de la configuracion ya no se compone --«<Proceso> por
+  //    <Serie>»-- sino que ES el de la linea. La obligacion del proceso por defecto es «cualquier cargo, en
+  //    La obligacion del proceso por defecto es «cualquier cargo, en todas las unidades»: un memo
+  //    lo escribe quien lo necesita, donde lo necesita. Por eso `cargo_id` queda NULL y el alcance
+  //    se NOMBRA `all_units` --los mismos nombres que `process_target_rules`-- en vez de deducirse
+  //    de dos columnas vacias.
+  const defaultDefinitionName = DEFAULT_PROCESS_NAME;
   let linea = await fetchOne(
     connection,
     `SELECT id FROM lineas
@@ -802,9 +786,9 @@ export const ensureDefaultProcess = async (connection) => {
   if (!definition) {
     const [r] = await connection.query(
       `INSERT INTO process_definition_versions
-        (process_id, series_id, linea_id, definition_version, name, description, status, effective_from)
-       VALUES (?, ?, ?, ?, ?, ?, 'active', CURDATE())`,
-      [processId, Number(series.id), lineaId, DEFAULT_DEFINITION_VERSION,
+        (process_id, linea_id, definition_version, name, description, status, effective_from)
+       VALUES (?, ?, ?, ?, ?, 'active', CURDATE())`,
+      [processId, lineaId, DEFAULT_DEFINITION_VERSION,
        defaultDefinitionName, "Tareas libres y no clasificadas."]
     );
     definition = { id: r.insertId, status: "active", name: defaultDefinitionName };

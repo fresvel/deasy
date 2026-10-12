@@ -425,9 +425,9 @@ export const listStuckTaskItems = async (req, res) => {
 
 // Cargo/tipo de unidad que la serie del proceso fija. Lo consume el panel de reglas para precargar y
 // bloquear el cargo (la serie ya decide el cargo; la regla solo añade alcance y entrega).
-export const getProcessDefinitionSeriesScope = async (req, res) => {
+export const getProcessDefinitionLineaScope = async (req, res) => {
   try {
-    const result = await service().getProcessDefinitionSeriesScope(req.params.id);
+    const result = await service().getProcessDefinitionLineaScope(req.params.id);
     res.json(result || {});
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });

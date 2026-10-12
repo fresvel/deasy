@@ -31,7 +31,7 @@
 // -------------------
 // Cada hook recibe un único objeto mutable. Lo importante:
 //   - `service`     el propio SqlAdminService, para llamar a sus delegadores (`wouldCreateUnitCycle`,
-//                   `ensureDraftDefinitionContext`, `resolveProcessDefinitionSeries`...). Los cuts
+//                   `ensureDraftDefinitionContext`, `resolveLinea`...). Los cuts
 //                   #1-#6 dejaron esos métodos como delegadores a los servicios extraídos, así que
 //                   los hooks siguen viendo la misma superficie que veían los injertos.
 //   - `pool`        atajo a `service.pool`.
@@ -156,20 +156,15 @@ const resolveUniquePersonToken = async (pool) => {
   throw new Error("No se pudo generar un token unico para el usuario.");
 };
 
-// `unit_types` y `cargos` comparten injerto: al renombrarlos hay que regenerar el nombre de las
-// configuraciones de las series que los referencian. Solo cambia la columna por la que se busca.
-const refreshSeriesNamesOnRename = (foreignKey) => async (ctx) => {
-  if (!Object.hasOwn(ctx.updates, "name")) {
-    return;
-  }
-  const [seriesRows] = await ctx.pool.query(
-    `SELECT id FROM process_definition_series WHERE ${foreignKey} = ?`,
-    [Number(ctx.existing.id ?? ctx.keyPayload.id)]
-  );
-  for (const seriesRow of seriesRows || []) {
-    await ctx.service.refreshProcessDefinitionVersionNames({ seriesId: Number(seriesRow.id) });
-  }
-};
+// AQUI VIVIA `refreshSeriesNamesOnRename`, EL INJERTO COMPARTIDO DE `unit_types` Y `cargos`, y se
+// va con la serie (frente 25, P9).
+//
+// Renombrar un cargo o un tipo de unidad disparaba una cascada: buscar todas las series que lo
+// referencian y regenerar el nombre de TODAS sus configuraciones, porque ese nombre se componia
+// —«<Proceso> por <Serie>»— y el de la serie se derivaba de `slugify(cargo.name)`. Dos cascadas no
+// transaccionales para sostener un nombre que nadie habia escrito.
+//
+// La linea tiene nombre propio. Renombrar un cargo ya no cambia el nombre de nada.
 
 // `turnos` y `document_signatures` tienen el MISMO injerto en create y en update: escribir y
 // reconciliar el progreso del documento dentro de la misma transacción. Solo cambia la función de
@@ -444,67 +439,21 @@ export const TABLE_HOOKS = {
     }
   },
 
-  unit_types: { afterUpdate: refreshSeriesNamesOnRename("unit_type_id") },
-
-  cargos: { afterUpdate: refreshSeriesNamesOnRename("cargo_id") },
+  // `unit_types` y `cargos` YA NO LLEVAN INJERTO: renombrarlos no cambia el nombre de ninguna
+  // configuracion, porque ese nombre es el de la LINEA y lo escribio una persona.
 
   // --- Estado complejo: el árbol de configuraciones de proceso -------------------------------
-  // Serie -> configuración (versionada) -> plantillas/reglas/periodos. Sus injertos encadenan
+  // Linea -> configuración (versionada) -> plantillas/reglas/periodos. Sus injertos encadenan
   // versionado, clonado y sincronización de flujos; todo eso ya vive en los servicios extraídos
   // en los cuts #3-#5, así que aquí solo queda la orquestación por-tabla.
 
-  process_definition_series: {
-    // La IDENTIDAD (code) no la elige el usuario: se deriva del origen (cargo o tipo de unidad).
-    async beforeCreate(ctx) {
-      const identity = await ctx.service.resolveProcessDefinitionSeriesIdentity(ctx.payload);
-      Object.assign(ctx.payload, identity);
-      const [dupRows] = await ctx.pool.query(
-        `SELECT id
-         FROM process_definition_series
-         WHERE code = ?
-         LIMIT 1`,
-        [identity.code]
-      );
-      if (dupRows?.length) {
-        throw new Error("Ya existe una serie con ese origen.");
-      }
-    },
-
-    async beforeUpdate(ctx) {
-      const candidateSeries = { ...ctx.existing, ...ctx.updates };
-      const sourceType = String(candidateSeries.source_type || ctx.existing.source_type || "").trim();
-      if (sourceType === "default") {
-        throw new Error("La serie por defecto del sistema no se edita manualmente.");
-      }
-      const identity = await ctx.service.resolveProcessDefinitionSeriesIdentity(candidateSeries);
-      Object.assign(ctx.updates, identity);
-      const [dupRows] = await ctx.pool.query(
-        `SELECT id
-         FROM process_definition_series
-         WHERE code = ?
-           AND id <> ?
-         LIMIT 1`,
-        [identity.code, Number(ctx.existing.id)]
-      );
-      if (dupRows?.length) {
-        throw new Error("Ya existe otra serie con ese origen.");
-      }
-    },
-
-    // Si la identidad cambió, regenera los nombres de sus configuraciones. No es transaccional (no
-    // lo era antes).
-    //
-    // ⚠️ AQUI HABIA UN `UPDATE ... SET variation_key` MASIVO, y se fue con la columna. Arrastraba la
-    // copia de `series.code` a todas las configuraciones de la serie, FUERA DE TRANSACCION y sobre la
-    // columna que sostenia DOS INDICES UNICOS: si se quedaba a medias, los dos unicos pasaban a
-    // vigilar etiquetas viejas. Lo midio `D1`. La linea tiene nombre propio y no se arrastra nada.
-    async afterUpdate(ctx) {
-      if (!Object.hasOwn(ctx.updates, "code")) {
-        return;
-      }
-      await ctx.service.refreshProcessDefinitionVersionNames({ seriesId: Number(ctx.existing.id) });
-    }
-  },
+  // AQUI VIVIAN LOS HOOKS DE `process_definition_series`, y se van con la tabla (frente 25, P9).
+  //
+  // Eran tres: derivar el `code` de la serie con `slugify(cargo.name)`, impedir duplicados por ese
+  // code derivado, y regenerar los nombres de sus configuraciones al renombrarla. Los tres existian
+  // porque la IDENTIDAD de la serie era DERIVADA. La linea tiene nombre escrito por una persona y
+  // su identidad son sus dos ejes, impuestos por `uq_lineas_identidad` con `NULLS NOT DISTINCT`:
+  // ningun hook hace falta para sostener eso.
 
   process_definition_versions: {
     async beforeCreate(ctx) {
@@ -526,25 +475,17 @@ export const TABLE_HOOKS = {
       if (requestedStatus !== "draft") {
         throw new Error("Las nuevas configuraciones solo pueden crearse en estado draft.");
       }
-      const series = await ctx.service.resolveProcessDefinitionSeries(ctx.payload);
-      // El proceso por defecto es especial: SOLO admite la configuración "sin variación"
-      // (source_type='default'). Puede versionarse (N versiones), pero no tener otra
-      // variación por cargo/tipo de unidad.
-      await ctx.service.ensureDefaultProcessSingleVariation(ctx.payload.process_id, series);
+      // LA LINEA llega en el payload: es la obligacion a la que esta configuracion da version.
+      // Antes llegaba una SERIE y de ella se derivaba todo —el `variation_key`, el nombre—; hoy la
+      // linea la eligio una persona y su nombre lo escribio ella.
+      const linea = await ctx.service.resolveLinea(ctx.payload);
+      // El proceso por defecto es especial: SOLO admite la linea "sin variacion" (cualquier cargo,
+      // todas las unidades). Puede versionarse (N configuraciones), pero no tener otra linea.
+      await ctx.service.ensureDefaultProcessSingleLinea(ctx.payload.process_id, linea);
       ctx.payload.name = await ctx.service.resolveProcessDefinitionVersionName(
         ctx.payload.process_id,
-        ctx.payload.series_id
+        ctx.payload.linea_id
       );
-      // LA LINEA, no la copia de la serie. Aqui se escribia
-      // `ctx.payload.variation_key = series.code`, que era el escritor de la copia que `D1` midio:
-      // tres columnas para una identidad, una de ellas derivada, y dos indices unicos encima.
-      // Mientras la pantalla siga pidiendo una serie, la linea se deriva de ella; cuando `P9` haga
-      // que pida cargo + alcance, esto recibira la linea directamente.
-      ctx.payload.linea_id = await ctx.service.resolveLineaDeSerie({
-        processId: ctx.payload.process_id,
-        series,
-        nombre: ctx.payload.name
-      });
       ctx.payload.status = "draft";
       await ctx.service.ensureProcessDefinitionVersionAvailable(ctx.payload);
     },
@@ -623,12 +564,6 @@ export const TABLE_HOOKS = {
         }
         delete updates.process_id;
       }
-      if (Object.hasOwn(updates, "series_id")) {
-        if (!isSameValue("series_id", updates.series_id, existing.series_id)) {
-          throw new Error("No se puede cambiar la serie de una configuracion.");
-        }
-        delete updates.series_id;
-      }
       if (Object.hasOwn(updates, "linea_id")) {
         if (!isSameValue("linea_id", updates.linea_id, existing.linea_id)) {
           // Y esto es la decision 12 del dueño con otras palabras: si la obligacion cambia de manos
@@ -668,7 +603,7 @@ export const TABLE_HOOKS = {
       if (currentStatus === "draft") {
         const generatedName = await ctx.service.resolveProcessDefinitionVersionName(
           existing.process_id,
-          existing.series_id
+          existing.linea_id
         );
         if (generatedName && !isSameValue("name", generatedName, existing.name)) {
           updates.name = generatedName;
@@ -814,7 +749,7 @@ export const TABLE_HOOKS = {
   process_target_rules: {
     async beforeCreate(ctx) {
       await RULE_CHILD_GUARDS.beforeCreate(ctx);
-      await ctx.service.applyTargetRuleSeriesConstraints(ctx.payload.process_definition_id, ctx.payload);
+      await ctx.service.applyTargetRuleLineaConstraints(ctx.payload.process_definition_id, ctx.payload);
     },
 
     // La serie BLINDA el cargo/tipo de unidad de la regla: si la restricción los cambia, ese cambio
@@ -822,7 +757,7 @@ export const TABLE_HOOKS = {
     async beforeUpdate(ctx) {
       await RULE_CHILD_GUARDS.beforeUpdate(ctx);
       const mergedRule = { ...ctx.existing, ...ctx.updates };
-      await ctx.service.applyTargetRuleSeriesConstraints(ctx.existing.process_definition_id, mergedRule);
+      await ctx.service.applyTargetRuleLineaConstraints(ctx.existing.process_definition_id, mergedRule);
       for (const key of ["cargo_id", "unit_type_id"]) {
         if (mergedRule[key] != null && Number(mergedRule[key]) !== Number(ctx.existing[key])) {
           ctx.updates[key] = mergedRule[key];

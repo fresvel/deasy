@@ -50,7 +50,7 @@
         <div v-if="view === 'definition'" class="mt-3">
           <div class="grid gap-2 text-sm text-body md:grid-cols-2">
             <div><strong>Proceso:</strong> {{ formatCell(selectedRow?.process_id, { name: 'process_id' }, selectedRow || {}) }}</div>
-            <div><strong>Variación:</strong> {{ formatCell(selectedRow?.series_id, { name: 'series_id' }, selectedRow || {}) }}</div>
+            <div><strong>Línea:</strong> {{ formatCell(selectedRow?.series_id, { name: 'series_id' }, selectedRow || {}) }}</div>
             <div><strong>Version:</strong> {{ selectedRow?.definition_version || "—" }}</div>
             <div class="md:col-span-2"><strong>Nombre:</strong> {{ selectedRow?.name || "—" }}</div>
             <div class="md:col-span-2"><strong>Descripcion:</strong> {{ selectedRow?.description || "—" }}</div>

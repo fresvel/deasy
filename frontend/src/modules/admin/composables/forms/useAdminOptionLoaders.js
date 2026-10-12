@@ -13,7 +13,7 @@ export function useAdminOptionLoaders({
   vacantPositionUnitOptions,
   vacantPositionCargoOptions,
   processDefinitionProcessOptions,
-  processDefinitionSeriesOptions,
+  processDefinitionLineaOptions,
   fkPositionFilters,
   fkPositionFilterLoading,
   fkUnitTypeOptions,
@@ -125,21 +125,21 @@ export function useAdminOptionLoaders({
     }
   };
 
-  const loadProcessDefinitionSeriesOptions = async () => {
+  const loadProcessDefinitionLineaOptions = async () => {
     try {
-      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_series"), {
+      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("lineas"), {
         params: {
-          filter_is_active: 1,
-          orderBy: "code",
+          orderBy: "nombre",
           order: "asc",
           limit: 500
         }
       });
-      processDefinitionSeriesOptions.value = (response.data || []).filter(
-        (row) => String(row?.source_type || "") !== "legacy"
-      );
+      // Sólo las VIGENTES: una línea retirada ya no admite configuraciones nuevas, y ofrecerla
+      // llevaría a un 400 del backend. Antes el filtro era `is_active`, una bandera; hoy es la
+      // vigencia, que es lo que de verdad dice si la obligación sigue en pie.
+      processDefinitionLineaOptions.value = (response.data || []).filter((row) => !row?.effective_to);
     } catch {
-      processDefinitionSeriesOptions.value = [];
+      processDefinitionLineaOptions.value = [];
     }
   };
 
@@ -261,7 +261,7 @@ export function useAdminOptionLoaders({
     loadVacantPositionUnitTypeOptions,
     loadVacantPositionCargoOptions,
     loadProcessDefinitionProcessOptions,
-    loadProcessDefinitionSeriesOptions,
+    loadProcessDefinitionLineaOptions,
     loadVacantPositionUnitOptions,
     loadFkUnitTypeOptions,
     loadFkCargoOptions,

@@ -60,8 +60,8 @@ const CREATE_ERROR_CASES = [
   ["tabla_desconocida", "tabla_inexistente", {}],
   ["campo_requerido_ausente", "unit_types", {}],
   ["unit_relations_consigo_misma", "unit_relations", { parent_unit_id: 2, child_unit_id: 2, relation_type_id: 1 }],
-  ["series_sin_origen", "process_definition_series", {}],
-  ["version_sin_serie", "process_definition_versions", {}],
+  ["linea_sin_datos", "lineas", {}],
+  ["version_sin_linea", "process_definition_versions", {}],
   ["regla_sin_configuracion", "process_target_rules", {}],
   ["tarea_sin_configuracion", "tasks", {}],
 ];
@@ -202,7 +202,7 @@ test("GET /admin/sql/ediciones/:id/schema -> esquema del artifact", async () => 
 const LIST_TABLES = [
   "persons", "units", "unit_types", "unit_relations", "relation_unit_types",
   "cargos", "unit_positions", "position_assignments", "term_types", "terms",
-  "processes", "process_definition_series", "process_definition_versions",
+  "processes", "lineas", "process_definition_versions",
   "process_target_rules", "vinculos",
   "generadores_de_documento", "ediciones",
   "tasks", "task_items", "task_item_tenures", "document_versions",
@@ -232,7 +232,7 @@ const READ_SUBSYSTEM_CASES = [
   ["activation_diff", `/admin/sql/process_definitions/${FIXTURE.definitionId}/activation-diff`],
   ["target_scope", `/admin/sql/process_definitions/${FIXTURE.definitionId}/target-scope`],
   ["resolvable_cargos", `/admin/sql/process_definitions/${FIXTURE.definitionId}/resolvable-cargos`],
-  ["series_scope", `/admin/sql/process_definitions/${FIXTURE.definitionId}/series-scope`],
+  ["linea_scope", `/admin/sql/process_definitions/${FIXTURE.definitionId}/linea-scope`],
   ["stuck_task_items", "/admin/sql/task-items/stuck"],
   ["unit_attachable_processes", `/admin/sql/units/${FIXTURE.unitId}/attachable-processes`],
 ];
@@ -738,33 +738,48 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
   const procesoId = proceso.body?.id;
   assert.ok(procesoId, "processes create debe devolver id");
 
-  // El graft de series DERIVA la identidad (code) del origen y rechaza duplicados de ese origen.
-  const serie = await post("/admin/sql/process_definition_series", {
+  // LA LÍNEA LLEVA LOS DOS EJES. Aquí se creaba una SERIE, que admitía uno O el otro y DERIVABA su
+  // identidad de `slugify(cargo.name)`; la línea lleva cargo Y alcance, y su nombre lo escribe quien
+  // la crea. La unicidad `(proceso, cargo, alcance)` la impone `uq_lineas_identidad`.
+  const linea = await post("/admin/sql/lineas", {
     token,
-    body: { source_type: "cargo", cargo_id: cargoId },
+    body: {
+      process_id: procesoId,
+      nombre: "Cadena de caracterización · Jefes",
+      cargo_id: cargoId,
+      unit_scope_type: "all_units",
+      effective_from: "2026-01-01",
+    },
   });
-  matchSnapshot(SUITE, "graft_series_create", {
-    status: serie.status,
-    body: normalize(serie.body, { maskIdKeys: true }),
+  matchSnapshot(SUITE, "graft_linea_create", {
+    status: linea.status,
+    body: normalize(linea.body, { maskIdKeys: true }),
   });
-  assert.equal(serie.status, 200, `series create debe responder 200: ${JSON.stringify(serie.body)}`);
-  const serieId = serie.body?.id;
+  assert.equal(linea.status, 200, `lineas create debe responder 200: ${JSON.stringify(linea.body)}`);
+  const lineaId = linea.body?.id;
 
-  const serieDuplicada = await post("/admin/sql/process_definition_series", {
+  // La MISMA pareja (cargo, alcance) dentro del mismo proceso es la misma obligación: colisiona.
+  const lineaDuplicada = await post("/admin/sql/lineas", {
     token,
-    body: { source_type: "cargo", cargo_id: cargoId },
+    body: {
+      process_id: procesoId,
+      nombre: "Otra con los mismos ejes",
+      cargo_id: cargoId,
+      unit_scope_type: "all_units",
+      effective_from: "2026-01-01",
+    },
   });
-  matchSnapshot(SUITE, "graft_series_origen_duplicado", {
-    status: serieDuplicada.status,
-    body: normalize(serieDuplicada.body),
+  matchSnapshot(SUITE, "graft_linea_ejes_duplicados", {
+    status: lineaDuplicada.status,
+    body: normalize(lineaDuplicada.body),
   });
 
-  // El graft de versiones fuerza status=draft y GENERA name + variation_key desde la serie.
+  // El graft de versiones fuerza status=draft y toma el nombre de la LÍNEA.
   const version = await post("/admin/sql/process_definition_versions", {
     token,
     body: {
       process_id: procesoId,
-      series_id: serieId,
+      linea_id: lineaId,
       definition_version: "1.0.0",
       effective_from: "2026-01-01",
     },
@@ -783,7 +798,7 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
     token,
     body: {
       process_id: procesoId,
-      series_id: serieId,
+      linea_id: lineaId,
       definition_version: "9.0.0",
       effective_from: "2026-01-01",
       status: "active",
@@ -826,7 +841,7 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
     token,
     body: {
       process_id: procesoId,
-      series_id: serieId,
+      linea_id: lineaId,
       definition_version: "2.0.0",
       effective_from: "2026-02-01",
       source_process_definition_id: definicionId,
@@ -853,22 +868,23 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
   // La identidad de una configuración es inmutable aunque esté en borrador.
   const cambioSerie = await put("/admin/sql/process_definition_versions", {
     token,
-    body: { keys: { id: definicionId }, data: { series_id: 999999 } },
+    body: { keys: { id: definicionId }, data: { linea_id: 999999 } },
   });
   matchSnapshot(SUITE, "graft_pdv_update_serie_inmutable", {
     status: cambioSerie.status,
     body: normalize(cambioSerie.body),
   });
 
-  // La serie por defecto del sistema no se edita a mano; una normal sí (y renombrar su code
-  // arrastra el variation_key y los nombres de sus configuraciones).
-  const serieEditada = await put("/admin/sql/process_definition_series", {
+  // RENOMBRAR UNA LÍNEA YA NO ARRASTRA NADA, y ese es el cambio. Antes esto editaba una serie, y
+  // cambiar su `code` disparaba una cascada NO transaccional que reescribía el `variation_key` y
+  // el nombre de todas sus configuraciones. La línea tiene nombre propio: cambiarlo es un UPDATE.
+  const lineaEditada = await put("/admin/sql/lineas", {
     token,
-    body: { keys: { id: serieId }, data: { is_active: 0 } },
+    body: { keys: { id: lineaId }, data: { nombre: "Cadena de caracterización · Jefes (renombrada)" } },
   });
-  matchSnapshot(SUITE, "graft_series_update", {
-    status: serieEditada.status,
-    body: normalize(serieEditada.body, { maskIdKeys: true }),
+  matchSnapshot(SUITE, "graft_linea_update", {
+    status: lineaEditada.status,
+    body: normalize(lineaEditada.body, { maskIdKeys: true }),
   });
 
   for (const [table, id] of [
@@ -876,7 +892,7 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
     ["process_definition_period_types", periodoId],
     ["process_target_rules", reglaId],
     ["process_definition_versions", definicionId],
-    ["process_definition_series", serieId],
+    ["lineas", lineaId],
     ["processes", procesoId],
   ]) {
     if (id) {
@@ -980,7 +996,7 @@ test("DELETE /admin/sql/vinculos -> desenlaza la plantilla de la configuración"
     token,
     body: {
       process_id: source.process_id,
-      series_id: source.series_id,
+      linea_id: source.linea_id,
       definition_version: "9.9.9",
       effective_from: "2026-03-01",
       source_process_definition_id: source.id,
@@ -1055,16 +1071,22 @@ test("POST /admin/sql/vinculos de otra línea -> lo rechaza el disparador", asyn
   const procesoId = proceso.body?.id;
   assert.ok(procesoId, `el proceso ajeno debe crearse: ${JSON.stringify(proceso.body)}`);
 
-  const serie = await post("/admin/sql/process_definition_series", {
+  const lineaAjena = await post("/admin/sql/lineas", {
     token,
-    body: { source_type: "cargo", cargo_id: cargoId },
+    body: {
+      process_id: procesoId,
+      nombre: "Línea ajena de pertenencia",
+      cargo_id: cargoId,
+      unit_scope_type: "all_units",
+      effective_from: "2026-04-01",
+    },
   });
-  const serieId = serie.body?.id;
-  assert.ok(serieId, `la serie debe crearse: ${JSON.stringify(serie.body)}`);
+  const lineaAjenaId = lineaAjena.body?.id;
+  assert.ok(lineaAjenaId, `la línea ajena debe crearse: ${JSON.stringify(lineaAjena.body)}`);
 
   const definicion = await post("/admin/sql/process_definition_versions", {
     token,
-    body: { process_id: procesoId, series_id: serieId, definition_version: "1.0.0", effective_from: "2026-04-01" },
+    body: { process_id: procesoId, linea_id: lineaAjenaId, definition_version: "1.0.0", effective_from: "2026-04-01" },
   });
   const definicionAjenaId = definicion.body?.id;
   assert.ok(definicionAjenaId, `la configuración ajena debe crearse: ${JSON.stringify(definicion.body)}`);
@@ -1104,7 +1126,7 @@ test("POST /admin/sql/vinculos de otra línea -> lo rechaza el disparador", asyn
   } finally {
     for (const [table, id] of [
       ["process_definition_versions", definicionAjenaId],
-      ["process_definition_series", serieId],
+      ["lineas", lineaAjenaId],
       ["processes", procesoId],
     ]) {
       if (id) {

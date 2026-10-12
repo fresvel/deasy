@@ -180,7 +180,7 @@
       :unit-position-cargo-options="unitPositionCargoOptions"
       :process-definition-inline-filters="processDefinitionInlineFilters"
       :process-definition-process-options="processDefinitionProcessOptions"
-      :process-definition-series-options="processDefinitionSeriesOptions"
+      :process-definition-linea-options="processDefinitionLineaOptions"
       :process-target-rule-inline-filters="processTargetRuleInlineFilters"
       :template-artifact-inline-filters="templateArtifactInlineFilters"
       :has-unit-position-filters="hasUnitPositionFilters"
@@ -627,7 +627,7 @@
       :loading="definitionRulesLoading"
       :rows="definitionRulesRows"
       :table-fields="definitionRulesTableFields"
-      :series-scope="definitionRulesSeriesScope"
+      :linea-scope="definitionRulesLineaScope"
       :suggest-providers="definitionRuleSuggestProviders"
       :format-cell="formatDefinitionRuleCell"
       @update:form="definitionRulesForm = $event"
@@ -659,8 +659,8 @@
       :process-options="processWizardProcessOptions"
       :unit-type-options="processWizardUnitTypeOptions"
       :cargo-options="processWizardCargoOptions"
-      :series-options="processWizardSeriesOptions"
-      :series-code-preview="processWizardSeriesCodePreview"
+      :linea-options="processWizardLineaOptions"
+      :unit-options="processWizardUnitOptions"
       :process-slug-preview="processWizardProcessSlugPreview"
       :definition-name-preview="processWizardDefinitionNamePreview"
       :creating-definition="processWizardCreating"
@@ -710,7 +710,7 @@
           :loading="definitionRulesLoading"
           :rows="definitionRulesRows"
           :table-fields="definitionRulesTableFields"
-          :series-scope="definitionRulesSeriesScope"
+          :linea-scope="definitionRulesLineaScope"
           :suggest-providers="definitionRuleSuggestProviders"
           :format-cell="formatDefinitionRuleCell"
           @update:form="definitionRulesForm = $event"
@@ -1313,7 +1313,7 @@ const templateArtifactInlineFilters = ref({
   is_active: ""
 });
 const processDefinitionProcessOptions = ref([]);
-const processDefinitionSeriesOptions = ref([]);
+const processDefinitionLineaOptions = ref([]);
 const editorMode = ref("create");
 const formData = ref({});
 const selectedRow = ref(null);
@@ -1377,7 +1377,7 @@ const definitionRulesLoading = ref(false);
 const definitionRulesError = ref("");
 const definitionRulesEditId = ref("");
 // Cargo/tipo de unidad que la serie del proceso fija; bloquea el cargo en el panel de reglas.
-const definitionRulesSeriesScope = ref(null);
+const definitionRulesLineaScope = ref(null);
 const definitionRulesForm = ref({
   unit_scope_type: "unit_exact",
   unit_id: "",
@@ -2306,7 +2306,7 @@ const {
   loadVacantPositionUnitTypeOptions,
   loadVacantPositionCargoOptions,
   loadProcessDefinitionProcessOptions,
-  loadProcessDefinitionSeriesOptions,
+  loadProcessDefinitionLineaOptions,
   loadVacantPositionUnitOptions,
   loadFkUnitTypeOptions,
   loadFkCargoOptions,
@@ -2324,7 +2324,7 @@ const {
   vacantPositionUnitOptions,
   vacantPositionCargoOptions,
   processDefinitionProcessOptions,
-  processDefinitionSeriesOptions,
+  processDefinitionLineaOptions,
   fkPositionFilters,
   fkPositionFilterLoading,
   fkUnitTypeOptions,
@@ -2443,7 +2443,7 @@ const loadProcessEditorConfigurations = async (processId = selectedRow.value?.id
       limit: 100
     });
     processEditorConfigurations.value = response.data || [];
-    await prefetchFkLabelsForRows(processEditorConfigurations.value, ["series_id"]);
+    await prefetchFkLabelsForRows(processEditorConfigurations.value, ["linea_id"]);
   } catch {
     processEditorConfigurations.value = [];
     processEditorConfigurationsError.value = "No se pudieron cargar las configuraciones del proceso.";
@@ -3216,7 +3216,7 @@ const {
   definitionRulesEditId,
   definitionRulesForm,
   definitionRulesLabels,
-  definitionRulesSeriesScope,
+  definitionRulesLineaScope,
   definitionTriggersContext,
   definitionTriggersRows,
   definitionTriggersLoading,
@@ -3366,8 +3366,8 @@ const {
   processOptions: processWizardProcessOptions,
   unitTypeOptions: processWizardUnitTypeOptions,
   cargoOptions: processWizardCargoOptions,
-  seriesOptions: processWizardSeriesOptions,
-  seriesCodePreview: processWizardSeriesCodePreview,
+  lineaOptions: processWizardLineaOptions,
+  unitOptions: processWizardUnitOptions,
   processSlugPreview: processWizardProcessSlugPreview,
   definitionNamePreview: processWizardDefinitionNamePreview,
   creatingDefinition: processWizardCreating,
@@ -3596,7 +3596,7 @@ const editConfigFromGraph = async ({ processId, definition, step = "definition",
       status: definition.status,
       linea_nombre: definition.linea_nombre,
       definition_version: definition.definition_version,
-      series_id: definition.series_id
+      linea_id: definition.linea_id
     },
     { step, readonly }
   );
@@ -3619,7 +3619,7 @@ const versionConfigFromGraph = async ({ processId, definition } = {}) => {
     id: definition.definition_id,
     process_id: processId,
     process_name: definition.process_name,
-    series_id: definition.series_id,
+    linea_id: definition.linea_id,
     linea_nombre: definition.linea_nombre,
     definition_version: definition.definition_version
   });
@@ -3884,22 +3884,21 @@ const openProcessDefinitionVersionWizard = async (row) => {
       : null
   });
   if (
-    row.series_id
-    && !processWizardSeriesOptions.value.some((option) => String(option.id) === String(row.series_id))
+    row.linea_id
+    && !processWizardLineaOptions.value.some((option) => String(option.id) === String(row.linea_id))
   ) {
-    processWizardSeriesOptions.value.push({
-      id: row.series_id,
-      code: row.linea_nombre,
+    processWizardLineaOptions.value.push({
+      id: row.linea_id,
+      nombre: row.linea_nombre,
       displayName: row.linea_nombre,
-      label: row.linea_nombre,
-      is_active: 1
+      label: row.linea_nombre
     });
   }
   processWizardDefinitionForm.value = {
     ...processWizardDefinitionForm.value,
     process_mode: "existing",
     process_id: processId ? String(processId) : "",
-    series_id: row.series_id ? String(row.series_id) : "",
+    linea_id: row.linea_id ? String(row.linea_id) : "",
     definition_version: getNextSemanticVersion(row.definition_version),
     description: row.description || "",
     source_process_definition_id: row.id ? String(row.id) : ""
@@ -4307,7 +4306,7 @@ onMounted(async () => {
   }
   if (isProcessDefinitionFilterTable.value) {
     await loadProcessDefinitionProcessOptions();
-    await loadProcessDefinitionSeriesOptions();
+    await loadProcessDefinitionLineaOptions();
   }
   await fetchRows();
 });

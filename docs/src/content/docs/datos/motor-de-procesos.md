@@ -1,20 +1,19 @@
 ---
-title: "El motor de procesos: serie, regla y flujo"
-description: "La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. Tabla por tabla."
+title: "El motor de procesos: línea, regla y flujo"
+description: "La línea nombra la obligación, la regla reparte el alcance y el flujo reparte los pasos. Tabla por tabla."
 sidebar:
   order: 1
 ---
 Esta es **la parte central del dominio** y la que mas cuesta al principio. La frase mnemotecnica del proyecto:
 
-*la **serie** nombra el proceso, la **regla** reparte el proceso, el **flujo** reparte los pasos.*
+*la **línea** nombra la obligación, la **regla** la reparte, el **flujo** reparte los pasos.*
 
 ```mermaid
 %% diagrama 08 — el motor de procesos, de la definicion al documento entregado y firmado
 flowchart TD
     PROC["processes<br/>#quot;Informe de Gestion Docente#quot; (solo un nombre)"]
     PDV["process_definition_versions<br/>LA CONFIGURACION (draft / active / retired)"]
-    PDS["process_definition_series<br/>LA SERIE (el eje de variacion)"]
-    LIN["lineas<br/>LA LINEA (los dos ejes juntos)<br/>la sustituye"]
+    LIN["lineas<br/>LA LINEA: de quien (cargo) y donde (alcance)"]
     PTR["process_target_rules<br/>LA REGLA: a que unidades y cargos alcanza"]
     PDPT["process_definition_period_types<br/>en que tipos de periodo corre"]
     PDT["vinculos<br/>que documentos produce (+ item_mode)"]
@@ -29,7 +28,6 @@ flowchart TD
 
     PROC --> PDV
     PROC --> LIN
-    PDV -->|"series_id"| PDS
     PDV -->|"linea_id"| LIN
     PDV --> PTR
     PDV --> PDPT
@@ -50,15 +48,11 @@ flowchart TD
 
 Solo identidad: `name`, `slug` único, `parent_id` autorreferencial, `is_active`. **Sin comportamiento.** Se hizo `DROP` de `unit_id`, `program_id`, `person_id` y `term_id` por vestigiales.
 
-### `lineas` — la línea (sustituye a la serie).
+### `lineas` — la línea.
 
 Desde el **2026-10-11**. La **obligación** de un proceso con los dos ejes juntos: `cargo_id` (el quién, `NULL` = cualquier cargo) y el alcance (el dónde), que usa **los mismos nombres que `process_target_rules`** porque es el mismo concepto: `unit_scope_type` con `all_units`, `unit_type` o `unit_exact`, más `unit_type_id` / `unit_id`. El alcance se **nombra**, no se deduce de columnas vacías. Lleva `nombre` propio, vigencia (`effective_from`/`effective_to`) y `linea_anterior_id`, el linaje que declara si una obligación cambió de manos — y **suceder a una línea obliga a haberla retirado**, impuesto por un disparador. Su identidad es `(process_id, cargo_id, unit_scope_type, unit_type_id, unit_id)` con `NULLS NOT DISTINCT`, porque «cualquier cargo» y «todas las unidades» son `NULL` y tienen que colisionar entre sí. `unit_subtree` no está entre sus valores a propósito: ese refinamiento es de la regla, dentro del alcance de la línea. A diferencia del `code` de la serie, que era **único global**, el nombre es único **por proceso**: la serie era un catálogo compartido, la línea es de su proceso.
 
-Hoy **convive** con la serie: `process_definition_versions.linea_id` ya apunta a ella y el arranque la siembra, pero lo que todavía manda es la serie.
-
-### `process_definition_series` — la serie.
-
-`source_type` puede ser `unit_type`, `cargo` o `default`. Es el **eje de variación**: el mismo proceso puede tener una configuración distinta por tipo de unidad o por cargo. La función `buildProcessDefinitionVersionName` genera el nombre resultante: *“\<Proceso\> por \<Serie\>”*, salvo en `default`, que usa el nombre del proceso a secas.
+Sustituyó a `process_definition_series` el **2026-10-11**. Aquella admitía un eje **o** el otro —`source_type` con `unit_type`, `cargo` o `default`— y derivaba su nombre de `slugify(cargo.name)`; como los cargos del catálogo son genéricos, el eje que no cabía había que escribirlo en la regla de reparto, y la variación quedaba partida en dos tablas. Con ella se fueron **seis mecanismos**, todos ellos para sostener una identidad derivada, incluidas **dos cascadas no transaccionales** que se disparaban al renombrar un cargo o un tipo de unidad.
 
 ### `process_definition_versions` — la configuración.
 

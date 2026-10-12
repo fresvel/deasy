@@ -108,7 +108,7 @@ export const recordViewerSummaryTableFields = [
 export const FK_TABLE_MAP = {
   parent_id: "processes",
   process_id: "processes",
-  series_id: "process_definition_series",
+  linea_id: "lineas",
   process_definition_id: "process_definition_versions",
   process_run_id: "process_runs",
   source_run_id: "process_runs",

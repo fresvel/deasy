@@ -155,16 +155,20 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
 
-### `process_definition_series`
+### `lineas`
 
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `source_type` | text | sí | — | `unit_type` · `cargo` · `default` |
-| `unit_type_id` | int | no | `unit_types.id` · impide borrar | — |
+| `process_id` | int | sí | `processes.id` · se va con el | — |
+| `nombre` | varchar(180) | sí | — | — |
 | `cargo_id` | int | no | `cargos.id` · impide borrar | — |
-| `code` | varchar(120) | sí | — | — |
-| `is_active` | smallint | sí | — | — |
+| `unit_scope_type` | text | sí | — | `all_units` · `unit_type` · `unit_exact` |
+| `unit_type_id` | int | no | `unit_types.id` · impide borrar | — |
+| `unit_id` | int | no | `units.id` · impide borrar | — |
+| `linea_anterior_id` | int | no | `lineas.id` · impide borrar | — |
+| `effective_from` | date | sí | — | — |
+| `effective_to` | date | no | — | — |
 | `created_at` | timestamp | sí | — | — |
 
 ### `process_definition_versions`
@@ -173,7 +177,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
 | `process_id` | int | sí | `processes.id` · se va con el | — |
-| `series_id` | int | sí | `process_definition_series.id` · impide borrar | — |
 | `linea_id` | int | sí | `lineas.id` · impide borrar | — |
 | `definition_version` | varchar(20) | sí | — | — |
 | `name` | varchar(180) | sí | — | — |
@@ -521,4 +524,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**33 tablas · 311 columnas · 78 referencias.** Leídas del catálogo de PostgreSQL.
+**33 tablas · 314 columnas · 80 referencias.** Leídas del catálogo de PostgreSQL.

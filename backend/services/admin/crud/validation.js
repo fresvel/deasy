@@ -28,7 +28,6 @@ import {
   assertDocumentStatusValue,
   assertDocumentVersionStatusValue,
 } from "../../documents/DocumentStateService.js";
-import { PROCESS_SERIES_SOURCE_TYPES } from "../processes/processDefinitionSeries.js";
 import { SEMANTIC_VERSION_REGEX } from "../kernel/versioning.js";
 
 export const parseJsonObject = (value, fieldLabel) => {
@@ -109,35 +108,38 @@ const unitRelationNotSelf = (candidate) => {
   }
 };
 
+const LINEA_UNIT_SCOPE_TYPES = new Set(["all_units", "unit_type", "unit_exact"]);
+
 const semanticVersionRequired = (candidate) => {
   if (!candidate.definition_version || !SEMANTIC_VERSION_REGEX.test(String(candidate.definition_version).trim())) {
     throw new Error("La version de la configuracion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
   }
 };
 
-const seriesSourceConsistent = (candidate) => {
-  if (!candidate.source_type || !PROCESS_SERIES_SOURCE_TYPES.has(String(candidate.source_type))) {
-    throw new Error("Selecciona el origen de la serie.");
+// EL ALCANCE DE UNA LINEA Y SU COLUMNA VAN JUNTOS.
+//
+// Sustituye a `seriesSourceConsistent`, que imponia el XOR de la serie: un eje O el otro, nunca los
+// dos. Ese XOR era el problema, no la regla — los cargos del catalogo son genericos, asi que una
+// obligacion como «el Informe de IF de los Coordinadores de Carrera» necesita cargo Y tipo de
+// unidad. Aqui los dos conviven; lo que se valida es que el alcance declarado traiga su columna.
+//
+// La base lo impone igual con `ck_lineas_unit_scope`; esto da el mensaje legible antes del 500.
+const lineaScopeConsistent = (candidate) => {
+  const scope = String(candidate.unit_scope_type || "all_units");
+  if (!LINEA_UNIT_SCOPE_TYPES.has(scope)) {
+    throw new Error("Selecciona un alcance valido para la linea.");
   }
-
-  if (candidate.source_type === "unit_type" && !candidate.unit_type_id) {
-    throw new Error("Una serie por tipo de unidad requiere seleccionar un tipo de unidad.");
+  if (scope === "unit_type" && !candidate.unit_type_id) {
+    throw new Error("Una linea por tipo de unidad requiere seleccionar el tipo de unidad.");
   }
-
-  if (candidate.source_type === "cargo" && !candidate.cargo_id) {
-    throw new Error("Una serie por cargo requiere seleccionar un cargo.");
+  if (scope === "unit_exact" && !candidate.unit_id) {
+    throw new Error("Una linea de una unidad concreta requiere seleccionar la unidad.");
   }
-
-  if (candidate.source_type === "unit_type" && candidate.cargo_id) {
-    throw new Error("Una serie por tipo de unidad no admite cargo.");
+  if (scope !== "unit_type" && candidate.unit_type_id) {
+    throw new Error("Solo una linea por tipo de unidad admite tipo de unidad.");
   }
-
-  if (candidate.source_type === "cargo" && candidate.unit_type_id) {
-    throw new Error("Una serie por cargo no admite tipo de unidad.");
-  }
-
-  if (candidate.source_type === "default" && (candidate.unit_type_id || candidate.cargo_id)) {
-    throw new Error("La serie por defecto no admite tipo de unidad ni cargo.");
+  if (scope !== "unit_exact" && candidate.unit_id) {
+    throw new Error("Solo una linea de una unidad concreta admite unidad.");
   }
 };
 
@@ -283,14 +285,18 @@ const TABLE_RULES = {
   process_definition_versions: [
     requires(
       ["process_id", "Selecciona un proceso base para la configuracion."],
-      ["series_id", "Selecciona una serie de configuracion."],
+      ["linea_id", "Selecciona la linea de la configuracion."],
     ),
     semanticVersionRequired,
     requires(["effective_from", "Selecciona la fecha de vigencia inicial de la configuracion."]),
     datesInOrder("configuraciones de proceso", "effective_from", "effective_to"),
   ],
-  process_definition_series: [
-    seriesSourceConsistent,
+  lineas: [
+    requires(["process_id", "Selecciona el proceso de la linea."]),
+    requires(["nombre", "Escribe el nombre de la linea."]),
+    requires(["effective_from", "Selecciona la fecha de vigencia inicial de la linea."]),
+    datesInOrder("lineas de proceso", "effective_from", "effective_to"),
+    lineaScopeConsistent,
   ],
   process_target_rules: [
     datesInOrder("reglas de alcance", "effective_from", "effective_to"),

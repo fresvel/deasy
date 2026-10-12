@@ -148,9 +148,9 @@
               </div>
               <div class="md:col-span-12 lg:col-span-3">
                 <AdminSelectField :model-value="processDefinitionInlineFilters.linea_id" select-class="deasy-control" @update:model-value="updateProcessDefinitionFilter('linea_id', $event)" @change="$emit('fetch-rows')">
-                  <option value="">Variación</option>
-                  <option v-for="row in processDefinitionSeriesOptions" :key="row.id" :value="String(row.code || '')">
-                    {{ formatFkOptionLabel("process_definition_series", row) }}
+                  <option value="">Línea</option>
+                  <option v-for="row in processDefinitionLineaOptions" :key="row.id" :value="String(row.id)">
+                    {{ row.nombre || `Línea ${row.id}` }}
                   </option>
                 </AdminSelectField>
               </div>
@@ -373,7 +373,7 @@ const props = defineProps({
   unitPositionCargoOptions: { type: Array, default: () => [] },
   processDefinitionInlineFilters: { type: Object, default: () => ({}) },
   processDefinitionProcessOptions: { type: Array, default: () => [] },
-  processDefinitionSeriesOptions: { type: Array, default: () => [] },
+  processDefinitionLineaOptions: { type: Array, default: () => [] },
   processTargetRuleInlineFilters: { type: Object, default: () => ({}) },
   templateArtifactInlineFilters: { type: Object, default: () => ({}) },
   hasUnitPositionFilters: { type: Boolean, default: false },

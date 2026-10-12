@@ -71,13 +71,15 @@ export function useAdminFormState({
     if (field.readOnly) {
       return true;
     }
-    if (props.table?.table === "process_definition_series") {
-      const sourceType = String(formData.value?.source_type || "").trim();
+    // EL ALCANCE DE UNA LÍNEA bloquea la columna que no le toca. `cargo_id` NO entra aquí, y esa
+    // es la diferencia con la serie: el cargo es el OTRO eje y convive con cualquier alcance.
+    if (props.table?.table === "lineas") {
+      const scope = String(formData.value?.unit_scope_type || "all_units").trim();
       if (field.name === "unit_type_id") {
-        return sourceType !== "unit_type";
+        return scope !== "unit_type";
       }
-      if (field.name === "cargo_id") {
-        return sourceType !== "cargo";
+      if (field.name === "unit_id") {
+        return scope !== "unit_exact";
       }
     }
     if (
@@ -105,43 +107,20 @@ export function useAdminFormState({
   };
 
   const handleSelectChange = (field) => {
-    if (props.table?.table !== "process_definition_series" || field?.name !== "source_type") {
+    if (props.table?.table !== "lineas" || field?.name !== "unit_scope_type") {
       return;
     }
-    const sourceType = String(formData.value?.source_type || "").trim();
-    if (sourceType === "unit_type") {
-      formData.value = {
-        ...formData.value,
-        cargo_id: ""
-      };
-      fkDisplay.value = {
-        ...fkDisplay.value,
-        cargo_id: ""
-      };
-      return;
-    }
-    if (sourceType === "cargo") {
-      formData.value = {
-        ...formData.value,
-        unit_type_id: ""
-      };
-      fkDisplay.value = {
-        ...fkDisplay.value,
-        unit_type_id: ""
-      };
-      return;
-    }
-    formData.value = {
-      ...formData.value,
-      unit_type_id: "",
-      cargo_id: ""
-    };
-    fkDisplay.value = {
-      ...fkDisplay.value,
-      unit_type_id: "",
-      cargo_id: ""
-    };
+    const scope = String(formData.value?.unit_scope_type || "all_units").trim();
+    // Limpia SÓLO la columna del alcance que se abandona. El cargo sobrevive: es el otro eje.
+    const limpiar = scope === "unit_type"
+      ? { unit_id: "" }
+      : scope === "unit_exact"
+        ? { unit_type_id: "" }
+        : { unit_type_id: "", unit_id: "" };
+    formData.value = { ...formData.value, ...limpiar };
+    fkDisplay.value = { ...fkDisplay.value, ...limpiar };
   };
+
 
   const isInputField = (field) => ["text", "email", "number", "date", "datetime", "password"].includes(field.type);
 

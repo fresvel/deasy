@@ -193,8 +193,7 @@
                     <AppTag :variant="tonoCicloVida(cfg.status)" outlined class-name="ml-auto">{{ configStatusLabel(cfg.status) }}</AppTag>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ seriesLabel(cfg) }}</span>
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.linea_nombre }}</span>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ lineaLabel(cfg) }}</span>
                     <span>v{{ cfg.definition_version }}</span>
                   </div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-2 text-theme-xs text-muted">
@@ -965,11 +964,8 @@ const detachChild = async (childId) => {
 
 
 const configStatusLabel = (status) => etiquetaCicloVida(status);
-const seriesLabel = (cfg) => {
-  if (cfg.series_source_type === "cargo") return `Cargo · ${cfg.series_cargo_name || cfg.series_code}`;
-  if (cfg.series_source_type === "unit_type") return `Tipo · ${cfg.series_unit_type_name || cfg.series_code}`;
-  return "General";
-};
+// Ver `ProcessConfigNode.vue`: el nombre lo trae la línea, no se compone del origen de la serie.
+const lineaLabel = (cfg) => cfg.linea_nombre || "Sin línea";
 
 
 // Acciones de configuración: cierran el drawer y delegan en el padre (wizard / lanzar).

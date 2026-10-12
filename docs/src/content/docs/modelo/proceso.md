@@ -41,11 +41,6 @@ responde a una pregunta distinta:
 
 - **La línea** (`lineas`) — **de quién es la obligación y dónde vive**, los dos ejes juntos. Es la
   identidad de la configuración.
-- **La serie** (`process_definition_series`) — por qué criterio se reparte este proceso. Su
-  `source_type` está cerrado a `unit_type`, `cargo` o `default`, y su `code` es único. Hoy es también
-  lo que **da nombre** a la configuración: `buildProcessDefinitionVersionName` produce
-  *«\<Proceso\> por \<Serie\>»*, salvo en `default`, donde el nombre es el del proceso a secas. **La
-  línea la va a sustituir**; sigue aquí porque es lo que la pantalla pide todavía.
 - **La vigencia** (`effective_from`, obligatoria, y `effective_to`, opcional) — desde cuándo rige y
   hasta cuándo.
 
@@ -66,10 +61,10 @@ Hoy la identidad es la **línea**, que es una columna y un `id`. El detalle medi
 
 :::
 
-:::note[La LÍNEA está sustituyendo a la serie, y ya existe en la base]
+:::note[La LÍNEA sustituyó a la serie, y por qué]
 
-Desde el **2026-10-11** hay una tabla **`lineas`** que va a ocupar el sitio de la serie y de la
-variación. No es un sinónimo: una línea lleva **los dos ejes a la vez** —`cargo_id` (el quién) y el
+El **2026-10-11** la tabla **`lineas`** ocupó el sitio de la serie y de la variación. No es un
+sinónimo: una línea lleva **los dos ejes a la vez** —`cargo_id` (el quién) y el
 alcance (el dónde: `unit_scope_type` con `all_units`, `unit_type` o `unit_exact`)— mientras la serie admite **uno
 o el otro**, nunca los dos.
 
@@ -89,10 +84,11 @@ La línea trae además dos cosas que hoy no se pueden expresar:
   «v1 por Coordinador, v2 por Director» es escribible y produce una historia falsa. Suceder a una
   línea **obliga a haberla retirado antes**, y lo impone la base.
 
-**En esta primera entrega la línea CONVIVE con la serie**: la tabla existe con sus garantías, el
-arranque crea la del «Proceso por defecto» —`cargo_id` vacío y `unit_scope_type = 'all_units'`, porque un
-memo lo escribe quien lo necesita donde lo necesita— y `process_definition_versions.linea_id` apunta a
-ella. Lo que todavía manda es la serie. El cambio completo está en el frente 25 del plan.
+El arranque siembra la del «Proceso por defecto» —`cargo_id` vacío y
+`unit_scope_type = 'all_units'`, porque un memo lo escribe quien lo necesita donde lo necesita—, y
+con la serie se fueron **seis mecanismos**: el eje único y su `CHECK`, el `code` derivado, las dos
+cascadas no transaccionales que se disparaban al renombrar un cargo, el recompositor de nombres y la
+copia `variation_key`. El detalle medido está en el frente 25 del plan.
 
 :::
 
@@ -149,19 +145,22 @@ erDiagram
     smallint is_active
     timestamp created_at
   }
-  process_definition_series {
-    int id PK
-    text source_type "unit_type, cargo, default"
-    int unit_type_id FK
-    int cargo_id FK
-    varchar code "identificador unico de la linea"
-    smallint is_active
+  lineas {
+    int id PK "LA OBLIGACION"
+    int process_id FK
+    varchar nombre "escrito por una persona"
+    int cargo_id FK "el QUIEN; vacio = cualquier cargo"
+    text unit_scope_type "all_units, unit_type, unit_exact"
+    int unit_type_id FK "el DONDE, si es por tipo"
+    int unit_id FK "el DONDE, si es una unidad"
+    int linea_anterior_id FK "EL LINAJE"
+    date effective_from
+    date effective_to
     timestamp created_at
   }
   process_definition_versions {
     int id PK "LA CONFIGURACION"
     int process_id FK
-    int series_id FK
     int linea_id FK "LA IDENTIDAD: la linea a la que pertenece"
     varchar definition_version "1.0.0"
     varchar name

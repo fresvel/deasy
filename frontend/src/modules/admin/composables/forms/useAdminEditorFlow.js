@@ -157,7 +157,7 @@ export function useAdminEditorFlow({
     formData.value = {
       ...formData.value,
       process_id: row.process_id ?? formData.value.process_id ?? "",
-      series_id: row.series_id ?? formData.value.series_id ?? "",
+      linea_id: row.linea_id ?? formData.value.linea_id ?? "",
       definition_version: getNextSemanticVersion(row.definition_version),
       status: "draft"
     };
