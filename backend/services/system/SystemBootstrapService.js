@@ -824,7 +824,7 @@ export const ensureDefaultProcess = async (connection) => {
   //    scope viven en `catalogo_documental`; la versión guarda el storage MinIO y QUIÉN la produce
   //    (`generador_id`). A QUE LINEA SIRVE no se guarda en ninguna de las dos desde el 2026-10-04
   //    (frente 23): lo dice su vínculo en `vinculos`, y lo impone el disparador
-  //    `trg_pdt_linea_unica`.
+  //    `trg_vinculo_formato_un_proceso`.
   let deliverable = await fetchOne(
     connection,
     "SELECT id FROM catalogo_documental WHERE code = ? LIMIT 1",

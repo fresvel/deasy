@@ -331,3 +331,55 @@ test("las cuatro nacen en el esquema de su dominio", () => {
     );
   }
 });
+
+// --- BLOQUE 6: LA SIMETRIA DE LAS DOS IDENTIDADES (frente 25 — 2026-10-12) -----------------------
+//
+// El modelo declara DOS identidades AL MISMO NIVEL, cada una con sus versiones, y un puente que une
+// VERSION con VERSION:
+//
+//     formato (catalogo_documental)  1 ---- N  ediciones
+//     linea   (lineas)               1 ---- N  process_definition_versions
+//                    vinculos: edicion <-> configuracion
+//
+// ESTO NO ES ESTETICA, Y YA SE ROMPIO DOS VECES:
+//
+//   · `catalogo_documental.owner_process_id` + `owner_variation_key` --retiradas por el frente 23--
+//     ponian el proceso DENTRO del papel. Eran una copia de lo que el vinculo ya decia, y su unico
+//     lector era el guardia que comprobaba que coincidieran.
+//   · `trg_pdt_linea_unica` --retirado el 2026-10-12 por decision del dueño-- imponia «un formato
+//     pertenece a UNA linea». Su enunciado espejo, «una linea pertenece a UN formato», es falso:
+//     una obligacion produce varios entregables. Una regla cierta en un sentido y absurda en el
+//     otro subordina una identidad a la otra.
+//
+// Lo que se vigila aqui es que ninguna de las dos vuelva a apuntar a la otra: si hace falta saber
+// a que obligacion sirve un formato, se DERIVA del vinculo, que es donde esta declarado.
+
+test("la simetria: el FORMATO no apunta a la obligacion", () => {
+  const create = bloqueRecorrido("catalogo_documental");
+  for (const columna of ["owner_process_id", "owner_variation_key", "linea_id", "process_id", "process_definition_id"]) {
+    assert.ok(
+      !new RegExp(`\\b${columna}\\b`).test(create),
+      `catalogo_documental no puede declarar ${columna}: la pertenencia se deriva del vinculo`
+    );
+  }
+});
+
+test("la simetria: la OBLIGACION no apunta al papel", () => {
+  const create = bloqueRecorrido("lineas");
+  for (const columna of ["catalogo_documental_id", "edicion_id", "formato_id"]) {
+    assert.ok(
+      !new RegExp(`\\b${columna}\\b`).test(create),
+      `lineas no puede declarar ${columna}: una obligacion produce VARIOS entregables`
+    );
+  }
+});
+
+test("el puente une VERSION con VERSION, no identidad con identidad", () => {
+  const create = bloqueRecorrido("vinculos");
+  assert.match(create, /edicion_id INT NOT NULL/);
+  assert.match(create, /process_definition_id INT NOT NULL/);
+  // Y lo contrario: si algun dia apunta a la identidad, la correccion del dueño del 2026-10-09
+  // --«una edicion sirve a una VERSION de variacion, no a una variacion»-- se habria perdido.
+  assert.ok(!/\blinea_id\b/.test(create), "vinculos no apunta a la linea: une versiones");
+  assert.ok(!/\bcatalogo_documental_id\b/.test(create), "vinculos no apunta al formato: une versiones");
+});

@@ -685,7 +685,7 @@ export const TABLE_HOOKS = {
       // dos columnas se retiraron en F1.2 porque este guardia era su UNICO lector, asi que la
       // comprobacion se va con ellas.
       //
-      // LA SUSTITUYE LA BASE, y cubre mas: `trg_pdt_linea_unica` (final de `postgres_schema.sql`)
+      // LA SUSTITUYE LA BASE, y cubre mas: `trg_vinculo_formato_un_proceso` (final de `postgres_schema.sql`)
       // rechaza el vinculo cuyo entregable ya sirva a otra linea, venga de este hook, del clon, de
       // un script o de un INSERT a mano — por ahi no pasaba el guardia. No es un indice unico
       // porque la regla mira `(process_id, series_id)` y eso no cabe en un indice de esta tabla.

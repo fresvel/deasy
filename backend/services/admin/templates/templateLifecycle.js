@@ -373,7 +373,7 @@ export default class TemplateLifecycleService {
   // que comprobara que coinciden, y el guardia no leia nada mas. Ademas comprobaba el proceso pero
   // NO la variacion, siendo el invariante que decia proteger sobre `(proceso, variacion)`.
   //
-  // Y LA REGLA LA SOSTIENE AHORA LA BASE, con `trg_pdt_linea_unica` (final de
+  // Y LA REGLA LA SOSTIENE AHORA LA BASE, con `trg_vinculo_formato_un_proceso` (final de
   // `postgres_schema.sql`): al vincular una edicion, todas las definiciones ya vinculadas a
   // cualquier edicion de ese mismo entregable tienen que compartir linea con la destino. Es un
   // disparador y no un indice unico porque la regla mira `(process_id, series_id)`, que no cabe en

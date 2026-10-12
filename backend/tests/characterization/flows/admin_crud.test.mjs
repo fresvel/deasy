@@ -1035,24 +1035,23 @@ test("DELETE /admin/sql/vinculos -> desenlaza la plantilla de la configuración"
   await del("/admin/sql/process_definition_versions", { token, body: { keys: { id: cloneId } } });
 });
 
-// LA REGLA DE PERTENENCIA, PROVOCADA POR HTTP (frente 23, F1.1 — 2026-10-04).
+// UN FORMATO NO CRUZA DE PROCESO, PROVOCADO POR HTTP (frente 25 — 2026-10-12).
 //
-// «Un entregable sirve a UNA SOLA LÍNEA»: al vincular una edición, todas las definiciones ya
-// vinculadas a cualquier edición de ese mismo entregable tienen que compartir
-// `(process_id, variation_key)` con la definición que se vincula. La impone el disparador
-// `trg_pdt_linea_unica`, no un índice — un único sobre `edicion_id` a secas rompía el
-// clon, y el caso de arriba («el clon debe crearse») es justo el que lo cazó.
+// ⚠️ ESTA PRUEBA MEDÍA OTRA REGLA, Y EL CAMBIO DE REGLA ES EL APRENDIZAJE. Hasta hoy decía «un
+// entregable sirve a UNA SOLA LÍNEA» y la imponía `trg_pdt_linea_unica`. Se retiró por decisión
+// del dueño porque ROMPÍA LA SIMETRÍA del modelo: subordinaba el formato a la obligación, y su
+// enunciado espejo —«una línea pertenece a un formato»— es falso, porque una obligación produce
+// varios entregables. El caso que lo destapó: el mismo Informe de IF lo entregan las Coordinaciones
+// de Carrera y las de Tecnología, que son dos líneas; con la regla vieja había que duplicar el
+// formato.
 //
-// ESTE CASO ES EL OTRO LADO DE ESE MISMO PAR, y hace falta que sean dos: el de arriba fija que lo
-// legítimo pasa, y este que lo ilegítimo muere. Un disparador que nadie provoca no es una
+// Lo que queda es un escalón más flojo: el formato sirve a varias líneas del MISMO proceso y no
+// cruza a otro. Lo impone `trg_vinculo_formato_un_proceso`.
+//
+// ESTE CASO ES EL OTRO LADO DE UN PAR, y hace falta que sean dos: «el clon debe crearse» fija que
+// lo legítimo pasa, y éste que lo ilegítimo muere. Un disparador que nadie provoca no es una
 // protección, es una intención.
-//
-// Se monta una línea ajena entera —proceso, serie y configuración borrador— porque la pertenencia
-// se compara contra `(proceso, variación)` y hay que diferir en algo. Aquí difiere el PROCESO, que
-// es el caso que también cubría el guardia retirado; que difiera solo la VARIACIÓN lo cubre la
-// prueba directa en SQL, porque montar dos series del mismo proceso por HTTP pide un cargo libre y
-// la fixture no garantiza que lo haya.
-test("POST /admin/sql/vinculos de otra línea -> lo rechaza el disparador", async () => {
+test("POST /admin/sql/vinculos de otro proceso -> lo rechaza el disparador", async () => {
   const token = await tokenFor("admin");
 
   // El entregable que YA tiene dueño: el que sembró el bootstrap en el Proceso por defecto.
@@ -1075,7 +1074,7 @@ test("POST /admin/sql/vinculos de otra línea -> lo rechaza el disparador", asyn
     token,
     body: {
       process_id: procesoId,
-      nombre: "Línea ajena de pertenencia",
+      nombre: "Línea de un proceso ajeno",
       cargo_id: cargoId,
       unit_scope_type: "all_units",
       effective_from: "2026-04-01",
@@ -1105,14 +1104,14 @@ test("POST /admin/sql/vinculos de otra línea -> lo rechaza el disparador", asyn
         item_mode: "single",
       },
     });
-    matchSnapshot(SUITE, "pertenencia_vinculo_de_otra_linea", {
+    matchSnapshot(SUITE, "pertenencia_vinculo_de_otro_proceso", {
       status: cruzado.status,
       body: normalize(cruzado.body),
     });
     assert.equal(cruzado.status, 400, `el vínculo cruzado debe rechazarse: ${JSON.stringify(cruzado.body)}`);
     assert.match(
       String(cruzado.body?.message || ""),
-      /pertenece a otra línea/,
+      /ya se usa en otro proceso/,
       "el mensaje tiene que explicarle a una persona qué pasa, no filtrar el nombre de una restricción",
     );
 

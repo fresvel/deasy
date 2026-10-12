@@ -43,7 +43,7 @@ flowchart TD
 
 Con UNIQUE sobre `(catalogo_documental_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el scope y la persona propietaria viven en `catalogo_documental`; `ediciones` guarda el estado, el almacenamiento y **quién produce el PDF** de cada versión.
 
-**El proceso propietario no vive en ninguna de las dos** desde el 2026-10-04: a qué línea sirve una edición lo dice su **vínculo** en `vinculos`. `catalogo_documental` tuvo dos columnas con ese dato copiado —`owner_process_id` y `owner_variation_key`— y se retiraron junto con el guardia que las comparaba con el vínculo, que era su único lector. Que la pertenencia a una sola línea se cumpla lo impone ahora el disparador `trg_pdt_linea_unica`, que no se puede saltar ni el clon, ni los scripts, ni un `INSERT` a mano.
+**El proceso propietario no vive en ninguna de las dos** desde el 2026-10-04: a qué línea sirve una edición lo dice su **vínculo** en `vinculos`. `catalogo_documental` tuvo dos columnas con ese dato copiado —`owner_process_id` y `owner_variation_key`— y se retiraron junto con el guardia que las comparaba con el vínculo, que era su único lector. Lo que la base impone hoy es que el formato **no cruce de proceso** —`trg_vinculo_formato_un_proceso`, que no se puede saltar ni el clon, ni los scripts, ni un `INSERT` a mano—. La regla llegó a decir «a una sola línea» y se retiró el 2026-10-12 porque rompía la simetría de las dos identidades; está contado en [el vínculo](/modelo/vinculo/).
 
 :::note[La semilla pasó a ser un catálogo de generadores]
 

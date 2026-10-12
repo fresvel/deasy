@@ -47,31 +47,50 @@ sin necesidad de duplicarla. Es una propiedad del modelo que conviene no perder.
 
 :::
 
-:::caution[Pero no a varias LÍNEAS: eso lo impide un disparador]
+:::caution[Pero no a otro PROCESO: eso lo impide un disparador]
 
-Lo de arriba es cierto dentro de **una línea**: la misma edición puede estar vinculada a varias
-configuraciones de esa línea —que es lo que pasa al versionar una configuración, porque clonar copia
-sus vínculos— y cada vínculo lleva su modo.
+Lo de arriba es cierto **dentro de un proceso**: la misma edición puede estar vinculada a varias
+configuraciones, de la misma línea o de varias líneas de ese proceso, y cada vínculo lleva su modo.
 
-Lo que **no** puede es cruzar de línea. Desde el 2026-10-04 lo impone la base, con el disparador
-`trg_pdt_linea_unica`: al vincular una edición, **todas** las definiciones ya vinculadas a cualquier
-edición de ese mismo entregable tienen que compartir `(proceso, variación)` con la definición que se
-vincula. El primer vínculo de un entregable siempre pasa — no hay con qué comparar.
+Lo que **no** puede es cruzar de proceso. Lo impone la base, con el disparador
+`trg_vinculo_formato_un_proceso`: al vincular una edición, **todas** las configuraciones ya
+vinculadas a cualquier edición de ese mismo formato tienen que pertenecer al mismo proceso. El
+primer vínculo de un formato siempre pasa — no hay con qué comparar. Si se cruza, el `INSERT` muere
+con un mensaje escrito para una persona, y la API lo devuelve como 400: *«El entregable "X" ya se usa
+en otro proceso y no se puede vincular aquí.»*
 
-Si se cruza, el `INSERT` muere con un mensaje escrito para una persona, y la API lo devuelve como
-400: *«El entregable "X" pertenece a otra línea (proceso/variación) y no se puede vincular a esta
-configuración. Crea o usa un entregable propio de esta línea.»*
+**Y hasta el 2026-10-12 esta regla era más estricta: decía «una sola LÍNEA».** Se retiró por decisión
+del dueño, y el motivo es de forma, no de comodidad: **rompía la simetría del modelo**.
 
-**Por qué un disparador y no un índice único.** Se intentó con
-`UNIQUE (edicion_id)` y rompía el versionado de configuraciones: ese índice prohíbe el
-mismo artefacto en dos *definiciones*, cuando la regla habla de dos *líneas*, y una línea contiene
-muchas versiones de definición. Y la regla no cabe en un índice de esta tabla, porque la línea se
-identificaba con una pareja de columnas —hoy es `process_definition_versions.linea_id`, una sola—: pedirla en un índice obligaría
-a copiar esa columna aquí, que es la duplicación que este frente vino a quitar.
+El modelo declara **dos identidades al mismo nivel**, cada una con sus versiones, y un puente que une
+**versión con versión**:
 
-Antes lo intentaba un guardia de JavaScript que comparaba dos columnas copiadas en `catalogo_documental`.
-Comprobaba la regla entera, pero solo en el alta por el CRUD de administración: el clon, los scripts
-de siembra y un `INSERT` a mano se lo saltaban. El disparador no se lo salta nadie.
+```
+   formato   1 ──── N   ediciones            el papel y sus versiones
+   línea     1 ──── N   configuraciones      la obligación y su historia
+                vinculos: edición ↔ configuración
+```
+
+La regla vieja no hablaba de eso: imponía algo **entre las dos identidades**, y en un solo sentido.
+La prueba de que era la pieza asimétrica es que **su enunciado espejo es absurdo**:
+
+| Lo que imponía | Su reflejo |
+|---|---|
+| «un **formato** pertenece a **una** línea» | «una **línea** pertenece a **un** formato» |
+| estaba impuesto | **es falso**: una obligación produce varios entregables — el informe y su anexo |
+
+Una regla cierta en un sentido y absurda en el otro **subordina una identidad a la otra**.
+
+**El caso que lo destapó:** el mismo Informe de Investigación Formativa lo entregan las
+Coordinaciones de **Carrera** y las de **Tecnología**, que son dos tipos de unidad y por tanto dos
+líneas. Con la regla vieja había que **duplicar el formato** — justo la avería que este modelo viene
+quitando —, o meter los dos ámbitos en una sola línea, y entonces no se podría retirar uno sin el
+otro, porque la vigencia y el linaje son de la línea entera.
+
+**La simetría ya no depende de que alguien se acuerde**: tres pruebas de
+`backend/database/postgres_schema.test.js` comprueban que el formato no declare ninguna columna que
+apunte a la obligación, que la obligación no declare ninguna que apunte al papel, y que el puente
+siga uniendo versiones y no identidades.
 
 :::
 
@@ -92,8 +111,8 @@ pasos: crear el formato como oficial, vincularlo, y después cambiarlo a persona
 no toca esta tabla. Así que `trg_formato_vinculado_sigue_oficial` cierra el otro lado: un formato ya
 vinculado **no puede volverse personal** sin desvincularlo primero. Uno sin vínculos sí puede.
 
-**No lo cubría `trg_pdt_linea_unica`**, y no es un olvido suyo: ése compara la **línea**, no de quién
-es el formato. Son dos garantías independientes sobre la misma tabla. Hasta esa fecha la combinación
+**No lo cubre el disparador de arriba**, y no es un olvido suyo: ése compara el **proceso**, no de
+quién es el formato. Son dos garantías independientes sobre la misma tabla. Hasta esa fecha la combinación
 era **alcanzable y no la validaba nadie** —ni un `CHECK`, ni un disparador, ni un guardia de
 JavaScript—, lo que se comprobó provocándola.
 

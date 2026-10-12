@@ -177,7 +177,7 @@ const main = async () => {
   //    REGLA DE NEGOCIO: un entregable sirve a UNA SOLA LÍNEA (proceso + variación). Por eso aquí
   //    NO se reutiliza "tpl_informe_general" (es del proceso por defecto) y se forkea.
   //
-  //    Y desde el 2026-10-04 lo impide la BASE: `trg_pdt_linea_unica`. Si quitas el fork y vinculas
+  //    Y desde el 2026-10-04 lo impide la BASE: `trg_vinculo_formato_un_proceso`. Si quitas el fork y vinculas
   //    el artefacto del proceso por defecto, este script muere con
   //    «El entregable "tpl_informe_general" pertenece a otra línea...». Antes lo intentaba un
   //    guardia de JavaScript (`assertDeliverableBelongsToConfigLine`), que este script **se
