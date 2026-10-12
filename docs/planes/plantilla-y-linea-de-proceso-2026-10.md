@@ -1,6 +1,6 @@
 # Frente 25 · Qué pareja (configuración, plantilla) es legal — y qué es una plantilla sin proceso
 
-> **Estado**: 🟡 **11 de 26 vivas** — 28 filas en el control, dos fuera (`P2` descartada ·
+> **Estado**: 🟡 **11 de 29 vivas** — 28 filas en el control, dos fuera (`P2` descartada ·
 > `P11` al [frente 26](./ciclos-en-los-grafos-2026-10.md)); contado con script, no a ojo · abierto el
 > **2026-10-09**
 > **Abierto por una observación del dueño** que corrige al frente 23.
@@ -153,11 +153,14 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P4** | **Imponer en el modelo la dirección que falta** entre los dos ejes de versión (decisiones 2 y 3 del dueño) | ⬜ | | |
 | **P5** | **Renombrar `process_target_rules`** a algo que **no sea `alcances`** —`destinatarios`, `cobertura`, `a_quien_alcanza`—, porque `alcance` y `ambito` están reservados por el frente 18 | ⬜ | | |
 | **P6** | **El renombrado completo**: `catalogo_documental`→`formatos`, `available_formats`→`archivos`, `storage_version`→`version`, `process_definition_versions`→`ediciones_de_proceso` | ⬜ | | |
-| **P8** | **La tabla `lineas`**, con los dos ejes (`cargo_id` + `unit_scope_type`/`unit_type_id`/`unit_id`), nombre propio, vigencia y `linea_anterior_id`; `process_definition_versions.linea_id` en lugar de `(process_id, series_id, variation_key)`; los dos únicos bajan a dos columnas | ✅ | la tabla con sus **8 garantías provocadas** una por una (el alcance y su columna van juntos ×2, la identidad con `NULLS NOT DISTINCT`, suceder a una vigente, retirar-y-suceder, la autosucesión, la vigencia al revés, y los dos ejes juntos); `linea_id` **`NOT NULL`** con su índice; el arranque siembra la línea. Construirla **corrigió dos veces el croquis del plan** (§0-ter). Cerrada con `P2-bis`, que es su otra mitad | 2026-10-11 |
+| **P8** | **La tabla `lineas`**, con los dos ejes (`cargo_id` + `unit_scope_type`/`unit_type_id`/`unit_id`), nombre propio, vigencia y `linea_anterior_id`; `process_definition_versions.linea_id` en lugar de `(process_id, series_id, variation_key)`; los dos únicos bajan a dos columnas | ✅ ⚠️ | la tabla con sus **8 garantías provocadas** una por una (el alcance y su columna van juntos ×2, la identidad con `NULLS NOT DISTINCT`, suceder a una vigente, retirar-y-suceder, la autosucesión, la vigencia al revés, y los dos ejes juntos); `linea_id` **`NOT NULL`** con su índice; el arranque siembra la línea. Construirla **corrigió dos veces el croquis del plan** (§0-ter). Cerrada con `P2-bis`, que es su otra mitad. ⚠️ **Y su FORMA quedó corta**: el ámbito es una columna y tiene que ser un **conjunto** (§8-bis, punto 3). Lo arregla `P17` | 2026-10-11 |
 | **P9** | **Retira `process_definition_series`** y sus seis mecanismos (el `XOR`, el `code` derivado, las dos cascadas, `variation_key` y su hook) | ✅ | la tabla, `series_id` y los **seis mecanismos** fuera; `lineas` entra en el editor genérico y en RBAC; el asistente pide **nombre + cargo + alcance** en vez de una serie. **73 ocurrencias en 30 ficheros**, no 65 en 21. 320/320 char con **9 goldens movidos** (y 7 claves huérfanas retiradas a mano, porque capturar añade y no borra), 888/888 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, los dos builds. **Verificado en el navegador**: el nodo del grafo dice el nombre de la línea donde decía «General», y el asistente pide los dos ejes | 2026-10-11 |
-| **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna: hoy son **13** | 🟡 | **ANÁLISIS HECHO** (§8): las 13 se reparten en **cuatro** grupos, no dos — 4 son copia de la línea (sembradas y blindadas por un guardia, la forma exacta de `variation_key`), 4 son suyas, 2 son el vínculo y 2 duplican la vigencia. Y destapó **tres huecos que son defectos hoy, se elija lo que se elija**. **Falta la decisión del dueño** entre A (recortar), B (disolver la regla en la configuración) y C (dejarla) | |
+| **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna: hoy son **13** | 🟡 | **ANÁLISIS HECHO** (§8 y §8-bis): las 13 se reparten en **cuatro** grupos, no dos, y destapó **tres huecos**. ⚠️ **Y la reevaluación del dueño lo reordenó**: si el mismo documento va a Coordinaciones de Carrera **y** de Tecnología, el DÓNDE de una línea es un **conjunto** —dos líneas no pueden compartir plantilla, lo impide `trg_pdt_linea_unica`—, así que `P8` hay que rehacerla en parte y la regla pasa a ser **copia entera**. **Falta la decisión del dueño** | |
 | **P11** | ⛔ **SALE DE ESTE FRENTE** · los ciclos en las claves ajenas autorreferenciales. Se abre el **[frente 26](./ciclos-en-los-grafos-2026-10.md)**, donde al medirlo resultaron ser **seis** grafos y no cinco | ⛔ | decisión del dueño: *«para los ciclos frente propio»*. Lo que queda aquí es que **`lineas.linea_anterior_id` nazca ya protegido**, lo que el frente 26 deja escrito en su §5 | 2026-10-11 |
 | **P12** | **La bifurcación del linaje es DELIBERADA**: se permite que dos líneas sucedan a la misma —una obligación que se parte es real— pero crear el segundo sucesor avisa. Las **fusiones no se pueden declarar** con una sola columna, y queda dicho | ⬜ | **depende de `P8`** | |
+| **P17** | **El DÓNDE de una línea es un CONJUNTO**: «IF · Coordinadores de Carrera y Tecnología» es **una** línea con dos ámbitos, porque dos líneas no pueden compartir plantilla (`trg_pdt_linea_unica`) y duplicar el formato es la avería que este frente vino a quitar. Cae `ck_lineas_unit_scope` como está y cae `uq_lineas_identidad` como tupla | ⬜ | **lo abre la reevaluación del dueño** (§8-bis). `P10` depende de esto: con el conjunto en la línea, la regla pasa de copia parcial a **copia entera** | |
+| **P18** | **UNA SOLA VIGENCIA, la de la LÍNEA** (§8-bis punto 2): la configuración se queda con `status`, que ya contesta su pregunta, y la regla pierde la suya. **Y la de la línea tiene que DETENER la ejecución** — hoy el generador no mira `lineas`, así que retirarla no para nada | ⬜ | cierra los huecos **2 y 3** del §8 | |
+| **P19** | **`unit_subtree` se retira** de `process_target_rules`: cero filas lo usan, ya se retiró del lado del flujo, y **cruza tipos de unidad**, así que es incompatible con una línea que fija UN cargo | ⬜ | cierra el hueco **1** si el conjunto de `P17` cubre el caso | |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
 | **P14** | **La casilla ④ se abre** (decisión 17): el camino que crea un formato **personal** y encarga con él. **La vía de adopción —cómo un formato personal pasa a institucional— se decide aparte**, y es otro frente: parametrizar una tarea que se repite *es* crear un proceso | ⬜ | ✅ **`P13` hecha, así que está desbloqueada.** Y la prohibición ya deja sitio: un formato **sin vínculos** sí puede ser personal, comprobado al provocarla | |
 | **P15** | **Los cuatro valores se renombran** (decisión 19): `task_items.origin_kind`→`origen` `(lanzamiento, encargo)` y `catalogo_documental.template_scope`→`propiedad` `(institucional, personal)`. **191 ocurrencias en 54 ficheros contados aparte**; toca la fachada de `sqlTables.js` y **dos columnas generadas** que leen `origin_kind` | ⬜ | **va con `P6`**, el renombrado completo, por la misma razón: renombrar dos veces cuesta el doble | |
@@ -836,3 +839,83 @@ ya están activas **siguen generando tareas**. Hoy la vigencia de la línea es *
 | **C · Dejarla** | nada | nada | la copia y su guardia se quedan, y los tres huecos también |
 
 **Lo que no depende de cuál se elija:** los **huecos 1 y 3** son defectos hoy, con la A, la B o la C.
+
+### 8-bis · La reevaluación del dueño, y lo que invalida (2026-10-12)
+
+El dueño trajo tres cosas. La tercera **tira parte del análisis de arriba y parte del modelo**.
+
+#### 1 · `unit_subtree` — qué se pierde, de verdad
+
+**Ya se estaba deprecando, y la mitad del trabajo está hecha**: `participantes_declarados.unit_scope_type`
+admite hoy **tres** valores (`unit_exact`, `context_exact`, `all_units`) y `unit_subtree` **ya no está
+ahí**. Sólo sobrevive en `process_target_rules`.
+
+| Medido | |
+|---|---|
+| Filas que lo usan | **0** |
+| Pantallas que lo ofrecen | **2** («Unidad y descendientes», «Esta unidad y sus dependientes») |
+| Profundidad real del organigrama | **5 niveles** (2 · 4 · 1 · 5 · 2 unidades) — un subárbol **no** es lo mismo que un tipo |
+| Cómo se resuelve | una CTE recursiva **sin protección de ciclos** — ver frente 26 |
+
+**Y hay un argumento que no es de uso sino de forma: un subárbol es INCOMPATIBLE con la premisa de
+la línea.** Una línea es *«un documento, de un cargo, en un sitio»*. Un subárbol **cruza tipos de
+unidad**: «la Escuela de Ingeniería y sus descendientes» son una Escuela **y** sus Carreras, y el
+cargo que produce el documento no es el mismo en las dos —Director en una, Coordinador en otra—. O
+sea que `unit_subtree` sólo funciona **sin cargo**, y entonces no es una obligación: es una difusión.
+
+**Lo que se pierde:** *«que lo entreguen todas las unidades que cuelgan de X, incluidas las que se
+creen mañana»*. Ese caso **no está en ninguno de los cuatro ejemplos del dueño**, que siempre son
+cargo + tipo o una unidad concreta. Y lo que sí hace falta —varias unidades a la vez— lo resuelve
+mejor el punto 3.
+
+#### 2 · Las tres vigencias: sí, una sola. Y lo medido dice CUÁL
+
+El dueño propone quedarse con una. De acuerdo, y la medición responde cuál **sin que sea cuestión de
+gusto**: hay que mirar qué consume cada una y qué puede terminar de forma independiente.
+
+| Vigencia | Quién la consume | ¿Puede algo terminar ahí por su cuenta? |
+|---|---|---|
+| `lineas` | `resolveLinea` y los selectores. **Nada en ejecución** (hueco 3) | **SÍ**: la obligación termina, y `linea_anterior_id` **exige** su `effective_to` para que otra la suceda (decisión 11). Es el único consumidor **estructural** de las tres |
+| `process_definition_versions` | el generador, junto con `status` | **NO por su cuenta**: `status = 'retired'` ya lo dice, y `retireActiveDefinitionsInLinea` escribe **las dos**. Dos mecanismos para una pregunta |
+| `process_target_rules` | dos consultas de lectura (el menú y el espacio de trabajo). Es `NULL` en las dos filas que existen | **NO**: si cambia cómo se reparte, eso es **otra versión de la configuración**, no una regla que caduca |
+
+**Conclusión del análisis: la que sobrevive es la de la LÍNEA**, no la del nivel más bajo — y es al
+revés de lo que sugería la pregunta por un motivo concreto: *es la única que algo necesita*. La
+configuración se queda con `status`, que ya contesta su pregunta; la regla pierde la suya.
+
+⚠️ **Y eso convierte el hueco 3 en obligatorio, no opcional.** Si la vigencia de la línea es la
+única, **tiene que detener la ejecución**: hoy el generador no mira `lineas`, así que retirar una
+línea no para nada. Dejar una sola vigencia y que además sea la declarativa sería peor que tener
+tres.
+
+#### 3 · «El IF puede ir a las Coordinaciones de Carrera Y de Tecnología» — esto rompe el modelo
+
+**`Carrera` y `Tecnología` son dos tipos de unidad distintos** (medido: ids 7 y 8 del catálogo). Y
+la línea, tal como la construí en `P8`, tiene **UN** `unit_type_id`. Así que esa obligación, hoy,
+serían **dos líneas**.
+
+**Y dos líneas no pueden compartir plantilla.** Lo impide `trg_pdt_linea_unica`, que es de este mismo
+frente: *«todas las definiciones ya vinculadas a cualquier edición de ese mismo entregable tienen que
+compartir la línea»*. O sea que con dos líneas **habría que duplicar el formato**, que es exactamente
+la avería que el frente 25 lleva tres días quitando.
+
+> **La conclusión es que el DÓNDE de una línea tiene que ser un CONJUNTO, no una columna.** La línea
+> es «IF · Coordinadores de Carrera y Tecnología»: **un** documento, **un** cargo, **varios** sitios.
+
+Eso invalida dos cosas de lo ya escrito:
+
+| Lo que dice hoy | Por qué deja de valer |
+|---|---|
+| `lineas.unit_scope_type` + `unit_type_id` \| `unit_id`, con `ck_lineas_unit_scope` | un ámbito **único** por línea |
+| `uq_lineas_identidad (process_id, cargo_id, unit_scope_type, unit_type_id, unit_id)` | la identidad no puede ser una tupla de columnas si el ámbito es un conjunto |
+
+**Y reordena A/B/C.** Con el conjunto en la línea, `cargo_id`, `unit_scope_type`, `unit_type_id` y
+`unit_id` de la regla pasan a ser **copia entera**, no parcial: la opción **A deja de ser un recorte
+y pasa a ser una retirada**. Lo único que le queda a la regla es el **CÓMO** —`recipient_policy`,
+`position_id`— y el orden.
+
+**La pregunta que esto abre, y que decide la forma:** si la línea lleva un conjunto de ámbitos,
+¿puede el **cómo** variar dentro de ese conjunto? *«En Carrera lo entrega el Coordinador; en
+Tecnología, el Jefe»* son **dos cargos** y por tanto dos líneas. Pero *«en Carrera va a todos los
+que encajen y en Tecnología sólo al que encabeza la unidad»* son dos `recipient_policy` para **una**
+línea — y eso decide si la regla sobrevive como «una fila por ámbito» o desaparece.
