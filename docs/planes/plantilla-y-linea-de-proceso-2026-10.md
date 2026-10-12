@@ -155,7 +155,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P6** | **El renombrado completo**: `catalogo_documental`→`formatos`, `available_formats`→`archivos`, `storage_version`→`version`, `process_definition_versions`→`ediciones_de_proceso` | ⬜ | | |
 | **P8** | **La tabla `lineas`**, con los dos ejes (`cargo_id` + `unit_scope_type`/`unit_type_id`/`unit_id`), nombre propio, vigencia y `linea_anterior_id`; `process_definition_versions.linea_id` en lugar de `(process_id, series_id, variation_key)`; los dos únicos bajan a dos columnas | ✅ | la tabla con sus **8 garantías provocadas** una por una (el alcance y su columna van juntos ×2, la identidad con `NULLS NOT DISTINCT`, suceder a una vigente, retirar-y-suceder, la autosucesión, la vigencia al revés, y los dos ejes juntos); `linea_id` **`NOT NULL`** con su índice; el arranque siembra la línea. Construirla **corrigió dos veces el croquis del plan** (§0-ter). Cerrada con `P2-bis`, que es su otra mitad | 2026-10-11 |
 | **P9** | **Retira `process_definition_series`** y sus seis mecanismos (el `XOR`, el `code` derivado, las dos cascadas, `variation_key` y su hook) | ✅ | la tabla, `series_id` y los **seis mecanismos** fuera; `lineas` entra en el editor genérico y en RBAC; el asistente pide **nombre + cargo + alcance** en vez de una serie. **73 ocurrencias en 30 ficheros**, no 65 en 21. 320/320 char con **9 goldens movidos** (y 7 claves huérfanas retiradas a mano, porque capturar añade y no borra), 888/888 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, los dos builds. **Verificado en el navegador**: el nodo del grafo dice el nombre de la línea donde decía «General», y el asistente pide los dos ejes | 2026-10-11 |
-| **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_exact`/`unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna: hoy son **13** | ⬜ | **depende de `P8`** | |
+| **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna: hoy son **13** | 🟡 | **ANÁLISIS HECHO** (§8): las 13 se reparten en **cuatro** grupos, no dos — 4 son copia de la línea (sembradas y blindadas por un guardia, la forma exacta de `variation_key`), 4 son suyas, 2 son el vínculo y 2 duplican la vigencia. Y destapó **tres huecos que son defectos hoy, se elija lo que se elija**. **Falta la decisión del dueño** entre A (recortar), B (disolver la regla en la configuración) y C (dejarla) | |
 | **P11** | ⛔ **SALE DE ESTE FRENTE** · los ciclos en las claves ajenas autorreferenciales. Se abre el **[frente 26](./ciclos-en-los-grafos-2026-10.md)**, donde al medirlo resultaron ser **seis** grafos y no cinco | ⛔ | decisión del dueño: *«para los ciclos frente propio»*. Lo que queda aquí es que **`lineas.linea_anterior_id` nazca ya protegido**, lo que el frente 26 deja escrito en su §5 | 2026-10-11 |
 | **P12** | **La bifurcación del linaje es DELIBERADA**: se permite que dos líneas sucedan a la misma —una obligación que se parte es real— pero crear el segundo sucesor avisa. Las **fusiones no se pueden declarar** con una sola columna, y queda dicho | ⬜ | **depende de `P8`** | |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
@@ -762,3 +762,77 @@ derivada**: se puede buscar por ella, no se puede escribir.
 | **Lo que arregla** | la unicidad de «una versión por línea» deja de vigilar una etiqueta que **hoy está derivada en todas las filas** |
 
 **Y con esto `P2-bis` queda desbloqueada**, que era lo único que esperaba a `D1`.
+
+---
+
+## 8 · `P10` · La regla, columna por columna (análisis, 2026-10-12)
+
+**Qué le queda a `process_target_rules` ahora que la línea es dueña del QUIÉN y del DÓNDE.** Son
+**13 columnas**, y el reparto no es el que el plan suponía: no hay dos grupos (lo que sube y lo que
+se queda), hay **cuatro**.
+
+### Las 13, con lo que decide cada una
+
+| Columna | Qué decide | ¿La línea ya lo dice? | |
+|---|---|---|---|
+| `id` · `created_at` | — | — | se quedan |
+| `process_definition_id` | de qué configuración es | — | **es el vínculo**: se queda |
+| `cargo_id` | el QUIÉN | **sí** | **copia**: `applyTargetRuleLineaConstraints` la **siembra** si falta y la **rechaza** si difiere |
+| `unit_type_id` | el DÓNDE por tipo | **sí** | **copia**, sembrada y blindada igual |
+| `unit_scope_type` | el DÓNDE | **3 de sus 4 valores** | `all_units`, `unit_type` y `unit_exact` son de la línea; **`unit_subtree` no** |
+| `unit_id` | qué unidad | **sí** (`unit_exact`) | copia **salvo** cuando refina con `unit_subtree` |
+| `position_id` | un puesto concreto | no | **se queda** — es más fino que un cargo |
+| `recipient_policy` | **cómo** se reparte: `all_matches` · `unit_head` · `exact_position` | no | **se queda** — es el CÓMO |
+| `priority` | orden entre reglas de la misma configuración | no | se queda **si puede haber más de una** |
+| `is_active` | si cuenta | no | se queda |
+| `effective_from` · `effective_to` | **cuándo** | la línea **también** tiene vigencia | **ver el hueco 2** |
+
+**Resumen: 4 columnas son copia de la línea** (`cargo_id`, `unit_type_id`, y `unit_scope_type`/`unit_id`
+en tres de sus cuatro combinaciones). **4 son suyas de verdad** (`position_id`, `recipient_policy`,
+`priority`, `is_active`). Y la vigencia está duplicada dos veces.
+
+### Quién escribe una regla, medido
+
+Sólo **tres** caminos: el **clon** de configuraciones (`processDefinitionVersion.js:360`), el
+**arranque** (`SystemBootstrapService.js:958`) y el **CRUD genérico**, que pasa por
+`applyTargetRuleLineaConstraints` en `beforeCreate` y en `beforeUpdate`. Así que la copia **está
+sostenida por un guardia**, que es exactamente la forma de `variation_key`: una copia, más un
+guardia cuyo trabajo es comprobar que coincide con su origen.
+
+### Tres huecos que el análisis destapó
+
+⚠️ **HUECO 1 · Una línea de UNA UNIDAD CONCRETA no restringe a su regla.**
+`applyTargetRuleLineaConstraints` sólo impone `cargo_id` y `unit_type_id`. Lee `l.unit_id` en su
+`SELECT` y **no lo usa nunca**. O sea que una línea «Informe de IF · Dirección de Investigación»
+—el tercer caso del dueño, el que la serie *no podía ni expresar*— admite una regla que apunte a
+**otra unidad**, o a **todas**, sin que nada se queje. El eje que más costó conseguir es el que no
+se propaga.
+
+⚠️ **HUECO 2 · Hay TRES vigencias apiladas y nada las relaciona.**
+
+```
+lineas.effective_from / effective_to                      ¿desde cuándo existe la obligación?
+process_definition_versions.effective_from / effective_to ¿desde cuándo rige esta versión?
+process_target_rules.effective_from / effective_to        ¿desde cuándo reparte así?
+```
+
+Cada una se filtra **por separado** (`pdv.effective_from <= CURDATE()` **y** `ptr.effective_from <=
+CURDATE()`), y **ninguna comprobación exige que la de dentro quepa en la de fuera**. Una regla puede
+estar vigente mientras su configuración no lo está, y una configuración mientras su línea está
+retirada.
+
+⚠️ **HUECO 3 · Retirar una línea NO DETIENE NADA.** El generador
+(`getActiveAutomaticDefinitions`) filtra por `pdv.status = 'active'` y por la vigencia de la
+**configuración**; no toca `lineas`. Así que poner `effective_to` a una línea sólo impide **crear
+configuraciones nuevas** sobre ella (`resolveLinea` lo rechaza) y la saca de los selectores — las que
+ya están activas **siguen generando tareas**. Hoy la vigencia de la línea es **declarativa**.
+
+### El espacio de diseño, sin elegir
+
+| | Qué hace | Qué gana | Qué cuesta |
+|---|---|---|---|
+| **A · La regla se queda con el CÓMO y el CUÁNDO** (lo que el plan suponía) | se van `cargo_id` y `unit_type_id`; `unit_scope_type` se recorta a `hereda` \| `unit_subtree`; `unit_id` sólo para el refinamiento | la copia desaparece y con ella su guardia; la regla pasa de 13 columnas a 9 | hay que recalcular los dos resolutores (`getPositionsForRule` y `resolveRuleScope`) para que lean el eje de la línea y lo refinen |
+| **B · La regla se disuelve en la configuración** | 1 regla por configuración —es lo que hay en la base sembrada— así que sus 4 columnas propias podrían ser columnas de `process_definition_versions` | una tabla menos y una vigencia menos | mata `priority`, que sólo existe para ordenar **varias** reglas. Hay que medir si alguna vez hacen falta dos |
+| **C · Dejarla** | nada | nada | la copia y su guardia se quedan, y los tres huecos también |
+
+**Lo que no depende de cuál se elija:** los **huecos 1 y 3** son defectos hoy, con la A, la B o la C.
