@@ -141,7 +141,7 @@ export class ProcessDefinitionAdminService {
     const recipientPolicy = form.recipient_policy || "all_matches";
     const scopeType = form.unit_scope_type || "unit_exact";
     const usesExactPosition = recipientPolicy === "exact_position";
-    const usesUnitScope = scopeType === "unit_exact" || scopeType === "unit_subtree" || usesExactPosition;
+    const usesUnitScope = scopeType === "unit_exact" || usesExactPosition;
     const usesUnitTypeScope = scopeType === "unit_type" && !usesExactPosition;
 
     return {

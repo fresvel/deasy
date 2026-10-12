@@ -1,3 +1,8 @@
+// ⚠️ AQUI HABIA CUATRO PRUEBAS DE `unit_subtree`, Y SE FUERON CON EL VALOR (frente 25, P19).
+// Fijaban el resolutor del subárbol, su protección contra ciclos y la etiqueta «Unidad y
+// jerarquía». El valor se retiró porque un subárbol CRUZA TIPOS DE UNIDAD y por tanto cargos, que
+// es incompatible con una regla que hereda el cargo de su línea.
+
 // Tests unitarios de los helpers puros extraídos de user_controler.js (Fase 3).
 //
 // Antes de la extracción estas funciones vivían enterradas en un fichero de 4118 L
@@ -18,7 +23,6 @@ import {
   getNumericUserId,
   getAuthenticatedUserId,
   isAuthorizedUserScope,
-  createUnitSubtreeResolver,
   doesPositionMatchRule,
   buildRuleDisplayLabel,
   buildFillStepDisplayLabel,
@@ -116,29 +120,7 @@ test("isAuthorizedUserScope solo autoriza si el usuario pide su propio ámbito",
   assert.equal(isAuthorizedUserScope({}, 5), false, "sin autenticación no hay ámbito");
 });
 
-test("createUnitSubtreeResolver recorre descendientes y cachea", () => {
-  // 1 → {2,3}; 2 → {4}; 3,4 → hojas
-  const children = new Map([
-    [1, [2, 3]],
-    [2, [4]]
-  ]);
-  const resolve = createUnitSubtreeResolver(children);
-  assert.deepEqual([...resolve(1)].sort((a, b) => a - b), [1, 2, 3, 4]);
-  assert.deepEqual([...resolve(2)].sort((a, b) => a - b), [2, 4]);
-  assert.deepEqual([...resolve(4)], [4], "hoja se incluye a sí misma");
-  assert.deepEqual([...resolve(null)], [], "unitId falsy → conjunto vacío");
-  // segunda llamada golpea la caché y devuelve el mismo Set
-  assert.equal(resolve(1), resolve(1));
-});
 
-test("createUnitSubtreeResolver no entra en bucle con ciclos", () => {
-  const children = new Map([
-    [1, [2]],
-    [2, [1]] // ciclo
-  ]);
-  const resolve = createUnitSubtreeResolver(children);
-  assert.deepEqual([...resolve(1)].sort((a, b) => a - b), [1, 2]);
-});
 
 test("doesPositionMatchRule: posición exacta manda sobre todo", () => {
   assert.equal(doesPositionMatchRule({ position_id: 8 }, { position_id: 8 }), true);
@@ -164,17 +146,6 @@ test("doesPositionMatchRule: filtra por cargo antes del alcance de unidad", () =
   );
 });
 
-test("doesPositionMatchRule: alcance unit_subtree usa el resolver de jerarquía", () => {
-  const subtree = (unitId) => (unitId === 1 ? new Set([1, 2, 3]) : new Set([unitId]));
-  assert.equal(
-    doesPositionMatchRule({ unit_id: 3 }, { unit_scope_type: "unit_subtree", unit_id: 1 }, subtree),
-    true
-  );
-  assert.equal(
-    doesPositionMatchRule({ unit_id: 9 }, { unit_scope_type: "unit_subtree", unit_id: 1 }, subtree),
-    false
-  );
-});
 
 test("doesPositionMatchRule: unit_exact / default exige misma unidad", () => {
   assert.equal(doesPositionMatchRule({ unit_id: 5 }, { unit_scope_type: "unit_exact", unit_id: 5 }), true);
@@ -185,10 +156,6 @@ test("doesPositionMatchRule: unit_exact / default exige misma unidad", () => {
 test("buildRuleDisplayLabel prioriza puesto exacto y luego compone unidad|cargo", () => {
   assert.equal(buildRuleDisplayLabel({ position_title: "Decano" }), "Puesto exacto: Decano");
   assert.equal(buildRuleDisplayLabel({ unit_scope_type: "all_units" }), "Todas las unidades");
-  assert.equal(
-    buildRuleDisplayLabel({ unit_scope_type: "unit_subtree", unit_name: "Facultad", cargo_name: "Director" }),
-    "Unidad y jerarquía: Facultad | Cargo: Director"
-  );
   assert.equal(buildRuleDisplayLabel({ id: 99 }), "Regla #99", "sin datos, fallback al id");
 });
 

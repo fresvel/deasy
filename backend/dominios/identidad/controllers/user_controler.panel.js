@@ -11,7 +11,6 @@
 // (flows/user_workspace.test.mjs). No la toques sin correr test:char:run.
 import { isDocumentPending } from "../../../services/documents/DocumentStateService.js";
 import {
-  createUnitSubtreeResolver,
   doesPositionMatchRule,
   buildRuleDisplayLabel,
   buildFillStepDisplayLabel,
@@ -19,7 +18,6 @@ import {
 } from "./user_controler.primitives.js";
 import {
   getActiveUserPositions,
-  getOrgChildrenMap,
   getDefinitionContext,
   getActiveDefinitionRules,
   getActiveDefinitionPeriodTypes,
@@ -68,9 +66,7 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
     return null;
   }
   const rules = await getActiveDefinitionRules(pool, definitionId);
-  const childrenByUnit = await getOrgChildrenMap(pool);
-  const getUnitSubtree = createUnitSubtreeResolver(childrenByUnit);
-  const matchingRules = rules.filter((rule) => positions.some((position) => doesPositionMatchRule(position, rule, getUnitSubtree)));
+  const matchingRules = rules.filter((rule) => positions.some((position) => doesPositionMatchRule(position, rule)));
   const tasks = await getUserAccessibleTasksForDefinition(pool, userId, definitionId, scopeUnitId);
   const fillRequests = await getUserPendingFillRequestsForDefinition(pool, userId, definitionId);
   const signatures = await getUserPendingSignaturesForDefinition(pool, userId, definitionId);

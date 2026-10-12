@@ -193,7 +193,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
 | `process_definition_id` | int | sí | `process_definition_versions.id` · se va con el | — |
-| `unit_scope_type` | text | sí | — | `unit_exact` · `unit_subtree` · `unit_type` · `all_units` |
+| `unit_scope_type` | text | sí | — | `unit_exact` · `unit_type` · `all_units` |
 | `unit_id` | int | no | `units.id` · impide borrar | — |
 | `unit_type_id` | int | no | `unit_types.id` · impide borrar | — |
 | `cargo_id` | int | no | `cargos.id` · impide borrar | — |

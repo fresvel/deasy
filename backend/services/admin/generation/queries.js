@@ -238,29 +238,10 @@ export const getPositionsForRule = async (connection, rule) => {
       params.push(rule.cargo_id);
     }
 
-    const useSubtree = rule.unit_scope_type === "unit_subtree";
-
-    if (useSubtree) {
-      if (!rule.unit_id) {
-        return [];
-      }
-      query = `
-        WITH RECURSIVE scoped_units AS (
-          SELECT id
-          FROM units
-          WHERE id = ?
-          UNION ALL
-          SELECT ur.child_unit_id
-          FROM unit_relations ur
-          INNER JOIN relation_unit_types rt
-            ON rt.id = ur.relation_type_id
-           AND rt.code = 'org'
-          INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
-        )
-        ${query}
-          AND up.unit_id IN (SELECT id FROM scoped_units)`;
-      params.unshift(rule.unit_id);
-    } else if (rule.unit_scope_type === "unit_exact") {
+    // AQUI VIVIA LA RAMA `unit_subtree`, con una CTE RECURSIVA sin proteccion de ciclos. Se fue
+    // con el valor (frente 25, P19): un subarbol cruza tipos de unidad y por tanto cargos, que es
+    // incompatible con una regla que hereda el cargo de su linea.
+    if (rule.unit_scope_type === "unit_exact") {
       if (!rule.unit_id) {
         return [];
       }

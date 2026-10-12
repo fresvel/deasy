@@ -105,26 +105,13 @@ export default class TaskAssignmentService {
         cargoIds.add(Number(rule.cargo_id));
       }
       const scope = String(rule.unit_scope_type || "unit_exact");
-      const useSubtree = scope === "unit_subtree";
       if (scope === "all_units") {
         allUnits = true;
         continue;
       }
-      if (useSubtree && rule.unit_id) {
-        const [rows] = await connection.query(
-          `WITH RECURSIVE scoped_units AS (
-             SELECT id FROM units WHERE id = ?
-             UNION ALL
-             SELECT ur.child_unit_id
-               FROM unit_relations ur
-               INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
-               INNER JOIN scoped_units su ON su.id = ur.parent_unit_id
-           )
-           SELECT id FROM units WHERE id IN (SELECT id FROM scoped_units) AND is_active = 1`,
-          [rule.unit_id]
-        );
-        rows.forEach((row) => unitIds.add(Number(row.id)));
-      } else if (scope === "unit_exact" && rule.unit_id) {
+      // AQUI VIVIA LA RAMA `unit_subtree`, con la SEGUNDA CTE recursiva sin proteccion de ciclos.
+      // Se fue con el valor (frente 25, P19).
+      if (scope === "unit_exact" && rule.unit_id) {
         unitIds.add(Number(rule.unit_id));
       } else if (scope === "unit_type" && rule.unit_type_id) {
         const [rows] = await connection.query(

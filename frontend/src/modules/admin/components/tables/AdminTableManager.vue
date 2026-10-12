@@ -1906,7 +1906,7 @@ const canSubmitDefinitionRule = computed(() => {
   if (scopeType === "unit_type") {
     return Boolean(definitionRulesForm.value.unit_type_id);
   }
-  if (scopeType === "unit_exact" || scopeType === "unit_subtree") {
+  if (scopeType === "unit_exact") {
     return Boolean(definitionRulesForm.value.unit_id);
   }
   if (scopeType === "all_units") {

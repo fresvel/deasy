@@ -109,35 +109,12 @@ export const isAuthorizedUserScope = (req, requestedUserId) => {
 
 // --- Resolución de jerarquía de unidades y coincidencia de reglas ---
 
-export const createUnitSubtreeResolver = (childrenByUnit) => {
-  const cache = new Map();
-  return (unitId) => {
-    if (!unitId) {
-      return new Set();
-    }
-    const normalizedUnitId = Number(unitId);
-    if (cache.has(normalizedUnitId)) {
-      return cache.get(normalizedUnitId);
-    }
-    const visited = new Set([normalizedUnitId]);
-    const stack = [normalizedUnitId];
-    while (stack.length) {
-      const current = stack.pop();
-      const children = childrenByUnit.get(current) || [];
-      children.forEach((childId) => {
-        const normalizedChildId = Number(childId);
-        if (!visited.has(normalizedChildId)) {
-          visited.add(normalizedChildId);
-          stack.push(normalizedChildId);
-        }
-      });
-    }
-    cache.set(normalizedUnitId, visited);
-    return visited;
-  };
-};
+// AQUI VIVIA `createUnitSubtreeResolver`, y se fue con `unit_subtree` (frente 25, P19): era su
+// unico consumidor. Resolvia «esta unidad y toda su descendencia» con un recorrido iterativo que
+// llevaba `visited`, asi que un ciclo en `unit_relations` no lo colgaba --a diferencia de las dos
+// CTE recursivas que hacian lo mismo en SQL, que se fueron el mismo dia--.
 
-export const doesPositionMatchRule = (position, rule, getUnitSubtree) => {
+export const doesPositionMatchRule = (position, rule) => {
   if (rule.position_id) {
     return Number(position.position_id) === Number(rule.position_id);
   }
@@ -152,8 +129,6 @@ export const doesPositionMatchRule = (position, rule, getUnitSubtree) => {
       return true;
     case "unit_type":
       return rule.unit_type_id && Number(position.unit_type_id) === Number(rule.unit_type_id);
-    case "unit_subtree":
-      return rule.unit_id && getUnitSubtree(Number(rule.unit_id)).has(Number(position.unit_id));
     case "unit_exact":
     default:
       if (!rule.unit_id) {
@@ -172,8 +147,8 @@ export const buildRuleDisplayLabel = (rule) => {
     parts.push("Todas las unidades");
   } else if (rule.unit_scope_type === "unit_type" && rule.unit_type_name) {
     parts.push(`Tipo: ${rule.unit_type_name}`);
-  } else if ((rule.unit_scope_type === "unit_exact" || rule.unit_scope_type === "unit_subtree") && rule.unit_name) {
-    parts.push(rule.unit_scope_type === "unit_subtree" ? `Unidad y jerarquía: ${rule.unit_name}` : `Unidad: ${rule.unit_name}`);
+  } else if (rule.unit_scope_type === "unit_exact" && rule.unit_name) {
+    parts.push(`Unidad: ${rule.unit_name}`);
   }
   if (rule.cargo_name) {
     parts.push(`Cargo: ${rule.cargo_name}`);

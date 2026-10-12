@@ -17,7 +17,7 @@ Las dos columnas están cerradas por `CHECK`:
 
 | Pregunta | Columna | Valores admitidos |
 |---|---|---|
-| **¿Hasta dónde llega?** | `unit_scope_type` | `unit_exact` · `unit_subtree` · `unit_type` · `all_units` |
+| **¿Hasta dónde llega?** | `unit_scope_type` | `unit_exact` · `unit_type` · `all_units` |
 | **¿A quién de ahí dentro?** | `recipient_policy` | `all_matches` · `unit_head` · `exact_position` |
 
 Combinando las dos se expresa casi cualquier cosa. *«A los coordinadores de todas las carreras»* es
@@ -26,8 +26,13 @@ decano de esta facultad»* es alcance `unit_exact` más política `unit_head`.
 
 Tres detalles de la resolución que no se ven en la declaración:
 
-- **`unit_subtree` baja solo por la relación orgánica.** El recorrido recursivo filtra
-  `relation_unit_types.code = 'org'`; los otros tipos de relación no cuentan como «lo que cuelga de».
+- **Eran CUATRO valores y son tres: `unit_subtree` se retiró el 2026-10-12.** «Esta unidad y sus
+  descendientes» **cruza tipos de unidad** —una Escuela y sus Carreras—, y el cargo que produce el
+  documento no es el mismo en las dos: Director en una, Coordinador en otra. Eso es incompatible con
+  una regla que hereda el cargo de su [línea](/modelo/proceso/). Cero filas lo usaban, y con él se
+  fueron dos recorridos recursivos sin protección de ciclos. Lo que sí hacía falta —un mismo
+  documento en varios sitios— lo da el modelo por otro lado: un formato sirve a varias líneas del
+  mismo proceso.
 - **`unit_head` no inventa sustituto.** Si una unidad del alcance no tiene jefatura marcada, esa unidad
   se queda fuera de la regla. Elegir «el primero de la lista» es exactamente el fallo que esa decisión
   vino a cerrar.
@@ -92,7 +97,7 @@ erDiagram
   process_target_rules {
     int id PK
     int process_definition_id FK
-    text unit_scope_type "unit_exact, unit_subtree, unit_type, all_units"
+    text unit_scope_type "unit_exact, unit_type, all_units"
     int unit_id FK "si el alcance es una unidad"
     int unit_type_id FK "si el alcance es un tipo"
     int cargo_id FK "que cargo dentro del alcance"

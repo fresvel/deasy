@@ -148,7 +148,7 @@ const targetScopeConsistent = (candidate) => {
     throw new Error("La politica exact_position requiere un puesto exacto.");
   }
 
-  if (candidate.unit_scope_type === "unit_exact" || candidate.unit_scope_type === "unit_subtree") {
+  if (candidate.unit_scope_type === "unit_exact") {
     if (!candidate.unit_id && !candidate.position_id) {
       throw new Error("El alcance por unidad requiere una unidad base.");
     }

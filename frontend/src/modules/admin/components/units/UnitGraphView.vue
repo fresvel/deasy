@@ -459,7 +459,6 @@
           Alcance
           <select v-model="processForm.unit_scope_type" class="deasy-control deasy-control--select">
             <option value="unit_exact">Solo esta unidad</option>
-            <option value="unit_subtree">Esta unidad y sus dependientes</option>
           </select>
         </label>
 
@@ -889,7 +888,6 @@ const setDetailTab = (tab) => {
 };
 const PROCESS_SCOPE_LABELS = {
   unit_exact: "Esta unidad",
-  unit_subtree: "Unidad y dependientes",
   unit_type: "Por tipo de unidad",
   all_units: "Todas las unidades"
 };

@@ -68,16 +68,9 @@ const getUserPositions = async (pool, userId) => {
   return positions;
 };
 
-const getOrgTreeRows = async (pool) => {
-  const [orgTreeRows] = await pool.query(
-    `SELECT ur.parent_unit_id, ur.child_unit_id
-     FROM unit_relations ur
-     INNER JOIN relation_unit_types rt
-       ON rt.id = ur.relation_type_id
-      AND rt.code = 'org'`
-  );
-  return orgTreeRows;
-};
+// AQUI VIVIA `getOrgTreeRows`, Y SE FUE CON `unit_subtree` (frente 25, P19). Traia el arbol
+// organizativo entero en cada carga del menu para poder resolver «esta unidad y sus
+// descendientes», que era el unico ambito que lo necesitaba. Una consulta menos por peticion.
 
 const getProcessTargetRuleRows = async (pool) => {
   const [processRuleRows] = await pool.query(
@@ -336,44 +329,9 @@ const seedMenuIndexes = (positions) => {
   return { unitsMap, cargoMapByUnit, consolidatedMap, groupMap };
 };
 
-/**
- * Resolutor memoizado del subárbol organizativo: `getUnitSubtree(unitId)` devuelve el conjunto
- * formado por la unidad y toda su descendencia por la relación `org`. El recorrido es iterativo
- * y lleva `visited`, así que un ciclo en `unit_relations` no lo cuelga.
- */
-const createUnitSubtreeResolver = (orgTreeRows) => {
-  const childrenByUnit = new Map();
-  orgTreeRows.forEach((row) => {
-    if (!childrenByUnit.has(row.parent_unit_id)) {
-      childrenByUnit.set(row.parent_unit_id, []);
-    }
-    childrenByUnit.get(row.parent_unit_id).push(row.child_unit_id);
-  });
+// AQUI VIVIA `createUnitSubtreeResolver`, el resolutor memoizado del subarbol. Se fue con
+// `unit_subtree` (frente 25, P19): era su unico consumidor.
 
-  const subtreeCache = new Map();
-  return (unitId) => {
-    if (!unitId) {
-      return new Set();
-    }
-    if (subtreeCache.has(unitId)) {
-      return subtreeCache.get(unitId);
-    }
-    const visited = new Set([unitId]);
-    const stack = [unitId];
-    while (stack.length) {
-      const current = stack.pop();
-      const children = childrenByUnit.get(current) || [];
-      children.forEach((childId) => {
-        if (!visited.has(childId)) {
-          visited.add(childId);
-          stack.push(childId);
-        }
-      });
-    }
-    subtreeCache.set(unitId, visited);
-    return visited;
-  };
-};
 
 // -------------------------------------------------------------------------------------------
 // Emparejamiento puesto ↔ origen del acceso
@@ -384,7 +342,7 @@ const createUnitSubtreeResolver = (orgTreeRows) => {
  * El puesto exacto manda sobre todo lo demás; `exact_position` sin `position_id` no casa con
  * nadie a propósito (es una regla mal configurada, no un comodín).
  */
-const positionMatchesRule = (position, rule, getUnitSubtree) => {
+const positionMatchesRule = (position, rule) => {
   if (rule.position_id) {
     return Number(position.position_id) === Number(rule.position_id);
   }
@@ -399,8 +357,6 @@ const positionMatchesRule = (position, rule, getUnitSubtree) => {
       return true;
     case "unit_type":
       return rule.unit_type_id && Number(position.unit_type_id) === Number(rule.unit_type_id);
-    case "unit_subtree":
-      return rule.unit_id && getUnitSubtree(Number(rule.unit_id)).has(Number(position.unit_id));
     case "unit_exact":
     default:
       if (!rule.unit_id) {
@@ -491,9 +447,9 @@ const addProcessToPosition = (position, process, { cargoMapByUnit, consolidatedM
 };
 
 /** Pasada 1: los procesos que le tocan a la persona porque una regla se los reparte. */
-const attachRuleProcesses = ({ positions, processRuleRows, indexes, getUnitSubtree, seenByUnitCargo, seenByCargo }) => {
+const attachRuleProcesses = ({ positions, processRuleRows, indexes, seenByUnitCargo, seenByCargo }) => {
   positions.forEach((position) => {
-    const matchingRules = processRuleRows.filter((rule) => positionMatchesRule(position, rule, getUnitSubtree));
+    const matchingRules = processRuleRows.filter((rule) => positionMatchesRule(position, rule));
     matchingRules.forEach((row) => {
       const process = {
         id: row.process_id,
@@ -615,11 +571,9 @@ export const buildUserMenu = async (pool, userId) => {
 
   const indexes = seedMenuIndexes(positions);
 
-  const orgTreeRows = await getOrgTreeRows(pool);
   const processRuleRows = await getProcessTargetRuleRows(pool);
   const operationalProcessRows = await getUserOperationalProcessRows(pool, userId);
 
-  const getUnitSubtree = createUnitSubtreeResolver(orgTreeRows);
   const seenByUnitCargo = new Map();
   const seenByCargo = new Map();
 
@@ -627,7 +581,6 @@ export const buildUserMenu = async (pool, userId) => {
     positions,
     processRuleRows,
     indexes,
-    getUnitSubtree,
     seenByUnitCargo,
     seenByCargo,
   });

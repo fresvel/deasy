@@ -245,7 +245,6 @@ const emit = defineEmits([
 
 const scopeOptions = [
   { value: "unit_exact", label: "Unidad exacta" },
-  { value: "unit_subtree", label: "Unidad y descendientes" },
   { value: "unit_type", label: "Tipo de unidad" },
   { value: "all_units", label: "Todas las unidades" }
 ];
@@ -337,7 +336,7 @@ const lineaFixedChips = computed(() => {
 // elegir el puesto (alcance, unidad, tipo y cargo se ocultan). El resto de entregas usa el alcance.
 const showScopeField = computed(() => !isExactPositionPolicy.value && !unitTypeLockedByLinea.value);
 const showUnitField = computed(() =>
-  !isExactPositionPolicy.value && (scopeType.value === "unit_exact" || scopeType.value === "unit_subtree")
+  !isExactPositionPolicy.value && scopeType.value === "unit_exact"
 );
 const showUnitTypeField = computed(() =>
   !isExactPositionPolicy.value && scopeType.value === "unit_type" && !unitTypeLockedByLinea.value
@@ -355,7 +354,7 @@ const requirementMessage = computed(() => {
   if (scopeType.value === "unit_type") {
     return "Selecciona el tipo de unidad para guardar la regla.";
   }
-  if (scopeType.value === "unit_exact" || scopeType.value === "unit_subtree") {
+  if (scopeType.value === "unit_exact") {
     return "Selecciona la unidad base para guardar la regla.";
   }
   return "Completa el alcance requerido para habilitar el boton de guardar.";
@@ -364,9 +363,6 @@ const requirementMessage = computed(() => {
 const ruleContextHint = computed(() => {
   if (isExactPositionPolicy.value) {
     return "La regla se limitara a un unico puesto; el alcance se fija como unidad exacta.";
-  }
-  if (scopeType.value === "unit_subtree") {
-    return "El alcance incluye la unidad base y sus descendientes organizacionales.";
   }
   if (scopeType.value === "unit_type") {
     return "El alcance se resolvera por todas las unidades del tipo seleccionado.";

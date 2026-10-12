@@ -253,14 +253,14 @@ test("validateTableRules exige puesto exacto cuando la política lo es", () => {
 
 test("validateTableRules exige una base para el alcance por unidad", () => {
   throwsWith(
-    () => validateTableRules("process_target_rules", { process_definition_id: 1, unit_scope_type: "unit_subtree" }),
+    () => validateTableRules("process_target_rules", { process_definition_id: 1, unit_scope_type: "unit_exact" }),
     "requiere una unidad base",
   );
   // Un puesto sirve como base, no solo la unidad.
   assert.doesNotThrow(() =>
     validateTableRules("process_target_rules", {
       process_definition_id: 1,
-      unit_scope_type: "unit_subtree",
+      unit_scope_type: "unit_exact",
       position_id: 5,
     }),
   );

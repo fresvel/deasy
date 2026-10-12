@@ -206,23 +206,10 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
   return rows;
 };
 
-export const getOrgChildrenMap = async (pool) => {
-  const [rows] = await pool.query(
-    `SELECT ur.parent_unit_id, ur.child_unit_id
-     FROM unit_relations ur
-     INNER JOIN relation_unit_types rt
-       ON rt.id = ur.relation_type_id
-      AND rt.code = 'org'`
-  );
-  const map = new Map();
-  rows.forEach((row) => {
-    if (!map.has(row.parent_unit_id)) {
-      map.set(row.parent_unit_id, []);
-    }
-    map.get(row.parent_unit_id).push(row.child_unit_id);
-  });
-  return map;
-};
+// AQUI VIVIA `getOrgChildrenMap`, Y SE FUE CON `unit_subtree` (frente 25, P19). Traia el arbol
+// organizativo entero para que el panel pudiera resolver «esta unidad y sus descendientes». Era su
+// unico consumidor, asi que es una consulta menos por peticion del panel.
+
 
 export const getDefinitionContext = async (pool, definitionId) => {
   const [rows] = await pool.query(

@@ -67,6 +67,11 @@ const operationalRow = (overrides = {}) => ({
   ...overrides,
 });
 
+// ⚠️ AQUI HABIA TRES PRUEBAS DE `unit_subtree`, Y SE FUERON CON EL VALOR (frente 25, P19).
+// Fijaban que el ámbito alcanzara al descendiente, que no alcanzara fuera del subárbol, y que un
+// CICLO en `unit_relations` no colgara el recorrido. Esa tercera era la única prueba de ciclos del
+// repositorio; su materia pasa al frente 26, que los censó en seis grafos.
+
 test("sin la relación 'org' lanza un error de configuración con statusCode 500", async () => {
   await assert.rejects(
     () => buildUserMenu(makePool({ org: [] }), 7),
@@ -108,47 +113,8 @@ test("una regla unit_exact de OTRA unidad no reparte nada", async () => {
   assert.deepEqual(menu.consolidated[0].processes, []);
 });
 
-test("unit_subtree alcanza a la unidad descendiente por la relación org", async () => {
-  const menu = await buildUserMenu(
-    makePool({
-      positions: [position({ unit_id: 102 })],
-      orgTree: [
-        { parent_unit_id: 100, child_unit_id: 101 },
-        { parent_unit_id: 101, child_unit_id: 102 },
-      ],
-      rules: [rule({ unit_scope_type: "unit_subtree", unit_id: 100 })],
-    }),
-    7
-  );
-  assert.equal(menu.units[0].cargos[0].processes.length, 1);
-});
 
-test("unit_subtree no alcanza a una unidad fuera del subárbol", async () => {
-  const menu = await buildUserMenu(
-    makePool({
-      positions: [position({ unit_id: 500 })],
-      orgTree: [{ parent_unit_id: 100, child_unit_id: 101 }],
-      rules: [rule({ unit_scope_type: "unit_subtree", unit_id: 100 })],
-    }),
-    7
-  );
-  assert.deepEqual(menu.units[0].cargos[0].processes, []);
-});
 
-test("un ciclo en unit_relations no cuelga el recorrido del subárbol", async () => {
-  const menu = await buildUserMenu(
-    makePool({
-      positions: [position({ unit_id: 101 })],
-      orgTree: [
-        { parent_unit_id: 100, child_unit_id: 101 },
-        { parent_unit_id: 101, child_unit_id: 100 },
-      ],
-      rules: [rule({ unit_scope_type: "unit_subtree", unit_id: 100 })],
-    }),
-    7
-  );
-  assert.equal(menu.units[0].cargos[0].processes.length, 1);
-});
 
 test("all_units reparte a cualquier puesto; unit_type solo al tipo de unidad que coincide", async () => {
   const todos = await buildUserMenu(

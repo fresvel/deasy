@@ -69,7 +69,6 @@ class AdminPresentationService {
     source_type: { unit_type: "Tipo de unidad", cargo: "Cargo", default: "Predeterminada" },
     unit_scope_type: {
       unit_exact: "Unidad exacta",
-      unit_subtree: "Unidad y descendientes",
       unit_type: "Tipo de unidad",
       all_units: "Todas las unidades",
       context_exact: "Unidad del contexto"

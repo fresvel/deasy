@@ -75,7 +75,7 @@ Table "process_definition_versions" {
 Table "process_target_rules" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
-  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_subtree'::text, 'unit_type'::text, 'all_units'::text])`, default: 'unit_exact']
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_type'::text, 'all_units'::text])`, default: 'unit_exact']
   "unit_id" int4
   "unit_type_id" int4
   "cargo_id" int4

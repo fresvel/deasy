@@ -165,8 +165,9 @@ aquí descritos no quiere decir que el reparto sea el correcto: quiere decir que
 A partir de aquí empieza el trabajo del sistema. **Y todo este nivel es declaración: nada de esto ha
 ocurrido todavía.** Es la plantilla de un proceso, no un proceso en marcha.
 
-El modelo se resume en tres ejes independientes: **la serie nombra, la regla reparte el alcance, y el
-flujo reparte los pasos.** (El flujo es el nivel 6.)
+El modelo se resume en tres ejes independientes: **la línea nombra la obligación, la regla la
+reparte, y el flujo reparte los pasos.** (El flujo es el nivel 6.) Hasta el 2026-10-11 el primero
+era «la serie», que admitía un eje **o** el otro; la línea lleva los dos.
 
 | Tabla | Qué guarda |
 |---|---|

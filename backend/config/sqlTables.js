@@ -445,7 +445,7 @@ export const SQL_TABLES = [
         name: "unit_scope_type",
         label: "Alcance",
         type: "select",
-        options: ["unit_exact", "unit_subtree", "unit_type", "all_units"],
+        options: ["unit_exact", "unit_type", "all_units"],
         defaultValue: "unit_exact"
       },
       { name: "unit_id", label: "Unidad", type: "number" },
