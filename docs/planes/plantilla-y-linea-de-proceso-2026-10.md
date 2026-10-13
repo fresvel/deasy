@@ -1311,3 +1311,28 @@ eje «quién» tiene que seguir siendo el **cargo**, nunca la jefatura.
 
 ⚠️ `Responsable` ya está en el catálogo de cargos **con cero puestos**: es exactamente el «cargo
 simbólico» que el dueño describe. No hay que inventar nada para él.
+
+### 10.17 · El hueco se reduce a UNO, y el criterio no es la distancia: es si el padre VARÍA
+
+El dueño corrigió uno de los tres pasos que yo daba por rotos: *«el informe de escuela lo revisa el
+Coordinador de Enseñanza-Aprendizaje… **este es el coordinador en una unidad, así que se resuelve**»*.
+Tiene razón, y los datos lo confirman:
+
+| Tipo | Unidades | ¿Cuántas tienen hijas? | ¿Se puede NOMBRAR la unidad superior? |
+|---|---|---|---|
+| **Coordinación** | **1** | 1 — es madre de las **5** Escuelas | ✅ **sí**: siempre es la misma, se declara `unit_exact` |
+| **Escuela** | **5** | 1 hoy, pero toda Escuela tendrá carreras | ❌ **no**: depende de qué carrera sea el documento |
+| Dirección | 2 | 1 | ✅ sí (hoy) |
+
+**Así que el criterio no es «cuántos escalones»: es si la unidad superior VARÍA según el documento.**
+
+- Si **no varía** —hay una sola, como la Coordinación— se **nombra**, y eso ya funciona.
+- Si **varía** —hay cinco Escuelas, cada una con sus carreras— hay que **derivarla del documento**, y eso
+  es lo único que falta.
+
+De los catorce pasos reales recogidos, **sólo uno** cae ahí: *«el Director de la Escuela a la que la
+carrera pertenece»*. Y el dueño pide modelarlo **previendo que el mismo patrón aparezca en otros
+sitios**: *«cosa que no pasa en otras unidades pero podría pasar»*.
+
+⚠️ **Y esto deshace mi tabla anterior**: yo contaba tres pasos rotos y eran **uno**. Los otros dos
+—«el Coordinador de E-A» y el segundo de `IF por carrera`— se declaran con lo que ya hay.
