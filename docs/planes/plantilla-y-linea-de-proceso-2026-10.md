@@ -997,3 +997,113 @@ trg_pdv_before_update_fn() line 7`.
 una corrida anterior que murió a medias deja residuo. Volver a lanzarlo sin reset dio **49 fallos**
 —entre ellos el `guided-update` entero, por un borrador colado en el primer `vinculos` de la
 lista— que **no eran del cambio**. La corrida que vale es `test:char:run`.
+
+## 10 · `P21` · El ámbito de un participante del recorrido (análisis, 2026-10-13)
+
+**La ficha estaba mal planteada y la primera propuesta era peor.** Decía que sobraba un valor
+(`unit_type`) y proponía quitarlo de la pantalla. El dueño la tumbó con tres casos reales, y al
+medirlos el hallazgo es el contrario: **falta un valor, y el que falta existía y se borró.**
+
+### 10.1 · Qué guarda cada tabla, y qué NO está mezclado
+
+| Nivel | Tablas | Qué dice |
+|---|---|---|
+| **La receta** | `pasos_declarados` + `participantes_declarados` | quién tendrá que hacer qué, en abstracto |
+| **La ejecución** | `tareas.recorridos` + `tareas.turnos` | qué está pasando con un documento concreto: estado, paso actual y **la persona ya resuelta** |
+
+⚠️ **La receta tiene DOS orígenes y eso NO es mezclar declaración con ejecución**: `edicion_id` (la
+receta escrita en una plantilla) o `task_item_id` (la receta definida a mano para un documento
+suelto, el `routed`). **Las dos son recetas.** La ejecución vive aparte, con su propia tabla y su
+propio estado, y nunca ha compartido fila con ninguna de las dos.
+
+⚠️ **Y la pregunta del dueño —«¿antes estaban separados y los mezclamos?»— tiene respuesta medida:
+NO.** `fill_flow_templates` y `signature_flow_templates`, las tablas que el frente 24 sustituyó, ya
+llevaban `task_item_id` y `edicion_id` con **el mismo `CHECK` de `num_nonnulls(...) = 1`**. La
+convivencia de los dos orígenes es anterior; lo que el frente 24 fusionó fue **entrega con firma** y
+**cabecera con pasos**, de ocho tablas a dos. No se está dando ninguna vuelta en círculo.
+
+### 10.2 · Los casos del dueño, pasados por el modelo
+
+| | Caso | ¿Hoy? |
+|---|---|---|
+| **A** | IF por carrera · firma el **coordinador de la carrera** | ✅ `context_exact` |
+| **B** | …revisa el **Director de la Escuela a la que la carrera pertenece** | ❌ **no hay forma** |
+| **B** | …aprueba el **Director de Investigación** | ✅ `unit_exact` sobre esa unidad |
+| **C** | entrega cada **docente**, revisa **su coordinador**, aprueba el **Director de la Escuela** | ✅ ✅ ❌ (el mismo hueco) |
+| **D** | el **Coordinador de Enseñanza-Aprendizaje** revisa los informes **de cada Escuela** | ❌ **el mismo hueco** |
+
+**Un solo hueco, repetido tres veces: no se puede decir «sube por el organigrama».**
+
+### 10.3 · El valor que falta EXISTÍA, y se borró por el motivo equivocado
+
+Se llamaba **`context_ancestor_type`** y hacía exactamente eso: subía por `unit_relations` desde la
+unidad del documento hasta encontrar una del **tipo** declarado, y buscaba el cargo allí. Su consulta
+recursiva está en el historial (`94c56c41^`), igual que la columna `relation_type_id` que llevaba el
+paso para decir **por qué relación** subir.
+
+Se retiró el **2026-08-11** con este motivo literal: *«lo que la web no autora, no existe. El
+`meta.yaml` era el ÚNICO sitio del que podían salir … `context_subtree` y `context_ancestor_type`»*.
+O sea: **se quitó porque ninguna pantalla lo ofrecía, no porque no hiciera falta** — y a la vez se
+dejó en la pantalla `unit_type`, que la base no puede guardar. Se retiró lo que servía y se conservó
+lo roto.
+
+### 10.4 · Dos correcciones del dueño, registradas
+
+⚠️ **1 · El argumento de «una unidad nueva añadiría un firmante a un documento circulante» era
+FALSO para subir.** Lo corrigió el dueño: *«si se añade una unidad del mismo tipo no firmaría un
+documento circulante, debería entregar su documento y firmarlo»*. Es así: el reparto crea **un
+documento por unidad**, de modo que cuando el recorrido se resuelve **ya hay una sola unidad**. Por
+eso «todas las unidades de tipo T» no significa nada dentro de un recorrido, y «el antepasado de tipo
+T» sí: sigue hablando de **este** documento.
+
+⚠️ **Pero el argumento SÍ vale para bajar**, y es lo que separa los dos sentidos: un antepasado es
+**una** unidad y no cambia al crecer el organigrama; los descendientes son **N** y sí cambian. Crear
+una carrera nueva no toca el informe de otra carrera, pero **sí cambiaría los firmantes del informe
+de su Escuela** si éstos se derivaran hacia abajo.
+
+⚠️ **2 · No se ha quitado nada.** La propuesta de retirar la opción del desplegable no se ejecutó;
+se retiró ella.
+
+### 10.5 · Subir por TIPO o por NÚMERO DE NIVELES — medido
+
+| | Por tipo | Por niveles |
+|---|---|---|
+| Caso B (doc. de Carrera → Escuela) | ✅ | ✅ sube 1 |
+| Caso D (doc. de Escuela → Coordinación) | ✅ | ✅ sube 1 |
+| **La MISMA plantilla sirviendo a Carreras y a Escuelas, revisada por la Coordinación** | ✅ una declaración | ❌ **imposible**: haría falta que un número valiera 2 y 1 a la vez |
+| Se inserta un nivel intermedio (p. ej. un Departamento) | ✅ sigue encontrando la Escuela | ❌ **se rompe en silencio**: «sube 1» aterriza en el Departamento |
+| El tipo buscado no está en la rama | encuentra **nada** → error de autoría visible | aterriza en **lo que haya**, del tipo que sea → persona equivocada, sin aviso |
+
+Medido en la institución sembrada: la Coordinación de Aprendizaje y Enseñanza está a **1 nivel** de
+una Escuela y a **2** de una Carrera. **El mismo antepasado, a dos profundidades** — y una
+configuración puede tener varias reglas, así que una sola plantilla ya puede servir a las dos.
+
+**Un tipo dice qué quieres; un número de niveles describe la forma que el organigrama tiene hoy.**
+
+### 10.6 · El tipo de relación
+
+`unit_relations` admite varias relaciones y `relation_unit_types` es un catálogo editable — con
+**una sola fila hoy** (`org`, Orgánica). Todo el backend la fija a mano (`rt.code = 'org'`) salvo el
+visor del organigrama, que la recibe como parámetro con `org` por defecto. El paso viejo llevaba
+`relation_type_id` y **nunca se escribió: 0 filas**.
+
+⚠️ `relation_unit_types.is_inheritance_allowed` **no lo lee nadie**: lo escribe la siembra y ahí
+muere.
+
+### 10.7 · `all_units` — el tercer valor, sin caso
+
+El dueño: *«no veo un uso o aplicación del tercero en el mundo real»*. Medido, le sobra razón a medias:
+
+- **Cero filas** lo usan hoy.
+- Su único productor es el editor de runtime, que lo deriva cuando se elige un cargo **sin** unidad.
+- No significa «una persona», significa **«no filtres»**: con el cargo `Director` encuentra **7**
+  (5 Escuelas + 2 Direcciones); con `Prorrector`, 1. Funciona por accidente cuando el cargo es único.
+
+### 10.8 · Órganos colegiados
+
+El dueño descarta forzar una unidad por órgano y apunta a *«hacerlo desde procesos… asignando
+personas/cargos específicos al proceso»*. Medido: **hoy eso no existe.** Un proceso no tiene lista de
+firmantes; lo más cercano es `process_target_rules.position_id`, que dice **quién lo hace**, no quién
+firma. Y `specific_person` existe como resolutor en la base, pero **la pantalla sólo lo ofrece en
+plantillas personales**: una plantilla institucional no puede nombrar a nadie. Queda como pregunta
+abierta, no como parte de `P21`.
