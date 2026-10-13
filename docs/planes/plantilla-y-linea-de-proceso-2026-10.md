@@ -1107,3 +1107,57 @@ firmantes; lo más cercano es `process_target_rules.position_id`, que dice **qui
 firma. Y `specific_person` existe como resolutor en la base, pero **la pantalla sólo lo ofrece en
 plantillas personales**: una plantilla institucional no puede nombrar a nadie. Queda como pregunta
 abierta, no como parte de `P21`.
+
+### 10.9 · Las TRES cosas, y las DOS que comparten tabla
+
+| | Qué es | Dónde vive |
+|---|---|---|
+| **1 · Receta de PLANTILLA** | «en el IF por carrera firma el coordinador», escrito una vez | `pasos_declarados` con **`edicion_id`** |
+| **2 · Receta de DOCUMENTO SUELTO** | los firmantes elegidos a mano al crear un `routed` | `pasos_declarados` con **`task_item_id`** |
+| **3 · EJECUCIÓN** | qué está pasando: estado, paso actual y **la persona ya resuelta** | `tareas.recorridos` + `tareas.turnos` |
+
+**1 y 2 comparten tabla. 3 no, y nunca lo hizo.**
+
+⚠️ **`P21` NO toca ese reparto.** Se midió porque el dueño preguntó si se estaba dando una vuelta en
+círculo —y no—, pero el defecto que `P21` persigue es otro: **falta el ámbito que sube por el
+organigrama**. Lo único mejorable de la convivencia de 1 y 2 es que la clase de receta se deduzca de
+«cuál de dos columnas no es nula» en vez de decirse en una palabra; eso es una columna generada, no
+una tabla nueva, y **no entra aquí**.
+
+### 10.10 · Dos decisiones del dueño (2026-10-13)
+
+| | Decisión | Cómo lo dijo |
+|---|---|---|
+| **22** | **SUBIR sí, BAJAR no.** El recorrido podrá nombrar al antepasado; no a los descendientes. Un antepasado es **una** unidad y no cambia al crecer el organigrama; los descendientes son **N** y sí: el informe de una Escuela vería cambiar sus firmantes al crear una carrera | *«De acuerdo en subir sí y bajar no»* |
+| **23** | **`all_units` NO se toca hoy.** Tiene un uso real que el análisis no había visto: **los procesos por defecto, tipo memorando**, donde el cargo no se acota a propósito. Queda por **afinar**, no por retirar | *«lo de all_units creo que dejé/usaba para los por defecto como memos. Creo que no conviene tocar hoy pero sí ver si se puede afinar»* |
+
+### 10.11 · El colapso de tipos anidados — medido, y la implementación vieja lo resolvía MAL
+
+El dueño preguntó si puede haber una Dirección colgando de otra Dirección, o una Coordinación de otra
+Coordinación. **Puede, y nada lo impide.** Provocado en una transacción revertida: una Dirección bajo
+la Dirección de Investigación y una Escuela bajo una Escuela **entran las dos sin resistencia**.
+
+| Qué podría impedirlo | ¿Existe? |
+|---|---|
+| Una restricción en `unit_relations` | ❌ sólo hay *un padre por tipo de relación* |
+| Un disparador | ❌ sólo el de `updated_at` |
+| Un catálogo de parejas (tipo padre → tipo hijo) permitidas | ❌ **no existe**: `unit_types` es nombre y poco más |
+| Validación al crear desde el organigrama | ❌ `createUnitWithParent` comprueba que el tipo exista, no cuál es |
+
+⚠️ **Y lo que de verdad importa: la implementación vieja de `context_ancestor_type` devolvía TODOS
+los antepasados de ese tipo, no el más cercano.** Su consulta terminaba en
+`up.unit_id IN (SELECT id FROM ancestor_units WHERE unit_type_id = ?)` — sin orden y sin límite. Con
+dos Direcciones anidadas habría convocado **a las dos**, en silencio. Restaurarla tal cual sería
+restaurar también ese fallo.
+
+**La salida, y por qué no es prohibir el anidamiento:**
+
+1. **La regla se declara «el antepasado de tipo T MÁS CERCANO».** Un `ORDER BY` por profundidad y uno
+   solo. Es determinista por construcción y además es lo que la frase quiere decir: *el mío*. Si
+   alguien necesita «la Dirección General, no la adjunta», para eso está `unit_exact`.
+2. **Prohibir que un tipo cuelgue de sí mismo sería modelar la comodidad del resolutor como si fuera
+   una regla de la institución**, y es falso: una Dirección General con direcciones adjuntas existe.
+3. **Y el colapso que el dueño temía —«coordinaciones (carrera) hijas de coordinaciones»— se evita
+   declarando el dato como lo que la unidad ES, no como se llama quien la dirige.** Una Carrera es una
+   Carrera aunque la dirija un Coordinador; la siembra actual ya lo hace bien (los tipos `Carrera` y
+   `Coordinación` son distintos). Eso es guía de modelado, no una restricción que la base deba imponer.
