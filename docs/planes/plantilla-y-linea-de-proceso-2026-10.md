@@ -1336,3 +1336,61 @@ sitios**: *«cosa que no pasa en otras unidades pero podría pasar»*.
 
 ⚠️ **Y esto deshace mi tabla anterior**: yo contaba tres pasos rotos y eran **uno**. Los otros dos
 —«el Coordinador de E-A» y el segundo de `IF por carrera`— se declaran con lo que ya hay.
+
+### 10.18 · Auditoría contra los 11 patrones de creación de la literatura
+
+Fuente: Russell, van der Aalst, ter Hofstede y Edmond, *Workflow Resource Patterns* (CAiSE 2005).
+Son los patrones que contestan **«¿a quién le toca esta tarea?»**. Los otros tres grupos (push, pull,
+detour) son de operación, no de declaración.
+
+| # | Patrón | Qué dice | Cómo lo cumplimos | Cómo mejorarlo |
+|---|---|---|---|---|
+| 1 | **Direct Allocation** | nombrar el recurso en diseño | `specific_person` (sólo plantillas personales y runtime) · y `unit_exact`+cargo, que nombra **el puesto** | ✅ ya es mejor que el patrón: nombrar el **puesto** sobrevive a una renuncia; nombrar la persona no |
+| 2 | **Role-Based** | limitar a quienes tienen un rol | `cargo_in_scope` | el cargo solo es genérico (`Director` son 7 personas). El par **(cargo, tipo de unidad)** lo convierte en rol real |
+| 3 | **Deferred Allocation** | diferir la identidad a runtime | `item_mode = routed` | — |
+| 4 | **Authorisation** | qué recursos **pueden** ejecutar | implícito: sólo el resuelto tiene turno | no hay autorización **por paso** independiente de la resolución |
+| 5 | **Separation of Duties** | dos tareas del caso a recursos **distintos** | ❌ **NADA LO IMPIDE** | ver abajo |
+| 6 | **Case Handling** | todas las tareas al mismo recurso | se obtiene de hecho con `task_assignee` repetido | — |
+| 7 | **Retain Familiar** | el mismo que hizo un paso previo | parcial, por el mismo camino | no se puede decir «el que firmó el paso 1» |
+| 8 | **Capability-based** | por capacidades del recurso | ❌ `unit_positions.profile` existe y está **vacío en las 40 filas** | no hace falta hoy |
+| 9 | **History-based** | por historial de ejecución | ❌ no existe | no hace falta |
+| 10 | **Organisational** | por **posición en la organización y relación con otros recursos** | ❌ **el hueco de `P21`** | la unidad superior derivada del documento |
+| 11 | **Automatic Execution** | sin recurso humano | N/A | — |
+
+⚠️ **EL PATRÓN QUE ESTAMOS IGNORANDO Y DUELE ES EL 5, SEPARATION OF DUTIES.** Comprobado: **nada
+impide que la misma persona resuelva dos pasos del mismo documento**. En un sistema de firmas eso es
+el control clásico —*quien prepara no firma*, la incompatibilidad de funciones— y aquí es alcanzable:
+basta que alguien ocupe dos puestos, o que dos pasos resuelvan al mismo cargo en la misma unidad.
+**No es parte de `P21`, pero es un defecto mayor que `P21`.**
+
+⚠️ Y del grupo **detour**, dos que tampoco están: **Delegation** (ceder un turno sin perder la
+responsabilidad) y **Escalation** (redistribuir si nadie responde). Hoy un turno que nadie atiende se
+queda quieto para siempre.
+
+### 10.19 · La observación del dueño: la estructura se recorre en DOS direcciones
+
+> *«Para la asignación al parecer debemos ir desde niveles superiores hacia inferiores, mientras que
+> para el control de responsabilidades (firmas y tal vez entregas) vamos desde los niveles inferiores
+> a superiores.»*
+
+**Es exacto, y describe las dos mitades de este sistema:**
+
+| | Mecanismo | Dirección | Qué produce |
+|---|---|---|---|
+| **Reparto** | `process_target_rules` | **de arriba hacia abajo** | **N documentos**, uno por unidad alcanzada |
+| **Recorrido** | `participantes_declarados` | **de abajo hacia arriba** | **las firmas de UN documento** |
+
+⚠️ **Y la literatura de patrones sólo modela la segunda.** Los 43 patrones contestan *«¿a quién le doy
+este ítem de trabajo?»*: dan por hecho que el ítem **ya existe**. No hay un solo patrón para
+*«replica esta obligación por la estructura»*, que es lo que hace el reparto. Eso aparece en los
+patrones de **control de flujo** (multiple instances) pero **sin dimensión organizativa**.
+
+En gestión la dualidad es vieja —*la autoridad se delega hacia abajo, la responsabilidad rinde hacia
+arriba*— y hay trabajo académico sobre jerarquías de rendición de cuentas. **Lo que no se encuentra
+dicho es la consecuencia de modelado**: que un sistema documental recorre **el mismo árbol en
+sentidos opuestos según la pregunta**, y que por tanto el metamodelo necesita **dos primitivas de
+recorrido distintas** — y que confundirlas es lo que ha hecho fracasar cuatro propuestas seguidas en
+este mismo frente (meter `unit_type`, que es del reparto, dentro del recorrido).
+
+**Material que este repositorio ya tiene para sostenerlo**: catorce pasos de cuatro tipos de documento
+reales, medidos; un organigrama real; y el registro de los cuatro intentos fallidos con su causa.
