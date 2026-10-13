@@ -1247,3 +1247,67 @@ sola jefatura por unidad, `(jefatura, tipo de unidad)` —*«la jefatura de la E
 persona **sin depender de cómo se llame el cargo**, y sobrevive a que mañana una Escuela la dirija un
 Decano. Pierde precisión si lo que quieres es un cargo que **no** es la jefatura (el Secretario de la
 Escuela). Es una decisión, no un detalle.
+
+### 10.15 · OCHO casos reales del dueño, y el hueco se reduce a UNO (2026-10-13)
+
+El dueño pidió mirar modelos de la vida real. El catálogo de referencia son los **Workflow Resource
+Patterns** (Russell, van der Aalst, ter Hofstede y Edmond, CAiSE 2005), y de sus ~43 patrones tres
+describen cómo se nombra a quien firma: **1 · distribución directa** (se nombra el recurso),
+**2 · por rol**, y **10 · distribución organizacional** («según su posición en la organización y su
+relación con otros recursos»). Que el 10 exista **aparte** del 2 es el dato: la literatura ya
+reconoce que *«un rol»* y *«el superior de alguien»* no se expresan igual.
+
+**Los ocho casos que el dueño ha ido dando, puestos en una tabla, dicen algo más fuerte: TODOS son
+`(cargo, unidad)`. Lo único que cambia es de dónde sale la unidad.**
+
+| Caso | Quién firma | Cargo | De qué unidad | ¿Hoy? |
+|---|---|---|---|---|
+| IIP por docente · firma | el docente | — | — (`task_assignee`) | ✅ |
+| IIP por docente · revisa | el coordinador de carrera | Coordinador | **la del documento** | ✅ `context_exact` |
+| IIP por docente · aprueba | el director de investigación | Director | **nombrada** (Dir. de Investigación) | ✅ `unit_exact` |
+| IIP por carrera · firma | el coordinador de carrera | Coordinador | **la del documento** | ✅ |
+| IIP por carrera · revisa | el director de **su** escuela | Director | **la superior** | ❌ |
+| IIP por carrera · aprueba | dirección de investigación | Director | **nombrada** | ✅ |
+| Titulación · firma | el director de escuela | Director | **la del documento** | ✅ |
+| Titulación · revisa | el **responsable de titulación** | Responsable | **nombrada** (Dir. de Docencia) | ✅ |
+| Titulación · aprueba | la dirección de docencia | Director | **nombrada** | ✅ |
+| IF por carrera · firma | el coordinador de carrera | Coordinador | **la del documento** | ✅ |
+| Informe de escuela · revisa | el coordinador de Enseñanza-Aprendizaje | Coordinador | **la superior** | ❌ |
+| **«la secretaria de una unidad»** | la secretaria | Secretaria | **la del documento** | ✅ |
+
+**Tres formas de determinar la unidad, y sólo falta una:**
+
+| | Cómo se determina la unidad | Patrón | ¿Existe? |
+|---|---|---|---|
+| **la del documento** | la que trae el entregable | 2 + contexto | ✅ `context_exact` |
+| **una nombrada** | escrita en la declaración | **1 · directa** | ✅ `unit_exact` |
+| **la superior** | de la que depende la del documento | **10 · organizacional** | ❌ **el único hueco** |
+
+### 10.16 · Y el hueco es UN ESCALÓN, no un recorrido
+
+⚠️ **Medido sobre los ocho casos: los tres que necesitan jerarquía necesitan EXACTAMENTE UN
+ESCALÓN.** Carrera→Escuela, Escuela→Coordinación. **Ninguno pide dos**, y la razón es clara en los
+propios ejemplos: cuando el firmante está más arriba, el dueño **lo nombra** («dirección de
+investigación», «dirección de docencia») en vez de describir un camino.
+
+Eso disuelve de golpe las tres discusiones que llevábamos:
+
+| Lo que se discutía | Por qué deja de existir |
+|---|---|
+| ¿subir **por tipo** o **por niveles**? | ni una cosa ni otra: **un escalón**, sin tipo y sin número |
+| el colapso de tipos anidados | no hay tipo que buscar: no se busca, **se sigue una arista** |
+| «el más cercano» es vago | no hay varios candidatos entre los que elegir el más cercano |
+
+**Y la base ya lo garantiza**: `uq_unit_relations_child_type (child_unit_id, relation_type_id)` hace
+que **una unidad tenga como mucho UN padre** por tipo de relación. Con un solo tipo de relación hoy
+(`org`), «la unidad superior» es una **función**, no una búsqueda. Sólo dos unidades no tienen padre
+—`Raiz del sistema` y `Prorrectorado`—, que es el caso que la autoría debe avisar.
+
+⚠️ **Y los tres patrones se conservan, que es lo que la propuesta anterior rompía.** Colapsar todo en
+«la jefatura N escalones arriba» perdía el 1 y el 2 — y los ejemplos del dueño los exigen: el
+**responsable de titulación** es un cargo que **no es jefatura**, en una unidad nombrada, y «la
+secretaria de una unidad» es un cargo que **no es jefatura**, en la unidad del documento. Por eso el
+eje «quién» tiene que seguir siendo el **cargo**, nunca la jefatura.
+
+⚠️ `Responsable` ya está en el catálogo de cargos **con cero puestos**: es exactamente el «cargo
+simbólico» que el dueño describe. No hay que inventar nada para él.
