@@ -1161,3 +1161,89 @@ restaurar también ese fallo.
    declarando el dato como lo que la unidad ES, no como se llama quien la dirige.** Una Carrera es una
    Carrera aunque la dirija un Coordinador; la siembra actual ya lo hace bien (los tipos `Carrera` y
    `Coordinación` son distintos). Eso es guía de modelado, no una restricción que la base deba imponer.
+
+### 10.12 · DEUDA anotada · la clase de receta se deduce, no se dice
+
+`pasos_declarados` lleva dos orígenes excluyentes (`edicion_id` = receta de plantilla ·
+`task_item_id` = receta de un documento suelto). Es **correcto** —las dos son recetas, y leerlas con
+el mismo código es lo que evita los dos lectores que ya costaron ocho tablas— pero **la clase se
+averigua mirando cuál de dos columnas no es nula**, y eso se lee mal en todas las consultas que la
+tocan.
+
+**Lo que la cerraría**: una columna generada que diga la clase en una palabra. No parte la tabla, no
+cambia comportamiento. **Fuera de `P21`**, a propósito: mezclarla haría dos cambios en el mismo
+sitio y ninguno medible por separado.
+
+### 10.13 · Cómo está de verdad «el Director de la Escuela» (medido, 2026-10-13)
+
+El dueño: *«sólo existe el tipo escuela y sólo existe el cargo director y la unidad… creo que sólo
+podría haber una Dirección de Escuela, ya me perdí»*. Son **cinco** piezas y conviene no juntarlas:
+
+| | Qué es | Cuántas hoy |
+|---|---|---|
+| `cargos` | el catálogo **genérico**: Coordinador, Docente, Responsable, Director, Prorrector, Asistente, Jefe. **Un cargo no pertenece a ninguna unidad** | 7 |
+| `unit_types` | Sistema, Prorrectorado, Dirección, Jefatura, Coordinación, Escuela, Carrera, Tecnología, Sede | 9 |
+| `units` | las unidades concretas, cada una con **un** tipo | 14 |
+| **`unit_positions`** | **el PUESTO: donde cargo y unidad convergen** — `(unidad, cargo, nº de plaza)` | 26 |
+| `position_assignments` | quién ocupa cada puesto hoy | — |
+
+**Así que «Director de Escuela» no es un puesto: son CINCO**, uno por Escuela. Lo que resuelve a una
+persona es *(cargo, unidad)*, y la unidad la pone el documento.
+
+Dos unicidades, y sólo una es la que el dueño recordaba:
+
+| Índice | Qué garantiza |
+|---|---|
+| `uq_unit_cargo_slot (unit_id, cargo_id, slot_no)` | **NO** impide varios puestos del mismo cargo en una unidad — por eso `Docente` tiene 8 plazas en cada Carrera |
+| **`uq_unit_head (unit_id, head_flag)`** | **sólo UNA jefatura por unidad**, impuesto por la base |
+
+Y las 12 unidades con puestos tienen **exactamente una jefatura**, con el cargo que corresponde a su
+tipo: Carrera→Coordinador · Escuela→Director · Dirección→Director · Jefatura→Jefe ·
+Prorrectorado→Prorrector.
+
+⚠️ **Y una corrección: mi ejemplo de «dos Direcciones de Escuela anidadas» mezclaba dos cosas.** Lo
+que provoqué fue una unidad de tipo `Dirección` bajo otra de tipo `Dirección` —que en una universidad
+sí existe (una Dirección General con adjuntas)—. **Una Escuela dentro de una Escuela no es real**, y
+el dueño tiene razón en no reconocerla. Lo que la medición dice es que **el modelo no distingue**: no
+impide ninguna de las dos.
+
+### 10.14 · LOS DOS EJES CONVERGEN EN EL PUESTO — la idea del dueño, medida
+
+> *«Existen dos ejes: cargos y tipos de unidad y estos convergen justo en la unidad. ¿Hay manera de
+> que eso se pueda aprovechar para resolver nuestro problema en lugar de que sea nuestra desventaja?»*
+
+**Sí, y los datos lo confirman.** La declaración deja de ser un procedimiento («sube hasta el tipo
+Escuela y coge al Director») y pasa a nombrar un **puesto tipo**: **`(cargo, tipo de unidad)`** —
+*«el Director de Escuela»*, *«el Coordinador de Carrera»*, que es como se dice en la institución.
+
+La resolución es una sola frase: **busca ese puesto empezando por la unidad del documento y subiendo
+por su rama.**
+
+| Medición | Resultado |
+|---|---|
+| ¿El par `(cargo, tipo)` se repite en alguna rama de la institución? | **0 colisiones** |
+| ¿El tipo **solo** se repite en alguna rama? | 0 también — pero es más frágil: basta una Escuela dentro de una Escuela |
+| ¿Hace falta decir «sube»? | **No.** Subir es la consecuencia de no encontrarlo en casa |
+| ¿Puede desbordarse? | **No.** El tipo es parte de la llave: `(Director, Escuela)` no puede resolver en una Coordinación |
+
+**Los casos del dueño con esta regla:**
+
+| Caso | Se declara | Resuelve |
+|---|---|---|
+| A · IF por carrera | `(Coordinador, Carrera)` | en **la propia unidad** del documento (nivel 0) |
+| B · revisión | `(Director, Escuela)` | la Carrera no lo tiene → sube → la Escuela sí |
+| B · aprobación | **unidad concreta**: Dirección de Investigación | ⚠️ con el par daría el Director de Docencia, que está antes en la rama. Aquí la unidad **se nombra**, y para eso está `unit_exact` |
+| C · aprobación | `(Director, Escuela)` | igual que B |
+| D · revisión del informe de una Escuela | `(Coordinador, Coordinación)` | la Escuela no lo tiene → sube → la Coordinación de Aprendizaje y Enseñanza sí |
+
+⚠️ **Y esto NO es el valor viejo con otro nombre, aunque se le parece mucho.** `context_ancestor_type`
+ya llevaba `(cargo, unit_type_id)` y ya arrancaba en la propia unidad. Lo que le faltaba era el
+significado —se declaraba como «ámbito», no como puesto— y le sobraba un fallo: **devolvía todos los
+antepasados que casaran, sin orden ni límite**. El par con nombre arregla lo segundo por construcción
+y hace lo primero decible.
+
+⚠️ **Tercera vía abierta por la misma medición: la JEFATURA.** Como `uq_unit_head` ya garantiza una
+sola jefatura por unidad, `(jefatura, tipo de unidad)` —*«la jefatura de la Escuela»*— nombra a una
+persona **sin depender de cómo se llame el cargo**, y sobrevive a que mañana una Escuela la dirija un
+Decano. Pierde precisión si lo que quieres es un cargo que **no** es la jefatura (el Secretario de la
+Escuela). Es una decisión, no un detalle.
