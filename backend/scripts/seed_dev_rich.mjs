@@ -22,7 +22,7 @@
 // USO:  node scripts/seed_dev_rich.mjs        (dentro del contenedor backend)
 // Es IDEMPOTENTE: si el proceso ya existe, no lo duplica.
 
-import { get, post, put } from "../tests/characterization/lib/http.mjs";
+import { get, patch, post, put } from "../tests/characterization/lib/http.mjs";
 import { tokenFor } from "../tests/characterization/lib/auth.mjs";
 import SqlAdminService from "../services/admin/SqlAdminService.js";
 
@@ -216,6 +216,27 @@ const main = async () => {
     item_mode: "single",
   }, token);
 
+  // 6-bis. UNA VERSIÓN EN BORRADOR PARA PODER AUTORAR EL RECORRIDO.
+  //
+  //    ⚠️ ESTE PASO FALTABA Y EL SEED ESTABA ROTO DESDE EL 2026-10-08. El fork inserta su edición
+  //    ya PUBLICADA (lo hace desde el 2026-08-06), y el frente 24 añadió un guard que prohíbe
+  //    tocar los pasos de una edición publicada: «Crea una version nueva para cambiar su
+  //    recorrido». Entre las dos cosas, `npm run seed:dev` moría con un 409 justo aquí, y nadie
+  //    lo vio porque este script no lo ejecuta ninguna puerta. No tiene nada que ver con el frente
+  //    25; se arregla aquí porque sin seed no hay con qué probar.
+  //
+  //    El fork TAMPOCO hereda recorrido: el entregable del que sale es `routed`, o sea sin receta
+  //    autorada, así que no hay nada que copiar. Hay que escribirla.
+  const verRes = await post(`/admin/sql/ediciones/${fork.artifact_id}/version`, { token, body: {} });
+  if (verRes.status >= 400) {
+    throw new Error(`No se pudo versionar la edicion del fork: ${verRes.status} ${JSON.stringify(verRes.body)}`);
+  }
+  const edicionBorradorId = Number(verRes.body?.id || verRes.body?.artifact_id);
+  if (!edicionBorradorId) {
+    throw new Error(`La version nueva no devolvio id: ${JSON.stringify(verRes.body)}`);
+  }
+  console.log(`  ✔ edicion en borrador #${edicionBorradorId} (para autorar el recorrido)`);
+
   // 7. LA RECETA DEL RECORRIDO, anclada en la EDICION. Eran CUATRO altas --dos cabeceras y dos
   //    pasos, con sus `selection_mode`, `is_required` y `approval_mode`-- y son cuatro sobre dos
   //    tablas: el paso y su participante, para cada accion. Sin cabeceras no hay nada que nombrar ni
@@ -224,7 +245,7 @@ const main = async () => {
   //    ENTREGA: lo llena el responsable de la tarea (el docente).
   const pasoEntregaId = await create("pasos_declarados", {
     accion: "entrega",
-    edicion_id: fork.artifact_id,
+    edicion_id: edicionBorradorId,
     orden: 1,
     nombre: "Elaboración del informe",
   }, token);
@@ -238,7 +259,7 @@ const main = async () => {
   //    va en el PARTICIPANTE: un firmante, un hueco.
   const pasoFirmaId = await create("pasos_declarados", {
     accion: "firma",
-    edicion_id: fork.artifact_id,
+    edicion_id: edicionBorradorId,
     orden: 1,
     code: "firma_1",
     nombre: "Coordinador de carrera",
@@ -252,6 +273,20 @@ const main = async () => {
     unit_id: UNIT_ID,
     slot: "firma_1",
   }, token);
+
+  // 8-bis. PUBLICAR el borrador con su recorrido, y apuntar el vínculo a él.
+  const pubRes = await patch(`/admin/sql/ediciones/${edicionBorradorId}/publish`, { token, body: {} });
+  if (pubRes.status >= 400) {
+    throw new Error(`No se pudo publicar la edicion del recorrido: ${pubRes.status} ${JSON.stringify(pubRes.body)}`);
+  }
+  const reapunta = await put("/admin/sql/vinculos", {
+    token,
+    body: { keys: { id: pdtId }, data: { edicion_id: edicionBorradorId } },
+  });
+  if (reapunta.status >= 400) {
+    throw new Error(`No se pudo reapuntar el vinculo: ${reapunta.status} ${JSON.stringify(reapunta.body)}`);
+  }
+  console.log(`  ✔ recorrido publicado y vinculo apuntando a la edicion #${edicionBorradorId}`);
 
   // 9. La regla de reparto: UNA, y sin ámbito.
   //    Eran DOS —una por unidad, con su cargo y su prioridad— y las cuatro columnas que las
