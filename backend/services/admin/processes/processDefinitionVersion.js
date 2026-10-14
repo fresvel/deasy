@@ -476,8 +476,10 @@ export default class ProcessDefinitionVersionService {
       }
     }
 
-    // Tipo de unidad: el alcance de la LINEA fija el de la regla; la regla solo añade la entrega y,
-    // con `P10`, el refinamiento `unit_subtree` DENTRO de ese alcance.
+    // Tipo de unidad: el alcance de la LINEA fija el de la regla; la regla solo añade la entrega.
+    // Decia «y, con `P10`, el refinamiento `unit_subtree` DENTRO de ese alcance»: ese refinamiento YA
+    // NO EXISTE —`P19` lo retiro del `CHECK`— y volver a traerlo reintroduciria las dos CTE
+    // recursivas sin proteccion de ciclos que se fueron con el. `P10` reparte columnas, no valores.
     if (lineaUnitTypeId) {
       const requestedScope = candidate.unit_scope_type ? String(candidate.unit_scope_type) : "";
       if (requestedScope && requestedScope !== "unit_type") {

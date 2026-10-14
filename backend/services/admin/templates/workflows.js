@@ -55,12 +55,18 @@ export const webFillUnitScopeTypesForScope = (scope) =>
   WEB_FILL_UNIT_SCOPE_TYPES_BY_SCOPE[scope === "ad_hoc" ? "ad_hoc" : "official"];
 
 // `context_subtree` y `context_ancestor_type` salen con los seis retirados: solo el `meta.yaml`
-// podía escribirlos. `unit_subtree` y `all_units` SE QUEDAN aunque el formulario tampoco los ofrezca,
-// porque tienen otro productor vivo: `materializeRuntimeFlowForTaskItem` deriva `all_units` cuando el
-// firmante de runtime va por cargo sin unidad ni tipo (`generation/documents.js`).
+// podía escribirlos. `all_units` SE QUEDA aunque el formulario no lo ofrezca, porque tiene otro
+// productor vivo: `materializeRuntimeFlowForTaskItem` deriva `all_units` cuando el firmante de
+// runtime va por cargo sin unidad ni tipo (`generation/documents.js`).
+//
+// ⚠️ `unit_subtree` ESTABA AQUÍ, y el comentario decía que se quedaba «porque tiene otro productor
+// vivo». Era FALSO desde `P19` (frente 25, 2026-10-12), que lo retiró del `CHECK` de la regla y se
+// llevó con él las dos CTE recursivas que lo resolvían. Del flujo había salido ya en el frente 24.
+// Sobrevivió aquí cuatro semanas en DOS catálogos, dos ramas de código y una prueba que lo afirmaba,
+// y ninguna puerta pudo verlo: un valor de más en una lista de permitidos no rompe nada — sólo deja
+// pasar una autoría que la base rechaza después, con una violación de CHECK en vez de un mensaje.
 export const FILL_UNIT_SCOPE_TYPES = new Set([
   "unit_exact",
-  "unit_subtree",
   "unit_type",
   "all_units",
   // Ámbito relativo al contexto del proceso (la unidad se resuelve en runtime, sin fijarla en autoría).
@@ -80,9 +86,10 @@ export const SIGNATURE_RESOLVER_TYPES = new Set([
   "cargo_in_scope"
 ]);
 
+// Espejo de `FILL_UNIT_SCOPE_TYPES`, y `unit_subtree` salió de los dos a la vez: eran la misma lista
+// escrita dos veces, así que el valor muerto estaba duplicado.
 export const SIGNATURE_UNIT_SCOPE_TYPES = new Set([
   "unit_exact",
-  "unit_subtree",
   "unit_type",
   "all_units",
   "context_exact"
@@ -149,7 +156,9 @@ export const buildStepResolver = (step) => {
     const scopeType = step?.unit_scope_type || "context_exact";
     resolver.unit_scope_type = scopeType;
     // Ámbitos estáticos requieren fijar la unidad/tipo; los context_* la derivan del proceso en runtime.
-    if ((scopeType === "unit_exact" || scopeType === "unit_subtree") && step?.unit_id) {
+    // `unit_subtree` compartía esta rama con `unit_exact` y se fue con `P19`: los dos fijaban la misma
+    // columna, así que la rama no pierde nada al quedarse con uno.
+    if (scopeType === "unit_exact" && step?.unit_id) {
       resolver.unit_id = Number(step.unit_id);
     }
     if (scopeType === "unit_type" && step?.unit_type_id) {
@@ -529,7 +538,9 @@ const checkCargoScope = (collector, context, resolver, label, resolvedCargoId) =
       collector.error(`${label}: el ámbito de contexto no resolvería porque el proceso vinculado no tiene reglas objetivo.`);
     }
   }
-  if (scope === "unit_exact" || scope === "unit_subtree") {
+  // `unit_subtree` compartía esta rama con `unit_exact` hasta `P19`: la comprobación es la misma
+  // —que la unidad exista y esté activa—, porque el subárbol se resolvía después.
+  if (scope === "unit_exact") {
     // Unidad fija = ruteo a una oficina concreta (revisión/firma). Esa oficina puede estar FUERA del
     // alcance del proceso (p. ej. una dirección superior), así que solo se exige que exista y esté activa.
     const unitId = normalizeNumericId(resolver?.unit_id);

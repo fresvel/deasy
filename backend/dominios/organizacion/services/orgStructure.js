@@ -104,7 +104,8 @@ export default class OrgStructureService {
 
 
   // Procesos que aplican a una unidad: reglas de alcance (process_target_rules) que la referencian
-  // directamente (unit_exact/unit_subtree por unit_id), por su tipo de unidad, o de alcance global (all_units).
+  // directamente (`unit_exact` por `unit_id`), por su tipo de unidad, o de alcance global
+  // (`all_units`). Decia tambien `unit_subtree`, que `P19` retiro del `CHECK` de la regla.
   async getUnitProcesses(unitId) {
     this.ensurePool();
     const id = Number(unitId);

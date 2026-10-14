@@ -102,15 +102,23 @@ test("los cinco resolutores/ambitos retirados ya no estan en ningun catalogo", (
   }
 });
 
-test("los que SI tienen productor se quedan: specific_person, unit_subtree y all_units", () => {
+test("los que SI tienen productor se quedan: specific_person y all_units", () => {
   // `specific_person` se retiraba solo «en plantillas official», y eso lo decide el gating por scope,
-  // no el catalogo: en `ad_hoc` la web sí lo autora. `unit_subtree` y `all_units` no los ofrece el
-  // formulario, pero `materializeRuntimeFlowForTaskItem` deriva `all_units` en el flujo de runtime.
+  // no el catalogo: en `ad_hoc` la web sí lo autora. `all_units` no lo ofrece el formulario, pero
+  // `materializeRuntimeFlowForTaskItem` lo deriva en el flujo de runtime.
   assert.equal(FILL_RESOLVER_TYPES.has("specific_person"), true);
   assert.equal(webFillResolverTypesForScope("ad_hoc").has("specific_person"), true);
   assert.equal(webFillResolverTypesForScope("official").has("specific_person"), false);
   assert.equal(FILL_UNIT_SCOPE_TYPES.has("all_units"), true);
-  assert.equal(FILL_UNIT_SCOPE_TYPES.has("unit_subtree"), true);
+});
+
+// ⚠️ ESTA PRUEBA AFIRMABA QUE `unit_subtree` SE QUEDABA «porque tiene productor», y era FALSO desde
+// `P19`. Una prueba que afirma lo contrario de lo que pasa no es un hueco de cobertura: es peor que
+// no tenerla, porque al leerla se da por medido lo que no lo está. Ahora afirma que NO está, que es
+// lo que la base impone.
+test("unit_subtree NO esta en los catalogos: P19 lo retiro de los dos lados", () => {
+  assert.equal(FILL_UNIT_SCOPE_TYPES.has("unit_subtree"), false);
+  assert.equal(SIGNATURE_UNIT_SCOPE_TYPES.has("unit_subtree"), false);
 });
 
 test("normalizeFillSteps LANZA ante un resolutor retirado, en vez de degradarlo en silencio", () => {
