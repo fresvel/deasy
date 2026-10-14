@@ -56,7 +56,7 @@ Dos detalles de la resolución que no se ven en la declaración:
 
 :::note[Lo que se fue de la regla, y por qué]
 
-**El 2026-10-14 la regla perdió cinco columnas** y bajó de diez a seis. No fue una limpieza: fue
+**El 2026-10-14 la regla perdió cinco columnas** y bajó de diez a cinco. No fue una limpieza: fue
 quitar una copia.
 
 | Columna | Por qué se fue |
