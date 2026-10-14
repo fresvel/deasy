@@ -1840,6 +1840,32 @@ arranque con un mensaje que no se parece al problema: *«El stack no estuvo list
 puerta lo caza en un segundo; lo que falla es correrla **después** de cada edición de SQL y no al
 final de la tanda.
 
+### 13.14 · LO QUE SÓLO VIO EL NAVEGADOR (2026-10-14)
+
+Las puertas, 887 unitarios de backend, 495 de frontend y 320 de caracterización pasaron en verde
+**con tres defectos visibles dentro**. Los tres se encontraron abriendo la pantalla, y los tres son
+de la misma familia: **código que seguía preguntando por una columna que ya no está.**
+
+| # | Qué se veía | Qué era |
+|---|---|---|
+| **1** | la columna **«Proceso»** del panel de reglas, vacía en todas las filas | el listado de configuraciones ya no devolvía el proceso, y el frontend lo leía de ahí |
+| **2** | cinco columnas —Alcance, Unidad, Tipo de unidad, Cargo, Puesto— **pintando un guion** | `definitionRulesTableFields` seguía declarándolas |
+| **3** | *«Completa los datos requeridos»* **sin que faltara ninguno**, y el botón de guardar muerto | `canSubmitDefinitionRule` miraba el ámbito; sin ámbito, ninguna rama casaba y caía en `return false` |
+
+⚠️ **EL TERCERO NO ERA COSMÉTICO: era una ROTURA FUNCIONAL.** Desde el panel **no se podía crear una
+regla** salvo eligiendo «puesto exacto». Y ningún test lo cubría: los unitarios del frontend no
+montan ese componente con su formulario, y char no pasa por la pantalla. La única forma de verlo era
+abrirla.
+
+**El primero se arregló exponiendo el proceso como campo DERIVADO** en el listado de
+configuraciones (`lin_pdv.process_id AS process_id`), con el mismo nombre que tenía. Y eso es
+exactamente lo que cambia: antes era un dato escrito que podía contradecir a la línea; ahora es la
+línea, leída. No hay dos verdades que sincronizar — que era el motivo de `P22`.
+
+**Lo que esto deja dicho:** quitar una columna no termina cuando el backend compila y los goldens se
+mueven. **Termina cuando alguien abre la pantalla.** Es la regla de salida nº 2 del `CLAUDE.md`, y
+aquí habría bastado con no abrirla para entregar un panel con un botón que no funciona.
+
 ---
 
 ## 12 · Los dos frentes que salen de aquí, y por qué no son `P21`

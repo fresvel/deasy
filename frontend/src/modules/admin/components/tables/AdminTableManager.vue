@@ -1892,25 +1892,22 @@ const canManageDefinitionTriggers = computed(() =>
 const canSubmitDefinitionArtifact = computed(() =>
   canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.edicion_id)
 );
+// ⚠️ ESTO MIRABA EL ALCANCE, y con `P10` (frente 25, 2026-10-14) el formulario dejó de tenerlo: sus
+// cuatro columnas eran copia de la línea. El resultado era que `scopeType` quedaba vacío, ninguna
+// rama casaba y la función caía en el `return false` final — o sea, **el botón de guardar no se
+// habilitaba nunca** salvo con puesto exacto, y el aviso decía «Completa los datos requeridos»
+// cuando no faltaba ninguno. Visto en el navegador; ningún test lo cubría.
+//
+// Hoy lo único que condiciona es la política: «ese puesto» exige su puesto, y las otras dos no
+// piden nada porque el alcance lo dice la obligación.
 const canSubmitDefinitionRule = computed(() => {
   if (!canManageDefinitionRules.value) {
     return false;
   }
-  const scopeType = String(definitionRulesForm.value.unit_scope_type || "");
-  const recipientPolicy = String(definitionRulesForm.value.recipient_policy || "");
-  if (recipientPolicy === "exact_position") {
+  if (String(definitionRulesForm.value.recipient_policy || "") === "exact_position") {
     return Boolean(definitionRulesForm.value.position_id);
   }
-  if (scopeType === "unit_type") {
-    return Boolean(definitionRulesForm.value.unit_type_id);
-  }
-  if (scopeType === "unit_exact") {
-    return Boolean(definitionRulesForm.value.unit_id);
-  }
-  if (scopeType === "all_units") {
-    return true;
-  }
-  return false;
+  return true;
 });
 // El tipo de periodo siempre es obligatorio: el proceso corre en uno o varios tipos de periodo.
 const definitionTriggerRequiresTermType = computed(() => true);

@@ -91,14 +91,14 @@ export const definitionTriggersTableFields = [
 
 export const definitionRulesTableFields = [
   { name: "id", label: "ID" },
-  { name: "unit_scope_type", label: "Alcance" },
-  { name: "unit_id", label: "Unidad" },
-  { name: "unit_type_id", label: "Tipo de unidad" },
-  { name: "cargo_id", label: "Cargo" },
-  { name: "position_id", label: "Puesto" },
-  { name: "recipient_policy", label: "Entrega" }
-  // SIN «Activo» (frente 25, P18-d): la regla perdio `is_active` y sus dos fechas. La columna
-  // quedaba pintando un guion en todas las filas.
+  { name: "recipient_policy", label: "Entrega" },
+  { name: "position_id", label: "Puesto" }
+  // SIN «Alcance», «Unidad», «Tipo de unidad» ni «Cargo» (frente 25, P10 — 2026-10-14): esas cuatro
+  // columnas eran copia de la LINEA y se retiraron de la tabla. Visto en el navegador antes de
+  // quitarlas de aqui: la rejilla pintaba cinco columnas con un guion en todas las filas, porque el
+  // dato ya no viene. El alcance se ve arriba, en los chips de «Fijado por la obligación».
+  //
+  // Y SIN «Activo» (frente 25, P18-d): la regla perdio `is_active` y sus dos fechas, por lo mismo.
 ];
 
 export const recordViewerSummaryTableFields = [

@@ -418,7 +418,9 @@
       "effective_to",
       "id",
       "linea_id",
+      "linea_nombre",
       "name",
+      "process_id",
       "status"
     ]
   },

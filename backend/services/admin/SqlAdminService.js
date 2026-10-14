@@ -370,6 +370,32 @@ export default class SqlAdminService {
       selectClause = `SELECT ${selectFields.join(", ")}`;
     }
 
+    // EL PROCESO DE UNA CONFIGURACION, DERIVADO DE SU LINEA (frente 25, P22 — 2026-10-14).
+    //
+    // La columna `process_id` se retiro de la tabla: era una copia. Pero la PANTALLA sigue
+    // necesitando saber de que proceso es una configuracion --la columna «Proceso» del panel de
+    // reglas se quedo en blanco al quitarla, visto en el navegador-- y ese dato existe: lo dice su
+    // linea. Asi que se expone DERIVADO, con el mismo nombre que tenia.
+    //
+    // Que sea derivado es justo lo que cambia: antes era un dato escrito que podia contradecir a la
+    // linea; ahora es la linea, leida. No hay dos verdades que sincronizar.
+    if (tableName === "process_definition_versions") {
+      columnPrefix = "process_definition_versions.";
+      joinClause = "INNER JOIN lineas lin_pdv ON lin_pdv.id = process_definition_versions.linea_id";
+      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      selectFields.push("lin_pdv.process_id AS process_id");
+      selectFields.push("lin_pdv.nombre AS linea_nombre");
+      selectClause = `SELECT ${selectFields.join(", ")}`;
+
+      // El filtro por proceso tambien pasa por la linea.
+      const processFilter = normalizedFilters.process_id;
+      delete normalizedFilters.process_id;
+      if (processFilter !== undefined && processFilter !== null && processFilter !== "") {
+        conditions.push("lin_pdv.process_id = ?");
+        params.push(processFilter);
+      }
+    }
+
     if (tableName === "process_target_rules") {
       joinClause = "LEFT JOIN process_definition_versions pd_rule ON pd_rule.id = process_target_rules.process_definition_id";
       columnPrefix = "process_target_rules.";
