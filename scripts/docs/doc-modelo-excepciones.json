@@ -1065,8 +1065,7 @@
     "unit_subtree": {
       "motivo": "FRENTE 25, P19 (2026-10-12) · MENCION HISTORICA. Era un valor de `unit_scope_type`, y se retiro de los dos sitios donde estuvo: del flujo (`participantes_declarados`) en el frente 24, y de la regla (`process_target_rules`) en el 25. La pagina lo nombra para contar que CAYO con los seis resolutores retirados, que es lo que impide que vuelva por inercia. Se retiro por FORMA, no por falta de uso: «esta unidad y sus descendientes» cruza tipos de unidad y por tanto cargos, incompatible con una regla que hereda el cargo de su linea; y con el se fueron dos CTE recursivas sin proteccion de ciclos. En `modelo/reparto.md` la mencion es la que CUENTA la retirada y su porque, que es justo donde una excepcion es correcta.",
       "paginas": [
-        "modelo/flujo-de-entrega.md",
-        "modelo/reparto.md"
+        "modelo/flujo-de-entrega.md"
       ]
     }
   },

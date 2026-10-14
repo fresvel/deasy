@@ -33,6 +33,7 @@ const SLUG = "informe-gestion-docente";
 const UNIT_ID = 8;            // Tecnologías de la Información
 const UNIT_2_ID = 9;          // Sistemas de Información (2ª unidad de la persona 3)
 const CARGO_DOCENTE = 2;      // destinatario del proceso (quien elabora)
+const UNIT_TYPE_CARRERA = 7;  // el tipo de las unidades 8 y 9 — y las dos UNICAS de su tipo
 const CARGO_COORDINADOR = 1;  // quien firma
 const TERM_TYPE_PERM = 5;     // Permanente
 const TERM_PERM = 1;
@@ -144,11 +145,19 @@ const main = async () => {
   //    eso «de los Docentes» tenía que escribirse en la regla de reparto. La línea lo dice entero y
   //    le pone nombre, que es el que la configuración hereda.
   const today = new Date().toISOString().slice(0, 10);
+  //
+  //    ⚠️ ESTO DECIA `all_units` Y LO ACOTABAN DOS REGLAS, una por Carrera. Las cuatro columnas de
+  //    ámbito de la regla se fueron con `P10` (2026-10-14) porque eran copia de aquí, así que el
+  //    acotado sube a donde se declara. Y la traducción es MEJOR que lo que sustituye: la obligación
+  //    no es «los Docentes de las unidades 8 y 9» —dos ids sueltos que nadie puede leer como una
+  //    idea— sino «los Docentes de las Carreras», que es lo que la institución diría. Da lo mismo
+  //    porque esas dos son las únicas Carreras del organigrama sembrado, pero lo dice entendiéndolo.
   const lineaId = await create("lineas", {
     process_id: processId,
     nombre: "Informe de Gestión Docente",
     cargo_id: CARGO_DOCENTE,
-    unit_scope_type: "all_units",
+    unit_scope_type: "unit_type",
+    unit_type_id: UNIT_TYPE_CARRERA,
     effective_from: today,
   }, token);
 
@@ -244,20 +253,17 @@ const main = async () => {
     slot: "firma_1",
   }, token);
 
-  // 9. Reglas de reparto: a los Docentes de AMBAS unidades (8 y 9).
+  // 9. La regla de reparto: UNA, y sin ámbito.
+  //    Eran DOS —una por unidad, con su cargo y su prioridad— y las cuatro columnas que las
+  //    distinguían eran copia de la línea (`P10`). Hoy el alcance lo dice la línea y la regla sólo
+  //    declara el afinado: aquí `all_matches`, o sea sin recorte.
   //    REGLA DE NEGOCIO: las reglas solo se pueden tocar con la config en `draft`, y una
   //    config `active` NO puede volver a draft (para cambiar el alcance hay que versionar).
-  //    Por eso se crean las dos AQUÍ, antes de activar: añadirlas luego es imposible.
-  for (const [unitId, priority] of [[UNIT_ID, 1], [UNIT_2_ID, 2]]) {
-    await create("process_target_rules", {
-      process_definition_id: definitionId,
-      unit_scope_type: "unit_exact",
-      unit_id: unitId,
-      cargo_id: CARGO_DOCENTE,
-      recipient_policy: "all_matches",
-      priority,
-    }, token);
-  }
+  //    Por eso se crea AQUÍ, antes de activar: añadirla luego es imposible.
+  await create("process_target_rules", {
+    process_definition_id: definitionId,
+    recipient_policy: "all_matches",
+  }, token);
 
   // 10. ACTIVAR la definición: ya tiene plantilla, flujos y regla. Hasta ahora era draft.
   console.log("Activando la definición...");

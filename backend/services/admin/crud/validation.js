@@ -143,19 +143,22 @@ const lineaScopeConsistent = (candidate) => {
   }
 };
 
+// LA REGLA Y SU PUESTO VAN JUNTOS, EN LOS DOS SENTIDOS.
+//
+// Antes esto validaba tambien el ambito de la regla (`unit_exact` exige unidad, `unit_type` exige
+// tipo). Esas cuatro columnas se fueron con `P10` --eran copia de la linea-- y con ellas su
+// validacion: el ambito se valida UNA VEZ, en `lineaScopeConsistent`, que es donde se declara.
+//
+// Lo que queda es la pareja politica/puesto, y ahora en las DOS direcciones: «ese puesto» sin
+// puesto no resuelve a nadie, y un puesto con otra politica es un dato que nadie lee. La base lo
+// impone igual (`ck_ptr_puesto_exacto`); esto da el mensaje legible antes del 500.
 const targetScopeConsistent = (candidate) => {
-  if (candidate.recipient_policy === "exact_position" && !candidate.position_id) {
+  const policy = String(candidate.recipient_policy || "all_matches");
+  if (policy === "exact_position" && !candidate.position_id) {
     throw new Error("La politica exact_position requiere un puesto exacto.");
   }
-
-  if (candidate.unit_scope_type === "unit_exact") {
-    if (!candidate.unit_id && !candidate.position_id) {
-      throw new Error("El alcance por unidad requiere una unidad base.");
-    }
-  }
-
-  if (candidate.unit_scope_type === "unit_type" && !candidate.unit_type_id) {
-    throw new Error("El alcance por tipo requiere un tipo de unidad.");
+  if (policy !== "exact_position" && candidate.position_id) {
+    throw new Error("Solo la politica exact_position admite un puesto exacto.");
   }
 };
 

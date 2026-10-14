@@ -195,7 +195,7 @@ export const RELATED_RECORD_CONFIG = {
   ],
   process_definition_versions: [
     { table: "process_definition_period_types", label: "Periodos del proceso", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
-    { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "priority", order: "asc" },
+    { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "id", order: "asc" },
     { table: "vinculos", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
     { table: "process_runs", label: "Corridas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "tasks", label: "Tareas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" }

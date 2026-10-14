@@ -338,17 +338,15 @@ export default class ProcessDefinitionVersionService {
       );
     }
 
+    // EL CLON DE LAS REGLAS: dos columnas, y eran ocho. Las cuatro de ambito eran copia de la
+    // linea y `priority` no ordenaba nada (`P10`). Y el clon es justo donde la copia costaba mas:
+    // versionar arrastraba el ambito verbatim, asi que una configuracion nueva nacia con el ambito
+    // CONGELADO en el momento del clon aunque su linea hubiera cambiado despues.
     const [ruleRows] = await connection.query(
-      `SELECT unit_scope_type,
-              unit_id,
-              unit_type_id,
-              cargo_id,
-              position_id,
-              recipient_policy,
-              priority
+      `SELECT position_id, recipient_policy
        FROM process_target_rules
        WHERE process_definition_id = ?
-       ORDER BY priority ASC, id ASC`,
+       ORDER BY id ASC`,
       [normalizedSourceId]
     );
 
@@ -356,24 +354,10 @@ export default class ProcessDefinitionVersionService {
       await connection.query(
         `INSERT INTO process_target_rules (
           process_definition_id,
-          unit_scope_type,
-          unit_id,
-          unit_type_id,
-          cargo_id,
           position_id,
-          recipient_policy,
-          priority
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        [
-          normalizedTargetId,
-          row.unit_scope_type,
-          row.unit_id,
-          row.unit_type_id,
-          row.cargo_id,
-          row.position_id,
-          row.recipient_policy,
-          row.priority
-        ]
+          recipient_policy
+        ) VALUES (?, ?, ?)`,
+        [normalizedTargetId, row.position_id, row.recipient_policy]
       );
     }
 
@@ -409,10 +393,15 @@ export default class ProcessDefinitionVersionService {
   }
 
 
-  // La serie de un proceso ("por Docente", "por Carrera"...) ya fija el cargo y/o el tipo de unidad
-  // objetivo. La regla NO debe volver a decidirlos: se siembran desde la serie y se blindan para que no
-  // puedan contradecirla. Así el cargo se decide una sola vez (en la serie) y la regla solo añade el
-  // alcance (unidad) y la entrega (recipient_policy).
+  // EL AMBITO DE LA OBLIGACION, para que la pantalla de reglas sepa que esta heredando.
+  //
+  // Decia «la serie de un proceso ya fija el cargo» cuatro veces, y la serie se retiro con `P9`
+  // (2026-10-11): el codigo ya leia `lineas` y la prosa se habia quedado en el mundo anterior.
+  //
+  // Esto NO siembra nada. Hasta `P10` (2026-10-14) la regla llevaba copia del cargo y del ambito, y
+  // este metodo alimentaba al guardia que las sembraba y las blindaba. Las cuatro columnas se
+  // fueron; lo que queda es una LECTURA, y su unico consumidor es el endpoint
+  // `/process_definitions/:id/linea-scope`, que la pantalla usa para ENSENAR lo que la linea ya dice.
   async getProcessDefinitionLineaScope(processDefinitionId, connection = this.pool) {
     const defId = normalizeNumericId(processDefinitionId);
     if (!defId) {
@@ -433,65 +422,52 @@ export default class ProcessDefinitionVersionService {
   }
 
 
+  // EL PUESTO EXACTO TIENE QUE SER DE LA OBLIGACION QUE DICE SERVIR.
+  //
+  // Es lo UNICO que queda del guardia de 60 lineas que sostenia las cuatro copias (`P10`). Y sigue
+  // haciendo falta porque es la unica comprobacion que la base no puede hacer: `position_id` apunta
+  // a `unit_positions` por clave ajena, pero que ESE puesto sea del cargo y del tipo de unidad que
+  // fija la linea exige dos saltos que un CHECK no puede dar.
+  //
+  // Sin esto, «lo entrega el puesto X» con un puesto ajeno a la obligacion resuelve a alguien que no
+  // la debe — y es peor que no resolver a nadie, porque el trabajo le llega a quien no toca.
   async applyTargetRuleLineaConstraints(processDefinitionId, candidate, connection = this.pool) {
+    if (String(candidate.recipient_policy || "all_matches") !== "exact_position") {
+      return;
+    }
+    const positionId = normalizeNumericId(candidate.position_id);
+    if (!positionId) {
+      return;
+    }
     const linea = await this.getProcessDefinitionLineaScope(processDefinitionId, connection);
-    if (!linea) {
+    const lineaCargoId = normalizeNumericId(linea?.cargo_id);
+    const lineaUnitTypeId = normalizeNumericId(linea?.unit_type_id);
+    const lineaUnitId = normalizeNumericId(linea?.unit_id);
+    if (!lineaCargoId && !lineaUnitTypeId && !lineaUnitId) {
       return;
     }
-    const lineaCargoId = normalizeNumericId(linea.cargo_id);
-    const lineaUnitTypeId = normalizeNumericId(linea.unit_type_id);
-    const policy = String(candidate.recipient_policy || "all_matches");
-
-    // Puesto exacto: el puesto define por sí mismo unidad y cargo, así que no se siembra ningún eje;
-    // solo validamos que el puesto pertenezca al eje (cargo o tipo de unidad) que fija la serie.
-    if (policy === "exact_position") {
-      const positionId = normalizeNumericId(candidate.position_id);
-      if (positionId && (lineaCargoId || lineaUnitTypeId)) {
-        const [posRows] = await connection.query(
-          `SELECT up.cargo_id, u.unit_type_id
-             FROM unit_positions up
-             INNER JOIN units u ON u.id = up.unit_id
-            WHERE up.id = ? LIMIT 1`,
-          [positionId]
-        );
-        const positionCargoId = normalizeNumericId(posRows?.[0]?.cargo_id);
-        const positionUnitTypeId = normalizeNumericId(posRows?.[0]?.unit_type_id);
-        if (lineaCargoId && positionCargoId && positionCargoId !== lineaCargoId) {
-          throw new Error("El puesto exacto no corresponde al cargo de la linea del proceso.");
-        }
-        if (lineaUnitTypeId && positionUnitTypeId && positionUnitTypeId !== lineaUnitTypeId) {
-          throw new Error("El puesto exacto no pertenece al tipo de unidad de la linea del proceso.");
-        }
-      }
+    const [posRows] = await connection.query(
+      `SELECT up.cargo_id, up.unit_id, u.unit_type_id
+         FROM unit_positions up
+         INNER JOIN units u ON u.id = up.unit_id
+        WHERE up.id = ? LIMIT 1`,
+      [positionId]
+    );
+    const fila = posRows?.[0];
+    if (!fila) {
       return;
     }
-
-    // Cargo: lo fija la LINEA; se siembra si la regla no lo trae, o se blinda si difiere.
-    if (lineaCargoId) {
-      const candidateCargoId = normalizeNumericId(candidate.cargo_id);
-      if (!candidateCargoId) {
-        candidate.cargo_id = lineaCargoId;
-      } else if (candidateCargoId !== lineaCargoId) {
-        throw new Error("El cargo de la regla debe coincidir con el cargo de la linea del proceso.");
-      }
+    if (lineaCargoId && normalizeNumericId(fila.cargo_id) !== lineaCargoId) {
+      throw new Error("El puesto exacto no corresponde al cargo de la linea del proceso.");
     }
-
-    // Tipo de unidad: el alcance de la LINEA fija el de la regla; la regla solo añade la entrega.
-    // Decia «y, con `P10`, el refinamiento `unit_subtree` DENTRO de ese alcance»: ese refinamiento YA
-    // NO EXISTE —`P19` lo retiro del `CHECK`— y volver a traerlo reintroduciria las dos CTE
-    // recursivas sin proteccion de ciclos que se fueron con el. `P10` reparte columnas, no valores.
-    if (lineaUnitTypeId) {
-      const requestedScope = candidate.unit_scope_type ? String(candidate.unit_scope_type) : "";
-      if (requestedScope && requestedScope !== "unit_type") {
-        throw new Error("El alcance de la regla lo fija la linea; no puede cambiarse.");
-      }
-      const candidateUnitTypeId = normalizeNumericId(candidate.unit_type_id);
-      if (candidateUnitTypeId && candidateUnitTypeId !== lineaUnitTypeId) {
-        throw new Error("El tipo de unidad de la regla debe coincidir con el tipo de unidad de la linea del proceso.");
-      }
-      candidate.unit_scope_type = "unit_type";
-      candidate.unit_type_id = lineaUnitTypeId;
-      candidate.unit_id = null;
+    if (lineaUnitTypeId && normalizeNumericId(fila.unit_type_id) !== lineaUnitTypeId) {
+      throw new Error("El puesto exacto no pertenece al tipo de unidad de la linea del proceso.");
+    }
+    // Y la UNIDAD, que el guardia viejo leia y NO USABA NUNCA: era el hueco 1 del §8, abierto
+    // desde `P8`. Con las copias fuera deja de ser un hueco del ambito --ya no hay ambito que
+    // contradecir-- pero el puesto exacto si puede salirse de la unidad de su obligacion.
+    if (lineaUnitId && normalizeNumericId(fila.unit_id) !== lineaUnitId) {
+      throw new Error("El puesto exacto no pertenece a la unidad de la linea del proceso.");
     }
   }
 

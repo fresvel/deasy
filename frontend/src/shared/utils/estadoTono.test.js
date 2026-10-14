@@ -379,12 +379,16 @@ describe("el booleano — dos ejes, porque no todo booleano es una habilitación
 });
 
 describe("la clasificación — no tiene eje bueno/malo, y su paleta lo respeta", () => {
-  // Eran 20 hasta el paso 4 de la fase 4 del frente 24. Bajan a 16: las dos `selection_mode` se
+  // Eran 20 hasta el paso 4 de la fase 4 del frente 24. Bajaron a 16: las dos `selection_mode` se
   // fueron con la columna, `approval_mode` con el cupo, y los dos vocabularios del participante son
-  // UNO para los dos lados en vez de dos por mitad. Entra `pasos_declarados.accion`, el
+  // UNO para los dos lados en vez de dos por mitad. Entró `pasos_declarados.accion`, el
   // discriminador nuevo.
-  it("las 16 columnas del registro están, y ninguna toma un tono de juicio", () => {
-    expect(COLUMNAS_DE_CLASIFICACION).toHaveLength(16);
+  //
+  // Y hoy son 15: `process_target_rules.unit_scope_type` se fue con `P10` (frente 25, 2026-10-14).
+  // Era COPIA del de la línea, así que el registro tenía la misma clasificación dos veces — y
+  // `lineas.unit_scope_type` se queda, que es donde el ámbito se declara.
+  it("las 15 columnas del registro están, y ninguna toma un tono de juicio", () => {
+    expect(COLUMNAS_DE_CLASIFICACION).toHaveLength(15);
     const PROHIBIDOS = [TONOS.SUCCESS, TONOS.WARNING, TONOS.DANGER, TONOS.SALMON];
     for (const ruta of COLUMNAS_DE_CLASIFICACION) {
       const corte = ruta.lastIndexOf(".");

@@ -10,38 +10,75 @@ Una configuración por sí sola no sabe a quién dirigirse. Eso lo dicen las **r
 (`process_target_rules`), y son la pieza que convierte «este proceso existe» en «a estas cuarenta
 personas les va a tocar».
 
-## Dos preguntas, dos columnas
+## Una pregunta, y antes eran dos
 
-Cada regla responde dos preguntas **por separado**, y esta separación es la que le da toda su potencia.
-Las dos columnas están cerradas por `CHECK`:
+Hasta el 2026-10-14 la regla respondía **dos** preguntas: hasta dónde llega y a quién de ahí dentro.
+La primera ya la contestaba la [obligación](/modelo/proceso/), así que la regla llevaba una **copia**
+de sus dos ejes —el cargo y el ámbito— sostenida por un guardia cuyo único trabajo era comprobar que
+coincidía con su origen. Hoy la regla responde una sola pregunta:
 
-| Pregunta | Columna | Valores admitidos |
-|---|---|---|
-| **¿Hasta dónde llega?** | `unit_scope_type` | `unit_exact` · `unit_type` · `all_units` |
-| **¿A quién de ahí dentro?** | `recipient_policy` | `all_matches` · `unit_head` · `exact_position` |
+| Pregunta | Dónde se contesta |
+|---|---|
+| **¿Hasta dónde llega?** | la **obligación**: `cargo_id` + `unit_scope_type` |
+| **¿A quién de ahí dentro?** | la **regla**: `recipient_policy` |
 
-Combinando las dos se expresa casi cualquier cosa. *«A los coordinadores de todas las carreras»* es
-alcance `unit_type` (Carrera) más política `all_matches` filtrando por el cargo Coordinador. *«Al
-decano de esta facultad»* es alcance `unit_exact` más política `unit_head`.
+`recipient_policy` está cerrada por `CHECK`, y cada valor cubre algo que un cargo **no puede
+expresar**:
 
-Tres detalles de la resolución que no se ven en la declaración:
+| Valor | Qué dice |
+|---|---|
+| `all_matches` | sin recorte. Es el defecto y no añade nada |
+| `unit_head` | **«el que manda aquí, sea quien sea»** |
+| `exact_position` | **la plaza**, con su `position_id` |
 
-- **Eran CUATRO valores y son tres: `unit_subtree` se retiró el 2026-10-12.** «Esta unidad y sus
-  descendientes» **cruza tipos de unidad** —una Escuela y sus Carreras—, y el cargo que produce el
-  documento no es el mismo en las dos: Director en una, Coordinador en otra. Eso es incompatible con
-  una regla que hereda el cargo de su [línea](/modelo/proceso/). Cero filas lo usaban, y con él se
-  fueron dos recorridos recursivos sin protección de ciclos. Lo que sí hacía falta —un mismo
-  documento en varios sitios— lo da el modelo por otro lado: un formato sirve a varias líneas del
-  mismo proceso.
+### Por qué esos dos valores no son redundantes
+
+**`unit_head` no se puede escribir con un cargo**, porque el cargo de la jefatura **varía por tipo de
+unidad**: en una Escuela es el Director, en una Carrera el Coordinador, en una Jefatura el Jefe, en el
+Prorrectorado el Prorrector. Una obligación que es **una** —*«el responsable de cada unidad entrega su
+informe»*— necesitaría cuatro obligaciones distintas para decirse por cargo. Y resuelve sin
+ambigüedad porque el modelo garantiza **una jefatura por unidad**.
+
+**`exact_position` baja un escalón más**: la obligación llega a *(cargo, unidad)* y ahí se para. Un
+puesto tiene una tercera coordenada, el número de plaza, y con un cargo de ocho plazas por unidad
+«el de la plaza tres» sólo se puede nombrar con el puesto.
+
+Así que esto **no es «cómo se reparte»**: es **el quién, cuando el cargo no basta** — porque varía o
+porque hay que bajar a la plaza. Y es lo que justifica que la tabla siga existiendo.
+
+Dos detalles de la resolución que no se ven en la declaración:
+
 - **`unit_head` no inventa sustituto.** Si una unidad del alcance no tiene jefatura marcada, esa unidad
   se queda fuera de la regla. Elegir «el primero de la lista» es exactamente el fallo que esa decisión
   vino a cerrar.
-- **`exact_position` se queda con una sola fila**, la del `position_id` declarado. Si la política es
-  `exact_position` y no hay `position_id`, la regla no alcanza a nadie.
+- **`exact_position` y su puesto van juntos, en los dos sentidos**, impuesto por la base: esa política
+  sin puesto no alcanzaría a nadie, y un puesto declarado con otra política es un dato que nadie lee.
 
-Una configuración puede tener varias reglas. Lo único que llevan además de su alcance es la
-**prioridad** (`priority`). **Ni interruptor ni fechas**: una regla no se apaga y no caduca por su
-cuenta.
+:::note[Lo que se fue de la regla, y por qué]
+
+**El 2026-10-14 la regla perdió cinco columnas** y bajó de diez a seis. No fue una limpieza: fue
+quitar una copia.
+
+| Columna | Por qué se fue |
+|---|---|
+| `cargo_id` · `unit_scope_type` · `unit_type_id` · `unit_id` | **copia de la obligación**. La regla nació tres meses antes que ella, cuando la regla *era* la declaración; al subir los dos ejes a su sitio, estas cuatro se quedaron atrás |
+| `priority` | **no ordenaba nada.** Las reglas de una configuración se **unen**, y lo que se acumula es el puesto, sin mirar de qué regla vino: cambiar el orden no podía cambiar el resultado |
+
+Lo que lo demostró no fueron los datos, fue el **comportamiento**: había dos consultas del mismo
+módulo preguntando lo mismo a dos tablas distintas. Con dos sitios donde mirar, *«a quién alcanza esta
+obligación»* tenía dos respuestas posibles — y nada garantizaba que fueran la misma, porque el
+guardia blindaba el cargo y el tipo pero la unidad la leía y **no la usaba nunca**.
+
+**Se perdieron dos cosas, y las dos eran redundantes**: una obligación sin acotar cuyo reparto la
+estrechaba a una unidad (es una obligación de esa unidad), y una obligación sin cargo cuyo reparto lo
+fijaba (es una obligación con cargo). Las dos se declaraban donde no hay nombre, ni vigencia, ni
+linaje, y pasan a declararse donde sí los hay. **No se perdió capacidad: se movió a donde queda
+escrita.**
+
+:::
+
+Una configuración puede tener **varias** reglas, y sus resultados se **suman**. Lo que las distingue
+hoy es su afinado, no su alcance: *«la jefatura de cada unidad, y además el puesto tal»*.
 
 :::note[La vigencia está en dos niveles, y el reparto no es uno de ellos]
 
@@ -63,15 +100,6 @@ obligación, y una obligación no puede recortarse por debajo de las normas que 
 
 :::
 
-:::caution[La prioridad desempata sillas, no personas]
-
-El lanzamiento recorre las reglas ordenadas por `priority ASC, id ASC` y va acumulando puestos
-**deduplicados por `position_id`**: si dos reglas alcanzan la misma silla, la que la aporta es la de
-prioridad más baja en número, y la segunda no vuelve a añadirla. El desempate es por puesto, no por
-persona — el borrador de este artículo decía «cuando dos alcanzan a la misma persona», y no es así:
-una persona con dos sillas alcanzadas recibe **dos** entregables.
-
-:::
 
 ## El resultado de una regla son sillas, no personas
 
@@ -107,22 +135,19 @@ persona las instancie.
 
 ```mermaid
 erDiagram
-  process_definition_versions ||--o{ process_target_rules : "reparte con"
-  units ||--o{ process_target_rules : "alcance unidad exacta"
-  unit_types ||--o{ process_target_rules : "alcance por tipo"
-  cargos ||--o{ process_target_rules : "filtra por cargo"
+  %% parcial: `lineas` y `process_definition_versions` salen solo como el extremo de su relacion,
+  %% para situar de donde viene el alcance. Sus columnas estan en /modelo/mapa-con-campos/
+  lineas ||--o{ process_definition_versions : "la obligacion y sus normas"
+  process_definition_versions ||--o{ process_target_rules : "afina con"
   unit_positions ||--o{ process_target_rules : "puesto exacto"
 
   process_target_rules {
     int id PK
     int process_definition_id FK
-    text unit_scope_type "unit_exact, unit_type, all_units"
-    int unit_id FK "si el alcance es una unidad"
-    int unit_type_id FK "si el alcance es un tipo"
-    int cargo_id FK "que cargo dentro del alcance"
-    int position_id FK "o un puesto exacto"
+
     text recipient_policy "all_matches, unit_head, exact_position"
-    int priority "cual aporta la silla si dos coinciden"
+    int position_id FK "solo con exact_position"
+
     timestamp created_at
   }
 ```

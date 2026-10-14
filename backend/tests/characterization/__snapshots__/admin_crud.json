@@ -187,11 +187,9 @@
   "graft_target_rules_create": {
     "status": 200,
     "body": {
-      "cargo_id": "<normalized>",
       "id": "<normalized>",
       "process_definition_id": "<normalized>",
-      "recipient_policy": "all_matches",
-      "unit_scope_type": "all_units"
+      "recipient_policy": "all_matches"
     }
   },
   "graft_template_artifacts_create_prohibido": {
@@ -432,16 +430,11 @@
     "isArray": true,
     "count": 1,
     "itemKeys": [
-      "cargo_id",
       "created_at",
       "id",
       "position_id",
-      "priority",
       "process_definition_id",
-      "recipient_policy",
-      "unit_id",
-      "unit_scope_type",
-      "unit_type_id"
+      "recipient_policy"
     ]
   },
   "list_processes": {

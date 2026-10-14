@@ -623,7 +623,6 @@ const CLASIFICACION = Object.freeze({
 
   /* Pares entre si: sin tono propio, todos NEUTRAL. */
   "lineas.unit_scope_type": null,
-  "process_target_rules.unit_scope_type": null,
   "process_target_rules.recipient_policy": null,
   "vinculos.item_mode": null,
   "unit_positions.position_type": null,

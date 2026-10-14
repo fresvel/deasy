@@ -193,13 +193,8 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
 | `process_definition_id` | int | sí | `process_definition_versions.id` · se va con el | — |
-| `unit_scope_type` | text | sí | — | `unit_exact` · `unit_type` · `all_units` |
-| `unit_id` | int | no | `units.id` · impide borrar | — |
-| `unit_type_id` | int | no | `unit_types.id` · impide borrar | — |
-| `cargo_id` | int | no | `cargos.id` · impide borrar | — |
 | `position_id` | int | no | `unit_positions.id` · impide borrar | — |
 | `recipient_policy` | text | sí | — | `all_matches` · `unit_head` · `exact_position` |
-| `priority` | int | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
 
 ### `process_definition_period_types`
@@ -521,4 +516,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**33 tablas · 311 columnas · 80 referencias.** Leídas del catálogo de PostgreSQL.
+**33 tablas · 306 columnas · 77 referencias.** Leídas del catálogo de PostgreSQL.

@@ -67,20 +67,33 @@ export const getActiveAutomaticDefinitions = async (connection, term) => {
 // LA REGLA YA NO TIENE VIGENCIA NI INTERRUPTOR (frente 25, P18-d): nace y muere con su version
 // de la norma, y quien decide si esa norma aplica al periodo es `getActiveAutomaticDefinitions`.
 // Por eso esta funcion ya no recibe las fechas del periodo: no tiene nada que comparar con ellas.
+// LAS REGLAS DE UNA CONFIGURACION, CON EL AMBITO DE SU LINEA PEGADO.
+//
+// El ambito y el cargo YA NO ESTAN EN LA REGLA (frente 25, P10): eran cuatro copias de la linea. La
+// regla conserva el afinado --`recipient_policy` y `position_id`-- y lo demas se lee de donde se
+// declara, con los dos JOIN que la consulta ya necesitaba para llegar a la obligacion.
+//
+// Los campos de la linea van con PREFIJO `linea_` a proposito: desde aqui se lee hacia abajo, y una
+// `cargo_id` a secas no diria de quien es. El unico consumidor es `getPositionsForRule`.
+//
+// Y SIN `ORDER BY priority`: la columna se fue con las copias porque no ordenaba nada. Las reglas de
+// una configuracion se UNEN --sus resultados se acumulan por puesto, sin mirar de que regla vienen--
+// asi que el orden de evaluacion no cambia el resultado. Queda `id` para que la salida sea estable.
 export const getTargetRulesMap = async (connection) => {
   const [rows] = await connection.query(
     `SELECT
-       id,
-       process_definition_id,
-       unit_scope_type,
-       unit_id,
-       unit_type_id,
-       cargo_id,
-       position_id,
-       recipient_policy,
-       priority
-     FROM process_target_rules
-     ORDER BY process_definition_id, priority ASC, id ASC`
+       ptr.id,
+       ptr.process_definition_id,
+       ptr.position_id,
+       ptr.recipient_policy,
+       lin.unit_scope_type AS linea_unit_scope_type,
+       lin.unit_id         AS linea_unit_id,
+       lin.unit_type_id    AS linea_unit_type_id,
+       lin.cargo_id        AS linea_cargo_id
+     FROM process_target_rules ptr
+     INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
+     ORDER BY ptr.process_definition_id, ptr.id ASC`
   );
   const map = new Map();
   rows.forEach((row) => {
@@ -247,26 +260,28 @@ export const getPositionsForRule = async (connection, rule) => {
     query += "\n      AND up.id = ?";
     params.push(rule.position_id);
   } else {
-    if (rule.cargo_id) {
+    // EL CARGO Y EL AMBITO SALEN DE LA LINEA, no de la regla (frente 25, P10). Antes la regla
+    // llevaba su copia y esto leia `rule.cargo_id`; hoy `getTargetRulesMap` los trae con prefijo.
+    if (rule.linea_cargo_id) {
       query += "\n      AND up.cargo_id = ?";
-      params.push(rule.cargo_id);
+      params.push(rule.linea_cargo_id);
     }
 
     // AQUI VIVIA LA RAMA `unit_subtree`, con una CTE RECURSIVA sin proteccion de ciclos. Se fue
     // con el valor (frente 25, P19): un subarbol cruza tipos de unidad y por tanto cargos, que es
-    // incompatible con una regla que hereda el cargo de su linea.
-    if (rule.unit_scope_type === "unit_exact") {
-      if (!rule.unit_id) {
+    // incompatible con una obligacion que fija UN cargo.
+    if (rule.linea_unit_scope_type === "unit_exact") {
+      if (!rule.linea_unit_id) {
         return [];
       }
       query += "\n      AND up.unit_id = ?";
-      params.push(rule.unit_id);
-    } else if (rule.unit_scope_type === "unit_type") {
-      if (!rule.unit_type_id) {
+      params.push(rule.linea_unit_id);
+    } else if (rule.linea_unit_scope_type === "unit_type") {
+      if (!rule.linea_unit_type_id) {
         return [];
       }
       query += "\n      AND u.unit_type_id = ?";
-      params.push(rule.unit_type_id);
+      params.push(rule.linea_unit_type_id);
     }
   }
 

@@ -35,9 +35,11 @@
         <span>{{ canSubmit ? ruleContextHint : (requirementMessage || "Completa el alcance requerido para habilitar el boton de guardar.") }}</span>
       </AppAlert>
 
-      <!-- Lo que ya fija la serie se muestra como contexto, no como campos editables. -->
+      <!-- Lo que fija la OBLIGACION se muestra como contexto. Decia «Fijado por la serie», y la
+           serie se retiro con P9; y hasta P10 esto convivia con campos editables que decian lo
+           mismo, asi que la pantalla ofrecia cambiar un alcance que un guardia revertia despues. -->
       <div v-if="lineaFixedChips.length" class="flex flex-wrap items-center gap-2 text-xs">
-        <span class="deasy-overline">Fijado por la serie</span>
+        <span class="deasy-overline">Fijado por la obligación</span>
         <span
           v-for="chip in lineaFixedChips"
           :key="chip.label"
@@ -47,68 +49,20 @@
         </span>
       </div>
 
-      <!-- Bloque 1: a quién va dirigida la regla -->
+      <!-- UN SOLO BLOQUE, Y ERAN DOS. El alcance, la unidad, el tipo y el cargo se editaban aqui y
+           eran copia de la linea (P10): la pantalla daba a elegir algo que la obligacion ya decia.
+           Y el bloque «Prioridad» se fue con su columna, que solo aparecia en un ORDER BY. -->
       <fieldset class="flex flex-col gap-3">
-        <p class="deasy-overline">Alcance y destinatarios</p>
+        <p class="deasy-overline">Destinatarios</p>
         <div class="grid items-start gap-3 md:grid-cols-12">
-          <AdminFieldGroup v-if="showScopeField" label="Alcance" group-class="md:col-span-4">
-            <AdminSelectField
-              :model-value="form.unit_scope_type"
-              :disabled="!canManage"
-              @update:model-value="updateScopeType"
-            >
-              <option v-for="option in scopeOptions" :key="option.value" :value="option.value">
-                {{ option.label }}
-              </option>
-            </AdminSelectField>
-          </AdminFieldGroup>
-          <AdminFieldGroup label="Entrega" group-class="md:col-span-4">
+          <AdminFieldGroup label="Entrega" group-class="md:col-span-6">
             <AdminSelectField :model-value="form.recipient_policy" :disabled="!canManage" @update:model-value="updateRecipientPolicy">
               <option v-for="option in recipientPolicyOptions" :key="option.value" :value="option.value">
                 {{ option.label }}
               </option>
             </AdminSelectField>
           </AdminFieldGroup>
-          <AdminFieldGroup v-if="showUnitField" label="Unidad" group-class="md:col-span-4">
-            <AdminLookupField
-              :model-value="labels.unit_id"
-              placeholder="Selecciona una unidad"
-              :suggest-provider="suggestProviders.unit_id"
-              :disabled="!canManage"
-              :clear-disabled="!canManage || !form.unit_id"
-              :search-disabled="!canManage"
-              @clear="$emit('clear-field', 'unit_id')"
-              @select="$emit('select-field', 'unit_id', $event)"
-              @search="$emit('open-fk-search', 'unit_id')"
-            />
-          </AdminFieldGroup>
-          <AdminFieldGroup v-if="showUnitTypeField" label="Tipo de unidad" group-class="md:col-span-4">
-            <AdminLookupField
-              :model-value="labels.unit_type_id"
-              placeholder="Selecciona un tipo"
-              :suggest-provider="suggestProviders.unit_type_id"
-              :disabled="!canManage"
-              :clear-disabled="!canManage || !form.unit_type_id"
-              :search-disabled="!canManage"
-              @clear="$emit('clear-field', 'unit_type_id')"
-              @select="$emit('select-field', 'unit_type_id', $event)"
-              @search="$emit('open-fk-search', 'unit_type_id')"
-            />
-          </AdminFieldGroup>
-          <AdminFieldGroup v-if="showCargoField" label="Cargo" group-class="md:col-span-4">
-            <AdminLookupField
-              :model-value="labels.cargo_id"
-              placeholder="Selecciona un cargo"
-              :suggest-provider="suggestProviders.cargo_id"
-              :disabled="!canManage"
-              :clear-disabled="!canManage || !form.cargo_id"
-              :search-disabled="!canManage"
-              @clear="$emit('clear-field', 'cargo_id')"
-              @select="$emit('select-field', 'cargo_id', $event)"
-              @search="$emit('open-fk-search', 'cargo_id')"
-            />
-          </AdminFieldGroup>
-          <AdminFieldGroup v-if="showPositionField" label="Puesto exacto" group-class="md:col-span-4">
+          <AdminFieldGroup v-if="showPositionField" label="Puesto exacto" group-class="md:col-span-6">
             <AdminLookupField
               :model-value="labels.position_id"
               placeholder="Selecciona un puesto"
@@ -122,19 +76,6 @@
             />
           </AdminFieldGroup>
         </div>
-      </fieldset>
-
-      <!-- Bloque 2: prioridad, estado y vigencia -->
-      <fieldset class="flex flex-col gap-3 border-t border-dashed border-line pt-4">
-        <p class="deasy-overline">Prioridad</p>
-        <div class="grid items-start gap-3 md:grid-cols-12">
-          <AdminFieldGroup label="Prioridad" group-class="md:col-span-2">
-            <AdminInputField :model-value="form.priority" type="number" min="1" :disabled="!canManage" @update:model-value="updateField('priority', $event)" />
-          </AdminFieldGroup>
-        </div>
-        <!-- AQUI ESTABAN «Activo», «Vigencia desde» y «Vigencia hasta», y se fueron con las tres
-             columnas (frente 25, P18-d): una regla no se enciende ni caduca por su cuenta — nace y
-             muere con su version de la norma. Si el reparto cambia, se versiona la configuracion. -->
       </fieldset>
 
       </div>
@@ -186,7 +127,6 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
-import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
@@ -213,7 +153,6 @@ const props = defineProps({
 
 const emit = defineEmits([
   "update:form",
-  "scope-change",
   "recipient-policy-change",
   "clear-field",
   "select-field",
@@ -224,12 +163,6 @@ const emit = defineEmits([
   "edit-row",
   "delete-row"
 ]);
-
-const scopeOptions = [
-  { value: "unit_exact", label: "Unidad exacta" },
-  { value: "unit_type", label: "Tipo de unidad" },
-  { value: "all_units", label: "Todas las unidades" }
-];
 
 const recipientPolicyOptions = [
   { value: "all_matches", label: "Todos los puestos coincidentes" },
@@ -281,12 +214,15 @@ watch(() => props.error, (val) => {
 // AQUI VIVIA `todayIso`, el atajo «Hoy» del campo de vigencia de la regla. Se fue con las fechas
 // (frente 25, P18-d).
 
-const scopeType = computed(() => String(props.form.unit_scope_type || "unit_exact"));
+// AQUI VIVIA `scopeType`, y se fue con las cuatro columnas de ambito de la regla (frente 25, P10):
+// eran copia de la linea. El alcance se lee de `lineaScope` y se ENSENA; no se edita aqui.
 const recipientPolicy = computed(() => String(props.form.recipient_policy || "all_matches"));
 const isExactPositionPolicy = computed(() => recipientPolicy.value === "exact_position");
 
-// La LÍNEA del proceso («Informe de IF · Coordinadores de Carrera») ya fija el cargo y el alcance.
-// Cuando es así, la regla no vuelve a decidirlos: quedan bloqueados y se muestran como contexto.
+// La LÍNEA del proceso («Informe de IF · Coordinadores de Carrera») fija el cargo y el alcance.
+// Ya no es «cuando es así»: es SIEMPRE, desde que la regla dejó de tener copia (P10). Lo que la
+// obligación dice se muestra como contexto, y los tres ámbitos se nombran aquí porque es la única
+// pantalla donde alguien ve el reparto sin abrir la línea.
 const lineaFixedCargoId = computed(() => {
   const id = props.lineaScope?.cargo_id;
   return id ? Number(id) : null;
@@ -295,31 +231,25 @@ const lineaFixedCargoName = computed(() => props.lineaScope?.cargo_name || "");
 const cargoLockedByLinea = computed(() => Boolean(lineaFixedCargoId.value));
 // Alcance por tipo de unidad: lo fija la línea; la regla solo decide la entrega.
 const lineaFixedUnitTypeName = computed(() => props.lineaScope?.unit_type_name || "");
-const unitTypeLockedByLinea = computed(() =>
-  String(props.lineaScope?.unit_scope_type || "") === "unit_type"
-  && Boolean(props.lineaScope?.unit_type_id)
-);
-// Resumen compacto de lo que la línea ya fija: se muestra como contexto en vez de campos bloqueados.
+const lineaScopeType = computed(() => String(props.lineaScope?.unit_scope_type || ""));
+// Resumen de lo que la obligación fija. Son los tres ámbitos, no sólo el del tipo: antes los otros
+// dos se veían como campos editables, así que aquí sólo hacía falta el que estaba bloqueado.
 const lineaFixedChips = computed(() => {
   const chips = [];
-  if (unitTypeLockedByLinea.value) {
+  if (lineaScopeType.value === "unit_type" && lineaFixedUnitTypeName.value) {
     chips.push({ label: "Alcance", value: `Tipo de unidad · ${lineaFixedUnitTypeName.value}` });
+  } else if (lineaScopeType.value === "unit_exact") {
+    chips.push({ label: "Alcance", value: "Una unidad concreta" });
+  } else if (lineaScopeType.value === "all_units") {
+    chips.push({ label: "Alcance", value: "Todas las unidades" });
   }
   if (cargoLockedByLinea.value) {
     chips.push({ label: "Cargo", value: lineaFixedCargoName.value });
   }
   return chips;
 });
-// "Puesto exacto" es un modo cerrado: el puesto define unidad y cargo, así que el formulario se reduce a
-// elegir el puesto (alcance, unidad, tipo y cargo se ocultan). El resto de entregas usa el alcance.
-const showScopeField = computed(() => !isExactPositionPolicy.value && !unitTypeLockedByLinea.value);
-const showUnitField = computed(() =>
-  !isExactPositionPolicy.value && scopeType.value === "unit_exact"
-);
-const showUnitTypeField = computed(() =>
-  !isExactPositionPolicy.value && scopeType.value === "unit_type" && !unitTypeLockedByLinea.value
-);
-const showCargoField = computed(() => !isExactPositionPolicy.value && !cargoLockedByLinea.value);
+// "Puesto exacto" es el único modo que pide un dato: el puesto. Los otros dos no piden nada, porque
+// el alcance ya no se declara aquí.
 const showPositionField = computed(() => isExactPositionPolicy.value);
 
 const requirementMessage = computed(() => {
@@ -329,26 +259,18 @@ const requirementMessage = computed(() => {
   if (isExactPositionPolicy.value) {
     return "Selecciona un puesto exacto para guardar la regla.";
   }
-  if (scopeType.value === "unit_type") {
-    return "Selecciona el tipo de unidad para guardar la regla.";
-  }
-  if (scopeType.value === "unit_exact") {
-    return "Selecciona la unidad base para guardar la regla.";
-  }
-  return "Completa el alcance requerido para habilitar el boton de guardar.";
+  return "Completa los datos requeridos para habilitar el boton de guardar.";
 });
 
+// EL AVISO EXPLICA EL AFINADO, no el alcance: el alcance lo dice la obligacion y se ve en los chips.
 const ruleContextHint = computed(() => {
   if (isExactPositionPolicy.value) {
-    return "La regla se limitara a un unico puesto; el alcance se fija como unidad exacta.";
+    return "Solo ese puesto, dentro del alcance de la obligacion.";
   }
-  if (scopeType.value === "unit_type") {
-    return "El alcance se resolvera por todas las unidades del tipo seleccionado.";
+  if (recipientPolicy.value === "unit_head") {
+    return "Solo la jefatura de cada unidad del alcance, sea cual sea su cargo.";
   }
-  if (scopeType.value === "all_units") {
-    return "El alcance cubre todas las unidades activas y puede acotarse por cargo.";
-  }
-  return "El alcance se aplica a la unidad seleccionada; puedes incluir sus descendientes si corresponde.";
+  return "Todos los puestos que coincidan con el alcance de la obligacion.";
 });
 
 const updateField = (fieldName, value) => {
@@ -356,11 +278,6 @@ const updateField = (fieldName, value) => {
     ...props.form,
     [fieldName]: value
   });
-};
-
-const updateScopeType = (value) => {
-  updateField("unit_scope_type", value);
-  emit("scope-change", value);
 };
 
 const updateRecipientPolicy = (value) => {

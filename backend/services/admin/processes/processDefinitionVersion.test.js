@@ -88,15 +88,17 @@ const TEMPLATES = [
   { edicion_id: 30, sort_order: 3, item_mode: "single" }
 ];
 
+// DOS COLUMNAS, Y ERAN SIETE. Las cuatro de ámbito —`unit_scope_type`, `unit_id`, `unit_type_id`,
+// `cargo_id`— eran copia de la línea y salieron con `P10` (frente 25, 2026-10-14), y con ellas
+// `priority`, que sólo aparecía en un `ORDER BY`.
+//
+// Y el clon era justo donde la copia costaba más: arrastraba el ámbito VERBATIM, así que una
+// configuración nueva nacía con el ámbito congelado en el instante del clon aunque su línea hubiera
+// cambiado después. Versionar la norma dejaba el reparto en el pasado, sin avisar.
 const RULES = [
   {
-    unit_scope_type: "unit_type",
-    unit_id: null,
-    unit_type_id: 7,
-    cargo_id: 11,
     position_id: null,
-    recipient_policy: "all_matches",
-    priority: 1
+    recipient_policy: "all_matches"
   }
 ];
 
@@ -196,7 +198,7 @@ for (const { nombre, tabla } of HIJOS) {
 
 // --- Las reglas y los periodos, columna a columna --------------------------------------------------
 
-test("las reglas de destino se clonan enteras", async () => {
+test("las reglas de destino se clonan con su afinado, y SIN ambito", async () => {
   const { service, connection } = buildService();
 
   const result = await service.cloneProcessDefinitionChildren({
@@ -209,6 +211,11 @@ test("las reglas de destino se clonan enteras", async () => {
   assert.equal(result.clonedRules, 1);
   const row = insertedRow(connection.log.inserts.rules[0]);
   assert.deepEqual(row, { process_definition_id: TARGET_ID, ...RULES[0] });
+  // El ámbito NO viaja: lo dice la línea de la configuración destino, que es la misma. Si alguna de
+  // estas claves reapareciera, el clon volvería a congelar el reparto.
+  for (const muerta of ["unit_scope_type", "unit_id", "unit_type_id", "cargo_id", "priority"]) {
+    assert.equal(muerta in row, false, `el clon no debe escribir ${muerta}`);
+  }
 });
 
 test("los tipos de periodo se clonan enteros", async () => {

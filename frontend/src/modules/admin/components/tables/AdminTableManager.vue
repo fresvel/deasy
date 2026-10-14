@@ -631,7 +631,6 @@
       :suggest-providers="definitionRuleSuggestProviders"
       :format-cell="formatDefinitionRuleCell"
       @update:form="definitionRulesForm = $event"
-      @scope-change="handleDefinitionRuleScopeChange"
       @recipient-policy-change="handleDefinitionRuleRecipientPolicyChange"
       @clear-field="clearDefinitionRuleField"
       @select-field="selectDefinitionRuleOption"
@@ -714,7 +713,6 @@
           :suggest-providers="definitionRuleSuggestProviders"
           :format-cell="formatDefinitionRuleCell"
           @update:form="definitionRulesForm = $event"
-          @scope-change="handleDefinitionRuleScopeChange"
           @recipient-policy-change="handleDefinitionRuleRecipientPolicyChange"
           @clear-field="clearDefinitionRuleField"
           @select-field="selectDefinitionRuleOption"
@@ -3160,7 +3158,6 @@ const {
   resetDefinitionRulesForm,
   resetDefinitionTriggersForm,
   formatDefinitionRuleSummary,
-  handleDefinitionRuleScopeChange,
   handleDefinitionRuleRecipientPolicyChange,
   refreshProcessDefinitionChecklist,
   openDefinitionRulesManager,

@@ -41,11 +41,13 @@ const rule = (overrides = {}) => ({
   linea_nombre: null,
   definition_version: 1,
   rule_id: 900,
-  priority: 1,
-  unit_scope_type: "unit_exact",
-  unit_id: 100,
-  unit_type_id: null,
-  cargo_id: null,
+  // CON PREFIJO `linea_`, y el prefijo es el contrato: el cargo y el ámbito salieron de la regla con
+  // `P10` (frente 25, 2026-10-14) porque eran copia de `lineas`. La fila que devuelve la consulta
+  // mezcla las dos tablas, y `priority` se fue del todo —sólo aparecía en un `ORDER BY`—.
+  linea_unit_scope_type: "unit_exact",
+  linea_unit_id: 100,
+  linea_unit_type_id: null,
+  linea_cargo_id: null,
   position_id: null,
   recipient_policy: null,
   is_routed: false,
@@ -106,7 +108,7 @@ test("una regla unit_exact reparte el proceso al cargo de esa unidad y al consol
 
 test("una regla unit_exact de OTRA unidad no reparte nada", async () => {
   const menu = await buildUserMenu(
-    makePool({ positions: [position()], rules: [rule({ unit_id: 999 })] }),
+    makePool({ positions: [position()], rules: [rule({ linea_unit_id: 999 })] }),
     7
   );
   assert.deepEqual(menu.units[0].cargos[0].processes, []);
@@ -118,7 +120,7 @@ test("una regla unit_exact de OTRA unidad no reparte nada", async () => {
 
 test("all_units reparte a cualquier puesto; unit_type solo al tipo de unidad que coincide", async () => {
   const todos = await buildUserMenu(
-    makePool({ positions: [position({ unit_id: 777 })], rules: [rule({ unit_scope_type: "all_units", unit_id: null })] }),
+    makePool({ positions: [position({ unit_id: 777 })], rules: [rule({ linea_unit_scope_type: "all_units", linea_unit_id: null })] }),
     7
   );
   assert.equal(todos.units[0].cargos[0].processes.length, 1);
@@ -126,7 +128,7 @@ test("all_units reparte a cualquier puesto; unit_type solo al tipo de unidad que
   const porTipo = await buildUserMenu(
     makePool({
       positions: [position({ unit_type_id: 5 })],
-      rules: [rule({ unit_scope_type: "unit_type", unit_id: null, unit_type_id: 9 })],
+      rules: [rule({ linea_unit_scope_type: "unit_type", linea_unit_id: null, linea_unit_type_id: 9 })],
     }),
     7
   );
@@ -135,13 +137,13 @@ test("all_units reparte a cualquier puesto; unit_type solo al tipo de unidad que
 
 test("el puesto exacto manda sobre el ámbito de unidad", async () => {
   const casa = await buildUserMenu(
-    makePool({ positions: [position()], rules: [rule({ position_id: 10, unit_id: 999 })] }),
+    makePool({ positions: [position()], rules: [rule({ position_id: 10, linea_unit_id: 999 })] }),
     7
   );
   assert.equal(casa.units[0].cargos[0].processes.length, 1);
 
   const noCasa = await buildUserMenu(
-    makePool({ positions: [position()], rules: [rule({ position_id: 11, unit_id: 100 })] }),
+    makePool({ positions: [position()], rules: [rule({ position_id: 11, linea_unit_id: 100 })] }),
     7
   );
   assert.deepEqual(noCasa.units[0].cargos[0].processes, []);
@@ -160,7 +162,7 @@ test("recipient_policy='exact_position' SIN position_id no casa con nadie", asyn
 
 test("una regla con cargo distinto no casa aunque la unidad coincida", async () => {
   const menu = await buildUserMenu(
-    makePool({ positions: [position()], rules: [rule({ cargo_id: 99 })] }),
+    makePool({ positions: [position()], rules: [rule({ linea_cargo_id: 99 })] }),
     7
   );
   assert.deepEqual(menu.units[0].cargos[0].processes, []);
@@ -206,8 +208,8 @@ test("los procesos y los cargos salen ordenados alfabéticamente", async () => {
     makePool({
       positions: [position(), position({ position_id: 11, cargo_id: 19, cargo_name: "Coordinador" })],
       rules: [
-        rule({ process_definition_id: 701, process_name: "Zeta", unit_scope_type: "all_units", unit_id: null }),
-        rule({ process_definition_id: 702, process_name: "Alfa", unit_scope_type: "all_units", unit_id: null }),
+        rule({ process_definition_id: 701, process_name: "Zeta", linea_unit_scope_type: "all_units", linea_unit_id: null }),
+        rule({ process_definition_id: 702, process_name: "Alfa", linea_unit_scope_type: "all_units", linea_unit_id: null }),
       ],
     }),
     7

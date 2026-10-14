@@ -134,28 +134,43 @@ test("doesPositionMatchRule: exact_position sin position_id nunca casa", () => {
   );
 });
 
+// ⚠️ LOS CAMPOS LLEVAN PREFIJO `linea_` DESDE `P10` (frente 25, 2026-10-14), y el prefijo ES el
+// contrato: el cargo y el ámbito salieron de `process_target_rules` —eran copia de `lineas`— así que
+// la fila que entra aquí MEZCLA las dos tablas. Si alguien vuelve a pasar `cargo_id` a secas, el
+// predicado deja de filtrar por cargo y **casa con todo el mundo en silencio**: por eso la primera
+// aserción de aquí abajo es la que importa.
 test("doesPositionMatchRule: filtra por cargo antes del alcance de unidad", () => {
   assert.equal(
-    doesPositionMatchRule({ cargo_id: 2, unit_id: 5 }, { cargo_id: 3, unit_scope_type: "all_units" }),
+    doesPositionMatchRule({ cargo_id: 2, unit_id: 5 }, { linea_cargo_id: 3, linea_unit_scope_type: "all_units" }),
     false,
     "cargo distinto corta aunque el alcance sea all_units"
   );
   assert.equal(
-    doesPositionMatchRule({ cargo_id: 2, unit_id: 5 }, { cargo_id: 2, unit_scope_type: "all_units" }),
+    doesPositionMatchRule({ cargo_id: 2, unit_id: 5 }, { linea_cargo_id: 2, linea_unit_scope_type: "all_units" }),
     true
   );
 });
 
+test("doesPositionMatchRule: un cargo SIN prefijo ya no filtra, y hay que saberlo", () => {
+  // No es una curiosidad: es el modo de fallo del renombrado. La fila vieja traía `cargo_id`, y con
+  // ese nombre el predicado ahora no ve cargo ninguno, así que `all_units` casa con CUALQUIER
+  // puesto. Un fallo abierto —de más gente, no de menos— y sin un solo síntoma.
+  assert.equal(
+    doesPositionMatchRule({ cargo_id: 2 }, { cargo_id: 3, linea_unit_scope_type: "all_units" }),
+    true,
+    "con el nombre viejo el filtro de cargo desaparece"
+  );
+});
 
 test("doesPositionMatchRule: unit_exact / default exige misma unidad", () => {
-  assert.equal(doesPositionMatchRule({ unit_id: 5 }, { unit_scope_type: "unit_exact", unit_id: 5 }), true);
-  assert.equal(doesPositionMatchRule({ unit_id: 5 }, { unit_scope_type: "unit_exact", unit_id: 6 }), false);
-  assert.equal(doesPositionMatchRule({ unit_id: 5 }, { unit_scope_type: "unit_exact" }), false, "sin unit_id no casa");
+  assert.equal(doesPositionMatchRule({ unit_id: 5 }, { linea_unit_scope_type: "unit_exact", linea_unit_id: 5 }), true);
+  assert.equal(doesPositionMatchRule({ unit_id: 5 }, { linea_unit_scope_type: "unit_exact", linea_unit_id: 6 }), false);
+  assert.equal(doesPositionMatchRule({ unit_id: 5 }, { linea_unit_scope_type: "unit_exact" }), false, "sin unidad no casa");
 });
 
 test("buildRuleDisplayLabel prioriza puesto exacto y luego compone unidad|cargo", () => {
   assert.equal(buildRuleDisplayLabel({ position_title: "Decano" }), "Puesto exacto: Decano");
-  assert.equal(buildRuleDisplayLabel({ unit_scope_type: "all_units" }), "Todas las unidades");
+  assert.equal(buildRuleDisplayLabel({ linea_unit_scope_type: "all_units" }), "Todas las unidades");
   assert.equal(buildRuleDisplayLabel({ id: 99 }), "Regla #99", "sin datos, fallback al id");
 });
 

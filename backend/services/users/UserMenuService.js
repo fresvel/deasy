@@ -83,11 +83,12 @@ const getProcessTargetRuleRows = async (pool) => {
        lin.nombre AS linea_nombre,
        pdv.definition_version,
        ptr.id AS rule_id,
-       ptr.priority,
-       ptr.unit_scope_type,
-       ptr.unit_id,
-       ptr.unit_type_id,
-       ptr.cargo_id,
+       -- el ambito y el cargo salen de la LINEA (frente 25, P10); con prefijo para que el
+       -- predicado no crea que son de la regla, que es lo que paso durante tres meses
+       lin.unit_scope_type AS linea_unit_scope_type,
+       lin.unit_id         AS linea_unit_id,
+       lin.unit_type_id    AS linea_unit_type_id,
+       lin.cargo_id        AS linea_cargo_id,
        ptr.position_id,
        ptr.recipient_policy,
        EXISTS(
@@ -114,7 +115,9 @@ const getProcessTargetRuleRows = async (pool) => {
      INNER JOIN process_target_rules ptr
        ON ptr.process_definition_id = pdv.id
      WHERE p.is_active = 1
-     ORDER BY p.name, ptr.priority, ptr.id`
+     -- SIN priority: se fue con las copias (P10). No ordenaba nada — las reglas de una
+     -- configuracion se unen y lo que se acumula es el puesto, sin mirar de que regla vino.
+     ORDER BY p.name, ptr.id`
   );
   return processRuleRows;
 };
@@ -356,20 +359,24 @@ const positionMatchesRule = (position, rule) => {
   if (rule.recipient_policy === "exact_position") {
     return false;
   }
-  if (rule.cargo_id && Number(position.cargo_id) !== Number(rule.cargo_id)) {
+  // EL CARGO Y EL AMBITO VIENEN DE LA OBLIGACION, no de la regla (frente 25, P10): sus cuatro
+  // columnas eran copia de `lineas` y se retiraron. El prefijo `linea_` es deliberado — esta
+  // funcion recibe una fila que MEZCLA las dos tablas, y durante tres meses el nombre sin prefijo
+  // hizo creer que el ambito era de la regla, que es de donde venia la confusion.
+  if (rule.linea_cargo_id && Number(position.cargo_id) !== Number(rule.linea_cargo_id)) {
     return false;
   }
-  switch (rule.unit_scope_type) {
+  switch (rule.linea_unit_scope_type) {
     case "all_units":
       return true;
     case "unit_type":
-      return rule.unit_type_id && Number(position.unit_type_id) === Number(rule.unit_type_id);
+      return rule.linea_unit_type_id && Number(position.unit_type_id) === Number(rule.linea_unit_type_id);
     case "unit_exact":
     default:
-      if (!rule.unit_id) {
+      if (!rule.linea_unit_id) {
         return false;
       }
-      return Number(position.unit_id) === Number(rule.unit_id);
+      return Number(position.unit_id) === Number(rule.linea_unit_id);
   }
 };
 

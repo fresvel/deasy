@@ -98,7 +98,6 @@
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
       "modelo/proceso.md",
-      "modelo/reparto.md",
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md"
     ]
@@ -733,7 +732,7 @@
     ]
   },
   "process_target_rules": {
-    "huella": "913431932e538a5c",
+    "huella": "dd3fae98d292a64a",
     "paginas": [
       "datos/index.md",
       "datos/motor-de-procesos.md",
@@ -787,7 +786,6 @@
       "modelo/flujo-de-firma.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
-      "modelo/reparto.md",
       "modelo/vocabularios-de-estado.md",
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md"
@@ -1082,7 +1080,6 @@
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
       "modelo/proceso.md",
-      "modelo/reparto.md",
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md"
     ]
@@ -1107,7 +1104,6 @@
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
-      "modelo/reparto.md",
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md",
       "referencia/modelo-datos.md"

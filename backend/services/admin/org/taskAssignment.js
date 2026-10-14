@@ -88,10 +88,21 @@ export default class TaskAssignmentService {
     if (!defId) {
       return { has_rules: false, supports_context: false, all_units: false, unit_ids: [], cargo_ids: [] };
     }
+    // ⚠️ EL AMBITO SALE DE LA LINEA (frente 25, P10), y esta consulta fue la que se escapo al censo:
+    // nombraba las columnas SIN ALIAS, asi que el barrido por `ptr.` / `rule.` no la vio. La cazo
+    // `test:char:run` con 27 fallos y un `column "unit_scope_type" does not exist` — que es la
+    // misma leccion que `check:sql-aliases` lleva escrita: una consulta sin alias es invisible para
+    // un censo que busca prefijos. Por eso ahora las columnas van cualificadas.
     const [rules] = await connection.query(
-      `SELECT unit_scope_type, unit_id, unit_type_id, cargo_id, position_id
-         FROM process_target_rules
-        WHERE process_definition_id = ?`,
+      `SELECT lin.unit_scope_type AS linea_unit_scope_type,
+              lin.unit_id         AS linea_unit_id,
+              lin.unit_type_id    AS linea_unit_type_id,
+              lin.cargo_id        AS linea_cargo_id,
+              ptr.position_id
+         FROM process_target_rules ptr
+         INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+        WHERE ptr.process_definition_id = ?`,
       [defId]
     );
     if (!rules.length) {
@@ -100,23 +111,27 @@ export default class TaskAssignmentService {
     const unitIds = new Set();
     const cargoIds = new Set();
     let allUnits = false;
+    // EL CARGO Y EL AMBITO VIENEN DE LA LINEA (frente 25, P10). Las filas las trae
+    // `getTargetRulesMap`, que las lee con prefijo `linea_` desde que las cuatro copias salieron de
+    // la regla. Ojo: todas las reglas de una configuracion comparten linea, asi que este bucle
+    // acumula el MISMO ambito N veces — correcto, porque los conjuntos no repiten.
     for (const rule of rules) {
-      if (rule.cargo_id) {
-        cargoIds.add(Number(rule.cargo_id));
+      if (rule.linea_cargo_id) {
+        cargoIds.add(Number(rule.linea_cargo_id));
       }
-      const scope = String(rule.unit_scope_type || "unit_exact");
+      const scope = String(rule.linea_unit_scope_type || "unit_exact");
       if (scope === "all_units") {
         allUnits = true;
         continue;
       }
       // AQUI VIVIA LA RAMA `unit_subtree`, con la SEGUNDA CTE recursiva sin proteccion de ciclos.
       // Se fue con el valor (frente 25, P19).
-      if (scope === "unit_exact" && rule.unit_id) {
-        unitIds.add(Number(rule.unit_id));
-      } else if (scope === "unit_type" && rule.unit_type_id) {
+      if (scope === "unit_exact" && rule.linea_unit_id) {
+        unitIds.add(Number(rule.linea_unit_id));
+      } else if (scope === "unit_type" && rule.linea_unit_type_id) {
         const [rows] = await connection.query(
           "SELECT id FROM units WHERE unit_type_id = ? AND is_active = 1",
-          [rule.unit_type_id]
+          [rule.linea_unit_type_id]
         );
         rows.forEach((row) => unitIds.add(Number(row.id)));
       }

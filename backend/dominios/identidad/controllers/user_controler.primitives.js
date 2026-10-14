@@ -121,20 +121,26 @@ export const doesPositionMatchRule = (position, rule) => {
   if (rule.recipient_policy === "exact_position") {
     return false;
   }
-  if (rule.cargo_id && Number(position.cargo_id) !== Number(rule.cargo_id)) {
+  // EL CARGO Y EL AMBITO VIENEN DE LA OBLIGACION (frente 25, P10). Con prefijo `linea_` porque la
+  // fila mezcla las dos tablas.
+  //
+  // ⚠️ ESTA FUNCION ES GEMELA DE `positionMatchesRule` en `UserMenuService.js`: el mismo predicado,
+  // escrito dos veces. No se unifica aqui para no mezclar dos cambios, pero queda dicho: si uno se
+  // corrige y el otro no, el menu y el panel dejan de coincidir sin que nada avise.
+  if (rule.linea_cargo_id && Number(position.cargo_id) !== Number(rule.linea_cargo_id)) {
     return false;
   }
-  switch (rule.unit_scope_type) {
+  switch (rule.linea_unit_scope_type) {
     case "all_units":
       return true;
     case "unit_type":
-      return rule.unit_type_id && Number(position.unit_type_id) === Number(rule.unit_type_id);
+      return rule.linea_unit_type_id && Number(position.unit_type_id) === Number(rule.linea_unit_type_id);
     case "unit_exact":
     default:
-      if (!rule.unit_id) {
+      if (!rule.linea_unit_id) {
         return false;
       }
-      return Number(position.unit_id) === Number(rule.unit_id);
+      return Number(position.unit_id) === Number(rule.linea_unit_id);
   }
 };
 
@@ -143,11 +149,11 @@ export const buildRuleDisplayLabel = (rule) => {
     return `Puesto exacto: ${rule.position_title}`;
   }
   const parts = [];
-  if (rule.unit_scope_type === "all_units") {
+  if (rule.linea_unit_scope_type === "all_units") {
     parts.push("Todas las unidades");
-  } else if (rule.unit_scope_type === "unit_type" && rule.unit_type_name) {
+  } else if (rule.linea_unit_scope_type === "unit_type" && rule.unit_type_name) {
     parts.push(`Tipo: ${rule.unit_type_name}`);
-  } else if (rule.unit_scope_type === "unit_exact" && rule.unit_name) {
+  } else if (rule.linea_unit_scope_type === "unit_exact" && rule.unit_name) {
     parts.push(`Unidad: ${rule.unit_name}`);
   }
   if (rule.cargo_name) {

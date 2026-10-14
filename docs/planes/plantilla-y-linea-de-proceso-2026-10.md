@@ -158,7 +158,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P6** | **El renombrado completo**: `catalogo_documental`→`formatos`, `available_formats`→`archivos`, `storage_version`→`version`, `process_definition_versions`→`ediciones_de_proceso` | ⬜ | | |
 | **P8** | **La tabla `lineas`**, con los dos ejes (`cargo_id` + `unit_scope_type`/`unit_type_id`/`unit_id`), nombre propio, vigencia y `linea_anterior_id`; `process_definition_versions.linea_id` en lugar de `(process_id, series_id, variation_key)`; los dos únicos bajan a dos columnas | ✅ | la tabla con sus **8 garantías provocadas** una por una (el alcance y su columna van juntos ×2, la identidad con `NULLS NOT DISTINCT`, suceder a una vigente, retirar-y-suceder, la autosucesión, la vigencia al revés, y los dos ejes juntos); `linea_id` **`NOT NULL`** con su índice; el arranque siembra la línea. Construirla **corrigió dos veces el croquis del plan** (§0-ter). Cerrada con `P2-bis`, que es su otra mitad. ⚠️ **El aviso de «la forma quedó corta» SE CAE** (2026-10-12): decía que el ámbito tenía que ser un **conjunto** y que lo arreglaría `P17`, y `P17` está **descartada**. La sustituyó `P20`: Carrera y Tecnología son **dos líneas que comparten papel**, cada una con su vigencia y su linaje. El ámbito se queda como **una** columna | 2026-10-11 |
 | **P9** | **Retira `process_definition_series`** y sus seis mecanismos (el `XOR`, el `code` derivado, las dos cascadas, `variation_key` y su hook) | ✅ | la tabla, `series_id` y los **seis mecanismos** fuera; `lineas` entra en el editor genérico y en RBAC; el asistente pide **nombre + cargo + alcance** en vez de una serie. **73 ocurrencias en 30 ficheros**, no 65 en 21. 320/320 char con **9 goldens movidos** (y 7 claves huérfanas retiradas a mano, porque capturar añade y no borra), 888/888 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, los dos builds. **Verificado en el navegador**: el nodo del grafo dice el nombre de la línea donde decía «General», y el asistente pide los dos ejes | 2026-10-11 |
-| **P10** | **`process_target_rules` se queda sólo con el CÓMO y el CUÁNDO**: el `cargo_id` y el eje estructural suben a la línea; la regla conserva `recipient_policy`, `priority`, vigencia y el refinamiento `unit_subtree` **dentro** del ámbito de la línea. Hay que decidir columna por columna. ⚠️ **El análisis de §8 contó 13 y hoy son 10**: `P18` se llevó `is_active` y las dos fechas, y `P19` un valor del `CHECK` | 🟡 | **ANÁLISIS HECHO** (§8 y §8-bis): las 13 se reparten en **cuatro** grupos, no dos, y destapó **tres huecos**. ⚠️ **Y la reevaluación del dueño lo reordenó**: si el mismo documento va a Coordinaciones de Carrera **y** de Tecnología, el DÓNDE de una línea es un **conjunto** —dos líneas no pueden compartir plantilla, lo impide `trg_pdt_linea_unica`—, así que `P8` hay que rehacerla en parte y la regla pasa a ser **copia entera**. **Falta la decisión del dueño** | |
+| **P10** | **LA REGLA SE QUEDA SÓLO CON EL AFINADO** (§13). Pierde `cargo_id`, `unit_scope_type`, `unit_type_id` y `unit_id` —**copia de la línea**, un residuo de cuando la regla era la declaración— y `priority`, que **no ordenaba nada**. De **10 columnas a 6**. Conserva `recipient_policy` y `position_id`, que dicen lo que un cargo **no puede**: «el que manda aquí» —porque el cargo de la jefatura varía por tipo de unidad— y «esta plaza» | ✅ | Lo demostró el **comportamiento**, no los datos: `procesosDeLaUnidad.js` tenía **dos consultas del mismo módulo** preguntando lo mismo a dos tablas, con dos respuestas posibles y nada que las igualara. **Dos huecos cerrados por construcción**: el **1** de §8 (`unit_id` leído y nunca usado) y el clon, que arrastraba el ámbito **verbatim** y dejaba el reparto congelado al versionar. Entraron **dos garantías nuevas**: `ck_ptr_puesto_exacto` (la política y su puesto, en los dos sentidos, que antes sólo validaba el CRUD) y el guardia reducido comprueba por fin la **unidad** del puesto exacto. **320/320 char con 2 goldens movidos** —las columnas fuera, y el panel con prefijo `linea_`—, 887/887 backend (+1) y 495/495 frontend, 5 puertas del backend, 31 del frontend, 5 de documentación, y 5 páginas del sitio + 3 generadores en el mismo commit. ⚠️ **El censo por prefijo de alias se dejó una consulta sin alias** y la cazó char con 27 fallos (§13.10) | 2026-10-14 |
 | **P11** | ⛔ **SALE DE ESTE FRENTE** · los ciclos en las claves ajenas autorreferenciales. Se abre el **[frente 26](./ciclos-en-los-grafos-2026-10.md)**, donde al medirlo resultaron ser **seis** grafos y no cinco | ⛔ | decisión del dueño: *«para los ciclos frente propio»*. Lo que queda aquí es que **`lineas.linea_anterior_id` nazca ya protegido**, lo que el frente 26 deja escrito en su §5 | 2026-10-11 |
 | **P12** | **La bifurcación del linaje es DELIBERADA**: se permite que dos líneas sucedan a la misma —una obligación que se parte es real— pero crear el segundo sucesor avisa. Las **fusiones no se pueden declarar** con una sola columna, y queda dicho | ⬜ | **depende de `P8`** | |
 | **P17** | ⛔ **DESCARTADA** · el DÓNDE de una línea como conjunto. La sustituye `P20`: si el formato puede servir a varias líneas del mismo proceso, Carrera y Tecnología son **dos líneas que comparten papel** —cada una con su vigencia y su linaje, que es lo que el conjunto no daba— y la línea conserva **un** ámbito | ⛔ | el dueño eligió quitar la restricción en vez de meter el conjunto. `ck_lineas_unit_scope` y `uq_lineas_identidad` se quedan como están | 2026-10-12 |
@@ -2063,3 +2063,69 @@ es suyo: `recipient_policy` y `position_id`.
 
 Y aparece una tarea que no estaba: **la copia de `pdv.process_id`**. No es de la regla, así que no es
 `P10`; es de la misma familia que `P2-bis`, y se registra como **`P22`**.
+
+### 13.10 · Lo que costó, y la trampa del censo (2026-10-14)
+
+**El censo por prefijo de alias se dejó una consulta.** El barrido buscaba `ptr.`, `rule.` y `r.` y
+dio 67 referencias en 8 ficheros. Faltaba una: `getProcessTargetScope`, en `org/taskAssignment.js`,
+que nombraba las columnas **sin cualificar**:
+
+```
+SELECT unit_scope_type, unit_id, unit_type_id, cargo_id, position_id
+  FROM process_target_rules
+```
+
+La cazó `test:char:run` con **27 fallos** y un `column "unit_scope_type" does not exist`. Es la misma
+lección que `check:sql-aliases` lleva escrita por el otro lado: **una consulta sin alias es invisible
+para un censo que busca prefijos.** El censo bueno es por *plantilla que nombra la tabla*, y da 2
+sospechosas más —las dos falsos positivos: la tabla vecina y un comentario—.
+
+**Y un fallo encadenado que parecía tres.** Tras arreglarlo quedaban 5 fallos, y tres de ellos eran
+**daño colateral de uno**: el golden de `graft_target_rules_create` se movió —legítimamente, dos
+columnas menos—, su test lanzó en el `matchSnapshot`, **su limpieza del `finally` no corrió**, y la
+configuración borrador que siembra sobrevivió. Eso cambió qué fila devolvía `body[0]` en otro test
+—que clonó de una configuración sin vínculo— y el conteo de borradores en una **tercera suite**. El
+propio test lo advierte en un comentario escrito tras pisar ese rastrillo: *«un caso que siembra
+estado global lo tiene que recoger pase lo que pase»* — y lo recoge en un `finally`, que no protege
+de que el `matchSnapshot` lance **antes**.
+
+Cómo se distinguió de una rotura real: **el estado final de la base**. El baseline deja 2
+configuraciones; la corrida con el cambio dejaba 4, con ids salteados — y los huecos de la secuencia
+dicen que allí hubo inserciones revertidas. Un `git stash` + char confirmó 320/320 antes del cambio,
+así que el fallo era mío; el estado comparado dijo **dónde**.
+
+### 13.11 · Lo que la regla NO perdió, y por qué sigue existiendo
+
+La pregunta del dueño al decidir: *«si quitas las copias, ¿para qué nos sirven ahora las reglas?»*.
+La respuesta no son los datos —`unit_head` y `exact_position` tienen cero filas— sino el
+comportamiento:
+
+| Valor | ¿Se puede decir con un cargo? |
+|---|---|
+| `all_matches` | sí: es no decir nada |
+| `unit_head` | **NO.** El cargo de la jefatura **varía por tipo de unidad** — Escuela→Director, Carrera→Coordinador, Jefatura→Jefe, Prorrectorado→Prorrector. «El responsable de cada unidad entrega su informe» es **una** obligación, y por cargo serían **cuatro** |
+| `exact_position` | **NO.** La obligación llega a *(cargo, unidad)* y ahí se para; `unit_positions` tiene una tercera coordenada, `slot_no`, y con `Docente` a 8 plazas por Carrera «el de la plaza 3» sólo se dice con el puesto |
+
+**Así que la regla no es «cómo se reparte»: es el QUIÉN cuando el cargo no basta** — porque varía o
+porque hay que bajar a la plaza. Eso es lo que justifica que la tabla siga existiendo, y es un
+argumento de modelo, no de uso.
+
+⚠️ **Y deja abierta una coincidencia que conviene no perder:** `recipient_policy = 'unit_head'` dice
+«la jefatura» en el **reparto**, y el resolutor `ancestor_unit_head` de `P21` dirá «la jefatura» en el
+**recorrido**. Son la misma idea en los dos ejes del sistema —hacia abajo al crear la obligación,
+hacia arriba al pedir la firma—, y si acaban con vocabularios distintos será deuda hecha a mano. El
+renombrado de `P6`/`P15` es el sitio para igualarlos.
+
+### 13.12 · La capacidad que SÍ estaba ejercitada, y su traducción
+
+De las dos cosas que se pierden, una **estaba en uso** — no en los datos sembrados, sino en el script
+de siembra rica (`seed_dev_rich.mjs`): una línea `all_units` + cargo Docente, acotada por **dos
+reglas `unit_exact`**, una por Carrera.
+
+Y su traducción es **mejor que lo que sustituye**: una sola línea `unit_type` = Carrera. La obligación
+no es «los Docentes de las unidades 8 y 9» —dos ids sueltos que nadie puede leer como una idea— sino
+**«los Docentes de las Carreras»**, que es lo que la institución diría. Da el mismo resultado, porque
+esas dos son las únicas Carreras del organigrama sembrado, pero lo dice entendiéndolo.
+
+**Esa es la forma de las dos pérdidas**: no eran capacidades, eran formas peores de decir algo que la
+obligación ya sabe decir — y sin nombre, sin vigencia y sin linaje, que es lo que la línea sí tiene.

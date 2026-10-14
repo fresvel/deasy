@@ -77,36 +77,15 @@ export function useProcessDefinitionManager({
   // La serie del proceso fija un eje (cargo o tipo de unidad). Lo re-sembramos sobre el formulario tras
   // cualquier cambio para que no quede estado obsoleto (p. ej. al alternar la entrega). En "puesto exacto"
   // el puesto define unidad y cargo, así que no se siembra (el guard del backend valida el puesto).
-  const applyRuleSeriesSeed = (form, labels) => {
-    const scope = definitionRulesLineaScope?.value;
-    if (!scope) {
-      return { form, labels };
-    }
-    const isExact = String(form.recipient_policy || "") === "exact_position";
-    const nextForm = { ...form };
-    const nextLabels = { ...labels };
-    if (scope.cargo_id && !isExact) {
-      nextForm.cargo_id = String(scope.cargo_id);
-      nextLabels.cargo_id = scope.cargo_name || String(scope.cargo_id);
-    }
-    if (scope.source_type === "unit_type" && scope.unit_type_id && !isExact) {
-      nextForm.unit_scope_type = "unit_type";
-      nextForm.unit_type_id = String(scope.unit_type_id);
-      nextForm.unit_id = "";
-      nextLabels.unit_type_id = scope.unit_type_name || String(scope.unit_type_id);
-      nextLabels.unit_id = "";
-    }
-    return { form: nextForm, labels: nextLabels };
-  };
-
+  // AQUI VIVIA `applyRuleSeriesSeed`, que copiaba el cargo y el tipo de unidad de la linea DENTRO
+  // del formulario de la regla para que el usuario viera prerrellenado lo que un guardia del backend
+  // iba a imponer de todas formas. Se fue con las cuatro columnas (frente 25, P10): no hay nada que
+  // sembrar, porque la regla ya no declara el alcance. `definitionRulesLineaScope` sigue cargandose
+  // —la pantalla lo ENSENA como contexto—, pero ya no se copia a ningun campo.
   const resetDefinitionRulesForm = () => {
     definitionRulesEditId.value = "";
-    const seeded = applyRuleSeriesSeed(
-      processDefinitionAdminService.createRuleForm(),
-      processDefinitionAdminService.createRuleLabels()
-    );
-    definitionRulesForm.value = seeded.form;
-    definitionRulesLabels.value = seeded.labels;
+    definitionRulesForm.value = processDefinitionAdminService.createRuleForm();
+    definitionRulesLabels.value = processDefinitionAdminService.createRuleLabels();
   };
 
   const loadDefinitionRulesSeriesScope = async (definitionId) => {
@@ -149,19 +128,6 @@ export function useProcessDefinitionManager({
     return cargoLabel ? `${primaryLabel} | ${cargoLabel}` : primaryLabel;
   };
 
-  const handleDefinitionRuleScopeChange = (scopeType = "") => {
-    const form = scopeType
-      ? { ...definitionRulesForm.value, unit_scope_type: scopeType }
-      : definitionRulesForm.value;
-    const nextState = processDefinitionAdminService.applyRuleScopeChange(
-      form,
-      definitionRulesLabels.value
-    );
-    const seeded = applyRuleSeriesSeed(nextState.form, nextState.labels);
-    definitionRulesForm.value = seeded.form;
-    definitionRulesLabels.value = seeded.labels;
-  };
-
   const handleDefinitionRuleRecipientPolicyChange = (recipientPolicy = "") => {
     const form = recipientPolicy
       ? { ...definitionRulesForm.value, recipient_policy: recipientPolicy }
@@ -170,9 +136,8 @@ export function useProcessDefinitionManager({
       form,
       definitionRulesLabels.value
     );
-    const seeded = applyRuleSeriesSeed(nextState.form, nextState.labels);
-    definitionRulesForm.value = seeded.form;
-    definitionRulesLabels.value = seeded.labels;
+    definitionRulesForm.value = nextState.form;
+    definitionRulesLabels.value = nextState.labels;
   };
 
   const refreshProcessDefinitionChecklist = async (definitionRow = selectedRow.value) => {
@@ -915,7 +880,6 @@ export function useProcessDefinitionManager({
     resetDefinitionRulesForm,
     resetDefinitionTriggersForm,
     formatDefinitionRuleSummary,
-    handleDefinitionRuleScopeChange,
     handleDefinitionRuleRecipientPolicyChange,
     refreshProcessDefinitionChecklist,
     loadDefinitionRules,

@@ -251,16 +251,27 @@ test("validateTableRules exige puesto exacto cuando la política lo es", () => {
   );
 });
 
-test("validateTableRules exige una base para el alcance por unidad", () => {
+// ⚠️ ESTA PRUEBA EXIGIA UNA BASE PARA EL ALCANCE DE LA REGLA, y ese alcance ya no existe: sus
+// cuatro columnas eran copia de la línea y salieron con `P10` (frente 25, 2026-10-14). El alcance se
+// valida UNA vez, en `lineaScopeConsistent`, que es donde se declara.
+//
+// Lo que queda por validar es la pareja política/puesto, y ahora en las DOS direcciones: antes sólo
+// se comprobaba que `exact_position` trajera su puesto. Un puesto con otra política es un dato que
+// nadie lee —`getPositionsForRule` lo usaría igual, porque mira `position_id` antes que la política—
+// así que guardarlo sin declararlo cambia a quién le llega el trabajo.
+test("validateTableRules empareja la politica de entrega con su puesto, en los dos sentidos", () => {
   throwsWith(
-    () => validateTableRules("process_target_rules", { process_definition_id: 1, unit_scope_type: "unit_exact" }),
-    "requiere una unidad base",
+    () => validateTableRules("process_target_rules", { process_definition_id: 1, recipient_policy: "exact_position" }),
+    "requiere un puesto exacto",
   );
-  // Un puesto sirve como base, no solo la unidad.
+  throwsWith(
+    () => validateTableRules("process_target_rules", { process_definition_id: 1, recipient_policy: "unit_head", position_id: 5 }),
+    "Solo la politica exact_position admite un puesto exacto.",
+  );
   assert.doesNotThrow(() =>
     validateTableRules("process_target_rules", {
       process_definition_id: 1,
-      unit_scope_type: "unit_exact",
+      recipient_policy: "exact_position",
       position_id: 5,
     }),
   );
@@ -351,11 +362,13 @@ test("validateTableRules exige al menos un formato disponible en el artifact", (
 // perdió su vigencia en el frente 25 (P18-d) —nace y muere con su versión de la norma—, así que no
 // hay fechas que ordenar y el requerido es lo primero. El orden intercalado sigue siendo contrato
 // en las otras tres tablas de este bloque.
-test("process_target_rules exige su configuracion antes que el alcance", () => {
+test("process_target_rules exige su configuracion antes que el afinado", () => {
   throwsWith(() => validateTableRules("process_target_rules", {}), "Selecciona una configuracion de proceso.");
+  // Decía «antes que el alcance», y el alcance se fue con `P10`. El orden sigue siendo contrato: el
+  // requerido primero, el afinado después.
   throwsWith(
-    () => validateTableRules("process_target_rules", { process_definition_id: 1, unit_scope_type: "unit_type" }),
-    "El alcance por tipo requiere un tipo de unidad.",
+    () => validateTableRules("process_target_rules", { process_definition_id: 1, recipient_policy: "exact_position" }),
+    "requiere un puesto exacto",
   );
   assert.doesNotThrow(() => validateTableRules("process_target_rules", { process_definition_id: 1 }));
 });

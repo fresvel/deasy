@@ -317,18 +317,17 @@
         ],
         "rules": [
           {
-            "cargo_id": "<normalized>",
             "cargo_name": null,
             "display_label": "Todas las unidades",
             "id": "<normalized>",
+            "linea_cargo_id": "<normalized>",
+            "linea_unit_id": "<normalized>",
+            "linea_unit_scope_type": "all_units",
+            "linea_unit_type_id": "<normalized>",
             "position_id": "<normalized>",
             "position_title": null,
-            "priority": 1,
             "recipient_policy": "all_matches",
-            "unit_id": "<normalized>",
             "unit_name": null,
-            "unit_scope_type": "all_units",
-            "unit_type_id": "<normalized>",
             "unit_type_name": null
           }
         ],

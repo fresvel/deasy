@@ -75,18 +75,12 @@ Table "process_definition_versions" {
 Table "process_target_rules" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
-  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'unit_type'::text, 'all_units'::text])`, default: 'unit_exact']
-  "unit_id" int4
-  "unit_type_id" int4
-  "cargo_id" int4
   "position_id" int4
   "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text, 'exact_position'::text])`, default: 'all_matches']
-  "priority" int4 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
     process_definition_id [type: btree, name: "idx_process_target_rules_definition"]
-    (unit_scope_type, unit_id, unit_type_id) [type: btree, name: "idx_process_target_rules_scope"]
   }
 
   Note: '''El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.'''
@@ -162,10 +156,7 @@ Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."p
 //   units -> lineas   [organizacion]
 //   process_definition_versions -> process_runs   [tareas]
 //   terms -> process_runs   [tareas]
-//   cargos -> process_target_rules   [identidad]
 //   unit_positions -> process_target_rules   [organizacion]
-//   unit_types -> process_target_rules   [organizacion]
-//   units -> process_target_rules   [organizacion]
 //   vinculos -> task_items   [tareas]
 //   process_definition_versions -> tasks   [tareas]
 //   terms -> tasks   [tareas]

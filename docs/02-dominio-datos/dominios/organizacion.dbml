@@ -239,8 +239,6 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 //   paises -> persons   [identidad]
 //   persons -> position_assignments   [identidad]
 //   unit_positions -> process_target_rules   [procesos]
-//   unit_types -> process_target_rules   [procesos]
-//   units -> process_target_rules   [procesos]
 //   relation_unit_types -> role_assignment_relation_types   [identidad]
 //   position_assignments -> role_assignments   [identidad]
 //   units -> role_assignments   [identidad]

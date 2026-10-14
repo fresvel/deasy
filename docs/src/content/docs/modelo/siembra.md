@@ -23,7 +23,9 @@ sola transacción**: si algo falla, no queda medio sembrado.
    pertenecen a ningún proceso formal: «hazme el informe de este evento».
 2. **Le da su LÍNEA** (`lineas`): la obligación en sí, con los dos ejes juntos. La del «Proceso por
    defecto» es *«cualquier cargo, en todas las unidades»* —`cargo_id` vacío y
-   `unit_scope_type = 'all_units'`—, porque un memo lo escribe quien lo necesita donde lo necesita.
+   `unit_scope_type = 'all_units'` **en su línea**—, porque un memo lo escribe quien lo necesita
+   donde lo necesita. La regla que el arranque crea no declara alcance ninguno desde el 2026-10-14:
+   lo hereda de la obligación.
    Aquí se sembraba antes una **serie**, que se retiró el 2026-10-11: el porqué está en
    [el proceso](/modelo/proceso/).
 

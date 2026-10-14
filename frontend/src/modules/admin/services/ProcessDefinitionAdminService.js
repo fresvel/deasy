@@ -5,23 +5,18 @@ export class ProcessDefinitionAdminService {
     this.sqlService = sqlService;
   }
 
+  // DOS CAMPOS, Y ERAN SIETE. `unit_scope_type`, `unit_id`, `unit_type_id` y `cargo_id` eran copia
+  // de la línea y salieron de la regla con `P10` (frente 25, 2026-10-14); `priority` se fue con
+  // ellas porque sólo aparecía en un `ORDER BY`. El alcance se edita en la obligación.
   createRuleForm() {
     return {
-      unit_scope_type: "unit_exact",
-      unit_id: "",
-      unit_type_id: "",
-      cargo_id: "",
       position_id: "",
-      recipient_policy: "all_matches",
-      priority: "1"
+      recipient_policy: "all_matches"
     };
   }
 
   createRuleLabels() {
     return {
-      unit_id: "",
-      unit_type_id: "",
-      cargo_id: "",
       position_id: ""
     };
   }
@@ -53,103 +48,29 @@ export class ProcessDefinitionAdminService {
     };
   }
 
-  applyRuleScopeChange(form, labels) {
-    const scopeType = String(form.unit_scope_type || "");
-    const recipientPolicy = String(form.recipient_policy || "");
-    if (scopeType === "unit_type") {
-      return {
-        form: {
-          ...form,
-          unit_id: "",
-          position_id: "",
-          recipient_policy: recipientPolicy === "exact_position" ? "all_matches" : (form.recipient_policy || "all_matches")
-        },
-        labels: {
-          ...labels,
-          unit_id: "",
-          position_id: ""
-        }
-      };
-    }
-    if (scopeType === "all_units") {
-      return {
-        form: {
-          ...form,
-          unit_id: "",
-          unit_type_id: "",
-          position_id: "",
-          recipient_policy: recipientPolicy === "exact_position" ? "all_matches" : (form.recipient_policy || "all_matches")
-        },
-        labels: {
-          ...labels,
-          unit_id: "",
-          unit_type_id: "",
-          position_id: ""
-        }
-      };
-    }
-    const keepsExactPosition = recipientPolicy === "exact_position" && scopeType === "unit_exact";
-    return {
-      form: {
-        ...form,
-        unit_type_id: "",
-        position_id: keepsExactPosition ? form.position_id : "",
-        recipient_policy: recipientPolicy === "exact_position" && !keepsExactPosition ? "all_matches" : (form.recipient_policy || "all_matches")
-      },
-      labels: {
-        ...labels,
-        unit_type_id: "",
-        position_id: keepsExactPosition ? labels.position_id : ""
-      }
-    };
-  }
-
+  // AQUI VIVIA `applyRuleScopeChange`, 54 lineas que limpiaban las columnas que el alcance elegido
+  // no usaba. Se fue con el alcance (`P10`): la regla ya no lo declara.
+  //
+  // Lo que queda es la pareja politica/puesto, y en un solo sentido: el puesto solo vive con
+  // `exact_position`. La base lo impone con `ck_ptr_puesto_exacto`; esto evita enviarlo.
   applyRuleRecipientPolicyChange(form, labels) {
-    const recipientPolicy = String(form.recipient_policy || "");
-    if (recipientPolicy === "exact_position") {
-      return {
-        form: {
-          ...form,
-          unit_scope_type: "unit_exact",
-          unit_type_id: "",
-          cargo_id: ""
-        },
-        labels: {
-          ...labels,
-          unit_type_id: "",
-          cargo_id: ""
-        }
-      };
+    if (String(form.recipient_policy || "") === "exact_position") {
+      return { form: { ...form }, labels: { ...labels } };
     }
-
     return {
-      form: {
-        ...form,
-        position_id: ""
-      },
-      labels: {
-        ...labels,
-        position_id: ""
-      }
+      form: { ...form, position_id: "" },
+      labels: { ...labels, position_id: "" }
     };
   }
 
   buildRulePayload(definitionId, form) {
     const recipientPolicy = form.recipient_policy || "all_matches";
-    const scopeType = form.unit_scope_type || "unit_exact";
     const usesExactPosition = recipientPolicy === "exact_position";
-    const usesUnitScope = scopeType === "unit_exact" || usesExactPosition;
-    const usesUnitTypeScope = scopeType === "unit_type" && !usesExactPosition;
 
     return {
       process_definition_id: Number(definitionId),
-      unit_scope_type: usesExactPosition ? "unit_exact" : scopeType,
-      unit_id: usesUnitScope && form.unit_id ? Number(form.unit_id) : null,
-      unit_type_id: usesUnitTypeScope && form.unit_type_id ? Number(form.unit_type_id) : null,
-      cargo_id: !usesExactPosition && form.cargo_id ? Number(form.cargo_id) : null,
       position_id: usesExactPosition && form.position_id ? Number(form.position_id) : null,
-      recipient_policy: recipientPolicy,
-      priority: Number(form.priority || 1) || 1
+      recipient_policy: recipientPolicy
     };
   }
 
@@ -181,7 +102,9 @@ export class ProcessDefinitionAdminService {
   listRules(processDefinitionId) {
     return this.sqlService.list("process_target_rules", {
       filter_process_definition_id: processDefinitionId,
-      orderBy: "priority",
+      // Ordenaba por `priority`, y esa columna se fue con `P10`: no desempataba nada, porque las
+      // reglas de una configuracion se UNEN. Por `id` la lista queda estable.
+      orderBy: "id",
       order: "asc",
       limit: 200
     });

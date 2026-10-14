@@ -12,6 +12,19 @@
 // dice por cuál: directamente por `unit_id`, por su TIPO de unidad, o por ser de alcance global.
 // Se devuelven las tres juntas porque la pantalla las muestra en una sola lista ordenada.
 export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTypeId) => {
+  // ⚠️ EL AMBITO SE LEE DE `lineas`, NO DE LA REGLA, y es el cambio de `P10` (2026-10-14).
+  //
+  // `unit_scope_type`, `unit_id`, `unit_type_id` y `cargo_id` estaban TAMBIEN en
+  // `process_target_rules`, como copia — y este fichero fue la prueba de comportamiento de que la
+  // copia hacia dano: esta consulta leia `ptr.unit_scope_type` y `ptr.cargo_id` mientras
+  // `listarProcesosEnganchables`, treinta lineas mas abajo, leia `lin.*` para preguntar LO MISMO.
+  // Dos sitios donde mirar, dos respuestas posibles, y nada que garantizara que coincidieran: el
+  // guardia blindaba el cargo y el tipo, pero `unit_id` lo leia y no lo usaba nunca.
+  //
+  // El `INNER JOIN lineas` ya estaba aqui (era `LEFT`, por el nombre de la linea), asi que leer
+  // bien no cuesta un salto mas. Pasa a `INNER` porque `linea_id` es `NOT NULL`: un `LEFT` prometia
+  // una fila sin linea que el modelo no permite, y con el ambito colgando de ahi habria dado NULL
+  // en el `CASE` en vez de 'global'.
   const [filas] = await ejecutor.query(
     `SELECT
             ptr.id AS rule_id,
@@ -22,33 +35,33 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
             pdv.linea_id,
             lin.nombre AS linea_nombre,
             pdv.status,
-            ptr.unit_scope_type,
+            -- el ambito sale de la LINEA (frente 25, P10); ver la cabecera de la funcion
+            lin.unit_scope_type,
+            lin.unit_id,
+            lin.unit_type_id,
+            lin.cargo_id,
             ptr.recipient_policy,
-            ptr.priority,
-            ptr.unit_id,
-            ptr.unit_type_id,
-            ptr.cargo_id,
             ptr.position_id,
             c.name AS cargo_name,
             up.title AS position_title,
             upc.name AS position_cargo_name,
             CASE
-              WHEN ptr.unit_id = ? THEN 'direct'
-              WHEN ptr.unit_type_id IS NOT NULL AND ptr.unit_type_id = ? THEN 'type'
-              WHEN ptr.unit_scope_type = 'all_units' THEN 'global'
+              WHEN lin.unit_id = ? THEN 'direct'
+              WHEN lin.unit_type_id IS NOT NULL AND lin.unit_type_id = ? THEN 'type'
+              WHEN lin.unit_scope_type = 'all_units' THEN 'global'
               ELSE 'other'
             END AS origin
      FROM process_target_rules ptr
      INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
-       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
+      INNER JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN processes p ON p.id = pdv.process_id
-     LEFT JOIN cargos c ON c.id = ptr.cargo_id
+     LEFT JOIN cargos c ON c.id = lin.cargo_id
      LEFT JOIN unit_positions up ON up.id = ptr.position_id
      LEFT JOIN cargos upc ON upc.id = up.cargo_id
-     WHERE ptr.unit_id = ?
-        OR (ptr.unit_type_id IS NOT NULL AND ptr.unit_type_id = ?)
-        OR ptr.unit_scope_type = 'all_units'
-     ORDER BY (ptr.unit_id = ?) DESC,
+     WHERE lin.unit_id = ?
+        OR (lin.unit_type_id IS NOT NULL AND lin.unit_type_id = ?)
+        OR lin.unit_scope_type = 'all_units'
+     ORDER BY (lin.unit_id = ?) DESC,
               FIELD(pdv.status, 'active', 'draft', 'retired'),
               p.name ASC, pdv.definition_version DESC`,
     [unitId, unitTypeId, unitId, unitTypeId, unitId]

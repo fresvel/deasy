@@ -441,17 +441,9 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
-      {
-        name: "unit_scope_type",
-        label: "Alcance",
-        type: "select",
-        options: ["unit_exact", "unit_type", "all_units"],
-        defaultValue: "unit_exact"
-      },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
-      { name: "cargo_id", label: "Cargo", type: "number" },
-      { name: "position_id", label: "Puesto exacto", type: "number" },
+      // SIN `cargo_id`, SIN `unit_scope_type`, SIN `unit_type_id` Y SIN `unit_id` (frente 25, P10):
+      // eran cuatro copias de la linea, y la pantalla ofrecia EDITARLAS, asi que daba a elegir un
+      // alcance que un guardia revertia a continuacion. El alcance se edita en `lineas`.
       {
         name: "recipient_policy",
         label: "Entrega",
@@ -459,12 +451,13 @@ export const SQL_TABLES = [
         options: ["all_matches", "unit_head", "exact_position"],
         defaultValue: "all_matches"
       },
-      { name: "priority", label: "Prioridad", type: "number", defaultValue: 1 },
-      // SIN `is_active` NI VIGENCIA (frente 25, P18-d): la regla nace y muere con su version de
-      // la norma. Si el reparto cambia, es otra configuracion.
+      { name: "position_id", label: "Puesto exacto", type: "number", showWhen: { field: "recipient_policy", equals: "exact_position" } },
+      // SIN `priority` (frente 25, P10): solo aparecia en `ORDER BY` y las reglas se UNEN, asi que
+      // no podia desempatar nada. Y SIN `is_active` NI VIGENCIA (P18-d): la regla nace y muere con
+      // su version de la norma. Si el reparto cambia, es otra configuracion.
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["unit_scope_type", "recipient_policy"]
+    searchFields: ["recipient_policy"]
   },
   {
     table: "term_types",
