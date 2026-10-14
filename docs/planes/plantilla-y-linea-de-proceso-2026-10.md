@@ -163,7 +163,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P12** | **La bifurcación del linaje es DELIBERADA**: se permite que dos líneas sucedan a la misma —una obligación que se parte es real— pero crear el segundo sucesor avisa. Las **fusiones no se pueden declarar** con una sola columna, y queda dicho | ⬜ | **depende de `P8`** | |
 | **P17** | ⛔ **DESCARTADA** · el DÓNDE de una línea como conjunto. La sustituye `P20`: si el formato puede servir a varias líneas del mismo proceso, Carrera y Tecnología son **dos líneas que comparten papel** —cada una con su vigencia y su linaje, que es lo que el conjunto no daba— y la línea conserva **un** ámbito | ⛔ | el dueño eligió quitar la restricción en vez de meter el conjunto. `ck_lineas_unit_scope` y `uq_lineas_identidad` se quedan como están | 2026-10-12 |
 | **P20** | **Fuera `trg_pdt_linea_unica`; el límite es el PROCESO** — y la simetría de las dos identidades deja de depender de que alguien se acuerde | ✅ | `trg_vinculo_formato_un_proceso` lo sustituye, y **tres pruebas de `postgres_schema.test.js`** vigilan la simetría: el formato no declara columna hacia la obligación, la obligación no declara ninguna hacia el papel, y el puente une **versiones**, no identidades. **Provocada**: añadir `owner_process_id` a `catalogo_documental` la pone en rojo con su mensaje. 320/320 char (un golden nuevo, uno huérfano retirado), 891/891 unitarios, 5 puertas del backend, 5 de documentación, y 3 páginas del sitio en el mismo commit | 2026-10-12 |
-| **P21** | **EL EJE «DÓNDE» DEL RECORRIDO, TERMINADO** (§11). El análisis cambió el diagnóstico: no es «un vocabulario desincronizado» sino **un eje sin acabar**. Más de quince casos del dueño y **todos** son `cargo` + `ámbito`; los ámbitos son **cinco** y la base soporta **tres**. Cuatro pasos: **(a)** fuera `unit_subtree` de `workflows.js`, que `P19` retiró y aquí sobrevive en dos `Set`, dos ramas y **una prueba que lo afirma falso**; **(b)** el **ámbito 4** (`unit_type`) — la columna que falta, y es la opción que la pantalla YA ofrece y la base rechaza con un **400**; **(c)** el **ámbito 5** (`context_ancestor_head`) — la jefatura N niveles arriba por una relación declarada, **sin cargo**; **(d)** `webFillUnitScopeTypesForScope`, exportada y probada y **que no llama nadie**: engancharla o borrarla | 🟡 | **ANÁLISIS CERRADO** (§10, 23 apartados) **y PLAN FICHERO POR FICHERO ESCRITO** (§11), sin tocar código. Medido: el **400** provocado por API en entrega y en firma; la premisa falsa «ninguna pantalla los produce» escrita **cuatro veces**; `participantes_declarados` **sin** `unit_type_id`, así que el valor es **inalmacenable**, no sólo rechazado. Decisiones del dueño: **22** subir sí, bajar no · **23** `all_units` no se toca · el ámbito 5 **no lleva cargo** · el tipo de relación es **obligatorio** (`uq_unit_relations_child_type`). **Falta que el dueño revise §11.2**: si el ámbito 5 es un ámbito con `cargo_id` nulo (propuesta **B**) o un cuarto resolutor (**A**) | |
+| **P21** | **EL EJE «DÓNDE» DEL RECORRIDO, TERMINADO** (§11). El análisis cambió el diagnóstico: no es «un vocabulario desincronizado» sino **un eje sin acabar**. Más de quince casos del dueño y **todos** son `cargo` + `ámbito`; los ámbitos son **cinco** y la base soporta **tres**. Cuatro pasos: **(a)** fuera `unit_subtree` de `workflows.js`, que `P19` retiró y aquí sobrevive en dos `Set`, dos ramas y **una prueba que lo afirma falso**; **(b)** el **ámbito 4** (`unit_type`) — la columna que falta, y es la opción que la pantalla YA ofrece y la base rechaza con un **400**; **(c)** el **resolutor `ancestor_unit_head`** — la jefatura N niveles arriba por una relación declarada, **sin cargo**; **(d)** `webFillUnitScopeTypesForScope`, exportada y probada y **que no llama nadie**: engancharla o borrarla; **(e)** el **ámbito inerte**: `unit_scope_type` nullable, exigida sólo donde significa algo | 🟡 | **ANÁLISIS CERRADO** (§10, 23 apartados) **y PLAN FICHERO POR FICHERO ESCRITO** (§11), sin tocar código. Medido: el **400** provocado por API en entrega y en firma; la premisa falsa «ninguna pantalla los produce» escrita **cuatro veces**; `participantes_declarados` **sin** `unit_type_id`, así que el valor es **inalmacenable**, no sólo rechazado. Decisiones del dueño: **22** subir sí, bajar no · **23** `all_units` no se toca · el ámbito 5 **no lleva cargo** · el tipo de relación es **obligatorio** (`uq_unit_relations_child_type`). **DECISIÓN 24 TOMADA** (2026-10-13): el quinto lugar es un **resolutor** (`ancestor_unit_head`), no un ámbito — el dueño eligió **A**, con el coste medido y aceptado (13 ramas). **Nada queda pendiente de decidir: se puede ejecutar.** Cinco pasos en §11.9, y el (e) sale de una pregunta del dueño: el **ámbito inerte** sí era un defecto, y lo cierra `unit_scope_type` nullable | |
 | **P18** | **LA VIGENCIA, POR NIVELES** (decisión 21, §9). Cuatro cosas: **(a)** la vigencia de la línea **detiene la ejecución**; **(b)** la norma que aplica a un periodo es la vigente **al empezarlo**, no la que lo solape; **(c)** la vigencia de una norma **cabe dentro** de la de su obligación, impuesto por la base; **(d)** la regla pierde `is_active`, `effective_from` y `effective_to` — tres columnas | ✅ | ⚠️ **REESCRITA el 2026-10-12.** Decía «una sola vigencia, la de la línea», y **era falso**: la de la configuración NO está duplicada con `status`. El generador la compara contra el **periodo** y el menú contra **hoy** — dos significados para las mismas columnas, que es lo que hizo fallar el análisis. Cierra los huecos **2 y 3** del §8. **Hecha**: tres columnas fuera del esquema, del editor genérico, del validador, de la siembra, del arranque y del formulario; `trg_norma_dentro_de_su_obligacion` y `trg_linea_no_recorta_sus_normas` imponen la contención; el generador filtra por la vigencia de la línea y compara contra `term.start_date`. 320/320 char con **2 goldens movidos y nada más** —seis líneas, las tres columnas en `list_process_target_rules` y en `panel_usuario`—, 885/885 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, y tres páginas del sitio en el mismo commit. **Verificado en el navegador** (ver abajo) | 2026-10-12 |
 | **P19** | **`unit_subtree` se retira** de `process_target_rules` | ✅ | el `CHECK` baja de 4 valores a 3, y con el valor se van **dos CTE recursivas sin protección de ciclos** (dos de los seis grafos del frente 26) y **dos consultas por petición**: `getOrgTreeRows` del menú y `getOrgChildrenMap` del panel traían el organigrama entero para resolverlo. Y la tubería muerta detrás: `createUnitSubtreeResolver` en dos sitios. **320/320 char sin mover un golden** —cero filas lo usaban—, 885/885 unitarios (−6: cuatro pruebas del resolutor y tres del menú se van con él, una de ellas **la única prueba de ciclos del repositorio**, cuya materia pasa al frente 26), 495/495 de frontend, 5 puertas del backend, 31 del frontend, 5 de documentación | 2026-10-12 |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
@@ -1130,6 +1130,7 @@ una tabla nueva, y **no entra aquí**.
 |---|---|---|
 | **22** | **SUBIR sí, BAJAR no.** El recorrido podrá nombrar al antepasado; no a los descendientes. Un antepasado es **una** unidad y no cambia al crecer el organigrama; los descendientes son **N** y sí: el informe de una Escuela vería cambiar sus firmantes al crear una carrera | *«De acuerdo en subir sí y bajar no»* |
 | **23** | **`all_units` NO se toca hoy.** Tiene un uso real que el análisis no había visto: **los procesos por defecto, tipo memorando**, donde el cargo no se acota a propósito. Queda por **afinar**, no por retirar | *«lo de all_units creo que dejé/usaba para los por defecto como memos. Creo que no conviene tocar hoy pero sí ver si se puede afinar»* |
+| **24** | **EL QUINTO LUGAR ES UN RESOLUTOR, NO UN ÁMBITO** (opción **A** de §11.2). «La jefatura N niveles arriba» no lleva cargo, así que no cabe en el eje DÓNDE, que existe para decir **dónde se busca un cargo**. El eje QUIÉN pasa de tres valores a **cuatro** y el eje DÓNDE se queda en cuatro, todos con cargo. **Coste medido y aceptado**: 13 puntos de decisión del código crecen una rama (9 en backend, 4 en el formulario) | *«2.- A»* | 2026-10-13 |
 
 ### 10.11 · El colapso de tipos anidados — medido, y la implementación vieja lo resolvía MAL
 
@@ -1468,99 +1469,134 @@ reconstruye el pasado. Queda como **frente propio**, y es mayor que éste.
 Esto es **lo que se toca y por qué**, escrito antes de tocar nada para que el dueño lo revise. No
 hay código escrito todavía.
 
-### 11.0 · Lo que el análisis dejó cerrado, en una tabla
+### 11.0 · El eje DÓNDE y el eje QUIÉN, después de la decisión 24
 
-| # | Ámbito | Qué declara | Lleva cargo | Estado hoy |
-|---|---|---|:--:|---|
-| 1 | sin acotar | — | sí | ✅ `all_units` |
-| 2 | la unidad del documento | — | sí | ✅ `context_exact` |
-| 3 | una unidad concreta | la unidad | sí | ✅ `unit_exact` |
-| 4 | todas las de un tipo | el tipo | sí | ❌ falta la columna |
-| 5 | N niveles arriba | relación + niveles | **no** | ❌ falta entero |
+El análisis cerró el DÓNDE en **cinco lugares** (§10.21). Al escribir el plan apareció que el quinto
+**no es del mismo eje**: los otros cuatro dicen *dónde se busca un cargo*, y el quinto no lleva cargo.
+El dueño eligió la opción **A** —un resolutor propio— el 2026-10-13. Así queda el vocabulario:
 
-### 11.1 · EL MODELO: tres columnas nuevas y un valor que vuelve
+**Eje QUIÉN** (`participantes_declarados.resolver_type`) · de **3 valores a 4**:
+
+| Valor | Qué dice | Estado |
+|---|---|---|
+| `task_assignee` | quien debe el entregable | ✅ |
+| `specific_person` | una persona nombrada (sólo plantilla personal) | ✅ |
+| `cargo_in_scope` | un cargo, en un ámbito | ✅ |
+| **`ancestor_unit_head`** | **la jefatura de la unidad N niveles arriba** | ❌ **nuevo** |
+
+**Eje DÓNDE** (`participantes_declarados.unit_scope_type`) · de **3 valores a 4**, y **todos llevan cargo**:
+
+| # | Ámbito | Qué declara | Estado |
+|---|---|---|---|
+| 1 | sin acotar | — | ✅ `all_units` |
+| 2 | la unidad del documento | — | ✅ `context_exact` |
+| 3 | una unidad concreta | la unidad | ✅ `unit_exact` |
+| 4 | todas las de un tipo | el tipo | ❌ **falta `unit_type_id`** |
+
+⚠️ **Lo que la decisión 24 gana, y conviene verlo porque no era obvio al elegir:** el eje DÓNDE queda
+**homogéneo**. Antes de elegir, los cinco valores de la columna se dividían en «cuatro que acompañan a
+un cargo» y «uno que no», así que la columna `cargo_id` habría tenido que ser obligatoria para cuatro
+valores y prohibida para el quinto — la clase de restricción que luego nadie entiende. Con el quinto
+en el otro eje, **cada eje dice una sola cosa**.
+
+⚠️ **Y lo que cuesta:** cuatro resolutores donde el repositorio bajó de nueve a tres a propósito
+(frente 24). **Medido antes de aceptarlo: 13 puntos de decisión crecen una rama** —9 en el backend y 4
+en el formulario—, enumerados en §11.6 y §11.7. No es una estimación: son `switch` y cadenas de `if`
+contados con `grep`.
+
+### 11.1 · EL MODELO: un valor en cada eje, y tres columnas
 
 `plantillas.participantes_declarados` tiene **10 columnas** y pasa a **13**.
 
-| Columna | Tipo | Para qué | Ámbito |
+| Columna | Tipo | Para qué | Quién la usa |
 |---|---|---|---|
-| `unit_type_id` | `INT NULL` → `unit_types` | el tipo de unidad | **4** |
-| `relation_type_id` | `INT NULL` → `relation_unit_types` | por qué relación se sube | **5** |
-| `niveles` | `SMALLINT NULL` | cuántos escalones | **5** |
+| `unit_type_id` | `INT NULL` → `unit_types` | el tipo de unidad | ámbito **4** de `cargo_in_scope` |
+| `relation_type_id` | `INT NULL` → `relation_unit_types` | por qué relación se sube | `ancestor_unit_head` |
+| `niveles` | `SMALLINT NULL` | cuántos escalones | `ancestor_unit_head` |
 
-Y el `CHECK` de `unit_scope_type` pasa de **3 valores a 5**:
+⚠️ **`ancestor_unit_head` NO toca `unit_scope_type`.** La columna existe para decir dónde se busca un
+cargo y este resolutor no busca cargo: su unidad de partida es siempre la del documento y su destino
+lo dicen `relation_type_id` + `niveles`. Dejar ahí un valor de relleno sería repetir el defecto que
+el dueño señaló en §11.2(b).
 
-| Valor | Qué significa |
-|---|---|
-| `all_units` | sin acotar |
-| `context_exact` | la unidad del documento |
-| `unit_exact` | la unidad escrita |
-| `unit_type` | **vuelve**; ahora sí es almacenable |
-| `context_ancestor_head` | **nuevo**; la jefatura N niveles arriba |
+### 11.2 · El ámbito INERTE — la pregunta del dueño, contestada
 
-⚠️ **El nombre del quinto se parece al borrado a propósito.** `context_ancestor_type` existió y se
-borró el 2026-08-11 (§10.3). El nuevo es su reencarnación **corregida**: sube por una relación
-declarada, se para en un nivel exacto, y coge **la jefatura** en vez de un par (cargo, tipo). Que el
-nombre lo recuerde es deliberado.
+> *«el escritor pone `unit_exact` con la unidad vacía en todo paso de Responsable del entregable, a
+> propósito. ¿Acaso es un defecto?»*
 
-### 11.2 · DOS COSAS DEL DISEÑO QUE HAY QUE DECIDIR MIRÁNDOLAS, no de pasada
+**Sí, es un defecto. Pequeño, conocido y escrito en el código** —el propio escritor lo llama
+«limpieza posterior»— **pero defecto.** Y no está donde parece.
 
-**(a) El ámbito 5 no lleva cargo, y eso tensa el nombre del resolutor.**
+**Lo que pasa, en llano:** la columna `unit_scope_type` es **obligatoria** y sólo significa algo para
+**uno** de los resolutores. Para los otros dos hay que poner algo de todas formas, así que el escritor
+pone el valor que ponían las tablas viejas: `unit_exact` en entrega, `context_exact` en firma. **Dos
+valores distintos para la misma nada**, y por un motivo que ya caducó: reproducir el defecto de dos
+tablas que el frente 24 borró.
 
-El eje «QUIÉN» tiene tres valores y uno es `cargo_in_scope`. El ámbito 5 **no lleva cargo** —es «mi
-jefe»—, así que hay dos formas de encajarlo:
+**Y se ve en los datos.** Las dos únicas filas de la pila B, las dos del mismo resolutor:
 
-| | Forma | Coste |
-|---|---|---|
-| **A** | un **cuarto resolutor** (`unit_head`) | el repositorio bajó de nueve resolutores a tres a propósito; volver a cuatro deshace parte de eso, y los `switch` de resolución pasan de 3 ramas a 4 en todos sus sitios |
-| **B** | **ámbito** del resolutor por cargo, con `cargo_id` a `NULL` | mantiene tres resolutores y los dos ejes del dueño; el precio es que `cargo_in_scope` resuelve un caso **sin cargo**, así que el nombre queda corto |
+| `resolver_type` | `unit_scope_type` | unidad | cargo |
+|---|---|:--:|:--:|
+| `specific_person` | `context_exact` | — | — |
+| `specific_person` | `unit_exact` | — | — |
 
-**Propuesta: B.** El eje «DÓNDE» se queda con cinco valores, como el dueño lo cerró, y la rama del
-ámbito 5 filtra por `up.is_unit_head = 1` en vez de por `up.cargo_id = ?`. Que el nombre quede corto
-se anota como deuda con su motivo, no se tapa.
+Misma clase de participante, **dos ámbitos distintos, y las dos resuelven idéntico**. Eso es la
+definición de una columna que no significa nada ahí.
 
-**(b) El `CHECK` de coherencia NO puede exigir la unidad siempre, y el motivo está medido.**
+**El daño real es que impide una garantía.** Lo natural sería un `CHECK` como el de `lineas`: cada
+ámbito con su columna y ninguna otra. Pero mientras un paso de `task_assignee` lleve `unit_exact` sin
+unidad, **ese `CHECK` rechazaría todo paso de entrega del repositorio**. O sea: el valor de relleno
+**compra la retrocompatibilidad con dos tablas que ya no existen y paga con la restricción que
+protegería al ámbito 3.**
 
-Lo natural sería «cada ámbito con su columna y ninguna otra», como `ck_lineas_unit_scope` en
-`lineas`. Pero el ámbito es **inerte** para los otros dos resolutores: `participantesDeUnPasoDeEntrega`
-escribe `unit_exact` por defecto **con `unit_id` a `NULL`** para un paso de `task_assignee`, y eso
-está así a propósito (lo explica el comentario del escritor: reproduce el defecto de las columnas
-viejas). Un `CHECK` que exigiera `unit_id NOT NULL` en `unit_exact` **rechazaría todo paso de
-entrega del repositorio**.
+**Lo que lo cierra, y es una línea de esquema:** `unit_scope_type` pasa a **`NULL`** y se exige
+—`NOT NULL`— sólo cuando el resolutor es `cargo_in_scope`. Entonces «no aplica» se dice con `NULL`,
+que es lo que `NULL` significa, y el `CHECK` completo se puede imponer sin excepciones.
 
-Así que son **tres** restricciones y no una:
+Entra como **paso (e) de `P21`**, al final y no al principio, por un motivo: mueve las filas
+existentes y los dos escritores, y es el único paso del plan que **no** hace falta para los dos
+lugares nuevos. Si rompe algo, rompe solo.
+
+### 11.3 · LAS RESTRICCIONES
 
 ```
--- 1 · coherencia COMPLETA, pero solo donde el ambito significa algo
+-- 1 · coherencia del ambito, donde el ambito significa algo
 CONSTRAINT ck_participantes_ambito CHECK (
   resolver_type <> 'cargo_in_scope'
-  OR (unit_scope_type = 'all_units'     AND unit_id IS NULL     AND unit_type_id IS NULL     AND relation_type_id IS NULL     AND niveles IS NULL AND cargo_id IS NOT NULL)
-  OR (unit_scope_type = 'context_exact' AND unit_id IS NULL     AND unit_type_id IS NULL     AND relation_type_id IS NULL     AND niveles IS NULL AND cargo_id IS NOT NULL)
-  OR (unit_scope_type = 'unit_exact'    AND unit_id IS NOT NULL AND unit_type_id IS NULL     AND relation_type_id IS NULL     AND niveles IS NULL AND cargo_id IS NOT NULL)
-  OR (unit_scope_type = 'unit_type'     AND unit_id IS NULL     AND unit_type_id IS NOT NULL AND relation_type_id IS NULL     AND niveles IS NULL AND cargo_id IS NOT NULL)
-  OR (unit_scope_type = 'context_ancestor_head'
-                                        AND unit_id IS NULL     AND unit_type_id IS NULL     AND relation_type_id IS NOT NULL AND niveles IS NOT NULL AND cargo_id IS NULL)
+  OR (cargo_id IS NOT NULL AND (
+        (unit_scope_type = 'all_units'     AND unit_id IS NULL     AND unit_type_id IS NULL)
+     OR (unit_scope_type = 'context_exact' AND unit_id IS NULL     AND unit_type_id IS NULL)
+     OR (unit_scope_type = 'unit_exact'    AND unit_id IS NOT NULL AND unit_type_id IS NULL)
+     OR (unit_scope_type = 'unit_type'     AND unit_id IS NULL     AND unit_type_id IS NOT NULL)
+  ))
 ),
--- 2 · y las columnas nuevas no llevan basura NUNCA, sea cual sea el resolutor
-CONSTRAINT ck_participantes_tipo_solo_su_ambito CHECK (unit_type_id IS NULL OR unit_scope_type = 'unit_type'),
-CONSTRAINT ck_participantes_subida_solo_su_ambito CHECK (
-  (relation_type_id IS NULL AND niveles IS NULL) OR unit_scope_type = 'context_ancestor_head'
+-- 2 · el tipo de unidad no aparece en ningun otro sitio
+CONSTRAINT ck_participantes_tipo_solo_su_ambito CHECK (
+  unit_type_id IS NULL OR (resolver_type = 'cargo_in_scope' AND unit_scope_type = 'unit_type')
 ),
--- 3 · el techo de la subida: sin el, un ciclo del organigrama no acota
+-- 3 · la subida va completa, y SOLO en su resolutor
+CONSTRAINT ck_participantes_subida CHECK (
+  CASE WHEN resolver_type = 'ancestor_unit_head'
+       THEN relation_type_id IS NOT NULL AND niveles IS NOT NULL
+            AND cargo_id IS NULL AND unit_id IS NULL AND unit_type_id IS NULL
+       ELSE relation_type_id IS NULL AND niveles IS NULL
+  END
+),
+-- 4 · el techo de la subida
 CONSTRAINT ck_participantes_niveles CHECK (niveles IS NULL OR niveles BETWEEN 1 AND 10)
 ```
 
-⚠️ **El techo de `niveles` no es decorativo, y es la ventaja real de «N niveles» sobre «sube hasta
+⚠️ **El techo de `niveles` no es decorativo, y es la ventaja de «N niveles» sobre «sube hasta
 encontrar».** `unit_relations` es uno de los seis grafos **sin protección de ciclos** del frente 26.
-Con un nivel exacto, un ciclo no cuelga la consulta: sube N pasos y para. Con «sube hasta encontrar
-el cargo», sí.
+Con un nivel exacto un ciclo no cuelga la consulta: sube N pasos y para. Con «sube hasta encontrar el
+cargo», sí.
 
-Y la primera restricción **exige `cargo_id`** donde antes no se exigía: hoy un participante
-`cargo_in_scope` sin cargo es legal en la base y el resolutor devuelve lista vacía. Eso **sube de
-«no resuelve nadie, en silencio» a «la base lo rechaza»** — es un arreglo que viene de regalo, y por
-eso se declara aquí en vez de dejarlo pasar.
+⚠️ **Y la primera restricción exige `cargo_id`, donde hoy no se exige.** Un participante
+`cargo_in_scope` **sin cargo** es legal en la base y el resolutor devuelve lista vacía: nadie firma, y
+en silencio. Pasa a rechazo. Es un arreglo que viene de regalo, y por eso se declara en vez de dejarlo
+pasar.
 
-### 11.3 · LA CONSULTA DEL ÁMBITO 5
+### 11.4 · LA CONSULTA DE `ancestor_unit_head`
 
 ```sql
 WITH RECURSIVE arriba AS (
@@ -1584,7 +1620,7 @@ SELECT DISTINCT pa.person_id
  ORDER BY pa.person_id ASC
 ```
 
-Tres cosas que la hacen determinista, y cada una se apoya en algo ya medido:
+Tres cosas la hacen determinista, y cada una se apoya en algo ya medido:
 
 | | Qué garantiza | Quién lo garantiza |
 |---|---|---|
@@ -1592,118 +1628,187 @@ Tres cosas que la hacen determinista, y cada una se apoya en algo ya medido:
 | **una jefatura por unidad** | no hay que elegir entre varias personas | `uq_unit_head (unit_id, head_flag)` |
 | **`nivel = ?`, no `<=`** | «mi jefe» es **uno**, no la cadena | la corrección del dueño |
 
-La unidad de partida es `context.scope_unit_id`, que ya viaja en el contexto
+La unidad de partida es `context.scope_unit_id`, que **ya viaja en el contexto**
 (`getDocumentVersionFillContext`: `COALESCE(ti.target_unit_id, up_item.unit_id, t.scope_unit_id)`).
-**No hace falta traer ningún dato nuevo al contexto**, que es lo que hace este ámbito más barato que
-el `unit_subtree` que `P19` retiró: aquél traía el organigrama entero en dos consultas por petición.
+**No hace falta traer ni un dato nuevo**, y eso lo hace más barato que el `unit_subtree` que `P19`
+retiró: aquél traía el organigrama entero en dos consultas por petición.
 
-### 11.4 · FICHERO POR FICHERO · el esquema
+### 11.5 · FICHERO POR FICHERO · el esquema
 
 | Fichero | Qué se toca |
 |---|---|
-| `backend/database/postgres_schema.sql` | las **3 columnas**, sus 2 claves ajenas, el `CHECK` de 5 valores, las **4 restricciones** de §11.2, y un índice `(unit_scope_type, unit_type_id)` |
-| `backend/database/postgres_schema.test.js` **línea 302** | la aserción `assert.doesNotMatch(sinProsa, /unit_subtree\|unit_type_id/)` **se cae**: afirma que la columna no existe, y va a existir. Se sustituye por su contraria y por una que exija los 5 valores y las 4 restricciones |
+| `backend/database/postgres_schema.sql` | las **3 columnas**, sus 2 claves ajenas, el `CHECK` de `resolver_type` de 3 valores a 4, el de `unit_scope_type` de 3 a 4, las **4 restricciones** de §11.3, y un índice `(unit_scope_type, unit_type_id)` |
+| `backend/database/postgres_schema.test.js` **línea 302** | `assert.doesNotMatch(sinProsa, /unit_subtree\|unit_type_id/)` **se cae**: afirma que la columna no existe y va a existir. Se sustituye por su contraria y por una que exija los dos vocabularios y las 4 restricciones |
 | `scripts/docs/dominios.json` | **no se toca**: no hay tabla nueva |
 
-### 11.5 · FICHERO POR FICHERO · el backend que ESCRIBE la receta
+### 11.6 · FICHERO POR FICHERO · el backend
+
+**Los 9 puntos de decisión del backend**, que son el coste de la decisión 24:
+
+| Fichero · línea | Qué es | Qué se le añade |
+|---|---|---|
+| `generation/assignees.js` **83** | **el resolutor**, 3 `case` | el `case` nuevo, con la CTE de §11.4 |
+| `templates/workflows.js` **145** | `buildStepResolver` | emitir `relation_type_id` + `niveles` |
+| `templates/workflows.js` **555 · 563** | `checkResolverRefs` | que el tipo de relación exista y `niveles` esté en rango |
+| `templates/workflows.js` **590 · 656** | validación de pasos | el resolutor nuevo es legal en plantilla institucional |
+| `templates/flowRows.js` **109** | **la inversa**: lee la receta para reabrir el editor | emitir las dos columnas |
+| `identidad/.../user_controler.primitives.js` **169** | **el rótulo que la persona VE** | el `case` nuevo |
+| `plantillas/datos/recetaDelRecorrido.js` **27** | `RESOLUTORES`, el vocabulario del escritor | el cuarto valor, y leer las dos columnas en **las dos convenciones de nombre** |
+
+Y los que cambian sin crecer una rama:
 
 | Fichero | Qué se toca |
 |---|---|
-| `backend/dominios/plantillas/datos/recetaDelRecorrido.js` | `AMBITOS` de 3 a 5 valores (línea 28); los dos convertidores (`participantesDeUnPasoDeEntrega`, `participantesDeUnPasoDeFirma`) leen `unitTypeId`, `relationTypeId` y `niveles` en las **dos** convenciones de nombre; el `INSERT` de `reemplazarReceta` pasa de 8 columnas a 11 |
-| `backend/dominios/plantillas/datos/recetaDelRecorrido.test.js` **línea 84** | la prueba que exige que `unit_subtree` sea rechazado **se queda** (sigue fuera); se le añaden las dos nuevas y una que rechace `unit_type` **sin** `unit_type_id` |
-| `backend/services/admin/generation/documents.js` **línea 159** | `materializeRuntimeFlowForTaskItem` deriva hoy `unit_exact` o `all_units`. Si el editor de runtime va a ofrecer los ámbitos nuevos, `normSigner` tiene que propagarlos; **si no, no se toca** (ver 11.10) |
-| `backend/services/admin/templates/templateArtifact.js` · `templateLifecycle.js` · `flowRows.js` | sólo si pasan el ámbito por valor; `flowRows.js` **línea 112** es la **inversa** (lee la receta para reabrir el editor) y tiene que emitir las columnas nuevas o el formulario las pierde al reabrir |
+| `generation/primitives.js` | `resolveScopeForStep` devuelve `unitTypeId`. ⚠️ **Y hay que borrar un comentario que deja de ser verdad**: las líneas 15-19 explican por qué ya no lo devuelve |
+| `generation/queries.js` **184** | **no se toca**: el contexto ya trae `scope_unit_id`, que es todo lo que necesita la subida |
+| `config/sqlTables.js` **1234 y 1240** | la fachada de `/admin`: los dos desplegables, de 3 opciones a 4 |
+| `templates/workflows.js` **47-48 · 61-88** | los `Set` del vocabulario web: entra el resolutor, y **sale `unit_subtree`**, que `P19` retiró y aquí sobrevive |
+| `templates/workflows.js` **149-156 · 532** | las dos ramas de `unit_subtree`, fuera |
+| `services/admin/crud/validation.js` **111-160** | ⚠️ **NO SE TOCA**: es `process_target_rules`, el **reparto**. Mismo nombre de columna, otra tabla |
 
-⚠️ **`flowRows.js` es el fichero que se olvida.** Es la función que vuelve a pintar lo guardado; si
-no emite las tres columnas, el usuario declara «el jefe de mi escuela», guarda, reabre, y ve el
-ámbito por defecto. Nada falla, nada avisa: la declaración se pierde en silencio.
+⚠️ **`user_controler.primitives.js` no estaba en la primera versión de este plan, y es el que más se
+nota.** `buildFillStepDisplayLabel` es el rótulo que la persona lee en la pantalla de un paso. Si se
+añade un resolutor y no se toca, el paso aparece como **«Responsable no resuelto»** — nada falla, nada
+avisa, y el usuario ve un error que no existe. Y al abrirlo aparece otra cosa: **de sus siete ramas,
+tres son valores RETIRADOS** (`document_owner`, `position`, `manual_pick`). Son rótulos de un
+vocabulario que la base ya rechaza.
 
-### 11.6 · FICHERO POR FICHERO · el backend que RESUELVE
+⚠️ **`flowRows.js` es el otro que se olvida.** Es lo que vuelve a pintar lo guardado. Si no emite las
+columnas nuevas, el usuario declara «el jefe de mi escuela», guarda, reabre el editor y ve el valor
+por defecto. **La declaración se pierde en silencio.**
 
-| Fichero | Qué se toca |
+⚠️ **`webFillUnitScopeTypesForScope` está exportada, probada y no la llama nadie** (§10). O se engancha
+a la validación del endpoint —que es lo que su nombre promete— o se borra. **Dejarla no vale**: una
+lista de valores permitidos que nadie consulta es una puerta que no cierra.
+
+### 11.7 · FICHERO POR FICHERO · el frontend
+
+**Los 4 puntos de decisión**, todos en `AdminDraftArtifactModal.vue`:
+
+| Línea | Qué es |
 |---|---|
-| `backend/services/admin/generation/primitives.js` | `resolveScopeForStep` devuelve hoy `{unitScopeType, unitId}`; pasa a devolver también `unitTypeId`, `relationTypeId` y `niveles`. **Y aquí hay que borrar un comentario que va a dejar de ser verdad**: las líneas 15-19 dicen que «ya no devuelve `unitTypeId`» y por qué |
-| `backend/services/admin/generation/assignees.js` | `resolverPersonasPorCargo`: la rama del **ámbito 4** es una línea (`AND u.unit_type_id = ?` — el `JOIN` a `units` ya está); la del **ámbito 5** es la CTE de §11.3 y es **otra consulta**, no un filtro más, porque no parte de `unit_positions`. Y su cabecera de 25 líneas documenta «tres ámbitos, no cinco»: se reescribe |
-| `backend/services/admin/generation/assignees.test.js` | tres pruebas nuevas (ámbito 4, ámbito 5 a un nivel, ámbito 5 a dos) y la de `all_units` revisada |
-| `backend/services/admin/generation/queries.js` **líneas 184-186** | el contexto ya trae `scope_unit_id`, que es lo único que necesita el ámbito 5. **No se toca**, y el comentario de las tres `JOIN` retiradas **sigue siendo cierto**: el tipo de unidad del ámbito 4 se compara contra la unidad **candidata**, no contra la del documento |
+| **931** | el rótulo del resolutor |
+| **972-973** | el traductor del valor de la base al del formulario |
+| **977 · 1211** | los dos manejadores del desplegable «Quién» (entrega y firma) |
 
-### 11.7 · FICHERO POR FICHERO · la autoría y su validación
+Y el resto:
 
-Aquí está el **destrozo que `P21` arrastra**, y es más grande que los ámbitos: `workflows.js` (701
-líneas) todavía valida con el vocabulario de **antes del frente 24**.
-
-| Fichero | Qué se toca |
+| Qué | Dónde |
 |---|---|
-| `backend/services/admin/templates/workflows.js` **líneas 47-48** | `WEB_FILL_UNIT_SCOPE_TYPES_BY_SCOPE`: 3 valores en `official`, 2 en `ad_hoc`. Entra el ámbito 5; `unit_type` ya estaba |
-| **líneas 61-67 y 84-88** | `FILL_UNIT_SCOPE_TYPES` y `SIGNATURE_UNIT_SCOPE_TYPES` admiten **5 valores de los que 1 es inalmacenable** (`unit_subtree`, que `P19` retiró). Quedan en los 5 **reales** |
-| **líneas 149-156** (`buildStepResolver`) | la rama `unit_subtree` se cae; entra la del ámbito 5 |
-| **líneas 309-360** (`normalizeFillSteps`, `normalizeSignatureSigner`) | ya leen `unit_type_id` y **`relation_type_id`** (línea 327 y 508): el campo del ámbito 5 **ya está en el normalizador** y no tiene columna donde caer. Deja de ser un campo huérfano |
-| **líneas 510-556** (`checkCargoScope`) | el validador: la rama `unit_subtree` se cae; la de `unit_type` se queda tal cual; entra la del ámbito 5, que tiene que comprobar **que el tipo de relación exista** y que `niveles` esté en rango |
-| `backend/services/admin/templates/workflows.test.js` | **línea 113** afirma `FILL_UNIT_SCOPE_TYPES.has("unit_subtree") === true` «porque tiene productor». **No lo tiene desde `P19`**: esa prueba es falsa hoy y se cae. Las de **58-81** (los dos `buildStepResolver`) se quedan; hacen falta las del ámbito 5 |
-| `backend/services/admin/crud/validation.js` **líneas 111-160** | ⚠️ **NO SE TOCA.** Es `lineaScopeConsistent` y `process_target_rules`: el **reparto**, no el recorrido. Mismo nombre de columna, otra tabla |
+| El desplegable «Quién», de 3 opciones a 4 | **líneas 328-332 y 480-484** |
+| Las dos `<option value="unit_type">` **dejan de mentir** | **343 y 485** |
+| Dos campos nuevos —relación y niveles— cuando el resolutor es la subida | junto a los bloques de **346-370 y 488-512** |
+| Al cambiar de resolutor, **limpiar** las columnas que el nuevo no usa | **998-1016 y 1223**. Si no se limpian, el `CHECK` de §11.3 rechaza la fila, y el error llega como violación de restricción, no como mensaje |
+| El selector de cargo y el de ámbito **se ocultan** en la subida | es el único resolutor que oculta los dos |
+| Rótulos del panel y de la tabla | `AdminTableManagerConfig.js` · `AdminPresentationService.js` (medir con `grep` antes de tocar) |
 
-⚠️ **`webFillUnitScopeTypesForScope` está exportada, probada y no la llama nadie** (§10). O se
-engancha a la validación del endpoint —que es lo que el nombre promete— o se borra. **Lo que no vale
-es dejarla**: una lista de valores permitidos que nadie consulta es una puerta que no cierra.
+⚠️ **Hay un campo que se llama casi igual que el ámbito 4 y NO es él.** El formulario ya tiene
+`filter_unit_type_id` —«Tipo (filtro)», líneas 348-353— que sirve para **acortar el desplegable de
+unidades** cuando eliges el ámbito 3. **No se guarda en ninguna columna.** Si al implementar el
+ámbito 4 alguien lo reutiliza creyendo que es el mismo, un filtro de pantalla se convierte en
+declaración guardada. Son dos cosas y el nombre casi coincide.
 
-### 11.8 · FICHERO POR FICHERO · el frontend
-
-| Fichero | Qué se toca |
-|---|---|
-| `frontend/.../modals/AdminDraftArtifactModal.vue` **343 y 485** | las dos `<option value="unit_type">` dejan de mentir. Entran dos `<option value="context_ancestor_head">` — una en entrega, otra en firmas |
-| **líneas 346-370 y 488-512** | los bloques condicionales: `fillStepNeedsUnit` (ámbito 3) y `fillStepNeedsUnitType` (ámbito 4) ya existen. Falta un `fillStepNeedsSubida` que enseñe **dos** campos: relación y niveles |
-| **líneas 998-1016 y 1223** | `updateFillStepUbicacion` y `updateSignatureUbicacion` limpian las columnas que el ámbito nuevo no usa. **Si no limpian, el `CHECK` de §11.2 rechaza la fila** — y el error llegaría como una violación de restricción, no como un mensaje |
-| **el bloque del cargo** | en el ámbito 5 el selector de cargo **se oculta**: el ámbito no lo lleva. Es el único de los cinco que lo hace |
-| `frontend/.../services/AdminTableManagerConfig.js` | la columna del panel: si enseña el ámbito, los dos valores nuevos necesitan rótulo |
-| `frontend/.../composables/...` · `AdminPresentationService.js` | sólo si traducen el valor a castellano; hay que medirlo con `grep` antes de tocar |
-
-⚠️ **Y hay un campo que se llama casi igual y NO es el ámbito 4.** El formulario ya tiene un
-`filter_unit_type_id` —**«Tipo (filtro)»**, líneas 348-353— que sirve para **acortar el desplegable
-de unidades** cuando eliges el ámbito 3. No se guarda en ninguna columna. Si al implementar el
-ámbito 4 alguien reutiliza ese campo creyendo que es el mismo, el filtro de la pantalla se convierte
-en declaración guardada. **Son dos cosas y el nombre casi coincide.**
-
-### 11.9 · FICHERO POR FICHERO · la documentación publicada
+### 11.8 · FICHERO POR FICHERO · la documentación publicada
 
 | Fichero | Qué se toca |
 |---|---|
 | `docs/src/content/docs/modelo/flujo-de-entrega.md` **77-93** | enumera los tres ámbitos y dice que `unit_type` cayó «porque ninguna pantalla lo producía». Vuelve, y el párrafo tiene que contar **por qué volvió** |
-| `docs/src/content/docs/modelo/vocabularios-de-estado.md` **24** | la fila del vocabulario: de 3 valores a 5 |
-| `docs/src/content/docs/modelo/flujo-de-firma.md` | su `erDiagram` dibuja `participantes_declarados`; si no declara `%% parcial`, hay que añadir las tres columnas o `check-diagramas-coherentes.mjs` lo marca |
+| `docs/src/content/docs/modelo/vocabularios-de-estado.md` **24** | la fila del vocabulario: los **dos** ejes crecen |
+| `docs/src/content/docs/modelo/flujo-de-firma.md` | su `erDiagram` dibuja `participantes_declarados`: o las tres columnas, o `%% parcial` con su motivo, o `check-diagramas-coherentes.mjs` lo marca |
 | `docs/02-dominio-datos/` · `docs/public/diagramas/` | **GENERADOS**: `bash scripts/docs/gen-dbml.sh` |
-| `docs/src/content/docs/referencia/campos-proceso-documento.md` · `modelo/mapa-con-campos.md` | **GENERADOS**: `gen-campos.sh` **después** de aplicar el esquema, nunca antes |
+| `referencia/campos-proceso-documento.md` · `modelo/mapa-con-campos.md` | **GENERADOS**: `gen-campos.sh` **después** de aplicar el esquema, nunca antes |
 
-### 11.10 · EL ORDEN, y lo que NO entra
+### 11.9 · EL ORDEN, y lo que NO entra
 
-Cuatro pasos, y cada uno deja el repositorio en verde:
+Cinco pasos, y cada uno deja el repositorio en verde:
 
-| Paso | Qué hace | Por qué en este orden |
+| Paso | Qué hace | Por qué ahí |
 |---|---|---|
-| **a** | **La limpieza**: fuera `unit_subtree` de los dos `Set` de `workflows.js`, su rama de `buildStepResolver` y de `checkCargoScope`, y la prueba falsa de la línea 113 | es deuda de `P19` y **no depende de nada**. Hacerlo primero deja el vocabulario diciendo la verdad antes de ampliarlo |
-| **b** | **El ámbito 4** (`unit_type`): la columna, el `CHECK`, el filtro de una línea, la pantalla | cierra el **400** medido: es la opción que la pantalla ya ofrece |
-| **c** | **El ámbito 5** (`context_ancestor_head`): dos columnas, la CTE, dos campos de formulario | es el ámbito nuevo de verdad, y el que contesta el patrón 10 de la literatura |
-| **d** | **`webFillUnitScopeTypesForScope`**: engancharla o borrarla | con el vocabulario ya correcto, la decisión es trivial; antes no |
+| **a** | **La limpieza**: fuera `unit_subtree` de los dos `Set`, sus dos ramas, y la prueba de `workflows.test.js` **línea 113** que afirma que tiene productor | es deuda de `P19`, **no depende de nada**, y deja el vocabulario diciendo la verdad antes de ampliarlo |
+| **b** | **El ámbito 4** (`unit_type`): la columna, el `CHECK`, el filtro de una línea, la pantalla | cierra el **400** medido: es la opción que la pantalla ya ofrece y la base rechaza |
+| **c** | **El resolutor `ancestor_unit_head`**: dos columnas, la CTE, los 13 puntos de decisión, dos campos de formulario | es lo nuevo de verdad, y lo que contesta el patrón 10 de la literatura |
+| **d** | **`webFillUnitScopeTypesForScope`**: engancharla o borrarla | con el vocabulario correcto la decisión es trivial; antes no |
+| **e** | **El ámbito inerte** (§11.2): `unit_scope_type` nullable, exigida sólo en `cargo_in_scope`, y el `CHECK` completo sin excepciones | mueve filas y los dos escritores, y **no hace falta** para a-d. Si rompe algo, rompe solo |
 
 **Lo que NO entra, dicho a propósito:**
 
 | | Por qué queda fuera |
 |---|---|
-| **La historia del organigrama** | §10.23: `unit_relations` no la tiene. Sin ella no se puede versionar la configuración cuando el organigrama cambia, que es lo que el dueño propuso. **Frente propio, mayor que éste** |
-| **El ámbito 5 en `routed`** | el constructor de runtime (`documents.js`) emite dos ámbitos. Ampliarlo pide una pantalla de runtime que hoy no existe; el ámbito 5 entra **en autoría de plantilla**, que es donde están los casos del dueño |
-| **La separación de funciones** | patrón 5 de la literatura, y está **ausente**: nada impide que la misma persona resuelva dos pasos del mismo documento. Es más grave que `P21` y no es lo mismo |
-| **«La secretaria de mi Escuela»** | el ámbito 5 coge **la jefatura**. No hay caso que pida otra cosa; si aparece, se abre con el caso delante |
-| **El cuarto resolutor** | §11.2(a): la propuesta es B. Si el dueño prefiere A, cambia el paso **c** entero |
+| **La historia del organigrama** | §10.23 y §12: `unit_relations` no la tiene. **Frente propio** |
+| **La separación de funciones** | patrón 5 de la literatura, **ausente**. **Frente propio**, y más grave que `P21` |
+| **`ancestor_unit_head` en `routed`** | el constructor de runtime emite dos ámbitos; ampliarlo pide una pantalla que hoy no existe. Entra en **autoría de plantilla**, que es donde están los casos del dueño |
+| **«La secretaria de mi Escuela»** | la subida coge **la jefatura**. No hay caso que pida otra cosa |
+| **Los tres rótulos muertos** de `buildFillStepDisplayLabel` | son del defecto 1.19 y tienen su plan de cierre; tocarlos aquí mezclaría dos cosas |
 
-### 11.11 · LO QUE HAY QUE VERIFICAR, y dónde
+### 11.10 · LO QUE HAY QUE VERIFICAR, y dónde
 
 | | Qué | Dónde |
 |---|---|---|
 | **Puertas** | `check:imports`, `check:sql-comments`, `check:sql-aliases`, `check:instancias`, `check:rutas` · `lint` del frontend · las 5 de documentación | dentro de la pila |
 | **Pruebas** | unitarios de backend y frontend · `test:char:run` (resetea la base, y es la corrida que vale) | dentro de la pila |
-| **Navegador** | `https://localhost:8543/admin/procesos/procesos/process_definition_versions` → Versionar → Crear configuración → Plantillas → el modal del borrador, pestaña del recorrido, en **entrega** y en **firmas** · `admin@institucion.edu.ec` / `Demo1234!` | la ruta más profunda a la que el router llega solo; el modal no es un segmento |
-| **Provocado** | el `400` de §10 **tiene que desaparecer**: declarar `unit_type` y que guarde. Y los cuatro rechazos del `CHECK`, uno por restricción | API y psql |
+| **Navegador** | `https://localhost:8543/admin/procesos/procesos/process_definition_versions` → Versionar → Crear configuración → Plantillas → el modal del borrador, el recorrido, en **entrega** y en **firmas** · `admin@institucion.edu.ec` / `Demo1234!` | la ruta más profunda a la que el router llega solo; el modal no es un segmento |
+| **Provocado** | el **400** de §10 tiene que desaparecer: declarar `unit_type` y que guarde. Y los rechazos de las 4 restricciones, uno por una | API y psql |
 
-⚠️ **Lo que NO se podrá verificar en el navegador, y hay que decirlo al entregar:** el ámbito 5 sólo
-se ve resolver con un documento **real** cuyo contexto tenga unidad, así que la comprobación de que
-«el director de mi escuela» cae en la persona correcta es de **generación**, no de pantalla. Se hace
-con una corrida de `test:char:run` y una consulta a `turnos`, no mirando el formulario.
+⚠️ **Lo que NO se podrá verificar en el navegador, y hay que decirlo al entregar:** la subida sólo se
+ve resolver con un documento **real** cuyo contexto tenga unidad, así que comprobar que «el director
+de mi escuela» cae en la persona correcta es de **generación**, no de pantalla. Se hace con una
+corrida de `test:char:run` y una consulta a `turnos`, no mirando el formulario.
+
+---
+
+## 12 · Los dos frentes que salen de aquí, y por qué no son `P21`
+
+Los dos se encontraron midiendo para `P21` y **ninguno es del mismo asunto**. Quedan escritos aquí
+para que no se pierdan, no para hacerlos en este frente.
+
+### 12.1 · La historia del organigrama
+
+**La propuesta es del dueño** (2026-10-13): *«si el organigrama cambia, entonces la edición del
+proceso cambia y por lo tanto debe ser una nueva»*. Es la decisión 21 de `P18` —*si la norma cambia,
+es otra versión*— aplicada un nivel más abajo, y es coherente.
+
+**Lo que lo bloquea, medido:**
+
+| Tabla | ¿Guarda historia? |
+|---|---|
+| `position_assignments` | ✅ `start_date`, `end_date`, `is_current` |
+| `unit_relations` | ❌ sólo `created_at` / `updated_at` |
+| `unit_positions` | ❌ |
+| `units` | ❌ |
+
+**Se sabe quién ocupaba un puesto en una fecha. No se sabe qué forma tenía el organigrama en esa
+fecha.** Sin eso no se puede detectar el cambio ni reconstruir el pasado, así que la propuesta del
+dueño **no se puede implementar hoy**.
+
+**Por qué importa más allá de `P21`:** si una Carrera cambia de Escuela, los documentos **ya
+firmados** dejan de poder explicarse. La pregunta *«¿por qué firmó éste?»* pierde respuesta
+reproducible — y es justo la pregunta que un sistema de firmas tiene que poder contestar dentro de
+cinco años. El resolutor `ancestor_unit_head` **no crea** el problema: lo hace visible, porque es el
+primero que depende de la **forma** del organigrama y no de una unidad escrita.
+
+**Por qué es frente propio y no una tarea:** toca tres tablas de `organizacion`, el organigrama de
+`/admin` que las edita, y la pregunta de qué significa «la versión vigente» para una estructura. Es
+más grande que `P21` entero.
+
+**Lo único que `P21` deja mientras tanto:** nada. La aserción del «tipo esperado» que se propuso en la
+conversación **se retira** — era un sustituto de algo que debe hacerse bien, y el dueño tenía razón al
+refutarla.
+
+### 12.2 · La separación de funciones
+
+**Es el patrón 5 de los 11 de creación de la literatura** (§10.18), y Deasy **no lo tiene**.
+Comprobado: **nada impide que la misma persona resuelva dos pasos del mismo documento.** Quien entrega
+puede revisar; quien revisa puede aprobar.
+
+**Por qué es más grave que `P21`:** `P21` es una capacidad que falta —hay casos que no se pueden
+declarar—. Esto es un **control de seguridad ausente**: lo que hoy se puede declarar incluye flujos
+que un auditor rechazaría. Y no avisa de nada, porque desde dentro del sistema cada paso es válido por
+separado.
+
+**Por qué no entra en `P21`:** `P21` amplía **quién puede ser nombrado**; esto restringe **quién puede
+ser nombrado dos veces**. Son direcciones contrarias, y mezclarlas haría que un cambio dependiera del
+otro para probarse.
+
+**Lo que haría falta medir primero**, cuando se abra: cuántos pasos de la receta sembrada resolverían
+en la misma persona hoy, y si la regla correcta es por **persona**, por **puesto** o por **unidad** —
+no es lo mismo, y el patrón de la literatura no lo decide.
