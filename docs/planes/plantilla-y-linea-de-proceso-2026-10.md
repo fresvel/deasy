@@ -1866,6 +1866,46 @@ línea, leída. No hay dos verdades que sincronizar — que era el motivo de `P2
 mueven. **Termina cuando alguien abre la pantalla.** Es la regla de salida nº 2 del `CLAUDE.md`, y
 aquí habría bastado con no abrirla para entregar un panel con un botón que no funciona.
 
+### 13.15 · LAS PESTAÑAS PRESENTABAN EL HIJO ANTES QUE EL PADRE (2026-10-14)
+
+Lo vio el dueño abriendo `/admin`: en el grupo **Procesos**, «Configuración de procesos» salía
+**antes** que «Líneas de proceso».
+
+No es gusto. Las pestañas se pintan en el orden en que las tablas están declaradas en
+`backend/config/sqlTables.js` —`AdminView.vue` sólo las agrupa por `category`, no las ordena—, así
+que **esa lista ES la lectura que hace la persona**. Y el orden que había era el de la *escritura*:
+la configuración existe desde el principio y la línea nació en este frente.
+
+| | Antes | Ahora |
+|---|---|---|
+| 1 | Procesos | Procesos |
+| 2 | **Configuración de procesos** | **Líneas de proceso** |
+| 3 | **Líneas de proceso** | **Configuración de procesos** |
+| 4 | Reglas de alcance | Reglas de alcance |
+| 5 | Periodos del proceso | Periodos del proceso |
+
+Desde `P22` la configuración **cuelga** de la línea: `linea_id` es `NOT NULL` y la cascada vive ahí.
+Con el orden viejo, la pestaña enseñaba el hijo antes que el padre, y quien quisiera entender el
+modelo leyendo la pantalla lo leía al revés. El orden nuevo **es la cadena**:
+
+    processes -> lineas -> process_definition_versions -> process_target_rules -> periodos
+     que se hace  quien lo debe,   como se hace,            el reparto EXTRA      cuando toca
+                    y donde       en esta version
+
+**La lección que queda escrita en el fichero**, para que nadie lo reordene por el alfabeto: cuando el
+orden de una lista de configuración es lo que la persona lee, **el orden es diseño** y lleva su
+motivo al lado.
+
+#### La «Proceso» que SIGUE viéndose, y por qué no es un residuo
+
+La misma mirada trajo la pregunta *«¿no habíamos quitado el proceso de `process_definition_versions`?»*.
+Sí: la **columna** no existe. Lo que se ve en el panel de **Reglas de alcance** es el campo derivado
+de §13.14, calculado atravesando la línea. **Lo que se quitó fue la copia, no el dato.**
+
+Queda anotado que ese panel enseña **Proceso** y **Configuración** y **no la línea** —que es hoy el
+eslabón que reparte—, y que con el nombre generado las dos columnas dicen la misma cadena. No se
+toca aquí: va con `P6`/`P15`, que es donde se revisa el vocabulario de las dos pantallas juntas.
+
 ---
 
 ## 12 · Los dos frentes que salen de aquí, y por qué no son `P21`

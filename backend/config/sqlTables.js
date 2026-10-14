@@ -367,33 +367,19 @@ export const SQL_TABLES = [
     ],
     searchFields: ["name", "slug"]
   },
-  {
-    table: "process_definition_versions",
-    label: "Configuración de procesos",
-    category: "Procesos",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      // SIN `process_id` (frente 25, P22): era una copia de `lineas.process_id`, y la fachada la
-      // declaraba `required`, asi que la pantalla OBLIGABA a escribir un dato derivable — y nada
-      // comprobaba que coincidiera con el de la linea elegida.
-      { name: "linea_id", label: "Linea", type: "number", required: true },
-      { name: "definition_version", label: "Version", type: "text", required: true },
-      { name: "name", label: "Nombre generado", type: "text", readOnly: true },
-      { name: "description", label: "Descripcion", type: "textarea" },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: ["draft", "active", "retired"],
-        defaultValue: "draft"
-      },
-      { name: "effective_from", label: "Vigencia desde", type: "date", required: true },
-      { name: "effective_to", label: "Vigencia hasta", type: "date" },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["definition_version", "name", "status"]
-  },
+  // EL ORDEN DE ESTE GRUPO ES LA CADENA DEL MODELO, NO EL ALFABETO NI LA ANTIGUEDAD.
+  //
+  // Las pestañas de `/admin` salen en el orden en que estan aqui (`AdminView.vue` solo agrupa por
+  // `category`), asi que esta lista ES la lectura que hace la persona. Y la cadena es:
+  //
+  //     processes -> lineas -> process_definition_versions -> process_target_rules -> periodos
+  //      que se hace   quien lo debe,    como se hace,          el reparto EXTRA     cuando toca
+  //                      y donde        en esta version
+  //
+  // Hasta el 2026-10-14 `process_definition_versions` iba ANTES que `lineas`, que es el orden en que
+  // se escribieron: la configuracion existe desde el principio y la linea nacio en el frente 25.
+  // Pero desde P22 la configuracion CUELGA de la linea (`linea_id` NOT NULL, con la cascada ahi), asi
+  // que la pestaña presentaba el hijo antes que el padre. Lo vio el dueño.
   {
     table: "lineas",
     label: "Lineas de proceso",
@@ -434,6 +420,33 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["nombre", "unit_scope_type"]
+  },
+  {
+    table: "process_definition_versions",
+    label: "Configuración de procesos",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      // SIN `process_id` (frente 25, P22): era una copia de `lineas.process_id`, y la fachada la
+      // declaraba `required`, asi que la pantalla OBLIGABA a escribir un dato derivable — y nada
+      // comprobaba que coincidiera con el de la linea elegida.
+      { name: "linea_id", label: "Linea", type: "number", required: true },
+      { name: "definition_version", label: "Version", type: "text", required: true },
+      { name: "name", label: "Nombre generado", type: "text", readOnly: true },
+      { name: "description", label: "Descripcion", type: "textarea" },
+      {
+        name: "status",
+        label: "Estado",
+        type: "select",
+        options: ["draft", "active", "retired"],
+        defaultValue: "draft"
+      },
+      { name: "effective_from", label: "Vigencia desde", type: "date", required: true },
+      { name: "effective_to", label: "Vigencia hasta", type: "date" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["definition_version", "name", "status"]
   },
   {
     table: "process_target_rules",
