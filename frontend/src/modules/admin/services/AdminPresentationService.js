@@ -1,3 +1,5 @@
+import { FK_LABEL_FIELDS } from "@/modules/admin/services/AdminTableManagerConfig";
+
 class AdminPresentationService {
   formatDateOnly(value) {
     if (!value) {
@@ -244,16 +246,12 @@ class AdminPresentationService {
     if (tableName === "ediciones") {
       return this.getFirstDefinedValue(row.display_name, row.template_code, row.id);
     }
-    if (tableName === "generadores_de_documento") {
-      return this.getFirstDefinedValue(row.nombre, row.code, row.id);
-    }
+    // Aquí había una lista escrita a mano —y un caso especial para `generadores_de_documento` que
+    // sólo existía porque a la lista le faltaba `nombre`—. Era la SEGUNDA copia; el porqué y lo que
+    // costaba están junto a `FK_LABEL_FIELDS`. `id` va al final como último recurso: no es una forma
+    // de llamarse, es lo que queda cuando la fila no tiene ninguna.
     return this.getFirstDefinedValue(
-      row.name,
-      row.title,
-      row.email,
-      row.label,
-      row.code,
-      row.slug,
+      ...FK_LABEL_FIELDS.map((field) => row[field]),
       row.id
     );
   }

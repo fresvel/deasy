@@ -1191,6 +1191,7 @@ import {
   definitionArtifactsTableFields,
   definitionRulesTableFields,
   definitionTriggersTableFields,
+  FK_LABEL_FIELDS,
   FK_TABLE_MAP,
   formatTemplateArtifactFieldLabel,
   personAssignmentSections,
@@ -2369,14 +2370,11 @@ const resolveDisplayField = (tableMeta) => {
   if (tableMeta.table === "ediciones") {
     return "display_name";
   }
-  if (tableMeta.table === "generadores_de_documento") {
-    return "nombre";
-  }
-  // `numero` y `direccion` entran el 2026-08-28: son el valor legible de `telefonos`,
-  // `documentos_identidad` y `emails`. Sin ellos el editor caía al primer campo que no fuera `id`
-  // —una clave ajena— y pintaba un número donde debía ir el teléfono o el correo.
-  const preferred = ["name", "title", "email", "direccion", "numero", "label", "code", "slug"];
-  const match = preferred.find((field) => tableMeta.fields.some((meta) => meta.name === field));
+  // ⚠️ `nombre` ENTRA EL 2026-10-14 Y SE LLEVA UN CASO ESPECIAL. Aquí había un `if` por nombre de
+  // tabla que devolvía "nombre" para `generadores_de_documento`, que es el injerto que la regla 3
+  // de «mover código» prohíbe: la lista ya existía para esto. Y la lista se fue a
+  // `AdminTableManagerConfig`, porque había DOS divergidas — el porqué, medido, está allí.
+  const match = FK_LABEL_FIELDS.find((field) => tableMeta.fields.some((meta) => meta.name === field));
   return match || tableMeta.fields.find((meta) => meta.name !== "id")?.name || "id";
 };
 

@@ -12,6 +12,38 @@ export const PROCESS_INLINE_HIDDEN_FIELDS = new Set([
   "version_parent_version_id"
 ]);
 
+// CÓMO SE LEE UNA FILA AJENA: LA LISTA ES UNA, Y ESTÁ AQUÍ POR HABER SIDO DOS.
+//
+// Dos sitios contestan «¿qué columna de esta fila es su nombre?» y hasta el 2026-10-14 cada uno
+// llevaba su propia lista, divergidas:
+//
+//   `resolveDisplayField` (AdminTableManager.vue)  name·title·email·direccion·numero·label·code·slug
+//   `formatFkOptionLabel` (AdminPresentationService) name·title·email·label·code·slug·id
+//
+// La segunda no tenía `direccion` ni `numero`. Esas dos entraron el 2026-08-28 para que el editor
+// dejara de pintar un número donde va el teléfono o el correo —el motivo está escrito junto a la
+// otra lista— y se añadieron **sólo a una**. Resultado medido sobre las 60 tablas del catálogo:
+// `telefonos`, `emails` y `documentos_identidad` seguían rotuladas con su `id` en el desplegable.
+//
+// Y ninguna de las dos tenía `nombre`, que es como se llama la columna en las tablas nuevas: por
+// eso «Sucede a la línea» ofrecía «5» en vez de «Informe de Gestión Docente». Lo vio el dueño.
+//
+// Las dos la usan distinto —una busca un NOMBRE DE COLUMNA en los metadatos de la tabla, la otra el
+// primer VALOR definido de una fila— y por eso no se puede unificar la función; la lista sí, que es
+// donde estaba la deuda. `id` no entra aquí: es el último recurso de quien la consume, no una forma
+// de llamarse.
+export const FK_LABEL_FIELDS = [
+  "name",
+  "nombre",
+  "title",
+  "email",
+  "direccion",
+  "numero",
+  "label",
+  "code",
+  "slug"
+];
+
 export const PROCESS_DEFINITION_HIDDEN_FIELDS = new Set([
   "linea_id"
 ]);
@@ -110,6 +142,10 @@ export const FK_TABLE_MAP = {
   parent_id: "processes",
   process_id: "processes",
   linea_id: "lineas",
+  // LA LÍNEA A LA QUE SUCEDE ES UNA LÍNEA, y hasta el 2026-10-14 el formulario pedía un número
+  // a pelo. Lo vio el dueño. Que el ID sea lo que se guarda no quiere decir que sea lo que se
+  // pregunta: el buscador lo resuelve igual que para cualquier otra clave ajena del admin.
+  linea_anterior_id: "lineas",
   process_definition_id: "process_definition_versions",
   process_run_id: "process_runs",
   source_run_id: "process_runs",
