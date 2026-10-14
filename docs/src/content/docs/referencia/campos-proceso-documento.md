@@ -178,7 +178,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `id` | int | sí | — | — |
 | `linea_id` | int | sí | `lineas.id` · se va con el | — |
 | `definition_version` | varchar(20) | sí | — | — |
-| `name` | varchar(180) | sí | — | — |
 | `description` | varchar(255) | no | — | — |
 | `status` | text | sí | — | `draft` · `active` · `retired` |
 | `active_series_flag` | smallint | no | — | — |
@@ -515,4 +514,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**33 tablas · 305 columnas · 76 referencias.** Leídas del catálogo de PostgreSQL.
+**33 tablas · 304 columnas · 76 referencias.** Leídas del catálogo de PostgreSQL.

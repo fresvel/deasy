@@ -323,8 +323,10 @@ export default class TemplateLifecycleService {
     const defId = Number(definitionId);
     const [defRows] = await connection.query(
       // el proceso sale de la LINEA (frente 25, P22); el nombre del campo se conserva
+      // SIN `pdv.name` (frente 25, P23): se leia SOLO para copiarla al INSERT de abajo, y la
+      // columna ya no existe — el nombre lo deriva la linea, que la nueva version comparte.
       `SELECT pdv.id, lin.process_id, pdv.linea_id, pdv.definition_version,
-              pdv.name, pdv.description, pdv.status
+              pdv.description, pdv.status
          FROM process_definition_versions pdv
          INNER JOIN lineas lin ON lin.id = pdv.linea_id
         WHERE pdv.id = ? LIMIT 1`,
@@ -355,9 +357,9 @@ export default class TemplateLifecycleService {
     const [insertResult] = await connection.query(
       // SIN `process_id` (frente 25, P22): lo dice la linea, y `linea_id` ya viaja aqui.
       `INSERT INTO process_definition_versions
-         (linea_id, definition_version, name, description, status, effective_from)
-       VALUES (?, ?, ?, ?, 'draft', CURDATE())`,
-      [definition.linea_id, nextVersion, definition.name, definition.description]
+         (linea_id, definition_version, description, status, effective_from)
+       VALUES (?, ?, ?, 'draft', CURDATE())`,
+      [definition.linea_id, nextVersion, definition.description]
     );
     const newId = Number(insertResult.insertId);
     await this._cloneProcessDefinitionChildren({
@@ -858,8 +860,10 @@ export default class TemplateLifecycleService {
 
     const [defRows] = await this.pool.query(
       // el proceso sale de la LINEA (frente 25, P22); el nombre del campo se conserva
+      // SIN `pdv.name` (frente 25, P23): se leia SOLO para copiarla al INSERT de abajo, y la
+      // columna ya no existe — el nombre lo deriva la linea, que la nueva version comparte.
       `SELECT pdv.id, lin.process_id, pdv.linea_id, pdv.definition_version,
-              pdv.name, pdv.description, pdv.status
+              pdv.description, pdv.status
          FROM process_definition_versions pdv
          INNER JOIN lineas lin ON lin.id = pdv.linea_id
         WHERE pdv.id = ? LIMIT 1`,
@@ -906,12 +910,11 @@ export default class TemplateLifecycleService {
       const [insertResult] = await connection.query(
         // SIN `process_id` (frente 25, P22): lo dice la linea.
         `INSERT INTO process_definition_versions
-           (linea_id, definition_version, name, description, status, effective_from)
-         VALUES (?, ?, ?, ?, 'draft', CURDATE())`,
+           (linea_id, definition_version, description, status, effective_from)
+         VALUES (?, ?, ?, 'draft', CURDATE())`,
         [
           definition.linea_id,
           nextConfigVersion,
-          definition.name,
           definition.description
         ]
       );

@@ -774,7 +774,10 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
     body: normalize(lineaDuplicada.body),
   });
 
-  // El graft de versiones fuerza status=draft y toma el nombre de la LÍNEA.
+  // El graft de versiones fuerza status=draft. YA NO ESCRIBE NINGÚN NOMBRE (frente 25, P23): el
+  // nombre era una columna copia de `lineas.nombre` y hoy se deriva al leer, con la identidad
+  // entera —la línea Y la versión—, así que la respuesta del POST no lo trae y lo comprueba la
+  // lectura de abajo.
   const version = await post("/admin/sql/process_definition_versions", {
     token,
     body: {
@@ -790,8 +793,19 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
   });
   assert.equal(version.status, 200, `pdv create debe responder 200: ${JSON.stringify(version.body)}`);
   assert.equal(version.body?.status, "draft", "una configuración nueva nace siempre en draft");
-  assert.ok(version.body?.name, "el graft debe generar el nombre de la configuración");
   const definicionId = version.body?.id;
+
+  // EL NOMBRE SE DERIVA, Y ES LA IDENTIDAD ENTERA. Esta aserción decía «el graft debe generar el
+  // nombre», y lo que generaba era una copia de `lineas.nombre`: dos configuraciones de la misma
+  // línea se llamaban igual, y renombrar la línea las dejaba a las dos con el nombre viejo (se
+  // provocó en el navegador antes de quitarlo). Ahora se lee, no se escribe.
+  const leida = (await get(`/admin/sql/process_definition_versions?filter_id=${definicionId}`, { token }))
+    .body?.find((row) => row.id === definicionId);
+  assert.equal(
+    leida?.name,
+    "Cadena de caracterización · Jefes · 1.0.0",
+    `el nombre se deriva de la línea y la versión: ${JSON.stringify(leida)}`
+  );
 
   // Crear directamente en 'active' está prohibido.
   const versionActiva = await post("/admin/sql/process_definition_versions", {

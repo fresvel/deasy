@@ -163,11 +163,12 @@ const main = async () => {
 
   // 3. Definición. REGLA DE NEGOCIO: sólo puede crearse en `draft`; se activa al final,
   //    cuando ya tiene plantilla, flujos y regla de reparto (SqlAdminService lo exige).
-  // SIN `process_id`: lo dice la línea (frente 25, P22).
+  // SIN `process_id`: lo dice la línea (frente 25, P22). Y SIN `name`: lo dice la línea más la
+  // versión, derivado al leer (frente 25, P23) — aquí se escribía EL MISMO literal que el nombre de
+  // la línea de arriba, copiado a mano, que es la copia en su forma más desnuda.
   const definitionId = await create("process_definition_versions", {
     linea_id: lineaId,
     definition_version: "1.0.0",
-    name: "Informe de Gestión Docente",
     description: "Informe semestral de gestión que elabora cada docente y firma su coordinador.",
     status: "draft",
     active_series_flag: 1,

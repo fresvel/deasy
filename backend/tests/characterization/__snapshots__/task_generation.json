@@ -29,7 +29,7 @@
     "body": {
       "definition": {
         "id": "<normalized>",
-        "name": "Proceso por defecto",
+        "name": "Proceso por defecto · 1.0.0",
         "status": "active"
       },
       "period_types": [
@@ -91,7 +91,7 @@
           "active_run_id": "<normalized>",
           "definition_id": "<normalized>",
           "launched": false,
-          "name": "Proceso por defecto",
+          "name": "Proceso por defecto · 1.0.0",
           "relaunched": false,
           "run_count": 0
         }
@@ -111,7 +111,7 @@
           "active_run_id": "<normalized>",
           "definition_id": "<normalized>",
           "launched": true,
-          "name": "Proceso por defecto",
+          "name": "Proceso por defecto · 1.0.0",
           "relaunched": false,
           "run_count": 1
         }

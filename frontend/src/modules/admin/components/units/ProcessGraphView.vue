@@ -194,7 +194,6 @@
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ lineaLabel(cfg) }}</span>
-                    <span>v{{ cfg.definition_version }}</span>
                   </div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-2 text-theme-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.rules_count }} reglas</span>
@@ -279,7 +278,7 @@
                     <AppTag :variant="tonoCorrida(run.status)" outlined class-name="ml-auto capitalize">{{ run.status }}</AppTag>
                   </div>
                   <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                    <span class="truncate">{{ run.definition_name }} · v{{ run.definition_version }}</span>
+                    <span class="truncate">{{ run.definition_name }}</span>
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
                     <span v-if="run.source_run_id" class="italic text-muted">relanzamiento</span>
                   </div>

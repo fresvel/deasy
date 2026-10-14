@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**32 tablas · 297 columnas · 75 claves ajenas · 9 diagramas.**
+**32 tablas · 296 columnas · 75 claves ajenas · 9 diagramas.**
 
 ## Cómo leerla
 
@@ -139,7 +139,7 @@ erDiagram
 
 ## Lo que se declara (1 de 2)
 
-**5 tablas** · 37 columnas · 11 claves ajenas propias. Apunta a `cargos`, `term_types`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
+**5 tablas** · 36 columnas · 11 claves ajenas propias. Apunta a `cargos`, `term_types`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -156,7 +156,6 @@ erDiagram
     int id PK
     int linea_id FK
     varchar definition_version
-    varchar name
     varchar description
     text status
     smallint active_series_flag

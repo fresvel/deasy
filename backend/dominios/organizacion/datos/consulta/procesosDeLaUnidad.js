@@ -30,7 +30,7 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
             ptr.id AS rule_id,
             pdv.id AS definition_id,
             p.name AS process_name,
-            pdv.name AS definition_name,
+            nombre_configuracion(lin.nombre, pdv.definition_version) AS definition_name,
             pdv.definition_version,
             pdv.linea_id,
             lin.nombre AS linea_nombre,
@@ -80,7 +80,7 @@ export const listarProcesosEnganchables = async (ejecutor) => {
   const [filas] = await ejecutor.query(
     `SELECT pdv.id AS definition_id,
             p.name AS process_name,
-            pdv.name AS definition_name,
+            nombre_configuracion(lin.nombre, pdv.definition_version) AS definition_name,
             pdv.definition_version,
             pdv.linea_id,
             lin.nombre AS linea_nombre,

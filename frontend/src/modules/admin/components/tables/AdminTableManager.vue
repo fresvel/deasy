@@ -1633,7 +1633,8 @@ const tableListFields = computed(() => {
   // `processes`— SÍ vienen, calculadas en el SELECT de `SqlAdminService`, y el filtro se las llevó
   // por delante sin que nadie lo notara: la tabla de procesos perdió dos columnas en silencio.
   //
-  // Hoy las TRES virtuales del modelo son calculadas y las tres se ven. Si algún día vuelve una
+  // Hoy las CUATRO virtuales del modelo son calculadas y las cuatro se ven (la cuarta es el
+  // `name` de una configuración, derivado desde P23). Si algún día vuelve una
   // virtual que sólo exista en el formulario, no basta con volver a poner este filtro: hará falta
   // distinguirlas, porque son dos cosas distintas con el mismo nombre.
   // ⚠️ Y `pairedWith` TAMBIÉN va aquí, no sólo en el formulario. Sin este filtro la lista pintaba
@@ -1743,8 +1744,15 @@ const fkListExtraFields = computed(() => {
     return [];
   }
   if (fkTable.value.table === "process_definition_versions") {
+    // TRES, Y ERAN CINCO (frente 25, P23 — 2026-10-14). Sobraban `linea_nombre` y
+    // `definition_version` porque el nombre derivado ya es exactamente esas dos piezas: la fila
+    // repetía la línea y la versión tres veces.
+    //
+    // (`linea_nombre` además no era un campo de la fachada —se proyecta en el SELECT pero no se
+    // declara en `sqlTables.js`—, así que este filtro nunca lo encontraba: pedía cinco y daba
+    // cuatro.)
     return fkTable.value.fields.filter((field) =>
-      ["linea_nombre", "definition_version", "name", "description", "status"].includes(field.name)
+      ["name", "description", "status"].includes(field.name)
     );
   }
   if (fkTable.value.table === "units") {

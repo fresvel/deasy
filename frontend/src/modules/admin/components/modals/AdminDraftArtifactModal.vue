@@ -595,7 +595,9 @@ const loadProcessDefinitionOptions = async () => {
         return {
           id: r.id,
           name,
-          label: `${name} (v${r.definition_version || "?"} · ${statusText})`,
+          // SIN `v${definition_version}` (frente 25, P23): el nombre derivado YA es «línea ·
+          // versión», así que la etiqueta decía la versión dos veces.
+          label: `${name} (${statusText})`,
         };
       });
   } catch {

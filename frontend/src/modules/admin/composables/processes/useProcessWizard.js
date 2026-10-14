@@ -189,11 +189,23 @@ export function useProcessWizard() {
     return processName ? resolveAvailableProcessSlug(processName) : "";
   });
 
-  // EL NOMBRE DE LA CONFIGURACIÓN ES EL DE SU LÍNEA. Se componía «<Proceso> por <Serie>» y el del
-  // la serie se derivaba de `slugify(cargo.name)`; eso no podía decir lo que la obligación es,
-  // porque le faltaba un eje: «Informe de IF por Coordinador» no distingue al de Carrera del de
-  // Escuela.
-  const definitionNamePreview = computed(() => selectedLineaName.value.slice(0, 180));
+  // EL NOMBRE DE LA CONFIGURACIÓN ES SU IDENTIDAD: LA LÍNEA Y LA VERSIÓN (frente 25, P23).
+  //
+  // Era sólo el nombre de la línea, y así dos configuraciones de la misma línea se llamaban IGUAL:
+  // la 1.0.0 y la 1.1.0 de la línea 1 decían las dos «Proceso por defecto». El nombre que servía
+  // para nombrar no distinguía.
+  //
+  // Antes de eso se componía «<Proceso> por <Serie>», con el de la serie derivado de
+  // `slugify(cargo.name)`, y le faltaba un eje: «Informe de IF por Coordinador» no distingue al de
+  // Carrera del de Escuela.
+  //
+  // El formato lo fija `nombre_configuracion(…)` en el esquema, que es lo que el backend devuelve;
+  // esto es la previsualización de lo mismo ANTES de guardar, y por eso repite el separador.
+  const definitionNamePreview = computed(() => {
+    const linea = selectedLineaName.value;
+    const version = String(definitionForm.value.definition_version || "").trim();
+    return [linea, version].filter(Boolean).join(" · ").slice(0, 180);
+  });
 
   // Resuelve la línea elegida, o crea la nueva con sus DOS ejes y su nombre escrito.
   const resolveLinea = async (form, processId) => {

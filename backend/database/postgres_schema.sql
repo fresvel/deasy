@@ -1562,7 +1562,21 @@ CREATE TABLE IF NOT EXISTS procesos.process_definition_versions (
   -- `series_id` SE FUE CON LA SERIE en `P9`, el mismo dia: la pantalla pide la linea directamente.
   linea_id INT NOT NULL,
   definition_version VARCHAR(20) NOT NULL,
-  name VARCHAR(180) NOT NULL,
+  -- SIN `name` (frente 25, P23 -- 2026-10-14). Era UNA COPIA DE `lineas.nombre`, y de las que ni
+  -- siquiera identificaban: dos configuraciones de la misma linea tenian el MISMO nombre, asi que
+  -- la columna que servia para nombrar no distinguia. Medido en la base sembrada: la 1.0.0 y la
+  -- 1.1.0 de la linea 1 decian las dos «Proceso por defecto».
+  --
+  -- Y estaba CADUCADA, provocado en el navegador: renombrar la linea 1 dejo a sus dos
+  -- configuraciones con el nombre viejo. La rutina que resincronizaba
+  -- (`refreshProcessDefinitionVersionNames`) colgaba de `processes.afterUpdate` --renombrar el
+  -- PROCESO, que desde `P9` ya no decide este nombre-- y no habia ni un gancho de `lineas`. O sea:
+  -- el unico disparador que existia era el unico que ya no podia cambiar nada.
+  --
+  -- Hoy se DERIVA, con la identidad entera: `nombre_configuracion(lineas.nombre,
+  -- definition_version)`, definida una vez mas abajo. La columna, la rutina y la ambiguedad se van
+  -- de una vez, y la fachada de /admin lo sigue exponiendo como `name` porque la pregunta --«como
+  -- se llama esta configuracion»-- no ha cambiado; lo que cambia es que ya no hay dos verdades.
   description VARCHAR(255) NULL,
   status TEXT CHECK (status IN ('draft', 'active', 'retired')) NOT NULL DEFAULT 'draft',
   active_series_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN status = 'active' THEN 1 ELSE NULL END) STORED,
@@ -1582,6 +1596,26 @@ CREATE INDEX IF NOT EXISTS idx_process_definition_versions_linea ON process_defi
 CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_versions_linea ON process_definition_versions (linea_id, definition_version);
 CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_one_active_linea ON process_definition_versions (linea_id, active_series_flag);
 CREATE INDEX IF NOT EXISTS idx_process_definition_versions_status ON process_definition_versions (linea_id, status, effective_from);
+
+-- EL NOMBRE DE UNA CONFIGURACION, EN UN SOLO SITIO. Sustituye a la columna `name` de arriba.
+--
+-- Es una funcion y no la expresion repetida en cada consulta porque la leen DIECISIETE sentencias
+-- en nueve ficheros: con la expresion suelta, el formato quedaria escrito diecisiete veces y seria
+-- la misma enfermedad que la columna --una regla en N sitios que nadie sincroniza--. Aqui el
+-- separador se cambia una vez.
+--
+-- Se llama SIN CUALIFICAR desde el codigo (el `search_path` la resuelve) para que las puertas de
+-- SQL no lean `procesos.` como un alias de tabla sin declarar.
+CREATE OR REPLACE FUNCTION procesos.nombre_configuracion(nombre_linea TEXT, version TEXT)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CONCAT_WS(' · ',
+    NULLIF(BTRIM(COALESCE(nombre_linea, '')), ''),
+    NULLIF(BTRIM(COALESCE(version, '')), '')
+  )
+$$;
 
 
 CREATE TABLE IF NOT EXISTS procesos.process_target_rules (

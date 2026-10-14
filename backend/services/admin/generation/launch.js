@@ -378,15 +378,19 @@ export const getTermLaunchStatus = async (termId) => {
     if (!term) throw notFound("Periodo no encontrado.");
 
     const [defs] = await connection.query(
-      `SELECT pdv.id, pdv.name
+      // El `INNER JOIN lineas` entra con el nombre derivado (frente 25, P23): esta consulta no
+      // tenia la linea porque leia la copia. Es INNER y no LEFT a proposito --`linea_id` es NOT
+      // NULL-- asi que no cambia ni una fila.
+      `SELECT pdv.id, nombre_configuracion(lin.nombre, pdv.definition_version) AS name
        FROM process_definition_versions pdv
+       INNER JOIN lineas lin ON lin.id = pdv.linea_id
        INNER JOIN process_definition_period_types pdp
          ON pdp.process_definition_id = pdv.id
         AND pdp.is_active = 1
         AND pdp.term_type_id = ?
        WHERE pdv.status = 'active'
-       GROUP BY pdv.id, pdv.name
-       ORDER BY pdv.name ASC`,
+       GROUP BY pdv.id, lin.nombre, pdv.definition_version
+       ORDER BY lin.nombre ASC, pdv.definition_version ASC`,
       [term.term_type_id]
     );
 
@@ -431,7 +435,10 @@ export const getDefinitionLaunchInfo = async (definitionId) => {
   const connection = await pool.getConnection();
   try {
     const [[definition]] = await connection.query(
-      "SELECT id, name, status FROM process_definition_versions WHERE id = ? LIMIT 1",
+      `SELECT pdv.id, nombre_configuracion(lin.nombre, pdv.definition_version) AS name, pdv.status
+         FROM process_definition_versions pdv
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+        WHERE pdv.id = ? LIMIT 1`,
       [definitionId]
     );
     if (!definition) throw notFound("La configuracion de proceso no existe.");

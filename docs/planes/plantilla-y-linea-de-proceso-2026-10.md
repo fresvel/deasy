@@ -165,6 +165,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P20** | **Fuera `trg_pdt_linea_unica`; el límite es el PROCESO** — y la simetría de las dos identidades deja de depender de que alguien se acuerde | ✅ | `trg_vinculo_formato_un_proceso` lo sustituye, y **tres pruebas de `postgres_schema.test.js`** vigilan la simetría: el formato no declara columna hacia la obligación, la obligación no declara ninguna hacia el papel, y el puente une **versiones**, no identidades. **Provocada**: añadir `owner_process_id` a `catalogo_documental` la pone en rojo con su mensaje. 320/320 char (un golden nuevo, uno huérfano retirado), 891/891 unitarios, 5 puertas del backend, 5 de documentación, y 3 páginas del sitio en el mismo commit | 2026-10-12 |
 | **P21** | **EL EJE «DÓNDE» DEL RECORRIDO, TERMINADO** (§11). El análisis cambió el diagnóstico: no es «un vocabulario desincronizado» sino **un eje sin acabar**. Más de quince casos del dueño y **todos** son `cargo` + `ámbito`; los ámbitos son **cinco** y la base soporta **tres**. Cuatro pasos: **(a)** fuera `unit_subtree` de `workflows.js`, que `P19` retiró y aquí sobrevive en dos `Set`, dos ramas y **una prueba que lo afirma falso**; **(b)** el **ámbito 4** (`unit_type`) — la columna que falta, y es la opción que la pantalla YA ofrece y la base rechaza con un **400**; **(c)** el **resolutor `ancestor_unit_head`** — la jefatura N niveles arriba por una relación declarada, **sin cargo**; **(d)** `webFillUnitScopeTypesForScope`, exportada y probada y **que no llama nadie**: engancharla o borrarla; **(e)** el **ámbito inerte**: `unit_scope_type` nullable, exigida sólo donde significa algo | 🟡 | **ANÁLISIS CERRADO** (§10, 23 apartados) **y PLAN FICHERO POR FICHERO ESCRITO** (§11), sin tocar código. Medido: el **400** provocado por API en entrega y en firma; la premisa falsa «ninguna pantalla los produce» escrita **cuatro veces**; `participantes_declarados` **sin** `unit_type_id`, así que el valor es **inalmacenable**, no sólo rechazado. Decisiones del dueño: **22** subir sí, bajar no · **23** `all_units` no se toca · el ámbito 5 **no lleva cargo** · el tipo de relación es **obligatorio** (`uq_unit_relations_child_type`). **DECISIÓN 24 TOMADA** (2026-10-13): el quinto lugar es un **resolutor** (`ancestor_unit_head`), no un ámbito — el dueño eligió **A**, con el coste medido y aceptado (13 ramas). **Nada queda pendiente de decidir: se puede ejecutar.** Cinco pasos en §11.9, y el (e) sale de una pregunta del dueño: el **ámbito inerte** sí era un defecto, y lo cierra `unit_scope_type` nullable. ✅ **PASO (a) HECHO** el 2026-10-14 (§11.11): `unit_subtree` fuera de los **dos** catálogos, de sus dos ramas y de la prueba que lo afirmaba; **dos comentarios caducados** que el censo destapó. 320/320 char **sin mover un golden** y 886/886 unitarios (+1), 5 puertas del backend, 5 de documentación | |
 | **P22** | **`process_definition_versions.process_id` SE RETIRA** (§13.13). Era una copia de `lineas.process_id` que **no sostenía nadie**: `linea_id` es `NOT NULL`, así que era 100 % derivable. Y la cascada de borrado se muda a `linea_id`, que es la relación de verdad | ✅ | **PROVOCADO antes**: `process_id` del proceso B con `linea_id` del proceso A entraba sin resistencia (decía 9, su línea decía 8). **27 consultas**: 12 ya unían `lineas` y 15 pagan un `JOIN` nuevo —4 de ellas correlacionadas de conteo—. La copia **no era inofensiva**: `trg_vinculo_formato_un_proceso` la leía para decidir si un formato ya servía a otro proceso, así que comparaba el proceso **declarado**. Y la cascada: provocado que borrar una línea con configuraciones fallaba, así que sin mover `ON DELETE CASCADE` a `linea_id` borrar un proceso habría dejado de funcionar. **320/320 char con 1 golden movido**, 887/887 backend y 495/495 frontend, 5 puertas del backend, 31 del frontend, 4 de documentación, 4 páginas del sitio y los generadores. ⚠️ **Cinco roturas que sólo vio char** (§13.13): tres consultas que nombraban la columna **sin alias**, un `lin` duplicado, y un `ON` que nombraba `lineas` **antes** de unirla | 2026-10-14 |
+| **P23** | **`process_definition_versions.name` SE RETIRA** (§13.16). Era una copia de `lineas.nombre`, y fallaba por los dos lados: **no distinguía** —dos configuraciones de la misma línea se llamaban igual— y **se quedaba atrás** al renombrar la línea. Hoy se deriva con la identidad entera, `nombre_configuracion(línea, versión)`, una función del esquema. Y con ella se cierra **el guardia que `P22` apagó sin que nada lo dijera** | ✅ | **PROVOCADO en el navegador las dos veces**: antes, renombrar la línea dejó a sus dos configuraciones con el nombre viejo; después, las dos lo siguen al instante. **17 lecturas en 9 ficheros**; de ellas **4 se van quitando** —las dos de `templateLifecycle` leían la columna *sólo* para volver a copiarla en el INSERT—, y **tres sitios que la reparaban** desaparecen (la rutina, el gancho de `processes.afterUpdate` y una reescritura en cada guardado). ⚠️ **El guardia apagado**: `ensureDefaultProcessSingleLinea` recibía `ctx.payload.process_id`, que `P22` sacó del catálogo, así que `pickPayload` le pasaba `undefined` y su `if (!processId) return` lo devolvía sin comprobar nada — **sin test que lo cubriera**. Ahora el proceso lo trae la línea y van **4 pruebas nuevas**. **320/320 char con 5 goldens movidos y 2 líneas retiradas**, 891/891 backend (+4) y 495/495 frontend, 5 puertas del backend, 31 del frontend, 5 de documentación, 2 páginas del sitio y los 3 generadores. ⚠️ **Dos fallos de char que parecían de comportamiento eran cascada**: un test que abortaba dejaba filas y el siguiente las contaba (§13.16) | 2026-10-14 |
 | **P18** | **LA VIGENCIA, POR NIVELES** (decisión 21, §9). Cuatro cosas: **(a)** la vigencia de la línea **detiene la ejecución**; **(b)** la norma que aplica a un periodo es la vigente **al empezarlo**, no la que lo solape; **(c)** la vigencia de una norma **cabe dentro** de la de su obligación, impuesto por la base; **(d)** la regla pierde `is_active`, `effective_from` y `effective_to` — tres columnas | ✅ | ⚠️ **REESCRITA el 2026-10-12.** Decía «una sola vigencia, la de la línea», y **era falso**: la de la configuración NO está duplicada con `status`. El generador la compara contra el **periodo** y el menú contra **hoy** — dos significados para las mismas columnas, que es lo que hizo fallar el análisis. Cierra los huecos **2 y 3** del §8. **Hecha**: tres columnas fuera del esquema, del editor genérico, del validador, de la siembra, del arranque y del formulario; `trg_norma_dentro_de_su_obligacion` y `trg_linea_no_recorta_sus_normas` imponen la contención; el generador filtra por la vigencia de la línea y compara contra `term.start_date`. 320/320 char con **2 goldens movidos y nada más** —seis líneas, las tres columnas en `list_process_target_rules` y en `panel_usuario`—, 885/885 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, y tres páginas del sitio en el mismo commit. **Verificado en el navegador** (ver abajo) | 2026-10-12 |
 | **P19** | **`unit_subtree` se retira** de `process_target_rules` | ✅ | el `CHECK` baja de 4 valores a 3, y con el valor se van **dos CTE recursivas sin protección de ciclos** (dos de los seis grafos del frente 26) y **dos consultas por petición**: `getOrgTreeRows` del menú y `getOrgChildrenMap` del panel traían el organigrama entero para resolverlo. Y la tubería muerta detrás: `createUnitSubtreeResolver` en dos sitios. **320/320 char sin mover un golden** —cero filas lo usaban—, 885/885 unitarios (−6: cuatro pruebas del resolutor y tres del menú se van con él, una de ellas **la única prueba de ciclos del repositorio**, cuya materia pasa al frente 26), 495/495 de frontend, 5 puertas del backend, 31 del frontend, 5 de documentación | 2026-10-12 |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
@@ -1966,6 +1967,84 @@ en la misma persona hoy, y si la regla correcta es por **persona**, por **puesto
 no es lo mismo, y el patrón de la literatura no lo decide.
 
 ---
+
+### 13.16 · `P23` · EL NOMBRE QUE NO NOMBRABA (2026-10-14)
+
+Salió de una intuición del dueño —*«revisa lo del nombre generado… tal vez ahora debería venir de la
+línea + la versión»*— y al medirlo era peor de lo que parecía: **la misma enfermedad de `P22`, una
+columna copia, pero con dos defectos encima.**
+
+**1 · No identificaba.** Dos configuraciones de la misma línea tenían el **mismo** nombre. En la base
+sembrada, la `1.0.0` y la `1.1.0` de la línea 1 decían las dos *«Proceso por defecto»*. La columna
+que servía para nombrar no servía para distinguir.
+
+**2 · Se quedaba atrás, y se provocó.** Renombrada la línea 1 a *«Proceso por defecto RENOMBRADO»*
+desde `/admin/procesos/procesos/lineas`, sus dos configuraciones **conservaron el nombre viejo**.
+
+**Por qué, y es lo que lo cierra:** había **tres** sitios reparando la copia y **ninguno** cubría ese
+caso.
+
+| # | Dónde | Cuándo corría | Qué pasaba con el renombrado de una línea |
+|---|---|---|---|
+| 1 | `refreshProcessDefinitionVersionNames` | `processes.afterUpdate` | **nunca**: desde `P9` el nombre es el de la LÍNEA, no el del proceso |
+| 2 | `resolveProcessDefinitionVersionName` | `beforeUpdate` de la configuración | sólo si alguien volvía a guardar **esa** configuración |
+| 3 | un `UPDATE … SET name` | en cada arranque | sólo la del «Proceso por defecto» |
+
+El 1 es el que más dice: era el **único disparador** que la copia tenía, y era justo el que ya no
+podía cambiar nada. **No había ni un gancho de `lineas`** (`grep -c "lineas:" tableHooks.js` → 0).
+
+**La forma de la solución.** El nombre se deriva al leer, como el `process_id` de `P22`, pero con la
+identidad **entera**: `nombre_configuracion(lineas.nombre, definition_version)`. Es una **función del
+esquema** y no la expresión repetida porque la leen **17 sentencias en 9 ficheros**: suelta, el
+formato quedaría escrito diecisiete veces, que es la misma enfermedad que la columna. Se llama **sin
+cualificar** para que `check:sql-aliases` no lea `procesos.` como un alias sin declarar.
+
+De las 17, **4 se van quitando en vez de derivando**: las dos lecturas de `templateLifecycle` leían
+la columna *sólo* para volver a copiarla en el INSERT de la versión siguiente.
+
+**Y en la pantalla, la versión se decía dos veces.** El nombre derivado ya la lleva, así que **tres**
+sitios que pintaban `{{ definition_name }} · v{{ definition_version }}` pasan a pintar sólo el
+nombre, y la lista corta del selector de configuraciones baja de **5 campos declarados a 3**
+(sobraban `linea_nombre` y `definition_version`; además `linea_nombre` **no era un campo de la
+fachada**, así que ese filtro pedía cinco y daba cuatro).
+
+#### El guardia que `P22` apagó, y que nada dijo
+
+Buscando quién escribía el nombre apareció esto, y no es del nombre:
+
+```js
+async ensureDefaultProcessSingleLinea(processId, linea, …) {
+  if (!processId) { return; }        // ← siempre, desde P22
+```
+
+`P22` quitó `process_id` del catálogo de la tabla, y `pickPayload` **sólo copia campos declarados**:
+desde ese día el llamador le pasaba `undefined` y la primera línea del cuerpo lo devolvía sin
+comprobar nada. **La regla «el proceso por defecto sólo admite la línea sin variación» dejó de
+imponerse en silencio**, y no lo cubría ningún test —`ensureDefaultProcessSingleLinea` no aparecía en
+su fichero de pruebas—.
+
+Hoy el proceso lo trae **la línea**, que es quien lo sabe: sin parámetro que pueda faltar, no hay
+nada que apagar. Y van **cuatro pruebas**, una de ellas para el caso que estaba en silencio: una
+línea sin proceso **no desactiva** el guardia, lo hace fallar.
+
+**La lección generalizable, y es la que vale para la próxima:** un guardia que empieza aceptando la
+ausencia de su dato **no avisa cuando se queda sin él — se apaga**. Lo mismo valía para
+`resolveProcessDefinitionVersionName(existing.process_id, …)`, con un primer parámetro muerto que
+nombraba una columna retirada (inofensivo, porque la función ya no lo usaba).
+
+#### Dos fallos de char que parecían de comportamiento
+
+La primera corrida dio **8 fallos**: seis eran el golden del nombre, y dos parecían regresiones —un
+clon que no se traía su plantilla, y dos borradores de más—. **No lo eran: eran cascada.** Una
+aserción del test del graft (*«el graft debe generar el nombre»*, que ya no es cierta) abortaba el
+caso **antes de su limpieza**, dejaba filas vivas, y el test siguiente leía `body[0]` y el de la otra
+suite contaba `byStatus` sobre toda la tabla. **Una causa, tres fallos.** Reescrita la aserción —que
+ahora **lee** el nombre en vez de exigir que se escriba—, 320/320.
+
+⚠️ Y de ahí una trampa del instrumental: `test:char:capture` grabó el `draft: 2` **de la basura**
+como si fuera el golden bueno. Se revirtió a mano. **Capturar mientras hay fallos en cascada graba el
+residuo.**
+
 
 ## 13 · EL REPARTO, revisado a petición del dueño (2026-10-14)
 

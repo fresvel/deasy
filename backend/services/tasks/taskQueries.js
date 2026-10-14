@@ -42,7 +42,7 @@ export const listTasksForPerson = async (pool, personId, filtros = {}) => {
             pdv.linea_id,
             lin.nombre AS linea_nombre,
             pdv.definition_version,
-            pdv.name AS process_definition_name,
+            nombre_configuracion(lin.nombre, pdv.definition_version) AS process_definition_name,
             tis.task_item_count,
             tis.task_item_names,
             p.id AS process_id,

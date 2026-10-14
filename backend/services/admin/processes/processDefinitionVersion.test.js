@@ -272,3 +272,74 @@ test("una configuracion origen inexistente falla en vez de clonar en vacio", asy
     /no existe/
   );
 });
+
+
+// ================================================================================================
+// EL GUARDIA DEL PROCESO POR DEFECTO, QUE ESTUVO APAGADO SIN QUE NADA LO DIJERA
+//
+// `ensureDefaultProcessSingleLinea` impone que el proceso por defecto (slug 'default') solo admita
+// la linea «sin variacion»: cualquier cargo, todas las unidades. Se puede versionar, pero no tener
+// otra linea por cargo o por alcance.
+//
+// Por que existe este bloque. El guardia recibia `(processId, linea)` y el llamador le pasaba
+// `ctx.payload.process_id`. `P22` quito `process_id` del catalogo de la tabla, y `pickPayload` solo
+// copia campos declarados: desde ese dia llegaba `undefined` y la primera linea del cuerpo
+// --`if (!processId) return`-- lo devolvia sin comprobar nada. La regla dejo de imponerse EN
+// SILENCIO, y ningun test lo cubria: este fichero no nombraba la funcion.
+//
+// No es un caso hipotetico: es la misma forma del fallo que mato a `P22` --un parametro que nombra
+// una columna retirada-- sobreviviendo en el llamador. Y la leccion generalizable es que un guardia
+// que empieza aceptando la ausencia de su dato NO AVISA cuando se queda sin el: se apaga.
+//
+// Hoy el proceso lo trae LA LINEA, que es quien lo sabe. Los dos primeros casos son la regla; el
+// tercero es el que habria puesto esto en rojo durante las dos semanas en que no comprobaba nada.
+function procesoConSlug(slug) {
+  return {
+    async query(sql, params) {
+      const text = String(sql);
+      if (text.includes("FROM processes")) {
+        assert.deepEqual(params, [9], "el proceso se consulta por el id que trae la LINEA");
+        return [[{ slug }]];
+      }
+      return assert.fail(`consulta inesperada: ${text}`);
+    }
+  };
+}
+
+const SIN_VARIACION = { id: 3, process_id: 9, cargo_id: null, unit_scope_type: "all_units" };
+
+test("el proceso por defecto admite la linea sin variacion", async () => {
+  const service = new ProcessDefinitionVersionService(procesoConSlug("default"));
+  await service.ensureDefaultProcessSingleLinea(SIN_VARIACION);
+});
+
+test("el proceso por defecto rechaza una linea con cargo o con alcance", async () => {
+  const service = new ProcessDefinitionVersionService(procesoConSlug("default"));
+  await assert.rejects(
+    () => service.ensureDefaultProcessSingleLinea({ ...SIN_VARIACION, cargo_id: 4 }),
+    /solo admite la linea/
+  );
+  await assert.rejects(
+    () => service.ensureDefaultProcessSingleLinea({ ...SIN_VARIACION, unit_scope_type: "unit_type" }),
+    /solo admite la linea/
+  );
+});
+
+test("cualquier OTRO proceso admite las lineas que quiera", async () => {
+  const service = new ProcessDefinitionVersionService(procesoConSlug("informe-gestion-docente"));
+  await service.ensureDefaultProcessSingleLinea({ ...SIN_VARIACION, cargo_id: 4, unit_scope_type: "unit_type" });
+});
+
+// EL CASO QUE ESTABA EN SILENCIO. Una linea sin proceso no es «no compruebes»: es un dato que falta,
+// y el guardia tiene que decirlo en vez de dejar pasar la fila.
+test("una linea sin proceso NO desactiva el guardia: lo hace fallar", async () => {
+  const service = new ProcessDefinitionVersionService({
+    async query() {
+      return assert.fail("no se debe consultar el proceso si la linea no dice cual es");
+    }
+  });
+  await assert.rejects(
+    () => service.ensureDefaultProcessSingleLinea({ id: 3, cargo_id: 4, unit_scope_type: "unit_type" }),
+    /no dice de que proceso es/
+  );
+});

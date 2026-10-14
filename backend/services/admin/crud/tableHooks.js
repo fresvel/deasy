@@ -429,18 +429,14 @@ export const TABLE_HOOKS = {
     }
   },
 
-  processes: {
-    async afterUpdate(ctx) {
-      if (Object.hasOwn(ctx.updates, "name")) {
-        await ctx.service.refreshProcessDefinitionVersionNames({
-          processId: Number(ctx.existing.id ?? ctx.keyPayload.id)
-        });
-      }
-    }
-  },
-
-  // `unit_types` y `cargos` YA NO LLEVAN INJERTO: renombrarlos no cambia el nombre de ninguna
-  // configuracion, porque ese nombre es el de la LINEA y lo escribio una persona.
+  // `processes` YA NO LLEVA INJERTO (frente 25, P23 — 2026-10-14). Tenia un `afterUpdate` que
+  // resincronizaba el nombre de las configuraciones del proceso al renombrarlo, y era el UNICO
+  // disparador que la copia tenia — justo el que desde `P9` ya no podia cambiar nada, porque el
+  // nombre pasó a ser el de la LINEA. No habia gancho de `lineas`, asi que renombrar una linea
+  // dejaba a sus configuraciones con el nombre viejo: provocado en el navegador antes de quitarlo.
+  // Con el nombre derivado no hay copia ni rutina que la persiga.
+  //
+  // `unit_types` y `cargos` tampoco: renombrarlos no cambia el nombre de ninguna configuracion.
 
   // --- Estado complejo: el árbol de configuraciones de proceso -------------------------------
   // Linea -> configuración (versionada) -> plantillas/reglas/periodos. Sus injertos encadenan
@@ -481,11 +477,11 @@ export const TABLE_HOOKS = {
       const linea = await ctx.service.resolveLinea(ctx.payload);
       // El proceso por defecto es especial: SOLO admite la linea "sin variacion" (cualquier cargo,
       // todas las unidades). Puede versionarse (N configuraciones), pero no tener otra linea.
-      await ctx.service.ensureDefaultProcessSingleLinea(ctx.payload.process_id, linea);
-      ctx.payload.name = await ctx.service.resolveProcessDefinitionVersionName(
-        ctx.payload.process_id,
-        ctx.payload.linea_id
-      );
+      // El guardia recibe LA LINEA, que es quien sabe de que proceso es. Recibia
+      // `ctx.payload.process_id`, y eso lo tuvo APAGADO desde `P22`: ese campo dejo de estar en el
+      // catalogo de la tabla, asi que `pickPayload` nunca lo incluia y llegaba `undefined`.
+      await ctx.service.ensureDefaultProcessSingleLinea(linea);
+      // Y AQUI SE ESCRIBIA `name` (frente 25, P23): el nombre se deriva en el SELECT.
       ctx.payload.status = "draft";
       await ctx.service.ensureProcessDefinitionVersionAvailable(ctx.payload);
     },
@@ -601,15 +597,12 @@ export const TABLE_HOOKS = {
       let allowed;
       let errorMessage;
       if (currentStatus === "draft") {
-        const generatedName = await ctx.service.resolveProcessDefinitionVersionName(
-          existing.process_id,
-          existing.linea_id
-        );
-        if (generatedName && !isSameValue("name", generatedName, existing.name)) {
-          updates.name = generatedName;
-        }
+        // AQUI SE REGENERABA `name` EN CADA EDICION, y era la mitad de la cascada: la otra mitad
+        // (`refreshProcessDefinitionVersionNames`) solo corria al renombrar el proceso, asi que
+        // renombrar la LINEA no actualizaba nada hasta que alguien volviera a guardar esta
+        // configuracion. El nombre se deriva, y por eso sale de la lista de campos editables:
+        // ofrecerlo era ofrecer editar un dato que el guardado siguiente pisaba.
         allowed = new Set([
-          "name",
           "description",
           "status",
           "effective_from",

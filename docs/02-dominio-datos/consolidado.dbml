@@ -905,7 +905,6 @@ Table "process_definition_versions" {
   "id" int4 [pk, not null, increment]
   "linea_id" int4 [not null]
   "definition_version" varchar(20) [not null]
-  "name" varchar(180) [not null]
   "description" varchar(255)
   "status" text [not null, check: `status = ANY (ARRAY['draft'::text, 'active'::text, 'retired'::text])`, default: 'draft']
   "active_series_flag" int2 [note: "columna generada (STORED)"]

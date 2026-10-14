@@ -56,7 +56,7 @@ Sustituyó a `process_definition_series` el **2026-10-11**. Aquella admitía un 
 
 ### `process_definition_versions` — la configuración.
 
-Tiene `status` (`draft`, `active`, `retired`) y vigencia (`effective_from` / `effective_to`). Dos mecanismos de integridad:
+Tiene `status` (`draft`, `active`, `retired`) y vigencia (`effective_from` / `effective_to`). **No tiene nombre propio**: desde el **2026-10-14** se deriva al leerlo con `nombre_configuracion(lineas.nombre, definition_version)` —una función del esquema, para que el formato viva en un solo sitio y no en las diecisiete consultas que lo leen—. Era una columna `name` copiada de `lineas.nombre`, y la copia fallaba por los dos lados: no distinguía dos versiones de la misma línea (las dos se llamaban igual) y se quedaba atrás al renombrar la línea, porque la única rutina que la resincronizaba se disparaba al renombrar el **proceso**. Tres sitios la reparaban y ninguno cubría ese caso. Dos mecanismos de integridad:
 
 - Una **columna generada** `active_series_flag` mas un índice UNIQUE sobre `(linea_id, active_series_flag)` garantiza **a nivel de base de datos** que solo hay una versión activa por línea. Hasta el 2026-10-11 ese índice iba sobre `(process_id, <la etiqueta de la variación>, active_series_flag)`, o sea sobre una copia del código de la serie; hoy va sobre la línea, que es el dato.
 

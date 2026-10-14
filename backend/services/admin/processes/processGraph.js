@@ -48,7 +48,7 @@ export default class ProcessGraphService {
       }));
     // Configuraciones (process_definition_versions) por proceso, para el grafo multinivel expandible.
     const [configs] = await this.pool.query(
-      `SELECT pdv.id AS definition_id, lin.process_id, pdv.name AS definition_name,
+      `SELECT pdv.id AS definition_id, lin.process_id, nombre_configuracion(lin.nombre, pdv.definition_version) AS definition_name,
               pdv.linea_id, lin.nombre AS linea_nombre, pdv.definition_version, pdv.status,
               lin.unit_scope_type, lin.cargo_id AS linea_cargo_id,
               sc.name AS linea_cargo_name, sut.name AS linea_unit_type_name
@@ -183,7 +183,7 @@ export default class ProcessGraphService {
 
     const [configurations] = await this.pool.query(
       `SELECT pdv.id AS definition_id,
-              pdv.name AS definition_name,
+              nombre_configuracion(lin.nombre, pdv.definition_version) AS definition_name,
               pdv.linea_id,
               lin.nombre AS linea_nombre,
               pdv.definition_version,
@@ -223,7 +223,7 @@ export default class ProcessGraphService {
 
     const [runs] = await this.pool.query(
       `SELECT pr.id, pr.process_definition_id, pr.run_mode, pr.status, pr.reason, pr.source_run_id, pr.created_at,
-              pdv.name AS definition_name, pdv.linea_id, lin.nombre AS linea_nombre, pdv.definition_version,
+              nombre_configuracion(lin.nombre, pdv.definition_version) AS definition_name, pdv.linea_id, lin.nombre AS linea_nombre, pdv.definition_version,
               t.id AS term_id, t.name AS term_name,
               tt.code AS term_type_code, tt.name AS term_type_name
          FROM process_runs pr

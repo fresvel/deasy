@@ -433,7 +433,11 @@ export const SQL_TABLES = [
       // comprobaba que coincidiera con el de la linea elegida.
       { name: "linea_id", label: "Linea", type: "number", required: true },
       { name: "definition_version", label: "Version", type: "text", required: true },
-      { name: "name", label: "Nombre generado", type: "text", readOnly: true },
+      // DERIVADO, NO COLUMNA (frente 25, P23 — 2026-10-14): `nombre_configuracion(linea, version)`.
+      // Era una copia de `lineas.nombre` que se quedaba atras al renombrar la linea --y que no
+      // distinguia dos versiones de la misma linea--. Se llamaba «Nombre generado» porque habia una
+      // rutina que lo generaba; ya no hay rutina, hay una derivacion.
+      { name: "name", label: "Nombre", type: "text", readOnly: true, virtual: true },
       { name: "description", label: "Descripcion", type: "textarea" },
       {
         name: "status",

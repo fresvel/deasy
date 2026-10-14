@@ -108,14 +108,23 @@ export default class ProcessDefinitionVersionService {
   // El proceso por defecto (slug 'default') es un routed comodin especial: solo puede tener UNA
   // linea — la «sin variacion»: cualquier cargo, todas las unidades. Se permite versionarla (N
   // configuraciones), pero no crear otra linea por cargo o por alcance.
-  async ensureDefaultProcessSingleLinea(processId, linea, { connection = this.pool } = {}) {
+  //
+  // ⚠️ ESTE GUARDIA ESTUVO APAGADO, y el apagon no lo delato nada (frente 25, P23 — 2026-10-14).
+  // Recibia `processId` del payload del CRUD, y `P22` quito `process_id` del catalogo de la tabla:
+  // desde entonces `pickPayload` --que solo copia campos declarados-- le pasaba `undefined` y la
+  // primera linea del cuerpo, un `if (!processId) return`, lo devolvia sin comprobar nada. O sea
+  // que la regla «el proceso por defecto solo admite la linea sin variacion» dejo de imponerse en
+  // silencio, y ningun test lo cubria. Ahora el proceso lo trae LA LINEA, que es quien lo sabe:
+  // sin parametro que pueda faltar, no hay nada que apagar.
+  async ensureDefaultProcessSingleLinea(linea, { connection = this.pool } = {}) {
     this.ensurePool();
+    const processId = normalizeNumericId(linea?.process_id);
     if (!processId) {
-      return;
+      throw new Error("La linea seleccionada no dice de que proceso es.");
     }
     const [rows] = await connection.query(
       "SELECT slug FROM processes WHERE id = ? LIMIT 1",
-      [Number(processId)]
+      [processId]
     );
     if (String(rows?.[0]?.slug || "") !== "default") {
       return;
@@ -127,68 +136,15 @@ export default class ProcessDefinitionVersionService {
   }
 
 
-  // EL NOMBRE DE UNA CONFIGURACION ES EL DE SU LINEA, y ese nombre LO ESCRIBE UNA PERSONA.
+  // AQUI VIVIAN LAS DOS RUTINAS DEL NOMBRE ALMACENADO, y se van con la columna (frente 25, P23 —
+  // 2026-10-14): `resolveProcessDefinitionVersionName`, que leia `lineas.nombre` para escribirlo en
+  // `pdv.name`, y `refreshProcessDefinitionVersionNames`, que recorria las configuraciones de un
+  // proceso o de una linea reescribiendo las que se habian quedado atras.
   //
-  // Antes se componia: «<Proceso> por <Serie>», con el nombre de la serie derivado de
-  // `slugify(cargo.name)`. Eso obligaba a dos cascadas no transaccionales cuando alguien renombraba
-  // un cargo o un tipo de unidad, y aun asi la etiqueta nunca podia decir lo que la obligacion es,
-  // porque le faltaba un eje: «Informe de IF por Coordinador» no distingue al de Carrera del de
-  // Escuela. La linea lo dice entero y no se deriva de nada.
-  async resolveProcessDefinitionVersionName(processId, lineaId, { connection = this.pool } = {}) {
-    this.ensurePool();
-    const normalizedLineaId = normalizeNumericId(lineaId);
-    if (!normalizedLineaId) {
-      throw new Error("Selecciona la linea para calcular el nombre de la configuracion.");
-    }
-    const [rows] = await connection.query(
-      "SELECT nombre FROM lineas WHERE id = ? LIMIT 1",
-      [normalizedLineaId]
-    );
-    const nombre = String(rows?.[0]?.nombre || "").trim();
-    if (!nombre) {
-      throw new Error("No se pudo calcular el nombre de la configuracion.");
-    }
-    return nombre.slice(0, 180);
-  }
-
-
-  async refreshProcessDefinitionVersionNames({ processId = null, lineaId = null, connection = this.pool } = {}) {
-    this.ensurePool();
-    const filters = [];
-    const params = [];
-    if (processId !== null && processId !== undefined && processId !== "") {
-      filters.push("l.process_id = ?");
-      params.push(Number(processId));
-    }
-    if (lineaId !== null && lineaId !== undefined && lineaId !== "") {
-      filters.push("pdv.linea_id = ?");
-      params.push(Number(lineaId));
-    }
-    if (!filters.length) {
-      return 0;
-    }
-    const [rows] = await connection.query(
-      `SELECT pdv.id, pdv.name, l.nombre AS nombre_linea
-       FROM process_definition_versions pdv
-       INNER JOIN lineas l ON l.id = pdv.linea_id
-       WHERE ${filters.join(" AND ")}`,
-      params
-    );
-    let updated = 0;
-    for (const row of rows || []) {
-      const generatedName = String(row.nombre_linea || "").trim().slice(0, 180);
-      if (!generatedName || String(row.name || "") === generatedName) {
-        continue;
-      }
-      await connection.query(
-        "UPDATE process_definition_versions SET name = ? WHERE id = ?",
-        [generatedName, Number(row.id)]
-      );
-      updated += 1;
-    }
-    return updated;
-  }
-
+  // La segunda es la prueba de que la copia no se sostenia: existia para arreglar a mano lo que la
+  // copia rompia, colgaba del unico gancho que ya no podia cambiar nada (`processes.afterUpdate`,
+  // y el nombre es el de la LINEA desde `P9`) y hacia su UPDATE fila a fila fuera de transaccion.
+  // Con el nombre derivado en el SELECT no hay nada que resincronizar.
 
   // Retira las configuraciones activas de UNA LINEA. Se llamaba `...InSeries` y recibia
   // `(processId, variationKey)`: la pareja mas la copia. La linea es una columna.

@@ -198,8 +198,6 @@ export default class SqlAdminService {
   ensureProcessDefinitionVersionAvailable(...args) { return this.processDefinitionVersion.ensureProcessDefinitionVersionAvailable(...args); }
   resolveLinea(...args) { return this.processDefinitionVersion.resolveLinea(...args); }
   ensureDefaultProcessSingleLinea(...args) { return this.processDefinitionVersion.ensureDefaultProcessSingleLinea(...args); }
-  resolveProcessDefinitionVersionName(...args) { return this.processDefinitionVersion.resolveProcessDefinitionVersionName(...args); }
-  refreshProcessDefinitionVersionNames(...args) { return this.processDefinitionVersion.refreshProcessDefinitionVersionNames(...args); }
   retireActiveDefinitionsInLinea(...args) { return this.processDefinitionVersion.retireActiveDefinitionsInLinea(...args); }
   getProcessDefinitionVersion(...args) { return this.processDefinitionVersion.getProcessDefinitionVersion(...args); }
   ensureDraftDefinitionContext(...args) { return this.processDefinitionVersion.ensureDraftDefinitionContext(...args); }
@@ -317,7 +315,11 @@ export default class SqlAdminService {
     // es `ediciones.generador_id`, columna FISICA de esta tabla. La fachada que lo traia por
     // JOIN desde `catalogo_documental` deja de hacer falta — era justo la pista de que el dato estaba en la
     // tabla equivocada.
+    // Columnas de la FACHADA que no son columnas de la TABLA: su expresion SQL, para que buscar y
+    // filtrar por ellas sigan funcionando. Se rellena abajo, en el bloque de la tabla que la define.
+    const derivedColumns = {};
     const qualifyField = (field) => {
+      if (derivedColumns[field]) return derivedColumns[field];
       if (tableName === "ediciones" && TA_DELIV_COLS[field]) return TA_DELIV_COLS[field];
       return columnPrefix ? `${columnPrefix}${field}` : field;
     };
@@ -360,11 +362,16 @@ export default class SqlAdminService {
       ) pd_main ON pd_main.process_id = processes.id`;
       columnPrefix = "processes.";
       const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      // Las dos van por `derivedColumns` desde P23: el ORDER BY llevaba un caso especial para
+      // `active_definition_version` --el unico campo derivado que se podia ordenar-- y con el mapa
+      // deja de hacer falta, porque quien sabe traducir el nombre es el mapa y no un `if`.
       if (availableFields.includes("active_definition_version")) {
+        derivedColumns.active_definition_version = "pd_main.definition_version";
         selectFields.push("pd_main.definition_version AS active_definition_version");
         orderableFields.push("active_definition_version");
       }
       if (availableFields.includes("active_definition_status")) {
+        derivedColumns.active_definition_status = "pd_main.status";
         selectFields.push("pd_main.status AS active_definition_status");
       }
       selectClause = `SELECT ${selectFields.join(", ")}`;
@@ -385,6 +392,19 @@ export default class SqlAdminService {
       const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
       selectFields.push("lin_pdv.process_id AS process_id");
       selectFields.push("lin_pdv.nombre AS linea_nombre");
+      // EL NOMBRE, TAMBIEN DERIVADO, Y CON LA IDENTIDAD ENTERA (frente 25, P23 — 2026-10-14).
+      //
+      // `name` era una columna copia de `lineas.nombre`, y ni siquiera identificaba: dos
+      // configuraciones de la misma linea se llamaban igual. Ahora lleva las dos piezas de su
+      // identidad, (linea, version), y la regla del formato vive en una sola funcion del esquema.
+      //
+      // Va por `derivedColumns` y no suelto en el SELECT para que el buscador de la pestaña siga
+      // encontrando por nombre: `searchFields` lo nombra, y `qualifyField` es quien lo traduce.
+      derivedColumns.name = "nombre_configuracion(lin_pdv.nombre, process_definition_versions.definition_version)";
+      selectFields.push(`${derivedColumns.name} AS name`);
+      // ORDENABLE, y no es un extra: el selector de configuraciones del modal de borradores pide
+      // `orderBy=name`. Sin esto, `safeOrderBy` no lo reconoceria y caeria a `id` EN SILENCIO.
+      orderableFields.push("name");
       selectClause = `SELECT ${selectFields.join(", ")}`;
 
       // El filtro por proceso tambien pasa por la linea.
@@ -463,14 +483,13 @@ export default class SqlAdminService {
 
     const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
     const safeOrderBy = orderableFields.includes(orderBy) ? orderBy : config.primaryKeys[0];
-    const orderColumn =
-      (tableName === "processes" && safeOrderBy === "active_definition_version")
-        ? safeOrderBy
-        : tableName === "ediciones"
-          ? qualifyField(safeOrderBy)
-          : joinClause
-            ? `${tableName}.${safeOrderBy}`
-            : safeOrderBy;
+    const orderColumn = derivedColumns[safeOrderBy]
+      ? derivedColumns[safeOrderBy]
+      : tableName === "ediciones"
+        ? qualifyField(safeOrderBy)
+        : joinClause
+          ? `${tableName}.${safeOrderBy}`
+          : safeOrderBy;
     const safeOrder = order?.toLowerCase() === "asc" ? "ASC" : "DESC";
     const safeLimit = Number.isFinite(Number(limit)) ? Math.max(1, Number(limit)) : DEFAULT_LIMIT;
     const safeOffset = Number.isFinite(Number(offset)) ? Math.max(0, Number(offset)) : 0;

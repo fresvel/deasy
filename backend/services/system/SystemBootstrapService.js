@@ -780,26 +780,29 @@ export const ensureDefaultProcess = async (connection) => {
   // 3. configuración activa
   let definition = await fetchOne(
     connection,
-    "SELECT id, status, name FROM process_definition_versions WHERE linea_id = ? AND definition_version = ? LIMIT 1",
+    "SELECT id, status FROM process_definition_versions WHERE linea_id = ? AND definition_version = ? LIMIT 1",
     [lineaId, DEFAULT_DEFINITION_VERSION]
   );
   if (!definition) {
     const [r] = await connection.query(
       // SIN `process_id` (frente 25, P22): era copia de la linea, que este mismo arranque acaba de
       // sembrar con `processId`. Lo escribia dos veces y nada comprobaba que coincidieran.
+      //
+      // Y SIN `name` (frente 25, P23): era OTRA copia, esta de `lineas.nombre` --que la linea de
+      // arriba acaba de recibir con el mismo valor--. El nombre se deriva al leerlo.
       `INSERT INTO process_definition_versions
-        (linea_id, definition_version, name, description, status, effective_from)
-       VALUES (?, ?, ?, ?, 'active', CURDATE())`,
-      [lineaId, DEFAULT_DEFINITION_VERSION,
-       defaultDefinitionName, "Tareas libres y no clasificadas."]
+        (linea_id, definition_version, description, status, effective_from)
+       VALUES (?, ?, ?, 'active', CURDATE())`,
+      [lineaId, DEFAULT_DEFINITION_VERSION, "Tareas libres y no clasificadas."]
     );
-    definition = { id: r.insertId, status: "active", name: defaultDefinitionName };
+    definition = { id: r.insertId, status: "active" };
   } else if (definition.status !== "active") {
     await connection.query("UPDATE process_definition_versions SET status = 'active' WHERE id = ?", [definition.id]);
   }
-  if (definition?.id && String(definition.name || "") !== defaultDefinitionName) {
-    await connection.query("UPDATE process_definition_versions SET name = ? WHERE id = ?", [defaultDefinitionName, definition.id]);
-  }
+  // AQUI HABIA UNA TERCERA RESINCRONIZACION DEL NOMBRE, y es la que mas dice: el arranque reponia
+  // en cada ejecucion el valor que la copia podia haber perdido. Tres sitios reparando lo mismo
+  // --este, el gancho de `processes` y el `beforeUpdate` del CRUD-- y aun asi renombrar la linea lo
+  // dejaba caducado, porque ninguno de los tres se disparaba con eso.
   const definitionId = Number(definition.id);
 
   // 4. EL PRIMER GENERADOR DEL CATALOGO (frente 23, F3.1). Esta fila era «la semilla» —el paquete

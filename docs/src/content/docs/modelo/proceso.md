@@ -34,9 +34,9 @@ en el esquema, así que una escritura directa a la base sí podría saltárselo.
 
 :::
 
-## Las tres coordenadas de una configuración
+## Las dos coordenadas de una configuración
 
-Una configuración no se identifica solo por su proceso. Lleva tres coordenadas más, y cada una
+Una configuración no se identifica solo por su proceso. Lleva dos coordenadas más, y cada una
 responde a una pregunta distinta:
 
 - **La línea** (`lineas`) — **de quién es la obligación y dónde vive**, los dos ejes juntos. Es la
@@ -46,6 +46,30 @@ responde a una pregunta distinta:
 
 Junto a ellas va `definition_version`, la etiqueta de versión de las reglas (`1.0.0` en la que siembra
 el arranque). **La pareja `(línea, versión)` es única.**
+
+Y **esa pareja es también su nombre**: la configuración no tiene columna de nombre. Se compone al
+leerla —«*Informe de Gestión Docente · 1.0.0*»— con una función del esquema,
+`nombre_configuracion(nombre de la línea, versión)`, igual que su proceso se lee de la línea.
+
+:::note[Aquí hubo una columna `name`, y era una copia caducada]
+
+Hasta el **2026-10-14** el nombre era una columna, escrita con el valor de `lineas.nombre`. Fallaba
+por los dos lados:
+
+- **No distinguía.** Dos configuraciones de la misma línea tenían el **mismo** nombre. En la base
+  sembrada, la `1.0.0` y la `1.1.0` de la línea del «Proceso por defecto» decían las dos *«Proceso
+  por defecto»*: la columna que servía para nombrar no servía para identificar.
+- **Se quedaba atrás.** Renombrar la línea no actualizaba sus configuraciones. Había una rutina de
+  resincronización, pero colgaba del único disparador que ya no podía cambiar nada —renombrar el
+  **proceso**, cuando el nombre pasó a ser el de la línea— y **no existía ningún gancho de
+  `lineas`**. Se provocó en el navegador antes de quitarla: las dos configuraciones se quedaron con
+  el nombre viejo.
+
+Con la columna se fueron **tres** sitios que la reparaban (la rutina, el gancho del renombrado y una
+reescritura en cada guardado), y la ambigüedad desapareció sola al derivar la identidad entera. El
+detalle medido está en el frente 25 del plan.
+
+:::
 
 :::note[Aquí había una tercera coordenada, y era una copia]
 
@@ -164,7 +188,6 @@ erDiagram
     int id PK "LA CONFIGURACION"
     int linea_id FK "LA IDENTIDAD: la linea a la que pertenece, y de donde sale su proceso"
     varchar definition_version "1.0.0"
-    varchar name
     varchar description
     text status "draft, active, retired"
     smallint active_series_flag "generada, una sola activa por linea"
