@@ -128,11 +128,13 @@ un `NULL`.
 
 ```mermaid
 erDiagram
-  processes ||--o{ process_definition_versions : "tiene versiones de reglas"
+  processes ||--o{ lineas : "tiene obligaciones"
   processes ||--o{ processes : "puede colgar de otro"
-  process_definition_series ||--o{ process_definition_versions : "criterio de reparto"
-  unit_types ||--o{ process_definition_series : "serie por tipo de unidad"
-  cargos ||--o{ process_definition_series : "serie por cargo"
+  lineas ||--o{ process_definition_versions : "LA IDENTIDAD de una configuracion"
+  lineas ||--o{ lineas : "EL LINAJE: sucede a otra"
+  unit_types ||--o{ lineas : "el DONDE por tipo"
+  units ||--o{ lineas : "el DONDE, una unidad"
+  cargos ||--o{ lineas : "el QUIEN"
   process_definition_versions ||--o{ process_definition_period_types : "corre en estos tipos de periodo"
   term_types ||--o{ process_definition_period_types : "tipo de periodo"
   term_types ||--o{ terms : "clasifica"
@@ -160,8 +162,7 @@ erDiagram
   }
   process_definition_versions {
     int id PK "LA CONFIGURACION"
-    int process_id FK
-    int linea_id FK "LA IDENTIDAD: la linea a la que pertenece"
+    int linea_id FK "LA IDENTIDAD: la linea a la que pertenece, y de donde sale su proceso"
     varchar definition_version "1.0.0"
     varchar name
     varchar description

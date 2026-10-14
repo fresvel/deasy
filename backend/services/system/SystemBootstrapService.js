@@ -785,10 +785,12 @@ export const ensureDefaultProcess = async (connection) => {
   );
   if (!definition) {
     const [r] = await connection.query(
+      // SIN `process_id` (frente 25, P22): era copia de la linea, que este mismo arranque acaba de
+      // sembrar con `processId`. Lo escribia dos veces y nada comprobaba que coincidieran.
       `INSERT INTO process_definition_versions
-        (process_id, linea_id, definition_version, name, description, status, effective_from)
-       VALUES (?, ?, ?, ?, ?, 'active', CURDATE())`,
-      [processId, lineaId, DEFAULT_DEFINITION_VERSION,
+        (linea_id, definition_version, name, description, status, effective_from)
+       VALUES (?, ?, ?, ?, 'active', CURDATE())`,
+      [lineaId, DEFAULT_DEFINITION_VERSION,
        defaultDefinitionName, "Tareas libres y no clasificadas."]
     );
     definition = { id: r.insertId, status: "active", name: defaultDefinitionName };

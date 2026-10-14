@@ -176,8 +176,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `process_id` | int | sí | `processes.id` · se va con el | — |
-| `linea_id` | int | sí | `lineas.id` · impide borrar | — |
+| `linea_id` | int | sí | `lineas.id` · se va con el | — |
 | `definition_version` | varchar(20) | sí | — | — |
 | `name` | varchar(180) | sí | — | — |
 | `description` | varchar(255) | no | — | — |
@@ -516,4 +515,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**33 tablas · 306 columnas · 77 referencias.** Leídas del catálogo de PostgreSQL.
+**33 tablas · 305 columnas · 76 referencias.** Leídas del catálogo de PostgreSQL.

@@ -95,12 +95,12 @@ const getProcessTargetRuleRows = async (pool) => {
          SELECT 1 FROM vinculos pdt
          WHERE pdt.process_definition_id = pdv.id AND pdt.item_mode = 'routed'
        ) AS is_routed
+     -- EL ORDEN DE LOS DOS JOIN CAMBIO CON P22, y no es estetico: antes el proceso se enganchaba
+     -- por la columna process_id de la configuracion, asi que lineas podia unirse DESPUES. Con la
+     -- copia fuera el enganche es lin.process_id, y un ON no puede nombrar una tabla que se une mas
+     -- abajo. Postgres lo dice con "missing FROM-clause entry", en tiempo de llamada y solo en esta
+     -- consulta: lo cazo la corrida de caracterizacion, con el menu del usuario en 500.
      FROM processes p
-     INNER JOIN process_definition_versions pdv
-       ON pdv.process_id = p.id
-      AND pdv.status = 'active'
-      AND pdv.effective_from <= CURDATE()
-      AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
      -- LA OBLIGACION TIENE QUE SEGUIR EN PIE para que el proceso aparezca en el menu
      -- (frente 25, P18-a). Aqui el JOIN es INNER y la vigencia se compara contra HOY, no contra un
      -- periodo: esta consulta contesta «que puede hacer esta persona AHORA».
@@ -109,9 +109,14 @@ const getProcessTargetRuleRows = async (pool) => {
      -- derogar una obligacion detiene la GENERACION de trabajo nuevo, no deja a medias lo que ya
      -- esta en marcha. Un documento en llenado se termina aunque su obligacion se haya derogado.
      INNER JOIN lineas lin
-       ON lin.id = pdv.linea_id
+       ON lin.process_id = p.id
       AND lin.effective_from <= CURDATE()
       AND (lin.effective_to IS NULL OR lin.effective_to >= CURDATE())
+     INNER JOIN process_definition_versions pdv
+       ON pdv.linea_id = lin.id
+      AND pdv.status = 'active'
+      AND pdv.effective_from <= CURDATE()
+      AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
      INNER JOIN process_target_rules ptr
        ON ptr.process_definition_id = pdv.id
      WHERE p.is_active = 1
@@ -171,8 +176,8 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN task_items ti ON ti.id = dv.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
-       INNER JOIN processes p ON p.id = pdv.process_id
+       INNER JOIN lineas lin ON lin.id = pdv.linea_id
+       INNER JOIN processes p ON p.id = lin.process_id
        LEFT JOIN (
          SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
          FROM position_assignments
@@ -234,8 +239,8 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
        INNER JOIN task_items ti ON ti.id = dv.task_item_id
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
-       INNER JOIN processes p ON p.id = pdv.process_id
+       INNER JOIN lineas lin ON lin.id = pdv.linea_id
+       INNER JOIN processes p ON p.id = lin.process_id
        LEFT JOIN (
          SELECT person_id, MIN(position_id) AS position_id, COUNT(*) AS total_positions
          FROM position_assignments

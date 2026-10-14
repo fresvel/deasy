@@ -16,7 +16,7 @@ export const getLatestDocumentVersionForTaskItem = async (connection, definition
        ti.id AS task_item_id,
        t.id AS task_id,
        t.term_id,
-       pdv.process_id,
+       lin.process_id,
        trm.term_type_id,
        trm.start_date AS term_start_date,
        YEAR(trm.start_date) AS term_year,
@@ -34,6 +34,8 @@ export const getLatestDocumentVersionForTaskItem = async (connection, definition
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     -- el proceso sale de la LINEA desde P22
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN terms trm ON trm.id = t.term_id
      INNER JOIN document_versions dv ON dv.task_item_id = ti.id
      INNER JOIN (

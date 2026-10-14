@@ -24,7 +24,7 @@ export const getActiveAutomaticDefinitions = async (connection, term) => {
      FROM (
        SELECT
          pdv.id,
-         pdv.process_id,
+         l.process_id,
          pdv.linea_id,
          pdv.definition_version,
          -- UNA configuracion activa por LINEA. Particionaba por (process_id, variation_key), que

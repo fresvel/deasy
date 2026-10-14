@@ -339,19 +339,22 @@ export default class SqlAdminService {
     }
 
     if (tableName === "processes") {
+      // EL PROCESO DE UNA CONFIGURACION SALE DE SU LINEA (frente 25, P22): las columnas sin
+      // cualificar de aqui dentro eran de `process_definition_versions`, que llevaba una copia.
       joinClause = `LEFT JOIN (
         SELECT process_id, definition_version, status
         FROM (
           SELECT
-            process_id,
-            definition_version,
-            status,
+            lin.process_id,
+            pdv.definition_version,
+            pdv.status,
             ROW_NUMBER() OVER (
-              PARTITION BY process_id
-              ORDER BY effective_from DESC, id DESC
+              PARTITION BY lin.process_id
+              ORDER BY pdv.effective_from DESC, pdv.id DESC
             ) AS rn
-          FROM process_definition_versions
-          WHERE status IN ('draft', 'active')
+          FROM process_definition_versions pdv
+          INNER JOIN lineas lin ON lin.id = pdv.linea_id
+          WHERE pdv.status IN ('draft', 'active')
         ) ranked_pd
         WHERE rn = 1
       ) pd_main ON pd_main.process_id = processes.id`;
@@ -397,7 +400,8 @@ export default class SqlAdminService {
         conditions.push(`EXISTS (
           SELECT 1 FROM vinculos pdt
             INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
-           WHERE pdt.edicion_id = ediciones.id AND pdv.process_id = ?
+            INNER JOIN lineas lin ON lin.id = pdv.linea_id
+           WHERE pdt.edicion_id = ediciones.id AND lin.process_id = ?
         )`);
         params.push(processFilter);
       }

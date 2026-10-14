@@ -322,8 +322,12 @@ export default class TemplateLifecycleService {
   async getOrCreateConfigWorkingDraft(definitionId, connection = this.pool) {
     const defId = Number(definitionId);
     const [defRows] = await connection.query(
-      `SELECT id, process_id, linea_id, definition_version, name, description, status
-         FROM process_definition_versions WHERE id = ? LIMIT 1`,
+      // el proceso sale de la LINEA (frente 25, P22); el nombre del campo se conserva
+      `SELECT pdv.id, lin.process_id, pdv.linea_id, pdv.definition_version,
+              pdv.name, pdv.description, pdv.status
+         FROM process_definition_versions pdv
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+        WHERE pdv.id = ? LIMIT 1`,
       [defId]
     );
     const definition = defRows?.[0];
@@ -349,10 +353,11 @@ export default class TemplateLifecycleService {
       definition.linea_id, "minor", connection
     );
     const [insertResult] = await connection.query(
+      // SIN `process_id` (frente 25, P22): lo dice la linea, y `linea_id` ya viaja aqui.
       `INSERT INTO process_definition_versions
-         (process_id, linea_id, definition_version, name, description, status, effective_from)
-       VALUES (?, ?, ?, ?, ?, 'draft', CURDATE())`,
-      [definition.process_id, definition.linea_id, nextVersion, definition.name, definition.description]
+         (linea_id, definition_version, name, description, status, effective_from)
+       VALUES (?, ?, ?, ?, 'draft', CURDATE())`,
+      [definition.linea_id, nextVersion, definition.name, definition.description]
     );
     const newId = Number(insertResult.insertId);
     await this._cloneProcessDefinitionChildren({
@@ -478,7 +483,11 @@ export default class TemplateLifecycleService {
     this.ensurePool();
     const defId = Number(definitionId);
     const [defRows] = await this.pool.query(
-      "SELECT id, process_id, linea_id, status, definition_version FROM process_definition_versions WHERE id = ? LIMIT 1",
+      // el proceso sale de la LINEA (frente 25, P22); el nombre del campo se conserva
+      `SELECT pdv.id, lin.process_id, pdv.linea_id, pdv.status, pdv.definition_version
+         FROM process_definition_versions pdv
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+        WHERE pdv.id = ? LIMIT 1`,
       [defId]
     );
     const draft = defRows?.[0];
@@ -565,8 +574,12 @@ export default class TemplateLifecycleService {
     );
     const src = srcRows?.[0];
     if (!src) throw new Error("La versión de origen no existe.");
+    // EL PROCESO SALE DE LA LINEA (frente 25, P22): la configuracion llevaba su copia.
     const [defRows] = await this.pool.query(
-      "SELECT process_id FROM process_definition_versions WHERE id = ? LIMIT 1",
+      `SELECT lin.process_id
+         FROM process_definition_versions pdv
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+        WHERE pdv.id = ? LIMIT 1`,
       [defId]
     );
     const def = defRows?.[0];
@@ -844,8 +857,12 @@ export default class TemplateLifecycleService {
     }
 
     const [defRows] = await this.pool.query(
-      `SELECT id, process_id, linea_id, definition_version, name, description, status
-         FROM process_definition_versions WHERE id = ? LIMIT 1`,
+      // el proceso sale de la LINEA (frente 25, P22); el nombre del campo se conserva
+      `SELECT pdv.id, lin.process_id, pdv.linea_id, pdv.definition_version,
+              pdv.name, pdv.description, pdv.status
+         FROM process_definition_versions pdv
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+        WHERE pdv.id = ? LIMIT 1`,
       [defId]
     );
     const definition = defRows?.[0];
@@ -887,11 +904,11 @@ export default class TemplateLifecycleService {
         connection
       );
       const [insertResult] = await connection.query(
+        // SIN `process_id` (frente 25, P22): lo dice la linea.
         `INSERT INTO process_definition_versions
-           (process_id, linea_id, definition_version, name, description, status, effective_from)
-         VALUES (?, ?, ?, ?, ?, 'draft', CURDATE())`,
+           (linea_id, definition_version, name, description, status, effective_from)
+         VALUES (?, ?, ?, ?, 'draft', CURDATE())`,
         [
-          definition.process_id,
           definition.linea_id,
           nextConfigVersion,
           definition.name,
@@ -947,7 +964,11 @@ export default class TemplateLifecycleService {
     }
 
     const [defRows] = await this.pool.query(
-      "SELECT id, process_id, linea_id, definition_version, status FROM process_definition_versions WHERE id = ? LIMIT 1",
+      // el proceso sale de la LINEA (frente 25, P22)
+      `SELECT pdv.id, lin.process_id, pdv.linea_id, pdv.definition_version, pdv.status
+         FROM process_definition_versions pdv
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
+        WHERE pdv.id = ? LIMIT 1`,
       [cfgId]
     );
     const definition = defRows?.[0];

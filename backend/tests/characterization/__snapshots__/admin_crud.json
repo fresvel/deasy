@@ -126,7 +126,6 @@
       "id": "<normalized>",
       "linea_id": "<normalized>",
       "name": "Cadena de caracterización · Jefes",
-      "process_id": "<normalized>",
       "status": "draft"
     }
   },
@@ -138,7 +137,6 @@
       "id": "<normalized>",
       "linea_id": "<normalized>",
       "name": "Cadena de caracterización · Jefes",
-      "process_id": "<normalized>",
       "status": "draft"
     }
   },
@@ -421,7 +419,6 @@
       "id",
       "linea_id",
       "name",
-      "process_id",
       "status"
     ]
   },

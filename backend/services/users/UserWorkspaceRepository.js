@@ -96,8 +96,11 @@ export const getUserDocumentCenterRows = async (pool, userId) => {
      ) dv ON dv.task_item_id = ti.id
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-     LEFT JOIN lineas lin ON lin.id = pdv.linea_id
-     INNER JOIN processes p ON p.id = pdv.process_id
+     -- INNER, y antes era LEFT: linea_id es NOT NULL, asi que una configuracion sin linea no
+     -- existe; y desde P22 el proceso cuelga de ahi, asi que un LEFT prometia una fila cuyo
+     -- proceso seria NULL.
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
+     INNER JOIN processes p ON p.id = lin.process_id
      LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
@@ -183,8 +186,11 @@ export const getUserGlobalPendingSignatureRows = async (pool, userId) => {
      INNER JOIN task_items ti ON ti.id = dv.task_item_id
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-     LEFT JOIN lineas lin ON lin.id = pdv.linea_id
-     INNER JOIN processes p ON p.id = pdv.process_id
+     -- INNER, y antes era LEFT: linea_id es NOT NULL, asi que una configuracion sin linea no
+     -- existe; y desde P22 el proceso cuelga de ahi, asi que un LEFT prometia una fila cuyo
+     -- proceso seria NULL.
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
+     INNER JOIN processes p ON p.id = lin.process_id
      LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
      LEFT JOIN catalogo_documental tar_dl ON tar_dl.id = tar.catalogo_documental_id
@@ -215,7 +221,7 @@ export const getDefinitionContext = async (pool, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
        pdv.id,
-       pdv.process_id,
+       lin.process_id,
        pdv.linea_id,
        lin.nombre AS linea_nombre,
        pdv.definition_version,
@@ -234,8 +240,11 @@ export const getDefinitionContext = async (pool, definitionId) => {
        END AS linea_donde,
        c.name AS linea_cargo_name
      FROM process_definition_versions pdv
-     LEFT JOIN lineas lin ON lin.id = pdv.linea_id
-     INNER JOIN processes p ON p.id = pdv.process_id
+     -- INNER, y antes era LEFT: linea_id es NOT NULL, asi que una configuracion sin linea no
+     -- existe; y desde P22 el proceso cuelga de ahi, asi que un LEFT prometia una fila cuyo
+     -- proceso seria NULL.
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
+     INNER JOIN processes p ON p.id = lin.process_id
      LEFT JOIN unit_types ut ON ut.id = lin.unit_type_id
      LEFT JOIN units u ON u.id = lin.unit_id
      LEFT JOIN cargos c ON c.id = lin.cargo_id
@@ -614,7 +623,7 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
        ti.end_date,
        ti.user_started_at,
        tar_dl.display_name AS template_artifact_name,
-       pdv.process_id,
+       lin.process_id,
        trm.term_type_id,
        trm.start_date AS term_start_date,
        YEAR(trm.start_date) AS term_year,
@@ -627,6 +636,8 @@ export const getAccessibleTaskItemForUser = async (pool, userId, definitionId, t
      FROM task_items ti
      INNER JOIN tasks t ON t.id = ti.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     -- el proceso sale de la LINEA desde P22; linea_id es NOT NULL, asi que el JOIN es INNER
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN terms trm ON trm.id = t.term_id
      LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
      LEFT JOIN ediciones tar ON tar.id = pdt.edicion_id
@@ -1083,7 +1094,8 @@ export const findRoutedItemsCreatedBy = async (ejecutor, personId) => {
        ON pdt.id = ti.vinculo_id AND pdt.item_mode = 'routed'
      JOIN tasks t ON t.id = ti.task_id
      JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-     JOIN processes p ON p.id = pdv.process_id
+     JOIN lineas lin ON lin.id = pdv.linea_id
+     JOIN processes p ON p.id = lin.process_id
      WHERE ti.created_by_person_id = ?
      ORDER BY ti.created_at DESC, ti.id DESC
      LIMIT 200`,
@@ -1128,7 +1140,8 @@ export const findRoutedItemsReceivedBy = async (ejecutor, personId) => {
        ON pdt.id = ti.vinculo_id AND pdt.item_mode = 'routed'
      JOIN tasks t ON t.id = ti.task_id
      JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-     JOIN processes p ON p.id = pdv.process_id
+     JOIN lineas lin ON lin.id = pdv.linea_id
+     JOIN processes p ON p.id = lin.process_id
      LEFT JOIN persons sender ON sender.id = ti.created_by_person_id
      WHERE (ti.created_by_person_id IS NULL OR ti.created_by_person_id <> ?)
        AND ( ${FILL_EXISTS} OR ${SIGN_EXISTS} )

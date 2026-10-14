@@ -54,7 +54,7 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
      FROM process_target_rules ptr
      INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
       INNER JOIN lineas lin ON lin.id = pdv.linea_id
-     INNER JOIN processes p ON p.id = pdv.process_id
+     INNER JOIN processes p ON p.id = lin.process_id
      LEFT JOIN cargos c ON c.id = lin.cargo_id
      LEFT JOIN unit_positions up ON up.id = ptr.position_id
      LEFT JOIN cargos upc ON upc.id = up.cargo_id
@@ -89,7 +89,7 @@ export const listarProcesosEnganchables = async (ejecutor) => {
             c.name AS linea_cargo_name
        FROM process_definition_versions pdv
        INNER JOIN lineas lin ON lin.id = pdv.linea_id
-       INNER JOIN processes p ON p.id = pdv.process_id
+       INNER JOIN processes p ON p.id = lin.process_id
        LEFT JOIN cargos c ON c.id = lin.cargo_id
       WHERE pdv.status = 'draft'
         AND lin.unit_scope_type <> 'unit_type'

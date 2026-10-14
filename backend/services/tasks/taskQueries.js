@@ -54,7 +54,9 @@ export const listTasksForPerson = async (pool, personId, filtros = {}) => {
      INNER JOIN task_items ti_te ON ti_te.id = te.task_item_id
      INNER JOIN tasks t ON t.id = ti_te.task_id
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-       LEFT JOIN lineas lin ON lin.id = pdv.linea_id
+     -- INNER, y era LEFT: desde P22 el proceso cuelga de aqui, asi que un LEFT prometia una fila
+     -- cuyo proceso seria NULL — y el JOIN a processes es INNER, que la habria descartado igual.
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
      LEFT JOIN (
        SELECT
          ti.task_id,
@@ -69,7 +71,7 @@ export const listTasksForPerson = async (pool, personId, filtros = {}) => {
        GROUP BY ti.task_id
      ) tis
        ON tis.task_id = t.id
-     INNER JOIN processes p ON p.id = pdv.process_id
+     INNER JOIN processes p ON p.id = lin.process_id
      INNER JOIN unit_positions up ON up.id = ti_te.responsible_position_id
      INNER JOIN units u ON u.id = up.unit_id
      LEFT JOIN position_assignments pa

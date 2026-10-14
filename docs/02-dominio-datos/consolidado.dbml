@@ -903,7 +903,6 @@ Table "process_definition_period_types" {
 
 Table "process_definition_versions" {
   "id" int4 [pk, not null, increment]
-  "process_id" int4 [not null]
   "linea_id" int4 [not null]
   "definition_version" varchar(20) [not null]
   "name" varchar(180) [not null]
@@ -1490,8 +1489,7 @@ Ref "fk_position_assignments_person":"persons"."id" <? "position_assignments"."p
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
-Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id"
-Ref "fk_process_definition_versions_process":"processes"."id" <? "process_definition_versions"."process_id" [delete: cascade]
+Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]
 Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user_id"
 Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"

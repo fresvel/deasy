@@ -173,7 +173,7 @@ era «la serie», que admitía un eje **o** el otro; la línea lleva los dos.
 |---|---|
 | `processes` | El proceso, por su nombre. Puede colgar de otro |
 | `lineas` | **La línea:** la obligación en sí — qué documento, **de quién** (`cargo_id`) y **dónde** (`unit_scope_type`), los dos ejes juntos, con nombre propio, vigencia y linaje. **Es el único sitio donde se declara el alcance**: la regla llevaba una copia y la perdió el 2026-10-14 |
-| `process_definition_versions` | **La definición, versionada.** Un proceso se puede redefinir sin perder lo que ya se lanzó con la versión anterior |
+| `process_definition_versions` | **La definición, versionada.** Un proceso se puede redefinir sin perder lo que ya se lanzó con la versión anterior. **No dice de qué proceso es**: lo dice su línea, y su `process_id` propio se retiró el 2026-10-14 por ser una copia que nada comprobaba |
 | `process_target_rules` | **El afinado:** de los puestos que la obligación alcanza, a cuáles de verdad — todos, la **jefatura** de cada unidad, o un **puesto** nombrado. **No declara alcance** (lo hereda de la línea), y **sin vigencia ni interruptor**: nace y muere con su versión de la definición |
 | `process_definition_period_types` | En qué tipos de periodo se repite |
 | `terms` | Los periodos concretos: «2026-1», «2026-2», «Permanente», con sus fechas |

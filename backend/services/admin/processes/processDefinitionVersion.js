@@ -157,7 +157,7 @@ export default class ProcessDefinitionVersionService {
     const filters = [];
     const params = [];
     if (processId !== null && processId !== undefined && processId !== "") {
-      filters.push("pdv.process_id = ?");
+      filters.push("l.process_id = ?");
       params.push(Number(processId));
     }
     if (lineaId !== null && lineaId !== undefined && lineaId !== "") {
@@ -234,9 +234,13 @@ export default class ProcessDefinitionVersionService {
   async getProcessDefinitionVersion(definitionId, connection = this.pool) {
     this.ensurePool();
     const [rows] = await connection.query(
-      `SELECT id, process_id, linea_id, status
-       FROM process_definition_versions
-       WHERE id = ?
+      // `process_id` SALE DE LA LINEA (frente 25, P22). Se mantiene el NOMBRE del campo porque
+      // sus consumidores preguntan «de que proceso es esta configuracion», que sigue siendo la
+      // pregunta correcta — lo que cambia es de donde se lee, no lo que significa.
+      `SELECT pdv.id, lin.process_id, pdv.linea_id, pdv.status
+       FROM process_definition_versions pdv
+       INNER JOIN lineas lin ON lin.id = pdv.linea_id
+       WHERE pdv.id = ?
        LIMIT 1`,
       [definitionId]
     );

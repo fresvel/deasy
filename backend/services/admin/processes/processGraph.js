@@ -27,8 +27,15 @@ export default class ProcessGraphService {
     this.ensurePool();
     const [nodes] = await this.pool.query(
       `SELECT p.id, p.name, p.slug, p.is_active, p.parent_id,
-              (SELECT COUNT(*) FROM process_definition_versions pdv WHERE pdv.process_id = p.id) AS definitions_count,
-              (SELECT COUNT(*) FROM process_definition_versions pdv WHERE pdv.process_id = p.id AND pdv.status = 'active') AS active_count
+              -- EL PROCESO DE UNA CONFIGURACION SALE DE SU LINEA (frente 25, P22): la columna
+              -- process_id de la configuracion era una copia que nada comprobaba. En una
+              -- correlacionada el precio es un JOIN dentro de la subconsulta, que es donde mas se nota.
+              (SELECT COUNT(*) FROM process_definition_versions pdv
+                 INNER JOIN lineas lin ON lin.id = pdv.linea_id
+                WHERE lin.process_id = p.id) AS definitions_count,
+              (SELECT COUNT(*) FROM process_definition_versions pdv
+                 INNER JOIN lineas lin ON lin.id = pdv.linea_id
+                WHERE lin.process_id = p.id AND pdv.status = 'active') AS active_count
          FROM processes p
         ORDER BY p.name ASC`
     );
@@ -41,7 +48,7 @@ export default class ProcessGraphService {
       }));
     // Configuraciones (process_definition_versions) por proceso, para el grafo multinivel expandible.
     const [configs] = await this.pool.query(
-      `SELECT pdv.id AS definition_id, pdv.process_id, pdv.name AS definition_name,
+      `SELECT pdv.id AS definition_id, lin.process_id, pdv.name AS definition_name,
               pdv.linea_id, lin.nombre AS linea_nombre, pdv.definition_version, pdv.status,
               lin.unit_scope_type, lin.cargo_id AS linea_cargo_id,
               sc.name AS linea_cargo_name, sut.name AS linea_unit_type_name
@@ -49,18 +56,19 @@ export default class ProcessGraphService {
          INNER JOIN lineas lin ON lin.id = pdv.linea_id
          LEFT JOIN cargos sc ON sc.id = lin.cargo_id
          LEFT JOIN unit_types sut ON sut.id = lin.unit_type_id
-        ORDER BY pdv.process_id, FIELD(pdv.status, 'active', 'draft', 'retired'), lin.nombre ASC`
+        ORDER BY lin.process_id, FIELD(pdv.status, 'active', 'draft', 'retired'), lin.nombre ASC`
     );
     // Entregables (plantillas vinculadas) por configuración, para el 3er nivel del grafo. Una misma plantilla
     // puede estar en varias configuraciones: cada fila pdt es un nodo (duplicado por config) y el template_code
     // es el distintivo que identifica que es el mismo entregable.
     const [templates] = await this.pool.query(
-      `SELECT pdt.id, pdt.process_definition_id AS definition_id, pdv.process_id,
+      `SELECT pdt.id, pdt.process_definition_id AS definition_id, lin.process_id,
               pdt.edicion_id, d.code AS template_code, d.display_name, d.template_scope,
               ta.storage_version, ta.lifecycle_state,
               (SELECT COUNT(*) FROM ediciones tav WHERE tav.catalogo_documental_id = ta.catalogo_documental_id) AS version_count
          FROM vinculos pdt
          INNER JOIN process_definition_versions pdv ON pdv.id = pdt.process_definition_id
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
          INNER JOIN ediciones ta ON ta.id = pdt.edicion_id
          INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
         ORDER BY pdt.process_definition_id, pdt.sort_order ASC`
@@ -193,7 +201,7 @@ export default class ProcessGraphService {
          INNER JOIN lineas lin ON lin.id = pdv.linea_id
          LEFT JOIN cargos sc ON sc.id = lin.cargo_id
          LEFT JOIN unit_types sut ON sut.id = lin.unit_type_id
-        WHERE pdv.process_id = ?
+        WHERE lin.process_id = ?
         ORDER BY FIELD(pdv.status, 'active', 'draft', 'retired'),
                  lin.nombre ASC, pdv.definition_version DESC`,
       [id]
@@ -201,8 +209,12 @@ export default class ProcessGraphService {
 
     const [children] = await this.pool.query(
       `SELECT c.id, c.name, c.slug, c.is_active,
-              (SELECT COUNT(*) FROM process_definition_versions pdv WHERE pdv.process_id = c.id) AS definitions_count,
-              (SELECT COUNT(*) FROM process_definition_versions pdv WHERE pdv.process_id = c.id AND pdv.status = 'active') AS active_count
+              (SELECT COUNT(*) FROM process_definition_versions pdv
+                 INNER JOIN lineas lin ON lin.id = pdv.linea_id
+                WHERE lin.process_id = c.id) AS definitions_count,
+              (SELECT COUNT(*) FROM process_definition_versions pdv
+                 INNER JOIN lineas lin ON lin.id = pdv.linea_id
+                WHERE lin.process_id = c.id AND pdv.status = 'active') AS active_count
          FROM processes c
         WHERE c.parent_id = ?
         ORDER BY c.name ASC`,
@@ -216,10 +228,10 @@ export default class ProcessGraphService {
               tt.code AS term_type_code, tt.name AS term_type_name
          FROM process_runs pr
          INNER JOIN process_definition_versions pdv ON pdv.id = pr.process_definition_id
-         LEFT JOIN lineas lin ON lin.id = pdv.linea_id
+         INNER JOIN lineas lin ON lin.id = pdv.linea_id
          LEFT JOIN terms t ON t.id = pr.term_id
          LEFT JOIN term_types tt ON tt.id = t.term_type_id
-        WHERE pdv.process_id = ?
+        WHERE lin.process_id = ?
         ORDER BY pr.created_at DESC`,
       [id]
     );

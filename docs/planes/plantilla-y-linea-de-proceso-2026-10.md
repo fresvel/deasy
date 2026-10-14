@@ -164,7 +164,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P17** | ⛔ **DESCARTADA** · el DÓNDE de una línea como conjunto. La sustituye `P20`: si el formato puede servir a varias líneas del mismo proceso, Carrera y Tecnología son **dos líneas que comparten papel** —cada una con su vigencia y su linaje, que es lo que el conjunto no daba— y la línea conserva **un** ámbito | ⛔ | el dueño eligió quitar la restricción en vez de meter el conjunto. `ck_lineas_unit_scope` y `uq_lineas_identidad` se quedan como están | 2026-10-12 |
 | **P20** | **Fuera `trg_pdt_linea_unica`; el límite es el PROCESO** — y la simetría de las dos identidades deja de depender de que alguien se acuerde | ✅ | `trg_vinculo_formato_un_proceso` lo sustituye, y **tres pruebas de `postgres_schema.test.js`** vigilan la simetría: el formato no declara columna hacia la obligación, la obligación no declara ninguna hacia el papel, y el puente une **versiones**, no identidades. **Provocada**: añadir `owner_process_id` a `catalogo_documental` la pone en rojo con su mensaje. 320/320 char (un golden nuevo, uno huérfano retirado), 891/891 unitarios, 5 puertas del backend, 5 de documentación, y 3 páginas del sitio en el mismo commit | 2026-10-12 |
 | **P21** | **EL EJE «DÓNDE» DEL RECORRIDO, TERMINADO** (§11). El análisis cambió el diagnóstico: no es «un vocabulario desincronizado» sino **un eje sin acabar**. Más de quince casos del dueño y **todos** son `cargo` + `ámbito`; los ámbitos son **cinco** y la base soporta **tres**. Cuatro pasos: **(a)** fuera `unit_subtree` de `workflows.js`, que `P19` retiró y aquí sobrevive en dos `Set`, dos ramas y **una prueba que lo afirma falso**; **(b)** el **ámbito 4** (`unit_type`) — la columna que falta, y es la opción que la pantalla YA ofrece y la base rechaza con un **400**; **(c)** el **resolutor `ancestor_unit_head`** — la jefatura N niveles arriba por una relación declarada, **sin cargo**; **(d)** `webFillUnitScopeTypesForScope`, exportada y probada y **que no llama nadie**: engancharla o borrarla; **(e)** el **ámbito inerte**: `unit_scope_type` nullable, exigida sólo donde significa algo | 🟡 | **ANÁLISIS CERRADO** (§10, 23 apartados) **y PLAN FICHERO POR FICHERO ESCRITO** (§11), sin tocar código. Medido: el **400** provocado por API en entrega y en firma; la premisa falsa «ninguna pantalla los produce» escrita **cuatro veces**; `participantes_declarados` **sin** `unit_type_id`, así que el valor es **inalmacenable**, no sólo rechazado. Decisiones del dueño: **22** subir sí, bajar no · **23** `all_units` no se toca · el ámbito 5 **no lleva cargo** · el tipo de relación es **obligatorio** (`uq_unit_relations_child_type`). **DECISIÓN 24 TOMADA** (2026-10-13): el quinto lugar es un **resolutor** (`ancestor_unit_head`), no un ámbito — el dueño eligió **A**, con el coste medido y aceptado (13 ramas). **Nada queda pendiente de decidir: se puede ejecutar.** Cinco pasos en §11.9, y el (e) sale de una pregunta del dueño: el **ámbito inerte** sí era un defecto, y lo cierra `unit_scope_type` nullable. ✅ **PASO (a) HECHO** el 2026-10-14 (§11.11): `unit_subtree` fuera de los **dos** catálogos, de sus dos ramas y de la prueba que lo afirmaba; **dos comentarios caducados** que el censo destapó. 320/320 char **sin mover un golden** y 886/886 unitarios (+1), 5 puertas del backend, 5 de documentación | |
-| **P22** | **`process_definition_versions.process_id` ES UNA COPIA SIN GUARDIA** (§13.3). La configuración lleva `process_id` **y** `linea_id`, y `lineas` ya dice de qué proceso es. Como `linea_id` es **`NOT NULL`**, la columna es **100 % derivable** — y nada comprueba que coincidan | ⬜ | **PROVOCADO** el 2026-10-14: `process_id` del proceso B con `linea_id` del proceso A **entra sin resistencia** (pdv dice 9, su línea dice 8). Es la forma de `variation_key` que `P2-bis` retiró, **peor**: aquélla al menos tenía un guardia. Coste medido: **36 usos en 13 ficheros**, los dos mayores `processGraph.js` (9) y `UserWorkspaceRepository.js` (7); cada uno pasa a un `JOIN lineas` que en muchos **ya está**. Encontrado al revisar el reparto a petición del dueño | |
+| **P22** | **`process_definition_versions.process_id` SE RETIRA** (§13.13). Era una copia de `lineas.process_id` que **no sostenía nadie**: `linea_id` es `NOT NULL`, así que era 100 % derivable. Y la cascada de borrado se muda a `linea_id`, que es la relación de verdad | ✅ | **PROVOCADO antes**: `process_id` del proceso B con `linea_id` del proceso A entraba sin resistencia (decía 9, su línea decía 8). **27 consultas**: 12 ya unían `lineas` y 15 pagan un `JOIN` nuevo —4 de ellas correlacionadas de conteo—. La copia **no era inofensiva**: `trg_vinculo_formato_un_proceso` la leía para decidir si un formato ya servía a otro proceso, así que comparaba el proceso **declarado**. Y la cascada: provocado que borrar una línea con configuraciones fallaba, así que sin mover `ON DELETE CASCADE` a `linea_id` borrar un proceso habría dejado de funcionar. **320/320 char con 1 golden movido**, 887/887 backend y 495/495 frontend, 5 puertas del backend, 31 del frontend, 4 de documentación, 4 páginas del sitio y los generadores. ⚠️ **Cinco roturas que sólo vio char** (§13.13): tres consultas que nombraban la columna **sin alias**, un `lin` duplicado, y un `ON` que nombraba `lineas` **antes** de unirla | 2026-10-14 |
 | **P18** | **LA VIGENCIA, POR NIVELES** (decisión 21, §9). Cuatro cosas: **(a)** la vigencia de la línea **detiene la ejecución**; **(b)** la norma que aplica a un periodo es la vigente **al empezarlo**, no la que lo solape; **(c)** la vigencia de una norma **cabe dentro** de la de su obligación, impuesto por la base; **(d)** la regla pierde `is_active`, `effective_from` y `effective_to` — tres columnas | ✅ | ⚠️ **REESCRITA el 2026-10-12.** Decía «una sola vigencia, la de la línea», y **era falso**: la de la configuración NO está duplicada con `status`. El generador la compara contra el **periodo** y el menú contra **hoy** — dos significados para las mismas columnas, que es lo que hizo fallar el análisis. Cierra los huecos **2 y 3** del §8. **Hecha**: tres columnas fuera del esquema, del editor genérico, del validador, de la siembra, del arranque y del formulario; `trg_norma_dentro_de_su_obligacion` y `trg_linea_no_recorta_sus_normas` imponen la contención; el generador filtra por la vigencia de la línea y compara contra `term.start_date`. 320/320 char con **2 goldens movidos y nada más** —seis líneas, las tres columnas en `list_process_target_rules` y en `panel_usuario`—, 885/885 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, y tres páginas del sitio en el mismo commit. **Verificado en el navegador** (ver abajo) | 2026-10-12 |
 | **P19** | **`unit_subtree` se retira** de `process_target_rules` | ✅ | el `CHECK` baja de 4 valores a 3, y con el valor se van **dos CTE recursivas sin protección de ciclos** (dos de los seis grafos del frente 26) y **dos consultas por petición**: `getOrgTreeRows` del menú y `getOrgChildrenMap` del panel traían el organigrama entero para resolverlo. Y la tubería muerta detrás: `createUnitSubtreeResolver` en dos sitios. **320/320 char sin mover un golden** —cero filas lo usaban—, 885/885 unitarios (−6: cuatro pruebas del resolutor y tres del menú se van con él, una de ellas **la única prueba de ciclos del repositorio**, cuya materia pasa al frente 26), 495/495 de frontend, 5 puertas del backend, 31 del frontend, 5 de documentación | 2026-10-12 |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
@@ -1795,6 +1795,50 @@ instrucción equivocada esperando a que alguien la siga.
 `user_controler.primitives.js`, los tres tests que comprueban que el valor **se rechaza**, las dos
 páginas del sitio y su excepción en `doc-modelo-excepciones.json`, que sigue atada a las dos páginas
 donde la mención es correcta.
+
+### 13.13 · `P22` · Lo que costó quitar la copia (2026-10-14)
+
+**27 consultas**, y el reparto del coste fue mejor de lo estimado: **12 ya unían `lineas`** —así que
+sólo cambia el prefijo— y **15** pagan un `JOIN` nuevo, cuatro de ellas correlacionadas de conteo,
+que es donde más se nota al leerlas.
+
+**Y la cascada de borrado hubo que mudarla.** No estaba en el análisis y salió provocándolo:
+
+```
+DELETE processes           -> borraba sus configuraciones    (via process_id, ON DELETE CASCADE)
+DELETE lineas (con config) -> ERROR: violates foreign key    (linea_id NO tenia cascada)
+```
+
+Sin mover `ON DELETE CASCADE` a `fk_process_definition_versions_linea`, **borrar un proceso habría
+dejado de funcionar**: el camino pasa a ser proceso → línea → configuración. Y es más correcto que lo
+de antes: la norma cuelga de la obligación, así que la cascada va por la relación real en vez de por
+un atajo.
+
+**Cinco roturas, y las cinco sólo las vio `test:char:run`:**
+
+| | Qué era | Cómo se manifestó |
+|---|---|---|
+| **3** | consultas que nombraban `process_id` **sin cualificar** | `column "process_id" does not exist` |
+| **1** | un `JOIN lineas lin` **duplicado** —el fichero ya tenía uno dentro de una subconsulta— | `table name "lin" specified more than once` |
+| **1** | un `ON` que nombraba `lin` **antes** de unir `lineas` | `missing FROM-clause entry for table "lin"` |
+
+⚠️ **LA ÚLTIMA ES LA LECCIÓN DE VERDAD, y no es un descuido de tecleo.** La consulta del menú
+enganchaba el proceso en el `ON` del `JOIN` a la configuración: `ON pdv.process_id = p.id`. Al pasar
+a `lin.process_id`, ese `ON` quedó nombrando una tabla que se unía **tres líneas más abajo** —y un
+`ON` no puede—. **Quitar una columna derivada puede obligar a reordenar los `JOIN`**, porque el
+enganche deja de estar en la tabla que ya estaba y pasa a la de al lado. Lo dice PostgreSQL en
+tiempo de llamada, en una sola consulta, y con el menú del usuario devolviendo 500.
+
+⚠️ **Y el barrido por prefijo de alias volvió a dejarse consultas**, igual que en `P10`: tres
+nombraban la columna sin cualificar. El barrido que sí las encuentra es por **plantilla que nombra la
+tabla**, mirándola entera — incluido lo que va **después** del primer `${…}`, que es justo donde
+`check:sql-aliases` deja de mirar por diseño.
+
+⚠️ **Cuarta vez en el día con el backtick dentro de un comentario `--`.** Esta vez dejó el backend
+**sin arrancar** (`SyntaxError: missing ) after argument list`) y la corrida de char murió en el
+arranque con un mensaje que no se parece al problema: *«El stack no estuvo listo en 120000ms»*. La
+puerta lo caza en un segundo; lo que falla es correrla **después** de cada edición de SQL y no al
+final de la tanda.
 
 ---
 

@@ -374,7 +374,9 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_id", label: "Proceso", type: "number", required: true },
+      // SIN `process_id` (frente 25, P22): era una copia de `lineas.process_id`, y la fachada la
+      // declaraba `required`, asi que la pantalla OBLIGABA a escribir un dato derivable — y nada
+      // comprobaba que coincidiera con el de la linea elegida.
       { name: "linea_id", label: "Linea", type: "number", required: true },
       { name: "definition_version", label: "Version", type: "text", required: true },
       { name: "name", label: "Nombre generado", type: "text", readOnly: true },

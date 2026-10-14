@@ -1046,8 +1046,7 @@
     "process_definition_series": {
       "motivo": "FRENTE 25, P9 (2026-10-11) · MENCION HISTORICA. La tabla se retiro: la sustituye `lineas`, que lleva los DOS ejes (cargo y alcance) en vez de uno O el otro. Las dos paginas la nombran para contar POR QUE murio --el eje unico era la causa de que la variacion estuviera partida entre la serie y la regla-- y que seis mecanismos se fueron con ella. Si alguna vez se reintroduce una tabla con ese nombre, esta excepcion deja de valer y hay que quitarla.",
       "paginas": [
-        "datos/motor-de-procesos.md",
-        "modelo/proceso.md"
+        "datos/motor-de-procesos.md"
       ]
     },
     "source_type": {

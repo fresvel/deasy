@@ -286,10 +286,9 @@ const TABLE_RULES = {
     unitRelationNotSelf,
   ],
   process_definition_versions: [
-    requires(
-      ["process_id", "Selecciona un proceso base para la configuracion."],
-      ["linea_id", "Selecciona la linea de la configuracion."],
-    ),
+    // SIN `process_id` (frente 25, P22): la columna era copia de la linea, y exigirla aqui obligaba
+    // a elegir DOS veces el mismo dato. La linea dice de que proceso es.
+    requires(["linea_id", "Selecciona la linea de la configuracion."]),
     semanticVersionRequired,
     requires(["effective_from", "Selecciona la fecha de vigencia inicial de la configuracion."]),
     datesInOrder("configuraciones de proceso", "effective_from", "effective_to"),

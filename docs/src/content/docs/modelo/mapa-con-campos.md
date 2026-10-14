@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**32 tablas · 298 columnas · 76 claves ajenas · 9 diagramas.**
+**32 tablas · 297 columnas · 75 claves ajenas · 9 diagramas.**
 
 ## Cómo leerla
 
@@ -139,7 +139,7 @@ erDiagram
 
 ## Lo que se declara (1 de 2)
 
-**5 tablas** · 38 columnas · 12 claves ajenas propias. Apunta a `cargos`, `term_types`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
+**5 tablas** · 37 columnas · 11 claves ajenas propias. Apunta a `cargos`, `term_types`, `unit_positions`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -154,7 +154,6 @@ erDiagram
   }
   process_definition_versions {
     int id PK
-    int process_id FK
     int linea_id FK
     varchar definition_version
     varchar name
@@ -200,7 +199,6 @@ erDiagram
   process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
   term_types ||--o{ process_definition_period_types : "term_type_id"
   lineas ||--o{ process_definition_versions : "linea_id"
-  processes ||--o{ process_definition_versions : "process_id"
   process_definition_versions ||--o{ process_target_rules : "process_definition_id"
   unit_positions |o--o{ process_target_rules : "position_id"
   processes |o--o{ processes : "parent_id"

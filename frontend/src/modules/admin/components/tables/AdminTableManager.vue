@@ -3314,7 +3314,6 @@ const {
 } = useProcessDefinitionActivationFlow({
   props,
   formData,
-  fkDisplay,
   editorMode,
   selectedRow,
   modalError,

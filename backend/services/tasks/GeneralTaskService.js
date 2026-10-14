@@ -43,7 +43,8 @@ export const getActiveGeneralDefinition = async (conn) => {
   const [rows] = await conn.query(
     `SELECT pdv.id
      FROM process_definition_versions pdv
-     INNER JOIN processes p ON p.id = pdv.process_id
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
+     INNER JOIN processes p ON p.id = lin.process_id
      WHERE p.slug = ? AND pdv.status = 'active'
      ORDER BY pdv.id DESC
      LIMIT 1`,

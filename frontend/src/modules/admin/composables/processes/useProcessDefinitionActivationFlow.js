@@ -5,7 +5,9 @@ import { processDefinitionAdminService } from "@/modules/admin/services/ProcessD
 export function useProcessDefinitionActivationFlow({
   props,
   formData,
-  fkDisplay,
+  // `fkDisplay` SALIO DE LA FIRMA con `P22` (frente 25): su unico uso era rellenar la etiqueta del
+  // selector de proceso al versionar, y la configuracion ya no tiene `process_id` — lo dice su
+  // linea, cuya etiqueta la pone `linea_id`. Un parametro que nadie usa es una dependencia falsa.
   editorMode,
   selectedRow,
   modalError,
@@ -221,16 +223,13 @@ export function useProcessDefinitionActivationFlow({
       ? String(formData.value.definition_version).trim()
       : getNextSemanticVersion(sourceRow.definition_version);
 
+    // SIN `process_id` (frente 25, P22): la configuración ya no lo lleva — lo dice su línea. Al
+    // versionar, lo único que hay que arrastrar es `linea_id`, que es su identidad.
     formData.value = {
       ...formData.value,
-      process_id: sourceRow.process_id ?? formData.value.process_id ?? "",
       linea_id: sourceRow.linea_id ?? formData.value.linea_id ?? "",
       definition_version: nextVersion,
       status: "draft"
-    };
-    fkDisplay.value = {
-      ...fkDisplay.value,
-      process_id: fkDisplay.value.process_id || (sourceRow.process_id ? String(sourceRow.process_id) : "")
     };
     processDefinitionCloneSourceId.value = sourceRow.id ? String(sourceRow.id) : "";
     editorMode.value = "create";

@@ -41,7 +41,7 @@ export const tareasAccesiblesDelProceso = async (ejecutor, processId, personId) 
     `SELECT DISTINCT
        t.id AS task_id,
        t.process_definition_id,
-       pdv.process_id,
+       lin.process_id,
        -- La unidad la tiene la tarea directamente. Antes salia de un COALESCE de TRES joins
        -- —el puesto de la tarea, el del entregable, y el del dueño del documento— para acabar
        -- en el mismo valor: medido, coincide en las 13 tareas. El primero de los tres colgaba
@@ -55,8 +55,10 @@ export const tareasAccesiblesDelProceso = async (ejecutor, processId, personId) 
      -- ella.
      FROM tasks t
      INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+     -- el proceso sale de la LINEA desde P22: la copia de la configuracion no la sostenia nadie
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
      LEFT JOIN task_items ti ON ti.task_id = t.id
-     WHERE pdv.process_id = ?
+     WHERE lin.process_id = ?
        -- El conjunto de participantes lo declara DeliverableAccessService, al nivel ANCHO
        -- (conversacion): un hilo de proceso incluye a todos los asignados de la tarea, no
        -- solo al responsable del entregable. Eso NO es el IDOR relajado, es la decision del
@@ -86,6 +88,7 @@ export const moderadoresDelHilo = async (ejecutor, processId, scopeUnitId) => {
        SELECT pa.person_id
        FROM tasks t
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
+       INNER JOIN lineas lin ON lin.id = pdv.linea_id
        INNER JOIN unit_positions up
          ON up.unit_id = t.scope_unit_id
         AND up.is_unit_head = 1
@@ -93,7 +96,7 @@ export const moderadoresDelHilo = async (ejecutor, processId, scopeUnitId) => {
        INNER JOIN position_assignments pa
          ON pa.position_id = up.id
         AND pa.is_current = 1
-       WHERE pdv.process_id = ?
+       WHERE lin.process_id = ?
          AND t.scope_unit_id = ?
        UNION
        -- Quien ENCARGO un entregable de esta unidad. Antes salia del creador de la TAREA,
@@ -102,7 +105,8 @@ export const moderadoresDelHilo = async (ejecutor, processId, scopeUnitId) => {
        FROM task_items ti
        INNER JOIN tasks t ON t.id = ti.task_id
        INNER JOIN process_definition_versions pdv ON pdv.id = t.process_definition_id
-       WHERE pdv.process_id = ?
+       INNER JOIN lineas lin ON lin.id = pdv.linea_id
+       WHERE lin.process_id = ?
          AND t.scope_unit_id = ?
          AND ti.created_by_person_id IS NOT NULL
      ) admins
@@ -119,10 +123,11 @@ export const etiquetasDelHilo = async (ejecutor, processId, scopeUnitId) => {
        p.name AS process_name,
        COALESCE(u.label, u.name) AS scope_unit_label
      FROM process_definition_versions pdv
-     INNER JOIN processes p ON p.id = pdv.process_id
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
+     INNER JOIN processes p ON p.id = lin.process_id
      INNER JOIN tasks t ON t.process_definition_id = pdv.id
      INNER JOIN units u ON u.id = t.scope_unit_id
-     WHERE pdv.process_id = ?
+     WHERE lin.process_id = ?
        AND u.id = ?
      LIMIT 1`,
     [processId, scopeUnitId]

@@ -693,7 +693,7 @@
     ]
   },
   "process_definition_versions": {
-    "huella": "31e3518027087713",
+    "huella": "28277638fdaab026",
     "paginas": [
       "arquitectura-y-patrones.md",
       "complemento/conversacion.md",
@@ -1104,6 +1104,7 @@
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
+      "modelo/proceso.md",
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md",
       "referencia/modelo-datos.md"

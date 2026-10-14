@@ -373,19 +373,18 @@ test("process_target_rules exige su configuracion antes que el afinado", () => {
   assert.doesNotThrow(() => validateTableRules("process_target_rules", { process_definition_id: 1 }));
 });
 
+// ⚠️ EXIGIA DOS: «un proceso base» y «la linea». El proceso salio de la configuracion con `P22`
+// (frente 25, 2026-10-14) porque era copia de la linea, así que pedirlo obligaba a elegir el mismo
+// dato dos veces — y nada comprobaba que las dos elecciones coincidieran.
 test("process_definition_versions intercala el semver entre sus requeridos", () => {
-  throwsWith(() => validateTableRules("process_definition_versions", {}), "Selecciona un proceso base");
-  throwsWith(
-    () => validateTableRules("process_definition_versions", { process_id: 1 }),
-    "Selecciona la linea de la configuracion.",
-  );
+  throwsWith(() => validateTableRules("process_definition_versions", {}), "Selecciona la linea de la configuracion.");
   // El semver se exige ANTES que effective_from, aunque este también falte.
   throwsWith(
-    () => validateTableRules("process_definition_versions", { process_id: 1, linea_id: 1 }),
+    () => validateTableRules("process_definition_versions", { linea_id: 1 }),
     "tres segmentos",
   );
   throwsWith(
-    () => validateTableRules("process_definition_versions", { process_id: 1, linea_id: 1, definition_version: "1.0.0" }),
+    () => validateTableRules("process_definition_versions", { linea_id: 1, definition_version: "1.0.0" }),
     "Selecciona la fecha de vigencia inicial",
   );
 });

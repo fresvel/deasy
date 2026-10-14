@@ -373,8 +373,10 @@ export function useProcessWizard() {
         return null;
       }
       const today = new Date().toISOString().slice(0, 10);
+      // SIN `process_id` (frente 25, P22): la columna era una copia de `lineas.process_id`, así que
+      // el asistente enviaba un dato que la línea ya dice. `processId` sigue haciendo falta aquí
+      // arriba —es lo que decide de qué proceso es la LÍNEA que se crea—, pero no viaja dos veces.
       const definitionRes = await adminSqlService.create("process_definition_versions", {
-        process_id: Number(processId),
         linea_id: Number(linea.id),
         definition_version: definitionVersion,
         description: form.description ? String(form.description) : null,

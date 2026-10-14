@@ -995,7 +995,6 @@ test("DELETE /admin/sql/vinculos -> desenlaza la plantilla de la configuración"
   const clone = await post("/admin/sql/process_definition_versions", {
     token,
     body: {
-      process_id: source.process_id,
       linea_id: source.linea_id,
       definition_version: "9.9.9",
       // DENTRO de la vigencia de su línea: la obligación del «Proceso por defecto» la siembra el
@@ -1088,7 +1087,8 @@ test("POST /admin/sql/vinculos de otro proceso -> lo rechaza el disparador", asy
 
   const definicion = await post("/admin/sql/process_definition_versions", {
     token,
-    body: { process_id: procesoId, linea_id: lineaAjenaId, definition_version: "1.0.0", effective_from: "2026-04-01" },
+    // SIN `process_id`: la configuración lo perdió con `P22` (frente 25) — era copia de su línea.
+    body: { linea_id: lineaAjenaId, definition_version: "1.0.0", effective_from: "2026-04-01" },
   });
   const definicionAjenaId = definicion.body?.id;
   assert.ok(definicionAjenaId, `la configuración ajena debe crearse: ${JSON.stringify(definicion.body)}`);
