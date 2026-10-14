@@ -1394,3 +1394,69 @@ este mismo frente (meter `unit_type`, que es del reparto, dentro del recorrido).
 
 **Material que este repositorio ya tiene para sostenerlo**: catorce pasos de cuatro tipos de documento
 reales, medidos; un organigrama real; y el registro de los cuatro intentos fallidos con su causa.
+
+### 10.20 · El par `(cargo, tipo)` se rompe al retipificar — medido
+
+El dueño señaló que una Carrera **es** una «coordinación de carrera». Provocado: retipificando las dos
+Carreras como `Coordinación`, el par `(cargo, tipo)` pasa de **0 colisiones a 4** dentro de la misma
+rama — `(Coordinador, Coordinación)` y `(Asistente, Coordinación)` casan con dos unidades.
+
+**El «0 colisiones» no era una propiedad del modelo: era una propiedad de cómo están tipificadas hoy
+las unidades, y tipificarlas se edita desde `/admin`.** Por eso el ámbito jerárquico NO se declara
+por tipo.
+
+### 10.21 · El eje «DÓNDE», cerrado: cinco ámbitos
+
+Más de quince casos reales del dueño, y **todos** son `cargo` + `ámbito`. El modelo de dos ejes es
+correcto; lo que nunca se cerró fue la lista del segundo:
+
+| # | Ámbito | Qué declara | Ejemplos | Estado |
+|---|---|---|---|---|
+| 1 | sin acotar | nada | todos los docentes · los memos | ✅ |
+| 2 | la unidad del documento | nada | «su coordinador» · «la secretaria» | ✅ |
+| 3 | una unidad concreta | la unidad | «el Director de Investigación» | ✅ |
+| 4 | todas las de un tipo | el tipo | «todos los directores de Escuela» (actas) | ❌ falta la columna |
+| 5 | **N niveles arriba** | relación + niveles | «el director de **mi** escuela» | ❌ falta entero |
+
+⚠️ **El ámbito 4 es la opción que la pantalla YA ofrece y la base rechaza.** `P21` nunca fue «una
+opción que sobra»: era **una opción sin terminar**. La propuesta inicial —quitarla— era el error de
+partida.
+
+⚠️ **Y el ámbito 5 NO lleva cargo** (corrección del dueño, 2026-10-13): *«sólo necesito ver quién es
+mi jefe o el jefe de mi jefe»*. Es el ejemplo canónico del patrón 10 —*«the **Manager** of the
+resource that undertook…»*— y `uq_unit_head` ya garantiza **una jefatura por unidad**. Medido: las 5
+Escuelas tienen Director, las 2 Carreras Coordinador, cada tipo su jefatura. Lo que esto cierra, y
+queda dicho: «la **secretaria** de mi Escuela» no sería declarable. No hay ningún caso que lo pida.
+
+### 10.22 · El tipo de relación es OBLIGATORIO, no opcional
+
+`uq_unit_relations_child_type (child_unit_id, relation_type_id)` ⇒ **una unidad tiene un padre POR
+CADA tipo de relación**. Hoy hay uno (`org`) y por eso «subir» es único **por casualidad**. En cuanto
+exista `academia`, `investigacion` o `areas_nacionales` —el dueño avisa de que vendrán—, subir sin
+decir por dónde **deja de tener respuesta**. El paso viejo ya llevaba `relation_type_id`, con cero
+filas, porque nadie lo autoraba.
+
+⚠️ Y `relation_unit_types.is_inheritance_allowed` **no lo lee nadie**: lo escribe la siembra y ahí
+muere. Con más relaciones a la vista, hay que decidir si significa algo.
+
+### 10.23 · EL ORGANIGRAMA NO TIENE HISTORIA — y eso es más grande que `P21`
+
+El dueño propone que un cambio del organigrama **genere una versión nueva de la configuración**, en
+vez de parchearlo con una aserción. Es coherente con la decisión 21 (`P18`): *si el reparto cambia,
+es otra versión de la norma*. Y pregunta si hay soporte de historial. **Medido: casi no.**
+
+| Tabla | ¿Historia? |
+|---|---|
+| `position_assignments` | ✅ **sí**: `start_date`, `end_date`, `is_current` — quién ocupó un puesto y cuándo |
+| `unit_relations` | ❌ **no**: sólo `created_at`/`updated_at`. **De quién depende una unidad no tiene historia** |
+| `unit_positions` | ❌ no: `is_active`, sin fechas |
+| `units` | ❌ no: `is_active`, sin fechas |
+
+**Consecuencia, y no es menor para un sistema de firmas:** se sabe *quién* ocupaba un puesto en una
+fecha, pero **no se puede reconstruir la forma del organigrama de esa fecha**. Si una Carrera cambia
+de Escuela, los documentos ya firmados dejan de poder explicarse: *«¿por qué firmó éste?»* ya no
+tiene respuesta reproducible.
+
+**Esto no bloquea `P21`** —los cinco ámbitos funcionan igual— pero sin historia **la propuesta de
+versionar al cambiar el organigrama no se puede implementar**: ni se detecta el cambio, ni se
+reconstruye el pasado. Queda como **frente propio**, y es mayor que éste.
