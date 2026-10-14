@@ -1981,6 +1981,75 @@ atrás. Es la tercera prosa caducada que aparece en dos días, después de las d
 `P21`, y las tres tienen la misma forma: **un cambio que movió el código y dejó el comentario
 apuntando al mundo anterior.**
 
+### 13.7 · POR QUÉ SE COPIA: es un residuo, no un diseño
+
+| Tabla | Nació |
+|---|---|
+| `process_target_rules` | **2026-07-03**, con el esquema portado a PostgreSQL |
+| `lineas` | **2026-10-11**, con `P8` |
+
+**La regla es tres meses más vieja que la línea.** Tenía el eje DÓNDE desde el primer día, porque
+entonces no había nada encima: la regla *era* la declaración. `P8` **subió** los dos ejes a la línea
+—que es donde pertenecen, porque la obligación es lo que tiene nombre, vigencia y linaje— pero **no
+los bajó** de la regla.
+
+Lo que hay hoy no es una decisión de modelo: es **una columna que sobrevivió a la tabla que la
+justificaba**, con un guardia escrito para que no contradiga a su nuevo dueño. Es la misma forma que
+`variation_key` (`P2-bis`) y que `pdv.process_id` (`P22`): **una copia más un guardia cuyo único
+trabajo es comprobar que coincide con su origen.**
+
+Y el guardia lo dice él mismo, en una frase que ya no se sostiene: *«la regla solo añade el alcance
+(unidad) y la entrega»*. **El alcance ya no lo añade: lo hereda.**
+
+### 13.8 · QUÉ DIFERENCIA HAY, columna por columna y medido
+
+| Columna de la regla | ¿Dice algo que la línea no diga? |
+|---|---|
+| `cargo_id` | ❌ copia, sembrada y blindada |
+| `unit_scope_type` | ❌ copia (blindada **sólo** si la línea es `unit_type`) |
+| `unit_type_id` | ❌ copia, sembrada y blindada |
+| `unit_id` | ❌ copia, **sin guardia** (hueco 1) |
+| `position_id` | ✅ **sí** — un puesto concreto es más fino que un cargo |
+| `recipient_policy` | ✅ **sí** — todas · la jefatura · ese puesto |
+| `priority` | ❌ **NADA** — ver abajo |
+| **poder tener VARIAS reglas** | ✅ **sí**, y es lo que la línea no puede |
+
+**Así que la diferencia real, en una frase:** la **línea** dice dónde vive la obligación, y dice
+**una** cosa; la **regla** recorta dentro de ahí, y puede hacerlo **varias veces, uniendo**.
+
+⚠️ **`priority` NO HACE NADA, y está medido.** Aparece en **tres consultas y siempre en un
+`ORDER BY`** (`generation/queries.js:83`, `UserMenuService.js:117`,
+`UserWorkspaceRepository.js:270`). Nunca se compara, nunca desempata, nunca recorta. Y no puede
+hacerlo: los dos consumidores **unen** los resultados de todas las reglas —`launch.js` deduplicando
+por `position_id`, `taskitems.js` sin deduplicar— y lo que se acumula es el **puesto**, que no lleva
+de qué regla vino. Cambiar el orden de evaluación **no cambia el resultado**. Era una de las tres
+columnas que §8 dio por «suyas de verdad»; son **dos**.
+
+⚠️ **Y los dos consumidores tratan los duplicados distinto.** `launch.js` lleva un `Set` de
+`position_id`; `resolveTaskTargetsForDefinition` hace `positions.push(...matched)` y no mira. Si dos
+reglas casan el mismo puesto, uno lo cuenta una vez y el otro dos. Hoy es **inocuo** porque la
+identidad del entregable es *(tarea, plantilla, puesto)* y el índice único lo absorbe, pero son dos
+tratamientos distintos de la misma estructura y sólo uno es deliberado.
+
+### 13.9 · EL SOLAPAMIENTO DE FONDO: dos mecanismos para «varios destinos»
+
+Y aquí está lo que el dueño venía oliendo desde el principio. **Hay dos formas de decir «este
+documento lo deben varios sitios», y las dos están vivas:**
+
+| Mecanismo | Cómo | Quién lo decidió |
+|---|---|---|
+| **varias LÍNEAS** | cada una con su ámbito, su vigencia y su linaje | **`P20`** (decisión del dueño, 2026-10-12) |
+| **varias REGLAS** | la unión de sus recortes, dentro de **una** línea | existe desde el 2026-07-03 |
+
+`P20` eligió el primero **explícitamente**: *«Carrera y Tecnología son dos líneas que comparten
+papel, cada una con su vigencia y su linaje, que es lo que el conjunto no daba»*. Pero el segundo
+**no se retiró**, y no hay nada que diga cuál usar.
+
+**Esta es la pregunta que `P10` tiene que contestar, y no es «qué columnas se van»:** es si la regla
+sigue siendo un conjunto de recortes que se unen, o si pasa a ser **una sola** por norma, y entonces
+«varios destinos» tiene una única respuesta —varias líneas— y la regla se queda con lo que de verdad
+es suyo: `recipient_policy` y `position_id`.
+
 ### 13.6 · Lo que esto cambia en `P10`
 
 `P10` sigue 🟡 esperando la decisión del dueño, pero su **análisis de §8 queda actualizado aquí**:
