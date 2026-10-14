@@ -166,6 +166,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P21** | **EL EJE «DÓNDE» DEL RECORRIDO, TERMINADO** (§11). El análisis cambió el diagnóstico: no es «un vocabulario desincronizado» sino **un eje sin acabar**. Más de quince casos del dueño y **todos** son `cargo` + `ámbito`; los ámbitos son **cinco** y la base soporta **tres**. Cuatro pasos: **(a)** fuera `unit_subtree` de `workflows.js`, que `P19` retiró y aquí sobrevive en dos `Set`, dos ramas y **una prueba que lo afirma falso**; **(b)** el **ámbito 4** (`unit_type`) — la columna que falta, y es la opción que la pantalla YA ofrece y la base rechaza con un **400**; **(c)** el **resolutor `ancestor_unit_head`** — la jefatura N niveles arriba por una relación declarada, **sin cargo**; **(d)** `webFillUnitScopeTypesForScope`, exportada y probada y **que no llama nadie**: engancharla o borrarla; **(e)** el **ámbito inerte**: `unit_scope_type` nullable, exigida sólo donde significa algo | 🟡 | **ANÁLISIS CERRADO** (§10, 23 apartados) **y PLAN FICHERO POR FICHERO ESCRITO** (§11), sin tocar código. Medido: el **400** provocado por API en entrega y en firma; la premisa falsa «ninguna pantalla los produce» escrita **cuatro veces**; `participantes_declarados` **sin** `unit_type_id`, así que el valor es **inalmacenable**, no sólo rechazado. Decisiones del dueño: **22** subir sí, bajar no · **23** `all_units` no se toca · el ámbito 5 **no lleva cargo** · el tipo de relación es **obligatorio** (`uq_unit_relations_child_type`). **DECISIÓN 24 TOMADA** (2026-10-13): el quinto lugar es un **resolutor** (`ancestor_unit_head`), no un ámbito — el dueño eligió **A**, con el coste medido y aceptado (13 ramas). **Nada queda pendiente de decidir: se puede ejecutar.** Cinco pasos en §11.9, y el (e) sale de una pregunta del dueño: el **ámbito inerte** sí era un defecto, y lo cierra `unit_scope_type` nullable. ✅ **PASO (a) HECHO** el 2026-10-14 (§11.11): `unit_subtree` fuera de los **dos** catálogos, de sus dos ramas y de la prueba que lo afirmaba; **dos comentarios caducados** que el censo destapó. 320/320 char **sin mover un golden** y 886/886 unitarios (+1), 5 puertas del backend, 5 de documentación | |
 | **P22** | **`process_definition_versions.process_id` SE RETIRA** (§13.13). Era una copia de `lineas.process_id` que **no sostenía nadie**: `linea_id` es `NOT NULL`, así que era 100 % derivable. Y la cascada de borrado se muda a `linea_id`, que es la relación de verdad | ✅ | **PROVOCADO antes**: `process_id` del proceso B con `linea_id` del proceso A entraba sin resistencia (decía 9, su línea decía 8). **27 consultas**: 12 ya unían `lineas` y 15 pagan un `JOIN` nuevo —4 de ellas correlacionadas de conteo—. La copia **no era inofensiva**: `trg_vinculo_formato_un_proceso` la leía para decidir si un formato ya servía a otro proceso, así que comparaba el proceso **declarado**. Y la cascada: provocado que borrar una línea con configuraciones fallaba, así que sin mover `ON DELETE CASCADE` a `linea_id` borrar un proceso habría dejado de funcionar. **320/320 char con 1 golden movido**, 887/887 backend y 495/495 frontend, 5 puertas del backend, 31 del frontend, 4 de documentación, 4 páginas del sitio y los generadores. ⚠️ **Cinco roturas que sólo vio char** (§13.13): tres consultas que nombraban la columna **sin alias**, un `lin` duplicado, y un `ON` que nombraba `lineas` **antes** de unirla | 2026-10-14 |
 | **P23** | **`process_definition_versions.name` SE RETIRA** (§13.16). Era una copia de `lineas.nombre`, y fallaba por los dos lados: **no distinguía** —dos configuraciones de la misma línea se llamaban igual— y **se quedaba atrás** al renombrar la línea. Hoy se deriva con la identidad entera, `nombre_configuracion(línea, versión)`, una función del esquema. Y con ella se cierra **el guardia que `P22` apagó sin que nada lo dijera** | ✅ | **PROVOCADO en el navegador las dos veces**: antes, renombrar la línea dejó a sus dos configuraciones con el nombre viejo; después, las dos lo siguen al instante. **17 lecturas en 9 ficheros**; de ellas **4 se van quitando** —las dos de `templateLifecycle` leían la columna *sólo* para volver a copiarla en el INSERT—, y **tres sitios que la reparaban** desaparecen (la rutina, el gancho de `processes.afterUpdate` y una reescritura en cada guardado). ⚠️ **El guardia apagado**: `ensureDefaultProcessSingleLinea` recibía `ctx.payload.process_id`, que `P22` sacó del catálogo, así que `pickPayload` le pasaba `undefined` y su `if (!processId) return` lo devolvía sin comprobar nada — **sin test que lo cubriera**. Ahora el proceso lo trae la línea y van **4 pruebas nuevas**. **320/320 char con 5 goldens movidos y 2 líneas retiradas**, 891/891 backend (+4) y 495/495 frontend, 5 puertas del backend, 31 del frontend, 5 de documentación, 2 páginas del sitio y los 3 generadores. ⚠️ **Dos fallos de char que parecían de comportamiento eran cascada**: un test que abortaba dejaba filas y el siguiente las contaba (§13.16) | 2026-10-14 |
+| **P24** | **EL ASISTENTE DEJA DE PEDIR EL PROCESO** (§13.17). Su paso 1 declaraba **12 grupos de campo** para **tres entidades** —proceso, línea y configuración—, y el proceso podía **contradecir** a la línea elegida. Hoy el proceso **acota** el buscador de líneas, y crear un proceso o una línea abre **su propio plano** | ✅ | **Medido en pantalla**: de **5 campos visibles** en el caso común y **11** en el peor (proceso nuevo + línea nueva) a **4 siempre** —uno de ellos sólo lectura—. El `<select>` de líneas pasa a `AdminLookupField` con `suggestProvider`, que manda `filter_process_id`: **la pareja contradictoria ya no se puede formar**, porque lo que no está no se puede elegir, y el sublabel dice proceso · cargo · dónde para que no se elija a ciegas. El `__new__` del desplegable —que inyectaba **5 campos más**— y el modo «+ Nuevo» —que cambiaba el campo por un input y añadía dos— se van a sus planos. **Navegar NO era opción**: el asistente es un modal y la ruta lo destruye con el formulario a medio llenar; el plano encima es gratis porque `AppModalShell` se coloca solo. 501/501 frontend (+6), 31 puertas del frontend, el build. **Verificado en el navegador** de punta a punta: línea creada desde su plano → queda elegida → configuración creada (borrada después). ⚠️ **Dos duplicaciones que sólo vio el navegador**: la cabecera del asistente decía la versión dos veces y «Se llamará» mostraba la versión sola cuando no había línea | 2026-10-14 |
 | **P18** | **LA VIGENCIA, POR NIVELES** (decisión 21, §9). Cuatro cosas: **(a)** la vigencia de la línea **detiene la ejecución**; **(b)** la norma que aplica a un periodo es la vigente **al empezarlo**, no la que lo solape; **(c)** la vigencia de una norma **cabe dentro** de la de su obligación, impuesto por la base; **(d)** la regla pierde `is_active`, `effective_from` y `effective_to` — tres columnas | ✅ | ⚠️ **REESCRITA el 2026-10-12.** Decía «una sola vigencia, la de la línea», y **era falso**: la de la configuración NO está duplicada con `status`. El generador la compara contra el **periodo** y el menú contra **hoy** — dos significados para las mismas columnas, que es lo que hizo fallar el análisis. Cierra los huecos **2 y 3** del §8. **Hecha**: tres columnas fuera del esquema, del editor genérico, del validador, de la siembra, del arranque y del formulario; `trg_norma_dentro_de_su_obligacion` y `trg_linea_no_recorta_sus_normas` imponen la contención; el generador filtra por la vigencia de la línea y compara contra `term.start_date`. 320/320 char con **2 goldens movidos y nada más** —seis líneas, las tres columnas en `list_process_target_rules` y en `panel_usuario`—, 885/885 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, y tres páginas del sitio en el mismo commit. **Verificado en el navegador** (ver abajo) | 2026-10-12 |
 | **P19** | **`unit_subtree` se retira** de `process_target_rules` | ✅ | el `CHECK` baja de 4 valores a 3, y con el valor se van **dos CTE recursivas sin protección de ciclos** (dos de los seis grafos del frente 26) y **dos consultas por petición**: `getOrgTreeRows` del menú y `getOrgChildrenMap` del panel traían el organigrama entero para resolverlo. Y la tubería muerta detrás: `createUnitSubtreeResolver` en dos sitios. **320/320 char sin mover un golden** —cero filas lo usaban—, 885/885 unitarios (−6: cuatro pruebas del resolutor y tres del menú se van con él, una de ellas **la única prueba de ciclos del repositorio**, cuya materia pasa al frente 26), 495/495 de frontend, 5 puertas del backend, 31 del frontend, 5 de documentación | 2026-10-12 |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
@@ -2044,6 +2045,62 @@ ahora **lee** el nombre en vez de exigir que se escriba—, 320/320.
 ⚠️ Y de ahí una trampa del instrumental: `test:char:capture` grabó el `draft: 2` **de la basura**
 como si fuera el golden bueno. Se revirtió a mano. **Capturar mientras hay fallos en cascada graba el
 residuo.**
+
+
+### 13.17 · `P24` · EL ASISTENTE PEDÍA TRES ENTIDADES EN UNA PANTALLA (2026-10-14)
+
+Lo preguntó el dueño pegando el HTML del paso 1: *«Sigo viendo que pide campo proceso aquí. ¿Para
+qué?»*. La respuesta medida: para **dos** cosas, y ninguna justificaba el campo.
+
+| Lo que hacía `process_id` en el paso 1 | ¿Hace falta el campo? |
+|---|---|
+| crear el proceso nuevo del botón «+ Nuevo» | no — eso es crear un proceso, no una configuración |
+| dar `process_id` a la **línea nueva** | no — eso es crear una línea |
+| filtrar la lista de líneas | **no lo hacía**: `loadProcessOptions` las traía todas |
+| viajar a la configuración | **no**: `P22` quitó esa columna |
+
+**Y podía contradecir.** `resolveLinea` devolvía la línea elegida **sin comprobar que su proceso
+coincidiera**, así que Proceso = «Proceso por defecto» + Línea del Informe pasaba, y el contexto
+quedaba con un `process_id` que su propia línea desmentía. **Es la enfermedad que mató a `P22`,
+sobrevivida en el formulario.**
+
+#### Lo que se midió antes de decidir
+
+| | Campos visibles en el paso 1 |
+|---|---|
+| Antes, caso común (proceso existente + línea existente) | **5** |
+| Antes, peor caso (proceso nuevo + línea nueva) | **11** |
+| Ahora, siempre | **4** (uno sólo lectura: «Se llamará») |
+
+Los 12 grupos declarados cubrían **tres entidades**: Proceso, Nombre generado, Proceso padre, Slug,
+Línea, Nombre de la línea, Cargo, Dónde, Tipo de unidad, Unidad, Versión y Descripción.
+
+#### Las tres decisiones
+
+**(a) El proceso ACOTA.** El dueño eligió la opción B —el proceso como filtro—. No vuelve como campo
+del registro: es un control que manda `filter_process_id` al buscador. Lo que esto cambia no es el
+ruido, es que **la pareja contradictoria ya no se puede formar**.
+
+**(b) El `<select>` pasa a buscador.** `AdminLookupField` con `suggestProvider`, el mismo componente
+que `linea_anterior_id` estrenó en el commit anterior. El sublabel lleva **proceso · cargo · dónde**
+aunque esté acotado: elegir a ciegas es justo lo que permitía la pareja de antes.
+
+**(c) «+ Nuevo» abre un plano, no una ruta.** El dato que lo decide: el asistente **es un modal**, así
+que navegar a `/admin/procesos/procesos/processes` lo destruye con el formulario a medio llenar, y no
+hay reanudación. El plano encima es barato y está soportado: `AppModalShell` **se coloca solo** al
+abrirse (`elevarSobreLoVisible`), de modo que el segundo modal no declara ninguna altura. Lo mismo
+vale para «Nueva línea», que era el mayor foco de ruido —**cinco campos** inyectados de golpe— y es
+la misma decisión.
+
+#### Lo que sólo vio el navegador
+
+Dos duplicaciones del nombre derivado que ninguna puerta podía ver, las dos encontradas
+ejercitando el asistente de punta a punta:
+
+1. La **cabecera de contexto** pintaba `name` y al lado una insignia con `definition_version`: con el
+   nombre derivado decía «Línea X · 1.0.0» y luego «1.0.0».
+2. **«Se llamará»** juntaba línea y versión descartando lo vacío, así que **sin línea elegida**
+   enseñaba «1.0.0» —la versión sola— como si fuera un nombre. Ahora dice «Pendiente».
 
 
 ## 13 · EL REPARTO, revisado a petición del dueño (2026-10-14)

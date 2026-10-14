@@ -13,7 +13,10 @@ export const PROCESS_WIZARD_STEPS = [
   { key: "activate", label: "Activar" },
 ];
 
-export const NEW_LINEA_VALUE = "__new__";
+// AQUI VIVIA `NEW_LINEA_VALUE = "__new__"` (frente 25, P23): el valor centinela de la opcion
+// «Nueva linea» del desplegable, que inyectaba CINCO campos mas en el mismo paso. Crear una
+// linea tiene su propio plano, asi que no hace falta un valor que signifique «esto no es una
+// linea, es un formulario».
 
 // EL ALCANCE DE UNA LÍNEA: dónde vive la obligación. Son los mismos tres valores y los mismos
 // nombres que `process_target_rules.unit_scope_type`, porque es el mismo concepto.
@@ -33,17 +36,19 @@ const slugify = (value, maxLength = 80) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, maxLength);
 
+// EL PASO 1 PIDE TRES COSAS, Y PEDÍA HASTA ONCE (frente 25, P23 — 2026-10-14).
+//
+// Declaraba 12 grupos de campo que cubrían TRES entidades —proceso, línea y configuración—: 5
+// visibles en el caso común y 11 en el peor (proceso nuevo + línea nueva). Y el proceso no es un
+// dato de la configuración: eso lo demostró `P22` quitando la columna. Tenerlo entre los campos que
+// se rellenan decía lo contrario, y además podía CONTRADECIR a la línea elegida, porque
+// `loadProcessOptions` las traía todas y nada comprobaba que la línea fuera de ese proceso.
+//
+// Hoy el proceso ACOTA el buscador de líneas (`filtro_process_id`) y no viaja en el formulario, y
+// crear un proceso o una línea pasa a su propio plano. Lo que queda aquí son los tres datos que SON
+// de la configuración: su línea, su versión y su descripción.
 const newDefinitionForm = () => ({
-  process_mode: "existing",
-  process_id: "",
-  new_process_name: "",
-  new_process_parent_id: "",
   linea_id: "",
-  linea_nombre: "",
-  unit_scope_type: "all_units",
-  unit_type_id: "",
-  unit_id: "",
-  cargo_id: "",
   definition_version: "1.0.0",
   description: "",
   source_process_definition_id: "",
@@ -51,8 +56,6 @@ const newDefinitionForm = () => ({
 
 const definitionFormFromRow = (row = {}) => ({
   ...newDefinitionForm(),
-  process_mode: "existing",
-  process_id: row.process_id ? String(row.process_id) : "",
   linea_id: row.linea_id ? String(row.linea_id) : "",
   definition_version: row.definition_version || "1.0.0",
   description: row.description || ""
@@ -74,6 +77,17 @@ export function useProcessWizard() {
   const duplicateDefinition = ref(null);
   const creatingDefinition = ref(false);
   const wizardError = ref("");
+  // LA ACOTACIÓN POR PROCESO. No es un campo del formulario y no viaja a ninguna parte: sólo decide
+  // qué líneas ofrece el buscador. Por eso vacío significa «todos los procesos» y no «falta un
+  // dato»: la línea elegida ya dice de qué proceso es.
+  const filtroProcessId = ref("");
+  // LOS DOS PLANOS: crear un proceso y crear una línea salen del paso 1 y se abren encima.
+  const procesoModalOpen = ref(false);
+  const lineaModalOpen = ref(false);
+  const creandoProceso = ref(false);
+  const creandoLinea = ref(false);
+  const procesoModalError = ref("");
+  const lineaModalError = ref("");
   const stepStatus = ref({ definition: false, packages: false, rules: false, triggers: false });
 
   const toRows = (data) => (Array.isArray(data) ? data : data?.rows || data?.data || []);
@@ -128,6 +142,43 @@ export function useProcessWizard() {
     }
   };
 
+  // EL BUSCADOR DE LÍNEAS, acotado por el proceso elegido.
+  //
+  // Antes el selector era un `<select>` con las 500 primeras líneas de TODOS los procesos y el
+  // proceso iba aparte, como campo: se podía elegir el proceso A y una línea del proceso B, y el
+  // contexto quedaba con un `process_id` que la línea contradecía. Aquí no cabe esa pareja: el
+  // proceso filtra la lista, así que lo que no está no se puede elegir.
+  //
+  // El sublabel lleva el proceso aunque esté acotado, para que la elección nunca sea a ciegas.
+  const lineaSuggestProvider = async (texto) => {
+    const params = { q: texto || "", limit: 8, orderBy: "nombre", order: "asc" };
+    if (filtroProcessId.value) {
+      params.filter_process_id = Number(filtroProcessId.value);
+    }
+    const response = await adminSqlService.list("lineas", params);
+    return toRows(response.data)
+      .filter((row) => !row?.effective_to)
+      .map((row) => ({
+        id: row.id,
+        label: row.nombre || `Línea ${row.id}`,
+        sublabel: describirLinea(row),
+        row
+      }));
+  };
+
+  // El contexto de una línea en una frase: de qué proceso es, quién la produce y dónde.
+  const describirLinea = (row) => {
+    const proceso = processOptions.value.find((p) => Number(p.id) === Number(row?.process_id))?.name;
+    const cargo = cargoOptions.value.find((c) => Number(c.id) === Number(row?.cargo_id))?.name;
+    const scope = String(row?.unit_scope_type || "all_units");
+    const donde = scope === "unit_type"
+      ? `${LINEA_SCOPE_LABELS.unit_type}: ${unitTypeOptions.value.find((u) => Number(u.id) === Number(row?.unit_type_id))?.name || "?"}`
+      : scope === "unit_exact"
+        ? `${LINEA_SCOPE_LABELS.unit_exact}: ${unitOptions.value.find((u) => Number(u.id) === Number(row?.unit_id))?.name || "?"}`
+        : LINEA_SCOPE_LABELS.all_units;
+    return [proceso, cargo || "Cualquier cargo", donde].filter(Boolean).join(" · ");
+  };
+
   // LA IDENTIDAD DE UNA CONFIGURACIÓN ES (LÍNEA, VERSIÓN). Eran tres columnas —proceso, variación y
   // versión—, y la variación era una copia del código de la serie.
   const findExistingDefinition = async ({ lineaId, definitionVersion }) => {
@@ -145,21 +196,31 @@ export function useProcessWizard() {
     )) || null;
   };
 
-  // EL NOMBRE DE LA LÍNEA. Aquí había TRES computed —`selectedSeriesDisplayName`,
+  // EL NOMBRE DE LA LÍNEA ELEGIDA. Aquí había TRES computed —`selectedSeriesDisplayName`,
   // `seriesCodePreview` y `selectedSeriesSourceType`— que reconstruían en el navegador la misma
   // derivación que el backend hacía con `slugify(cargo.name)`. Con la línea no hay nada que
-  // derivar: o se eligió una, y tiene nombre, o se está escribiendo el de la nueva.
+  // derivar: se eligió una, y tiene nombre.
+  //
+  // El `__new__` del selector se fue con el plano de «Nueva línea» (P23): una opción de un
+  // desplegable que inyectaba CINCO campos más en la misma pantalla era el mayor foco de ruido del
+  // paso 1, y además obligaba a que el formulario de la configuración supiera rellenar una línea.
   const selectedLineaName = computed(() => {
-    const form = definitionForm.value;
-    const selectedLineaId = Number(form.linea_id);
-    if (selectedLineaId) {
-      return lineaOptions.value.find((row) => Number(row.id) === selectedLineaId)?.nombre || "";
-    }
-    if (form.linea_id !== NEW_LINEA_VALUE) {
+    const selectedLineaId = Number(definitionForm.value.linea_id);
+    if (!selectedLineaId) {
       return "";
     }
-    return String(form.linea_nombre || "").trim();
+    return lineaOptions.value.find((row) => Number(row.id) === selectedLineaId)?.nombre || "";
   });
+
+  // Elegir en el buscador guarda el id Y cachea la fila, que es de donde sale el nombre que se
+  // previsualiza y la etiqueta que el campo enseña.
+  const elegirLinea = (option) => {
+    const row = option?.row || null;
+    if (row?.id && !lineaOptions.value.some((item) => Number(item.id) === Number(row.id))) {
+      lineaOptions.value = [...lineaOptions.value, { ...row, displayName: row.nombre, label: row.nombre }];
+    }
+    definitionForm.value = { ...definitionForm.value, linea_id: row?.id ? String(row.id) : "" };
+  };
 
   const resolveAvailableProcessSlug = (processName) => {
     const baseSlug = slugify(processName, 170) || "proceso";
@@ -180,14 +241,12 @@ export function useProcessWizard() {
     return `${baseSlug}-${Date.now()}`.slice(0, 180);
   };
 
-  const processSlugPreview = computed(() => {
-    const form = definitionForm.value;
-    if (form.process_mode !== "new") {
-      return "";
-    }
-    const processName = String(form.new_process_name || "").trim();
-    return processName ? resolveAvailableProcessSlug(processName) : "";
-  });
+  // La previsualización del slug se mudó al plano de «Nuevo proceso», que es donde se escribe el
+  // nombre del que sale. Aquí miraba `definitionForm`, un formulario que ya no tiene esos campos.
+  const slugPreviewPara = (nombre) => {
+    const limpio = String(nombre || "").trim();
+    return limpio ? resolveAvailableProcessSlug(limpio) : "";
+  };
 
   // EL NOMBRE DE LA CONFIGURACIÓN ES SU IDENTIDAD: LA LÍNEA Y LA VERSIÓN (frente 25, P23).
   //
@@ -208,47 +267,124 @@ export function useProcessWizard() {
   });
 
   // Resuelve la línea elegida, o crea la nueva con sus DOS ejes y su nombre escrito.
-  const resolveLinea = async (form, processId) => {
+  // LA LÍNEA ELEGIDA. Era «resolver»: elegía una existente O CREABA UNA con cinco campos del mismo
+  // formulario. Crear vive ahora en su propio plano (`crearLinea`), así que esto sólo mira lo que ya
+  // se eligió — y eso es lo que permite que el paso 1 tenga tres campos en todos los casos.
+  const resolveLinea = (form) => {
     const selectedLineaId = Number(form.linea_id);
-    if (selectedLineaId) {
-      const selected = lineaOptions.value.find((row) => Number(row.id) === selectedLineaId);
-      if (!selected) {
-        throw new Error("La línea seleccionada no está disponible.");
+    if (!selectedLineaId) {
+      throw new Error("Busca y selecciona la línea de la configuración.");
+    }
+    const selected = lineaOptions.value.find((row) => Number(row.id) === selectedLineaId);
+    if (!selected) {
+      throw new Error("La línea seleccionada no está disponible.");
+    }
+    return { id: selectedLineaId, nombre: selected.nombre };
+  };
+
+  // --- LOS DOS PLANOS -----------------------------------------------------------------------------
+  //
+  // «+ Nuevo proceso» y «+ Nueva línea» abren un plano encima en vez de inyectar campos aquí o de
+  // navegar a `/admin/procesos/procesos/processes`. Navegar NO era opción: el asistente es un modal
+  // y la ruta lo destruye con el formulario a medio llenar, y no hay reanudación. Y el plano encima
+  // es barato: `AppModalShell` se coloca solo al abrirse (`elevarSobreLoVisible`), así que un
+  // segundo modal no declara ninguna altura ni la puede equivocar.
+
+  const abrirProcesoModal = () => {
+    procesoModalError.value = "";
+    procesoModalOpen.value = true;
+  };
+  const cerrarProcesoModal = () => { procesoModalOpen.value = false; };
+
+  const abrirLineaModal = () => {
+    lineaModalError.value = "";
+    lineaModalOpen.value = true;
+  };
+  const cerrarLineaModal = () => { lineaModalOpen.value = false; };
+
+  // Crea el proceso y lo deja ACOTANDO el buscador: es lo que la persona acaba de decir que quiere
+  // mirar, y la línea que cree a continuación nacerá dentro de él.
+  const crearProceso = async (form) => {
+    creandoProceso.value = true;
+    procesoModalError.value = "";
+    try {
+      const nombre = String(form?.name || "").trim();
+      if (!nombre) {
+        throw new Error("Ingresa el nombre del nuevo proceso.");
       }
-      return { id: selectedLineaId, nombre: selected.nombre };
+      const parentId = form?.parent_id ? Number(form.parent_id) : null;
+      if (parentId && !processOptions.value.some((option) => Number(option.id) === parentId)) {
+        throw new Error("Selecciona un proceso padre válido.");
+      }
+      const res = await adminSqlService.create("processes", {
+        name: nombre,
+        slug: resolveAvailableProcessSlug(nombre),
+        parent_id: parentId || null,
+        is_active: 1
+      });
+      const id = resolveCreatedId(res);
+      await loadProcessOptions();
+      filtroProcessId.value = id ? String(id) : "";
+      procesoModalOpen.value = false;
+      return id;
+    } catch (error) {
+      procesoModalError.value = error?.response?.data?.message || error?.message || "No se pudo crear el proceso.";
+      return null;
+    } finally {
+      creandoProceso.value = false;
     }
-    if (form.linea_id !== NEW_LINEA_VALUE) {
-      throw new Error("Selecciona una línea existente o crea una nueva.");
-    }
+  };
 
-    const nombre = String(form.linea_nombre || "").trim();
-    if (!nombre) {
-      throw new Error("Escribe el nombre de la línea.");
+  // Crea la línea y la deja ELEGIDA en el buscador. Los dos ejes se piden juntos —cargo Y alcance—,
+  // que es la diferencia con la serie: ésta admitía uno o el otro, así que «los Coordinadores DE
+  // CARRERA» no cabía y había que partirlo entre esta pantalla y la regla de reparto.
+  const crearLinea = async (form) => {
+    creandoLinea.value = true;
+    lineaModalError.value = "";
+    try {
+      const processId = Number(form?.process_id);
+      if (!processId) {
+        throw new Error("Selecciona el proceso al que pertenece la línea.");
+      }
+      const nombre = String(form?.nombre || "").trim();
+      if (!nombre) {
+        throw new Error("Escribe el nombre de la línea.");
+      }
+      const scope = String(form?.unit_scope_type || "all_units");
+      if (!LINEA_SCOPE_LABELS[scope]) {
+        throw new Error("Selecciona un alcance válido para la línea.");
+      }
+      const unitTypeId = scope === "unit_type" ? Number(form.unit_type_id) : null;
+      const unitId = scope === "unit_exact" ? Number(form.unit_id) : null;
+      if (scope === "unit_type" && !unitTypeId) {
+        throw new Error("Selecciona el tipo de unidad de la línea.");
+      }
+      if (scope === "unit_exact" && !unitId) {
+        throw new Error("Selecciona la unidad de la línea.");
+      }
+      const fila = {
+        process_id: processId,
+        nombre,
+        cargo_id: form.cargo_id ? Number(form.cargo_id) : null,
+        unit_scope_type: scope,
+        unit_type_id: unitTypeId,
+        unit_id: unitId,
+        effective_from: new Date().toISOString().slice(0, 10)
+      };
+      const res = await adminSqlService.create("lineas", fila);
+      const id = resolveCreatedId(res);
+      if (!id) {
+        throw new Error("No se pudo crear la línea.");
+      }
+      elegirLinea({ row: { ...fila, id } });
+      lineaModalOpen.value = false;
+      return id;
+    } catch (error) {
+      lineaModalError.value = error?.response?.data?.message || error?.message || "No se pudo crear la línea.";
+      return null;
+    } finally {
+      creandoLinea.value = false;
     }
-    const scope = String(form.unit_scope_type || "all_units");
-    if (!LINEA_SCOPE_LABELS[scope]) {
-      throw new Error("Selecciona un alcance válido para la línea.");
-    }
-    const unitTypeId = scope === "unit_type" ? Number(form.unit_type_id) : null;
-    const unitId = scope === "unit_exact" ? Number(form.unit_id) : null;
-    if (scope === "unit_type" && !unitTypeId) {
-      throw new Error("Selecciona el tipo de unidad de la línea.");
-    }
-    if (scope === "unit_exact" && !unitId) {
-      throw new Error("Selecciona la unidad de la línea.");
-    }
-
-    const today = new Date().toISOString().slice(0, 10);
-    const lineaRes = await adminSqlService.create("lineas", {
-      process_id: Number(processId),
-      nombre,
-      cargo_id: form.cargo_id ? Number(form.cargo_id) : null,
-      unit_scope_type: scope,
-      unit_type_id: unitTypeId,
-      unit_id: unitId,
-      effective_from: today
-    });
-    return { id: resolveCreatedId(lineaRes), nombre };
   };
 
   const refreshStepStatus = async () => {
@@ -302,12 +438,17 @@ export function useProcessWizard() {
           label: nombre
         });
       }
+      filtroProcessId.value = definitionRow.process_id ? String(definitionRow.process_id) : "";
       currentStep.value = step || "rules";
       await refreshStepStatus();
     } else {
       definitionContext.value = null;
       currentStep.value = "definition";
       stepStatus.value = { definition: false, packages: false, rules: false, triggers: false };
+      // Abrir el asistente DESDE un proceso lo deja acotando el buscador, que es lo que antes hacía
+      // rellenando el campo `process_id` — con la diferencia de que esto no puede contradecir a la
+      // línea: acota la lista en vez de viajar junto a ella.
+      filtroProcessId.value = "";
       if (processRow?.id) {
         if (!processOptions.value.some((option) => String(option.id) === String(processRow.id))) {
           processOptions.value.push({
@@ -315,11 +456,7 @@ export function useProcessWizard() {
             name: processRow.name || processRow.slug || `Proceso ${processRow.id}`
           });
         }
-        definitionForm.value = {
-          ...definitionForm.value,
-          process_mode: "existing",
-          process_id: String(processRow.id)
-        };
+        filtroProcessId.value = String(processRow.id);
       }
     }
     wizardOpen.value = true;
@@ -327,6 +464,8 @@ export function useProcessWizard() {
 
   const closeWizard = () => {
     wizardOpen.value = false;
+    procesoModalOpen.value = false;
+    lineaModalOpen.value = false;
   };
 
   const goToStep = (key) => {
@@ -344,33 +483,10 @@ export function useProcessWizard() {
     let duplicateLookupParams = null;
     try {
       const form = definitionForm.value;
-      let processId = form.process_id ? Number(form.process_id) : null;
-      if (form.process_mode === "new") {
-        const processName = String(form.new_process_name || "").trim();
-        if (!processName) {
-          throw new Error("Ingresa el nombre del nuevo proceso.");
-        }
-        const parentId = form.new_process_parent_id ? Number(form.new_process_parent_id) : null;
-        if (parentId && !processOptions.value.some((option) => Number(option.id) === parentId)) {
-          throw new Error("Selecciona un proceso padre válido.");
-        }
-        const slug = processSlugPreview.value || resolveAvailableProcessSlug(processName);
-        const processRes = await adminSqlService.create("processes", {
-          name: processName,
-          slug,
-          parent_id: parentId || null,
-          is_active: 1
-        });
-        processId = resolveCreatedId(processRes);
-        await loadProcessOptions();
-      }
-      if (!processId) {
-        throw new Error("Selecciona o crea un proceso.");
-      }
-      const linea = await resolveLinea(form, processId);
-      if (!linea.id) {
-        throw new Error("No se pudo resolver la línea de la configuración.");
-      }
+      // AQUÍ SE CREABA EL PROCESO, y era el síntoma de que el paso 1 cubría tres entidades. Crear un
+      // proceso ya no es parte de crear una configuración: tiene su plano (`crearProceso`), y lo que
+      // llega aquí es una LÍNEA, que es el único dato de proceso que la configuración tiene.
+      const linea = resolveLinea(form);
       const definitionVersion = form.definition_version || "1.0.0";
       duplicateLookupParams = {
         lineaId: linea.id,
@@ -386,8 +502,8 @@ export function useProcessWizard() {
       }
       const today = new Date().toISOString().slice(0, 10);
       // SIN `process_id` (frente 25, P22): la columna era una copia de `lineas.process_id`, así que
-      // el asistente enviaba un dato que la línea ya dice. `processId` sigue haciendo falta aquí
-      // arriba —es lo que decide de qué proceso es la LÍNEA que se crea—, pero no viaja dos veces.
+      // el asistente enviaba un dato que la línea ya dice. Desde `P23` tampoco lo pide el
+      // formulario, así que no hay ninguna pareja (proceso, línea) que pueda contradecirse.
       const definitionRes = await adminSqlService.create("process_definition_versions", {
         linea_id: Number(linea.id),
         definition_version: definitionVersion,
@@ -397,9 +513,12 @@ export function useProcessWizard() {
         source_process_definition_id: form.source_process_definition_id ? Number(form.source_process_definition_id) : null,
       });
       const created = definitionRes?.data || {};
+      // El proceso del contexto sale de LA LÍNEA cacheada, no de un campo del formulario: es el
+      // mismo camino que el backend usa desde `P22`, proceso -> línea -> configuración.
+      const lineaRow = lineaOptions.value.find((row) => Number(row.id) === Number(linea.id));
       definitionContext.value = {
         id: resolveCreatedId(definitionRes),
-        process_id: Number(processId),
+        process_id: lineaRow?.process_id ? Number(lineaRow.process_id) : null,
         linea_id: Number(linea.id),
         definition_version: definitionVersion,
         name: created.name || definitionNamePreview.value,
@@ -441,7 +560,23 @@ export function useProcessWizard() {
     cargoOptions,
     unitOptions,
     lineaOptions,
-    processSlugPreview,
+    filtroProcessId,
+    procesoModalOpen,
+    lineaModalOpen,
+    creandoProceso,
+    creandoLinea,
+    procesoModalError,
+    lineaModalError,
+    lineaSuggestProvider,
+    elegirLinea,
+    selectedLineaName,
+    slugPreviewPara,
+    abrirProcesoModal,
+    cerrarProcesoModal,
+    abrirLineaModal,
+    cerrarLineaModal,
+    crearProceso,
+    crearLinea,
     definitionNamePreview,
     creatingDefinition,
     wizardError,

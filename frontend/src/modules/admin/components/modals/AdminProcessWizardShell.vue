@@ -47,10 +47,10 @@
     </AppAlert>
 
     <AppAlert variant="success" class="mb-3 flex flex-wrap items-center gap-2" v-if="definitionContext?.id && showContextSummary">
+      <!-- SIN la insignia de versión (frente 25, P23 — 2026-10-14): el nombre derivado YA es «línea
+           · versión», así que esta cabecera decía la versión dos veces seguidas («Línea X · 1.0.0»
+           y al lado «1.0.0»). Visto en el navegador al crear una configuración. -->
       <strong>{{ definitionContext.name || `Configuración #${definitionContext.id}` }}</strong>
-      <span class="inline-flex items-center rounded-xl bg-white/70 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
-        {{ definitionContext.definition_version || "—" }}
-      </span>
       <AppTag :variant="tonoEstadoDefinicion">
         {{ definitionStatusLabel }}
       </AppTag>

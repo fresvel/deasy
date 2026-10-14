@@ -656,16 +656,18 @@
       :definition-form="processWizardDefinitionForm"
       :duplicate-definition="processWizardDuplicateDefinition"
       :process-options="processWizardProcessOptions"
-      :unit-type-options="processWizardUnitTypeOptions"
-      :cargo-options="processWizardCargoOptions"
-      :linea-options="processWizardLineaOptions"
-      :unit-options="processWizardUnitOptions"
-      :process-slug-preview="processWizardProcessSlugPreview"
+      :filtro-process-id="processWizardFiltroProcessId"
+      :linea-suggest-provider="processWizardLineaSuggestProvider"
+      :selected-linea-name="processWizardSelectedLineaName"
       :definition-name-preview="processWizardDefinitionNamePreview"
       :creating-definition="processWizardCreating"
       :wizard-error="processWizardError"
       :readonly="processWizardReadonly"
       @update:definition-form="processWizardDefinitionForm = $event"
+      @update:filtro-process-id="processWizardFiltroProcessId = $event"
+      @elegir-linea="processWizardElegirLinea"
+      @abrir-proceso="processWizardAbrirProcesoModal"
+      @abrir-linea="processWizardAbrirLineaModal"
       @go-to-step="handleProcessWizardGoToStep"
       @create-definition="handleProcessWizardCreateDefinition"
       @edit-existing-definition="handleProcessWizardEditExistingDefinition"
@@ -807,6 +809,32 @@
         </AppModalShell>
       </template>
     </AdminProcessWizardModal>
+
+    <!-- LOS DOS PLANOS DEL ASISTENTE (frente 25, P23). Van fuera de `AdminProcessWizardModal` y no
+         dentro: se apilan solos encima de él (`AppModalShell` se coloca al abrirse), y así ninguno
+         de los dos tiene que saber nada del otro. -->
+    <AdminProcessWizardProcesoModal
+      :open="processWizardProcesoModalOpen"
+      :process-options="processWizardProcessOptions"
+      :creando="processWizardCreandoProceso"
+      :error="processWizardProcesoModalError"
+      :slug-preview-para="processWizardSlugPreviewPara"
+      @close="processWizardCerrarProcesoModal"
+      @crear="processWizardCrearProceso"
+    />
+
+    <AdminProcessWizardLineaModal
+      :open="processWizardLineaModalOpen"
+      :process-options="processWizardProcessOptions"
+      :cargo-options="processWizardCargoOptions"
+      :unit-type-options="processWizardUnitTypeOptions"
+      :unit-options="processWizardUnitOptions"
+      :process-id-por-defecto="processWizardFiltroProcessId"
+      :creando="processWizardCreandoLinea"
+      :error="processWizardLineaModalError"
+      @close="processWizardCerrarLineaModal"
+      @crear="processWizardCrearLinea"
+    />
 
     <AdminFkBrowserModal
       ref="fkModal"
@@ -1232,6 +1260,8 @@ import AdminProcessDefinitionActivationModal from "@/modules/admin/components/mo
 import AdminConfigActivationDiff from "@/modules/admin/components/modals/AdminConfigActivationDiff.vue";
 import AdminProcessDefinitionVersioningModal from "@/modules/admin/components/modals/AdminProcessDefinitionVersioningModal.vue";
 import AdminProcessWizardModal from "@/modules/admin/components/modals/AdminProcessWizardModal.vue";
+import AdminProcessWizardLineaModal from "@/modules/admin/components/modals/AdminProcessWizardLineaModal.vue";
+import AdminProcessWizardProcesoModal from "@/modules/admin/components/modals/AdminProcessWizardProcesoModal.vue";
 import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
 import AdminRecordViewerModal from "@/modules/admin/components/modals/AdminRecordViewerModal.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
@@ -3367,7 +3397,23 @@ const {
   cargoOptions: processWizardCargoOptions,
   lineaOptions: processWizardLineaOptions,
   unitOptions: processWizardUnitOptions,
-  processSlugPreview: processWizardProcessSlugPreview,
+  filtroProcessId: processWizardFiltroProcessId,
+  procesoModalOpen: processWizardProcesoModalOpen,
+  lineaModalOpen: processWizardLineaModalOpen,
+  creandoProceso: processWizardCreandoProceso,
+  creandoLinea: processWizardCreandoLinea,
+  procesoModalError: processWizardProcesoModalError,
+  lineaModalError: processWizardLineaModalError,
+  lineaSuggestProvider: processWizardLineaSuggestProvider,
+  elegirLinea: processWizardElegirLinea,
+  selectedLineaName: processWizardSelectedLineaName,
+  slugPreviewPara: processWizardSlugPreviewPara,
+  abrirProcesoModal: processWizardAbrirProcesoModal,
+  cerrarProcesoModal: processWizardCerrarProcesoModal,
+  abrirLineaModal: processWizardAbrirLineaModal,
+  cerrarLineaModal: processWizardCerrarLineaModal,
+  crearProceso: processWizardCrearProceso,
+  crearLinea: processWizardCrearLinea,
   definitionNamePreview: processWizardDefinitionNamePreview,
   creatingDefinition: processWizardCreating,
   wizardError: processWizardError,

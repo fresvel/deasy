@@ -22,137 +22,61 @@
           Editar existente
         </AdminButton>
       </AppAlert>
+      <!-- TRES CAMPOS, Y ERAN HASTA ONCE (frente 25, P23 — 2026-10-14).
+           Este paso declaraba 12 grupos de campo que cubrían TRES entidades —proceso, línea y
+           configuración—: 5 visibles en el caso común y 11 en el peor. Lo que queda son los tres
+           datos que SON de la configuración. El proceso ACOTA el buscador en vez de ser un campo, y
+           crear un proceso o una línea abre su propio plano. -->
       <div class="grid gap-3 md:grid-cols-12">
-        <AdminFieldGroup label="Proceso" group-class="md:col-span-6">
-          <div class="flex gap-2">
+        <AdminFieldGroup label="Acotar por proceso" group-class="md:col-span-5">
+          <div class="flex items-stretch gap-2">
             <AdminSelectField
-              v-if="form.process_mode === 'existing'"
-              :model-value="form.process_id"
+              :model-value="filtroProcessId"
               class="flex-1"
               :disabled="isDefinitionLocked"
-              @update:model-value="updateForm('process_id', $event)"
+              @update:model-value="$emit('update:filtroProcessId', $event)"
             >
-              <option value="">Selecciona un proceso</option>
+              <option value="">Todos los procesos</option>
               <option v-for="proc in processOptions" :key="proc.id" :value="String(proc.id)">{{ proc.name }}</option>
             </AdminSelectField>
-            <AdminInputField
-              v-else
-              :model-value="form.new_process_name"
+            <AdminButton variant="danger-outline" :disabled="isDefinitionLocked" @click="$emit('abrir-proceso')">
+              + Nuevo
+            </AdminButton>
+          </div>
+          <p class="m-0 mt-1 text-theme-xs text-muted">
+            Sólo filtra la búsqueda. El proceso de una configuración lo dice su línea.
+          </p>
+        </AdminFieldGroup>
+
+        <AdminFieldGroup label="Línea de proceso" group-class="md:col-span-7">
+          <div class="flex items-stretch gap-2">
+            <AdminLookupField
               class="flex-1"
-              placeholder="Nombre del nuevo proceso"
+              group-class="flex-1"
+              :model-value="selectedLineaName"
+              placeholder="Escribe para buscar una línea"
               :disabled="isDefinitionLocked"
-              @update:model-value="updateForm('new_process_name', $event)"
+              :show-search="false"
+              :suggest-provider="isDefinitionLocked ? null : lineaSuggestProvider"
+              @select="$emit('elegir-linea', $event)"
+              @clear="$emit('elegir-linea', null)"
             />
-            <AdminButton variant="danger-outline" :disabled="isDefinitionLocked" @click="toggleProcessMode">
-              {{ form.process_mode === 'existing' ? '+ Nuevo' : 'Existente' }}
+            <AdminButton variant="danger-outline" :disabled="isDefinitionLocked" @click="$emit('abrir-linea')">
+              + Nueva
             </AdminButton>
           </div>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Nombre generado" group-class="md:col-span-6">
+
+        <AdminFieldGroup label="Versión" group-class="md:col-span-4">
+          <AdminInputField :model-value="form.definition_version" placeholder="1.0.0" :disabled="isDefinitionLocked" @update:model-value="updateForm('definition_version', $event)" />
+        </AdminFieldGroup>
+
+        <AdminFieldGroup label="Se llamará" group-class="md:col-span-8">
           <div class="deasy-card flex min-h-10 items-center break-all px-3.5 py-2.5 text-sm font-semibold text-body">
             {{ definitionNameLabel }}
           </div>
         </AdminFieldGroup>
-        <AdminFieldGroup
-          v-if="form.process_mode === 'new'"
-          label="Proceso padre"
-          group-class="md:col-span-6"
-        >
-          <AdminSelectField
-            :model-value="form.new_process_parent_id"
-            :disabled="isDefinitionLocked"
-            @update:model-value="updateForm('new_process_parent_id', $event)"
-          >
-            <option value="">Sin proceso padre</option>
-            <option v-for="proc in processOptions" :key="proc.id" :value="String(proc.id)">{{ proc.name }}</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup
-          v-if="form.process_mode === 'new'"
-          label="Slug"
-          group-class="md:col-span-6"
-        >
-          <div class="deasy-card flex min-h-10 items-center break-all px-3.5 py-2.5 text-sm font-semibold text-body">
-            {{ processSlugPreview || "Pendiente" }}
-          </div>
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Línea de proceso" group-class="md:col-span-12">
-          <AdminSelectField :model-value="form.linea_id" :disabled="isDefinitionLocked" @update:model-value="updateForm('linea_id', $event)">
-            <option value="">Selecciona una línea</option>
-            <option v-for="linea in lineaOptions" :key="linea.id" :value="String(linea.id)">
-              {{ linea.label || linea.nombre }}
-            </option>
-            <option value="__new__">Nueva línea</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup
-          v-if="isCreatingLinea"
-          label="Nombre de la línea"
-          group-class="md:col-span-12"
-        >
-          <AdminInputField
-            :model-value="form.linea_nombre"
-            placeholder="Informe de Investigación Formativa · Coordinadores de Carrera"
-            :disabled="isDefinitionLocked"
-            @update:model-value="updateForm('linea_nombre', $event)"
-          />
-        </AdminFieldGroup>
-        <AdminFieldGroup
-          v-if="isCreatingLinea"
-          label="Cargo que lo produce"
-          group-class="md:col-span-4"
-        >
-          <AdminSelectField
-            :model-value="form.cargo_id"
-            :disabled="isDefinitionLocked"
-            @update:model-value="updateForm('cargo_id', $event)"
-          >
-            <option value="">Cualquier cargo</option>
-            <option v-for="c in cargoOptions" :key="c.id" :value="String(c.id)">{{ c.name }}</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup
-          v-if="isCreatingLinea"
-          label="Dónde"
-          group-class="md:col-span-4"
-        >
-          <AdminSelectField :model-value="form.unit_scope_type" :disabled="isDefinitionLocked" @update:model-value="updateForm('unit_scope_type', $event)">
-            <option value="all_units">Todas las unidades</option>
-            <option value="unit_type">Por tipo de unidad</option>
-            <option value="unit_exact">Una unidad concreta</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup
-          v-if="isCreatingLinea && form.unit_scope_type === 'unit_type'"
-          label="Tipo de unidad"
-          group-class="md:col-span-4"
-        >
-          <AdminSelectField
-            :model-value="form.unit_type_id"
-            :disabled="isDefinitionLocked"
-            @update:model-value="updateForm('unit_type_id', $event)"
-          >
-            <option value="">Selecciona un tipo de unidad</option>
-            <option v-for="u in unitTypeOptions" :key="u.id" :value="String(u.id)">{{ u.name }}</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup
-          v-if="isCreatingLinea && form.unit_scope_type === 'unit_exact'"
-          label="Unidad"
-          group-class="md:col-span-4"
-        >
-          <AdminSelectField
-            :model-value="form.unit_id"
-            :disabled="isDefinitionLocked"
-            @update:model-value="updateForm('unit_id', $event)"
-          >
-            <option value="">Selecciona una unidad</option>
-            <option v-for="u in unitOptions" :key="u.id" :value="String(u.id)">{{ u.name }}</option>
-          </AdminSelectField>
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Versión" group-class="md:col-span-4">
-          <AdminInputField :model-value="form.definition_version" placeholder="1.0.0" :disabled="isDefinitionLocked" @update:model-value="updateForm('definition_version', $event)" />
-        </AdminFieldGroup>
+
         <AdminFieldGroup label="Descripción" group-class="md:col-span-12">
           <AdminInputField :model-value="form.description" placeholder="Descripción breve del proceso" :disabled="isDefinitionLocked" @update:model-value="updateForm('description', $event)" />
         </AdminFieldGroup>
@@ -188,6 +112,7 @@ import { computed } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
+import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminProcessWizardShell from "@/modules/admin/components/modals/AdminProcessWizardShell.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
@@ -201,24 +126,29 @@ const props = defineProps({
   definitionForm: { type: Object, default: () => ({}) },
   duplicateDefinition: { type: Object, default: null },
   processOptions: { type: Array, default: () => [] },
-  unitTypeOptions: { type: Array, default: () => [] },
-  cargoOptions: { type: Array, default: () => [] },
-  lineaOptions: { type: Array, default: () => [] },
-  unitOptions: { type: Array, default: () => [] },
-  processSlugPreview: { type: String, default: "" },
+  // La ACOTACIÓN, que no es un campo del formulario: sólo decide qué líneas ofrece el buscador.
+  filtroProcessId: { type: String, default: "" },
+  lineaSuggestProvider: { type: Function, default: null },
+  selectedLineaName: { type: String, default: "" },
   definitionNamePreview: { type: String, default: "" },
   creatingDefinition: { type: Boolean, default: false },
   wizardError: { type: String, default: "" },
   readonly: { type: Boolean, default: false }
 });
 
-const emit = defineEmits(["close", "go-to-step", "create-definition", "edit-existing-definition", "update:definitionForm"]);
+const emit = defineEmits([
+  "close",
+  "go-to-step",
+  "create-definition",
+  "edit-existing-definition",
+  "update:definitionForm",
+  "update:filtroProcessId",
+  "elegir-linea",
+  "abrir-proceso",
+  "abrir-linea"
+]);
 
 const form = computed(() => props.definitionForm || {});
-// LOS DOS EJES SE PIDEN JUNTOS, que es la diferencia con la serie: ésta ofrecía «por tipo de
-// unidad» O «por cargo», nunca los dos, así que «los Coordinadores DE CARRERA» no cabía y había que
-// partirlo entre esta pantalla y la regla de reparto.
-const isCreatingLinea = computed(() => form.value.linea_id === "__new__");
 
 const hasDefinition = computed(() => Boolean(props.definitionContext?.id));
 const isDefinitionLocked = computed(() => props.readonly || hasDefinition.value);
@@ -226,39 +156,20 @@ const modalTitle = computed(() =>
   props.definitionContext?.id ? "Configuración de proceso" : "Configurar nuevo proceso"
 );
 const showContextSummary = computed(() => Boolean(props.definitionContext?.id && props.currentStep !== "definition"));
-const definitionNameLabel = computed(() =>
-  props.definitionNamePreview || props.definitionContext?.name || "Pendiente"
-);
+// SIN LÍNEA NO HAY NOMBRE QUE PREVISUALIZAR. La previsualización junta línea y versión descartando
+// lo vacío, así que sin línea elegida enseñaba la versión sola —«1.0.0»— como si fuera el nombre.
+const definitionNameLabel = computed(() => {
+  if (props.definitionContext?.id) {
+    return props.definitionContext.name || "Pendiente";
+  }
+  return props.selectedLineaName ? (props.definitionNamePreview || "Pendiente") : "Pendiente";
+});
 
+// AQUÍ LIMPIABA CAMPOS DE OTRAS DOS ENTIDADES, y era la señal: el alcance de la LÍNEA borraba su
+// columna hermana, y alternar «Existente / + Nuevo» vaciaba los campos del PROCESO. Las dos reglas
+// se fueron con sus campos a sus planos; lo que queda escribe el formulario y ya está.
 const updateForm = (field, value) => {
-  const nextForm = { ...props.definitionForm, [field]: value };
-  // El alcance limpia SU columna, no la del cargo: el cargo es el otro eje y sobrevive a cualquier
-  // alcance. Con la serie había que borrarlo, porque los dos ejes eran excluyentes.
-  if (field === "unit_scope_type") {
-    if (value === "unit_type") {
-      nextForm.unit_id = "";
-    } else if (value === "unit_exact") {
-      nextForm.unit_type_id = "";
-    } else {
-      nextForm.unit_type_id = "";
-      nextForm.unit_id = "";
-    }
-  } else if (field === "process_mode") {
-    if (value === "existing") {
-      nextForm.new_process_name = "";
-      nextForm.new_process_parent_id = "";
-    } else {
-      nextForm.process_id = "";
-    }
-  }
-  emit("update:definitionForm", nextForm);
-};
-
-const toggleProcessMode = () => {
-  if (isDefinitionLocked.value) {
-    return;
-  }
-  updateForm("process_mode", form.value.process_mode === "existing" ? "new" : "existing");
+  emit("update:definitionForm", { ...props.definitionForm, [field]: value });
 };
 
 const currentIndex = computed(() => props.steps.findIndex((s) => s.key === props.currentStep));
