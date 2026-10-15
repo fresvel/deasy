@@ -62,7 +62,6 @@ const CREATE_ERROR_CASES = [
   ["unit_relations_consigo_misma", "unit_relations", { parent_unit_id: 2, child_unit_id: 2, relation_type_id: 1 }],
   ["linea_sin_datos", "lineas", {}],
   ["version_sin_linea", "process_definition_versions", {}],
-  ["regla_sin_configuracion", "process_target_rules", {}],
   ["tarea_sin_configuracion", "tasks", {}],
 ];
 
@@ -203,7 +202,6 @@ const LIST_TABLES = [
   "persons", "units", "unit_types", "unit_relations", "relation_unit_types",
   "cargos", "unit_positions", "position_assignments", "term_types", "terms",
   "processes", "lineas", "process_definition_versions",
-  "process_target_rules", "vinculos",
   "generadores_de_documento", "ediciones",
   "tasks", "task_items", "task_item_tenures", "document_versions",
   "roles", "permissions", "role_permissions", "cargo_role_map",
@@ -823,21 +821,6 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
     body: normalize(versionActiva.body),
   });
 
-  // Los tres hijos exigen que su configuración esté en borrador (ensureDraftDefinitionContext).
-  const regla = await post("/admin/sql/process_target_rules", {
-    token,
-    body: {
-      process_definition_id: definicionId,
-      unit_scope_type: "all_units",
-      recipient_policy: "all_matches",
-      cargo_id: cargoId,
-    },
-  });
-  matchSnapshot(SUITE, "graft_target_rules_create", {
-    status: regla.status,
-    body: normalize(regla.body, { maskIdKeys: true }),
-  });
-  const reglaId = regla.body?.id;
 
   const periodo = await post("/admin/sql/process_definition_period_types", {
     token,
@@ -904,7 +887,6 @@ test("cadena de configuración -> grafts de process_definition_* sobre un borrad
   for (const [table, id] of [
     ["process_definition_versions", clonId],
     ["process_definition_period_types", periodoId],
-    ["process_target_rules", reglaId],
     ["process_definition_versions", definicionId],
     ["lineas", lineaId],
     ["processes", procesoId],

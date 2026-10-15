@@ -13,8 +13,7 @@ Esta es **la parte central del dominio** y la que mas cuesta al principio. La fr
 flowchart TD
     PROC["processes<br/>#quot;Informe de Gestion Docente#quot; (solo un nombre)"]
     PDV["process_definition_versions<br/>LA CONFIGURACION (draft / active / retired)"]
-    LIN["lineas<br/>LA LINEA: de quien (cargo) y donde (alcance)"]
-    PTR["process_target_rules<br/>LA REGLA: a que unidades y cargos alcanza"]
+    LIN["lineas<br/>LA OBLIGACION: de quien (cargo o jefatura) y donde (alcance)"]
     PDPT["process_definition_period_types<br/>en que tipos de periodo corre"]
     PDT["vinculos<br/>que documentos produce (+ item_mode)"]
     RUNS["process_runs<br/>EL LANZAMIENTO en un periodo concreto"]
@@ -29,7 +28,6 @@ flowchart TD
     PROC --> PDV
     PROC --> LIN
     PDV -->|"linea_id"| LIN
-    PDV --> PTR
     PDV --> PDPT
     PDV --> PDT
     PDV --> RUNS
@@ -60,19 +58,19 @@ Tiene `status` (`draft`, `active`, `retired`) y vigencia (`effective_from` / `ef
 
 - Una **columna generada** `active_series_flag` mas un índice UNIQUE sobre `(linea_id, active_series_flag)` garantiza **a nivel de base de datos** que solo hay una versión activa por línea. Hasta el 2026-10-11 ese índice iba sobre `(process_id, <la etiqueta de la variación>, active_series_flag)`, o sea sobre una copia del código de la serie; hoy va sobre la línea, que es el dato.
 
-- Un **trigger** (`trg_process_definition_versions_before_update`) impide activarla si no tiene al menos una regla de reparto *y* un tipo de periodo activo, lanzando una excepción con mensaje en espanol. Hasta el 2026-10-12 exigía que la regla estuviera *activa*; ya no puede, porque la regla no tiene interruptor.
+- Un **trigger** (`trg_process_definition_versions_before_update`) impide activarla si no tiene al menos un tipo de periodo activo, lanzando una excepción con mensaje en espanol. Exigía **dos** cosas: hasta el 2026-10-12 que la regla de reparto estuviera *activa* —y la regla dejó de tener interruptor—, y hasta el 2026-10-15 que **existiera** una regla. Esa segunda se fue con la tabla, y vale la pena saber qué garantizaba: contaba **filas**, no destinatarios.
 
 :::tip[Reglas de negocio dentro de la base de datos]
 
-Es poco habitual y merece la pena entender el porque: si la regla “no se puede activar sin reglas de alcance” viviera solo en el código, cualquier script, migración o consulta manual podría saltarsela. Al ponerla en un trigger, **es imposible dejar la base de datos en un estado inválido**, venga la escritura de donde venga.
+Es poco habitual y merece la pena entender el porque: si la regla “no se puede activar sin un tipo de periodo” viviera solo en el código, cualquier script, migración o consulta manual podría saltarsela. Al ponerla en un trigger, **es imposible dejar la base de datos en un estado inválido**, venga la escritura de donde venga.
 
 :::
 
-### `process_target_rules` — la regla.
+### El reparto ya no es una tabla.
 
-**Ya no reparte el alcance: lo afina.** Hasta el 2026-10-14 llevaba `unit_scope_type`, `unit_id`, `unit_type_id` y `cargo_id` —**copia de su línea**, sostenida por un guardia que comprobaba que coincidieran— y una `priority` que sólo aparecía en un `ORDER BY`. Las cinco se fueron, y ese mismo día se fue `position_id` con la política `exact_position`: nombraba una plaza **saltándose la obligación** —sin cargo y sin ámbito—, y nombrar a alguien es una tarea ad-hoc, no una norma. La tabla bajó de diez columnas a **cuatro**. Lo que queda es `recipient_policy` (`all_matches`, `unit_head`), que dice lo que un cargo **no puede**: «el que manda aquí, sea quien sea», porque el cargo de la jefatura varía por tipo de unidad. Una configuración puede tener varias reglas y sus resultados se **suman**.
+**`process_target_rules` se retiró el 2026-10-15**, y su final fue un vaciado de diez días. Llevaba `unit_scope_type`, `unit_id`, `unit_type_id` y `cargo_id` —**copia de su línea**, sostenida por un guardia que comprobaba que coincidieran—, una `priority` que sólo aparecía en un `ORDER BY`, `is_active` y dos fechas propias, y un `position_id` que nombraba **una plaza saltándose la obligación**. Cuando todo eso se fue quedaba **una columna con dos valores**, y los dos decían «quién» — que es lo que la línea ya declara.
 
-El **2026-10-12** perdió `is_active`, `effective_from` y `effective_to`: el reparto no tiene vida propia, nace y muere con su versión de la configuración. Cambiar a quién alcanza un proceso es reformar la norma, no encender una fila. La vigencia vive dos niveles más arriba — en la configuración y en la línea — y está contada en [el reparto](/modelo/reparto/).
+Hoy `recipient_policy` es una columna de **`lineas`**, al lado del cargo con el que puede contradecirse, y la base impone que la jefatura no lleve cargo (`ck_lineas_jefatura_sin_cargo`). Dice lo que un cargo **no puede**: «el que manda aquí, sea quien sea», porque el cargo de la jefatura varía por tipo de unidad. Y con la tabla se fue la pierna de la activación que contaba reglas: contaba **filas**, no destinatarios. Está contado en [el reparto](/modelo/reparto/).
 
 ### `vinculos` — el paquete de entregables.
 

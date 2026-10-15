@@ -14,8 +14,7 @@
 //
 // El ORDEN dentro de la lista es CONTRATO: el primer guard que falla decide el mensaje que
 // ve el usuario. Ojo con las que INTERCALAN — `process_definition_versions` mete el semver
-// entre sus requeridos, `process_target_rules` valida fechas antes que su requerido y
-// `task_items` mete el guard de origen en medio. Normalizarlas a "requeridos primero"
+// entre sus requeridos y `task_items` mete el guard de origen en medio. Normalizarlas a "requeridos primero"
 // cambiaría el mensaje; hay tests unitarios dedicados a clavar justo eso.
 //
 // AVISO sobre el orden de los guards: `SqlAdminService.create()` comprueba los campos
@@ -141,20 +140,18 @@ const lineaScopeConsistent = (candidate) => {
   if (scope !== "unit_exact" && candidate.unit_id) {
     throw new Error("Solo una linea de una unidad concreta admite unidad.");
   }
+  // LA JEFATURA NO LLEVA CARGO (frente 25, P26). La base lo impone con `ck_lineas_jefatura_sin_cargo`;
+  // esto da el mensaje legible antes del 500. Si ya sabes el cargo no necesitas la jefatura, y pedir
+  // los dos resuelve a la interseccion: casi siempre nadie.
+  if (String(candidate.recipient_policy || "all_matches") === "unit_head" && candidate.cargo_id) {
+    throw new Error("Una linea dirigida a la jefatura no lleva cargo: la jefatura ya dice quien es.");
+  }
 };
 
-// LA REGLA Y SU PUESTO VAN JUNTOS, EN LOS DOS SENTIDOS.
-//
-// Antes esto validaba tambien el ambito de la regla (`unit_exact` exige unidad, `unit_type` exige
-// tipo). Esas cuatro columnas se fueron con `P10` --eran copia de la linea-- y con ellas su
-// validacion: el ambito se valida UNA VEZ, en `lineaScopeConsistent`, que es donde se declara.
-//
-// Lo que queda es la pareja politica/puesto, y ahora en las DOS direcciones: «ese puesto» sin
-// puesto no resuelve a nadie, y un puesto con otra politica es un dato que nadie lee. La base lo
-// impone igual (`ck_ptr_puesto_exacto`); esto da el mensaje legible antes del 500.
-// AQUI VIVIA `targetScopeConsistent`, que casaba la politica con el puesto. Se fue con los dos
-// (frente 25, P25): sin `exact_position` la regla no tiene ningun par que pueda contradecirse, y
-// los dos valores que quedan no piden nada mas.
+// AQUI VIVIO LA VALIDACION DE LA REGLA DE REPARTO, y se fue en tres pasos: el ambito con `P10`
+// --era copia de la linea--, la pareja politica/puesto con `P25`, y la tabla entera con `P26`. Lo
+// unico que sobrevivio es la politica, que ahora se valida arriba, en la linea, junto al cargo con
+// el que puede contradecirse.
 
 // `processDefinedNeedsTemplate` VIVIO AQUI hasta el 2026-10-04 (frente 23, F2.1). Exigia el vinculo
 // SOLO cuando `origin_kind = 'process_defined'`, porque se creia que un entregable `user_added`
@@ -293,11 +290,6 @@ const TABLE_RULES = {
     requires(["effective_from", "Selecciona la fecha de vigencia inicial de la linea."]),
     datesInOrder("lineas de proceso", "effective_from", "effective_to"),
     lineaScopeConsistent,
-  ],
-  process_target_rules: [
-    // SIN `datesInOrder`: la regla ya no tiene vigencia (frente 25, P18-d). Y sin
-    // `targetScopeConsistent`: se fue con el puesto exacto (P25).
-    requires(["process_definition_id", "Selecciona una configuracion de proceso."]),
   ],
   task_items: [
     requires(["task_id", "Selecciona una tarea."]),

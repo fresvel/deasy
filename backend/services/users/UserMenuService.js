@@ -82,14 +82,13 @@ const getProcessTargetRuleRows = async (pool) => {
        pdv.linea_id,
        lin.nombre AS linea_nombre,
        pdv.definition_version,
-       ptr.id AS rule_id,
-       -- el ambito y el cargo salen de la LINEA (frente 25, P10); con prefijo para que el
-       -- predicado no crea que son de la regla, que es lo que paso durante tres meses
+       -- EL «QUIEN» ENTERO ES LA LINEA (frente 25, P26): cargo, ambito y afinado en la misma fila.
+       -- El prefijo linea_ se conserva porque el predicado recibe filas que mezclan tablas.
        lin.unit_scope_type AS linea_unit_scope_type,
        lin.unit_id         AS linea_unit_id,
        lin.unit_type_id    AS linea_unit_type_id,
        lin.cargo_id        AS linea_cargo_id,
-       ptr.recipient_policy,
+       lin.recipient_policy,
        EXISTS(
          SELECT 1 FROM vinculos pdt
          WHERE pdt.process_definition_id = pdv.id AND pdt.item_mode = 'routed'
@@ -116,12 +115,10 @@ const getProcessTargetRuleRows = async (pool) => {
       AND pdv.status = 'active'
       AND pdv.effective_from <= CURDATE()
       AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
-     INNER JOIN process_target_rules ptr
-       ON ptr.process_definition_id = pdv.id
      WHERE p.is_active = 1
-     -- SIN priority: se fue con las copias (P10). No ordenaba nada — las reglas de una
-     -- configuracion se unen y lo que se acumula es el puesto, sin mirar de que regla vino.
-     ORDER BY p.name, ptr.id`
+     -- SIN el JOIN a las reglas (frente 25, P26): la tabla se retiro y el afinado es de la linea,
+     -- que ya esta unida aqui arriba. Cada configuracion activa aporta UNA fila, no una por regla.
+     ORDER BY p.name, pdv.id`
   );
   return processRuleRows;
 };

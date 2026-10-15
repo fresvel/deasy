@@ -289,17 +289,9 @@ const main = async () => {
   }
   console.log(`  ✔ recorrido publicado y vinculo apuntando a la edicion #${edicionBorradorId}`);
 
-  // 9. La regla de reparto: UNA, y sin ámbito.
-  //    Eran DOS —una por unidad, con su cargo y su prioridad— y las cuatro columnas que las
-  //    distinguían eran copia de la línea (`P10`). Hoy el alcance lo dice la línea y la regla sólo
-  //    declara el afinado: aquí `all_matches`, o sea sin recorte.
-  //    REGLA DE NEGOCIO: las reglas solo se pueden tocar con la config en `draft`, y una
-  //    config `active` NO puede volver a draft (para cambiar el alcance hay que versionar).
-  //    Por eso se crea AQUÍ, antes de activar: añadirla luego es imposible.
-  await create("process_target_rules", {
-    process_definition_id: definitionId,
-    recipient_policy: "all_matches",
-  }, token);
+  // 9. La regla de reparto YA NO EXISTE como paso (frente 25, P26). Eran DOS filas con su ámbito y
+  //    su prioridad; `P10` las dejó en una sin ámbito, `P25` le quitó el puesto y aquí se retiró la
+  //    tabla: el afinado es `lineas.recipient_policy` y viaja con la obligación que se creó arriba.
 
   // 10. ACTIVAR la definición: ya tiene plantilla, flujos y regla. Hasta ahora era draft.
   console.log("Activando la definición...");

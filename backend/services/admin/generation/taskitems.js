@@ -4,7 +4,7 @@
 // Aquí se decide qué entregables (task_items) existen en una tarea y a qué posiciones se
 // asigna, aplicando las reglas de reparto (process_target_rules) del proceso.
 import {
-  getPositionsForRule,
+  getPositionsForScope,
   getExistingTaskItemTemplateIds,
   getExistingTaskItemTargetKeys
 } from "./queries.js";
@@ -127,16 +127,13 @@ export const ensureTaskItemsForTaskTargets = async (
 // Ahora devuelve los puestos y ya esta. Quien responde de cada entregable vive en su tenencia
 // (`task_item_tenures`), que si tiene un solo escritor y si sabe guardar una sucesion.
 export const resolveTaskTargetsForDefinition = async (connection, taskId, processDefinitionId, targetRulesMap) => {
-  const rules = targetRulesMap.get(processDefinitionId) || [];
-  if (!rules.length) {
+  // UN ALCANCE POR CONFIGURACION (frente 25, P26): el de su linea. Antes era una lista de reglas.
+  const scope = targetRulesMap.get(processDefinitionId);
+  if (!scope) {
     return { targets: [], hasRules: false, hasAssignees: false };
   }
 
-  const positions = [];
-  for (const rule of rules) {
-    const matched = await getPositionsForRule(connection, rule);
-    positions.push(...matched);
-  }
+  const positions = await getPositionsForScope(connection, scope);
 
   const [taskScopeRows] = await connection.query(
     `SELECT scope_unit_id

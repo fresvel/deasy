@@ -67,41 +67,30 @@ export const getActiveAutomaticDefinitions = async (connection, term) => {
 // LA REGLA YA NO TIENE VIGENCIA NI INTERRUPTOR (frente 25, P18-d): nace y muere con su version
 // de la norma, y quien decide si esa norma aplica al periodo es `getActiveAutomaticDefinitions`.
 // Por eso esta funcion ya no recibe las fechas del periodo: no tiene nada que comparar con ellas.
-// LAS REGLAS DE UNA CONFIGURACION, CON EL AMBITO DE SU LINEA PEGADO.
+// EL ALCANCE DE CADA CONFIGURACION, QUE ES EL DE SU LINEA — UNA FILA, NO UNA LISTA.
 //
-// El ambito y el cargo YA NO ESTAN EN LA REGLA (frente 25, P10): eran cuatro copias de la linea. La
-// regla conserva el afinado --`recipient_policy` y `position_id`-- y lo demas se lee de donde se
-// declara, con los dos JOIN que la consulta ya necesitaba para llegar a la obligacion.
+// Esto devolvia las REGLAS de cada configuracion, y era un `Map<id, []>` porque una configuracion
+// podia tener varias. Ya no: `process_target_rules` se retiro entera (frente 25, P26) despues de
+// quedarse en UNA columna con DOS valores que ni siquiera se podian combinar --`unit_head` esta
+// contenido en `all_matches`--. Hoy el «quien» completo --cargo, ambito y afinado-- es una sola fila
+// de `lineas`, y una configuracion tiene exactamente una por su clave ajena NOT NULL.
 //
-// Los campos de la linea van con PREFIJO `linea_` a proposito: desde aqui se lee hacia abajo, y una
-// `cargo_id` a secas no diria de quien es. El unico consumidor es `getPositionsForRule`.
-//
-// Y SIN `ORDER BY priority`: la columna se fue con las copias porque no ordenaba nada. Las reglas de
-// una configuracion se UNEN --sus resultados se acumulan por puesto, sin mirar de que regla vienen--
-// asi que el orden de evaluacion no cambia el resultado. Queda `id` para que la salida sea estable.
-export const getTargetRulesMap = async (connection) => {
+// Los campos van con PREFIJO `linea_` a proposito: desde aqui se lee hacia abajo, y una `cargo_id` a
+// secas no diria de quien es. El unico consumidor es `getPositionsForScope`.
+export const getLineaScopeMap = async (connection) => {
   const [rows] = await connection.query(
     `SELECT
-       ptr.id,
-       ptr.process_definition_id,
-       ptr.recipient_policy,
+       pdv.id AS process_definition_id,
+       lin.recipient_policy,
        lin.unit_scope_type AS linea_unit_scope_type,
        lin.unit_id         AS linea_unit_id,
        lin.unit_type_id    AS linea_unit_type_id,
        lin.cargo_id        AS linea_cargo_id
-     FROM process_target_rules ptr
-     INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
+     FROM process_definition_versions pdv
      INNER JOIN lineas lin ON lin.id = pdv.linea_id
-     ORDER BY ptr.process_definition_id, ptr.id ASC`
+     ORDER BY pdv.id ASC`
   );
-  const map = new Map();
-  rows.forEach((row) => {
-    if (!map.has(row.process_definition_id)) {
-      map.set(row.process_definition_id, []);
-    }
-    map.get(row.process_definition_id).push(row);
-  });
-  return map;
+  return new Map(rows.map((row) => [row.process_definition_id, row]));
 };
 
 export const getExecutableTemplatesMap = async (connection) => {
@@ -235,8 +224,11 @@ export const resolveCurrentPersonsForPosition = async (connection, positionId) =
 
 // SIN LA RAMA DEL PUESTO EXACTO (frente 25, P25). Era la unica que consultaba `up.id = ?` SIN
 // cargo y SIN ambito: una regla podia repartir a una plaza ajena a su obligacion, que es el agujero
-// que `P10` cerro para `unit_id`. Hoy toda regla pasa por el cargo y el ambito de su linea.
-export const getPositionsForRule = async (connection, rule) => {
+// que `P10` cerro para `unit_id`. Hoy todo pasa por el cargo y el ambito de la obligacion.
+//
+// Y SE LLAMABA `getPositionsForRule` (frente 25, P26): lo que recibe ya no es una regla --no hay
+// tabla de reglas-- sino el alcance de la LINEA, con su afinado dentro.
+export const getPositionsForScope = async (connection, rule) => {
   const params = [];
   let query = `
     SELECT DISTINCT
@@ -254,7 +246,7 @@ export const getPositionsForRule = async (connection, rule) => {
       AND u.is_active = 1`;
 
   // EL CARGO Y EL AMBITO SALEN DE LA LINEA, no de la regla (frente 25, P10). Antes la regla
-  // llevaba su copia y esto leia `rule.cargo_id`; hoy `getTargetRulesMap` los trae con prefijo.
+  // llevaba su copia y esto leia `rule.cargo_id`; hoy `getLineaScopeMap` los trae con prefijo.
   if (rule.linea_cargo_id) {
     query += "\n      AND up.cargo_id = ?";
     params.push(rule.linea_cargo_id);

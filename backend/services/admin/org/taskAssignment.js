@@ -93,15 +93,18 @@ export default class TaskAssignmentService {
     // `test:char:run` con 27 fallos y un `column "unit_scope_type" does not exist` — que es la
     // misma leccion que `check:sql-aliases` lleva escrita: una consulta sin alias es invisible para
     // un censo que busca prefijos. Por eso ahora las columnas van cualificadas.
+    //
+    // Y DESDE `P26` SE LEE LA LINEA DIRECTAMENTE: la tabla de reglas se retiro, asi que ya no hay
+    // que pasar por ella para llegar a lo que siempre fue suyo. El bucle de abajo recorre una lista
+    // de UNA, y se conserva porque `has_rules` es contrato de la API.
     const [rules] = await connection.query(
       `SELECT lin.unit_scope_type AS linea_unit_scope_type,
               lin.unit_id         AS linea_unit_id,
               lin.unit_type_id    AS linea_unit_type_id,
               lin.cargo_id        AS linea_cargo_id
-         FROM process_target_rules ptr
-         INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
+         FROM process_definition_versions pdv
          INNER JOIN lineas lin ON lin.id = pdv.linea_id
-        WHERE ptr.process_definition_id = ?`,
+        WHERE pdv.id = ?`,
       [defId]
     );
     if (!rules.length) {
@@ -110,10 +113,9 @@ export default class TaskAssignmentService {
     const unitIds = new Set();
     const cargoIds = new Set();
     let allUnits = false;
-    // EL CARGO Y EL AMBITO VIENEN DE LA LINEA (frente 25, P10). Las filas las trae
-    // `getTargetRulesMap`, que las lee con prefijo `linea_` desde que las cuatro copias salieron de
-    // la regla. Ojo: todas las reglas de una configuracion comparten linea, asi que este bucle
-    // acumula el MISMO ambito N veces — correcto, porque los conjuntos no repiten.
+    // EL CARGO Y EL AMBITO VIENEN DE LA LINEA (frente 25, P10), y desde `P26` son LA MISMA FILA:
+    // esta lista tiene exactamente un elemento. El bucle se conserva porque `has_rules` sigue siendo
+    // contrato de la API y el calculo de conjuntos no cambia.
     for (const rule of rules) {
       if (rule.linea_cargo_id) {
         cargoIds.add(Number(rule.linea_cargo_id));

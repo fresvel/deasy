@@ -46,7 +46,7 @@ sola transacción**: si algo falla, no queda medio sembrado.
    **no siembra ningún flujo**.
 7. **Crea el periodo «Permanente»** (`terms`, del tipo `PERM`), lo declara como tipo de periodo de la
    configuración (`process_definition_period_types`) y añade una regla de reparto
-   (`process_target_rules`) con política `all_matches` —el alcance lo pone su línea, `all_units`—, para que el proceso
+   con la política `all_matches` de su línea —que nace sin acotar, `all_units`—, para que el proceso
    pueda dispararse en cualquier momento y para cualquiera.
 
 Si esos siete pasos te resultan claros, el resto de estas páginas es el detalle de cada uno.

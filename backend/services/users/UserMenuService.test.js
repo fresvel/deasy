@@ -12,7 +12,7 @@ const makePool = ({ org = [{ id: 1 }], positions = [], orgTree = [], rules = [],
     if (sql.includes("operational.source_unit_type_id")) return [operational];
     if (sql.includes("FROM position_assignments pa")) return [positions];
     if (sql.includes("FROM unit_relations ur")) return [orgTree];
-    if (sql.includes("INNER JOIN process_target_rules ptr")) return [rules];
+    if (sql.includes("INNER JOIN process_definition_versions pdv")) return [rules];
     throw new Error(`consulta inesperada: ${sql.slice(0, 80)}`);
   },
 });

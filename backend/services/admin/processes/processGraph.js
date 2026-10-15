@@ -194,7 +194,6 @@ export default class ProcessGraphService {
               lin.cargo_id AS linea_cargo_id,
               sc.name AS linea_cargo_name,
               sut.name AS linea_unit_type_name,
-              (SELECT COUNT(*) FROM process_target_rules ptr WHERE ptr.process_definition_id = pdv.id) AS rules_count,
               (SELECT COUNT(*) FROM vinculos pdt WHERE pdt.process_definition_id = pdv.id) AS templates_count,
               (SELECT COUNT(*) FROM process_runs pr WHERE pr.process_definition_id = pdv.id) AS runs_count
          FROM process_definition_versions pdv

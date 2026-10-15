@@ -120,7 +120,7 @@
   "graft_pdv_create_clon": {
     "status": 200,
     "body": {
-      "__notice": "Se clonaron 0 plantillas, 1 reglas y 1 periodos del proceso desde la configuracion origen.",
+      "__notice": "Se clonaron 0 plantillas y 1 periodos del proceso desde la configuracion origen.",
       "definition_version": "2.0.0",
       "effective_from": "2026-02-01",
       "id": "<normalized>",
@@ -178,14 +178,6 @@
     "body": {
       "id": "<normalized>",
       "name": "Proceso caracterización (renombrado)"
-    }
-  },
-  "graft_target_rules_create": {
-    "status": 200,
-    "body": {
-      "id": "<normalized>",
-      "process_definition_id": "<normalized>",
-      "recipient_policy": "all_matches"
     }
   },
   "graft_template_artifacts_create_prohibido": {
@@ -351,6 +343,7 @@
       "linea_anterior_id",
       "nombre",
       "process_id",
+      "recipient_policy",
       "unit_id",
       "unit_scope_type",
       "unit_type_id"
@@ -420,17 +413,6 @@
       "name",
       "process_id",
       "status"
-    ]
-  },
-  "list_process_target_rules": {
-    "status": 200,
-    "isArray": true,
-    "count": 1,
-    "itemKeys": [
-      "created_at",
-      "id",
-      "process_definition_id",
-      "recipient_policy"
     ]
   },
   "list_processes": {
@@ -736,7 +718,6 @@
         "from_version",
         "has_active",
         "period_types",
-        "rules",
         "templates",
         "to_version"
       ]

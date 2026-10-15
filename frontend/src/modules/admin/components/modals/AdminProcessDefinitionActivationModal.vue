@@ -14,19 +14,15 @@
   >
     <ProcessActivationPanel
       :checking="checking"
-      :has-active-rules="hasActiveRules"
       :has-active-triggers="hasActiveTriggers"
       :has-active-artifacts="hasActiveArtifacts"
       :view="view"
       :selected-row="selectedRow"
-      :rules="rules"
       :triggers="triggers"
       :artifacts="artifacts"
-      :rule-table-fields="ruleTableFields"
       :trigger-table-fields="triggerTableFields"
       :artifact-table-fields="artifactTableFields"
       :format-cell="formatCell"
-      :format-definition-rule-summary="formatDefinitionRuleSummary"
       :show-menu="false"
       @update:view="$emit('update:view', $event)"
       @view-row="$emit('view-row', $event)"
@@ -74,22 +70,18 @@ import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 
 const props = defineProps({
   checking: { type: Boolean, default: false },
-  hasActiveRules: { type: Boolean, default: false },
   hasActiveTriggers: { type: Boolean, default: false },
   hasActiveArtifacts: { type: Boolean, default: false },
   view: { type: String, default: "definition" },
   selectedRow: { type: Object, default: null },
-  rules: { type: Array, default: () => [] },
   triggers: { type: Array, default: () => [] },
   artifacts: { type: Array, default: () => [] },
-  ruleTableFields: { type: Array, default: () => [] },
   triggerTableFields: { type: Array, default: () => [] },
   artifactTableFields: { type: Array, default: () => [] },
   primaryAction: { type: [String, Object], default: "" },
   primaryActionLabel: { type: String, default: "" },
   allRequirementsMet: { type: Boolean, default: false },
-  formatCell: { type: Function, required: true },
-  formatDefinitionRuleSummary: { type: Function, required: true }
+  formatCell: { type: Function, required: true }
 });
 const emit = defineEmits(["update:view", "view-row", "cancel", "primary-action", "confirm"]);
 const modalRef = ref(null);
@@ -101,14 +93,12 @@ const confirmActivate = () => {
 
 const activationSteps = [
   { key: "definition", label: "Configuración" },
-  { key: "rules", label: "Alcance" },
   { key: "triggers", label: "Periodos" },
   { key: "artifacts", label: "Paquetes" },
   { key: "activate", label: "Activar", hint: "Final" }
 ];
 const activationStepStatus = computed(() => ({
   definition: Boolean(props.selectedRow?.id),
-  rules: props.hasActiveRules,
   triggers: props.hasActiveTriggers,
   artifacts: props.hasActiveArtifacts,
   activate: props.allRequirementsMet

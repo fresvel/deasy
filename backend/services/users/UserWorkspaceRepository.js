@@ -255,13 +255,16 @@ export const getDefinitionContext = async (pool, definitionId) => {
   return rows[0] || null;
 };
 
-export const getActiveDefinitionRules = async (pool, definitionId) => {
+// EL ALCANCE DE UNA CONFIGURACION: UNA FILA, LA DE SU OBLIGACION.
+//
+// Se llamaba `getActiveDefinitionRules` y devolvia las reglas. La tabla se retiro (frente 25, P26)
+// despues de quedarse en una columna con dos valores; el «quien» entero --cargo, ambito y afinado--
+// es la linea, y toda configuracion tiene exactamente una.
+export const getDefinitionScope = async (pool, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
-       ptr.id,
-       ptr.recipient_policy,
-       -- el ambito y el cargo salen de la LINEA (frente 25, P10), con prefijo: esta fila mezcla
-       -- las dos tablas y el rotulo que la pinta necesita saber de donde viene cada cosa
+       lin.recipient_policy,
+       -- con prefijo linea_ : el predicado que lee esta fila la recibe mezclada con el puesto
        lin.unit_scope_type AS linea_unit_scope_type,
        lin.unit_id         AS linea_unit_id,
        lin.unit_type_id    AS linea_unit_type_id,
@@ -269,17 +272,16 @@ export const getActiveDefinitionRules = async (pool, definitionId) => {
        u.name AS unit_name,
        ut.name AS unit_type_name,
        c.name AS cargo_name
-     FROM process_target_rules ptr
-     INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
+     FROM process_definition_versions pdv
      INNER JOIN lineas lin ON lin.id = pdv.linea_id
      LEFT JOIN units u ON u.id = lin.unit_id
      LEFT JOIN unit_types ut ON ut.id = lin.unit_type_id
      LEFT JOIN cargos c ON c.id = lin.cargo_id
-     WHERE ptr.process_definition_id = ?
-     ORDER BY ptr.id ASC`,
+     WHERE pdv.id = ?
+     LIMIT 1`,
     [definitionId]
   );
-  return rows;
+  return rows[0] || null;
 };
 
 export const getActiveDefinitionPeriodTypes = async (pool, definitionId) => {

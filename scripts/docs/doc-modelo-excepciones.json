@@ -1066,6 +1066,19 @@
       "paginas": [
         "modelo/flujo-de-entrega.md"
       ]
+    },
+    "process_target_rules": {
+      "motivo": "FRENTE 25, P26 (2026-10-15) · MENCION HISTORICA. La tabla del reparto se retiro entera, y las dos paginas la nombran para CONTAR su final, que es lo que impide que vuelva por inercia: nacio cuando la regla ERA la declaracion, `P8` le subio los dos ejes a `lineas`, `P10` le quito las cuatro copias y `priority`, `P18-d` su vigencia y su interruptor, y `P25` el puesto exacto. Lo que quedaba era UNA columna con DOS valores que decian «quien» -- que es lo que la obligacion ya declara--, y ni siquiera se podian combinar, porque `unit_head` esta contenido en `all_matches`. La columna vive hoy en `lineas.recipient_policy`. En `modelo/reparto.md` la mencion es la que cuenta la retirada y su porque; en `datos/motor-de-procesos.md`, la que explica por que el disparador de activacion dejo de contar reglas.",
+      "paginas": [
+        "datos/motor-de-procesos.md",
+        "modelo/reparto.md"
+      ]
+    },
+    "exact_position": {
+      "motivo": "FRENTE 25, P25 (2026-10-14) · MENCION HISTORICA. Era el tercer valor de `recipient_policy` y nombraba UNA PLAZA. Se retiro por tres cosas medidas: se saltaba la obligacion --la consulta miraba `up.id` SIN cargo y SIN ambito, el agujero que `P10` cerro para `unit_id`--, no hacia falta --el cargo `Asistente` tiene una plaza por unidad, y `slot_no` es un numero, no una funcion-- y era NOMBRAR A ALGUIEN dentro de una norma, que es lo que cubre la tarea ad-hoc. La pagina lo nombra para contar eso, que es justo donde una excepcion es correcta.",
+      "paginas": [
+        "modelo/reparto.md"
+      ]
     }
   },
   "tablas_sin_pagina": {}

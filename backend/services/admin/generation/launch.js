@@ -11,12 +11,12 @@ import { notFound } from "../../../errors/HttpError.js";
 import {
   getTermById,
   getActiveAutomaticDefinitions,
-  getTargetRulesMap,
+  getLineaScopeMap,
   getExecutableTemplatesMap,
   getExistingAutomaticTasksMap,
   getExistingTasksByUnitForDefinition,
   getActiveRunForDefinitionTerm,
-  getPositionsForRule
+  getPositionsForScope
 } from "./queries.js";
 import {
   ensureTaskItemsForTaskTargets,
@@ -99,7 +99,7 @@ export const hydrateTaskFromDefinition = async ({
   }
 
   const templatesMap = executableTemplatesMap || await getExecutableTemplatesMap(connection);
-  const rulesMap = targetRulesMap || await getTargetRulesMap(connection);
+  const rulesMap = targetRulesMap || await getLineaScopeMap(connection);
 
   // Los puestos se resuelven y se usan. Hasta el 2026-08-23 esto escribia `task_assignments`, la
   // volvia a LEER en la linea siguiente, y alimentaba con eso la creacion de los entregables: una
@@ -151,24 +151,16 @@ export const launchDefinitionInTerm = async (connection, {
     return { ...empty, status: "no_task_items" };
   }
 
-  const rulesMap = targetRulesMap || await getTargetRulesMap(connection);
-  const rules = rulesMap.get(definition.id) || [];
-  if (!rules.length) {
+  // UN ALCANCE, Y ERA UNA LISTA DE REGLAS (frente 25, P26). Con la tabla retirada, una configuracion
+  // tiene exactamente el alcance de su linea, asi que se fue tambien la deduplicacion por puesto: la
+  // hacia falta porque dos reglas de la misma configuracion podian solaparse.
+  const scopeMap = targetRulesMap || await getLineaScopeMap(connection);
+  const scope = scopeMap.get(definition.id);
+  if (!scope) {
     return { ...empty, status: "no_target_rules" };
   }
 
-  // Posiciones objetivo (deduplicadas por position_id), agrupadas por unidad.
-  const allPositions = [];
-  const seenPositionIds = new Set();
-  for (const rule of rules) {
-    const matched = await getPositionsForRule(connection, rule);
-    for (const pos of matched) {
-      if (!seenPositionIds.has(pos.position_id)) {
-        seenPositionIds.add(pos.position_id);
-        allPositions.push(pos);
-      }
-    }
-  }
+  const allPositions = await getPositionsForScope(connection, scope);
   if (!allPositions.length) {
     return { ...empty, status: "no_assignees" };
   }
@@ -265,7 +257,7 @@ export const generateTasksForTerm = async (termId) => {
     if (!term) throw notFound("Periodo no encontrado.");
 
     const activeDefinitions = await getActiveAutomaticDefinitions(connection, term);
-    const targetRulesMap = await getTargetRulesMap(connection);
+    const targetRulesMap = await getLineaScopeMap(connection);
     // artifact_origin deprecado: la generación automática toma todas las plantillas vinculadas a la
     // configuración (toda plantilla materializa un entregable), sin filtrar por process/general.
     const executableTemplatesMap = await getExecutableTemplatesMap(connection);

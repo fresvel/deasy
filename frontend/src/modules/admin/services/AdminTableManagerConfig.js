@@ -93,12 +93,9 @@ export const unassignedTemplateArtifactTableFields = [
   { name: "is_active", label: "Activo" }
 ];
 
-// UNA COLUMNA, Y ERAN TRES. «Alcance» leia `unit_scope_type` --muerta en `P10`-- y «Activo»
-// leia `is_active` --muerta en `P18-d`--: la rejilla de activacion pintaba un guion y un «No» fijo
-// sobre datos que no existen. Queda el DESTINO, que es lo unico que una regla dice hoy.
-export const processDefinitionActivationRuleTableFields = [
-  { name: "destination", label: "Destino" }
-];
+// Y AQUI `processDefinitionActivationRuleTableFields`, la del panel de activacion: llego a pintar
+// tres columnas y dos mentian --«Alcance» vacia desde `P10` y «Activo» un «No» fijo desde `P18-d`--.
+// Se fue entera con la tabla (frente 25, P26).
 
 export const processDefinitionActivationTriggerTableFields = [
   { name: "term_type_id", label: "Tipo de periodo" },
@@ -122,17 +119,8 @@ export const definitionTriggersTableFields = [
   { name: "is_active", label: "Activo" }
 ];
 
-export const definitionRulesTableFields = [
-  { name: "id", label: "ID" },
-  { name: "recipient_policy", label: "Entrega" }
-  // SIN «Alcance», «Unidad», «Tipo de unidad» ni «Cargo» (frente 25, P10 — 2026-10-14): esas cuatro
-  // columnas eran copia de la LINEA y se retiraron de la tabla. Visto en el navegador antes de
-  // quitarlas de aqui: la rejilla pintaba cinco columnas con un guion en todas las filas, porque el
-  // dato ya no viene. El alcance se ve arriba, en los chips de «Fijado por la obligación».
-  //
-  // Y SIN «Activo» (frente 25, P18-d): la regla perdio `is_active` y sus dos fechas, por lo mismo.
-  // Y SIN «Puesto» (frente 25, P25): se fue con `exact_position`.
-];
+// AQUI ESTABA `definitionRulesTableFields`, la rejilla del gestor de reglas. Se fue con la tabla
+// (frente 25, P26).
 
 export const recordViewerSummaryTableFields = [
   { name: "label", label: "Campo" },
@@ -232,7 +220,6 @@ export const RELATED_RECORD_CONFIG = {
   ],
   process_definition_versions: [
     { table: "process_definition_period_types", label: "Periodos del proceso", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
-    { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "id", order: "asc" },
     { table: "vinculos", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
     { table: "process_runs", label: "Corridas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "tasks", label: "Tareas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" }

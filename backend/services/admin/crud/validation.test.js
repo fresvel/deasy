@@ -238,25 +238,14 @@ test("validateTableRules valida el orden de las fechas de vigencia", () => {
   );
 });
 
-// --- process_target_rules -----------------------------------------------------
-
-// ⚠️ AQUI HUBO DOS PRUEBAS DE LA PAREJA POLITICA/PUESTO, y las dos se fueron con el puesto exacto
-// (frente 25, P25). Antes de esas, otra exigia una base para el ALCANCE de la regla, retirado en
-// `P10`. La regla ha ido perdiendo todo lo que podia contradecirse, y una tabla sin pares no tiene
-// consistencia que validar: lo unico que queda es su requerido.
+// --- process_target_rules: LA TABLA YA NO EXISTE -------------------------------
 //
-// Lo que esta prueba fija es esa ausencia: ninguna combinacion de la regla puede ser rechazada, y
-// un `position_id` colado --que ya no es columna-- no resucita ninguna regla de validacion.
-test("validateTableRules ya no valida ninguna pareja en la regla de alcance", () => {
-  for (const politica of ["all_matches", "unit_head"]) {
-    assert.doesNotThrow(() =>
-      validateTableRules("process_target_rules", { process_definition_id: 1, recipient_policy: politica }),
-    );
-  }
-  assert.doesNotThrow(
-    () => validateTableRules("process_target_rules", { process_definition_id: 1, position_id: 5 }),
-    "el puesto ya no es columna: nadie lo valida ni lo rechaza",
-  );
+// Aqui hubo cuatro pruebas en seis dias: el alcance (retirado en `P10`), la pareja politica/puesto
+// en los dos sentidos (retirada en `P25`) y el requerido. La tabla entera se fue en `P26`, asi que
+// lo unico que queda por fijar es que el catalogo no la nombre — si alguien la reintroduce sin
+// reglas, `validateTableRules` la dejaria pasar en silencio.
+test("process_target_rules ya no esta en las reglas de validacion", () => {
+  assert.doesNotThrow(() => validateTableRules("process_target_rules", {}));
 });
 
 // --- task_items: el entregable NO depende del origen -------------------------
@@ -338,18 +327,6 @@ test("validateTableRules exige al menos un formato disponible en el artifact", (
 // condicional o las fechas EN MEDIO de sus requeridos. El orden es el contrato —
 // decide qué mensaje ve el usuario — y es lo primero que rompería un refactor que
 // las normalizara a la plantilla declarativa. Estos tests lo clavan.
-
-// ⚠️ ESTA PRUEBA MEDÍA UN ORDEN QUE YA NO EXISTE. Se llamaba «valida las fechas ANTES que su
-// configuracion requerida» y clavaba que `ensureDateOrder` iba primero en el cuerpo. La regla
-// perdió su vigencia en el frente 25 (P18-d) —nace y muere con su versión de la norma—, así que no
-// hay fechas que ordenar y el requerido es lo primero. El orden intercalado sigue siendo contrato
-// en las otras tres tablas de este bloque.
-test("process_target_rules solo exige su configuracion", () => {
-  throwsWith(() => validateTableRules("process_target_rules", {}), "Selecciona una configuracion de proceso.");
-  // Decía «antes que el afinado», y antes de eso «antes que el alcance»: el alcance se fue con `P10`
-  // y el afinado dejo de validarse con `P25`. Ya no hay segundo guard con el que ordenar.
-  assert.doesNotThrow(() => validateTableRules("process_target_rules", { process_definition_id: 1 }));
-});
 
 // ⚠️ EXIGIA DOS: «un proceso base» y «la linea». El proceso salio de la configuracion con `P22`
 // (frente 25, 2026-10-14) porque era copia de la linea, así que pedirlo obligaba a elegir el mismo

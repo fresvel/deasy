@@ -228,7 +228,7 @@ export default class ProcessDefinitionVersionService {
     const normalizedTargetProcessId = Number(targetProcessId);
 
     if (!normalizedSourceId || !normalizedTargetId) {
-      return { clonedTemplates: 0, clonedRules: 0, clonedPeriodTypes: 0 };
+      return { clonedTemplates: 0, clonedPeriodTypes: 0 };
     }
 
     const sourceDefinition = await this.getProcessDefinitionVersion(normalizedSourceId, connection);
@@ -298,28 +298,11 @@ export default class ProcessDefinitionVersionService {
       );
     }
 
-    // EL CLON DE LAS REGLAS: UNA columna, y eran ocho. Las cuatro de ambito eran copia de la
-    // linea y `priority` no ordenaba nada (`P10`); `position_id` se fue en `P25`. Y el clon es
-    // justo donde la copia costaba mas: versionar arrastraba el ambito verbatim, asi que una
-    // configuracion nueva nacia con el ambito CONGELADO en el momento del clon aunque su linea
-    // hubiera cambiado despues.
-    const [ruleRows] = await connection.query(
-      `SELECT recipient_policy
-       FROM process_target_rules
-       WHERE process_definition_id = ?
-       ORDER BY id ASC`,
-      [normalizedSourceId]
-    );
-
-    for (const row of ruleRows) {
-      await connection.query(
-        `INSERT INTO process_target_rules (
-          process_definition_id,
-          recipient_policy
-        ) VALUES (?, ?)`,
-        [normalizedTargetId, row.recipient_policy]
-      );
-    }
+    // AQUI SE CLONABAN LAS REGLAS, y era donde la copia costaba mas: versionar arrastraba el ambito
+    // VERBATIM, asi que una configuracion nueva nacia con el reparto congelado en el instante del
+    // clon aunque su linea hubiera cambiado despues. Empezo con ocho columnas, `P10` la dejo en dos,
+    // `P25` en una, y `P26` retiro la tabla: el afinado es de la LINEA, y las dos versiones de una
+    // configuracion comparten linea, asi que no hay nada que copiar — lo comparten de verdad.
 
     const [periodTypeRows] = await connection.query(
       `SELECT term_type_id,
@@ -347,7 +330,6 @@ export default class ProcessDefinitionVersionService {
 
     return {
       clonedTemplates: templateRows.length,
-      clonedRules: ruleRows.length,
       clonedPeriodTypes: periodTypeRows.length
     };
   }

@@ -3,11 +3,14 @@ import { processDefinitionAdminService } from "@/modules/admin/services/ProcessD
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 // Pasos del wizard guiado de proceso (de la creación a la activación).
-// Orden: Reglas ANTES que Paquetes. El flujo de entrega de las plantillas (ámbitos de contexto) depende
-// de las reglas objetivo del proceso, así que estas deben definirse primero.
+//
+// CUATRO, Y ERAN CINCO (frente 25, P26). El segundo era «Alcance» y gestionaba
+// `process_target_rules`, que se retiró: a quién alcanza una configuración lo dice su LÍNEA, y la
+// línea se elige en el paso 1. Decía aquí que las reglas iban antes que los paquetes «porque el
+// flujo de entrega depende de ellas» — y sigue siendo cierto del alcance, sólo que ya está decidido
+// antes de abrir el asistente.
 export const PROCESS_WIZARD_STEPS = [
   { key: "definition", label: "Configuración" },
-  { key: "rules", label: "Alcance" },
   { key: "packages", label: "Paquetes" },
   { key: "triggers", label: "Periodos" },
   { key: "activate", label: "Activar" },

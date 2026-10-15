@@ -1,28 +1,35 @@
 ---
 title: "El reparto: a quién le toca cuando esto se dispare"
-description: "La regla de alcance responde dos preguntas por separado —hasta dónde llega y a quién de ahí dentro— y su resultado son sillas, no personas."
+description: "A quién alcanza un proceso lo dice su obligación, en una sola fila: el cargo, el dónde y, cuando el cargo no basta, la jefatura. Y su resultado son sillas, no personas."
 sidebar:
   label: "4 · El reparto"
   order: 4
 ---
 
-Una configuración por sí sola no sabe a quién dirigirse. Eso lo dicen las **reglas de reparto**
-(`process_target_rules`), y son la pieza que convierte «este proceso existe» en «a estas cuarenta
-personas les va a tocar».
+Una configuración por sí sola no sabe a quién dirigirse. Lo dice su **obligación**
+([`lineas`](/modelo/proceso/)), y es la pieza que convierte «este proceso existe» en «a estas
+cuarenta personas les va a tocar».
 
-## Una pregunta, y antes eran dos
+## Una fila, y antes eran dos tablas
 
-Hasta el 2026-10-14 la regla respondía **dos** preguntas: hasta dónde llega y a quién de ahí dentro.
-La primera ya la contestaba la [obligación](/modelo/proceso/), así que la regla llevaba una **copia**
-de sus dos ejes —el cargo y el ámbito— sostenida por un guardia cuyo único trabajo era comprobar que
-coincidía con su origen. Hoy la regla responde una sola pregunta:
+Esto lo declaraba una tabla aparte, `process_target_rules`, **y se retiró el 2026-10-15**. Su
+historia es la de una copia que se fue vaciando:
 
-| Pregunta | Dónde se contesta |
+| Cuándo | Qué perdió |
 |---|---|
-| **¿Hasta dónde llega?** | la **obligación**: `cargo_id` + `unit_scope_type` |
-| **¿A quién de ahí dentro?** | la **regla**: `recipient_policy` |
+| hasta el 2026-10-14 | llevaba **copia** del cargo y del ámbito de su obligación, con un guardia cuyo único trabajo era comprobar que coincidían |
+| 2026-10-14 | se van las cuatro copias y `priority`, que no ordenaba nada |
+| 2026-10-14 | se va el **puesto exacto**, que nombraba una plaza saltándose la obligación |
+| 2026-10-15 | se va **la tabla**: quedaba una columna con dos valores, y los dos decían «quién» |
 
-`recipient_policy` está cerrada por `CHECK`, y cada valor cubre algo que un cargo **no puede
+Hoy el «quién» entero es **una sola fila**, y por eso no puede contradecirse:
+
+| Pregunta | Columna de la obligación |
+|---|---|
+| **¿Hasta dónde llega?** | `unit_scope_type` (+ `unit_id` / `unit_type_id`) |
+| **¿Quién, dentro de ahí?** | `cargo_id` y `recipient_policy` |
+
+`recipient_policy` está cerrada por `CHECK`, y su segundo valor cubre algo que un cargo **no puede
 expresar**:
 
 | Valor | Qué dice |
@@ -44,10 +51,11 @@ Un detalle de la resolución que no se ve en la declaración: **`unit_head` no i
 una unidad del alcance no tiene jefatura marcada, esa unidad se queda fuera de la regla. Elegir «el
 primero de la lista» es exactamente el fallo que esa decisión vino a cerrar.
 
-:::note[Lo que se fue de la regla, y por qué]
+:::note[Lo que se fue de la regla antes de irse ella]
 
-**El 2026-10-14 la regla perdió seis columnas** y bajó de diez a cuatro. No fue una limpieza: fue
-quitar una copia, y después quitar lo que nombraba a alguien.
+**En dos días la regla perdió seis columnas** —de diez a cuatro— y después se fue entera. No fue una
+limpieza: fue quitar una copia, después lo que nombraba a alguien, y al final la tabla que las
+sostenía.
 
 | Columna | Por qué se fue |
 |---|---|
@@ -65,6 +73,15 @@ estrechaba a una unidad (es una obligación de esa unidad), y una obligación si
 fijaba (es una obligación con cargo). Las dos se declaraban donde no hay nombre, ni vigencia, ni
 linaje, y pasan a declararse donde sí los hay. **No se perdió capacidad: se movió a donde queda
 escrita.**
+
+Y lo último que quedó —la política— siguió el mismo camino: **es el tercer estado del «quién»**, el
+que un `cargo_id` no sabe decir. Donde se dice «de quién es esta obligación» es donde tiene que
+poder decirse «del que mande aquí».
+
+Con la tabla se fue también **la pierna de la activación que contaba reglas**. No se sustituyó por
+nada, y conviene saber por qué: contaba **filas**, no destinatarios, así que con la política por
+defecto lo único que garantizaba era que alguien había pulsado «Agregar regla». Lo que sí valdría la
+pena exigir —que la obligación alcance a alguien— **nunca se comprobó**, ni antes ni ahora.
 
 :::
 
@@ -85,13 +102,14 @@ Nombraba **una plaza**, y tres cosas lo condenaban:
 
 :::
 
-Una configuración puede tener **varias** reglas y sus resultados se **suman**, pero con dos valores
-eso ya no distingue nada: `unit_head` está contenido en `all_matches`, así que dos reglas en la misma
-configuración o son la misma o una absorbe a la otra.
+Una configuración tenía **varias** reglas y sus resultados se **sumaban**. Con dos valores eso ya no
+distinguía nada —`unit_head` está contenido en `all_matches`, así que dos reglas de la misma
+configuración o eran la misma o una absorbía a la otra—, y fue lo último que sostenía la tabla: hoy
+una configuración tiene **un** alcance, el de su obligación.
 
 :::note[La vigencia está en dos niveles, y el reparto no es uno de ellos]
 
-Hasta el 2026-10-12 la regla llevaba `is_active` y dos fechas propias, de modo que el reparto podía
+Hasta el 2026-10-12 el reparto llevaba `is_active` y dos fechas propias, de modo que podía
 entrar y salir sin que la configuración cambiara. Se retiraron las tres porque no es así como
 cambia el reparto en una institución: *«desde marzo también las Tecnologías»* no es encender una
 regla, es que **cambió la norma** — y una reforma se aprueba entera.
@@ -102,7 +120,7 @@ Así que la vigencia vive donde hay un acto que la respalde:
 |---|---|
 | **La obligación** ([`lineas`](/modelo/proceso/)) | vigencia (`effective_from` / `effective_to`) y **ningún interruptor**: una obligación no se apaga, se **deroga**, con fecha y casi siempre a futuro |
 | **La norma** (`process_definition_versions`) | **estado** (¿aprobada?) **y** vigencia: aprobar y entrar en vigor son dos actos distintos |
-| **El reparto** (`process_target_rules`) | nada. Nace y muere con su versión de la norma |
+| **El reparto** | no es un nivel: viaja **dentro de la obligación**, que es quien tiene vigencia |
 
 Dos disparadores sostienen la jerarquía: la ventana de una norma **cabe dentro** de la de su
 obligación, y una obligación no puede recortarse por debajo de las normas que ya cuelgan de ella.
@@ -110,9 +128,9 @@ obligación, y una obligación no puede recortarse por debajo de las normas que 
 :::
 
 
-## El resultado de una regla son sillas, no personas
+## El resultado del reparto son sillas, no personas
 
-Una regla se resuelve a una lista de **puestos** (`unit_positions` activos, en unidades activas).
+Una obligación se resuelve a una lista de **puestos** (`unit_positions` activos, en unidades activas).
 Quién esté sentado en cada uno se mira en ese momento, y se mira con un `LEFT JOIN` contra
 `position_assignments`: **un puesto vacío sigue siendo un destino válido**.
 
@@ -121,18 +139,18 @@ forma que hoy no se sostiene:
 
 | Situación | Qué ocurre al lanzar |
 |---|---|
-| Ninguna regla alcanza ningún puesto | El lanzamiento termina con `no_assignees` y **no crea ni tarea ni entregable** |
-| La regla alcanza un puesto **ocupado** | Se crea el entregable con `responsible_position_id` y `assigned_person_id` |
-| La regla alcanza un puesto **vacío** | Se crea igual, anclado al puesto, con `assigned_person_id` en `NULL` — y su primer turno en `task_item_tenures` nace **sin persona**, que es como se representa el abandono |
+| La obligación no alcanza ningún puesto | El lanzamiento termina con `no_assignees` y **no crea ni tarea ni entregable** |
+| Alcanza un puesto **ocupado** | Se crea el entregable con `responsible_position_id` y `assigned_person_id` |
+| Alcanza un puesto **vacío** | Se crea igual, anclado al puesto, con `assigned_person_id` en `NULL` — y su primer turno en `task_item_tenures` nace **sin persona**, que es como se representa el abandono |
 
 :::note[Lo que sí desapareció: el entregable sin puesto]
 
-Hasta el 2026-08-23 existía un camino de respaldo (`ensureTaskItemsForTask`) que, cuando la regla no
-encontraba a nadie, creaba el entregable **sin puesto responsable**: nacía sin nadie que respondiera de
+Hasta el 2026-08-23 existía un camino de respaldo (`ensureTaskItemsForTask`) que, cuando el reparto
+no encontraba a nadie, creaba el entregable **sin puesto responsable**: nacía sin nadie que respondiera de
 él, no aparecía en la lista de nadie, y ahí se quedaba — mientras la misma respuesta del lanzamiento ya
 declaraba `has_assignees: false`. Ese respaldo se retiró, y con él `responsible_position_id` pasó a ser
-`NOT NULL`. El aviso sigue saliendo, y es el que hay que atender: lo que falta es una regla de alcance
-o un puesto ocupado, no un entregable huérfano.
+`NOT NULL`. El aviso sigue saliendo, y es el que hay que atender: lo que falta es una obligación que
+alcance o un puesto ocupado, no un entregable huérfano.
 
 :::
 
@@ -144,17 +162,19 @@ persona las instancie.
 
 ```mermaid
 erDiagram
-  %% parcial: `lineas` y `process_definition_versions` salen solo como el extremo de su relacion,
-  %% para situar de donde viene el alcance. Sus columnas estan en /modelo/mapa-con-campos/
+  %% parcial: de `lineas` salen solo las columnas del REPARTO, que es lo que cuenta esta pagina.
+  %% La tabla entera esta en /modelo/mapa-con-campos/
   lineas ||--o{ process_definition_versions : "la obligacion y sus normas"
-  process_definition_versions ||--o{ process_target_rules : "afina con"
+  cargos ||--o{ lineas : "a quien"
+  units ||--o{ lineas : "donde (unidad exacta)"
+  unit_types ||--o{ lineas : "donde (por tipo)"
 
-  process_target_rules {
+  lineas {
     int id PK
-    int process_definition_id FK
-
+    int cargo_id FK "vacio = cualquiera"
     text recipient_policy "all_matches, unit_head"
-
-    timestamp created_at
+    text unit_scope_type "all_units, unit_type, unit_exact"
+    int unit_type_id FK
+    int unit_id FK
   }
 ```

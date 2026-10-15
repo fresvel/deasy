@@ -284,7 +284,6 @@ export const TABLE_RESOURCE_MAP = {
   process_definition_period_types: "process_definitions",
   process_definition_versions: "process_definitions",
   process_runs: "process_execution",
-  process_target_rules: "process_definitions",
   processes: "process_definitions",
   relation_unit_types: "units",
   resources: "security",

@@ -281,6 +281,7 @@
     "status": 200,
     "body": {
       "definition": {
+        "alcanza_a_mis_puestos": true,
         "chat_context": {
           "accessible_scope_unit_ids": [],
           "process_id": "<normalized>"
@@ -294,13 +295,11 @@
         "linea_donde": null,
         "linea_id": "<normalized>",
         "linea_nombre": "Proceso por defecto",
-        "matching_rules_count": 1,
         "name": "Proceso por defecto · 1.0.0",
         "period_types_count": 1,
         "process_id": "<normalized>",
         "process_name": "Proceso por defecto",
         "process_slug": "default",
-        "rules_count": 1,
         "status": "active",
         "templates_count": 1,
         "unit_scope_type": "all_units"
@@ -319,7 +318,6 @@
           {
             "cargo_name": null,
             "display_label": "Todas las unidades",
-            "id": "<normalized>",
             "linea_cargo_id": "<normalized>",
             "linea_unit_id": "<normalized>",
             "linea_unit_scope_type": "all_units",

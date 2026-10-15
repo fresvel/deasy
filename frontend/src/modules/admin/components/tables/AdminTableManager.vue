@@ -454,7 +454,6 @@
       @handle-select-change="handleSelectChange"
       @add-process-configuration="openProcessConfigurationFromEditor"
       @delete-process-configuration="deleteProcessEditorConfiguration"
-      @open-definition-rules="openDefinitionRulesFromEditor"
       @open-definition-triggers="openDefinitionTriggersFromEditor"
       @open-definition-artifacts="openDefinitionArtifactsFromEditor"
       @submit-and-configure="submitForm({ openProcessConfigurationAfterCreate: true })"
@@ -472,22 +471,18 @@
       v-if="!processWizardOpen"
       ref="processDefinitionActivationModal"
       :checking="processDefinitionActivationChecking"
-      :has-active-rules="processDefinitionActivationHasActiveRules"
       :has-active-triggers="processDefinitionActivationHasActiveTriggers"
       :has-active-artifacts="processDefinitionActivationHasActiveArtifacts"
       :view="processDefinitionActivationView"
       :selected-row="selectedRow"
-      :rules="processDefinitionActivationRules"
       :triggers="processDefinitionActivationTriggers"
       :artifacts="processDefinitionActivationArtifacts"
-      :rule-table-fields="processDefinitionActivationRuleTableFields"
       :trigger-table-fields="processDefinitionActivationTriggerTableFields"
       :artifact-table-fields="processDefinitionActivationArtifactTableFields"
       :primary-action="processDefinitionActivationPrimaryAction"
       :primary-action-label="processDefinitionActivationPrimaryActionLabel"
       :all-requirements-met="allProcessDefinitionActivationRequirementsMet"
       :format-cell="formatCell"
-      :format-definition-rule-summary="formatDefinitionRuleSummary"
       @update:view="processDefinitionActivationView = $event"
       @view-row="handleActivationViewRow"
       @cancel="cancelProcessDefinitionActivation"
@@ -525,7 +520,6 @@
       :context="definitionArtifactsPromptContext"
       @close="closeDefinitionArtifactsPrompt"
       @open-wizard="handleOpenWizardFromPrompt"
-      @open-rules="confirmDefinitionRulesPrompt"
       @open-triggers="confirmDefinitionTriggersPrompt"
       @open-artifacts="confirmDefinitionArtifactsPrompt"
     />
@@ -607,41 +601,6 @@
       </template>
     </AppModalShell>
 
-    <AppModalShell
-      v-if="!processWizardOpen"
-      ref="definitionRulesModal"
-      labelled-by="definitionRulesModalLabel"
-      title="Alcance de la configuracion"
-      size="xl"
-      close-action
-      @close="closeDefinitionRulesManager"
-    >
-      <AdminDefinitionRulesPanel
-      :context="definitionRulesContext"
-      :error="definitionRulesError"
-      :can-manage="canManageDefinitionRules"
-      :can-submit="canSubmitDefinitionRule"
-      :labels="definitionRulesLabels"
-      :form="definitionRulesForm"
-      :edit-id="definitionRulesEditId"
-      :loading="definitionRulesLoading"
-      :rows="definitionRulesRows"
-      :table-fields="definitionRulesTableFields"
-      :linea-scope="definitionRulesLineaScope"
-      :format-cell="formatDefinitionRuleCell"
-      @update:form="definitionRulesForm = $event"
-      @submit="submitDefinitionRule"
-      @reset="resetDefinitionRulesForm"
-      @view-row="openRecordViewer($event, allTablesMap.process_target_rules)"
-      @edit-row="startDefinitionRuleEdit"
-      @delete-row="deleteDefinitionRule"
-      />
-      <template #footer>
-        <AdminButton variant="neutral-outline" @click="closeDefinitionRulesManager">Cerrar</AdminButton>
-        <AdminButton variant="primary-outline" @click="acceptDefinitionRulesManager">Aceptar</AdminButton>
-      </template>
-    </AppModalShell>
-
     <AdminProcessWizardModal
       :open="processWizardOpen"
       :current-step="processWizardStep"
@@ -693,29 +652,6 @@
           @set-item-mode="setDefinitionArtifactItemMode($event.row, $event.itemMode)"
         />
       </template>
-      <template #rules>
-        <AdminDefinitionRulesPanel
-          embedded
-          :context="definitionRulesContext"
-          :error="definitionRulesError"
-          :can-manage="!processWizardReadonly && canManageDefinitionRules"
-          :can-submit="!processWizardReadonly && canSubmitDefinitionRule"
-          :labels="definitionRulesLabels"
-          :form="definitionRulesForm"
-          :edit-id="definitionRulesEditId"
-          :loading="definitionRulesLoading"
-          :rows="definitionRulesRows"
-          :table-fields="definitionRulesTableFields"
-          :linea-scope="definitionRulesLineaScope"
-          :format-cell="formatDefinitionRuleCell"
-          @update:form="definitionRulesForm = $event"
-          @submit="wizardSubmitRule"
-          @reset="resetDefinitionRulesForm"
-          @view-row="handleWizardViewRow($event, allTablesMap.process_target_rules)"
-          @edit-row="startDefinitionRuleEdit"
-          @delete-row="deleteDefinitionRule"
-        />
-      </template>
       <template #triggers>
         <AdminDefinitionTriggersPanel
           embedded
@@ -747,25 +683,21 @@
       <template #activate>
         <ProcessActivationPanel
           :checking="processDefinitionActivationChecking"
-          :has-active-rules="processDefinitionActivationHasActiveRules"
           :has-active-triggers="processDefinitionActivationHasActiveTriggers"
           :has-active-artifacts="processDefinitionActivationHasActiveArtifacts"
           :view="processDefinitionActivationView"
           :selected-row="processWizardDefinition"
-          :rules="processDefinitionActivationRules"
           :triggers="processDefinitionActivationTriggers"
           :artifacts="processDefinitionActivationArtifacts"
-          :rule-table-fields="processDefinitionActivationRuleTableFields"
           :trigger-table-fields="processDefinitionActivationTriggerTableFields"
           :artifact-table-fields="processDefinitionActivationArtifactTableFields"
           :format-cell="formatCell"
-          :format-definition-rule-summary="formatDefinitionRuleSummary"
           @update:view="processDefinitionActivationView = $event"
           @view-row="handleActivationViewRow"
         />
         <div class="mt-4 flex items-center justify-end gap-2 border-t border-line pt-3">
           <span v-if="!allProcessDefinitionActivationRequirementsMet" class="mr-auto text-sm font-medium text-warning">
-            Completa los requisitos (reglas, disparadores) para activar.
+            Completa los requisitos (periodos, paquetes) para activar.
           </span>
           <AdminButton
             v-if="!processWizardReadonly"
@@ -787,7 +719,7 @@
           <AppAlert variant="warning" class="flex items-start gap-3 leading-relaxed">
             <font-awesome-icon icon="triangle-exclamation" class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
             <span>
-              Al activar, <strong>ya no podrás modificar</strong> reglas, periodos ni paquetes en esta versión.
+              Al activar, <strong>ya no podrás modificar</strong> periodos ni paquetes en esta versión.
               Si ya existe una configuración activa en la misma serie, <strong>se retirará automáticamente</strong>.
             </span>
           </AppAlert>
@@ -1207,7 +1139,6 @@ import { adminPresentationService } from "@/modules/admin/services/AdminPresenta
 import { processDefinitionAdminService } from "@/modules/admin/services/ProcessDefinitionAdminService";
 import {
   definitionArtifactsTableFields,
-  definitionRulesTableFields,
   definitionTriggersTableFields,
   FK_LABEL_FIELDS,
   FK_TABLE_MAP,
@@ -1219,7 +1150,6 @@ import {
   PROCESS_DEFINITION_HIDDEN_FIELDS,
   PROCESS_INLINE_HIDDEN_FIELDS,
   processDefinitionActivationArtifactTableFields,
-  processDefinitionActivationRuleTableFields,
   processDefinitionActivationTriggerTableFields,
   recordViewerSummaryTableFields,
   unassignedTemplateArtifactTableFields,
@@ -1229,7 +1159,6 @@ import AdminFeedbackToast from "@/modules/admin/components/ui/AdminFeedbackToast
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import AdminDefinitionArtifactsPanel from "@/modules/admin/components/modals/AdminDefinitionArtifactsPanel.vue";
 import AdminDefinitionCreatedPromptModal from "@/modules/admin/components/modals/AdminDefinitionCreatedPromptModal.vue";
-import AdminDefinitionRulesPanel from "@/modules/admin/components/modals/AdminDefinitionRulesPanel.vue";
 import AdminDefinitionTriggersPanel from "@/modules/admin/components/modals/AdminDefinitionTriggersPanel.vue";
 import AdminDeleteConfirmModal from "@/modules/admin/components/modals/AdminDeleteConfirmModal.vue";
 import AdminDraftArtifactModal from "@/modules/admin/components/modals/AdminDraftArtifactModal.vue";
@@ -1347,7 +1276,6 @@ const processConfigurationDeleteRow = ref(null);
 const editorModal = ref(null);
 const processDefinitionVersioningModal = ref(null);
 const processDefinitionActivationModal = ref(null);
-const definitionRulesModal = ref(null);
 const definitionTriggersModal = ref(null);
 const definitionArtifactsModal = ref(null);
 const definitionArtifactsPromptModal = ref(null);
@@ -1377,11 +1305,9 @@ const processDefinitionCloneSourceId = ref("");
 const processDefinitionActivationConfirmed = ref(false);
 const processDefinitionActivationFromEditor = ref(false);
 const processDefinitionActivationChecking = ref(false);
-const processDefinitionActivationHasActiveRules = ref(true);
 const processDefinitionActivationHasActiveTriggers = ref(true);
 const processDefinitionActivationHasActiveArtifacts = ref(true);
 const processDefinitionActivationView = ref("definition");
-const processDefinitionActivationRules = ref([]);
 const processDefinitionActivationTriggers = ref([]);
 const processDefinitionActivationArtifacts = ref([]);
 const processDefinitionChecklistLoading = ref(false);
@@ -1389,31 +1315,6 @@ const processDefinitionChecklist = ref({
   rules: false,
   triggers: false,
   artifacts: false
-});
-const definitionRulesContext = ref(null);
-const definitionRulesRows = ref([]);
-const definitionRulesLoading = ref(false);
-const definitionRulesError = ref("");
-const definitionRulesEditId = ref("");
-// Cargo/tipo de unidad que la serie del proceso fija; bloquea el cargo en el panel de reglas.
-const definitionRulesLineaScope = ref(null);
-const definitionRulesForm = ref({
-  unit_scope_type: "unit_exact",
-  unit_id: "",
-  unit_type_id: "",
-  cargo_id: "",
-  position_id: "",
-  recipient_policy: "all_matches",
-  priority: "1",
-  is_active: "1",
-  effective_from: "",
-  effective_to: ""
-});
-const definitionRulesLabels = ref({
-  unit_id: "",
-  unit_type_id: "",
-  cargo_id: "",
-  position_id: ""
 });
 const definitionTriggersContext = ref(null);
 const definitionTriggersRows = ref([]);
@@ -1904,13 +1805,6 @@ const canManageDefinitionArtifacts = computed(() =>
     formData.value?.status
   )
 );
-const canManageDefinitionRules = computed(() =>
-  isDraftDefinitionStatus(
-    definitionRulesContext.value?.status,
-    selectedRow.value?.status,
-    formData.value?.status
-  )
-);
 const canManageDefinitionTriggers = computed(() =>
   isDraftDefinitionStatus(
     definitionTriggersContext.value?.status,
@@ -1921,15 +1815,6 @@ const canManageDefinitionTriggers = computed(() =>
 const canSubmitDefinitionArtifact = computed(() =>
   canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.edicion_id)
 );
-// ⚠️ ESTO MIRABA EL ALCANCE, y con `P10` (frente 25, 2026-10-14) el formulario dejó de tenerlo: sus
-// cuatro columnas eran copia de la línea. El resultado era que `scopeType` quedaba vacío, ninguna
-// rama casaba y la función caía en el `return false` final — o sea, **el botón de guardar no se
-// habilitaba nunca** salvo con puesto exacto, y el aviso decía «Completa los datos requeridos»
-// cuando no faltaba ninguno. Visto en el navegador; ningún test lo cubría.
-//
-// Y hoy NADA lo condiciona salvo el permiso: con el puesto exacto fuera (frente 25, P25) los dos
-// valores que quedan no piden ningun dato mas, porque el alcance lo dice la obligación.
-const canSubmitDefinitionRule = computed(() => canManageDefinitionRules.value);
 // El tipo de periodo siempre es obligatorio: el proceso corre en uno o varios tipos de periodo.
 const definitionTriggerRequiresTermType = computed(() => true);
 const canSubmitDefinitionTrigger = computed(() => {
@@ -1946,12 +1831,6 @@ const processDefinitionActivationPrimaryAction = computed(() => {
     return {
       type: "edit_definition",
       label: "Editar configuracion"
-    };
-  }
-  if (processDefinitionActivationView.value === "rules") {
-    return {
-      type: "rules",
-      label: processDefinitionActivationRules.value.length ? "Editar reglas" : "Agregar reglas"
     };
   }
   if (processDefinitionActivationView.value === "triggers") {
@@ -1971,9 +1850,9 @@ const processDefinitionActivationPrimaryAction = computed(() => {
 const processDefinitionActivationPrimaryActionLabel = computed(() =>
   processDefinitionActivationPrimaryAction.value?.label || "Continuar"
 );
+
 const allProcessDefinitionActivationRequirementsMet = computed(() =>
-  processDefinitionActivationHasActiveRules.value
-  && processDefinitionActivationHasActiveTriggers.value
+  processDefinitionActivationHasActiveTriggers.value
   && processDefinitionActivationHasActiveArtifacts.value
 );
 // El preview del seed se descarga por axios (responseType blob) para que lleve el header Bearer del
@@ -2187,7 +2066,6 @@ const {
   buildPersonAssignmentContext,
   formatValueForTable,
   formatCell,
-  formatDefinitionRuleCell,
   toDateInputValue,
   toDateTimeInputValue,
   normalizeComparableFormValue,
@@ -2224,7 +2102,6 @@ const {
   ensureEditorInstance,
   ensureProcessDefinitionVersioningInstance,
   ensureProcessDefinitionActivationInstance,
-  ensureDefinitionRulesInstance,
   ensureDefinitionTriggersInstance,
   ensureDeleteInstance,
   ensureRecordViewerInstance,
@@ -2241,7 +2118,6 @@ const {
   hideParentModalsForFk,
   hideParentModalsForRecordViewer,
   getPersonAssignmentsInstance,
-  getDefinitionRulesInstance,
   getDefinitionTriggersInstance,
   getDefinitionArtifactsInstance,
   getDefinitionArtifactsPromptInstance,
@@ -2267,7 +2143,6 @@ const {
   editorModal,
   processDefinitionVersioningModal,
   processDefinitionActivationModal,
-  definitionRulesModal,
   definitionTriggersModal,
   definitionArtifactsModal,
   definitionArtifactsPromptModal,
@@ -2288,17 +2163,12 @@ const {
   processDefinitionActivationConfirmed,
   processDefinitionActivationFromEditor,
   processDefinitionActivationChecking,
-  processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
   processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
-  processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
-  definitionRulesError,
-  definitionRulesContext,
-  definitionRulesRows,
   definitionTriggersError,
   definitionTriggersContext,
   definitionTriggersRows,
@@ -2310,7 +2180,6 @@ const {
   refreshProcessDefinitionChecklist: (...args) => refreshProcessDefinitionChecklist(...args),
   openProcessDefinitionActivationModal: (...args) => openProcessDefinitionActivationModal(...args),
   restoreProcessWizardFromRecordViewer: () => restoreProcessWizardFromRecordViewer(),
-  resetDefinitionRulesForm: (...args) => resetDefinitionRulesForm(...args),
   resetDefinitionTriggersForm: (...args) => resetDefinitionTriggersForm(...args),
   resetDefinitionArtifactsForm: (...args) => resetDefinitionArtifactsForm(...args)
 });
@@ -3170,21 +3039,10 @@ const {
 
 const {
   resetDefinitionArtifactsForm,
-  resetDefinitionRulesForm,
   resetDefinitionTriggersForm,
-  formatDefinitionRuleSummary,
   refreshProcessDefinitionChecklist,
-  openDefinitionRulesManager,
-  closeDefinitionRulesManager,
-  acceptDefinitionRulesManager,
-  confirmDefinitionRulesPrompt,
-  openDefinitionRulesFromEditor,
-  openDefinitionRulesFromActivation,
   openDefinitionArtifactsFromActivation,
 
-  startDefinitionRuleEdit,
-  submitDefinitionRule,
-  deleteDefinitionRule,
   openDefinitionTriggersManager,
   closeDefinitionTriggersManager,
   acceptDefinitionTriggersManager,
@@ -3218,14 +3076,6 @@ const {
   editorMode,
   selectedRow,
   getEditorInstance,
-  definitionRulesContext,
-  definitionRulesRows,
-  definitionRulesLoading,
-  definitionRulesError,
-  definitionRulesEditId,
-  definitionRulesForm,
-  definitionRulesLabels,
-  definitionRulesLineaScope,
   definitionTriggersContext,
   definitionTriggersRows,
   definitionTriggersLoading,
@@ -3244,10 +3094,8 @@ const {
   processDefinitionChecklistLoading,
   processDefinitionChecklist,
   definitionTriggerRequiresTermType,
-  canManageDefinitionRules,
   canManageDefinitionTriggers,
   canManageDefinitionArtifacts,
-  canSubmitDefinitionRule,
   canSubmitDefinitionTrigger,
   clearModalOrigins,
   pushModalOrigin,
@@ -3262,11 +3110,9 @@ const {
   formatCell,
   formatDateOnly,
   prefetchFkLabelsForRows,
-  ensureDefinitionRulesInstance,
   ensureDefinitionTriggersInstance,
   ensureDefinitionArtifactsInstance,
   ensureDefinitionArtifactsPromptInstance,
-  getDefinitionRulesInstance,
   getDefinitionTriggersInstance,
   getDefinitionArtifactsInstance,
   getDefinitionArtifactsPromptInstance
@@ -3338,12 +3184,10 @@ const {
   processDefinitionActivationConfirmed,
   processDefinitionActivationFromEditor,
   processDefinitionActivationChecking,
-  processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
   processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
-  processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
   clearModalOrigins,
@@ -3358,7 +3202,6 @@ const {
   setFkLabel,
   formatFkOptionLabel,
   openEdit: (...args) => openEdit(...args),
-  openDefinitionRulesFromActivation,
   openDefinitionTriggersFromActivation,
   openDefinitionArtifactsFromActivation,
   submitForm: async () => submitForm()
@@ -3412,8 +3255,6 @@ const loadProcessWizardStep = async (key) => {
   }
   if (key === "packages") {
     await openDefinitionArtifactsManager(def, { showModal: false });
-  } else if (key === "rules") {
-    await openDefinitionRulesManager(def, { showModal: false });
   } else if (key === "triggers") {
     await openDefinitionTriggersManager(def, { showModal: false });
   } else if (key === "activate") {
@@ -3431,12 +3272,9 @@ const loadProcessWizardActivationStep = async (definitionRow) => {
   try {
     const checklist = await processDefinitionAdminService.evaluateChecklist(definitionRow.id);
     await loadProcessDefinitionActivationDetail(definitionRow.id);
-    processDefinitionActivationHasActiveRules.value = Boolean(checklist?.rules);
     processDefinitionActivationHasActiveTriggers.value = Boolean(checklist?.triggers);
   } catch {
-    processDefinitionActivationHasActiveRules.value = false;
     processDefinitionActivationHasActiveTriggers.value = true;
-    processDefinitionActivationRules.value = [];
     processDefinitionActivationTriggers.value = [];
     processDefinitionActivationArtifacts.value = [];
   } finally {
@@ -3460,10 +3298,11 @@ const draftNewProcessDefinitionId = ref("");
 const draftArtifactPreselectDefinitionId = ref("");
 
 const handleProcessWizardCreateDefinition = async () => {
-  // Tras crear/confirmar la definición se avanza a Reglas (paso siguiente), que deben definirse antes
-  // que los Paquetes para que los ámbitos de contexto del flujo de entrega sean resolubles.
+  // Tras crear/confirmar la configuración se avanza a PAQUETES. Se avanzaba a «Alcance», que era el
+  // paso de las reglas de reparto: se retiró con su tabla (frente 25, P26) porque a quién alcanza lo
+  // dice la línea, y la línea se eligió en el paso anterior.
   if (processWizardDefinition.value?.id) {
-    await handleProcessWizardGoToStep("rules");
+    await handleProcessWizardGoToStep("packages");
     return;
   }
   const created = await runProcessWizardCreateDefinition();
@@ -3471,7 +3310,7 @@ const handleProcessWizardCreateDefinition = async () => {
     if (wizardFromDraft.value) {
       draftNewProcessDefinitionId.value = String(created.id);
     }
-    await loadProcessWizardStep("rules");
+    await loadProcessWizardStep("packages");
   }
 };
 
@@ -3521,7 +3360,6 @@ const refreshWizardAfter = async (action) => {
   }
 };
 const wizardSubmitArtifact = () => refreshWizardAfter(submitDefinitionArtifact);
-const wizardSubmitRule = () => refreshWizardAfter(submitDefinitionRule);
 const wizardSubmitTrigger = () => refreshWizardAfter(submitDefinitionTrigger);
 const showWizardActivateConfirm = ref(false);
 const confirmWizardActivation = async () => {

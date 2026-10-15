@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 87 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 86 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -659,6 +659,7 @@ Table "lineas" {
   "process_id" int4 [not null]
   "nombre" varchar(180) [not null]
   "cargo_id" int4
+  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text])`, default: 'all_matches']
   "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['all_units'::text, 'unit_type'::text, 'unit_exact'::text])`, default: 'all_units']
   "unit_type_id" int4
   "unit_id" int4
@@ -936,19 +937,6 @@ Table "process_runs" {
     (process_definition_id, status) [type: btree, name: "idx_process_runs_definition"]
     term_id [type: btree, name: "idx_process_runs_term"]
   }
-}
-
-Table "process_target_rules" {
-  "id" int4 [pk, not null, increment]
-  "process_definition_id" int4 [not null]
-  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text])`, default: 'all_matches']
-  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
-
-  Indexes {
-    process_definition_id [type: btree, name: "idx_process_target_rules_definition"]
-  }
-
-  Note: '''El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.'''
 }
 
 Table "processes" {
@@ -1492,7 +1480,6 @@ Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user
 Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
 Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
-Ref "fk_process_target_rules_definition":"process_definition_versions"."id" <? "process_target_rules"."process_definition_id" [delete: cascade]
 Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"

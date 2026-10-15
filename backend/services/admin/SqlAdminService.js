@@ -162,7 +162,7 @@ export default class SqlAdminService {
   constructor(pool = getPostgresPool()) {
     this.pool = pool;
     this.taskAssignment = new TaskAssignmentService(this.pool);
-    this.templateLifecycle = new TemplateLifecycleService(this.pool, { getByKeys: (...a) => this.getByKeys(...a), cloneProcessDefinitionChildren: (...a) => this.cloneProcessDefinitionChildren(...a), getNextProcessDefinitionVersion: (...a) => this.getNextProcessDefinitionVersion(...a), retireActiveDefinitionsInLinea: (...a) => this.retireActiveDefinitionsInLinea(...a), createTemplateArtifactVersion: (...a) => this.createTemplateArtifactVersion(...a), getNextStorageVersionForTemplateCode: (...a) => this.getNextStorageVersionForTemplateCode(...a), retirePriorPublishedSiblings: (...a) => this.retirePriorPublishedSiblings(...a), getCargoCodeMap: (...a) => this.getCargoCodeMap(...a), getUnitTypeNameMap: (...a) => this.getUnitTypeNameMap(...a), getProcessTargetScope: (...a) => this.getProcessTargetScope(...a), getResolvableCargoIdsByUnit: (...a) => this.getResolvableCargoIdsByUnit(...a), listResolvableCargos: (...a) => this.listResolvableCargos(...a), getWorkflowReferenceIdSets: (...a) => this.getWorkflowReferenceIdSets(...a), ensureDefinitionHasActiveRulesForActivation: (...a) => this.ensureDefinitionHasActiveRulesForActivation(...a), ensureDefinitionHasActivePeriodTypesForActivation: (...a) => this.ensureDefinitionHasActivePeriodTypesForActivation(...a), ensureDefinitionHasArtifactsForActivation: (...a) => this.ensureDefinitionHasArtifactsForActivation(...a) });
+    this.templateLifecycle = new TemplateLifecycleService(this.pool, { getByKeys: (...a) => this.getByKeys(...a), cloneProcessDefinitionChildren: (...a) => this.cloneProcessDefinitionChildren(...a), getNextProcessDefinitionVersion: (...a) => this.getNextProcessDefinitionVersion(...a), retireActiveDefinitionsInLinea: (...a) => this.retireActiveDefinitionsInLinea(...a), createTemplateArtifactVersion: (...a) => this.createTemplateArtifactVersion(...a), getNextStorageVersionForTemplateCode: (...a) => this.getNextStorageVersionForTemplateCode(...a), retirePriorPublishedSiblings: (...a) => this.retirePriorPublishedSiblings(...a), getCargoCodeMap: (...a) => this.getCargoCodeMap(...a), getUnitTypeNameMap: (...a) => this.getUnitTypeNameMap(...a), getProcessTargetScope: (...a) => this.getProcessTargetScope(...a), getResolvableCargoIdsByUnit: (...a) => this.getResolvableCargoIdsByUnit(...a), listResolvableCargos: (...a) => this.listResolvableCargos(...a), getWorkflowReferenceIdSets: (...a) => this.getWorkflowReferenceIdSets(...a), ensureDefinitionHasActivePeriodTypesForActivation: (...a) => this.ensureDefinitionHasActivePeriodTypesForActivation(...a), ensureDefinitionHasArtifactsForActivation: (...a) => this.ensureDefinitionHasArtifactsForActivation(...a) });
     this.processGraph = new ProcessGraphService(this.pool, { getByKeys: (...a) => this.getByKeys(...a) });
     this.processDefinitionVersion = new ProcessDefinitionVersionService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
     this.templateArtifact = new TemplateArtifactService(this.pool, { getByKeys: (tableName, keys) => this.getByKeys(tableName, keys) });
@@ -415,21 +415,8 @@ export default class SqlAdminService {
       }
     }
 
-    if (tableName === "process_target_rules") {
-      joinClause = "LEFT JOIN process_definition_versions pd_rule ON pd_rule.id = process_target_rules.process_definition_id";
-      columnPrefix = "process_target_rules.";
-      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
-      selectClause = `SELECT ${selectFields.join(", ")}`;
-
-      const definitionStatus = normalizedFilters.definition_status;
-      delete normalizedFilters.definition_status;
-
-      if (definitionStatus !== undefined && definitionStatus !== null && definitionStatus !== "") {
-        conditions.push("pd_rule.status = ?");
-        params.push(definitionStatus);
-      }
-
-    }
+    // AQUI VIVIA EL CASO ESPECIAL DE `process_target_rules`, con su JOIN a la configuracion para
+    // poder filtrar por el estado del borrador. Se fue con la tabla (frente 25, P26).
 
     if (tableName === "ediciones") {
       columnPrefix = "ediciones.";
@@ -619,26 +606,12 @@ export default class SqlAdminService {
     return rows?.[0] ?? null;
   }
 
-  async ensureDefinitionHasActiveRulesForActivation(definitionId, connection = this.pool) {
-    const normalizedDefinitionId = Number(definitionId);
-    if (!normalizedDefinitionId) {
-      return;
-    }
-
-    const [rows] = await connection.query(
-      `SELECT COUNT(*) AS total
-       FROM process_target_rules
-       WHERE process_definition_id = ?`,
-      [normalizedDefinitionId]
-    );
-
-    const total = Number(rows?.[0]?.total || 0);
-    if (total < 1) {
-      throw new Error(
-        "No se puede activar una configuracion si no tiene al menos una regla en Reglas de alcance."
-      );
-    }
-  }
+  // AQUI VIVIA `ensureDefinitionHasActiveRulesForActivation`, que exigia >= 1 fila en
+  // `process_target_rules` para activar. Contaba FILAS, NO DESTINATARIOS: con la politica por
+  // defecto lo unico que garantizaba era que alguien habia pulsado «Agregar regla». Se fue con la
+  // tabla (frente 25, P26); el afinado vive en la linea, que toda configuracion tiene por una clave
+  // ajena NOT NULL. Lo que SI valdria la pena exigir --que la obligacion resuelva a alguien-- no
+  // existia antes y no se inventa aqui: es una decision de comportamiento, no un reemplazo.
 
   async ensureDefinitionHasActivePeriodTypesForActivation(definitionId, connection = this.pool) {
     const normalizedDefinitionId = Number(definitionId);

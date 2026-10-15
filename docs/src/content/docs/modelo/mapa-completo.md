@@ -36,7 +36,6 @@ flowchart TB
     PR["processes"] --> PDV["process_definition_versions"]
     PR --> LIN["lineas"]
     LIN --> PDV
-    PDV --> PTR["process_target_rules"]
     PDV --> PDPT["process_definition_period_types"]
     TT["term_types"] --> PDPT
     DEL["catalogo_documental"] --> TA["ediciones"]

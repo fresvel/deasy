@@ -42,7 +42,6 @@
       <div v-if="view !== 'activate'" class="mt-3">
         <div v-if="showMenu" class="flex flex-wrap gap-2" role="group" aria-label="Resumen de activacion">
           <AdminButton variant="neutral-outline" :class="{ active: view === 'definition' }" @click="$emit('update:view', 'definition')">Configuracion</AdminButton>
-          <AdminButton variant="neutral-outline" :class="{ active: view === 'rules' }" @click="$emit('update:view', 'rules')">Alcance</AdminButton>
           <AdminButton variant="neutral-outline" :class="{ active: view === 'triggers' }" @click="$emit('update:view', 'triggers')">Periodos</AdminButton>
           <AdminButton variant="neutral-outline" :class="{ active: view === 'artifacts' }" @click="$emit('update:view', 'artifacts')">Paquetes</AdminButton>
         </div>
@@ -55,40 +54,6 @@
             <div class="md:col-span-2"><strong>Nombre:</strong> {{ selectedRow?.name || "—" }}</div>
             <div class="md:col-span-2"><strong>Descripcion:</strong> {{ selectedRow?.description || "—" }}</div>
           </div>
-        </div>
-
-        <div v-else-if="view === 'rules'" class="mt-3">
-          <AppDataTable
-            v-if="rules.length"
-            :fields="ruleTableFields"
-            :rows="rules"
-            :row-key="(row) => `activation-rule-${row.id}`"
-            table-class="min-w-full border-separate border-spacing-0 text-sm"
-            responsive-class="overflow-x-auto deasy-card"
-            scroll-class=""
-          >
-            <template #cell="{ row, field }">
-              <template v-if="field.name === 'destination'">
-                {{ formatDefinitionRuleSummary(row) }}
-              </template>
-              <template v-else-if="field.name === 'is_active'">
-                {{ Number(row.is_active) === 1 ? "Si" : "No" }}
-              </template>
-              <template v-else>
-                {{ row[field.name] || "—" }}
-              </template>
-            </template>
-            <template #actions="{ row }">
-              <AdminTableActions
-                :show-edit="false"
-                :show-delete="false"
-                view-title="Ver regla"
-                view-label="Ver regla"
-                @view="$emit('view-row', { table: 'process_target_rules', row })"
-              />
-            </template>
-          </AppDataTable>
-          <div v-else class="text-sm text-muted">Sin reglas registradas.</div>
         </div>
 
         <div v-else-if="view === 'triggers'" class="mt-3">
@@ -172,26 +137,23 @@ import AdminTableActions from "@/modules/admin/components/tables/AdminTableActio
 
 const props = defineProps({
   checking: { type: Boolean, default: false },
-  hasActiveRules: { type: Boolean, default: false },
   hasActiveTriggers: { type: Boolean, default: false },
   hasActiveArtifacts: { type: Boolean, default: false },
   view: { type: String, default: "definition" },
   selectedRow: { type: Object, default: null },
-  rules: { type: Array, default: () => [] },
   triggers: { type: Array, default: () => [] },
   artifacts: { type: Array, default: () => [] },
-  ruleTableFields: { type: Array, default: () => [] },
   triggerTableFields: { type: Array, default: () => [] },
   artifactTableFields: { type: Array, default: () => [] },
   formatCell: { type: Function, required: true },
-  formatDefinitionRuleSummary: { type: Function, required: true },
   showMenu: { type: Boolean, default: true }
 });
 defineEmits(["update:view", "view-row"]);
 
 const status = computed(() => String(props.selectedRow?.status || "").toLowerCase());
+// DOS REQUISITOS, Y ERAN TRES (frente 25, P26): «Regla de alcance» exigía una fila en una tabla que
+// ya no existe —y que contaba filas, no destinatarios—. El alcance viene con la obligación.
 const requirements = computed(() => [
-  { key: "rules", label: "Regla de alcance", done: props.hasActiveRules },
   { key: "triggers", label: "Tipo de periodo", done: props.hasActiveTriggers },
   { key: "artifacts", label: "Plantilla vinculada", done: props.hasActiveArtifacts }
 ]);

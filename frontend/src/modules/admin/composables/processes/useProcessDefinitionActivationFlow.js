@@ -19,11 +19,9 @@ export function useProcessDefinitionActivationFlow({
   processDefinitionActivationConfirmed,
   processDefinitionActivationFromEditor,
   processDefinitionActivationChecking,
-  processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
   processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
-  processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
   clearModalOrigins,
@@ -35,7 +33,6 @@ export function useProcessDefinitionActivationFlow({
   normalizeComparableFormValue,
   getNextSemanticVersion,
   openEdit,
-  openDefinitionRulesFromActivation,
   openDefinitionTriggersFromActivation,
   openDefinitionArtifactsFromActivation,
   submitForm
@@ -52,21 +49,14 @@ export function useProcessDefinitionActivationFlow({
   };
 
   const loadProcessDefinitionActivationDetail = async (definitionId) => {
-    processDefinitionActivationRules.value = [];
     processDefinitionActivationTriggers.value = [];
     processDefinitionActivationArtifacts.value = [];
     if (!definitionId) {
       return;
     }
-    const [rulesResponse, triggersResponse, artifactsResponse] = await Promise.all([
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_target_rules"), {
-        params: {
-          filter_process_definition_id: definitionId,
-          orderBy: "priority",
-          order: "asc",
-          limit: 100
-        }
-      }),
+    // DOS LISTAS, Y ERAN TRES (frente 25, P26): la de reglas pedia una tabla retirada --y la pedia
+    // ordenada por `priority`, una columna que se habia ido en `P10`--.
+    const [triggersResponse, artifactsResponse] = await Promise.all([
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_period_types"), {
         params: {
           filter_process_definition_id: definitionId,
@@ -84,17 +74,14 @@ export function useProcessDefinitionActivationFlow({
         }
       })
     ]);
-    processDefinitionActivationRules.value = rulesResponse.data || [];
     processDefinitionActivationTriggers.value = triggersResponse.data || [];
     processDefinitionActivationArtifacts.value = artifactsResponse.data || [];
-    await prefetchFkLabelsForRows(processDefinitionActivationRules.value, ["unit_id", "unit_type_id", "cargo_id", "position_id"]);
     await prefetchFkLabelsForRows(processDefinitionActivationTriggers.value, ["term_type_id"]);
     await prefetchFkLabelsForRows(processDefinitionActivationArtifacts.value, ["edicion_id"]);
   };
 
   const openProcessDefinitionActivationModal = async () => {
     processDefinitionActivationChecking.value = true;
-    processDefinitionActivationHasActiveRules.value = true;
     processDefinitionActivationHasActiveTriggers.value = true;
     processDefinitionActivationHasActiveArtifacts.value = true;
     processDefinitionActivationView.value = "definition";
@@ -104,14 +91,11 @@ export function useProcessDefinitionActivationFlow({
       const definitionId = selectedRow.value?.id;
       const checklist = await processDefinitionAdminService.evaluateChecklist(definitionId);
       await loadProcessDefinitionActivationDetail(definitionId);
-      processDefinitionActivationHasActiveRules.value = checklist.rules;
       processDefinitionActivationHasActiveTriggers.value = checklist.triggers;
       processDefinitionActivationHasActiveArtifacts.value = checklist.artifacts;
     } catch {
-      processDefinitionActivationHasActiveRules.value = false;
       processDefinitionActivationHasActiveTriggers.value = true;
       processDefinitionActivationHasActiveArtifacts.value = true;
-      processDefinitionActivationRules.value = [];
       processDefinitionActivationTriggers.value = [];
       processDefinitionActivationArtifacts.value = [];
     } finally {
@@ -168,10 +152,6 @@ export function useProcessDefinitionActivationFlow({
     }
     if (actionType === "edit_definition") {
       openDefinitionEditorFromActivation();
-      return;
-    }
-    if (actionType === "rules") {
-      await openDefinitionRulesFromActivation();
       return;
     }
     if (actionType === "triggers") {

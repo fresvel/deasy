@@ -168,6 +168,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P23** | **`process_definition_versions.name` SE RETIRA** (§13.16). Era una copia de `lineas.nombre`, y fallaba por los dos lados: **no distinguía** —dos configuraciones de la misma línea se llamaban igual— y **se quedaba atrás** al renombrar la línea. Hoy se deriva con la identidad entera, `nombre_configuracion(línea, versión)`, una función del esquema. Y con ella se cierra **el guardia que `P22` apagó sin que nada lo dijera** | ✅ | **PROVOCADO en el navegador las dos veces**: antes, renombrar la línea dejó a sus dos configuraciones con el nombre viejo; después, las dos lo siguen al instante. **17 lecturas en 9 ficheros**; de ellas **4 se van quitando** —las dos de `templateLifecycle` leían la columna *sólo* para volver a copiarla en el INSERT—, y **tres sitios que la reparaban** desaparecen (la rutina, el gancho de `processes.afterUpdate` y una reescritura en cada guardado). ⚠️ **El guardia apagado**: `ensureDefaultProcessSingleLinea` recibía `ctx.payload.process_id`, que `P22` sacó del catálogo, así que `pickPayload` le pasaba `undefined` y su `if (!processId) return` lo devolvía sin comprobar nada — **sin test que lo cubriera**. Ahora el proceso lo trae la línea y van **4 pruebas nuevas**. **320/320 char con 5 goldens movidos y 2 líneas retiradas**, 891/891 backend (+4) y 495/495 frontend, 5 puertas del backend, 31 del frontend, 5 de documentación, 2 páginas del sitio y los 3 generadores. ⚠️ **Dos fallos de char que parecían de comportamiento eran cascada**: un test que abortaba dejaba filas y el siguiente las contaba (§13.16) | 2026-10-14 |
 | **P24** | **EL ASISTENTE DEJA DE PEDIR EL PROCESO** (§13.17). Su paso 1 declaraba **12 grupos de campo** para **tres entidades** —proceso, línea y configuración—, y el proceso podía **contradecir** a la línea elegida. Hoy el proceso **acota** el buscador de líneas, y crear un proceso o una línea abre **su propio plano** | ✅ | **Medido en pantalla**: de **5 campos visibles** en el caso común y **11** en el peor (proceso nuevo + línea nueva) a **4 siempre** —uno de ellos sólo lectura—. El `<select>` de líneas pasa a `AdminLookupField` con `suggestProvider`, que manda `filter_process_id`: **la pareja contradictoria ya no se puede formar**, porque lo que no está no se puede elegir, y el sublabel dice proceso · cargo · dónde para que no se elija a ciegas. El `__new__` del desplegable —que inyectaba **5 campos más**— y el modo «+ Nuevo» —que cambiaba el campo por un input y añadía dos— se van a sus planos. **Navegar NO era opción**: el asistente es un modal y la ruta lo destruye con el formulario a medio llenar; el plano encima es gratis porque `AppModalShell` se coloca solo. 501/501 frontend (+6), 31 puertas del frontend, el build. **Verificado en el navegador** de punta a punta: línea creada desde su plano → queda elegida → configuración creada (borrada después). ⚠️ **Dos duplicaciones que sólo vio el navegador**: la cabecera del asistente decía la versión dos veces y «Se llamará» mostraba la versión sola cuando no había línea | 2026-10-14 |
 | **P25** | **`exact_position` SE RETIRA, y con ella `position_id`** (§13.18). La regla tenía **dos columnas con dato**, y una nombraba **una plaza**. Lo decidió el dueño tras la evaluación «¿tabla o campo?» | ✅ | **Tres cosas la condenaban, las tres medidas:** (1) **se saltaba la obligación** — con el puesto puesto, `getPositionsForRule` consultaba `up.id = ?` **sin cargo y sin ámbito**, que es el agujero que `P10` cerró para `unit_id`, abierto por la única columna que quedaba, y **nadie** lo validaba; (2) **no hacía falta**: «la asistente de la Escuela X» es una línea `(Asistente, unidad exacta)` —en el catálogo real ese cargo tiene **12 plazas en 12 unidades**, una por unidad, y el único cargo con varias plazas en la misma unidad es `Docente`—; (3) **era nombrar a alguien** dentro de una norma, que es la tarea ad-hoc. **Nadie la ejercitaba**: el seed, el bootstrap y los goldens sólo escriben `all_matches`. La tabla baja de **5 columnas a 4** y el `CHECK` de 3 valores a 2; se van el `FK` a `unit_positions`, el `CHECK` `ck_ptr_puesto_exacto`, el guardia `applyTargetRuleLineaConstraints` (45 líneas, lo último de `P10`) y **140 líneas de maquinaria de claves ajenas** del gestor. Un puesto deja de estar retenido por una regla: **6 dependencias → 5**. 887/887 backend, 501/501 frontend, **320/320 char** (3 líneas de golden), 5 puertas backend, 31 frontend, 5 de documentación, los dos builds. **Verificado en el navegador**: el formulario de regla es **un desplegable de dos valores**, la rejilla pierde la columna «Puesto», y el clon al versionar funciona. ⚠️ **El censo por `exact_position` dejó fuera CUATRO consultas** que sólo decían `position_id`: las cazó `test:char:run` con 34 fallos | 2026-10-15 |
+| **P26** | **LA TABLA DEL REPARTO SE RETIRA; `recipient_policy` BAJA A `lineas`** (§13.19). Lo ordenó el dueño tras la evaluación: «pásalo a la línea» | ✅ | Lo que quedaba era **una columna con dos valores**, y ni siquiera se podían combinar —`unit_head` está contenido en `all_matches`—, así que varias reglas por configuración ya no distinguían nada. Y los dos valores dicen **quién**, que es lo que la obligación declara: con el cargo en una tabla y el afinado en otra, «a quién alcanza esto» se contestaba leyendo **dos filas**. Hoy es una, con `ck_lineas_jefatura_sin_cargo` impidiendo la única pareja que podía contradecirse. **Se va la tabla entera** (73 líneas de esquema), su índice, su pestaña de `/admin`, el **paso «Alcance» del asistente** (5 → 4), el panel de reglas (287 líneas), un requisito de activación (3 → 2) y la pierna del disparador que **contaba filas, no destinatarios**. El clon al versionar deja de copiar el reparto: las dos versiones comparten línea. 885/885 backend, 501/501 frontend, **317/317 char** (3 goldens tocados, 2 podados), 5 puertas backend, 31 frontend, 5 de documentación, los dos builds. **Verificado en el navegador**: la pestaña ya no está, `lineas` muestra «Destinatario», el asistente tiene 4 pasos, y por API la jefatura **con** cargo se rechaza y **sin** cargo pasa. ⚠️ **Un `required: true` de más** en el catálogo rompió el alta de líneas (*«Datos incompletos: Destinatario»*): el backend exige todo campo `required` aunque la base tenga `DEFAULT`. Lo cazó char | 2026-10-15 |
 | **P18** | **LA VIGENCIA, POR NIVELES** (decisión 21, §9). Cuatro cosas: **(a)** la vigencia de la línea **detiene la ejecución**; **(b)** la norma que aplica a un periodo es la vigente **al empezarlo**, no la que lo solape; **(c)** la vigencia de una norma **cabe dentro** de la de su obligación, impuesto por la base; **(d)** la regla pierde `is_active`, `effective_from` y `effective_to` — tres columnas | ✅ | ⚠️ **REESCRITA el 2026-10-12.** Decía «una sola vigencia, la de la línea», y **era falso**: la de la configuración NO está duplicada con `status`. El generador la compara contra el **periodo** y el menú contra **hoy** — dos significados para las mismas columnas, que es lo que hizo fallar el análisis. Cierra los huecos **2 y 3** del §8. **Hecha**: tres columnas fuera del esquema, del editor genérico, del validador, de la siembra, del arranque y del formulario; `trg_norma_dentro_de_su_obligacion` y `trg_linea_no_recorta_sus_normas` imponen la contención; el generador filtra por la vigencia de la línea y compara contra `term.start_date`. 320/320 char con **2 goldens movidos y nada más** —seis líneas, las tres columnas en `list_process_target_rules` y en `panel_usuario`—, 885/885 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, y tres páginas del sitio en el mismo commit. **Verificado en el navegador** (ver abajo) | 2026-10-12 |
 | **P19** | **`unit_subtree` se retira** de `process_target_rules` | ✅ | el `CHECK` baja de 4 valores a 3, y con el valor se van **dos CTE recursivas sin protección de ciclos** (dos de los seis grafos del frente 26) y **dos consultas por petición**: `getOrgTreeRows` del menú y `getOrgChildrenMap` del panel traían el organigrama entero para resolverlo. Y la tubería muerta detrás: `createUnitSubtreeResolver` en dos sitios. **320/320 char sin mover un golden** —cero filas lo usaban—, 885/885 unitarios (−6: cuatro pruebas del resolutor y tres del menú se van con él, una de ellas **la única prueba de ciclos del repositorio**, cuya materia pasa al frente 26), 495/495 de frontend, 5 puertas del backend, 31 del frontend, 5 de documentación | 2026-10-12 |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
@@ -2208,6 +2209,69 @@ COLUMNA.**
 - **La pantalla «Vincular proceso a la unidad» no vincula nada a la unidad**: desde `P10` la regla no
   tiene unidad, y a quién alcanza lo dice la línea. Hoy crea una regla para una configuración cuyo
   ámbito ya estaba decidido.
+
+
+
+### 13.19 · `P26` · EL REPARTO DEJA DE SER UNA TABLA (2026-10-15)
+
+`P25` dejó `process_target_rules` en **una columna con dato y dos valores**. El dueño preguntó qué
+pasaba entonces con la tabla, y ordenó: **«pásalo a la línea»**.
+
+#### Por qué la línea y no la configuración
+
+| | |
+|---|---|
+| El eje | `cargo_id` y `recipient_policy` **son el mismo**: los dos dicen *quién* |
+| El síntoma | «a quién alcanza esta obligación» se contestaba leyendo **dos filas de dos tablas** |
+| El precedente | es el diagnóstico exacto de `P10`, `P22` y `P23` |
+| Lo que cierra | `ck_lineas_jefatura_sin_cargo`: la única pareja que podía contradecirse, imposible |
+
+`cargo_id` sabe decir dos cosas —un cargo, o `NULL` para «cualquiera»— y **no sabe decir la tercera**:
+«el que manda aquí», porque el cargo de la jefatura varía por tipo de unidad. Ése es exactamente el
+hueco que `recipient_policy` llena, y por eso su sitio es la fila donde se declara el cargo.
+
+#### Lo que se fue con la tabla
+
+| | |
+|---|---|
+| Esquema | la tabla (**73 líneas**), su índice, y la pierna del disparador de activación |
+| Backend | el gate `ensureDefinitionHasActiveRulesForActivation`, el caso especial del editor genérico, el clon de reglas, los tres ganchos del CRUD, su entrada en el catálogo y en el RBAC |
+| Frontend | el panel (**287 líneas**), la **pestaña** de `/admin`, el **paso «Alcance»** del asistente (5 → 4), la vista y el requisito del panel de activación (3 → 2), y el modal «Vincular proceso a la unidad» del organigrama |
+| Documentación | `modelo/reparto.md` reescrita, 5 páginas más, 2 excepciones históricas con su motivo |
+
+**El clon al versionar deja de copiar el reparto**, y eso es una mejora de fondo: copiarlo era lo que
+congelaba el alcance en el instante del clon. Las dos versiones de una configuración comparten línea,
+así que ahora lo comparten de verdad.
+
+#### La puerta que se fue, y lo que de verdad garantizaba
+
+El disparador exigía **≥ 1 fila** en `process_target_rules` para activar. Con la política por defecto,
+lo único que garantizaba era que **alguien había pulsado «Agregar regla»**: contaba filas, no
+destinatarios. Hoy la obligación siempre existe —`linea_id` es `NOT NULL`— así que no hay nada que
+olvidar. **Lo que sí valdría la pena exigir —que la obligación alcance a alguien— no se comprobaba
+antes y sigue sin comprobarse**: queda anotado, no inventado aquí.
+
+#### Lo que costó
+
+| | |
+|---|---|
+| Backend | 24 ficheros, 13 consultas |
+| Frontend | 18 ficheros, uno borrado |
+| Trampas | un `required: true` de más en el catálogo rompió el alta de líneas; **dos backticks** dentro de comentarios `--` de SQL partieron dos plantillas; un bloque borrado por anclas se llevó una función viva (`openDefinitionArtifactsFromActivation`) |
+
+Las tres las cazaron las puertas y los tests —char, `node --check` vía las suites, y eslint—, que es
+justo lo que se espera de ellas. La de los backticks está escrita en `CLAUDE.md` desde agosto.
+
+#### Lo que queda abierto
+
+- **`unit_head` sigue sin mirarse en los dos predicados gemelos** del menú y el panel: filtran por
+  cargo y ámbito, no por jefatura, así que pueden ofrecer un proceso que el lanzamiento no dará.
+  Hace falta que `getUserPositions` traiga `up.is_unit_head`.
+- **El vocabulario envejeció**: `has_rules`, `no_target_rules`, `rules_count` y la clave `rules` del
+  panel siguen nombrando una tabla que no existe. Son claves de API, no pantalla; se renombran con
+  `P6`/`P15`.
+- **Una línea nueva nace siempre `all_matches`**: el plano «+ Nueva línea» del asistente no ofrece
+  todavía el destinatario, así que para la jefatura hay que editarla después en su pestaña.
 
 
 ## 13 · EL REPARTO, revisado a petición del dueño (2026-10-14)

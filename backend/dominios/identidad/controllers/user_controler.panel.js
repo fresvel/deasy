@@ -19,7 +19,7 @@ import {
 import {
   getActiveUserPositions,
   getDefinitionContext,
-  getActiveDefinitionRules,
+  getDefinitionScope,
   getActiveDefinitionPeriodTypes,
   getDefinitionTemplates,
   getAvailableTerms,
@@ -65,12 +65,14 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
   if (!positions.length) {
     return null;
   }
-  const rules = await getActiveDefinitionRules(pool, definitionId);
-  const matchingRules = rules.filter((rule) => positions.some((position) => doesPositionMatchRule(position, rule)));
+  // UNA FILA, LA DE LA OBLIGACION (frente 25, P26): era una lista de reglas y hoy la configuracion
+  // tiene exactamente un alcance, el de su linea.
+  const alcance = await getDefinitionScope(pool, definitionId);
+  const alcanzaAMisPuestos = Boolean(alcance) && positions.some((position) => doesPositionMatchRule(position, alcance));
   const tasks = await getUserAccessibleTasksForDefinition(pool, userId, definitionId, scopeUnitId);
   const fillRequests = await getUserPendingFillRequestsForDefinition(pool, userId, definitionId);
   const signatures = await getUserPendingSignaturesForDefinition(pool, userId, definitionId);
-  const hasOperationalAccess = Boolean(matchingRules.length || tasks.length || fillRequests.length || signatures.length);
+  const hasOperationalAccess = Boolean(alcanzaAMisPuestos || tasks.length || fillRequests.length || signatures.length);
   if (!hasOperationalAccess) {
     return null;
   }
@@ -427,8 +429,10 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
   return {
     definition: {
       ...definition,
-      rules_count: rules.length,
-      matching_rules_count: matchingRules.length,
+      // `rules_count` y `matching_rules_count` se fueron con la tabla (frente 25, P26): contaban
+      // filas de un conjunto que ahora tiene exactamente una. Lo que el panel necesitaba saber de
+      // verdad es si la obligacion alcanza a alguno de MIS puestos.
+      alcanza_a_mis_puestos: alcanzaAMisPuestos,
       templates_count: templates.length,
       period_types_count: periodTypes.length,
       chat_context: {
@@ -470,10 +474,11 @@ export const buildUserProcessDefinitionPanel = async (pool, userId, definitionId
     turnos_entrega_pendientes: fillRequests,
     signatures,
     dependencies: {
-      rules: matchingRules.map((rule) => ({
-        ...rule,
-        display_label: buildRuleDisplayLabel(rule)
-      })),
+      // UNA FILA O NINGUNA (frente 25, P26). Era la lista de reglas que alcanzaban a esta persona;
+      // hoy es el alcance de la obligacion, y sale solo si la alcanza.
+      rules: alcanzaAMisPuestos
+        ? [{ ...alcance, display_label: buildRuleDisplayLabel(alcance) }]
+        : [],
       period_types: periodTypes,
       templates
     },

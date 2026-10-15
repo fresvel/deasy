@@ -1,5 +1,3 @@
-import axios from "@/core/services/httpClient";
-import { API_ROUTES } from "@/core/config/apiConfig";
 import { processDefinitionAdminService } from "@/modules/admin/services/ProcessDefinitionAdminService";
 
 export function useProcessDefinitionManager({
@@ -7,14 +5,6 @@ export function useProcessDefinitionManager({
   editorMode,
   selectedRow,
   getEditorInstance,
-  definitionRulesContext,
-  definitionRulesRows,
-  definitionRulesLoading,
-  definitionRulesError,
-  definitionRulesEditId,
-  definitionRulesForm,
-  definitionRulesLabels,
-  definitionRulesLineaScope,
   definitionTriggersContext,
   definitionTriggersRows,
   definitionTriggersLoading,
@@ -32,10 +22,8 @@ export function useProcessDefinitionManager({
   definitionArtifactsPromptContext,
   processDefinitionChecklistLoading,
   processDefinitionChecklist,
-  canManageDefinitionRules,
   canManageDefinitionTriggers,
   canManageDefinitionArtifacts,
-  canSubmitDefinitionRule,
   canSubmitDefinitionTrigger,
   clearModalOrigins,
   pushModalOrigin,
@@ -44,13 +32,10 @@ export function useProcessDefinitionManager({
   resolveFkSuggestions,
   formatFkOptionLabel,
   getFkCachedLabel,
-  formatCell,
   prefetchFkLabelsForRows,
-  ensureDefinitionRulesInstance,
   ensureDefinitionTriggersInstance,
   ensureDefinitionArtifactsInstance,
   ensureDefinitionArtifactsPromptInstance,
-  getDefinitionRulesInstance,
   getDefinitionTriggersInstance,
   getDefinitionArtifactsInstance,
   getDefinitionArtifactsPromptInstance
@@ -72,35 +57,12 @@ export function useProcessDefinitionManager({
     typeof getEditorInstance === "function" ? getEditorInstance() : getEditorInstance
   );
 
-  // La serie del proceso fija un eje (cargo o tipo de unidad). Lo re-sembramos sobre el formulario tras
-  // cualquier cambio para que no quede estado obsoleto (p. ej. al alternar la entrega). En "puesto exacto"
-  // el puesto define unidad y cargo, así que no se siembra (el guard del backend valida el puesto).
-  // AQUI VIVIA `applyRuleSeriesSeed`, que copiaba el cargo y el tipo de unidad de la linea DENTRO
-  // del formulario de la regla para que el usuario viera prerrellenado lo que un guardia del backend
-  // iba a imponer de todas formas. Se fue con las cuatro columnas (frente 25, P10): no hay nada que
-  // sembrar, porque la regla ya no declara el alcance. `definitionRulesLineaScope` sigue cargandose
-  // —la pantalla lo ENSENA como contexto—, pero ya no se copia a ningun campo.
-  const resetDefinitionRulesForm = () => {
-    definitionRulesEditId.value = "";
-    definitionRulesForm.value = processDefinitionAdminService.createRuleForm();
-    definitionRulesLabels.value = processDefinitionAdminService.createRuleLabels();
-  };
-
-  const loadDefinitionRulesSeriesScope = async (definitionId) => {
-    if (!definitionRulesLineaScope) {
-      return;
-    }
-    if (!definitionId) {
-      definitionRulesLineaScope.value = null;
-      return;
-    }
-    try {
-      const { data } = await axios.get(API_ROUTES.ADMIN_SQL_PROCESS_LINEA_SCOPE(definitionId));
-      definitionRulesLineaScope.value = data && Object.keys(data).length ? data : null;
-    } catch {
-      definitionRulesLineaScope.value = null;
-    }
-  };
+  // AQUI VIVIAN EL FORMULARIO DE LA REGLA Y SU CONTEXTO (frente 25, P26). Primero fue
+  // `applyRuleSeriesSeed`, que copiaba el cargo y el tipo de unidad de la linea dentro del
+  // formulario; se fue con las cuatro columnas en `P10`. Despues quedaron el reseteo y
+  // `loadDefinitionRulesSeriesScope`, que leia el alcance de la obligacion para ENSEÑARLO como
+  // contexto. Con la tabla retirada no hay formulario que resetear ni contexto que acompañar: el
+  // alcance se lee y se edita en la linea.
 
   const resetDefinitionTriggersForm = () => {
     definitionTriggersEditId.value = "";
@@ -108,24 +70,10 @@ export function useProcessDefinitionManager({
     definitionTriggersLabels.value = processDefinitionAdminService.createTriggerLabels();
   };
 
-  // EL DESTINO ES LA POLITICA, y nada mas. Esto leia `unit_scope_type`, `unit_type_id`, `unit_id`
-  // y `cargo_id` de la regla: las cuatro murieron en `P10` y la fila ya no las trae, asi que el
-  // panel de activacion ensenaba un guion. Y la rama del puesto exacto se fue con `P25`.
-  const formatDefinitionRuleSummary = (row) => {
-    if (!row) {
-      return "—";
-    }
-    return formatCell(row.recipient_policy, { name: "recipient_policy" }, row);
-  };
-
-  // AQUI VIVIA `handleDefinitionRuleRecipientPolicyChange`, que al cambiar de politica limpiaba el
-  // puesto exacto. Sin puesto (frente 25, P25) no queda nada que limpiar.
-
   const refreshProcessDefinitionChecklist = async (definitionRow = selectedRow.value) => {
     const definitionId = definitionRow?.id;
     processDefinitionChecklistLoading.value = true;
     processDefinitionChecklist.value = {
-      rules: false,
       triggers: false,
       artifacts: false
     };
@@ -137,90 +85,11 @@ export function useProcessDefinitionManager({
       processDefinitionChecklist.value = await processDefinitionAdminService.evaluateChecklist(definitionId);
     } catch {
       processDefinitionChecklist.value = {
-        rules: false,
         triggers: false,
         artifacts: false
       };
     } finally {
       processDefinitionChecklistLoading.value = false;
-    }
-  };
-
-  const loadDefinitionRules = async () => {
-    const definitionId = definitionRulesContext.value?.id;
-    if (!definitionId) {
-      definitionRulesRows.value = [];
-      definitionRulesError.value = "";
-      definitionRulesLoading.value = false;
-      return;
-    }
-    definitionRulesLoading.value = true;
-    definitionRulesError.value = "";
-    try {
-      const response = await processDefinitionAdminService.listRules(definitionId);
-      // SIN `prefetchFkLabelsForRows`: la regla ya no tiene ni una clave ajena que rotular
-      // (frente 25, P25). Pedia las etiquetas de cuatro columnas que no existen desde `P10`.
-      definitionRulesRows.value = response.data || [];
-    } catch {
-      definitionRulesRows.value = [];
-      definitionRulesError.value = "No se pudieron cargar las reglas vinculadas.";
-    } finally {
-      definitionRulesLoading.value = false;
-    }
-    await refreshProcessDefinitionChecklist(definitionRulesContext.value);
-  };
-
-  const openDefinitionRulesManager = async (definitionRow, { showModal = true } = {}) => {
-    if (!definitionRow?.id) {
-      return;
-    }
-    definitionRulesContext.value = { ...definitionRow };
-    definitionRulesError.value = "";
-    await loadDefinitionRulesSeriesScope(definitionRow.id);
-    resetDefinitionRulesForm();
-    if (showModal) {
-      ensureDefinitionRulesInstance();
-      getDefinitionRulesInstance()?.show();
-    }
-    await loadDefinitionRules();
-  };
-
-  const closeDefinitionRulesManager = () => {
-    clearModalOrigins();
-    blurActiveElement();
-    getDefinitionRulesInstance()?.hide();
-  };
-
-  const acceptDefinitionRulesManager = () => {
-    getDefinitionRulesInstance()?.hide();
-  };
-
-  const confirmDefinitionRulesPrompt = async () => {
-    const context = definitionArtifactsPromptContext.value;
-    closeDefinitionArtifactsPrompt();
-    if (context?.id) {
-      await openDefinitionRulesManager(context);
-    }
-  };
-
-  const openDefinitionRulesFromEditor = async () => {
-    if (props.table?.table !== "process_definition_versions" || editorMode.value !== "edit" || !selectedRow.value?.id) {
-      return;
-    }
-    clearModalOrigins();
-    pushModalOrigin("editor");
-    blurActiveElement();
-    resolveEditorInstance()?.hide();
-    await openDefinitionRulesManager(selectedRow.value);
-  };
-
-  const openDefinitionRulesFromActivation = async () => {
-    const context = selectedRow.value;
-    clearModalOrigins();
-    pushModalOrigin("definitionActivation");
-    closeProcessDefinitionActivationModal();
-    if (context?.id) {
-      await openDefinitionRulesManager(context);
     }
   };
 
@@ -231,78 +100,6 @@ export function useProcessDefinitionManager({
     closeProcessDefinitionActivationModal();
     if (context?.id) {
       await openDefinitionArtifactsManager(context);
-    }
-  };
-
-  // AQUI VIVIERON 140 LINEAS DE MAQUINARIA DE CLAVES AJENAS DE LA REGLA (frente 25, P25):
-  // `openDefinitionRuleFkSearch`, `buildDefinitionRuleSuggestProvider`, el mapa
-  // `definitionRuleSuggestProviders`, `selectDefinitionRuleOption` y `clearDefinitionRuleField`,
-  // mas el autollenado de unidad y cargo al elegir un puesto. Servian a los campos de alcance
-  // --muertos en `P10`-- y al puesto exacto, muerto aqui. El formulario de una regla es HOY UN
-  // DESPLEGABLE DE DOS VALORES, y un desplegable no busca nada.
-
-  const startDefinitionRuleEdit = (row) => {
-    if (!row) {
-      return;
-    }
-    if (!canManageDefinitionRules.value) {
-      definitionRulesError.value = "Solo puedes modificar reglas mientras la configuracion este en draft.";
-      return;
-    }
-    definitionRulesEditId.value = row.id ? String(row.id) : "";
-    // UNA CLAVE, Y ERAN SIETE. Las cuatro del alcance murieron en `P10`, `priority` con ellas y
-    // `position_id` en `P25`: hidratarlas dejaba el formulario lleno de claves que nadie enviaba.
-    definitionRulesForm.value = {
-      recipient_policy: row.recipient_policy || "all_matches"
-    };
-    definitionRulesLabels.value = {};
-  };
-
-  const submitDefinitionRule = async () => {
-    const definitionId = definitionRulesContext.value?.id;
-    if (!definitionId) {
-      definitionRulesError.value = "No hay una configuracion seleccionada.";
-      return;
-    }
-    if (!canManageDefinitionRules.value) {
-      definitionRulesError.value = "Solo puedes modificar reglas mientras la configuracion este en draft.";
-      return;
-    }
-    if (!canSubmitDefinitionRule.value) {
-      definitionRulesError.value = "Completa el alcance requerido para guardar la regla.";
-      return;
-    }
-    const payload = processDefinitionAdminService.buildRulePayload(definitionId, definitionRulesForm.value);
-    definitionRulesError.value = "";
-    try {
-      await processDefinitionAdminService.saveRule(definitionRulesEditId.value, payload);
-      resetDefinitionRulesForm();
-      await loadDefinitionRules();
-    } catch (error) {
-      definitionRulesError.value = error?.response?.data?.message || "No se pudo guardar la regla.";
-    }
-  };
-
-  const deleteDefinitionRule = async (row) => {
-    if (!row?.id) {
-      return;
-    }
-    if (!canManageDefinitionRules.value) {
-      definitionRulesError.value = "Solo puedes modificar reglas mientras la configuracion este en draft.";
-      return;
-    }
-    if (!window.confirm("¿Deseas eliminar esta regla de la configuracion?")) {
-      return;
-    }
-    definitionRulesError.value = "";
-    try {
-      await processDefinitionAdminService.deleteRule(row.id);
-      if (String(definitionRulesEditId.value) === String(row.id)) {
-        resetDefinitionRulesForm();
-      }
-      await loadDefinitionRules();
-    } catch (error) {
-      definitionRulesError.value = error?.response?.data?.message || "No se pudo eliminar la regla.";
     }
   };
 
@@ -712,21 +509,9 @@ export function useProcessDefinitionManager({
 
   return {
     resetDefinitionArtifactsForm,
-    resetDefinitionRulesForm,
     resetDefinitionTriggersForm,
-    formatDefinitionRuleSummary,
     refreshProcessDefinitionChecklist,
-    loadDefinitionRules,
-    openDefinitionRulesManager,
-    closeDefinitionRulesManager,
-    acceptDefinitionRulesManager,
-    confirmDefinitionRulesPrompt,
-    openDefinitionRulesFromEditor,
-    openDefinitionRulesFromActivation,
     openDefinitionArtifactsFromActivation,
-    startDefinitionRuleEdit,
-    submitDefinitionRule,
-    deleteDefinitionRule,
     loadDefinitionTriggers,
     openDefinitionTriggersManager,
     closeDefinitionTriggersManager,

@@ -372,7 +372,7 @@ export const SQL_TABLES = [
   // Las pestañas de `/admin` salen en el orden en que estan aqui (`AdminView.vue` solo agrupa por
   // `category`), asi que esta lista ES la lectura que hace la persona. Y la cadena es:
   //
-  //     processes -> lineas -> process_definition_versions -> process_target_rules -> periodos
+  //     processes -> lineas -> process_definition_versions -> periodos
   //      que se hace   quien lo debe,    como se hace,          el reparto EXTRA     cuando toca
   //                      y donde        en esta version
   //
@@ -396,6 +396,22 @@ export const SQL_TABLES = [
       // cargos son genericos (`Coordinador`, no «Coordinador de Carrera»), el eje que no cabia habia
       // que ponerlo en la regla de reparto: la variacion estaba PARTIDA EN DOS TABLAS.
       { name: "cargo_id", label: "Cargo (vacio = cualquiera)", type: "number" },
+      // EL TERCER ESTADO DEL «QUIEN» (frente 25, P26). Vivia en `process_target_rules`, que se
+      // retiro: el cargo sabe decir «este cargo» y «cualquiera», y no sabe decir «el que manda
+      // aqui», porque el cargo de la jefatura varia por tipo de unidad. Con `unit_head` la base
+      // exige `cargo_id` vacio (`ck_lineas_jefatura_sin_cargo`): saber el cargo y pedir la jefatura
+      // resuelve a la interseccion, que es casi siempre nadie.
+      // ⚠️ SIN `required: true`, y es la misma leccion que `unit_type_id` lleva escrita tres lineas
+      // mas abajo: el backend exige todo campo `required`, y esta columna tiene DEFAULT en la base.
+      // Marcarla obligo a mandarla en cada alta --«Datos incompletos: Destinatario»-- y rompio el
+      // alta de una linea que no la nombra. Lo cazo `test:char:run`.
+      {
+        name: "recipient_policy",
+        label: "Destinatario",
+        type: "select",
+        options: ["all_matches", "unit_head"],
+        defaultValue: "all_matches"
+      },
       {
         name: "unit_scope_type",
         label: "Alcance",
@@ -452,34 +468,11 @@ export const SQL_TABLES = [
     ],
     searchFields: ["definition_version", "name", "status"]
   },
-  {
-    table: "process_target_rules",
-    label: "Reglas de alcance",
-    category: "Procesos",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
-      // SIN `cargo_id`, SIN `unit_scope_type`, SIN `unit_type_id` Y SIN `unit_id` (frente 25, P10):
-      // eran cuatro copias de la linea, y la pantalla ofrecia EDITARLAS, asi que daba a elegir un
-      // alcance que un guardia revertia a continuacion. El alcance se edita en `lineas`.
-      // SIN `position_id` Y SIN `exact_position` (frente 25, P25): nombrar una plaza se saltaba la
-      // linea --sin cargo y sin ambito-- y es un encargo, no una obligacion del puesto. Lo que
-      // queda son DOS valores: todos los que coincidan, o la jefatura.
-      {
-        name: "recipient_policy",
-        label: "Entrega",
-        type: "select",
-        options: ["all_matches", "unit_head"],
-        defaultValue: "all_matches"
-      },
-      // SIN `priority` (frente 25, P10): solo aparecia en `ORDER BY` y las reglas se UNEN, asi que
-      // no podia desempatar nada. Y SIN `is_active` NI VIGENCIA (P18-d): la regla nace y muere con
-      // su version de la norma. Si el reparto cambia, es otra configuracion.
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["recipient_policy"]
-  },
+  // AQUI ESTABA `process_target_rules`, y la tabla se retiro entera (frente 25, P26 — 2026-10-15):
+  // lo ultimo que le quedaba era UNA columna con DOS valores, y los dos decian «quien», que es lo
+  // que la LINEA ya declara. Hoy el afinado es `lineas.recipient_policy` y se edita donde se edita
+  // la obligacion. Con la tabla se fue su pestaña «Reglas de alcance» de `/admin`.
+
   {
     table: "term_types",
     label: "Tipos de periodo",

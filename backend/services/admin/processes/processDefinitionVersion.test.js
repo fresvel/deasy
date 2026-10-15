@@ -55,7 +55,6 @@ function fakeConnection({ definition, templates = [], rules = [], periodTypes = 
       const text = String(sql);
       if (/^\s*INSERT/i.test(text)) {
         if (text.includes("vinculos")) log.inserts.templates.push({ sql: text, params });
-        else if (text.includes("process_target_rules")) log.inserts.rules.push({ sql: text, params });
         else if (text.includes("process_definition_period_types")) log.inserts.periodTypes.push({ sql: text, params });
         else assert.fail(`INSERT inesperado durante el clonado: ${text}`);
         return [{ affectedRows: 1 }];
@@ -64,10 +63,6 @@ function fakeConnection({ definition, templates = [], rules = [], periodTypes = 
       if (text.includes("FROM vinculos")) {
         log.selects.templates = text;
         return [templates];
-      }
-      if (text.includes("FROM process_target_rules")) {
-        log.selects.rules = text;
-        return [rules];
       }
       if (text.includes("FROM process_definition_period_types")) {
         log.selects.periodTypes = text;
@@ -88,18 +83,8 @@ const TEMPLATES = [
   { edicion_id: 30, sort_order: 3, item_mode: "single" }
 ];
 
-// UNA COLUMNA, Y ERAN SIETE. Las cuatro de ámbito —`unit_scope_type`, `unit_id`, `unit_type_id`,
-// `cargo_id`— eran copia de la línea y salieron con `P10` (frente 25, 2026-10-14), con ellas
-// `priority`, que sólo aparecía en un `ORDER BY`, y `position_id` con `P25`.
-//
-// Y el clon era justo donde la copia costaba más: arrastraba el ámbito VERBATIM, así que una
-// configuración nueva nacía con el ámbito congelado en el instante del clon aunque su línea hubiera
-// cambiado después. Versionar la norma dejaba el reparto en el pasado, sin avisar.
-const RULES = [
-  {
-    recipient_policy: "all_matches"
-  }
-];
+// AQUI VIVIA LA FIXTURE `RULES`, con la unica columna que le quedaba a la tabla. `process_target_rules`
+// se retiro entera en `P26`: el «quien» --cargo, ambito y afinado-- es una sola fila de `lineas`.
 
 const PERIOD_TYPES = [{ term_type_id: 5, is_active: 1 }];
 
@@ -107,7 +92,6 @@ function buildService(fixture = {}) {
   const connection = fakeConnection({
     definition: DEFINITION,
     templates: TEMPLATES,
-    rules: RULES,
     periodTypes: PERIOD_TYPES,
     ...fixture
   });
@@ -169,7 +153,6 @@ test("el remap de plantilla re-apunta el artifact pero NO toca el item_mode", as
 
 const HIJOS = [
   { nombre: "templates", tabla: "vinculos" },
-  { nombre: "rules", tabla: "process_target_rules" },
   { nombre: "periodTypes", tabla: "process_definition_period_types" }
 ];
 
@@ -197,7 +180,10 @@ for (const { nombre, tabla } of HIJOS) {
 
 // --- Las reglas y los periodos, columna a columna --------------------------------------------------
 
-test("las reglas de destino se clonan con su afinado, y SIN ambito", async () => {
+// AQUI SE CLAVABA EL CLON DE LAS REGLAS, columna a columna. La tabla se retiro (frente 25, P26) y
+// lo que se fija ahora es la AUSENCIA: el clon no puede volver a tocar el reparto, porque las dos
+// versiones de una configuracion comparten LINEA y el afinado vive en ella.
+test("el clon ya no escribe ninguna regla de reparto", async () => {
   const { service, connection } = buildService();
 
   const result = await service.cloneProcessDefinitionChildren({
@@ -207,14 +193,8 @@ test("las reglas de destino se clonan con su afinado, y SIN ambito", async () =>
     connection
   });
 
-  assert.equal(result.clonedRules, 1);
-  const row = insertedRow(connection.log.inserts.rules[0]);
-  assert.deepEqual(row, { process_definition_id: TARGET_ID, ...RULES[0] });
-  // El ámbito NO viaja: lo dice la línea de la configuración destino, que es la misma. Si alguna de
-  // estas claves reapareciera, el clon volvería a congelar el reparto.
-  for (const muerta of ["unit_scope_type", "unit_id", "unit_type_id", "cargo_id", "priority"]) {
-    assert.equal(muerta in row, false, `el clon no debe escribir ${muerta}`);
-  }
+  assert.equal("clonedRules" in result, false, "el resumen ya no cuenta reglas");
+  assert.deepEqual(connection.log.inserts.rules, [], "ningun INSERT de reparto");
 });
 
 test("los tipos de periodo se clonan enteros", async () => {
@@ -243,7 +223,7 @@ test("sin origen o sin destino no se clona nada", async () => {
     targetDefinitionId: TARGET_ID,
     connection
   });
-  assert.deepEqual(result, { clonedTemplates: 0, clonedRules: 0, clonedPeriodTypes: 0 });
+  assert.deepEqual(result, { clonedTemplates: 0, clonedPeriodTypes: 0 });
   assert.deepEqual(connection.log.inserts.templates, []);
 });
 

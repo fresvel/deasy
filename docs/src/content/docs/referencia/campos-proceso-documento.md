@@ -1,6 +1,6 @@
 ---
 title: "Campos de la cadena proceso → documento"
-description: "Las 33 tablas del recorrido, con todas sus columnas, tipos, referencias y valores admitidos. Generada del catálogo de PostgreSQL."
+description: "Las 32 tablas del recorrido, con todas sus columnas, tipos, referencias y valores admitidos. Generada del catálogo de PostgreSQL."
 sidebar:
   order: 20
 ---
@@ -22,7 +22,7 @@ y esta página saldría mintiendo. `npm run test:char:run` la recrea.
 
 :::
 
-Son **33 tablas**. El recorrido narrado, con sus diagramas, está en
+Son **32 tablas**. El recorrido narrado, con sus diagramas, está en
 [Del proceso al documento firmado](/modelo/). Esta página es el
 detalle: **cada columna de cada tabla**, en el orden de la cadena y no en orden alfabético.
 
@@ -163,6 +163,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `process_id` | int | sí | `processes.id` · se va con el | — |
 | `nombre` | varchar(180) | sí | — | — |
 | `cargo_id` | int | no | `cargos.id` · impide borrar | — |
+| `recipient_policy` | text | sí | — | `unit_head` |
 | `unit_scope_type` | text | sí | — | `all_units` · `unit_type` · `unit_exact` |
 | `unit_type_id` | int | no | `unit_types.id` · impide borrar | — |
 | `unit_id` | int | no | `units.id` · impide borrar | — |
@@ -183,15 +184,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `active_series_flag` | smallint | no | — | — |
 | `effective_from` | date | sí | — | — |
 | `effective_to` | date | no | — | — |
-| `created_at` | timestamp | sí | — | — |
-
-### `process_target_rules`
-
-| Columna | Tipo | Obligatorio | Apunta a | Admite |
-|---|---|---|---|---|
-| `id` | int | sí | — | — |
-| `process_definition_id` | int | sí | `process_definition_versions.id` · se va con el | — |
-| `recipient_policy` | text | sí | — | `all_matches` · `unit_head` |
 | `created_at` | timestamp | sí | — | — |
 
 ### `process_definition_period_types`
@@ -513,4 +505,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**33 tablas · 303 columnas · 75 referencias.** Leídas del catálogo de PostgreSQL.
+**32 tablas · 300 columnas · 74 referencias.** Leídas del catálogo de PostgreSQL.

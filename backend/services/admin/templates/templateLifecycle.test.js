@@ -106,7 +106,6 @@ const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } =
     getByKeys: async () => ({ id: TPL_ID, lifecycle_state: "draft", storage_version: "1.1.0" }),
     retirePriorPublishedSiblings: async (_conn, id) => { events.push(`retira-hermanas:${id}`); },
     retireActiveDefinitionsInLinea: async () => { events.push("retira-config-anterior"); return 1; },
-    ensureDefinitionHasActiveRulesForActivation: async () => { events.push("gate:reglas"); },
     ensureDefinitionHasActivePeriodTypesForActivation: async () => { events.push("gate:periodos"); },
     ensureDefinitionHasArtifactsForActivation: async () => { events.push("gate:entregables"); },
   });
@@ -129,7 +128,8 @@ test("sin mas borradores en la config, finish publica la plantilla y activa la c
     // MinIO: rechazar no debe costar un BEGIN/ROLLBACK.
     `cuenta-pasos:${TPL_ID}`,
     "begin",
-    "gate:reglas",
+    // SIN `gate:reglas` (frente 25, P26): exigia una fila en `process_target_rules` y la tabla se
+    // retiro. El orden de los demas sigue siendo contrato.
     "gate:periodos",
     `retira-hermanas:${TPL_ID}`,
     `publica-y-activa:${TPL_ID}`,

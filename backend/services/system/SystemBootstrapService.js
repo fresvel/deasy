@@ -953,20 +953,9 @@ export const ensureDefaultProcess = async (connection) => {
       [definitionId, permanentTermTypeId]
     );
   }
-  const rule = await fetchOne(
-    connection,
-    // Buscaba `unit_scope_type = 'all_units'`, y esa columna se fue con `P10`: era copia de la
-    // linea. El alcance de esta configuracion lo dice SU linea --que este mismo arranque siembra
-    // sin acotar--, asi que aqui basta con que la regla exista.
-    "SELECT id FROM process_target_rules WHERE process_definition_id = ? LIMIT 1",
-    [definitionId]
-  );
-  if (!rule) {
-    await connection.query(
-      "INSERT INTO process_target_rules (process_definition_id, recipient_policy) VALUES (?, 'all_matches')",
-      [definitionId]
-    );
-  }
+  // AQUI SE SEMBRABA LA REGLA DE REPARTO, y la tabla se retiro (frente 25, P26). No hay nada que
+  // poner en su lugar: el afinado es `lineas.recipient_policy`, que nace en `all_matches` por
+  // defecto con la linea que este mismo arranque siembra sin acotar.
 
   return { processId, definitionId, artifactId };
 };

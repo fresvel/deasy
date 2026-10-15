@@ -6,7 +6,6 @@ import { etiquetaBooleano } from "@/shared/utils/estadoTono.js";
 
 export function useAdminPresentationAdapters({
   props,
-  allTablesMap,
   positionMetaById,
   processIdByDefinitionId,
   processDefinitionMetaById,
@@ -34,20 +33,8 @@ export function useAdminPresentationAdapters({
       }
       return true;
     });
-    if (tableMeta.table === "process_target_rules") {
-      const expandedFields = [];
-      fields.forEach((field) => {
-        expandedFields.push(field);
-        if (field.name === "process_definition_id") {
-          expandedFields.push({
-            name: "__process_name",
-            label: "Proceso",
-            type: "text"
-          });
-        }
-      });
-      return expandedFields;
-    }
+    // AQUI SE EXPANDIAN LOS CAMPOS DE `process_target_rules` con el nombre del proceso. Se fue con
+    // la tabla (frente 25, P26).
     if (tableMeta.table === "ediciones") {
       return fields.map((field) => formatTemplateArtifactFieldLabel(field));
     }
@@ -199,14 +186,6 @@ export function useAdminPresentationAdapters({
   const formatCell = (value, field, row = null) =>
     formatValueForTable(props.table, value, field, row);
 
-  const formatDefinitionRuleCell = (row, fieldName) =>
-    formatValueForTable(
-      allTablesMap.value.process_target_rules || { table: "process_target_rules", fields: [] },
-      row?.[fieldName],
-      { name: fieldName },
-      row
-    );
-
   const toDateInputValue = (value) => {
     if (!value) {
       return "";
@@ -276,7 +255,6 @@ export function useAdminPresentationAdapters({
     buildPersonAssignmentContext,
     formatValueForTable,
     formatCell,
-    formatDefinitionRuleCell,
     toDateInputValue,
     toDateTimeInputValue,
     normalizeComparableFormValue,

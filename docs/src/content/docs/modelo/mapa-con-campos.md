@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 32 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 31 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**32 tablas · 295 columnas · 74 claves ajenas · 9 diagramas.**
+**31 tablas · 292 columnas · 73 claves ajenas · 9 diagramas.**
 
 ## Cómo leerla
 
@@ -139,7 +139,7 @@ erDiagram
 
 ## Lo que se declara (1 de 2)
 
-**5 tablas** · 35 columnas · 10 claves ajenas propias. Apunta a `cargos`, `term_types`, `unit_types`, `units`, que salen como caja vacía.
+**5 tablas** · 39 columnas · 9 claves ajenas propias. Apunta a `cargos`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -168,18 +168,13 @@ erDiagram
     int process_id FK
     varchar nombre
     int cargo_id FK
+    text recipient_policy
     text unit_scope_type
     int unit_type_id FK
     int unit_id FK
     int linea_anterior_id FK
     date effective_from
     date effective_to
-    timestamp created_at
-  }
-  process_target_rules {
-    int id PK
-    int process_definition_id FK
-    text recipient_policy
     timestamp created_at
   }
   process_definition_period_types {
@@ -189,32 +184,6 @@ erDiagram
     smallint is_active
     timestamp created_at
   }
-  lineas |o--o{ lineas : "linea_anterior_id"
-  cargos |o--o{ lineas : "cargo_id"
-  processes ||--o{ lineas : "process_id"
-  unit_types |o--o{ lineas : "unit_type_id"
-  units |o--o{ lineas : "unit_id"
-  process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
-  term_types ||--o{ process_definition_period_types : "term_type_id"
-  lineas ||--o{ process_definition_versions : "linea_id"
-  process_definition_versions ||--o{ process_target_rules : "process_definition_id"
-  processes |o--o{ processes : "parent_id"
-```
-
-<details>
-<summary>Llegan 7 claves ajenas desde otros diagramas</summary>
-
-`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `vinculos.process_definition_id` → `process_definition_versions`
-
-</details>
-
-## Lo que se declara (2 de 2)
-
-**5 tablas** · 42 columnas · 6 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
-
-```mermaid
-erDiagram
-  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   term_types {
     int id PK
     varchar code UK
@@ -224,6 +193,31 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
+  lineas |o--o{ lineas : "linea_anterior_id"
+  cargos |o--o{ lineas : "cargo_id"
+  processes ||--o{ lineas : "process_id"
+  unit_types |o--o{ lineas : "unit_type_id"
+  units |o--o{ lineas : "unit_id"
+  process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
+  term_types ||--o{ process_definition_period_types : "term_type_id"
+  lineas ||--o{ process_definition_versions : "linea_id"
+  processes |o--o{ processes : "parent_id"
+```
+
+<details>
+<summary>Llegan 8 claves ajenas desde otros diagramas</summary>
+
+`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `terms.term_type_id` → `term_types` · `vinculos.process_definition_id` → `process_definition_versions`
+
+</details>
+
+## Lo que se declara (2 de 2)
+
+**4 tablas** · 35 columnas · 6 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   catalogo_documental {
     int id PK
     varchar code UK
@@ -276,9 +270,9 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 5 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 3 claves ajenas desde otros diagramas</summary>
 
-`document_versions.edicion_id` → `ediciones` · `pasos_declarados.edicion_id` → `ediciones` · `process_definition_period_types.term_type_id` → `term_types` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
+`document_versions.edicion_id` → `ediciones` · `pasos_declarados.edicion_id` → `ediciones` · `task_items.vinculo_id` → `vinculos`
 
 </details>
 

@@ -16,7 +16,6 @@
   ],
   "tablas": {
     "processes": "Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.",
-    "process_target_rules": "El eje de REPARTO: a quién alcanza el proceso. La serie siembra y blinda el cargo de la regla.",
     "vinculos": "El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.",
     "catalogo_documental": "El ENTREGABLE como identidad estable (el 'libro'). Sus versiones son `ediciones` (las 'ediciones'): la identidad vive aquí y sólo aquí.",
     "ediciones": "Las EDICIONES de un entregable, versionadas. Cuelgan de `catalogo_documental`, que es quien porta la identidad.",

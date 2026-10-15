@@ -25,9 +25,13 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
   // bien no cuesta un salto mas. Pasa a `INNER` porque `linea_id` es `NOT NULL`: un `LEFT` prometia
   // una fila sin linea que el modelo no permite, y con el ambito colgando de ahi habria dado NULL
   // en el `CASE` en vez de 'global'.
+  //
+  // Y DESDE `P26` LA CONSULTA ARRANCA EN LA CONFIGURACION, no en la regla: `process_target_rules` se
+  // retiro entera y `recipient_policy` es de la linea. `rule_id` se conserva como identificador de
+  // la fila --lo usa la pantalla-- y hoy es el de la configuracion.
   const [filas] = await ejecutor.query(
     `SELECT
-            ptr.id AS rule_id,
+            pdv.id AS rule_id,
             pdv.id AS definition_id,
             p.name AS process_name,
             nombre_configuracion(lin.nombre, pdv.definition_version) AS definition_name,
@@ -40,7 +44,7 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
             lin.unit_id,
             lin.unit_type_id,
             lin.cargo_id,
-            ptr.recipient_policy,
+            lin.recipient_policy,
             c.name AS cargo_name,
             CASE
               WHEN lin.unit_id = ? THEN 'direct'
@@ -48,9 +52,8 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
               WHEN lin.unit_scope_type = 'all_units' THEN 'global'
               ELSE 'other'
             END AS origin
-     FROM process_target_rules ptr
-     INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
-      INNER JOIN lineas lin ON lin.id = pdv.linea_id
+     FROM process_definition_versions pdv
+     INNER JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN processes p ON p.id = lin.process_id
      LEFT JOIN cargos c ON c.id = lin.cargo_id
      WHERE lin.unit_id = ?

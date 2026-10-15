@@ -245,7 +245,6 @@ export default class TemplateLifecycleService {
     getResolvableCargoIdsByUnit,
     listResolvableCargos,
     getWorkflowReferenceIdSets,
-    ensureDefinitionHasActiveRulesForActivation,
     ensureDefinitionHasActivePeriodTypesForActivation,
     ensureDefinitionHasArtifactsForActivation
   } = {}) {
@@ -263,7 +262,6 @@ export default class TemplateLifecycleService {
     this._getResolvableCargoIdsByUnit = getResolvableCargoIdsByUnit;
     this._listResolvableCargos = listResolvableCargos;
     this._getWorkflowReferenceIdSets = getWorkflowReferenceIdSets;
-    this._ensureDefinitionHasActiveRulesForActivation = ensureDefinitionHasActiveRulesForActivation;
     this._ensureDefinitionHasActivePeriodTypesForActivation = ensureDefinitionHasActivePeriodTypesForActivation;
     this._ensureDefinitionHasArtifactsForActivation = ensureDefinitionHasArtifactsForActivation;
   }
@@ -540,7 +538,6 @@ export default class TemplateLifecycleService {
       const [r] = await this.pool.query(`SELECT COUNT(*) AS n FROM ${table} WHERE process_definition_id = ?`, [id]);
       return Number(r?.[0]?.n || 0);
     };
-    const rules = { from: active ? await countRows("process_target_rules", active.id) : 0, to: await countRows("process_target_rules", defId) };
     const periodTypes = { from: active ? await countRows("process_definition_period_types", active.id) : 0, to: await countRows("process_definition_period_types", defId) };
 
     return {
@@ -549,7 +546,6 @@ export default class TemplateLifecycleService {
       to_version: draft.definition_version,
       config_status: draft.status,
       templates,
-      rules,
       period_types: periodTypes
     };
   }
@@ -1002,8 +998,9 @@ export default class TemplateLifecycleService {
     const connection = await this.pool.getConnection();
     try {
       await connection.beginTransaction();
-      // Readiness de activación que NO depende del estado de la plantilla.
-      await this._ensureDefinitionHasActiveRulesForActivation(cfgId, connection);
+      // Readiness de activación que NO depende del estado de la plantilla. Eran DOS: la de las
+      // reglas se fue con `process_target_rules` (frente 25, P26), que contaba filas y no
+      // destinatarios.
       await this._ensureDefinitionHasActivePeriodTypesForActivation(cfgId, connection);
 
       // Publicar plantilla PRIMERO (deja is_active=1) para que pase el check de artefactos activos.

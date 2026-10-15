@@ -497,9 +497,11 @@ export const TABLE_HOOKS = {
         targetProcessId: ctx.payload.process_id,
         connection: ctx.connection
       });
-      if (cloneSummary.clonedTemplates || cloneSummary.clonedRules || cloneSummary.clonedPeriodTypes) {
+      // SIN LAS REGLAS EN EL AVISO (frente 25, P26): no se clonan porque no existen — el afinado es
+      // de la linea, y las dos versiones comparten la misma.
+      if (cloneSummary.clonedTemplates || cloneSummary.clonedPeriodTypes) {
         ctx.notice =
-          `Se clonaron ${cloneSummary.clonedTemplates} plantillas, ${cloneSummary.clonedRules} reglas`
+          `Se clonaron ${cloneSummary.clonedTemplates} plantillas`
           + ` y ${cloneSummary.clonedPeriodTypes} periodos del proceso desde la configuracion origen.`;
       }
     },
@@ -651,7 +653,6 @@ export const TABLE_HOOKS = {
     // queda nada a medias (ni plantillas publicadas ni configuraciones retiradas).
     async beforeUpdateTx(ctx) {
       const definitionId = ctx.existing.id ?? ctx.keyPayload.id;
-      await ctx.service.ensureDefinitionHasActiveRulesForActivation(definitionId, ctx.connection);
       await ctx.service.ensureDefinitionHasActivePeriodTypesForActivation(definitionId, ctx.connection);
       // Publica las plantillas borrador de la config (activa config + publica plantilla, juntas) antes de
       // validar que haya artefactos activos.
@@ -739,16 +740,8 @@ export const TABLE_HOOKS = {
     // Un hook vacio es peor que ninguno: se lee como "aqui falta algo".
   },
 
-  // SIN `applyTargetRuleLineaConstraints` (frente 25, P25): era lo ultimo que quedaba del guardia
-  // de 60 lineas de `P10`, y comprobaba que el PUESTO EXACTO fuera de la linea. Sin puesto no hay
-  // nada que comprobar. Con el se fue tambien un bucle que propagaba `cargo_id` y `unit_type_id` a
-  // los updates: dos columnas que esta tabla no tiene desde `P10` --codigo muerto que ningun test
-  // podia tocar, porque `pickPayload` solo copia lo declarado--.
-  process_target_rules: {
-    beforeCreate: RULE_CHILD_GUARDS.beforeCreate,
-    beforeUpdate: RULE_CHILD_GUARDS.beforeUpdate,
-    beforeRemove: RULE_CHILD_GUARDS.beforeRemove
-  },
+  // AQUI ESTABAN LOS TRES GANCHOS DE `process_target_rules` --los guardias de «solo en borrador»--
+  // y antes de ellos `applyTargetRuleLineaConstraints`. Se fueron con la tabla (frente 25, P26).
 
   process_definition_period_types: {
     async beforeCreate(ctx) {

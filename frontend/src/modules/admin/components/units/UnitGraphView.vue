@@ -327,7 +327,6 @@
             <div class="mb-3 flex items-center justify-between gap-2">
               <p class="deasy-overline">Procesos de la unidad</p>
               <div class="flex items-center gap-2">
-                <AppButton v-if="editable" variant="neutral-outline" title="Vincular una configuración en borrador existente a esta unidad" @click="openAttachProcess">Vincular</AppButton>
                 <AppButton v-if="editable && canCreateProcess" variant="primary-outline" @click="$emit('create-process')">+ Nueva configuración</AppButton>
               </div>
             </div>
@@ -348,28 +347,11 @@
                 </div>
                 <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
                   <span class="text-muted">Destinatario: <span class="font-medium text-body">{{ recipientSummary(proc) }}</span></span>
-                  <div v-if="editable && proc.origin === 'direct' && proc.status === 'draft'" class="ml-auto flex items-center gap-2">
-                    <AppButton
-                      variant="success-soft"
-                      icon-only
-                      title="Editar alcance de la regla"
-                      aria-label="Editar alcance de la regla"
-                      @click="openEditProcessRule(proc)"
-                    >
-                      <IconPencil class="h-5 w-5" />
-                    </AppButton>
-                    <AppButton
-                      variant="danger-soft"
-                      icon-only
-                      title="Quitar el proceso de esta unidad"
-                      aria-label="Quitar el proceso de esta unidad"
-                      @click="detachProcess(proc.rule_id)"
-                    >
-                      <IconUnlink class="h-5 w-5" />
-                    </AppButton>
-                  </div>
-                  <span v-else-if="proc.origin === 'direct'" class="ml-auto text-theme-xs italic text-muted">Versiona el proceso para cambiar el alcance</span>
-                  <span v-else class="ml-auto text-theme-xs italic text-muted">Definido a nivel de proceso</span>
+                  <!-- AQUI ESTABAN «Editar alcance» y «Quitar el proceso», que editaban y borraban
+                       una fila de `process_target_rules`. Desde `P10` esa fila no tenía unidad, así
+                       que «quitar el proceso de esta unidad» no quitaba nada de la unidad: borraba
+                       el reparto de la configuración entera. La tabla se retiró en `P26`. -->
+                  <span class="ml-auto text-theme-xs italic text-muted">El alcance lo dice la línea del proceso</span>
                 </div>
               </li>
             </ul>
@@ -432,53 +414,11 @@
       @save="saveProfileWizard"
  />
 
-    <!-- Vincular / editar proceso de la unidad (regla de alcance) -->
-    <AppModalShell
-      v-if="processModalOpen"
-      controlled
-      :open="processModalOpen"
-      :title="processEditingRuleId ? 'Editar proceso de la unidad' : 'Vincular proceso a la unidad'"
-      content-class="max-w-md"
-      @close="processModalOpen = false"
-    >
-      <div class="flex flex-col gap-3">
-        <label class="deasy-form-label">
-          Proceso (configuración en borrador)
-          <select v-model="processForm.process_definition_id" :disabled="Boolean(processEditingRuleId)" class="deasy-control deasy-control--select">
-            <option value="">Selecciona…</option>
-            <option v-for="def in attachableProcesses" :key="def.definition_id" :value="def.definition_id">
-              {{ def.process_name }} · {{ def.definition_name }}
-            </option>
-          </select>
-          <span v-if="!processEditingRuleId && attachableLoaded && !attachableProcesses.length" class="mt-1 block text-theme-xs text-warning">
-            No hay configuraciones en borrador acotables por unidad. El alcance solo se edita en borrador; las variaciones por tipo de unidad se gestionan en la configuración del proceso.
-          </span>
-        </label>
-
-        <!-- UN SOLO CAMPO, Y ERAN CUATRO (frente 25, P25 — 2026-10-14). «Alcance» tenía una sola
-             opción y mandaba `unit_scope_type`; «Cargo destinatario» mandaba `cargo_id`; y el aviso
-             «Cargo fijado por la serie» hablaba de la serie, retirada en `P9`. Las tres columnas
-             murieron en `P10` y `pickPayload` sólo copia lo declarado: la pantalla ofrecía elegir
-             tres cosas que SE EVAPORABAN al guardar. «Puesto exacto» se fue con su columna aquí. -->
-        <label class="deasy-form-label">
-          Entrega (destinatario)
-          <select v-model="processForm.recipient_policy" class="deasy-control deasy-control--select">
-            <option value="all_matches">Todos los del cargo</option>
-            <option value="unit_head">Jefatura de la unidad</option>
-          </select>
-        </label>
-      </div>
-      <template #footer>
-        <AppButton variant="danger-outline" @click="processModalOpen = false">Cancelar</AppButton>
-        <AppButton
-          variant="primary-outline"
-          :disabled="processSaving || !processForm.process_definition_id"
-          @click="confirmProcessRule"
-        >
-          {{ processSaving ? 'Guardando…' : (processEditingRuleId ? 'Guardar' : 'Vincular') }}
-        </AppButton>
-      </template>
-    </AppModalShell>
+    <!-- AQUI ESTABA «Vincular proceso a la unidad» (frente 25, P26). Creaba una fila en
+         `process_target_rules`, y desde `P10` esa fila NO TENIA UNIDAD: lo que la pantalla prometía
+         —enganchar un proceso a esta unidad— no lo hacía, porque a quién alcanza una configuración
+         lo dice su LÍNEA. La tabla se retiró y el modal con ella; la lista de procesos de la unidad
+         se queda, que sí lee la obligación. -->
   </div>
 </template>
 
@@ -504,7 +444,7 @@ import SToggle from "@/shared/components/forms/SToggle.vue";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconCrown, IconFileDescription, IconPencil, IconTrash, IconUnlink, IconUserEdit, IconUserMinus, IconUserPlus } from "@tabler/icons-vue";
+import { IconCrown, IconFileDescription, IconPencil, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
@@ -831,10 +771,6 @@ const closeDetail = () => {
   assignForId.value = null;
   editingPosition.value = null;
   profileWizardPosition.value = null;
-  processModalOpen.value = false;
-  processEditingRuleId.value = null;
-  attachableLoaded.value = false;
-  attachableProcesses.value = [];
   detailTab.value = "ocupaciones";
 };
 
@@ -881,87 +817,10 @@ const processOriginMeta = (origin) => PROCESS_ORIGIN_META[origin] || PROCESS_ORI
 const recipientSummary = (proc) =>
   `${proc.cargo_name || 'Cargo no definido'} · ${recipientPolicyLabel(proc.recipient_policy)}`;
 
-const attachableProcesses = ref([]);
-const attachableLoaded = ref(false);
-const processModalOpen = ref(false);
-const processEditingRuleId = ref(null);
-const processSaving = ref(false);
-const processForm = ref({ process_definition_id: "", recipient_policy: "all_matches" });
-
-// AQUI VIVIAN `selectedAttachableDef` y `seriesLockedCargo`, que leian `series_cargo_id` de la
-// configuracion elegida para bloquear el cargo del formulario. La SERIE se retiro en `P9` y el
-// cargo de la regla en `P10`: los dos computados quedaron sin dato y sin campo que gobernar.
-
-const loadAttachableProcesses = async () => {
-  if (!detailUnit.value?.id) return;
-  try {
-    const { data } = await adminSqlService.getUnitAttachableProcesses(detailUnit.value.id);
-    attachableProcesses.value = data.definitions || [];
-  } catch {
-    attachableProcesses.value = [];
-  } finally {
-    attachableLoaded.value = true;
-  }
-};
-const refreshUnitProcesses = async () => {
-  detailProcessesLoaded.value = false;
-  await loadUnitProcesses();
-};
-const resetProcessForm = () => {
-  processForm.value = { process_definition_id: "", recipient_policy: "all_matches" };
-};
-const openAttachProcess = async () => {
-  processEditingRuleId.value = null;
-  resetProcessForm();
-  processModalOpen.value = true;
-  if (!attachableLoaded.value) await loadAttachableProcesses();
-};
-const openEditProcessRule = async (proc) => {
-  processEditingRuleId.value = proc.rule_id;
-  processForm.value = {
-    process_definition_id: proc.definition_id,
-    recipient_policy: proc.recipient_policy || "all_matches"
-  };
-  processModalOpen.value = true;
-  if (!attachableLoaded.value) await loadAttachableProcesses();
-};
-// DOS CAMPOS, Y ERAN SIETE. Cinco de los que mandaba no son columnas de la tabla desde `P10` y
-// `P18-d` --`unit_scope_type`, `unit_id`, `unit_type_id`, `cargo_id` e `is_active`--, asi que
-// `pickPayload` los tiraba sin decir nada; `position_id` se fue en `P25`.
-const confirmProcessRule = async () => {
-  const form = processForm.value;
-  if (!form.process_definition_id) return;
-  const payload = {
-    process_definition_id: Number(form.process_definition_id),
-    recipient_policy: form.recipient_policy
-  };
-  processSaving.value = true;
-  try {
-    if (processEditingRuleId.value) {
-      await adminSqlService.update("process_target_rules", { id: processEditingRuleId.value }, payload);
-      setFeedback("success", "Proceso actualizado en la unidad.");
-    } else {
-      await adminSqlService.create("process_target_rules", payload);
-      setFeedback("success", "Proceso vinculado a la unidad.");
-    }
-    processModalOpen.value = false;
-    processEditingRuleId.value = null;
-    await refreshUnitProcesses();
-  } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo guardar el proceso.");
-  } finally {
-    processSaving.value = false;
-  }
-};
-const detachProcess = async (ruleId) => {
-  try {
-    await adminSqlService.remove("process_target_rules", { id: ruleId });
-    setFeedback("success", "Proceso desvinculado de la unidad.");
-    await refreshUnitProcesses();
-  } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo desvincular el proceso.");
-  }
-};
+// AQUI VIVIA LA VINCULACION DE PROCESOS A LA UNIDAD (frente 25, P26): el formulario, las
+// configuraciones enganchables, el alta, la edicion y el desenganche. Las cuatro escribian
+// `process_target_rules`, que se retiro — y que desde `P10` ya no tenia unidad, asi que esta
+// pantalla prometia un enganche que no existia. La LISTA se queda: lee la obligacion.
 
 const loadCargos = async () => {
   try {
@@ -1279,8 +1138,8 @@ onMounted(() => {
 // refreshProcesses: tras crear/editar una configuración en el wizard, recarga la lista de procesos del drawer.
 const refreshProcessesIfOpen = async () => {
   if (detailUnit.value?.id && detailTab.value === "procesos") {
-    attachableLoaded.value = false;
-    await refreshUnitProcesses();
+    detailProcessesLoaded.value = false;
+    await loadUnitProcesses();
   } else {
     detailProcessesLoaded.value = false;
   }

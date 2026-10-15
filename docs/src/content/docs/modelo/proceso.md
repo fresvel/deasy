@@ -92,6 +92,11 @@ sinónimo: una línea lleva **los dos ejes a la vez** —`cargo_id` (el quién) 
 alcance (el dónde: `unit_scope_type` con `all_units`, `unit_type` o `unit_exact`)— mientras la serie admite **uno
 o el otro**, nunca los dos.
 
+Y desde el **2026-10-15** lleva también `recipient_policy`, el **tercer estado del quién**: un
+`cargo_id` sabe decir «este cargo» y «cualquiera», y no sabe decir **«el que manda aquí»** —porque el
+cargo de la jefatura varía por tipo de unidad—. Vivía en una tabla aparte; está contado en
+[el reparto](/modelo/reparto/).
+
 **Y eso era la causa de un problema real.** Los cargos del catálogo son genéricos —`Coordinador`,
 `Docente`, `Director`…: no existe «Coordinador de Carrera»—, así que una obligación como *«el Informe
 de Investigación Formativa de los Coordinadores de Carrera»* necesita cargo **y** tipo de unidad. Al
@@ -108,8 +113,9 @@ La línea trae además dos cosas que hoy no se pueden expresar:
   «v1 por Coordinador, v2 por Director» es escribible y produce una historia falsa. Suceder a una
   línea **obliga a haberla retirado antes**, y lo impone la base.
 
-El arranque siembra la del «Proceso por defecto» —`cargo_id` vacío y
-`unit_scope_type = 'all_units'`, porque un memo lo escribe quien lo necesita donde lo necesita—, y
+El arranque siembra la del «Proceso por defecto» —`cargo_id` vacío,
+`recipient_policy = 'all_matches'` y `unit_scope_type = 'all_units'`, porque un memo lo escribe quien
+lo necesita donde lo necesita—, y
 con la serie se fueron **seis mecanismos**: el eje único y su `CHECK`, el `code` derivado, las dos
 cascadas no transaccionales que se disparaban al renombrar un cargo, el recompositor de nombres y la
 copia `variation_key`. El detalle medido está en el frente 25 del plan.
@@ -176,6 +182,7 @@ erDiagram
     int process_id FK
     varchar nombre "escrito por una persona"
     int cargo_id FK "el QUIEN; vacio = cualquier cargo"
+    text recipient_policy "all_matches, unit_head"
     text unit_scope_type "all_units, unit_type, unit_exact"
     int unit_type_id FK "el DONDE, si es por tipo"
     int unit_id FK "el DONDE, si es una unidad"
