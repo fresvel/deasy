@@ -2102,6 +2102,25 @@ ejercitando el asistente de punta a punta:
 2. **«Se llamará»** juntaba línea y versión descartando lo vacío, así que **sin línea elegida**
    enseñaba «1.0.0» —la versión sola— como si fuera un nombre. Ahora dice «Pendiente».
 
+#### Y lo que vio el dueño al día siguiente: «di clic en nuevo y ya no me sale el modal»
+
+Los dos planos se entregaron **deshabilitados** cuando el asistente abre una configuración que ya
+existe (`isDefinitionLocked`), **y con el tono de peligro**. O sea: dos botones rojos que al pulsarse
+no hacen nada. La verificación de `P24` recorrió el camino de **crear**, donde los dos funcionan, y
+ése es justo el hueco que deja mirar una sola rama.
+
+Tres arreglos, y los tres son la misma idea —lo que no se puede usar no se enseña—:
+
+| | Qué hacía | Qué hace |
+|---|---|---|
+| «+ Nuevo» · «+ Nueva» | deshabilitados y en rojo sobre una configuración creada | **no se pintan** (`v-if="!isDefinitionLocked"`), y en el tono de añadir |
+| La ✕ del buscador de líneas | seguía activa con el campo **deshabilitado** | `AdminLookupField` desactiva su ✕ cuando el campo lo está |
+| El nodo del mapa | «Proceso por defecto · 1.1.0» y debajo «Proceso por defecto · v1.1.0» | sólo el nombre |
+
+La tercera es **la segunda copia** de la duplicación que `P23` dijo haber cerrado: se quitó el `· vX`
+de `ProcessGraphView` y de `UnitGraphView`, y **`ProcessConfigNode.vue` —el nodo mismo— no se miró**.
+Con él se fue la pastilla de línea del cajón del mapa, que repetía la primera mitad del nombre.
+
 
 ## 13 · EL REPARTO, revisado a petición del dueño (2026-10-14)
 

@@ -23,10 +23,6 @@
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.definition_name }}</span>
       <AppTag :variant="tonoEstado" outlined>{{ statusLabel }}</AppTag>
     </p>
-    <p class="m-0 mt-0.5 flex items-center gap-2 text-theme-xs text-muted">
-      <span class="truncate">{{ lineaLabel }}</span>
-      <span class="shrink-0">· v{{ data.definition_version }}</span>
-    </p>
     <p v-if="data.templatesCount" class="m-0 mt-1">
       <button
         type="button"
@@ -72,11 +68,5 @@ const statusBorderClass = computed(() => `graph-node--estado graph-node--estado-
 /* Mismas variantes que el modal de edicion. Antes `draft` salia AMBAR aqui y gris alla: el
    mismo estado con dos colores segun la pantalla. */
 const tonoEstado = computed(() => tonoCicloVida(props.data.status));
-// EL NOMBRE DE LA LÍNEA, que es lo que distingue una configuración de otra.
-//
-// Aquí se componía una etiqueta a partir del origen de la SERIE —«Cargo · Docente», «Tipo ·
-// Carrera», y «General» para todo lo demás—, y por eso toda configuración sin eje salía con la
-// misma palabra en pantalla. La línea tiene nombre escrito por una persona y lleva los dos ejes.
-const lineaLabel = computed(() => props.data.linea_nombre || "Sin línea");
 </script>
 

@@ -27,6 +27,12 @@
            configuración—: 5 visibles en el caso común y 11 en el peor. Lo que queda son los tres
            datos que SON de la configuración. El proceso ACOTA el buscador en vez de ser un campo, y
            crear un proceso o una línea abre su propio plano. -->
+      <!-- SOBRE UNA CONFIGURACIÓN YA CREADA LOS DOS PLANOS NO SE DESACTIVAN: SE VAN (2026-10-14).
+           Salían deshabilitados y con el tono de peligro, así que parecían dos botones rojos que al
+           pulsarlos no hacían nada —el dueño lo leyó como «ya no me sale el modal»—. Un paso 1
+           bloqueado no admite cambiar la línea, de modo que crear un proceso o una línea desde ahí
+           no tendría dónde aterrizar: lo que no se puede usar no se enseña. Y el tono vuelve a ser
+           el de una acción que AÑADE; el rojo es de Cancelar y de lo que destruye. -->
       <div class="grid gap-3 md:grid-cols-12">
         <AdminFieldGroup label="Acotar por proceso" group-class="md:col-span-5">
           <div class="flex items-stretch gap-2">
@@ -39,7 +45,7 @@
               <option value="">Todos los procesos</option>
               <option v-for="proc in processOptions" :key="proc.id" :value="String(proc.id)">{{ proc.name }}</option>
             </AdminSelectField>
-            <AdminButton variant="danger-outline" :disabled="isDefinitionLocked" @click="$emit('abrir-proceso')">
+            <AdminButton v-if="!isDefinitionLocked" variant="primary-outline" @click="$emit('abrir-proceso')">
               + Nuevo
             </AdminButton>
           </div>
@@ -61,7 +67,7 @@
               @select="$emit('elegir-linea', $event)"
               @clear="$emit('elegir-linea', null)"
             />
-            <AdminButton variant="danger-outline" :disabled="isDefinitionLocked" @click="$emit('abrir-linea')">
+            <AdminButton v-if="!isDefinitionLocked" variant="primary-outline" @click="$emit('abrir-linea')">
               + Nueva
             </AdminButton>
           </div>

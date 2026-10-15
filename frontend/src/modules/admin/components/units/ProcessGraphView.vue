@@ -192,9 +192,6 @@
                     <span class="truncate text-sm font-semibold text-strong" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
                     <AppTag :variant="tonoCicloVida(cfg.status)" outlined class-name="ml-auto">{{ configStatusLabel(cfg.status) }}</AppTag>
                   </div>
-                  <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ lineaLabel(cfg) }}</span>
-                  </div>
                   <div class="mt-1.5 flex flex-wrap items-center gap-2 text-theme-xs text-muted">
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.rules_count }} reglas</span>
                     <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.templates_count }} plantillas</span>
@@ -964,7 +961,6 @@ const detachChild = async (childId) => {
 
 const configStatusLabel = (status) => etiquetaCicloVida(status);
 // Ver `ProcessConfigNode.vue`: el nombre lo trae la línea, no se compone del origen de la serie.
-const lineaLabel = (cfg) => cfg.linea_nombre || "Sin línea";
 
 
 // Acciones de configuración: cierran el drawer y delegan en el padre (wizard / lanzar).

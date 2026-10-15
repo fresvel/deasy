@@ -32,7 +32,7 @@
         icon-only
         :title="clearTitle"
         :aria-label="clearLabel"
-        :disabled="clearDisabled"
+        :disabled="clearDisabled || disabled"
         @mousedown="handleButtonMouseDown"
         @click="handleClear"
       >
