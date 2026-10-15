@@ -240,40 +240,22 @@ test("validateTableRules valida el orden de las fechas de vigencia", () => {
 
 // --- process_target_rules -----------------------------------------------------
 
-test("validateTableRules exige puesto exacto cuando la política lo es", () => {
-  throwsWith(
-    () =>
-      validateTableRules("process_target_rules", {
-        process_definition_id: 1,
-        recipient_policy: "exact_position",
-      }),
-    "requiere un puesto exacto",
-  );
-});
-
-// ⚠️ ESTA PRUEBA EXIGIA UNA BASE PARA EL ALCANCE DE LA REGLA, y ese alcance ya no existe: sus
-// cuatro columnas eran copia de la línea y salieron con `P10` (frente 25, 2026-10-14). El alcance se
-// valida UNA vez, en `lineaScopeConsistent`, que es donde se declara.
+// ⚠️ AQUI HUBO DOS PRUEBAS DE LA PAREJA POLITICA/PUESTO, y las dos se fueron con el puesto exacto
+// (frente 25, P25). Antes de esas, otra exigia una base para el ALCANCE de la regla, retirado en
+// `P10`. La regla ha ido perdiendo todo lo que podia contradecirse, y una tabla sin pares no tiene
+// consistencia que validar: lo unico que queda es su requerido.
 //
-// Lo que queda por validar es la pareja política/puesto, y ahora en las DOS direcciones: antes sólo
-// se comprobaba que `exact_position` trajera su puesto. Un puesto con otra política es un dato que
-// nadie lee —`getPositionsForRule` lo usaría igual, porque mira `position_id` antes que la política—
-// así que guardarlo sin declararlo cambia a quién le llega el trabajo.
-test("validateTableRules empareja la politica de entrega con su puesto, en los dos sentidos", () => {
-  throwsWith(
-    () => validateTableRules("process_target_rules", { process_definition_id: 1, recipient_policy: "exact_position" }),
-    "requiere un puesto exacto",
-  );
-  throwsWith(
-    () => validateTableRules("process_target_rules", { process_definition_id: 1, recipient_policy: "unit_head", position_id: 5 }),
-    "Solo la politica exact_position admite un puesto exacto.",
-  );
-  assert.doesNotThrow(() =>
-    validateTableRules("process_target_rules", {
-      process_definition_id: 1,
-      recipient_policy: "exact_position",
-      position_id: 5,
-    }),
+// Lo que esta prueba fija es esa ausencia: ninguna combinacion de la regla puede ser rechazada, y
+// un `position_id` colado --que ya no es columna-- no resucita ninguna regla de validacion.
+test("validateTableRules ya no valida ninguna pareja en la regla de alcance", () => {
+  for (const politica of ["all_matches", "unit_head"]) {
+    assert.doesNotThrow(() =>
+      validateTableRules("process_target_rules", { process_definition_id: 1, recipient_policy: politica }),
+    );
+  }
+  assert.doesNotThrow(
+    () => validateTableRules("process_target_rules", { process_definition_id: 1, position_id: 5 }),
+    "el puesto ya no es columna: nadie lo valida ni lo rechaza",
   );
 });
 
@@ -362,14 +344,10 @@ test("validateTableRules exige al menos un formato disponible en el artifact", (
 // perdió su vigencia en el frente 25 (P18-d) —nace y muere con su versión de la norma—, así que no
 // hay fechas que ordenar y el requerido es lo primero. El orden intercalado sigue siendo contrato
 // en las otras tres tablas de este bloque.
-test("process_target_rules exige su configuracion antes que el afinado", () => {
+test("process_target_rules solo exige su configuracion", () => {
   throwsWith(() => validateTableRules("process_target_rules", {}), "Selecciona una configuracion de proceso.");
-  // Decía «antes que el alcance», y el alcance se fue con `P10`. El orden sigue siendo contrato: el
-  // requerido primero, el afinado después.
-  throwsWith(
-    () => validateTableRules("process_target_rules", { process_definition_id: 1, recipient_policy: "exact_position" }),
-    "requiere un puesto exacto",
-  );
+  // Decía «antes que el afinado», y antes de eso «antes que el alcance»: el alcance se fue con `P10`
+  // y el afinado dejo de validarse con `P25`. Ya no hay segundo guard con el que ordenar.
   assert.doesNotThrow(() => validateTableRules("process_target_rules", { process_definition_id: 1 }));
 });
 

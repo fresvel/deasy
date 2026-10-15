@@ -122,15 +122,18 @@ test("isAuthorizedUserScope solo autoriza si el usuario pide su propio ámbito",
 
 
 
-test("doesPositionMatchRule: posición exacta manda sobre todo", () => {
-  assert.equal(doesPositionMatchRule({ position_id: 8 }, { position_id: 8 }), true);
-  assert.equal(doesPositionMatchRule({ position_id: 8 }, { position_id: 9 }), false);
-});
-
-test("doesPositionMatchRule: exact_position sin position_id nunca casa", () => {
+// EL PUESTO EXACTO YA NO EXISTE (frente 25, P25). Aqui habia dos pruebas: que `position_id` mandaba
+// sobre todo lo demas, y que `exact_position` sin puesto no casaba con nadie. Lo que se fija ahora
+// es lo contrario: un `position_id` suelto en la fila NO PUEDE volver a cortocircuitar el predicado,
+// porque esa rama era la que se saltaba el cargo y el ambito de la obligacion.
+test("doesPositionMatchRule: un position_id en la fila ya no decide nada", () => {
   assert.equal(
-    doesPositionMatchRule({ position_id: 8 }, { recipient_policy: "exact_position" }),
-    false
+    doesPositionMatchRule(
+      { position_id: 8, unit_id: 5 },
+      { position_id: 8, linea_unit_scope_type: "unit_exact", linea_unit_id: 6 }
+    ),
+    false,
+    "el ambito de la linea manda: la plaza no puede saltarselo"
   );
 });
 
@@ -168,8 +171,12 @@ test("doesPositionMatchRule: unit_exact / default exige misma unidad", () => {
   assert.equal(doesPositionMatchRule({ unit_id: 5 }, { linea_unit_scope_type: "unit_exact" }), false, "sin unidad no casa");
 });
 
-test("buildRuleDisplayLabel prioriza puesto exacto y luego compone unidad|cargo", () => {
-  assert.equal(buildRuleDisplayLabel({ position_title: "Decano" }), "Puesto exacto: Decano");
+test("buildRuleDisplayLabel compone unidad|cargo y ya no rotula puestos", () => {
+  assert.equal(
+    buildRuleDisplayLabel({ position_title: "Decano", linea_unit_scope_type: "all_units" }),
+    "Todas las unidades",
+    "el rotulo del puesto exacto se fue con la politica (P25)"
+  );
   assert.equal(buildRuleDisplayLabel({ linea_unit_scope_type: "all_units" }), "Todas las unidades");
   assert.equal(buildRuleDisplayLabel({ id: 99 }), "Regla #99", "sin datos, fallback al id");
 });

@@ -62,19 +62,6 @@
               </option>
             </AdminSelectField>
           </AdminFieldGroup>
-          <AdminFieldGroup v-if="showPositionField" label="Puesto exacto" group-class="md:col-span-6">
-            <AdminLookupField
-              :model-value="labels.position_id"
-              placeholder="Selecciona un puesto"
-              :suggest-provider="suggestProviders.position_id"
-              :disabled="!canManage"
-              :clear-disabled="!canManage || !form.position_id"
-              :search-disabled="!canManage"
-              @clear="$emit('clear-field', 'position_id')"
-              @select="$emit('select-field', 'position_id', $event)"
-              @search="$emit('open-fk-search', 'position_id')"
-            />
-          </AdminFieldGroup>
         </div>
       </fieldset>
 
@@ -127,7 +114,6 @@ import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
-import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
@@ -144,19 +130,14 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
   lineaScope: { type: Object, default: null },
+  // SIN `suggestProviders` (frente 25, P25): la regla no tiene ni una clave ajena que buscar.
   // En el wizard el encabezado del proceso ya lo muestra el shell; evita el banner de contexto duplicado.
   embedded: { type: Boolean, default: false },
-  // Mapa fieldName -> proveedor de recomendaciones (combobox). Vacío = lookup clásico.
-  suggestProviders: { type: Object, default: () => ({}) },
   formatCell: { type: Function, required: true }
 });
 
 const emit = defineEmits([
   "update:form",
-  "recipient-policy-change",
-  "clear-field",
-  "select-field",
-  "open-fk-search",
   "submit",
   "reset",
   "view-row",
@@ -164,10 +145,11 @@ const emit = defineEmits([
   "delete-row"
 ]);
 
+// DOS OPCIONES, Y ERAN TRES. «Puesto exacto» se fue con su columna (frente 25, P25): nombraba una
+// plaza saltandose la obligacion, y nombrar a alguien es una tarea ad-hoc, no una norma.
 const recipientPolicyOptions = [
   { value: "all_matches", label: "Todos los puestos coincidentes" },
-  { value: "unit_head", label: "Jefatura de la unidad" },
-  { value: "exact_position", label: "Puesto exacto" }
+  { value: "unit_head", label: "Jefatura de la unidad" }
 ];
 
 // Formulario colapsable: por defecto solo se ve la lista. Se abre con "Agregar regla" o al editar una fila,
@@ -217,7 +199,6 @@ watch(() => props.error, (val) => {
 // AQUI VIVIA `scopeType`, y se fue con las cuatro columnas de ambito de la regla (frente 25, P10):
 // eran copia de la linea. El alcance se lee de `lineaScope` y se ENSENA; no se edita aqui.
 const recipientPolicy = computed(() => String(props.form.recipient_policy || "all_matches"));
-const isExactPositionPolicy = computed(() => recipientPolicy.value === "exact_position");
 
 // La LÍNEA del proceso («Informe de IF · Coordinadores de Carrera») fija el cargo y el alcance.
 // Ya no es «cuando es así»: es SIEMPRE, desde que la regla dejó de tener copia (P10). Lo que la
@@ -248,25 +229,17 @@ const lineaFixedChips = computed(() => {
   }
   return chips;
 });
-// "Puesto exacto" es el único modo que pide un dato: el puesto. Los otros dos no piden nada, porque
-// el alcance ya no se declara aquí.
-const showPositionField = computed(() => isExactPositionPolicy.value);
-
+// AQUI VIVIA `showPositionField`: «Puesto exacto» era el unico modo que pedia un dato. Hoy NINGUNO
+// pide nada --el alcance lo dice la obligacion-- asi que el formulario es un solo desplegable.
 const requirementMessage = computed(() => {
   if (!props.canManage || props.canSubmit) {
     return "";
-  }
-  if (isExactPositionPolicy.value) {
-    return "Selecciona un puesto exacto para guardar la regla.";
   }
   return "Completa los datos requeridos para habilitar el boton de guardar.";
 });
 
 // EL AVISO EXPLICA EL AFINADO, no el alcance: el alcance lo dice la obligacion y se ve en los chips.
 const ruleContextHint = computed(() => {
-  if (isExactPositionPolicy.value) {
-    return "Solo ese puesto, dentro del alcance de la obligacion.";
-  }
   if (recipientPolicy.value === "unit_head") {
     return "Solo la jefatura de cada unidad del alcance, sea cual sea su cargo.";
   }
@@ -282,6 +255,5 @@ const updateField = (fieldName, value) => {
 
 const updateRecipientPolicy = (value) => {
   updateField("recipient_policy", value);
-  emit("recipient-policy-change", value);
 };
 </script>

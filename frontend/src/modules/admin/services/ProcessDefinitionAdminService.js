@@ -5,20 +5,20 @@ export class ProcessDefinitionAdminService {
     this.sqlService = sqlService;
   }
 
-  // DOS CAMPOS, Y ERAN SIETE. `unit_scope_type`, `unit_id`, `unit_type_id` y `cargo_id` eran copia
+  // UN CAMPO, Y ERAN SIETE. `unit_scope_type`, `unit_id`, `unit_type_id` y `cargo_id` eran copia
   // de la línea y salieron de la regla con `P10` (frente 25, 2026-10-14); `priority` se fue con
-  // ellas porque sólo aparecía en un `ORDER BY`. El alcance se edita en la obligación.
+  // ellas porque sólo aparecía en un `ORDER BY`; y `position_id` con `P25`. El alcance se edita en
+  // la obligación, y la regla sólo dice a quién, dentro de ella, le toca.
   createRuleForm() {
     return {
-      position_id: "",
       recipient_policy: "all_matches"
     };
   }
 
+  // Sin ningún campo de clave ajena no hay rótulo que recordar — se conserva la forma porque el
+  // gestor la llama igual que las de disparadores y entregables.
   createRuleLabels() {
-    return {
-      position_id: ""
-    };
+    return {};
   }
 
   createTriggerForm() {
@@ -48,29 +48,14 @@ export class ProcessDefinitionAdminService {
     };
   }
 
-  // AQUI VIVIA `applyRuleScopeChange`, 54 lineas que limpiaban las columnas que el alcance elegido
-  // no usaba. Se fue con el alcance (`P10`): la regla ya no lo declara.
-  //
-  // Lo que queda es la pareja politica/puesto, y en un solo sentido: el puesto solo vive con
-  // `exact_position`. La base lo impone con `ck_ptr_puesto_exacto`; esto evita enviarlo.
-  applyRuleRecipientPolicyChange(form, labels) {
-    if (String(form.recipient_policy || "") === "exact_position") {
-      return { form: { ...form }, labels: { ...labels } };
-    }
-    return {
-      form: { ...form, position_id: "" },
-      labels: { ...labels, position_id: "" }
-    };
-  }
+  // AQUI VIVIERON DOS LIMPIADORES, y los dos se fueron con lo que limpiaban: `applyRuleScopeChange`
+  // (54 lineas) con el alcance en `P10`, y `applyRuleRecipientPolicyChange` con el puesto exacto en
+  // `P25`. Cambiar de politica ya no puede dejar un campo huerfano: no hay mas campos.
 
   buildRulePayload(definitionId, form) {
-    const recipientPolicy = form.recipient_policy || "all_matches";
-    const usesExactPosition = recipientPolicy === "exact_position";
-
     return {
       process_definition_id: Number(definitionId),
-      position_id: usesExactPosition && form.position_id ? Number(form.position_id) : null,
-      recipient_policy: recipientPolicy
+      recipient_policy: form.recipient_policy || "all_matches"
     };
   }
 

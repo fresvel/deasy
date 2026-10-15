@@ -152,15 +152,9 @@ const lineaScopeConsistent = (candidate) => {
 // Lo que queda es la pareja politica/puesto, y ahora en las DOS direcciones: «ese puesto» sin
 // puesto no resuelve a nadie, y un puesto con otra politica es un dato que nadie lee. La base lo
 // impone igual (`ck_ptr_puesto_exacto`); esto da el mensaje legible antes del 500.
-const targetScopeConsistent = (candidate) => {
-  const policy = String(candidate.recipient_policy || "all_matches");
-  if (policy === "exact_position" && !candidate.position_id) {
-    throw new Error("La politica exact_position requiere un puesto exacto.");
-  }
-  if (policy !== "exact_position" && candidate.position_id) {
-    throw new Error("Solo la politica exact_position admite un puesto exacto.");
-  }
-};
+// AQUI VIVIA `targetScopeConsistent`, que casaba la politica con el puesto. Se fue con los dos
+// (frente 25, P25): sin `exact_position` la regla no tiene ningun par que pueda contradecirse, y
+// los dos valores que quedan no piden nada mas.
 
 // `processDefinedNeedsTemplate` VIVIO AQUI hasta el 2026-10-04 (frente 23, F2.1). Exigia el vinculo
 // SOLO cuando `origin_kind = 'process_defined'`, porque se creia que un entregable `user_added`
@@ -301,9 +295,9 @@ const TABLE_RULES = {
     lineaScopeConsistent,
   ],
   process_target_rules: [
-    // SIN `datesInOrder`: la regla ya no tiene vigencia (frente 25, P18-d).
+    // SIN `datesInOrder`: la regla ya no tiene vigencia (frente 25, P18-d). Y sin
+    // `targetScopeConsistent`: se fue con el puesto exacto (P25).
     requires(["process_definition_id", "Selecciona una configuracion de proceso."]),
-    targetScopeConsistent,
   ],
   task_items: [
     requires(["task_id", "Selecciona una tarea."]),

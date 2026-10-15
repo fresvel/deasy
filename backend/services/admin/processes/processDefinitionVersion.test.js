@@ -88,16 +88,15 @@ const TEMPLATES = [
   { edicion_id: 30, sort_order: 3, item_mode: "single" }
 ];
 
-// DOS COLUMNAS, Y ERAN SIETE. Las cuatro de ámbito —`unit_scope_type`, `unit_id`, `unit_type_id`,
-// `cargo_id`— eran copia de la línea y salieron con `P10` (frente 25, 2026-10-14), y con ellas
-// `priority`, que sólo aparecía en un `ORDER BY`.
+// UNA COLUMNA, Y ERAN SIETE. Las cuatro de ámbito —`unit_scope_type`, `unit_id`, `unit_type_id`,
+// `cargo_id`— eran copia de la línea y salieron con `P10` (frente 25, 2026-10-14), con ellas
+// `priority`, que sólo aparecía en un `ORDER BY`, y `position_id` con `P25`.
 //
 // Y el clon era justo donde la copia costaba más: arrastraba el ámbito VERBATIM, así que una
 // configuración nueva nacía con el ámbito congelado en el instante del clon aunque su línea hubiera
 // cambiado después. Versionar la norma dejaba el reparto en el pasado, sin avisar.
 const RULES = [
   {
-    position_id: null,
     recipient_policy: "all_matches"
   }
 ];

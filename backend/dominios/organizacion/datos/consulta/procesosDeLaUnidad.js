@@ -41,10 +41,7 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
             lin.unit_type_id,
             lin.cargo_id,
             ptr.recipient_policy,
-            ptr.position_id,
             c.name AS cargo_name,
-            up.title AS position_title,
-            upc.name AS position_cargo_name,
             CASE
               WHEN lin.unit_id = ? THEN 'direct'
               WHEN lin.unit_type_id IS NOT NULL AND lin.unit_type_id = ? THEN 'type'
@@ -56,8 +53,6 @@ export const listarProcesosQueAlcanzanLaUnidad = async (ejecutor, unitId, unitTy
       INNER JOIN lineas lin ON lin.id = pdv.linea_id
      INNER JOIN processes p ON p.id = lin.process_id
      LEFT JOIN cargos c ON c.id = lin.cargo_id
-     LEFT JOIN unit_positions up ON up.id = ptr.position_id
-     LEFT JOIN cargos upc ON upc.id = up.cargo_id
      WHERE lin.unit_id = ?
         OR (lin.unit_type_id IS NOT NULL AND lin.unit_type_id = ?)
         OR lin.unit_scope_type = 'all_units'

@@ -97,8 +97,7 @@ export default class TaskAssignmentService {
       `SELECT lin.unit_scope_type AS linea_unit_scope_type,
               lin.unit_id         AS linea_unit_id,
               lin.unit_type_id    AS linea_unit_type_id,
-              lin.cargo_id        AS linea_cargo_id,
-              ptr.position_id
+              lin.cargo_id        AS linea_cargo_id
          FROM process_target_rules ptr
          INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
          INNER JOIN lineas lin ON lin.id = pdv.linea_id

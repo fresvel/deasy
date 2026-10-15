@@ -167,6 +167,7 @@ commit. Si ves un `D` suelto en un texto de ese día, habla de la decisión, no 
 | **P22** | **`process_definition_versions.process_id` SE RETIRA** (§13.13). Era una copia de `lineas.process_id` que **no sostenía nadie**: `linea_id` es `NOT NULL`, así que era 100 % derivable. Y la cascada de borrado se muda a `linea_id`, que es la relación de verdad | ✅ | **PROVOCADO antes**: `process_id` del proceso B con `linea_id` del proceso A entraba sin resistencia (decía 9, su línea decía 8). **27 consultas**: 12 ya unían `lineas` y 15 pagan un `JOIN` nuevo —4 de ellas correlacionadas de conteo—. La copia **no era inofensiva**: `trg_vinculo_formato_un_proceso` la leía para decidir si un formato ya servía a otro proceso, así que comparaba el proceso **declarado**. Y la cascada: provocado que borrar una línea con configuraciones fallaba, así que sin mover `ON DELETE CASCADE` a `linea_id` borrar un proceso habría dejado de funcionar. **320/320 char con 1 golden movido**, 887/887 backend y 495/495 frontend, 5 puertas del backend, 31 del frontend, 4 de documentación, 4 páginas del sitio y los generadores. ⚠️ **Cinco roturas que sólo vio char** (§13.13): tres consultas que nombraban la columna **sin alias**, un `lin` duplicado, y un `ON` que nombraba `lineas` **antes** de unirla | 2026-10-14 |
 | **P23** | **`process_definition_versions.name` SE RETIRA** (§13.16). Era una copia de `lineas.nombre`, y fallaba por los dos lados: **no distinguía** —dos configuraciones de la misma línea se llamaban igual— y **se quedaba atrás** al renombrar la línea. Hoy se deriva con la identidad entera, `nombre_configuracion(línea, versión)`, una función del esquema. Y con ella se cierra **el guardia que `P22` apagó sin que nada lo dijera** | ✅ | **PROVOCADO en el navegador las dos veces**: antes, renombrar la línea dejó a sus dos configuraciones con el nombre viejo; después, las dos lo siguen al instante. **17 lecturas en 9 ficheros**; de ellas **4 se van quitando** —las dos de `templateLifecycle` leían la columna *sólo* para volver a copiarla en el INSERT—, y **tres sitios que la reparaban** desaparecen (la rutina, el gancho de `processes.afterUpdate` y una reescritura en cada guardado). ⚠️ **El guardia apagado**: `ensureDefaultProcessSingleLinea` recibía `ctx.payload.process_id`, que `P22` sacó del catálogo, así que `pickPayload` le pasaba `undefined` y su `if (!processId) return` lo devolvía sin comprobar nada — **sin test que lo cubriera**. Ahora el proceso lo trae la línea y van **4 pruebas nuevas**. **320/320 char con 5 goldens movidos y 2 líneas retiradas**, 891/891 backend (+4) y 495/495 frontend, 5 puertas del backend, 31 del frontend, 5 de documentación, 2 páginas del sitio y los 3 generadores. ⚠️ **Dos fallos de char que parecían de comportamiento eran cascada**: un test que abortaba dejaba filas y el siguiente las contaba (§13.16) | 2026-10-14 |
 | **P24** | **EL ASISTENTE DEJA DE PEDIR EL PROCESO** (§13.17). Su paso 1 declaraba **12 grupos de campo** para **tres entidades** —proceso, línea y configuración—, y el proceso podía **contradecir** a la línea elegida. Hoy el proceso **acota** el buscador de líneas, y crear un proceso o una línea abre **su propio plano** | ✅ | **Medido en pantalla**: de **5 campos visibles** en el caso común y **11** en el peor (proceso nuevo + línea nueva) a **4 siempre** —uno de ellos sólo lectura—. El `<select>` de líneas pasa a `AdminLookupField` con `suggestProvider`, que manda `filter_process_id`: **la pareja contradictoria ya no se puede formar**, porque lo que no está no se puede elegir, y el sublabel dice proceso · cargo · dónde para que no se elija a ciegas. El `__new__` del desplegable —que inyectaba **5 campos más**— y el modo «+ Nuevo» —que cambiaba el campo por un input y añadía dos— se van a sus planos. **Navegar NO era opción**: el asistente es un modal y la ruta lo destruye con el formulario a medio llenar; el plano encima es gratis porque `AppModalShell` se coloca solo. 501/501 frontend (+6), 31 puertas del frontend, el build. **Verificado en el navegador** de punta a punta: línea creada desde su plano → queda elegida → configuración creada (borrada después). ⚠️ **Dos duplicaciones que sólo vio el navegador**: la cabecera del asistente decía la versión dos veces y «Se llamará» mostraba la versión sola cuando no había línea | 2026-10-14 |
+| **P25** | **`exact_position` SE RETIRA, y con ella `position_id`** (§13.18). La regla tenía **dos columnas con dato**, y una nombraba **una plaza**. Lo decidió el dueño tras la evaluación «¿tabla o campo?» | ✅ | **Tres cosas la condenaban, las tres medidas:** (1) **se saltaba la obligación** — con el puesto puesto, `getPositionsForRule` consultaba `up.id = ?` **sin cargo y sin ámbito**, que es el agujero que `P10` cerró para `unit_id`, abierto por la única columna que quedaba, y **nadie** lo validaba; (2) **no hacía falta**: «la asistente de la Escuela X» es una línea `(Asistente, unidad exacta)` —en el catálogo real ese cargo tiene **12 plazas en 12 unidades**, una por unidad, y el único cargo con varias plazas en la misma unidad es `Docente`—; (3) **era nombrar a alguien** dentro de una norma, que es la tarea ad-hoc. **Nadie la ejercitaba**: el seed, el bootstrap y los goldens sólo escriben `all_matches`. La tabla baja de **5 columnas a 4** y el `CHECK` de 3 valores a 2; se van el `FK` a `unit_positions`, el `CHECK` `ck_ptr_puesto_exacto`, el guardia `applyTargetRuleLineaConstraints` (45 líneas, lo último de `P10`) y **140 líneas de maquinaria de claves ajenas** del gestor. Un puesto deja de estar retenido por una regla: **6 dependencias → 5**. 887/887 backend, 501/501 frontend, **320/320 char** (3 líneas de golden), 5 puertas backend, 31 frontend, 5 de documentación, los dos builds. **Verificado en el navegador**: el formulario de regla es **un desplegable de dos valores**, la rejilla pierde la columna «Puesto», y el clon al versionar funciona. ⚠️ **El censo por `exact_position` dejó fuera CUATRO consultas** que sólo decían `position_id`: las cazó `test:char:run` con 34 fallos | 2026-10-15 |
 | **P18** | **LA VIGENCIA, POR NIVELES** (decisión 21, §9). Cuatro cosas: **(a)** la vigencia de la línea **detiene la ejecución**; **(b)** la norma que aplica a un periodo es la vigente **al empezarlo**, no la que lo solape; **(c)** la vigencia de una norma **cabe dentro** de la de su obligación, impuesto por la base; **(d)** la regla pierde `is_active`, `effective_from` y `effective_to` — tres columnas | ✅ | ⚠️ **REESCRITA el 2026-10-12.** Decía «una sola vigencia, la de la línea», y **era falso**: la de la configuración NO está duplicada con `status`. El generador la compara contra el **periodo** y el menú contra **hoy** — dos significados para las mismas columnas, que es lo que hizo fallar el análisis. Cierra los huecos **2 y 3** del §8. **Hecha**: tres columnas fuera del esquema, del editor genérico, del validador, de la siembra, del arranque y del formulario; `trg_norma_dentro_de_su_obligacion` y `trg_linea_no_recorta_sus_normas` imponen la contención; el generador filtra por la vigencia de la línea y compara contra `term.start_date`. 320/320 char con **2 goldens movidos y nada más** —seis líneas, las tres columnas en `list_process_target_rules` y en `panel_usuario`—, 885/885 + 495/495 unitarios, 5 puertas del backend, 31 del frontend, 5 de documentación, y tres páginas del sitio en el mismo commit. **Verificado en el navegador** (ver abajo) | 2026-10-12 |
 | **P19** | **`unit_subtree` se retira** de `process_target_rules` | ✅ | el `CHECK` baja de 4 valores a 3, y con el valor se van **dos CTE recursivas sin protección de ciclos** (dos de los seis grafos del frente 26) y **dos consultas por petición**: `getOrgTreeRows` del menú y `getOrgChildrenMap` del panel traían el organigrama entero para resolverlo. Y la tubería muerta detrás: `createUnitSubtreeResolver` en dos sitios. **320/320 char sin mover un golden** —cero filas lo usaban—, 885/885 unitarios (−6: cuatro pruebas del resolutor y tres del menú se van con él, una de ellas **la única prueba de ciclos del repositorio**, cuya materia pasa al frente 26), 495/495 de frontend, 5 puertas del backend, 31 del frontend, 5 de documentación | 2026-10-12 |
 | **P13** | **La casilla ③ queda PROHIBIDA por el modelo** (decisión 16): un `vinculo` no puede apuntar a una edición cuyo formato sea **personal** | ✅ | **DOS** disparadores, porque con uno solo se rodea en dos pasos: `trg_vinculo_solo_formato_oficial` y `trg_formato_vinculado_sigue_oficial`. Provocados los **cinco** casos: ③ rechazada · ① pasa · el rodeo (`UPDATE` a `ad_hoc` de un formato vinculado) rechazado · un formato **sin** vincular sí puede volverse personal —lo necesita `P14`— · un `UPDATE` que sólo mueve `sort_order` pasa sin pagar el JOIN. **320/320 char sin mover un golden**, 894/894 unitarios, 5 puertas del backend, 4 de documentación, y dos páginas del sitio en el mismo commit | 2026-10-11 |
@@ -2120,6 +2121,93 @@ Tres arreglos, y los tres son la misma idea —lo que no se puede usar no se ens
 La tercera es **la segunda copia** de la duplicación que `P23` dijo haber cerrado: se quitó el `· vX`
 de `ProcessGraphView` y de `UnitGraphView`, y **`ProcessConfigNode.vue` —el nodo mismo— no se miró**.
 Con él se fue la pastilla de línea del cajón del mapa, que repetía la primera mitad del nombre.
+
+
+### 13.18 · `P25` · LA REGLA DEJA DE NOMBRAR PLAZAS (2026-10-15)
+
+Sale de la pregunta del dueño —*«evalúa si la regla, como está diseñada ahora, debería seguir siendo
+una tabla o ya debería pasar a ser un campo»*— y de la respuesta a la única que quedaba abierta:
+**«sin `exact_position`, ¿cómo asignas a la asistente académica una actividad?»**
+
+#### Lo que la tabla era, medido
+
+Tras `P10` quedaban **cinco columnas y sólo dos con dato**: `recipient_policy` y `position_id`.
+
+| Combinación de reglas | Qué resuelve |
+|---|---|
+| `all_matches` | todos los de la línea |
+| `all_matches` + `unit_head` | **= `all_matches`** (lo absorbe) |
+| `unit_head` + `exact_position` | jefaturas **+** una plaza |
+| `exact_position` ×2 | dos plazas |
+
+**Tener varias filas sólo significaba algo con `exact_position`** — y eso es una lista de personas
+elegidas a mano, que es lo que los resolutores de flujo ya habían retirado (`manual_pick`, `position`).
+
+Y lo que el sistema escribe por sí mismo: **4 configuraciones, 4 reglas, las 4 `all_matches`** —el
+valor que no recorta nada—. `unit_head` y `exact_position` no aparecen en el seed, ni en el bootstrap,
+ni en un solo golden.
+
+#### Por qué se va, en el orden en que pesa
+
+1. **Se saltaba la obligación.** `getPositionsForRule` con `position_id` consultaba `up.id = ?` **sin
+   cargo y sin ámbito**, y nada validaba que esa plaza cayera dentro de la línea. Es el agujero que
+   `P10` cerró para `unit_id`, reabierto por la única columna que había quedado.
+2. **No hacía falta para lo que parecía.** Medido en el catálogo de puestos:
+
+   | Cargo | Plazas | Unidades | `slot_no` máx |
+   |---|---|---|---|
+   | Docente | 17 | 2 | **9** |
+   | **Asistente** | **12** | **12** | **1** |
+   | Director | 7 | 7 | 1 |
+
+   «La asistente de la Escuela X» es una línea `(Asistente, unidad exacta)` y resuelve a **una plaza**.
+   El único cargo con varias plazas en la misma unidad es `Docente` — y `slot_no` es un número, no una
+   función: «la plaza 3» no dice qué debe. `title` y `profile` existen en el puesto y **no resuelven
+   nada**: tres consultas los leen sólo para mostrarlos.
+3. **Era nombrar a alguien dentro de una norma.** Eso ya tiene camino —la tarea ad-hoc del Proceso por
+   defecto, `routed`, con persona concreta en el flujo de runtime— y se revoca sin versionar nada.
+
+#### Lo que se fue con ella
+
+| | |
+|---|---|
+| Esquema | la columna, el `FK` a `unit_positions` y el `CHECK` `ck_ptr_puesto_exacto`; el `CHECK` de la política baja de 3 valores a 2 |
+| Backend | `applyTargetRuleLineaConstraints` (45 líneas, lo último del guardia de `P10`), `targetScopeConsistent`, la rama del puesto en los **dos predicados gemelos**, y un bucle del gancho que propagaba `cargo_id` y `unit_type_id` — dos columnas muertas desde `P10` |
+| Frontend | **140 líneas** de maquinaria de claves ajenas del gestor de reglas (buscador, proveedor de sugerencias, autollenado de unidad y cargo), el campo «Puesto exacto», y la hidratación al editar, que llenaba **7 claves** donde hoy hay **1** |
+| Dependencias | un puesto deja de estar retenido por una regla de reparto: **6 → 5** |
+
+#### Lo que se arregló de paso, y era residuo de `P10` y `P18-d`
+
+- El **organigrama** mandaba `unit_scope_type`, `unit_id`, `unit_type_id`, `cargo_id` e `is_active`:
+  cinco columnas que no existen. `pickPayload` sólo copia lo declarado, así que la pantalla ofrecía
+  elegir «Alcance: solo esta unidad» y un «Cargo destinatario» que **se evaporaban al guardar**. Su
+  formulario pasa de **cuatro campos a uno**.
+- La rejilla del panel de activación pintaba «Alcance» (vacía desde `P10`) y «Activo» (un «No» fijo
+  desde `P18-d`): **tres columnas a una**, la del destino.
+- `formatDefinitionRuleSummary` leía las cuatro columnas de ámbito muertas; hoy dice la política.
+
+#### La trampa del censo, otra vez
+
+El barrido por `exact_position` encontró **71 referencias en 21 ficheros** y **dejó fuera cuatro
+consultas** que sólo decían `position_id` sin nombrar la política: `taskAssignment.js`,
+`UserWorkspaceRepository.js`, el **clon** de `processDefinitionVersion.js` y la lista de la unidad.
+Ninguna puerta las ve —el SQL es una cadena— y las cazó `test:char:run`: **34 fallos**, casi todos
+cascada de `column "position_id" does not exist`. Es la misma lección que ya está escrita dos veces en
+`CLAUDE.md`: **un censo por el nombre del VALOR no encuentra lo que se escribió con el nombre de la
+COLUMNA.**
+
+#### Lo que queda abierto
+
+- **`unit_head` no lo miran los dos predicados gemelos.** `positionMatchesRule` y
+  `doesPositionMatchRule` filtran por cargo y ámbito pero **no** por jefatura, así que el menú y el
+  panel pueden ofrecer un proceso que el lanzamiento no dará —`applyRecipientPolicy` sí filtra—. Para
+  cerrarlo hace falta que `getUserPositions` traiga `up.is_unit_head`, que hoy no selecciona.
+- **La tabla tiene ahora UNA columna con dato y dos valores.** Con `all_matches` absorbiendo a
+  `unit_head`, varias reglas por configuración ya no distinguen nada: el siguiente paso natural es
+  colapsarla sobre `lineas` como un discriminador único de «quién» (camino **E** de la evaluación).
+- **La pantalla «Vincular proceso a la unidad» no vincula nada a la unidad**: desde `P10` la regla no
+  tiene unidad, y a quién alcanza lo dice la línea. Hoy crea una regla para una configuración cuyo
+  ámbito ya estaba decidido.
 
 
 ## 13 · EL REPARTO, revisado a petición del dueño (2026-10-14)

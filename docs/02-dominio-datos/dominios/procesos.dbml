@@ -73,8 +73,7 @@ Table "process_definition_versions" {
 Table "process_target_rules" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
-  "position_id" int4
-  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text, 'exact_position'::text])`, default: 'all_matches']
+  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text])`, default: 'all_matches']
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
@@ -153,7 +152,6 @@ Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."p
 //   units -> lineas   [organizacion]
 //   process_definition_versions -> process_runs   [tareas]
 //   terms -> process_runs   [tareas]
-//   unit_positions -> process_target_rules   [organizacion]
 //   vinculos -> task_items   [tareas]
 //   process_definition_versions -> tasks   [tareas]
 //   terms -> tasks   [tareas]

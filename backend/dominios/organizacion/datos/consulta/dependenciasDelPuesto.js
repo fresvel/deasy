@@ -29,7 +29,8 @@ export const DEPENDENCIAS_DE_UN_PUESTO = [
   ["task_item_tenures", "position_id", "tenencia", "tenencias"],
   ["vacancies", "position_id", "vacante", "vacantes"],
   ["contracts", "position_id", "contrato", "contratos"],
-  ["process_target_rules", "position_id", "regla de proceso", "reglas de proceso"],
+  // SIN `process_target_rules` (frente 25, P25): la regla ya no apunta a una plaza, asi que un
+  // puesto deja de estar retenido por el reparto de un proceso. Eran SEIS dependencias; son CINCO.
 ];
 
 // Devuelve SÓLO lo que bloquea —`{ singular, plural, n }` por tabla con filas—, en el orden de la

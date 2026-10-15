@@ -455,44 +455,16 @@
           </span>
         </label>
 
-        <label class="deasy-form-label">
-          Alcance
-          <select v-model="processForm.unit_scope_type" class="deasy-control deasy-control--select">
-            <option value="unit_exact">Solo esta unidad</option>
-          </select>
-        </label>
-
+        <!-- UN SOLO CAMPO, Y ERAN CUATRO (frente 25, P25 — 2026-10-14). «Alcance» tenía una sola
+             opción y mandaba `unit_scope_type`; «Cargo destinatario» mandaba `cargo_id`; y el aviso
+             «Cargo fijado por la serie» hablaba de la serie, retirada en `P9`. Las tres columnas
+             murieron en `P10` y `pickPayload` sólo copia lo declarado: la pantalla ofrecía elegir
+             tres cosas que SE EVAPORABAN al guardar. «Puesto exacto» se fue con su columna aquí. -->
         <label class="deasy-form-label">
           Entrega (destinatario)
           <select v-model="processForm.recipient_policy" class="deasy-control deasy-control--select">
             <option value="all_matches">Todos los del cargo</option>
             <option value="unit_head">Jefatura de la unidad</option>
-            <option value="exact_position">Puesto exacto</option>
-          </select>
-        </label>
-
-        <!-- Cargo: fijado por la serie (variación por cargo) o seleccionable (variación default) -->
-        <div v-if="processForm.recipient_policy !== 'exact_position'">
-          <div v-if="seriesLockedCargo" class="rounded-2xl border border-brand-200 bg-brand-50/50 px-3 py-2 text-xs text-primary">
-            Cargo fijado por la serie: <span class="font-semibold">{{ seriesLockedCargo.name }}</span>
-          </div>
-          <label v-else class="deasy-form-label">
-            Cargo destinatario
-            <select v-model="processForm.cargo_id" class="deasy-control deasy-control--select">
-              <option value="">Selecciona…</option>
-              <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
-          </label>
-        </div>
-
-        <!-- Puesto exacto: de los puestos de esta unidad -->
-        <label v-else class="deasy-form-label">
-          Puesto de la unidad
-          <select v-model="processForm.position_id" class="deasy-control deasy-control--select">
-            <option value="">Selecciona…</option>
-            <option v-for="pos in detailPositions" :key="pos.id" :value="pos.id">
-              {{ pos.cargo_name || pos.title || 'Puesto' }} #{{ pos.slot_no }}
-            </option>
           </select>
         </label>
       </div>
@@ -500,9 +472,7 @@
         <AppButton variant="danger-outline" @click="processModalOpen = false">Cancelar</AppButton>
         <AppButton
           variant="primary-outline"
-          :disabled="processSaving || !processForm.process_definition_id
-            || (processForm.recipient_policy === 'exact_position' && !processForm.position_id)
-            || (processForm.recipient_policy !== 'exact_position' && !seriesLockedCargo && !processForm.cargo_id)"
+          :disabled="processSaving || !processForm.process_definition_id"
           @click="confirmProcessRule"
         >
           {{ processSaving ? 'Guardando…' : (processEditingRuleId ? 'Guardar' : 'Vincular') }}
@@ -897,8 +867,7 @@ const processScopeLabel = (code) => PROCESS_SCOPE_LABELS[code] || code || "—";
 // --- Administración de procesos de la unidad (vía reglas de alcance) ---
 const RECIPIENT_POLICY_LABELS = {
   all_matches: "Todos los del cargo",
-  unit_head: "Jefatura de la unidad",
-  exact_position: "Puesto exacto"
+  unit_head: "Jefatura de la unidad"
 };
 /* El ORIGEN de la regla ya no lleva su clase: solo la etiqueta. El tono lo pone `tonoOrigen`. */
 const PROCESS_ORIGIN_META = {
@@ -909,29 +878,19 @@ const PROCESS_ORIGIN_META = {
 };
 const recipientPolicyLabel = (code) => RECIPIENT_POLICY_LABELS[code] || code || "—";
 const processOriginMeta = (origin) => PROCESS_ORIGIN_META[origin] || PROCESS_ORIGIN_META.other;
-const recipientSummary = (proc) => {
-  if (proc.recipient_policy === "exact_position") {
-    const cargo = proc.position_cargo_name ? `${proc.position_cargo_name}` : "Puesto";
-    return `${cargo}${proc.position_title ? ' · ' + proc.position_title : ''}`;
-  }
-  return `${proc.cargo_name || 'Cargo no definido'} · ${recipientPolicyLabel(proc.recipient_policy)}`;
-};
+const recipientSummary = (proc) =>
+  `${proc.cargo_name || 'Cargo no definido'} · ${recipientPolicyLabel(proc.recipient_policy)}`;
 
 const attachableProcesses = ref([]);
 const attachableLoaded = ref(false);
 const processModalOpen = ref(false);
 const processEditingRuleId = ref(null);
 const processSaving = ref(false);
-const processForm = ref({ process_definition_id: "", unit_scope_type: "unit_exact", recipient_policy: "all_matches", cargo_id: "", position_id: "" });
+const processForm = ref({ process_definition_id: "", recipient_policy: "all_matches" });
 
-const selectedAttachableDef = computed(() =>
-  attachableProcesses.value.find((d) => String(d.definition_id) === String(processForm.value.process_definition_id)) || null
-);
-// Variación por cargo: la serie fija el cargo de la regla (no editable aquí).
-const seriesLockedCargo = computed(() => {
-  const def = selectedAttachableDef.value;
-  return def?.series_cargo_id ? { id: def.series_cargo_id, name: def.series_cargo_name } : null;
-});
+// AQUI VIVIAN `selectedAttachableDef` y `seriesLockedCargo`, que leian `series_cargo_id` de la
+// configuracion elegida para bloquear el cargo del formulario. La SERIE se retiro en `P9` y el
+// cargo de la regla en `P10`: los dos computados quedaron sin dato y sin campo que gobernar.
 
 const loadAttachableProcesses = async () => {
   if (!detailUnit.value?.id) return;
@@ -949,7 +908,7 @@ const refreshUnitProcesses = async () => {
   await loadUnitProcesses();
 };
 const resetProcessForm = () => {
-  processForm.value = { process_definition_id: "", unit_scope_type: "unit_exact", recipient_policy: "all_matches", cargo_id: "", position_id: "" };
+  processForm.value = { process_definition_id: "", recipient_policy: "all_matches" };
 };
 const openAttachProcess = async () => {
   processEditingRuleId.value = null;
@@ -961,28 +920,20 @@ const openEditProcessRule = async (proc) => {
   processEditingRuleId.value = proc.rule_id;
   processForm.value = {
     process_definition_id: proc.definition_id,
-    unit_scope_type: proc.unit_scope_type || "unit_exact",
-    recipient_policy: proc.recipient_policy || "all_matches",
-    cargo_id: proc.cargo_id || "",
-    position_id: proc.position_id || ""
+    recipient_policy: proc.recipient_policy || "all_matches"
   };
   processModalOpen.value = true;
   if (!attachableLoaded.value) await loadAttachableProcesses();
 };
+// DOS CAMPOS, Y ERAN SIETE. Cinco de los que mandaba no son columnas de la tabla desde `P10` y
+// `P18-d` --`unit_scope_type`, `unit_id`, `unit_type_id`, `cargo_id` e `is_active`--, asi que
+// `pickPayload` los tiraba sin decir nada; `position_id` se fue en `P25`.
 const confirmProcessRule = async () => {
   const form = processForm.value;
   if (!form.process_definition_id) return;
-  const exact = form.recipient_policy === "exact_position";
   const payload = {
     process_definition_id: Number(form.process_definition_id),
-    unit_scope_type: form.unit_scope_type,
-    unit_id: detailUnit.value.id,
-    unit_type_id: null,
-    recipient_policy: form.recipient_policy,
-    // En variación por cargo el cargo lo siembra/blinda la serie en el backend (se envía vacío).
-    cargo_id: exact || seriesLockedCargo.value ? null : (form.cargo_id ? Number(form.cargo_id) : null),
-    position_id: exact ? (form.position_id ? Number(form.position_id) : null) : null,
-    is_active: 1
+    recipient_policy: form.recipient_policy
   };
   processSaving.value = true;
   try {

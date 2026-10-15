@@ -429,7 +429,6 @@
     "itemKeys": [
       "created_at",
       "id",
-      "position_id",
       "process_definition_id",
       "recipient_policy"
     ]

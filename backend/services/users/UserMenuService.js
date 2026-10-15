@@ -89,7 +89,6 @@ const getProcessTargetRuleRows = async (pool) => {
        lin.unit_id         AS linea_unit_id,
        lin.unit_type_id    AS linea_unit_type_id,
        lin.cargo_id        AS linea_cargo_id,
-       ptr.position_id,
        ptr.recipient_policy,
        EXISTS(
          SELECT 1 FROM vinculos pdt
@@ -354,16 +353,16 @@ const seedMenuIndexes = (positions) => {
 
 /**
  * ¿Esta regla reparte el proceso a este puesto?
- * El puesto exacto manda sobre todo lo demás; `exact_position` sin `position_id` no casa con
- * nadie a propósito (es una regla mal configurada, no un comodín).
+ *
+ * SIN LA RAMA DEL PUESTO EXACTO (frente 25, P25): se fue con la columna. Lo que queda es el cargo
+ * y el ámbito de la OBLIGACIÓN.
+ *
+ * ⚠️ Y queda dicho lo que esta función sigue sin mirar: `unit_head`. Un puesto que no es la
+ * jefatura casa igual con una regla que sólo reparte a jefaturas, así que el menú puede ofrecer un
+ * proceso que el lanzamiento no le dará —`applyRecipientPolicy` sí filtra—. Para cerrarlo hace
+ * falta que `getUserPositions` traiga `up.is_unit_head`, que hoy no selecciona.
  */
 const positionMatchesRule = (position, rule) => {
-  if (rule.position_id) {
-    return Number(position.position_id) === Number(rule.position_id);
-  }
-  if (rule.recipient_policy === "exact_position") {
-    return false;
-  }
   // EL CARGO Y EL AMBITO VIENEN DE LA OBLIGACION, no de la regla (frente 25, P10): sus cuatro
   // columnas eran copia de `lineas` y se retiraron. El prefijo `linea_` es deliberado — esta
   // funcion recibe una fila que MEZCLA las dos tablas, y durante tres meses el nombre sin prefijo

@@ -47,12 +47,11 @@ export const resolveScopeForStep = (step, context) => {
 // nombre nuevo A PROPÓSITO: una regla que dijera `one_per_unit` deja de ser válida y hay que
 // migrarla a mano, mirando cuál de las dos promesas quería. Cambiarle el significado al valor
 // viejo habría movido el comportamiento de las reglas existentes en silencio.
-export const applyRecipientPolicy = (rows, recipientPolicy, exactPositionId = null) => {
+// DOS POLITICAS, Y ERAN TRES (frente 25, P25): `exact_position` recortaba a la primera fila porque
+// la consulta ya venia filtrada por `up.id`. Se fue con su columna.
+export const applyRecipientPolicy = (rows, recipientPolicy) => {
   if (!rows.length) {
     return [];
-  }
-  if (recipientPolicy === "exact_position" || exactPositionId) {
-    return rows.slice(0, 1);
   }
   if (recipientPolicy === "unit_head") {
     // Una unidad puede no tener jefatura —hoy pasa en 2 de 13—, y entonces NO se inventa un

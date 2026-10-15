@@ -739,25 +739,14 @@ export const TABLE_HOOKS = {
     // Un hook vacio es peor que ninguno: se lee como "aqui falta algo".
   },
 
+  // SIN `applyTargetRuleLineaConstraints` (frente 25, P25): era lo ultimo que quedaba del guardia
+  // de 60 lineas de `P10`, y comprobaba que el PUESTO EXACTO fuera de la linea. Sin puesto no hay
+  // nada que comprobar. Con el se fue tambien un bucle que propagaba `cargo_id` y `unit_type_id` a
+  // los updates: dos columnas que esta tabla no tiene desde `P10` --codigo muerto que ningun test
+  // podia tocar, porque `pickPayload` solo copia lo declarado--.
   process_target_rules: {
-    async beforeCreate(ctx) {
-      await RULE_CHILD_GUARDS.beforeCreate(ctx);
-      await ctx.service.applyTargetRuleLineaConstraints(ctx.payload.process_definition_id, ctx.payload);
-    },
-
-    // La LINEA blinda el cargo/tipo de unidad de la regla: si la restricción los cambia, ese cambio
-    // se propaga a los updates (no se pierde).
-    async beforeUpdate(ctx) {
-      await RULE_CHILD_GUARDS.beforeUpdate(ctx);
-      const mergedRule = { ...ctx.existing, ...ctx.updates };
-      await ctx.service.applyTargetRuleLineaConstraints(ctx.existing.process_definition_id, mergedRule);
-      for (const key of ["cargo_id", "unit_type_id"]) {
-        if (mergedRule[key] != null && Number(mergedRule[key]) !== Number(ctx.existing[key])) {
-          ctx.updates[key] = mergedRule[key];
-        }
-      }
-    },
-
+    beforeCreate: RULE_CHILD_GUARDS.beforeCreate,
+    beforeUpdate: RULE_CHILD_GUARDS.beforeUpdate,
     beforeRemove: RULE_CHILD_GUARDS.beforeRemove
   },
 

@@ -1646,9 +1646,10 @@ CREATE TABLE IF NOT EXISTS procesos.process_target_rules (
   -- pasan a declararse donde si los hay. No se pierde capacidad: se mueve a donde queda escrita.
   --
   -- LO QUE LA REGLA SI DICE, y la linea no puede, son estas dos columnas. Ver su comentario.
-  position_id INT NULL,
-  -- EL AFINADO DEL DESTINATARIO. La linea llega a (cargo, donde) y ahi se para; estas dos bajan el
-  -- ultimo escalon, y cada valor cubre algo que un `cargo_id` NO PUEDE EXPRESAR:
+  -- SIN `position_id` (frente 25, P25 — 2026-10-14). Ver `exact_position`, abajo.
+  --
+  -- EL AFINADO DEL DESTINATARIO. La linea llega a (cargo, donde) y ahi se para; esta columna baja
+  -- el ultimo escalon, y su segundo valor cubre algo que un `cargo_id` NO PUEDE EXPRESAR:
   --
   --   all_matches     -> sin recorte. Es el defecto y no anade nada.
   --
@@ -1659,13 +1660,24 @@ CREATE TABLE IF NOT EXISTS procesos.process_target_rules (
   --                      informe»-- necesitaria CUATRO lineas para decirse por cargo. Y resuelve
   --                      sin ambiguedad porque `uq_unit_head` garantiza una jefatura por unidad.
   --
-  --   exact_position  -> LA PLAZA. La linea llega a (cargo, unidad) y no mas abajo; `unit_positions`
-  --                      tiene una tercera coordenada, `slot_no`, y con `Docente` a 8 plazas por
-  --                      Carrera «el de la plaza 3» solo se dice con `position_id`.
+  -- AQUI HUBO UN TERCER VALOR, `exact_position`, Y SE RETIRO CON SU COLUMNA (frente 25, P25 —
+  -- 2026-10-14). Nombraba UNA PLAZA, y tres cosas lo condenaban:
   --
-  -- Asi que esto NO es «como se reparte»: es el QUIEN cuando el cargo no basta, porque varia o
-  -- porque hay que bajar a la plaza. Y es lo que justifica que la tabla siga existiendo.
-  recipient_policy TEXT CHECK (recipient_policy IN ('all_matches', 'unit_head', 'exact_position')) NOT NULL DEFAULT 'all_matches',
+  --   1. SE SALTABA LA LINEA. Con `position_id` puesto, `getPositionsForRule` consultaba
+  --      `up.id = ?` SIN cargo y SIN ambito, y nada comprobaba que esa plaza cayera dentro de la
+  --      obligacion. Es el agujero que `P10` cerro para `unit_id` --una linea acotada a una unidad
+  --      admitiendo un reparto a otra-- abierto por la unica columna que habia quedado.
+  --   2. NO HACIA FALTA PARA LO QUE PARECIA. «La asistente de la Escuela X» es una linea
+  --      `(cargo: Asistente, unidad exacta)`: medido en el catalogo, `Asistente` tiene 12 plazas en
+  --      12 unidades distintas, una por unidad. El unico cargo con varias plazas en la misma unidad
+  --      es `Docente`. Y `slot_no` es un numero, no una funcion: «la plaza 3» no dice que debe.
+  --   3. ERA NOMBRAR A ALGUIEN dentro de una norma. Eso ya tiene camino y no es una obligacion del
+  --      puesto: la tarea ad-hoc del Proceso por defecto, que es `routed` y admite persona concreta
+  --      en el flujo de runtime. Es la misma razon por la que `manual_pick` y `position` salieron
+  --      de los resolutores de flujo.
+  --
+  -- Asi que esto NO es «como se reparte»: es el QUIEN cuando el cargo no basta porque VARIA.
+  recipient_policy TEXT CHECK (recipient_policy IN ('all_matches', 'unit_head')) NOT NULL DEFAULT 'all_matches',
   -- SIN `priority` (frente 25, P10 — 2026-10-14). NO HACIA NADA, y no por descuido: no PODIA.
   -- Aparecia en tres consultas y siempre en un `ORDER BY`; nunca se comparaba ni desempataba. Los
   -- dos consumidores UNEN los resultados de todas las reglas de una configuracion --`launch.js`
@@ -1674,15 +1686,10 @@ CREATE TABLE IF NOT EXISTS procesos.process_target_rules (
   -- cambiar el resultado. Un orden que no ordena nada es peor que no tenerlo: promete una
   -- precedencia que no existe.
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_process_target_rules_definition FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
-  CONSTRAINT fk_process_target_rules_position FOREIGN KEY (position_id) REFERENCES unit_positions(id),
-  -- EL PUESTO EXACTO EXIGE SU PUESTO, y al reves. Lo validaba `validation.js` --o sea, solo el CRUD
-  -- generico--: el clon de configuraciones y el arranque escriben por su cuenta y no pasaban por
-  -- ahi. Una politica que dice «ese puesto» sin decir cual resuelve a NADIE, en silencio.
-  CONSTRAINT ck_ptr_puesto_exacto CHECK (
-    (recipient_policy = 'exact_position' AND position_id IS NOT NULL)
-    OR (recipient_policy <> 'exact_position' AND position_id IS NULL)
-  )
+  -- SIN `fk_process_target_rules_position` NI `ck_ptr_puesto_exacto`: los dos sostenian la plaza.
+  -- Con ellos se va una dependencia de `unit_positions`, asi que un puesto deja de estar retenido
+  -- por una regla de reparto (ver `dependenciasDelPuesto.js`).
+  CONSTRAINT fk_process_target_rules_definition FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_process_target_rules_definition ON process_target_rules (process_definition_id);
 

@@ -29,9 +29,8 @@ expresar**:
 |---|---|
 | `all_matches` | sin recorte. Es el defecto y no añade nada |
 | `unit_head` | **«el que manda aquí, sea quien sea»** |
-| `exact_position` | **la plaza**, con su `position_id` |
 
-### Por qué esos dos valores no son redundantes
+### Por qué `unit_head` no es redundante
 
 **`unit_head` no se puede escribir con un cargo**, porque el cargo de la jefatura **varía por tipo de
 unidad**: en una Escuela es el Director, en una Carrera el Coordinador, en una Jefatura el Jefe, en el
@@ -39,30 +38,22 @@ Prorrectorado el Prorrector. Una obligación que es **una** —*«el responsable
 informe»*— necesitaría cuatro obligaciones distintas para decirse por cargo. Y resuelve sin
 ambigüedad porque el modelo garantiza **una jefatura por unidad**.
 
-**`exact_position` baja un escalón más**: la obligación llega a *(cargo, unidad)* y ahí se para. Un
-puesto tiene una tercera coordenada, el número de plaza, y con un cargo de ocho plazas por unidad
-«el de la plaza tres» sólo se puede nombrar con el puesto.
+Así que esto **no es «cómo se reparte»**: es **el quién, cuando el cargo no basta porque varía**.
 
-Así que esto **no es «cómo se reparte»**: es **el quién, cuando el cargo no basta** — porque varía o
-porque hay que bajar a la plaza. Y es lo que justifica que la tabla siga existiendo.
-
-Dos detalles de la resolución que no se ven en la declaración:
-
-- **`unit_head` no inventa sustituto.** Si una unidad del alcance no tiene jefatura marcada, esa unidad
-  se queda fuera de la regla. Elegir «el primero de la lista» es exactamente el fallo que esa decisión
-  vino a cerrar.
-- **`exact_position` y su puesto van juntos, en los dos sentidos**, impuesto por la base: esa política
-  sin puesto no alcanzaría a nadie, y un puesto declarado con otra política es un dato que nadie lee.
+Un detalle de la resolución que no se ve en la declaración: **`unit_head` no inventa sustituto.** Si
+una unidad del alcance no tiene jefatura marcada, esa unidad se queda fuera de la regla. Elegir «el
+primero de la lista» es exactamente el fallo que esa decisión vino a cerrar.
 
 :::note[Lo que se fue de la regla, y por qué]
 
-**El 2026-10-14 la regla perdió cinco columnas** y bajó de diez a cinco. No fue una limpieza: fue
-quitar una copia.
+**El 2026-10-14 la regla perdió seis columnas** y bajó de diez a cuatro. No fue una limpieza: fue
+quitar una copia, y después quitar lo que nombraba a alguien.
 
 | Columna | Por qué se fue |
 |---|---|
 | `cargo_id` · `unit_scope_type` · `unit_type_id` · `unit_id` | **copia de la obligación**. La regla nació tres meses antes que ella, cuando la regla *era* la declaración; al subir los dos ejes a su sitio, estas cuatro se quedaron atrás |
 | `priority` | **no ordenaba nada.** Las reglas de una configuración se **unen**, y lo que se acumula es el puesto, sin mirar de qué regla vino: cambiar el orden no podía cambiar el resultado |
+| `position_id` | con la política `exact_position`, que **nombraba una plaza** |
 
 Lo que lo demostró no fueron los datos, fue el **comportamiento**: había dos consultas del mismo
 módulo preguntando lo mismo a dos tablas distintas. Con dos sitios donde mirar, *«a quién alcanza esta
@@ -77,8 +68,26 @@ escrita.**
 
 :::
 
-Una configuración puede tener **varias** reglas, y sus resultados se **suman**. Lo que las distingue
-hoy es su afinado, no su alcance: *«la jefatura de cada unidad, y además el puesto tal»*.
+:::note[Y por qué se fue `exact_position`]
+
+Nombraba **una plaza**, y tres cosas lo condenaban:
+
+1. **Se saltaba la obligación.** Con el puesto puesto, la resolución consultaba ese puesto **sin cargo
+   y sin ámbito**, y nada comprobaba que cayera dentro de la obligación. Es el mismo agujero que se
+   había cerrado para `unit_id`, abierto por la única columna que había quedado.
+2. **No hacía falta para lo que parecía.** *«La asistente de la Escuela X»* es una obligación
+   *(cargo: Asistente, unidad exacta)*: en el catálogo real ese cargo tiene **una plaza por unidad**.
+   El único cargo con varias plazas en la misma unidad es el de Docente — y el número de plaza es un
+   número, no una función: «la plaza 3» no dice qué se debe.
+3. **Era nombrar a alguien dentro de una norma.** Eso ya tiene camino y no es una obligación del
+   puesto: la **tarea ad-hoc**, que admite persona concreta y se revoca sin versionar nada. Es la
+   misma razón por la que los resolutores de flujo perdieron «elegir a mano».
+
+:::
+
+Una configuración puede tener **varias** reglas y sus resultados se **suman**, pero con dos valores
+eso ya no distingue nada: `unit_head` está contenido en `all_matches`, así que dos reglas en la misma
+configuración o son la misma o una absorbe a la otra.
 
 :::note[La vigencia está en dos niveles, y el reparto no es uno de ellos]
 
@@ -139,14 +148,12 @@ erDiagram
   %% para situar de donde viene el alcance. Sus columnas estan en /modelo/mapa-con-campos/
   lineas ||--o{ process_definition_versions : "la obligacion y sus normas"
   process_definition_versions ||--o{ process_target_rules : "afina con"
-  unit_positions ||--o{ process_target_rules : "puesto exacto"
 
   process_target_rules {
     int id PK
     int process_definition_id FK
 
-    text recipient_policy "all_matches, unit_head, exact_position"
-    int position_id FK "solo con exact_position"
+    text recipient_policy "all_matches, unit_head"
 
     timestamp created_at
   }

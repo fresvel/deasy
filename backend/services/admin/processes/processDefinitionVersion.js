@@ -298,12 +298,13 @@ export default class ProcessDefinitionVersionService {
       );
     }
 
-    // EL CLON DE LAS REGLAS: dos columnas, y eran ocho. Las cuatro de ambito eran copia de la
-    // linea y `priority` no ordenaba nada (`P10`). Y el clon es justo donde la copia costaba mas:
-    // versionar arrastraba el ambito verbatim, asi que una configuracion nueva nacia con el ambito
-    // CONGELADO en el momento del clon aunque su linea hubiera cambiado despues.
+    // EL CLON DE LAS REGLAS: UNA columna, y eran ocho. Las cuatro de ambito eran copia de la
+    // linea y `priority` no ordenaba nada (`P10`); `position_id` se fue en `P25`. Y el clon es
+    // justo donde la copia costaba mas: versionar arrastraba el ambito verbatim, asi que una
+    // configuracion nueva nacia con el ambito CONGELADO en el momento del clon aunque su linea
+    // hubiera cambiado despues.
     const [ruleRows] = await connection.query(
-      `SELECT position_id, recipient_policy
+      `SELECT recipient_policy
        FROM process_target_rules
        WHERE process_definition_id = ?
        ORDER BY id ASC`,
@@ -314,10 +315,9 @@ export default class ProcessDefinitionVersionService {
       await connection.query(
         `INSERT INTO process_target_rules (
           process_definition_id,
-          position_id,
           recipient_policy
-        ) VALUES (?, ?, ?)`,
-        [normalizedTargetId, row.position_id, row.recipient_policy]
+        ) VALUES (?, ?)`,
+        [normalizedTargetId, row.recipient_policy]
       );
     }
 
@@ -382,55 +382,10 @@ export default class ProcessDefinitionVersionService {
   }
 
 
-  // EL PUESTO EXACTO TIENE QUE SER DE LA OBLIGACION QUE DICE SERVIR.
-  //
-  // Es lo UNICO que queda del guardia de 60 lineas que sostenia las cuatro copias (`P10`). Y sigue
-  // haciendo falta porque es la unica comprobacion que la base no puede hacer: `position_id` apunta
-  // a `unit_positions` por clave ajena, pero que ESE puesto sea del cargo y del tipo de unidad que
-  // fija la linea exige dos saltos que un CHECK no puede dar.
-  //
-  // Sin esto, «lo entrega el puesto X» con un puesto ajeno a la obligacion resuelve a alguien que no
-  // la debe — y es peor que no resolver a nadie, porque el trabajo le llega a quien no toca.
-  async applyTargetRuleLineaConstraints(processDefinitionId, candidate, connection = this.pool) {
-    if (String(candidate.recipient_policy || "all_matches") !== "exact_position") {
-      return;
-    }
-    const positionId = normalizeNumericId(candidate.position_id);
-    if (!positionId) {
-      return;
-    }
-    const linea = await this.getProcessDefinitionLineaScope(processDefinitionId, connection);
-    const lineaCargoId = normalizeNumericId(linea?.cargo_id);
-    const lineaUnitTypeId = normalizeNumericId(linea?.unit_type_id);
-    const lineaUnitId = normalizeNumericId(linea?.unit_id);
-    if (!lineaCargoId && !lineaUnitTypeId && !lineaUnitId) {
-      return;
-    }
-    const [posRows] = await connection.query(
-      `SELECT up.cargo_id, up.unit_id, u.unit_type_id
-         FROM unit_positions up
-         INNER JOIN units u ON u.id = up.unit_id
-        WHERE up.id = ? LIMIT 1`,
-      [positionId]
-    );
-    const fila = posRows?.[0];
-    if (!fila) {
-      return;
-    }
-    if (lineaCargoId && normalizeNumericId(fila.cargo_id) !== lineaCargoId) {
-      throw new Error("El puesto exacto no corresponde al cargo de la linea del proceso.");
-    }
-    if (lineaUnitTypeId && normalizeNumericId(fila.unit_type_id) !== lineaUnitTypeId) {
-      throw new Error("El puesto exacto no pertenece al tipo de unidad de la linea del proceso.");
-    }
-    // Y la UNIDAD, que el guardia viejo leia y NO USABA NUNCA: era el hueco 1 del §8, abierto
-    // desde `P8`. Con las copias fuera deja de ser un hueco del ambito --ya no hay ambito que
-    // contradecir-- pero el puesto exacto si puede salirse de la unidad de su obligacion.
-    if (lineaUnitId && normalizeNumericId(fila.unit_id) !== lineaUnitId) {
-      throw new Error("El puesto exacto no pertenece a la unidad de la linea del proceso.");
-    }
-  }
-
+  // AQUI VIVIA `applyTargetRuleLineaConstraints`, 45 lineas que comprobaban que el PUESTO EXACTO de
+  // una regla perteneciera al cargo, al tipo de unidad y a la unidad de su linea. Era lo ultimo que
+  // quedaba del guardia de 60 lineas de `P10`, y se fue con el puesto (frente 25, P25): la politica
+  // que lo pedia no existe, asi que no hay nada que pueda contradecir a la obligacion.
 
   // Proxima version semver de una configuracion dentro de su LINEA.
   //

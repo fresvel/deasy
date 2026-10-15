@@ -135,29 +135,19 @@ test("all_units reparte a cualquier puesto; unit_type solo al tipo de unidad que
   assert.deepEqual(porTipo.units[0].cargos[0].processes, []);
 });
 
-test("el puesto exacto manda sobre el ámbito de unidad", async () => {
-  const casa = await buildUserMenu(
+// AQUI HABIA DOS PRUEBAS DEL PUESTO EXACTO —que mandaba sobre el ambito, y que sin puesto no casaba
+// con nadie— y las dos se fueron con la politica (frente 25, P25). La primera fijaba justo lo que la
+// retirada corrige: una regla alcanzaba a un puesto de OTRA unidad que la de su obligacion.
+test("un position_id en la regla ya no puede saltarse el ambito de la obligacion", async () => {
+  const menu = await buildUserMenu(
     makePool({ positions: [position()], rules: [rule({ position_id: 10, linea_unit_id: 999 })] }),
     7
   );
-  assert.equal(casa.units[0].cargos[0].processes.length, 1);
-
-  const noCasa = await buildUserMenu(
-    makePool({ positions: [position()], rules: [rule({ position_id: 11, linea_unit_id: 100 })] }),
-    7
+  assert.deepEqual(
+    menu.units[0].cargos[0].processes,
+    [],
+    "la unidad de la linea es 999 y la del puesto no: la plaza ya no manda sobre ella"
   );
-  assert.deepEqual(noCasa.units[0].cargos[0].processes, []);
-});
-
-test("recipient_policy='exact_position' SIN position_id no casa con nadie", async () => {
-  const menu = await buildUserMenu(
-    makePool({
-      positions: [position()],
-      rules: [rule({ recipient_policy: "exact_position", position_id: null })],
-    }),
-    7
-  );
-  assert.deepEqual(menu.units[0].cargos[0].processes, []);
 });
 
 test("una regla con cargo distinto no casa aunque la unidad coincida", async () => {

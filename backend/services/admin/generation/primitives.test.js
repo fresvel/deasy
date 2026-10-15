@@ -77,12 +77,14 @@ test("applyRecipientPolicy: sin filas, no hay destinatarios", () => {
   assert.deepEqual(applyRecipientPolicy([], "all"), []);
 });
 
-test("applyRecipientPolicy: exact_position se queda con UNA sola fila", () => {
-  assert.deepEqual(applyRecipientPolicy(rows, "exact_position"), [rows[0]]);
-});
-
-test("applyRecipientPolicy: un exactPositionId fuerza una sola fila aunque la política sea otra", () => {
-  assert.deepEqual(applyRecipientPolicy(rows, "all", 7), [rows[0]]);
+// AQUI HABIA DOS PRUEBAS DEL PUESTO EXACTO: que recortaba a una fila, y que un `exactPositionId`
+// lo forzaba aunque la politica fuera otra. Las dos se fueron con la politica (frente 25, P25).
+// Lo que se fija ahora es que NADA recorte por su cuenta: una politica desconocida --o la tercera,
+// si alguien la reintroduce por el JSONB o por un volcado viejo-- devuelve TODAS las filas, que es
+// el comportamiento seguro para un reparto (quien decide a quien alcanza es el cargo y el ambito).
+test("applyRecipientPolicy: una politica que no conoce no recorta nada", () => {
+  assert.deepEqual(applyRecipientPolicy(rows, "exact_position"), rows);
+  assert.deepEqual(applyRecipientPolicy(rows, "lo_que_sea"), rows);
 });
 
 test("applyRecipientPolicy: unit_head deja SOLO las jefaturas, no la primera fila", () => {

@@ -463,14 +463,16 @@ export const SQL_TABLES = [
       // SIN `cargo_id`, SIN `unit_scope_type`, SIN `unit_type_id` Y SIN `unit_id` (frente 25, P10):
       // eran cuatro copias de la linea, y la pantalla ofrecia EDITARLAS, asi que daba a elegir un
       // alcance que un guardia revertia a continuacion. El alcance se edita en `lineas`.
+      // SIN `position_id` Y SIN `exact_position` (frente 25, P25): nombrar una plaza se saltaba la
+      // linea --sin cargo y sin ambito-- y es un encargo, no una obligacion del puesto. Lo que
+      // queda son DOS valores: todos los que coincidan, o la jefatura.
       {
         name: "recipient_policy",
         label: "Entrega",
         type: "select",
-        options: ["all_matches", "unit_head", "exact_position"],
+        options: ["all_matches", "unit_head"],
         defaultValue: "all_matches"
       },
-      { name: "position_id", label: "Puesto exacto", type: "number", showWhen: { field: "recipient_policy", equals: "exact_position" } },
       // SIN `priority` (frente 25, P10): solo aparecia en `ORDER BY` y las reglas se UNEN, asi que
       // no podia desempatar nada. Y SIN `is_active` NI VIGENCIA (P18-d): la regla nace y muere con
       // su version de la norma. Si el reparto cambia, es otra configuracion.

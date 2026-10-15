@@ -941,8 +941,7 @@ Table "process_runs" {
 Table "process_target_rules" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
-  "position_id" int4
-  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text, 'exact_position'::text])`, default: 'all_matches']
+  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text])`, default: 'all_matches']
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
@@ -1494,7 +1493,6 @@ Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
 Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
 Ref "fk_process_target_rules_definition":"process_definition_versions"."id" <? "process_target_rules"."process_definition_id" [delete: cascade]
-Ref "fk_process_target_rules_position":"unit_positions"."id" ?<? "process_target_rules"."position_id"
 Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"

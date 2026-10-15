@@ -115,12 +115,7 @@ export const isAuthorizedUserScope = (req, requestedUserId) => {
 // CTE recursivas que hacian lo mismo en SQL, que se fueron el mismo dia--.
 
 export const doesPositionMatchRule = (position, rule) => {
-  if (rule.position_id) {
-    return Number(position.position_id) === Number(rule.position_id);
-  }
-  if (rule.recipient_policy === "exact_position") {
-    return false;
-  }
+  // SIN LA RAMA DEL PUESTO EXACTO (frente 25, P25): se fue con la columna.
   // EL CARGO Y EL AMBITO VIENEN DE LA OBLIGACION (frente 25, P10). Con prefijo `linea_` porque la
   // fila mezcla las dos tablas.
   //
@@ -145,9 +140,7 @@ export const doesPositionMatchRule = (position, rule) => {
 };
 
 export const buildRuleDisplayLabel = (rule) => {
-  if (rule.position_title) {
-    return `Puesto exacto: ${rule.position_title}`;
-  }
+  // SIN EL ROTULO DEL PUESTO EXACTO (frente 25, P25): la regla ya no nombra una plaza.
   const parts = [];
   if (rule.linea_unit_scope_type === "all_units") {
     parts.push("Todas las unidades");

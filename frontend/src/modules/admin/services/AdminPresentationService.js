@@ -76,9 +76,9 @@ class AdminPresentationService {
       context_exact: "Unidad del contexto"
     },
     recipient_policy: {
+      // SIN `exact_position` (frente 25, P25): la politica se retiro con su columna.
       all_matches: "Todos los puestos coincidentes",
-      unit_head: "Jefatura de la unidad",
-      exact_position: "Puesto exacto"
+      unit_head: "Jefatura de la unidad"
     },
     run_mode: { automatic: "Automatica", manual: "Manual" },
     origin_kind: { process_defined: "Definido por el proceso", user_added: "Añadido por el usuario" },

@@ -233,7 +233,6 @@ export default class SqlAdminService {
   }
   cloneProcessDefinitionChildren(...args) { return this.processDefinitionVersion.cloneProcessDefinitionChildren(...args); }
   getProcessDefinitionLineaScope(...args) { return this.processDefinitionVersion.getProcessDefinitionLineaScope(...args); }
-  applyTargetRuleLineaConstraints(...args) { return this.processDefinitionVersion.applyTargetRuleLineaConstraints(...args); }
   getNextProcessDefinitionVersion(...args) { return this.processDefinitionVersion.getNextProcessDefinitionVersion(...args); }
 
   // Conteos agregados (solo lectura) para los resúmenes de Operación. Cada dominio se calcula de forma

@@ -259,7 +259,6 @@ export const getActiveDefinitionRules = async (pool, definitionId) => {
   const [rows] = await pool.query(
     `SELECT
        ptr.id,
-       ptr.position_id,
        ptr.recipient_policy,
        -- el ambito y el cargo salen de la LINEA (frente 25, P10), con prefijo: esta fila mezcla
        -- las dos tablas y el rotulo que la pinta necesita saber de donde viene cada cosa
@@ -269,15 +268,13 @@ export const getActiveDefinitionRules = async (pool, definitionId) => {
        lin.cargo_id        AS linea_cargo_id,
        u.name AS unit_name,
        ut.name AS unit_type_name,
-       c.name AS cargo_name,
-       up.title AS position_title
+       c.name AS cargo_name
      FROM process_target_rules ptr
      INNER JOIN process_definition_versions pdv ON pdv.id = ptr.process_definition_id
      INNER JOIN lineas lin ON lin.id = pdv.linea_id
      LEFT JOIN units u ON u.id = lin.unit_id
      LEFT JOIN unit_types ut ON ut.id = lin.unit_type_id
      LEFT JOIN cargos c ON c.id = lin.cargo_id
-     LEFT JOIN unit_positions up ON up.id = ptr.position_id
      WHERE ptr.process_definition_id = ?
      ORDER BY ptr.id ASC`,
     [definitionId]

@@ -84,7 +84,6 @@ export const getTargetRulesMap = async (connection) => {
     `SELECT
        ptr.id,
        ptr.process_definition_id,
-       ptr.position_id,
        ptr.recipient_policy,
        lin.unit_scope_type AS linea_unit_scope_type,
        lin.unit_id         AS linea_unit_id,
@@ -234,12 +233,10 @@ export const resolveCurrentPersonsForPosition = async (connection, positionId) =
   return rows.map((row) => Number(row.person_id)).filter(Boolean);
 };
 
+// SIN LA RAMA DEL PUESTO EXACTO (frente 25, P25). Era la unica que consultaba `up.id = ?` SIN
+// cargo y SIN ambito: una regla podia repartir a una plaza ajena a su obligacion, que es el agujero
+// que `P10` cerro para `unit_id`. Hoy toda regla pasa por el cargo y el ambito de su linea.
 export const getPositionsForRule = async (connection, rule) => {
-  const useExactPosition = rule.position_id || rule.recipient_policy === "exact_position";
-  if (useExactPosition && !rule.position_id) {
-    return [];
-  }
-
   const params = [];
   let query = `
     SELECT DISTINCT
@@ -256,38 +253,33 @@ export const getPositionsForRule = async (connection, rule) => {
     WHERE up.is_active = 1
       AND u.is_active = 1`;
 
-  if (useExactPosition) {
-    query += "\n      AND up.id = ?";
-    params.push(rule.position_id);
-  } else {
-    // EL CARGO Y EL AMBITO SALEN DE LA LINEA, no de la regla (frente 25, P10). Antes la regla
-    // llevaba su copia y esto leia `rule.cargo_id`; hoy `getTargetRulesMap` los trae con prefijo.
-    if (rule.linea_cargo_id) {
-      query += "\n      AND up.cargo_id = ?";
-      params.push(rule.linea_cargo_id);
-    }
+  // EL CARGO Y EL AMBITO SALEN DE LA LINEA, no de la regla (frente 25, P10). Antes la regla
+  // llevaba su copia y esto leia `rule.cargo_id`; hoy `getTargetRulesMap` los trae con prefijo.
+  if (rule.linea_cargo_id) {
+    query += "\n      AND up.cargo_id = ?";
+    params.push(rule.linea_cargo_id);
+  }
 
-    // AQUI VIVIA LA RAMA `unit_subtree`, con una CTE RECURSIVA sin proteccion de ciclos. Se fue
-    // con el valor (frente 25, P19): un subarbol cruza tipos de unidad y por tanto cargos, que es
-    // incompatible con una obligacion que fija UN cargo.
-    if (rule.linea_unit_scope_type === "unit_exact") {
-      if (!rule.linea_unit_id) {
-        return [];
-      }
-      query += "\n      AND up.unit_id = ?";
-      params.push(rule.linea_unit_id);
-    } else if (rule.linea_unit_scope_type === "unit_type") {
-      if (!rule.linea_unit_type_id) {
-        return [];
-      }
-      query += "\n      AND u.unit_type_id = ?";
-      params.push(rule.linea_unit_type_id);
+  // AQUI VIVIA LA RAMA `unit_subtree`, con una CTE RECURSIVA sin proteccion de ciclos. Se fue
+  // con el valor (frente 25, P19): un subarbol cruza tipos de unidad y por tanto cargos, que es
+  // incompatible con una obligacion que fija UN cargo.
+  if (rule.linea_unit_scope_type === "unit_exact") {
+    if (!rule.linea_unit_id) {
+      return [];
     }
+    query += "\n      AND up.unit_id = ?";
+    params.push(rule.linea_unit_id);
+  } else if (rule.linea_unit_scope_type === "unit_type") {
+    if (!rule.linea_unit_type_id) {
+      return [];
+    }
+    query += "\n      AND u.unit_type_id = ?";
+    params.push(rule.linea_unit_type_id);
   }
 
   query += "\n    ORDER BY up.unit_id ASC, up.slot_no ASC, up.id ASC";
   const [rows] = await connection.query(query, params);
-  return applyRecipientPolicy(rows, rule.recipient_policy, rule.position_id);
+  return applyRecipientPolicy(rows, rule.recipient_policy);
 };
 
 export const getExistingTaskItemTemplateIds = async (connection, taskId) => {

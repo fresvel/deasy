@@ -42,9 +42,7 @@ export function useProcessDefinitionManager({
   closeProcessDefinitionActivationModal,
   openFkSearch,
   resolveFkSuggestions,
-  resolveFkTable,
   formatFkOptionLabel,
-  fetchFkLabel,
   getFkCachedLabel,
   formatCell,
   prefetchFkLabelsForRows,
@@ -110,35 +108,18 @@ export function useProcessDefinitionManager({
     definitionTriggersLabels.value = processDefinitionAdminService.createTriggerLabels();
   };
 
+  // EL DESTINO ES LA POLITICA, y nada mas. Esto leia `unit_scope_type`, `unit_type_id`, `unit_id`
+  // y `cargo_id` de la regla: las cuatro murieron en `P10` y la fila ya no las trae, asi que el
+  // panel de activacion ensenaba un guion. Y la rama del puesto exacto se fue con `P25`.
   const formatDefinitionRuleSummary = (row) => {
     if (!row) {
       return "—";
     }
-    const scopeType = String(row.unit_scope_type || "");
-    if (scopeType === "all_units") {
-      return "Todas las unidades";
-    }
-    if (scopeType === "unit_type") {
-      return formatCell(row.unit_type_id, { name: "unit_type_id" }, row);
-    }
-    const primaryLabel = row.position_id
-      ? formatCell(row.position_id, { name: "position_id" }, row)
-      : formatCell(row.unit_id, { name: "unit_id" }, row);
-    const cargoLabel = row.cargo_id ? formatCell(row.cargo_id, { name: "cargo_id" }, row) : "";
-    return cargoLabel ? `${primaryLabel} | ${cargoLabel}` : primaryLabel;
+    return formatCell(row.recipient_policy, { name: "recipient_policy" }, row);
   };
 
-  const handleDefinitionRuleRecipientPolicyChange = (recipientPolicy = "") => {
-    const form = recipientPolicy
-      ? { ...definitionRulesForm.value, recipient_policy: recipientPolicy }
-      : definitionRulesForm.value;
-    const nextState = processDefinitionAdminService.applyRuleRecipientPolicyChange(
-      form,
-      definitionRulesLabels.value
-    );
-    definitionRulesForm.value = nextState.form;
-    definitionRulesLabels.value = nextState.labels;
-  };
+  // AQUI VIVIA `handleDefinitionRuleRecipientPolicyChange`, que al cambiar de politica limpiaba el
+  // puesto exacto. Sin puesto (frente 25, P25) no queda nada que limpiar.
 
   const refreshProcessDefinitionChecklist = async (definitionRow = selectedRow.value) => {
     const definitionId = definitionRow?.id;
@@ -177,8 +158,9 @@ export function useProcessDefinitionManager({
     definitionRulesError.value = "";
     try {
       const response = await processDefinitionAdminService.listRules(definitionId);
+      // SIN `prefetchFkLabelsForRows`: la regla ya no tiene ni una clave ajena que rotular
+      // (frente 25, P25). Pedia las etiquetas de cuatro columnas que no existen desde `P10`.
       definitionRulesRows.value = response.data || [];
-      await prefetchFkLabelsForRows(definitionRulesRows.value, ["unit_id", "unit_type_id", "cargo_id", "position_id"]);
     } catch {
       definitionRulesRows.value = [];
       definitionRulesError.value = "No se pudieron cargar las reglas vinculadas.";
@@ -252,148 +234,12 @@ export function useProcessDefinitionManager({
     }
   };
 
-  const openDefinitionRuleFkSearch = (fieldName) => {
-    if (!fieldName) {
-      return;
-    }
-    const positionFilters = fieldName === "position_id"
-      ? {
-          unit_type_id: definitionRulesForm.value.unit_type_id || "",
-          unit_id: definitionRulesForm.value.unit_id || "",
-          cargo_id: definitionRulesForm.value.cargo_id || ""
-        }
-      : null;
-    openFkSearch({ name: fieldName }, async (row) => {
-      const idValue = row.id ?? "";
-      definitionRulesForm.value = {
-        ...definitionRulesForm.value,
-        [fieldName]: idValue ? String(idValue) : ""
-      };
-      definitionRulesLabels.value = {
-        ...definitionRulesLabels.value,
-        [fieldName]: formatFkOptionLabel(resolveFkTable(fieldName), row)
-      };
-      if (fieldName === "position_id" && idValue) {
-        try {
-          const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
-            params: { filter_id: idValue, limit: 1 }
-          });
-          const positionRow = response.data?.[0];
-          if (positionRow?.unit_id) {
-            await fetchFkLabel("units", positionRow.unit_id);
-            definitionRulesForm.value = {
-              ...definitionRulesForm.value,
-              unit_id: String(positionRow.unit_id)
-            };
-            definitionRulesLabels.value = {
-              ...definitionRulesLabels.value,
-              unit_id: String(getFkCachedLabel("units", positionRow.unit_id) || positionRow.unit_id)
-            };
-          }
-          if (positionRow?.cargo_id) {
-            await fetchFkLabel("cargos", positionRow.cargo_id);
-            definitionRulesForm.value = {
-              ...definitionRulesForm.value,
-              cargo_id: String(positionRow.cargo_id)
-            };
-            definitionRulesLabels.value = {
-              ...definitionRulesLabels.value,
-              cargo_id: String(getFkCachedLabel("cargos", positionRow.cargo_id) || positionRow.cargo_id)
-            };
-          }
-        } catch {
-          // Best-effort autofill.
-        }
-      }
-    }, { initialPositionFilters: positionFilters });
-  };
-
-  // Recomendaciones inline (combobox) para los campos FK de la regla. Reutiliza el
-  // fetcher headless (respeta exclusión de puestos asignados, activos, contexto de
-  // unidad/cargo) y el mismo formateador de etiqueta que el modal.
-  const buildDefinitionRuleSuggestProvider = (fieldName) => async (searchText) => {
-    const initialPositionFilters = fieldName === "position_id"
-      ? {
-          unit_type_id: definitionRulesForm.value.unit_type_id || "",
-          unit_id: definitionRulesForm.value.unit_id || "",
-          cargo_id: definitionRulesForm.value.cargo_id || ""
-        }
-      : null;
-    const { rows } = await resolveFkSuggestions(fieldName, {
-      q: searchText,
-      initialPositionFilters
-    });
-    return (rows || []).map((row) => ({
-      id: row?.id ?? "",
-      label: formatFkOptionLabel(resolveFkTable(fieldName), row),
-      row
-    }));
-  };
-
-  const definitionRuleSuggestProviders = {
-    unit_id: buildDefinitionRuleSuggestProvider("unit_id"),
-    unit_type_id: buildDefinitionRuleSuggestProvider("unit_type_id"),
-    cargo_id: buildDefinitionRuleSuggestProvider("cargo_id"),
-    position_id: buildDefinitionRuleSuggestProvider("position_id")
-  };
-
-  const selectDefinitionRuleOption = async (fieldName, option) => {
-    if (!fieldName) {
-      return;
-    }
-    const idValue = option?.id ?? "";
-    definitionRulesForm.value = {
-      ...definitionRulesForm.value,
-      [fieldName]: idValue ? String(idValue) : ""
-    };
-    definitionRulesLabels.value = {
-      ...definitionRulesLabels.value,
-      [fieldName]: option?.label ?? ""
-    };
-    // Al elegir un puesto exacto, autollenar unidad y cargo desde la misma fila
-    // (el combobox ya nos entrega el row completo; no hace falta re-consultar).
-    if (fieldName === "position_id" && idValue) {
-      const positionRow = option?.row;
-      if (positionRow?.unit_id) {
-        await fetchFkLabel("units", positionRow.unit_id);
-        definitionRulesForm.value = {
-          ...definitionRulesForm.value,
-          unit_id: String(positionRow.unit_id)
-        };
-        definitionRulesLabels.value = {
-          ...definitionRulesLabels.value,
-          unit_id: String(getFkCachedLabel("units", positionRow.unit_id) || positionRow.unit_id)
-        };
-      }
-      if (positionRow?.cargo_id) {
-        await fetchFkLabel("cargos", positionRow.cargo_id);
-        definitionRulesForm.value = {
-          ...definitionRulesForm.value,
-          cargo_id: String(positionRow.cargo_id)
-        };
-        definitionRulesLabels.value = {
-          ...definitionRulesLabels.value,
-          cargo_id: String(getFkCachedLabel("cargos", positionRow.cargo_id) || positionRow.cargo_id)
-        };
-      }
-    }
-  };
-
-  const clearDefinitionRuleField = (fieldName) => {
-    if (!fieldName) {
-      return;
-    }
-    definitionRulesForm.value = {
-      ...definitionRulesForm.value,
-      [fieldName]: ""
-    };
-    if (Object.prototype.hasOwnProperty.call(definitionRulesLabels.value, fieldName)) {
-      definitionRulesLabels.value = {
-        ...definitionRulesLabels.value,
-        [fieldName]: ""
-      };
-    }
-  };
+  // AQUI VIVIERON 140 LINEAS DE MAQUINARIA DE CLAVES AJENAS DE LA REGLA (frente 25, P25):
+  // `openDefinitionRuleFkSearch`, `buildDefinitionRuleSuggestProvider`, el mapa
+  // `definitionRuleSuggestProviders`, `selectDefinitionRuleOption` y `clearDefinitionRuleField`,
+  // mas el autollenado de unidad y cargo al elegir un puesto. Servian a los campos de alcance
+  // --muertos en `P10`-- y al puesto exacto, muerto aqui. El formulario de una regla es HOY UN
+  // DESPLEGABLE DE DOS VALORES, y un desplegable no busca nada.
 
   const startDefinitionRuleEdit = (row) => {
     if (!row) {
@@ -404,23 +250,12 @@ export function useProcessDefinitionManager({
       return;
     }
     definitionRulesEditId.value = row.id ? String(row.id) : "";
+    // UNA CLAVE, Y ERAN SIETE. Las cuatro del alcance murieron en `P10`, `priority` con ellas y
+    // `position_id` en `P25`: hidratarlas dejaba el formulario lleno de claves que nadie enviaba.
     definitionRulesForm.value = {
-      unit_scope_type: row.unit_scope_type || "unit_exact",
-      unit_id: row.unit_id ? String(row.unit_id) : "",
-      unit_type_id: row.unit_type_id ? String(row.unit_type_id) : "",
-      cargo_id: row.cargo_id ? String(row.cargo_id) : "",
-      position_id: row.position_id ? String(row.position_id) : "",
-      recipient_policy: row.recipient_policy || "all_matches",
-      // Sin `is_active` ni vigencia (frente 25, P18-d): la regla ya no las tiene, y `buildRulePayload`
-      // tampoco las manda. Hidratarlas dejaba tres claves muertas en el formulario.
-      priority: row.priority !== null && row.priority !== undefined ? String(row.priority) : "1"
+      recipient_policy: row.recipient_policy || "all_matches"
     };
-    definitionRulesLabels.value = {
-      unit_id: row.unit_id ? String(getFkCachedLabel("units", row.unit_id) || row.unit_id) : "",
-      unit_type_id: row.unit_type_id ? String(getFkCachedLabel("unit_types", row.unit_type_id) || row.unit_type_id) : "",
-      cargo_id: row.cargo_id ? String(getFkCachedLabel("cargos", row.cargo_id) || row.cargo_id) : "",
-      position_id: row.position_id ? String(getFkCachedLabel("unit_positions", row.position_id) || row.position_id) : ""
-    };
+    definitionRulesLabels.value = {};
   };
 
   const submitDefinitionRule = async () => {
@@ -880,7 +715,6 @@ export function useProcessDefinitionManager({
     resetDefinitionRulesForm,
     resetDefinitionTriggersForm,
     formatDefinitionRuleSummary,
-    handleDefinitionRuleRecipientPolicyChange,
     refreshProcessDefinitionChecklist,
     loadDefinitionRules,
     openDefinitionRulesManager,
@@ -890,10 +724,6 @@ export function useProcessDefinitionManager({
     openDefinitionRulesFromEditor,
     openDefinitionRulesFromActivation,
     openDefinitionArtifactsFromActivation,
-    openDefinitionRuleFkSearch,
-    definitionRuleSuggestProviders,
-    selectDefinitionRuleOption,
-    clearDefinitionRuleField,
     startDefinitionRuleEdit,
     submitDefinitionRule,
     deleteDefinitionRule,

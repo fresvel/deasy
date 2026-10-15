@@ -93,10 +93,11 @@ export const unassignedTemplateArtifactTableFields = [
   { name: "is_active", label: "Activo" }
 ];
 
+// UNA COLUMNA, Y ERAN TRES. «Alcance» leia `unit_scope_type` --muerta en `P10`-- y «Activo»
+// leia `is_active` --muerta en `P18-d`--: la rejilla de activacion pintaba un guion y un «No» fijo
+// sobre datos que no existen. Queda el DESTINO, que es lo unico que una regla dice hoy.
 export const processDefinitionActivationRuleTableFields = [
-  { name: "unit_scope_type", label: "Alcance" },
-  { name: "destination", label: "Destino" },
-  { name: "is_active", label: "Activo" }
+  { name: "destination", label: "Destino" }
 ];
 
 export const processDefinitionActivationTriggerTableFields = [
@@ -123,14 +124,14 @@ export const definitionTriggersTableFields = [
 
 export const definitionRulesTableFields = [
   { name: "id", label: "ID" },
-  { name: "recipient_policy", label: "Entrega" },
-  { name: "position_id", label: "Puesto" }
+  { name: "recipient_policy", label: "Entrega" }
   // SIN «Alcance», «Unidad», «Tipo de unidad» ni «Cargo» (frente 25, P10 — 2026-10-14): esas cuatro
   // columnas eran copia de la LINEA y se retiraron de la tabla. Visto en el navegador antes de
   // quitarlas de aqui: la rejilla pintaba cinco columnas con un guion en todas las filas, porque el
   // dato ya no viene. El alcance se ve arriba, en los chips de «Fijado por la obligación».
   //
   // Y SIN «Activo» (frente 25, P18-d): la regla perdio `is_active` y sus dos fechas, por lo mismo.
+  // Y SIN «Puesto» (frente 25, P25): se fue con `exact_position`.
 ];
 
 export const recordViewerSummaryTableFields = [

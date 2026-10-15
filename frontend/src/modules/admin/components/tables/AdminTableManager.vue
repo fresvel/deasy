@@ -628,13 +628,8 @@
       :rows="definitionRulesRows"
       :table-fields="definitionRulesTableFields"
       :linea-scope="definitionRulesLineaScope"
-      :suggest-providers="definitionRuleSuggestProviders"
       :format-cell="formatDefinitionRuleCell"
       @update:form="definitionRulesForm = $event"
-      @recipient-policy-change="handleDefinitionRuleRecipientPolicyChange"
-      @clear-field="clearDefinitionRuleField"
-      @select-field="selectDefinitionRuleOption"
-      @open-fk-search="openDefinitionRuleFkSearch"
       @submit="submitDefinitionRule"
       @reset="resetDefinitionRulesForm"
       @view-row="openRecordViewer($event, allTablesMap.process_target_rules)"
@@ -712,13 +707,8 @@
           :rows="definitionRulesRows"
           :table-fields="definitionRulesTableFields"
           :linea-scope="definitionRulesLineaScope"
-          :suggest-providers="definitionRuleSuggestProviders"
           :format-cell="formatDefinitionRuleCell"
           @update:form="definitionRulesForm = $event"
-          @recipient-policy-change="handleDefinitionRuleRecipientPolicyChange"
-          @clear-field="clearDefinitionRuleField"
-          @select-field="selectDefinitionRuleOption"
-          @open-fk-search="openDefinitionRuleFkSearch"
           @submit="wizardSubmitRule"
           @reset="resetDefinitionRulesForm"
           @view-row="handleWizardViewRow($event, allTablesMap.process_target_rules)"
@@ -1937,17 +1927,9 @@ const canSubmitDefinitionArtifact = computed(() =>
 // habilitaba nunca** salvo con puesto exacto, y el aviso decía «Completa los datos requeridos»
 // cuando no faltaba ninguno. Visto en el navegador; ningún test lo cubría.
 //
-// Hoy lo único que condiciona es la política: «ese puesto» exige su puesto, y las otras dos no
-// piden nada porque el alcance lo dice la obligación.
-const canSubmitDefinitionRule = computed(() => {
-  if (!canManageDefinitionRules.value) {
-    return false;
-  }
-  if (String(definitionRulesForm.value.recipient_policy || "") === "exact_position") {
-    return Boolean(definitionRulesForm.value.position_id);
-  }
-  return true;
-});
+// Y hoy NADA lo condiciona salvo el permiso: con el puesto exacto fuera (frente 25, P25) los dos
+// valores que quedan no piden ningun dato mas, porque el alcance lo dice la obligación.
+const canSubmitDefinitionRule = computed(() => canManageDefinitionRules.value);
 // El tipo de periodo siempre es obligatorio: el proceso corre en uno o varios tipos de periodo.
 const definitionTriggerRequiresTermType = computed(() => true);
 const canSubmitDefinitionTrigger = computed(() => {
@@ -3191,7 +3173,6 @@ const {
   resetDefinitionRulesForm,
   resetDefinitionTriggersForm,
   formatDefinitionRuleSummary,
-  handleDefinitionRuleRecipientPolicyChange,
   refreshProcessDefinitionChecklist,
   openDefinitionRulesManager,
   closeDefinitionRulesManager,
@@ -3200,8 +3181,7 @@ const {
   openDefinitionRulesFromEditor,
   openDefinitionRulesFromActivation,
   openDefinitionArtifactsFromActivation,
-  openDefinitionRuleFkSearch,
-  clearDefinitionRuleField,
+
   startDefinitionRuleEdit,
   submitDefinitionRule,
   deleteDefinitionRule,
@@ -3215,8 +3195,7 @@ const {
   openDefinitionTriggerFkSearch,
   definitionTriggerSuggestProvider,
   selectDefinitionTriggerOption,
-  definitionRuleSuggestProviders,
-  selectDefinitionRuleOption,
+
   clearDefinitionTriggerTermType,
   startDefinitionTriggerEdit,
   submitDefinitionTrigger,
