@@ -1,0 +1,44 @@
+{
+  "_porque": "Las reglas que esta puerta aplica al plan de docs/planes. Son las mismas que el perfil `codigo` de la skill `plan-trabajo`, y ESO ES DOS SITIOS A PROPOSITO: el dato del plan viaja en el repositorio y su comprobador tiene que viajar con el, porque las puertas de aqui corren en CI y la skill vive en el $HOME de una persona. La comprobacion H de check-plan.mjs compara este fichero con el perfil de la skill cuando la skill esta presente, para que la divergencia no sea silenciosa.",
+
+  "estados": {
+    "pendiente":  { "glifo": "⬜",  "terminal": false, "fuera": false },
+    "encurso":    { "glifo": "🟡",  "terminal": false, "fuera": false },
+    "bloqueada":  { "glifo": "⛔",  "terminal": false, "fuera": false },
+    "cerrada":    { "glifo": "✅",  "terminal": true,  "fuera": false },
+    "descartada": { "glifo": "🚫",  "terminal": true,  "fuera": true  },
+    "sinobjeto":  { "glifo": "∅",   "terminal": true,  "fuera": true  },
+    "movida":     { "glifo": "➡️", "terminal": true,  "fuera": true  }
+  },
+
+  "tipos": {
+    "Q": { "nombre": "pregunta",     "exige": ["dijo"],    "cierra": "la respuesta del dueño, citada literal" },
+    "D": { "nombre": "decision",     "exige": ["ficha"],   "cierra": "lo elegido y lo descartado, con su razón medida" },
+    "M": { "nombre": "medicion",     "exige": [],          "cierra": "una cifra y el comando que la produce" },
+    "C": { "nombre": "cambio",       "exige": ["realiza"], "cierra": "commit y puertas en verde" },
+    "V": { "nombre": "verificacion", "exige": [],          "cierra": "ruta, usuario y antes/después medido" },
+    "R": { "nombre": "registro",     "exige": [],          "cierra": "la página publicada en el mismo commit" },
+    "K": { "nombre": "riesgo",       "exige": ["vigila"],  "cierra": "deja de ser incierto" }
+  },
+
+  "procesos": {
+    "verificacion": { "tipo": "C", "la_hace": "V" }
+  },
+
+  "procedencia": {
+    "tipo": "C",
+    "campo": "realiza",
+    "origenes": { "decision": "D-", "defecto": "defecto:", "medicion": "M:" }
+  },
+
+  "verbos_de_actividad": [
+    "revisar", "analizar", "evaluar", "mejorar", "ajustar", "optimizar", "limpiar",
+    "estudiar", "ver", "mirar", "repasar", "investigar", "explorar", "considerar",
+    "documentar", "refactorizar", "arreglar", "corregir", "implementar", "crear",
+    "hacer", "revisión", "análisis"
+  ],
+
+  "fechas_prohibidas": [
+    "ayer", "hoy", "mañana", "esta semana", "la semana pasada", "reciente", "pronto"
+  ]
+}

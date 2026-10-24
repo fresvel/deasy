@@ -24,10 +24,10 @@ name: docs-links
 
 on:
   pull_request:
-    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/*.mjs', 'scripts/docs/doc-modelo-*.json', 'backend/database/postgres_schema.sql', '.github/workflows/docs-links.yml']
+    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/*.mjs', 'scripts/docs/doc-modelo-*.json', 'scripts/planes/*', 'docs/planes/**/*.yaml', 'backend/database/postgres_schema.sql', '.github/workflows/docs-links.yml']
   push:
     branches: [develop, main]
-    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/*.mjs', 'scripts/docs/doc-modelo-*.json', 'backend/database/postgres_schema.sql', '.github/workflows/docs-links.yml']
+    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/*.mjs', 'scripts/docs/doc-modelo-*.json', 'scripts/planes/*', 'docs/planes/**/*.yaml', 'backend/database/postgres_schema.sql', '.github/workflows/docs-links.yml']
   schedule:
     # Lunes 06:00 UTC — solo para el job de enlaces externos.
     - cron: '0 6 * * 1'
@@ -97,6 +97,15 @@ jobs:
       # -- nueve columnas en uno, seis en otro-- en la MISMA pagina, hasta que lo vio el dueño.
       - name: Comprobar que los diagramas no se contradicen
         run: node scripts/docs/check-diagramas-coherentes.mjs
+
+      # Que el PLAN no mienta. La skill `plan-trabajo` trae su propia puerta (`plan verificar`),
+      # pero vive en el $HOME de una persona y este runner clona el repositorio y nada mas: nunca
+      # la ve. Los DATOS del plan si viajan aqui (docs/planes/<proyecto>/tareas/*.md), asi que lo
+      # que faltaba era quien los leyera. Sin esto podriamos commitear un cambio cerrado sin
+      # verificar, una evidencia vacia o una fecha relativa, y CI lo dejaria pasar en verde --
+      # exactamente lo que la norma «las puertas corren en CI» existe para evitar.
+      - name: Comprobar que el plan no se contradice
+        run: node scripts/planes/check-plan.mjs
 
   # ── No bloqueante: URLs externas ────────────────────────────────────────────────────────
   enlaces-externos:

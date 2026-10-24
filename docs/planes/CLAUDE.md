@@ -9,6 +9,35 @@ ella—, pero **ninguna puede relajar lo que sigue**.
 
 ---
 
+## 0. El plan se está convirtiendo, y ya tiene PUERTA
+
+Desde el **2026-10-23** los frentes se llevan con la skill `plan-trabajo`: la raíz es esta carpeta
+(`plan.yaml`), el proyecto es `deasy/`, y **[`INDICE.md`](./INDICE.md) es GENERADO** —`plan indice`,
+no se edita a mano—. La postura es **«índice ahora, conversión al tocar»**: los 19 frentes están
+registrados sin reescribir ninguno, y cada uno se convierte **el día que se abre para trabajar**.
+Convertido va el **26**; los demás siguen con su tabla de §1 y eso es correcto mientras nadie los
+abra.
+
+```bash
+node scripts/planes/check-plan.mjs    # la puerta. Corre en CI (docs-links.yml)
+plan estado F26                       # el avance, GENERADO
+plan verificar                        # la puerta de la skill, en local
+```
+
+⚠️ **Hay DOS comprobadores a propósito, y conviene saber por qué.** `plan verificar` vive en
+`~/.claude/skills/`, que es la máquina de una persona: **el runner de CI no lo ve**. Los datos del
+plan sí viajan aquí, así que `check-plan.mjs` los lee y falla en CI. Su comprobación **H** compara
+sus reglas (`scripts/planes/plan-reglas.json`) con el perfil de la skill cuando la skill está
+presente, para que la divergencia entre los dos no sea silenciosa.
+
+⚠️ **Lo que la puerta defiende es el PROCESO, no la forma del plan**: *un cambio cerrado tiene
+quien lo verifique* —una tarea `V` que le apunte con `depende_de`—. **Las fases son libres.** Exigir
+una fase por cada etapa del ciclo se retiró el 2026-10-24 leyendo a Boehm en el original: las etapas
+de la espiral *«se eligen por riesgo»*. El porqué medido, con sus fuentes, está en
+`~/.claude/skills/plan-trabajo/referencias/fundamento.md` §1-bis.
+
+---
+
 ## 1. Todo plan lleva su control de ejecución, y es una tabla checklist
 
 **Un plan sin control de ejecución no es un plan: es una lista de intenciones.** Ya pasó dos veces en
