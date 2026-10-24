@@ -4,6 +4,11 @@
 > Es el **único** documento del que se sacan tareas. Todo lo que hay en `referencia/` se consulta,
 > **no se ejecuta**.
 
+> ⚠️ **El estado de cada plan lo dice [`INDICE.md`](./INDICE.md), que es GENERADO** (`plan indice`,
+> de la skill `plan-trabajo`) y **no se edita a mano**. Esta página dice **qué es** cada documento;
+> el índice dice **cómo va**. Si lees aquí un «9 de 9» o un «cerrado», es prosa heredada que
+> todavía no se ha retirado: manda el índice.
+
 Esta carpeta nació el **2026-08-09** para arreglar un problema concreto: había once documentos sueltos
 en la raíz de `docs/`, mezclando planes con auditorías y con documentación de dominio, y **ninguno
 decía si tenía trabajo pendiente o era historia**. Saber por dónde empezar costaba más que empezar.

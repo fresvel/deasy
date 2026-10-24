@@ -1,0 +1,79 @@
+version: 1
+perfil: codigo
+heredados:
+- ruta: plan-maestro-2026-08.md
+  titulo: Plan maestro — los frentes
+  estado: encurso
+  nota: el único del que se sacan tareas; delega en los planes de frente
+- ruta: plantilla-y-linea-de-proceso-2026-10.md
+  titulo: Frente 25 · qué pareja (configuración, plantilla) es legal
+  estado: encurso
+  nota: el más vivo; su rama ya está en develop
+- ruta: ciclos-en-los-grafos-2026-10.md
+  titulo: Frente 26 · los ciclos en los grafos del modelo
+  estado: encurso
+  nota: seis grafos sin protección en el esquema
+- ruta: mapa-modulos-2026-10.md
+  titulo: Frente 22 · dónde vive cada tabla y cada módulo
+  estado: encurso
+  nota: 'queda F7.5: el backend de los cuatro dominios entrelazados'
+- ruta: expediente-relacional-2026-09.md
+  titulo: Frente 18 · el expediente deja de ser un JSONB con diez formas
+  estado: encurso
+  nota: ''
+- ruta: versionado-de-objetos-2026-09.md
+  titulo: Frente 16 · el versionado de objetos en MinIO
+  estado: pendiente
+  nota: análisis; abierto sin trabajo hecho
+- ruta: universidades-ror-2026-09.md
+  titulo: Frente 19 · la universidad que emite el título deja de ser texto
+  estado: encurso
+  nota: ''
+- ruta: mapa-y-geocodificacion-2026-09.md
+  titulo: Frente 21 · el mapa y la dirección que se prellena
+  estado: encurso
+  nota: ''
+- ruta: persona-datos-completos-2026-09.md
+  titulo: Frente 20 · lo que falta saber de una persona
+  estado: encurso
+  nota: ''
+- ruta: frontend-identidad-2026-08.md
+  titulo: Frontend de identidad
+  estado: encurso
+  nota: una tarea bloqueada por el frente 15, que ya cerró
+- ruta: identidad-sin-pais-fijo-2026-08.md
+  titulo: Identidad sin país fijo
+  estado: encurso
+  nota: la que queda la ejecuta el frente 15
+- ruta: lopdp-consentimiento-2026-09.md
+  titulo: 'Frente 17 · LOPDP: consentimiento demostrable'
+  estado: encurso
+  nota: queda mudar el texto legal a dos buckets de MinIO
+- ruta: auditoria-modelo-negocio-2026-08.md
+  titulo: Auditoría del modelo de negocio dirigida por el dueño
+  estado: pendiente
+  nota: 16 recorridos sin empezar
+- ruta: channels-verificacion-2026-08.md
+  titulo: Frente 15 · verificar un número por Telegram o WhatsApp
+  estado: cerrada
+  nota: cerrado; se consulta por el porqué del SMS descartado
+- ruta: plantillas-y-entregables-2026-10.md
+  titulo: Frente 23 · quitar lo que se dice dos veces sobre «qué plantilla»
+  estado: cerrada
+  nota: cerrado
+- ruta: recorrido-unificado-2026-10.md
+  titulo: Frente 24 · el recorrido documental unificado
+  estado: cerrada
+  nota: cerrado
+- ruta: defectos-conocidos/plan-defectos-2026-08.md
+  titulo: Frente 1 · los defectos conocidos
+  estado: encurso
+  nota: dos tareas bloqueadas entre sí (1.19)
+- ruta: plan_data/plan-datos-2026-08.md
+  titulo: Frente 9 · la capa de datos, siete fases
+  estado: encurso
+  nota: 'ojo: su README repite el estado de las fases'
+- ruta: sistema-diseno-componentes/plan-2026-08-13.md
+  titulo: Frente 4 · sistema de diseño, tercera vuelta
+  estado: encurso
+  nota: una tarea viva de 61
