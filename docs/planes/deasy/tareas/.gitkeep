@@ -1,3 +1,0 @@
-Git no sigue carpetas vacias, y `plan frente nuevo` escribe en frentes/ SIN crearla:
-sin este fichero, un clon recien hecho revienta con FileNotFoundError.
-Se puede borrar en cuanto la carpeta tenga contenido real.
