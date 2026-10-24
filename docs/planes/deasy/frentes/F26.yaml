@@ -1,0 +1,23 @@
+id: F26
+titulo: Los ciclos en los grafos del modelo
+ciclo: exploratorio
+abierto: '2026-10-23'
+fases:
+  P1:
+    titulo: El censo y el espacio de diseño
+    etapa: medicion
+  P2:
+    titulo: Qué decide el dueño
+    etapa: pregunta
+  P3:
+    titulo: La protección elegida
+    etapa: decision
+  P4:
+    titulo: La protección, en el esquema y en el código
+    etapa: cambio
+  P5:
+    titulo: Los dos guardias con prueba
+    etapa: verificacion
+  P6:
+    titulo: El patrón escrito donde se vea
+    etapa: registro

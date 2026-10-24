@@ -14,17 +14,32 @@ tiene el suyo.
 
 ## 0 · Control de ejecución
 
-| Tarea | Qué entrega | Estado | Evidencia | Fecha |
-|---|---|:--:|---|---|
-| **CI1** | **El censo medido**: cuántos grafos hay, qué protección tiene cada uno, quién recorre su cadena, y qué hay hoy en la base | ✅ | §1 y §2: **6 grafos**, 5 por clave ajena autorreferencial + `unit_relations`; **cero** `CHECK` en el esquema; **dos** guardias en código, los dos vulnerables al estado que previenen; **cero** ciclos en los datos de hoy | 2026-10-11 |
-| **CI2** | **El espacio de diseño de la protección**: `CHECK` de autoapuntado, disparador recursivo, camino materializado, `ltree`, comprobación en servicio — cada una con qué impide, qué permite y qué cuesta. **Sin elegir** | ⬜ | | |
-| **Z** | **La decisión del dueño**: qué grafos necesitan protección de ciclo completa y cuáles sólo de autoapuntado, y con qué mecanismo | ⬜ | | |
-| **CI3** | **Ninguna fila se apunta a sí misma**, impuesto por el ESQUEMA en los cinco autorreferenciales. Es el único ciclo que un humano teclea sin querer, y hoy **nada lo impide** en cuatro de los cinco | ⬜ | **depende de `Z`** | |
-| **CI4** | **Los ciclos de longitud mayor que uno**, donde `Z` diga que hacen falta, con el mecanismo que salga de `CI2` | ⬜ | **depende de `Z`** | |
-| **CI5** | **Todo recorrido recursivo del backend es seguro**: las **5** CTEs `WITH RECURSIVE` llevan `CYCLE` o límite de profundidad. Hoy **ninguna** lo lleva, así que un ciclo ya existente **las cuelga** | ⬜ | **no depende de `Z`**: vale para cualquier mecanismo que se elija | |
-| **CI6** | **`processes.parent_id` deja de ser un `number` libre en `/admin`**: o el editor genérico pasa por el guardia, o el campo se retira de `sqlTables.js` y se edita sólo por el grafo | ⬜ | **es el camino que rodea el guardia** | |
-| **CI7** | **Los dos guardias tienen prueba**: hoy `wouldCreateProcessCycle` está a **`FNDA:0`** —cero ejecuciones— en el informe de cobertura | ⬜ | | |
-| **CI8** | **El patrón queda escrito** donde se vea al escribir el siguiente recorrido recursivo, no sólo aquí | ⬜ | **depende de `CI5`** | |
+> ⚠️ **El control de este frente YA NO ESTÁ AQUÍ.** Se convirtió el **2026-10-23** al formato de la
+> skill `plan-trabajo`: vive en `docs/planes/deasy/tareas/F26.*.md`, un fichero por tarea, y el
+> recuento lo **genera** `plan estado F26` — no se escribe a mano ni se copia a este documento.
+> La puerta es `plan verificar`.
+>
+> **Lo que sigue aquí es el razonamiento**, que es lo que se echa de menos meses después. Las
+> tareas sólo guardan qué entregan y su evidencia.
+
+**Qué era cada tarea antes.** La prosa de abajo todavía las nombra `CI1`…`CI8`:
+
+| Antes | Ahora | Tipo | Qué entrega |
+|---|---|:--:|---|
+| `CI1` | `F26.P1.T1` | M | el censo medido |
+| `CI2` | `F26.P1.T2` | M | el espacio de diseño de la protección |
+| `Z` | `F26.P2.T1` | Q | **la pregunta**: qué grafos y con qué mecanismo |
+| `Z` | `F26.P3.T1` | D | **la decisión**, con lo descartado y su razón |
+| `CI3` | `F26.P4.T1` | C | ninguna fila se apunta a sí misma |
+| `CI4` | `F26.P4.T2` | C | los ciclos de longitud mayor que uno |
+| `CI5` | `F26.P4.T3` | C | las cinco CTEs recursivas, seguras |
+| `CI6` | `F26.P4.T4` | C | `parent_id` deja de ser un `number` libre |
+| `CI7` | `F26.P5.T1` | V | los dos guardias con prueba |
+| `CI8` | `F26.P6.T1` | R | el patrón escrito donde se vea |
+
+⚠️ **`Z` se partió en DOS por decisión del dueño** (2026-10-23): la pregunta guarda **qué se le
+preguntó y qué contestó, literal**; la decisión guarda **lo elegido y lo descartado con su razón
+medida**. Eran una sola fila y se perdía la primera mitad.
 
 ⚠️ **`CI1` ya está hecha y por eso este frente no abre en blanco.** Se midió el 2026-10-11 al
 registrar la decisión que lo crea, y **corrigió dos afirmaciones** que el frente 25 había escrito:

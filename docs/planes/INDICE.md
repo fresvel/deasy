@@ -6,7 +6,7 @@ Generado por `plan indice` el 2026-10-23. **No se edita a mano.**
 
 | Proyecto | Frentes | Tareas vivas | Hechas |
 |---|--:|--:|--:|
-| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 0 | 0 | 0 |
+| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 1 | 10 | 1 |
 
 ## Heredados — registrados, sin convertir
 
@@ -16,7 +16,7 @@ Se convierten **el día que se tocan**, no antes.
 |---|---|---|
 | [Plan maestro — los frentes](plan-maestro-2026-08.md) | 🟡 encurso | el único del que se sacan tareas; delega en los planes de frente |
 | [Frente 25 · qué pareja (configuración, plantilla) es legal](plantilla-y-linea-de-proceso-2026-10.md) | 🟡 encurso | el más vivo; su rama ya está en develop |
-| [Frente 26 · los ciclos en los grafos del modelo](ciclos-en-los-grafos-2026-10.md) | 🟡 encurso | seis grafos sin protección en el esquema |
+| [Frente 26 · los ciclos en los grafos del modelo](ciclos-en-los-grafos-2026-10.md) | ➡️ movida | ➡️ CONVERTIDO: es el frente F26 del proyecto `deasy`. Aquí sólo queda el razonamiento |
 | [Frente 22 · dónde vive cada tabla y cada módulo](mapa-modulos-2026-10.md) | 🟡 encurso | queda F7.5: el backend de los cuatro dominios entrelazados |
 | [Frente 18 · el expediente deja de ser un JSONB con diez formas](expediente-relacional-2026-09.md) | 🟡 encurso |  |
 | [Frente 16 · el versionado de objetos en MinIO](versionado-de-objetos-2026-09.md) | ⬜ pendiente | análisis; abierto sin trabajo hecho |

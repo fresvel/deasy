@@ -11,8 +11,9 @@ heredados:
   nota: el más vivo; su rama ya está en develop
 - ruta: ciclos-en-los-grafos-2026-10.md
   titulo: Frente 26 · los ciclos en los grafos del modelo
-  estado: encurso
-  nota: seis grafos sin protección en el esquema
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F26 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
 - ruta: mapa-modulos-2026-10.md
   titulo: Frente 22 · dónde vive cada tabla y cada módulo
   estado: encurso
