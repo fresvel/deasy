@@ -2,6 +2,12 @@
 
 Generado por `plan indice` el 2026-10-23. **No se edita a mano.**
 
+## Gobernados por `plan`
+
+| Proyecto | Frentes | Tareas vivas | Hechas |
+|---|--:|--:|--:|
+| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 0 | 0 | 0 |
+
 ## Heredados — registrados, sin convertir
 
 Se convierten **el día que se tocan**, no antes.
