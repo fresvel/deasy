@@ -21,6 +21,12 @@ tiene el suyo.
 >
 > **Lo que sigue aquí es el razonamiento**, que es lo que se echa de menos meses después. Las
 > tareas sólo guardan qué entregan y su evidencia.
+>
+> ⚠️ **Sus SEIS fases no son un diseño: son un residuo.** Se crearon el 2026-10-23 porque la puerta
+> exigía entonces una fase por cada etapa del ciclo `exploratorio`, así que `P5` y `P6` guardan una
+> tarea cada una. Esa regla **se retiró el 2026-10-24** —leyendo a Boehm: las etapas de la espiral
+> «se eligen por riesgo»— y las fases son libres. No se renumeran, porque un identificador no se
+> renumera nunca; si alguna estorba, su tarea se retira ➡️ `movida` a donde toque.
 
 **Qué era cada tarea antes.** La prosa de abajo todavía las nombra `CI1`…`CI8`:
 
