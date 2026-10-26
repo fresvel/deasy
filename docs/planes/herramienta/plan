@@ -2,7 +2,7 @@
 # PYTHON_ARGCOMPLETE_OK
 """Planes de trabajo: frentes, fases y tareas con control de ejecución y puerta.
 
-  plan init [--raiz DIR]            crea la raíz y deja en ella la copia de la herramienta
+  plan init [--raiz DIR]            crea la raíz («hilo/» si no se dice) con la copia de la herramienta
   plan actualizar [--aplicar]       sube la copia del proyecto a la versión del skill, enseñando antes qué cambia
   plan proyecto nuevo SLUG --titulo "..."
   plan frente nuevo F25 --titulo "..." --ciclo exploratorio
@@ -109,34 +109,92 @@ def muere(msg):
 
 
 # --- raíz y configuración ----------------------------------------------------
+RAIZ_POR_DEFECTO = "hilo"   # «no perder el hilo»: minúsculas, una palabra; `--raiz` la personaliza
+NO_SE_BUSCA = {"node_modules", "venv", ".venv", "__pycache__", "build", "dist", "target"}
+
+
+def es_raiz(d):
+    """Una raíz se reconoce por su contenido. `herramienta/` puede faltar en una
+    raíz anterior al 2026-10-26 (deasy) hasta que corra `plan actualizar`."""
+    try:
+        f = d / "plan.yaml"
+        if not f.is_file():
+            return False
+        if (d / HERRAMIENTA).is_dir():
+            return True
+        return "heredados" in f.read_text()
+    except OSError:          # sin permiso, enlace roto…: no es una raíz nuestra
+        return False
+
+
+def raices_bajo(base):
+    """Las raíces que hay en las hijas y nietas visibles de `base`."""
+    out = []
+    for h in hijas_visibles(base):
+        if es_raiz(h):
+            out.append(h)
+            continue
+        out += [n for n in hijas_visibles(h) if es_raiz(n)]
+    return out
+
+
+AMBIGUA = None     # (base, candidatas) si la última búsqueda vio varias raíces en un nivel
+
+
 def buscar_raiz(desde=None):
-    """Sube desde el directorio actual buscando la raíz del plan."""
+    """Sube desde el directorio actual buscando la raíz del plan: aquí, en una
+    hija o en una nieta (docs/planes) de cada ancestro. Nunca hay carpeta oculta:
+    la raíz se reconoce por su contenido (plan.yaml + herramienta/), no por una
+    marca. Si en un nivel hay más de una candidata, se dice en vez de adivinar."""
     if os.environ.get("PLAN_RAIZ"):
         return Path(os.environ["PLAN_RAIZ"]).resolve()
     d = Path(desde or Path.cwd()).resolve()
+    tope = Path.home().resolve().parent     # por encima de $HOME no hay planes nuestros
     for base in [d, *d.parents]:
+        if base == tope or base == Path("/"):
+            break
+        if es_raiz(base):
+            return base
+        # Puntero oculto de antes del 2026-10-26: se lee si existe, ya no se escribe.
         puntero = base / ".plan" / "raiz"
         if puntero.is_file():
             destino = (base / puntero.read_text().strip()).resolve()
-            if (destino / "plan.yaml").is_file():
+            if es_raiz(destino):
                 return destino
-        if (base / ".plan" / "plan.yaml").is_file():
-            return base / ".plan"
-        if (base / "plan.yaml").is_file():
-            return base
-        # Raíz visible hija directa, sin puntero oculto: es el caso de SharePoint,
-        # donde `.plan/` sincroniza mal. Vale si hay UNA sola candidata.
-        hijas = [h for h in base.iterdir()
-                 if h.is_dir() and not h.name.startswith(".")
-                 and (h / "plan.yaml").is_file() and (h / HERRAMIENTA).is_dir()]
-        if len(hijas) == 1:
-            return hijas[0]
+        candidatas = raices_bajo(base)
+        if len(candidatas) == 1:
+            return candidatas[0]
+        if len(candidatas) > 1:
+            # Un ancestro con varios planes ajenos (una carpeta de proyectos) no es
+            # un error: es que desde aquí no se alcanza ninguno sin ambigüedad.
+            global AMBIGUA
+            AMBIGUA = (base, candidatas)
+            return None
     return None
+
+
+def hijas_visibles(d):
+    out = []
+    try:
+        for h in d.iterdir():
+            try:
+                if h.is_dir() and not h.name.startswith(".") and h.name not in NO_SE_BUSCA:
+                    out.append(h)
+            except OSError:
+                continue
+    except OSError:
+        return []
+    return out
 
 
 def raiz_o_muere():
     r = buscar_raiz()
     if r is None:
+        if AMBIGUA:
+            base, cs = AMBIGUA
+            muere("desde aquí se alcanzan varios planes bajo " + str(base) + ": "
+                  + ", ".join(str(c.relative_to(base)) for c in cs)
+                  + ". Entra en la carpeta de uno, o fija PLAN_RAIZ.")
         muere("no encuentro la raíz del plan. Empieza con `plan init`.")
     return r
 
@@ -348,28 +406,24 @@ def copiar_herramienta(raiz):
 
 def cmd_init(a):
     base = Path.cwd().resolve()
-    if a.raiz:
-        raiz = (base / a.raiz).resolve()
-        raiz.mkdir(parents=True, exist_ok=True)
-        if raiz.parent != base:
-            # Solo hace falta puntero si la raíz no es hija directa (docs/planes).
-            # Una hija directa se encuentra sola, y así en SharePoint no queda
-            # ninguna carpeta oculta.
-            (base / ".plan").mkdir(exist_ok=True)
-            (base / ".plan" / "raiz").write_text(
-                os.path.relpath(raiz, base) + "\n")
-    else:
-        raiz = base / ".plan"
-        raiz.mkdir(exist_ok=True)
+    raiz = (base / (a.raiz or RAIZ_POR_DEFECTO)).resolve()
+    if any(parte.startswith(".") for parte in raiz.relative_to(base).parts):
+        muere("la raíz no puede ser una carpeta oculta: sincroniza mal y se ignora por costumbre. "
+              "Dale un nombre visible.")
+    if raiz.relative_to(base).parts.__len__() > 2:
+        muere("la raíz puede ser hija o nieta de esta carpeta (p. ej. docs/planes), no más "
+              "profunda: el comando la busca a dos niveles.")
+    otras = [r for r in raices_bajo(base) if r != raiz] + ([base] if es_raiz(base) else [])
+    if otras:
+        muere("aquí ya hay un plan en " + ", ".join(str(o.relative_to(base) if o != base else ".") for o in otras)
+              + "; dos raíces alcanzables desde la misma carpeta se confunden")
     if (raiz / "plan.yaml").is_file():
         muere(f"ya hay un plan en {raiz}")
+    raiz.mkdir(parents=True, exist_ok=True)
     guardar_config(raiz, {"version": 1,
                           "heredados_plazo_dias": PLAZO_HEREDADO, "heredados": []})
     copiar_herramienta(raiz)
     print(f"✅ raíz del plan en {raiz}  ·  herramienta v{VERSION} copiada en {HERRAMIENTA}/")
-    if raiz.name == ".plan":
-        print("⚠️  Es una carpeta oculta: COMPRUEBA que el control de versiones "
-              "o la sincronización la siguen — el plan tiene que viajar con el trabajo.")
 
 
 def cmd_proyecto_nuevo(a):
@@ -1309,7 +1363,7 @@ def main():
     sp = ap.add_subparsers(dest="cmd", required=True)
 
     p = sp.add_parser("init", help="crea la raíz del plan y copia la herramienta")
-    p.add_argument("--raiz", help="carpeta visible (p. ej. docs/planes); por defecto .plan/")
+    p.add_argument("--raiz", help=f"carpeta de la raíz, hija o nieta de la actual (p. ej. docs/planes); por defecto «{RAIZ_POR_DEFECTO}»")
     p.set_defaults(fn=cmd_init)
 
     q = sp.add_parser("actualizar", help="sube la copia del proyecto a la versión del skill")
@@ -1456,6 +1510,10 @@ def delegar_a_la_copia(a):
     if copia.resolve() == yo:
         return
     v = version_de(copia)
+    if v == VERSION and not misma_herramienta(copia.parent):
+        print(f"plan: la copia de este proyecto es v{v} como el skill, pero difiere "
+              "(correcciones sin cambio de versión). Corro con la del proyecto; "
+              "`plan actualizar` la pone al día.", file=sys.stderr)
     if v < VERSION:
         print(f"plan: este proyecto lleva la herramienta v{v}; el skill está en v{VERSION}. "
               "Corro con la del proyecto. Para subirla: `plan actualizar`.", file=sys.stderr)
@@ -1463,7 +1521,17 @@ def delegar_a_la_copia(a):
         print(f"plan: este proyecto lleva la herramienta v{v}, MÁS NUEVA que el skill (v{VERSION}). "
               "Corro con la del proyecto.", file=sys.stderr)
     os.environ[SIN_COPIA_AVISADO] = "1"
+    os.environ["PLAN_RAIZ"] = str(raiz)      # la copia no vuelve a buscar: ya está decidido
     os.execv(sys.executable, [sys.executable, str(copia), *sys.argv[1:]])
+
+
+def misma_herramienta(dir_copia):
+    """¿La copia es byte a byte la del skill (programa y vocabulario)?"""
+    try:
+        return ((dir_copia / "plan").read_bytes() == Path(__file__).resolve().read_bytes()
+                and (dir_copia / "vocabulario.yaml").read_bytes() == ruta_vocabulario().read_bytes())
+    except OSError:
+        return False
 
 
 def cmd_actualizar(a):
@@ -1473,11 +1541,12 @@ def cmd_actualizar(a):
         muere("`actualizar` se corre con el `plan` del skill, no con la copia del proyecto")
     copia = raiz / HERRAMIENTA / "plan"
     v = version_de(copia) if copia.is_file() else None
-    if v == VERSION and (raiz / HERRAMIENTA / "vocabulario.yaml").read_text() == ruta_vocabulario().read_text():
+    if v is not None and misma_herramienta(raiz / HERRAMIENTA):
         print(f"✅ el proyecto ya lleva la herramienta v{VERSION}, idéntica al skill")
         return
     de = f"v{v}" if v is not None else "ninguna copia"
-    print(f"── herramienta: {de} → v{VERSION}")
+    flecha = f"{de} → v{VERSION}" if v != VERSION else f"v{VERSION} con correcciones"
+    print(f"── herramienta: {flecha}")
     # Antes de tocar nada: qué diría la puerta NUEVA sobre este plan, tal como está.
     with tempfile.TemporaryDirectory() as tmp:
         t = Path(tmp)
