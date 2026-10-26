@@ -6,9 +6,10 @@ heredados:
   nota: el único del que se sacan tareas; delega en los planes de frente
   registrado: '2026-10-23'
 - ruta: plantilla-y-linea-de-proceso-2026-10.md
-  titulo: Frente 25 · qué pareja (configuración, plantilla) es legal
-  estado: encurso
-  nota: el más vivo; su rama ya está en develop
+  titulo: Qué pareja (configuración, plantilla) es legal
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F25 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: ciclos-en-los-grafos-2026-10.md
   titulo: Frente 26 · los ciclos en los grafos del modelo
@@ -17,14 +18,16 @@ heredados:
     razonamiento'
   registrado: '2026-10-23'
 - ruta: mapa-modulos-2026-10.md
-  titulo: Frente 22 · dónde vive cada tabla y cada módulo
-  estado: encurso
-  nota: 'queda F7.5: el backend de los cuatro dominios entrelazados'
+  titulo: 'El mapa de módulos: una sola respuesta a «¿dónde vive esto?»'
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F22 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: expediente-relacional-2026-09.md
-  titulo: Frente 18 · el expediente deja de ser un JSONB con diez formas
-  estado: encurso
-  nota: ''
+  titulo: El expediente sale del JSON
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F18 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: versionado-de-objetos-2026-09.md
   titulo: Frente 16 · el versionado de objetos en MinIO
@@ -38,34 +41,40 @@ heredados:
     razonamiento'
   registrado: '2026-10-23'
 - ruta: mapa-y-geocodificacion-2026-09.md
-  titulo: Frente 21 · el mapa y la dirección que se prellena
-  estado: encurso
-  nota: ''
+  titulo: El mapa, y que la dirección se prellene sola
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F21 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: persona-datos-completos-2026-09.md
-  titulo: Frente 20 · lo que falta saber de una persona
-  estado: encurso
-  nota: ''
+  titulo: Lo que falta saber de una persona
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F20 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: frontend-identidad-2026-08.md
-  titulo: Frontend de identidad
-  estado: encurso
-  nota: una tarea bloqueada por el frente 15, que ya cerró
+  titulo: Frontend de la identidad
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F13 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: identidad-sin-pais-fijo-2026-08.md
   titulo: Identidad sin país fijo
-  estado: encurso
-  nota: la que queda la ejecuta el frente 15
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F14 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: lopdp-consentimiento-2026-09.md
-  titulo: 'Frente 17 · LOPDP: consentimiento demostrable'
-  estado: encurso
-  nota: queda mudar el texto legal a dos buckets de MinIO
+  titulo: 'LOPDP: consentimiento demostrable y textos legales versionados'
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F17 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: auditoria-modelo-negocio-2026-08.md
-  titulo: Auditoría del modelo de negocio dirigida por el dueño
-  estado: pendiente
-  nota: 16 recorridos sin empezar
+  titulo: Auditoría del modelo dirigida por el dueño
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F12 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: channels-verificacion-2026-08.md
   titulo: Frente 15 · verificar un número por Telegram o WhatsApp
@@ -83,17 +92,17 @@ heredados:
   nota: cerrado
   registrado: '2026-10-23'
 - ruta: defectos-conocidos/plan-defectos-2026-08.md
-  titulo: Frente 1 · los defectos conocidos
-  estado: encurso
-  nota: dos tareas bloqueadas entre sí (1.19)
+  titulo: Defectos conocidos y sin arreglar
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F1 del proyecto `deasy`. Aquí sólo queda el razonamiento'
   registrado: '2026-10-23'
 - ruta: plan_data/plan-datos-2026-08.md
-  titulo: Frente 9 · la capa de datos, siete fases
-  estado: encurso
-  nota: 'ojo: su README repite el estado de las fases'
+  titulo: La capa de datos
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F9 del proyecto `deasy`. Aquí sólo queda el razonamiento'
   registrado: '2026-10-23'
 - ruta: sistema-diseno-componentes/plan-2026-08-13.md
-  titulo: Frente 4 · sistema de diseño, tercera vuelta
-  estado: encurso
-  nota: una tarea viva de 61
+  titulo: Sistema de diseño
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F4 del proyecto `deasy`. Aquí sólo queda el razonamiento'
   registrado: '2026-10-23'

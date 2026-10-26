@@ -6,7 +6,7 @@ Generado por `plan indice` el 2026-10-26. **No se edita a mano.**
 
 | Proyecto | Frentes | Tareas vivas | Hechas |
 |---|--:|--:|--:|
-| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 1 | 10 | 1 |
+| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 14 | 291 | 190 |
 
 ## Heredados — registrados, sin convertir
 
@@ -15,21 +15,21 @@ Se convierten **el día que se tocan**, no antes. Un heredado vivo más de **30 
 | Plan | Estado | Registrado | Nota |
 |---|---|---|---|
 | [Plan maestro — los frentes](plan-maestro-2026-08.md) | 🟡 encurso | 2026-10-23 · hace 3 d | el único del que se sacan tareas; delega en los planes de frente |
-| [Frente 25 · qué pareja (configuración, plantilla) es legal](plantilla-y-linea-de-proceso-2026-10.md) | 🟡 encurso | 2026-10-23 · hace 3 d | el más vivo; su rama ya está en develop |
+| [Qué pareja (configuración, plantilla) es legal](plantilla-y-linea-de-proceso-2026-10.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F25 del proyecto `deasy`. Aquí sólo queda el razonamiento |
 | [Frente 26 · los ciclos en los grafos del modelo](ciclos-en-los-grafos-2026-10.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F26 del proyecto `deasy`. Aquí sólo queda el razonamiento |
-| [Frente 22 · dónde vive cada tabla y cada módulo](mapa-modulos-2026-10.md) | 🟡 encurso | 2026-10-23 · hace 3 d | queda F7.5: el backend de los cuatro dominios entrelazados |
-| [Frente 18 · el expediente deja de ser un JSONB con diez formas](expediente-relacional-2026-09.md) | 🟡 encurso | 2026-10-23 · hace 3 d |  |
+| [El mapa de módulos: una sola respuesta a «¿dónde vive esto?»](mapa-modulos-2026-10.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F22 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [El expediente sale del JSON](expediente-relacional-2026-09.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F18 del proyecto `deasy`. Aquí sólo queda el razonamiento |
 | [Frente 16 · el versionado de objetos en MinIO](versionado-de-objetos-2026-09.md) | ⬜ pendiente | 2026-10-23 · hace 3 d | análisis; abierto sin trabajo hecho |
-| [Frente 19 · la universidad que emite el título deja de ser texto](universidades-ror-2026-09.md) | 🟡 encurso | 2026-10-23 · hace 3 d |  |
-| [Frente 21 · el mapa y la dirección que se prellena](mapa-y-geocodificacion-2026-09.md) | 🟡 encurso | 2026-10-23 · hace 3 d |  |
-| [Frente 20 · lo que falta saber de una persona](persona-datos-completos-2026-09.md) | 🟡 encurso | 2026-10-23 · hace 3 d |  |
-| [Frontend de identidad](frontend-identidad-2026-08.md) | 🟡 encurso | 2026-10-23 · hace 3 d | una tarea bloqueada por el frente 15, que ya cerró |
-| [Identidad sin país fijo](identidad-sin-pais-fijo-2026-08.md) | 🟡 encurso | 2026-10-23 · hace 3 d | la que queda la ejecuta el frente 15 |
-| [Frente 17 · LOPDP: consentimiento demostrable](lopdp-consentimiento-2026-09.md) | 🟡 encurso | 2026-10-23 · hace 3 d | queda mudar el texto legal a dos buckets de MinIO |
-| [Auditoría del modelo de negocio dirigida por el dueño](auditoria-modelo-negocio-2026-08.md) | ⬜ pendiente | 2026-10-23 · hace 3 d | 16 recorridos sin empezar |
+| [Frente 19 · la universidad que emite el título deja de ser texto](universidades-ror-2026-09.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F19 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [El mapa, y que la dirección se prellene sola](mapa-y-geocodificacion-2026-09.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F21 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [Lo que falta saber de una persona](persona-datos-completos-2026-09.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F20 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [Frontend de la identidad](frontend-identidad-2026-08.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F13 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [Identidad sin país fijo](identidad-sin-pais-fijo-2026-08.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F14 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [LOPDP: consentimiento demostrable y textos legales versionados](lopdp-consentimiento-2026-09.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F17 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [Auditoría del modelo dirigida por el dueño](auditoria-modelo-negocio-2026-08.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F12 del proyecto `deasy`. Aquí sólo queda el razonamiento |
 | [Frente 15 · verificar un número por Telegram o WhatsApp](channels-verificacion-2026-08.md) | ✅ cerrada | 2026-10-23 | cerrado; se consulta por el porqué del SMS descartado |
 | [Frente 23 · quitar lo que se dice dos veces sobre «qué plantilla»](plantillas-y-entregables-2026-10.md) | ✅ cerrada | 2026-10-23 | cerrado |
 | [Frente 24 · el recorrido documental unificado](recorrido-unificado-2026-10.md) | ✅ cerrada | 2026-10-23 | cerrado |
-| [Frente 1 · los defectos conocidos](defectos-conocidos/plan-defectos-2026-08.md) | 🟡 encurso | 2026-10-23 · hace 3 d | dos tareas bloqueadas entre sí (1.19) |
-| [Frente 9 · la capa de datos, siete fases](plan_data/plan-datos-2026-08.md) | 🟡 encurso | 2026-10-23 · hace 3 d | ojo: su README repite el estado de las fases |
-| [Frente 4 · sistema de diseño, tercera vuelta](sistema-diseno-componentes/plan-2026-08-13.md) | 🟡 encurso | 2026-10-23 · hace 3 d | una tarea viva de 61 |
+| [Defectos conocidos y sin arreglar](defectos-conocidos/plan-defectos-2026-08.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F1 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [La capa de datos](plan_data/plan-datos-2026-08.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F9 del proyecto `deasy`. Aquí sólo queda el razonamiento |
+| [Sistema de diseño](sistema-diseno-componentes/plan-2026-08-13.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F4 del proyecto `deasy`. Aquí sólo queda el razonamiento |
