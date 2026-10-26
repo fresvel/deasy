@@ -1,0 +1,168 @@
+# Vocabulario del comando `plan`: lo que el programa lee en vez de llevarlo escrito.
+#
+# Es UNO para todos los proyectos —código, gestión, obra, docencia—, porque lo que
+# la puerta comprueba es igual en todos: que lo cerrado tenga evidencia, que un
+# cambio tenga quien lo verifique, que la entrega sea un resultado y no una
+# actividad. Decidido el 2026-10-26, tras revisar campo por campo el antiguo
+# perfil «codigo»: lo único que olía a software eran textos descriptivos que la
+# puerta no lee. Si algún día un proyecto real exige que la puerta compruebe algo
+# DISTINTO —no un texto distinto—, ese día se decide qué hacer. No antes.
+#
+# Está aquí y no en el código porque es lo que más se toca: una palabra prohibida
+# nueva tras cada corrección, un origen nuevo al entrar en un dominio. Añadir una
+# línea a una lista es seguro; tocar el programa, no tanto.
+#
+# Cada proyecto lleva su COPIA de este fichero junto a la del programa (carpeta
+# `herramienta/` de su raíz de planes), fijada a una versión. Lo que se edita es
+# ESTE fichero; las copias cambian solo con `plan actualizar`.
+
+titulo: Planes de trabajo, para cualquier proyecto
+
+# ---------------------------------------------------------------------------
+# TIPOS DE TAREA — cada uno se define por lo que lo CIERRA, no por lo que trata.
+# `exige` es el campo condicional que la puerta reclama para ese tipo; de aquí
+# salen también las opciones `--realiza`, `--dijo`… del comando.
+# ---------------------------------------------------------------------------
+tipos:
+  Q:
+    nombre: pregunta
+    cierra: la respuesta del dueño, citada literal
+    exige: [dijo]
+  D:
+    nombre: decision
+    cierra: lo elegido y lo descartado, con su razón medida
+    exige: [ficha]
+  M:
+    nombre: medicion
+    cierra: una cifra y cómo se obtuvo (el comando, la consulta o la fuente)
+    exige: []
+  C:
+    nombre: cambio
+    cierra: el cambio hecho y comprobable — commit, oficio enviado, equipo instalado, documento publicado
+    exige: [realiza]
+  V:
+    nombre: verificacion
+    cierra: quién lo comprobó, dónde, y el antes y el después medidos
+    exige: []
+  R:
+    nombre: registro
+    cierra: el documento o la página publicados donde tienen que estar, en el mismo cierre
+    exige: []
+  K:
+    nombre: riesgo
+    cierra: deja de ser incierto — se materializa y engendra su arreglo, o se retira
+    exige: [vigila]
+
+# ---------------------------------------------------------------------------
+# CICLOS DE VIDA — van en el FRENTE, no en el proyecto. Son DECLARATIVOS: dicen
+# la forma del incremento y salen en la tabla de estado; la puerta no exige una
+# fase por etapa (decidido el 2026-10-24 leyendo a Boehm: las etapas «se eligen
+# por riesgo»). Lo que se comprueba es `procesos:` y `depende_de`.
+# ---------------------------------------------------------------------------
+ciclos:
+  exploratorio:
+    descripcion: el entregable de las primeras fases es conocimiento
+    etapas: [medicion, pregunta, decision, cambio, verificacion]
+  incremental:
+    descripcion: destino conocido, con verificación en cada paso
+    etapas: [cambio, verificacion, registro]
+  correctivo:
+    descripcion: reproducir el fallo, arreglarlo, dejar la comprobación que impide que vuelva
+    etapas: [reproduccion, cambio, verificacion]
+
+etapas:
+  - medicion
+  - pregunta
+  - decision
+  - reproduccion
+  - cambio
+  - verificacion
+  - registro
+
+# ---------------------------------------------------------------------------
+# LOS PROCESOS QUE LA PUERTA DEFIENDE. Cada clave nombra TIPOS de arriba.
+# ---------------------------------------------------------------------------
+procesos:
+  # V&V: un cambio cerrado tiene que tener quien lo verifique, apuntándole con
+  # `depende_de`. Que la verificación siga abierta es AVISO, no fallo.
+  verificacion:
+    tipo: C             # el tipo que exige verificación
+    la_hace: V          # el tipo que la presta
+
+# ---------------------------------------------------------------------------
+# PROCEDENCIA DE UN CAMBIO — qué se admite en `realiza:` de una tarea C.
+# Cuatro orígenes y ninguno más: una vía de escape que no cuesta nada se
+# convierte en el valor por defecto. `mandato:` entró el 2026-10-26 para la
+# gestión: en código un cambio nace de una decisión, un defecto o una medición;
+# en una Dirección nace muchas veces de un documento externo que obliga, y
+# fabricar una decisión para envolver «la norma lo exige» es una decisión falsa.
+#
+#   refiere: decision  → lo que sigue al prefijo es una ficha de decisiones/
+#   refiere: tarea     → lo que sigue a «:» es una tarea del proyecto, del `tipo` dicho
+#   (sin refiere)      → texto libre, pero obligatorio
+# ---------------------------------------------------------------------------
+procedencia:
+  tipo: C             # qué tipo lleva la comprobación de origen
+  campo: realiza      # qué campo se valida contra `origenes`
+
+origenes:
+  decision:
+    prefijo: "D-"
+    refiere: decision
+    descripcion: una ficha de decisión de este proyecto
+  defecto:
+    prefijo: "defecto:"
+    descripcion: un defecto registrado, con su identificador o su frase de reproducción
+  medicion:
+    prefijo: "M:"
+    refiere: tarea
+    tipo: M
+    descripcion: una tarea de medición cuyo resultado no deja alternativa
+  mandato:
+    prefijo: "mandato:"
+    descripcion: un documento externo que obliga, identificado — resolución, oficio, artículo de una norma — y nunca «lo pidieron»
+
+# ---------------------------------------------------------------------------
+# «Qué entrega» tiene que ser un RESULTADO OBSERVABLE, no una actividad.
+# «El botón deja de dar 404», no «revisar el botón». La puerta rechaza una
+# entrega que empiece por uno de estos verbos. Los de gestión entraron el
+# 2026-10-26.
+# ---------------------------------------------------------------------------
+verbos_de_actividad:
+  - revisar
+  - analizar
+  - evaluar
+  - mejorar
+  - ajustar
+  - optimizar
+  - limpiar
+  - estudiar
+  - ver
+  - mirar
+  - repasar
+  - investigar
+  - explorar
+  - considerar
+  - documentar
+  - refactorizar
+  - arreglar
+  - corregir
+  - implementar
+  - crear
+  - hacer
+  - revisión
+  - análisis
+  # gestión
+  - socializar
+  - acompañar
+  - coordinar
+  - gestionar
+  - dinamizar
+  - fortalecer
+  - promover
+  - impulsar
+  - dar seguimiento
+  - trabajar
+
+# Palabras que delatan una fecha relativa donde debe ir una absoluta.
+fechas_prohibidas: [ayer, hoy, mañana, "esta semana", "la semana pasada", reciente, pronto, "próximamente"]

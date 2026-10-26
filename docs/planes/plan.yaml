@@ -1,5 +1,4 @@
 version: 1
-perfil: codigo
 heredados:
 - ruta: plan-maestro-2026-08.md
   titulo: Plan maestro — los frentes

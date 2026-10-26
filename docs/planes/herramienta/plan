@@ -1,0 +1,1503 @@
+#!/usr/bin/env python3
+# PYTHON_ARGCOMPLETE_OK
+"""Planes de trabajo: frentes, fases y tareas con control de ejecución y puerta.
+
+  plan init [--raiz DIR]            crea la raíz y deja en ella la copia de la herramienta
+  plan actualizar [--aplicar]       sube la copia del proyecto a la versión del skill, enseñando antes qué cambia
+  plan proyecto nuevo SLUG --titulo "..."
+  plan frente nuevo F25 --titulo "..." --ciclo exploratorio
+  plan fase nueva F25.P1 --titulo "..." [--etapa medicion]
+  plan tarea nueva F25.P1.T1 --tipo C --entrega "..." [--depende-de ...] [--realiza D-04]
+  plan tarea editar F25.P1.T1 [--tipo Q] [--entrega "..."] [--depende-de A B] [--sin-depender-de A] [--realiza ...]
+  plan tarea mover F25.P1.T1 F26.P2 [--como F26.P2.T4]
+  plan decision nueva D-04 --titulo "..." [--dijo "..."]
+  plan cerrar F25.P1.T1 --evidencia "..." [--fecha AAAA-MM-DD]
+  plan estado [F25]                 (con varios proyectos: plan --proyecto SLUG estado)
+  plan retomar [F25]                por dónde ibas: en curso con su nota, bloqueadas, listas
+  plan verificar
+  plan indice
+  plan heredado registrar RUTA --titulo "..." [--estado encurso]
+  plan heredado fechar AAAA-MM-DD      pone fecha de registro a los heredados que no la tienen
+  plan migrar RUTA.md --frente F25 [--aplicar]
+
+El identificador es una RUTA: F25.P3.T2 (frente, fase, tarea), con S para el
+subfrente opcional: F25.S1.P3.T2. No se renumera nunca.
+El TIPO no va en el identificador: es columna, y lo define el vocabulario.
+
+Cada proyecto lleva en <raíz>/herramienta/ su COPIA de este programa y del
+vocabulario, fijada a una versión: dentro de un proyecto, `plan` corre esa copia,
+así que lo que ve el portátil y lo que ve la integración continua es lo mismo, y
+un cambio en el skill no pone en rojo ningún proyecto hasta `plan actualizar`.
+"""
+
+import argparse
+import datetime as dt
+import os
+import re
+import sys
+from pathlib import Path
+
+import yaml
+
+# Versión de la HERRAMIENTA (programa + vocabulario). Sube cuando cambia una regla
+# de la puerta o el vocabulario; no por un comando nuevo que no cambia qué pasa o
+# qué falla. Las copias de los proyectos la llevan, y así cada proyecto decide
+# cuándo asumir reglas nuevas (`plan actualizar`).
+VERSION = 2
+
+AQUI = Path(__file__).resolve().parent
+
+
+def ruta_vocabulario():
+    """Junto al programa (copia de un proyecto) o en la raíz del skill (original)."""
+    for c in (AQUI / "vocabulario.yaml", AQUI.parent / "vocabulario.yaml"):
+        if c.is_file():
+            return c
+    muere_temprano(f"no encuentro vocabulario.yaml junto a {AQUI} ni en {AQUI.parent}")
+
+
+def muere_temprano(msg):
+    print(f"plan: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+VOCAB = yaml.safe_load(ruta_vocabulario().read_text())
+
+
+def campos_del_vocabulario(vocab=None):
+    """Los campos condicionales que algún tipo exige, en orden y sin repetir.
+    De aquí salen las opciones --realiza, --dijo… del comando."""
+    vistos = []
+    for t in (vocab or VOCAB)["tipos"].values():
+        for c in t.get("exige", []):
+            if c not in vistos:
+                vistos.append(c)
+    return vistos
+
+# --- estados: siete desenlaces, cuatro de ellos terminales --------------------
+ESTADOS = {
+    "pendiente": "⬜",
+    "encurso": "🟡",
+    "bloqueada": "⛔",
+    "cerrada": "✅",
+    "descartada": "🚫",
+    "sinobjeto": "∅",
+    "movida": "➡️",
+}
+TERMINALES = {"cerrada", "descartada", "sinobjeto", "movida"}
+FUERA = {"descartada", "sinobjeto", "movida"}  # terminan sin haberse hecho
+
+RE_ID = re.compile(r"^F(\d+)(?:\.S(\d+))?\.P(\d+)\.T(\d+)(-[a-z0-9]+)?$")
+RE_FASE = re.compile(r"^F(\d+)(?:\.S(\d+))?\.P(\d+)$")
+RE_FRENTE = re.compile(r"^F(\d+)(?:\.S(\d+))?$")
+RE_FECHA = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+HOY = dt.date.today().isoformat()
+
+# Cuantos dias puede estar un plan heredado VIVO (pendiente, en curso, bloqueado)
+# sin convertirse antes de que se avise. Es juicio nuestro, no hallazgo: se
+# cambia en plan.yaml (`heredados_plazo_dias`). El riesgo medido es que «indice
+# ahora, conversion al tocar» deje un plan vivo registrado indefinidamente.
+PLAZO_HEREDADO = 30
+
+HERRAMIENTA = "herramienta"      # la copia del programa y el vocabulario, en la raíz
+
+
+def muere(msg):
+    print(f"plan: {msg}", file=sys.stderr)
+    sys.exit(1)
+
+
+# --- raíz y configuración ----------------------------------------------------
+def buscar_raiz(desde=None):
+    """Sube desde el directorio actual buscando la raíz del plan."""
+    if os.environ.get("PLAN_RAIZ"):
+        return Path(os.environ["PLAN_RAIZ"]).resolve()
+    d = Path(desde or Path.cwd()).resolve()
+    for base in [d, *d.parents]:
+        puntero = base / ".plan" / "raiz"
+        if puntero.is_file():
+            destino = (base / puntero.read_text().strip()).resolve()
+            if (destino / "plan.yaml").is_file():
+                return destino
+        if (base / ".plan" / "plan.yaml").is_file():
+            return base / ".plan"
+        if (base / "plan.yaml").is_file():
+            return base
+        # Raíz visible hija directa, sin puntero oculto: es el caso de SharePoint,
+        # donde `.plan/` sincroniza mal. Vale si hay UNA sola candidata.
+        hijas = [h for h in base.iterdir()
+                 if h.is_dir() and not h.name.startswith(".")
+                 and (h / "plan.yaml").is_file() and (h / HERRAMIENTA).is_dir()]
+        if len(hijas) == 1:
+            return hijas[0]
+    return None
+
+
+def raiz_o_muere():
+    r = buscar_raiz()
+    if r is None:
+        muere("no encuentro la raíz del plan. Empieza con `plan init`.")
+    return r
+
+
+def cargar_config(raiz):
+    return yaml.safe_load((raiz / "plan.yaml").read_text()) or {}
+
+
+def guardar_config(raiz, cfg):
+    (raiz / "plan.yaml").write_text(
+        yaml.safe_dump(cfg, allow_unicode=True, sort_keys=False)
+    )
+
+
+# --- frontmatter -------------------------------------------------------------
+ORDEN_CAMPOS = ["id", "tipo", "estado", "entrega", "evidencia", "fecha", "depende_de",
+                *campos_del_vocabulario(), "revision_pendiente"]
+
+
+def leer_md(path):
+    txt = path.read_text()
+    if not txt.startswith("---"):
+        return {}, txt
+    partes = txt.split("---", 2)
+    if len(partes) < 3:
+        return {}, txt
+    try:
+        meta = yaml.safe_load(partes[1]) or {}
+    except yaml.YAMLError as e:
+        muere(f"{path.name}: frontmatter ilegible — {e}")
+    return meta, partes[2].lstrip("\n")
+
+
+def escribir_md(path, meta, cuerpo):
+    orden = [c for c in ORDEN_CAMPOS if c in meta]
+    orden += [c for c in meta if c not in orden]
+    lineas = ["---"]
+    for c in orden:
+        v = meta[c]
+        if isinstance(v, list):
+            lineas.append(f"{c}: [{', '.join(str(x) for x in v)}]")
+        elif isinstance(v, bool):
+            lineas.append(f"{c}: {'true' if v else 'false'}")
+        elif v is None or v == "":
+            lineas.append(f"{c}:")
+        else:
+            # Delegar el escapado en PyYAML: una evidencia empieza muy a menudo
+            # por backtick (`CHECK (…)`), que YAML reserva y rompe el fichero.
+            lineas.append(yaml.safe_dump(
+                {c: str(v).replace("\n", " ")},
+                allow_unicode=True, width=10 ** 9, default_flow_style=False,
+            ).rstrip("\n"))
+    lineas.append("---")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text("\n".join(lineas) + "\n\n" + cuerpo.rstrip("\n") + "\n")
+
+
+# --- modelo ------------------------------------------------------------------
+class Proyecto:
+    def __init__(self, dir_):
+        self.dir = dir_
+        self.slug = dir_.name
+        self.meta = yaml.safe_load((dir_ / "proyecto.yaml").read_text()) or {}
+        # `perfil:` en proyecto.yaml se tolera y se ignora: quedó de cuando había
+        # perfiles seleccionables (hasta el 2026-10-26). El vocabulario es uno.
+        self.vocab = VOCAB
+        self.frentes = {}
+        for f in sorted((dir_ / "frentes").glob("*.yaml")) if (dir_ / "frentes").is_dir() else []:
+            d = yaml.safe_load(f.read_text()) or {}
+            self.frentes[d["id"]] = d
+        self.tareas = {}
+        for f in sorted((dir_ / "tareas").glob("*.md")) if (dir_ / "tareas").is_dir() else []:
+            meta, cuerpo = leer_md(f)
+            meta["_fichero"] = f
+            meta["_cuerpo"] = cuerpo
+            self.tareas[meta.get("id", f.stem)] = meta
+        self.decisiones = {}
+        for f in sorted((dir_ / "decisiones").glob("*.md")) if (dir_ / "decisiones").is_dir() else []:
+            meta, cuerpo = leer_md(f)
+            self.decisiones[meta.get("id", f.stem)] = meta
+
+    # --- consultas ---
+    def fases_de(self, frente_id):
+        """Devuelve {fase_id_completo: {titulo, etapa, ciclo}} de un frente o subfrente."""
+        out = {}
+        m = RE_FRENTE.match(frente_id)
+        if not m:
+            return out
+        base = self.frentes.get(f"F{int(m.group(1))}")
+        if not base:
+            return out
+        if m.group(2):  # es un subfrente
+            sub = (base.get("subfrentes") or {}).get(f"S{int(m.group(2))}")
+            if not sub:
+                return out
+            ciclo = sub.get("ciclo", base.get("ciclo"))
+            for pid, p in (sub.get("fases") or {}).items():
+                out[f"{frente_id}.{pid}"] = {**p, "ciclo": ciclo}
+            return out
+        for pid, p in (base.get("fases") or {}).items():
+            out[f"{frente_id}.{pid}"] = {**p, "ciclo": base.get("ciclo")}
+        for sid, sub in (base.get("subfrentes") or {}).items():
+            ciclo = sub.get("ciclo", base.get("ciclo"))
+            for pid, p in (sub.get("fases") or {}).items():
+                out[f"{frente_id}.{sid}.{pid}"] = {**p, "ciclo": ciclo}
+        return out
+
+    def ambitos(self):
+        """Todos los frentes y subfrentes, como identificadores."""
+        out = []
+        for fid, f in self.frentes.items():
+            out.append(fid)
+            for sid in (f.get("subfrentes") or {}):
+                out.append(f"{fid}.{sid}")
+        return sorted(out, key=clave_orden)
+
+    def tareas_de_fase(self, fase_id):
+        return {k: v for k, v in self.tareas.items() if k.rsplit(".", 1)[0] == fase_id}
+
+    def tareas_de(self, ambito):
+        return {k: v for k, v in self.tareas.items()
+                if k == ambito or k.startswith(ambito + ".")}
+
+
+def clave_orden(s):
+    return [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", s)]
+
+
+def proyectos(raiz):
+    return [Proyecto(d) for d in sorted(raiz.iterdir())
+            if d.is_dir() and (d / "proyecto.yaml").is_file()]
+
+
+def un_proyecto(raiz, slug=None):
+    ps = proyectos(raiz)
+    if not ps:
+        muere("no hay proyectos. Crea uno con `plan proyecto nuevo <slug> --titulo ...`")
+    if slug:
+        for p in ps:
+            if p.slug == slug:
+                return p
+        muere(f"no hay proyecto «{slug}». Hay: {', '.join(p.slug for p in ps)}")
+    if len(ps) > 1:
+        muere("hay varios proyectos; di cuál con --proyecto: " + ", ".join(p.slug for p in ps))
+    return ps[0]
+
+
+# --- recuentos ---------------------------------------------------------------
+def recuento(tareas):
+    total = len(tareas)
+    fuera = sum(1 for t in tareas.values() if t.get("estado") in FUERA)
+    hechas = sum(1 for t in tareas.values() if t.get("estado") == "cerrada")
+    vivas = total - fuera
+    return {"total": total, "fuera": fuera, "hechas": hechas, "vivas": vivas}
+
+
+def glifo(estado):
+    return ESTADOS.get(estado, "?")
+
+
+def marca_fase(tareas):
+    r = recuento(tareas)
+    if r["vivas"] == 0:
+        return "—" if r["total"] == 0 else f"🚫 {r['fuera']} fuera"
+    if r["hechas"] == r["vivas"]:
+        return f"✅ **{r['hechas']} de {r['vivas']}**"
+    if r["hechas"] == 0 and not any(
+        t.get("estado") in ("encurso", "bloqueada") for t in tareas.values()
+    ):
+        return "⬜"
+    return f"🟡 **{r['hechas']} de {r['vivas']}**"
+
+
+# --- comandos ----------------------------------------------------------------
+def version_de(script):
+    """Lee VERSION de una copia del programa sin ejecutarla."""
+    m = re.search(r"^VERSION\s*=\s*(\d+)", script.read_text(), re.M)
+    return int(m.group(1)) if m else 0
+
+
+def copiar_herramienta(raiz):
+    """Deja en <raíz>/herramienta/ una copia de solo lectura del programa y del
+    vocabulario ACTUALES (los de este fichero). Es la versión que el proyecto fija."""
+    import shutil, stat
+    destino = raiz / HERRAMIENTA
+    destino.mkdir(parents=True, exist_ok=True)
+    for origen, nombre in ((Path(__file__).resolve(), "plan"),
+                           (ruta_vocabulario(), "vocabulario.yaml")):
+        d = destino / nombre
+        if d.exists():
+            d.chmod(d.stat().st_mode | stat.S_IWUSR)
+        shutil.copyfile(origen, d)
+        d.chmod(0o555 if nombre == "plan" else 0o444)
+    (destino / "LEEME.md").write_text(
+        "# La herramienta de este plan\n\n"
+        f"Copia de solo lectura del comando `plan` y de su vocabulario, **versión {VERSION}**, "
+        "del skill `plan-trabajo`. Dentro de este proyecto `plan` corre ESTA copia, así que lo que "
+        "comprueba el portátil y lo que comprueba la integración continua es lo mismo, y un cambio "
+        "en el skill no pone en rojo este plan hasta que alguien decide subir de versión.\n\n"
+        "No se edita a mano: cambia con `plan actualizar --aplicar`, que antes enseña qué "
+        "hallazgos nuevos aparecerían.\n\n"
+        "Para correr la puerta sin el skill (integración continua):\n\n"
+        "```bash\n"
+        "pip install pyyaml\n"
+        "PLAN_RAIZ=<esta carpeta de planes> python3 <esta carpeta>/herramienta/plan verificar\n"
+        "```\n")
+    return destino
+
+
+def cmd_init(a):
+    base = Path.cwd().resolve()
+    if a.raiz:
+        raiz = (base / a.raiz).resolve()
+        raiz.mkdir(parents=True, exist_ok=True)
+        if raiz.parent != base:
+            # Solo hace falta puntero si la raíz no es hija directa (docs/planes).
+            # Una hija directa se encuentra sola, y así en SharePoint no queda
+            # ninguna carpeta oculta.
+            (base / ".plan").mkdir(exist_ok=True)
+            (base / ".plan" / "raiz").write_text(
+                os.path.relpath(raiz, base) + "\n")
+    else:
+        raiz = base / ".plan"
+        raiz.mkdir(exist_ok=True)
+    if (raiz / "plan.yaml").is_file():
+        muere(f"ya hay un plan en {raiz}")
+    guardar_config(raiz, {"version": 1,
+                          "heredados_plazo_dias": PLAZO_HEREDADO, "heredados": []})
+    copiar_herramienta(raiz)
+    print(f"✅ raíz del plan en {raiz}  ·  herramienta v{VERSION} copiada en {HERRAMIENTA}/")
+    if raiz.name == ".plan":
+        print("⚠️  Es una carpeta oculta: COMPRUEBA que el control de versiones "
+              "o la sincronización la siguen — el plan tiene que viajar con el trabajo.")
+
+
+def cmd_proyecto_nuevo(a):
+    raiz = raiz_o_muere()
+    cfg = cargar_config(raiz)
+    d = raiz / a.slug
+    if (d / "proyecto.yaml").is_file():
+        muere(f"el proyecto «{a.slug}» ya existe")
+    for sub in ("frentes", "tareas", "decisiones"):
+        (d / sub).mkdir(parents=True, exist_ok=True)
+    (d / "proyecto.yaml").write_text(yaml.safe_dump(
+        {"id": a.slug, "titulo": a.titulo, "abierto": HOY},
+        allow_unicode=True, sort_keys=False))
+    print(f"✅ proyecto «{a.slug}» en {d}")
+
+
+def cmd_frente_nuevo(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    if not RE_FRENTE.match(a.id) or "." in a.id:
+        muere("el identificador de un frente es F<n> (p. ej. F25)")
+    if a.ciclo not in p.vocab["ciclos"]:
+        muere(f"ciclo desconocido. Hay: {', '.join(p.vocab['ciclos'])}")
+    f = p.dir / "frentes" / f"{a.id}.yaml"
+    if f.is_file():
+        muere(f"el frente {a.id} ya existe")
+    # `plan proyecto nuevo` ya creo esta carpeta, pero git NO SIGUE CARPETAS
+    # VACIAS: en un clon recien hecho de un proyecto sin frentes convertidos,
+    # `frentes/` no existe y esto reventaba con un FileNotFoundError crudo, con
+    # traza y todo. El escritor de tareas y decisiones (`escribir_md`) ya lo
+    # hace; este se habia quedado fuera.
+    f.parent.mkdir(parents=True, exist_ok=True)
+    f.write_text(yaml.safe_dump(
+        {"id": a.id, "titulo": a.titulo, "ciclo": a.ciclo,
+         "abierto": HOY, "fases": {}},
+        allow_unicode=True, sort_keys=False))
+    etapas = p.vocab["ciclos"][a.ciclo]["etapas"]
+    print(f"✅ frente {a.id} · ciclo {a.ciclo}")
+    print(f"   su forma: {' → '.join(etapas)}")
+    print("   (declarativo: las fases son libres. Lo que la puerta exige es que "
+          "un cambio cerrado tenga quien lo verifique)")
+
+
+def cmd_fase_nueva(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    m = RE_FASE.match(a.id)
+    if not m:
+        muere("el identificador de una fase es F<n>.P<n> o F<n>.S<n>.P<n>")
+    fid = f"F{int(m.group(1))}"
+    if fid not in p.frentes:
+        muere(f"no existe el frente {fid}")
+    # La etapa es OPCIONAL desde el 2026-10-24: dice a que parte del modelo
+    # pertenece la fase, y ya no se exige una por etapa. Si se da, se valida.
+    if a.etapa and a.etapa not in p.vocab["etapas"]:
+        muere(f"etapa desconocida. Hay: {', '.join(p.vocab['etapas'])}")
+    doc = p.frentes[fid]
+    pid = a.id.rsplit(".", 1)[1]
+    if m.group(2):
+        subs = doc.setdefault("subfrentes", {})
+        sub = subs.setdefault(f"S{int(m.group(2))}",
+                              {"titulo": "", "ciclo": doc.get("ciclo"), "fases": {}})
+        destino = sub.setdefault("fases", {})
+    else:
+        destino = doc.setdefault("fases", {})
+    if pid in destino:
+        muere(f"la fase {a.id} ya existe")
+    destino[pid] = {"titulo": a.titulo, "etapa": a.etapa or ""}
+    (p.dir / "frentes" / f"{fid}.yaml").write_text(
+        yaml.safe_dump(doc, allow_unicode=True, sort_keys=False))
+    print(f"✅ fase {a.id}" + (f" · etapa {a.etapa}" if a.etapa else " · sin etapa"))
+
+
+def validar_entrega(vocab, entrega):
+    if not entrega or not entrega.strip():
+        return "«Qué entrega» está vacío"
+    texto = entrega.strip().lower()
+    primera = re.split(r"[\s,]", texto)[0].strip(":.")
+    verbos = {v.lower() for v in vocab.get("verbos_de_actividad", [])}
+    if primera in verbos or any(" " in v and texto.startswith(v) for v in verbos):
+        return (f"«{entrega}» describe una ACTIVIDAD, no un resultado observable. "
+                "Escribe qué será cierto cuando esté hecha: «el botón deja de dar 404», "
+                "no «revisar el botón». Si no sabes enunciarlo, la tarea mezcla dos cosas: pártela.")
+    return None
+
+
+def cmd_tarea_nueva(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    if not RE_ID.match(a.id):
+        muere("el identificador de una tarea es F<n>[.S<n>].P<n>.T<n>[-sufijo]")
+    if a.id in p.tareas:
+        muere(f"la tarea {a.id} ya existe")
+    if a.tipo not in p.vocab["tipos"]:
+        muere(f"tipo desconocido. Hay: {', '.join(p.vocab['tipos'])}")
+    fase_id = a.id.rsplit(".", 1)[0]
+    ambito = fase_id.rsplit(".", 1)[0]
+    if fase_id not in p.fases_de(ambito):
+        muere(f"no existe la fase {fase_id}. Créala con `plan fase nueva`.")
+    err = validar_entrega(p.vocab, a.entrega)
+    if err:
+        muere(err)
+    meta = {"id": a.id, "tipo": a.tipo, "estado": "pendiente",
+            "entrega": a.entrega, "evidencia": "", "fecha": ""}
+    if a.depende_de:
+        meta["depende_de"] = a.depende_de
+    for campo in p.vocab["tipos"][a.tipo].get("exige", []):
+        meta[campo] = getattr(a, campo, None) or ""
+    escribir_md(p.dir / "tareas" / f"{a.id}.md", meta, a.nota or "")
+    exige = p.vocab["tipos"][a.tipo].get("exige", [])
+    print(f"✅ {a.id} · tipo {a.tipo} ({p.vocab['tipos'][a.tipo]['nombre']})")
+    print(f"   cierra con: {p.vocab['tipos'][a.tipo]['cierra']}")
+    if exige:
+        print(f"   la puerta exigirá al cerrar: {', '.join(exige)}")
+
+
+def prefijo_decision(vocab):
+    for o in vocab.get("origenes", {}).values():
+        if o.get("refiere") == "decision":
+            return o["prefijo"]
+    return "D-"
+
+
+def cmd_decision_nueva(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    pref = prefijo_decision(p.vocab)
+    if not a.id.startswith(pref):
+        muere(f"el identificador de una decisión es {pref}<n> (p. ej. {pref}04)")
+    f = p.dir / "decisiones" / f"{a.id}.md"
+    if f.is_file():
+        muere(f"la decisión {a.id} ya existe")
+    meta = {"id": a.id, "fecha": a.fecha or HOY, "estado": "firme",
+            "tarea": a.tarea or "", "dijo": a.dijo or ""}
+    cuerpo = f"""# {a.id} · {a.titulo}
+
+## Contexto
+<!-- qué problema obliga a decidir, con la medición que lo motiva -->
+
+## Opciones
+
+| Opción | A favor | En contra | Medido |
+|---|---|---|---|
+|  |  |  |  |
+
+## Decisión
+<!-- lo elegido, en una frase -->
+
+## Lo descartado y por qué
+<!-- con su razón MEDIDA. Lo descartado sin razón se vuelve a proponer en tres meses -->
+
+## Consecuencias
+<!-- qué deja de ser posible, qué hay que vigilar -->
+"""
+    escribir_md(f, meta, cuerpo)
+    print(f"✅ decisión {a.id} en {f}")
+
+
+def limpia(meta):
+    """Quita las claves internas antes de escribir."""
+    return {k: v for k, v in meta.items() if not k.startswith("_")}
+
+
+def cmd_tarea_editar(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    t = p.tareas.get(a.id)
+    if not t:
+        muere(f"no hay tarea {a.id}")
+    meta, cuerpo = leer_md(t["_fichero"])
+    tipos = p.vocab["tipos"]
+    cambios = []
+
+    if a.tipo:
+        if a.tipo not in tipos:
+            muere(f"tipo desconocido. Hay: {', '.join(tipos)}")
+        viejo = meta.get("tipo")
+        if a.tipo != viejo:
+            # El tipo es columna, no identificador: cambiarlo no renumera nada.
+            # Los campos que exigia el tipo viejo se quitan solo si estan vacios;
+            # si tienen contenido se quedan, que borrar texto no es cosa de un flag.
+            for campo in tipos.get(viejo, {}).get("exige", []):
+                if campo not in tipos[a.tipo].get("exige", []) and not str(meta.get(campo) or "").strip():
+                    meta.pop(campo, None)
+            for campo in tipos[a.tipo].get("exige", []):
+                meta.setdefault(campo, "")
+            meta["tipo"] = a.tipo
+            cambios.append(f"tipo {viejo} → {a.tipo}")
+
+    if a.entrega is not None:
+        err = validar_entrega(p.vocab, a.entrega)
+        if err:
+            muere(err)
+        meta["entrega"] = a.entrega
+        cambios.append("entrega")
+
+    deps = deps_de(meta)
+    for d in a.depende_de or []:
+        if d not in p.tareas:
+            muere(f"depende de {d}, que no existe")
+        if d == a.id:
+            muere("una tarea no puede depender de si misma")
+        if d not in deps:
+            deps.append(d)
+            cambios.append(f"+depende_de {d}")
+    for d in a.sin_depender_de or []:
+        if d not in deps:
+            muere(f"{a.id} no dependia de {d}")
+        deps.remove(d)
+        cambios.append(f"-depende_de {d}")
+    if deps:
+        meta["depende_de"] = deps
+    else:
+        meta.pop("depende_de", None)
+
+    for campo in campos_del_vocabulario(p.vocab):
+        v = getattr(a, campo, None)
+        if v is not None:
+            meta[campo] = v
+            cambios.append(campo)
+
+    if a.nota:
+        cuerpo = (cuerpo.rstrip("\n") + "\n\n" + a.nota).strip("\n")
+        cambios.append("nota")
+
+    if not cambios:
+        muere("no has dicho que cambiar")
+
+    p.tareas[a.id] = {**meta, "_fichero": t["_fichero"], "_cuerpo": cuerpo}
+    puerta_previa(p, [a.id], f"{a.id} no se puede editar asi")
+    escribir_md(t["_fichero"], meta, cuerpo)
+    print(f"✏️  {a.id} · " + " · ".join(cambios))
+
+
+def cmd_tarea_mover(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    t = p.tareas.get(a.id)
+    if not t:
+        muere(f"no hay tarea {a.id}")
+    if t.get("estado") in TERMINALES:
+        muere(f"{a.id} esta en «{t.get('estado')}», que es terminal: lo terminado no se mueve, se cita")
+    if not RE_FASE.match(a.fase):
+        muere("el destino es una fase: F<n>.P<n> o F<n>.S<n>.P<n>")
+    ambito = a.fase.rsplit(".", 1)[0]
+    if a.fase not in p.fases_de(ambito):
+        muere(f"no existe la fase {a.fase}. Creala con `plan fase nueva`.")
+    if a.fase == a.id.rsplit(".", 1)[0]:
+        muere(f"{a.id} ya esta en {a.fase}")
+
+    if a.como:
+        nuevo = a.como
+        if not RE_ID.match(nuevo) or nuevo.rsplit(".", 1)[0] != a.fase:
+            muere(f"--como tiene que ser una tarea de {a.fase}: {a.fase}.T<n>")
+    else:
+        usados = [int(RE_ID.match(k).group(4)) for k in p.tareas_de_fase(a.fase)]
+        nuevo = f"{a.fase}.T{max(usados, default=0) + 1}"
+    if nuevo in p.tareas:
+        muere(f"la tarea {nuevo} ya existe")
+
+    meta, cuerpo = leer_md(t["_fichero"])
+
+    # La nueva hereda todo —tipo, estado, entrega, nota— y dice de donde viene.
+    meta_nueva = dict(meta)
+    meta_nueva["id"] = nuevo
+    cuerpo_nuevo = (f"Movida desde **{a.id}** el {HOY}.\n\n" + cuerpo).strip("\n")
+
+    # La vieja queda como ➡️ movida, terminal, y dice a donde. Es el rastro que
+    # permite seguir leyendo un commit que la cite.
+    meta_vieja = dict(meta)
+    meta_vieja.update({"estado": "movida", "evidencia": f"→ {nuevo}", "fecha": HOY})
+    meta_vieja.pop("depende_de", None)
+    meta_vieja.pop("revision_pendiente", None)
+
+    # Quien dependia de la vieja pasa a depender de la nueva: si no, al volverse
+    # la vieja terminal se «desbloquearian» solas. Lo mismo con `realiza: M:…`.
+    reescritas = []
+    proc = p.vocab.get("procedencia") or {}
+    campo_proc = proc.get("campo", "realiza")
+    for oid, o in p.tareas.items():
+        if oid == a.id:
+            continue
+        toco = False
+        deps = deps_de(o)
+        if a.id in deps:
+            o["depende_de"] = [nuevo if d == a.id else d for d in deps]
+            toco = True
+        r = str(o.get(campo_proc) or "")
+        for og in (p.vocab.get("origenes") or {}).values():
+            if og.get("refiere") == "tarea" and r.startswith(og["prefijo"]) \
+                    and r[len(og["prefijo"]):].strip() == a.id:
+                o[campo_proc] = og["prefijo"] + nuevo
+                toco = True
+        if toco:
+            reescritas.append(oid)
+
+    fich_nuevo = p.dir / "tareas" / f"{nuevo}.md"
+    p.tareas[nuevo] = {**meta_nueva, "_fichero": fich_nuevo, "_cuerpo": cuerpo_nuevo}
+    p.tareas[a.id] = {**meta_vieja, "_fichero": t["_fichero"], "_cuerpo": cuerpo}
+    puerta_previa(p, [a.id, nuevo, *reescritas], f"{a.id} no se puede mover a {a.fase}")
+
+    escribir_md(fich_nuevo, meta_nueva, cuerpo_nuevo)
+    escribir_md(t["_fichero"], meta_vieja, cuerpo)
+    for oid in reescritas:
+        o = p.tareas[oid]
+        escribir_md(o["_fichero"], limpia(o), o["_cuerpo"])
+    print(f"➡️  {a.id} → {nuevo}")
+    if reescritas:
+        print(f"   referencias reescritas en: {', '.join(reescritas)}")
+    print()
+    imprimir_estado(Proyecto(p.dir), nuevo.split(".")[0])
+
+
+def cmd_cerrar(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    t = p.tareas.get(a.id)
+    if not t:
+        muere(f"no hay tarea {a.id}")
+    estado = a.estado
+    if estado not in ESTADOS:
+        muere(f"estado desconocido. Hay: {', '.join(ESTADOS)}")
+    if estado == "cerrada" and not a.evidencia:
+        muere("una tarea cerrada sin evidencia no vale. Usa --evidencia.")
+    if estado in FUERA and not a.evidencia:
+        muere(f"un «{estado}» lleva su razón en --evidencia "
+              "(un bloqueo o un descarte sin causa nombrada es abandono con mejor aspecto)")
+    fecha = a.fecha or HOY
+    if not RE_FECHA.match(fecha):
+        muere("la fecha va en absoluto: AAAA-MM-DD")
+    meta, cuerpo = leer_md(t["_fichero"])
+    meta["estado"] = estado
+    meta["evidencia"] = a.evidencia or meta.get("evidencia", "")
+    meta["fecha"] = fecha if estado in TERMINALES else ""
+    for campo in campos_del_vocabulario(p.vocab):
+        v = getattr(a, campo, None)
+        if v:
+            meta[campo] = v
+    if a.nota:
+        cuerpo = (cuerpo.rstrip("\n") + "\n\n" + a.nota).strip("\n")
+    meta.pop("revision_pendiente", None)
+
+    # La puerta corre ANTES de escribir, sobre la tarea tal y como quedaria. La
+    # regla 4 dice que cerrar y registrar van en el mismo commit; si el cierre
+    # deja la puerta en rojo y nadie la corre hasta la sesion siguiente, ese
+    # commit viaja mintiendo. Medido el 2026-10-26: `cerrar` aceptaba un cambio
+    # sin `realiza`, con dependencias vivas y sin verificacion, y solo
+    # `verificar` lo cazaba despues. Se comprueba el proyecto entero (la V&V
+    # mira otras tareas) y se bloquea solo por los fallos de ESTA tarea; los
+    # ajenos ya estaban y los sigue diciendo `plan verificar`.
+    p.tareas[a.id] = {**meta, "_fichero": t["_fichero"], "_cuerpo": cuerpo}
+    puerta_previa(p, [a.id], f"{a.id} no se puede pasar a «{estado}»")
+
+    escribir_md(t["_fichero"], meta, cuerpo)
+    cuando = f"  ({fecha})" if estado in TERMINALES else ""
+    print(f"{glifo(estado)} {a.id} → {estado}{cuando}")
+    print()
+    imprimir_estado(Proyecto(p.dir), a.id.split(".")[0])
+
+
+# --- la puerta ---------------------------------------------------------------
+def puerta_previa(p, ids, que):
+    """Corre la puerta sobre el proyecto EN MEMORIA, ya modificado, y aborta sin
+    escribir si hay fallos de las tareas `ids`. Los fallos ajenos no bloquean:
+    ya estaban, y los sigue diciendo `plan verificar`. La usan `cerrar`,
+    `tarea editar` y `tarea mover`: todo lo que cambia una tarea pasa por aqui."""
+    fallos, _ = verificar_proyecto(p)
+    propios = [f for f in fallos
+               if any(f.strip().startswith(f"✗ {i}:") for i in ids)]
+    if propios:
+        print(f"plan: {que}: la puerta fallaria. No se ha escrito nada.", file=sys.stderr)
+        for f in propios:
+            print(f, file=sys.stderr)
+        sys.exit(2)
+
+
+def verificar_proyecto(p):
+    fallos, avisos = [], []
+    # Una tarea migrada todavía sin revisar NO pone la puerta en rojo: sus
+    # hallazgos salen como avisos. Quitarle `revision_pendiente` —que es lo que
+    # hace `plan cerrar`— los asciende a fallos. Es la postura «se convierte el
+    # día que se toca»: sin esto, migrar dejaría la puerta roja el primer día.
+    en_revision = {tid for tid, t in p.tareas.items() if t.get("revision_pendiente")}
+
+    def falla(idt, msg):
+        if idt in en_revision:
+            avisos.append(f"  · {idt}: (migrada) {msg}")
+        else:
+            fallos.append(f"  ✗ {idt}: {msg}")
+
+    def avisa(idt, msg):
+        avisos.append(f"  · {idt}: {msg}")
+
+    tipos = p.vocab["tipos"]
+    origenes = p.vocab["origenes"]
+    relativas = [x.lower() for x in p.vocab.get("fechas_prohibidas", [])]
+
+    # --- el ciclo se DECLARA, no se policia -------------------------------
+    # Aqui se exigia una fase por cada etapa del ciclo («la regla del 100 %»), y
+    # se retiro el 2026-10-24 leyendo a Boehm: las etapas de la espiral «se
+    # eligen por riesgo» (risk-driven subsetting, p.65). Obligar a las cinco era
+    # aplicar la cascada con los nombres de la espiral, y hacia inventar fases
+    # vacias para contentar a la puerta — medido: 6 fases para 9 tareas en F26.
+    # Lo que se comprueba ahora es el PROCESO (V&V, mas abajo), que es lo que
+    # esta skill dice adoptar. La etapa sigue siendo informacion util: dice a
+    # que parte del modelo pertenece una fase, y sale en la tabla de estado.
+    for ambito in p.ambitos():
+        fases = p.fases_de(ambito)
+        if not fases:
+            avisa(ambito, "no tiene ninguna fase")
+            continue
+        ciclo = next(iter(fases.values())).get("ciclo")
+        if ciclo not in p.vocab["ciclos"]:
+            falla(ambito, f"ciclo desconocido: {ciclo}")
+
+    todas_las_fases = {}
+    for ambito in p.ambitos():
+        todas_las_fases.update(p.fases_de(ambito))
+
+    # --- tarea a tarea ---
+    for tid in sorted(p.tareas, key=clave_orden):
+        t = p.tareas[tid]
+        if not RE_ID.match(tid):
+            falla(tid, "el identificador no es una ruta F<n>[.S<n>].P<n>.T<n>")
+            continue
+        if t["_fichero"].stem != tid:
+            falla(tid, f"el fichero se llama {t['_fichero'].name}")
+        fase_id = tid.rsplit(".", 1)[0]
+        if fase_id not in todas_las_fases:
+            falla(tid, f"cuelga de la fase {fase_id}, que no existe")
+        tipo = t.get("tipo")
+        if tipo not in tipos:
+            falla(tid, f"tipo desconocido: {tipo}")
+            continue
+        estado = t.get("estado")
+        if estado not in ESTADOS:
+            falla(tid, f"estado desconocido: {estado}")
+            continue
+
+        err = validar_entrega(p.vocab, t.get("entrega", ""))
+        if err:
+            falla(tid, err)
+
+        fecha = str(t.get("fecha") or "")
+        if estado in TERMINALES:
+            if not fecha:
+                falla(tid, f"«{estado}» sin fecha")
+            elif not RE_FECHA.match(fecha):
+                falla(tid, f"fecha «{fecha}» no es absoluta (AAAA-MM-DD)")
+        if any(r in str(t.get("evidencia", "")).lower() for r in relativas):
+            falla(tid, "la evidencia usa una fecha relativa; escríbela en absoluto")
+
+        if estado == "cerrada" and not str(t.get("evidencia") or "").strip():
+            falla(tid, "cerrada con la casilla de evidencia vacía")
+        if estado in FUERA and not str(t.get("evidencia") or "").strip():
+            falla(tid, f"«{estado}» sin razón escrita en la evidencia")
+        if estado == "encurso" and not t["_cuerpo"].strip():
+            falla(tid, "🟡 sin nota de dónde te quedaste: es indistinguible de ⬜")
+
+        # dependencias
+        deps = t.get("depende_de") or []
+        if isinstance(deps, str):
+            deps = [d.strip() for d in deps.split(",") if d.strip()]
+        for d in deps:
+            if d not in p.tareas:
+                falla(tid, f"depende de {d}, que no existe")
+        vivas = [d for d in deps if d in p.tareas
+                 and p.tareas[d].get("estado") not in TERMINALES]
+        if estado == "bloqueada":
+            if not deps and not t["_cuerpo"].strip():
+                falla(tid, "⛔ sin causa: declara `depende_de` o escribe por qué y por quién")
+            elif deps and not vivas:
+                falla(tid, "⛔ pero TODAS sus dependencias están terminales — "
+                           "se desbloqueó y nadie la retomó")
+        if estado == "cerrada" and vivas:
+            falla(tid, "cerrada con dependencias vivas: " + ", ".join(vivas))
+
+        # campo condicional del tipo, exigible al cerrar
+        if estado == "cerrada":
+            for campo in tipos[tipo].get("exige", []):
+                if not str(t.get(campo) or "").strip():
+                    falla(tid, f"tipo {tipo} cerrado sin «{campo}» "
+                               f"(cierra con: {tipos[tipo]['cierra']})")
+
+        # procedencia de un cambio — qué tipo y qué campo los dice el PERFIL.
+
+        # Qué tipo, qué campo y qué orígenes los dice el VOCABULARIO; aquí no hay
+        # letras: `refiere: decision` pide una ficha, `refiere: tarea` pide una
+        # tarea del `tipo` dicho, sin `refiere` basta el texto tras el prefijo.
+        proc = p.vocab.get("procedencia") or {}
+        campo_proc = proc.get("campo", "realiza")
+        if tipo == proc.get("tipo") and str(t.get(campo_proc) or "").strip():
+            r = str(t[campo_proc]).strip()
+            valido = False
+            for nombre, o in origenes.items():
+                if not r.startswith(o["prefijo"]):
+                    continue
+                valido = True
+                resto = r[len(o["prefijo"]):].strip()
+                if o.get("refiere") == "decision" and r not in p.decisiones:
+                    falla(tid, f"{campo_proc} {r}, que no es una ficha de decisión de este proyecto")
+                elif o.get("refiere") == "tarea":
+                    if resto not in p.tareas:
+                        falla(tid, f"{campo_proc} {r}, que no es una tarea de este proyecto")
+                    elif o.get("tipo") and p.tareas[resto].get("tipo") != o["tipo"]:
+                        falla(tid, f"{campo_proc} {r}, que no es de tipo {o['tipo']} ({tipos[o['tipo']]['nombre']})")
+                elif not resto:
+                    falla(tid, f"{campo_proc} «{r}» no dice cuál: el prefijo solo no es un origen")
+                break
+            if not valido:
+                falla(tid, f"«{campo_proc}: {r}» no es un origen válido. Admitidos: "
+                           + ", ".join(f"{o['prefijo']}…" for o in origenes.values()))
+
+    # --- V&V: un cambio cerrado tiene que tener quien lo verifique ----------
+    # Sustituye a la completitud del ciclo. Planificar una fase de verificacion
+    # no verifica nada —medido en este repositorio: 16 tareas en ✅ sin evidencia,
+    # y fases tenian todas—; lo que vale es que exista la tarea que lo verifica y
+    # apunte al cambio con `depende_de`.
+    vv = (p.vocab.get("procesos") or {}).get("verificacion") or {}
+    t_cambio, t_verifica = vv.get("tipo"), vv.get("la_hace")
+    if t_cambio and t_verifica:
+        verifican = {}
+        for vid, v in p.tareas.items():
+            if v.get("tipo") != t_verifica:
+                continue
+            deps = v.get("depende_de") or []
+            if isinstance(deps, str):
+                deps = [d.strip() for d in deps.split(",") if d.strip()]
+            for d in deps:
+                verifican.setdefault(d, []).append(vid)
+        for tid in sorted(p.tareas, key=clave_orden):
+            t = p.tareas[tid]
+            if t.get("tipo") != t_cambio or t.get("estado") != "cerrada":
+                continue
+            quienes = verifican.get(tid, [])
+            if not quienes:
+                falla(tid, f"cerrada sin verificacion: ninguna tarea {t_verifica} "
+                           f"depende de ella. Crea la {t_verifica} y apuntala con "
+                           f"`--depende-de {tid}`")
+            elif all(p.tareas[q].get("estado") not in TERMINALES for q in quienes):
+                avisa(tid, "cerrada y su verificacion sigue abierta: "
+                           + ", ".join(quienes))
+
+    return fallos, avisos
+
+
+def cmd_verificar(a):
+    raiz = raiz_o_muere()
+    ps = [un_proyecto(raiz, a.proyecto)] if a.proyecto else proyectos(raiz)
+    total_f = total_a = 0
+    for p in ps:
+        fallos, avisos = verificar_proyecto(p)
+        total_f += len(fallos)
+        total_a += len(avisos)
+        print(f"── {p.slug} · {p.meta.get('titulo','')}")
+        r = recuento(p.tareas)
+        print(f"   {r['total']} tareas · {r['vivas']} vivas · {r['hechas']} hechas · {r['fuera']} fuera")
+        pend = sum(1 for t in p.tareas.values() if t.get("revision_pendiente"))
+        if pend:
+            print(f"   · {pend} migrada(s) pendiente(s) de revisión: sus hallazgos "
+                  "salen como avisos hasta que se toquen")
+        for l in fallos:
+            print(l)
+        for l in avisos:
+            print(l)
+        if not fallos and not avisos:
+            print("   ✅ sin hallazgos")
+        print()
+    if not a.proyecto:
+        her, vivos = avisos_heredados(cargar_config(raiz))
+        if vivos:
+            print(f"── heredados · {vivos} vivo(s) sin convertir")
+            for l in her:
+                print(l)
+            if not her:
+                print("   ✅ todos dentro de plazo")
+            print()
+            total_a += len(her)
+    if total_f:
+        print(f"⛔ {total_f} fallo(s), {total_a} aviso(s)")
+        sys.exit(2)
+    print(f"✅ puerta en verde ({total_a} aviso(s))")
+
+
+# --- presentación del avance (el formato fijo) -------------------------------
+def imprimir_estado(p, ambito=None):
+    if ambito is None:
+        print(f"## {p.meta.get('titulo', p.slug)} — nivel **PROYECTO**")
+        print()
+        r = recuento(p.tareas)
+        print(f"**{r['hechas']} de {r['vivas']} tareas vivas** · "
+              f"{r['total']} en total, {r['fuera']} fuera")
+        print()
+        print("| Frente | Ciclo | Tareas | Estado |")
+        print("|---|---|--:|---|")
+        for amb in p.ambitos():
+            ts = p.tareas_de(amb)
+            fases = p.fases_de(amb)
+            ciclo = next(iter(fases.values())).get("ciclo") if fases else "—"
+            tit = titulo_de(p, amb)
+            rr = recuento(ts)
+            print(f"| **{amb}** · {tit} | {ciclo} | {rr['vivas']} | {marca_fase(ts)} |")
+        return
+
+    fases = p.fases_de(ambito)
+    if not fases:
+        muere(f"no hay frente {ambito}")
+    ts = p.tareas_de(ambito)
+    r = recuento(ts)
+    ciclo = next(iter(fases.values())).get("ciclo")
+    cab = f"**{r['hechas']} de {r['vivas']} vivas**"
+    if r["fuera"]:
+        cab += f" · {r['total']} tareas, {r['fuera']} fuera"
+    print(f"## {ambito} · {titulo_de(p, ambito)} — nivel **FRENTE** · ciclo {ciclo}")
+    print()
+    print(f"### Estado general — {cab}")
+    print()
+    print("| Fase | Etapa | Tareas | Estado |")
+    print("|---|---|---|---|")
+    en_curso = None
+    for fid in sorted(fases, key=clave_orden):
+        tf = p.tareas_de_fase(fid)
+        rf = recuento(tf)
+        corto = fid.rsplit(".", 1)[1]
+        if rf["total"] == 0:
+            celda = "—"
+        elif rf["hechas"] == rf["vivas"] and rf["vivas"] > 0:
+            celda = "—"
+        else:
+            celda = " · ".join(
+                f"{k.rsplit('.',1)[1]} {glifo(v.get('estado'))}"
+                for k, v in sorted(tf.items(), key=lambda kv: clave_orden(kv[0])))
+            if en_curso is None:
+                en_curso = fid
+        print(f"| **{corto}** · {fases[fid].get('titulo','')} | "
+              f"{fases[fid].get('etapa','')} | {celda} | {marca_fase(tf)} |")
+
+    if en_curso:
+        tf = p.tareas_de_fase(en_curso)
+        rf = recuento(tf)
+        print()
+        print(f"### {en_curso} · {fases[en_curso].get('titulo','')} — "
+              f"{rf['hechas']} de {rf['vivas']}")
+        print()
+        print("| Tarea | T | Qué entrega | Estado |")
+        print("|---|:--:|---|:--:|")
+        for k in sorted(tf, key=clave_orden):
+            v = tf[k]
+            print(f"| **{k.rsplit('.',1)[1]}** | {v.get('tipo','')} | "
+                  f"{v.get('entrega','')} | {glifo(v.get('estado'))} |")
+
+
+def deps_de(t):
+    deps = t.get("depende_de") or []
+    if isinstance(deps, str):
+        deps = [d.strip() for d in deps.split(",") if d.strip()]
+    return deps
+
+
+def primer_parrafo(cuerpo, ancho=220):
+    for parrafo in re.split(r"\n\s*\n", cuerpo.strip()):
+        linea = " ".join(parrafo.split())
+        if linea:
+            return linea if len(linea) <= ancho else linea[:ancho - 1] + "…"
+    return ""
+
+
+def imprimir_retomar(p, ambito=None):
+    """Por donde ibas. Lo que una sesion nueva necesita y `estado` no da: la
+    nota de la tarea en curso, la causa de cada bloqueo y que se puede empezar
+    ya porque no depende de nada vivo."""
+    ts = p.tareas_de(ambito) if ambito else p.tareas
+    if ambito and not p.fases_de(ambito):
+        muere(f"no hay frente {ambito}")
+    nivel = f"{ambito} · {titulo_de(p, ambito)} — nivel **FRENTE**" if ambito \
+        else f"{p.meta.get('titulo', p.slug)} — nivel **PROYECTO**"
+    r = recuento(ts)
+    print(f"## Retomar · {nivel}")
+    print()
+    print(f"**{r['hechas']} de {r['vivas']} tareas vivas**")
+
+    orden = sorted(ts, key=clave_orden)
+    en_curso = [k for k in orden if ts[k].get("estado") == "encurso"]
+    bloqueadas = [k for k in orden if ts[k].get("estado") == "bloqueada"]
+    pendientes = [k for k in orden if ts[k].get("estado") == "pendiente"]
+
+    def vivas_de(k):
+        return [d for d in deps_de(ts[k])
+                if d in p.tareas and p.tareas[d].get("estado") not in TERMINALES]
+
+    listas = [k for k in pendientes if not vivas_de(k)]
+    esperan = [k for k in pendientes if vivas_de(k)]
+
+    print()
+    print(f"### 🟡 En curso ({len(en_curso)})")
+    if not en_curso:
+        print("_ninguna_")
+    for k in en_curso:
+        t = ts[k]
+        print(f"- **{k}** [{t.get('tipo','')}] · {t.get('entrega','')}")
+        nota = primer_parrafo(t["_cuerpo"])
+        print(f"  ↳ {nota}" if nota else "  ↳ ⚠️ sin nota de dónde te quedaste")
+
+    print()
+    print(f"### ⛔ Bloqueadas ({len(bloqueadas)})")
+    if not bloqueadas:
+        print("_ninguna_")
+    for k in bloqueadas:
+        t = ts[k]
+        print(f"- **{k}** [{t.get('tipo','')}] · {t.get('entrega','')}")
+        v = vivas_de(k)
+        if v:
+            print(f"  ↳ espera a: {', '.join(v)}")
+        elif deps_de(t):
+            print("  ↳ ⚠️ todas sus dependencias están terminales: se desbloqueó y nadie la retomó")
+        else:
+            nota = primer_parrafo(t["_cuerpo"])
+            print(f"  ↳ {nota}" if nota else "  ↳ ⚠️ sin causa escrita")
+
+    print()
+    print(f"### ⬜ Listas para empezar ({len(listas)})")
+    if not listas:
+        print("_ninguna_")
+    for k in listas:
+        t = ts[k]
+        print(f"- **{k}** [{t.get('tipo','')}] · {t.get('entrega','')}")
+    if esperan:
+        print(f"\n_{len(esperan)} pendiente(s) más esperan a otra tarea: "
+              + ", ".join(esperan) + "_")
+
+    cerradas = [k for k in orden if ts[k].get("estado") == "cerrada" and ts[k].get("fecha")]
+    if cerradas:
+        ultima = max(cerradas, key=lambda k: (str(ts[k]["fecha"]), clave_orden(k)))
+        t = ts[ultima]
+        print()
+        print(f"### Último cierre")
+        print(f"- ✅ **{ultima}** · {t['fecha']} · {primer_parrafo(str(t.get('evidencia','')), 160)}")
+
+    if ambito is None:
+        her, vivos = avisos_heredados(cargar_config(raiz_o_muere()))
+        if vivos:
+            vencidos = sum(1 for l in her if "sin convertir" in l)
+            sin_fecha = sum(1 for l in her if "sin fecha" in l)
+            print()
+            print(f"### Heredados sin convertir: {vivos}")
+            if vencidos or sin_fecha:
+                print(f"- ⚠️ {vencidos} fuera de plazo, {sin_fecha} sin fecha de registro. "
+                      "El detalle en `plan verificar`")
+
+    fallos, avisos = verificar_proyecto(p)
+    print()
+    if fallos:
+        print(f"⛔ la puerta tiene **{len(fallos)} fallo(s)** y {len(avisos)} aviso(s): "
+              "corre `plan verificar` antes de seguir")
+    else:
+        print(f"✅ puerta en verde ({len(avisos)} aviso(s))")
+
+
+def cmd_retomar(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    imprimir_retomar(p, a.frente)
+
+
+def titulo_de(p, ambito):
+    m = RE_FRENTE.match(ambito)
+    base = p.frentes.get(f"F{int(m.group(1))}", {})
+    if m.group(2):
+        return (base.get("subfrentes", {}) or {}).get(
+            f"S{int(m.group(2))}", {}).get("titulo", "")
+    return base.get("titulo", "")
+
+
+def cmd_estado(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    imprimir_estado(p, a.frente)
+
+
+# --- índice y planes heredados ------------------------------------------------
+def heredados_vivos(cfg):
+    """Los heredados que siguen vivos y cuanto llevan: (h, dias | None, vencido)."""
+    plazo = int(cfg.get("heredados_plazo_dias") or PLAZO_HEREDADO)
+    out = []
+    for h in cfg.get("heredados") or []:
+        if h.get("estado", "pendiente") in TERMINALES:
+            continue
+        reg = str(h.get("registrado") or "")
+        dias = None
+        if RE_FECHA.match(reg):
+            dias = (dt.date.fromisoformat(HOY) - dt.date.fromisoformat(reg)).days
+        out.append((h, dias, dias is not None and dias > plazo))
+    return out, plazo
+
+
+def avisos_heredados(cfg):
+    vivos, plazo = heredados_vivos(cfg)
+    L = []
+    for h, dias, vencido in vivos:
+        if dias is None:
+            L.append(f"  · {h['ruta']}: heredado vivo sin fecha de registro — "
+                     "`plan heredado fechar AAAA-MM-DD`")
+        elif vencido:
+            L.append(f"  · {h['ruta']}: heredado «{h.get('estado')}» registrado hace {dias} días "
+                     f"(plazo {plazo}) y sin convertir — conviértelo con `plan migrar` "
+                     "o ciérralo (descartada / movida)")
+    return L, len(vivos)
+
+
+def cmd_indice(a):
+    raiz = raiz_o_muere()
+    cfg = cargar_config(raiz)
+    L = ["# Índice de planes", "",
+         f"Generado por `plan indice` el {HOY}. **No se edita a mano.**", ""]
+    ps = proyectos(raiz)
+    if ps:
+        L += ["## Gobernados por `plan`", "",
+              "| Proyecto | Frentes | Tareas vivas | Hechas |", "|---|--:|--:|--:|"]
+        for p in ps:
+            r = recuento(p.tareas)
+            L.append(f"| [{p.meta.get('titulo', p.slug)}]({p.slug}/) | "
+                     f"{len(p.ambitos())} | {r['vivas']} | {r['hechas']} |")
+        L.append("")
+    her = cfg.get("heredados") or []
+    if her:
+        vivos, plazo = heredados_vivos(cfg)
+        edad = {id(h): (dias, vencido) for h, dias, vencido in vivos}
+        vencidos = sum(1 for _, _, v in vivos if v)
+        L += ["## Heredados — registrados, sin convertir", "",
+              "Se convierten **el día que se tocan**, no antes. "
+              f"Un heredado vivo más de **{plazo} días** sale marcado ⚠️: "
+              f"es la cola larga, y hoy son **{vencidos}**.", "",
+              "| Plan | Estado | Registrado | Nota |", "|---|---|---|---|"]
+        for h in her:
+            dias, vencido = edad.get(id(h), (None, False))
+            reg = str(h.get("registrado") or "")
+            if h.get("estado", "pendiente") in TERMINALES:
+                col = reg or "—"
+            elif not reg:
+                col = "⚠️ sin fecha"
+            else:
+                col = f"{reg} · hace {dias} d" + (" ⚠️" if vencido else "")
+            L.append(f"| [{h.get('titulo', h['ruta'])}]({h['ruta']}) | "
+                     f"{glifo(h.get('estado','pendiente'))} {h.get('estado','')} | "
+                     f"{col} | {h.get('nota','')} |")
+        L.append("")
+    (raiz / "INDICE.md").write_text("\n".join(L))
+    print(f"✅ {raiz / 'INDICE.md'} — {len(ps)} proyecto(s), {len(her)} heredado(s)")
+
+
+def cmd_heredado_registrar(a):
+    raiz = raiz_o_muere()
+    cfg = cargar_config(raiz)
+    ruta = os.path.relpath(Path(a.ruta).resolve(), raiz)
+    if a.estado not in ESTADOS:
+        muere(f"estado desconocido. Hay: {', '.join(ESTADOS)}")
+    her = cfg.setdefault("heredados", [])
+    for h in her:
+        if h["ruta"] == ruta:
+            h.update({"titulo": a.titulo, "estado": a.estado, "nota": a.nota or ""})
+            h.setdefault("registrado", a.registrado or HOY)
+            break
+    else:
+        her.append({"ruta": ruta, "titulo": a.titulo, "estado": a.estado,
+                    "nota": a.nota or "", "registrado": a.registrado or HOY})
+    guardar_config(raiz, cfg)
+    print(f"✅ heredado: {ruta}")
+
+
+def cmd_heredado_fechar(a):
+    raiz = raiz_o_muere()
+    cfg = cargar_config(raiz)
+    if not RE_FECHA.match(a.fecha):
+        muere("la fecha va en absoluto: AAAA-MM-DD")
+    n = 0
+    for h in cfg.get("heredados") or []:
+        if not h.get("registrado"):
+            h["registrado"] = a.fecha
+            n += 1
+    guardar_config(raiz, cfg)
+    print(f"✅ {n} heredado(s) fechados el {a.fecha}; los que ya tenían fecha no se tocan")
+
+
+RE_FILA = re.compile(
+    r"^\|\s*\**`?([A-Za-z][\w.\-]*)`?\**\s*\|(.+?)\|\s*(⬜|🟡|⛔|✅|🚫|∅|➡️)\s*\|(.*)$")
+EMOJI_A_ESTADO = {v: k for k, v in ESTADOS.items()}
+
+
+def cmd_migrar(a):
+    p = un_proyecto(raiz_o_muere(), a.proyecto)
+    src = Path(a.ruta)
+    if not src.is_file():
+        muere(f"no existe {src}")
+    if a.frente not in p.frentes:
+        muere(f"crea antes el frente {a.frente} (`plan frente nuevo`)")
+    fases = p.fases_de(a.frente)
+    if not fases:
+        muere(f"el frente {a.frente} no tiene fases; créalas antes")
+    destino_fase = a.fase or sorted(fases, key=clave_orden)[0]
+    if destino_fase not in fases:
+        muere(f"no existe la fase {destino_fase}")
+
+    filas = []
+    for linea in src.read_text().splitlines():
+        m = RE_FILA.match(linea.strip())
+        if m:
+            viejo, entrega, emoji, resto = m.groups()
+            campos = [c.strip() for c in resto.split("|")]
+            filas.append({
+                "viejo": viejo,
+                "entrega": entrega.replace("**", "").strip().strip("`").strip(),
+                "estado": EMOJI_A_ESTADO.get(emoji, "pendiente"),
+                "evidencia": campos[0] if campos else "",
+                "fecha": next((c for c in campos if RE_FECHA.match(c)), ""),
+            })
+    if not filas:
+        muere("no encontré filas de control (| ID | qué entrega | estado | evidencia | fecha |)")
+
+    n = len(p.tareas_de_fase(destino_fase))
+    print(f"{len(filas)} fila(s) de {src.name} → {destino_fase}")
+    plan = []
+    for i, f in enumerate(filas, start=n + 1):
+        nid = f"{destino_fase}.T{i}"
+        plan.append((nid, f))
+        print(f"  {nid}  {glifo(f['estado'])}  [{f['viejo']}]  {f['entrega'][:70]}")
+    if not a.aplicar:
+        print("\n(vista previa — repite con --aplicar)")
+        return
+    for nid, f in plan:
+        meta = {"id": nid, "tipo": a.tipo, "estado": f["estado"],
+                "entrega": f["entrega"], "evidencia": f["evidencia"],
+                "fecha": f["fecha"], "revision_pendiente": True}
+        cuerpo = (f"Migrada de `{src.name}`, donde era **{f['viejo']}**.\n\n"
+                  "⚠️ Pendiente de revisión: comprueba que «Qué entrega» sea falsable, "
+                  "que el tipo sea el correcto y que lleve `realiza`/`dijo` si toca.\n")
+        escribir_md(p.dir / "tareas" / f"{nid}.md", meta, cuerpo)
+    print(f"\n✅ {len(plan)} tarea(s) creadas, marcadas `revision_pendiente`")
+
+
+# --- CLI ---------------------------------------------------------------------
+def main():
+    ap = argparse.ArgumentParser(
+        prog="plan", description=__doc__.splitlines()[0],
+        formatter_class=argparse.RawDescriptionHelpFormatter, epilog=__doc__)
+    ap.add_argument("--proyecto", help="slug del proyecto, si hay varios")
+    sp = ap.add_subparsers(dest="cmd", required=True)
+
+    p = sp.add_parser("init", help="crea la raíz del plan y copia la herramienta")
+    p.add_argument("--raiz", help="carpeta visible (p. ej. docs/planes); por defecto .plan/")
+    p.set_defaults(fn=cmd_init)
+
+    q = sp.add_parser("actualizar", help="sube la copia del proyecto a la versión del skill")
+    q.add_argument("--aplicar", action="store_true", help="sin esto, solo enseña qué cambiaría")
+    q.set_defaults(fn=cmd_actualizar)
+
+    pr = sp.add_parser("proyecto").add_subparsers(dest="sub", required=True)
+    q = pr.add_parser("nuevo")
+    q.add_argument("slug")
+    q.add_argument("--titulo", required=True)
+    q.set_defaults(fn=cmd_proyecto_nuevo)
+
+    def opciones_del_tipo(parser):
+        # Las opciones --realiza, --dijo, --ficha, --vigila… salen del vocabulario:
+        # un campo nuevo en `exige` aparece aquí solo, sin tocar el programa.
+        for campo in campos_del_vocabulario():
+            parser.add_argument(f"--{campo.replace('_', '-')}", dest=campo,
+                                help=f"campo que exige algún tipo (ver vocabulario)")
+
+    fr = sp.add_parser("frente").add_subparsers(dest="sub", required=True)
+    q = fr.add_parser("nuevo")
+    q.add_argument("id")
+    q.add_argument("--titulo", required=True)
+    q.add_argument("--ciclo", required=True)
+    q.set_defaults(fn=cmd_frente_nuevo)
+
+    fa = sp.add_parser("fase").add_subparsers(dest="sub", required=True)
+    q = fa.add_parser("nueva")
+    q.add_argument("id")
+    q.add_argument("--titulo", required=True)
+    q.add_argument("--etapa", help="opcional: a qué etapa del ciclo pertenece")
+    q.set_defaults(fn=cmd_fase_nueva)
+
+    ta = sp.add_parser("tarea").add_subparsers(dest="sub", required=True)
+    q = ta.add_parser("nueva")
+    q.add_argument("id")
+    q.add_argument("--tipo", required=True)
+    q.add_argument("--entrega", required=True, help="resultado OBSERVABLE, no actividad")
+    q.add_argument("--depende-de", nargs="*", dest="depende_de")
+    opciones_del_tipo(q)
+    q.add_argument("--nota", help="cuerpo en prosa")
+    q.set_defaults(fn=cmd_tarea_nueva)
+
+    q = ta.add_parser("editar", help="cambia tipo, entrega, dependencias o campos del tipo")
+    q.add_argument("id")
+    q.add_argument("--tipo")
+    q.add_argument("--entrega")
+    q.add_argument("--depende-de", nargs="*", dest="depende_de", help="añade dependencias")
+    q.add_argument("--sin-depender-de", nargs="*", dest="sin_depender_de", help="quita dependencias")
+    opciones_del_tipo(q)
+    q.add_argument("--nota", help="párrafo que se añade al cuerpo")
+    q.set_defaults(fn=cmd_tarea_editar)
+
+    q = ta.add_parser("mover", help="lleva una tarea viva a otra fase; la vieja queda ➡️ movida")
+    q.add_argument("id")
+    q.add_argument("fase", help="fase de destino: F26.P2")
+    q.add_argument("--como", help="identificador exacto en el destino; por defecto el siguiente libre")
+    q.set_defaults(fn=cmd_tarea_mover)
+
+    de = sp.add_parser("decision").add_subparsers(dest="sub", required=True)
+    q = de.add_parser("nueva")
+    q.add_argument("id")
+    q.add_argument("--titulo", required=True)
+    q.add_argument("--dijo", help="la frase literal del dueño")
+    q.add_argument("--tarea")
+    q.add_argument("--fecha")
+    q.set_defaults(fn=cmd_decision_nueva)
+
+    q = sp.add_parser("cerrar", help="cambia el estado de una tarea")
+    q.add_argument("id")
+    q.add_argument("--estado", default="cerrada", choices=list(ESTADOS))
+    q.add_argument("--evidencia")
+    q.add_argument("--fecha")
+    opciones_del_tipo(q)
+    q.add_argument("--nota")
+    q.set_defaults(fn=cmd_cerrar)
+
+    q = sp.add_parser("estado", help="las dos tablas, recontadas")
+    q.add_argument("frente", nargs="?")
+    q.set_defaults(fn=cmd_estado)
+
+    q = sp.add_parser("retomar", help="por dónde ibas: en curso, bloqueadas, listas")
+    q.add_argument("frente", nargs="?")
+    q.set_defaults(fn=cmd_retomar)
+
+    q = sp.add_parser("verificar", help="la puerta")
+    q.set_defaults(fn=cmd_verificar)
+
+    q = sp.add_parser("indice", help="regenera INDICE.md")
+    q.set_defaults(fn=cmd_indice)
+
+    he = sp.add_parser("heredado").add_subparsers(dest="sub", required=True)
+    q = he.add_parser("registrar")
+    q.add_argument("ruta")
+    q.add_argument("--titulo", required=True)
+    q.add_argument("--estado", default="encurso")
+    q.add_argument("--nota")
+    q.add_argument("--registrado", help="fecha de registro si no es hoy (AAAA-MM-DD)")
+    q.set_defaults(fn=cmd_heredado_registrar)
+    q = he.add_parser("fechar", help="pone fecha de registro a los heredados que no la tienen")
+    q.add_argument("fecha")
+    q.set_defaults(fn=cmd_heredado_fechar)
+
+    q = sp.add_parser("migrar", help="convierte la tabla de control de un plan antiguo")
+    q.add_argument("ruta")
+    q.add_argument("--frente", required=True)
+    q.add_argument("--fase")
+    q.add_argument("--tipo", default="C")
+    q.add_argument("--aplicar", action="store_true")
+    q.set_defaults(fn=cmd_migrar)
+
+    try:
+        import argcomplete
+        argcomplete.autocomplete(ap)
+    except ImportError:
+        pass
+    a = ap.parse_args()
+    if a.cmd not in ("init", "actualizar"):
+        delegar_a_la_copia(a)
+    a.fn(a)
+
+
+SIN_COPIA_AVISADO = "PLAN_SIN_DELEGAR"
+
+
+def delegar_a_la_copia(a):
+    """Dentro de un proyecto corre SU copia de la herramienta, no la del skill.
+    Así el proyecto se comprueba con la versión que fijó, igual aquí que en la
+    integración continua, y un cambio en el skill no lo pone en rojo sin que
+    nadie lo pida. Si la copia es más vieja, se dice en una línea y se sigue."""
+    if os.environ.get(SIN_COPIA_AVISADO):
+        return
+    raiz = buscar_raiz()
+    if raiz is None:
+        return
+    copia = raiz / HERRAMIENTA / "plan"
+    yo = Path(__file__).resolve()
+    if not copia.is_file():
+        if yo.parent.name != HERRAMIENTA:
+            print(f"plan: este proyecto no lleva copia de la herramienta "
+                  f"({HERRAMIENTA}/): corro con la del skill (v{VERSION}). "
+                  "Fíjala con `plan actualizar --aplicar`.", file=sys.stderr)
+        return
+    if copia.resolve() == yo:
+        return
+    v = version_de(copia)
+    if v < VERSION:
+        print(f"plan: este proyecto lleva la herramienta v{v}; el skill está en v{VERSION}. "
+              "Corro con la del proyecto. Para subirla: `plan actualizar`.", file=sys.stderr)
+    elif v > VERSION:
+        print(f"plan: este proyecto lleva la herramienta v{v}, MÁS NUEVA que el skill (v{VERSION}). "
+              "Corro con la del proyecto.", file=sys.stderr)
+    os.environ[SIN_COPIA_AVISADO] = "1"
+    os.execv(sys.executable, [sys.executable, str(copia), *sys.argv[1:]])
+
+
+def cmd_actualizar(a):
+    import subprocess, tempfile
+    raiz = raiz_o_muere()
+    if Path(__file__).resolve().parent.name == HERRAMIENTA:
+        muere("`actualizar` se corre con el `plan` del skill, no con la copia del proyecto")
+    copia = raiz / HERRAMIENTA / "plan"
+    v = version_de(copia) if copia.is_file() else None
+    if v == VERSION and (raiz / HERRAMIENTA / "vocabulario.yaml").read_text() == ruta_vocabulario().read_text():
+        print(f"✅ el proyecto ya lleva la herramienta v{VERSION}, idéntica al skill")
+        return
+    de = f"v{v}" if v is not None else "ninguna copia"
+    print(f"── herramienta: {de} → v{VERSION}")
+    # Antes de tocar nada: qué diría la puerta NUEVA sobre este plan, tal como está.
+    with tempfile.TemporaryDirectory() as tmp:
+        t = Path(tmp)
+        import shutil
+        shutil.copyfile(Path(__file__).resolve(), t / "plan")
+        shutil.copyfile(ruta_vocabulario(), t / "vocabulario.yaml")
+        env = {**os.environ, "PLAN_RAIZ": str(raiz), SIN_COPIA_AVISADO: "1"}
+        print(f"   con la v{VERSION}, `plan verificar` diría:")
+        print()
+        sys.stdout.flush()      # el hijo escribe directo; sin esto su salida sale antes que esta cabecera
+        r = subprocess.run([sys.executable, str(t / "plan"), "verificar"], env=env)
+    print()
+    if not a.aplicar:
+        print("(vista previa — nada cambiado. Repite con --aplicar para fijar la "
+              f"v{VERSION} en {HERRAMIENTA}/)")
+        return
+    copiar_herramienta(raiz)
+    print(f"✅ herramienta v{VERSION} fijada en {raiz / HERRAMIENTA}"
+          + ("" if r.returncode == 0 else f"  ⚠️ la puerta sale con código {r.returncode}: hay fallos que atender"))
+
+
+if __name__ == "__main__":
+    main()
