@@ -33,8 +33,9 @@ heredados:
   registrado: '2026-10-23'
 - ruta: universidades-ror-2026-09.md
   titulo: Frente 19 · la universidad que emite el título deja de ser texto
-  estado: encurso
-  nota: ''
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F19 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
   registrado: '2026-10-23'
 - ruta: mapa-y-geocodificacion-2026-09.md
   titulo: Frente 21 · el mapa y la dirección que se prellena
