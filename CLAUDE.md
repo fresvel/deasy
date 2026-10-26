@@ -142,10 +142,11 @@ denominador** antes de enseñarlo, y no colapses varias tareas en una fila.
 → Formato exacto y por qué es fijo: **§6 de [`docs/planes/CLAUDE.md`](docs/planes/CLAUDE.md)**.
 
 ⚠️ **Y desde el 2026-10-23 el avance de un frente convertido NO SE CUENTA A MANO**: lo imprime
-`plan estado <frente>` (skill `plan-trabajo`), y `node scripts/planes/check-plan.mjs` es su puerta,
-en CI. Va por frentes: el **26** está convertido, los demás siguen con su tabla. Cuál es cuál lo
-dice [`docs/planes/INDICE.md`](docs/planes/INDICE.md), que es **generado**. El §0 de la norma de esa
-carpeta explica por qué hay dos comprobadores.
+`plan estado <frente>` (skill `plan-trabajo`), y su puerta es
+`PLAN_RAIZ=docs/planes python3 docs/planes/herramienta/plan verificar`, que corre en CI. Va por
+frentes: el **26** está convertido, los demás siguen con su tabla. Cuál es cuál lo dice
+[`docs/planes/INDICE.md`](docs/planes/INDICE.md), que es **generado**. El §0 de la norma de esa
+carpeta explica por qué la herramienta viaja dentro del repositorio.
 
 **2 · Entregaste un cambio visual → van CUATRO cosas, aunque parezca trivial.**
 **(a)** la auditoría que lo motivó, **con cifras** —cuántos hay, cuántos no conformaban, cuántos

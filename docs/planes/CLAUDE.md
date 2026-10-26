@@ -19,16 +19,27 @@ Convertido va el **26**; los demás siguen con su tabla de §1 y eso es correcto
 abra.
 
 ```bash
-node scripts/planes/check-plan.mjs    # la puerta. Corre en CI (docs-links.yml)
 plan estado F26                       # el avance, GENERADO
-plan verificar                        # la puerta de la skill, en local
+plan retomar F26                      # por dónde ibas: notas, bloqueos y qué se puede empezar ya
+plan verificar                        # la puerta, en local
+PLAN_RAIZ=docs/planes python3 docs/planes/herramienta/plan verificar   # la MISMA, como la corre CI
 ```
 
-⚠️ **Hay DOS comprobadores a propósito, y conviene saber por qué.** `plan verificar` vive en
-`~/.claude/skills/`, que es la máquina de una persona: **el runner de CI no lo ve**. Los datos del
-plan sí viajan aquí, así que `check-plan.mjs` los lee y falla en CI. Su comprobación **H** compara
-sus reglas (`scripts/planes/plan-reglas.json`) con el perfil de la skill cuando la skill está
-presente, para que la divergencia entre los dos no sea silenciosa.
+⚠️ **La herramienta viaja DENTRO del repositorio, y por eso hay una sola puerta.** En
+[`herramienta/`](./herramienta/) hay una copia de solo lectura del programa y del vocabulario con su
+**versión** (hoy la **2**), y dentro de este proyecto `plan` corre **esa copia**, no la del skill.
+Eso compra dos cosas: el runner de CI —que clona el repositorio y nada más— ejecuta el **mismo
+programa** que el portátil, y un cambio en el skill **no puede poner este plan en rojo** hasta que
+alguien lo pida con `plan actualizar`, que antes enseña qué hallazgos nuevos aparecerían. La copia
+no se edita a mano.
+
+⚠️ **Hasta el 2026-10-26 hubo DOS comprobadores**, y vale saber por qué se fue el segundo:
+`scripts/planes/check-plan.mjs` era una reimplementación en JavaScript de la puerta, escrita cuando
+la skill sólo vivía en el `$HOME` de una persona. Había que **mantenerla igual a mano** —con las
+reglas copiadas en `plan-reglas.json` y una comprobación **H** que comparaba las dos listas para que
+la divergencia no fuese silenciosa—, o sea maquinaria para vigilar un problema que la copia versionada
+no tiene. Se borró con su fichero de reglas. **Si vuelves a ver una segunda implementación de una
+puerta, es que falta hacerla viajar con el dato.**
 
 ⚠️ **Lo que la puerta defiende es el PROCESO, no la forma del plan**: *un cambio cerrado tiene
 quien lo verifique* —una tarea `V` que le apunte con `depende_de`—. **Las fases son libres.** Exigir
