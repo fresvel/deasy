@@ -3,7 +3,9 @@ heredados:
 - ruta: plan-maestro-2026-08.md
   titulo: Plan maestro — los frentes
   estado: encurso
-  nota: el único del que se sacan tareas; delega en los planes de frente
+  nota: 'sin convertir A PROPÓSITO: sus filas son FRENTES, no tareas. Los 15 convertidos
+    ya no se cuentan aquí; siguen viviendo dentro de él los frentes 2, 3, 5, 6, 7,
+    8, 10 y 11, que no tienen documento propio'
   registrado: '2026-10-23'
 - ruta: plantilla-y-linea-de-proceso-2026-10.md
   titulo: Qué pareja (configuración, plantilla) es legal
@@ -30,9 +32,11 @@ heredados:
     razonamiento'
   registrado: '2026-10-23'
 - ruta: versionado-de-objetos-2026-09.md
-  titulo: Frente 16 · el versionado de objetos en MinIO
-  estado: pendiente
-  nota: análisis; abierto sin trabajo hecho
+  titulo: El versionado de objetos en MinIO
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F16 del proyecto `deasy`. Su control se ESCRIBIÓ
+    (no se migró: el documento no tenía filas), a partir de su §5 y sus cinco preguntas
+    del §3'
   registrado: '2026-10-23'
 - ruta: universidades-ror-2026-09.md
   titulo: Frente 19 · la universidad que emite el título deja de ser texto
