@@ -298,7 +298,7 @@
             <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-(--z-capa-base) w-full"></canvas>
             
             <SignatureBox
-              v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && previewBoxStyle.display !== 'none' && !isHoveringField"
+              v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && !isHoveringField"
               :is-preview="true"
               :left="parseFloat(previewBoxStyle.left)"
               :top="parseFloat(previewBoxStyle.top)"
@@ -1350,7 +1350,17 @@ const fieldId = (name) => `${uid}-${name}`;
 
   const isMouseOverPdf = ref(false);
   const isHoveringField = ref(false);
-  const previewBoxStyle = ref({ display: 'none' });
+  // ⚠️ SIN CENTINELA `display`: es el defecto 1.7, y estaba AQUI TAMBIEN.
+  //
+  // La ficha del 1.7 solo nombraba `MultiSignerPanel.vue`; este componente tenia la forma
+  // identica --el `ref` con `display:'none'`, el `v-if` preguntando por el, y la asignacion del
+  // movimiento escribiendo `left/top/width/height` sin `display`--. Un arreglo aplicado a un solo
+  // sitio habria dejado el otro igual, que es como el IDOR se quedo a medias.
+  //
+  // Se borra por el mismo motivo que alli: `isMouseOverPdf` se enciende en `handleMouseMove`, que
+  // es la misma funcion que escribe la posicion, asi que el termino no filtraba nada que el
+  // primero no filtrara ya.
+  const previewBoxStyle = ref({});
 
   const handleMouseMove = (event) => {
     if (!pdfViewer.value) return;

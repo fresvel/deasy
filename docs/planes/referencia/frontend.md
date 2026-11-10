@@ -111,9 +111,35 @@ Es la ilustración exacta de la regla del `CLAUDE.md` ("*keep business logic in 
 | Bug | Evidencia | Efecto |
 |---|---|---|
 | **`fieldsJson` no existe** | Aparece sólo en `FirmarPdf.vue:350` (template), nunca en el script | El panel "JSON Output" pinta vacío. Vue no avisa |
-| **Sello fantasma pegado** | `isMouseOverPdf` en `MultiSignerPanel.vue` se declara (`:554`) y escribe (`:892`, `:933`) pero **nunca se lee**; `FirmarPdf.vue:302` sí lo usa en su `v-if` | El sello se queda pintado al sacar el ratón del PDF |
+| ~~**Sello fantasma pegado**~~ | ~~`isMouseOverPdf` en `MultiSignerPanel.vue` se declara y escribe pero **nunca se lee**~~ | ✅ **Corregido el 2026-11-10 · y esta fila era FALSA desde antes** — ver el aviso de abajo |
 | **`searchTerm` se filtra entre tablas** | 0 menciones en `useAdminTableReset.js`; consumido en `useAdminTableDataSource.js:284`. Sus hermanos `vacantSearchTerm` (`:14`) y `unassignedTemplateArtifactSearch` (`:32`) **sí** se resetean | Buscas "juan" en Personas → cambias de pestaña → la tabla nueva se consulta filtrada por "juan" |
 | **PDF al registro equivocado** | `recordId = list[list.length - 1]?._id` en `AgregarTitulo.vue:278` + **5 gemelos**: asume que el backend appendea al final | Si el backend ordena por fecha o alfabéticamente, el PDF se adjunta al registro equivocado, en silencio |
+
+⚠️ **La fila del sello fantasma AFIRMABA LO CONTRARIO DE LO QUE HACÍA EL CÓDIGO, y este mismo
+fichero guardaba las dos cosas a la vez**: decía que `isMouseOverPdf` «nunca se lee» mientras la
+tarea **0.4** del §… de abajo registra, con un ✅, que se añadió al `v-if` de `MultiSignerPanel`.
+Un fichero de referencia que se contradice cuesta más que el defecto que describe — por eso
+corregirlo era una tarea propia del frente 1 (`T1.7-c`) y no un detalle.
+
+**Lo que es cierto hoy**, medido el 2026-11-10: `isMouseOverPdf` **se lee en los dos** componentes,
+en el `v-if` de la caja de vista previa. El sello no se queda pegado al sacar el ratón.
+
+Y el defecto que de verdad vivía en ese `v-if` era otro: `previewBoxStyle.display !== 'none'`, un
+**guard permanentemente verdadero** (el `ref` nacía con `display:'none'` y el primer movimiento
+sustituía el objeto por uno sin `display`, así que la pregunta era `undefined !== 'none'`). Estaba
+en **los dos** componentes, no sólo en `MultiSignerPanel` como decía su ficha. **Borrado**, porque
+lo que quería expresar ya lo dice `isMouseOverPdf`: la bandera se enciende en la misma función que
+escribe la posición.
+
+⚠️ **Y queda algo abierto en ese mismo `v-if` de `MultiSignerPanel`, que es un hallazgo nuevo**: de
+sus cinco términos, **sólo dos deciden algo**. `selectionMode` se declara `ref("preset")` y
+**nunca se reasigna**, así que `selectionMode === 'preset'` es constante; y como el camino de
+`preset` sale por `return` antes de `isDragging = true`, `isDragging` **nunca llega a ser cierto**
+—además de ser un `let` y no un `ref`, o sea no reactivo—. Detrás de esas dos constantes hay un
+**modo de dibujo manual de área inalcanzable**: el ramal de arrastre de `handlePointerDown`, el de
+`handlePointerMove`, el cuerpo entero de `handlePointerUp` y el aviso «Calculando Área…», que no
+puede aparecer nunca. Si ese modo debe existir, falta cablearlo; si no, sobra. **No se tocó**: es
+una decisión sobre una capacidad, no una limpieza.
 | **Ramas inalcanzables** | `AdminView.vue:1305,1316` ramifican sobre `managementSection`, meta que sólo existe en `/procesos` → que renderiza `ProcessManagementView` | Código muerto, vestigio de cuando AdminView servía `/procesos` |
 | **Tarjeta "Orígenes" muerta** | `AdminView.vue:599-605`: sus 3 tablas no existen en el registro backend → `tableCount: 0`, pero el `v-for` no filtra por eso | La tarjeta se pinta y el clic no hace nada |
 | **`exportPng` con selector global** | `UnitGraphView.vue:635` y `ProcessGraphView.vue:1098` hacen `document.querySelector` sobre la **misma clase** `.unit-graph-canvas` | Latente: hoy se excluyen mutuamente. Si se montan a la vez, el mapa de procesos exportaría el organigrama |

@@ -160,7 +160,7 @@
               <canvas ref="pdfCanvas" class="z-(--z-capa-fondo) block h-auto w-full bg-white"></canvas>
 
               <SignatureBox
-                v-if="isMouseOverPdf && selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
+                v-if="isMouseOverPdf && selectionMode === 'preset' && !isDragging && !isHoveringField"
                 :is-preview="true"
                 :left="parseFloat(previewBoxStyle.left)"
                 :top="parseFloat(previewBoxStyle.top)"
@@ -519,7 +519,19 @@ const currentUserLabel = computed(() => "Firma");
 
 const isMouseOverPdf = ref(false);
 const isHoveringField = ref(false);
-const previewBoxStyle = ref({ display: 'none' });
+// ⚠️ SIN CENTINELA `display`, Y ES EL DEFECTO 1.7 CERRADO, no un descuido.
+//
+// Nacia como `{ display: 'none' }` y el `v-if` preguntaba `previewBoxStyle.display !== 'none'`
+// para decir «no dibujes el fantasma hasta saber donde». Funcionaba UNA vez: el primer
+// `pointermove` sustituye el objeto entero por uno con `left/top/width/height` y **sin `display`**,
+// asi que desde entonces la pregunta era `undefined !== 'none'` --siempre cierta-- y ese termino
+// llevaba meses sin decidir nada.
+//
+// No se arreglo poniendo `display`, se borro, porque lo que queria decir **ya lo dice
+// `isMouseOverPdf`**: la bandera se enciende en `handlePointerMove`, la MISMA funcion que escribe
+// la posicion y en la misma llamada. «El puntero esta sobre el PDF» implica «hay posicion»; no hay
+// camino que encienda una sin la otra, asi que no habia una tercera condicion que expresar.
+const previewBoxStyle = ref({});
 const filters = ref({
   query: "",
   unit: "all",
