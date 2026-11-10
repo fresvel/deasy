@@ -6,3 +6,6 @@ fases:
   P1:
     titulo: Lo migrado del plan heredado
     etapa: cambio
+  P2:
+    titulo: Los tres defectos del multifirmador que salieron al firmar 74 documentos
+    etapa: ''
