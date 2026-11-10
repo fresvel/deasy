@@ -23,20 +23,34 @@ de ser es una llave.
 
     admin  1234567897 · gestor 0927654327 · usuario 1122334459     ← su documento, para consultas SQL
 
-⚠️ **El TOKEN DE FIRMA de esos tres CAMBIA en cada reseteo, y el de las personas de ejemplo no.**
-Es `identidad.persons.token`, 10 caracteres, y se gasta como marcador `!-<token>-!` —el hueco que
-dejan las plantillas LaTeX— en la firma por token. Hay **dos sembradores con dos políticas**:
+    admin !-FIRMAdemo1-! · gestor !-FIRMAdemo2-! · usuario !-FIRMAdemo3-!   ← su MARCADOR de firma
 
-| Quién la crea | Qué token le pone | ¿Sobrevive a un reseteo? |
-|---|---|---|
-| El **bootstrap** (admin · gestor · usuario) | `crypto.randomBytes`, 10 al azar (`upsertAdminPerson`) | **NO.** Solo se conserva si la persona ya existía |
-| El **seed de ejemplo** (las demás) | **su propia cédula** (`genericCatalog.js`) | Sí, mientras la cédula no cambie |
+⚠️ **Esos tres marcadores son FIJOS desde el 2026-11-10, y antes cambiaban en cada reseteo.**
+`identidad.persons.token` son 10 caracteres y se gastan como `!-<token>-!`: es el hueco que dejan
+las plantillas LaTeX y lo que el firmador busca **como texto** en el PDF
+(`find_marker_coordinates`). Lo sorteaba el bootstrap, así que cualquier plantilla, golden o nota
+que lo citara dejaba de casar al siguiente reseteo.
 
-Así que **no escribas el token de `usuario` en una plantilla ni en un fixture**: hoy vale
-`!-8wfW0qiE4i-!` en la pila A y mañana otro. Se lee en `GET /users/me`
-(`signatureToken`/`signatureMarker`) o en la pantalla de firma al elegir «por token», que imprime el
-marcador que va a buscar. (El JWT del navegador es otra cosa y cambia en **cada login**: lleva `iat`
-y `exp`, y caduca a las 2 h.)
+**No se arregló sembrando el azar**, que es lo primero que uno piensa y no se puede: `randomBytes`
+es un CSPRNG y no admite semilla, y cambiarlo por un generador sembrado haría calculable el token
+del administrador **real** de cada despliegue. Lo que se abrió es una **entrada**: el payload del
+bootstrap acepta `signature_token` y **sortea sólo cuando no se pide**, así que una instalación de
+verdad no cambió. Los tres valores de prueba están **en los dos sitios que instalan**, y van juntos:
+`SystemBootstrapView.vue` (los «datos de ejemplo» de `/setup`) y
+`tests/characterization/setup/bootstrap_system.mjs` (el harness). Si cambias uno, cambia el otro.
+
+Es legítimo porque **el token no es un secreto**: sólo dice DÓNDE estampar. Quien autoriza es el
+certificado con su contraseña, el permiso RBAC y el turno — y el marcador se imprime dentro del PDF,
+así que quien escribe la plantilla tiene que conocerlo.
+
+⚠️ **Y la misma columna la escriben TRES sitios con tres políticas**, que es la deuda de fondo y
+sigue abierta: `utils/tokenGenerator.js` (`generateUniqueToken`, el canónico, para quien se
+registra), una **copia del mismo algoritmo** dentro de `SystemBootstrapService.js` —existe porque
+necesita la conexión de la transacción, no el pool— y `genericCatalog.js`, que a las personas de
+ejemplo les pone **su propia cédula**. La copia es la que conviene colapsar primero.
+
+(El JWT del navegador es otra cosa y cambia en **cada login**: lleva `iat` y `exp`, y caduca a las
+2 h.)
 
 ⚠️ **Esos tres números cambiaron el 2026-08-27** y no es capricho: desde que el modelo admite
 pasaportes se comprueba el **dígito verificador** de la cédula ecuatoriana, y los tres de antes

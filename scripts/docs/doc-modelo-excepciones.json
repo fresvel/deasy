@@ -1086,6 +1086,12 @@
         "complemento/firma-en-lote.md"
       ]
     },
+    "signature_token": {
+      "motivo": "TOKEN DE FIRMA PEDIBLE (2026-11-10) · NO ES UNA COLUMNA: es el campo OPCIONAL del payload del bootstrap con el que se pide un `persons.token` concreto en vez de sortearlo. La columna se llama `token` y esa si existe; la pagina cita el nombre del campo de entrada para que se pueda buscar en el codigo.",
+      "paginas": [
+        "modelo/flujo-de-firma.md"
+      ]
+    },
     "proxy_request_buffering": {
       "motivo": "FIRMA EN LOTE (2026-11-10) · NO ES UN NOMBRE DEL ESQUEMA: es una directiva de NGINX. La pagina la cita para explicar por que el tope de bytes EXISTE y no se sube sin mas: con el buffering activado --el valor por defecto-- nginx escribe el cuerpo entero en su disco antes de pasarlo al backend.",
       "paginas": [

@@ -52,6 +52,34 @@ const generateRawToken = () => {
   return token;
 };
 
+// EL TOKEN DE FIRMA SE PUEDE FIJAR, y no es lo mismo que sembrar el azar.
+//
+// `crypto.randomBytes` es un CSPRNG: no admite semilla, y sustituirlo por un generador con semilla
+// para que el dev sea reproducible dejaria el token del administrador REAL de cada despliegue
+// calculable por quien conozca el algoritmo. El azar se queda donde esta; lo que se abre es una
+// ENTRADA: quien instala puede decir cual quiere, y si no dice nada se sigue sorteando.
+//
+// Es legitimo porque el token NO ES UN SECRETO: el firmador solo lo usa para LOCALIZAR texto
+// --`find_marker_coordinates(pdf, token)` en `signer/app.py`-- y quien autoriza es el certificado
+// con su contraseña, el permiso RBAC y el turno. El marcador `!-token-!` se IMPRIME dentro del PDF
+// (en blanco) y quien escribe la plantilla LaTeX tiene que conocerlo: es dato de diseño, no credencial.
+// Lo unico que el modelo le exige es ser UNICO, y eso se comprueba abajo.
+//
+// Devuelve `null` cuando no se pide nada, que es la señal de «sortealo».
+export const normalizarTokenDeFirma = (valor) => {
+  const token = String(valor ?? "").trim();
+  if (!token) return null;
+  if (token.length !== TOKEN_LENGTH) {
+    throw buildError(`El token de firma debe tener exactamente ${TOKEN_LENGTH} caracteres.`);
+  }
+  for (const caracter of token) {
+    if (!TOKEN_CHARS.includes(caracter)) {
+      throw buildError("El token de firma solo admite letras y digitos sin acentos.");
+    }
+  }
+  return token;
+};
+
 const generateUniqueTokenWithConnection = async (connection) => {
   for (let attempts = 0; attempts < 10; attempts += 1) {
     const token = generateRawToken();
@@ -82,6 +110,8 @@ const validateAdminPayload = (payload = {}) => {
   const whatsapp = normalizeString(payload.whatsapp);
   const password = String(payload.password || "");
   const confirmPassword = String(payload.confirm_password || payload.repassword || "");
+  // Opcional a proposito: vacio = se sortea, que es lo que hace una instalacion de verdad.
+  const signatureToken = normalizarTokenDeFirma(payload.signature_token);
 
   if (!cedula) throw buildError("La cedula del administrador es requerida.");
   if (cedula.length < 10) throw buildError("La cedula del administrador no es valida.");
@@ -99,7 +129,8 @@ const validateAdminPayload = (payload = {}) => {
     last_name: lastName,
     email,
     whatsapp: whatsapp || null,
-    password
+    password,
+    signature_token: signatureToken
   };
 };
 
@@ -1032,7 +1063,27 @@ const upsertAdminPerson = async (connection, payload) => {
   );
 
   const passwordHash = await bcrypt.hash(payload.password, 10);
-  const token = existingPerson?.token || await generateUniqueTokenWithConnection(connection);
+  // EL ORDEN IMPORTA, y es el que hace reproducible una instalacion de prueba: lo que PIDE el
+  // payload gana al que ya tuviera la persona, porque si no, un `recoverAdmin` sobre una base vieja
+  // se quedaria con el token sorteado de antes y la fixture volveria a moverse. Sin peticion, se
+  // conserva el que hay --nunca se le cambia el marcador a alguien sin pedirlo-- y solo en ultimo
+  // lugar se sortea.
+  const token = payload.signature_token
+    || existingPerson?.token
+    || await generateUniqueTokenWithConnection(connection);
+
+  // El token es UNICO en `persons`: un token pedido que ya es de OTRA persona tiene que fallar aqui
+  // con su motivo, no mas abajo como una violacion de constraint que nadie sabe leer.
+  if (payload.signature_token) {
+    const duenoActual = await fetchOne(
+      connection,
+      "SELECT id FROM persons WHERE token = ? LIMIT 1",
+      [payload.signature_token]
+    );
+    if (duenoActual && Number(duenoActual.id) !== Number(existingPerson?.id ?? 0)) {
+      throw buildError(`El token de firma solicitado ya pertenece a otra persona (id ${duenoActual.id}).`, 409);
+    }
+  }
 
   if (existingPerson) {
     await connection.query(

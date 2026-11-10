@@ -373,20 +373,35 @@ const steps = [
 ];
 
 const blankPerson = () => ({
-  cedula: "", first_name: "", last_name: "", email: "", whatsapp: "", password: "", confirm_password: ""
+  cedula: "", first_name: "", last_name: "", email: "", whatsapp: "", password: "", confirm_password: "",
+  // Vacio en una instalacion de verdad: el backend sortea el token de firma cuando no se pide uno.
+  signature_token: ""
 });
 
+// ⚠️ LOS DATOS DE EJEMPLO FIJAN EL TOKEN DE FIRMA, y por eso sobreviven a un reseteo.
+//
+// `persons.token` es el marcador `!-token-!` que la plantilla deja como hueco para la firma. Lo
+// sorteaba el bootstrap, asi que cada reseteo de la base de prueba lo cambiaba y cualquier plantilla
+// o fixture que lo citara dejaba de casar. Pedirlo aqui lo vuelve reproducible SIN tocar el azar:
+// una instalacion real no manda nada y sigue sorteandose.
+//
+// Los MISMOS tres valores estan en `backend/tests/characterization/setup/bootstrap_system.mjs`, para
+// que un reseteo por esta pantalla y uno por el harness dejen la base igual. Si cambias uno, cambia
+// el otro. El digito final es el `persons.id` que le toca a cada uno.
 const EXAMPLE_ADMIN = {
   cedula: "1234567897", first_name: "Administrador", last_name: "Principal",
-  email: "admin@institucion.edu.ec", whatsapp: "0990000000", password: "Demo1234!", confirm_password: "Demo1234!"
+  email: "admin@institucion.edu.ec", whatsapp: "0990000000", password: "Demo1234!", confirm_password: "Demo1234!",
+  signature_token: "FIRMAdemo1"
 };
 const EXAMPLE_GESTOR = {
   cedula: "0927654327", first_name: "Gestor", last_name: "Procesos",
-  email: "gestor@institucion.edu.ec", whatsapp: "", password: "Gestor1234!", confirm_password: "Gestor1234!"
+  email: "gestor@institucion.edu.ec", whatsapp: "", password: "Gestor1234!", confirm_password: "Gestor1234!",
+  signature_token: "FIRMAdemo2"
 };
 const EXAMPLE_USUARIO = {
   cedula: "1122334459", first_name: "Usuario", last_name: "Prueba",
-  email: "usuario@institucion.edu.ec", whatsapp: "", password: "Demo1234!", confirm_password: "Demo1234!"
+  email: "usuario@institucion.edu.ec", whatsapp: "", password: "Demo1234!", confirm_password: "Demo1234!",
+  signature_token: "FIRMAdemo3"
 };
 
 const form = reactive(blankPerson());

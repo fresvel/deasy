@@ -21,7 +21,23 @@ import { post, get } from "../lib/http.mjs";
 import { waitForReady } from "../lib/readiness.mjs";
 import { FIXTURE, USERS } from "../config.mjs";
 
-const personPayload = (user, firstName, lastName, email, whatsapp = "") => ({
+// ⚠️ EL TOKEN DE FIRMA VA FIJO, para que la fixture sea la misma tras cada reseteo.
+//
+// `persons.token` es el marcador `!-token-!` que la plantilla deja como hueco de la firma, y el
+// bootstrap lo SORTEABA: cada `test:char:fixture` dejaba otro, asi que nada podia citarlo --ni un
+// golden, ni una plantilla, ni una nota--. El backend acepta pedirlo desde el 2026-11-10 y sortea
+// solo cuando no se pide, asi que una instalacion real no cambia.
+//
+// Los MISMOS tres valores estan en los datos de ejemplo de
+// `frontend/src/modules/auth/views/SystemBootstrapView.vue`, para que un reseteo por el harness y
+// uno por la pantalla de `/setup` dejen la base igual. Si cambias uno, cambia el otro.
+const TOKEN_DE_FIRMA = {
+  admin: "FIRMAdemo1",
+  gestor: "FIRMAdemo2",
+  usuario: "FIRMAdemo3",
+};
+
+const personPayload = (user, firstName, lastName, email, whatsapp = "", signatureToken = "") => ({
   cedula: user.cedula,
   first_name: firstName,
   last_name: lastName,
@@ -29,6 +45,7 @@ const personPayload = (user, firstName, lastName, email, whatsapp = "") => ({
   whatsapp,
   password: user.password,
   confirm_password: user.password,
+  signature_token: signatureToken,
 });
 
 // El bootstrap ofrece los catálogos disponibles en su propio `status`. Los
@@ -101,7 +118,7 @@ async function main() {
   }
 
   const payload = {
-    ...personPayload(USERS.admin, "Administrador", "Principal", "admin@institucion.edu.ec", "0990000000"),
+    ...personPayload(USERS.admin, "Administrador", "Principal", "admin@institucion.edu.ec", "0990000000", TOKEN_DE_FIRMA.admin),
     // ⚠️ LOS TRES LLEVAN TELEFONO, Y HACE FALTA. Desde que la verificacion del telefono es
     // obligatoria (C8), una persona sembrada sin telefono no puede entrar a nada: el guard del
     // backend la corta en todas las rutas protegidas. Gestor y usuario no lo tenian, y con eso la
@@ -109,8 +126,8 @@ async function main() {
     //
     // El bootstrap los da por verificados igual que da por verificado su correo y su documento: los
     // crea el instalador, que responde por ellos. Es la misma decision, no una excepcion nueva.
-    gestor: personPayload(USERS.gestor, "Gestor", "Procesos", "gestor@institucion.edu.ec", "0990000001"),
-    usuario: personPayload(USERS.usuario, "Usuario", "Prueba", "usuario@institucion.edu.ec", "0990000002"),
+    gestor: personPayload(USERS.gestor, "Gestor", "Procesos", "gestor@institucion.edu.ec", "0990000001", TOKEN_DE_FIRMA.gestor),
+    usuario: personPayload(USERS.usuario, "Usuario", "Prueba", "usuario@institucion.edu.ec", "0990000002", TOKEN_DE_FIRMA.usuario),
     preconfig: buildPreconfig(status.body?.catalogOptions),
   };
 

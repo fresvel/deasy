@@ -44,6 +44,36 @@ firma del revisor», «la firma del aprobador». La cadena completa es esta:
 Por eso nadie tiene que colocar la firma a mano: la posición ya viaja dentro del documento. Con un
 matiz — el servicio admite **dos modos**, `token` y `coordinates`; lo anterior describe el primero.
 
+### De dónde sale ese token, y por qué no es un secreto
+
+Lo único que el modelo le exige es ser **único**: `persons.token` es `NOT NULL UNIQUE`. No autoriza
+nada —quien autoriza es el certificado con su contraseña, el permiso y el turno— y **se imprime
+dentro del PDF**, así que quien escribe la maqueta tiene que conocerlo. Es dato de diseño, no
+credencial.
+
+Eso es lo que permite **pedirlo** en vez de sortearlo. El payload del bootstrap acepta un
+`signature_token` opcional y **sólo sortea cuando no se pide**, de modo que una instalación real no
+cambia y una base de prueba puede quedar igual tras cada reseteo —antes no: el token se sorteaba, y
+cualquier maqueta o prueba que lo citara dejaba de casar—. El valor pedido se valida en forma
+(diez caracteres, sólo letras y dígitos sin acentos, porque el firmador lo busca como **texto** y un
+carácter que la extracción normalice de otra forma no casaría) y en unicidad: pedir el de otra
+persona responde `409`, no una violación de restricción.
+
+:::caution[La misma columna la escriben tres sitios, con tres políticas]
+Y es deuda, no diseño:
+
+| Quién escribe | Qué pone |
+|---|---|
+| `utils/tokenGenerator.js` → `generateUniqueToken` | diez caracteres al azar. **Es el canónico**, y lo usa quien se registra |
+| `SystemBootstrapService.js` | una **copia del mismo algoritmo**, porque necesita la conexión de la transacción y no el pool; hoy además respeta el token pedido |
+| `genericCatalog.js` (datos de ejemplo) | **la cédula de la persona** |
+
+La copia del medio es la que conviene colapsar primero: es el mismo alfabeto y la misma longitud
+escritos dos veces. La tercera es otra discusión — derivar el marcador de un documento de identidad
+lo ata a un número que **puede cambiar**, que es justo por lo que el almacenamiento dejó de colgar
+de la cédula.
+:::
+
 Los participantes de un paso de **entrega** no tienen hueco: `slot` queda nulo, y eso no es una
 carencia. Entregar no deja marca en el papel.
 

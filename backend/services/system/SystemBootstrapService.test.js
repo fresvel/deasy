@@ -18,7 +18,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { publishBaseSeedAssets } from "./SystemBootstrapService.js";
+import { publishBaseSeedAssets, normalizarTokenDeFirma } from "./SystemBootstrapService.js";
 
 const FICHEROS = [
   { rel: "defaults.yaml", abs: "/seed/defaults.yaml" },
@@ -103,4 +103,49 @@ test("un fallo de MinIO NO aborta el bootstrap: es best-effort y lo reporta", as
   });
   assert.equal(resultado.published, false);
   assert.equal(resultado.reason, "minio caido");
+});
+
+// --- El token de firma que se PIDE al bootstrap ---------------------------------------------------
+//
+// POR QUE EXISTE ESTA RED. `persons.token` es el marcador `!-token-!` que la plantilla deja como
+// hueco de la firma, y el bootstrap lo SORTEABA con `crypto.randomBytes`: cada reseteo de la base de
+// prueba lo cambiaba, asi que ninguna plantilla, fixture ni nota podia citarlo.
+//
+// La peticion del dueño fue «ponle una semilla al random». Un CSPRNG no admite semilla, y cambiarlo
+// por un generador sembrado haria calculable el token del administrador REAL de cada despliegue. Lo
+// que se abrio es una ENTRADA opcional: el azar sigue ahi, y es lo que ocurre cuando no se pide nada.
+// Esto fija el contrato de esa entrada.
+
+test("sin token pedido devuelve null, que es la señal de «sortealo»", () => {
+  for (const vacio of [undefined, null, "", "   "]) {
+    assert.equal(normalizarTokenDeFirma(vacio), null, JSON.stringify(vacio));
+  }
+});
+
+test("un token pedido se devuelve tal cual, sin los espacios de alrededor", () => {
+  assert.equal(normalizarTokenDeFirma("FIRMAdemo3"), "FIRMAdemo3");
+  assert.equal(normalizarTokenDeFirma("  FIRMAdemo3  "), "FIRMAdemo3");
+});
+
+test("la longitud es EXACTA: ni 9 ni 11 caracteres valen", () => {
+  for (const malo of ["FIRMAdemo", "FIRMAdemo33"]) {
+    assert.throws(
+      () => normalizarTokenDeFirma(malo),
+      (error) => error.statusCode === 400 && /exactamente 10/.test(error.message),
+      malo,
+    );
+  }
+});
+
+// El alfabeto no es decoracion: el marcador se busca como TEXTO dentro del PDF
+// (`find_marker_coordinates`), y un caracter que la extraccion de texto normalice de otra forma
+// --una tilde, una eñe, un guion-- deja de casar y la firma no se coloca en ningun sitio.
+test("solo letras y digitos sin acentos", () => {
+  for (const malo of ["FIRMAdem-3", "FIRMAdemoñ", "FIRMA demo", "FIRMAdemó3"]) {
+    assert.throws(
+      () => normalizarTokenDeFirma(malo),
+      (error) => error.statusCode === 400 && /letras y digitos/.test(error.message),
+      malo,
+    );
+  }
 });
