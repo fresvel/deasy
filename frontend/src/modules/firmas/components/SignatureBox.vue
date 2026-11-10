@@ -5,8 +5,8 @@
     :style="computedStyle"
     @mousedown.stop.prevent="startDrag"
     @click.stop="onClick"
-    @mouseenter="$emit('hover-enter')"
-    @mouseleave="$emit('hover-leave')"
+    @mouseenter="avisarEntrada"
+    @mouseleave="avisarSalida"
   >
     <div class="h-full w-full border border-blue-light-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40 pointer-events-none">
       <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-info drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
@@ -63,6 +63,38 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['update:position', 'delete', 'select', 'drag-start', 'drag-end', 'hover-enter', 'hover-leave']);
+
+// ⚠️ ESTA CAJA PROMETE AVISAR CUANDO EL PUNTERO SALE, Y TIENE QUE CUMPLIRLO AL DESAPARECER.
+//
+// `hover-leave` salia solo de `@mouseleave`, y el navegador NO dispara `mouseleave` sobre un
+// elemento que se desmonta con el puntero dentro. Quien escucha se queda creyendo que el puntero
+// sigue encima para siempre.
+//
+// El efecto medido el 2026-11-10: en el multifirmador, los botones «Siguiente documento» y
+// «Siguiente pagina» viven DENTRO de esta caja, asi que pulsarlos la desmonta con el puntero
+// encima. `isHoveringField` se quedaba en `true` y la vista previa de la estampa --que se pinta con
+// `!isHoveringField`-- no volvia a aparecer en los documentos siguientes hasta que un clic de
+// colocacion creaba otra caja de la que salir. Navegando con el boton de la cabecera del modal no
+// pasaba: para llegar ahi el puntero sale de la caja y `mouseleave` SI se dispara. Mismo bucle con
+// el boton de borrar, y en los dos componentes que usan esta caja.
+//
+// Se arregla aqui y no en quien escucha porque el incumplimiento es de esta caja: con esto, todo
+// consumidor presente y futuro recibe el par completo sin saber nada de esto.
+const punteroDentro = ref(false);
+
+const avisarEntrada = () => {
+  if (punteroDentro.value) return;
+  punteroDentro.value = true;
+  emit('hover-enter');
+};
+
+// Idempotente a proposito: se llama desde `mouseleave` Y desde el desmontaje, y solo uno de los dos
+// ocurre en cada caso --pero nada garantiza que no ocurran los dos--.
+const avisarSalida = () => {
+  if (!punteroDentro.value) return;
+  punteroDentro.value = false;
+  emit('hover-leave');
+};
 
 const isDragging = ref(false);
 let dragStartX = 0;
@@ -190,6 +222,8 @@ onBeforeUnmount(() => {
     window.removeEventListener('mousemove', onDrag);
     window.removeEventListener('mouseup', stopDrag);
   }
+  // El aviso que el navegador no va a dar.
+  avisarSalida();
 });
 
 </script>

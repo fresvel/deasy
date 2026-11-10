@@ -360,8 +360,8 @@ sobre blanco.
 
 ## 4. Verificación: lo que ninguna herramienta ve
 
-**Ni el build, ni el lint, ni los 304 tests detectan que rompiste un estilo.** Está demostrado
-**seis** veces:
+**Ni el build, ni el lint, ni los tests detectan que rompiste un estilo.** Está demostrado
+**siete** veces:
 
 | Lo que se rompió | build / lint / tests |
 |---|---|
@@ -371,6 +371,28 @@ sobre blanco.
 | 43 botones perdieron su fondo por un hex partido a la mitad | verde |
 | Los conectores de Vue Flow volvieron a los valores de la librería | verde |
 | Tres tarjetas de firmas perdieron los márgenes de su icono | verde |
+| La vista previa de la estampa **dejó de aparecer** al navegar desde la propia estampa | verde |
+
+⚠️ **El séptimo no es CSS, y por eso enseña otra cosa: un componente que promete un PAR de eventos
+tiene que cumplirlo también al desmontarse.** `SignatureBox` emitía `hover-leave` sólo desde
+`@mouseleave`, y **el navegador no dispara `mouseleave` sobre un elemento que se desmonta con el
+puntero dentro**. Como los botones «Siguiente documento» y «Siguiente página» viven DENTRO de esa
+caja, pulsarlos la desmontaba con el puntero encima: el oyente se quedaba creyendo que el puntero
+seguía ahí para siempre y la vista previa no volvía a pintarse. Medido el 2026-11-10 en el
+navegador, con la misma secuencia antes y después — el paso que cambia es el cuarto:
+
+| paso | antes | después |
+|---|---:|---:|
+| ratón sobre el PDF | 1 | 1 |
+| clic de colocación | 1 | 1 |
+| ratón sobre la estampa (debe ocultarse) | 0 | 0 |
+| **siguiente documento DESDE la estampa** | **0** | **1** |
+| mover el ratón por el documento siguiente | 0 | 1 |
+
+**Si escribes `hover-enter`/`hover-leave`, `focus`/`blur` o cualquier par así, emite el cierre en
+`onBeforeUnmount`** — y hazlo idempotente, porque entonces sale de dos sitios. La pista que lo
+delata: *«por un camino sí y por otro no»*. Navegando con el botón de la cabecera del modal
+funcionaba, porque para llegar hasta ahí el puntero sale de la caja.
 
 ⚠️ **Antes de creerte que una regla nueva «no aplica», comprueba que el dev server la sirve.**
 El HMR de Vite puede quedarse con una versión anterior de un `.css`: el 2026-08-15 una regla recién
