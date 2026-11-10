@@ -23,6 +23,21 @@ de ser es una llave.
 
     admin  1234567897 · gestor 0927654327 · usuario 1122334459     ← su documento, para consultas SQL
 
+⚠️ **El TOKEN DE FIRMA de esos tres CAMBIA en cada reseteo, y el de las personas de ejemplo no.**
+Es `identidad.persons.token`, 10 caracteres, y se gasta como marcador `!-<token>-!` —el hueco que
+dejan las plantillas LaTeX— en la firma por token. Hay **dos sembradores con dos políticas**:
+
+| Quién la crea | Qué token le pone | ¿Sobrevive a un reseteo? |
+|---|---|---|
+| El **bootstrap** (admin · gestor · usuario) | `crypto.randomBytes`, 10 al azar (`upsertAdminPerson`) | **NO.** Solo se conserva si la persona ya existía |
+| El **seed de ejemplo** (las demás) | **su propia cédula** (`genericCatalog.js`) | Sí, mientras la cédula no cambie |
+
+Así que **no escribas el token de `usuario` en una plantilla ni en un fixture**: hoy vale
+`!-8wfW0qiE4i-!` en la pila A y mañana otro. Se lee en `GET /users/me`
+(`signatureToken`/`signatureMarker`) o en la pantalla de firma al elegir «por token», que imprime el
+marcador que va a buscar. (El JWT del navegador es otra cosa y cambia en **cada login**: lleva `iat`
+y `exp`, y caduca a las 2 h.)
+
 ⚠️ **Esos tres números cambiaron el 2026-08-27** y no es capricho: desde que el modelo admite
 pasaportes se comprueba el **dígito verificador** de la cédula ecuatoriana, y los tres de antes
 (`1234567890`, `0987654321`, `1122334455`) eran secuencias inventadas que no lo cumplían — con el
