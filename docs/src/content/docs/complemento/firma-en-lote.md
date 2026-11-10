@@ -12,7 +12,7 @@ no puede resolverse dentro de una petición HTTP.
 
 `signature_batch_jobs` es **la única tabla** de ese mecanismo: guarda el progreso del trabajo para
 que quien lo lanzó pueda preguntar «¿por dónde va?» y para que **el trabajo sobreviva a un reinicio
-del backend**. Lo maneja `services/sign/BatchSigningService.js`.
+del backend**. Lo maneja `dominios/firmas/services/BatchSigningService.js`.
 
 ## Por qué está en la base y no en memoria
 
@@ -23,6 +23,49 @@ Un mapa en memoria habría bastado para el caso feliz. Pero si el backend se rei
 lote de cincuenta —un despliegue, un fallo— quien lo lanzó se queda esperando una respuesta que ya
 no va a llegar, y sin forma de saber cuáles se firmaron. Con la tabla, al menos, queda el recuento y
 el detalle por fichero.
+
+## Cuántos caben en un lote, y los dos números que tienen que estar de acuerdo
+
+Un lote viaja **completo en una sola petición**: `POST /sign/batch/start` es un `multipart/form-data`
+con todos los PDF dentro, así que su peso es el peso del lote. Eso lo acotan **dos** números
+distintos, en dos sitios distintos, y los dos tienen que dejar pasar el mismo lote:
+
+| Qué acota | Cuánto | Dónde |
+|---|---|---|
+| **Documentos** por lote | **200** | `MAX_DOCUMENTOS_POR_LOTE`, en `dominios/firmas/routes/index.js` |
+| **Bytes** de la petición | **200 MB** | `client_max_body_size` de `location /api/`, en las plantillas de `nginx/` |
+| Bytes de **un** documento | 30 MB | el `fileSize` de multer, en el mismo router |
+
+:::caution[Los dos números se mueven juntos, o la pared sigue donde estaba]
+Eran **30 documentos** y **20 MB**, y los dos fallaron el **2026-11-10** con un lote de **74
+documentos (36,1 MB)** — que es lo que produce *«firmar todos los pendientes»* sin pedir permiso a
+nadie.
+
+Lo rechazó el proxy: **HTTP 413 tras 1 ms y 130 KB subidos de 36 MB**, porque a nginx le basta leer
+`Content-Length`. Y lo rechazó **con su página HTML**, no con el `{ message, code }` que
+habla la API: el cliente hacía
+`response.json()` sobre ese HTML y lo que se leía en pantalla era un error de sintaxis de JSON. El
+tamaño era la causa y no apareció nombrado en ningún sitio.
+
+Debajo había una segunda pared, más baja y más muda: con el proxy ya arreglado, **31 documentos**
+contestaban `LIMIT_UNEXPECTED_FILE` — *«Se envió un archivo en un campo que no se esperaba»* —,
+porque pasarse del `maxCount` de un campo es, para multer, un campo inesperado. Un 400 que habla
+del **campo** cuando el problema es la **cuenta**.
+
+Hoy: el tope lo dice `limits.files`, que falla con `LIMIT_FILE_COUNT`, y el router lo traduce
+**nombrando la cifra** — *«Un lote admite hasta 200 documentos en una sola tanda»*.
+:::
+
+:::note[Subir los números no quita la pared, sólo la mueve]
+Con `proxy_request_buffering` activado —el valor por defecto— nginx escribe el cuerpo entero en su
+disco antes de pasarlo al backend, y multer lo escribe otra vez en el suyo. Un lote sin tope es un
+disco sin tope, así que 200 MB **es** un tope y está puesto a propósito.
+
+Lo que lo quitaría de verdad es que el lote **deje de viajar en una sola petición**: abrir el
+trabajo con sus metadatos, mandar los documentos de uno en uno contra ese trabajo, y arrancar la
+firma al final. Entonces ninguna petición crece con el tamaño del lote, cada documento se puede
+reintentar solo, y no hay número que ajustar. No está hecho.
+:::
 
 ## Las cuatro cuentas, y por qué son cuatro
 

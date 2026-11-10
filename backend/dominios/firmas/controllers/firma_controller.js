@@ -53,6 +53,26 @@ import {
   uploadFileToMinio
 } from "../../../services/storage/minio_service.js";
 
+// SUELTA LOS TEMPORALES DE MULTER, y existe porque se midieron 238 huerfanos en /tmp.
+//
+// Multer escribe cada PDF subido en `os.tmpdir()` (ver el `dest` del router) y **nadie los recoge
+// por el hecho de contestar**. Quien los borra es el `finally` de `processSinglePdfSigning`, asi que
+// todo camino que conteste ANTES de llegar ahi --un certificado que no existe, una contraseña que
+// no cuadra, un contexto invalido-- deja el fichero en disco para siempre.
+//
+// Medido el 2026-11-10: tres PDF contra `batch/start` con un `certificate_id` inexistente dejaron
+// /tmp en 235 -> 238 ficheros. Con el lote a 200 documentos y 30 MB por documento, UN rechazo
+// tardio puede dejar 6 GB. Es un `unlink` con la devolucion vacia a proposito: si ya no esta
+// --porque el `finally` de abajo se le adelanto-- no hay nada que contar.
+const liberarTemporales = (req) => {
+  const files = Array.isArray(req.files?.pdf) ? req.files.pdf : [];
+  for (const file of files) {
+    if (file?.path) {
+      fs.unlink(file.path, () => {});
+    }
+  }
+};
+
 export const requestSign = async (req, res) => {
   try {
     if (!req.files?.pdf?.[0]) {
@@ -82,6 +102,10 @@ export const requestSign = async (req, res) => {
       details: error?.details || error?.cause?.message || null,
       error_name: error?.name || null,
     });
+  } finally {
+    // Incondicional: aqui el fichero NO sobrevive a la respuesta --la firma de a uno es sincrona--
+    // asi que soltarlo dos veces es gratis y olvidarlo no.
+    liberarTemporales(req);
   }
 };
 
@@ -113,9 +137,7 @@ export const validateSignedDocument = async (req, res) => {
     console.error("[sign_controller][validate] Error:", error);
     return res.status(error.statusCode ?? 500).json({ error: error.message || "No se pudo validar el documento." });
   } finally {
-    if (req.files?.pdf?.[0]?.path) {
-      fs.unlink(req.files.pdf[0].path, () => {});
-    }
+    liberarTemporales(req);
     if (minioPdfPath) {
       await removeMinioObject(MINIO_SPOOL_BUCKET, minioPdfPath).catch(() => {});
     }
@@ -127,12 +149,7 @@ export const validateSignedDocument = async (req, res) => {
 // evidencia de firma). Se conserva la ruta para devolver 410 Gone y guiar a los clientes legacy.
 export const requestSignBatch = async (req, res) => {
   // Libera cualquier archivo subido por multer para no dejar temporales.
-  const files = Array.isArray(req.files?.pdf) ? req.files.pdf : [];
-  for (const file of files) {
-    if (file?.path) {
-      fs.unlink(file.path, () => {});
-    }
-  }
+  liberarTemporales(req);
   return res.status(410).json({
     error: "Endpoint de firma masiva legacy retirado. Usa POST /sign/batch/start (procesa de forma asíncrona y persiste evidencia).",
     code: "SIGN_BATCH_LEGACY_GONE",
@@ -141,6 +158,12 @@ export const requestSignBatch = async (req, res) => {
 };
 
 export const requestSignBatchStart = async (req, res) => {
+  // ⚠️ AQUI EL `finally` NO PUEDE SER INCONDICIONAL, y es la diferencia con `requestSign`: el lote
+  // se firma en SEGUNDO PLANO, asi que cuando esta funcion contesta 202 los ficheros todavia hacen
+  // falta. Desde ese momento los suelta el bucle --`processSinglePdfSigning` en su `finally`, o el
+  // `catch` del bucle--, y borrarlos aqui se los quitaria de debajo. Antes de ese momento, no los
+  // suelta nadie.
+  let elBucleSeQuedaLosFicheros = false;
   try {
     const files = Array.isArray(req.files?.pdf) ? req.files.pdf : [];
     if (!files.length) {
@@ -164,6 +187,7 @@ export const requestSignBatchStart = async (req, res) => {
     }));
 
     startBatchSigningLoop({ job, files, context, batchDocumentFields, batchDocumentContexts });
+    elBucleSeQuedaLosFicheros = true;
 
     return res.status(202).json({
       message: "Proceso batch iniciado.",
@@ -174,6 +198,10 @@ export const requestSignBatchStart = async (req, res) => {
   } catch (error) {
     console.error("[sign_controller][batch-start] Error:", error);
     return res.status(error.statusCode ?? 500).json({ error: error.message || "No se pudo iniciar la firma masiva." });
+  } finally {
+    if (!elBucleSeQuedaLosFicheros) {
+      liberarTemporales(req);
+    }
   }
 };
 

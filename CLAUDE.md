@@ -1169,6 +1169,30 @@ El diseño y las decisiones del dueño, con sus mediciones, en
 
 Env config: `docker/.env` + per-env `docker/.env.<env>`; reference model is `docker/.env_model`. Frontend uses `VITE_API_BASE_URL` (`/api` behind the Nginx proxy in Docker).
 
+⚠️ **El proxy tiene un tope de cuerpo, y si una pantalla puede mandar más que él, el fallo no se
+parece a un tope.** `client_max_body_size` de `location /api/` vale **200m** en
+`nginx/app-conf.d/` y en `nginx/ingress-conf.d/` (los dos bloques), y tiene que ir **emparejado**
+con `MAX_DOCUMENTOS_POR_LOTE` de `backend/dominios/firmas/routes/index.js` (**200**): aquél acota
+los **bytes** y éste los **documentos**, y un lote legítimo pasa los dos. Si subes uno, sube el otro
+o la pared se queda donde estaba con otro código de error.
+
+Eran 20m y 30 documentos, y el **2026-11-10** los dos fallaron con un lote de **74 documentos
+(36,1 MB)** —lo que produce «firmar todos los pendientes», que no acota nada—. Lo que lo hace
+caro de diagnosticar es que **ninguno de los tres síntomas nombraba el tamaño**: nginx corta **tras
+leer la cabecera** (413 en 1 ms, 130 KB subidos de 36 MB) y contesta **HTML**, el frontend hacía
+`response.json()` sobre ese HTML y pintaba un error de JSON, y debajo esperaba una segunda pared
+que decía `LIMIT_UNEXPECTED_FILE` —«un archivo en un campo que no se esperaba»— cuando el problema
+era la **cuenta**. Los tres arreglados; la historia y lo medido, en
+[`docs/src/content/docs/complemento/firma-en-lote.md`](docs/src/content/docs/complemento/firma-en-lote.md).
+
+⚠️ **Y lo que subir un tope empeora: multer deja los PDF en `os.tmpdir()` y los suelta el
+`finally` de `processSinglePdfSigning`**, así que **todo camino que conteste antes de llegar ahí los
+deja en disco para siempre**. Medido el mismo día: tres PDF con un `certificate_id` inexistente
+dejaban `/tmp` en 235 → **238**; con el lote a 200 documentos de hasta 30 MB, un rechazo tardío
+podían ser 6 GB. Lo cierra `liberarTemporales` en `dominios/firmas/controllers/firma_controller.js`
+— y ahí **el `finally` de `batch/start` no puede ser incondicional**: ese lote se firma en segundo
+plano y cuando el controlador contesta 202 los ficheros todavía hacen falta.
+
 ## CI/CD
 `.github/workflows/cd-multienv.yml`: push to `develop` publishes `dev`-tagged images (no deploy); `qa` and `main` publish `qa`/`prod` images and deploy when `DEPLOY_DELIVERY_MODE=gh-actions`. Published images: `deasy-backend`, `deasy-frontend`, `deasy-signer`, `deasy-analytics`.
 

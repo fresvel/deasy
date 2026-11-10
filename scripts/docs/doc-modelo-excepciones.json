@@ -1079,6 +1079,18 @@
       "paginas": [
         "modelo/reparto.md"
       ]
+    },
+    "client_max_body_size": {
+      "motivo": "FIRMA EN LOTE (2026-11-10) · NO ES UN NOMBRE DEL ESQUEMA: es una directiva de NGINX, el tope de bytes del cuerpo de una peticion. La pagina la cita porque es la MITAD del limite de un lote --la otra mitad es `MAX_DOCUMENTOS_POR_LOTE`, en el router de `firmas`-- y porque con 20m era la causa del 413 del multifirmador: un lote de 74 documentos pesa 36,1 MB.",
+      "paginas": [
+        "complemento/firma-en-lote.md"
+      ]
+    },
+    "proxy_request_buffering": {
+      "motivo": "FIRMA EN LOTE (2026-11-10) · NO ES UN NOMBRE DEL ESQUEMA: es una directiva de NGINX. La pagina la cita para explicar por que el tope de bytes EXISTE y no se sube sin mas: con el buffering activado --el valor por defecto-- nginx escribe el cuerpo entero en su disco antes de pasarlo al backend.",
+      "paginas": [
+        "complemento/firma-en-lote.md"
+      ]
     }
   },
   "tablas_sin_pagina": {}

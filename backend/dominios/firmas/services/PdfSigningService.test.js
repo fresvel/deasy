@@ -193,6 +193,31 @@ test("en modo token, sin token del usuario ni en el cuerpo, es 400", async () =>
   );
 });
 
+// EL DEFECTO QUE ESTE TEST FIJA, medido el 2026-11-10: la firma MASIVA en modo token contestaba
+// «El usuario no tiene token de firma configurado.» a una persona que lo tiene.
+//
+// Quien llega a `buildSignContext` viene de `resolveSigningUser`, que devuelve la FILA de `persons`
+// --columna `token`--, no el objeto publico de `toPublicUser`, que es el unico que la renombra a
+// `signatureToken`. La reserva solo miraba el nombre renombrado. En la firma de a uno no se veia
+// porque el frontend manda el marcador en el cuerpo y el cuerpo gana; en lote no lo mandaba.
+test("en modo token, la reserva lee `token` de la fila de persons, no solo `signatureToken`", async () => {
+  const comoLaDevuelveFindById = { id: 7, cedula: "1122334455", token: "8wfW0qiE4i" };
+  const context = await buildSignContext(
+    { body: cuerpoValido({ sign_mode: "token" }), userId: 7 },
+    deps({ resolveUser: async () => comoLaDevuelveFindById }),
+  );
+  assert.equal(context.signMode, "token");
+  assert.equal(context.resolvedToken, "!-8wfW0qiE4i-!");
+});
+
+test("en modo token, el marcador del cuerpo sigue ganando a lo que traiga el usuario", async () => {
+  const context = await buildSignContext(
+    { body: cuerpoValido({ sign_mode: "token", token: "!-DELCUERPO-!" }), userId: 7 },
+    deps({ resolveUser: async () => ({ id: 7, cedula: "1122334455", token: "8wfW0qiE4i" }) }),
+  );
+  assert.equal(context.resolvedToken, "!-DELCUERPO-!");
+});
+
 test("el contexto de coordenadas recorta el sello, normaliza los booleanos y trae los campos", async () => {
   const context = await buildSignContext({
     body: cuerpoValido({ use_timestamp: "true", allow_untrusted_signer: "1", tsa_url: "  " }),

@@ -1050,10 +1050,39 @@ const fieldId = (name) => `${uid}-${name}`;
     try {
       return JSON.parse(rawText);
     } catch {
+      // ⚠️ Un cuerpo que NO es JSON no se devuelve como mensaje si es HTML. Lo que contesta el
+      // proxy ante un 413, un 502 o un 504 es su propia pagina, y colarla en `message` pinta
+      // «<html><head><title>413 Request Entity Too Large…» dentro del aviso de la pantalla.
+      // Un texto plano sigue valiendo: eso lo manda un servicio, no un proxy.
+      if (/^\s*</.test(rawText)) {
+        return {};
+      }
       return {
         message: rawText
       };
     }
+  };
+
+  // El peso de un lote, en la unidad en la que se puede decir en voz alta.
+  const formatBatchWeight = (bytes) => {
+    const mib = Number(bytes || 0) / (1024 * 1024);
+    return `${mib.toFixed(1).replace('.', ',')} MB`;
+  };
+
+  // POR QUE ESTO EXISTE: el fallo que mas cuesta no es el que falla, es el que falla sin decir de
+  // que. Un lote rechazado por tamaño lo rechaza el PROXY, que no habla el contrato de errores de
+  // la API --`{ message, code }`-- sino HTML. Sin este traductor, la pantalla contaba un problema
+  // de JSON y la persona buscaba el fallo en la firma.
+  const describeBatchStartFailure = (response, payload, batchBytes) => {
+    const delServidor = String(payload?.error || payload?.message || '').trim();
+    if (delServidor) {
+      return delServidor;
+    }
+    if (response.status === 413) {
+      return `El lote pesa ${formatBatchWeight(batchBytes)} y el servidor rechazó la petición por tamaño (HTTP 413). `
+        + 'Divide el lote en tandas más pequeñas, o pide que se suba el límite de subida del proxy.';
+    }
+    return `Error del servidor (${response.status}).`;
   };
 
   let ctx;
@@ -2443,18 +2472,33 @@ const fieldId = (name) => `${uid}-${name}`;
           return;
         }
 
+        const esModoToken = multiBatchRequest.value.mode === 'token';
+        if (esModoToken && !currentSignatureMarker.value) {
+          signError.value = 'El usuario actual no tiene token de firma configurado.';
+          return;
+        }
+
         isSigning.value = true;
         isStartingMultiBatch.value = true;
         signError.value = '';
         try {
           const formData = new FormData();
+          let pesoDelLote = 0;
           multiBatchRequest.value.documents.forEach((doc) => {
+            pesoDelLote += Number(doc.file?.size || 0);
             formData.append('pdf', doc.file);
           });
           formData.append('certificate_id', String(selectedCertificateId.value));
           formData.append('password', certPassword.value);
           formData.append('stampText', stampText.value.trim());
-          formData.append('sign_mode', multiBatchRequest.value.mode === 'token' ? 'token' : 'coordinates');
+          formData.append('sign_mode', esModoToken ? 'token' : 'coordinates');
+          // El marcador viaja EXPLICITO, igual que en la firma de a uno. No mandarlo dejaba la
+          // firma masiva en modo token dependiendo de una reserva del servidor que leia una
+          // propiedad inexistente y contestaba «no tiene token de firma configurado» a quien si lo
+          // tiene (arreglado tambien alli, en `PdfSigningService.buildSignContext`).
+          if (esModoToken) {
+            formData.append('token', currentSignatureMarker.value);
+          }
           if (multiBatchRequest.value.mode === 'shared-coordinates' && multiBatchRequest.value.sharedFields?.length) {
             formData.append('fields', JSON.stringify(
               multiBatchRequest.value.sharedFields.map((field) => ({
@@ -2508,9 +2552,16 @@ const fieldId = (name) => `${uid}-${name}`;
             headers: getAuthHeaders(),
             body: formData
           });
-          const data = await response.json();
+          // ⚠️ `readResponsePayload` y no `response.json()`, y la diferencia la pago una sesion.
+          //
+          // Aqui habia un `await response.json()` ANTES de mirar `response.ok`. Cuando el que
+          // contesta es el proxy y no el backend --un 413 por tamaño, un 502, un 504-- el cuerpo es
+          // HTML, `json()` revienta con un error de sintaxis, y lo que acaba en pantalla no habla
+          // del lote: habla de JSON. El 2026-11-10 un lote de 74 documentos (36,1 MB) se rechazo
+          // asi, con el tamaño como causa real y sin que la pantalla lo nombrara ni una vez.
+          const data = await readResponsePayload(response);
           if (!response.ok) {
-            throw new Error(data?.error || data?.message || `Error del servidor (${response.status})`);
+            throw new Error(describeBatchStartFailure(response, data, pesoDelLote));
           }
           activeMultiBatchJobId.value = data.jobId || '';
           activeMultiBatchJob.value = {

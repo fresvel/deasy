@@ -181,7 +181,18 @@ export const buildSignContext = async (
       : [];
   const resolvedToken = signMode === "token"
     ? (() => {
-        const rawToken = String(tokenRaw || user.signatureToken || "").trim();
+        // ⚠️ `user.token` ADEMAS de `user.signatureToken`, y no es cinturon y tirantes.
+        //
+        // Quien llega aqui viene de `resolveSigningUser`, que usa `findById` --la FILA de `persons`,
+        // donde la columna se llama `token`--, no `toPublicUser`, que es el unico que la renombra a
+        // `signatureToken`. Asi que la reserva leia una propiedad que ese objeto nunca tiene.
+        //
+        // En la firma de a uno no se notaba: el frontend manda el marcador en el campo `token` y
+        // `tokenRaw` gana siempre. En la firma MASIVA en modo token no lo mandaba, caia a la
+        // reserva, y la reserva valia `undefined`: «El usuario no tiene token de firma configurado.»
+        // para una persona que lo tiene en la base. Medido el 2026-11-10 con `usuario`, que tiene
+        // token, contra `POST /sign/batch/start` con `sign_mode=token`.
+        const rawToken = String(tokenRaw || user.signatureToken || user.token || "").trim();
         if (!rawToken) {
           throw badRequest("El usuario no tiene token de firma configurado.");
         }

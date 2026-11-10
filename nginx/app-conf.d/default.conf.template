@@ -29,6 +29,8 @@ server {
   ssl_session_cache   shared:SSL:10m;
   ssl_prefer_server_ciphers off;
 
+  # La red gruesa del cuerpo. Vale para el frontend y para todo lo que no sea `/api/`, donde una
+  # peticion de 20 MB ya es desproporcionada. `/api/` declara la suya, mas alta, y dice por que.
   client_max_body_size 20m;
 
   location = /healthz {
@@ -63,6 +65,27 @@ server {
     # La red gruesa (ver `nginx.conf`). El limitador de verdad esta en el backend: este solo evita
     # que una inundacion llegue a convertirse en una consulta a la base por peticion.
     limit_req zone=api_general burst=60 nodelay;
+
+    # ⛔ EL 413 DEL MULTIFIRMADOR ESTABA AQUI, Y NO ERA UN FALLO DE LA FIRMA.
+    #
+    # `POST /api/deasy/v1/sign/batch/start` manda **todos** los PDF del lote en un solo
+    # multipart, asi que su peso es el del lote entero: 74 documentos medidos el 2026-11-10
+    # pesaban 36,1 MB y el tope de aqui eran 20. nginx los rechazaba **tras leer la cabecera**
+    # --1 ms, 130 KB subidos de 36 MB-- con su pagina HTML de 176 bytes; el frontend hacia
+    # `response.json()` sobre ese HTML y lo que veia la persona era un error de sintaxis, no
+    # «el lote pesa demasiado». Tres sintomas, una causa, y ninguno nombraba el tamaño.
+    #
+    # 200m NO es un numero elegido por simetria: es el tope del backend --200 documentos por
+    # lote, `MAX_DOCUMENTOS_POR_LOTE` en `dominios/firmas/routes/index.js`-- por 1 MB de media,
+    # que es el doble de la media medida (477 KiB). Las dos cifras tienen que moverse juntas: la
+    # de aqui acota los BYTES y la del backend acota los DOCUMENTOS, y un lote legitimo tiene que
+    # pasar las dos.
+    #
+    # ⚠️ Sigue habiendo un tope, y es a proposito: con `proxy_request_buffering` en on --el
+    # defecto-- nginx escribe el cuerpo entero en su disco antes de pasarlo, asi que un cuerpo sin
+    # limite es un disco sin limite. Lo que quita el tope de verdad no es subirlo otra vez: es que
+    # el lote deje de viajar en UNA peticion.
+    client_max_body_size 200m;
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
     proxy_set_header X-Real-IP $remote_addr;
