@@ -319,20 +319,94 @@ Y el caso que lo resume: **`lineas.linea_anterior_id` tiene CERO vías en el có
 `/admin`.** Para esa columna, «comprobación en servicio» no significa «protección parcial»: significa
 **ninguna**, porque no hay servicio por donde pase.
 
+### La pregunta del dueño: ¿alguno de los siete necesita PERMITIR un ciclo?
+
+Preguntado el **2026-11-12**: *«En la tabla que me mostraste ninguna de las 7 debería permitir una
+relación cíclica. ¿O tú puedes justificar el caso específico de que alguno lo necesite?»*
+
+**No. Ninguno, hoy.** Repasados uno a uno, los siete son jerarquías o linajes y en los siete un ciclo
+es un sinsentido: un proceso no desciende de sí mismo, una versión no sucede a sí misma, una corrida
+no sale de sí misma, un mensaje no responde a uno que le responde. **Y lo medido lo confirma**: cero
+ciclos y cero autoapuntados en los siete.
+
+Lo único que se le parece es **hipotético y está en `unit_relations`**, que lleva varios grafos sobre
+las mismas filas discriminados por `relation_type_id`. Un tipo de relación **no jerárquico** —una
+«colabora con», simétrica— produciría `A→B` y `B→A`, que en una tabla de aristas **es** un ciclo de
+longitud 2 y sería correcto. Medido hoy: existe **un** tipo, `org` («Relación jerárquica
+organizacional»), con sus **12 aristas**. Así que no hay ningún ciclo legítimo hoy — pero la
+protección de ese grafo tiene que ir **acotada por `relation_type_id`**, como ya va su guardia
+actual, para que añadir un tipo simétrico mañana no obligue a deshacerla.
+
+### Y entonces la medición que de verdad reparte el trabajo: ¿quién MODIFICA la arista?
+
+⚠️ **Esto corrige lo que este documento proponía antes.** La idea de «protección completa en los dos
+que edita un humano y `CHECK` de autoapuntado en los otros cinco» era un argumento de **coste**, y
+dicha así significaba dejar pasar los ciclos de longitud ≥2 en cinco grafos. Eso no se sostiene, y la
+medición que lo deshace es otra: no *quién escribe* la columna, sino **quién la modifica**.
+
+Censado sobre los mismos 251 ficheros, separando el `INSERT` del `UPDATE` —y descartando los `UPDATE`
+que sólo la nombran en el `WHERE`, que no la modifican—:
+
+| Grafo · columna | `INSERT` | `UPDATE` que la modifica | Quién |
+|---|--:|--:|---|
+| `processes.parent_id` | 2 | **1** | `processGraph.js` (`setProcessParent`) |
+| `ediciones.parent_version_id` | 1 | **0** | — |
+| `process_runs.source_run_id` | 2 | **0** | — |
+| `task_items.source_task_item_id` | 1 | **0** | — |
+| `chat_messages.reply_to_message_id` | 0 | **0** | — |
+| `lineas.linea_anterior_id` | 0 | **0** | — |
+| `unit_relations.parent_unit_id` | 2 | **0** | — |
+
+**Seis de los siete no los modifica NADIE en toda la aplicación.** Y eso vale una protección distinta,
+porque **un ciclo necesita que una arista existente cambie de destino**:
+
+> Al insertar **una fila con su arista**, el `id` es nuevo y no puede estar en ninguna cadena previa,
+> así que la arista va **de un nodo nuevo hacia el grafo que ya estaba**. Si ese grafo era acíclico,
+> sigue siéndolo. Por inducción: **si la columna no se modifica nunca, no puede haber ciclo.**
+
+O sea que para esas columnas **la inmutabilidad basta, y prohíbe el ciclo por completo** —no sólo el
+de longitud 1, como haría el `CHECK`— a coste **O(1)**: ni recorrido, ni bloqueo, ni ~40 líneas de
+plpgsql por tabla. Y el camino que hoy permite modificarlas no es ninguna regla de negocio: es el
+editor genérico de `/admin`, que las expone en **cinco** de los siete.
+
+⚠️ **Y la excepción que rompe la inducción, que es el hallazgo:** en una **tabla de aristas** el
+razonamiento no vale. `insertarRelacion` inserta `(parent_unit_id, child_unit_id)` entre **dos
+unidades que ya existen**, así que **una arista nueva puede cerrar un ciclo sin que nadie modifique
+nada**. Por eso su guardia corre *antes de insertar* y no al modificar — y por eso `unit_relations`
+necesita la comprobación completa aunque su columna sea inmutable. (Medido además: **cero**
+`DELETE FROM unit_relations` en el backend, así que reubicar una unidad hoy no pasa por el código.)
+
+**El reparto que sale de medir, y no de estimar:**
+
+| Protección que hace falta | Grafos | Por qué |
+|---|---|---|
+| **Recursiva, con bloqueo de la cadena** | `processes.parent_id` · `unit_relations` | el primero porque la aplicación lo reempareja a propósito; el segundo porque una arista nueva entre dos nodos existentes basta para cerrar el ciclo |
+| **Inmutabilidad** (rechazar que cambie una vez puesta) | `ediciones` · `process_runs` · `task_items` | nadie los modifica, y el hijo siempre es nuevo al insertar |
+| **Inmutabilidad**, y además salir de `/admin` | `lineas` · y revisar `chat_messages` | `lineas` es el caso extremo: **cero** vías en el código y editable en `/admin`, o sea que su única vía de escritura es la que no debería existir |
+
+**Ninguno de los siete queda permitiendo ciclos.** Lo que cambia es que cinco se cierran por O(1) y
+dos necesitan el mecanismo caro, en vez de los siete.
+
 ### Lo que las mediciones implican (y que la decisión tendrá que resolver)
 
 1. **Lo que se elija tiene que vivir en la base**, porque el camino que hay que cubrir —el editor
    genérico— no tiene servicio propio. Las opciones A, B, B′, C y D cumplen; la E, no.
-2. **Y tiene que bloquear la cadena que lee**, o cae con dos escrituras a la vez. Medido: B entra en
-   ciclo, B′ no.
-3. **`CYCLE` va igual**, se elija lo que se elija: es lo que separa «error legible» de «petición
-   colgada», y son cuatro recorridos.
-4. **Son siete tablas, no una.** B, C y D se escriben **por tabla** (~40 líneas de plpgsql cada una),
-   así que el coste se multiplica por siete y conviene preguntarse si el mecanismo se puede
-   **generar** una vez y aplicar siete, en vez de copiarse siete veces — que es exactamente la forma
-   del problema que este repositorio ya se ha encontrado tres veces.
-5. **El `CHECK` de autoapuntado es gratis y entra hoy sin migrar nada.** No resuelve el frente, pero
-   no compite con ninguna de las otras: cierra el caso de longitud 1 mientras se decide el resto.
+2. **Y donde haga falta recorrer, tiene que bloquear la cadena**, o cae con dos escrituras a la vez.
+   Medido: B entra en ciclo, B′ no.
+3. **Pero sólo DOS grafos necesitan recorrer.** Los otros cinco se cierran con **inmutabilidad**, a
+   O(1), porque nadie los modifica y el hijo siempre es nuevo al insertar. Eso reduce las ~40 líneas
+   de plpgsql «por tabla» de siete tablas a dos.
+4. **`CYCLE` va igual**, se elija lo que se elija: es lo que separa «error legible» de «petición
+   colgada», y son cuatro recorridos, uno de ellos una **vista**.
+5. **El `CHECK` de autoapuntado es gratis y entra hoy sin migrar nada** — pero **no es un sustituto
+   de nada**: deja pasar el ciclo de longitud 2. Vale como suelo mientras se implementa el resto, no
+   como protección de ningún grafo.
+6. **Y una pregunta que la medición pone encima de la mesa sin responderla**: cinco de los siete
+   están expuestos en `sqlTables.js` como un número libre, y a cinco de los siete **no los modifica
+   nadie en la aplicación**. Proteger una columna que ningún código modifica y que sólo el editor
+   genérico puede tocar es, en parte, proteger de una capacidad que quizá no debería existir. Si esos
+   linajes no se editan a mano nunca, **retirarlos del catálogo** es más barato que protegerlos — y
+   es una decisión de propiedad del dato, no de integridad.
 
 ### El SQL del laboratorio, para poder repetirlo
 
