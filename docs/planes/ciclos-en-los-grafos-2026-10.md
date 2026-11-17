@@ -355,10 +355,26 @@ que sólo la nombran en el `WHERE`, que no la modifican—:
 | `task_items.source_task_item_id` | 1 | **0** | — |
 | `chat_messages.reply_to_message_id` | 0 | **0** | — |
 | `lineas.linea_anterior_id` | 0 | **0** | — |
-| `unit_relations.parent_unit_id` | 2 | **0** | — |
+| `unit_relations.parent_unit_id` | 2 | **0** literal · **1** por `/admin` | el editor genérico, con un `beforeUpdate` propio |
 
-**Seis de los siete no los modifica NADIE en toda la aplicación.** Y eso vale una protección distinta,
-porque **un ciclo necesita que una arista existente cambie de destino**:
+⚠️ **Corregido el 2026-11-17: aquí ponía «seis de los siete no los modifica NADIE en toda la
+aplicación», y es falso para `unit_relations`.** El censo buscaba el `UPDATE` **literal**, y el
+editor genérico lo **construye** (`SqlAdminService`), así que no lo vio — el mismo punto ciego que
+`CLAUDE.md` ya nombra para la comprobación C del mapa. Y no es un camino accidental:
+`services/admin/crud/tableHooks.js` tiene un `beforeUpdate` de `unit_relations` **escrito a
+propósito para reemparejar una relación que ya existe**, que llama a `wouldCreateUnitCycle` antes de
+dejar pasar el cambio. O sea que al organigrama **sí se le cambia el padre desde la aplicación**, y
+con guardia.
+
+Lo que queda en pie, dicho con precisión: **seis de los siete no tienen ningún `UPDATE` literal que
+los modifique**, y de ésos, **cinco los puede modificar igualmente el editor genérico** (la tabla de
+arriba), uno de ellos —`unit_relations`— con un gancho propio. Así que la inmutabilidad de los cinco
+linajes **no es un hecho que se observe: es una regla que hay que IMPONER**, en la base. El
+razonamiento que sigue no cambia —dice qué pasa *si* la columna no se modifica—, pero deja de ser
+una descripción de lo que hay.
+
+Y eso vale una protección distinta, porque **un ciclo necesita que una arista existente cambie de
+destino**:
 
 > Al insertar **una fila con su arista**, el `id` es nuevo y no puede estar en ninguna cadena previa,
 > así que la arista va **de un nodo nuevo hacia el grafo que ya estaba**. Si ese grafo era acíclico,
@@ -373,19 +389,29 @@ editor genérico de `/admin`, que las expone en **cinco** de los siete.
 razonamiento no vale. `insertarRelacion` inserta `(parent_unit_id, child_unit_id)` entre **dos
 unidades que ya existen**, así que **una arista nueva puede cerrar un ciclo sin que nadie modifique
 nada**. Por eso su guardia corre *antes de insertar* y no al modificar — y por eso `unit_relations`
-necesita la comprobación completa aunque su columna sea inmutable. (Medido además: **cero**
-`DELETE FROM unit_relations` en el backend, así que reubicar una unidad hoy no pasa por el código.)
+necesita la comprobación completa aunque su columna fuese inmutable — que hoy **no lo es**: ver la
+corrección de arriba. (Medido además: **cero** `DELETE FROM unit_relations` en el código dedicado;
+reubicar una unidad pasa hoy por el editor genérico, que la reempareja con un `UPDATE` y **no deja
+rastro del padre anterior** más que el `updated_at`. Esa falta de memoria es el frente **F27**.)
 
 **El reparto que sale de medir, y no de estimar:**
 
 | Protección que hace falta | Grafos | Por qué |
 |---|---|---|
-| **Recursiva, con bloqueo de la cadena** | `processes.parent_id` · `unit_relations` | el primero porque la aplicación lo reempareja a propósito; el segundo porque una arista nueva entre dos nodos existentes basta para cerrar el ciclo |
-| **Inmutabilidad** (rechazar que cambie una vez puesta) | `ediciones` · `process_runs` · `task_items` | nadie los modifica, y el hijo siempre es nuevo al insertar |
+| **Recursiva, con bloqueo de la cadena** | `processes.parent_id` · `unit_relations` | los dos porque la aplicación los reempareja a propósito; y el segundo, además, porque una arista nueva entre dos nodos existentes basta para cerrar el ciclo |
+| **Inmutabilidad** (rechazar que cambie una vez puesta) | `ediciones` · `process_runs` · `task_items` | ningún código dedicado los modifica (el editor genérico **sí puede** en los dos últimos), y el hijo siempre es nuevo al insertar |
 | **Inmutabilidad**, y además salir de `/admin` | `lineas` · y revisar `chat_messages` | `lineas` es el caso extremo: **cero** vías en el código y editable en `/admin`, o sea que su única vía de escritura es la que no debería existir |
 
 **Ninguno de los siete queda permitiendo ciclos.** Lo que cambia es que cinco se cierran por O(1) y
 dos necesitan el mecanismo caro, en vez de los siete.
+
+⚠️ **Y el mecanismo de esos dos depende de F27** (abierto el 2026-11-17). Si `unit_relations` pasa a
+guardar su historia con **aristas fechadas** —lo decidido en `F27.P2.T2`—, reemparejar deja de ser
+un `UPDATE` de la arista y pasa a ser *cerrar una fila y abrir otra*: la arista se vuelve inmutable
+y el caso que queda es sólo el de la inserción entre dos nodos existentes, acotado además a las
+filas **vigentes**. Lo mismo para `processes.parent_id` si sale a su propia relación. Por eso
+`F26.P2.T1` espera a `F27.P3.T1`: elegir el disparador antes de saber la forma de la tabla sería
+elegirlo dos veces.
 
 ### Lo que las mediciones implican (y que la decisión tendrá que resolver)
 
