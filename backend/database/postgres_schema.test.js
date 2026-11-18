@@ -383,3 +383,30 @@ test("el puente une VERSION con VERSION, no identidad con identidad", () => {
   assert.ok(!/\blinea_id\b/.test(create), "vinculos no apunta a la linea: une versiones");
   assert.ok(!/\bcatalogo_documental_id\b/.test(create), "vinculos no apunta al formato: une versiones");
 });
+
+// LA LINEA DE UN ENTREGABLE SE SELLA HACIENDO INMUTABLE LA CADENA (frente 27, D-02). Son tres
+// eslabones y los tres llevan su disparador; si falta uno, la cadena vuelve a poder moverse por ahi.
+const ESLABONES_SELLADOS = [
+  ["trg_task_items_tarea_inmutable", "task_id", "task_items"],
+  ["trg_tasks_configuracion_inmutable", "process_definition_id", "tasks"],
+  ["trg_configuracion_linea_inmutable", "linea_id", "process_definition_versions"],
+];
+
+for (const [disparador, columna, tabla] of ESLABONES_SELLADOS) {
+  test(`${tabla}.${columna} no se puede cambiar una vez escrito`, () => {
+    const patron = new RegExp(
+      `CREATE OR REPLACE TRIGGER ${disparador}\\s+BEFORE UPDATE OF ${columna} ON ${tabla}\\s+` +
+        `FOR EACH ROW WHEN \\(OLD\\.${columna} IS DISTINCT FROM NEW\\.${columna}\\)\\s+` +
+        `EXECUTE FUNCTION rechazar_cambio_de_eslabon\\('${columna}'\\);`
+    );
+    assert.match(SIN_COMENTARIOS, patron);
+  });
+}
+
+test("el sello NO alcanza a lineas.process_id: es el eslabon que una reorganizacion mueve", () => {
+  assert.ok(
+    !/BEFORE UPDATE OF process_id ON lineas/.test(SIN_COMENTARIOS),
+    "lineas.process_id tiene que poder cambiar; su memoria es la vigencia (F27.P3.T1), no un rechazo"
+  );
+});
+

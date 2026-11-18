@@ -74,6 +74,37 @@ real:
 > **El disparo no puede crear dos veces el mismo entregable para el mismo puesto, pero una persona sí
 > puede crear tantas réplicas como necesite.**
 
+## De qué línea es un entregable, y por qué no puede cambiar
+
+Un entregable no lleva escrita su línea: llega a ella por tres claves, las tres obligatorias.
+
+```
+task_items.task_id  →  tasks.process_definition_id  →  process_definition_versions.linea_id
+```
+
+Desde el 2026-11-18 **ninguna de las tres se puede cambiar una vez escrita**. Lo impide la base, con
+un disparador por eslabón (`trg_task_items_tarea_inmutable`, `trg_tasks_configuracion_inmutable`,
+`trg_configuracion_linea_inmutable`), así que vale para todos los caminos, incluido el editor
+genérico de `/admin`. El intento contesta *«No se puede cambiar tasks.process_definition_id una vez
+escrito…»*.
+
+Importa porque de esa cadena depende **a qué proceso pertenece cada documento**. Antes, mover una
+configuración de línea reclasificaba de golpe todos los entregables de todas sus tareas, hacia atrás
+y sin dejar rastro. Ningún código de la aplicación lo hacía —el disparo y la tarea suelta sólo
+escriben esas claves al crear—, pero nada lo impedía.
+
+Tres cosas que conviene saber:
+
+- **No se copió la línea al entregable.** Sería el mismo dato dicho dos veces, y el modelo ya retiró
+  una copia así (`process_definition_versions.process_id`, que duplicaba `lineas.process_id`). La
+  línea se sigue leyendo por la cadena; lo que cambió es que la cadena ya no se mueve.
+- **Reescribir el mismo valor sí pasa.** El editor genérico manda la fila entera al guardar, y
+  rechazarle un eslabón que no ha tocado bloquearía cualquier otra edición.
+- **`lineas.process_id` queda fuera, a propósito.** Es el único eslabón que tiene que poder cambiar
+  —una reorganización mueve una línea de un proceso a otro—, y lo que necesita no es un rechazo sino
+  memoria de cuándo cambió. Esa parte está decidida y **sin construir**, igual que el control del
+  borrado.
+
 ## Qué cuelga de aquí
 
 Desde el 2026-08-23 **`document_versions` cuelga directamente de `task_items`**

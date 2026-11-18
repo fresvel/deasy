@@ -2984,6 +2984,55 @@ AFTER INSERT ON task_items
 FOR EACH ROW EXECUTE FUNCTION trg_task_items_after_insert_fn();
 
 
+-- LA LINEA DE UN ENTREGABLE QUEDA SELLADA, Y SE SELLA HACIENDO INMUTABLE LA CADENA (frente 27,
+-- decision D-02 del 2026-11-18).
+--
+-- Un entregable llega a su linea por tres eslabones, los tres obligatorios:
+--
+--     task_items.task_id -> tasks.process_definition_id -> process_definition_versions.linea_id
+--
+-- y hasta hoy los tres se podian cambiar una vez escritos. Ningun codigo de la aplicacion lo hace
+-- --el lanzamiento y la tarea suelta solo los escriben al crear--, pero el editor generico de /admin
+-- si puede, y cambiar uno RECLASIFICA documentos hacia atras y sin rastro: mover una configuracion de
+-- linea se lleva de golpe todos los entregables de todas sus tareas.
+--
+-- No se copia la linea al entregable. Seria el mismo dato dicho dos veces, y este esquema ya retiro
+-- una copia asi: `process_definition_versions.process_id`, que duplicaba `lineas.process_id` (frente
+-- 25, P22). Con la cadena inmutable la linea se sigue leyendo por sus tres claves y no puede moverse.
+--
+-- El `WHEN` deja pasar el UPDATE que reescribe el MISMO valor: el editor generico manda la fila
+-- entera al guardar, y rechazarle un eslabon que no ha tocado seria castigar cualquier otra edicion.
+--
+-- Lo que este sello NO cubre, a proposito: `lineas.process_id`. Es el unico eslabon que tiene que
+-- poder cambiar --una reorganizacion mueve una linea de proceso-- y por eso es donde ira la
+-- vigencia (F27.P3.T1). Tampoco cubre el BORRADO, que es F27.P3.T4.
+CREATE OR REPLACE FUNCTION public.rechazar_cambio_de_eslabon() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RAISE EXCEPTION 'No se puede cambiar %.% una vez escrito: es un eslabon de la cadena que fija la linea de un entregable.',
+    TG_TABLE_NAME, TG_ARGV[0]
+    USING ERRCODE = 'restrict_violation';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_task_items_tarea_inmutable
+BEFORE UPDATE OF task_id ON task_items
+FOR EACH ROW WHEN (OLD.task_id IS DISTINCT FROM NEW.task_id)
+EXECUTE FUNCTION rechazar_cambio_de_eslabon('task_id');
+
+CREATE OR REPLACE TRIGGER trg_tasks_configuracion_inmutable
+BEFORE UPDATE OF process_definition_id ON tasks
+FOR EACH ROW WHEN (OLD.process_definition_id IS DISTINCT FROM NEW.process_definition_id)
+EXECUTE FUNCTION rechazar_cambio_de_eslabon('process_definition_id');
+
+CREATE OR REPLACE TRIGGER trg_configuracion_linea_inmutable
+BEFORE UPDATE OF linea_id ON process_definition_versions
+FOR EACH ROW WHEN (OLD.linea_id IS DISTINCT FROM NEW.linea_id)
+EXECUTE FUNCTION rechazar_cambio_de_eslabon('linea_id');
+
+
 -- Y `task_items.assigned_person_id` pasa a ser una CACHE DE UN SOLO ESCRITOR: este trigger.
 --
 -- No se retira la columna porque tiene 21 referencias en 7 ficheros y esta en los dos caminos
