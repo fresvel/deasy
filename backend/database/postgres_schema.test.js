@@ -384,12 +384,17 @@ test("el puente une VERSION con VERSION, no identidad con identidad", () => {
   assert.ok(!/\bcatalogo_documental_id\b/.test(create), "vinculos no apunta al formato: une versiones");
 });
 
-// LA LINEA DE UN ENTREGABLE SE SELLA HACIENDO INMUTABLE LA CADENA (frente 27, D-02). Son tres
-// eslabones y los tres llevan su disparador; si falta uno, la cadena vuelve a poder moverse por ahi.
+// LA LINEA DE UN ENTREGABLE SE SELLA HACIENDO INMUTABLE LA CADENA (frente 27, D-02). Son cuatro
+// eslabones y los cuatro llevan su disparador; si falta uno, la cadena vuelve a poder moverse por ahi.
+//
+// Eran tres, y un cuarto test afirmaba que `lineas.process_id` TENIA que poder cambiar. Estaba mal:
+// la linea ya tiene vigencia y sucesion propias y el proceso es parte de su identidad, asi que una
+// linea que pasa a otro proceso es una linea nueva. Aquel test protegia el error.
 const ESLABONES_SELLADOS = [
   ["trg_task_items_tarea_inmutable", "task_id", "task_items"],
   ["trg_tasks_configuracion_inmutable", "process_definition_id", "tasks"],
   ["trg_configuracion_linea_inmutable", "linea_id", "process_definition_versions"],
+  ["trg_lineas_proceso_inmutable", "process_id", "lineas"],
 ];
 
 for (const [disparador, columna, tabla] of ESLABONES_SELLADOS) {
@@ -403,10 +408,10 @@ for (const [disparador, columna, tabla] of ESLABONES_SELLADOS) {
   });
 }
 
-test("el sello NO alcanza a lineas.process_id: es el eslabon que una reorganizacion mueve", () => {
-  assert.ok(
-    !/BEFORE UPDATE OF process_id ON lineas/.test(SIN_COMENTARIOS),
-    "lineas.process_id tiene que poder cambiar; su memoria es la vigencia (F27.P3.T1), no un rechazo"
-  );
+test("la linea conserva lo que hace innecesario mudarla: vigencia propia y sucesion", () => {
+  const create = bloqueRecorrido("lineas");
+  for (const columna of ["effective_from", "effective_to", "linea_anterior_id"]) {
+    assert.match(create, new RegExp(`\\b${columna}\\b`), `lineas pierde ${columna}`);
+  }
 });
 

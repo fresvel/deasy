@@ -2987,11 +2987,12 @@ FOR EACH ROW EXECUTE FUNCTION trg_task_items_after_insert_fn();
 -- LA LINEA DE UN ENTREGABLE QUEDA SELLADA, Y SE SELLA HACIENDO INMUTABLE LA CADENA (frente 27,
 -- decision D-02 del 2026-11-18).
 --
--- Un entregable llega a su linea por tres eslabones, los tres obligatorios:
+-- Un entregable llega a su PROCESO por cuatro eslabones, los cuatro obligatorios:
 --
 --     task_items.task_id -> tasks.process_definition_id -> process_definition_versions.linea_id
+--                        -> lineas.process_id
 --
--- y hasta hoy los tres se podian cambiar una vez escritos. Ningun codigo de la aplicacion lo hace
+-- y hasta hoy los cuatro se podian cambiar una vez escritos. Ningun codigo de la aplicacion lo hace
 -- --el lanzamiento y la tarea suelta solo los escriben al crear--, pero el editor generico de /admin
 -- si puede, y cambiar uno RECLASIFICA documentos hacia atras y sin rastro: mover una configuracion de
 -- linea se lleva de golpe todos los entregables de todas sus tareas.
@@ -3003,15 +3004,21 @@ FOR EACH ROW EXECUTE FUNCTION trg_task_items_after_insert_fn();
 -- El `WHEN` deja pasar el UPDATE que reescribe el MISMO valor: el editor generico manda la fila
 -- entera al guardar, y rechazarle un eslabon que no ha tocado seria castigar cualquier otra edicion.
 --
--- Lo que este sello NO cubre, a proposito: `lineas.process_id`. Es el unico eslabon que tiene que
--- poder cambiar --una reorganizacion mueve una linea de proceso-- y por eso es donde ira la
--- vigencia (F27.P3.T1). Tampoco cubre el BORRADO, que es F27.P3.T4.
+-- EL CUARTO ESLABON, `lineas.process_id`, ENTRO DESPUES Y CORRIGIENDO ESTE MISMO COMENTARIO. Aqui
+-- ponia que era «el unico eslabon que tiene que poder cambiar» y que ahi iria la vigencia. Era
+-- falso, y bastaba mirar la tabla: la linea YA tiene vigencia propia (effective_from, effective_to)
+-- y sucesion (linea_anterior_id), y el proceso es parte de su IDENTIDAD --sus dos indices unicos
+-- empiezan por process_id--. Una linea que pasa a otro proceso es una linea NUEVA que sucede a la
+-- anterior. Lo que una reorganizacion mueve es el PROCESO dentro de su arbol, y esa es la arista que
+-- llevara fechas (F27.P3.T1).
+--
+-- Lo que este sello NO cubre: el BORRADO, que es la decision D-03.
 CREATE OR REPLACE FUNCTION public.rechazar_cambio_de_eslabon() RETURNS trigger
   -- Un disparador no puede depender del search_path de quien lo dispara.
   SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
 AS $$
 BEGIN
-  RAISE EXCEPTION 'No se puede cambiar %.% una vez escrito: es un eslabon de la cadena que fija la linea de un entregable.',
+  RAISE EXCEPTION 'No se puede cambiar %.% una vez escrito: es un eslabon de la cadena que fija la linea y el proceso de un entregable.',
     TG_TABLE_NAME, TG_ARGV[0]
     USING ERRCODE = 'restrict_violation';
 END;
@@ -3031,6 +3038,11 @@ CREATE OR REPLACE TRIGGER trg_configuracion_linea_inmutable
 BEFORE UPDATE OF linea_id ON process_definition_versions
 FOR EACH ROW WHEN (OLD.linea_id IS DISTINCT FROM NEW.linea_id)
 EXECUTE FUNCTION rechazar_cambio_de_eslabon('linea_id');
+
+CREATE OR REPLACE TRIGGER trg_lineas_proceso_inmutable
+BEFORE UPDATE OF process_id ON lineas
+FOR EACH ROW WHEN (OLD.process_id IS DISTINCT FROM NEW.process_id)
+EXECUTE FUNCTION rechazar_cambio_de_eslabon('process_id');
 
 
 -- Y `task_items.assigned_person_id` pasa a ser una CACHE DE UN SOLO ESCRITOR: este trigger.

@@ -74,18 +74,21 @@ real:
 > **El disparo no puede crear dos veces el mismo entregable para el mismo puesto, pero una persona sí
 > puede crear tantas réplicas como necesite.**
 
-## De qué línea es un entregable, y por qué no puede cambiar
+## De qué línea y de qué proceso es un entregable, y por qué no puede cambiar
 
-Un entregable no lleva escrita su línea: llega a ella por tres claves, las tres obligatorias.
+Un entregable no lleva escritos su línea ni su proceso: llega a ellos por cuatro claves, las cuatro
+obligatorias.
 
 ```
 task_items.task_id  →  tasks.process_definition_id  →  process_definition_versions.linea_id
+                    →  lineas.process_id
 ```
 
-Desde el 2026-11-18 **ninguna de las tres se puede cambiar una vez escrita**. Lo impide la base, con
-un disparador por eslabón (`trg_task_items_tarea_inmutable`, `trg_tasks_configuracion_inmutable`,
-`trg_configuracion_linea_inmutable`), así que vale para todos los caminos, incluido el editor
-genérico de `/admin`. El intento contesta *«No se puede cambiar tasks.process_definition_id una vez
+Desde el 2026-11-18 **ninguna de las cuatro se puede cambiar una vez escrita**. Lo impide la base,
+con un disparador por eslabón (`trg_task_items_tarea_inmutable`,
+`trg_tasks_configuracion_inmutable`, `trg_configuracion_linea_inmutable`,
+`trg_lineas_proceso_inmutable`), así que vale para todos los caminos, incluido el editor genérico de
+`/admin`. El intento contesta *«No se puede cambiar tasks.process_definition_id una vez
 escrito…»*.
 
 Importa porque de esa cadena depende **a qué proceso pertenece cada documento**. Antes, mover una
@@ -100,10 +103,18 @@ Tres cosas que conviene saber:
   línea se sigue leyendo por la cadena; lo que cambió es que la cadena ya no se mueve.
 - **Reescribir el mismo valor sí pasa.** El editor genérico manda la fila entera al guardar, y
   rechazarle un eslabón que no ha tocado bloquearía cualquier otra edición.
-- **`lineas.process_id` queda fuera, a propósito.** Es el único eslabón que tiene que poder cambiar
-  —una reorganización mueve una línea de un proceso a otro—, y lo que necesita no es un rechazo sino
-  memoria de cuándo cambió. Esa parte está decidida y **sin construir**, igual que el control del
-  borrado.
+- **Una línea no se muda de proceso: la sucede otra.** La línea ya tiene vigencia propia
+  (`effective_from`, `effective_to`) y sucesión (`linea_anterior_id`), y el proceso es parte de su
+  identidad —sus dos índices únicos empiezan por `process_id`—. Si pasa a otro proceso es una línea
+  nueva que apunta a la anterior, y los documentos de la antigua siguen siendo de la antigua.
+- **Lo que una reorganización mueve es el proceso dentro de su árbol**, no la línea. Que ese
+  movimiento guarde su historia está decidido y **sin construir**, igual que el control del borrado.
+
+:::caution[Esta sección decía lo contrario durante unas horas]
+La primera versión afirmaba que `lineas.process_id` era «el único eslabón que tiene que poder
+cambiar». Era falso, y se corrigió el mismo 2026-11-18 al mirar la tabla de líneas: la vigencia y la
+sucesión que hacían innecesario mudarla ya estaban ahí.
+:::
 
 ## Qué cuelga de aquí
 
