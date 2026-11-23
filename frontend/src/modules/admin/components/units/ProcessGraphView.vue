@@ -458,25 +458,30 @@ const showConfigs = ref(false);
 const showTemplates = ref(false);
 const loading = ref(false);
 const error = ref("");
-const showInactive = ref(true);
-// QUÉ SE MUESTRA, como una lista de casillas. Son tres interruptores independientes; el control
-// segmentado que había los hacía parecer una elección excluyente.
+// QUÉ SE MUESTRA, como una lista de casillas: tres estados del proceso —activos, borradores y
+// suprimidos— y las dos capas que cuelgan de él. Son interruptores independientes; el control
+// segmentado que había los hacía parecer una elección excluyente, y sólo sabía ocultar los
+// suprimidos. Un proceso PROGRAMADO no tiene casilla: se ve siempre.
+const ESTADOS_CON_CASILLA = ["vigente", "borrador", "suprimido"];
+const estadosVisibles = ref(new Set(ESTADOS_CON_CASILLA));
 const OPCIONES_DE_VISTA = [
-  { value: "suprimidos", label: "Procesos suprimidos" },
+  { value: "vigente", label: "Procesos activos" },
+  { value: "borrador", label: "Borradores" },
+  { value: "suprimido", label: "Procesos suprimidos" },
   { value: "configuraciones", label: "Configuraciones" },
   { value: "entregables", label: "Entregables" }
 ];
 const vistaActiva = computed({
   get: () => [
-    showInactive.value && "suprimidos",
+    ...ESTADOS_CON_CASILLA.filter((estado) => estadosVisibles.value.has(estado)),
     showConfigs.value && "configuraciones",
     showTemplates.value && "entregables"
   ].filter(Boolean),
-  // Cada casilla dispara la MISMA función que disparaba su botón: mostrar entregables arrastra las
-  // configuraciones, y eso lo saben `toggleConfigsView` y `toggleTemplatesView`, no este setter.
+  // Las dos capas disparan la MISMA función que disparaba su botón: mostrar entregables arrastra
+  // las configuraciones, y eso lo saben `toggleConfigsView` y `toggleTemplatesView`, no este setter.
   set: (marcados) => {
     const quiere = new Set(marcados);
-    if (quiere.has("suprimidos") !== showInactive.value) showInactive.value = !showInactive.value;
+    estadosVisibles.value = new Set(ESTADOS_CON_CASILLA.filter((estado) => quiere.has(estado)));
     if (quiere.has("configuraciones") !== showConfigs.value) toggleConfigsView();
     if (quiere.has("entregables") !== showTemplates.value) toggleTemplatesView();
   }
@@ -661,7 +666,7 @@ const layout = (rawNodes, rawEdges) => {
 const buildGraph = () => {
   const hidden = hiddenByCollapse.value;
   const apiNodes = (rawGraph.value.nodes || []).filter(
-    (p) => (showInactive.value || p.estado !== "suprimido") && !hidden.has(String(p.id))
+    (p) => (!ESTADOS_CON_CASILLA.includes(p.estado) || estadosVisibles.value.has(p.estado)) && !hidden.has(String(p.id))
   );
   const visibleIds = new Set(apiNodes.map((p) => String(p.id)));
   const rawNodes = apiNodes.map((p) => ({
@@ -1251,7 +1256,7 @@ const exportPng = async () => {
   }
 };
 
-watch(showInactive, buildGraph);
+watch(estadosVisibles, buildGraph);
 onMounted(loadGraph);
 
 defineExpose({
