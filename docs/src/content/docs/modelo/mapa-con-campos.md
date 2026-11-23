@@ -513,7 +513,7 @@ erDiagram
   document_versions ||--o{ recorridos : "document_version_id"
   participantes_declarados ||--o{ turnos : "participante_id"
   persons |o--o{ turnos : "persona_id"
-  recorridos |o--o{ turnos : "accion, recorrido_id"
+  recorridos |o--o{ turnos : "recorrido_id, accion"
 ```
 
 <details>

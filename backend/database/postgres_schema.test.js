@@ -415,3 +415,20 @@ test("la linea conserva lo que hace innecesario mudarla: vigencia propia y suces
   }
 });
 
+// EL BORRADO NO ARRASTRA DOCUMENTOS (frente 27, D-03). Las dos claves que lo propagaban lo frenan, y
+// la tercera se queda en cascada a proposito: sin ella un entregable no se podria borrar nunca.
+test("borrar una tarea no se lleva sus entregables, ni un entregable sus documentos", () => {
+  assert.match(SIN_COMENTARIOS, /fk_task_items_task FOREIGN KEY \(task_id\) REFERENCES tasks\(id\) ON DELETE RESTRICT/);
+  assert.match(
+    SIN_COMENTARIOS,
+    /fk_document_versions_task_item FOREIGN KEY \(task_item_id\) REFERENCES task_items\(id\) ON DELETE RESTRICT/
+  );
+});
+
+test("los turnos SI caen con su entregable: el primero lo crea un disparador al insertar", () => {
+  assert.match(
+    SIN_COMENTARIOS,
+    /fk_task_item_tenures_item FOREIGN KEY \(task_item_id\) REFERENCES task_items\(id\) ON DELETE CASCADE/
+  );
+});
+

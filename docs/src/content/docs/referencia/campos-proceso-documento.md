@@ -314,7 +314,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `task_id` | int | sí | `tasks.id` · se va con el | — |
+| `task_id` | int | sí | `tasks.id` · impide borrar | — |
 | `vinculo_id` | int | sí | `vinculos.id` · impide borrar | — |
 | `origin_kind` | text | sí | — | `process_defined` · `user_added` |
 | `title` | varchar(180) | no | — | — |
@@ -357,7 +357,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `task_item_id` | int | sí | `task_items.id` · se va con el | — |
+| `task_item_id` | int | sí | `task_items.id` · impide borrar | — |
 | `version` | int | sí | — | — |
 | `version_minor` | int | sí | — | — |
 | `version_label` | text | no | — | — |

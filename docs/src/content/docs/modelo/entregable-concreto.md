@@ -119,7 +119,7 @@ sucesión que hacían innecesario mudarla ya estaban ahí.
 ## Qué cuelga de aquí
 
 Desde el 2026-08-23 **`document_versions` cuelga directamente de `task_items`**
-(`document_versions.task_item_id`, con `ON DELETE CASCADE`). En medio había una tabla `documents`, en
+(`document_versions.task_item_id`). En medio había una tabla `documents`, en
 relación 1:1 estricta con el entregable —un solo `INSERT` en todo el backend y siempre con
 `task_item_id`— y **sin una sola columna propia**: `owner_person_id` era copia del responsable,
 `title` se escribía y nadie la leía, `comments_thread_ref` era un fósil, `status` era derivada, y
@@ -127,6 +127,23 @@ relación 1:1 estricta con el entregable —un solo `INSERT` en todo el backend 
 
 También cuelgan de aquí las tenencias (`task_item_tenures`, `ON DELETE CASCADE`), que son la página
 siguiente.
+
+### Borrar no arrastra documentos
+
+Desde el 2026-11-23 **la base se niega a borrar una tarea que tenga entregables y un entregable que
+tenga documento** (`ON DELETE RESTRICT` en `task_items.task_id` y en
+`document_versions.task_item_id`). Antes las dos claves propagaban el borrado, así que eliminar una
+tarea se llevaba sus entregables y, con ellos, cada versión de cada documento.
+
+Ningún camino de la aplicación borra tareas, entregables ni versiones; quien lo hace es el harness
+de pruebas, y ya lo hacía de abajo arriba. Lo que **sí** sigue cayendo con el entregable son sus
+tenencias —la primera la crea un disparador al insertar, y sin esa cascada ningún entregable se
+podría borrar— y su receta de runtime.
+
+Una versión, a su vez, sólo se puede borrar mientras no ha recorrido nada: sus recorridos, sus firmas
+y sus observaciones la retienen. Sus archivos subidos y sus anexos sí caen con ella, **y ojo: sólo
+las filas** — los ficheros de MinIO quedan sin dueño, porque una cascada de la base no toca un
+bucket.
 
 :::note[Qué edición de plantilla se usa: aquí no se guarda]
 

@@ -119,7 +119,7 @@ subdominio**. Cada corte convierte una transacción ACID en una saga, sin trazas
 | **Serverless** | evitar | Firmar con pyHanko y compilar LaTeX son cargas largas con estado en disco: lo contrario de una función efímera |
 | **CQRS / Event Sourcing** | evitar | Resuelven asimetría lectura/escritura a gran escala y auditoría total. No hay ni una cosa ni la otra |
 | **Hexagonal / Clean / Onion** | ya la tienes | La inyección existe (`constructor(pool = getPostgresPool())`). **Sin TypeScript, un «puerto» es un comentario**: adoptarlas es reetiquetar carpetas |
-| **DDD táctico** | a medias | Lo valioso ya está: el lenguaje ubicuo (el glosario del entregable) y los **diez agregados que la base dibuja** con sus `ON DELETE CASCADE` |
+| **DDD táctico** | a medias | Lo valioso ya está: el lenguaje ubicuo (el glosario del entregable) y los **agregados que la base dibuja** con sus `ON DELETE CASCADE` —siete raíces de cascada, medido el 2026-11-23; la tarea dejó de ser una de ellas cuando su borrado dejó de arrastrar entregables y documentos— |
 
 «No a los microservicios» no es una regla, es el resultado de un criterio: **un componente se gana
 estar fuera cuando tiene *runtime* ajeno, ejecuta código externo, o carga la CPU de forma que

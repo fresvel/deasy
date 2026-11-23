@@ -249,7 +249,7 @@ Ref "fk_document_attachments_version":"document_versions"."id" <? "document_atta
 Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
 Ref "fk_document_signatures_turno":"turnos"."id" ?<? "document_signatures"."turno_id"
 Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_version_uploads"."document_version_id" [delete: cascade]
-Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: cascade]
+Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: restrict]
 Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
 Ref "fk_document_workflow_observations_turno":"turnos"."id" ?<? "document_workflow_observations"."turno_id"
 Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
@@ -257,9 +257,9 @@ Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_
 Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"
 Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
 Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
-Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
+Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: restrict]
 Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
-Ref "fk_turnos_recorrido":"recorridos".("accion", "id") <? "turnos".("accion", "recorrido_id") [delete: cascade]
+Ref "fk_turnos_recorrido":"recorridos".("id", "accion") <? "turnos".("recorrido_id", "accion") [delete: cascade]
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> document_attachments   [identidad]

@@ -2070,7 +2070,10 @@ CREATE TABLE IF NOT EXISTS tareas.task_items (
   -- de los cuales es 'pendiente', asi que el filtro del relevo NO EXCLUIA NADA y todo entregable
   -- era reasignable para siempre, firmado incluido. Lo pendiente se lee ahora del DOCUMENTO.
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_task_items_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE CASCADE,
+  -- SIN CASCADA (frente 27, D-03): borrar una tarea se llevaba sus entregables, y con ellos sus
+  -- documentos. Ningun camino de la aplicacion contaba con ello; quien necesita borrar --el harness
+  -- de pruebas-- ya lo hace de abajo arriba. Ahora la base lo exige.
+  CONSTRAINT fk_task_items_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE RESTRICT,
   CONSTRAINT fk_task_items_vinculo FOREIGN KEY (vinculo_id) REFERENCES vinculos(id),
   CONSTRAINT fk_task_items_created_by FOREIGN KEY (created_by_person_id) REFERENCES persons(id),
   CONSTRAINT fk_task_items_source FOREIGN KEY (source_task_item_id) REFERENCES task_items(id),
@@ -2260,7 +2263,10 @@ CREATE TABLE IF NOT EXISTS tareas.document_versions (
   render_engine VARCHAR(80) NULL,
   status VARCHAR(30) NOT NULL DEFAULT 'Borrador',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_document_versions_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id) ON DELETE CASCADE,
+  -- SIN CASCADA (frente 27, D-03): un entregable con documento no se borra. Lo que SI sigue cayendo
+  -- con el entregable son sus turnos (`task_item_tenures`, porque el primero lo crea un disparador al
+  -- insertar y sin esa cascada ninguno se podria borrar) y su receta de runtime (`pasos_declarados`).
+  CONSTRAINT fk_document_versions_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id) ON DELETE RESTRICT,
   CONSTRAINT fk_document_versions_artifact FOREIGN KEY (edicion_id) REFERENCES ediciones(id)
 );
 CREATE UNIQUE INDEX IF NOT EXISTS uq_document_versions ON document_versions (task_item_id, version);

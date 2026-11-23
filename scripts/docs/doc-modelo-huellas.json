@@ -312,7 +312,7 @@
     ]
   },
   "document_versions": {
-    "huella": "0bd3b72714d9fe0b",
+    "huella": "b7dd0f2713169479",
     "paginas": [
       "complemento/credenciales.md",
       "datos/firmas-y-dominios.md",
@@ -497,6 +497,7 @@
     "paginas": [
       "datos/index.md",
       "datos/motor-de-procesos.md",
+      "modelo/entregable-concreto.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/proceso.md",
@@ -705,6 +706,7 @@
       "datos/index.md",
       "datos/motor-de-procesos.md",
       "modelo/disparo.md",
+      "modelo/entregable-concreto.md",
       "modelo/entregable-y-ediciones.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
@@ -770,6 +772,7 @@
       "datos/firmas-y-dominios.md",
       "datos/index.md",
       "datos/motor-de-procesos.md",
+      "modelo/entregable-concreto.md",
       "modelo/flujo-de-entrega.md",
       "modelo/flujo-de-firma.md",
       "modelo/mapa-completo.md",
@@ -900,7 +903,7 @@
     ]
   },
   "task_items": {
-    "huella": "70bcbdd35c6d8801",
+    "huella": "4943c98b22626db7",
     "paginas": [
       "complemento/expediente.md",
       "confusiones.md",

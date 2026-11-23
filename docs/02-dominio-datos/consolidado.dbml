@@ -1429,7 +1429,7 @@ Ref "fk_document_signatures_turno":"turnos"."id" ?<? "document_signatures"."turn
 Ref "fk_document_version_uploads_person":"persons"."id" ?<? "document_version_uploads"."uploaded_by_person_id"
 Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_version_uploads"."document_version_id" [delete: cascade]
 Ref "fk_document_versions_artifact":"ediciones"."id" ?<? "document_versions"."edicion_id"
-Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: cascade]
+Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: restrict]
 Ref "fk_document_workflow_observations_author":"persons"."id" <? "document_workflow_observations"."author_person_id"
 Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
 Ref "fk_document_workflow_observations_resolver":"persons"."id" ?<? "document_workflow_observations"."resolved_by_person_id"
@@ -1500,7 +1500,7 @@ Ref "fk_task_items_origin_unit":"units"."id" ?<? "task_items"."origin_unit_id"
 Ref "fk_task_items_responsible_position":"unit_positions"."id" <? "task_items"."responsible_position_id"
 Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
 Ref "fk_task_items_target_unit":"units"."id" ?<? "task_items"."target_unit_id"
-Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: cascade]
+Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: restrict]
 Ref "fk_task_items_vinculo":"vinculos"."id" <? "task_items"."vinculo_id"
 Ref "fk_tasks_process_definition":"process_definition_versions"."id" <? "tasks"."process_definition_id"
 Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
@@ -1514,7 +1514,7 @@ Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
 Ref "fk_tipos_discapacidad_pais":"paises"."id" <? "tipos_discapacidad"."pais_id"
 Ref "fk_turnos_participante":"participantes_declarados"."id" <? "turnos"."participante_id"
 Ref "fk_turnos_persona":"persons"."id" ?<? "turnos"."persona_id"
-Ref "fk_turnos_recorrido":"recorridos".("accion", "id") <? "turnos".("accion", "recorrido_id") [delete: cascade]
+Ref "fk_turnos_recorrido":"recorridos".("id", "accion") <? "turnos".("recorrido_id", "accion") [delete: cascade]
 Ref "fk_tvk_canal":"canales_mensajeria"."id" ?<? "telefono_verification_keys"."canal_id"
 Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono_id" [delete: cascade]
 Ref "fk_unit_positions_cargo":"cargos"."id" <? "unit_positions"."cargo_id"
