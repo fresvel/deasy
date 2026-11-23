@@ -552,6 +552,7 @@
 
 <script setup>
 import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoAmbito } from "@/shared/utils/estadoTono.js";
