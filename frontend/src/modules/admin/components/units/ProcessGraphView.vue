@@ -23,7 +23,7 @@
       <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
       <div class="flex flex-wrap items-center gap-2">
         <div class="deasy-card inline-flex items-center gap-2 p-0.5">
-          <button type="button" class="graph-toggle" :class="showInactive ? 'graph-toggle--on' : ''" title="Mostrar también procesos inactivos" @click="showInactive = !showInactive">Inactivos</button>
+          <button type="button" class="graph-toggle" :class="showInactive ? 'graph-toggle--on' : ''" title="Mostrar también los procesos suprimidos" @click="showInactive = !showInactive">Suprimidos</button>
           <button type="button" class="graph-toggle" :class="showConfigs ? 'graph-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
           <button type="button" class="graph-toggle" :class="showTemplates ? 'graph-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
         </div>
@@ -137,7 +137,59 @@
             <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
           </select>
         </label>
-        <SToggle v-model="editForm.is_active" label="Activo" label-position="end" />
+        <!-- LA VIGENCIA, en vez del interruptor «Activo» (frente 27, D-03). Sin fecha de inicio el
+             proceso es un borrador; ponerlo en vigor pide la fecha y su origen, y una
+             reorganización pide además el acto que la ordena. Lo impone la base. -->
+        <fieldset class="flex flex-col gap-3 rounded-xl border border-line p-3">
+          <legend class="px-1 text-theme-xs font-semibold text-muted">
+            Vigencia · <AppTag :variant="tonoVigencia(editingProcess.estado)" outlined>{{ etiquetaVigencia(editingProcess.estado) }}</AppTag>
+          </legend>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="deasy-form-label">
+              Rige desde
+              <input v-model="editForm.vigente_desde" type="date" class="deasy-control" />
+            </label>
+            <label class="deasy-form-label">
+              Origen del inicio
+              <select v-model="editForm.inicio_origen" class="deasy-control deasy-control--select" :disabled="!editForm.vigente_desde">
+                <option value="">—</option>
+                <option value="carga_inicial">Carga inicial</option>
+                <option value="reorganizacion">Reorganización</option>
+              </select>
+            </label>
+          </div>
+          <label v-if="editForm.inicio_origen === 'reorganizacion'" class="deasy-form-label">
+            Acto que lo ordena
+            <select v-model="editForm.inicio_acto_id" class="deasy-control deasy-control--select">
+              <option value="">— Elige un acto —</option>
+              <option v-for="acto in actoOptions" :key="acto.id" :value="String(acto.id)">{{ acto.etiqueta }}</option>
+            </select>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="deasy-form-label">
+              Rige hasta
+              <input v-model="editForm.vigente_hasta" type="date" class="deasy-control" :disabled="!editForm.vigente_desde" />
+            </label>
+            <label class="deasy-form-label">
+              Origen del fin
+              <select v-model="editForm.fin_origen" class="deasy-control deasy-control--select" :disabled="!editForm.vigente_hasta">
+                <option value="">—</option>
+                <option value="carga_inicial">Carga inicial</option>
+                <option value="reorganizacion">Reorganización</option>
+              </select>
+            </label>
+          </div>
+          <label v-if="editForm.fin_origen === 'reorganizacion'" class="deasy-form-label">
+            Acto que lo suprime
+            <select v-model="editForm.fin_acto_id" class="deasy-control deasy-control--select">
+              <option value="">— Elige un acto —</option>
+              <option v-for="acto in actoOptions" :key="acto.id" :value="String(acto.id)">{{ acto.etiqueta }}</option>
+            </select>
+          </label>
+          <p class="m-0 text-theme-xs text-muted">
+            «Rige hasta» es el primer día en que ya no rige. Suprimir no borra el proceso: conserva todo lo que colgó de él.
+          </p>
+        </fieldset>
       </div>
       <template #footer>
         <AppButton variant="danger-outline" :disabled="savingEdit" @click="closeEditModal">Cancelar</AppButton>
@@ -227,7 +279,7 @@
                 <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-line px-3 py-2.5">
                   <div class="flex items-center gap-2">
                     <span class="truncate text-sm font-semibold text-strong">{{ ch.name }}</span>
-                    <span v-if="!ch.is_active" class="text-theme-xs font-semibold text-danger">Inactivo</span>
+                    <AppTag v-if="ch.estado !== 'vigente'" :variant="tonoVigencia(ch.estado)" outlined>{{ etiquetaVigencia(ch.estado) }}</AppTag>
                     <AppTag
                       class-name="ml-auto"
                       outlined
@@ -359,7 +411,7 @@
 import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
-import { tonoCicloVida, tonoCorrida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
+import { tonoCicloVida, tonoCorrida, etiquetaCicloVida, tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType } from "@vue-flow/core";
@@ -373,7 +425,6 @@ import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
-import SToggle from "@/shared/components/forms/SToggle.vue";
 import { IconArrowLeft, IconDownload, IconEye, IconPencil, IconPlus, IconRefresh, IconUnlink } from "@tabler/icons-vue";
 import ProcessNode from "./ProcessNode.vue";
 import ProcessConfigNode from "./ProcessConfigNode.vue";
@@ -429,7 +480,23 @@ const detailChildren = ref([]);
 const detailRuns = ref([]);
 // Edición de datos generales del proceso en un modal aparte (como en unidades).
 const editingProcess = ref(null);
-const editForm = ref({ name: "", slug: "", parent_id: "", is_active: true });
+const VIGENCIA_VACIA = { vigente_desde: "", inicio_origen: "", inicio_acto_id: "", vigente_hasta: "", fin_origen: "", fin_acto_id: "" };
+const editForm = ref({ name: "", slug: "", parent_id: "", ...VIGENCIA_VACIA });
+// Los actos entre los que elegir cuando el origen es una reorganización. Se cargan al abrir el
+// modal y no al montar: la mayoría de las visitas al grafo no editan nada.
+const actoOptions = ref([]);
+const loadActoOptions = async () => {
+  try {
+    const { data } = await adminSqlService.list("actos", { orderBy: "fecha_emision", order: "desc", limit: 500 });
+    const filas = Array.isArray(data) ? data : data?.rows || data?.data || [];
+    actoOptions.value = filas.map((a) => ({
+      id: a.id,
+      etiqueta: `${a.numero} · ${String(a.fecha_emision || "").slice(0, 10)} · ${a.asunto}`
+    }));
+  } catch {
+    actoOptions.value = [];
+  }
+};
 const savingEdit = ref(false);
 
 const nodeNameById = computed(() => {
@@ -570,7 +637,7 @@ const layout = (rawNodes, rawEdges) => {
 const buildGraph = () => {
   const hidden = hiddenByCollapse.value;
   const apiNodes = (rawGraph.value.nodes || []).filter(
-    (p) => (showInactive.value || Number(p.is_active) === 1) && !hidden.has(String(p.id))
+    (p) => (showInactive.value || p.estado !== "suprimido") && !hidden.has(String(p.id))
   );
   const visibleIds = new Set(apiNodes.map((p) => String(p.id)));
   const rawNodes = apiNodes.map((p) => ({
@@ -882,13 +949,19 @@ const openEditModal = (processId) => {
   if (!props.editable) return;
   const p = rawProcessById(processId);
   if (!p) return;
-  editingProcess.value = { id: p.id, name: p.name };
+  editingProcess.value = { id: p.id, name: p.name, estado: p.estado };
   editForm.value = {
     name: p.name || "",
     slug: p.slug || "",
     parent_id: p.parent_id ? String(p.parent_id) : "",
-    is_active: Number(p.is_active) === 1
+    vigente_desde: p.vigente_desde || "",
+    inicio_origen: p.inicio_origen || "",
+    inicio_acto_id: p.inicio_acto_id ? String(p.inicio_acto_id) : "",
+    vigente_hasta: p.vigente_hasta || "",
+    fin_origen: p.fin_origen || "",
+    fin_acto_id: p.fin_acto_id ? String(p.fin_acto_id) : ""
   };
+  loadActoOptions();
 };
 const closeEditModal = () => { editingProcess.value = null; };
 const saveProcessEdit = async () => {
@@ -902,7 +975,15 @@ const saveProcessEdit = async () => {
       {
         name: editForm.value.name.trim(),
         slug: editForm.value.slug.trim(),
-        is_active: editForm.value.is_active ? 1 : 0
+        // Vacío es NULL, no cadena vacía: sin fecha no hay origen ni acto, y eso lo exige la base.
+        vigente_desde: editForm.value.vigente_desde || null,
+        inicio_origen: editForm.value.vigente_desde ? (editForm.value.inicio_origen || null) : null,
+        inicio_acto_id: editForm.value.inicio_origen === "reorganizacion" && editForm.value.inicio_acto_id
+          ? Number(editForm.value.inicio_acto_id) : null,
+        vigente_hasta: editForm.value.vigente_hasta || null,
+        fin_origen: editForm.value.vigente_hasta ? (editForm.value.fin_origen || null) : null,
+        fin_acto_id: editForm.value.fin_origen === "reorganizacion" && editForm.value.fin_acto_id
+          ? Number(editForm.value.fin_acto_id) : null
       }
     );
     const current = rawProcessById(ep.id);
@@ -924,7 +1005,7 @@ const saveProcessEdit = async () => {
 const openProcessDetail = async (processId, tab = "configuraciones") => {
   const p = rawProcessById(processId);
   detailProcess.value = p
-    ? { id: p.id, name: p.name, slug: p.slug, parent_id: p.parent_id, is_active: p.is_active }
+    ? { id: p.id, name: p.name, slug: p.slug, parent_id: p.parent_id, estado: p.estado }
     : { id: processId, name: "" };
   detailTab.value = tab;
   detailLoading.value = true;

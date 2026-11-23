@@ -60,6 +60,40 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- LA VIGENCIA DE UN NODO DE LA ESTRUCTURA SE LEE DE DOS FECHAS (frente 27, decision D-03).
+--
+-- Una unidad, un proceso o un puesto ya no llevan una bandera `is_active`: llevan desde cuando rigen
+-- y hasta cuando. De esas dos fechas salen cuatro lecturas, y TODAS dependen del dia en que se
+-- pregunta, que es por lo que esto es una funcion y no una columna guardada:
+--
+--     sin inicio                     -> borrador     (registrado; aun no existe oficialmente)
+--     inicio que aun no llega        -> programado   (tiene acto y fecha, todavia no rige)
+--     inicio cumplido y fin sin llegar -> vigente
+--     fin cumplido                   -> suprimido    (la fila se queda; deja de regir)
+--
+-- El periodo es SEMIABIERTO: rige desde `desde` inclusive hasta `hasta` EXCLUSIVE. «Se suprime
+-- desde el 1 de enero» es hasta = 1 de enero, y ese dia ya no rige. Es la misma convencion que
+-- usaran las relaciones fechadas, para que dos periodos seguidos no se solapen ni dejen hueco.
+--
+-- Hay UNA sola definicion, y es esta. Quien necesite saber si algo rige llama a la funcion: la
+-- condicion no se copia en cada consulta.
+CREATE OR REPLACE FUNCTION public.estado_de_vigencia(desde DATE, hasta DATE) RETURNS TEXT
+  LANGUAGE sql STABLE
+AS $$
+  SELECT CASE
+    WHEN desde IS NULL THEN 'borrador'
+    WHEN desde > CURRENT_DATE THEN 'programado'
+    WHEN hasta IS NOT NULL AND hasta <= CURRENT_DATE THEN 'suprimido'
+    ELSE 'vigente'
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.esta_vigente(desde DATE, hasta DATE) RETURNS BOOLEAN
+  LANGUAGE sql STABLE
+AS $$
+  SELECT desde IS NOT NULL AND desde <= CURRENT_DATE AND (hasta IS NULL OR hasta > CURRENT_DATE);
+$$;
+
 -- Canonical schema aligned to docs/02-dominio-datos/consolidado.dbml
 
 -- ── GEOGRAFIA ────────────────────────────────────────────────────────────────────────────────────
@@ -1472,10 +1506,42 @@ CREATE TABLE IF NOT EXISTS procesos.processes (
   name VARCHAR(180) NOT NULL,
   slug VARCHAR(180) NOT NULL UNIQUE,
   parent_id INT NULL,
-  is_active SMALLINT NOT NULL DEFAULT 1,
+  -- SIN `is_active` (frente 27, D-03). Era la unica memoria del proceso y no tenia fecha: apagarla
+  -- no decia cuando dejo de existir, quien lo decidio ni con que papel. La sustituyen dos fechas,
+  -- y de ellas se LEE el estado con `estado_de_vigencia` --no se guarda, porque depende del dia--.
+  --
+  -- Un proceso NACE EN BORRADOR, sin fecha de inicio: se puede preparar sin tener el acto en la
+  -- mano, y ponerlo en vigor es un paso aparte. Cada extremo del periodo lleva su ORIGEN y, si lo
+  -- hubo, el ACTO que lo ordeno: a un proceso lo crea un papel y lo suprime otro.
+  vigente_desde DATE NULL,
+  vigente_hasta DATE NULL,
+  inicio_origen TEXT NULL CHECK (inicio_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  inicio_acto_id INT NULL,
+  fin_origen TEXT NULL CHECK (fin_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  fin_acto_id INT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT fk_processes_parent FOREIGN KEY (parent_id) REFERENCES processes(id)
+  CONSTRAINT fk_processes_parent FOREIGN KEY (parent_id) REFERENCES processes(id),
+  CONSTRAINT fk_processes_inicio_acto FOREIGN KEY (inicio_acto_id) REFERENCES actos(id),
+  CONSTRAINT fk_processes_fin_acto FOREIGN KEY (fin_acto_id) REFERENCES actos(id),
+  -- No se suprime lo que nunca empezo, y el fin no puede ser anterior al inicio.
+  CONSTRAINT ck_processes_periodo CHECK (
+    vigente_hasta IS NULL OR (vigente_desde IS NOT NULL AND vigente_hasta >= vigente_desde)
+  ),
+  -- Cada fecha lleva su origen, y no hay origen sin fecha.
+  CONSTRAINT ck_processes_inicio_con_origen CHECK ((vigente_desde IS NULL) = (inicio_origen IS NULL)),
+  CONSTRAINT ck_processes_fin_con_origen CHECK ((vigente_hasta IS NULL) = (fin_origen IS NULL)),
+  -- EL ORIGEN DECIDE SI EL ACTO ES OBLIGATORIO: una reorganizacion lo exige; la carga inicial y la
+  -- correccion, no. Y un acto no cuelga de un extremo que no tiene fecha.
+  CONSTRAINT ck_processes_inicio_acto CHECK (
+    (inicio_origen IS DISTINCT FROM 'reorganizacion' OR inicio_acto_id IS NOT NULL)
+    AND (inicio_acto_id IS NULL OR vigente_desde IS NOT NULL)
+  ),
+  CONSTRAINT ck_processes_fin_acto CHECK (
+    (fin_origen IS DISTINCT FROM 'reorganizacion' OR fin_acto_id IS NOT NULL)
+    AND (fin_acto_id IS NULL OR vigente_hasta IS NOT NULL)
+  )
 );
+CREATE INDEX IF NOT EXISTS idx_processes_vigencia ON processes (vigente_desde, vigente_hasta);
 
 
 -- AQUI VIVIA `process_definition_series`, Y SE RETIRA (frente 25, P9 — 2026-10-11).

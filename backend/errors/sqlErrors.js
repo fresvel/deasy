@@ -35,6 +35,38 @@ export const isUniqueViolation = (error) => error?.code === PG_UNIQUE_VIOLATION;
 export const isNotNullViolation = (error) => error?.code === PG_NOT_NULL_VIOLATION;
 export const isForeignKeyViolation = (error) => error?.code === PG_FOREIGN_KEY_VIOLATION;
 
+/** Violacion de un CHECK: la fila no cumple una regla que la base impone. */
+export const PG_CHECK_VIOLATION = "23514";
+export const isCheckViolation = (error) => error?.code === PG_CHECK_VIOLATION;
+
+// LO QUE DICE CADA `CHECK` QUE ES UNA REGLA DE NEGOCIO, por el nombre de su restriccion.
+//
+// Un CHECK no se puede traducir en general, como un duplicado o una clave ajena: su `detail` trae
+// la fila entera y no dice QUE regla fallo. Lo unico que identifica la regla es el NOMBRE de la
+// restriccion, y por eso esto es una tabla y no una funcion: quien añade al esquema un CHECK que
+// una persona puede provocar desde una pantalla, añade aqui su frase.
+//
+// Las que no estan aqui siguen saliendo con el texto del motor, como hasta ahora. No se inventa un
+// mensaje generico: «el dato no es valido» no le dice a nadie que corregir.
+const MENSAJES_DE_CHECK = Object.freeze({
+  ck_actos_un_solo_emisor:
+    "Un acto tiene exactamente un emisor: una unidad o un emisor externo, no los dos ni ninguno.",
+  ck_actos_un_solo_suscriptor:
+    "«Suscrito por» es una persona del sistema o un nombre escrito, no los dos.",
+  ck_processes_periodo:
+    "No se puede fijar «rige hasta» sin «rige desde», ni una fecha de fin anterior a la de inicio.",
+  ck_processes_inicio_con_origen:
+    "La fecha de inicio y su origen van juntos: elige el origen, o deja las dos cosas en blanco.",
+  ck_processes_fin_con_origen:
+    "La fecha de fin y su origen van juntos: elige el origen, o deja las dos cosas en blanco.",
+  ck_processes_inicio_acto:
+    "Poner en vigor por una reorganización necesita el acto que la ordena.",
+  ck_processes_fin_acto:
+    "Suprimir por una reorganización necesita el acto que la ordena."
+});
+
+export const checkViolationMessage = (error) => MENSAJES_DE_CHECK[violatedConstraint(error)] ?? null;
+
 /** Nombre de la restricción violada, "" si el error no es de restricción. */
 export const violatedConstraint = (error) => String(error?.constraint || "");
 
@@ -178,6 +210,12 @@ export function translateConstraintError(error, tableName, { deleting = false } 
   // 400: el cliente no mando un dato obligatorio. No es 409 — nada esta cogido, falta algo.
   if (isNotNullViolation(error)) {
     return badRequest(notNullViolationMessage(error, tableName));
+  }
+  // 400: la fila no cumple una regla. Solo se traduce el CHECK que tiene su frase; el que no, se
+  // deja pasar tal cual, igual que antes de que esto existiera.
+  if (isCheckViolation(error)) {
+    const mensaje = checkViolationMessage(error);
+    return mensaje ? badRequest(mensaje) : null;
   }
   return null;
 }

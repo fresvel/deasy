@@ -461,3 +461,36 @@ test("el enlace al documento vive en tareas y retiene la version: su clave no pr
   );
 });
 
+// LA VIGENCIA DE UN PROCESO (frente 27, D-03): dos fechas en vez de la bandera.
+test("processes ya no tiene is_active: su estado se lee de dos fechas", () => {
+  const create = bloqueRecorrido("processes");
+  assert.ok(!/\bis_active\b/.test(create.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n")));
+  assert.match(create, /vigente_desde DATE NULL/);
+  assert.match(create, /vigente_hasta DATE NULL/);
+});
+
+test("un proceso nace en borrador: ninguna de las dos fechas tiene valor por defecto", () => {
+  const create = bloqueRecorrido("processes");
+  assert.ok(!/vigente_desde DATE[^,\n]*DEFAULT/.test(create));
+  assert.ok(!/vigente_hasta DATE[^,\n]*DEFAULT/.test(create));
+});
+
+test("el origen decide si el acto es obligatorio, en el inicio y en el fin", () => {
+  for (const extremo of ["inicio", "fin"]) {
+    assert.match(
+      SCHEMA,
+      new RegExp(`ck_processes_${extremo}_acto CHECK \\(\\s*\\(${extremo}_origen IS DISTINCT FROM 'reorganizacion' OR ${extremo}_acto_id IS NOT NULL\\)`)
+    );
+  }
+});
+
+test("hay UNA definicion de «vigente», y depende del dia: es una funcion STABLE, no una columna", () => {
+  assert.equal((SCHEMA.match(/CREATE OR REPLACE FUNCTION public\.esta_vigente\(/g) || []).length, 1);
+  assert.equal((SCHEMA.match(/CREATE OR REPLACE FUNCTION public\.estado_de_vigencia\(/g) || []).length, 1);
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.estado_de_vigencia("), SCHEMA.indexOf("FUNCTION public.esta_vigente("));
+  assert.match(cuerpo, /LANGUAGE sql STABLE/);
+  for (const estado of ["borrador", "programado", "suprimido", "vigente"]) {
+    assert.ok(cuerpo.includes(`'${estado}'`), `falta el estado ${estado}`);
+  }
+});
+

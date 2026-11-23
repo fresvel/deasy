@@ -416,7 +416,17 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_id", label: "Proceso padre", type: "number" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      // LA VIGENCIA, en vez de `is_active` (frente 27, D-03). Dos fechas, y cada una con su origen y
+      // su acto. Las reglas --no hay fin sin inicio, cada fecha lleva origen, una reorganizacion exige
+      // acto-- las impone la base, no este formulario.
+      { name: "vigente_desde", label: "Rige desde", type: "date" },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      // DERIVADO, no columna: depende del dia en que se pregunta. Se puede filtrar por el.
+      { name: "estado", label: "Estado", type: "select", options: ["borrador", "programado", "vigente", "suprimido"], readOnly: true, virtual: true },
       { name: "active_definition_version", label: "Configuracion activa", type: "text", readOnly: true, virtual: true },
       { name: "active_definition_status", label: "Estado configuracion", type: "text", readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }

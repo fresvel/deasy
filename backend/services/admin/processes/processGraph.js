@@ -26,7 +26,12 @@ export default class ProcessGraphService {
   async getProcessGraph() {
     this.ensurePool();
     const [nodes] = await this.pool.query(
-      `SELECT p.id, p.name, p.slug, p.is_active, p.parent_id,
+      `SELECT p.id, p.name, p.slug, p.parent_id,
+              -- Las fechas salen como TEXTO (AAAA-MM-DD): son dias, no instantes, y como Date de
+              -- JavaScript viajarian con una hora y una zona que no tienen.
+              p.vigente_desde::text AS vigente_desde, p.vigente_hasta::text AS vigente_hasta,
+              p.inicio_origen, p.inicio_acto_id, p.fin_origen, p.fin_acto_id,
+              estado_de_vigencia(p.vigente_desde, p.vigente_hasta) AS estado,
               -- EL PROCESO DE UNA CONFIGURACION SALE DE SU LINEA (frente 25, P22): la columna
               -- process_id de la configuracion era una copia que nada comprobaba. En una
               -- correlacionada el precio es un JOIN dentro de la subconsulta, que es donde mas se nota.
@@ -116,7 +121,9 @@ export default class ProcessGraphService {
     }
     try {
       const [r] = await this.pool.query(
-        "INSERT INTO processes (name, slug, parent_id, is_active) VALUES (?, ?, ?, 1)",
+        // NACE EN BORRADOR (frente 27, D-03): sin fecha de inicio. Ponerlo en vigor es un paso aparte,
+        // que pide la fecha, su origen y --si es una reorganizacion-- el acto que lo ordena.
+        "INSERT INTO processes (name, slug, parent_id) VALUES (?, ?, ?)",
         [cleanName, cleanSlug, parentId]
       );
       return { id: Number(r.insertId) };
@@ -169,7 +176,10 @@ export default class ProcessGraphService {
       throw new Error("Proceso inválido.");
     }
     const [processRows] = await this.pool.query(
-      `SELECT p.id, p.name, p.slug, p.parent_id, p.is_active, par.name AS parent_name
+      `SELECT p.id, p.name, p.slug, p.parent_id, par.name AS parent_name,
+              p.vigente_desde::text AS vigente_desde, p.vigente_hasta::text AS vigente_hasta,
+              p.inicio_origen, p.inicio_acto_id, p.fin_origen, p.fin_acto_id,
+              estado_de_vigencia(p.vigente_desde, p.vigente_hasta) AS estado
          FROM processes p
          LEFT JOIN processes par ON par.id = p.parent_id
         WHERE p.id = ?
@@ -207,7 +217,8 @@ export default class ProcessGraphService {
     );
 
     const [children] = await this.pool.query(
-      `SELECT c.id, c.name, c.slug, c.is_active,
+      `SELECT c.id, c.name, c.slug, c.vigente_desde::text AS vigente_desde, c.vigente_hasta::text AS vigente_hasta,
+              estado_de_vigencia(c.vigente_desde, c.vigente_hasta) AS estado,
               (SELECT COUNT(*) FROM process_definition_versions pdv
                  INNER JOIN lineas lin ON lin.id = pdv.linea_id
                 WHERE lin.process_id = c.id) AS definitions_count,
@@ -242,7 +253,13 @@ export default class ProcessGraphService {
         slug: process.slug,
         parent_id: process.parent_id,
         parent_name: process.parent_name,
-        is_active: process.is_active
+        vigente_desde: process.vigente_desde,
+        vigente_hasta: process.vigente_hasta,
+        inicio_origen: process.inicio_origen,
+        inicio_acto_id: process.inicio_acto_id,
+        fin_origen: process.fin_origen,
+        fin_acto_id: process.fin_acto_id,
+        estado: process.estado
       },
       configurations,
       children,

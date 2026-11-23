@@ -777,7 +777,9 @@ export const ensureDefaultProcess = async (connection) => {
   let process = await fetchOne(connection, "SELECT id FROM processes WHERE slug = ? LIMIT 1", [DEFAULT_PROCESS_SLUG]);
   if (!process) {
     const [r] = await connection.query(
-      "INSERT INTO processes (name, slug, parent_id, is_active) VALUES (?, ?, NULL, 1)",
+      // RIGE DESDE LA INSTALACION, con origen «carga inicial»: es la estructura que el sistema trae al
+      // nacer, y por eso no pide acto (frente 27, D-03 y D-05).
+      "INSERT INTO processes (name, slug, parent_id, vigente_desde, inicio_origen) VALUES (?, ?, NULL, CURRENT_DATE, 'carga_inicial')",
       [DEFAULT_PROCESS_NAME, DEFAULT_PROCESS_SLUG]
     );
     process = { id: r.insertId };

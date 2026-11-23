@@ -76,8 +76,17 @@ Table "processes" {
   "name" varchar(180) [not null]
   "slug" varchar(180) [unique, not null]
   "parent_id" int4
-  "is_active" int2 [not null, default: 1]
+  "vigente_desde" date
+  "vigente_hasta" date
+  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (vigente_desde, vigente_hasta) [type: btree, name: "idx_processes_vigencia"]
+  }
 
   Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
 }
@@ -139,6 +148,8 @@ Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."p
 //   units -> lineas   [organizacion]
 //   process_definition_versions -> process_runs   [tareas]
 //   terms -> process_runs   [tareas]
+//   actos -> processes   [organizacion]
+//   actos -> processes   [organizacion]
 //   vinculos -> task_items   [tareas]
 //   process_definition_versions -> tasks   [tareas]
 //   terms -> tasks   [tareas]

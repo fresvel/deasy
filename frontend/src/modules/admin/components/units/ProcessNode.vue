@@ -2,7 +2,7 @@
   <div
     class="graph-node relative rounded-xl border px-3 py-2 transition-all"
     :class="[
-      data.is_active ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
+      data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
       data.dimmed ? 'graph-node--apagado' : ''
     ]"
@@ -55,7 +55,7 @@
         {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
       </button>
       <AppTag v-else variant="neutral" outlined>Sin config.</AppTag>
-      <AppTag v-if="!data.is_active" variant="warning" outlined>Inactivo</AppTag>
+      <AppTag v-if="data.estado !== 'vigente'" :variant="tonoVigencia(data.estado)" outlined>{{ etiquetaVigencia(data.estado) }}</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
@@ -63,6 +63,7 @@
 
 <script setup>
 import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import { IconPencil, IconCornerDownRight, IconPlus, IconChevronUp, IconChevronDown, IconChevronRight } from "@tabler/icons-vue";

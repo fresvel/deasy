@@ -65,6 +65,34 @@ const ETIQUETA_CICLO_VIDA = Object.freeze({
 
 export const etiquetaCicloVida = (valor) => ETIQUETA_CICLO_VIDA[valor] ?? "Sin estado";
 
+/* ── VIGENCIA de un nodo de la estructura (frente 27, decisión D-03) ───────────────────────
+ *
+ * Unidades, procesos y puestos ya no llevan un booleano «Activo»: llevan dos fechas, y de ellas
+ * la base lee uno de estos cuatro estados (`estado_de_vigencia`, en el esquema). Aquí sólo se
+ * decide cómo se ve.
+ *
+ * Sigue el esquema del ciclo de vida, que fijó el dueño el 2026-08-15, porque es el mismo
+ * razonamiento: un BORRADOR aún no existe y no reclama atención (NEUTRAL); lo SUPRIMIDO sí la
+ * reclama, porque estuvo vivo y dejó de estarlo (WARNING). `programado` es lo único nuevo: tiene
+ * fecha y todavía no rige, así que informa sin alarmar (INFO). */
+const VIGENCIA = Object.freeze({
+  borrador: TONOS.NEUTRAL,
+  programado: TONOS.INFO,
+  vigente: TONOS.SUCCESS,
+  suprimido: TONOS.WARNING
+});
+
+export const tonoVigencia = (valor) => VIGENCIA[valor] ?? TONOS.NEUTRAL;
+
+const ETIQUETA_VIGENCIA = Object.freeze({
+  borrador: "Borrador",
+  programado: "Programado",
+  vigente: "Vigente",
+  suprimido: "Suprimido"
+});
+
+export const etiquetaVigencia = (valor) => ETIQUETA_VIGENCIA[valor] ?? "Sin estado";
+
 /* ── CORRIDA (`process_runs.status`) ───────────────────────────────────────────────────────
  *
  * ⚠️ `pending` PASA DE ÁMBAR A SALMÓN, y es consecuencia directa del esquema de arriba: el ámbar
@@ -505,6 +533,7 @@ const presenta = (valor) => {
 
 const COLUMNA_ESTADO = Object.freeze({
   "processes.active_definition_status": [tonoCicloVida, etiquetaCicloVida],
+  "processes.estado": [tonoVigencia, etiquetaVigencia],
   "process_definition_versions.status": [tonoCicloVida, etiquetaCicloVida],
   "ediciones.lifecycle_state": [tonoCicloVida, etiquetaCicloVida],
   "process_runs.status": [tonoCorrida, etiquetaCorrida],

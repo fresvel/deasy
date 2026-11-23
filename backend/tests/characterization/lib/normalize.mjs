@@ -23,6 +23,10 @@ const VOLATILE_KEYS = new Set([
   // enmascarar, el golden de login y el de /users/me cambiaban EN CADA captura: el bootstrap
   // marca el canal verificado con CURRENT_TIMESTAMP.
   "verificado_at", "verified_at",
+  // `vigente_desde` (frente 27, D-03): lo que el bootstrap instala rige «desde hoy», asi que el
+  // golden cambiaria CADA DIA. Que un nodo este en borrador o rigiendo no se pierde al
+  // enmascararlo: lo dice `estado`, que viaja al lado y sale de esta misma fecha.
+  "vigente_desde",
   "iat", "exp",
   "token", "accessToken", "access_token", "refreshToken", "refresh_token",
   "expiresIn", "expires_in", "expiresAt", "expires_at",

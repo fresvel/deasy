@@ -44,7 +44,7 @@ flowchart TD
 
 ### `processes`.
 
-Solo identidad: `name`, `slug` único, `parent_id` autorreferencial, `is_active`. **Sin comportamiento.** Se hizo `DROP` de `unit_id`, `program_id`, `person_id` y `term_id` por vestigiales.
+Identidad —`name`, `slug` único, `parent_id` autorreferencial— y su **vigencia**: dos fechas de las que se lee si está en borrador, programado, vigente o suprimido (antes era una bandera `is_active`; ver [el proceso](/modelo/proceso/#un-proceso-no-está-activo-rige-entre-dos-fechas)). **Sin comportamiento.** Se hizo `DROP` de `unit_id`, `program_id`, `person_id` y `term_id` por vestigiales.
 
 ### `lineas` — la línea.
 

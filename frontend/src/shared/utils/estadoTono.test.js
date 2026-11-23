@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   TONOS,
   tonoCicloVida, etiquetaCicloVida,
+  tonoVigencia, etiquetaVigencia,
   tonoCorrida, tonoDiff, tonoActividad, tonoSincronizacion,
   coberturaEstado, tonoCobertura, tonoOrigen, tonoAmbito,
   tonoTarea, etiquetaTarea,
@@ -313,8 +314,10 @@ describe("el registro de columnas de admin — qué celda es una pastilla", () =
   // mitad-- son DOS (`recorridos.estado` y `turnos.estado`) desde el paso 4 de la fase 4, y
   // `documents.status` cayo con su tabla, que murio el 2026-08-23 y llevaba desde entonces en este
   // registro apuntando al vacio.
-  it("las 12 columnas del registro resuelven tono Y etiqueta", () => {
-    expect(COLUMNAS_DE_ESTADO).toHaveLength(12);
+  // Y son TRECE desde el frente 27: `processes.estado`, la vigencia leida de sus dos fechas, que
+  // sustituye al booleano «Activo» del proceso.
+  it("las 13 columnas del registro resuelven tono Y etiqueta", () => {
+    expect(COLUMNAS_DE_ESTADO).toHaveLength(13);
     for (const ruta of COLUMNAS_DE_ESTADO) {
       const [tabla, columna] = [ruta.slice(0, ruta.lastIndexOf(".")), ruta.slice(ruta.lastIndexOf(".") + 1)];
       expect(esColumnaDeEstado(tabla, columna)).toBe(true);
@@ -497,3 +500,21 @@ describe("los 31 booleanos del esquema, cada uno con su eje", () => {
     expect(tonoDeBooleano("signature_statuses", "is_active", 0)).toBe(TONOS.WARNING);
   });
 });
+
+describe("la vigencia de un nodo de la estructura", () => {
+  it("un borrador no reclama atención y lo suprimido sí, como en el ciclo de vida", () => {
+    expect(tonoVigencia("borrador")).toBe(TONOS.NEUTRAL);
+    expect(tonoVigencia("vigente")).toBe(TONOS.SUCCESS);
+    expect(tonoVigencia("suprimido")).toBe(TONOS.WARNING);
+    expect(tonoVigencia("programado")).toBe(TONOS.INFO);
+  });
+
+  it("los cuatro estados tienen etiqueta en castellano, y lo desconocido no revienta", () => {
+    expect(["borrador", "programado", "vigente", "suprimido"].map(etiquetaVigencia)).toEqual([
+      "Borrador", "Programado", "Vigente", "Suprimido"
+    ]);
+    expect(etiquetaVigencia("otra-cosa")).toBe("Sin estado");
+    expect(tonoVigencia(undefined)).toBe(TONOS.NEUTRAL);
+  });
+});
+

@@ -98,7 +98,9 @@ export function useProcessWizard() {
   const loadProcessOptions = async () => {
     try {
       const [procRes, unitTypeRes, cargoRes, lineaRes, unitRes] = await Promise.all([
-        adminSqlService.list("processes", { filter_is_active: 1, orderBy: "name", order: "asc", limit: 500 }),
+        // Todo menos lo SUPRIMIDO: un proceso en borrador se configura antes de ponerlo en vigor, asi
+        // que tiene que poder elegirse aqui. El estado sale de sus dos fechas (frente 27, D-03).
+        adminSqlService.list("processes", { orderBy: "name", order: "asc", limit: 500 }),
         adminSqlService.list("unit_types", { orderBy: "name", order: "asc", limit: 500 }),
         adminSqlService.list("cargos", { orderBy: "name", order: "asc", limit: 500 }),
         adminSqlService.list("lineas", { orderBy: "nombre", order: "asc", limit: 500 }),

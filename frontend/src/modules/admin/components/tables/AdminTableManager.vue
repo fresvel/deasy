@@ -921,11 +921,13 @@
                 />
               </div>
               <div>
-                <label :for="fieldId('process-filter-is-active')" class="deasy-form-label deasy-form-label--inline">Activo</label>
-                <AdminSelectField :id="fieldId('process-filter-is-active')" v-model="processFilters.is_active">
+                <label :for="fieldId('process-filter-estado')" class="deasy-form-label deasy-form-label--inline">Estado</label>
+                <AdminSelectField :id="fieldId('process-filter-estado')" v-model="processFilters.estado">
                   <option value="">Todos</option>
-                  <option value="1">Si</option>
-                  <option value="0">No</option>
+                  <option value="borrador">Borrador</option>
+                  <option value="programado">Programado</option>
+                  <option value="vigente">Vigente</option>
+                  <option value="suprimido">Suprimido</option>
                 </AdminSelectField>
               </div>
             </div>
@@ -1395,7 +1397,7 @@ const fkPositionFilterLoading = ref(false);
 
 const processFilters = ref({
   parent_id: "",
-  is_active: ""
+  estado: ""
 });
 const processFilterLabels = ref({
   parent_id: ""

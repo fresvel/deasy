@@ -177,3 +177,28 @@ test("traduce a HttpError con el código correcto y deja pasar lo que no es de r
   assert.equal(translateConstraintError(new Error("conexión caída"), "persons"), null);
   assert.equal(translateConstraintError({ code: "42703" }, "persons"), null);
 });
+
+test("un CHECK con frase propia se traduce; uno sin ella sigue siendo el error del motor", () => {
+  const sinActo = translateConstraintError({ code: "23514", constraint: "ck_processes_inicio_acto" }, "processes");
+  assert.equal(sinActo.statusCode, 400);
+  assert.match(sinActo.message, /necesita el acto/);
+
+  const dosEmisores = translateConstraintError({ code: "23514", constraint: "ck_actos_un_solo_emisor" }, "actos");
+  assert.match(dosEmisores.message, /exactamente un emisor/);
+
+  // Sin frase no se inventa una generica: devuelve null y el llamador lo deja como estaba.
+  assert.equal(translateConstraintError({ code: "23514", constraint: "otra_restriccion_check" }, "x"), null);
+});
+
+test("cada frase de CHECK nombra una restriccion que EXISTE en el esquema", async () => {
+  const { readFileSync } = await import("node:fs");
+  const esquema = readFileSync(new URL("../database/postgres_schema.sql", import.meta.url), "utf8");
+  const fuente = readFileSync(new URL("./sqlErrors.js", import.meta.url), "utf8");
+  const bloque = fuente.slice(fuente.indexOf("const MENSAJES_DE_CHECK"), fuente.indexOf("export const checkViolationMessage"));
+  const nombres = [...bloque.matchAll(/^  (ck_[a-z_]+):/gm)].map((m) => m[1]);
+  assert.ok(nombres.length >= 7, "se esperaban al menos las siete frases iniciales");
+  for (const nombre of nombres) {
+    assert.ok(esquema.includes(`CONSTRAINT ${nombre} CHECK`), `${nombre} no existe en el esquema`);
+  }
+});
+

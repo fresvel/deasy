@@ -373,6 +373,13 @@ export default class SqlAdminService {
         derivedColumns.active_definition_status = "pd_main.status";
         selectFields.push("pd_main.status AS active_definition_status");
       }
+      // EL ESTADO DE VIGENCIA, DERIVADO (frente 27, D-03): sustituye a la columna `is_active`. No se
+      // guarda porque depende del dia en que se pregunta; lo calcula la unica funcion del esquema
+      // que sabe leer las dos fechas.
+      if (availableFields.includes("estado")) {
+        derivedColumns.estado = "estado_de_vigencia(processes.vigente_desde, processes.vigente_hasta)";
+        selectFields.push(`${derivedColumns.estado} AS estado`);
+      }
       selectClause = `SELECT ${selectFields.join(", ")}`;
     }
 
@@ -450,7 +457,9 @@ export default class SqlAdminService {
     }
 
     for (const [field, value] of Object.entries(normalizedFilters)) {
-      if (!physicalFields.includes(field)) {
+      // Tambien se filtra por una columna DERIVADA: quien sabe traducirla a SQL es `derivedColumns`,
+      // igual que para buscar y ordenar. Sin esto, «solo los vigentes» no tendria como pedirse.
+      if (!physicalFields.includes(field) && !derivedColumns[field]) {
         continue;
       }
       if (value === undefined || value === null || value === "") {

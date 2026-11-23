@@ -976,8 +976,17 @@ Table "processes" {
   "name" varchar(180) [not null]
   "slug" varchar(180) [unique, not null]
   "parent_id" int4
-  "is_active" int2 [not null, default: 1]
+  "vigente_desde" date
+  "vigente_hasta" date
+  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (vigente_desde, vigente_hasta) [type: btree, name: "idx_processes_vigencia"]
+  }
 
   Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
 }
@@ -1525,6 +1534,8 @@ Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user
 Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
 Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
+Ref "fk_processes_fin_acto":"actos"."id" ?<? "processes"."fin_acto_id"
+Ref "fk_processes_inicio_acto":"actos"."id" ?<? "processes"."inicio_acto_id"
 Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"

@@ -423,11 +423,17 @@
       "active_definition_status",
       "active_definition_version",
       "created_at",
+      "estado",
+      "fin_acto_id",
+      "fin_origen",
       "id",
-      "is_active",
+      "inicio_acto_id",
+      "inicio_origen",
       "name",
       "parent_id",
-      "slug"
+      "slug",
+      "vigente_desde",
+      "vigente_hasta"
     ]
   },
   "list_relation_unit_types": {
@@ -654,12 +660,18 @@
       "runs"
     ],
     "process": {
+      "estado": "vigente",
+      "fin_acto_id": "<normalized>",
+      "fin_origen": null,
       "id": "<normalized>",
-      "is_active": 1,
+      "inicio_acto_id": "<normalized>",
+      "inicio_origen": "carga_inicial",
       "name": "Proceso por defecto",
       "parent_id": "<normalized>",
       "parent_name": null,
-      "slug": "default"
+      "slug": "default",
+      "vigente_desde": "<normalized>",
+      "vigente_hasta": null
     },
     "configurationCount": 1
   },
@@ -701,11 +713,17 @@
     "nodeKeys": [
       "active_count",
       "definitions_count",
+      "estado",
+      "fin_acto_id",
+      "fin_origen",
       "id",
-      "is_active",
+      "inicio_acto_id",
+      "inicio_origen",
       "name",
       "parent_id",
-      "slug"
+      "slug",
+      "vigente_desde",
+      "vigente_hasta"
     ],
     "edgeKeys": []
   },

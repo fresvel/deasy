@@ -75,7 +75,7 @@ export function useAdminSearchFilters({
   const clearProcessFilter = async () => {
     processFilters.value = {
       parent_id: "",
-      is_active: ""
+      estado: ""
     };
     processFilterLabels.value = {
       parent_id: ""

@@ -22,6 +22,25 @@
       "orden-de-lectura.md"
     ]
   },
+  "acto_documentos": {
+    "huella": "c87d4bb57f0794f4",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "actos": {
+    "huella": "24bb46697ac17393",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/proceso.md",
+      "modelo/reparto.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
   "aplications": {
     "huella": "bd5d570319ca9b9b",
     "paginas": [
@@ -326,6 +345,7 @@
       "modelo/lo-que-no-cierra.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
       "modelo/vocabularios-de-estado.md",
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md"
@@ -735,7 +755,7 @@
     ]
   },
   "processes": {
-    "huella": "cf0985187852ce81",
+    "huella": "f444b5f62356607c",
     "paginas": [
       "arquitectura-y-patrones.md",
       "backend/index.md",
@@ -999,6 +1019,14 @@
       "orden-de-lectura.md",
       "panorama.md",
       "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "tipos_de_acto": {
+    "huella": "46e33ee9ef0fc73b",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
     ]
   },
   "tipos_discapacidad": {

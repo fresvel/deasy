@@ -154,6 +154,44 @@ Un detalle del esquema que sorprende al consultarlo: `terms.name` es **único** 
 **obligatoria**. No hay periodos sin final; el «Permanente» lo resuelve con una fecha lejana, no con
 un `NULL`.
 
+## Un proceso no está «activo»: rige entre dos fechas
+
+Desde el 2026-11-23 `processes` **no tiene `is_active`**. Tenía una bandera sin fecha, y apagarla no
+decía cuándo dejó de existir el proceso, quién lo decidió ni con qué papel. La sustituyen dos fechas,
+`vigente_desde` y `vigente_hasta`, y de ellas **se lee** uno de cuatro estados:
+
+| Estado | Cuándo | Qué significa |
+|---|---|---|
+| `borrador` | sin fecha de inicio | Está registrado; todavía no existe oficialmente |
+| `programado` | el inicio aún no llega | Tiene fecha y origen; todavía no rige |
+| `vigente` | el inicio se cumplió y el fin no | Rige |
+| `suprimido` | el fin se cumplió | Dejó de regir. **La fila se queda**, con todo lo que colgó de ella |
+
+El estado **no se guarda**: depende del día en que se pregunta, así que lo calcula la base con
+`estado_de_vigencia(desde, hasta)`. Es la única definición; ninguna consulta copia la condición. La
+API lo devuelve como `estado`, y la pantalla lo pinta como una pastilla.
+
+Cuatro reglas, y las cuatro las impone la base con un `CHECK`:
+
+- **Un proceso nace en borrador.** Se crea sin fecha, se puede preparar con calma, y ponerlo en vigor
+  es un paso aparte.
+- **El periodo es semiabierto.** `vigente_hasta` es el primer día en que **ya no** rige: «se suprime
+  desde el 1 de enero» es `vigente_hasta = 1 de enero`.
+- **Cada fecha lleva su origen**, y no hay fin sin inicio.
+- **El origen decide si hace falta un acto.** Una `reorganizacion` lo exige; la `carga_inicial` —lo
+  que el sistema trae al instalarse— no. El acto está contado en
+  [La organización](/modelo/organizacion/#el-papel-que-ordena-un-cambio--actos).
+
+Lo que la persona ve en el menú son sólo los procesos **vigentes**. Un borrador se puede configurar
+igual: el asistente lo ofrece, porque un proceso se arma antes de ponerlo en vigor.
+
+:::caution[Lo que todavía no hace]
+Esto vale **sólo para los procesos**: las unidades y los puestos siguen con su `is_active`, y pasan a
+fechas en los dos pasos siguientes. Tampoco está construido que la base impida **borrar** un proceso
+que ya rige, ni la corrección con permiso propio: el origen `correccion` existe en el vocabulario,
+pero la pantalla aún no lo ofrece.
+:::
+
 ## El diagrama
 
 ```mermaid
@@ -174,7 +212,12 @@ erDiagram
     varchar name "Evaluacion docente"
     varchar slug "unico"
     int parent_id FK "proceso padre, opcional"
-    smallint is_active
+    date vigente_desde "sin fecha = borrador"
+    date vigente_hasta "primer dia en que ya no rige"
+    text inicio_origen "carga_inicial, reorganizacion, correccion"
+    int inicio_acto_id FK "el acto que lo puso en vigor"
+    text fin_origen "carga_inicial, reorganizacion, correccion"
+    int fin_acto_id FK "el acto que lo suprimio"
     timestamp created_at
   }
   lineas {
