@@ -458,15 +458,16 @@ const showConfigs = ref(false);
 const showTemplates = ref(false);
 const loading = ref(false);
 const error = ref("");
-// QUÉ SE MUESTRA, como una lista de casillas: tres estados del proceso —activos, borradores y
-// suprimidos— y las dos capas que cuelgan de él. Son interruptores independientes; el control
-// segmentado que había los hacía parecer una elección excluyente, y sólo sabía ocultar los
-// suprimidos. Un proceso PROGRAMADO no tiene casilla: se ve siempre.
-const ESTADOS_CON_CASILLA = ["vigente", "borrador", "suprimido"];
+// QUÉ SE MUESTRA, como una lista de casillas: los cuatro estados del proceso —activos, borradores,
+// programados y suprimidos— y las dos capas que cuelgan de él. Son interruptores independientes; el
+// control segmentado que había los hacía parecer una elección excluyente, y sólo sabía ocultar los
+// suprimidos.
+const ESTADOS_CON_CASILLA = ["vigente", "borrador", "programado", "suprimido"];
 const estadosVisibles = ref(new Set(ESTADOS_CON_CASILLA));
 const OPCIONES_DE_VISTA = [
   { value: "vigente", label: "Procesos activos" },
   { value: "borrador", label: "Borradores" },
+  { value: "programado", label: "Programados" },
   { value: "suprimido", label: "Procesos suprimidos" },
   { value: "configuraciones", label: "Configuraciones" },
   { value: "entregables", label: "Entregables" }
@@ -666,7 +667,7 @@ const layout = (rawNodes, rawEdges) => {
 const buildGraph = () => {
   const hidden = hiddenByCollapse.value;
   const apiNodes = (rawGraph.value.nodes || []).filter(
-    (p) => (!ESTADOS_CON_CASILLA.includes(p.estado) || estadosVisibles.value.has(p.estado)) && !hidden.has(String(p.id))
+    (p) => estadosVisibles.value.has(p.estado) && !hidden.has(String(p.id))
   );
   const visibleIds = new Set(apiNodes.map((p) => String(p.id)));
   const rawNodes = apiNodes.map((p) => ({
