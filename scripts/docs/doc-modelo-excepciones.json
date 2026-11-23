@@ -647,7 +647,7 @@
       ]
     },
     "pg_trgm": {
-      "motivo": "EXTENSION de PostgreSQL, no una tabla ni una columna. Propuesta en el apartado del cotejo de duplicados; hoy postgres_schema.sql no declara ninguna extension. SE RETIRA DE ESTA LISTA cuando el esquema la declare.",
+      "motivo": "EXTENSION de PostgreSQL, no una tabla ni una columna. Propuesta en el apartado del cotejo de duplicados; postgres_schema.sql no la declara (desde el 2026-11-23 declara una sola, btree_gist). SE RETIRA DE ESTA LISTA cuando el esquema la declare.",
       "paginas": [
         "complemento/expediente.md"
       ]
@@ -1024,8 +1024,7 @@
       "paginas": [
         "complemento/expediente.md",
         "modelo/mapa-con-campos.md",
-        "modelo/proceso.md",
-        "referencia/campos-proceso-documento.md"
+        "modelo/proceso.md"
       ]
     },
     "vinculo": {
@@ -1099,6 +1098,12 @@
       "motivo": "FIRMA EN LOTE (2026-11-10) · NO ES UN NOMBRE DEL ESQUEMA: es una directiva de NGINX. La pagina la cita para explicar por que el tope de bytes EXISTE y no se sube sin mas: con el buffering activado --el valor por defecto-- nginx escribe el cuerpo entero en su disco antes de pasarlo al backend.",
       "paginas": [
         "complemento/firma-en-lote.md"
+      ]
+    },
+    "btree_gist": {
+      "motivo": "EXTENSION de PostgreSQL, no una tabla ni una columna. Es la unica del esquema (frente 27, D-04): la pide la restriccion de exclusion que impide que dos vidas del mismo proceso se solapen.",
+      "paginas": [
+        "modelo/proceso.md"
       ]
     }
   },

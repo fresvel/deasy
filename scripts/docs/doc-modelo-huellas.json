@@ -37,8 +37,7 @@
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
       "modelo/proceso.md",
-      "modelo/reparto.md",
-      "referencia/campos-proceso-documento.md"
+      "modelo/reparto.md"
     ]
   },
   "aplications": {
@@ -754,8 +753,17 @@
       "referencia/modelo-datos.md"
     ]
   },
+  "process_vigencias": {
+    "huella": "75224f520dfa060a",
+    "paginas": [
+      "datos/motor-de-procesos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md"
+    ]
+  },
   "processes": {
-    "huella": "f444b5f62356607c",
+    "huella": "500feb945dd19a2e",
     "paginas": [
       "arquitectura-y-patrones.md",
       "backend/index.md",

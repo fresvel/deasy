@@ -179,7 +179,7 @@ test("traduce a HttpError con el código correcto y deja pasar lo que no es de r
 });
 
 test("un CHECK con frase propia se traduce; uno sin ella sigue siendo el error del motor", () => {
-  const sinActo = translateConstraintError({ code: "23514", constraint: "ck_processes_inicio_acto" }, "processes");
+  const sinActo = translateConstraintError({ code: "23514", constraint: "ck_process_vigencias_inicio_acto" }, "processes");
   assert.equal(sinActo.statusCode, 400);
   assert.match(sinActo.message, /necesita el acto/);
 
@@ -196,9 +196,16 @@ test("cada frase de CHECK nombra una restriccion que EXISTE en el esquema", asyn
   const fuente = readFileSync(new URL("./sqlErrors.js", import.meta.url), "utf8");
   const bloque = fuente.slice(fuente.indexOf("const MENSAJES_DE_CHECK"), fuente.indexOf("export const checkViolationMessage"));
   const nombres = [...bloque.matchAll(/^  (ck_[a-z_]+):/gm)].map((m) => m[1]);
-  assert.ok(nombres.length >= 7, "se esperaban al menos las siete frases iniciales");
+  assert.ok(nombres.length >= 6, "se esperaban al menos las seis frases iniciales");
   for (const nombre of nombres) {
     assert.ok(esquema.includes(`CONSTRAINT ${nombre} CHECK`), `${nombre} no existe en el esquema`);
   }
+});
+
+test("dos vidas solapadas del mismo proceso se dicen con una frase, y son un conflicto", () => {
+  const solape = translateConstraintError({ code: "23P01", constraint: "ex_process_vigencias_sin_solape" }, "process_vigencias");
+  assert.equal(solape.statusCode, 409);
+  assert.match(solape.message, /coincide con otra vida/);
+  assert.equal(translateConstraintError({ code: "23P01", constraint: "otra_exclusion" }, "x"), null);
 });
 

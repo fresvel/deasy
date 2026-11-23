@@ -416,22 +416,36 @@ export const SQL_TABLES = [
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "parent_id", label: "Proceso padre", type: "number" },
-      // LA VIGENCIA, en vez de `is_active` (frente 27, D-03). Dos fechas, y cada una con su origen y
-      // su acto. Las reglas --no hay fin sin inicio, cada fecha lleva origen, una reorganizacion exige
-      // acto-- las impone la base, no este formulario.
-      { name: "vigente_desde", label: "Rige desde", type: "date" },
-      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
-      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
-      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
-      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
-      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
-      // DERIVADO, no columna: depende del dia en que se pregunta. Se puede filtrar por el.
+      // EL ESTADO, en vez de `is_active` (frente 27, D-03). DERIVADO, no columna: sale de las vidas
+      // del proceso (`process_vigencias`, la tabla de abajo) y depende del dia en que se pregunta.
+      // Se puede filtrar por el.
       { name: "estado", label: "Estado", type: "select", options: ["borrador", "programado", "vigente", "suprimido"], readOnly: true, virtual: true },
       { name: "active_definition_version", label: "Configuracion activa", type: "text", readOnly: true, virtual: true },
       { name: "active_definition_status", label: "Estado configuracion", type: "text", readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
+  },
+  // LAS VIDAS DE UN PROCESO (frente 27, D-03): una fila por cada vez que ha regido. Poner un proceso
+  // en vigor, suprimirlo y reactivarlo es crear o cerrar una fila de aqui. Las reglas --el fin lleva
+  // origen, una reorganizacion exige acto, dos vidas no se solapan-- las impone la base.
+  {
+    table: "process_vigencias",
+    label: "Vigencia de procesos",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
+      { name: "vigente_desde", label: "Rige desde", type: "date", required: true },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"], required: true },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
   },
   // EL ORDEN DE ESTE GRUPO ES LA CADENA DEL MODELO, NO EL ALFABETO NI LA ANTIGUEDAD.
   //

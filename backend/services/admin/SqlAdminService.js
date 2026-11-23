@@ -374,10 +374,10 @@ export default class SqlAdminService {
         selectFields.push("pd_main.status AS active_definition_status");
       }
       // EL ESTADO DE VIGENCIA, DERIVADO (frente 27, D-03): sustituye a la columna `is_active`. No se
-      // guarda porque depende del dia en que se pregunta; lo calcula la unica funcion del esquema
-      // que sabe leer las dos fechas.
+      // guarda porque depende del dia en que se pregunta; sale del periodo que cuenta hoy
+      // (`process_vigencia_actual`), y un proceso sin ninguno es un borrador.
       if (availableFields.includes("estado")) {
-        derivedColumns.estado = "estado_de_vigencia(processes.vigente_desde, processes.vigente_hasta)";
+        derivedColumns.estado = "COALESCE((SELECT pva.estado FROM process_vigencia_actual pva WHERE pva.process_id = processes.id), 'borrador')";
         selectFields.push(`${derivedColumns.estado} AS estado`);
       }
       selectClause = `SELECT ${selectFields.join(", ")}`;

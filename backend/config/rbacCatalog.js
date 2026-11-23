@@ -285,6 +285,7 @@ export const TABLE_RESOURCE_MAP = {
   process_definition_versions: "process_definitions",
   process_runs: "process_execution",
   processes: "process_definitions",
+  process_vigencias: "process_definitions",
   relation_unit_types: "units",
   tipos_de_acto: "units",
   actos: "units",

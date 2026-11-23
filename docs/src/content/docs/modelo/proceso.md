@@ -154,42 +154,59 @@ Un detalle del esquema que sorprende al consultarlo: `terms.name` es **único** 
 **obligatoria**. No hay periodos sin final; el «Permanente» lo resuelve con una fecha lejana, no con
 un `NULL`.
 
-## Un proceso no está «activo»: rige entre dos fechas
+## Un proceso no está «activo»: tiene vidas
 
 Desde el 2026-11-23 `processes` **no tiene `is_active`**. Tenía una bandera sin fecha, y apagarla no
-decía cuándo dejó de existir el proceso, quién lo decidió ni con qué papel. La sustituyen dos fechas,
-`vigente_desde` y `vigente_hasta`, y de ellas **se lee** uno de cuatro estados:
+decía cuándo dejó de existir el proceso, quién lo decidió ni con qué papel. Su vigencia vive en
+**`process_vigencias`**, con **una fila por cada vez que el proceso ha regido**: puede regir,
+suprimirse y volver a regir, y el hueco entre dos vidas queda a la vista.
+
+De las dos fechas de un periodo —`vigente_desde` y `vigente_hasta`— **se lee** el estado:
 
 | Estado | Cuándo | Qué significa |
 |---|---|---|
-| `borrador` | sin fecha de inicio | Está registrado; todavía no existe oficialmente |
-| `programado` | el inicio aún no llega | Tiene fecha y origen; todavía no rige |
+| `borrador` | el proceso no tiene **ninguna** vida | Está registrado; todavía no existe oficialmente |
+| `programado` | su vida aún no empieza | Tiene fecha y origen; todavía no rige |
 | `vigente` | el inicio se cumplió y el fin no | Rige |
-| `suprimido` | el fin se cumplió | Dejó de regir. **La fila se queda**, con todo lo que colgó de ella |
+| `suprimido` | su última vida terminó | Dejó de regir. **El proceso se queda**, con todo lo que colgó de él, y se puede reactivar |
 
-El estado **no se guarda**: depende del día en que se pregunta, así que lo calcula la base con
-`estado_de_vigencia(desde, hasta)`. Es la única definición; ninguna consulta copia la condición. La
-API lo devuelve como `estado`, y la pantalla lo pinta como una pastilla.
+El estado **no se guarda**: depende del día en que se pregunta. Lo calcula la base con
+`estado_de_vigencia(desde, hasta)` sobre el periodo que cuenta hoy —el que rige; si no hay, el
+próximo; si tampoco, el último—, que es lo que da la vista `process_vigencia_actual`. Y `proceso_rige(id)`
+es la única forma de preguntar si un proceso rige. La API lo devuelve como `estado`, y la pantalla
+lo pinta como una pastilla.
 
-Cuatro reglas, y las cuatro las impone la base con un `CHECK`:
+Cinco reglas, y las cinco las impone la base:
 
-- **Un proceso nace en borrador.** Se crea sin fecha, se puede preparar con calma, y ponerlo en vigor
-  es un paso aparte.
-- **El periodo es semiabierto.** `vigente_hasta` es el primer día en que **ya no** rige: «se suprime
-  desde el 1 de enero» es `vigente_hasta = 1 de enero`.
-- **Cada fecha lleva su origen**, y no hay fin sin inicio.
+- **Un proceso nace en borrador**, sin ninguna vida. Ponerlo en vigor es un paso aparte: abrirle una.
+- **El periodo es semiabierto.** `vigente_hasta` es el primer día en que **ya no** rige.
+- **La fecha de fin lleva su origen**, y un acto de fin no cuelga de una vida abierta.
 - **El origen decide si hace falta un acto.** Una `reorganizacion` lo exige; la `carga_inicial` —lo
   que el sistema trae al instalarse— no. El acto está contado en
   [La organización](/modelo/organizacion/#el-papel-que-ordena-un-cambio--actos).
+- **Dos vidas del mismo proceso no se solapan.** Lo impide una restricción de exclusión por rango de
+  fechas, que pide la extensión btree_gist de PostgreSQL —la única del esquema—. Una vida abierta llega hasta el infinito,
+  así que tampoco se puede abrir otra sin cerrar la anterior.
+
+Las tres primeras son `CHECK`; como la fecha, el origen y el acto están en la misma fila, ninguna
+necesita un disparador.
 
 Lo que la persona ve en el menú son sólo los procesos **vigentes**. Un borrador se puede configurar
 igual: el asistente lo ofrece, porque un proceso se arma antes de ponerlo en vigor.
 
+:::note[Por qué una tabla y no dos fechas en el proceso]
+El primer intento, unas horas antes, guardaba las dos fechas en la fila del proceso. Admitía una sola
+vida —reactivar habría sido crear otro proceso, que perdía la historia del anterior— y no se podía
+repetir en las unidades: el acto apunta a la unidad que lo emite, la unidad apuntaría al acto que la
+creó, y dos tablas que se apuntan una a otra no tienen orden en que crearse. Una tabla de periodos,
+creada después de las dos, apunta a ambas sin círculo.
+:::
+
 :::caution[Lo que todavía no hace]
-Esto vale **sólo para los procesos**: las unidades y los puestos siguen con su `is_active`, y pasan a
-fechas en los dos pasos siguientes. Tampoco está construido que la base impida **borrar** un proceso
-que ya rige, ni la corrección con permiso propio: el origen `correccion` existe en el vocabulario,
-pero la pantalla aún no lo ofrece.
+Esto vale **sólo para los procesos**: las unidades y los puestos siguen con su `is_active`, y pasan
+a tener vidas en los dos pasos siguientes. Tampoco está construido que la base impida **borrar** un
+proceso que ya ha regido, ni la corrección con permiso propio: el origen `correccion` existe en el
+vocabulario, pero la pantalla aún no lo ofrece.
 :::
 
 ## El diagrama
@@ -198,6 +215,7 @@ pero la pantalla aún no lo ofrece.
 erDiagram
   processes ||--o{ lineas : "tiene obligaciones"
   processes ||--o{ processes : "puede colgar de otro"
+  processes ||--o{ process_vigencias : "sus vidas"
   lineas ||--o{ process_definition_versions : "LA IDENTIDAD de una configuracion"
   lineas ||--o{ lineas : "EL LINAJE: sucede a otra"
   unit_types ||--o{ lineas : "el DONDE por tipo"
@@ -212,7 +230,12 @@ erDiagram
     varchar name "Evaluacion docente"
     varchar slug "unico"
     int parent_id FK "proceso padre, opcional"
-    date vigente_desde "sin fecha = borrador"
+    timestamp created_at
+  }
+  process_vigencias {
+    int id PK "UNA VIDA del proceso"
+    int process_id FK
+    date vigente_desde "desde cuando rige"
     date vigente_hasta "primer dia en que ya no rige"
     text inicio_origen "carga_inicial, reorganizacion, correccion"
     int inicio_acto_id FK "el acto que lo puso en vigor"

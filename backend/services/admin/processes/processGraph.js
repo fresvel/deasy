@@ -27,11 +27,12 @@ export default class ProcessGraphService {
     this.ensurePool();
     const [nodes] = await this.pool.query(
       `SELECT p.id, p.name, p.slug, p.parent_id,
-              -- Las fechas salen como TEXTO (AAAA-MM-DD): son dias, no instantes, y como Date de
-              -- JavaScript viajarian con una hora y una zona que no tienen.
-              p.vigente_desde::text AS vigente_desde, p.vigente_hasta::text AS vigente_hasta,
-              p.inicio_origen, p.inicio_acto_id, p.fin_origen, p.fin_acto_id,
-              estado_de_vigencia(p.vigente_desde, p.vigente_hasta) AS estado,
+              -- LA VIGENCIA sale de la vista process_vigencia_actual: el periodo que cuenta hoy. Sin fila
+              -- alli el proceso no ha regido nunca y es un borrador. Las fechas van como TEXTO
+              -- (AAAA-MM-DD): son dias, no instantes.
+              v.vigencia_id, v.vigente_desde::text AS vigente_desde, v.vigente_hasta::text AS vigente_hasta,
+              v.inicio_origen, v.inicio_acto_id, v.fin_origen, v.fin_acto_id,
+              COALESCE(v.estado, 'borrador') AS estado,
               -- EL PROCESO DE UNA CONFIGURACION SALE DE SU LINEA (frente 25, P22): la columna
               -- process_id de la configuracion era una copia que nada comprobaba. En una
               -- correlacionada el precio es un JOIN dentro de la subconsulta, que es donde mas se nota.
@@ -42,6 +43,7 @@ export default class ProcessGraphService {
                  INNER JOIN lineas lin ON lin.id = pdv.linea_id
                 WHERE lin.process_id = p.id AND pdv.status = 'active') AS active_count
          FROM processes p
+         LEFT JOIN process_vigencia_actual v ON v.process_id = p.id
         ORDER BY p.name ASC`
     );
     const edges = nodes
@@ -177,11 +179,15 @@ export default class ProcessGraphService {
     }
     const [processRows] = await this.pool.query(
       `SELECT p.id, p.name, p.slug, p.parent_id, par.name AS parent_name,
-              p.vigente_desde::text AS vigente_desde, p.vigente_hasta::text AS vigente_hasta,
-              p.inicio_origen, p.inicio_acto_id, p.fin_origen, p.fin_acto_id,
-              estado_de_vigencia(p.vigente_desde, p.vigente_hasta) AS estado
+              -- LA VIGENCIA sale de la vista process_vigencia_actual: el periodo que cuenta hoy. Sin fila
+              -- alli el proceso no ha regido nunca y es un borrador. Las fechas van como TEXTO
+              -- (AAAA-MM-DD): son dias, no instantes.
+              v.vigencia_id, v.vigente_desde::text AS vigente_desde, v.vigente_hasta::text AS vigente_hasta,
+              v.inicio_origen, v.inicio_acto_id, v.fin_origen, v.fin_acto_id,
+              COALESCE(v.estado, 'borrador') AS estado
          FROM processes p
          LEFT JOIN processes par ON par.id = p.parent_id
+         LEFT JOIN process_vigencia_actual v ON v.process_id = p.id
         WHERE p.id = ?
         LIMIT 1`,
       [id]
@@ -217,8 +223,7 @@ export default class ProcessGraphService {
     );
 
     const [children] = await this.pool.query(
-      `SELECT c.id, c.name, c.slug, c.vigente_desde::text AS vigente_desde, c.vigente_hasta::text AS vigente_hasta,
-              estado_de_vigencia(c.vigente_desde, c.vigente_hasta) AS estado,
+      `SELECT c.id, c.name, c.slug, COALESCE(vc.estado, 'borrador') AS estado,
               (SELECT COUNT(*) FROM process_definition_versions pdv
                  INNER JOIN lineas lin ON lin.id = pdv.linea_id
                 WHERE lin.process_id = c.id) AS definitions_count,
@@ -226,8 +231,24 @@ export default class ProcessGraphService {
                  INNER JOIN lineas lin ON lin.id = pdv.linea_id
                 WHERE lin.process_id = c.id AND pdv.status = 'active') AS active_count
          FROM processes c
+         LEFT JOIN process_vigencia_actual vc ON vc.process_id = c.id
         WHERE c.parent_id = ?
         ORDER BY c.name ASC`,
+      [id]
+    );
+
+    // TODAS LAS VIDAS del proceso, la mas reciente primero: es la historia que enseña la pestaña
+    // «Vigencia», con el numero del acto de cada extremo para no obligar a otra peticion.
+    const [vigencias] = await this.pool.query(
+      `SELECT pv.id, pv.vigente_desde::text AS vigente_desde, pv.vigente_hasta::text AS vigente_hasta,
+              pv.inicio_origen, pv.inicio_acto_id, ai.numero AS inicio_acto_numero,
+              pv.fin_origen, pv.fin_acto_id, af.numero AS fin_acto_numero,
+              estado_de_vigencia(pv.vigente_desde, pv.vigente_hasta) AS estado
+         FROM process_vigencias pv
+         LEFT JOIN actos ai ON ai.id = pv.inicio_acto_id
+         LEFT JOIN actos af ON af.id = pv.fin_acto_id
+        WHERE pv.process_id = ?
+        ORDER BY pv.vigente_desde DESC`,
       [id]
     );
 
@@ -253,6 +274,7 @@ export default class ProcessGraphService {
         slug: process.slug,
         parent_id: process.parent_id,
         parent_name: process.parent_name,
+        vigencia_id: process.vigencia_id,
         vigente_desde: process.vigente_desde,
         vigente_hasta: process.vigente_hasta,
         inicio_origen: process.inicio_origen,
@@ -261,6 +283,7 @@ export default class ProcessGraphService {
         fin_acto_id: process.fin_acto_id,
         estado: process.estado
       },
+      vigencias,
       configurations,
       children,
       runs

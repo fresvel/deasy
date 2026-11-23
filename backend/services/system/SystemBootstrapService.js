@@ -777,12 +777,17 @@ export const ensureDefaultProcess = async (connection) => {
   let process = await fetchOne(connection, "SELECT id FROM processes WHERE slug = ? LIMIT 1", [DEFAULT_PROCESS_SLUG]);
   if (!process) {
     const [r] = await connection.query(
-      // RIGE DESDE LA INSTALACION, con origen «carga inicial»: es la estructura que el sistema trae al
-      // nacer, y por eso no pide acto (frente 27, D-03 y D-05).
-      "INSERT INTO processes (name, slug, parent_id, vigente_desde, inicio_origen) VALUES (?, ?, NULL, CURRENT_DATE, 'carga_inicial')",
+      "INSERT INTO processes (name, slug, parent_id) VALUES (?, ?, NULL)",
       [DEFAULT_PROCESS_NAME, DEFAULT_PROCESS_SLUG]
     );
     process = { id: r.insertId };
+    // RIGE DESDE LA INSTALACION, con origen «carga inicial»: es la estructura que el sistema trae al
+    // nacer, y por eso no pide acto (frente 27, D-03 y D-05). Su primera vida es una fila de
+    // `process_vigencias`; sin ella seria un borrador y no saldria en el menu de nadie.
+    await connection.query(
+      "INSERT INTO process_vigencias (process_id, vigente_desde, inicio_origen) VALUES (?, CURRENT_DATE, 'carga_inicial')",
+      [process.id]
+    );
   }
   const processId = Number(process.id);
 

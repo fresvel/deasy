@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, de un vistazo"
-description: "Las 34 tablas de la cadena proceso → documento sin sus campos, agrupadas por lo que declaran, lo que ocurre y los dos flujos."
+description: "Las 35 tablas de la cadena proceso → documento sin sus campos, agrupadas por lo que declaran, lo que ocurre y los dos flujos."
 sidebar:
   label: "Mapa completo"
   order: 15
@@ -12,7 +12,7 @@ Las mismas tablas y los mismos grupos, con **todas sus columnas y claves ajenas*
 no se queda atrás; la agrupación la toma de este mapa.
 :::
 
-La cadena entera sin los campos, para ver la forma. Son **34 tablas** repartidas en seis grupos: la
+La cadena entera sin los campos, para ver la forma. Son **35 tablas** repartidas en seis grupos: la
 organización (que no es parte de la cadena pero la sostiene), lo que se declara, lo que ocurre, los dos
 flujos y las observaciones.
 
@@ -36,6 +36,8 @@ flowchart TB
   subgraph DECL["Lo que se declara"]
     direction TB
     PR["processes"] --> PDV["process_definition_versions"]
+    PR --> PV["process_vigencias"]
+    ACT --> PV
     PR --> LIN["lineas"]
     LIN --> PDV
     PDV --> PDPT["process_definition_period_types"]
@@ -151,4 +153,4 @@ persona*, no de cuántas formas se la puede contactar. Lo que la cadena gana de 
 claves ajenas, y todas salen de `persons`**: dos a `paises` —nacionalidad y país de
 nacimiento—, una a `cantones` —el de nacimiento— y una a `estados_civiles`.
 
-El esquema completo tiene **89 tablas** (contadas el 2026-11-23, con las tres del acto); estas 34 son las que van del proceso al documento firmado.
+El esquema completo tiene **90 tablas** (contadas el 2026-11-23, con las tres del acto y las vidas del proceso); estas 35 son las que van del proceso al documento firmado.

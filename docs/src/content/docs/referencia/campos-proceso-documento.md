@@ -152,12 +152,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `name` | varchar(180) | sí | — | — |
 | `slug` | varchar(180) | sí | — | — |
 | `parent_id` | int | no | `processes.id` · impide borrar | — |
-| `vigente_desde` | date | no | — | — |
-| `vigente_hasta` | date | no | — | — |
-| `inicio_origen` | text | no | — | `carga_inicial` · `reorganizacion` · `correccion` |
-| `inicio_acto_id` | int | no | `actos.id` · impide borrar | — |
-| `fin_origen` | text | no | — | `carga_inicial` · `reorganizacion` · `correccion` |
-| `fin_acto_id` | int | no | `actos.id` · impide borrar | — |
 | `created_at` | timestamp | sí | — | — |
 
 ### `lineas`
@@ -510,4 +504,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**32 tablas · 305 columnas · 76 referencias.** Leídas del catálogo de PostgreSQL.
+**32 tablas · 299 columnas · 74 referencias.** Leídas del catálogo de PostgreSQL.

@@ -461,27 +461,37 @@ test("el enlace al documento vive en tareas y retiene la version: su clave no pr
   );
 });
 
-// LA VIGENCIA DE UN PROCESO (frente 27, D-03): dos fechas en vez de la bandera.
-test("processes ya no tiene is_active: su estado se lee de dos fechas", () => {
-  const create = bloqueRecorrido("processes");
-  assert.ok(!/\bis_active\b/.test(create.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n")));
-  assert.match(create, /vigente_desde DATE NULL/);
+// LA VIGENCIA DE UN PROCESO (frente 27, D-03): ni bandera ni columnas en su fila; una tabla de
+// periodos, con una fila por cada vez que ha regido.
+test("processes no lleva ni is_active ni fechas: su vigencia vive en process_vigencias", () => {
+  const create = bloqueRecorrido("processes").split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+  for (const columna of ["is_active", "vigente_desde", "vigente_hasta", "inicio_acto_id", "fin_acto_id"]) {
+    assert.ok(!new RegExp(`\\b${columna}\\b`).test(create), `processes no puede declarar ${columna}`);
+  }
+  assert.match(SCHEMA_CRUDO, /CREATE TABLE IF NOT EXISTS procesos\.process_vigencias \(/);
+});
+
+test("una vida siempre tiene inicio y su origen: el borrador es NO tener ninguna fila", () => {
+  const create = bloqueRecorrido("process_vigencias");
+  assert.match(create, /vigente_desde DATE NOT NULL/);
+  assert.match(create, /inicio_origen TEXT NOT NULL/);
   assert.match(create, /vigente_hasta DATE NULL/);
 });
 
-test("un proceso nace en borrador: ninguna de las dos fechas tiene valor por defecto", () => {
-  const create = bloqueRecorrido("processes");
-  assert.ok(!/vigente_desde DATE[^,\n]*DEFAULT/.test(create));
-  assert.ok(!/vigente_hasta DATE[^,\n]*DEFAULT/.test(create));
+test("el origen decide si el acto es obligatorio, en el inicio y en el fin", () => {
+  assert.match(SCHEMA, /ck_process_vigencias_inicio_acto CHECK \(inicio_origen <> 'reorganizacion' OR inicio_acto_id IS NOT NULL\)/);
+  assert.match(
+    SCHEMA,
+    /ck_process_vigencias_fin_acto CHECK \(\s*\(fin_origen IS DISTINCT FROM 'reorganizacion' OR fin_acto_id IS NOT NULL\)/
+  );
 });
 
-test("el origen decide si el acto es obligatorio, en el inicio y en el fin", () => {
-  for (const extremo of ["inicio", "fin"]) {
-    assert.match(
-      SCHEMA,
-      new RegExp(`ck_processes_${extremo}_acto CHECK \\(\\s*\\(${extremo}_origen IS DISTINCT FROM 'reorganizacion' OR ${extremo}_acto_id IS NOT NULL\\)`)
-    );
-  }
+test("dos vidas del mismo proceso no se solapan, y lo impide una exclusion, no un disparador", () => {
+  assert.match(SCHEMA, /CREATE EXTENSION IF NOT EXISTS btree_gist/);
+  assert.match(
+    SCHEMA,
+    /ex_process_vigencias_sin_solape EXCLUDE USING gist \(\s*process_id WITH =,\s*daterange\(vigente_desde, vigente_hasta, '\[\)'\) WITH &&\s*\)/
+  );
 });
 
 test("hay UNA definicion de «vigente», y depende del dia: es una funcion STABLE, no una columna", () => {

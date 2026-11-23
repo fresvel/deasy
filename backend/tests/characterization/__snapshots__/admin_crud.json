@@ -424,16 +424,10 @@
       "active_definition_version",
       "created_at",
       "estado",
-      "fin_acto_id",
-      "fin_origen",
       "id",
-      "inicio_acto_id",
-      "inicio_origen",
       "name",
       "parent_id",
-      "slug",
-      "vigente_desde",
-      "vigente_hasta"
+      "slug"
     ]
   },
   "list_relation_unit_types": {
@@ -657,7 +651,8 @@
       "children",
       "configurations",
       "process",
-      "runs"
+      "runs",
+      "vigencias"
     ],
     "process": {
       "estado": "vigente",
@@ -670,6 +665,7 @@
       "parent_id": "<normalized>",
       "parent_name": null,
       "slug": "default",
+      "vigencia_id": "<normalized>",
       "vigente_desde": "<normalized>",
       "vigente_hasta": null
     },
@@ -722,6 +718,7 @@
       "name",
       "parent_id",
       "slug",
+      "vigencia_id",
       "vigente_desde",
       "vigente_hasta"
     ],

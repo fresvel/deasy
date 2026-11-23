@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 34 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 35 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**34 tablas · 318 columnas · 80 claves ajenas · 10 diagramas.**
+**35 tablas · 321 columnas · 81 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -174,13 +174,13 @@ erDiagram
 <details>
 <summary>Llegan 34 claves ajenas desde otros diagramas</summary>
 
-`acto_documentos.acto_id` → `actos` · `aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `participantes_declarados.persona_id` → `persons` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `position_assignments.person_id` → `persons` · `process_runs.created_by_user_id` → `persons` · `processes.fin_acto_id` → `actos` · `processes.inicio_acto_id` → `actos` · `role_assignments.person_id` → `persons` · `task_item_tenures.person_id` → `persons` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `telefonos.person_id` → `persons` · `turnos.persona_id` → `persons` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
+`acto_documentos.acto_id` → `actos` · `aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `participantes_declarados.persona_id` → `persons` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `position_assignments.person_id` → `persons` · `process_runs.created_by_user_id` → `persons` · `process_vigencias.fin_acto_id` → `actos` · `process_vigencias.inicio_acto_id` → `actos` · `role_assignments.person_id` → `persons` · `task_item_tenures.person_id` → `persons` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `telefonos.person_id` → `persons` · `turnos.persona_id` → `persons` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
 
 </details>
 
 ## Lo que se declara (1 de 2)
 
-**5 tablas** · 44 columnas · 11 claves ajenas propias. Apunta a `actos`, `cargos`, `unit_types`, `units`, que salen como caja vacía.
+**5 tablas** · 40 columnas · 12 claves ajenas propias. Apunta a `actos`, `cargos`, `term_types`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -190,12 +190,6 @@ erDiagram
     varchar name
     varchar slug UK
     int parent_id FK
-    date vigente_desde
-    date vigente_hasta
-    text inicio_origen
-    int inicio_acto_id FK
-    text fin_origen
-    int fin_acto_id FK
     timestamp created_at
   }
   process_definition_versions {
@@ -207,6 +201,17 @@ erDiagram
     smallint active_series_flag
     date effective_from
     date effective_to
+    timestamp created_at
+  }
+  process_vigencias {
+    int id PK
+    int process_id FK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
     timestamp created_at
   }
   lineas {
@@ -230,6 +235,34 @@ erDiagram
     smallint is_active
     timestamp created_at
   }
+  lineas |o--o{ lineas : "linea_anterior_id"
+  cargos |o--o{ lineas : "cargo_id"
+  processes ||--o{ lineas : "process_id"
+  unit_types |o--o{ lineas : "unit_type_id"
+  units |o--o{ lineas : "unit_id"
+  process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
+  term_types ||--o{ process_definition_period_types : "term_type_id"
+  lineas ||--o{ process_definition_versions : "linea_id"
+  actos |o--o{ process_vigencias : "fin_acto_id"
+  actos |o--o{ process_vigencias : "inicio_acto_id"
+  processes ||--o{ process_vigencias : "process_id"
+  processes |o--o{ processes : "parent_id"
+```
+
+<details>
+<summary>Llegan 7 claves ajenas desde otros diagramas</summary>
+
+`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `vinculos.process_definition_id` → `process_definition_versions`
+
+</details>
+
+## Lo que se declara (2 de 2)
+
+**5 tablas** · 42 columnas · 6 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   term_types {
     int id PK
     varchar code UK
@@ -239,33 +272,6 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
-  lineas |o--o{ lineas : "linea_anterior_id"
-  cargos |o--o{ lineas : "cargo_id"
-  processes ||--o{ lineas : "process_id"
-  unit_types |o--o{ lineas : "unit_type_id"
-  units |o--o{ lineas : "unit_id"
-  process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
-  term_types ||--o{ process_definition_period_types : "term_type_id"
-  lineas ||--o{ process_definition_versions : "linea_id"
-  actos |o--o{ processes : "fin_acto_id"
-  actos |o--o{ processes : "inicio_acto_id"
-  processes |o--o{ processes : "parent_id"
-```
-
-<details>
-<summary>Llegan 8 claves ajenas desde otros diagramas</summary>
-
-`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `terms.term_type_id` → `term_types` · `vinculos.process_definition_id` → `process_definition_versions`
-
-</details>
-
-## Lo que se declara (2 de 2)
-
-**4 tablas** · 35 columnas · 6 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
-
-```mermaid
-erDiagram
-  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   catalogo_documental {
     int id PK
     varchar code UK
@@ -318,9 +324,9 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 3 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 5 claves ajenas desde otros diagramas</summary>
 
-`document_versions.edicion_id` → `ediciones` · `pasos_declarados.edicion_id` → `ediciones` · `task_items.vinculo_id` → `vinculos`
+`document_versions.edicion_id` → `ediciones` · `pasos_declarados.edicion_id` → `ediciones` · `process_definition_period_types.term_type_id` → `term_types` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
 
 </details>
 

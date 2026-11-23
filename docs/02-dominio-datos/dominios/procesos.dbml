@@ -71,22 +71,29 @@ Table "process_definition_versions" {
   }
 }
 
-Table "processes" {
+Table "process_vigencias" {
   "id" int4 [pk, not null, increment]
-  "name" varchar(180) [not null]
-  "slug" varchar(180) [unique, not null]
-  "parent_id" int4
-  "vigente_desde" date
+  "process_id" int4 [not null]
+  "vigente_desde" date [not null]
   "vigente_hasta" date
-  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
   "inicio_acto_id" int4
   "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
   "fin_acto_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (vigente_desde, vigente_hasta) [type: btree, name: "idx_processes_vigencia"]
+    (process_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_process_vigencias_sin_solape"]
+    (process_id, vigente_desde) [type: btree, name: "idx_process_vigencias_process"]
   }
+}
+
+Table "processes" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "slug" varchar(180) [unique, not null]
+  "parent_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
 }
@@ -134,6 +141,7 @@ Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: casca
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
 Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]
+Ref "fk_process_vigencias_process":"processes"."id" <? "process_vigencias"."process_id"
 Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
 Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."process_definition_id" [delete: cascade]
@@ -148,8 +156,8 @@ Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."p
 //   units -> lineas   [organizacion]
 //   process_definition_versions -> process_runs   [tareas]
 //   terms -> process_runs   [tareas]
-//   actos -> processes   [organizacion]
-//   actos -> processes   [organizacion]
+//   actos -> process_vigencias   [organizacion]
+//   actos -> process_vigencias   [organizacion]
 //   vinculos -> task_items   [tareas]
 //   process_definition_versions -> tasks   [tareas]
 //   terms -> tasks   [tareas]

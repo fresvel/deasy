@@ -53,19 +53,29 @@ const MENSAJES_DE_CHECK = Object.freeze({
     "Un acto tiene exactamente un emisor: una unidad o un emisor externo, no los dos ni ninguno.",
   ck_actos_un_solo_suscriptor:
     "«Suscrito por» es una persona del sistema o un nombre escrito, no los dos.",
-  ck_processes_periodo:
-    "No se puede fijar «rige hasta» sin «rige desde», ni una fecha de fin anterior a la de inicio.",
-  ck_processes_inicio_con_origen:
-    "La fecha de inicio y su origen van juntos: elige el origen, o deja las dos cosas en blanco.",
-  ck_processes_fin_con_origen:
+  ck_process_vigencias_periodo:
+    "La fecha de fin no puede ser anterior a la de inicio.",
+  ck_process_vigencias_fin_con_origen:
     "La fecha de fin y su origen van juntos: elige el origen, o deja las dos cosas en blanco.",
-  ck_processes_inicio_acto:
+  ck_process_vigencias_inicio_acto:
     "Poner en vigor por una reorganización necesita el acto que la ordena.",
-  ck_processes_fin_acto:
+  ck_process_vigencias_fin_acto:
     "Suprimir por una reorganización necesita el acto que la ordena."
 });
 
 export const checkViolationMessage = (error) => MENSAJES_DE_CHECK[violatedConstraint(error)] ?? null;
+
+/** Violacion de una restriccion de EXCLUSION: dos filas que no pueden coexistir. */
+export const PG_EXCLUSION_VIOLATION = "23P01";
+export const isExclusionViolation = (error) => error?.code === PG_EXCLUSION_VIOLATION;
+
+// Misma idea que los CHECK, y por el mismo motivo: lo unico que identifica la regla es el NOMBRE.
+const MENSAJES_DE_EXCLUSION = Object.freeze({
+  ex_process_vigencias_sin_solape:
+    "Ese periodo coincide con otra vida de este proceso: cierra la anterior o cambia las fechas."
+});
+
+export const exclusionViolationMessage = (error) => MENSAJES_DE_EXCLUSION[violatedConstraint(error)] ?? null;
 
 /** Nombre de la restricción violada, "" si el error no es de restricción. */
 export const violatedConstraint = (error) => String(error?.constraint || "");
@@ -216,6 +226,12 @@ export function translateConstraintError(error, tableName, { deleting = false } 
   if (isCheckViolation(error)) {
     const mensaje = checkViolationMessage(error);
     return mensaje ? badRequest(mensaje) : null;
+  }
+  // 409: el estado actual no admite la operacion --ya hay otra fila que ocupa ese sitio--, que es
+  // la misma familia que un duplicado.
+  if (isExclusionViolation(error)) {
+    const mensaje = exclusionViolationMessage(error);
+    return mensaje ? conflict(mensaje) : null;
   }
   return null;
 }

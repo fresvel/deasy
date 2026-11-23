@@ -115,7 +115,7 @@ const getProcessTargetRuleRows = async (pool) => {
       AND pdv.status = 'active'
       AND pdv.effective_from <= CURDATE()
       AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
-     WHERE esta_vigente(p.vigente_desde, p.vigente_hasta)
+     WHERE proceso_rige(p.id)
      -- SIN el JOIN a las reglas (frente 25, P26): la tabla se retiro y el afinado es de la linea,
      -- que ya esta unida aqui arriba. Cada configuracion activa aporta UNA fila, no una por regla.
      ORDER BY p.name, pdv.id`
@@ -193,7 +193,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          AND pdv.status = 'active'
          AND pdv.effective_from <= CURDATE()
          AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
-         AND esta_vigente(p.vigente_desde, p.vigente_hasta)
+         AND proceso_rige(p.id)
          AND LOWER(COALESCE(dv.status, '')) IN (
            'pendiente de llenado',
            'en llenado',
@@ -256,7 +256,7 @@ export const getUserOperationalProcessRows = async (pool, userId) => {
          AND pdv.status = 'active'
          AND pdv.effective_from <= CURDATE()
          AND (pdv.effective_to IS NULL OR pdv.effective_to >= CURDATE())
-         AND esta_vigente(p.vigente_desde, p.vigente_hasta)
+         AND proceso_rige(p.id)
          AND LOWER(COALESCE(dv.status, '')) IN (
            'listo para firma',
            'pendiente de firma',

@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 89 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 90 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -971,22 +971,29 @@ Table "process_runs" {
   }
 }
 
-Table "processes" {
+Table "process_vigencias" {
   "id" int4 [pk, not null, increment]
-  "name" varchar(180) [not null]
-  "slug" varchar(180) [unique, not null]
-  "parent_id" int4
-  "vigente_desde" date
+  "process_id" int4 [not null]
+  "vigente_desde" date [not null]
   "vigente_hasta" date
-  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
   "inicio_acto_id" int4
   "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
   "fin_acto_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (vigente_desde, vigente_hasta) [type: btree, name: "idx_processes_vigencia"]
+    (process_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_process_vigencias_sin_solape"]
+    (process_id, vigente_desde) [type: btree, name: "idx_process_vigencias_process"]
   }
+}
+
+Table "processes" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "slug" varchar(180) [unique, not null]
+  "parent_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
 }
@@ -1534,8 +1541,9 @@ Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user
 Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
 Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
-Ref "fk_processes_fin_acto":"actos"."id" ?<? "processes"."fin_acto_id"
-Ref "fk_processes_inicio_acto":"actos"."id" ?<? "processes"."inicio_acto_id"
+Ref "fk_process_vigencias_fin_acto":"actos"."id" ?<? "process_vigencias"."fin_acto_id"
+Ref "fk_process_vigencias_inicio_acto":"actos"."id" ?<? "process_vigencias"."inicio_acto_id"
+Ref "fk_process_vigencias_process":"processes"."id" <? "process_vigencias"."process_id"
 Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"
