@@ -48,19 +48,28 @@ export const isCheckViolation = (error) => error?.code === PG_CHECK_VIOLATION;
 //
 // Las que no estan aqui siguen saliendo con el texto del motor, como hasta ahora. No se inventa un
 // mensaje generico: «el dato no es valido» no le dice a nadie que corregir.
+// LAS REGLAS DE UNA VIDA son las mismas en cada tabla de periodos --de procesos, de unidades-- y solo
+// cambia el nombre de la restriccion, que lleva el de su tabla. Se escriben UNA vez y se reparten:
+// asi una tabla nueva de vigencias entra añadiendo su nombre a esta lista, no copiando cuatro frases.
+const TABLAS_DE_VIGENCIA = Object.freeze({
+  process_vigencias: "este proceso",
+  unit_vigencias: "esta unidad"
+});
+
+const reglasDeVida = (tabla) => ({
+  [`ck_${tabla}_periodo`]: "La fecha de fin no puede ser anterior a la de inicio.",
+  [`ck_${tabla}_fin_con_origen`]:
+    "La fecha de fin y su origen van juntos: elige el origen, o deja las dos cosas en blanco.",
+  [`ck_${tabla}_inicio_acto`]: "Poner en vigor por una reorganización necesita el acto que la ordena.",
+  [`ck_${tabla}_fin_acto`]: "Suprimir por una reorganización necesita el acto que la ordena."
+});
+
 const MENSAJES_DE_CHECK = Object.freeze({
   ck_actos_un_solo_emisor:
     "Un acto tiene exactamente un emisor: una unidad o un emisor externo, no los dos ni ninguno.",
   ck_actos_un_solo_suscriptor:
     "«Suscrito por» es una persona del sistema o un nombre escrito, no los dos.",
-  ck_process_vigencias_periodo:
-    "La fecha de fin no puede ser anterior a la de inicio.",
-  ck_process_vigencias_fin_con_origen:
-    "La fecha de fin y su origen van juntos: elige el origen, o deja las dos cosas en blanco.",
-  ck_process_vigencias_inicio_acto:
-    "Poner en vigor por una reorganización necesita el acto que la ordena.",
-  ck_process_vigencias_fin_acto:
-    "Suprimir por una reorganización necesita el acto que la ordena."
+  ...Object.assign({}, ...Object.keys(TABLAS_DE_VIGENCIA).map(reglasDeVida))
 });
 
 export const checkViolationMessage = (error) => MENSAJES_DE_CHECK[violatedConstraint(error)] ?? null;
@@ -70,9 +79,19 @@ export const PG_EXCLUSION_VIOLATION = "23P01";
 export const isExclusionViolation = (error) => error?.code === PG_EXCLUSION_VIOLATION;
 
 // Misma idea que los CHECK, y por el mismo motivo: lo unico que identifica la regla es el NOMBRE.
-const MENSAJES_DE_EXCLUSION = Object.freeze({
-  ex_process_vigencias_sin_solape:
-    "Ese periodo coincide con otra vida de este proceso: cierra la anterior o cambia las fechas."
+const MENSAJES_DE_EXCLUSION = Object.freeze(
+  Object.fromEntries(
+    Object.entries(TABLAS_DE_VIGENCIA).map(([tabla, de]) => [
+      `ex_${tabla}_sin_solape`,
+      `Ese periodo coincide con otra vida de ${de}: cierra la anterior o cambia las fechas.`
+    ])
+  )
+);
+
+/** Los nombres de restriccion que este modulo sabe traducir. Lo lee el test que los ata al esquema. */
+export const RESTRICCIONES_CON_FRASE = Object.freeze({
+  check: Object.keys(MENSAJES_DE_CHECK),
+  exclusion: Object.keys(MENSAJES_DE_EXCLUSION)
 });
 
 export const exclusionViolationMessage = (error) => MENSAJES_DE_EXCLUSION[violatedConstraint(error)] ?? null;

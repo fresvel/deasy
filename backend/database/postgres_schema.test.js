@@ -504,3 +504,28 @@ test("hay UNA definicion de «vigente», y depende del dia: es una funcion STABL
   }
 });
 
+// LA VIGENCIA DE UNA UNIDAD (frente 27, D-03): la misma forma que la del proceso.
+test("units no lleva is_active ni apunta a actos: su vigencia vive en unit_vigencias", () => {
+  const create = bloqueRecorrido("units").split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+  for (const columna of ["is_active", "vigente_desde", "inicio_acto_id", "fin_acto_id"]) {
+    assert.ok(!new RegExp(`\\b${columna}\\b`).test(create), `units no puede declarar ${columna}`);
+  }
+  assert.match(SCHEMA_CRUDO, /CREATE TABLE IF NOT EXISTS organizacion\.unit_vigencias \(/);
+});
+
+test("unit_vigencias se crea DESPUES de units y de actos: es lo que deshace el circulo", () => {
+  const pos = (tabla) => SCHEMA_CRUDO.indexOf(`CREATE TABLE IF NOT EXISTS organizacion.${tabla} (`);
+  assert.ok(pos("units") > 0 && pos("actos") > 0 && pos("unit_vigencias") > 0);
+  assert.ok(pos("units") < pos("actos"), "el acto apunta a la unidad que lo emite");
+  assert.ok(pos("actos") < pos("unit_vigencias"), "las vidas apuntan al acto que las ordena");
+});
+
+test("las tablas de vigencias tienen las mismas reglas, con el nombre de su tabla", () => {
+  for (const tabla of ["process_vigencias", "unit_vigencias"]) {
+    for (const regla of ["periodo", "fin_con_origen", "inicio_acto", "fin_acto"]) {
+      assert.ok(SCHEMA.includes(`CONSTRAINT ck_${tabla}_${regla} CHECK`), `falta ck_${tabla}_${regla}`);
+    }
+    assert.ok(SCHEMA.includes(`CONSTRAINT ex_${tabla}_sin_solape EXCLUDE USING gist`), `falta la exclusion de ${tabla}`);
+  }
+});
+

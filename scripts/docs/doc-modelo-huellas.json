@@ -1112,8 +1112,16 @@
       "referencia/campos-proceso-documento.md"
     ]
   },
+  "unit_vigencias": {
+    "huella": "b999a8715afbb1c3",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
   "units": {
-    "huella": "c9143d3a06f77134",
+    "huella": "3f5f0a184eba2803",
     "paginas": [
       "arquitectura-y-patrones.md",
       "backend/auth.md",

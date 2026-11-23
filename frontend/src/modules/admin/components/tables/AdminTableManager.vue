@@ -126,7 +126,6 @@
       :editable="canUpdateCurrentTable"
       :can-create-process="canCreateProcessConfiguration"
       class="mb-2"
-      @edit-unit="openEdit"
       @create-unit="openCreate"
       @create-process="openProcessWizardFromScratch"
     />

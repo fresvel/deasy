@@ -87,7 +87,7 @@ export const buscarPersonas = async (ejecutor, whereClause, params, limite) => {
       AND up.is_active = 1
      LEFT JOIN units u
        ON u.id = up.unit_id
-      AND u.is_active = 1
+      AND unidad_rige(u.id)
      LEFT JOIN unit_types ut
        ON ut.id = u.unit_type_id
      LEFT JOIN cargos c

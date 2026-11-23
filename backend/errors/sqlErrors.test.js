@@ -190,15 +190,16 @@ test("un CHECK con frase propia se traduce; uno sin ella sigue siendo el error d
   assert.equal(translateConstraintError({ code: "23514", constraint: "otra_restriccion_check" }, "x"), null);
 });
 
-test("cada frase de CHECK nombra una restriccion que EXISTE en el esquema", async () => {
+test("cada frase nombra una restriccion que EXISTE en el esquema, CHECK o exclusion", async () => {
   const { readFileSync } = await import("node:fs");
+  const { RESTRICCIONES_CON_FRASE } = await import("./sqlErrors.js");
   const esquema = readFileSync(new URL("../database/postgres_schema.sql", import.meta.url), "utf8");
-  const fuente = readFileSync(new URL("./sqlErrors.js", import.meta.url), "utf8");
-  const bloque = fuente.slice(fuente.indexOf("const MENSAJES_DE_CHECK"), fuente.indexOf("export const checkViolationMessage"));
-  const nombres = [...bloque.matchAll(/^  (ck_[a-z_]+):/gm)].map((m) => m[1]);
-  assert.ok(nombres.length >= 6, "se esperaban al menos las seis frases iniciales");
-  for (const nombre of nombres) {
+  assert.ok(RESTRICCIONES_CON_FRASE.check.length >= 10, "dos de actos y cuatro por cada tabla de vigencias");
+  for (const nombre of RESTRICCIONES_CON_FRASE.check) {
     assert.ok(esquema.includes(`CONSTRAINT ${nombre} CHECK`), `${nombre} no existe en el esquema`);
+  }
+  for (const nombre of RESTRICCIONES_CON_FRASE.exclusion) {
+    assert.ok(esquema.includes(`CONSTRAINT ${nombre} EXCLUDE`), `${nombre} no existe en el esquema`);
   }
 });
 
@@ -207,5 +208,13 @@ test("dos vidas solapadas del mismo proceso se dicen con una frase, y son un con
   assert.equal(solape.statusCode, 409);
   assert.match(solape.message, /coincide con otra vida/);
   assert.equal(translateConstraintError({ code: "23P01", constraint: "otra_exclusion" }, "x"), null);
+});
+
+test("las reglas de una vida se dicen igual para un proceso y para una unidad", () => {
+  const deProceso = translateConstraintError({ code: "23514", constraint: "ck_process_vigencias_fin_acto" }, "process_vigencias");
+  const deUnidad = translateConstraintError({ code: "23514", constraint: "ck_unit_vigencias_fin_acto" }, "unit_vigencias");
+  assert.equal(deProceso.message, deUnidad.message);
+  const solape = translateConstraintError({ code: "23P01", constraint: "ex_unit_vigencias_sin_solape" }, "unit_vigencias");
+  assert.match(solape.message, /otra vida de esta unidad/);
 });
 

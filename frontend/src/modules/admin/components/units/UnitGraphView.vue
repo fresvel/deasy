@@ -6,13 +6,13 @@
         <span>· {{ nodes.length }} unidades · {{ edges.length }} relaciones</span>
         <AppInfoTip placement="bottom" aria-label="Ayuda del organigrama">
           <template v-if="editable">
-            Haz clic en una unidad para ver sus puestos y ocupaciones. Pasa el cursor sobre una unidad para
-            editar / agregar hijos, o arrastra desde su punto inferior al superior de otra para crear una
-            relación. Usa los botones de cada relación para cambiar su tipo o quitarla.
+            Pulsa una unidad para abrirla: sus datos, su vigencia, sus puestos y sus procesos. Pasa el cursor
+            sobre ella para agregarle hijas, o arrastra desde su punto inferior al superior de otra para crear
+            una relación. Usa los botones de cada relación para cambiar su tipo o quitarla.
           </template>
           <template v-else>
-            Haz clic en una unidad para ver sus puestos y ocupaciones. Vista de solo lectura: no tienes
-            permisos para editar.
+            Pulsa una unidad para ver sus datos, su vigencia, sus puestos y sus procesos. Vista de solo
+            lectura: no tienes permisos para editar.
           </template>
         </AppInfoTip>
       </div>
@@ -24,11 +24,14 @@
             <option value="all">Todos los tipos</option>
           </select>
         </label>
-        <label class="flex items-center gap-2 text-xs font-medium text-icon">
-          <input v-model="showInactive" type="checkbox" class="text-primary" />
-          Mostrar inactivas
-        </label>
-        <AppButton v-if="editable" variant="neutral-outline" :disabled="loading" @click="$emit('create-unit')">+ Unidad</AppButton>
+        <!-- Los dos botones con rótulo miden lo mismo porque van en una rejilla de columnas iguales:
+             el patrón del mapa de procesos. -->
+        <div class="grid auto-cols-fr grid-flow-col gap-2">
+          <AppCheckMenu v-model="vistaActiva" label="Mostrar" :options="OPCIONES_DE_VISTA" />
+          <AppButton v-if="editable" variant="primary-outline" :disabled="loading" @click="$emit('create-unit')">
+            <IconPlus class="mr-1 h-4 w-4" /> Unidad
+          </AppButton>
+        </div>
         <AppButton variant="neutral-outline" :disabled="loading" @click="loadGraph">Refrescar</AppButton>
       </div>
     </div>
@@ -163,207 +166,261 @@
       </template>
     </AppModalShell>
 
-    <!-- Drawer: detalle de unidad (puestos y ocupaciones) -->
-    <div v-if="detailUnit" class="deasy-drawer-overlay" @click.self="closeDetail">
-      <aside class="deasy-drawer">
-        <header class="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
-          <div class="min-w-0">
-            <p class="deasy-overline">Detalle de unidad</p>
-            <h3 class="deasy-title deasy-title--block mt-0.5 truncate">{{ detailUnit.name }}</h3>
-          </div>
-          <AppCloseButton class="shrink-0" @click="closeDetail" />
-        </header>
+    <!-- LA UNIDAD, EN UN SOLO MODAL CON PESTAÑAS (2026-11-23), como el proceso en su mapa. Eran dos
+         sitios: un panel lateral con puestos y procesos y, aparte, el editor genérico al que mandaba
+         un lápiz flotante sobre el nodo. Ahora pulsar la unidad abre esto, y sus datos y su vigencia
+         son dos pestañas más. Lo que falla aquí dentro se dice aquí dentro. -->
+    <AppModalShell
+      v-if="Boolean(detailUnit)"
+      controlled
+      :open="Boolean(detailUnit)" :title="detailUnit.name || 'Unidad'" content-class="max-w-3xl" @close="closeDetail">
+      <div class="deasy-inline-tabs" role="tablist">
+        <button
+          v-for="pestana in PESTANAS_DE_LA_UNIDAD"
+          :key="pestana.id"
+          type="button"
+          role="tab"
+          class="deasy-inline-tab"
+          :class="detailTab === pestana.id ? 'deasy-inline-tab--active' : ''"
+          :aria-selected="detailTab === pestana.id"
+          @click="setDetailTab(pestana.id)"
+        >
+          <component :is="pestana.icono" class="h-4 w-4" />
+          {{ pestana.rotulo }}
+        </button>
+      </div>
 
-        <!-- Pestañas del panel -->
-        <div class="deasy-inline-tabs px-5" role="tablist">
-          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'ocupaciones' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'ocupaciones'" @click="setDetailTab('ocupaciones')">Ocupaciones</button>
-          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'procesos' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'procesos'" @click="setDetailTab('procesos')">Procesos</button>
+      <AppAlert v-if="modalError" variant="danger" class="mt-3">{{ modalError }}</AppAlert>
+
+      <div class="mt-4">
+        <!-- Pestaña: Datos — la identidad de la unidad -->
+        <div v-show="detailTab === 'datos'" class="flex flex-col gap-3">
+          <label class="deasy-form-label">
+            Nombre
+            <input v-model="unidadForm.name" type="text" class="deasy-control" placeholder="Nombre de la unidad" :disabled="!editable" />
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="deasy-form-label">
+              Etiqueta
+              <input v-model="unidadForm.label" type="text" class="deasy-control" placeholder="Sigla o nombre corto" :disabled="!editable" />
+            </label>
+            <label class="deasy-form-label">
+              Identificador (slug)
+              <input v-model="unidadForm.slug" type="text" class="deasy-control" placeholder="identificador" :disabled="!editable" />
+            </label>
+          </div>
+          <label class="deasy-form-label">
+            Tipo de unidad
+            <select v-model="unidadForm.unit_type_id" class="deasy-control deasy-control--select" :disabled="!editable">
+              <option v-for="tipo in unitTypes" :key="tipo.id" :value="String(tipo.id)">{{ tipo.name }}</option>
+            </select>
+          </label>
         </div>
 
-        <div class="flex-1 overflow-y-auto px-5 py-4">
-          <!-- Pestaña: Ocupaciones -->
-          <div v-show="detailTab === 'ocupaciones'">
-          <div class="mb-3 flex items-center justify-between gap-2">
-            <p class="deasy-overline">Puestos y ocupaciones</p>
-            <AppButton v-if="editable" variant="neutral-outline" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
-          </div>
+        <!-- Pestaña: Vigencia — las vidas de la unidad (frente 27, D-03). La misma pieza que el proceso. -->
+        <NodeVigenciaPanel
+          v-show="detailTab === 'vigencia'"
+          :vigencia="vigencia"
+          :estado="detailUnit.estado"
+          sujeto="Unidad"
+          :editable="editable"
+          @reactivar="empezarVidaNueva"
+        />
 
-          <!-- Formulario de nuevo puesto -->
-          <div v-if="editable && addingPosition" class="mb-3 rounded-xl border border-brand-200 bg-brand-50/40 p-3">
-            <div class="flex flex-col gap-2">
-              <select v-model="positionForm.cargo_id" aria-label="Cargo del nuevo puesto" class="deasy-control deasy-control--select">
-                <option value="">Cargo…</option>
-                <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
+        <!-- Pestaña: Ocupaciones -->
+        <div v-show="detailTab === 'ocupaciones'">
+        <div class="mb-3 flex items-center justify-between gap-2">
+          <p class="deasy-overline">Puestos y ocupaciones</p>
+          <AppButton v-if="editable" variant="neutral-outline" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
+        </div>
+
+        <!-- Formulario de nuevo puesto -->
+        <div v-if="editable && addingPosition" class="mb-3 rounded-xl border border-brand-200 bg-brand-50/40 p-3">
+          <div class="flex flex-col gap-2">
+            <select v-model="positionForm.cargo_id" aria-label="Cargo del nuevo puesto" class="deasy-control deasy-control--select">
+              <option value="">Cargo…</option>
+              <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+            <input v-model="positionForm.title" type="text" aria-label="Título del nuevo puesto (opcional)" placeholder="Título (opcional)" class="deasy-control" />
+            <div class="flex items-center gap-3">
+              <select v-model="positionForm.position_type" aria-label="Tipo del nuevo puesto" class="deasy-control deasy-control--select flex-1">
+                <option value="real">Real</option>
+                <option value="promocion">Promoción</option>
+                <option value="simbolico">Simbólico</option>
               </select>
-              <input v-model="positionForm.title" type="text" aria-label="Título del nuevo puesto (opcional)" placeholder="Título (opcional)" class="deasy-control" />
-              <div class="flex items-center gap-3">
-                <select v-model="positionForm.position_type" aria-label="Tipo del nuevo puesto" class="deasy-control deasy-control--select flex-1">
-                  <option value="real">Real</option>
-                  <option value="promocion">Promoción</option>
-                  <option value="simbolico">Simbólico</option>
-                </select>
-                <SToggle v-model="positionForm.is_unit_head" label="Jefatura" label-position="end" />
-              </div>
-              <div class="flex justify-end gap-2">
-                <AppButton variant="danger-outline" @click="addingPosition = false">Cancelar</AppButton>
-                <AppButton variant="primary-outline" :disabled="!positionForm.cargo_id" @click="confirmAddPosition">Crear puesto</AppButton>
-              </div>
+              <SToggle v-model="positionForm.is_unit_head" label="Jefatura" label-position="end" />
+            </div>
+            <div class="flex justify-end gap-2">
+              <AppButton variant="danger-outline" @click="addingPosition = false">Cancelar</AppButton>
+              <AppButton variant="primary-outline" :disabled="!positionForm.cargo_id" @click="confirmAddPosition">Crear puesto</AppButton>
             </div>
           </div>
+        </div>
 
-          <div v-if="detailLoading" class="text-sm text-muted">Cargando…</div>
-          <AppEmpty v-else-if="!detailPositions.length">
-            Esta unidad no tiene puestos registrados.
-          </AppEmpty>
-          <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-            <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-line px-3 py-2.5">
-              <div class="flex items-center gap-2">
-                <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-warning" title="Jefatura" />
-                <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
-                <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
-                <span v-if="!pos.is_active" class="ml-auto text-theme-xs font-semibold text-danger">Inactivo</span>
+        <div v-if="detailLoading" class="text-sm text-muted">Cargando…</div>
+        <AppEmpty v-else-if="!detailPositions.length">
+          Esta unidad no tiene puestos registrados.
+        </AppEmpty>
+        <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
+          <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-line px-3 py-2.5">
+            <div class="flex items-center gap-2">
+              <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-warning" title="Jefatura" />
+              <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
+              <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
+              <span v-if="!pos.is_active" class="ml-auto text-theme-xs font-semibold text-danger">Inactivo</span>
+              <div v-if="editable" class="ml-auto flex items-center gap-2">
+                <AppButton
+                  :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
+                  icon-only
+                  title="Marcar/quitar jefatura"
+                  aria-label="Marcar/quitar jefatura"
+                  @click="toggleHead(pos)"
+                >
+                  <IconCrown class="h-5 w-5" />
+                </AppButton>
+                <AppButton
+                  variant="success-soft"
+                  icon-only
+                  title="Editar puesto"
+                  aria-label="Editar puesto"
+                  @click="openEditPosition(pos)"
+                >
+                  <IconPencil class="h-5 w-5" />
+                </AppButton>
+                <AppButton
+                  variant="danger-soft"
+                  icon-only
+                  title="Eliminar puesto"
+                  aria-label="Eliminar puesto"
+                  @click="removePosition(pos.id)"
+                >
+                  <IconTrash class="h-5 w-5" />
+                </AppButton>
+              </div>
+            </div>
+            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+              <template v-if="pos.person_id">
+                <AppTag variant="success">Ocupado</AppTag>
+                <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
                 <div v-if="editable" class="ml-auto flex items-center gap-2">
-                  <AppButton
-                    :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
-                    icon-only
-                    title="Marcar/quitar jefatura"
-                    aria-label="Marcar/quitar jefatura"
-                    @click="toggleHead(pos)"
-                  >
-                    <IconCrown class="h-5 w-5" />
-                  </AppButton>
                   <AppButton
                     variant="success-soft"
                     icon-only
-                    title="Editar puesto"
-                    aria-label="Editar puesto"
-                    @click="openEditPosition(pos)"
+                    title="Cambiar persona asignada"
+                    aria-label="Cambiar persona asignada"
+                    @click="openAssign(pos.id)"
                   >
-                    <IconPencil class="h-5 w-5" />
+                    <IconUserEdit class="h-5 w-5" />
                   </AppButton>
                   <AppButton
                     variant="danger-soft"
                     icon-only
-                    title="Eliminar puesto"
-                    aria-label="Eliminar puesto"
-                    @click="removePosition(pos.id)"
+                    title="Quitar persona del puesto"
+                    aria-label="Quitar persona del puesto"
+                    @click="unassign(pos.id)"
                   >
-                    <IconTrash class="h-5 w-5" />
+                    <IconUserMinus class="h-5 w-5" />
                   </AppButton>
                 </div>
-              </div>
-              <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                <template v-if="pos.person_id">
-                  <AppTag variant="success">Ocupado</AppTag>
-                  <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
-                  <div v-if="editable" class="ml-auto flex items-center gap-2">
-                    <AppButton
-                      variant="success-soft"
-                      icon-only
-                      title="Cambiar persona asignada"
-                      aria-label="Cambiar persona asignada"
-                      @click="openAssign(pos.id)"
-                    >
-                      <IconUserEdit class="h-5 w-5" />
-                    </AppButton>
-                    <AppButton
-                      variant="danger-soft"
-                      icon-only
-                      title="Quitar persona del puesto"
-                      aria-label="Quitar persona del puesto"
-                      @click="unassign(pos.id)"
-                    >
-                      <IconUserMinus class="h-5 w-5" />
-                    </AppButton>
-                  </div>
-                </template>
-                <template v-else>
-                  <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
-                  <AppButton
-                    v-if="editable"
-                    variant="success-soft"
-                    icon-only
-                    class-name="ml-auto"
-                    title="Asignar persona al puesto"
-                    aria-label="Asignar persona al puesto"
-                    @click="openAssign(pos.id)"
-                  >
-                    <IconUserPlus class="h-5 w-5" />
-                  </AppButton>
-                </template>
-              </div>
+              </template>
+              <template v-else>
+                <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
+                <AppButton
+                  v-if="editable"
+                  variant="success-soft"
+                  icon-only
+                  class-name="ml-auto"
+                  title="Asignar persona al puesto"
+                  aria-label="Asignar persona al puesto"
+                  @click="openAssign(pos.id)"
+                >
+                  <IconUserPlus class="h-5 w-5" />
+                </AppButton>
+              </template>
+            </div>
 
-              <!-- Acceso al wizard de perfil (visible, con texto) -->
-              <AppButton
-                v-if="editable"
-                variant="neutral-outline"
-                class-name="mt-2"
-                @click="openProfileWizard(pos)"
-              >
-                <IconFileDescription class="h-3.5 w-3.5" />
-                {{ pos.profile ? 'Editar perfil' : 'Definir perfil' }}
-              </AppButton>
+            <!-- Acceso al wizard de perfil (visible, con texto) -->
+            <AppButton
+              v-if="editable"
+              variant="neutral-outline"
+              class-name="mt-2"
+              @click="openProfileWizard(pos)"
+            >
+              <IconFileDescription class="h-3.5 w-3.5" />
+              {{ pos.profile ? 'Editar perfil' : 'Definir perfil' }}
+            </AppButton>
 
-              <!-- Buscador de persona para asignar -->
-              <div v-if="editable && assignForId === pos.id" class="deasy-card mt-2 p-2">
-                <input v-model="personQuery" type="text" aria-label="Buscar persona por nombre o cédula" placeholder="Buscar persona (nombre o cédula)…" class="deasy-control" @input="searchPersons" />
-                <div v-if="personSearching" class="mt-1 px-1 text-theme-xs text-muted">Buscando…</div>
-                <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-2 overflow-y-auto p-0">
-                  <li v-for="per in personResults" :key="per.id">
-                    <button type="button" class="deasy-option deasy-option--split" @click="pickPerson(per.id)">
-                      <span class="truncate text-body">{{ per.first_name }} {{ per.last_name }}</span>
-                      <span class="ml-2 shrink-0 text-muted">{{ per.cedula }}</span>
-                    </button>
-                  </li>
-                </ul>
-                <AppEmpty v-else-if="personQuery.trim().length >= 2" :icon="false">Sin resultados.</AppEmpty>
+            <!-- Buscador de persona para asignar -->
+            <div v-if="editable && assignForId === pos.id" class="deasy-card mt-2 p-2">
+              <input v-model="personQuery" type="text" aria-label="Buscar persona por nombre o cédula" placeholder="Buscar persona (nombre o cédula)…" class="deasy-control" @input="searchPersons" />
+              <div v-if="personSearching" class="mt-1 px-1 text-theme-xs text-muted">Buscando…</div>
+              <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-2 overflow-y-auto p-0">
+                <li v-for="per in personResults" :key="per.id">
+                  <button type="button" class="deasy-option deasy-option--split" @click="pickPerson(per.id)">
+                    <span class="truncate text-body">{{ per.first_name }} {{ per.last_name }}</span>
+                    <span class="ml-2 shrink-0 text-muted">{{ per.cedula }}</span>
+                  </button>
+                </li>
+              </ul>
+              <AppEmpty v-else-if="personQuery.trim().length >= 2" :icon="false">Sin resultados.</AppEmpty>
+            </div>
+          </li>
+        </ul>
+        </div>
+
+        <!-- Pestaña: Procesos de la unidad (alcance) -->
+        <div v-show="detailTab === 'procesos'">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <p class="deasy-overline">Procesos de la unidad</p>
+            <div class="flex items-center gap-2">
+              <AppButton v-if="editable && canCreateProcess" variant="primary-outline" @click="$emit('create-process')">+ Nueva configuración</AppButton>
+            </div>
+          </div>
+          <div v-if="detailProcessesLoading" class="text-sm text-muted">Cargando…</div>
+          <AppEmpty v-else-if="!detailProcesses.length">
+            Ningún proceso aplica a esta unidad.
+          </AppEmpty>
+          <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
+            <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-line px-3 py-2.5">
+              <div class="flex items-center gap-2">
+                <span class="truncate text-sm font-semibold text-strong">{{ proc.process_name }}</span>
+                <AppTag :variant="tonoOrigen(proc.origin)" outlined class-name="ml-auto">{{ processOriginMeta(proc.origin).label }}</AppTag>
+                <AppTag :variant="tonoCicloVida(proc.status)" outlined>{{ etiquetaCicloVida(proc.status) }}</AppTag>
+              </div>
+              <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                <span class="truncate">{{ proc.definition_name }}</span>
+                <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ processScopeLabel(proc.unit_scope_type) }}</span>
+              </div>
+              <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+                <span class="text-muted">Destinatario: <span class="font-medium text-body">{{ recipientSummary(proc) }}</span></span>
+                <!-- AQUI ESTABAN «Editar alcance» y «Quitar el proceso», que editaban y borraban
+                     una fila de `process_target_rules`. Desde `P10` esa fila no tenía unidad, así
+                     que «quitar el proceso de esta unidad» no quitaba nada de la unidad: borraba
+                     el reparto de la configuración entera. La tabla se retiró en `P26`. -->
+                <span class="ml-auto text-theme-xs italic text-muted">El alcance lo dice la línea del proceso</span>
               </div>
             </li>
           </ul>
-          </div>
-
-          <!-- Pestaña: Procesos de la unidad (alcance) -->
-          <div v-show="detailTab === 'procesos'">
-            <div class="mb-3 flex items-center justify-between gap-2">
-              <p class="deasy-overline">Procesos de la unidad</p>
-              <div class="flex items-center gap-2">
-                <AppButton v-if="editable && canCreateProcess" variant="primary-outline" @click="$emit('create-process')">+ Nueva configuración</AppButton>
-              </div>
-            </div>
-            <div v-if="detailProcessesLoading" class="text-sm text-muted">Cargando…</div>
-            <AppEmpty v-else-if="!detailProcesses.length">
-              Ningún proceso aplica a esta unidad.
-            </AppEmpty>
-            <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-              <li v-for="proc in detailProcesses" :key="proc.rule_id" class="rounded-xl border border-line px-3 py-2.5">
-                <div class="flex items-center gap-2">
-                  <span class="truncate text-sm font-semibold text-strong">{{ proc.process_name }}</span>
-                  <AppTag :variant="tonoOrigen(proc.origin)" outlined class-name="ml-auto">{{ processOriginMeta(proc.origin).label }}</AppTag>
-                  <AppTag :variant="tonoCicloVida(proc.status)" outlined>{{ etiquetaCicloVida(proc.status) }}</AppTag>
-                </div>
-                <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                  <span class="truncate">{{ proc.definition_name }}</span>
-                  <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ processScopeLabel(proc.unit_scope_type) }}</span>
-                </div>
-                <div class="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
-                  <span class="text-muted">Destinatario: <span class="font-medium text-body">{{ recipientSummary(proc) }}</span></span>
-                  <!-- AQUI ESTABAN «Editar alcance» y «Quitar el proceso», que editaban y borraban
-                       una fila de `process_target_rules`. Desde `P10` esa fila no tenía unidad, así
-                       que «quitar el proceso de esta unidad» no quitaba nada de la unidad: borraba
-                       el reparto de la configuración entera. La tabla se retiró en `P26`. -->
-                  <span class="ml-auto text-theme-xs italic text-muted">El alcance lo dice la línea del proceso</span>
-                </div>
-              </li>
-            </ul>
-            <p class="m-0 mt-3 text-theme-xs leading-snug text-muted">
-              "Directo" = regla propia de esta unidad. El alcance solo se edita mientras la configuración está
-              en <span class="font-semibold">borrador</span>; al activarse queda fija (cambiarla ⇒ nueva versión).
-              "Por tipo"/"Global" se definen en la configuración del proceso y aplican a varias unidades.
-            </p>
-          </div>
+          <p class="m-0 mt-3 text-theme-xs leading-snug text-muted">
+            "Directo" = regla propia de esta unidad. El alcance solo se edita mientras la configuración está
+            en <span class="font-semibold">borrador</span>; al activarse queda fija (cambiarla ⇒ nueva versión).
+            "Por tipo"/"Global" se definen en la configuración del proceso y aplican a varias unidades.
+          </p>
         </div>
-      </aside>
-    </div>
+      </div>
+
+      <template #footer>
+        <template v-if="detailTab === 'datos' && editable">
+          <AppButton variant="danger-outline" :disabled="savingUnidad" @click="closeDetail">Cancelar</AppButton>
+          <AppButton variant="primary-outline" :disabled="savingUnidad || !unidadForm.name.trim()" @click="saveUnidad">{{ savingUnidad ? "Guardando…" : "Guardar" }}</AppButton>
+        </template>
+        <template v-else-if="detailTab === 'vigencia' && editable && vigencia.vidaModo.value !== 'cerrada'">
+          <AppButton variant="danger-outline" :disabled="savingUnidad" @click="closeDetail">Cancelar</AppButton>
+          <AppButton variant="primary-outline" :disabled="savingUnidad || !vigencia.sePuedeGuardar.value" @click="saveVida">{{ savingUnidad ? "Guardando…" : vigencia.etiquetaDeGuardarVida.value }}</AppButton>
+        </template>
+        <AppButton v-else variant="neutral-outline" @click="closeDetail">Cerrar</AppButton>
+      </template>
+    </AppModalShell>
 
     <!-- Editar puesto (cargo, título, tipo, jefatura, activo) -->
     <AppModalShell
@@ -427,7 +484,6 @@ import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoCicloVida, tonoOrigen, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
-import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
 import { toBlob } from "html-to-image";
@@ -441,10 +497,13 @@ import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
+import NodeVigenciaPanel from "./NodeVigenciaPanel.vue";
+import AppCheckMenu from "@/shared/components/forms/AppCheckMenu.vue";
+import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconCrown, IconFileDescription, IconPencil, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus } from "@tabler/icons-vue";
+import { IconCalendarEvent, IconCrown, IconFileDescription, IconId, IconPencil, IconPlus, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
@@ -452,7 +511,7 @@ const props = defineProps({
   editable: { type: Boolean, default: true },
   canCreateProcess: { type: Boolean, default: true }
 });
-const emit = defineEmits(["edit-unit", "create-unit", "create-process"]);
+defineEmits(["create-unit", "create-process"]);
 
 /* LA RUEDA DE SERIES vive en `tokens.css` desde F8 (2026-08-20). Aqui solo queda el NOMBRE del
    token, que es lo mismo que hace `estadoTono.js` con los tonos: JavaScript nombra, el CSS pinta.
@@ -469,7 +528,20 @@ const relationTypes = ref([]);
 const activeRelationType = ref(props.relationType);
 const loading = ref(false);
 const error = ref("");
-const showInactive = ref(true);
+// QUÉ SE MUESTRA, como una lista de casillas: los cuatro estados de vigencia de una unidad. El
+// mismo desplegable que el mapa de procesos; antes era una casilla suelta «Mostrar inactivas».
+const ESTADOS_CON_CASILLA = ["vigente", "borrador", "programado", "suprimido"];
+const estadosVisibles = ref(new Set(ESTADOS_CON_CASILLA));
+const OPCIONES_DE_VISTA = [
+  { value: "vigente", label: "Unidades activas" },
+  { value: "borrador", label: "Borradores" },
+  { value: "programado", label: "Programadas" },
+  { value: "suprimido", label: "Unidades suprimidas" }
+];
+const vistaActiva = computed({
+  get: () => ESTADOS_CON_CASILLA.filter((estado) => estadosVisibles.value.has(estado)),
+  set: (marcados) => { estadosVisibles.value = new Set(marcados); }
+});
 const selectedEdge = ref(null);
 const editingEdge = ref(null);
 const editingTypeCode = ref("");
@@ -479,7 +551,23 @@ const createForm = ref({ name: "", slug: "", unit_type_id: "" });
 const detailUnit = ref(null);
 const detailPositions = ref([]);
 const detailLoading = ref(false);
-const detailTab = ref("ocupaciones");
+const detailTab = ref("datos");
+// El error de lo que se intenta DENTRO del modal se enseña dentro: en la página quedaba tapado.
+const modalError = ref("");
+const PESTANAS_DE_LA_UNIDAD = [
+  { id: "datos", rotulo: "Datos", icono: IconId },
+  { id: "vigencia", rotulo: "Vigencia", icono: IconCalendarEvent },
+  { id: "ocupaciones", rotulo: "Ocupaciones", icono: IconUsers },
+  { id: "procesos", rotulo: "Procesos", icono: IconSettings }
+];
+const unidadForm = ref({ name: "", label: "", slug: "", unit_type_id: "" });
+const savingUnidad = ref(false);
+// LAS VIDAS de la unidad abierta (frente 27, D-03): el composable que comparte con el mapa de procesos.
+const vigencia = useNodeVigencia({ tabla: "unit_vigencias", claveDelNodo: "unit_id" });
+const empezarVidaNueva = () => {
+  vigencia.empezarVidaNueva();
+  modalError.value = "";
+};
 const detailProcesses = ref([]);
 const detailProcessesLoading = ref(false);
 const detailProcessesLoaded = ref(false);
@@ -664,7 +752,7 @@ const layout = (rawNodes, rawEdges) => {
 const buildGraph = () => {
   const hidden = hiddenByCollapse.value;
   const apiNodes = (rawGraph.value.nodes || []).filter(
-    (u) => (showInactive.value || Number(u.is_active) === 1) && !hidden.has(String(u.id))
+    (u) => estadosVisibles.value.has(u.estado) && !hidden.has(String(u.id))
   );
   const visibleIds = new Set(apiNodes.map((u) => String(u.id)));
   const rawNodes = apiNodes.map((u) => {
@@ -676,7 +764,6 @@ const buildGraph = () => {
       data: {
         ...u,
         editable: props.editable,
-        onEdit: editUnit,
         onAddChild,
         onAddSibling,
         onToggleCollapse: toggleCollapse,
@@ -732,13 +819,7 @@ const loadGraph = async () => {
 const rawUnitById = (unitId) =>
   (rawGraph.value.nodes || []).find((u) => String(u.id) === String(unitId)) || null;
 
-// Clic en nodo / botón Editar: abre el editor de unidad existente (en el componente padre).
-const editUnit = (unitId) => {
-  if (!props.editable) return;
-  const u = rawUnitById(unitId);
-  if (u) emit("edit-unit", { ...u });
-};
-// Clic en el nodo: abre el panel derecho de puestos y ocupaciones (la edición se hace desde la toolbar).
+// Clic en el nodo: abre el modal de la unidad, con sus datos, su vigencia, sus puestos y sus procesos.
 const onNodeClick = ({ node }) => {
   if (!node?.data) return;
   openDetail(node.data.id);
@@ -747,15 +828,27 @@ const onNodeClick = ({ node }) => {
 // Detalle de unidad (drawer): puestos y ocupaciones.
 const openDetail = async (unitId) => {
   const u = rawUnitById(unitId);
-  detailUnit.value = u ? { id: u.id, name: u.name } : { id: unitId, name: "" };
-  detailTab.value = "ocupaciones";
+  detailUnit.value = u ? { id: u.id, name: u.name, estado: u.estado } : { id: unitId, name: "", estado: "borrador" };
+  unidadForm.value = {
+    name: u?.name || "",
+    label: u?.label || "",
+    slug: u?.slug || "",
+    unit_type_id: u?.unit_type_id ? String(u.unit_type_id) : ""
+  };
+  // La pestaña «Vigencia» se prepara ya con lo que trae el grafo, y se completa con el detalle.
+  vigencia.prepararVida(u, []);
+  modalError.value = "";
+  if (props.editable) vigencia.cargarActos();
+  detailTab.value = "datos";
   detailProcesses.value = [];
   detailProcessesLoaded.value = false;
   detailPositions.value = [];
   detailLoading.value = true;
   try {
     const { data } = await adminSqlService.getUnitDetail(unitId);
-    detailUnit.value = data.unit || detailUnit.value;
+    // El detalle no trae el estado: lo trae el grafo. Se conserva el que ya se tenía.
+    detailUnit.value = { ...(data.unit || {}), id: unitId, name: data.unit?.name ?? detailUnit.value?.name ?? "", estado: u?.estado || "borrador" };
+    vigencia.prepararVida(u, data.vigencias || []);
     detailPositions.value = data.positions || [];
   } catch (e) {
     setFeedback("error", e?.response?.data?.message || "No se pudo cargar el detalle.");
@@ -771,7 +864,47 @@ const closeDetail = () => {
   assignForId.value = null;
   editingPosition.value = null;
   profileWizardPosition.value = null;
-  detailTab.value = "ocupaciones";
+  detailTab.value = "datos";
+};
+
+// Guarda la identidad de la unidad (pestaña «Datos»). Al ir bien cierra, y el aviso sale en la página.
+const saveUnidad = async () => {
+  const unidad = detailUnit.value;
+  if (!props.editable || !unidad?.id || !unidadForm.value.name.trim()) return;
+  savingUnidad.value = true;
+  modalError.value = "";
+  try {
+    await adminSqlService.update("units", { id: unidad.id }, {
+      name: unidadForm.value.name.trim(),
+      label: unidadForm.value.label.trim() || null,
+      slug: unidadForm.value.slug.trim(),
+      unit_type_id: Number(unidadForm.value.unit_type_id)
+    });
+    setFeedback("success", "Unidad actualizada.");
+    closeDetail();
+    await loadGraph();
+  } catch (e) {
+    modalError.value = e?.response?.data?.message || "No se pudo actualizar la unidad.";
+  } finally {
+    savingUnidad.value = false;
+  }
+};
+// Guarda la vida que enseña la pestaña «Vigencia»: poner en vigor, mover fechas, suprimir o reactivar.
+const saveVida = async () => {
+  const unidad = detailUnit.value;
+  if (!props.editable || !unidad?.id || !vigencia.sePuedeGuardar.value) return;
+  savingUnidad.value = true;
+  modalError.value = "";
+  try {
+    await vigencia.guardarVida(unidad.id);
+    setFeedback("success", "Vigencia actualizada.");
+    closeDetail();
+    await loadGraph();
+  } catch (e) {
+    modalError.value = e?.response?.data?.message || "No se pudo guardar la vigencia.";
+  } finally {
+    savingUnidad.value = false;
+  }
 };
 
 // Pestaña "Procesos" del drawer: procesos que aplican a la unidad (carga perezosa).
@@ -1126,7 +1259,7 @@ const onEdgeUpdate = async ({ edge, connection }) => {
   }
 };
 
-watch(showInactive, buildGraph);
+watch(estadosVisibles, buildGraph);
 watch(healthOnly, buildGraph);
 watch(activeRelationType, loadGraph);
 onMounted(() => {

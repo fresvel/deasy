@@ -30,7 +30,7 @@ export const unidadesDeLaPersona = async (ejecutor, personId) => {
      INNER JOIN units u ON u.id = up.unit_id
      WHERE pa.person_id = ?
        AND pa.is_current = 1
-       AND u.is_active = 1
+       AND unidad_rige(u.id)
      GROUP BY u.id, unit_label
      ORDER BY unit_label`,
     [personId]
@@ -45,7 +45,7 @@ export const etiquetaDeUnidadActiva = async (ejecutor, unitId) => {
     `SELECT COALESCE(u.label, u.name) AS unit_label
      FROM units u
      WHERE u.id = ?
-       AND u.is_active = 1
+       AND unidad_rige(u.id)
      LIMIT 1`,
     [unitId]
   );

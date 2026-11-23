@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 90 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 91 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -1369,13 +1369,29 @@ Table "unit_types" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
+Table "unit_vigencias" {
+  "id" int4 [pk, not null, increment]
+  "unit_id" int4 [not null]
+  "vigente_desde" date [not null]
+  "vigente_hasta" date
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (unit_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_unit_vigencias_sin_solape"]
+    (unit_id, vigente_desde) [type: btree, name: "idx_unit_vigencias_unit"]
+  }
+}
+
 Table "units" {
   "id" int4 [pk, not null, increment]
   "name" varchar(180) [not null]
   "label" varchar(75)
   "slug" varchar(180) [not null]
   "unit_type_id" int4 [not null]
-  "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
@@ -1586,6 +1602,9 @@ Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
 Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"
 Ref "fk_unit_relations_parent":"units"."id" <? "unit_relations"."parent_unit_id"
 Ref "fk_unit_relations_relation_type":"relation_unit_types"."id" <? "unit_relations"."relation_type_id"
+Ref "fk_unit_vigencias_fin_acto":"actos"."id" ?<? "unit_vigencias"."fin_acto_id"
+Ref "fk_unit_vigencias_inicio_acto":"actos"."id" ?<? "unit_vigencias"."inicio_acto_id"
+Ref "fk_unit_vigencias_unit":"units"."id" <? "unit_vigencias"."unit_id"
 Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 Ref "fk_vacancies_position":"unit_positions"."id" <? "vacancies"."position_id"
 Ref "fk_vacancy_visibility_role":"roles"."id" ?<? "vacancy_visibility"."role_id"

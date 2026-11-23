@@ -1024,6 +1024,7 @@
       "paginas": [
         "complemento/expediente.md",
         "modelo/mapa-con-campos.md",
+        "modelo/organizacion.md",
         "modelo/proceso.md"
       ]
     },

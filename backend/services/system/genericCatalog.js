@@ -228,12 +228,22 @@ const seedExampleUnits = async (connection) => {
     const typeId = typeIdByName.get(unit.unit_type);
     if (!typeId) continue;
     await connection.query(
-      `INSERT INTO units (name, label, slug, unit_type_id, is_active)
-       SELECT ?, ?, ?, ?, 1 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM units WHERE slug = ?)`,
+      `INSERT INTO units (name, label, slug, unit_type_id)
+       SELECT ?, ?, ?, ? FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM units WHERE slug = ?)`,
       [unit.name, unit.label, unit.slug, typeId, unit.slug]
     );
     const [rows] = await connection.query("SELECT id FROM units WHERE slug = ? LIMIT 1", [unit.slug]);
-    if (rows?.[0]?.id) idBySlug.set(unit.slug, Number(rows[0].id));
+    if (rows?.[0]?.id) {
+      idBySlug.set(unit.slug, Number(rows[0].id));
+      // Las unidades de ejemplo RIGEN desde la instalacion, como carga inicial (frente 27, D-03):
+      // su primera vida, si aun no tienen ninguna. Sin ella serian borradores.
+      await connection.query(
+        `INSERT INTO unit_vigencias (unit_id, vigente_desde, inicio_origen)
+         SELECT ?, CURRENT_DATE, 'carga_inicial' FROM DUAL
+          WHERE NOT EXISTS (SELECT 1 FROM unit_vigencias WHERE unit_id = ?)`,
+        [Number(rows[0].id), Number(rows[0].id)]
+      );
+    }
   }
 
   // 4. Relaciones orgánicas padre->hijo (idempotente; un padre por tipo de relación).

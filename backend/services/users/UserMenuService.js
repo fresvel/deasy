@@ -60,7 +60,7 @@ const getUserPositions = async (pool, userId) => {
      WHERE pa.person_id = ?
        AND pa.is_current = 1
        AND up.is_active = 1
-       AND u.is_active = 1
+       AND unidad_rige(u.id)
        AND c.is_active = 1
      ORDER BY u.name, c.name`,
     [userId]

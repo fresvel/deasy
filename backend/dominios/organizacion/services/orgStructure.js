@@ -17,6 +17,7 @@ import { conflict, notFound } from "../../../errors/HttpError.js";
 import { conTransaccion } from "../../../config/postgres.js";
 import { slugify, normalizeNumericId } from "../../../services/admin/kernel/primitives.js";
 import {
+  listarVidasDeLaUnidad,
   listarNodosDelGrafo,
   listarTiposDeRelacion,
   listarAristasDelGrafo,
@@ -96,8 +97,10 @@ export default class OrgStructureService {
       throw new Error("La unidad no existe.");
     }
     const positions = await listarPuestosConOcupante(this.pool, id);
+    const vigencias = await listarVidasDeLaUnidad(this.pool, id);
     return {
       unit: { id: unit.id, name: unit.name, label: unit.label },
+      vigencias,
       positions
     };
   }

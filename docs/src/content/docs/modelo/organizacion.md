@@ -24,6 +24,20 @@ Las unidades se relacionan entre sí formando el organigrama, y esa relación **
 de toda la vida, pero puede haber otras. Cada tipo declara además si **hereda permisos hacia abajo**
 (`is_inheritance_allowed`).
 
+**Una unidad no está «activa»: tiene vidas.** Desde el 2026-11-23 `units` no lleva `is_active`. Su
+vigencia vive en `unit_vigencias`, con una fila por cada vez que la unidad ha regido —puede regir,
+suprimirse y volver a regir—, y de ahí se lee si está en borrador, programada, vigente o suprimida.
+Es exactamente la forma de los procesos, contada en
+[El proceso](/modelo/proceso/#un-proceso-no-está-activo-tiene-vidas): las mismas cuatro lecturas, el
+mismo periodo semiabierto, las mismas reglas —una reorganización exige acto, dos vidas no se
+solapan— y la misma función que lo pregunta, aquí `unidad_rige(id)`.
+
+En la unidad esa forma no es sólo conveniente: **es la única posible**. El acto apunta a la unidad
+que lo emite, así que si la unidad apuntase al acto que la creó las dos tablas se necesitarían
+mutuamente y no habría orden en que crearlas. `unit_vigencias` se declara después de las dos y
+apunta a ambas. Una unidad **nace en borrador**, sin ninguna vida; las que el sistema instala rigen
+desde la instalación, como carga inicial.
+
 Un puesto se identifica por `(unit_id, cargo_id, slot_no)` —«Coordinador de carrera, plaza 1, de la
 Carrera de Sistemas»— y lleva un `position_type` cerrado por `CHECK` a `real`, `promocion` o
 `simbolico`.
@@ -810,6 +824,7 @@ erDiagram
   cargos ||--o{ unit_positions : "define el rol de"
   units ||--o{ unit_relations : "padre"
   units ||--o{ unit_relations : "hija"
+  units ||--o{ unit_vigencias : "sus vidas"
   relation_unit_types ||--o{ unit_relations : "tipo de vinculo"
   unit_positions ||--o{ position_assignments : "ocupada por"
   persons ||--o{ position_assignments : "ocupa"
@@ -827,9 +842,19 @@ erDiagram
     varchar label "nombre corto para pantalla"
     varchar slug "identificador en URL"
     int unit_type_id FK
-    smallint is_active
     timestamp created_at
     timestamp updated_at
+  }
+  unit_vigencias {
+    int id PK "UNA VIDA de la unidad"
+    int unit_id FK
+    date vigente_desde "desde cuando rige"
+    date vigente_hasta "primer dia en que ya no rige"
+    text inicio_origen "carga_inicial, reorganizacion, correccion"
+    int inicio_acto_id FK "el acto que la puso en vigor"
+    text fin_origen "carga_inicial, reorganizacion, correccion"
+    int fin_acto_id FK "el acto que la suprimio"
+    timestamp created_at
   }
   relation_unit_types {
     int id PK

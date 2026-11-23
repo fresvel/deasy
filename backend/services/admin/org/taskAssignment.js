@@ -67,7 +67,7 @@ export default class TaskAssignmentService {
   async getWorkflowReferenceIdSets(connection = this.pool) {
     const [persons, units, unitTypes] = await Promise.all([
       connection.query("SELECT id FROM persons WHERE is_active = 1"),
-      connection.query("SELECT id FROM units WHERE is_active = 1"),
+      connection.query("SELECT id FROM units WHERE unidad_rige(id)"),
       connection.query("SELECT id FROM unit_types WHERE is_active = 1")
     ]);
     const toSet = (result) => new Set((result?.[0] || []).map((row) => Number(row.id)));
@@ -131,7 +131,7 @@ export default class TaskAssignmentService {
         unitIds.add(Number(rule.linea_unit_id));
       } else if (scope === "unit_type" && rule.linea_unit_type_id) {
         const [rows] = await connection.query(
-          "SELECT id FROM units WHERE unit_type_id = ? AND is_active = 1",
+          "SELECT id FROM units WHERE unit_type_id = ? AND unidad_rige(id)",
           [rule.linea_unit_type_id]
         );
         rows.forEach((row) => unitIds.add(Number(row.id)));

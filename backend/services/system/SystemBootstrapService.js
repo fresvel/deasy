@@ -558,7 +558,7 @@ const seedInstitucion = async (connection) => {
 const ensureBootstrapUnit = async (connection) => {
   const existingUnit = await fetchOne(
     connection,
-    "SELECT id FROM units WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
+    "SELECT id FROM units WHERE unidad_rige(id) ORDER BY id ASC LIMIT 1"
   );
   if (existingUnit) {
     return Number(existingUnit.id);
@@ -579,9 +579,17 @@ const ensureBootstrapUnit = async (connection) => {
   }
 
   await connection.query(
-    `INSERT INTO units (name, label, slug, unit_type_id, is_active)
-     VALUES (?, ?, ?, ?, 1)`,
+    `INSERT INTO units (name, label, slug, unit_type_id)
+     VALUES (?, ?, ?, ?)`,
     [BOOTSTRAP_UNIT_NAME, BOOTSTRAP_UNIT_LABEL, BOOTSTRAP_UNIT_SLUG, unitType.id]
+  );
+  // RIGE DESDE LA INSTALACION, con origen «carga inicial» (frente 27, D-03): su primera vida es una
+  // fila de `unit_vigencias`. Sin ella la unidad raiz seria un borrador y el sistema recien instalado
+  // no tendria ninguna unidad que rija.
+  await connection.query(
+    `INSERT INTO unit_vigencias (unit_id, vigente_desde, inicio_origen)
+     SELECT id, CURRENT_DATE, 'carga_inicial' FROM units WHERE slug = ?`,
+    [BOOTSTRAP_UNIT_SLUG]
   );
 
   const inserted = await fetchOne(

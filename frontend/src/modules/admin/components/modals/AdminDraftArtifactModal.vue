@@ -626,7 +626,8 @@ const loadWorkflowCatalogs = async () => {
   try {
     const [cargoRes, unitRes, unitTypeRes, personRes] = await Promise.all([
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("cargos"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 500 } }),
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), { params: { filter_is_active: 1, orderBy: "name", order: "asc", limit: 1000 } }),
+      // Sólo las unidades que RIGEN: su estado sale de sus vidas, ya no de una bandera (frente 27, D-03).
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("units"), { params: { filter_estado: "vigente", orderBy: "name", order: "asc", limit: 1000 } }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_types"), { params: { orderBy: "name", order: "asc", limit: 500 } }),
       axios.get(API_ROUTES.ADMIN_SQL_TABLE("persons"), { params: { orderBy: "first_name", order: "asc", limit: 1000 } }),
     ]);

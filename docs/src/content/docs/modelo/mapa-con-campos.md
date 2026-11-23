@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 35 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 36 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**35 tablas · 321 columnas · 81 claves ajenas · 10 diagramas.**
+**36 tablas · 329 columnas · 84 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -34,7 +34,7 @@ cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: est
 
 ## La organización (1 de 2)
 
-**5 tablas** · 41 columnas · 5 claves ajenas propias. Apunta a `persons`, que sale como caja vacía.
+**5 tablas** · 40 columnas · 5 claves ajenas propias. Apunta a `persons`, que sale como caja vacía.
 
 ```mermaid
 erDiagram
@@ -52,7 +52,6 @@ erDiagram
     varchar label
     varchar slug
     int unit_type_id FK
-    smallint is_active
     timestamp created_at
     timestamp updated_at
   }
@@ -98,15 +97,15 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 20 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 21 claves ajenas desde otros diagramas</summary>
 
-`actos.unidad_emisora_id` → `units` · `cargo_role_map.cargo_id` → `cargos` · `chat_conversations.scope_unit_id` → `units` · `contracts.position_id` → `unit_positions` · `lineas.cargo_id` → `cargos` · `lineas.unit_type_id` → `unit_types` · `lineas.unit_id` → `units` · `participantes_declarados.cargo_id` → `cargos` · `participantes_declarados.unit_id` → `units` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `task_item_tenures.position_id` → `unit_positions` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `unit_relations.child_unit_id` → `units` · `unit_relations.parent_unit_id` → `units` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units`
+`actos.unidad_emisora_id` → `units` · `cargo_role_map.cargo_id` → `cargos` · `chat_conversations.scope_unit_id` → `units` · `contracts.position_id` → `unit_positions` · `lineas.cargo_id` → `cargos` · `lineas.unit_type_id` → `unit_types` · `lineas.unit_id` → `units` · `participantes_declarados.cargo_id` → `cargos` · `participantes_declarados.unit_id` → `units` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `task_item_tenures.position_id` → `unit_positions` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `unit_relations.child_unit_id` → `units` · `unit_relations.parent_unit_id` → `units` · `unit_vigencias.unit_id` → `units` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units`
 
 </details>
 
 ## La organización (2 de 2)
 
-**4 tablas** · 40 columnas · 10 claves ajenas propias. Apunta a `cantones`, `estados_civiles`, `paises`, `relation_unit_types`, `units`, que salen como caja vacía.
+**5 tablas** · 49 columnas · 13 claves ajenas propias. Apunta a `cantones`, `estados_civiles`, `paises`, `relation_unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -136,6 +135,17 @@ erDiagram
     int child_unit_id FK
     timestamp created_at
     timestamp updated_at
+  }
+  unit_vigencias {
+    int id PK
+    int unit_id FK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
+    timestamp created_at
   }
   tipos_de_acto {
     int id PK
@@ -169,6 +179,9 @@ erDiagram
   units ||--o{ unit_relations : "child_unit_id"
   units ||--o{ unit_relations : "parent_unit_id"
   relation_unit_types ||--o{ unit_relations : "relation_type_id"
+  actos |o--o{ unit_vigencias : "fin_acto_id"
+  actos |o--o{ unit_vigencias : "inicio_acto_id"
+  units ||--o{ unit_vigencias : "unit_id"
 ```
 
 <details>

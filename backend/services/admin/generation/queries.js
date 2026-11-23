@@ -243,7 +243,7 @@ export const getPositionsForScope = async (connection, rule) => {
       ON pa.position_id = up.id
      AND pa.is_current = 1
     WHERE up.is_active = 1
-      AND u.is_active = 1`;
+      AND unidad_rige(u.id)`;
 
   // EL CARGO Y EL AMBITO SALEN DE LA LINEA, no de la regla (frente 25, P10). Antes la regla
   // llevaba su copia y esto leia `rule.cargo_id`; hoy `getLineaScopeMap` los trae con prefijo.

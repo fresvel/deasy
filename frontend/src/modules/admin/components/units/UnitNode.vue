@@ -2,7 +2,7 @@
   <div
     class="graph-node relative rounded-xl border px-3 py-2 transition-all"
     :class="[
-      data.is_active ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
+      data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
       data.dimmed ? 'graph-node--apagado' : ''
     ]"
@@ -11,8 +11,8 @@
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle" />
 
-    <!-- Toolbar de nodo (hover), al costado derecho para no tapar los conectores: colapsar / editar /
-         agregar hijo / agregar hermano. El detalle (puestos/ocupaciones) se abre al hacer clic en el nodo. -->
+    <!-- Toolbar de nodo (hover), al costado derecho para no tapar los conectores: colapsar / agregar
+         hija / agregar hermana. La unidad —datos, vigencia, puestos, procesos— se abre pulsando el nodo. -->
     <div v-if="hover" class="nodrag nopan graph-node__toolbar">
       <button
         v-if="data.hasChildren"
@@ -25,9 +25,6 @@
         <IconChevronUp v-else class="h-4 w-4" />
       </button>
       <template v-if="data.editable">
-        <button type="button" class="graph-node__btn" title="Editar unidad" @click.stop="data.onEdit?.(data.id)">
-          <IconPencil class="h-4 w-4" />
-        </button>
         <button type="button" class="graph-node__btn" title="Agregar unidad hija" @click.stop="data.onAddChild?.(data.id)">
           <IconCornerDownRight class="h-4 w-4" />
         </button>
@@ -46,16 +43,17 @@
         :title="data.healthIssues.join(' · ')"
       />
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
+      <!-- El estado va SIEMPRE, también cuando rige, a la derecha del nombre: como en el proceso. -->
+      <AppTag :variant="tonoVigencia(data.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(data.estado) }}</AppTag>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-2">
       <AppTag variant="neutral" outlined>{{ data.unit_type_name || 'Sin tipo' }}</AppTag>
       <AppTag
-        v-if="data.positions_count"
+        v-if="Number(data.positions_count) > 0"
         :variant="tonoPuestos"
         outlined
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</AppTag>
-      <AppTag v-if="!data.is_active" variant="warning" outlined>Inactiva</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
@@ -63,11 +61,11 @@
 
 <script setup>
 import AppTag from "@/shared/components/data/AppTag.vue";
-import { coberturaEstado, tonoCobertura } from "@/shared/utils/estadoTono.js";
+import { coberturaEstado, tonoCobertura, tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import {
-  IconPencil, IconCornerDownRight, IconPlus, IconCrown,
+  IconCornerDownRight, IconPlus, IconCrown,
   IconAlertTriangle, IconChevronUp, IconChevronDown
 } from "@tabler/icons-vue";
 

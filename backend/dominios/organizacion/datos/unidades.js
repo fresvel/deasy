@@ -16,7 +16,12 @@
 // GROUP BY porque son tres agregados independientes sobre la misma tabla.
 export const listarNodosDelGrafo = async (ejecutor) => {
   const [filas] = await ejecutor.query(
-    `SELECT u.id, u.name, u.label, u.slug, u.unit_type_id, ut.name AS unit_type_name, u.is_active,
+    `SELECT u.id, u.name, u.label, u.slug, u.unit_type_id, ut.name AS unit_type_name,
+            -- LA VIGENCIA sale de la vista unit_vigencia_actual: el periodo que cuenta hoy. Sin fila
+            -- alli la unidad no ha regido nunca y es un borrador. Las fechas van como TEXTO.
+            v.vigencia_id, v.vigente_desde::text AS vigente_desde, v.vigente_hasta::text AS vigente_hasta,
+            v.inicio_origen, v.inicio_acto_id, v.fin_origen, v.fin_acto_id,
+            COALESCE(v.estado, 'borrador') AS estado,
             (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_active = 1) AS positions_count,
             (SELECT COUNT(*) FROM unit_positions p
                INNER JOIN position_assignments pa ON pa.position_id = p.id AND pa.is_current = 1
@@ -24,7 +29,26 @@ export const listarNodosDelGrafo = async (ejecutor) => {
             (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_unit_head = 1 AND p.is_active = 1) AS head_count
      FROM units u
      LEFT JOIN unit_types ut ON ut.id = u.unit_type_id
+     LEFT JOIN unit_vigencia_actual v ON v.unit_id = u.id
      ORDER BY u.id ASC`
+  );
+  return filas ?? [];
+};
+
+// TODAS LAS VIDAS de una unidad, la más reciente primero: la historia que enseña la pestaña
+// «Vigencia» del organigrama, con el número del acto de cada extremo para no pedir otra consulta.
+export const listarVidasDeLaUnidad = async (ejecutor, unitId) => {
+  const [filas] = await ejecutor.query(
+    `SELECT uv.id, uv.vigente_desde::text AS vigente_desde, uv.vigente_hasta::text AS vigente_hasta,
+            uv.inicio_origen, uv.inicio_acto_id, ai.numero AS inicio_acto_numero,
+            uv.fin_origen, uv.fin_acto_id, af.numero AS fin_acto_numero,
+            estado_de_vigencia(uv.vigente_desde, uv.vigente_hasta) AS estado
+       FROM unit_vigencias uv
+       LEFT JOIN actos ai ON ai.id = uv.inicio_acto_id
+       LEFT JOIN actos af ON af.id = uv.fin_acto_id
+      WHERE uv.unit_id = ?
+      ORDER BY uv.vigente_desde DESC`,
+    [unitId]
   );
   return filas ?? [];
 };
@@ -76,7 +100,8 @@ export const existeCaminoEntreUnidades = async (ejecutor, desdeUnitId, hastaUnit
 
 export const insertarUnidad = async (ejecutor, { name, label, slug, unitTypeId }) => {
   const [resultado] = await ejecutor.query(
-    "INSERT INTO units (name, label, slug, unit_type_id, is_active) VALUES (?, ?, ?, ?, 1)",
+    // NACE EN BORRADOR (frente 27, D-03): sin ninguna vida. Ponerla en vigor es un paso aparte.
+    "INSERT INTO units (name, label, slug, unit_type_id) VALUES (?, ?, ?, ?)",
     [name, label, slug, unitTypeId]
   );
   return Number(resultado.insertId);

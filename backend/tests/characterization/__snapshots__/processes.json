@@ -5,8 +5,8 @@
     "count": 14,
     "itemKeys": [
       "created_at",
+      "estado",
       "id",
-      "is_active",
       "label",
       "name",
       "slug",
@@ -21,8 +21,8 @@
     "count": 14,
     "itemKeys": [
       "created_at",
+      "estado",
       "id",
-      "is_active",
       "label",
       "name",
       "slug",

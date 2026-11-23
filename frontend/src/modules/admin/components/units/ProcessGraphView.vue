@@ -165,90 +165,18 @@
 
         <div v-if="detailLoading" v-show="detailTab !== 'datos'" class="text-sm text-muted">Cargando…</div>
         <template v-else>
-          <!-- Pestaña: Vigencia — las vidas del proceso (frente 27, D-03). Un proceso puede regir,
-               suprimirse y volver a regir: arriba va la vida en curso, o el formulario para abrir
-               una; abajo, las anteriores. Sin ninguna vida es un borrador. -->
-          <div v-show="detailTab === 'vigencia'" class="flex flex-col gap-4">
-            <div class="flex items-center justify-between gap-2">
-              <p class="deasy-overline">{{ tituloDeLaVida }}</p>
-              <AppTag :variant="tonoVigencia(detailProcess.estado)" outlined>{{ etiquetaVigencia(detailProcess.estado) }}</AppTag>
-            </div>
+          <!-- Pestaña: Vigencia — las vidas del proceso (frente 27, D-03). La pieza es la misma
+               que usa el organigrama. -->
+          <NodeVigenciaPanel
+            v-show="detailTab === 'vigencia'"
+            :vigencia="vigencia"
+            :estado="detailProcess.estado"
+            sujeto="Proceso"
+            :editable="editable"
+            @reactivar="empezarVidaNueva"
+          />
 
-            <!-- La última vida terminó: se puede abrir otra, pero no sin pedirlo. -->
-            <div v-if="vidaModo === 'cerrada'" class="flex flex-col items-start gap-3">
-              <p class="m-0 text-sm text-icon">Este proceso está suprimido. Reactivarlo abre una vida nueva; la anterior queda en su historia.</p>
-              <AppButton v-if="editable" variant="primary-outline" @click="empezarVidaNueva">Reactivar</AppButton>
-            </div>
-
-            <div v-else class="flex flex-col gap-3">
-              <div class="grid grid-cols-2 gap-3">
-                <label class="deasy-form-label">
-                  Rige desde
-                  <input v-model="vidaForm.vigente_desde" type="date" class="deasy-control" :disabled="!editable" />
-                </label>
-                <label class="deasy-form-label">
-                  Origen del inicio
-                  <select v-model="vidaForm.inicio_origen" class="deasy-control deasy-control--select" :disabled="!editable">
-                    <option value="">—</option>
-                    <option value="carga_inicial">Carga inicial</option>
-                    <option value="reorganizacion">Reorganización</option>
-                  </select>
-                </label>
-              </div>
-              <label v-if="vidaForm.inicio_origen === 'reorganizacion'" class="deasy-form-label">
-                Acto que lo ordena
-                <select v-model="vidaForm.inicio_acto_id" class="deasy-control deasy-control--select" :disabled="!editable">
-                  <option value="">— Elige un acto —</option>
-                  <option v-for="acto in actoOptions" :key="acto.id" :value="String(acto.id)">{{ acto.etiqueta }}</option>
-                </select>
-              </label>
-              <!-- El fin sólo se ofrece sobre una vida que ya existe: una vida nueva se abre, no nace cerrada. -->
-              <template v-if="vidaModo === 'editar'">
-                <div class="grid grid-cols-2 gap-3">
-                  <label class="deasy-form-label">
-                    Rige hasta
-                    <input v-model="vidaForm.vigente_hasta" type="date" class="deasy-control" :disabled="!editable" />
-                  </label>
-                  <label class="deasy-form-label">
-                    Origen del fin
-                    <select v-model="vidaForm.fin_origen" class="deasy-control deasy-control--select" :disabled="!editable || !vidaForm.vigente_hasta">
-                      <option value="">—</option>
-                      <option value="carga_inicial">Carga inicial</option>
-                      <option value="reorganizacion">Reorganización</option>
-                    </select>
-                  </label>
-                </div>
-                <label v-if="vidaForm.fin_origen === 'reorganizacion'" class="deasy-form-label">
-                  Acto que lo suprime
-                  <select v-model="vidaForm.fin_acto_id" class="deasy-control deasy-control--select" :disabled="!editable">
-                    <option value="">— Elige un acto —</option>
-                    <option v-for="acto in actoOptions" :key="acto.id" :value="String(acto.id)">{{ acto.etiqueta }}</option>
-                  </select>
-                </label>
-                <p class="m-0 text-theme-xs text-muted">«Rige hasta» es el primer día en que ya no rige.</p>
-              </template>
-            </div>
-
-            <div v-if="vidasAnteriores.length">
-              <p class="deasy-overline mb-2">Vidas anteriores</p>
-              <ul class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="vida in vidasAnteriores" :key="vida.id" class="rounded-xl border border-line px-3 py-2.5">
-                  <div class="flex items-center gap-2">
-                    <span class="text-sm font-semibold text-strong">{{ vida.vigente_desde }} → {{ vida.vigente_hasta || "sin fecha de fin" }}</span>
-                    <AppTag :variant="tonoVigencia(vida.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(vida.estado) }}</AppTag>
-                  </div>
-                  <p class="m-0 mt-1 text-theme-xs text-muted">
-                    Inicio: {{ etiquetaOrigen(vida.inicio_origen) }}<span v-if="vida.inicio_acto_numero"> · {{ vida.inicio_acto_numero }}</span>
-                    <template v-if="vida.vigente_hasta">
-                      · Fin: {{ etiquetaOrigen(vida.fin_origen) }}<span v-if="vida.fin_acto_numero"> · {{ vida.fin_acto_numero }}</span>
-                    </template>
-                  </p>
-                </li>
-              </ul>
-            </div>
-          </div>
-
-        <!-- Pestaña: Configuraciones -->
+<!-- Pestaña: Configuraciones -->
         <div v-show="detailTab === 'configuraciones'">
           <div class="mb-3 flex items-center justify-between gap-2">
             <p class="deasy-overline">Configuraciones</p>
@@ -362,9 +290,9 @@
           <AppButton variant="danger-outline" :disabled="savingEdit" @click="closeDetail">Cancelar</AppButton>
           <AppButton variant="primary-outline" :disabled="savingEdit || !editForm.name.trim()" @click="saveProcessEdit">{{ savingEdit ? "Guardando…" : "Guardar" }}</AppButton>
         </template>
-        <template v-else-if="detailTab === 'vigencia' && editable && vidaModo !== 'cerrada'">
+        <template v-else-if="detailTab === 'vigencia' && editable && vigencia.vidaModo.value !== 'cerrada'">
           <AppButton variant="danger-outline" :disabled="savingEdit" @click="closeDetail">Cancelar</AppButton>
-          <AppButton variant="primary-outline" :disabled="savingEdit || !vidaForm.vigente_desde" @click="saveVida">{{ savingEdit ? "Guardando…" : etiquetaDeGuardarVida }}</AppButton>
+          <AppButton variant="primary-outline" :disabled="savingEdit || !vigencia.sePuedeGuardar.value" @click="saveVida">{{ savingEdit ? "Guardando…" : vigencia.etiquetaDeGuardarVida.value }}</AppButton>
         </template>
         <AppButton v-else variant="neutral-outline" @click="closeDetail">Cerrar</AppButton>
       </template>
@@ -438,6 +366,8 @@
 </template>
 
 <script setup>
+import NodeVigenciaPanel from "./NodeVigenciaPanel.vue";
+import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
 import AppCheckMenu from "@/shared/components/forms/AppCheckMenu.vue";
 import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
@@ -547,63 +477,12 @@ const detailConfigurations = ref([]);
 const detailChildren = ref([]);
 const detailRuns = ref([]);
 const editForm = ref({ name: "", slug: "", parent_id: "" });
-// LAS VIDAS del proceso abierto (frente 27, D-03). `vidaModo` dice qué enseña la pestaña «Vigencia»:
-//   · "nueva"   — no hay ninguna vida (borrador), o se pidió reactivar: formulario para abrir una.
-//   · "editar"  — hay una vida vigente o programada: se le pueden mover las fechas o ponerle fin.
-//   · "cerrada" — la última terminó: sólo se ofrece reactivar.
-const VIDA_VACIA = { id: null, vigente_desde: "", inicio_origen: "", inicio_acto_id: "", vigente_hasta: "", fin_origen: "", fin_acto_id: "" };
-const vidas = ref([]);
-const vidaForm = ref({ ...VIDA_VACIA });
-const vidaModo = ref("nueva");
-const vidasAnteriores = computed(() => vidas.value.filter((v) => v.id !== vidaForm.value.id));
-const tituloDeLaVida = computed(() => {
-  if (vidaModo.value === "editar") return "Vida en curso";
-  if (vidaModo.value === "cerrada") return "Sin vida en curso";
-  return vidas.value.length ? "Vida nueva" : "Poner en vigor";
-});
-const etiquetaDeGuardarVida = computed(() => {
-  if (vidaModo.value === "editar") return "Guardar";
-  return vidas.value.length ? "Reactivar" : "Poner en vigor";
-});
-const ETIQUETA_ORIGEN = { carga_inicial: "Carga inicial", reorganizacion: "Reorganización", correccion: "Corrección" };
-const etiquetaOrigen = (origen) => ETIQUETA_ORIGEN[origen] || "—";
-// Decide el modo a partir del periodo que cuenta hoy, que es lo que el detalle devuelve en `process`.
-const prepararVida = (proceso) => {
-  if (proceso?.estado === "vigente" || proceso?.estado === "programado") {
-    vidaModo.value = "editar";
-    vidaForm.value = {
-      id: proceso.vigencia_id,
-      vigente_desde: proceso.vigente_desde || "",
-      inicio_origen: proceso.inicio_origen || "",
-      inicio_acto_id: proceso.inicio_acto_id ? String(proceso.inicio_acto_id) : "",
-      vigente_hasta: proceso.vigente_hasta || "",
-      fin_origen: proceso.fin_origen || "",
-      fin_acto_id: proceso.fin_acto_id ? String(proceso.fin_acto_id) : ""
-    };
-    return;
-  }
-  vidaModo.value = proceso?.estado === "suprimido" ? "cerrada" : "nueva";
-  vidaForm.value = { ...VIDA_VACIA };
-};
+// LAS VIDAS del proceso abierto (frente 27, D-03): el estado de la pestaña «Vigencia». Lo lleva un
+// composable compartido con el organigrama; aquí sólo se le dice qué tabla y qué clave son las suyas.
+const vigencia = useNodeVigencia({ tabla: "process_vigencias", claveDelNodo: "process_id" });
 const empezarVidaNueva = () => {
-  vidaModo.value = "nueva";
-  vidaForm.value = { ...VIDA_VACIA };
+  vigencia.empezarVidaNueva();
   modalError.value = "";
-};
-// Los actos entre los que elegir cuando el origen es una reorganización. Se cargan al abrir el
-// modal y no al montar: la mayoría de las visitas al grafo no editan nada.
-const actoOptions = ref([]);
-const loadActoOptions = async () => {
-  try {
-    const { data } = await adminSqlService.list("actos", { orderBy: "fecha_emision", order: "desc", limit: 500 });
-    const filas = Array.isArray(data) ? data : data?.rows || data?.data || [];
-    actoOptions.value = filas.map((a) => ({
-      id: a.id,
-      etiqueta: `${a.numero} · ${String(a.fecha_emision || "").slice(0, 10)} · ${a.asunto}`
-    }));
-  } catch {
-    actoOptions.value = [];
-  }
 };
 const savingEdit = ref(false);
 
@@ -1091,17 +970,15 @@ const openProcessDetail = async (processId, tab = "datos") => {
     parent_id: p?.parent_id ? String(p.parent_id) : ""
   };
   // La pestaña «Vigencia» se prepara ya con lo que trae el grafo, y se afina cuando llega el detalle.
-  vidas.value = [];
-  prepararVida(p);
+  vigencia.prepararVida(p, []);
   modalError.value = "";
-  if (props.editable) loadActoOptions();
+  if (props.editable) vigencia.cargarActos();
   detailTab.value = tab;
   detailLoading.value = true;
   try {
     const { data } = await adminSqlService.getProcessDetail(processId);
     detailProcess.value = data.process || detailProcess.value;
-    vidas.value = data.vigencias || [];
-    prepararVida(detailProcess.value);
+    vigencia.prepararVida(detailProcess.value, data.vigencias || []);
     detailConfigurations.value = data.configurations || [];
     detailChildren.value = data.children || [];
     detailRuns.value = data.runs || [];
@@ -1119,25 +996,11 @@ const closeDetail = () => { detailProcess.value = null; };
 // y lo que rechace se dice dentro del modal.
 const saveVida = async () => {
   const proceso = detailProcess.value;
-  if (!props.editable || !proceso?.id || !vidaForm.value.vigente_desde) return;
+  if (!props.editable || !proceso?.id || !vigencia.sePuedeGuardar.value) return;
   savingEdit.value = true;
   modalError.value = "";
-  const f = vidaForm.value;
-  // Vacío es NULL, no cadena vacía: sin fecha de fin no hay origen ni acto de fin.
-  const datos = {
-    vigente_desde: f.vigente_desde,
-    inicio_origen: f.inicio_origen || null,
-    inicio_acto_id: f.inicio_origen === "reorganizacion" && f.inicio_acto_id ? Number(f.inicio_acto_id) : null,
-    vigente_hasta: f.vigente_hasta || null,
-    fin_origen: f.vigente_hasta ? (f.fin_origen || null) : null,
-    fin_acto_id: f.fin_origen === "reorganizacion" && f.fin_acto_id ? Number(f.fin_acto_id) : null
-  };
   try {
-    if (vidaModo.value === "editar" && f.id) {
-      await adminSqlService.update("process_vigencias", { id: f.id }, datos);
-    } else {
-      await adminSqlService.create("process_vigencias", { process_id: proceso.id, ...datos });
-    }
+    await vigencia.guardarVida(proceso.id);
     setFeedback("success", "Vigencia actualizada.");
     detailProcess.value = null;
     await loadGraph();

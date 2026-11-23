@@ -203,8 +203,8 @@ creada después de las dos, apunta a ambas sin círculo.
 :::
 
 :::caution[Lo que todavía no hace]
-Esto vale **sólo para los procesos**: las unidades y los puestos siguen con su `is_active`, y pasan
-a tener vidas en los dos pasos siguientes. Tampoco está construido que la base impida **borrar** un
+Esto vale para los procesos y para las **unidades**; los **puestos** siguen con su `is_active`, y
+pasan a tener vidas en el paso siguiente. Tampoco está construido que la base impida **borrar** un
 proceso que ya ha regido, ni la corrección con permiso propio: el origen `correccion` existe en el
 vocabulario, pero la pantalla aún no lo ofrece.
 :::

@@ -50,7 +50,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `label` | varchar(75) | no | — | — |
 | `slug` | varchar(180) | sí | — | — |
 | `unit_type_id` | int | sí | `unit_types.id` · impide borrar | — |
-| `is_active` | smallint | sí | — | — |
 | `created_at` | timestamp | sí | — | — |
 | `updated_at` | timestamp | sí | — | — |
 
@@ -504,4 +503,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**32 tablas · 299 columnas · 74 referencias.** Leídas del catálogo de PostgreSQL.
+**32 tablas · 298 columnas · 74 referencias.** Leídas del catálogo de PostgreSQL.

@@ -339,6 +339,17 @@ export default class SqlAdminService {
       selectClause = `SELECT ${selectFields.join(", ")}`;
     }
 
+    // EL ESTADO DE VIGENCIA DE UNA UNIDAD, DERIVADO (frente 27, D-03): sustituye a su columna
+    // `is_active`. Sale del periodo que cuenta hoy (`unit_vigencia_actual`); sin ninguno, borrador.
+    // Va por `derivedColumns` para que se pueda filtrar por el: «solo las vigentes».
+    if (tableName === "units" && availableFields.includes("estado")) {
+      columnPrefix = "units.";
+      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      derivedColumns.estado = "COALESCE((SELECT uva.estado FROM unit_vigencia_actual uva WHERE uva.unit_id = units.id), 'borrador')";
+      selectFields.push(`${derivedColumns.estado} AS estado`);
+      selectClause = `SELECT ${selectFields.join(", ")}`;
+    }
+
     if (tableName === "processes") {
       // EL PROCESO DE UNA CONFIGURACION SALE DE SU LINEA (frente 25, P22): las columnas sin
       // cualificar de aqui dentro eran de `process_definition_versions`, que llevaba una copia.

@@ -43,7 +43,7 @@ export const getActiveUserPositions = async (pool, userId) => {
      WHERE pa.person_id = ?
        AND pa.is_current = 1
        AND up.is_active = 1
-       AND u.is_active = 1
+       AND unidad_rige(u.id)
        AND c.is_active = 1
      ORDER BY u.name, c.name, up.slot_no, up.id`,
     [userId]
@@ -1069,7 +1069,7 @@ export const findRecipients = async (ejecutor, texto = "") => {
 // El catálogo que necesita el editor de flujo en runtime: unidades y cargos activos.
 export const findFlowCatalog = async (ejecutor) => {
   const [units] = await ejecutor.query(
-    `SELECT id, name FROM units WHERE is_active = 1 ORDER BY name ASC LIMIT 1000`
+    `SELECT id, name FROM units WHERE unidad_rige(id) ORDER BY name ASC LIMIT 1000`
   );
   const [cargos] = await ejecutor.query(
     `SELECT id, name FROM cargos WHERE is_active = 1 ORDER BY name ASC LIMIT 500`
