@@ -26,12 +26,14 @@
     <p v-if="data.templatesCount" class="m-0 mt-1">
       <button
         type="button"
-        class="nodrag graph-node__toggle graph-node__toggle--brand"
+        class="nodrag graph-node__toggle"
         :title="data.templatesExpanded ? 'Ocultar entregables' : 'Mostrar entregables'"
         @click.stop="data.onToggleTemplates?.(data.definition_id)"
       >
-        <IconChevronRight class="h-2.5 w-2.5 transition-transform" :class="data.templatesExpanded ? 'rotate-90' : ''" />
-        {{ data.templatesCount }} entregable{{ data.templatesCount === 1 ? "" : "s" }}
+        <AppTag variant="primary" outlined>
+          <IconChevronRight class="h-3 w-3 transition-transform" :class="data.templatesExpanded ? 'rotate-90' : ''" />
+          {{ data.templatesCount }} entregable{{ data.templatesCount === 1 ? "" : "s" }}
+        </AppTag>
       </button>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle graph-node__handle--sm" :class="data.templatesCount ? '' : 'graph-node__handle--hidden'" />

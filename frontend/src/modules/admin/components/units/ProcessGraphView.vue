@@ -10,9 +10,9 @@
         <span class="text-xs">· {{ nodes.length }} procesos · {{ edges.length }} relaciones</span>
         <AppInfoTip placement="bottom" aria-label="Ayuda del mapa de procesos">
           <template v-if="editable">
-            Jerarquía padre→hijo de procesos (procesos macro y sub-procesos). Pasa el cursor sobre un proceso para
-            editar / agregar hijos, o arrastra desde su punto inferior al superior de otro para anidarlo. Usa el
-            botón de la relación para desvincular (el hijo queda como raíz).
+            Jerarquía padre→hijo de procesos (procesos macro y sub-procesos). Pulsa un proceso para abrirlo; pasa el
+            cursor sobre él para agregarle hijos, o arrastra desde su punto inferior al superior de otro para
+            anidarlo. Usa el botón de la relación para desvincular (el hijo queda como raíz).
           </template>
           <template v-else>
             Jerarquía padre→hijo de procesos (procesos macro y sub-procesos). Vista de solo lectura: no tienes
@@ -22,20 +22,21 @@
       </div>
       <!-- Derecha: niveles a mostrar (segmented) + refrescar + exportar + crear -->
       <div class="flex flex-wrap items-center gap-2">
-        <div class="deasy-card inline-flex items-center gap-2 p-0.5">
-          <button type="button" class="graph-toggle" :class="showInactive ? 'graph-toggle--on' : ''" title="Mostrar también los procesos suprimidos" @click="showInactive = !showInactive">Suprimidos</button>
-          <button type="button" class="graph-toggle" :class="showConfigs ? 'graph-toggle--on' : ''" title="Mostrar las configuraciones de cada proceso" @click="toggleConfigsView">Configuraciones</button>
-          <button type="button" class="graph-toggle" :class="showTemplates ? 'graph-toggle--on' : ''" title="Mostrar los entregables de cada configuración" @click="toggleTemplatesView">Entregables</button>
-        </div>
         <AppButton variant="neutral-outline" icon-only :disabled="loading" title="Refrescar" aria-label="Refrescar" @click="loadGraph">
           <IconRefresh class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
         </AppButton>
         <AppButton variant="neutral-outline" icon-only :disabled="exporting" title="Exportar PNG" aria-label="Exportar PNG" @click="exportPng">
           <IconDownload class="h-4 w-4" />
         </AppButton>
-        <AppButton v-if="editable" variant="primary-outline" :disabled="loading" title="Crear proceso raíz" @click="openCreateProcess('root', null, '')">
-          <IconPlus class="mr-1 h-4 w-4" /> Proceso
-        </AppButton>
+        <!-- Los dos botones con rótulo miden LO MISMO, y no porque se les fije un ancho: van en una
+             rejilla de columnas iguales y cada uno llena la suya. Así el ancho lo decide el más
+             largo de los dos, y un botón no lleva estilo por fuera. -->
+        <div class="grid auto-cols-fr grid-flow-col gap-2">
+          <AppCheckMenu v-model="vistaActiva" label="Mostrar" :options="OPCIONES_DE_VISTA" />
+          <AppButton v-if="editable" variant="primary-outline" :disabled="loading" title="Crear proceso raíz" @click="openCreateProcess('root', null, '')">
+            <IconPlus class="mr-1 h-4 w-4" /> Proceso
+          </AppButton>
+        </div>
       </div>
     </div>
 
@@ -116,229 +117,224 @@
       </template>
     </AppModalShell>
 
-    <!-- Editar datos generales del proceso (modal, como en unidades) -->
+    <!-- EL PROCESO, EN UN SOLO MODAL CON PESTAÑAS (2026-11-23). Eran dos sitios: un panel lateral
+         con el detalle y, aparte, un modal de edición al que se llegaba por un lápiz flotante sobre
+         el nodo o por otro lápiz dentro del panel. Ahora pulsar el nodo abre esto, y editar es una
+         pestaña más. Los errores salen DENTRO: antes salían en la página, por detrás del modal. -->
     <AppModalShell
-      v-if="Boolean(editingProcess)"
+      v-if="Boolean(detailProcess)"
       controlled
-      :open="Boolean(editingProcess)" title="Editar proceso" content-class="max-w-md" @close="closeEditModal">
-      <div class="flex flex-col gap-3">
-        <label class="deasy-form-label">
-          Nombre
-          <input v-model="editForm.name" type="text" class="deasy-control" placeholder="Nombre del proceso" />
-        </label>
-        <label class="deasy-form-label">
-          Identificador (slug)
-          <input v-model="editForm.slug" type="text" class="deasy-control" placeholder="identificador" />
-        </label>
-        <label class="deasy-form-label">
-          Proceso padre
-          <select v-model="editForm.parent_id" class="deasy-control deasy-control--select">
-            <option value="">— Sin padre (raíz) —</option>
-            <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
+      :open="Boolean(detailProcess)" :title="detailProcess.name || 'Proceso'" content-class="max-w-2xl" @close="closeDetail">
+      <div class="deasy-inline-tabs" role="tablist">
+        <button
+          v-for="pestana in PESTANAS_DEL_PROCESO"
+          :key="pestana.id"
+          type="button"
+          role="tab"
+          class="deasy-inline-tab"
+          :class="detailTab === pestana.id ? 'deasy-inline-tab--active' : ''"
+          :aria-selected="detailTab === pestana.id"
+          @click="detailTab = pestana.id"
+        >
+          <component :is="pestana.icono" class="h-4 w-4" />
+          {{ pestana.rotulo }}
+        </button>
+      </div>
+
+      <AppAlert v-if="modalError" variant="danger" class="mt-3">{{ modalError }}</AppAlert>
+
+      <div class="mt-4">
+        <!-- Pestaña: Datos — identidad y vigencia -->
+        <div v-show="detailTab === 'datos'" class="flex flex-col gap-3">
+          <label class="deasy-form-label">
+            Nombre
+            <input v-model="editForm.name" type="text" class="deasy-control" placeholder="Nombre del proceso" :disabled="!editable" />
+          </label>
+          <label class="deasy-form-label">
+            Identificador (slug)
+            <input v-model="editForm.slug" type="text" class="deasy-control" placeholder="identificador" :disabled="!editable" />
+          </label>
+          <label class="deasy-form-label">
+            Proceso padre
+            <select v-model="editForm.parent_id" class="deasy-control deasy-control--select" :disabled="!editable">
+              <option value="">— Sin padre (raíz) —</option>
+              <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
+            </select>
+          </label>
+          <!-- LA VIGENCIA, en vez del interruptor «Activo» (frente 27, D-03). Sin fecha de inicio el
+               proceso es un borrador; ponerlo en vigor pide la fecha y su origen, y una
+               reorganización pide además el acto que la ordena. Lo impone la base. -->
+      <fieldset class="flex flex-col gap-3 rounded-xl border border-line p-3">
+        <legend class="px-1 text-theme-xs font-semibold text-muted">
+          Vigencia · <AppTag :variant="tonoVigencia(detailProcess.estado)" outlined>{{ etiquetaVigencia(detailProcess.estado) }}</AppTag>
+        </legend>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="deasy-form-label">
+            Rige desde
+            <input v-model="editForm.vigente_desde" type="date" class="deasy-control" :disabled="!editable" />
+          </label>
+          <label class="deasy-form-label">
+            Origen del inicio
+            <select v-model="editForm.inicio_origen" class="deasy-control deasy-control--select" :disabled="!editable || !editForm.vigente_desde">
+              <option value="">—</option>
+              <option value="carga_inicial">Carga inicial</option>
+              <option value="reorganizacion">Reorganización</option>
+            </select>
+          </label>
+        </div>
+        <label v-if="editForm.inicio_origen === 'reorganizacion'" class="deasy-form-label">
+          Acto que lo ordena
+          <select v-model="editForm.inicio_acto_id" class="deasy-control deasy-control--select" :disabled="!editable">
+            <option value="">— Elige un acto —</option>
+            <option v-for="acto in actoOptions" :key="acto.id" :value="String(acto.id)">{{ acto.etiqueta }}</option>
           </select>
         </label>
-        <!-- LA VIGENCIA, en vez del interruptor «Activo» (frente 27, D-03). Sin fecha de inicio el
-             proceso es un borrador; ponerlo en vigor pide la fecha y su origen, y una
-             reorganización pide además el acto que la ordena. Lo impone la base. -->
-        <fieldset class="flex flex-col gap-3 rounded-xl border border-line p-3">
-          <legend class="px-1 text-theme-xs font-semibold text-muted">
-            Vigencia · <AppTag :variant="tonoVigencia(editingProcess.estado)" outlined>{{ etiquetaVigencia(editingProcess.estado) }}</AppTag>
-          </legend>
-          <div class="grid grid-cols-2 gap-3">
-            <label class="deasy-form-label">
-              Rige desde
-              <input v-model="editForm.vigente_desde" type="date" class="deasy-control" />
-            </label>
-            <label class="deasy-form-label">
-              Origen del inicio
-              <select v-model="editForm.inicio_origen" class="deasy-control deasy-control--select" :disabled="!editForm.vigente_desde">
-                <option value="">—</option>
-                <option value="carga_inicial">Carga inicial</option>
-                <option value="reorganizacion">Reorganización</option>
-              </select>
-            </label>
-          </div>
-          <label v-if="editForm.inicio_origen === 'reorganizacion'" class="deasy-form-label">
-            Acto que lo ordena
-            <select v-model="editForm.inicio_acto_id" class="deasy-control deasy-control--select">
-              <option value="">— Elige un acto —</option>
-              <option v-for="acto in actoOptions" :key="acto.id" :value="String(acto.id)">{{ acto.etiqueta }}</option>
+        <div class="grid grid-cols-2 gap-3">
+          <label class="deasy-form-label">
+            Rige hasta
+            <input v-model="editForm.vigente_hasta" type="date" class="deasy-control" :disabled="!editable || !editForm.vigente_desde" />
+          </label>
+          <label class="deasy-form-label">
+            Origen del fin
+            <select v-model="editForm.fin_origen" class="deasy-control deasy-control--select" :disabled="!editable || !editForm.vigente_hasta">
+              <option value="">—</option>
+              <option value="carga_inicial">Carga inicial</option>
+              <option value="reorganizacion">Reorganización</option>
             </select>
           </label>
-          <div class="grid grid-cols-2 gap-3">
-            <label class="deasy-form-label">
-              Rige hasta
-              <input v-model="editForm.vigente_hasta" type="date" class="deasy-control" :disabled="!editForm.vigente_desde" />
-            </label>
-            <label class="deasy-form-label">
-              Origen del fin
-              <select v-model="editForm.fin_origen" class="deasy-control deasy-control--select" :disabled="!editForm.vigente_hasta">
-                <option value="">—</option>
-                <option value="carga_inicial">Carga inicial</option>
-                <option value="reorganizacion">Reorganización</option>
-              </select>
-            </label>
+        </div>
+        <label v-if="editForm.fin_origen === 'reorganizacion'" class="deasy-form-label">
+          Acto que lo suprime
+          <select v-model="editForm.fin_acto_id" class="deasy-control deasy-control--select" :disabled="!editable">
+            <option value="">— Elige un acto —</option>
+            <option v-for="acto in actoOptions" :key="acto.id" :value="String(acto.id)">{{ acto.etiqueta }}</option>
+          </select>
+        </label>
+        <p class="m-0 text-theme-xs text-muted">
+          «Rige hasta» es el primer día en que ya no rige.
+        </p>
+      </fieldset>
+        </div>
+
+        <div v-if="detailLoading" v-show="detailTab !== 'datos'" class="text-sm text-muted">Cargando…</div>
+        <template v-else>
+        <!-- Pestaña: Configuraciones -->
+        <div v-show="detailTab === 'configuraciones'">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <p class="deasy-overline">Configuraciones</p>
+            <AppButton v-if="editable" variant="primary-outline" @click="createConfiguration">+ Nueva configuración</AppButton>
           </div>
-          <label v-if="editForm.fin_origen === 'reorganizacion'" class="deasy-form-label">
-            Acto que lo suprime
-            <select v-model="editForm.fin_acto_id" class="deasy-control deasy-control--select">
-              <option value="">— Elige un acto —</option>
-              <option v-for="acto in actoOptions" :key="acto.id" :value="String(acto.id)">{{ acto.etiqueta }}</option>
-            </select>
-          </label>
-          <p class="m-0 text-theme-xs text-muted">
-            «Rige hasta» es el primer día en que ya no rige. Suprimir no borra el proceso: conserva todo lo que colgó de él.
-          </p>
-        </fieldset>
+          <AppEmpty v-if="!detailConfigurations.length">
+            Este proceso no tiene configuraciones.
+          </AppEmpty>
+          <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
+            <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-line px-3 py-2.5">
+              <div class="flex items-center gap-2">
+                <span class="truncate text-sm font-semibold text-strong" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
+                <AppTag :variant="tonoCicloVida(cfg.status)" outlined class-name="ml-auto">{{ configStatusLabel(cfg.status) }}</AppTag>
+              </div>
+              <div class="mt-1.5 flex flex-wrap items-center gap-2 text-theme-xs text-muted">
+                <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.rules_count }} reglas</span>
+                <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.templates_count }} plantillas</span>
+                <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.runs_count }} corridas</span>
+              </div>
+              <div class="mt-2 flex flex-wrap items-center gap-2 text-theme-xs">
+                <template v-if="editable && cfg.status === 'draft'">
+                  <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Editar</button>
+                  <span class="text-gray-300">·</span>
+                  <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'rules')">Reglas</button>
+                  <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'triggers')">Disparadores</button>
+                  <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'packages')">Plantillas</button>
+                </template>
+                <template v-else>
+                  <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Ver</button>
+                  <button v-if="editable && cfg.status === 'active'" type="button" class="deasy-inline-action deasy-inline-action--success" @click="launchConfiguration(cfg)">Lanzar</button>
+                </template>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Pestaña: Sub-procesos -->
+        <div v-show="detailTab === 'subprocesos'">
+          <div class="mb-3 flex items-center justify-between gap-2">
+            <p class="deasy-overline">Sub-procesos</p>
+            <AppButton v-if="editable" variant="neutral-outline" @click="addChildFromModal">+ Sub-proceso</AppButton>
+          </div>
+          <AppEmpty v-if="!detailChildren.length">
+            Este proceso no tiene sub-procesos.
+          </AppEmpty>
+          <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
+            <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-line px-3 py-2.5">
+              <div class="flex items-center gap-2">
+                <span class="truncate text-sm font-semibold text-strong">{{ ch.name }}</span>
+                <AppTag v-if="ch.estado !== 'vigente'" :variant="tonoVigencia(ch.estado)" outlined>{{ etiquetaVigencia(ch.estado) }}</AppTag>
+                <AppTag
+                  class-name="ml-auto"
+                  outlined
+                  :variant="ch.active_count ? 'success' : (ch.definitions_count ? 'warning' : 'neutral')"
+                >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</AppTag>
+              </div>
+              <div class="mt-1.5 flex items-center gap-2 text-xs">
+                <span class="truncate text-muted">{{ ch.slug }}</span>
+                <div class="ml-auto flex items-center gap-2">
+                  <AppButton
+                    variant="info-soft"
+                    icon-only
+                    title="Abrir el sub-proceso"
+                    aria-label="Abrir el sub-proceso"
+                    @click="openProcessDetail(ch.id)"
+                  >
+                    <IconEye class="h-5 w-5" />
+                  </AppButton>
+                  <AppButton
+                    v-if="editable"
+                    variant="danger-soft"
+                    icon-only
+                    title="Desvincular del proceso padre"
+                    aria-label="Desvincular del proceso padre"
+                    @click="detachChild(ch.id)"
+                  >
+                    <IconUnlink class="h-5 w-5" />
+                  </AppButton>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Pestaña: Lanzamientos / corridas -->
+        <div v-show="detailTab === 'corridas'">
+          <p class="deasy-overline mb-3">Lanzamientos / corridas</p>
+          <AppEmpty v-if="!detailRuns.length">
+            Este proceso no tiene corridas registradas.
+          </AppEmpty>
+          <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
+            <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-line px-3 py-2.5">
+              <div class="flex items-center gap-2">
+                <span class="truncate text-sm font-semibold text-strong">{{ run.term_name || "Sin periodo" }}</span>
+                <AppTag :variant="tonoCorrida(run.status)" outlined class-name="ml-auto capitalize">{{ run.status }}</AppTag>
+              </div>
+              <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
+                <span class="truncate">{{ run.definition_name }}</span>
+                <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
+                <span v-if="run.source_run_id" class="italic text-muted">relanzamiento</span>
+              </div>
+            </li>
+          </ul>
+          <p class="m-0 mt-3 text-theme-xs leading-snug text-muted">El lanzamiento de nuevas corridas se habilitará en el siguiente paso.</p>
+        </div>
+        </template>
       </div>
+
       <template #footer>
-        <AppButton variant="danger-outline" :disabled="savingEdit" @click="closeEditModal">Cancelar</AppButton>
-        <AppButton variant="primary-outline" :disabled="savingEdit || !editForm.name.trim()" @click="saveProcessEdit">{{ savingEdit ? "Guardando…" : "Guardar" }}</AppButton>
+        <template v-if="detailTab === 'datos' && editable">
+          <AppButton variant="danger-outline" :disabled="savingEdit" @click="closeDetail">Cancelar</AppButton>
+          <AppButton variant="primary-outline" :disabled="savingEdit || !editForm.name.trim()" @click="saveProcessEdit">{{ savingEdit ? "Guardando…" : "Guardar" }}</AppButton>
+        </template>
+        <AppButton v-else variant="neutral-outline" @click="closeDetail">Cerrar</AppButton>
       </template>
     </AppModalShell>
-
-    <!-- Drawer: cockpit del proceso (configuraciones, sub-procesos, lanzamientos) -->
-    <div v-if="detailProcess" class="deasy-drawer-overlay" @click.self="closeDetail">
-      <aside class="deasy-drawer">
-        <header class="flex items-start justify-between gap-3 border-b border-line px-5 py-4">
-          <div class="min-w-0">
-            <p class="deasy-overline">Detalle de proceso</p>
-            <h3 class="deasy-title deasy-title--block mt-0.5 truncate">{{ detailProcess.name }}</h3>
-          </div>
-          <div class="flex shrink-0 items-center gap-2">
-            <AppButton
-              v-if="editable"
-              variant="success-soft"
-              icon-only
-              title="Editar datos del proceso"
-              aria-label="Editar datos del proceso"
-              @click="openEditModal(detailProcess.id)"
-            >
-              <IconPencil class="h-5 w-5" />
-            </AppButton>
-            <AppCloseButton @click="closeDetail" />
-          </div>
-        </header>
-
-        <div class="deasy-inline-tabs px-5" role="tablist">
-          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'configuraciones' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'configuraciones'" @click="detailTab = 'configuraciones'">Configuraciones</button>
-          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'subprocesos' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'subprocesos'" @click="detailTab = 'subprocesos'">Sub-procesos</button>
-          <button type="button" role="tab" class="deasy-inline-tab" :class="detailTab === 'corridas' ? 'deasy-inline-tab--active' : ''" :aria-selected="detailTab === 'corridas'" @click="detailTab = 'corridas'">Lanzamientos</button>
-        </div>
-
-        <div class="flex-1 overflow-y-auto px-5 py-4">
-          <div v-if="detailLoading" class="text-sm text-muted">Cargando…</div>
-          <template v-else>
-            <!-- Pestaña: Configuraciones -->
-            <div v-show="detailTab === 'configuraciones'">
-              <div class="mb-3 flex items-center justify-between gap-2">
-                <p class="deasy-overline">Configuraciones</p>
-                <AppButton v-if="editable" variant="primary-outline" @click="createConfiguration">+ Nueva configuración</AppButton>
-              </div>
-              <AppEmpty v-if="!detailConfigurations.length">
-                Este proceso no tiene configuraciones.
-              </AppEmpty>
-              <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="cfg in detailConfigurations" :key="cfg.definition_id" class="rounded-xl border border-line px-3 py-2.5">
-                  <div class="flex items-center gap-2">
-                    <span class="truncate text-sm font-semibold text-strong" :title="cfg.definition_name">{{ cfg.definition_name }}</span>
-                    <AppTag :variant="tonoCicloVida(cfg.status)" outlined class-name="ml-auto">{{ configStatusLabel(cfg.status) }}</AppTag>
-                  </div>
-                  <div class="mt-1.5 flex flex-wrap items-center gap-2 text-theme-xs text-muted">
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.rules_count }} reglas</span>
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.templates_count }} plantillas</span>
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 ring-1 ring-line">{{ cfg.runs_count }} corridas</span>
-                  </div>
-                  <div class="mt-2 flex flex-wrap items-center gap-2 text-theme-xs">
-                    <template v-if="editable && cfg.status === 'draft'">
-                      <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Editar</button>
-                      <span class="text-gray-300">·</span>
-                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'rules')">Reglas</button>
-                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'triggers')">Disparadores</button>
-                      <button type="button" class="deasy-inline-action deasy-inline-action--neutral" @click="editConfiguration(cfg, 'packages')">Plantillas</button>
-                    </template>
-                    <template v-else>
-                      <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="editConfiguration(cfg, 'definition')">Ver</button>
-                      <button v-if="editable && cfg.status === 'active'" type="button" class="deasy-inline-action deasy-inline-action--success" @click="launchConfiguration(cfg)">Lanzar</button>
-                    </template>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Pestaña: Sub-procesos -->
-            <div v-show="detailTab === 'subprocesos'">
-              <div class="mb-3 flex items-center justify-between gap-2">
-                <p class="deasy-overline">Sub-procesos</p>
-                <AppButton v-if="editable" variant="neutral-outline" @click="addChildFromDrawer">+ Sub-proceso</AppButton>
-              </div>
-              <AppEmpty v-if="!detailChildren.length">
-                Este proceso no tiene sub-procesos.
-              </AppEmpty>
-              <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="ch in detailChildren" :key="ch.id" class="rounded-xl border border-line px-3 py-2.5">
-                  <div class="flex items-center gap-2">
-                    <span class="truncate text-sm font-semibold text-strong">{{ ch.name }}</span>
-                    <AppTag v-if="ch.estado !== 'vigente'" :variant="tonoVigencia(ch.estado)" outlined>{{ etiquetaVigencia(ch.estado) }}</AppTag>
-                    <AppTag
-                      class-name="ml-auto"
-                      outlined
-                      :variant="ch.active_count ? 'success' : (ch.definitions_count ? 'warning' : 'neutral')"
-                    >{{ ch.definitions_count ? `${ch.active_count}/${ch.definitions_count} config.` : "Sin config." }}</AppTag>
-                  </div>
-                  <div class="mt-1.5 flex items-center gap-2 text-xs">
-                    <span class="truncate text-muted">{{ ch.slug }}</span>
-                    <div class="ml-auto flex items-center gap-2">
-                      <AppButton
-                        variant="info-soft"
-                        icon-only
-                        title="Abrir el sub-proceso"
-                        aria-label="Abrir el sub-proceso"
-                        @click="openProcessDetail(ch.id)"
-                      >
-                        <IconEye class="h-5 w-5" />
-                      </AppButton>
-                      <AppButton
-                        v-if="editable"
-                        variant="danger-soft"
-                        icon-only
-                        title="Desvincular del proceso padre"
-                        aria-label="Desvincular del proceso padre"
-                        @click="detachChild(ch.id)"
-                      >
-                        <IconUnlink class="h-5 w-5" />
-                      </AppButton>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </div>
-
-            <!-- Pestaña: Lanzamientos / corridas -->
-            <div v-show="detailTab === 'corridas'">
-              <p class="deasy-overline mb-3">Lanzamientos / corridas</p>
-              <AppEmpty v-if="!detailRuns.length">
-                Este proceso no tiene corridas registradas.
-              </AppEmpty>
-              <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-                <li v-for="run in detailRuns" :key="run.id" class="rounded-xl border border-line px-3 py-2.5">
-                  <div class="flex items-center gap-2">
-                    <span class="truncate text-sm font-semibold text-strong">{{ run.term_name || "Sin periodo" }}</span>
-                    <AppTag :variant="tonoCorrida(run.status)" outlined class-name="ml-auto capitalize">{{ run.status }}</AppTag>
-                  </div>
-                  <div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted">
-                    <span class="truncate">{{ run.definition_name }}</span>
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-icon ring-1 ring-line">{{ run.run_mode === "automatic" ? "Automática" : "Manual" }}</span>
-                    <span v-if="run.source_run_id" class="italic text-muted">relanzamiento</span>
-                  </div>
-                </li>
-              </ul>
-              <p class="m-0 mt-3 text-theme-xs leading-snug text-muted">El lanzamiento de nuevas corridas se habilitará en el siguiente paso.</p>
-            </div>
-          </template>
-        </div>
-      </aside>
-    </div>
 
     <!-- Drawer: versiones del entregable (plantilla) -->
     <div v-if="templateDetail" class="deasy-drawer-overlay" @click.self="closeTemplateVersions">
@@ -408,6 +404,7 @@
 </template>
 
 <script setup>
+import AppCheckMenu from "@/shared/components/forms/AppCheckMenu.vue";
 import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
@@ -425,7 +422,7 @@ import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
-import { IconArrowLeft, IconDownload, IconEye, IconPencil, IconPlus, IconRefresh, IconUnlink } from "@tabler/icons-vue";
+import { IconArrowLeft, IconDownload, IconEye, IconId, IconPlus, IconRefresh, IconRocket, IconSettings, IconSitemap, IconUnlink } from "@tabler/icons-vue";
 import ProcessNode from "./ProcessNode.vue";
 import ProcessConfigNode from "./ProcessConfigNode.vue";
 import ProcessTemplateNode from "./ProcessTemplateNode.vue";
@@ -442,7 +439,7 @@ const emit = defineEmits([
   "add-template", "clone-template", "guided-update-template", "open-template-editor", "notify"
 ]);
 
-const NODE_W = 210;
+const NODE_W = 260;
 const NODE_H = 64;
 const CONFIG_W = 190;
 const CONFIG_H = 64;
@@ -462,6 +459,28 @@ const showTemplates = ref(false);
 const loading = ref(false);
 const error = ref("");
 const showInactive = ref(true);
+// QUÉ SE MUESTRA, como una lista de casillas. Son tres interruptores independientes; el control
+// segmentado que había los hacía parecer una elección excluyente.
+const OPCIONES_DE_VISTA = [
+  { value: "suprimidos", label: "Procesos suprimidos" },
+  { value: "configuraciones", label: "Configuraciones" },
+  { value: "entregables", label: "Entregables" }
+];
+const vistaActiva = computed({
+  get: () => [
+    showInactive.value && "suprimidos",
+    showConfigs.value && "configuraciones",
+    showTemplates.value && "entregables"
+  ].filter(Boolean),
+  // Cada casilla dispara la MISMA función que disparaba su botón: mostrar entregables arrastra las
+  // configuraciones, y eso lo saben `toggleConfigsView` y `toggleTemplatesView`, no este setter.
+  set: (marcados) => {
+    const quiere = new Set(marcados);
+    if (quiere.has("suprimidos") !== showInactive.value) showInactive.value = !showInactive.value;
+    if (quiere.has("configuraciones") !== showConfigs.value) toggleConfigsView();
+    if (quiere.has("entregables") !== showTemplates.value) toggleTemplatesView();
+  }
+});
 const selectedEdge = ref(null);
 const createContext = ref(null);
 const createForm = ref({ name: "", slug: "" });
@@ -471,17 +490,22 @@ const exporting = ref(false);
 const feedback = ref({ kind: "", message: "" });
 let feedbackTimer = null;
 
-// Drawer / cockpit del proceso (réplica del de unidades): detalle con pestañas.
+// El proceso abierto: un modal con pestañas (datos, configuraciones, sub-procesos, lanzamientos).
 const detailProcess = ref(null);
-const detailTab = ref("configuraciones");
+const detailTab = ref("datos");
+// El error de lo que se intenta DENTRO del modal se enseña dentro: en la página quedaba tapado.
+const modalError = ref("");
+const PESTANAS_DEL_PROCESO = [
+  { id: "datos", rotulo: "Datos", icono: IconId },
+  { id: "configuraciones", rotulo: "Configuraciones", icono: IconSettings },
+  { id: "subprocesos", rotulo: "Sub-procesos", icono: IconSitemap },
+  { id: "corridas", rotulo: "Lanzamientos", icono: IconRocket }
+];
 const detailLoading = ref(false);
 const detailConfigurations = ref([]);
 const detailChildren = ref([]);
 const detailRuns = ref([]);
-// Edición de datos generales del proceso en un modal aparte (como en unidades).
-const editingProcess = ref(null);
-const VIGENCIA_VACIA = { vigente_desde: "", inicio_origen: "", inicio_acto_id: "", vigente_hasta: "", fin_origen: "", fin_acto_id: "" };
-const editForm = ref({ name: "", slug: "", parent_id: "", ...VIGENCIA_VACIA });
+const editForm = ref({ name: "", slug: "", parent_id: "", vigente_desde: "", inicio_origen: "", inicio_acto_id: "", vigente_hasta: "", fin_origen: "", fin_acto_id: "" });
 // Los actos entre los que elegir cuando el origen es una reorganización. Se cargan al abrir el
 // modal y no al montar: la mayoría de las visitas al grafo no editan nada.
 const actoOptions = ref([]);
@@ -647,7 +671,6 @@ const buildGraph = () => {
     data: {
       ...p,
       editable: props.editable,
-      onEdit: editProcess,
       onAddChild,
       onAddSibling,
       onToggleCollapse: toggleCollapse,
@@ -766,7 +789,7 @@ const loadGraph = async () => {
 const rawProcessById = (processId) =>
   (rawGraph.value.nodes || []).find((p) => String(p.id) === String(processId)) || null;
 
-// Clic en nodo proceso → drawer; clic en nodo configuración → abre el wizard de esa configuración.
+// Clic en nodo proceso → su modal; clic en nodo configuración → abre el wizard de esa configuración.
 const onNodeClick = ({ node }) => {
   if (!node?.data) return;
   if (node.type === "config") {
@@ -935,39 +958,19 @@ const guidedUpdateTemplate = (tpl) => {
     storageVersion: tpl.storage_version
   });
 };
-// El ✎ del hover (o el botón del drawer) abre el modal de edición de datos generales.
-const editProcess = (processId) => openEditModal(processId);
 
 // Opciones de proceso padre (todos menos el que se está editando; el backend bloquea ciclos).
 const parentOptions = computed(() =>
   (rawGraph.value.nodes || [])
-    .filter((p) => String(p.id) !== String(editingProcess.value?.id))
+    .filter((p) => String(p.id) !== String(detailProcess.value?.id))
     .map((p) => ({ id: p.id, name: p.name }))
 );
 
-const openEditModal = (processId) => {
-  if (!props.editable) return;
-  const p = rawProcessById(processId);
-  if (!p) return;
-  editingProcess.value = { id: p.id, name: p.name, estado: p.estado };
-  editForm.value = {
-    name: p.name || "",
-    slug: p.slug || "",
-    parent_id: p.parent_id ? String(p.parent_id) : "",
-    vigente_desde: p.vigente_desde || "",
-    inicio_origen: p.inicio_origen || "",
-    inicio_acto_id: p.inicio_acto_id ? String(p.inicio_acto_id) : "",
-    vigente_hasta: p.vigente_hasta || "",
-    fin_origen: p.fin_origen || "",
-    fin_acto_id: p.fin_acto_id ? String(p.fin_acto_id) : ""
-  };
-  loadActoOptions();
-};
-const closeEditModal = () => { editingProcess.value = null; };
 const saveProcessEdit = async () => {
-  const ep = editingProcess.value;
-  if (!ep?.id || !editForm.value.name.trim()) return;
+  const ep = detailProcess.value;
+  if (!props.editable || !ep?.id || !editForm.value.name.trim()) return;
   savingEdit.value = true;
+  modalError.value = "";
   try {
     await adminSqlService.update(
       "processes",
@@ -991,22 +994,36 @@ const saveProcessEdit = async () => {
     if (Number(current?.parent_id || 0) !== Number(nextParent || 0)) {
       await adminSqlService.setProcessParent(ep.id, nextParent);
     }
+    // Al guardar bien se cierra: el aviso de éxito va en la página, que vuelve a estar a la vista.
     setFeedback("success", "Proceso actualizado.");
-    editingProcess.value = null;
+    detailProcess.value = null;
     await loadGraph();
-    if (detailProcess.value?.id === ep.id) await openProcessDetail(ep.id, detailTab.value);
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo actualizar el proceso.");
+    modalError.value = e?.response?.data?.message || "No se pudo actualizar el proceso.";
   } finally {
     savingEdit.value = false;
   }
 };
 
-const openProcessDetail = async (processId, tab = "configuraciones") => {
+const openProcessDetail = async (processId, tab = "datos") => {
   const p = rawProcessById(processId);
   detailProcess.value = p
     ? { id: p.id, name: p.name, slug: p.slug, parent_id: p.parent_id, estado: p.estado }
     : { id: processId, name: "" };
+  // El formulario de la pestaña «Datos» sale del grafo, que ya trae las fechas como texto.
+  editForm.value = {
+    name: p?.name || "",
+    slug: p?.slug || "",
+    parent_id: p?.parent_id ? String(p.parent_id) : "",
+    vigente_desde: p?.vigente_desde || "",
+    inicio_origen: p?.inicio_origen || "",
+    inicio_acto_id: p?.inicio_acto_id ? String(p.inicio_acto_id) : "",
+    vigente_hasta: p?.vigente_hasta || "",
+    fin_origen: p?.fin_origen || "",
+    fin_acto_id: p?.fin_acto_id ? String(p.fin_acto_id) : ""
+  };
+  modalError.value = "";
+  if (props.editable) loadActoOptions();
   detailTab.value = tab;
   detailLoading.value = true;
   try {
@@ -1024,7 +1041,7 @@ const openProcessDetail = async (processId, tab = "configuraciones") => {
 };
 const closeDetail = () => { detailProcess.value = null; };
 
-const addChildFromDrawer = () => {
+const addChildFromModal = () => {
   if (!detailProcess.value?.id) return;
   openCreateProcess("child", detailProcess.value.id, detailProcess.value.name);
 };
@@ -1044,7 +1061,7 @@ const configStatusLabel = (status) => etiquetaCicloVida(status);
 // Ver `ProcessConfigNode.vue`: el nombre lo trae la línea, no se compone del origen de la serie.
 
 
-// Acciones de configuración: cierran el drawer y delegan en el padre (wizard / lanzar).
+// Acciones de configuración: cierran el modal y delegan en el padre (wizard / lanzar).
 const createConfiguration = () => {
   if (!detailProcess.value?.id) return;
   const payload = { processId: detailProcess.value.id, processName: detailProcess.value.name };

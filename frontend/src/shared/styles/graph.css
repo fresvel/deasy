@@ -43,29 +43,9 @@
         min-height: 28rem;
     }
 
-    /* ── Control segmentado (que capas del grafo se ven) ─────────────────────────────
-       La opcion activa se distingue por TRES señales a la vez —fondo blanco, color de
-       marca y una elevacion minima— porque va sobre un carril gris y el color solo no
-       bastaba. */
-
-    .graph-toggle {
-        padding: 0.25rem 0.6rem;
-        border-radius: var(--radius-lg);
-        font-size: 0.72rem;
-        font-weight: 600;
-        color: var(--color-muted);
-        transition: color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
-    }
-
-    .graph-toggle:hover {
-        color: var(--color-strong);
-    }
-
-    .graph-toggle--on {
-        background: var(--color-white);
-        color: var(--color-primary);
-        box-shadow: var(--elev-1);
-    }
+    /* [2026-11-23] AQUI VIVIA EL CONTROL SEGMENTADO `graph-toggle` (que capas del grafo se ven).
+       Parecia una eleccion excluyente --un carril con una opcion iluminada-- y eran tres
+       interruptores independientes. Lo sustituye `AppCheckMenu`, una lista de casillas. */
 
     /* [2026-08-15] AQUI VIVIA `graph-icon-btn`, Y SU SITIO ERA UN ERROR DE CLASIFICACION.
      *
@@ -251,56 +231,23 @@
        `check-orphan-classes` porque la cadena esta en el CSS construido. **Ninguno de los
        dieciseis comprobaba que el selector pudiera casar con algun nodo**, que es lo que
        `check-selector-reach.mjs` mira desde entonces. */
+    /* [2026-11-23] EL CONTADOR QUE DESPLIEGA YA NO TIENE SKIN PROPIO: lleva dentro un `AppTag`.
+       Tenia caja, radio, cinco tonos y un tamaño de letra suyos (11 px), o sea una segunda
+       pastilla que se parecia a la del sistema sin serlo; al lado de la de estado se notaba. Ahora
+       esta regla solo quita al `<button>` lo que el navegador le pone, y la pastilla es la de
+       todos. Los cinco modificadores de tono (`--brand`, `--success`, `--warning`, `--danger`,
+       `--neutral`) se fueron con ella: el tono lo da la variante del `AppTag`. */
     .graph-node__toggle {
         display: inline-flex;
-        align-items: center;
-        gap: 0.25rem;
-        padding: 0.125rem 0.375rem;
-        border-radius: 8px;
-        font-size: 0.6875rem;
-        font-weight: 600;
+        padding: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
         transition: filter 0.15s ease;
     }
 
     .graph-node__toggle:hover {
         filter: brightness(0.95);
-    }
-
-    /* Los tonos. El de marca ya existia —iba en el atributo como
-       `bg-brand-50 text-primary ring-1 ring-brand-200`, repetido en los dos usos y con un
-       `ring` de mas en uno—; los otros cuatro entran con F3.3, porque el contador es quien
-       lleva los ejes de COBERTURA (cuantas configuraciones activas, cuantos puestos ocupados).
-
-       El borde va por `box-shadow: inset`, no por `ring-*`: F1.3b midio que los
-       `--tw-ring-color` propios no pintan porque `overrides.css` los gana desde fuera de capa. */
-    .graph-node__toggle--brand {
-        background: var(--color-brand-50);
-        color: var(--color-primary);
-        box-shadow: inset 0 0 0 1px var(--color-brand-200);
-    }
-
-    .graph-node__toggle--success {
-        background: var(--color-success-50);
-        color: var(--color-success);
-        box-shadow: inset 0 0 0 1px var(--color-success-200);
-    }
-
-    .graph-node__toggle--warning {
-        background: var(--color-warning-50);
-        color: var(--color-warning);
-        box-shadow: inset 0 0 0 1px var(--color-warning-200);
-    }
-
-    .graph-node__toggle--danger {
-        background: var(--color-error-50);
-        color: var(--color-danger);
-        box-shadow: inset 0 0 0 1px var(--color-error-200);
-    }
-
-    .graph-node__toggle--neutral {
-        background: var(--color-surface);
-        color: var(--color-muted);
-        box-shadow: inset 0 0 0 1px var(--color-line);
     }
 }
 
