@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, de un vistazo"
-description: "Las 38 tablas de la cadena proceso → documento sin sus campos, agrupadas por lo que declaran, lo que ocurre y los dos flujos."
+description: "Las 34 tablas de la cadena proceso → documento sin sus campos, agrupadas por lo que declaran, lo que ocurre y los dos flujos."
 sidebar:
   label: "Mapa completo"
   order: 15
@@ -12,7 +12,7 @@ Las mismas tablas y los mismos grupos, con **todas sus columnas y claves ajenas*
 no se queda atrás; la agrupación la toma de este mapa.
 :::
 
-La cadena entera sin los campos, para ver la forma. Son **38 tablas** repartidas en seis grupos: la
+La cadena entera sin los campos, para ver la forma. Son **34 tablas** repartidas en seis grupos: la
 organización (que no es parte de la cadena pero la sostiene), lo que se declara, lo que ocurre, los dos
 flujos y las observaciones.
 
@@ -29,6 +29,8 @@ flowchart TB
     UP --> PA["position_assignments"]
     P["persons"] --> PA
     U --> UR["unit_relations"]
+    TDA["tipos_de_acto"] --> ACT["actos"]
+    U --> ACT
   end
 
   subgraph DECL["Lo que se declara"]
@@ -56,7 +58,10 @@ flowchart TB
     TI --> DV["document_versions"]
     DV --> DVU["document_version_uploads"]
     DV --> DA["document_attachments"]
+    DV --> AD["acto_documentos"]
   end
+
+  ACT --> AD
 
   subgraph REC["El recorrido del documento"]
     direction TB
@@ -126,6 +131,12 @@ estado de **a quién le toca** era también una tabla de catálogo —`signature
 la entrega usaba un `CHECK`; hoy es `turnos.estado`, el mismo `CHECK` y el mismo vocabulario para los
 dos lados.
 
+**El acto**, que aparece junto a la organización, es el papel que ordena un cambio de estructura:
+`actos` con su catálogo `tipos_de_acto`, y `acto_documentos`, que lo une al documento firmado cuando
+se produjo aquí. El enlace va del documento al acto y no al revés porque una clave ajena no sube de
+nivel: el acto está en el 2 y `document_versions` en el 5. Está contado en
+[La organización](/modelo/organizacion/).
+
 **Lo que el mapa no dibuja** son las otras **55 tablas** del esquema, y están todas en el
 [mapa del complemento](/complemento/mapa-completo/): la rama de vacantes y contratación (8), el RBAC
 (8), el chat (6), dos sueltas —`relation_unit_types` y `signature_batch_jobs`— y **31 de la
@@ -140,5 +151,4 @@ persona*, no de cuántas formas se la puede contactar. Lo que la cadena gana de 
 claves ajenas, y todas salen de `persons`**: dos a `paises` —nacionalidad y país de
 nacimiento—, una a `cantones` —el de nacimiento— y una a `estados_civiles`.
 
-El esquema completo tiene **87 tablas** —eran 95 antes de que las ocho del recorrido partido se
-convirtieran en cuatro—; estas 30 son las que van del proceso al documento firmado.
+El esquema completo tiene **89 tablas** (contadas el 2026-11-23, con las tres del acto); estas 34 son las que van del proceso al documento firmado.

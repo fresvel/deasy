@@ -16,6 +16,28 @@ Project organizacion {
   Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → cantón → parroquia.'''
 }
 
+Table "actos" {
+  "id" int4 [pk, not null, increment]
+  "tipo_de_acto_id" int4 [not null]
+  "numero" varchar(120) [not null]
+  "asunto" varchar(500) [not null]
+  "fecha_emision" date [not null]
+  "fecha_vigencia" date [not null]
+  "unidad_emisora_id" int4
+  "emisor_externo" varchar(255)
+  "suscrito_por_person_id" int4
+  "suscrito_por_nombre" varchar(255)
+  "en_calidad_de" text [check: `en_calidad_de = ANY (ARRAY['titular'::text, 'subrogante'::text, 'encargado'::text, 'delegado'::text])`]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (tipo_de_acto_id, numero, unidad_emisora_id, emisor_externo) [type: btree, unique, name: "uq_actos_referencia"]
+    unidad_emisora_id [type: btree, name: "idx_actos_unidad_emisora"]
+    fecha_vigencia [type: btree, name: "idx_actos_vigencia"]
+  }
+}
+
 Table "cantones" {
   "id" int4 [pk, not null, increment]
   "provincia_id" int4 [not null]
@@ -145,6 +167,14 @@ Table "relation_unit_types" {
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
 
+Table "tipos_de_acto" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
 Table "unit_positions" {
   "id" int4 [pk, not null, increment]
   "unit_id" int4 [not null]
@@ -205,6 +235,8 @@ Table "units" {
   }
 }
 
+Ref "fk_actos_tipo":"tipos_de_acto"."id" <? "actos"."tipo_de_acto_id"
+Ref "fk_actos_unidad_emisora":"units"."id" ?<? "actos"."unidad_emisora_id"
 Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
 Ref "fk_clases_parroquia_pais":"paises"."id" <? "clases_parroquia"."pais_id"
 Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
@@ -220,6 +252,8 @@ Ref "fk_unit_relations_relation_type":"relation_unit_types"."id" <? "unit_relati
 Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   actos -> acto_documentos   [tareas]
+//   persons -> actos   [identidad]
 //   paises -> autoidentificaciones_etnicas   [identidad]
 //   paises -> categorias_visa   [identidad]
 //   units -> chat_conversations   [chat]

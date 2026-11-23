@@ -562,6 +562,7 @@ Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono
 Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cascade]
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   persons -> actos   [organizacion]
 //   persons -> aplications   [empleo]
 //   paises -> autoidentificaciones_etnicas   [organizacion]
 //   persons -> catalogo_documental   [plantillas]

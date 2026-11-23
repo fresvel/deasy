@@ -432,3 +432,32 @@ test("los turnos SI caen con su entregable: el primero lo crea un disparador al 
   );
 });
 
+// EL ACTO (frente 27, D-05): el papel que ordena un cambio de estructura.
+test("un acto tiene exactamente un emisor: una unidad o un texto, nunca los dos ni ninguno", () => {
+  const create = bloqueRecorrido("actos");
+  assert.match(create, /unidad_emisora_id INT NULL/);
+  assert.match(create, /emisor_externo VARCHAR\(255\) NULL/);
+  assert.match(SCHEMA, /ck_actos_un_solo_emisor CHECK \(\(unidad_emisora_id IS NULL\) <> \(emisor_externo IS NULL\)\)/);
+});
+
+test("el acto NO apunta a un puesto ni a un documento: emite el organo, y el enlace va al reves", () => {
+  const create = bloqueRecorrido("actos");
+  for (const columna of ["position_id", "puesto_id", "document_version_id"]) {
+    assert.ok(!new RegExp(`\\b${columna}\\b`).test(create), `actos no puede declarar ${columna}`);
+  }
+});
+
+test("el acto lleva dos fechas obligatorias: cuando se emitio y desde cuando rige", () => {
+  const create = bloqueRecorrido("actos");
+  assert.match(create, /fecha_emision DATE NOT NULL/);
+  assert.match(create, /fecha_vigencia DATE NOT NULL/);
+});
+
+test("el enlace al documento vive en tareas y retiene la version: su clave no propaga el borrado", () => {
+  assert.match(SCHEMA_CRUDO, /CREATE TABLE IF NOT EXISTS tareas\.acto_documentos \(/);
+  assert.match(
+    SIN_COMENTARIOS,
+    /fk_acto_documentos_version FOREIGN KEY \(document_version_id\) REFERENCES document_versions\(id\)\n/
+  );
+});
+

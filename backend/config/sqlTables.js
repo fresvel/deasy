@@ -350,6 +350,62 @@ export const SQL_TABLES = [
     ],
     searchFields: []
   },
+  // EL ACTO que ordena un cambio de estructura (frente 27, D-05). Tres tablas: el catalogo de tipos,
+  // el acto, y el enlace a su documento cuando se firmo aqui. El emisor es una unidad O un texto,
+  // exactamente uno de los dos: lo impone la base (`ck_actos_un_solo_emisor`), no este formulario.
+  {
+    table: "tipos_de_acto",
+    label: "Tipos de acto",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "actos",
+    label: "Actos",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "tipo_de_acto_id", label: "Tipo de acto", type: "number", required: true },
+      { name: "numero", label: "Numero", type: "text", required: true },
+      { name: "asunto", label: "Asunto", type: "textarea", required: true },
+      { name: "fecha_emision", label: "Fecha de emision", type: "date", required: true },
+      { name: "fecha_vigencia", label: "Rige desde", type: "date", required: true },
+      { name: "unidad_emisora_id", label: "Unidad emisora", type: "number" },
+      { name: "emisor_externo", label: "Emisor externo", type: "text" },
+      { name: "suscrito_por_person_id", label: "Suscrito por (persona)", type: "number" },
+      { name: "suscrito_por_nombre", label: "Suscrito por (nombre)", type: "text" },
+      {
+        name: "en_calidad_de",
+        label: "En calidad de",
+        type: "select",
+        options: ["titular", "subrogante", "encargado", "delegado"]
+      },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["numero", "asunto", "emisor_externo"]
+  },
+  {
+    table: "acto_documentos",
+    label: "Documento del acto",
+    category: "Estructura",
+    primaryKeys: ["acto_id"],
+    fields: [
+      { name: "acto_id", label: "Acto", type: "number", required: true },
+      { name: "document_version_id", label: "Version de documento", type: "number", required: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
   {
     table: "processes",
     label: "Procesos",

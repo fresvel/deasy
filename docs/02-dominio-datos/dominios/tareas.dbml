@@ -16,6 +16,16 @@ Project tareas {
   Note: '''Tareas, entregables instanciados y documentos — Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables (`task_items`) y los documentos producidos.'''
 }
 
+Table "acto_documentos" {
+  "acto_id" int4 [pk, not null]
+  "document_version_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    document_version_id [type: btree, name: "idx_acto_documentos_version"]
+  }
+}
+
 Table "document_attachments" {
   "id" int4 [pk, not null, increment]
   "document_version_id" int4 [not null]
@@ -245,6 +255,7 @@ Table "turnos" {
   Note: '''A QUIEN LE TOCO: un turno por cada persona convocada en un recorrido. Apunta al PARTICIPANTE declarado que lo produjo --no solo al paso--, asi que se sabe de que declaracion salio. Sustituye a las dos tablas de solicitud que habia, una por lado.'''
 }
 
+Ref "fk_acto_documentos_version":"document_versions"."id" <? "acto_documentos"."document_version_id"
 Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
 Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
 Ref "fk_document_signatures_turno":"turnos"."id" ?<? "document_signatures"."turno_id"
@@ -262,6 +273,7 @@ Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
 Ref "fk_turnos_recorrido":"recorridos".("id", "accion") <? "turnos".("recorrido_id", "accion") [delete: cascade]
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   actos -> acto_documentos   [organizacion]
 //   persons -> document_attachments   [identidad]
 //   persons -> document_signatures   [identidad]
 //   signature_statuses -> document_signatures   [firmas]

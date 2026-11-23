@@ -1,6 +1,6 @@
 ---
 title: Modelo de datos
-description: Las 86 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
+description: Las 89 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
 sidebar:
   order: 1
 ---
@@ -11,8 +11,8 @@ generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **<!-- gen:total-tablas -->86<!-- /gen --> tablas y <!-- gen:total-relaciones -->154<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
-de <!-- gen:total-tablas -->86<!-- /gen --> tablas impresiona y no se lee.
+Son **<!-- gen:total-tablas -->89<!-- /gen --> tablas y <!-- gen:total-relaciones -->159<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+de <!-- gen:total-tablas -->89<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
 Cada dominio muestra **solo las relaciones internas**. Las que salen hacia otros dominios están
@@ -42,7 +42,7 @@ Quién es cada quien y qué puede hacer. `persons` es la identidad única del si
 ## Unidades, puestos y ocupación
 
 El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa.
-**<!-- gen:tablas-dominio:organizacion -->13<!-- /gen --> tablas.**
+**<!-- gen:tablas-dominio:organizacion -->15<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de organización](/diagramas/organizacion.svg)
 
@@ -72,8 +72,8 @@ las versiones. Aquí vive también la autoría del flujo de llenado. **<!-- gen:
 
 Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables
 (`task_items`) y los documentos producidos. Es donde converge todo: tiene
-**<!-- gen:relaciones-fuera:tareas -->25<!-- /gen --> relaciones con otros dominios**.
-**<!-- gen:tablas-dominio:tareas -->11<!-- /gen --> tablas.**
+**<!-- gen:relaciones-fuera:tareas -->26<!-- /gen --> relaciones con otros dominios**.
+**<!-- gen:tablas-dominio:tareas -->12<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de tareas](/diagramas/tareas.svg)
 
@@ -134,7 +134,7 @@ qué**, y ésa es otra pregunta. Para eso cada tabla declara además su **nivel*
 | **7 · encima** | Conversación y empleo: se apoyan en todo lo anterior y nada depende de ellos |
 
 **La regla es una sola: una clave ajena puede apuntar a su propio nivel o a uno inferior, nunca a una
-superior.** Medido sobre las <!-- gen:total-relaciones -->154<!-- /gen --> relaciones del esquema: 86 bajan de nivel, 71 se quedan
+superior.** Medido sobre las <!-- gen:total-relaciones -->159<!-- /gen --> relaciones del esquema: 86 bajan de nivel, 71 se quedan
 en la suya y **ninguna sube**. Lo comprueba `scripts/docs/check-mapa-tablas.mjs`.
 
 Dos cosas que los niveles enseñan y que ningún diagrama por dominio decía:

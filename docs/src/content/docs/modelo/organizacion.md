@@ -763,6 +763,44 @@ almacén es justo la razón de guardarla.
 
 :::
 
+## El papel que ordena un cambio — `actos`
+
+Una unidad no se crea ni se suprime porque sí: lo decide alguien con competencia, y hay un documento
+que lo dice. Hasta el 2026-11-23 el modelo no tenía dónde apuntarlo. Ahora hay tres tablas:
+
+| Tabla | Qué guarda |
+|---|---|
+| `tipos_de_acto` | El catálogo: resolución, acta, memorando, oficio, disposición. Se amplía en `/admin` |
+| `actos` | La **referencia** del papel: tipo, número, asunto, quién lo emite y sus dos fechas |
+| `acto_documentos` | El enlace al documento firmado, cuando se produjo aquí |
+
+Cuatro cosas que no son evidentes:
+
+- **Quien emite es el órgano, no la persona ni su puesto.** La competencia para decidir es de la
+  Dirección o del Consejo, y por eso un memorando se numera con la sigla de la unidad y la serie
+  continúa cuando cambia el titular. El emisor es una unidad (`unidad_emisora_id`) **o** un texto
+  (`emisor_externo`, para un órgano que no está en el sistema): exactamente uno de los dos, y lo
+  impone la base.
+- **Quien firma se deduce casi siempre** —de la firma, si el acto se produjo aquí; de quién ocupaba
+  la jefatura en la fecha de emisión, si no—. `suscrito_por_*` y `en_calidad_de` (`titular`,
+  `subrogante`, `encargado`, `delegado`) existen para cuando **no** se puede deducir. En los cuatro
+  casos el acto sigue siendo del órgano.
+- **Lleva dos fechas y no son la misma**: `fecha_emision` es cuándo se firmó, `fecha_vigencia` desde
+  cuándo rige. Una resolución de diciembre puede regir desde enero.
+- **Un acto sin fila en `acto_documentos` no es un error**: es el estado «referencia registrada,
+  documento pendiente». La referencia es obligatoria; el documento puede llegar después.
+
+El enlace al documento va **del documento al acto**, en el dominio de tareas, y no al revés: el acto
+está en el nivel 2 para que unidades y procesos puedan apuntarle, `document_versions` está en el 5, y
+una clave ajena no sube de nivel.
+
+:::caution[Lo que todavía no hace]
+Hoy el acto **se puede registrar y enlazar, pero nada lo exige**: las unidades, los procesos y sus
+relaciones aún no llevan fechas de vigencia ni apuntan a un acto. Tampoco se puede adjuntar el
+fichero de un acto externo, ni queda escrito quién registró cada acto. Las tres cosas están
+decididas y **sin construir**.
+:::
+
 ## El diagrama, con todos sus campos
 
 ```mermaid

@@ -198,7 +198,9 @@
       "position_assignments": 2,
       "unit_positions": 2,
       "unit_relations": 2,
-      "units": 2
+      "units": 2,
+      "tipos_de_acto": 0,
+      "actos": 2
     }
   },
   "procesos": {
@@ -239,7 +241,8 @@
       "task_item_tenures": 5,
       "task_items": 5,
       "tasks": 5,
-      "turnos": 6
+      "turnos": 6,
+      "acto_documentos": 5
     }
   },
   "firmas": {
