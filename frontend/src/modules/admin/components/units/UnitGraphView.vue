@@ -242,8 +242,16 @@
 
         <!-- Pestaña: Ocupaciones -->
         <div v-show="detailTab === 'ocupaciones'">
+        <!-- LAS TRES CLASES DE PUESTO, COMO SUBPESTAÑAS, EN LA MISMA FILA QUE «+ PUESTO» (2026-11-23).
+             Llevan el mismo estilo que las pestañas del modal —el subrayado—, no el de grupo
+             segmentado: el dueño vio las segmentadas y no las quiso. Ocupan el sitio del rótulo
+             «Puestos y ocupaciones», que repetía el nombre de la pestaña.
+
+             «Todas» va delante y es la que abre: la mayoría de las unidades tienen dos puestos, y
+             partirlos en tres pestañas los escondería. En «Todas» se ven agrupados por clase; las
+             otras tres filtran. Cada una dice cuántos hay. -->
         <div class="mb-3 flex items-center justify-between gap-2">
-          <p class="deasy-overline">Puestos y ocupaciones</p>
+          <ProfileSubsectionTabs v-model="clasePuestos" :tabs="pestanasDeClase" aria-label="Clases de puesto" />
           <AppButton v-if="editable" variant="neutral-outline" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
         </div>
 
@@ -275,12 +283,6 @@
           Esta unidad no tiene puestos registrados.
         </AppEmpty>
         <template v-else>
-          <!-- LAS TRES CLASES DE PUESTO, COMO SUBPESTAÑAS (2026-11-23). Una plaza con contrato, una
-               jefatura por designación y una función sin contrato propio son cosas distintas, y en
-               una unidad grande iban mezcladas. «Todas» va delante y es la que abre: la mayoría de
-               las unidades tienen dos puestos, y partirlos en tres pestañas los escondería. En
-               «Todas» se ven agrupados por clase; las otras tres filtran. Cada una dice cuántos hay. -->
-          <ProfileSubsectionTabs v-model="clasePuestos" nested :tabs="pestanasDeClase" aria-label="Clases de puesto" class="mb-3" />
           <AppEmpty v-if="!gruposDePuestos.length">
             Esta unidad no tiene puestos de esta clase.
           </AppEmpty>
