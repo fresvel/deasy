@@ -305,6 +305,95 @@
       </template>
     </AppModalShell>
 
+    <!-- LA CONFIGURACIÓN, EN UN MODAL CON PESTAÑAS (2026-11-24). Pulsar su nodo abría directamente
+         el asistente —ocho pasos— aunque sólo se quisiera mirar qué es. Ahora abre esto, como los
+         demás nodos del mapa: «Datos» dice qué es y de qué proceso; «Entregables», qué produce. El
+         asistente sigue ahí, a un botón, para editarla o verla entera. -->
+    <AppModalShell
+      v-if="Boolean(configDetail)"
+      controlled
+      :open="Boolean(configDetail)"
+      :title="configDetail.definition_name || 'Configuración'"
+      content-class="deasy-dialog-panel--viewport max-w-2xl"
+      body-class="flex min-h-0 flex-col"
+      footer-class="shrink-0"
+      @close="configDetail = null"
+    >
+      <div class="deasy-inline-tabs shrink-0" role="tablist">
+        <button
+          v-for="pestana in PESTANAS_DE_LA_CONFIGURACION"
+          :key="pestana.id"
+          type="button"
+          role="tab"
+          class="deasy-inline-tab"
+          :class="configTab === pestana.id ? 'deasy-inline-tab--active' : ''"
+          :aria-selected="configTab === pestana.id"
+          @click="configTab = pestana.id"
+        >
+          <component :is="pestana.icono" class="h-4 w-4" />
+          {{ pestana.rotulo }}<span v-if="pestana.id === 'entregables' && entregablesDeLaConfig.length" class="ml-1 font-semibold">· {{ entregablesDeLaConfig.length }}</span>
+        </button>
+      </div>
+
+      <div class="mt-4 min-h-0 flex-1 overflow-y-auto">
+        <div v-show="configTab === 'datos'" class="flex flex-col gap-4">
+          <div>
+            <p class="deasy-overline m-0">Proceso</p>
+            <p class="m-0 mt-1 text-sm font-semibold text-strong">{{ rawProcessById(configDetail.process_id)?.name || "—" }}</p>
+          </div>
+          <div>
+            <p class="deasy-overline m-0">Versión y estado</p>
+            <p class="m-0 mt-1 flex items-center gap-2 text-sm text-icon">
+              <span class="font-semibold text-strong">{{ configDetail.definition_version }}</span>
+              <AppTag :variant="tonoCicloVida(configDetail.status)" outlined>{{ configStatusLabel(configDetail.status) }}</AppTag>
+            </p>
+          </div>
+          <div v-if="configDetail.linea_cargo_name">
+            <p class="deasy-overline m-0">Cargo responsable</p>
+            <p class="m-0 mt-1 text-sm text-icon">{{ configDetail.linea_cargo_name }}</p>
+          </div>
+          <div v-if="configDetail.linea_unit_type_name">
+            <p class="deasy-overline m-0">Tipo de unidad</p>
+            <p class="m-0 mt-1 text-sm text-icon">{{ configDetail.linea_unit_type_name }}</p>
+          </div>
+        </div>
+
+        <div v-show="configTab === 'entregables'">
+          <ul v-if="entregablesDeLaConfig.length" class="m-0 flex list-none flex-col gap-2 p-0">
+            <li
+              v-for="tpl in entregablesDeLaConfig"
+              :key="tpl.id"
+              class="deasy-elegible cursor-pointer rounded-xl px-3 py-2.5"
+              role="button"
+              tabindex="0"
+              title="Abrir el entregable"
+              @click="abrirEntregableDeLaConfig(tpl)"
+              @keydown.enter="abrirEntregableDeLaConfig(tpl)"
+              @keydown.space.prevent="abrirEntregableDeLaConfig(tpl)"
+            >
+              <div class="flex items-center gap-2">
+                <span class="min-w-0 truncate text-sm font-semibold text-strong">{{ tpl.display_name }}</span>
+                <span v-if="tpl.storage_version" class="shrink-0 text-theme-xs text-muted">v{{ tpl.storage_version }}</span>
+                <span class="ml-auto shrink-0 text-theme-xs font-semibold text-primary">Ver →</span>
+              </div>
+            </li>
+          </ul>
+          <AppEmpty v-else :icon="false">Esta configuración no tiene entregables.</AppEmpty>
+        </div>
+      </div>
+
+      <template #footer>
+        <AppButton variant="neutral-outline" @click="configDetail = null">Cerrar</AppButton>
+        <template v-if="editable">
+          <AppButton v-if="configDetail.status === 'draft'" variant="neutral-outline" @click="desdeElModalDeConfig(addTemplateToConfig)">+ Entregable</AppButton>
+          <AppButton v-else variant="neutral-outline" @click="desdeElModalDeConfig(versionConfig)">Versionar</AppButton>
+        </template>
+        <AppButton variant="primary-outline" @click="desdeElModalDeConfig(abrirAsistenteDeConfig)">
+          {{ editable && configDetail.status === 'draft' ? "Editar en el asistente" : "Ver en el asistente" }}
+        </AppButton>
+      </template>
+    </AppModalShell>
+
     <!-- EL ENTREGABLE, EN UN MODAL CON PESTAÑAS (2026-11-24), como el proceso y la unidad. Era el único
          nodo del mapa que abría un panel lateral: mismo gesto —pulsar un nodo—, otra forma de
          responder. «Datos» dice qué es y qué versión usa esta configuración; «Versiones», su linaje,
@@ -902,7 +991,7 @@ const loadGraph = async () => {
 const rawProcessById = (processId) =>
   (rawGraph.value.nodes || []).find((p) => String(p.id) === String(processId)) || null;
 
-// Clic en nodo proceso → su modal; clic en nodo configuración → abre el wizard de esa configuración.
+// Clic en un nodo → su modal con pestañas: el del proceso, el de la configuración o el del entregable.
 const onNodeClick = ({ node }) => {
   if (!node?.data) return;
   if (node.type === "config") {
@@ -915,8 +1004,30 @@ const onNodeClick = ({ node }) => {
   }
   openProcessDetail(node.data.id);
 };
-// Abre la configuración (wizard) desde su nodo en el grafo; reusa el camino edit-config del padre.
+// --- El modal de la configuración: sus datos y sus entregables ---
+const configDetail = ref(null);
+const configTab = ref("datos");
+const PESTANAS_DE_LA_CONFIGURACION = [
+  { id: "datos", rotulo: "Datos", icono: IconId },
+  { id: "entregables", rotulo: "Entregables", icono: IconVersions }
+];
+const entregablesDeLaConfig = computed(() =>
+  configDetail.value ? templatesByConfig.value.get(String(configDetail.value.definition_id)) || [] : []
+);
 const openConfigFromNode = (cfg) => {
+  closeDetail();
+  configTab.value = "datos";
+  configDetail.value = cfg;
+};
+// Un modal a la vez: lo que sale del de la configuración —el asistente, otro modal— lo cierra antes.
+const desdeElModalDeConfig = (accion) => {
+  const cfg = configDetail.value;
+  configDetail.value = null;
+  if (cfg) accion(cfg);
+};
+const abrirEntregableDeLaConfig = (tpl) => desdeElModalDeConfig(() => openTemplateFromNode(tpl));
+// Abre la configuración en el asistente; reusa el camino edit-config del padre.
+const abrirAsistenteDeConfig = (cfg) => {
   const proc = rawProcessById(cfg.process_id);
   closeDetail();
   emit("edit-config", {
