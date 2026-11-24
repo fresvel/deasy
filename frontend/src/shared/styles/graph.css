@@ -21,29 +21,66 @@
     .graph-node--unidad { width: 240px; }
     .graph-node--proceso { width: 260px; }
 
-    /* LA PESTAÑA DEL TIPO DE UNIDAD: sobre el borde de arriba, a la izquierda. Azul de marca con
-       texto blanco —4.8:1; el azul sobre su tinte claro se quedaba en 4.3:1 a 11 px—, y gris cuando
-       el nodo no rige, para que no llame más que una unidad vigente. El ancho tiene tope: la
-       flecha del padre entra por el centro del nodo (120 px) y la pestaña acaba antes (12 + 96). */
+    /* LA PESTAÑA DEL TIPO DE UNIDAD, COMO LA DE UNA CARPETA. No es una etiqueta pegada encima: es
+       el mismo contorno del nodo, que sube por la izquierda, rodea el texto y baja de vuelta al
+       borde superior con una curva hacia fuera. Tres piezas hacen una sola línea:
+         · la pestaña tapa el borde superior del nodo en su ancho y no tiene borde abajo;
+         · su borde izquierdo continúa el del nodo (por eso va en `left: -1px`, sobre él);
+         · `::after` dibuja la curva de la derecha con un degradado radial —transparente, un
+           píxel del color del borde, y el relleno— y de paso tapa el tramo recto que sobraría.
+       El color del borde llega por `--nodo-borde`, que declara cada estado del nodo: un degradado
+       no puede heredar `border-color`.
+
+       Colores (decisión del dueño): los de la pestaña seleccionada de los menús —`brand-50` de
+       fondo y `brand-600` de texto, 5.8:1—, y en gris análogo cuando la unidad no rige.
+
+       El texto tiene tope de ancho: la flecha del padre entra por el centro del nodo (120 px) y
+       la pestaña, con su curva, acaba en 112. */
     .graph-node__tipo {
+        --tipo-fondo: var(--color-brand-50);
         position: absolute;
         bottom: 100%;
-        left: 12px;
-        max-width: 96px;
-        height: 18px;
-        padding: 0 8px;
-        border-radius: 8px 8px 0 0;
-        background: var(--color-primary);
-        color: var(--color-white);
+        left: -1px;
+        height: 20px;
+        padding: 0 10px;
+        border: 1px solid var(--nodo-borde);
+        border-bottom: 0;
+        border-radius: 12px 10px 0 0;
+        background: var(--tipo-fondo);
+        color: var(--color-brand-600);
         font-size: 11px;
         font-weight: 600;
-        line-height: 18px;
+        line-height: 19px;
+    }
+
+    .graph-node__tipo::after {
+        content: "";
+        position: absolute;
+        right: -8px;
+        bottom: 0;
+        width: 8px;
+        height: 8px;
+        background: radial-gradient(
+            circle at 100% 0,
+            transparent 6.6px,
+            var(--nodo-borde) 7.2px,
+            var(--nodo-borde) 7.8px,
+            var(--tipo-fondo) 8.4px
+        );
+    }
+
+    .graph-node__tipo-texto {
+        display: block;
+        max-width: 84px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
 
-    .graph-node--inactivo .graph-node__tipo { background: var(--color-icon); }
+    .graph-node--inactivo .graph-node__tipo {
+        --tipo-fondo: var(--color-gray-100);
+        color: var(--color-icon);
+    }
 
     /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
        Es el gris de los iconos aclarado, no un color propio. */
@@ -369,9 +406,13 @@
        estado necesita un borde, ese borde tiene nombre. Con las dos ramas nombradas el analisis
        estatico deja de tener que adivinar. */
     .graph-node--inactivo {
+        --nodo-borde: var(--color-line);
         opacity: 0.8;
-        border-color: var(--color-line);
+        border-color: var(--nodo-borde);
     }
 
-    .graph-node--activo { border-color: var(--color-line-strong); }
+    .graph-node--activo {
+        --nodo-borde: var(--color-line-strong);
+        border-color: var(--nodo-borde);
+    }
 }

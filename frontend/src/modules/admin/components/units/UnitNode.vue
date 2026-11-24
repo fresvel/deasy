@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node graph-node--unidad relative rounded-xl border px-3 py-2 transition-all"
+    class="graph-node graph-node--unidad relative rounded-xl rounded-tl-none border px-3 py-2 transition-all"
     :class="[
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
@@ -11,11 +11,15 @@
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle" />
 
-    <!-- EL TIPO DE UNIDAD VA EN UNA PESTAÑA, montada sobre el borde de arriba (2026-11-24). Dice qué
-         clase de cosa es el nodo y casi nunca cambia; abajo queda lo que sí cambia —vigencia y
-         puestos—. Con el tipo y la vigencia dentro, el nodo medía hasta 296 px donde el trazado
-         reserva 210, y se pisaban. Se corta con puntos suspensivos: el nombre entero va en `title`. -->
-    <span class="graph-node__tipo" :title="data.unit_type_name || 'Sin tipo'">{{ data.unit_type_name || 'Sin tipo' }}</span>
+    <!-- EL TIPO DE UNIDAD VA EN UNA PESTAÑA DE CARPETA (2026-11-24): el contorno del nodo sube, la
+         rodea y vuelve a bajar con una curva, como una sola pieza. Dice qué clase de cosa es el nodo
+         y casi nunca cambia; abajo queda lo que sí cambia —vigencia y puestos—. Con el tipo y la
+         vigencia dentro, el nodo medía hasta 296 px donde el trazado reserva 210, y se pisaban.
+         El texto se corta con puntos suspensivos: el nombre entero va en `title`. La esquina de
+         arriba a la izquierda del nodo va recta (`rounded-tl-none`) porque ahí sigue la pestaña. -->
+    <span class="graph-node__tipo" :title="data.unit_type_name || 'Sin tipo'">
+      <span class="graph-node__tipo-texto">{{ data.unit_type_name || 'Sin tipo' }}</span>
+    </span>
 
     <!-- CUANDO EL MAPA SE VE DESDE ESTA UNIDAD, ella es la raíz y lleva la vuelta: a la vista de la que
          se vino y, si se llegó enfocando dos veces, al mapa entero. Va a la izquierda y siempre a la
