@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node graph-node--template relative rounded-xl rounded-tl-none border border-brand-200 border-l-4 border-l-brand-400 bg-brand-50/50 px-2.5 py-1.5 transition-all"
+    class="graph-node graph-node--template relative rounded-xl rounded-tl-none border border-brand-200 border-l-4 border-l-brand-400 bg-brand-50/50 px-2.5 py-2 transition-all"
     :class="data.highlighted ? 'graph-node--resaltado' : ''"
     :title="data.display_name"
     @mouseenter="hover = true"
@@ -8,7 +8,7 @@
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle graph-node__handle--sm" />
     <!-- Qué clase de nodo es, como en el proceso. La franja de la izquierda sube con ella. -->
-    <span class="graph-node__tipo graph-node__tipo--sm"><span class="graph-node__tipo-texto">Entregable</span></span>
+    <span class="graph-node__tipo graph-node__tipo--sm graph-node__tipo--franja"><span class="graph-node__tipo-texto">Entregable</span></span>
 
     <div v-if="hover && data.editable" class="nodrag nopan graph-node__toolbar graph-node__toolbar--sm">
       <button v-if="data.parentConfigStatus === 'active'" type="button" class="graph-node__btn graph-node__btn--sm graph-node__btn--accent" title="Actualizar plantilla (nueva versión de plantilla + configuración, publica y activa juntas)" @click.stop="data.onGuidedUpdate?.(data)">
@@ -28,18 +28,18 @@
       <IconFileText class="h-3.5 w-3.5 shrink-0 text-primary" />
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.display_name }}</span>
     </p>
-    <p class="m-0 mt-0.5 flex items-center gap-2">
-      <AppTag variant="primary" outlined class-name="deasy-tag--truncate" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</AppTag>
-      <AppTag
+    <!-- El código y la versión, sin caja: como en los demás nodos del mapa. -->
+    <p class="m-0 mt-1 flex items-center gap-3">
+      <span class="graph-node__dato block min-w-0 truncate" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</span>
+      <span
         v-if="data.storage_version"
-        :variant="tonoEstado"
-        outlined
-        dot
+        class="graph-node__dato shrink-0"
+        :class="[`graph-node__dato--${tonoEstado}`, tonoEstado === 'success' ? '' : 'graph-node__dato--destaca']"
         :title="`Versión vinculada: ${data.storage_version} (${stateLabel})${Number(data.version_count) > 1 ? ` · ${data.version_count} versiones` : ''}`"
       >
-        v{{ data.storage_version }}
+        <span class="graph-node__punto"></span>v{{ data.storage_version }}
         <span v-if="Number(data.version_count) > 1" class="opacity-70">· {{ data.version_count }}</span>
-      </AppTag>
+      </span>
       <IconAlertTriangle
         v-if="isUnhealthy"
         class="h-3.5 w-3.5 shrink-0 text-warning"
@@ -50,7 +50,6 @@
 </template>
 
 <script setup>
-import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import { ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";

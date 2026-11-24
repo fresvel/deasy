@@ -1,7 +1,8 @@
 <template>
   <div
-    class="graph-node graph-node--proceso relative rounded-xl rounded-tl-none border px-3 py-2 transition-all"
+    class="graph-node graph-node--proceso graph-node--franja relative rounded-xl rounded-tl-none px-3 py-2.5 transition-all"
     :class="[
+      `graph-node--estado-${tonoVigencia(data.estado)}`,
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
       data.dimmed ? 'graph-node--apagado' : ''
@@ -14,7 +15,7 @@
     <!-- LA PESTAÑA DICE QUÉ CLASE DE NODO ES. En este mapa conviven tres —proceso, configuración y
          entregable— y hasta ahora se distinguían sólo por tamaño y color. Es la misma pestaña de
          carpeta que lleva la unidad con su tipo. -->
-    <span class="graph-node__tipo"><span class="graph-node__tipo-texto">Proceso</span></span>
+    <span class="graph-node__tipo graph-node__tipo--franja"><span class="graph-node__tipo-texto">Proceso</span></span>
 
     <!-- La vuelta de una vista enfocada: como en el organigrama, a la izquierda y siempre a la vista. -->
     <div v-if="data.focused" class="nodrag nopan graph-node__toolbar graph-node__toolbar--izquierda">
@@ -57,12 +58,12 @@
       <span class="min-w-0 flex-1 truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
-    <!-- PRUEBA (2026-11-24, opción 3): el estado y las configuraciones van en una franja al pie,
-         separada por una línea fina, en texto pequeño. Sólo toma color lo que no es lo normal. La
-         cuenta de configuraciones sigue siendo el botón que las despliega. -->
-    <div class="graph-node__pie">
-      <span class="graph-node__dato" :class="[`graph-node__dato--${tonoVigencia(data.estado)}`, data.estado === 'vigente' ? '' : 'graph-node__dato--destaca']">{{ etiquetaVigencia(data.estado) }}</span>
-      <span aria-hidden="true">·</span>
+    <!-- El estado y las configuraciones, sin caja: como en la unidad. La cuenta de configuraciones
+         sigue siendo el botón que las despliega. -->
+    <p class="m-0 mt-1.5 flex flex-wrap items-center gap-3">
+      <span class="graph-node__dato" :class="[`graph-node__dato--${tonoVigencia(data.estado)}`, data.estado === 'vigente' ? '' : 'graph-node__dato--destaca']">
+        <span class="graph-node__punto"></span>{{ etiquetaVigencia(data.estado) }}
+      </span>
       <button
         v-if="data.hasConfigs"
         type="button"
@@ -75,7 +76,7 @@
         {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
       </button>
       <span v-else class="graph-node__dato">Sin config.</span>
-    </div>
+    </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
 </template>

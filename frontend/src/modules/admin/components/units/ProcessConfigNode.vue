@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node graph-node--config relative rounded-2xl rounded-tl-none border-l-4 px-2.5 py-1.5 transition-all"
+    class="graph-node graph-node--config relative rounded-2xl rounded-tl-none border-l-4 px-2.5 py-2 transition-all"
     :class="[statusBorderClass, data.highlighted ? 'graph-node--resaltado' : '']"
     :title="data.definition_name"
     @mouseenter="hover = true"
@@ -8,7 +8,7 @@
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle graph-node__handle--sm" />
     <!-- Qué clase de nodo es, como en el proceso. La franja de estado de la izquierda sube con ella. -->
-    <span class="graph-node__tipo graph-node__tipo--sm"><span class="graph-node__tipo-texto">Configuración</span></span>
+    <span class="graph-node__tipo graph-node__tipo--sm graph-node__tipo--franja"><span class="graph-node__tipo-texto">Configuración</span></span>
 
     <div v-if="hover && data.editable" class="nodrag nopan graph-node__toolbar graph-node__toolbar--sm">
       <button v-if="data.status === 'draft'" type="button" class="graph-node__btn graph-node__btn--sm" title="Agregar entregable" @click.stop="data.onAddTemplate?.(data)">
@@ -23,19 +23,21 @@
     </div>
     <p class="m-0 flex items-center gap-2">
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.definition_name }}</span>
-      <AppTag :variant="tonoEstado" outlined>{{ statusLabel }}</AppTag>
     </p>
-    <p v-if="data.templatesCount" class="m-0 mt-1">
+    <!-- El estado y los entregables, sin caja: como en la unidad y el proceso. -->
+    <p class="m-0 mt-1 flex flex-wrap items-center gap-3">
+      <span class="graph-node__dato" :class="[`graph-node__dato--${tonoEstado}`, tonoEstado === 'success' ? '' : 'graph-node__dato--destaca']">
+        <span class="graph-node__punto"></span>{{ statusLabel }}
+      </span>
       <button
+        v-if="data.templatesCount"
         type="button"
-        class="nodrag graph-node__toggle"
+        class="nodrag graph-node__toggle graph-node__dato"
         :title="data.templatesExpanded ? 'Ocultar entregables' : 'Mostrar entregables'"
         @click.stop="data.onToggleTemplates?.(data.definition_id)"
       >
-        <AppTag variant="primary" outlined>
-          <IconChevronRight class="h-3 w-3 transition-transform" :class="data.templatesExpanded ? 'rotate-90' : ''" />
-          {{ data.templatesCount }} entregable{{ data.templatesCount === 1 ? "" : "s" }}
-        </AppTag>
+        <IconChevronRight class="h-3 w-3 transition-transform" :class="data.templatesExpanded ? 'rotate-90' : ''" />
+        {{ data.templatesCount }} entregable{{ data.templatesCount === 1 ? "" : "s" }}
       </button>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle graph-node__handle--sm" :class="data.templatesCount ? '' : 'graph-node__handle--hidden'" />
@@ -43,7 +45,6 @@
 </template>
 
 <script setup>
-import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoCicloVida } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";

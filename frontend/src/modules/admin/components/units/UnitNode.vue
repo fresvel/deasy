@@ -1,7 +1,8 @@
 <template>
   <div
-    class="graph-node graph-node--unidad relative rounded-xl rounded-tl-none border px-3 py-2 transition-all"
+    class="graph-node graph-node--unidad graph-node--franja relative rounded-xl rounded-tl-none px-3 py-2.5 transition-all"
     :class="[
+      `graph-node--estado-${tonoVigencia(data.estado)}`,
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
       data.dimmed ? 'graph-node--apagado' : ''
@@ -17,7 +18,7 @@
          vigencia dentro, el nodo medía hasta 296 px donde el trazado reserva 210, y se pisaban.
          El texto se corta con puntos suspensivos: el nombre entero va en `title`. La esquina de
          arriba a la izquierda del nodo va recta (`rounded-tl-none`) porque ahí sigue la pestaña. -->
-    <span class="graph-node__tipo" :title="data.unit_type_name || 'Sin tipo'">
+    <span class="graph-node__tipo graph-node__tipo--franja" :title="data.unit_type_name || 'Sin tipo'">
       <span class="graph-node__tipo-texto">{{ data.unit_type_name || 'Sin tipo' }}</span>
     </span>
 
@@ -80,10 +81,11 @@
       <IconCrown v-if="Number(data.head_count) > 0" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
-    <!-- PRUEBA (2026-11-24, opción 1): el estado y los puestos van SIN CAJA. Un punto con el tono del
-         estado y su nombre en gris; la cuenta de puestos, con su icono, sólo toma color cuando falta
-         gente. Así la única caja del nodo es el nodo, y lo que no es normal es lo único que tiñe. -->
-    <p class="m-0 mt-1 flex flex-wrap items-center gap-3">
+    <!-- EL ESTADO Y LOS PUESTOS VAN SIN CAJA (decisión del dueño, 2026-11-24). Un punto con el tono
+         del estado y su nombre en gris; la cuenta de puestos, con su icono, sólo toma color cuando
+         falta gente. Así la única caja del nodo es el nodo, y lo que no es normal es lo único que
+         tiñe. El tono del estado va también en la franja de la izquierda, como en la configuración. -->
+    <p class="m-0 mt-1.5 flex flex-wrap items-center gap-3">
       <span class="graph-node__dato" :class="[`graph-node__dato--${tonoVigencia(data.estado)}`, data.estado === 'vigente' ? '' : 'graph-node__dato--destaca']">
         <span class="graph-node__punto"></span>{{ etiquetaVigencia(data.estado) }}
       </span>

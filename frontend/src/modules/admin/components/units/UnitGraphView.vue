@@ -826,7 +826,7 @@ let feedbackTimer = null;
 
 // El ancho es el de `.graph-node--unidad` en graph.css: van juntos.
 const NODE_W = 240;
-const NODE_H = 60;
+const NODE_H = 66;
 
 const relationColorMap = computed(() => {
   const map = new Map();

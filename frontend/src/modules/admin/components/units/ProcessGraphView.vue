@@ -415,11 +415,11 @@ const emit = defineEmits([
 
 const { fitView } = useVueFlow();
 const NODE_W = 260;
-const NODE_H = 65;
+const NODE_H = 66;
 const CONFIG_W = 210;
-const CONFIG_H = 64;
+const CONFIG_H = 58;
 const TEMPLATE_W = 170;
-const TEMPLATE_H = 52;
+const TEMPLATE_H = 58;
 const EDGE_COLOR = "var(--color-edge-proceso)";
 const CONFIG_EDGE_COLOR = "var(--color-edge-config)";
 const TEMPLATE_EDGE_COLOR = "var(--color-edge-plantilla)";

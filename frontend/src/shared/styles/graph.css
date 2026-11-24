@@ -21,6 +21,11 @@
     .graph-node--unidad { width: 240px; }
     .graph-node--proceso { width: 260px; }
 
+    .graph-node--unidad,
+    .graph-node--proceso {
+        --nodo-franja: var(--tono-borde, var(--color-line-strong));
+    }
+
     /* LA PESTAÑA DEL TIPO DE UNIDAD, COMO LA DE UNA CARPETA. No es una etiqueta pegada encima: es
        el mismo contorno del nodo, que sube por la izquierda, rodea el texto y baja de vuelta al
        borde superior con una curva hacia fuera. Tres piezas hacen una sola línea:
@@ -83,12 +88,17 @@
        Esos dos nodos llevan a la izquierda una franja de 4 px con su estado: la pestaña la
        continúa hacia arriba, con el mismo color (`--nodo-franja`). */
     .graph-node__tipo--sm {
-        left: -4px;
         height: 18px;
         padding: 0 6px;
-        border-left: 4px solid var(--nodo-franja);
         font-size: 10px;
         line-height: 17px;
+    }
+
+    /* Cuando el nodo lleva a la izquierda la franja de 4 px con su estado —y desde el 2026-11-24
+       la llevan los cuatro—, la pestaña la continúa hacia arriba con el mismo color. */
+    .graph-node__tipo--franja {
+        left: -4px;
+        border-left: 4px solid var(--nodo-franja);
     }
 
     .graph-node--inactivo .graph-node__tipo {
@@ -96,7 +106,7 @@
         color: var(--color-icon);
     }
 
-    /* UN DATO DEL NODO SIN CAJA (prueba del 2026-11-24): texto gris y, si lo lleva, un punto con el
+    /* UN DATO DEL NODO SIN CAJA (decisión del dueño, 2026-11-24): texto gris y, si lo lleva, un punto con el
        tono. `--destaca` tiñe también el texto: es para lo que NO es lo normal —suprimido, a
        medias, sin cubrir—. Los tonos de texto son los 700, que pasan de 4.5:1 sobre blanco. */
     .graph-node__dato {
@@ -140,19 +150,6 @@
         height: 8px;
         border-radius: 999px;
         background: var(--dato-punto, var(--color-line-strong));
-    }
-
-    /* LA FRANJA AL PIE DEL NODO (prueba, opción 3): de borde a borde, bajo una línea fina. Los
-       márgenes negativos deshacen el relleno del nodo (12 a los lados, 8 abajo). */
-    .graph-node__pie {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        margin: 8px -12px -8px;
-        padding: 4px 12px;
-        border-top: 1px solid var(--color-line);
-        color: var(--color-muted);
-        font-size: 12px;
     }
 
     /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
@@ -493,5 +490,14 @@
     .graph-node--activo {
         --nodo-borde: var(--color-line-strong);
         border-color: var(--nodo-borde);
+    }
+
+    /* LA FRANJA DE ESTADO EN LA UNIDAD Y EL PROCESO, como la de la configuración: 4 px a la
+       izquierda con el tono de su vigencia (`graph-node--estado-<tono>` pone `--tono-borde`). Va
+       DESPUÉS de `--activo` / `--inactivo` porque esas dos fijan el color de los cuatro lados, y
+       trae el borde entero: en la plantilla ya no hay utilidad `border`, que ganaría a esta regla. */
+    .graph-node--franja {
+        border: 1px solid var(--nodo-borde);
+        border-left: 4px solid var(--nodo-franja);
     }
 }
