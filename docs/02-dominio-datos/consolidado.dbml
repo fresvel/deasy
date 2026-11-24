@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 94 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 97 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -559,7 +559,7 @@ Table "dossier_items" {
   "id" int8 [pk, not null, increment]
   "dossier_id" int8 [not null]
   "section" varchar(20) [not null]
-  "data" jsonb [not null, default: `{}`]
+  "data" jsonb [not null, default: `'{}'::jsonb`]
   "url_documento" text [not null, default: '']
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
@@ -937,6 +937,21 @@ Table "position_assignments" {
   }
 }
 
+Table "position_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_position_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_position_id) [type: btree, unique, name: "uq_position_equivalencias_par"]
+    sucesor_position_id [type: btree, name: "idx_position_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UN PUESTO QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no el puesto--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida. El sucesor puede ser de otra unidad.'''
+}
+
 Table "position_vigencias" {
   "id" int4 [pk, not null, increment]
   "position_id" int4 [not null]
@@ -985,6 +1000,21 @@ Table "process_definition_versions" {
     linea_id [type: btree, name: "idx_process_definition_versions_linea"]
     (linea_id, status, effective_from) [type: btree, name: "idx_process_definition_versions_status"]
   }
+}
+
+Table "process_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_process_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_process_id) [type: btree, unique, name: "uq_process_equivalencias_par"]
+    sucesor_process_id [type: btree, name: "idx_process_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UN PROCESO QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no el proceso--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida.'''
 }
 
 Table "process_relations" {
@@ -1377,6 +1407,21 @@ Table "turnos" {
   Note: '''A QUIEN LE TOCO: un turno por cada persona convocada en un recorrido. Apunta al PARTICIPANTE declarado que lo produjo --no solo al paso--, asi que se sabe de que declaracion salio. Sustituye a las dos tablas de solicitud que habia, una por lado.'''
 }
 
+Table "unit_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_unit_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_unit_id) [type: btree, unique, name: "uq_unit_equivalencias_par"]
+    sucesor_unit_id [type: btree, name: "idx_unit_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UNA UNIDAD QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no la unidad--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida.'''
+}
+
 Table "unit_positions" {
   "id" int4 [pk, not null, increment]
   "unit_id" int4 [not null]
@@ -1609,12 +1654,18 @@ Ref "fk_persons_nacimiento_pais":"paises"."id" ?<? "persons"."nacimiento_pais_id
 Ref "fk_persons_nacionalidad":"paises"."id" ?<? "persons"."nacionalidad_pais_id"
 Ref "fk_position_assignments_person":"persons"."id" <? "position_assignments"."person_id"
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
+Ref "fk_position_equivalencias_antecesor":"position_vigencias"."id" <? "position_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_position_equivalencias_registrado_por":"persons"."id" ?<? "position_equivalencias"."registrado_por_person_id"
+Ref "fk_position_equivalencias_sucesor":"unit_positions"."id" <? "position_equivalencias"."sucesor_position_id"
 Ref "fk_position_vigencias_fin_acto":"actos"."id" ?<? "position_vigencias"."fin_acto_id"
 Ref "fk_position_vigencias_inicio_acto":"actos"."id" ?<? "position_vigencias"."inicio_acto_id"
 Ref "fk_position_vigencias_position":"unit_positions"."id" <? "position_vigencias"."position_id"
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
 Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]
+Ref "fk_process_equivalencias_antecesor":"process_vigencias"."id" <? "process_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_process_equivalencias_registrado_por":"persons"."id" ?<? "process_equivalencias"."registrado_por_person_id"
+Ref "fk_process_equivalencias_sucesor":"processes"."id" <? "process_equivalencias"."sucesor_process_id"
 Ref "fk_process_relations_child":"processes"."id" <? "process_relations"."child_process_id"
 Ref "fk_process_relations_fin_acto":"actos"."id" ?<? "process_relations"."fin_acto_id"
 Ref "fk_process_relations_inicio_acto":"actos"."id" ?<? "process_relations"."inicio_acto_id"
@@ -1662,6 +1713,9 @@ Ref "fk_turnos_persona":"persons"."id" ?<? "turnos"."persona_id"
 Ref "fk_turnos_recorrido":"recorridos".("id", "accion") <? "turnos".("recorrido_id", "accion") [delete: cascade]
 Ref "fk_tvk_canal":"canales_mensajeria"."id" ?<? "telefono_verification_keys"."canal_id"
 Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono_id" [delete: cascade]
+Ref "fk_unit_equivalencias_antecesor":"unit_vigencias"."id" <? "unit_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_unit_equivalencias_registrado_por":"persons"."id" ?<? "unit_equivalencias"."registrado_por_person_id"
+Ref "fk_unit_equivalencias_sucesor":"units"."id" <? "unit_equivalencias"."sucesor_unit_id"
 Ref "fk_unit_positions_cargo":"cargos"."id" <? "unit_positions"."cargo_id"
 Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
 Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"

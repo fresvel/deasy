@@ -509,6 +509,15 @@ export const getEfectosDeSuprimir = async (req, res) => {
   }
 };
 
+// Los puestos entre los que elegir el sucesor de uno que se suprime (frente 27, D-05).
+export const getPuestosCandidatosASuceder = async (_req, res) => {
+  try {
+    res.json({ puestos: await service().listarPuestosCandidatosASuceder() });
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
 // Suprime de una vez los puestos que rigen en una unidad, con una misma fecha.
 export const suprimirPuestosDeUnidad = async (req, res) => {
   try {

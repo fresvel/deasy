@@ -357,6 +357,23 @@ export const SQL_TABLES = [
     ],
     searchFields: []
   },
+  // QUE SUCEDE A UNA UNIDAD SUPRIMIDA (frente 27, D-05): una fila por sucesor de cada vida que termina.
+  // Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No se
+  // modifican: se quitan y se registran otras, y la base lo impone.
+  {
+    table: "unit_equivalencias",
+    label: "Equivalencias de unidades",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "antecesor_vigencia_id", label: "Vida que termina", type: "number", required: true },
+      { name: "sucesor_unit_id", label: "Unidad que la sucede", type: "number", required: true },
+      { name: "registrado_por_person_id", label: "Registrado por", type: "number", readOnly: true, sello: "actor" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
   {
     table: "unit_relations",
     label: "Relaciones de unidades",
@@ -493,6 +510,21 @@ export const SQL_TABLES = [
       { name: "vigente_hasta", label: "Rige hasta", type: "date" },
       { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
       { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // QUE SUCEDE A UN PROCESO SUPRIMIDO (frente 27, D-05): la misma forma que la de las unidades.
+  {
+    table: "process_equivalencias",
+    label: "Equivalencias de procesos",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "antecesor_vigencia_id", label: "Vida que termina", type: "number", required: true },
+      { name: "sucesor_process_id", label: "Proceso que lo sucede", type: "number", required: true },
+      { name: "registrado_por_person_id", label: "Registrado por", type: "number", readOnly: true, sello: "actor" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: []
@@ -1283,6 +1315,21 @@ export const SQL_TABLES = [
       { name: "vigente_hasta", label: "Rige hasta", type: "date" },
       { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
       { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // QUE SUCEDE A UN PUESTO SUPRIMIDO (frente 27, D-05): la misma forma que la de las unidades.
+  {
+    table: "position_equivalencias",
+    label: "Equivalencias de puestos",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "antecesor_vigencia_id", label: "Vida que termina", type: "number", required: true },
+      { name: "sucesor_position_id", label: "Puesto que lo sucede", type: "number", required: true },
+      { name: "registrado_por_person_id", label: "Registrado por", type: "number", readOnly: true, sello: "actor" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: []

@@ -48,6 +48,11 @@ export class AdminSqlService {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_ESTRUCTURA_EFECTOS(clase, id));
   }
 
+  /* Los puestos entre los que elegir el sucesor de uno que se suprime: de todas las unidades. */
+  getPuestosCandidatosASuceder() {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_ESTRUCTURA_PUESTOS_CANDIDATOS);
+  }
+
   /* CORREGIR algo de la estructura que ya rigió: { tabla, id?, cambios, motivo }. Pide un permiso
      propio (`correcciones_estructura.create`) y deja el antes y el después en su bitácora. */
   corregirEstructura(payload) {

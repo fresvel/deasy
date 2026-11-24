@@ -764,6 +764,7 @@ export default class SqlAdminService {
   setUnitParent(...args) { return this.orgStructure.setUnitParent(...args); }
   efectosDeSuprimir(...args) { return this.orgStructure.efectosDeSuprimir(...args); }
   suprimirPuestosDeUnidad(...args) { return this.orgStructure.suprimirPuestosDeUnidad(...args); }
+  listarPuestosCandidatosASuceder(...args) { return this.orgStructure.listarPuestosCandidatosASuceder(...args); }
 
   // LOS SELLOS DE UNA TABLA para quien hace la peticion: las columnas que el catalogo marca con
   // `sello: "actor"` reciben a esa persona. Es DECLARATIVO a proposito: una tabla que quiera guardar

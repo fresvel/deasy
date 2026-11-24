@@ -203,7 +203,9 @@
       "actos": 2,
       "unit_vigencias": 2,
       "correcciones_de_estructura": 2,
-      "position_vigencias": 2
+      "position_vigencias": 2,
+      "unit_equivalencias": 2,
+      "position_equivalencias": 2
     }
   },
   "procesos": {
@@ -218,7 +220,8 @@
       "processes": 4,
       "terms": 4,
       "process_vigencias": 4,
-      "process_relations": 4
+      "process_relations": 4,
+      "process_equivalencias": 4
     }
   },
   "plantillas": {

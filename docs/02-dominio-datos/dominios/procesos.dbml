@@ -71,6 +71,21 @@ Table "process_definition_versions" {
   }
 }
 
+Table "process_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_process_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_process_id) [type: btree, unique, name: "uq_process_equivalencias_par"]
+    sucesor_process_id [type: btree, name: "idx_process_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UN PROCESO QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no el proceso--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida.'''
+}
+
 Table "process_relations" {
   "id" int4 [pk, not null, increment]
   "parent_process_id" int4 [not null]
@@ -160,6 +175,8 @@ Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: restr
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
 Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]
+Ref "fk_process_equivalencias_antecesor":"process_vigencias"."id" <? "process_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_process_equivalencias_sucesor":"processes"."id" <? "process_equivalencias"."sucesor_process_id"
 Ref "fk_process_relations_child":"processes"."id" <? "process_relations"."child_process_id"
 Ref "fk_process_relations_parent":"processes"."id" <? "process_relations"."parent_process_id"
 Ref "fk_process_vigencias_process":"processes"."id" <? "process_vigencias"."process_id"
@@ -174,6 +191,7 @@ Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."p
 //   cargos -> lineas   [identidad]
 //   unit_types -> lineas   [organizacion]
 //   units -> lineas   [organizacion]
+//   persons -> process_equivalencias   [identidad]
 //   actos -> process_relations   [organizacion]
 //   actos -> process_relations   [organizacion]
 //   process_definition_versions -> process_runs   [tareas]

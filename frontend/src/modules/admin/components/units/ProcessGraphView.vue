@@ -179,6 +179,7 @@
             :estado="detailProcess.estado"
             sujeto="Proceso"
             :editable="editable"
+            :candidatos="candidatosASuceder"
             @reactivar="empezarVidaNueva"
             @descartar="descartarVida"
           />
@@ -938,6 +939,15 @@ const parentOptions = computed(() =>
     .map((p) => ({ id: p.id, name: p.name, estado: p.estado }))
 );
 
+// Entre quiénes se elige el sucesor de un proceso que termina: los que tienen alguna vida —uno en
+// borrador no puede suceder a nadie—.
+const candidatosASuceder = computed(() =>
+  (rawGraph.value.nodes || [])
+    .filter((p) => p.estado && p.estado !== "borrador")
+    .map((p) => ({ id: p.id, etiqueta: p.name }))
+    .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"))
+);
+
 const saveProcessEdit = async () => {
   const ep = detailProcess.value;
   if (!props.editable || !ep?.id || !editForm.value.name.trim()) return;
@@ -991,7 +1001,7 @@ const openProcessDetail = async (processId, tab = "datos") => {
   try {
     const { data } = await adminSqlService.getProcessDetail(processId);
     detailProcess.value = data.process || detailProcess.value;
-    vigencia.prepararVida(detailProcess.value, data.vigencias || []);
+    vigencia.prepararVida(detailProcess.value, data.vigencias || [], data.antecesores || []);
     detailConfigurations.value = data.configurations || [];
     detailChildren.value = data.children || [];
     detailRuns.value = data.runs || [];

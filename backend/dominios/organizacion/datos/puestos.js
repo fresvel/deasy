@@ -68,6 +68,54 @@ export const listarVidasDeLosPuestos = async (ejecutor, unitId) => {
   return filas ?? [];
 };
 
+// LAS EQUIVALENCIAS DE LOS PUESTOS de una unidad (frente 27, D-05), en los dos sentidos y en una
+// consulta cada uno: el servicio las reparte por puesto. El puesto del otro lado puede ser de OTRA
+// unidad —una fusión mueve puestos entre unidades—, y por eso su nombre lleva la suya.
+export const listarSucesoresDeLosPuestos = async (ejecutor, unitId) => {
+  const [filas] = await ejecutor.query(
+    `SELECT e.id, e.antecesor_vigencia_id, e.sucesor_position_id AS nodo_id,
+            s.title || ' · ' || su.name AS nombre
+       FROM position_equivalencias e
+       INNER JOIN position_vigencias pv ON pv.id = e.antecesor_vigencia_id
+       INNER JOIN unit_positions p ON p.id = pv.position_id
+       INNER JOIN unit_positions s ON s.id = e.sucesor_position_id
+       INNER JOIN units su ON su.id = s.unit_id
+      WHERE p.unit_id = ?
+      ORDER BY s.title ASC`,
+    [unitId]
+  );
+  return filas ?? [];
+};
+
+export const listarAntecesoresDeLosPuestos = async (ejecutor, unitId) => {
+  const [filas] = await ejecutor.query(
+    `SELECT e.id, e.sucesor_position_id AS position_id, pv.position_id AS nodo_id,
+            a.title || ' · ' || au.name AS nombre, pv.vigente_hasta::text AS desde
+       FROM position_equivalencias e
+       INNER JOIN unit_positions s ON s.id = e.sucesor_position_id
+       INNER JOIN position_vigencias pv ON pv.id = e.antecesor_vigencia_id
+       INNER JOIN unit_positions a ON a.id = pv.position_id
+       INNER JOIN units au ON au.id = a.unit_id
+      WHERE s.unit_id = ?
+      ORDER BY pv.vigente_hasta DESC, a.title ASC`,
+    [unitId]
+  );
+  return filas ?? [];
+};
+
+// LOS PUESTOS ENTRE LOS QUE ELEGIR UN SUCESOR: los que tienen alguna vida —uno en borrador no puede
+// suceder a nadie—, de todas las unidades, con la suya en el nombre.
+export const listarPuestosCandidatosASuceder = async (ejecutor) => {
+  const [filas] = await ejecutor.query(
+    `SELECT p.id, p.title || ' · ' || u.name AS etiqueta
+       FROM unit_positions p
+       INNER JOIN units u ON u.id = p.unit_id
+      WHERE EXISTS (SELECT 1 FROM position_vigencias pv WHERE pv.position_id = p.id)
+      ORDER BY u.name ASC, p.title ASC`
+  );
+  return filas ?? [];
+};
+
 export const existePuesto = async (ejecutor, positionId) => {
   const [filas] = await ejecutor.query("SELECT id FROM unit_positions WHERE id = ? LIMIT 1", [positionId]);
   return filas.length > 0;

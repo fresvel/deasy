@@ -36,6 +36,13 @@ const VIDA_VACIA = Object.freeze({
   confirmaSupresion: false
 });
 
+/* LAS EQUIVALENCIAS (frente 27, D-05): la tabla de cada clase y cómo se llama en ella el sucesor. */
+const EQUIVALENCIAS_DE = Object.freeze({
+  unit_vigencias: { tabla: "unit_equivalencias", sucesor: "sucesor_unit_id" },
+  position_vigencias: { tabla: "position_equivalencias", sucesor: "sucesor_position_id" },
+  process_vigencias: { tabla: "process_equivalencias", sucesor: "sucesor_process_id" }
+});
+
 const CLASE_DE = Object.freeze({ unit_vigencias: "unidad", position_vigencias: "puesto", process_vigencias: "proceso" });
 
 /* LA FRASE DE LO QUE SE CIERRA: «21 roles asignados y 2 vacantes abiertas». */
@@ -136,10 +143,44 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     && finCorregidoValido.value
   );
 
+  /* LO QUE SUCEDE A LO QUE SE SUPRIME. Quien tiene sucesores es una VIDA con fecha de fin —la última
+     de un nodo suprimido, o la que está en curso si ya tiene su fin guardado—, no el nodo: cada vez
+     que termina puede tener los suyos. Varios sucesores son una división; varios antecesores, una
+     fusión. Se registran y se quitan en el acto, sin esperar al «Guardar» del formulario: no son
+     parte de la vida, cuelgan de ella. Las reglas —que el sucesor rija ese día o después, que nadie
+     se suceda a sí mismo— las impone la base. */
+  const antecesores = ref([]);
+  const vidaQueTermina = computed(() => {
+    let id = null;
+    if (vidaModo.value === "cerrada") id = ultimaVida.value?.vigencia_id ?? null;
+    else if (vidaModo.value === "editar" && hastaOriginal.value) id = vidaForm.value.id;
+    return id ? vidas.value.find((v) => v.id === id) || null : null;
+  });
+  const sucesores = computed(() => vidaQueTermina.value?.sucesores || []);
+  const conSucesoresDe = (vidaId, lista) => {
+    vidas.value = vidas.value.map((v) => (v.id === vidaId ? { ...v, sucesores: lista } : v));
+  };
+  const anadirSucesor = async ({ id, etiqueta }) => {
+    const vida = vidaQueTermina.value;
+    const eq = EQUIVALENCIAS_DE[tabla];
+    if (!vida || !eq || !id) return;
+    const { data } = await adminSqlService.create(eq.tabla, { antecesor_vigencia_id: vida.id, [eq.sucesor]: Number(id) });
+    conSucesoresDe(vida.id, [...(vida.sucesores || []), { id: data?.id, nodo_id: Number(id), nombre: etiqueta }]);
+  };
+  const quitarSucesor = async (equivalenciaId) => {
+    const vida = vidaQueTermina.value;
+    const eq = EQUIVALENCIAS_DE[tabla];
+    if (!vida || !eq) return;
+    await adminSqlService.remove(eq.tabla, { id: equivalenciaId });
+    conSucesoresDe(vida.id, (vida.sucesores || []).filter((s) => s.id !== equivalenciaId));
+  };
+
   /* Decide el modo a partir del periodo que cuenta hoy, que es lo que el nodo trae consigo
-     (`estado`, `vigencia_id` y sus fechas). `lista` son todas sus vidas, si ya se conocen. */
-  const prepararVida = (nodo, lista = null) => {
+     (`estado`, `vigencia_id` y sus fechas). `lista` son todas sus vidas, si ya se conocen, y
+     `susAntecesores`, a quién sucede. */
+  const prepararVida = (nodo, lista = null, susAntecesores = []) => {
     if (lista) vidas.value = lista;
+    antecesores.value = susAntecesores || [];
     nodoId.value = nodo?.id ?? null;
     efectos.value = [];
     corrigiendoElFin.value = false;
@@ -277,6 +318,12 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     efectosQueSeQuedan,
     cargarEfectos,
     puedeCorregir: puedeCorregirLaEstructura(),
+    antecesores,
+    vidaQueTermina,
+    sucesores,
+    anadirSucesor,
+    quitarSucesor,
+    nodoId,
     prepararVida,
     empezarVidaNueva,
     cargarActos,

@@ -4,6 +4,8 @@ vi.mock("@/modules/admin/services/AdminSqlService", () => ({
   adminSqlService: {
     getEfectosDeSuprimir: vi.fn().mockResolvedValue({ data: { efectos: [{ singular: "rol asignado", plural: "roles asignados", n: 5, seCierra: true }] } }),
     update: vi.fn().mockResolvedValue({}),
+    create: vi.fn().mockResolvedValue({ data: { id: 41 } }),
+    remove: vi.fn().mockResolvedValue({}),
     corregirEstructura: vi.fn().mockResolvedValue({})
   }
 }));
@@ -85,5 +87,45 @@ describe("useNodeVigencia · con hijos no se suprime", () => {
     // Y con fecha futura tampoco: programar la supresión también pide haberlos movido.
     v.vidaForm.value.vigente_hasta = dia(30);
     expect(v.sePuedeGuardar.value).toBe(false);
+  });
+});
+
+describe("useNodeVigencia · sucesores", () => {
+  const suprimido = { id: 7, estado: "suprimido", vigencia_id: 3, vigente_desde: dia(-50), vigente_hasta: dia(-1), fin_origen: "carga_inicial" };
+  const vidas = () => [{ id: 3, vigente_hasta: dia(-1), sucesores: [{ id: 40, nodo_id: 8, nombre: "B" }] }, { id: 2, vigente_hasta: dia(-90), sucesores: [] }];
+
+  it("los sucesores cuelgan de la vida que terminó, no del nodo", () => {
+    const v = nueva();
+    v.prepararVida(suprimido, vidas(), [{ id: 1, nodo_id: 5, nombre: "Z", desde: dia(-60) }]);
+    expect(v.vidaQueTermina.value.id).toBe(3);
+    expect(v.sucesores.value.map((s) => s.nombre)).toEqual(["B"]);
+    expect(v.antecesores.value).toHaveLength(1);
+  });
+
+  it("una vida en curso sin fecha de fin guardada no tiene a quién registrar", () => {
+    const v = nueva();
+    v.prepararVida(vigente(), [{ id: 3, vigente_hasta: null, sucesores: [] }]);
+    expect(v.vidaQueTermina.value).toBeNull();
+    // Escribir la fecha en el formulario no basta: hasta que no se guarda, la vida no termina.
+    v.vidaForm.value.vigente_hasta = dia(5);
+    expect(v.vidaQueTermina.value).toBeNull();
+  });
+
+  it("una supresión programada ya puede decir quién la sucederá", () => {
+    const v = nueva();
+    v.prepararVida(vigente({ vigente_hasta: dia(30), fin_origen: "carga_inicial" }), [{ id: 3, vigente_hasta: dia(30), sucesores: [] }]);
+    expect(v.vidaQueTermina.value.id).toBe(3);
+  });
+
+  it("añadir y quitar escriben en la tabla de su clase y actualizan la lista", async () => {
+    const { adminSqlService } = await import("@/modules/admin/services/AdminSqlService");
+    const v = nueva();
+    v.prepararVida(suprimido, vidas());
+    await v.anadirSucesor({ id: "9", etiqueta: "C" });
+    expect(adminSqlService.create).toHaveBeenCalledWith("unit_equivalencias", { antecesor_vigencia_id: 3, sucesor_unit_id: 9 });
+    expect(v.sucesores.value).toEqual([{ id: 40, nodo_id: 8, nombre: "B" }, { id: 41, nodo_id: 9, nombre: "C" }]);
+    await v.quitarSucesor(40);
+    expect(adminSqlService.remove).toHaveBeenCalledWith("unit_equivalencias", { id: 40 });
+    expect(v.sucesores.value.map((s) => s.nombre)).toEqual(["C"]);
   });
 });

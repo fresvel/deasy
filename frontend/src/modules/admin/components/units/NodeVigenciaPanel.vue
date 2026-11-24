@@ -8,6 +8,15 @@
       <AppTag :variant="tonoVigencia(estado)" outlined>{{ etiquetaVigencia(estado) }}</AppTag>
     </div>
 
+    <!-- A QUIÉN SUCEDE (frente 27, D-05): varios antecesores son una fusión. Sólo se lee: la
+         equivalencia se registra desde el que termina. -->
+    <p v-if="vigencia.antecesores.value.length" class="m-0 text-sm text-icon">
+      Sucede a
+      <template v-for="(antecesor, i) in vigencia.antecesores.value" :key="antecesor.id">
+        <span v-if="i">{{ i === vigencia.antecesores.value.length - 1 ? " y a " : ", a " }}</span>
+        <strong class="text-strong">{{ antecesor.nombre }}</strong> (desde el {{ antecesor.desde }})</template>.
+    </p>
+
     <!-- La última vida terminó: se puede abrir otra, pero no sin pedirlo. -->
     <div v-if="vigencia.vidaModo.value === 'cerrada'" class="flex flex-col items-start gap-3">
       <p class="m-0 text-sm text-icon">{{ sujeto }} sin vida en curso. Reactivar abre una vida nueva; la anterior queda en su historia. Lo que se cerró al suprimir no vuelve solo: hay que asignarlo otra vez.</p>
@@ -114,6 +123,33 @@
       </template>
     </div>
 
+    <!-- QUÉ SUCEDE A LO QUE TERMINA (frente 27, D-05). Cuelga de la vida que tiene fecha de fin, y
+         se registra en el acto: no espera al «Guardar» del formulario. -->
+    <div v-if="vigencia.vidaQueTermina.value" class="flex flex-col gap-2">
+      <p class="deasy-overline m-0">Sucesores</p>
+      <p class="m-0 text-theme-xs text-muted">
+        Quién continúa lo que termina el {{ vigencia.vidaQueTermina.value.vigente_hasta }}. Con varios sucesores es una división; si otro nodo que termina tiene el mismo, una fusión.
+      </p>
+      <ul v-if="vigencia.sucesores.value.length" class="m-0 flex list-none flex-col gap-2 p-0">
+        <li v-for="sucesor in vigencia.sucesores.value" :key="sucesor.id" class="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2">
+          <span class="text-sm font-semibold text-strong">{{ sucesor.nombre }}</span>
+          <AppButton v-if="editable" variant="danger-outline" :disabled="ocupado" @click="quitar(sucesor)">Quitar</AppButton>
+        </li>
+      </ul>
+      <p v-else class="m-0 text-sm text-icon">Sin sucesores registrados.</p>
+      <div v-if="editable" class="flex items-end gap-2">
+        <label class="deasy-form-label min-w-0 flex-1">
+          Añadir un sucesor
+          <select v-model="elegido" class="deasy-control deasy-control--select" :disabled="ocupado">
+            <option value="">— Elige —</option>
+            <option v-for="candidato in candidatosLibres" :key="candidato.id" :value="String(candidato.id)">{{ candidato.etiqueta }}</option>
+          </select>
+        </label>
+        <AppButton variant="primary-outline" :disabled="!elegido || ocupado" @click="anadir">Añadir</AppButton>
+      </div>
+      <AppAlert v-if="errorDeSucesores" variant="danger">{{ errorDeSucesores }}</AppAlert>
+    </div>
+
     <!-- UNA CORRECCIÓN PIDE SU MOTIVO. Aparece sola cuando lo que se va a guardar lo es: un origen
          «corrección», o cambiar una fecha —de inicio o de fin— que ya ocurrió. -->
     <div v-if="vigencia.vidaModo.value !== 'cerrada' && vigencia.esCorreccion.value" class="flex flex-col gap-2">
@@ -141,6 +177,9 @@
               · Fin: {{ etiquetaOrigen(vida.fin_origen) }}<span v-if="vida.fin_acto_numero"> · {{ vida.fin_acto_numero }}</span>
             </template>
           </p>
+          <p v-if="vida.sucesores?.length" class="m-0 mt-1 text-theme-xs text-muted">
+            Sucesores: {{ vida.sucesores.map((s) => s.nombre).join(", ") }}
+          </p>
         </li>
       </ul>
     </div>
@@ -148,7 +187,7 @@
 </template>
 
 <script setup>
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
@@ -169,9 +208,45 @@ const props = defineProps({
   estado: { type: String, default: "borrador" },
   /* Cómo se nombra al nodo en la frase de reactivar: «Proceso», «Unidad»… */
   sujeto: { type: String, default: "Nodo" },
-  editable: { type: Boolean, default: false }
+  editable: { type: Boolean, default: false },
+  /* Entre quiénes se elige un sucesor: [{ id, etiqueta }], de la misma clase que el nodo. */
+  candidatos: { type: Array, default: () => [] }
 });
 defineEmits(["reactivar", "descartar", "suprimir-puestos"]);
+
+/* LOS SUCESORES se registran y se quitan aquí mismo, uno a uno. Lo que la base rechace —que el
+   elegido no rija ese día, que esté en borrador— se enseña junto al control, no arriba del modal. */
+const elegido = ref("");
+const ocupado = ref(false);
+const errorDeSucesores = ref("");
+const candidatosLibres = computed(() => {
+  const yaEstan = new Set(props.vigencia.sucesores.value.map((s) => String(s.nodo_id)));
+  const elMismo = String(props.vigencia.nodoId.value ?? "");
+  return props.candidatos.filter((c) => String(c.id) !== elMismo && !yaEstan.has(String(c.id)));
+});
+const conAviso = async (trabajo, alFallar) => {
+  ocupado.value = true;
+  errorDeSucesores.value = "";
+  try {
+    await trabajo();
+  } catch (e) {
+    errorDeSucesores.value = e?.response?.data?.message || alFallar;
+  } finally {
+    ocupado.value = false;
+  }
+};
+const anadir = () => conAviso(async () => {
+  const candidato = props.candidatos.find((c) => String(c.id) === elegido.value);
+  if (!candidato) return;
+  await props.vigencia.anadirSucesor(candidato);
+  elegido.value = "";
+}, "No se pudo registrar el sucesor.");
+const quitar = (sucesor) => conAviso(() => props.vigencia.quitarSucesor(sucesor.id), "No se pudo quitar el sucesor.");
+/* Al pasar a otro nodo, o a otra vida, no se arrastra ni la elección ni el aviso del anterior. */
+watch(() => props.vigencia.vidaQueTermina.value?.id, () => {
+  elegido.value = "";
+  errorDeSucesores.value = "";
+});
 
 /* El formulario vive en el composable; aquí sólo se le da un nombre corto para la plantilla. */
 const form = computed(() => props.vigencia.vidaForm.value);

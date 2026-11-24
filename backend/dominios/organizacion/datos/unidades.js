@@ -53,6 +53,35 @@ export const listarVidasDeLaUnidad = async (ejecutor, unitId) => {
   return filas ?? [];
 };
 
+// LAS EQUIVALENCIAS DE UNA UNIDAD (frente 27, D-05), en los dos sentidos. `sucesores` cuelga de cada
+// vida que terminó —varios es una división—; `antecesores`, de la unidad que recibe —varios es una
+// fusión—. Desde cuándo vale es la fecha de fin de la vida que termina: la equivalencia no la repite.
+export const listarSucesoresDeLaUnidad = async (ejecutor, unitId) => {
+  const [filas] = await ejecutor.query(
+    `SELECT e.id, e.antecesor_vigencia_id, e.sucesor_unit_id AS nodo_id, s.name AS nombre
+       FROM unit_equivalencias e
+       INNER JOIN unit_vigencias uv ON uv.id = e.antecesor_vigencia_id
+       INNER JOIN units s ON s.id = e.sucesor_unit_id
+      WHERE uv.unit_id = ?
+      ORDER BY s.name ASC`,
+    [unitId]
+  );
+  return filas ?? [];
+};
+
+export const listarAntecesoresDeLaUnidad = async (ejecutor, unitId) => {
+  const [filas] = await ejecutor.query(
+    `SELECT e.id, uv.unit_id AS nodo_id, a.name AS nombre, uv.vigente_hasta::text AS desde
+       FROM unit_equivalencias e
+       INNER JOIN unit_vigencias uv ON uv.id = e.antecesor_vigencia_id
+       INNER JOIN units a ON a.id = uv.unit_id
+      WHERE e.sucesor_unit_id = ?
+      ORDER BY uv.vigente_hasta DESC, a.name ASC`,
+    [unitId]
+  );
+  return filas ?? [];
+};
+
 export const listarTiposDeRelacion = async (ejecutor) => {
   const [filas] = await ejecutor.query(
     "SELECT id, code, name FROM relation_unit_types ORDER BY id ASC"

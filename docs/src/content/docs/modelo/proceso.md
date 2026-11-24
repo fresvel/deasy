@@ -206,6 +206,15 @@ creada después de las dos, apunta a ambas sin círculo.
 :::caution[Lo que todavía no hace]
 Esto vale para los tres nodos de la estructura: procesos, **unidades** y **puestos**.
 
+### Qué sucede a un proceso que se suprime
+
+Un proceso que se suprime puede **fundirse** con otro o **partirse** en varios, y eso se escribe en
+`process_equivalencias`: una fila por cada sucesor de la vida que termina. Tiene la misma forma y las
+mismas reglas que la de las unidades y los puestos
+([La organización](/modelo/organizacion/#qué-sucede-a-lo-que-se-suprime)): el antecesor es una vida y
+no el proceso, el sucesor tiene que regir ese día o después, y la fecha y el acto son los del fin de
+esa vida.
+
 ### De qué proceso cuelga, y desde cuándo
 
 Hasta el **2026-11-23** el padre de un proceso era una columna de `processes`. Una columna dice de
@@ -250,6 +259,8 @@ erDiagram
   processes ||--o{ process_vigencias : "sus vidas"
   processes ||--o{ process_relations : "padre"
   processes ||--o{ process_relations : "hijo"
+  process_vigencias ||--o{ process_equivalencias : "la vida que termina"
+  processes ||--o{ process_equivalencias : "lo sucede"
   lineas ||--o{ process_definition_versions : "LA IDENTIDAD de una configuracion"
   lineas ||--o{ lineas : "EL LINAJE: sucede a otra"
   unit_types ||--o{ lineas : "el DONDE por tipo"
@@ -277,6 +288,13 @@ erDiagram
     int fin_acto_id FK "el acto que la cerro"
     timestamp created_at
     timestamp updated_at
+  }
+  process_equivalencias {
+    int id PK "UN SUCESOR de una vida que termina"
+    int antecesor_vigencia_id FK "la vida, no el proceso"
+    int sucesor_process_id FK
+    int registrado_por_person_id FK "lo escribe el sistema"
+    timestamp created_at
   }
   process_vigencias {
     int id PK "UNA VIDA del proceso"

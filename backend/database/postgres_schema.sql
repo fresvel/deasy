@@ -1928,6 +1928,172 @@ CREATE OR REPLACE TRIGGER trg_unit_vigencias_sin_puestos
 BEFORE INSERT OR UPDATE OF vigente_hasta ON unit_vigencias
 FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_de_unidad_con_puestos();
 
+-- LAS EQUIVALENCIAS: QUE SUCEDE A LO QUE SE SUPRIME (frente 27, D-05, punto 6).
+--
+-- Una reorganizacion real funde y parte: dos unidades pasan a ser una, un proceso se divide en
+-- tres. Por eso no es un enlace «sucede a» en la fila del nodo, sino una tabla aparte: un antecesor
+-- puede tener VARIOS sucesores (division) y un sucesor VARIOS antecesores (fusion).
+--
+-- EL ANTECESOR ES UNA VIDA, NO UN NODO. Lo que tiene sucesores es «la vez que rigio hasta el dia
+-- tal»: un nodo puede suprimirse, reactivarse y volver a suprimirse, y cada fin tiene los suyos.
+-- Y asi la equivalencia no repite nada: desde cuando vale es la fecha de fin de esa vida, y el acto
+-- que la ordena es el de ese fin. Dos datos que dicen lo mismo acaban contradiciendose.
+--
+-- Hay una tabla POR CLASE de nodo para que sea la base quien compruebe que a una unidad la sucede
+-- una unidad. Las tres comparten sus reglas, que llegan como argumento del disparador:
+--
+--   1. Solo tiene sucesores una vida CON FECHA DE FIN, haya llegado o no: una supresion programada
+--      ya puede decir quien la sucedera.
+--   2. Un nodo no se sucede a si mismo.
+--   3. El sucesor tiene que REGIR el dia del fin o despues. Uno en borrador, o suprimido antes, no
+--      recibe nada.
+--   4. Una equivalencia NO SE MODIFICA: se quita y se registra otra.
+--   5. A una vida con sucesores no se le quita el fin, ni se le mueve a una fecha en la que alguno
+--      ya no rija: antes hay que quitarlos.
+--
+-- Argumentos: tabla de vidas, su columna de nodo, columna del sucesor, tabla de nodos y su columna
+-- de nombre.
+CREATE OR REPLACE FUNCTION public.comprobar_equivalencia() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  sucesor INT := (to_jsonb(NEW) ->> TG_ARGV[2])::INT;
+  antecesor INT;
+  fin DATE;
+  nombre_antecesor TEXT;
+  nombre_sucesor TEXT;
+  con_vidas BOOLEAN;
+  rige_despues BOOLEAN;
+BEGIN
+  EXECUTE format('SELECT v.%1$I, v.vigente_hasta FROM %2$I v WHERE v.id = $1', TG_ARGV[1], TG_ARGV[0])
+    INTO antecesor, fin USING NEW.antecesor_vigencia_id;
+  IF antecesor IS NULL THEN
+    RETURN NEW; -- la clave ajena dira que esa vida no existe
+  END IF;
+  EXECUTE format('SELECT n.%1$I FROM %2$I n WHERE n.id = $1', TG_ARGV[4], TG_ARGV[3]) INTO nombre_antecesor USING antecesor;
+  EXECUTE format('SELECT n.%1$I FROM %2$I n WHERE n.id = $1', TG_ARGV[4], TG_ARGV[3]) INTO nombre_sucesor USING sucesor;
+  IF fin IS NULL THEN
+    RAISE EXCEPTION '«%» no tiene fecha de fin: solo lo que se suprime tiene sucesores.', nombre_antecesor
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF antecesor = sucesor THEN
+    RAISE EXCEPTION '«%» no puede sucederse a sí mismo. Si vuelve a regir, se reactiva.', nombre_antecesor
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  EXECUTE format(
+    'SELECT COUNT(*) > 0, COALESCE(bool_or(v.vigente_hasta IS NULL OR v.vigente_hasta > $2), FALSE)
+       FROM %1$I v WHERE v.%2$I = $1', TG_ARGV[0], TG_ARGV[1]
+  ) INTO con_vidas, rige_despues USING sucesor, fin;
+  IF NOT con_vidas THEN
+    RAISE EXCEPTION '«%» está en borrador: para suceder a «%» tiene que regir. Ponlo en vigor antes.', nombre_sucesor, nombre_antecesor
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NOT rige_despues THEN
+    RAISE EXCEPTION '«%» no rige el % ni después: no puede suceder a «%», que termina ese día.', nombre_sucesor, fin, nombre_antecesor
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.rechazar_cambio_de_equivalencia() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Una equivalencia no se modifica: se quita y se registra otra.'
+    USING ERRCODE = 'restrict_violation';
+END;
+$$ LANGUAGE plpgsql;
+
+-- Argumentos: tabla de equivalencias, su columna de sucesor, columna del nodo en la tabla de
+-- vidas, tabla de nodos, su columna de nombre.
+CREATE OR REPLACE FUNCTION public.rechazar_fin_incoherente_con_sucesores() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  cuantos INT;
+  quien TEXT;
+BEGIN
+  IF NEW.vigente_hasta IS NULL THEN
+    EXECUTE format('SELECT COUNT(*) FROM %1$I e WHERE e.antecesor_vigencia_id = $1', TG_ARGV[0])
+      INTO cuantos USING NEW.id;
+    IF cuantos > 0 THEN
+      RAISE EXCEPTION 'Esta vida tiene % registrado%: quítalo% antes de quitarle la fecha de fin.',
+        CASE WHEN cuantos = 1 THEN 'un sucesor' ELSE cuantos || ' sucesores' END,
+        CASE WHEN cuantos = 1 THEN '' ELSE 's' END,
+        CASE WHEN cuantos = 1 THEN '' ELSE 's' END
+        USING ERRCODE = 'restrict_violation';
+    END IF;
+    RETURN NEW;
+  END IF;
+  EXECUTE format(
+    'SELECT n.%5$I FROM %1$I e
+       JOIN %4$I n ON n.id = e.%2$I
+      WHERE e.antecesor_vigencia_id = $1
+        AND NOT EXISTS (
+          SELECT 1 FROM %6$I v
+           WHERE v.%3$I = e.%2$I AND (v.vigente_hasta IS NULL OR v.vigente_hasta > $2)
+        )
+      LIMIT 1', TG_ARGV[0], TG_ARGV[1], TG_ARGV[2], TG_ARGV[3], TG_ARGV[4], TG_TABLE_NAME
+  ) INTO quien USING NEW.id, NEW.vigente_hasta;
+  IF quien IS NOT NULL THEN
+    RAISE EXCEPTION 'El fin no puede pasar al %: «%» está registrado como sucesor y ese día ya no rige. Quítalo antes.', NEW.vigente_hasta, quien
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE IF NOT EXISTS organizacion.unit_equivalencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  antecesor_vigencia_id INT NOT NULL,
+  sucesor_unit_id INT NOT NULL,
+  registrado_por_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Una vida que nunca empezo se descarta entera, y sus sucesores previstos se van con ella.
+  CONSTRAINT fk_unit_equivalencias_antecesor FOREIGN KEY (antecesor_vigencia_id) REFERENCES unit_vigencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_unit_equivalencias_sucesor FOREIGN KEY (sucesor_unit_id) REFERENCES units(id),
+  CONSTRAINT fk_unit_equivalencias_registrado_por FOREIGN KEY (registrado_por_person_id) REFERENCES persons(id),
+  CONSTRAINT uq_unit_equivalencias_par UNIQUE (antecesor_vigencia_id, sucesor_unit_id)
+);
+CREATE INDEX IF NOT EXISTS idx_unit_equivalencias_sucesor ON unit_equivalencias (sucesor_unit_id);
+CREATE OR REPLACE TRIGGER trg_unit_equivalencias_coherente
+BEFORE INSERT ON unit_equivalencias
+FOR EACH ROW EXECUTE FUNCTION comprobar_equivalencia('unit_vigencias', 'unit_id', 'sucesor_unit_id', 'units', 'name');
+CREATE OR REPLACE TRIGGER trg_unit_equivalencias_inmutable
+BEFORE UPDATE ON unit_equivalencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_cambio_de_equivalencia();
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_con_sucesores
+BEFORE UPDATE OF vigente_hasta ON unit_vigencias
+FOR EACH ROW WHEN (OLD.vigente_hasta IS DISTINCT FROM NEW.vigente_hasta)
+EXECUTE FUNCTION rechazar_fin_incoherente_con_sucesores('unit_equivalencias', 'sucesor_unit_id', 'unit_id', 'units', 'name');
+
+CREATE TABLE IF NOT EXISTS organizacion.position_equivalencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  antecesor_vigencia_id INT NOT NULL,
+  sucesor_position_id INT NOT NULL,
+  registrado_por_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Una vida que nunca empezo se descarta entera, y sus sucesores previstos se van con ella.
+  CONSTRAINT fk_position_equivalencias_antecesor FOREIGN KEY (antecesor_vigencia_id) REFERENCES position_vigencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_position_equivalencias_sucesor FOREIGN KEY (sucesor_position_id) REFERENCES unit_positions(id),
+  CONSTRAINT fk_position_equivalencias_registrado_por FOREIGN KEY (registrado_por_person_id) REFERENCES persons(id),
+  CONSTRAINT uq_position_equivalencias_par UNIQUE (antecesor_vigencia_id, sucesor_position_id)
+);
+CREATE INDEX IF NOT EXISTS idx_position_equivalencias_sucesor ON position_equivalencias (sucesor_position_id);
+CREATE OR REPLACE TRIGGER trg_position_equivalencias_coherente
+BEFORE INSERT ON position_equivalencias
+FOR EACH ROW EXECUTE FUNCTION comprobar_equivalencia('position_vigencias', 'position_id', 'sucesor_position_id', 'unit_positions', 'title');
+CREATE OR REPLACE TRIGGER trg_position_equivalencias_inmutable
+BEFORE UPDATE ON position_equivalencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_cambio_de_equivalencia();
+CREATE OR REPLACE TRIGGER trg_position_vigencias_con_sucesores
+BEFORE UPDATE OF vigente_hasta ON position_vigencias
+FOR EACH ROW WHEN (OLD.vigente_hasta IS DISTINCT FROM NEW.vigente_hasta)
+EXECUTE FUNCTION rechazar_fin_incoherente_con_sucesores('position_equivalencias', 'sucesor_position_id', 'position_id', 'unit_positions', 'title');
+
+
 
 CREATE TABLE IF NOT EXISTS empleo.vacancies (
   id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
@@ -2376,6 +2542,32 @@ FOR EACH ROW EXECUTE FUNCTION sincronizar_aristas_con_vida('process_relations', 
 CREATE OR REPLACE TRIGGER trg_process_vigencias_sin_hijos
 BEFORE INSERT OR UPDATE OF vigente_hasta ON process_vigencias
 FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_con_hijos('process_relations', 'parent_process_id', 'process_id', 'proceso');
+
+-- Las equivalencias de los procesos: la misma forma y las mismas reglas que las de las unidades.
+CREATE TABLE IF NOT EXISTS procesos.process_equivalencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  antecesor_vigencia_id INT NOT NULL,
+  sucesor_process_id INT NOT NULL,
+  registrado_por_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Una vida que nunca empezo se descarta entera, y sus sucesores previstos se van con ella.
+  CONSTRAINT fk_process_equivalencias_antecesor FOREIGN KEY (antecesor_vigencia_id) REFERENCES process_vigencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_equivalencias_sucesor FOREIGN KEY (sucesor_process_id) REFERENCES processes(id),
+  CONSTRAINT fk_process_equivalencias_registrado_por FOREIGN KEY (registrado_por_person_id) REFERENCES persons(id),
+  CONSTRAINT uq_process_equivalencias_par UNIQUE (antecesor_vigencia_id, sucesor_process_id)
+);
+CREATE INDEX IF NOT EXISTS idx_process_equivalencias_sucesor ON process_equivalencias (sucesor_process_id);
+CREATE OR REPLACE TRIGGER trg_process_equivalencias_coherente
+BEFORE INSERT ON process_equivalencias
+FOR EACH ROW EXECUTE FUNCTION comprobar_equivalencia('process_vigencias', 'process_id', 'sucesor_process_id', 'processes', 'name');
+CREATE OR REPLACE TRIGGER trg_process_equivalencias_inmutable
+BEFORE UPDATE ON process_equivalencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_cambio_de_equivalencia();
+CREATE OR REPLACE TRIGGER trg_process_vigencias_con_sucesores
+BEFORE UPDATE OF vigente_hasta ON process_vigencias
+FOR EACH ROW WHEN (OLD.vigente_hasta IS DISTINCT FROM NEW.vigente_hasta)
+EXECUTE FUNCTION rechazar_fin_incoherente_con_sucesores('process_equivalencias', 'sucesor_process_id', 'process_id', 'processes', 'name');
+
 
 
 -- AQUI VIVIA `process_definition_series`, Y SE RETIRA (frente 25, P9 — 2026-10-11).
@@ -4141,9 +4333,9 @@ FOR EACH ROW EXECUTE FUNCTION trg_task_item_tenures_sync_fn();
 -- quedarse sin responsable —hay gente convocada con solicitudes a su nombre—, asi que solo se
 -- LISTA para el jefe de la unidad, que decide. Los cerrados no se tocan: no queda trabajo.
 --
--- ⚠️ Y NO REASIGNA NADA. El modelo no dice que sustituye a un puesto desactivado —no hay «se
--- fusiono con» ni «sus funciones pasan a»—, asi que elegir sucesor seria adivinar. Lo decide una
--- persona, desde el panel de supervision.
+-- ⚠️ Y NO REASIGNA NADA. Que puesto sucede a uno suprimido se puede registrar --es
+-- position_equivalencias--, pero eso es memoria y no reparto: un puesto puede partirse en varios, y
+-- a cual va cada entregable no lo sabe la base. Lo decide una persona, desde el panel de supervision.
 --
 -- ⚠️ DESDE EL FRENTE 27 UN PUESTO NO SE «DESACTIVA» CON UN UPDATE: se le pone fin a su vida, en
 -- `position_vigencias`. El efecto es el mismo de siempre, pero vive en una FUNCION que llaman dos:

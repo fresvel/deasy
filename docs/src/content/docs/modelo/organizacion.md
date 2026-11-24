@@ -238,6 +238,40 @@ el mismo motivo: un puesto que rige en una unidad que no rige es una contradicci
 cada uno —con quien lo ocupa y con sus entregables— lo decide quien reorganiza. Se suprimen antes, o
 con la misma fecha.
 
+### Qué sucede a lo que se suprime
+
+Una reorganización real casi nunca borra sin más: **funde** dos unidades en una, o **parte** una en
+tres. Por eso lo que continúa a un nodo suprimido no es un enlace «sucede a» en su fila, sino una
+tabla aparte —`unit_equivalencias`, `position_equivalencias` y, para los procesos,
+`process_equivalencias`—, donde un antecesor puede tener **varios sucesores** (división) y un sucesor
+**varios antecesores** (fusión).
+
+Tres cosas que no son evidentes:
+
+- **El antecesor es una vida, no un nodo.** Lo que tiene sucesores es «la vez que rigió hasta tal
+  día»: una unidad puede suprimirse, reactivarse y volver a suprimirse, y cada fin tiene los suyos.
+  La fila guarda `antecesor_vigencia_id` y nada más de su lado.
+- **La equivalencia no tiene fecha ni acto propios.** Desde cuándo vale es la fecha de fin de esa
+  vida, y el acto que la ordena es el de ese fin. Repetirlos aquí serían dos datos diciendo lo mismo.
+- **Hay una tabla por clase de nodo**, para que sea la base quien compruebe que a una unidad la
+  sucede una unidad y a un puesto, un puesto. El puesto sucesor puede estar en otra unidad.
+
+Las reglas, que impone la base y son las mismas en las tres:
+
+| | |
+|---|---|
+| Quién puede tener sucesores | una vida **con fecha de fin**, haya llegado o no: una supresión programada ya puede decir quién la sucederá |
+| Quién puede suceder | un nodo que **rija ese día o después**. Uno en borrador, o que terminó ese mismo día o antes, no recibe nada |
+| A sí mismo | no. Un nodo que vuelve a regir se **reactiva** |
+| Modificar | no se modifica: se quita y se registra otra |
+| Quitarle el fin a una vida con sucesores | se rechaza hasta que se quiten. Lo mismo si el fin se mueve a un día en que alguno ya no rige |
+
+Cada fila guarda además **quién la registró**, que escribe el sistema como en los actos.
+
+Registrar un sucesor **no mueve nada**: los entregables de un puesto suprimido siguen quedando sin
+responsable y se listan para quien decide. La equivalencia dice adónde fue a parar lo que había, para
+quien lo busque después; no reparte el trabajo.
+
 ## La persona ya no lo lleva todo encima
 
 Hasta el **2026-08-27**, `persons` tenía **23 columnas** y dentro cabía casi todo: la cédula, el
@@ -959,10 +993,8 @@ está en el nivel 2 para que unidades y procesos puedan apuntarle, `document_ver
 una clave ajena no sube de nivel.
 
 :::caution[Lo que todavía no hace]
-Hoy el acto **se puede registrar y enlazar, pero nada lo exige**: las unidades, los procesos y sus
-relaciones aún no llevan fechas de vigencia ni apuntan a un acto. Tampoco se puede adjuntar el
-fichero de un acto externo, ni queda escrito quién registró cada acto. Las tres cosas están
-decididas y **sin construir**.
+A un acto **externo** —el que no se produjo ni se firmó aquí— todavía no se le puede adjuntar su
+fichero, y no hay una lista de los actos que siguen sin documento. Está decidido y **sin construir**.
 :::
 
 ## El diagrama, con todos sus campos
@@ -976,6 +1008,10 @@ erDiagram
   units ||--o{ unit_relations : "hija"
   units ||--o{ unit_vigencias : "sus vidas"
   unit_positions ||--o{ position_vigencias : "sus vidas"
+  unit_vigencias ||--o{ unit_equivalencias : "la vida que termina"
+  units ||--o{ unit_equivalencias : "la sucede"
+  position_vigencias ||--o{ position_equivalencias : "la vida que termina"
+  unit_positions ||--o{ position_equivalencias : "lo sucede"
   relation_unit_types ||--o{ unit_relations : "tipo de vinculo"
   unit_positions ||--o{ position_assignments : "ocupada por"
   persons ||--o{ position_assignments : "ocupa"
@@ -1016,6 +1052,20 @@ erDiagram
     int inicio_acto_id FK "el acto que lo puso en vigor"
     text fin_origen "carga_inicial, reorganizacion, correccion"
     int fin_acto_id FK "el acto que lo suprimio"
+    timestamp created_at
+  }
+  unit_equivalencias {
+    int id PK "UN SUCESOR de una vida que termina"
+    int antecesor_vigencia_id FK "la vida, no la unidad"
+    int sucesor_unit_id FK
+    int registrado_por_person_id FK "lo escribe el sistema"
+    timestamp created_at
+  }
+  position_equivalencias {
+    int id PK "UN SUCESOR de una vida que termina"
+    int antecesor_vigencia_id FK "la vida, no el puesto"
+    int sucesor_position_id FK "puede ser de otra unidad"
+    int registrado_por_person_id FK "lo escribe el sistema"
     timestamp created_at
   }
   relation_unit_types {

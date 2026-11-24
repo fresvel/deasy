@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 39 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 42 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**39 tablas · 362 columnas · 93 claves ajenas · 10 diagramas.**
+**42 tablas · 377 columnas · 102 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -34,7 +34,7 @@ cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: est
 
 ## La organización (1 de 2)
 
-**6 tablas** · 55 columnas · 9 claves ajenas propias. Apunta a `cantones`, `estados_civiles`, `paises`, que salen como caja vacía.
+**7 tablas** · 67 columnas · 14 claves ajenas propias. Apunta a `actos`, `cantones`, `estados_civiles`, `paises`, `relation_unit_types`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -106,31 +106,6 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
-  estados_civiles |o--o{ persons : "estado_civil_id"
-  cantones |o--o{ persons : "nacimiento_canton_id"
-  paises |o--o{ persons : "nacimiento_pais_id"
-  paises |o--o{ persons : "nacionalidad_pais_id"
-  persons ||--o{ position_assignments : "person_id"
-  unit_positions ||--o{ position_assignments : "position_id"
-  cargos ||--o{ unit_positions : "cargo_id"
-  units ||--o{ unit_positions : "unit_id"
-  unit_types ||--o{ units : "unit_type_id"
-```
-
-<details>
-<summary>Llegan 54 claves ajenas desde otros diagramas</summary>
-
-`actos.registrado_por_person_id` → `persons` · `actos.suscrito_por_person_id` → `persons` · `actos.unidad_emisora_id` → `units` · `aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `lineas.cargo_id` → `cargos` · `lineas.unit_type_id` → `unit_types` · `lineas.unit_id` → `units` · `participantes_declarados.cargo_id` → `cargos` · `participantes_declarados.persona_id` → `persons` · `participantes_declarados.unit_id` → `units` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `position_vigencias.position_id` → `unit_positions` · `process_runs.created_by_user_id` → `persons` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `turnos.persona_id` → `persons` · `unit_relations.child_unit_id` → `units` · `unit_relations.parent_unit_id` → `units` · `unit_vigencias.unit_id` → `units` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
-
-</details>
-
-## La organización (2 de 2)
-
-**6 tablas** · 57 columnas · 15 claves ajenas propias. Apunta a `persons`, `relation_unit_types`, `unit_positions`, `units`, que salen como caja vacía.
-
-```mermaid
-erDiagram
-  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   unit_relations {
     int id PK
     int relation_type_id FK
@@ -145,6 +120,36 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
+  estados_civiles |o--o{ persons : "estado_civil_id"
+  cantones |o--o{ persons : "nacimiento_canton_id"
+  paises |o--o{ persons : "nacimiento_pais_id"
+  paises |o--o{ persons : "nacionalidad_pais_id"
+  persons ||--o{ position_assignments : "person_id"
+  unit_positions ||--o{ position_assignments : "position_id"
+  cargos ||--o{ unit_positions : "cargo_id"
+  units ||--o{ unit_positions : "unit_id"
+  units ||--o{ unit_relations : "child_unit_id"
+  actos |o--o{ unit_relations : "fin_acto_id"
+  actos |o--o{ unit_relations : "inicio_acto_id"
+  units ||--o{ unit_relations : "parent_unit_id"
+  relation_unit_types ||--o{ unit_relations : "relation_type_id"
+  unit_types ||--o{ units : "unit_type_id"
+```
+
+<details>
+<summary>Llegan 57 claves ajenas desde otros diagramas</summary>
+
+`actos.registrado_por_person_id` → `persons` · `actos.suscrito_por_person_id` → `persons` · `actos.unidad_emisora_id` → `units` · `aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `lineas.cargo_id` → `cargos` · `lineas.unit_type_id` → `unit_types` · `lineas.unit_id` → `units` · `participantes_declarados.cargo_id` → `cargos` · `participantes_declarados.persona_id` → `persons` · `participantes_declarados.unit_id` → `units` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `position_equivalencias.registrado_por_person_id` → `persons` · `position_equivalencias.sucesor_position_id` → `unit_positions` · `position_vigencias.position_id` → `unit_positions` · `process_equivalencias.registrado_por_person_id` → `persons` · `process_runs.created_by_user_id` → `persons` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `turnos.persona_id` → `persons` · `unit_equivalencias.registrado_por_person_id` → `persons` · `unit_equivalencias.sucesor_unit_id` → `units` · `unit_vigencias.unit_id` → `units` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
+
+</details>
+
+## La organización (2 de 2)
+
+**7 tablas** · 55 columnas · 16 claves ajenas propias. Apunta a `persons`, `unit_positions`, `units`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
   unit_vigencias {
     int id PK
     int unit_id FK
@@ -177,6 +182,20 @@ erDiagram
     int fin_acto_id FK
     timestamp created_at
   }
+  unit_equivalencias {
+    int id PK
+    int antecesor_vigencia_id FK
+    int sucesor_unit_id FK
+    int registrado_por_person_id FK
+    timestamp created_at
+  }
+  position_equivalencias {
+    int id PK
+    int antecesor_vigencia_id FK
+    int sucesor_position_id FK
+    int registrado_por_person_id FK
+    timestamp created_at
+  }
   tipos_de_acto {
     int id PK
     varchar code UK
@@ -204,29 +223,30 @@ erDiagram
   persons |o--o{ actos : "suscrito_por_person_id"
   tipos_de_acto ||--o{ actos : "tipo_de_acto_id"
   units |o--o{ actos : "unidad_emisora_id"
+  position_vigencias ||--o{ position_equivalencias : "antecesor_vigencia_id"
+  persons |o--o{ position_equivalencias : "registrado_por_person_id"
+  unit_positions ||--o{ position_equivalencias : "sucesor_position_id"
   actos |o--o{ position_vigencias : "fin_acto_id"
   actos |o--o{ position_vigencias : "inicio_acto_id"
   unit_positions ||--o{ position_vigencias : "position_id"
-  units ||--o{ unit_relations : "child_unit_id"
-  actos |o--o{ unit_relations : "fin_acto_id"
-  actos |o--o{ unit_relations : "inicio_acto_id"
-  units ||--o{ unit_relations : "parent_unit_id"
-  relation_unit_types ||--o{ unit_relations : "relation_type_id"
+  unit_vigencias ||--o{ unit_equivalencias : "antecesor_vigencia_id"
+  persons |o--o{ unit_equivalencias : "registrado_por_person_id"
+  units ||--o{ unit_equivalencias : "sucesor_unit_id"
   actos |o--o{ unit_vigencias : "fin_acto_id"
   actos |o--o{ unit_vigencias : "inicio_acto_id"
   units ||--o{ unit_vigencias : "unit_id"
 ```
 
 <details>
-<summary>Llegan 5 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 7 claves ajenas desde otros diagramas</summary>
 
-`acto_documentos.acto_id` → `actos` · `process_relations.fin_acto_id` → `actos` · `process_relations.inicio_acto_id` → `actos` · `process_vigencias.fin_acto_id` → `actos` · `process_vigencias.inicio_acto_id` → `actos`
+`acto_documentos.acto_id` → `actos` · `process_relations.fin_acto_id` → `actos` · `process_relations.inicio_acto_id` → `actos` · `process_vigencias.fin_acto_id` → `actos` · `process_vigencias.inicio_acto_id` → `actos` · `unit_relations.fin_acto_id` → `actos` · `unit_relations.inicio_acto_id` → `actos`
 
 </details>
 
 ## Lo que se declara (1 de 2)
 
-**6 tablas** · 50 columnas · 15 claves ajenas propias. Apunta a `actos`, `cargos`, `term_types`, `unit_types`, `units`, que salen como caja vacía.
+**6 tablas** · 50 columnas · 16 claves ajenas propias. Apunta a `actos`, `cargos`, `persons`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -272,6 +292,13 @@ erDiagram
     timestamp created_at
     timestamp updated_at
   }
+  process_equivalencias {
+    int id PK
+    int antecesor_vigencia_id FK
+    int sucesor_process_id FK
+    int registrado_por_person_id FK
+    timestamp created_at
+  }
   lineas {
     int id PK
     int process_id FK
@@ -286,21 +313,15 @@ erDiagram
     date effective_to
     timestamp created_at
   }
-  process_definition_period_types {
-    int id PK
-    int process_definition_id FK
-    int term_type_id FK
-    smallint is_active
-    timestamp created_at
-  }
   lineas |o--o{ lineas : "linea_anterior_id"
   cargos |o--o{ lineas : "cargo_id"
   processes ||--o{ lineas : "process_id"
   unit_types |o--o{ lineas : "unit_type_id"
   units |o--o{ lineas : "unit_id"
-  process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
-  term_types ||--o{ process_definition_period_types : "term_type_id"
   lineas ||--o{ process_definition_versions : "linea_id"
+  process_vigencias ||--o{ process_equivalencias : "antecesor_vigencia_id"
+  persons |o--o{ process_equivalencias : "registrado_por_person_id"
+  processes ||--o{ process_equivalencias : "sucesor_process_id"
   processes ||--o| process_relations : "child_process_id"
   actos |o--o{ process_relations : "fin_acto_id"
   actos |o--o{ process_relations : "inicio_acto_id"
@@ -311,19 +332,26 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 7 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 8 claves ajenas desde otros diagramas</summary>
 
-`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `vinculos.process_definition_id` → `process_definition_versions`
+`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_definition_period_types.process_definition_id` → `process_definition_versions` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `vinculos.process_definition_id` → `process_definition_versions`
 
 </details>
 
 ## Lo que se declara (2 de 2)
 
-**5 tablas** · 42 columnas · 6 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
+**6 tablas** · 47 columnas · 8 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
   %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  process_definition_period_types {
+    int id PK
+    int process_definition_id FK
+    int term_type_id FK
+    smallint is_active
+    timestamp created_at
+  }
   term_types {
     int id PK
     varchar code UK
@@ -380,14 +408,16 @@ erDiagram
   catalogo_documental ||--o{ ediciones : "catalogo_documental_id"
   generadores_de_documento |o--o{ ediciones : "generador_id"
   ediciones |o--o{ ediciones : "parent_version_id"
+  process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
+  term_types ||--o{ process_definition_period_types : "term_type_id"
   process_definition_versions ||--o{ vinculos : "process_definition_id"
   ediciones ||--o{ vinculos : "edicion_id"
 ```
 
 <details>
-<summary>Llegan 5 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 4 claves ajenas desde otros diagramas</summary>
 
-`document_versions.edicion_id` → `ediciones` · `pasos_declarados.edicion_id` → `ediciones` · `process_definition_period_types.term_type_id` → `term_types` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
+`document_versions.edicion_id` → `ediciones` · `pasos_declarados.edicion_id` → `ediciones` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
 
 </details>
 

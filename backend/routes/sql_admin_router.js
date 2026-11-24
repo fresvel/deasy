@@ -34,6 +34,7 @@ import {
   corregirEstructura,
   getEfectosDeSuprimir,
   suprimirPuestosDeUnidad,
+  getPuestosCandidatosASuceder,
   getUnitDetail,
   getUnitProcesses,
   getUnitAttachableProcesses,
@@ -145,6 +146,7 @@ router.patch("/processes/:id/parent", requireSqlAdminPermission({ table: "proces
 router.get("/units/graph", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitGraph);
 router.post("/units/with-parent", requireSqlAdminPermission({ resource: "units", action: "create" }), createUnitWithParent);
 router.get("/estructura/efectos-de-suprimir/:clase/:id", requireSqlAdminPermission({ resource: "units", action: "read" }), getEfectosDeSuprimir);
+router.get("/estructura/puestos-candidatos-a-suceder", requireSqlAdminPermission({ resource: "units", action: "read" }), getPuestosCandidatosASuceder);
 router.post("/estructura/correcciones", requireSqlAdminPermission({ resource: "correcciones_estructura", action: "create" }), corregirEstructura);
 router.patch("/units/:id/parent", requireSqlAdminPermission({ resource: "units", action: "update" }), setUnitParent);
 router.get("/units/:id/detail", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitDetail);

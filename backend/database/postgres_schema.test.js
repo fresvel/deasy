@@ -754,3 +754,39 @@ test("un acto guarda quien lo registro, y esa columna es inmutable", () => {
   assert.match(SCHEMA, /BEFORE UPDATE OF registrado_por_person_id ON actos\s+FOR EACH ROW WHEN \(OLD\.registrado_por_person_id IS DISTINCT FROM NEW\.registrado_por_person_id\)\s+EXECUTE FUNCTION rechazar_cambio_de_sello\('registrado_por_person_id'\)/);
 });
 
+
+// LAS EQUIVALENCIAS (frente 27, D-05, punto 6): que sucede a lo que se suprime, con fusiones y
+// divisiones. Una tabla por clase de nodo, las tres con las mismas reglas.
+test("cada clase de nodo tiene su tabla de equivalencias, anclada a la vida que termina", () => {
+  for (const [clase, vidas, nodos, nodoEnVidas, nombre] of [
+    ["unit", "unit_vigencias", "units", "unit_id", "name"],
+    ["position", "position_vigencias", "unit_positions", "position_id", "title"],
+    ["process", "process_vigencias", "processes", "process_id", "name"],
+  ]) {
+    const tabla = `${clase}_equivalencias`;
+    const sucesor = `sucesor_${clase}_id`;
+    const create = bloqueRecorrido(tabla);
+    // El antecesor es una VIDA, no un nodo: la fecha y el acto salen de su fin y no se repiten.
+    assert.match(create, new RegExp(`FOREIGN KEY \\(antecesor_vigencia_id\\) REFERENCES ${vidas}\\(id\\) ON DELETE CASCADE`));
+    assert.match(create, new RegExp(`FOREIGN KEY \\(${sucesor}\\) REFERENCES ${nodos}\\(id\\)`));
+    assert.match(create, new RegExp(`UNIQUE \\(antecesor_vigencia_id, ${sucesor}\\)`));
+    assert.doesNotMatch(create, /vigente_desde|acto_id|origen/, `${tabla} repite lo que ya dice el fin de la vida`);
+    assert.match(
+      SCHEMA,
+      new RegExp(`BEFORE INSERT ON ${tabla}\\s+FOR EACH ROW EXECUTE FUNCTION comprobar_equivalencia\\('${vidas}', '${nodoEnVidas}', '${sucesor}', '${nodos}', '${nombre}'\\)`)
+    );
+    assert.match(SCHEMA, new RegExp(`BEFORE UPDATE ON ${tabla}\\s+FOR EACH ROW EXECUTE FUNCTION rechazar_cambio_de_equivalencia\\(\\)`));
+    assert.match(
+      SCHEMA,
+      new RegExp(`BEFORE UPDATE OF vigente_hasta ON ${vidas}\\s+FOR EACH ROW WHEN \\(OLD\\.vigente_hasta IS DISTINCT FROM NEW\\.vigente_hasta\\)\\s+EXECUTE FUNCTION rechazar_fin_incoherente_con_sucesores\\('${tabla}', '${sucesor}', '${nodoEnVidas}', '${nodos}', '${nombre}'\\)`)
+    );
+  }
+});
+
+test("un sucesor tiene que regir el dia del fin o despues", () => {
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.comprobar_equivalencia()")).split("$$ LANGUAGE plpgsql;")[0];
+  // «Mayor que»: uno que termina ESE MISMO dia no recibe nada.
+  assert.match(cuerpo, /v\.vigente_hasta IS NULL OR v\.vigente_hasta > \$2/);
+  assert.match(cuerpo, /IF antecesor = sucesor THEN/);
+  assert.match(cuerpo, /IF fin IS NULL THEN/);
+});

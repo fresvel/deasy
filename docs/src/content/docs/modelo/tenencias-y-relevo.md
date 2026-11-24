@@ -142,9 +142,11 @@ disparador, que deja huérfanos los entregables con la causa `occupancy_end` —
 vendrá otro»—; como para entonces ya tienen abierto su turno de `position_deactivated`, ese disparador
 no encuentra nada que tocar y la causa correcta se conserva.
 
-Lo que **no** hace es reasignar. El modelo no dice qué sustituye a un puesto desactivado —no hay «se
-fusionó con» ni «sus funciones pasan a»—, así que elegir sucesor sería adivinar. Los entregables
-afectados se listan para el jefe de la unidad, que decide.
+Lo que **no** hace es reasignar. Desde el 2026-11-24 el modelo sí puede decir qué puesto sucede a
+uno suprimido (`position_equivalencias`, en
+[La organización](/modelo/organizacion/#qué-sucede-a-lo-que-se-suprime)), pero eso es memoria y no
+reparto: un puesto puede partirse en varios, y a cuál va cada entregable no lo sabe la base. Los
+entregables afectados se listan para el jefe de la unidad, que decide.
 
 ```mermaid
 erDiagram

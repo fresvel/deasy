@@ -277,6 +277,7 @@
           :estado="detailUnit.estado"
           sujeto="Unidad"
           :editable="editable"
+          :candidatos="unidadesASuceder"
           @reactivar="empezarVidaNueva"
           @descartar="descartarVida"
           @suprimir-puestos="abrirSuprimirPuestos"
@@ -556,6 +557,7 @@
           :estado="editingPosition.estado"
           sujeto="Puesto"
           :editable="editable"
+          :candidatos="puestosASuceder"
           @reactivar="empezarVidaDelPuesto"
           @descartar="descartarVidaDelPuesto"
         />
@@ -730,6 +732,24 @@ const PESTANAS_DEL_PUESTO = [
   { id: "vigencia", rotulo: "Vigencia", icono: IconCalendarEvent }
 ];
 const vigenciaDelPuesto = useNodeVigencia({ tabla: "position_vigencias", claveDelNodo: "position_id" });
+// ENTRE QUIÉNES SE ELIGE UN SUCESOR (frente 27, D-05). Las unidades ya están en el grafo; los puestos
+// no —el grafo sólo trae los de la unidad abierta, y una reorganización los mueve entre unidades—,
+// así que se piden cada vez que se abre un puesto.
+const unidadesASuceder = computed(() =>
+  (rawGraph.value.nodes || [])
+    .filter((u) => u.estado && u.estado !== "borrador")
+    .map((u) => ({ id: u.id, etiqueta: u.name }))
+    .sort((a, b) => a.etiqueta.localeCompare(b.etiqueta, "es"))
+);
+const puestosASuceder = ref([]);
+const cargarPuestosASuceder = async () => {
+  try {
+    const { data } = await adminSqlService.getPuestosCandidatosASuceder();
+    puestosASuceder.value = data?.puestos || [];
+  } catch {
+    puestosASuceder.value = [];
+  }
+};
 const empezarVidaDelPuesto = () => {
   vigenciaDelPuesto.empezarVidaNueva();
   positionError.value = "";
@@ -1006,7 +1026,7 @@ const openDetail = async (unitId, { mantener = false } = {}) => {
     const { data } = await adminSqlService.getUnitDetail(unitId);
     // El detalle no trae el estado: lo trae el grafo. Se conserva el que ya se tenía.
     detailUnit.value = { ...(data.unit || {}), id: unitId, name: data.unit?.name ?? detailUnit.value?.name ?? "", estado: u?.estado || "borrador" };
-    vigencia.prepararVida(u, data.vigencias || []);
+    vigencia.prepararVida(u, data.vigencias || [], data.antecesores || []);
     detailPositions.value = data.positions || [];
   } catch (e) {
     setFeedback("error", e?.response?.data?.message || "No se pudo cargar el detalle.");
@@ -1227,8 +1247,9 @@ const openEditPosition = (pos) => {
   positionTab.value = "datos";
   positionError.value = "";
   // El puesto ya trae consigo su periodo de hoy y todas sus vidas: llegan con el detalle de la unidad.
-  vigenciaDelPuesto.prepararVida(pos, pos.vigencias || []);
+  vigenciaDelPuesto.prepararVida(pos, pos.vigencias || [], pos.antecesores || []);
   vigenciaDelPuesto.cargarActos();
+  cargarPuestosASuceder();
 };
 const closeEditPosition = () => { editingPosition.value = null; };
 const confirmEditPosition = async () => {

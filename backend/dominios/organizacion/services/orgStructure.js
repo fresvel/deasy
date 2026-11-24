@@ -18,6 +18,8 @@ import { conTransaccion } from "../../../config/postgres.js";
 import { slugify, normalizeNumericId } from "../../../services/admin/kernel/primitives.js";
 import {
   listarVidasDeLaUnidad,
+  listarSucesoresDeLaUnidad,
+  listarAntecesoresDeLaUnidad,
   listarNodosDelGrafo,
   listarTiposDeRelacion,
   listarAristasDelGrafo,
@@ -32,8 +34,12 @@ import {
 } from "../datos/unidades.js";
 import { contarEfectosDeSuprimir, CLASES_DE_NODO } from "../datos/consulta/efectosDeSuprimir.js";
 import { planDeMovimiento } from "../../../services/estructura/planDeMovimiento.js";
+import { agruparPor, conSusSucesores } from "../../../services/estructura/sucesores.js";
 import {
   listarVidasDeLosPuestos,
+  listarSucesoresDeLosPuestos,
+  listarAntecesoresDeLosPuestos,
+  listarPuestosCandidatosASuceder,
   siguienteSlot,
   insertarPuesto,
   actualizarPuesto,
@@ -106,19 +112,37 @@ export default class OrgStructureService {
       throw new Error("La unidad no existe.");
     }
     const puestos = await listarPuestosConOcupante(this.pool, id);
-    const vigencias = await listarVidasDeLaUnidad(this.pool, id);
+    // Cada vida lleva lo que la sucedió (frente 27, D-05): varios sucesores son una división.
+    const vigencias = conSusSucesores(
+      await listarVidasDeLaUnidad(this.pool, id),
+      await listarSucesoresDeLaUnidad(this.pool, id)
+    );
     // Cada puesto lleva sus vidas: es la historia que enseña su pestaña «Vigencia».
-    const vidasPorPuesto = new Map();
-    for (const vida of await listarVidasDeLosPuestos(this.pool, id)) {
-      if (!vidasPorPuesto.has(vida.position_id)) vidasPorPuesto.set(vida.position_id, []);
-      vidasPorPuesto.get(vida.position_id).push(vida);
-    }
-    const positions = puestos.map((puesto) => ({ ...puesto, vigencias: vidasPorPuesto.get(puesto.id) ?? [] }));
+    const vidasDeLosPuestos = conSusSucesores(
+      await listarVidasDeLosPuestos(this.pool, id),
+      await listarSucesoresDeLosPuestos(this.pool, id)
+    );
+    const vidasPorPuesto = agruparPor(vidasDeLosPuestos, "position_id");
+    const antecesoresPorPuesto = agruparPor(await listarAntecesoresDeLosPuestos(this.pool, id), "position_id");
+    const positions = puestos.map((puesto) => ({
+      ...puesto,
+      vigencias: vidasPorPuesto.get(puesto.id) ?? [],
+      antecesores: antecesoresPorPuesto.get(puesto.id) ?? []
+    }));
     return {
       unit: { id: unit.id, name: unit.name, label: unit.label },
       vigencias,
+      // A quién sucede esta unidad: varios antecesores son una fusión.
+      antecesores: await listarAntecesoresDeLaUnidad(this.pool, id),
       positions
     };
+  }
+
+  // Los puestos entre los que elegir el sucesor de uno que se suprime. De todas las unidades: una
+  // reorganización mueve puestos de una a otra.
+  async listarPuestosCandidatosASuceder() {
+    this.ensurePool();
+    return listarPuestosCandidatosASuceder(this.pool);
   }
 
 

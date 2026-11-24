@@ -11,6 +11,7 @@ import { isUniqueViolation, translateConstraintError } from "../../../errors/sql
 import { conflict } from "../../../errors/HttpError.js";
 import { conTransaccion } from "../../../config/postgres.js";
 import { planDeMovimiento } from "../../estructura/planDeMovimiento.js";
+import { conSusSucesores } from "../../estructura/sucesores.js";
 
 export default class ProcessGraphService {
   constructor(pool, { getByKeys } = {}) {
@@ -331,6 +332,26 @@ export default class ProcessGraphService {
         ORDER BY pv.vigente_desde DESC`,
       [id]
     );
+    // LAS EQUIVALENCIAS (frente 27, D-05), en los dos sentidos: lo que sucedio a cada vida que
+    // termino --varios es una division-- y a quien sucede este proceso --varios, una fusion--.
+    const [sucesores] = await this.pool.query(
+      `SELECT e.id, e.antecesor_vigencia_id, e.sucesor_process_id AS nodo_id, s.name AS nombre
+         FROM process_equivalencias e
+         INNER JOIN process_vigencias pv ON pv.id = e.antecesor_vigencia_id
+         INNER JOIN processes s ON s.id = e.sucesor_process_id
+        WHERE pv.process_id = ?
+        ORDER BY s.name ASC`,
+      [id]
+    );
+    const [antecesores] = await this.pool.query(
+      `SELECT e.id, pv.process_id AS nodo_id, a.name AS nombre, pv.vigente_hasta::text AS desde
+         FROM process_equivalencias e
+         INNER JOIN process_vigencias pv ON pv.id = e.antecesor_vigencia_id
+         INNER JOIN processes a ON a.id = pv.process_id
+        WHERE e.sucesor_process_id = ?
+        ORDER BY pv.vigente_hasta DESC, a.name ASC`,
+      [id]
+    );
 
     const [runs] = await this.pool.query(
       `SELECT pr.id, pr.process_definition_id, pr.run_mode, pr.status, pr.reason, pr.source_run_id, pr.created_at,
@@ -363,7 +384,8 @@ export default class ProcessGraphService {
         fin_acto_id: process.fin_acto_id,
         estado: process.estado
       },
-      vigencias,
+      vigencias: conSusSucesores(vigencias, sucesores),
+      antecesores,
       configurations,
       children,
       runs
