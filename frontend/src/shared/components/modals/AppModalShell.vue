@@ -47,7 +47,7 @@
 
 <script setup>
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
-import { computed, nextTick, ref, useAttrs, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, useAttrs, watch } from "vue";
 import { elevarSobreLoVisible, liberarAltura } from "@/shared/utils/modalController";
 
 const props = defineProps({
@@ -138,8 +138,20 @@ watch(
     }
     await nextTick();
     elevarSobreLoVisible(rootElement.value);
-  }
+  },
+  /* `immediate`, Y NO ES UN DETALLE. Un modal que se monta YA ABIERTO —`v-if="x"` junto a
+     `:open="x"`, que es como se escriben casi todos— no ve cambiar `open` nunca: nace en `true`.
+     Sin esto no se elevaba, y quedaba a la altura base. Si se abría desde la página, daba igual;
+     si se abría DESDE OTRO MODAL, ganaba el que fuera después en el documento. Así el diálogo de
+     «Cambiar de padre» salió por debajo del modal del proceso que lo había pedido (2026-11-24): la
+     pantalla se quedaba en «Guardando…» esperando una respuesta que no se podía dar. */
+  { immediate: true }
 );
+
+/* Y al desmontarse abierto —el mismo `v-if`— hay que soltar el peldaño: `open` tampoco cambia. */
+onBeforeUnmount(() => {
+  if (props.controlled) liberarAltura(rootElement.value);
+});
 
 
 const shellClass = computed(() => {
