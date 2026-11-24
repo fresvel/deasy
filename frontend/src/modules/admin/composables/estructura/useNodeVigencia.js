@@ -133,9 +133,24 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     return !corrigiendoElFin.value || (Boolean(hasta) && hasta <= hoy());
   });
 
+  /* LO QUE LA BASE VA A EXIGIR, DICHO ANTES. Un inicio lleva su origen; un fin, el suyo; y una
+     reorganización, el acto que la ordena. Antes el botón se dejaba pulsar y la base lo rechazaba —
+     y al crear un puesto con su vigencia, eso dejaba el puesto creado y en borrador—. */
+  const loQueFalta = computed(() => {
+    const f = vidaForm.value;
+    if (!f.vigente_desde) return "";
+    if (!f.inicio_origen) return "Elige el origen del inicio.";
+    if (f.inicio_origen === "reorganizacion" && !f.inicio_acto_id) return "Una reorganización lleva su acto: elige el que lo ordena.";
+    if (!f.vigente_hasta) return "";
+    if (!f.fin_origen) return "Elige el origen del fin.";
+    if (f.fin_origen === "reorganizacion" && !f.fin_acto_id) return "Una reorganización lleva su acto: elige el que lo suprime.";
+    return "";
+  });
+
   const sePuedeGuardar = computed(() =>
     vidaModo.value !== "cerrada"
     && Boolean(vidaForm.value.vigente_desde)
+    && !loQueFalta.value
     && (!esCorreccion.value || String(vidaForm.value.motivo || "").trim().length >= MOTIVO_MINIMO)
     && (!suprimeYa.value || Boolean(vidaForm.value.confirmaSupresion))
     // Con hijos no se suprime: la base lo rechazaría, y aquí se dice antes.
@@ -150,6 +165,17 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
      parte de la vida, cuelgan de ella. Las reglas —que el sucesor rija ese día o después, que nadie
      se suceda a sí mismo— las impone la base. */
   const antecesores = ref([]);
+  /* REACTIVAR ALGO QUE YA TIENE SUCESORES SE DEJA PASAR, CON AVISO (decisión del dueño, 2026-11-24).
+     Puede ser un hecho nuevo —la unidad se dividió y años después vuelve— o deshacer un error; el
+     sistema no sabe cuál, y quien reactiva sí. Lo que no puede es pasar en silencio: los sucesores
+     de la vida anterior siguen registrados, y si la supresión fue un error hay que quitarlos. */
+  const sucesoresDeLaVidaAnterior = computed(() => {
+    if (vidaModo.value !== "nueva") return null;
+    const terminadas = vidas.value
+      .filter((v) => v.vigente_hasta && v.sucesores?.length)
+      .sort((x, y) => String(y.vigente_hasta).localeCompare(String(x.vigente_hasta)));
+    return terminadas[0] || null;
+  });
   const vidaQueTermina = computed(() => {
     let id = null;
     if (vidaModo.value === "cerrada") id = ultimaVida.value?.vigencia_id ?? null;
@@ -316,6 +342,8 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     tituloDeLaVida,
     etiquetaDeGuardarVida,
     sePuedeGuardar,
+    loQueFalta,
+    sucesoresDeLaVidaAnterior,
     esCorreccion,
     sePuedeCorregirElFin,
     empezarCorreccionDelFin,

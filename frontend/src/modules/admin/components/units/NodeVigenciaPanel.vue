@@ -28,6 +28,13 @@
     </div>
 
     <div v-else class="flex flex-col gap-3">
+      <!-- REACTIVAR CON SUCESORES REGISTRADOS: pasa, pero no en silencio. -->
+      <AppAlert v-if="vigencia.sucesoresDeLaVidaAnterior.value" variant="warning">
+        La vida que terminó el {{ vigencia.sucesoresDeLaVidaAnterior.value.vigente_hasta }} tiene
+        {{ vigencia.sucesoresDeLaVidaAnterior.value.sucesores.length === 1 ? "registrado como sucesor a" : "registrados como sucesores a" }}
+        <strong>{{ vigencia.sucesoresDeLaVidaAnterior.value.sucesores.map((s) => s.nombre).join(", ") }}</strong>.
+        Reactivar no lo cambia: seguirá constando en su historia. Si la supresión fue un error, cancela y quítalo antes.
+      </AppAlert>
       <div class="grid grid-cols-2 gap-3">
         <label class="deasy-form-label">
           Rige desde
@@ -122,6 +129,11 @@
         </div>
       </template>
     </div>
+
+    <!-- Por qué el botón de guardar está apagado, cuando es por algo que falta escribir. -->
+    <p v-if="editable && vigencia.vidaModo.value !== 'cerrada' && vigencia.loQueFalta.value" class="m-0 text-theme-xs text-warning">
+      {{ vigencia.loQueFalta.value }}
+    </p>
 
     <!-- QUÉ SUCEDE A LO QUE TERMINA (frente 27, D-05). Cuelga de la vida que tiene fecha de fin, y
          se registra en el acto: no espera al «Guardar» del formulario. -->

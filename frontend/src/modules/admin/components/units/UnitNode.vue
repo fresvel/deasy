@@ -34,14 +34,24 @@
       </template>
     </div>
 
+    <!-- LAS OBSERVACIONES DEL NODO: un aviso en la esquina, con cuántas son. Pulsarlo las enseña una
+         por una, con qué hacer en cada caso. Antes eran un triángulo junto al nombre —que sólo
+         hablaba al pasar el ratón— y una pastilla por cada cosa; con un solo sitio, la siguiente
+         observación que haga falta no ocupa más nodo. -->
+    <button
+      v-if="data.healthIssues && data.healthIssues.length"
+      type="button"
+      class="nodrag graph-node__aviso"
+      :title="data.healthIssues.map((o) => o.titulo).join(' · ')"
+      :aria-label="`${data.healthIssues.length} ${data.healthIssues.length === 1 ? 'observación' : 'observaciones'} en ${data.name}`"
+      @click.stop="data.onOpenIssues?.(data.id)"
+    >
+      <IconAlertTriangle class="h-3 w-3" />{{ data.healthIssues.length }}
+    </button>
+
     <p class="m-0 flex items-center gap-2">
       <span class="max-w-[10.5rem] truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
-      <IconCrown v-if="data.head_count" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
-      <IconAlertTriangle
-        v-if="data.healthIssues && data.healthIssues.length"
-        class="h-3.5 w-3.5 shrink-0 text-warning"
-        :title="data.healthIssues.join(' · ')"
-      />
+      <IconCrown v-if="Number(data.head_count) > 0" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
       <!-- El estado va SIEMPRE, también cuando rige, a la derecha del nombre: como en el proceso. -->
       <AppTag :variant="tonoVigencia(data.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(data.estado) }}</AppTag>
@@ -54,14 +64,6 @@
         outlined
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</AppTag>
-      <!-- LO QUE QUEDÓ A MEDIAS: puestos creados que todavía no rigen. La cuenta de al lado sólo ve
-           los que rigen, así que sin esto un borrador no se encuentra desde el organigrama. -->
-      <AppTag
-        v-if="Number(data.draft_positions_count) > 0"
-        :variant="tonoVigencia('borrador')"
-        outlined
-        :title="`${data.draft_positions_count} ${Number(data.draft_positions_count) === 1 ? 'puesto creado que todavía no rige' : 'puestos creados que todavía no rigen'}`"
-      >{{ data.draft_positions_count }} en borrador</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>

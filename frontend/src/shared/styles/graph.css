@@ -116,6 +116,39 @@
         z-index: var(--z-capa-controles); /* la barra de acciones del nodo */
     }
 
+    /* EL AVISO DE LA ESQUINA: cuántas observaciones tiene el nodo. Va montado sobre el borde de
+       arriba y metido 10 px hacia dentro del derecho, no en el vértice: a la derecha del nodo sale
+       la barra de acciones al pasar el ratón, y en el vértice se pisaban. Texto oscuro sobre el
+       ámbar claro, no blanco sobre el ámbar vivo: blanco sobre `warning-500` da 2.2:1. */
+    .graph-node__aviso {
+        position: absolute;
+        top: -10px;
+        right: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        border: 1px solid var(--color-warning-300);
+        background: var(--color-warning-100);
+        color: var(--color-warning-800);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .graph-node__aviso:hover {
+        background: var(--color-warning-200);
+        border-color: var(--color-warning-500);
+    }
+
+    .graph-node__aviso:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+    }
+
     .graph-node__toolbar--sm {
         padding-left: 6px;
     }

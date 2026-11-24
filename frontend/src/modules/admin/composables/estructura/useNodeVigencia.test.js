@@ -32,6 +32,7 @@ describe("useNodeVigencia · suprimir", () => {
     v.prepararVida(vigente());
     expect(v.sePuedeGuardar.value).toBe(true);
     v.vidaForm.value.vigente_hasta = dia(20);
+    v.vidaForm.value.fin_origen = "carga_inicial";
     expect(v.suprimeMasAdelante.value).toBe(true);
     expect(v.sePuedeGuardar.value).toBe(true);
     v.vidaForm.value.vigente_hasta = dia(0);
@@ -140,5 +141,49 @@ describe("useNodeVigencia · sucesores", () => {
     await v.quitarSucesor(40);
     expect(adminSqlService.remove).toHaveBeenCalledWith("unit_equivalencias", { id: 40 });
     expect(v.sucesores.value).toEqual([]);
+  });
+});
+
+describe("useNodeVigencia · lo que falta por escribir", () => {
+  it("una reorganización sin acto no se deja guardar, y dice qué falta", () => {
+    const v = nueva();
+    v.prepararVida({ id: 7, estado: "borrador" });
+    v.vidaForm.value.vigente_desde = dia(0);
+    expect(v.loQueFalta.value).toMatch(/origen del inicio/);
+    expect(v.sePuedeGuardar.value).toBe(false);
+    v.vidaForm.value.inicio_origen = "reorganizacion";
+    expect(v.loQueFalta.value).toMatch(/acto/);
+    expect(v.sePuedeGuardar.value).toBe(false);
+    v.vidaForm.value.inicio_acto_id = "4";
+    expect(v.loQueFalta.value).toBe("");
+    expect(v.sePuedeGuardar.value).toBe(true);
+  });
+
+  it("un fin pide su origen, y su acto si es una reorganización", () => {
+    const v = nueva();
+    v.prepararVida(vigente());
+    v.vidaForm.value.vigente_hasta = dia(20);
+    expect(v.loQueFalta.value).toMatch(/origen del fin/);
+    v.vidaForm.value.fin_origen = "reorganizacion";
+    expect(v.sePuedeGuardar.value).toBe(false);
+    v.vidaForm.value.fin_acto_id = "4";
+    expect(v.sePuedeGuardar.value).toBe(true);
+  });
+});
+
+describe("useNodeVigencia · reactivar con sucesores", () => {
+  const suprimido = { id: 7, estado: "suprimido", vigencia_id: 3, vigente_desde: dia(-50), vigente_hasta: dia(-5), inicio_origen: "carga_inicial", fin_origen: "carga_inicial" };
+  it("avisa de los sucesores de la vida anterior sólo al abrir una vida nueva", () => {
+    const v = nueva();
+    v.prepararVida(suprimido, [{ id: 3, vigente_hasta: dia(-5), sucesores: [{ id: 40, nodo_id: 8, nombre: "AB" }] }]);
+    expect(v.sucesoresDeLaVidaAnterior.value).toBe(null);
+    v.empezarVidaNueva();
+    expect(v.sucesoresDeLaVidaAnterior.value.sucesores[0].nombre).toBe("AB");
+  });
+  it("sin sucesores no avisa", () => {
+    const v = nueva();
+    v.prepararVida(suprimido, [{ id: 3, vigente_hasta: dia(-5), sucesores: [] }]);
+    v.empezarVidaNueva();
+    expect(v.sucesoresDeLaVidaAnterior.value).toBe(null);
   });
 });

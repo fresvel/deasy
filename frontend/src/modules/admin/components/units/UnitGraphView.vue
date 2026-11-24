@@ -141,6 +141,29 @@
       </template>
     </AppModalShell>
 
+    <!-- LAS OBSERVACIONES DE UN NODO, una por una y con adónde ir a resolverla. Se abre desde el
+         aviso de su esquina. -->
+    <AppModalShell
+      v-if="Boolean(observacionesDe)"
+      controlled
+      :open="Boolean(observacionesDe)"
+      :title="`Observaciones de ${observacionesDe.name}`"
+      content-class="max-w-md"
+      @close="observacionesDe = null"
+    >
+      <ul class="m-0 flex list-none flex-col gap-2 p-0">
+        <li v-for="observacion in observacionesDe.lista" :key="observacion.clave" class="flex flex-col gap-2 rounded-xl border border-line px-3 py-2.5">
+          <p class="m-0 flex items-center gap-2 text-sm font-semibold text-strong">
+            <IconAlertTriangle class="h-4 w-4 shrink-0 text-warning" />{{ observacion.titulo }}
+          </p>
+          <p class="m-0 text-sm text-icon">{{ observacion.detalle }}</p>
+          <div class="flex justify-end">
+            <AppButton variant="primary-outline" @click="resolverObservacion(observacion)">Ir a sus puestos</AppButton>
+          </div>
+        </li>
+      </ul>
+    </AppModalShell>
+
     <NodeMoverModal :mover="moverUnidad" :acto-options="vigencia.actoOptions.value" />
 
     <AppModalShell
@@ -831,15 +854,55 @@ const legend = computed(() => {
     .map((rt) => ({ code: rt.code, name: rt.name, color: colorForCode(rt.code) }));
 });
 
-// Salud: una unidad tiene pendientes si no tiene jefatura, no tiene puestos, o le quedan puestos en
-// borrador —creados y sin poner en vigor—, que es trabajo a medias y no se ve desde fuera.
+// LAS OBSERVACIONES DE UNA UNIDAD: lo que le falta o le quedó a medias. Cada una dice qué pasa, qué
+// se hace y en qué pestaña del modal de la unidad se resuelve. Son la lista que enseña el aviso de
+// la esquina del nodo, y lo que cuenta «Pendientes». Para añadir otra, basta otra entrada aquí.
 const healthIssues = (u) => {
   const issues = [];
-  if (!Number(u.head_count)) issues.push("Sin jefatura");
-  if (!Number(u.positions_count)) issues.push("Sin puestos");
+  // A una unidad suprimida no se le pide jefatura ni puestos: ya no rige. Un borrador sí cuenta.
+  const rige = u.estado !== "suprimido";
+  if (rige && !Number(u.head_count)) {
+    issues.push({
+      clave: "sin_jefatura",
+      titulo: "Sin jefatura",
+      detalle: "Ningún puesto que rija en la unidad está marcado como jefatura. Se marca en el puesto, con la corona.",
+      pestana: "ocupaciones"
+    });
+  }
+  if (rige && !Number(u.positions_count)) {
+    issues.push({
+      clave: "sin_puestos",
+      titulo: "Sin puestos",
+      detalle: "La unidad no tiene ningún puesto que rija.",
+      pestana: "ocupaciones"
+    });
+  }
   const borradores = Number(u.draft_positions_count) || 0;
-  if (borradores) issues.push(`${borradores} ${borradores === 1 ? "puesto" : "puestos"} en borrador`);
+  if (borradores) {
+    issues.push({
+      clave: "puestos_en_borrador",
+      titulo: `${borradores} ${borradores === 1 ? "puesto" : "puestos"} en borrador`,
+      detalle: borradores === 1
+        ? "Se creó y todavía no rige: no cuenta como puesto de la unidad ni se puede ocupar. Edítalo y ponle fecha en «Vigencia», o elimínalo si se creó por error."
+        : "Se crearon y todavía no rigen: no cuentan como puestos de la unidad ni se pueden ocupar. Edítalos y ponles fecha en «Vigencia», o elimínalos si se crearon por error.",
+      pestana: "ocupaciones"
+    });
+  }
   return issues;
+};
+// El modal de las observaciones de un nodo, y el salto desde cada una a donde se resuelve.
+const observacionesDe = ref(null);
+const openIssues = (unitId) => {
+  const u = rawUnitById(unitId);
+  if (u) observacionesDe.value = { id: u.id, name: u.name, lista: healthIssues(u) };
+};
+const resolverObservacion = (observacion) => {
+  const unidadId = observacionesDe.value?.id;
+  observacionesDe.value = null;
+  if (!unidadId) return;
+  // `openDetail` deja la pestaña en «Datos» antes de su primera espera: se cambia justo después.
+  openDetail(unidadId);
+  detailTab.value = observacion.pestana;
 };
 const pendingCount = computed(
   () => (rawGraph.value.nodes || []).filter((u) => healthIssues(u).length).length
@@ -985,6 +1048,7 @@ const buildGraph = () => {
         onAddChild,
         onAddSibling,
         onToggleCollapse: toggleCollapse,
+        onOpenIssues: openIssues,
         healthIssues: issues,
         hasChildren: childrenMap.value.has(String(u.id)),
         collapsed: collapsedIds.value.has(String(u.id)),

@@ -268,6 +268,12 @@ Las reglas, que impone la base y son las mismas en las tres:
 | A sí mismo | no. Un nodo que vuelve a regir se **reactiva** |
 | Modificar | no se modifica: se quita y se registra otra |
 | Quitar | libre mientras el fin sea futuro. Si ya ocurrió es una **corrección**: permiso aparte, motivo, y lo que decía queda en la bitácora |
+
+**Reactivar un nodo que tiene sucesores registrados se permite, con aviso.** Puede ser un hecho
+nuevo —la unidad se dividió y tiempo después vuelve a existir— o la forma de deshacer una supresión
+equivocada; el sistema no sabe cuál de las dos, y quien reactiva sí. Por eso no se rechaza: al abrir
+la vida nueva, la pantalla dice qué sucesores tiene la anterior y que reactivar no los cambia. Siguen
+constando en la historia de esa vida, y si la supresión fue un error se quitan antes, como corrección.
 | Quitarle el fin a una vida con sucesores | se rechaza hasta que se quiten. Lo mismo si el fin se mueve a un día en que alguno ya no rige |
 
 Cada fila guarda además **quién la registró**, que escribe el sistema como en los actos.
