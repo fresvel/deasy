@@ -91,7 +91,13 @@ const ETIQUETA_VIGENCIA = Object.freeze({
   suprimido: "Suprimido"
 });
 
-export const etiquetaVigencia = (valor) => ETIQUETA_VIGENCIA[valor] ?? "Sin estado";
+/* UNA UNIDAD ESTÁ «SUPRIMIDA», NO «SUPRIMIDO» (F27.P4.T23). La base guarda un solo código por
+   estado y lo comparten tres clases de nodo: el proceso y el puesto son masculinos, la unidad no. El
+   género lo sabe quien pinta —que es quien sabe qué está nombrando—, y lo pide con `femenino`. */
+const ETIQUETA_VIGENCIA_EN_FEMENINO = Object.freeze({ programado: "Programada", suprimido: "Suprimida" });
+
+export const etiquetaVigencia = (valor, { femenino = false } = {}) =>
+  (femenino ? ETIQUETA_VIGENCIA_EN_FEMENINO[valor] : null) ?? ETIQUETA_VIGENCIA[valor] ?? "Sin estado";
 
 /* ── CORRIDA (`process_runs.status`) ───────────────────────────────────────────────────────
  *

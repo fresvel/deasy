@@ -298,6 +298,7 @@
           :vigencia="vigencia"
           :estado="detailUnit.estado"
           sujeto="Unidad"
+          femenino
           :editable="editable"
           :candidatos="unidadesASuceder"
           @reactivar="empezarVidaNueva"
@@ -838,7 +839,7 @@ let feedbackTimer = null;
 
 // El ancho es el de `.graph-node--unidad` en graph.css: van juntos.
 const NODE_W = 240;
-const NODE_H = 76;
+const NODE_H = 89;
 
 const relationColorMap = computed(() => {
   const map = new Map();
@@ -1119,6 +1120,11 @@ const buildGraph = () => {
     (u) => estadosVisibles.value.has(u.estado) && !hidden.has(String(u.id)) && (!rama || rama.has(String(u.id)))
   );
   const visibleIds = new Set(apiNodes.map((u) => String(u.id)));
+  // Cuántas unidades dependen de cada una ENTRE LAS QUE SE ESTÁN ENSEÑANDO por estado: es lo que
+  // anuncia su pie, y no puede prometer nodos que el filtro esconde.
+  const estadoDe = new Map((rawGraph.value.nodes || []).map((u) => [String(u.id), u.estado]));
+  const cuantasHijas = (id) =>
+    (childrenMap.value.get(String(id)) || []).filter((hija) => estadosVisibles.value.has(estadoDe.get(hija))).length;
   const rawNodes = apiNodes.map((u) => {
     const issues = healthIssues(u);
     return {
@@ -1138,6 +1144,7 @@ const buildGraph = () => {
         onOpenIssues: openIssues,
         healthIssues: issues,
         hasChildren: childrenMap.value.has(String(u.id)),
+        childrenCount: cuantasHijas(u.id),
         collapsed: collapsedIds.value.has(String(u.id)),
         highlighted: highlightId.value === String(u.id),
         dimmed: healthOnly.value && !issues.length

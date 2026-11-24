@@ -311,6 +311,26 @@
       </template>
     </AppModalShell>
 
+    <!-- Las observaciones de un proceso, una por una y con adónde ir a resolverla: como en la unidad. -->
+    <AppModalShell
+      v-if="Boolean(observacionesAbiertas)"
+      controlled
+      :open="Boolean(observacionesAbiertas)"
+      :title="`Observaciones de ${observacionesAbiertas.name}`"
+      content-class="max-w-md"
+      @close="observacionesAbiertas = null"
+    >
+      <ul class="m-0 flex list-none flex-col gap-2 p-0">
+        <li v-for="observacion in observacionesAbiertas.lista" :key="observacion.clave" class="flex flex-col gap-2 rounded-xl border border-line px-3 py-2.5">
+          <p class="m-0 text-sm font-semibold text-strong">{{ observacion.titulo }}</p>
+          <p class="m-0 text-sm text-icon">{{ observacion.detalle }}</p>
+          <div class="flex justify-end">
+            <AppButton variant="primary-outline" @click="resolverObservacion(observacion)">{{ observacion.accion }}</AppButton>
+          </div>
+        </li>
+      </ul>
+    </AppModalShell>
+
     <!-- LA CONFIGURACIÓN, EN UN MODAL CON PESTAÑAS (2026-11-24). Pulsar su nodo abría directamente
          el asistente —ocho pasos— aunque sólo se quisiera mirar qué es. Ahora abre esto, como los
          demás nodos del mapa: «Datos» dice qué es y de qué proceso; «Entregables», qué produce. El
@@ -645,6 +665,8 @@ const alCambiarUnActo = async () => {
   if (!id) return;
   const { data } = await adminSqlService.getProcessDetail(id);
   detailActos.value = data.actos || [];
+  // Y el mapa, que es quien cuenta los actos sin documento de cada proceso para su aviso.
+  await loadGraph();
 };
 const detailRuns = ref([]);
 const editForm = ref({ name: "", slug: "", parent_id: "" });
@@ -882,6 +904,8 @@ const buildGraph = () => {
       focusDepth: pilaDeEnfoque.value.length,
       hasChildren: childrenMap.value.has(String(p.id)),
       childrenCount: cuantosHijos(p.id),
+      observaciones: observacionesDe(p),
+      onOpenIssues: abrirObservaciones,
       collapsed: collapsedIds.value.has(String(p.id)),
       hasConfigs: Number(p.definitions_count) > 0,
       configsExpanded: expandedConfigIds.value.has(String(p.id)),
@@ -1020,6 +1044,35 @@ const onNodeClick = ({ node }) => {
   }
   openProcessDetail(node.data.id);
 };
+// LAS OBSERVACIONES DE UN PROCESO: lo que le falta. Son lo que cuenta el aviso de la esquina de su
+// nodo, y cada una dice en qué pestaña de su modal se resuelve. Para añadir otra, otra entrada aquí.
+const observacionesDe = (p) => {
+  const lista = [];
+  const actos = Number(p.actos_sin_documento) || 0;
+  if (actos) {
+    lista.push({
+      clave: "actos_sin_documento",
+      titulo: `${actos} ${actos === 1 ? "acto" : "actos"} sin documento`,
+      detalle: actos === 1
+        ? "Un acto que ordenó algo de este proceso está registrado, pero su documento todavía no. Si vino de fuera, adjúntale el PDF."
+        : "Hay actos que ordenaron algo de este proceso cuyo documento todavía no está. A los que vinieron de fuera, adjúntales el PDF.",
+      pestana: "actos",
+      accion: "Ir a sus actos"
+    });
+  }
+  return lista;
+};
+const observacionesAbiertas = ref(null);
+const abrirObservaciones = (processId) => {
+  const p = rawProcessById(processId);
+  if (p) observacionesAbiertas.value = { id: p.id, name: p.name, lista: observacionesDe(p) };
+};
+const resolverObservacion = (observacion) => {
+  const id = observacionesAbiertas.value?.id;
+  observacionesAbiertas.value = null;
+  if (id) openProcessDetail(id, observacion.pestana);
+};
+
 // --- El modal de la configuración: sus datos y sus entregables ---
 const configDetail = ref(null);
 const configTab = ref("datos");

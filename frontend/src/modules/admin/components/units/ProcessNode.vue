@@ -12,6 +12,20 @@
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle" />
 
+    <!-- EL AVISO DE LA ESQUINA, como en la unidad: cuántas observaciones tiene el proceso. Hoy sólo
+         hay una clase —actos que ordenaron algo de él y siguen sin documento—; al pulsarlo se abren
+         y llevan a donde se resuelven. -->
+    <button
+      v-if="data.observaciones && data.observaciones.length"
+      type="button"
+      class="nodrag graph-node__aviso"
+      :title="data.observaciones.map((o) => o.titulo).join(' · ')"
+      :aria-label="`${data.observaciones.length} ${data.observaciones.length === 1 ? 'observación' : 'observaciones'} en ${data.name}`"
+      @click.stop="data.onOpenIssues?.(data.id)"
+    >
+      <IconAlertTriangle class="h-3 w-3" />{{ data.observaciones.length }}
+    </button>
+
     <!-- LA PESTAÑA DICE QUÉ CLASE DE NODO ES. En este mapa conviven tres —proceso, configuración y
          entregable— y hasta ahora se distinguían sólo por tamaño y color. Es la misma pestaña de
          carpeta que lleva la unidad con su tipo. -->
@@ -110,7 +124,7 @@
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { IconCornerDownRight, IconChevronRight, IconFocusCentered, IconArrowBackUp, IconSitemap, IconHierarchy2, IconTimeline } from "@tabler/icons-vue";
+import { IconAlertTriangle, IconCornerDownRight, IconChevronRight, IconFocusCentered, IconArrowBackUp, IconSitemap, IconHierarchy2, IconTimeline } from "@tabler/icons-vue";
 
 const props = defineProps({
   data: { type: Object, required: true }

@@ -5,7 +5,7 @@
   <div class="flex flex-col gap-4">
     <div class="flex items-center justify-between gap-2">
       <p class="deasy-overline">{{ vigencia.tituloDeLaVida.value }}</p>
-      <AppTag :variant="tonoVigencia(estado)" outlined>{{ etiquetaVigencia(estado) }}</AppTag>
+      <AppTag :variant="tonoVigencia(estado)" outlined>{{ etiquetaVigencia(estado, { femenino }) }}</AppTag>
     </div>
 
     <!-- A QUIÉN SUCEDE (frente 27, D-05): varios antecesores son una fusión. Sólo se lee: la
@@ -200,7 +200,7 @@
         <li v-for="vida in vigencia.vidasAnteriores.value" :key="vida.id" class="rounded-xl border border-line px-3 py-2.5">
           <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-strong">{{ vida.vigente_desde }} → {{ vida.vigente_hasta || "sin fecha de fin" }}</span>
-            <AppTag :variant="tonoVigencia(vida.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(vida.estado) }}</AppTag>
+            <AppTag :variant="tonoVigencia(vida.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(vida.estado, { femenino }) }}</AppTag>
           </div>
           <p class="m-0 mt-1 text-theme-xs text-muted">
             Inicio: {{ etiquetaOrigen(vida.inicio_origen) }}<span v-if="vida.inicio_acto_numero"> · {{ vida.inicio_acto_numero }}</span>
@@ -239,6 +239,8 @@ const props = defineProps({
   estado: { type: String, default: "borrador" },
   /* Cómo se nombra al nodo en la frase de reactivar: «Proceso», «Unidad»… */
   sujeto: { type: String, default: "Nodo" },
+  /* El nodo es de género femenino —una unidad—: su estado se dice «Suprimida», «Programada». */
+  femenino: { type: Boolean, default: false },
   editable: { type: Boolean, default: false },
   /* Entre quiénes se elige un sucesor: [{ id, etiqueta }], de la misma clase que el nodo. */
   candidatos: { type: Array, default: () => [] }

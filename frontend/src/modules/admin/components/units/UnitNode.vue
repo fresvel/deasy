@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node graph-node--unidad graph-node--franja relative rounded-xl rounded-tl-none px-3 pb-5 pt-2.5 transition-all"
+    class="graph-node graph-node--unidad graph-node--franja relative rounded-xl rounded-tl-none px-3 py-2.5 transition-all"
     :class="[
       `graph-node--estado-${tonoVigencia(data.estado)}`,
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
@@ -38,16 +38,6 @@
          su rama / agregar hija. La unidad —datos, vigencia, puestos, procesos— se abre pulsando el nodo. -->
     <div v-if="hover" class="nodrag nopan graph-node__toolbar">
       <button
-        v-if="data.hasChildren"
-        type="button"
-        class="graph-node__btn"
-        :title="data.collapsed ? 'Expandir rama' : 'Colapsar rama'"
-        @click.stop="data.onToggleCollapse?.(data.id)"
-      >
-        <IconChevronDown v-if="data.collapsed" class="h-4 w-4" />
-        <IconChevronUp v-else class="h-4 w-4" />
-      </button>
-      <button
         v-if="data.hasChildren && !data.focused"
         type="button"
         class="graph-node__btn"
@@ -79,7 +69,6 @@
     <p class="m-0 flex items-center gap-2">
       <span class="min-w-0 flex-1 truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <IconCrown v-if="Number(data.head_count) > 0" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
-      <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
     <!-- EL ESTADO Y LOS PUESTOS VAN SIN CAJA (decisión del dueño, 2026-11-24). Un punto con el tono
          del estado y su nombre en gris; la cuenta de puestos, con su icono, sólo toma color cuando
@@ -87,7 +76,7 @@
          tiñe. El tono del estado va también en la franja de la izquierda, como en la configuración. -->
     <p class="m-0 mt-1.5 flex flex-wrap items-center gap-3">
       <span class="graph-node__dato" :class="[`graph-node__dato--${tonoVigencia(data.estado)}`, data.estado === 'vigente' ? '' : 'graph-node__dato--destaca']">
-        <span class="graph-node__punto"></span>{{ etiquetaVigencia(data.estado) }}
+        <span class="graph-node__punto"></span>{{ etiquetaVigencia(data.estado, { femenino: true }) }}
       </span>
       <span
         v-if="Number(data.positions_count) > 0"
@@ -98,7 +87,27 @@
         <IconUsers class="h-3.5 w-3.5" />{{ data.occupied_count || 0 }}/{{ data.positions_count }}
       </span>
     </p>
-    <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
+    <!-- EL PIE: LAS UNIDADES QUE DEPENDEN DE ÉSTA, como en el proceso (2026-11-24). Una sola pieza,
+         porque la unidad sólo tiene una clase de hijos: dice cuántas son, se pulsa para recogerlas o
+         desplegarlas —lo que antes hacía un botón de la barra flotante—, y de su centro salen las
+         líneas. Está siempre, aunque diga cero, para que todas las unidades midan lo mismo. -->
+    <div class="nodrag graph-node__pie">
+      <div class="graph-node__pie-parte">
+        <button
+          v-if="data.childrenCount"
+          type="button"
+          class="graph-node__pie-boton"
+          :class="data.collapsed ? 'graph-node__pie-boton--cerrado' : ''"
+          :title="`${data.childrenCount} ${data.childrenCount === 1 ? 'unidad depende' : 'unidades dependen'} de ésta · pulsa para ${data.collapsed ? 'mostrarlas' : 'ocultarlas'}`"
+          @click.stop="data.onToggleCollapse?.(data.id)"
+        >
+          <IconChevronRight class="h-3 w-3 transition-transform" :class="data.collapsed ? '' : 'rotate-90'" />
+          <IconHierarchy2 class="h-3.5 w-3.5" />{{ data.childrenCount }}
+        </button>
+        <span v-else class="graph-node__pie-vacio" title="Ninguna unidad depende de ésta"><IconHierarchy2 class="h-3.5 w-3.5" />0</span>
+        <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
+      </div>
+    </div>
   </div>
 </template>
 
@@ -108,7 +117,7 @@ import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import {
   IconCornerDownRight, IconCrown, IconFocusCentered, IconArrowBackUp, IconSitemap,
-  IconAlertTriangle, IconChevronUp, IconChevronDown, IconUsers
+  IconAlertTriangle, IconChevronRight, IconHierarchy2, IconUsers
 } from "@tabler/icons-vue";
 
 const props = defineProps({

@@ -24,6 +24,7 @@
 
     /* Lo que el pie necesita saber del nodo para ir de borde a borde: su relleno y el radio
        interior de sus esquinas de abajo (el exterior, menos el borde de ese lado). */
+    .graph-node--unidad,
     .graph-node--proceso {
         --nodo-px: 12px;
         --nodo-py: 10px;
