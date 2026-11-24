@@ -9,8 +9,8 @@
 //   API_PREFIX Prefijo montado por el backend. Confirmado en config/apiPaths.js.
 //
 // Credenciales de los usuarios sembrados en dev (ver CLAUDE.md):
-//   admin  -> admin@institucion.edu.ec  (cedula 1234567897)
-//   gestor -> gestor@institucion.edu.ec (cedula 0927654327)
+//   admin  -> admin@domain.com  (cedula 1234567897)
+//   gestor -> gestor@domain.com (cedula 0927654327)
 //   password para todos: Demo1234!
 
 const stripTrailingSlash = (value) => value.replace(/\/+$/, "");
@@ -46,20 +46,20 @@ export const SNAPSHOT_MODE = process.env.SNAPSHOT_MODE === "update" ? "update" :
 export const USERS = {
   admin: {
     label: "admin",
-    email: process.env.TEST_ADMIN_EMAIL ?? "admin@institucion.edu.ec",
+    email: process.env.TEST_ADMIN_EMAIL ?? "admin@domain.com",
     cedula: process.env.TEST_ADMIN_ID ?? "1234567897",
     password: process.env.TEST_ADMIN_PASSWORD ?? "Demo1234!",
   },
   gestor: {
     label: "gestor",
-    email: process.env.TEST_GESTOR_EMAIL ?? "gestor@institucion.edu.ec",
+    email: process.env.TEST_GESTOR_EMAIL ?? "gestor@domain.com",
     cedula: process.env.TEST_GESTOR_ID ?? "0927654327",
     password: process.env.TEST_GESTOR_PASSWORD ?? "Gestor1234!",
   },
   // Usuario de baja privilegia — objetivo del test de 403.
   usuario: {
     label: "usuario",
-    email: process.env.TEST_USUARIO_EMAIL ?? "usuario@institucion.edu.ec",
+    email: process.env.TEST_USUARIO_EMAIL ?? "usuario@domain.com",
     cedula: process.env.TEST_USUARIO_ID ?? "1122334459",
     password: process.env.TEST_USUARIO_PASSWORD ?? "Demo1234!",
   },

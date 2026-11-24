@@ -59,6 +59,11 @@ export class AdminSqlService {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_ESTRUCTURA_CORRECCIONES, payload);
   }
 
+  /* Las vidas de una `unidad`, un `puesto` o un `proceso`, cada una con el nombre de su nodo. */
+  getVidasConSuNodo(clase) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_ESTRUCTURA_VIDAS(clase));
+  }
+
   /* LOS ACTOS Y SU PAPEL (frente 27, F27.P4.T11). Cada acto con su documento —«firmado», «adjunto»
      o ninguno— y si ya ordena algo, que es lo que hace de cambiar su fichero una corrección. */
   getActosYSuDocumento({ soloSinDocumento = false } = {}) {

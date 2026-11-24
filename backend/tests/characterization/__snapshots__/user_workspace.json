@@ -871,7 +871,7 @@
       "recipients": [
         {
           "cedula": "1234567897",
-          "email": "admin@institucion.edu.ec",
+          "email": "admin@domain.com",
           "first_name": "Administrador",
           "full_name": "Administrador Principal",
           "id": "<normalized>",

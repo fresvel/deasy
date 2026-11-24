@@ -1951,17 +1951,22 @@ const advancedRuntimeMode = ref(false);
 const isCurrentTableTraceability = computed(() => isTraceabilityTable(currentTableName.value));
 const runtimeWriteAllowed = computed(() =>
   !isCurrentTableTraceability.value || (isAdminUser.value && advancedRuntimeMode.value));
+// TABLAS DE SOLO CONSULTA (`soloConsulta`, en el catálogo): la lista se ve, pero aquí no se crea, ni
+// se edita, ni se elimina. Son las vidas, las relaciones y las equivalencias de la estructura, que
+// se escriben desde el modal de cada nodo. El texto de la marca dice dónde.
+const esSoloConsulta = computed(() => Boolean(props.table?.soloConsulta));
 const canCreateCurrentTable = computed(() =>
   canCreateAdminTable(currentTableName.value)
   && runtimeWriteAllowed.value
   // Las plantillas se crean SOLO desde un proceso (pestaña "Plantillas" de la configuración). La tabla
   // global es de consulta/versionado: se oculta el botón "Crear".
   && !isTemplateArtifactsTable.value
+  && !esSoloConsulta.value
 );
 const canCreateProcessConfiguration = computed(() => canCreateAdminTable("process_definition_versions"));
 const canDeleteProcessConfiguration = computed(() => canDeleteAdminTable("process_definition_versions"));
-const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
-const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value) && runtimeWriteAllowed.value);
+const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value && !esSoloConsulta.value);
+const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value) && runtimeWriteAllowed.value && !esSoloConsulta.value);
 const processEditorConfigurationTableFields = [
   { name: "linea_nombre", label: "Línea" },
   { name: "definition_version", label: "Version" },

@@ -99,8 +99,79 @@ class AdminPresentationService {
     /* Aqui habia dos diccionarios mas, `selection_mode` y `approval_mode`. Se fueron con sus columnas
        el 2026-10-09 (§10 del plan): el primero elegia «el id mas bajo» y el segundo era el cupo. */
     dedication: { TC: "Tiempo completo", MT: "Medio tiempo", TP: "Tiempo parcial" },
-    relation_type: { dependencia: "Dependencia", servicios: "Servicios", promocion: "Promoción" }
+    relation_type: { dependencia: "Dependencia", servicios: "Servicios", promocion: "Promoción" },
+    /* LA ESTRUCTURA CON MEMORIA (frente 27). Salían como códigos —`carga_inicial`, `titular`,
+       `unit_vigencias`— en las listas y en los desplegables del editor. */
+    inicio_origen: { carga_inicial: "Carga inicial", reorganizacion: "Reorganización", correccion: "Corrección" },
+    fin_origen: { carga_inicial: "Carga inicial", reorganizacion: "Reorganización", correccion: "Corrección" },
+    en_calidad_de: { titular: "Titular", subrogante: "Subrogante", encargado: "Encargado", delegado: "Delegado" },
+    /* Qué se corrigió, en la bitácora de correcciones: el nombre de la tabla, dicho en castellano. */
+    tabla: {
+      unit_vigencias: "Vigencia de una unidad",
+      position_vigencias: "Vigencia de un puesto",
+      process_vigencias: "Vigencia de un proceso",
+      unit_relations: "Relación entre unidades",
+      process_relations: "Relación entre procesos",
+      unit_equivalencias: "Sucesor de una unidad",
+      position_equivalencias: "Sucesor de un puesto",
+      process_equivalencias: "Sucesor de un proceso",
+      acto_adjuntos: "Fichero de un acto"
+    }
   };
+
+  /* Cómo se llama cada columna de las tablas que se corrigen, para la bitácora. Las que apuntan a
+     otra fila llevan «(id)»: el valor que se enseña es su identificador, no su nombre. */
+  static COLUMNAS_DE_LA_ESTRUCTURA = {
+    vigente_desde: "rige desde",
+    vigente_hasta: "rige hasta",
+    inicio_origen: "origen del inicio",
+    fin_origen: "origen del fin",
+    inicio_acto_id: "acto del inicio (id)",
+    fin_acto_id: "acto del fin (id)",
+    unit_id: "unidad (id)",
+    position_id: "puesto (id)",
+    process_id: "proceso (id)",
+    parent_unit_id: "unidad padre (id)",
+    child_unit_id: "unidad hija (id)",
+    parent_process_id: "proceso padre (id)",
+    child_process_id: "proceso hijo (id)",
+    relation_type_id: "tipo de relación (id)",
+    antecesor_vigencia_id: "vida que termina (id)",
+    sucesor_unit_id: "unidad sucesora (id)",
+    sucesor_position_id: "puesto sucesor (id)",
+    sucesor_process_id: "proceso sucesor (id)",
+    acto_id: "acto (id)",
+    file_name: "fichero",
+    file_path: "ruta en el almacén",
+    mime_type: "tipo",
+    size_bytes: "tamaño en bytes",
+    sha256: "huella"
+  };
+
+  /* LO QUE DECÍA UNA FILA, LEGIBLE — para la bitácora de correcciones, que guarda el antes y el
+     después como JSON. `otro` es la otra mitad: con ella sólo se enseñan las claves que cambian, que
+     es lo que se quiere saber; sin ella (un alta o una baja), la fila entera. */
+  formatFilaDeBitacora(valor, otro = null) {
+    const leer = (v) => {
+      if (!v) return null;
+      if (typeof v === "object") return v;
+      try { return JSON.parse(v); } catch { return null; }
+    };
+    const fila = leer(valor);
+    if (!fila) {
+      return valor ? String(valor) : "—";
+    }
+    const pareja = leer(otro);
+    /* Lo que no dice nada de la fila —su id y los sellos— no se enseña. */
+    const SIN_INTERES = ["id", "registrado_por_person_id", "subido_por_person_id"];
+    const claves = Object.keys(fila).filter((k) => !SIN_INTERES.includes(k) && (!pareja || JSON.stringify(fila[k]) !== JSON.stringify(pareja[k])));
+    const decir = (k) => {
+      const v = fila[k];
+      const texto = v === null || v === undefined || v === "" ? "—" : this.formatSelectOptionLabel({ name: k }, v);
+      return `${AdminPresentationService.COLUMNAS_DE_LA_ESTRUCTURA[k] ?? k.replaceAll("_", " ")}: ${texto}`;
+    };
+    return claves.length ? claves.map(decir).join(" · ") : "sin cambios";
+  }
 
   hasSelectOptionLabels(fieldName) {
     return Object.hasOwn(AdminPresentationService.SELECT_OPTION_LABELS, String(fieldName || ""));

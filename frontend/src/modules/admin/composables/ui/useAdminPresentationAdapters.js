@@ -3,6 +3,8 @@ import {
   formatTemplateArtifactFieldLabel
 } from "@/modules/admin/services/AdminTableManagerConfig";
 import { etiquetaBooleano } from "@/shared/utils/estadoTono.js";
+import { adminPresentationService } from "@/modules/admin/services/AdminPresentationService";
+import { etiquetaDeVida } from "@/modules/admin/composables/estructura/etiquetasDeVidas.js";
 
 export function useAdminPresentationAdapters({
   props,
@@ -141,6 +143,22 @@ export function useAdminPresentationAdapters({
       return definitionMeta.status || "—";
     }
     if (["created_at", "updated_at", "created", "updated"].includes(fieldName)) {
+      return formatDateTimeHour(value);
+    }
+    // LA BITÁCORA DE CORRECCIONES guarda el antes y el después como JSON: se enseña qué cambió.
+    if (tableMeta?.table === "correcciones_de_estructura" && ["antes", "despues"].includes(fieldName)) {
+      return adminPresentationService.formatFilaDeBitacora(value, fieldName === "antes" ? row?.despues : row?.antes);
+    }
+    // LA VIDA QUE TERMINA, en las equivalencias: su id no dice nada; el nodo y sus fechas, sí.
+    if (fieldName === "antecesor_vigencia_id") {
+      return etiquetaDeVida(tableMeta?.table, value) ?? value;
+    }
+    // UNA FECHA ES UNA FECHA. Sólo algunas columnas se formateaban, por nombre; las demás salían
+    // como llegan de la base, `2026-11-01T00:00:00.000Z`. Ahora decide el TIPO que declara el catálogo.
+    if (field?.type === "date") {
+      return formatDateOnly(value);
+    }
+    if (field?.type === "datetime") {
       return formatDateTimeHour(value);
     }
     if (tableMeta?.table === "process_definition_versions" && fieldName === "linea_id") {

@@ -18,6 +18,10 @@
           @click="$emit('go-back')" icon-only>
           <font-awesome-icon icon="backward" />
         </AdminButton>
+        <!-- SOLO CONSULTA: la tabla se ve aquí pero se escribe en otro sitio, y se dice cuál. -->
+        <span v-if="table?.soloConsulta" class="max-w-md text-theme-xs text-muted">
+          <strong class="text-icon">Sólo consulta.</strong> {{ table.soloConsulta }}
+        </span>
         <AdminButton
           v-if="isGeneradoresTable && canUpdate"
           variant="neutral-outline"

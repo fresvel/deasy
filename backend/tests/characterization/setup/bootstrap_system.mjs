@@ -118,7 +118,7 @@ async function main() {
   }
 
   const payload = {
-    ...personPayload(USERS.admin, "Administrador", "Principal", "admin@institucion.edu.ec", "0990000000", TOKEN_DE_FIRMA.admin),
+    ...personPayload(USERS.admin, "Administrador", "Principal", "admin@domain.com", "0990000000", TOKEN_DE_FIRMA.admin),
     // ⚠️ LOS TRES LLEVAN TELEFONO, Y HACE FALTA. Desde que la verificacion del telefono es
     // obligatoria (C8), una persona sembrada sin telefono no puede entrar a nada: el guard del
     // backend la corta en todas las rutas protegidas. Gestor y usuario no lo tenian, y con eso la
@@ -126,8 +126,8 @@ async function main() {
     //
     // El bootstrap los da por verificados igual que da por verificado su correo y su documento: los
     // crea el instalador, que responde por ellos. Es la misma decision, no una excepcion nueva.
-    gestor: personPayload(USERS.gestor, "Gestor", "Procesos", "gestor@institucion.edu.ec", "0990000001", TOKEN_DE_FIRMA.gestor),
-    usuario: personPayload(USERS.usuario, "Usuario", "Prueba", "usuario@institucion.edu.ec", "0990000002", TOKEN_DE_FIRMA.usuario),
+    gestor: personPayload(USERS.gestor, "Gestor", "Procesos", "gestor@domain.com", "0990000001", TOKEN_DE_FIRMA.gestor),
+    usuario: personPayload(USERS.usuario, "Usuario", "Prueba", "usuario@domain.com", "0990000002", TOKEN_DE_FIRMA.usuario),
     preconfig: buildPreconfig(status.body?.catalogOptions),
   };
 

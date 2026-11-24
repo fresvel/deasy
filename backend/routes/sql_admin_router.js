@@ -5,6 +5,7 @@ import {
   corregirFicheroDelActo,
   descargarFicheroDelActo,
   listarActosDocumentos,
+  listarVidasConSuNodo,
   quitarFicheroDelActo,
   quitarFicheroDelActoComoCorreccion
 } from "../dominios/organizacion/index.js";
@@ -161,6 +162,7 @@ router.get("/estructura/puestos-candidatos-a-suceder", requireSqlAdminPermission
 router.post("/estructura/correcciones", requireSqlAdminPermission({ resource: "correcciones_estructura", action: "create" }), corregirEstructura);
 // EL FICHERO DE UN ACTO EXTERNO (F27.P4.T11). Cuatro rutas normales y dos de corrección: lo que
 // separa cambiar un fichero «sin trámite» de corregirlo es el PERMISO, y el permiso lo pone la ruta.
+router.get("/estructura/vidas/:clase", requireSqlAdminPermission({ resource: "units", action: "read" }), listarVidasConSuNodo);
 router.get("/estructura/actos/documentos", requireSqlAdminPermission({ resource: "units", action: "read" }), listarActosDocumentos);
 router.get("/estructura/actos/:id/adjunto", requireSqlAdminPermission({ resource: "units", action: "read" }), descargarFicheroDelActo);
 router.post("/estructura/actos/:id/adjunto", requireSqlAdminPermission({ resource: "units", action: "update" }), actoUpload.single("archivo"), adjuntarFicheroAlActo);

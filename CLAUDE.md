@@ -8,9 +8,9 @@ Para realizar las pruebas debes considerar que todo el sistema está dockerizado
 Los usuarios de referencia los **crea el bootstrap** (`/setup` → "usar datos de
 ejemplo"); no hay ningún seed SQL alternativo. Ojo: la contraseña del gestor NO es `Demo1234!`.
 
-    admin   -> admin@institucion.edu.ec    /  Demo1234!
-    gestor  -> gestor@institucion.edu.ec   /  Gestor1234!   (de momento tiene rol de usuario también)
-    usuario -> usuario@institucion.edu.ec  /  Demo1234!
+    admin   -> admin@domain.com    /  Demo1234!
+    gestor  -> gestor@domain.com   /  Gestor1234!   (de momento tiene rol de usuario también)
+    usuario -> usuario@domain.com  /  Demo1234!
 
 ⚠️ **SE ENTRA POR CORREO, no por cédula, desde el 2026-08-29.** El login aceptaba el número de
 documento y resolvía `d.numero = ?` **a secas**, cuando la unicidad de un documento es

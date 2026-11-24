@@ -22,6 +22,7 @@ import {
   listarActosConSuDocumento,
   listarActosDeUnNodo
 } from "../datos/consulta/actosYSuDocumento.js";
+import { CLASES_CON_VIDAS, listarVidasConNombre } from "../datos/consulta/vidasConNombre.js";
 import { registrarCorreccion } from "./correccionesDeEstructura.js";
 
 const BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
@@ -108,6 +109,12 @@ export const abrirAdjuntoDelActo = async (actoId, { connection = getPostgresPool
   const fila = await leerAdjuntoParaDescargar(connection, actoId);
   if (!fila) throw notFound("Ese acto no tiene fichero adjunto.");
   return { nombre: fila.file_name, tipo: fila.mime_type, bytes: Number(fila.size_bytes), flujo: await getMinioObjectStream(BUCKET, fila.file_path) };
+};
+
+// LAS VIDAS DE UNA CLASE DE NODO CON SU NOMBRE, para etiquetar una referencia a una vida.
+export const listarVidasDeLaClase = (clase, { connection = getPostgresPool() } = {}) => {
+  if (!CLASES_CON_VIDAS.includes(clase)) throw badRequest("Esa no es una clase de nodo con vidas.");
+  return listarVidasConNombre(connection, clase);
 };
 
 // LOS ACTOS DE UN NODO, para su modal: los que cita una `unidad` o un `proceso`, con su documento.

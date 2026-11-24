@@ -11,8 +11,8 @@ Con la base vacia, el backend arranca en modo bootstrap y el frontend redirige a
 
 ## Credenciales
 
-El login es por **cedula**, no por correo. Los correos de ejemplo (`admin@institucion.edu.ec`,
-`gestor@institucion.edu.ec`, `usuario@institucion.edu.ec`) sirven para notificaciones, no para
+El login es por **cedula**, no por correo. Los correos de ejemplo (`admin@domain.com`,
+`gestor@domain.com`, `usuario@domain.com`) sirven para notificaciones, no para
 autenticarse.
 
 | Rol | Cedula | Contrasena |

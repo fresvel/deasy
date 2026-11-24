@@ -341,6 +341,11 @@ export const SQL_TABLES = [
   // en vigor, suprimirla y reactivarla es crear o cerrar una fila de aqui.
   {
     table: "unit_vigencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: abre la unidad y ve a «Vigencia».",
     label: "Vigencia de unidades",
     category: "Estructura",
     primaryKeys: ["id"],
@@ -362,6 +367,11 @@ export const SQL_TABLES = [
   // modifican: se quitan y se registran otras, y la base lo impone.
   {
     table: "unit_equivalencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: abre la unidad que termina y ve a «Sucesores», en «Vigencia».",
     label: "Equivalencias de unidades",
     category: "Estructura",
     primaryKeys: ["id"],
@@ -376,12 +386,17 @@ export const SQL_TABLES = [
   },
   {
     table: "unit_relations",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: mueve la unidad de padre, o une dos nodos.",
     label: "Relaciones de unidades",
     category: "Estructura",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "relation_type_id", label: "Tipo de relacion", type: "number", required: true },
+      { name: "relation_type_id", label: "Tipo de relación", type: "number", required: true },
       { name: "parent_unit_id", label: "Unidad padre", type: "number", required: true },
       { name: "child_unit_id", label: "Unidad hija", type: "number", required: true },
       // LA ARISTA LLEVA FECHAS (frente 27, D-04). Sin «Rige desde» es un borrador.
@@ -400,18 +415,21 @@ export const SQL_TABLES = [
   // tableHooks.js rechaza el alta. Aqui solo se CONSULTA quien corrigio que, por que, y que decia.
   {
     table: "correcciones_de_estructura",
+    // SOLO CONSULTA: es una bitácora. El editor ofrecía «Agregar», «Editar» y «Eliminar» sobre ella
+    // —la base los habría rechazado, pero no hay por qué ofrecerlos—.
+    soloConsulta: "La escribe el sistema cada vez que se registra una corrección.",
     label: "Correcciones de la estructura",
     category: "Estructura",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "ocurrido_at", label: "Cuando", type: "datetime", readOnly: true },
-      { name: "actor_person_id", label: "Quien corrigio", type: "number", readOnly: true },
+      { name: "ocurrido_at", label: "Cuándo", type: "datetime", readOnly: true },
+      { name: "actor_person_id", label: "Quién corrigió", type: "number", readOnly: true },
       { name: "tabla", label: "Tabla", type: "text", readOnly: true },
       { name: "registro_id", label: "Registro", type: "number", readOnly: true },
       { name: "motivo", label: "Motivo", type: "textarea", readOnly: true },
       { name: "antes", label: "Antes", type: "textarea", readOnly: true },
-      { name: "despues", label: "Despues", type: "textarea", readOnly: true }
+      { name: "despues", label: "Después", type: "textarea", readOnly: true }
     ],
     searchFields: ["tabla", "motivo"]
   },
@@ -425,7 +443,7 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "code", label: "Código", type: "text", required: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
@@ -440,9 +458,9 @@ export const SQL_TABLES = [
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "tipo_de_acto_id", label: "Tipo de acto", type: "number", required: true },
-      { name: "numero", label: "Numero", type: "text", required: true },
+      { name: "numero", label: "Número", type: "text", required: true },
       { name: "asunto", label: "Asunto", type: "textarea", required: true },
-      { name: "fecha_emision", label: "Fecha de emision", type: "date", required: true, ayuda: "Cuándo se firmó." },
+      { name: "fecha_emision", label: "Fecha de emisión", type: "date", required: true, ayuda: "Cuándo se firmó." },
       { name: "fecha_vigencia", label: "Rige desde", type: "date", required: true, ayuda: "Desde cuándo rige lo que ordena. Puede no ser el día en que se firmó." },
       // QUIEN LO EMITE ES UNA UNIDAD O UN TEXTO, EXACTAMENTE UNO (`ck_actos_un_solo_emisor`).
       // `exclusivoCon` se lo dice al formulario: en cuanto uno tiene valor, el otro se bloquea. La
@@ -498,7 +516,7 @@ export const SQL_TABLES = [
     primaryKeys: ["acto_id"],
     fields: [
       { name: "acto_id", label: "Acto", type: "number", required: true },
-      { name: "document_version_id", label: "Version de documento", type: "number", required: true },
+      { name: "document_version_id", label: "Versión de documento", type: "number", required: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: []
@@ -527,6 +545,11 @@ export const SQL_TABLES = [
   // origen, una reorganizacion exige acto, dos vidas no se solapan-- las impone la base.
   {
     table: "process_vigencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el mapa de procesos: abre el proceso y ve a «Vigencia».",
     label: "Vigencia de procesos",
     category: "Procesos",
     primaryKeys: ["id"],
@@ -546,6 +569,11 @@ export const SQL_TABLES = [
   // QUE SUCEDE A UN PROCESO SUPRIMIDO (frente 27, D-05): la misma forma que la de las unidades.
   {
     table: "process_equivalencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el mapa de procesos: abre el proceso que termina y ve a «Sucesores», en «Vigencia».",
     label: "Equivalencias de procesos",
     category: "Procesos",
     primaryKeys: ["id"],
@@ -562,6 +590,11 @@ export const SQL_TABLES = [
   // fila por arista, con fechas; cambiar de padre es cerrar una y abrir otra.
   {
     table: "process_relations",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el mapa de procesos: cambia el padre en «Datos», o une dos nodos.",
     label: "Relaciones de procesos",
     category: "Procesos",
     primaryKeys: ["id"],
@@ -1332,6 +1365,11 @@ export const SQL_TABLES = [
   // LAS VIDAS DE UN PUESTO (frente 27, D-03): una fila por cada vez que ha regido.
   {
     table: "position_vigencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: abre la unidad, edita el puesto y ve a «Vigencia».",
     label: "Vigencia de puestos",
     category: "Estructura",
     primaryKeys: ["id"],
@@ -1351,6 +1389,11 @@ export const SQL_TABLES = [
   // QUE SUCEDE A UN PUESTO SUPRIMIDO (frente 27, D-05): la misma forma que la de las unidades.
   {
     table: "position_equivalencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: edita el puesto que termina y ve a «Sucesores», en «Vigencia».",
     label: "Equivalencias de puestos",
     category: "Estructura",
     primaryKeys: ["id"],

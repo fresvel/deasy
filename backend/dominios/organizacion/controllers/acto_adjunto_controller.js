@@ -5,11 +5,21 @@ import {
   abrirAdjuntoDelActo,
   adjuntarAlActo,
   listarActosYSuDocumento,
+  listarVidasDeLaClase,
   quitarAdjuntoDelActo
 } from "../services/actoAdjuntos.js";
 
 const responder = (res, error) => res.status(error.statusCode || 400).json({ message: error.message });
 const actor = (req) => Number(req.auth?.userId) || null;
+
+// Las vidas de una clase de nodo —unidad, puesto o proceso— con el nombre de su nodo.
+export const listarVidasConSuNodo = async (req, res) => {
+  try {
+    res.json(await listarVidasDeLaClase(req.params.clase));
+  } catch (error) {
+    responder(res, error);
+  }
+};
 
 export const listarActosDocumentos = async (req, res) => {
   try {

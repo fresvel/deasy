@@ -35,7 +35,7 @@
           </div>
           <div>
             <label :for="fieldId('email-1')" class="deasy-form-label">Correo electrónico</label>
-            <input :id="fieldId('email-1')" v-model="form.email" type="email" autocomplete="off" class="deasy-control" placeholder="admin@institucion.edu.ec" />
+            <input :id="fieldId('email-1')" v-model="form.email" type="email" autocomplete="off" class="deasy-control" placeholder="admin@domain.com" />
           </div>
           <div>
             <label :for="fieldId('first-name-1')" class="deasy-form-label">Nombres</label>
@@ -83,7 +83,7 @@
             </div>
             <div>
               <label :for="fieldId('email-2')" class="deasy-form-label">Correo electrónico</label>
-              <input :id="fieldId('email-2')" v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-control" placeholder="gestor@institucion.edu.ec" />
+              <input :id="fieldId('email-2')" v-model="gestorForm.email" type="email" autocomplete="off" class="deasy-control" placeholder="gestor@domain.com" />
             </div>
             <div>
               <label :for="fieldId('first-name-2')" class="deasy-form-label">Nombres</label>
@@ -125,7 +125,7 @@
             </div>
             <div>
               <label :for="fieldId('email-3')" class="deasy-form-label">Correo electrónico</label>
-              <input :id="fieldId('email-3')" v-model="usuarioForm.email" type="email" autocomplete="off" class="deasy-control" placeholder="usuario@institucion.edu.ec" />
+              <input :id="fieldId('email-3')" v-model="usuarioForm.email" type="email" autocomplete="off" class="deasy-control" placeholder="usuario@domain.com" />
             </div>
             <div>
               <label :for="fieldId('first-name-3')" class="deasy-form-label">Nombres</label>
@@ -390,17 +390,17 @@ const blankPerson = () => ({
 // el otro. El digito final es el `persons.id` que le toca a cada uno.
 const EXAMPLE_ADMIN = {
   cedula: "1234567897", first_name: "Administrador", last_name: "Principal",
-  email: "admin@institucion.edu.ec", whatsapp: "0990000000", password: "Demo1234!", confirm_password: "Demo1234!",
+  email: "admin@domain.com", whatsapp: "0990000000", password: "Demo1234!", confirm_password: "Demo1234!",
   signature_token: "FIRMAdemo1"
 };
 const EXAMPLE_GESTOR = {
   cedula: "0927654327", first_name: "Gestor", last_name: "Procesos",
-  email: "gestor@institucion.edu.ec", whatsapp: "", password: "Gestor1234!", confirm_password: "Gestor1234!",
+  email: "gestor@domain.com", whatsapp: "", password: "Gestor1234!", confirm_password: "Gestor1234!",
   signature_token: "FIRMAdemo2"
 };
 const EXAMPLE_USUARIO = {
   cedula: "1122334459", first_name: "Usuario", last_name: "Prueba",
-  email: "usuario@institucion.edu.ec", whatsapp: "", password: "Demo1234!", confirm_password: "Demo1234!",
+  email: "usuario@domain.com", whatsapp: "", password: "Demo1234!", confirm_password: "Demo1234!",
   signature_token: "FIRMAdemo3"
 };
 

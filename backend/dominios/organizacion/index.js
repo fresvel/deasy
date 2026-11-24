@@ -32,6 +32,7 @@ export {
   corregirFicheroDelActo,
   descargarFicheroDelActo,
   listarActosDocumentos,
+  listarVidasConSuNodo,
   quitarFicheroDelActo,
   quitarFicheroDelActoComoCorreccion
 } from "./controllers/acto_adjunto_controller.js";
