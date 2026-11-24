@@ -686,6 +686,11 @@ const buildGraph = () => {
     (p) => estadosVisibles.value.has(p.estado) && !hidden.has(String(p.id)) && (!rama || rama.has(String(p.id)))
   );
   const visibleIds = new Set(apiNodes.map((p) => String(p.id)));
+  // Cuántos subprocesos tiene cada uno ENTRE LOS QUE SE ESTÁN ENSEÑANDO por estado: es lo que
+  // anuncia su pestaña, y no puede prometer nodos que el filtro esconde.
+  const estadoDe = new Map((rawGraph.value.nodes || []).map((p) => [String(p.id), p.estado]));
+  const cuantosHijos = (id) =>
+    (childrenMap.value.get(String(id)) || []).filter((hijo) => estadosVisibles.value.has(estadoDe.get(hijo))).length;
   const rawNodes = apiNodes.map((p) => ({
     id: String(p.id),
     type: "process",
@@ -701,6 +706,7 @@ const buildGraph = () => {
       focused: enfocado.value === String(p.id),
       focusDepth: pilaDeEnfoque.value.length,
       hasChildren: childrenMap.value.has(String(p.id)),
+      childrenCount: cuantosHijos(p.id),
       collapsed: collapsedIds.value.has(String(p.id)),
       hasConfigs: Number(p.definitions_count) > 0,
       configsExpanded: expandedConfigIds.value.has(String(p.id)),
@@ -714,6 +720,8 @@ const buildGraph = () => {
       id: e.id,
       type: "process",
       source: String(e.parent_process_id),
+      // Cada clase de hijo sale de su pestaña: los subprocesos, de «sub»; las configuraciones, de «cfg».
+      sourceHandle: "sub",
       target: String(e.child_process_id),
       updatable: props.editable,
       markerEnd: { type: MarkerType.ArrowClosed, color: EDGE_COLOR },
@@ -752,6 +760,7 @@ const buildGraph = () => {
         id: `pc-${pid}-${cfg.definition_id}`,
         type: "process",
         source: pid,
+        sourceHandle: "cfg",
         target: `c-${cfg.definition_id}`,
         updatable: false,
         markerEnd: { type: MarkerType.ArrowClosed, color: CONFIG_EDGE_COLOR },

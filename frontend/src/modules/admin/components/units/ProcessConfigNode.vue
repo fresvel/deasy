@@ -29,18 +29,23 @@
       <span class="graph-node__dato" :class="[`graph-node__dato--${tonoEstado}`, tonoEstado === 'success' ? '' : 'graph-node__dato--destaca']">
         <span class="graph-node__punto"></span>{{ statusLabel }}
       </span>
+    </p>
+    <!-- LOS ENTREGABLES CUELGAN DE UNA PESTAÑA CENTRADA. La configuración sólo tiene una clase de
+         hijos, así que no hay lado que elegir: va en el eje, donde entra la línea por arriba y de
+         donde sale hacia el entregable, que el trazado coloca justo debajo. -->
+    <div v-if="data.templatesCount" class="nodrag graph-node__rama graph-node__rama--centro" :class="data.templatesExpanded ? '' : 'graph-node__rama--cerrada'">
       <button
-        v-if="data.templatesCount"
         type="button"
-        class="nodrag graph-node__toggle graph-node__dato"
+        class="graph-node__rama-boton"
         :title="data.templatesExpanded ? 'Ocultar entregables' : 'Mostrar entregables'"
         @click.stop="data.onToggleTemplates?.(data.definition_id)"
       >
         <IconChevronRight class="h-3 w-3 transition-transform" :class="data.templatesExpanded ? 'rotate-90' : ''" />
         {{ data.templatesCount }} entregable{{ data.templatesCount === 1 ? "" : "s" }}
       </button>
-    </p>
-    <Handle type="source" :position="Position.Bottom" class="graph-node__handle graph-node__handle--sm" :class="data.templatesCount ? '' : 'graph-node__handle--hidden'" />
+      <Handle type="source" :position="Position.Bottom" class="graph-node__handle graph-node__handle--sm" />
+    </div>
+    <Handle v-else type="source" :position="Position.Bottom" class="graph-node__handle graph-node__handle--sm graph-node__handle--hidden" />
   </div>
 </template>
 

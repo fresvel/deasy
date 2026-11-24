@@ -106,6 +106,100 @@
         color: var(--color-icon);
     }
 
+    /* LAS PESTAÑAS DE ABAJO: DE ELLAS CUELGA LO QUE DEPENDE DEL NODO. Son el espejo de la pestaña
+       del tipo: el contorno baja, rodea el rótulo y vuelve al borde inferior con la misma curva
+       de 6 px. La de arriba dice qué es el nodo; éstas, qué tiene debajo, y se pulsan.
+         · `--izquierda` continúa la franja de estado hacia abajo; `--derecha` cierra por el borde
+           derecho; `--centro` va en el eje, para el nodo que sólo tiene una clase de hijos.
+         · `--cerrada` es «hay algo recogido»: va rellena, como la pestaña activa de un menú, para
+           que llame a pulsarla. Desplegada queda en blanco, parte del nodo.
+       El conector de Vue Flow va DENTRO de la pestaña, así que la línea sale de su centro. */
+    .graph-node__rama {
+        --rama-fondo: var(--color-white);
+        position: absolute;
+        top: 100%;
+        display: flex;
+        align-items: center;
+        height: 22px;
+        border: 1px solid var(--nodo-borde);
+        border-top: 0;
+        border-radius: 0 0 6px 6px;
+        background: var(--rama-fondo);
+    }
+
+    .graph-node__rama--cerrada { --rama-fondo: var(--color-brand-50); }
+
+    .graph-node__rama--izquierda {
+        left: -4px;
+        border-left: 4px solid var(--nodo-franja);
+    }
+
+    .graph-node__rama--derecha { right: -1px; }
+
+    .graph-node__rama--centro {
+        left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Las curvas hacia fuera, una a cada lado que no toca el borde del nodo. */
+    .graph-node__rama--izquierda::after,
+    .graph-node__rama--centro::after,
+    .graph-node__rama--derecha::before,
+    .graph-node__rama--centro::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        width: 6px;
+        height: 6px;
+    }
+
+    .graph-node__rama--izquierda::after,
+    .graph-node__rama--centro::after {
+        right: -6px;
+        background: radial-gradient(
+            circle at 100% 100%,
+            transparent 4.6px,
+            var(--nodo-borde) 5.2px,
+            var(--nodo-borde) 5.8px,
+            var(--rama-fondo) 6.4px
+        );
+    }
+
+    .graph-node__rama--derecha::before,
+    .graph-node__rama--centro::before {
+        left: -6px;
+        background: radial-gradient(
+            circle at 0 100%,
+            transparent 4.6px,
+            var(--nodo-borde) 5.2px,
+            var(--nodo-borde) 5.8px,
+            var(--rama-fondo) 6.4px
+        );
+    }
+
+    .graph-node__rama-boton {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 100%;
+        padding: 0 8px;
+        border: 0;
+        background: none;
+        color: var(--color-muted);
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+        cursor: pointer;
+    }
+
+    .graph-node__rama--cerrada .graph-node__rama-boton,
+    .graph-node__rama-boton:hover {
+        color: var(--color-brand-600);
+    }
+
+    /* Ninguna configuración activa: la cuenta avisa, recogida o no. */
+    .graph-node__rama--aviso .graph-node__rama-boton { color: var(--color-warning-700); }
+
     /* UN DATO DEL NODO SIN CAJA (decisión del dueño, 2026-11-24): texto gris y, si lo lleva, un punto con el
        tono. `--destaca` tiñe también el texto: es para lo que NO es lo normal —suprimido, a
        medias, sin cubrir—. Los tonos de texto son los 700, que pasan de 4.5:1 sobre blanco. */
