@@ -59,13 +59,13 @@ tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
 
 | | |
 |---|---|
-| Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **38** |
-| Columnas de esas 38 | **353** |
-| Claves foráneas **entre** esas 38 | **87** |
-| Claves foráneas **declaradas en** esas 38 | **92** |
-| Tablas del esquema entero (con chat, empleo y dossier) | **93** |
+| Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **39** |
+| Columnas de esas 39 | **361** |
+| Claves foráneas **entre** esas 39 | **87** |
+| Claves foráneas **declaradas en** esas 39 | **92** |
+| Tablas del esquema entero (con chat, empleo y dossier) | **94** |
 | Claves foráneas del esquema entero | **173** |
-| Restricciones `CHECK` del esquema entero | **88** |
+| Restricciones `CHECK` del esquema entero | **90** |
 
 Las dos cifras de claves foráneas no son la misma, y la diferencia explica una pregunta que sale
 sola: **cinco** de las declaradas apuntan **fuera del mapa** —cuatro de `persons` (a `paises` dos
@@ -73,7 +73,7 @@ veces, a `cantones` y a `estados_civiles`) y `unit_relations` a `relation_unit_t
 [Campos de la cadena](/referencia/campos-proceso-documento/) cuenta una tabla más que el mapa: sin
 `relation_unit_types` las suyas quedarían colgando.
 
-Las siete cifras se volvieron a medir en el catálogo el **2026-11-23**: la tabla llevaba caducada
+Las siete cifras se volvieron a medir en el catálogo el **2026-11-24**: la tabla llevaba caducada
 desde que entraron las vidas y el acto, y decía 90 tablas y 36 `CHECK`.
 
 De las que apuntan fuera eran **tres** hasta el 2026-10-09: la tercera era `fill_flow_steps.relation_type_id`, una columna

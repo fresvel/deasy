@@ -80,7 +80,16 @@ export const RESOURCE_CATALOG = [
   { code: "catalogos", name: "Catalogos", description: "Geografia, vocabularios de persona, categorias de visa y la institucion." },
   // Leer la bitacora es de quien vigila, y NO es leer el dato: Auditor ve QUIEN accedio a lo de
   // alguien, no lo que vio.
-  { code: "bitacora_sensible", name: "Bitacora de accesos", description: "Quien leyo o cambio datos sensibles y de pago, y cuando." }
+  { code: "bitacora_sensible", name: "Bitacora de accesos", description: "Quien leyo o cambio datos sensibles y de pago, y cuando." },
+  // CORREGIR LA ESTRUCTURA NO ES EDITARLA (frente 27, D-05, punto 5). Editar es registrar lo que la
+  // institucion decide; corregir es reescribir algo que ya rigio porque estaba mal escrito. Lo
+  // segundo cambia la historia, y por eso NO lo tiene quien edita la estructura: `GestorUnidades` y
+  // `GestorProcesos` se quedan sin el a proposito.
+  //
+  // `create` REGISTRA una correccion; `read` lee la bitacora. `update`, `delete` y `manage` existen
+  // porque el catalogo da cinco acciones a todo recurso, pero NO LOS MIRA NADIE: una correccion no
+  // se modifica ni se borra -- lo rechaza la base--.
+  { code: "correcciones_estructura", name: "Correcciones de la estructura", description: "Corregir, con motivo, vigencias y relaciones de unidades, procesos y puestos que ya rigieron; y leer su bitacora." }
 ];
 
 export const SENSITIVE_RESOURCES = RESOURCE_CATALOG
@@ -349,5 +358,6 @@ export const TABLE_RESOURCE_MAP = {
   documentos_identidad: "datos_sensibles",
   persona_autoidentificacion: "datos_sensibles",
   // La bitacora: la leen Auditor y AdminSistema, y nadie la escribe desde /admin (hook en tableHooks).
-  accesos_sensibles: "bitacora_sensible"
+  accesos_sensibles: "bitacora_sensible",
+  correcciones_de_estructura: "correcciones_estructura"
 };

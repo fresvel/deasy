@@ -32,7 +32,7 @@ export default class ProcessGraphService {
               -- EL PADRE sale de la vista process_relacion_actual: la arista que cuenta hoy --la que
               -- rige; si no, la programada; si no, el borrador; si no, la ultima--. Es lo que se
               -- DIBUJA, y por eso un proceso en borrador o ya suprimido tambien tiene su sitio.
-              rel.parent_process_id AS parent_id, rel.estado AS relacion_estado,
+              rel.parent_process_id AS parent_id, rel.estado AS relacion_estado, rel.id AS relacion_id,
               -- EL CAMBIO QUE YA ESTA PROGRAMADO: cuando termina la relacion de hoy y de quien
               -- colgara despues. Sin esto, tras fechar un cambio a futuro la pantalla seguiria
               -- enseñando el padre de hoy como si no hubiera pasado nada.

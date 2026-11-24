@@ -675,3 +675,31 @@ test("processes ya no tiene columna de padre, y los niveles salen del arbol vige
   assert.match(niveles, /FROM unit_arbol_vigente ur/);
 });
 
+// LAS CORRECCIONES DE LA ESTRUCTURA (frente 27, D-05). La bitacora es la unica memoria de lo que una
+// fila decia antes de corregirse, asi que su forma se fija: solo altas, sin claves ajenas, y las
+// cinco tablas que se corrigen enganchadas a la regla que exige la entrada.
+test("la bitacora de correcciones solo admite altas y no tiene claves ajenas", () => {
+  const create = bloqueRecorrido("correcciones_de_estructura");
+  assert.ok(!/FOREIGN KEY/.test(create), "la prueba tiene que sobrevivir a la fila corregida y a quien la corrigio");
+  assert.match(create, /CONSTRAINT ck_correcciones_de_estructura_motivo CHECK \(char_length\(btrim\(motivo\)\) >= 10\)/);
+  assert.match(SCHEMA, /BEFORE UPDATE OR DELETE ON correcciones_de_estructura FOR EACH ROW EXECUTE FUNCTION rechazar_modificacion_de_bitacora\(\)/);
+});
+
+test("las cinco tablas que se corrigen exigen la entrada, y la lista coincide con la de la bitacora", () => {
+  const tablas = ["unit_vigencias", "position_vigencias", "process_vigencias", "unit_relations", "process_relations"];
+  for (const tabla of tablas) {
+    assert.match(SCHEMA, new RegExp(`BEFORE INSERT OR UPDATE ON ${tabla}\\s+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_registrada\\(\\)`), tabla);
+    assert.match(bloqueRecorrido("correcciones_de_estructura"), new RegExp(`'${tabla}'`), `la bitacora no admite ${tabla}`);
+  }
+});
+
+test("la marca de correccion no basta sola: tiene que existir la entrada, de esa tabla y de esa fila", () => {
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.correccion_en_curso(")).split("$$ LANGUAGE plpgsql")[0];
+  assert.match(cuerpo, /current_setting\('deasy\.correccion', true\)/);
+  assert.match(cuerpo, /SELECT 1 FROM correcciones_de_estructura c\s+WHERE c\.id = marca::BIGINT/);
+  assert.match(cuerpo, /c\.tabla = de_tabla AND \(c\.registro_id IS NULL OR c\.registro_id = de_registro\)/);
+  // Y la regla que protege los extremos de una relacion pregunta aqui antes de rechazar.
+  const extremos = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.rechazar_cambio_de_arista_empezada()")).split("$$ LANGUAGE plpgsql")[0];
+  assert.match(extremos, /IF correccion_en_curso\(TG_TABLE_NAME, OLD\.id\) THEN\s+RETURN NEW;/);
+});
+

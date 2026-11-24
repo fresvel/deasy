@@ -99,6 +99,14 @@
         "complemento/permisos.md"
       ]
     },
+    "correcciones_estructura": {
+      "motivo": "RBAC · recurso de permisos (`correcciones_estructura.create`) que protege el camino de correcciones y la tabla `correcciones_de_estructura`; no es una tabla.",
+      "paginas": [
+        "backend/auth.md",
+        "complemento/permisos.md",
+        "modelo/organizacion.md"
+      ]
+    },
     "campo_amplio_id": {
       "motivo": "FRENTE 18 · nombre del DISENO del expediente relacional, todavia NO implementado en el esquema. La seccion 5 de la pagina va precedida de un aviso :::caution que lo dice; el plan es docs/planes/expediente-relacional-2026-09.md. SE RETIRA DE ESTA LISTA cuando la tarea E3 cree la tabla o la columna: si sigue aqui despues de eso, la excepcion esta tapando una deriva de verdad.",
       "paginas": [

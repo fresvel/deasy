@@ -315,6 +315,36 @@ export const TABLE_HOOKS = {
     }
   },
 
+  // LA BITACORA DE CORRECCIONES TAMPOCO SE ESCRIBE DESDE /admin: sus altas las hace el camino de
+  // correcciones, en la misma transaccion que la correccion. Modificar y borrar los rechaza la base.
+  correcciones_de_estructura: {
+    async beforeCreate() {
+      throw forbidden("La bitacora de correcciones no admite altas desde el editor.");
+    },
+    async beforeUpdate() {
+      throw forbidden("La bitacora de correcciones no se modifica.");
+    }
+  },
+
+  // El arbol de procesos no puede tener ciclos, tampoco por el editor generico ni por una correccion
+  // (frente 27, D-04). Es el gemelo del gancho de `unit_relations`, mas abajo.
+  process_relations: {
+    async beforeCreate(ctx) {
+      const padre = Number(ctx.payload.parent_process_id);
+      const hijo = Number(ctx.payload.child_process_id);
+      if (padre && hijo && (await ctx.service.wouldCreateProcessCycle(padre, hijo))) {
+        throw new Error("La relación crearía un ciclo en la jerarquía de procesos.");
+      }
+    },
+    async beforeUpdate(ctx) {
+      const padre = Number(ctx.updates.parent_process_id ?? ctx.existing.parent_process_id);
+      const hijo = Number(ctx.updates.child_process_id ?? ctx.existing.child_process_id);
+      if (await ctx.service.wouldCreateProcessCycle(padre, hijo)) {
+        throw new Error("La relación crearía un ciclo en la jerarquía de procesos.");
+      }
+    }
+  },
+
   persons: {
     // Graft de SEGURIDAD: la contraseña nunca se guarda en claro y cada persona tiene un token
     // único. `sanitizePersonRow` (en el motor) se encarga de que el hash no salga en la respuesta.

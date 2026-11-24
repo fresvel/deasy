@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fraseDelCambioProgramado, necesitaFecha, useMoverNodo } from "./useMoverNodo.js";
+import { fraseDelCambioProgramado, necesitaFecha, origenesDelMovimiento, useMoverNodo } from "./useMoverNodo.js";
 
 describe("necesitaFecha", () => {
   it("una relación vigente no se pisa: siempre pregunta, también al desvincular", () => {
@@ -66,5 +66,44 @@ describe("fraseDelCambioProgramado", () => {
   it("sin cambio a la vista no dice nada", () => {
     expect(fraseDelCambioProgramado({ estado: "vigente" })).toBe("");
     expect(fraseDelCambioProgramado({ estado: "borrador", hasta: "2026-12-01" })).toBe("");
+  });
+});
+
+describe("origenesDelMovimiento", () => {
+  it("mover una relación que ya rige no ofrece «carga inicial»", () => {
+    expect(origenesDelMovimiento({ relacionVigente: true, padreId: 3, puedeCorregir: false })).toEqual(["reorganizacion"]);
+  });
+  it("con el permiso de corregir, y un padre al que moverla, ofrece también «corrección»", () => {
+    expect(origenesDelMovimiento({ relacionVigente: true, padreId: 3, puedeCorregir: true })).toEqual(["reorganizacion", "correccion"]);
+    // Desvincular no es corregible: una corrección no borra la relación.
+    expect(origenesDelMovimiento({ relacionVigente: true, padreId: null, puedeCorregir: true })).toEqual(["reorganizacion"]);
+  });
+  it("colgar por primera vez un nodo que ya tenía vida sí admite «carga inicial», y no «corrección»", () => {
+    expect(origenesDelMovimiento({ relacionVigente: false, padreId: 3, puedeCorregir: true })).toEqual(["carga_inicial", "reorganizacion"]);
+  });
+});
+
+describe("useMoverNodo · corrección", () => {
+  it("corregir no manda fecha: manda la relación, el padre y el motivo, por su propio camino", async () => {
+    const mover = vi.fn();
+    const corregir = vi.fn().mockResolvedValue({});
+    const m = useMoverNodo({ mover, corregir, puedeCorregir: true });
+    const hecho = m.pedir({ hijoId: 5, padreId: 3, aristaId: 12, estadoDeLaArista: "vigente", estadoDelNodo: "vigente" });
+    expect(m.peticion.value.origenes).toEqual(["reorganizacion", "correccion"]);
+    m.form.value.origen = "correccion";
+    m.form.value.motivo = "corto";
+    expect(m.sePuedeConfirmar.value).toBe(false);
+    m.form.value.motivo = "Se registró bajo el proceso equivocado";
+    await m.confirmar();
+    expect(corregir).toHaveBeenCalledWith({ aristaId: 12, padreId: 3, motivo: "Se registró bajo el proceso equivocado" });
+    expect(mover).not.toHaveBeenCalled();
+    await expect(hecho).resolves.toBe(true);
+  });
+
+  it("sin el permiso, el diálogo ni la ofrece", async () => {
+    const m = useMoverNodo({ mover: vi.fn(), corregir: vi.fn(), puedeCorregir: false });
+    m.pedir({ hijoId: 5, padreId: 3, aristaId: 12, estadoDeLaArista: "vigente", estadoDelNodo: "vigente" });
+    expect(m.peticion.value.origenes).toEqual(["reorganizacion"]);
+    m.cancelar();
   });
 });

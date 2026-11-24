@@ -85,6 +85,7 @@ const reglasDeArista = (tabla) => ({
 
 const MENSAJES_DE_CHECK = Object.freeze({
   ...Object.assign({}, ...Object.keys(TABLAS_DE_ARISTA).map(reglasDeArista)),
+  ck_correcciones_de_estructura_motivo: "Una corrección necesita su motivo, escrito (al menos 10 caracteres).",
   ck_actos_un_solo_emisor:
     "Un acto tiene exactamente un emisor: una unidad o un emisor externo, no los dos ni ninguno.",
   ck_actos_un_solo_suscriptor:

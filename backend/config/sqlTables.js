@@ -379,6 +379,25 @@ export const SQL_TABLES = [
     ],
     searchFields: []
   },
+  // LA BITACORA DE CORRECCIONES (frente 27, D-05): todo de solo lectura, y el gancho de
+  // tableHooks.js rechaza el alta. Aqui solo se CONSULTA quien corrigio que, por que, y que decia.
+  {
+    table: "correcciones_de_estructura",
+    label: "Correcciones de la estructura",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "ocurrido_at", label: "Cuando", type: "datetime", readOnly: true },
+      { name: "actor_person_id", label: "Quien corrigio", type: "number", readOnly: true },
+      { name: "tabla", label: "Tabla", type: "text", readOnly: true },
+      { name: "registro_id", label: "Registro", type: "number", readOnly: true },
+      { name: "motivo", label: "Motivo", type: "textarea", readOnly: true },
+      { name: "antes", label: "Antes", type: "textarea", readOnly: true },
+      { name: "despues", label: "Despues", type: "textarea", readOnly: true }
+    ],
+    searchFields: ["tabla", "motivo"]
+  },
   // EL ACTO que ordena un cambio de estructura (frente 27, D-05). Tres tablas: el catalogo de tipos,
   // el acto, y el enlace a su documento cuando se firmo aqui. El emisor es una unidad O un texto,
   // exactamente uno de los dos: lo impone la base (`ck_actos_un_solo_emisor`), no este formulario.

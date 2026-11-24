@@ -31,6 +31,7 @@ import {
   getUnitGraph,
   createUnitWithParent,
   setUnitParent,
+  corregirEstructura,
   getUnitDetail,
   getUnitProcesses,
   getUnitAttachableProcesses,
@@ -141,6 +142,7 @@ router.get("/processes/:id/detail", requireSqlAdminPermission({ table: "processe
 router.patch("/processes/:id/parent", requireSqlAdminPermission({ table: "processes", action: "update" }), setProcessParent);
 router.get("/units/graph", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitGraph);
 router.post("/units/with-parent", requireSqlAdminPermission({ resource: "units", action: "create" }), createUnitWithParent);
+router.post("/estructura/correcciones", requireSqlAdminPermission({ resource: "correcciones_estructura", action: "create" }), corregirEstructura);
 router.patch("/units/:id/parent", requireSqlAdminPermission({ resource: "units", action: "update" }), setUnitParent);
 router.get("/units/:id/detail", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitDetail);
 router.get("/units/:id/processes", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitProcesses);

@@ -1352,7 +1352,11 @@ const moverUnidad = useMoverNodo({
       ...extras,
       parent_unit_id: padreId ? Number(padreId) : null,
       relation_type_id: tipoDelMovimiento
-    })
+    }),
+  // Corregir arregla la relación de hoy en su sitio: le cambia el padre, con motivo.
+  corregir: ({ aristaId, padreId, motivo }) =>
+    adminSqlService.corregirEstructura({ tabla: "unit_relations", id: aristaId, cambios: { parent_unit_id: Number(padreId) }, motivo }),
+  puedeCorregir: vigencia.puedeCorregir
 });
 // El cambio de padre que ya tiene fecha, dicho en el modal de la unidad: el organigrama dibuja el de hoy.
 const cambioProgramado = computed(() => {
@@ -1378,7 +1382,8 @@ const cambiarPadre = (hijoId, padreId, relationTypeId) => {
     hijoNombre: hijo?.name || "",
     padreNombre: padreId ? nodeNameById.value.get(String(padreId)) || "" : "",
     estadoDeLaArista: arista?.estado,
-    estadoDelNodo: hijo?.estado
+    estadoDelNodo: hijo?.estado,
+    aristaId: arista?.id
   });
 };
 

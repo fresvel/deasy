@@ -26,6 +26,7 @@
             <option value="">—</option>
             <option value="carga_inicial">Carga inicial</option>
             <option value="reorganizacion">Reorganización</option>
+            <option v-if="vigencia.puedeCorregir" value="correccion">Corrección</option>
           </select>
         </label>
       </div>
@@ -49,6 +50,7 @@
               <option value="">—</option>
               <option value="carga_inicial">Carga inicial</option>
               <option value="reorganizacion">Reorganización</option>
+              <option v-if="vigencia.puedeCorregir" value="correccion">Corrección</option>
             </select>
           </label>
         </div>
@@ -66,6 +68,19 @@
           <AppButton variant="danger-outline" @click="$emit('descartar')">Descartar</AppButton>
         </div>
       </template>
+    </div>
+
+    <!-- UNA CORRECCIÓN PIDE SU MOTIVO. Aparece sola cuando lo que se va a guardar lo es: un origen
+         «corrección», o cambiar la fecha de inicio de una vida que ya empezó. -->
+    <div v-if="vigencia.vidaModo.value !== 'cerrada' && vigencia.esCorreccion.value" class="flex flex-col gap-2">
+      <AppAlert v-if="!vigencia.puedeCorregir" variant="warning">
+        Cambiar la fecha de inicio de una vida que ya empezó es una corrección, y registrar correcciones pide un permiso aparte que no tienes.
+      </AppAlert>
+      <label v-else class="deasy-form-label">
+        Motivo de la corrección
+        <textarea v-model="form.motivo" rows="2" class="deasy-control" placeholder="Qué estaba mal registrado y por qué"></textarea>
+        <span class="text-theme-xs font-normal text-muted">Queda en la bitácora de correcciones, con lo que decía antes y lo que dice ahora.</span>
+      </label>
     </div>
 
     <div v-if="vigencia.vidasAnteriores.value.length">
@@ -90,6 +105,7 @@
 
 <script setup>
 import { computed } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";

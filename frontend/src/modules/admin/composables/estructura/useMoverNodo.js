@@ -33,9 +33,18 @@ export const fraseDelCambioProgramado = ({ estado, hasta, proximoPadre, proximoD
 
 const hoy = () => new Date().toISOString().slice(0, 10);
 
-export const useMoverNodo = ({ mover }) => {
+/* QUÉ ORÍGENES SE OFRECEN. Mover una relación que YA RIGE es un cambio posterior a la carga, así que
+   «carga inicial» no tiene sentido ahí: o la institución lo movió —reorganización—, o estaba mal
+   registrado —corrección, si se tiene ese permiso y hay a dónde moverlo—. «Carga inicial» se queda
+   para la primera vez que se cuelga un nodo que ya tenía vida y ninguna relación. */
+export const origenesDelMovimiento = ({ relacionVigente, padreId, puedeCorregir }) => {
+  if (!relacionVigente) return ["carga_inicial", "reorganizacion"];
+  return puedeCorregir && padreId ? ["reorganizacion", "correccion"] : ["reorganizacion"];
+};
+
+export const useMoverNodo = ({ mover, corregir = null, puedeCorregir = false }) => {
   const peticion = ref(null);
-  const form = ref({ vigente_desde: "", origen: "", acto_id: "" });
+  const form = ref({ vigente_desde: "", origen: "", acto_id: "", motivo: "" });
   const error = ref("");
   const guardando = ref(false);
   let resolver = null;
@@ -47,14 +56,19 @@ export const useMoverNodo = ({ mover }) => {
     resolver = null;
   };
 
-  const pedir = async ({ hijoId, padreId = null, hijoNombre = "", padreNombre = "", estadoDeLaArista, estadoDelNodo }) => {
+  /* `aristaId` es la relación de hoy: hace falta para corregirla en su sitio. */
+  const pedir = async ({ hijoId, padreId = null, hijoNombre = "", padreNombre = "", estadoDeLaArista, estadoDelNodo, aristaId = null }) => {
     if (!necesitaFecha({ estadoDeLaArista, estadoDelNodo, padreId })) {
       await mover(hijoId, padreId, {});
       return true;
     }
-    form.value = { vigente_desde: hoy(), origen: "", acto_id: "" };
+    form.value = { vigente_desde: hoy(), origen: "", acto_id: "", motivo: "" };
     error.value = "";
-    peticion.value = { hijoId, padreId, hijoNombre, padreNombre };
+    const relacionVigente = estadoDeLaArista === "vigente";
+    peticion.value = {
+      hijoId, padreId, hijoNombre, padreNombre, aristaId, relacionVigente,
+      origenes: origenesDelMovimiento({ relacionVigente, padreId, puedeCorregir: puedeCorregir && Boolean(corregir) && Boolean(aristaId) })
+    };
     return new Promise((resolve) => {
       resolver = resolve;
     });
@@ -62,6 +76,8 @@ export const useMoverNodo = ({ mover }) => {
 
   const sePuedeConfirmar = computed(() => {
     const f = form.value;
+    // Una corrección no tiene fecha —arregla la relación en su sitio—: tiene motivo.
+    if (f.origen === "correccion") return String(f.motivo || "").trim().length >= 10;
     return Boolean(f.vigente_desde && f.origen && (f.origen !== "reorganizacion" || f.acto_id));
   });
 
@@ -71,6 +87,11 @@ export const useMoverNodo = ({ mover }) => {
     error.value = "";
     try {
       const f = form.value;
+      if (f.origen === "correccion") {
+        await corregir({ aristaId: peticion.value.aristaId, padreId: peticion.value.padreId, motivo: f.motivo.trim() });
+        cerrar(true);
+        return;
+      }
       await mover(peticion.value.hijoId, peticion.value.padreId, {
         vigente_desde: f.vigente_desde,
         origen: f.origen,

@@ -27,13 +27,13 @@ se encarga un trigger.
 `resources` y `actions` son dos catálogos gemelos —`id · code · name · description · is_active ·
 created_at · updated_at`, idénticos— y su producto cartesiano es `permissions`.
 
-Medido en la base sembrada el 2026-09-10: **19 recursos × 5 acciones = 95 permisos**, exactamente. No hay ni uno de
+Medido en la base sembrada el 2026-11-24: **20 recursos × 5 acciones = 100 permisos**, exactamente. No hay ni uno de
 más ni uno de menos: la siembra genera la matriz completa.
 
-Los 19 recursos son `account` · `dossier` · `security` · `people` · `units` · `academic_terms` ·
+Los 20 recursos son `account` · `dossier` · `security` · `people` · `units` · `academic_terms` ·
 `process_definitions` · `process_execution` · `templates` · `documents` · `fill_flows` ·
 `signature_flows` · `contracts` · `channels` · `legal_documents` · `datos_sensibles` · `datos_pago` ·
-`catalogos` · `bitacora_sensible` —los cuatro últimos, del 2026-09-10; ver [§5](#5--lo-sensible-quién-lo-ve-y-quién-lo-vio)—. Las 5 acciones, `read` · `create` · `update` ·
+`catalogos` · `bitacora_sensible` · `correcciones_estructura` —los cuatro anteriores al último, del 2026-09-10 (ver [§5](#5--lo-sensible-quién-lo-ve-y-quién-lo-vio)); el último, del 2026-11-24: corregir la estructura es un permiso aparte del de editarla (ver [La organización](/modelo/organizacion/#corregir-no-es-reorganizar))—. Las 5 acciones, `read` · `create` · `update` ·
 `delete` · `manage`.
 
 :::caution[Un recurso donde `read` y `manage` NO son una gradación]
@@ -143,6 +143,7 @@ catálogo. La marca no es decorativa: cambia tres reglas.
 | **`datos_pago`** | Las cuentas bancarias | `AdminSistema` · `GestorTalentoHumano` | `AdminSistema` |
 | `catalogos` | Geografía, vocabularios de persona, categorías de visa e `instituciones` | Todos los roles menos `Usuario` | `AdminSistema` |
 | `bitacora_sensible` | `accesos_sensibles` | `AdminSistema` · `Auditor` | Nadie desde `/admin` |
+| `correcciones_estructura` | `correcciones_de_estructura` | `AdminSistema` · `Auditor` | Nadie desde `/admin`: sólo el camino de correcciones, que tiene `AdminSistema` |
 
 **Por qué son sensibles.** La LOPDP nombra literalmente, en su Art. 4, «etnia, identidad de género,
 identidad cultural, […] condición migratoria, orientación sexual, salud», y el Art. 25 hace

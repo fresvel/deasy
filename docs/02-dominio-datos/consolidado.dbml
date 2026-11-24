@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 93 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 94 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -368,6 +368,22 @@ Table "contracts" {
   Indexes {
     (person_id, status) [type: btree, name: "idx_contracts_person_status"]
     (position_id, status) [type: btree, name: "idx_contracts_position_status"]
+  }
+}
+
+Table "correcciones_de_estructura" {
+  "id" int8 [pk, not null, increment]
+  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying])::text[])`]
+  "registro_id" int8
+  "actor_person_id" int4 [not null]
+  "motivo" text [not null, check: `char_length(btrim(motivo)) >= 10`]
+  "antes" jsonb
+  "despues" jsonb [not null]
+  "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (actor_person_id, ocurrido_at) [type: btree, name: "idx_correcciones_de_estructura_actor"]
+    (tabla, registro_id) [type: btree, name: "idx_correcciones_de_estructura_registro"]
   }
 }
 

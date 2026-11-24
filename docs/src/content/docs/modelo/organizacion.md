@@ -161,6 +161,45 @@ Hay dos lecturas, y son dos vistas:
   borrador; si no, la última que tuvo. Es lo que **dibuja** el organigrama, para que una unidad en
   borrador o ya suprimida tenga también su sitio.
 
+## Corregir no es reorganizar
+
+Cambiar algo que **ya rigió** puede ser dos cosas opuestas, y el sistema las separa:
+
+| | Qué pasó en la realidad | Qué se escribe |
+|---|---|---|
+| **Reorganización** | La institución movió algo | Se cierra un periodo y se abre otro, con el acto que lo ordena |
+| **Corrección** | Estaba mal registrado desde el principio | Se arregla la fila **en su sitio**, con un motivo, y queda en una bitácora lo que decía antes |
+
+Una corrección **reescribe la historia**, y por eso pide lo que un cambio normal no:
+
+- **Un permiso propio**, `correcciones_estructura`, distinto del de editar la estructura. Quien
+  administra unidades o procesos no lo tiene.
+- **Un motivo escrito.**
+- **El antes y el después**, en `correcciones_de_estructura`: quién, cuándo, por qué, qué decía la
+  fila y qué dice ahora. Sólo admite altas —ni se modifica ni se borra—, y es **la única memoria**
+  de lo que la fila decía.
+
+Tres cosas son corrección y sólo se pueden hacer así, en las vidas de unidades, puestos y procesos y
+en las relaciones de los dos árboles:
+
+1. **Cambiar la fecha de inicio de algo que ya empezó a regir.** Es afirmar que rigió desde otro día.
+2. **Cambiar el padre de una relación que ya rige**, sin cerrarla.
+3. **Escribir el origen «corrección»** en un inicio o en un fin — por ejemplo, para cerrar algo que
+   rigió por error.
+
+Poner fin a algo que rige **no** es una corrección: es suprimir. Y una corrección **no borra**: lo
+que rigió por error se cierra con origen «corrección», y así queda escrito que existió y que fue un
+error.
+
+La base no se fía de la aplicación para esto. Quien corrige escribe **primero** su entrada en la
+bitácora, y las reglas que protegen lo que ya rigió sólo ceden si esa entrada existe y es de esa
+tabla y de esa fila. No hay forma de saltarse una sin dejar escrito por qué.
+
+En la pantalla, mover un nodo cuya relación ya rige pregunta **qué pasó**: reorganización o
+corrección. «Carga inicial» no se ofrece ahí —mover algo que ya rige es, por definición, posterior a
+la carga—; se queda para colgar por primera vez un nodo que ya tenía vida. (La base sí la admite en
+un fin, porque sirve para cargar historia antigua: una unidad que existió de 2015 a 2020.)
+
 :::caution[Lo que la base NO decide]
 Qué pasa con las **hijas** de una unidad que se suprime. La base cierra la relación de la unidad
 suprimida con su padre, pero no toca las de sus hijas: adónde van es una decisión de quien

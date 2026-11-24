@@ -1,6 +1,6 @@
 ---
 title: Modelo de datos
-description: Las 93 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
+description: Las 94 tablas de PostgreSQL, en ocho diagramas por dominio, generados desde el esquema.
 sidebar:
   order: 1
 ---
@@ -11,8 +11,8 @@ generaba. Ahora las escribe `scripts/docs/gen-mapa-campos.mjs` entre marcas. Los
 `backend/database/postgres_schema.sql` cada vez que corre `scripts/docs/gen-dbml.sh`, y una
 puerta de CI impide que el esquema y estos dibujos se separen.
 
-Son **<!-- gen:total-tablas -->93<!-- /gen --> tablas y <!-- gen:total-relaciones -->173<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
-de <!-- gen:total-tablas -->93<!-- /gen --> tablas impresiona y no se lee.
+Son **<!-- gen:total-tablas -->94<!-- /gen --> tablas y <!-- gen:total-relaciones -->173<!-- /gen --> relaciones**, repartidas en ocho dominios porque un diagrama
+de <!-- gen:total-tablas -->94<!-- /gen --> tablas impresiona y no se lee.
 
 :::note[Cómo leer los diagramas]
 Cada dominio muestra **solo las relaciones internas**. Las que salen hacia otros dominios están
@@ -42,7 +42,7 @@ Quién es cada quien y qué puede hacer. `persons` es la identidad única del si
 ## Unidades, puestos y ocupación
 
 El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa.
-**<!-- gen:tablas-dominio:organizacion -->17<!-- /gen --> tablas.**
+**<!-- gen:tablas-dominio:organizacion -->18<!-- /gen --> tablas.**
 
 ![Diagrama del dominio de organización](/diagramas/organizacion.svg)
 

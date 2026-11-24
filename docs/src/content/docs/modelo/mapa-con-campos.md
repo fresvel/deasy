@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 38 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 39 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**38 tablas · 353 columnas · 92 claves ajenas · 10 diagramas.**
+**39 tablas · 361 columnas · 92 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -126,7 +126,7 @@ erDiagram
 
 ## La organización (2 de 2)
 
-**5 tablas** · 48 columnas · 14 claves ajenas propias. Apunta a `persons`, `relation_unit_types`, `unit_positions`, `units`, que salen como caja vacía.
+**6 tablas** · 56 columnas · 14 claves ajenas propias. Apunta a `persons`, `relation_unit_types`, `unit_positions`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -155,6 +155,16 @@ erDiagram
     text fin_origen
     int fin_acto_id FK
     timestamp created_at
+  }
+  correcciones_de_estructura {
+    bigint id PK
+    varchar tabla
+    bigint registro_id
+    int actor_person_id
+    text motivo
+    jsonb antes
+    jsonb despues
+    timestamp ocurrido_at
   }
   position_vigencias {
     int id PK

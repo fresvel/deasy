@@ -1147,7 +1147,11 @@ const confirmCreateProcess = async () => {
 // proceso tiene ya rige, pregunta desde cuándo; si es un borrador, la cambia sin más. Devuelve
 // `false` si se canceló.
 const moverProceso = useMoverNodo({
-  mover: (hijoId, padreId, extras) => adminSqlService.setProcessParent(Number(hijoId), padreId ? Number(padreId) : null, extras)
+  mover: (hijoId, padreId, extras) => adminSqlService.setProcessParent(Number(hijoId), padreId ? Number(padreId) : null, extras),
+  // Corregir arregla la relación de hoy en su sitio: le cambia el padre, con motivo.
+  corregir: ({ aristaId, padreId, motivo }) =>
+    adminSqlService.corregirEstructura({ tabla: "process_relations", id: aristaId, cambios: { parent_process_id: Number(padreId) }, motivo }),
+  puedeCorregir: vigencia.puedeCorregir
 });
 // El cambio de padre que ya tiene fecha, dicho en el modal del proceso: lo que se ve es el padre de hoy.
 const cambioProgramado = computed(() => {
@@ -1169,7 +1173,8 @@ const cambiarPadre = (hijoId, padreId) => {
     hijoNombre: hijo?.name || "",
     padreNombre: padreId ? nodeNameById.value.get(String(padreId)) || "" : "",
     estadoDeLaArista: hijo?.relacion_estado,
-    estadoDelNodo: hijo?.estado
+    estadoDelNodo: hijo?.estado,
+    aristaId: hijo?.relacion_id
   });
 };
 

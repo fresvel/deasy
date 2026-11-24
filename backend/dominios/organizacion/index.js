@@ -21,6 +21,10 @@ export { createProgram } from "./controllers/program_controler.js";
 // El organigrama: lo usa el editor genérico de `/admin` para su pestaña de unidades.
 export { default as OrgStructureService } from "./services/orgStructure.js";
 
+// Las correcciones de la estructura: la bitácora es de este dominio, y quien corrige —el editor de
+// `/admin`, sobre tablas de dos dominios— entra por aquí a dejar su entrada.
+export { registrarCorreccion, TABLAS_CON_CORRECCION } from "./services/correccionesDeEstructura.js";
+
 // La institución: quién es, y cuál es su país. Lo preguntan la recuperación de correo y el documento
 // de identidad —para saber qué documento es el «nacional»—.
 export { default as InstitucionService } from "./services/InstitucionService.js";

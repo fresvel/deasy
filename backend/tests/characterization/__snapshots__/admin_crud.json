@@ -726,6 +726,7 @@
       "proximo_padre_id",
       "relacion_estado",
       "relacion_hasta",
+      "relacion_id",
       "slug",
       "vigencia_id",
       "vigente_desde",

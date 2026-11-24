@@ -15,6 +15,12 @@
  */
 import { computed, ref } from "vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
+import { canAccessResource } from "@/core/utils/accessControl.js";
+
+/* Lo mínimo que la base acepta como motivo de una corrección. */
+export const MOTIVO_MINIMO = 10;
+/* ¿Puede esta persona corregir la estructura? Es un permiso aparte del de editarla. */
+export const puedeCorregirLaEstructura = () => canAccessResource("correcciones_estructura", "create");
 
 const VIDA_VACIA = Object.freeze({
   id: null,
@@ -23,7 +29,9 @@ const VIDA_VACIA = Object.freeze({
   inicio_acto_id: "",
   vigente_hasta: "",
   fin_origen: "",
-  fin_acto_id: ""
+  fin_acto_id: "",
+  /* Sólo se usa si lo que se guarda es una corrección. */
+  motivo: ""
 });
 
 const ETIQUETA_ORIGEN = Object.freeze({
@@ -51,7 +59,24 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     if (vidaModo.value === "editar") return "Guardar";
     return vidas.value.length ? "Reactivar" : "Poner en vigor";
   });
-  const sePuedeGuardar = computed(() => vidaModo.value !== "cerrada" && Boolean(vidaForm.value.vigente_desde));
+  /* La fecha de inicio con que se abrió el formulario: cambiarla, si ya ocurrió, es una corrección. */
+  const desdeOriginal = ref("");
+  const hoy = () => new Date().toISOString().slice(0, 10);
+
+  /* ¿LO QUE SE VA A GUARDAR ES UNA CORRECCIÓN? Dos casos, los mismos que exige la base: que un
+     origen diga «corrección», o que se cambie la fecha de inicio de una vida que ya empezó —eso es
+     afirmar que rigió desde otro día—. Poner fin a una vida NO lo es: es suprimir. */
+  const esCorreccion = computed(() => {
+    const f = vidaForm.value;
+    if (f.inicio_origen === "correccion" || (f.vigente_hasta && f.fin_origen === "correccion")) return true;
+    return vidaModo.value === "editar" && Boolean(desdeOriginal.value)
+      && desdeOriginal.value <= hoy() && f.vigente_desde !== desdeOriginal.value;
+  });
+  const sePuedeGuardar = computed(() =>
+    vidaModo.value !== "cerrada"
+    && Boolean(vidaForm.value.vigente_desde)
+    && (!esCorreccion.value || String(vidaForm.value.motivo || "").trim().length >= MOTIVO_MINIMO)
+  );
 
   /* Decide el modo a partir del periodo que cuenta hoy, que es lo que el nodo trae consigo
      (`estado`, `vigencia_id` y sus fechas). `lista` son todas sus vidas, si ya se conocen. */
@@ -66,17 +91,21 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
         inicio_acto_id: nodo.inicio_acto_id ? String(nodo.inicio_acto_id) : "",
         vigente_hasta: nodo.vigente_hasta || "",
         fin_origen: nodo.fin_origen || "",
-        fin_acto_id: nodo.fin_acto_id ? String(nodo.fin_acto_id) : ""
+        fin_acto_id: nodo.fin_acto_id ? String(nodo.fin_acto_id) : "",
+        motivo: ""
       };
+      desdeOriginal.value = nodo.vigente_desde || "";
       return;
     }
     vidaModo.value = nodo?.estado === "suprimido" ? "cerrada" : "nueva";
     vidaForm.value = { ...VIDA_VACIA };
+    desdeOriginal.value = "";
   };
 
   const empezarVidaNueva = () => {
     vidaModo.value = "nueva";
     vidaForm.value = { ...VIDA_VACIA };
+    desdeOriginal.value = "";
   };
 
   /* Los actos entre los que elegir cuando el origen es una reorganización. Se piden al abrir el
@@ -106,7 +135,17 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
       fin_origen: f.vigente_hasta ? (f.fin_origen || null) : null,
       fin_acto_id: f.fin_origen === "reorganizacion" && f.fin_acto_id ? Number(f.fin_acto_id) : null
     };
-    if (vidaModo.value === "editar" && f.id) {
+    const editando = vidaModo.value === "editar" && f.id;
+    // UNA CORRECCIÓN VA POR SU CAMINO: el editor de siempre la rechazaría, y es correcto que lo haga.
+    if (esCorreccion.value) {
+      return adminSqlService.corregirEstructura({
+        tabla,
+        id: editando ? f.id : null,
+        cambios: editando ? datos : { [claveDelNodo]: nodoId, ...datos },
+        motivo: String(f.motivo || "").trim()
+      });
+    }
+    if (editando) {
       return adminSqlService.update(tabla, { id: f.id }, datos);
     }
     return adminSqlService.create(tabla, { [claveDelNodo]: nodoId, ...datos });
@@ -133,6 +172,8 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     tituloDeLaVida,
     etiquetaDeGuardarVida,
     sePuedeGuardar,
+    esCorreccion,
+    puedeCorregir: puedeCorregirLaEstructura(),
     prepararVida,
     empezarVidaNueva,
     cargarActos,

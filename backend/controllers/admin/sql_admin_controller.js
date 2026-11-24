@@ -4,6 +4,7 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import SqlAdminService from "../../services/admin/SqlAdminService.js";
 import SqlAdminConBitacora from "../../services/admin/SqlAdminConBitacora.js";
+import CorreccionesDeEstructura from "../../services/estructura/CorreccionesDeEstructura.js";
 import { tablasLegibles } from "../../services/admin/tablasLegibles.js";
 import { parseAvailableFormats } from "../../services/admin/templates/artifacts.js";
 import { getPostgresPool } from "../../config/postgres.js";
@@ -29,6 +30,8 @@ const service = () => (_service ??= new SqlAdminService());
 // Envuelve a `service()`, asi que resolver el editor resuelve tambien el servicio — una sola vez.
 let _editor = null;
 const editor = () => (_editor ??= new SqlAdminConBitacora(service()));
+let _correcciones = null;
+const correcciones = () => (_correcciones ??= new CorreccionesDeEstructura(service()));
 
 // Quien accede, con que recurso -- lo deja `requireSqlAdminPermission`-- y desde donde.
 const contextoDeAcceso = (req) => ({
@@ -491,6 +494,17 @@ export const createProcessWithParent = async (req, res) => {
 export const setProcessParent = async (req, res) => {
   try {
     const result = await service().setProcessParent(req.params.id, req.body?.parent_id ?? null, req.body || {});
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+// Corrige, con motivo, algo de la estructura que ya rigió (frente 27, D-05). El permiso —propio, y
+// distinto del de editar la estructura— lo exige la ruta.
+export const corregirEstructura = async (req, res) => {
+  try {
+    const result = await correcciones().corregir(req.body || {}, contextoDeAcceso(req));
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });

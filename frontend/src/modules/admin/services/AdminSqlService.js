@@ -43,6 +43,12 @@ export class AdminSqlService {
     return this.httpClient.patch(API_ROUTES.ADMIN_SQL_PROCESS_PARENT(processId), { ...extras, parent_id: parentId });
   }
 
+  /* CORREGIR algo de la estructura que ya rigió: { tabla, id?, cambios, motivo }. Pide un permiso
+     propio (`correcciones_estructura.create`) y deja el antes y el después en su bitácora. */
+  corregirEstructura(payload) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_ESTRUCTURA_CORRECCIONES, payload);
+  }
+
   /* payload = { parent_unit_id, relation_type_id, vigente_desde?, origen?, acto_id? } */
   setUnitParent(unitId, payload) {
     return this.httpClient.patch(API_ROUTES.ADMIN_SQL_UNIT_PARENT(unitId), payload);

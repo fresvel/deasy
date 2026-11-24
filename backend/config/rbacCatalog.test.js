@@ -107,6 +107,13 @@ describe("catalogos y bitacora", () => {
     assert.deepEqual(rolesCon("catalogos", ESCRITURA), ["AdminSistema"]);
   });
 
+  // CORREGIR LA ESTRUCTURA NO ES EDITARLA (frente 27, D-05): quien edita unidades o procesos no
+  // puede reescribir lo que ya rigio. Si esto cambia, que sea a proposito.
+  it("corregir la estructura es solo de AdminSistema, y su bitacora la lee ademas Auditor", () => {
+    assert.deepEqual(rolesCon("correcciones_estructura", ["create"]), ["AdminSistema"]);
+    assert.deepEqual(rolesCon("correcciones_estructura", ["read"]), ["AdminSistema", "Auditor"]);
+  });
+
   it("la bitacora la leen AdminSistema y Auditor, y nadie mas", () => {
     assert.deepEqual(rolesCon("bitacora_sensible", TODAS), ["AdminSistema", "Auditor"]);
   });

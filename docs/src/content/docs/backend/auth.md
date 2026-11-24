@@ -171,7 +171,7 @@ flowchart TD
     CRM["cargo_role_map"] --> POSA
 ```
 
-Diecinueve recursos (`account`, `dossier`, `security`, `people`, `units`, `academic_terms`, `process_definitions`, `process_execution`, `templates`, `documents`, `fill_flows`, `signature_flows`, `contracts`, `channels`, `legal_documents`, `datos_sensibles`, `datos_pago`, `catalogos`, `bitacora_sensible`) por cinco acciones (`read`, `create`, `update`, `delete`, `manage`) dan **95 permisos**, y hay **13 roles** — medido en la base sembrada el 2026-09-10. Aquí ponía «trece recursos» y «70 permisos», que ni siquiera cuadraban entre sí: trece por cinco son 65.
+Veinte recursos (`account`, `dossier`, `security`, `people`, `units`, `academic_terms`, `process_definitions`, `process_execution`, `templates`, `documents`, `fill_flows`, `signature_flows`, `contracts`, `channels`, `legal_documents`, `datos_sensibles`, `datos_pago`, `catalogos`, `bitacora_sensible`, `correcciones_estructura`) por cinco acciones (`read`, `create`, `update`, `delete`, `manage`) dan **100 permisos**, y hay **13 roles** — medido en la base sembrada el 2026-09-10. Aquí ponía «trece recursos» y «70 permisos», que ni siquiera cuadraban entre sí: trece por cinco son 65.
 
 Dos sutilezas importantes:
 
