@@ -135,6 +135,13 @@ aplica una función de la base que llaman dos: un disparador, cuando la supresi�
 registrarla; y una tarea periódica del backend, cuando se registró con fecha futura y vence sin que
 nadie escriba nada. El nombre de la causa, `position_deactivated`, no cambió.
 
+Y desde ese mismo día **suprimir un puesto cierra también su ocupación**. Antes no: la persona seguía
+figurando como titular vigente de un puesto que la institución ya no reconocía. La función lo hace
+**después** de tratar los entregables, y el orden importa: cerrar una ocupación tiene su propio
+disparador, que deja huérfanos los entregables con la causa `occupancy_end` —«se fue el titular,
+vendrá otro»—; como para entonces ya tienen abierto su turno de `position_deactivated`, ese disparador
+no encuentra nada que tocar y la causa correcta se conserva.
+
 Lo que **no** hace es reasignar. El modelo no dice qué sustituye a un puesto desactivado —no hay «se
 fusionó con» ni «sus funciones pasan a»—, así que elegir sucesor sería adivinar. Los entregables
 afectados se listan para el jefe de la unidad, que decide.

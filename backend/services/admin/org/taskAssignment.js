@@ -595,11 +595,11 @@ export default class TaskAssignmentService {
                  AND pa2.is_current = 1
                  AND pa2.person_id = ti.assigned_person_id
             )
-            -- EL PUESTO SE DESACTIVO (D2). Hace falta como termino propio porque desactivar un
-            -- puesto NO cierra su ocupacion: la persona sigue figurando como titular vigente de un
-            -- puesto que ya no existe, asi que los dos terminos de arriba lo dan por sano. Sin esto,
-            -- un entregable EN FASE DE FIRMA anclado a un puesto desactivado no aparecia en ninguna
-            -- parte — y es justo el que necesita que lo mire alguien, porque el trigger no lo toca.
+            -- EL PUESTO SE SUPRIMIO (D2). Desde el 2026-11-23 suprimir un puesto SI cierra su
+            -- ocupacion, asi que el termino de arriba ya recoge al entregable EN FASE DE FIRMA
+            -- anclado a el --su responsable dejo de ocupar el puesto--. Este se queda porque dice
+            -- lo que importa sin depender de eso, y porque es de donde sale el motivo
+            -- «puesto_desactivado», que manda sobre «titular_se_fue».
             OR NOT puesto_rige(up.id)
           )
         ORDER BY up.unit_id ASC, ti.id ASC

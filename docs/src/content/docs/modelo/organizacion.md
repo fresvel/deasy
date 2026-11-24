@@ -61,8 +61,9 @@ forma y `puesto_rige(id)` para preguntarlo. Es donde más falta hacía: con una 
 que se suprime y se reabre al año sería *otro* puesto, y sus ocupaciones, entregables y relevos
 quedarían colgando del antiguo. Suprimir un puesto **deja sin responsable sus entregables en curso**
 —con la causa `position_deactivated`, y sin tocar los que ya están en firma, que quedan en el panel
-de quien encabeza la unidad— y **no cierra su ocupación**: la persona sigue figurando en un puesto
-que ya no rige. Lo aplica el mismo par que en la unidad: un disparador si la supresión ya rige, y la
+de quien encabeza la unidad— y **cierra su ocupación**: la persona deja de figurar como titular de
+un puesto que ya no rige, y pierde el rol que ese puesto le daba. Reactivar el puesto no la devuelve:
+hay que volver a designarla. Lo aplica el mismo par que en la unidad: un disparador si la supresión ya rige, y la
 tarea periódica si vence más adelante.
 
 Un puesto se identifica por `(unit_id, cargo_id, slot_no)` —«Coordinador de carrera, plaza 1, de la

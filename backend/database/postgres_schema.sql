@@ -3537,6 +3537,7 @@ CREATE OR REPLACE FUNCTION public.aplicar_supresion_de_puesto(puesto INT) RETURN
 AS $$
 DECLARE
   afectadas INT := 0;
+  n INT;
 BEGIN
   IF (SELECT pva.estado FROM position_vigencia_actual pva WHERE pva.position_id = puesto) IS DISTINCT FROM 'suprimido' THEN
     RETURN 0;
@@ -3561,6 +3562,26 @@ BEGIN
        SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
      );
   GET DIAGNOSTICS afectadas = ROW_COUNT;
+
+  -- Y SE CIERRA SU OCUPACION (decision del dueño del 2026-11-23). Hasta aqui suprimir un puesto
+  -- dejaba a la persona figurando como titular vigente de un puesto que ya no rige, y conservando
+  -- el rol que ese puesto le daba.
+  --
+  -- ⚠️ VA DESPUES DE LOS ENTREGABLES, Y EL ORDEN IMPORTA. Cerrar una ocupacion tiene su propio
+  -- disparador, que deja huerfanos los entregables de quien se va con la causa `occupancy_end`
+  -- --«se fue el titular, vendra otro»--. Aqui la causa es otra: el puesto dejo de existir y no va
+  -- a venir nadie. Como los entregables ya tienen abierto su turno de `position_deactivated`, aquel
+  -- disparador no encuentra nada que cerrar ni que abrir, y la causa correcta se conserva. Lo que
+  -- si hace, y se quiere, es revocar el rol derivado de esa ocupacion.
+  --
+  -- La fecha de fin es la del puesto: el primer dia en que ya no rige.
+  UPDATE position_assignments pa
+     SET is_current = 0,
+         end_date = COALESCE(pa.end_date, (SELECT pva.vigente_hasta FROM position_vigencia_actual pva WHERE pva.position_id = puesto), CURRENT_DATE)
+   WHERE pa.position_id = puesto AND pa.is_current = 1;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  afectadas := afectadas + n;
+
   RETURN afectadas;
 END;
 $$ LANGUAGE plpgsql;
@@ -3823,19 +3844,22 @@ BEGIN
        )
      );
 
-  -- Un puesto ya suprimido que aun tiene entregables en curso con un turno abierto que NO es el de
-  -- «puesto desactivado»: su supresion vencio y nadie la aplico.
+  -- Un puesto ya suprimido que aun tiene una ocupacion vigente, o entregables en curso con un turno
+  -- abierto que NO es el de «puesto desactivado»: su supresion vencio y nadie la aplico.
   RETURN QUERY
   SELECT 'puesto'::text, p.position_id, aplicar_supresion_de_puesto(p.position_id)
     FROM position_vigencia_actual p
    WHERE p.estado = 'suprimido'
-     AND EXISTS (
+     AND (
+       EXISTS (SELECT 1 FROM position_assignments pa WHERE pa.position_id = p.position_id AND pa.is_current = 1)
+       OR EXISTS (
        SELECT 1
          FROM task_items ti
          INNER JOIN task_item_tenures t ON t.task_item_id = ti.id AND t.ended_at IS NULL
         WHERE ti.responsible_position_id = p.position_id
           AND t.opened_by <> 'position_deactivated'
           AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+       )
      );
 END;
 $$ LANGUAGE plpgsql;

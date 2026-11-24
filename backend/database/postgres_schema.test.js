@@ -594,3 +594,16 @@ test("suprimir no destruye lo que se preparaba: el efecto solo actua sobre lo SU
   }
 });
 
+// SUPRIMIR UN PUESTO CIERRA SU OCUPACION, Y LO HACE DESPUES DE TRATAR SUS ENTREGABLES. El orden no es
+// estetico: cerrar una ocupacion tiene su propio disparador, que deja huerfanos los entregables con
+// la causa `occupancy_end` («se fue el titular, vendra otro»). Si fuera antes, esa causa ganaria a
+// `position_deactivated`, que es la verdadera: el puesto dejo de existir y no va a venir nadie.
+test("suprimir un puesto cierra su ocupacion despues de dejar huerfanos sus entregables", () => {
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.aplicar_supresion_de_puesto(")).split("$$ LANGUAGE plpgsql;")[0];
+  const huerfanos = cuerpo.indexOf("'position_deactivated', 'El puesto responsable se desactivo'");
+  const ocupacion = cuerpo.indexOf("UPDATE position_assignments pa");
+  assert.ok(huerfanos > 0, "la funcion ya no abre el turno de puesto desactivado");
+  assert.ok(ocupacion > 0, "la funcion ya no cierra la ocupacion");
+  assert.ok(huerfanos < ocupacion, "la ocupacion se cierra ANTES que los entregables: gana la causa equivocada");
+});
+
