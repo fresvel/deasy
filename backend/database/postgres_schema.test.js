@@ -529,3 +529,32 @@ test("las tablas de vigencias tienen las mismas reglas, con el nombre de su tabl
   }
 });
 
+// UN DISPARADOR NO PUEDE LEER UNA COLUMNA QUE SU TABLA YA NO TIENE. PostgreSQL no valida el cuerpo de
+// una funcion plpgsql al crearla: el esquema se aplica sin queja y el fallo sale al primer UPDATE.
+// Paso el 2026-11-23 con `units.is_active` --se retiro la columna y el disparador de «unidad
+// inactivada» se quedo leyendo `OLD.is_active`-- y rompio toda actualizacion de una unidad sin que
+// lo viera ninguna puerta. Esto cruza cada disparador con las columnas de SU tabla.
+test("ningun disparador lee con OLD/NEW una columna que su tabla no declara", () => {
+  const cuerpos = new Map();
+  for (const m of SCHEMA.matchAll(/CREATE OR REPLACE FUNCTION public\.(\w+)\(\) RETURNS trigger[\s\S]*?AS \$\$([\s\S]*?)\$\$ LANGUAGE plpgsql;/g)) {
+    cuerpos.set(m[1], m[2]);
+  }
+  const disparadores = [...SIN_COMENTARIOS.matchAll(/CREATE OR REPLACE TRIGGER (\w+)\s+[\s\S]*?\bON (\w+)[\s\S]*?EXECUTE FUNCTION (\w+)\(/g)];
+  assert.ok(disparadores.length > 20, `se esperaban decenas de disparadores y salieron ${disparadores.length}`);
+  let cruzados = 0;
+  for (const [, nombre, tabla, funcion] of disparadores) {
+    const cuerpo = cuerpos.get(funcion);
+    if (!cuerpo) continue; // funciones genericas con otra firma: no leen columnas por nombre
+    const create = bloqueRecorrido(tabla);
+    const sinComentarios = cuerpo.split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+    for (const [, columna] of sinComentarios.matchAll(/\b(?:OLD|NEW)\.(\w+)/g)) {
+      cruzados += 1;
+      assert.ok(
+        new RegExp(`^\\s*${columna}\\s`, "m").test(create),
+        `${nombre} (sobre ${tabla}) lee ${columna}, que ${tabla} no declara`
+      );
+    }
+  }
+  assert.ok(cruzados > 30, `se cruzaron solo ${cruzados} lecturas: el test se quedo sin mirar`);
+});
+

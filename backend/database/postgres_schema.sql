@@ -3627,32 +3627,51 @@ CREATE OR REPLACE TRIGGER trg_persons_after_update
 AFTER UPDATE ON persons
 FOR EACH ROW EXECUTE FUNCTION trg_persons_after_update_fn();
 
--- 5) Unidad inactivada: revoca roles y cancela vacantes abiertas.
-CREATE OR REPLACE FUNCTION public.trg_units_after_update_fn() RETURNS trigger
+-- 5) Unidad SUPRIMIDA: revoca roles y cancela vacantes abiertas.
+--
+-- ⚠️ ESTE DISPARADOR VIVIA SOBRE `units` Y LEIA `OLD.is_active`, Y ROMPIO TODA ACTUALIZACION DE UNA
+-- UNIDAD durante unas horas del 2026-11-23: la columna se retiro (frente 27, D-03) y el disparador
+-- se quedo. PostgreSQL no valida el cuerpo de una funcion plpgsql al crearla, asi que el esquema se
+-- aplicaba sin queja y el fallo --`record "old" has no field "is_active"`-- solo salia al hacer un
+-- UPDATE. No lo vio ninguna puerta, ni las 317 pruebas de caracterizacion: ninguna actualiza una
+-- unidad. Lo vigila desde entonces `postgres_schema.test.js`.
+--
+-- Una unidad ya no se «inactiva» con un UPDATE: se le pone fin a su vida, en `unit_vigencias`. Asi
+-- que el disparador vive ALLI, y actua cuando esa vida termina hoy o antes y a la unidad no le
+-- queda ninguna otra que rija.
+--
+-- ⚠️ LO QUE NO CUBRE, Y ES UNA DECISION ABIERTA: un fin con fecha FUTURA. Al registrarlo la unidad
+-- sigue rigiendo y aqui no pasa nada; el dia que llega la fecha no se dispara nada, porque nadie
+-- escribe ninguna fila. Los roles y las vacantes de esa unidad se quedan como estaban hasta que
+-- algo los revise.
+CREATE OR REPLACE FUNCTION public.trg_unit_vigencias_cierre_fn() RETURNS trigger
   -- Un disparador no puede depender del search_path de quien lo dispara.
   SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
 AS $$
 BEGIN
-  IF OLD.is_active = 1 AND NEW.is_active = 0 THEN
+  IF NEW.vigente_hasta IS NOT NULL
+     AND NEW.vigente_hasta <= CURRENT_DATE
+     AND (TG_OP = 'INSERT' OR OLD.vigente_hasta IS DISTINCT FROM NEW.vigente_hasta)
+     AND NOT unidad_rige(NEW.unit_id) THEN
     UPDATE role_assignments
     SET is_current = 0,
         end_date = COALESCE(end_date, CURRENT_DATE),
         revoked_at = now(),
         revoked_reason = 'unit_inactivated'
-    WHERE unit_id = NEW.id AND is_current = 1;
+    WHERE unit_id = NEW.unit_id AND is_current = 1;
 
     UPDATE vacancies v
     SET status = 'cancelada', closed_at = now()
     FROM unit_positions up
-    WHERE up.id = v.position_id AND up.unit_id = NEW.id AND v.status = 'abierta';
+    WHERE up.id = v.position_id AND up.unit_id = NEW.unit_id AND v.status = 'abierta';
   END IF;
   RETURN NULL;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE TRIGGER trg_units_after_update
-AFTER UPDATE ON units
-FOR EACH ROW EXECUTE FUNCTION trg_units_after_update_fn();
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_cierre
+AFTER INSERT OR UPDATE ON unit_vigencias
+FOR EACH ROW EXECUTE FUNCTION trg_unit_vigencias_cierre_fn();
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────
 -- Un solo principal por persona: marcar uno DESMARCA al anterior.

@@ -38,6 +38,18 @@ mutuamente y no habría orden en que crearlas. `unit_vigencias` se declara despu
 apunta a ambas. Una unidad **nace en borrador**, sin ninguna vida; las que el sistema instala rigen
 desde la instalación, como carga inicial.
 
+**Suprimir una unidad tiene efectos, y los dispara la base.** Cuando su vida termina hoy o antes —y
+no le queda otra que rija—, un disparador sobre `unit_vigencias` revoca los roles vigentes asignados
+en esa unidad (`revoked_reason = 'unit_inactivated'`) y cancela las vacantes abiertas de sus puestos.
+
+:::caution[Un fin con fecha futura no dispara nada el día que llega]
+Si la supresión se registra para una fecha que aún no ha llegado, la unidad sigue rigiendo y no pasa
+nada, que es lo correcto. Pero **el día que llega esa fecha tampoco pasa nada**: nadie escribe ninguna
+fila, así que ningún disparador corre, y los roles y las vacantes de esa unidad se quedan como
+estaban. Las consultas que preguntan `unidad_rige` sí dejan de verla desde ese día. Qué ejecuta esos
+efectos al vencer la fecha es una decisión abierta.
+:::
+
 Un puesto se identifica por `(unit_id, cargo_id, slot_no)` —«Coordinador de carrera, plaza 1, de la
 Carrera de Sistemas»— y lleva un `position_type` cerrado por `CHECK` a `real`, `promocion` o
 `simbolico`.
