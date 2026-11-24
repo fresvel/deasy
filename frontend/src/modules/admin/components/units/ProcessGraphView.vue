@@ -385,7 +385,7 @@ import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { tonoCicloVida, tonoCorrida, etiquetaCicloVida, tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
-import { VueFlow, MarkerType } from "@vue-flow/core";
+import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
 import { toBlob } from "html-to-image";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
@@ -413,6 +413,7 @@ const emit = defineEmits([
   "add-template", "clone-template", "guided-update-template", "open-template-editor", "notify"
 ]);
 
+const { fitView } = useVueFlow();
 const NODE_W = 260;
 const NODE_H = 64;
 const CONFIG_W = 190;
@@ -532,6 +533,49 @@ const hiddenByCollapse = computed(() => {
   return hidden;
 });
 
+// VER EL MAPA DESDE UN PROCESO HACIA ABAJO, igual que el organigrama desde una unidad: él pasa a
+// ser la raíz y lo demás desaparece. Es una pila: «volver» regresa a la vista anterior, no al mapa
+// entero. Sus configuraciones y entregables le siguen, porque cuelgan de procesos que se ven.
+const pilaDeEnfoque = ref([]);
+const enfocado = computed(() => pilaDeEnfoque.value[pilaDeEnfoque.value.length - 1] || null);
+const ramaEnfocada = computed(() => {
+  if (!enfocado.value) return null;
+  const rama = new Set([enfocado.value]);
+  const bajar = (id) => {
+    (childrenMap.value.get(id) || []).forEach((hijo) => {
+      if (!rama.has(hijo)) {
+        rama.add(hijo);
+        bajar(hijo);
+      }
+    });
+  };
+  bajar(enfocado.value);
+  return rama;
+});
+const reencuadrar = () => {
+  buildGraph();
+  setTimeout(() => fitView({ duration: 400, padding: 0.25, maxZoom: 1.2 }), 60);
+};
+const enfocar = (processId) => {
+  const id = String(processId);
+  if (enfocado.value === id) return;
+  if (collapsedIds.value.has(id)) {
+    const next = new Set(collapsedIds.value);
+    next.delete(id);
+    collapsedIds.value = next;
+  }
+  pilaDeEnfoque.value = [...pilaDeEnfoque.value, id];
+  reencuadrar();
+};
+const volverDelEnfoque = () => {
+  pilaDeEnfoque.value = pilaDeEnfoque.value.slice(0, -1);
+  reencuadrar();
+};
+const quitarElEnfoque = () => {
+  pilaDeEnfoque.value = [];
+  reencuadrar();
+};
+
 const toggleCollapse = (processId) => {
   const id = String(processId);
   const next = new Set(collapsedIds.value);
@@ -633,8 +677,13 @@ const layout = (rawNodes, rawEdges) => {
 
 const buildGraph = () => {
   const hidden = hiddenByCollapse.value;
+  // Si el proceso enfocado ya no está —se eliminó—, se vuelve al mapa entero.
+  if (enfocado.value && !(rawGraph.value.nodes || []).some((p) => String(p.id) === enfocado.value)) {
+    pilaDeEnfoque.value = [];
+  }
+  const rama = ramaEnfocada.value;
   const apiNodes = (rawGraph.value.nodes || []).filter(
-    (p) => estadosVisibles.value.has(p.estado) && !hidden.has(String(p.id))
+    (p) => estadosVisibles.value.has(p.estado) && !hidden.has(String(p.id)) && (!rama || rama.has(String(p.id)))
   );
   const visibleIds = new Set(apiNodes.map((p) => String(p.id)));
   const rawNodes = apiNodes.map((p) => ({
@@ -645,8 +694,12 @@ const buildGraph = () => {
       ...p,
       editable: props.editable,
       onAddChild,
-      onAddSibling,
       onToggleCollapse: toggleCollapse,
+      onFocus: enfocar,
+      onUnfocus: volverDelEnfoque,
+      onUnfocusAll: quitarElEnfoque,
+      focused: enfocado.value === String(p.id),
+      focusDepth: pilaDeEnfoque.value.length,
       hasChildren: childrenMap.value.has(String(p.id)),
       collapsed: collapsedIds.value.has(String(p.id)),
       hasConfigs: Number(p.definitions_count) > 0,
@@ -1099,11 +1152,6 @@ const launchConfiguration = (cfg) => {
   emit("launch-config", payload);
 };
 
-const parentProcessIdOf = (childId) => {
-  const edge = (rawGraph.value.edges || []).find((e) => String(e.child_process_id) === String(childId));
-  return edge ? edge.parent_process_id : null;
-};
-
 const openCreateProcess = (mode, parentProcessId, anchorName) => {
   if (!props.editable) return;
   createForm.value = { name: "", slug: "" };
@@ -1112,25 +1160,12 @@ const openCreateProcess = (mode, parentProcessId, anchorName) => {
 const onAddChild = (processId) => {
   openCreateProcess("child", processId, nodeNameById.value.get(String(processId)));
 };
-const onAddSibling = (processId) => {
-  const parentId = parentProcessIdOf(processId);
-  openCreateProcess("sibling", parentId, nodeNameById.value.get(String(processId)));
-};
 
-const createDialogTitle = computed(() => {
-  if (createContext.value?.mode === "child") return "Agregar sub-proceso";
-  if (createContext.value?.mode === "sibling") return "Agregar proceso hermano";
-  return "Agregar proceso";
-});
+const createDialogTitle = computed(() => (createContext.value?.mode === "child" ? "Agregar sub-proceso" : "Agregar proceso"));
 const createDialogHint = computed(() => {
   const ctx = createContext.value;
   if (!ctx) return "";
   if (ctx.mode === "child") return `Se creará como sub-proceso de "${ctx.anchorName}".`;
-  if (ctx.mode === "sibling") {
-    return ctx.parentProcessId
-      ? `Se creará bajo el mismo padre que "${ctx.anchorName}".`
-      : `"${ctx.anchorName}" es raíz: el nuevo proceso se creará sin padre.`;
-  }
   return "Se creará como proceso raíz (sin padre).";
 });
 

@@ -11,6 +11,16 @@
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle" />
 
+    <!-- La vuelta de una vista enfocada: como en el organigrama, a la izquierda y siempre a la vista. -->
+    <div v-if="data.focused" class="nodrag nopan graph-node__toolbar graph-node__toolbar--izquierda">
+      <button type="button" class="graph-node__btn graph-node__btn--accent" title="Volver a la vista anterior" @click.stop="data.onUnfocus?.()">
+        <IconArrowBackUp class="h-4 w-4" />
+      </button>
+      <button v-if="data.focusDepth > 1" type="button" class="graph-node__btn" title="Volver al mapa completo" @click.stop="data.onUnfocusAll?.()">
+        <IconSitemap class="h-4 w-4" />
+      </button>
+    </div>
+
     <div v-if="hover" class="nodrag nopan graph-node__toolbar">
       <button
         v-if="data.hasChildren"
@@ -22,14 +32,18 @@
         <IconChevronDown v-if="data.collapsed" class="h-4 w-4" />
         <IconChevronUp v-else class="h-4 w-4" />
       </button>
-      <template v-if="data.editable">
-        <button type="button" class="graph-node__btn" title="Agregar proceso hijo" @click.stop="data.onAddChild?.(data.id)">
-          <IconCornerDownRight class="h-4 w-4" />
-        </button>
-        <button type="button" class="graph-node__btn" title="Agregar proceso hermano" @click.stop="data.onAddSibling?.(data.id)">
-          <IconPlus class="h-4 w-4" />
-        </button>
-      </template>
+      <button
+        v-if="data.hasChildren && !data.focused"
+        type="button"
+        class="graph-node__btn"
+        title="Ver sólo este proceso y lo que depende de él"
+        @click.stop="data.onFocus?.(data.id)"
+      >
+        <IconFocusCentered class="h-4 w-4" />
+      </button>
+      <button v-if="data.editable" type="button" class="graph-node__btn" title="Agregar proceso hijo" @click.stop="data.onAddChild?.(data.id)">
+        <IconCornerDownRight class="h-4 w-4" />
+      </button>
     </div>
 
     <!-- El estado va SIEMPRE, también cuando rige, y en el mismo sitio que el de la configuración:
@@ -63,7 +77,7 @@ import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { IconCornerDownRight, IconPlus, IconChevronUp, IconChevronDown, IconChevronRight } from "@tabler/icons-vue";
+import { IconCornerDownRight, IconChevronUp, IconChevronDown, IconChevronRight, IconFocusCentered, IconArrowBackUp, IconSitemap } from "@tabler/icons-vue";
 
 const props = defineProps({
   data: { type: Object, required: true }
