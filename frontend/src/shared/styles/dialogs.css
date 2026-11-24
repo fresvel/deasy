@@ -18,6 +18,20 @@
         @apply rounded-xl border border-line bg-white shadow-[var(--elev-3)];
     }
 
+    /* EL PANEL QUE NO CRECE MÁS QUE LA PANTALLA (2026-11-23). Un modal con pestañas cuyo contenido
+       puede ser largo: el panel se acota al alto de la ventana y se vuelve columna, para que quien
+       lo use deje fijas la cabecera, las pestañas y el pie y haga desplazable SOLO el contenido.
+
+       Hace falta porque el modal se centra con flex, y un panel más alto que la ventana centrado así
+       empuja su parte de arriba FUERA del área desplazable: la cabecera queda inalcanzable. Pasó en
+       el organigrama, abriendo una unidad con diez puestos.
+
+       El `4rem` son los `py-8` de `.deasy-dialog-root`, arriba y abajo. */
+    .deasy-dialog-panel--viewport {
+        @apply flex flex-col;
+        max-height: calc(100vh - 4rem);
+    }
+
     .deasy-dialog-header {
         @apply border-b border-line bg-white px-5 py-4 sm:px-6;
     }

@@ -124,8 +124,11 @@
     <AppModalShell
       v-if="Boolean(detailProcess)"
       controlled
-      :open="Boolean(detailProcess)" :title="detailProcess.name || 'Proceso'" content-class="max-w-3xl" @close="closeDetail">
-      <div class="deasy-inline-tabs" role="tablist">
+      :open="Boolean(detailProcess)" :title="detailProcess.name || 'Proceso'" content-class="deasy-dialog-panel--viewport max-w-3xl" body-class="flex min-h-0 flex-col" footer-class="shrink-0" @close="closeDetail">
+      <!-- EL MODAL NO CRECE MÁS QUE LA PANTALLA, y lo que se desplaza es el contenido de la pestaña:
+           las pestañas, el aviso y los botones se quedan siempre a la vista. Sin esto, una pestaña
+           larga (diez puestos) empujaba la cabecera fuera de la pantalla y no había forma de volver. -->
+      <div class="deasy-inline-tabs shrink-0" role="tablist">
         <button
           v-for="pestana in PESTANAS_DEL_PROCESO"
           :key="pestana.id"
@@ -141,9 +144,9 @@
         </button>
       </div>
 
-      <AppAlert v-if="modalError" variant="danger" class="mt-3">{{ modalError }}</AppAlert>
+      <AppAlert v-if="modalError" variant="danger" class="mt-3 shrink-0">{{ modalError }}</AppAlert>
 
-      <div class="mt-4">
+      <div class="mt-4 min-h-0 flex-1 overflow-y-auto">
         <!-- Pestaña: Datos — identidad y vigencia -->
         <div v-show="detailTab === 'datos'" class="flex flex-col gap-3">
           <label class="deasy-form-label">
