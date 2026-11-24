@@ -1,14 +1,14 @@
 <template>
   <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center justify-between gap-3">
-      <!-- Izquierda: regresar + título + contador + ayuda -->
-      <div class="flex items-center gap-2 text-sm text-muted">
+      <!-- Izquierda: regresar y ayuda -->
+      <div class="flex items-center gap-2">
         <AppButton variant="neutral-outline" icon-only title="Regresar" aria-label="Regresar" @click="$emit('go-back')">
           <IconArrowLeft class="h-4 w-4" />
         </AppButton>
-        <span class="font-semibold text-body">Mapa de procesos</span>
-        <span class="text-xs">· {{ nodes.length }} procesos · {{ edges.length }} relaciones</span>
-        <AppInfoTip placement="bottom" aria-label="Ayuda del mapa de procesos">
+        <!-- Sin el rótulo «Mapa de procesos · N procesos · N relaciones»: repetía la pestaña en la que
+             ya se está. Y la ayuda es un botón del mismo alto que sus vecinos, como en el organigrama. -->
+        <AppInfoTip as-button placement="bottom-start" aria-label="Ayuda del mapa de procesos">
           <template v-if="editable">
             Jerarquía padre→hijo de procesos (procesos macro y sub-procesos). Pulsa un proceso para abrirlo; pasa el
             cursor sobre él para agregarle hijos, o arrastra desde su punto inferior al superior de otro para

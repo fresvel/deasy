@@ -65,7 +65,8 @@ const props = defineProps({
     type: String,
     default: "Más información"
   },
-  // Posición de la burbuja respecto al ícono: top | bottom | left | right.
+  // Posición de la burbuja respecto al ícono: top | bottom | left | right, y `bottom-start` /
+  // `bottom-end` para alinearla a un borde del ícono en vez de centrarla.
   placement: {
     type: String,
     default: "top"
@@ -77,6 +78,11 @@ const open = ref(false);
 const PLACEMENT_CLASSES = {
   top: "bottom-full left-1/2 mb-2 -translate-x-1/2",
   bottom: "top-full left-1/2 mt-2 -translate-x-1/2",
+  /* La burbuja mide 16rem y centrada sobresale 8rem a cada lado del ícono: pegado al borde
+     izquierdo de la pantalla, la mitad quedaba recortada por el contenedor. Estas dos la anclan a
+     un borde del ícono y crecen hacia dentro. */
+  "bottom-start": "top-full left-0 mt-2",
+  "bottom-end": "top-full right-0 mt-2",
   left: "right-full top-1/2 mr-2 -translate-y-1/2",
   right: "left-full top-1/2 ml-2 -translate-y-1/2"
 };

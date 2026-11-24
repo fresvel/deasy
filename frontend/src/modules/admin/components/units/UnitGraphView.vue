@@ -11,7 +11,7 @@
         <AppButton variant="neutral-outline" icon-only title="Regresar" aria-label="Regresar" @click="$emit('go-back')">
           <IconArrowLeft class="h-4 w-4" />
         </AppButton>
-        <AppInfoTip as-button placement="bottom" aria-label="Ayuda del organigrama">
+        <AppInfoTip as-button placement="bottom-start" aria-label="Ayuda del organigrama">
           <template v-if="editable">
             Pulsa una unidad para abrirla: sus datos, su vigencia, sus puestos y sus procesos. Pasa el cursor
             sobre ella para agregarle hijas, o arrastra desde su punto inferior al superior de otra para crear
@@ -274,111 +274,127 @@
         <AppEmpty v-else-if="!detailPositions.length">
           Esta unidad no tiene puestos registrados.
         </AppEmpty>
-        <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
-          <li v-for="pos in detailPositions" :key="pos.id" class="rounded-xl border border-line px-3 py-2.5">
-            <div class="flex items-center gap-2">
-              <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-warning" title="Jefatura" />
-              <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
-              <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
-              <span v-if="!pos.is_active" class="ml-auto text-theme-xs font-semibold text-danger">Inactivo</span>
-              <div v-if="editable" class="ml-auto flex items-center gap-2">
-                <AppButton
-                  :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
-                  icon-only
-                  title="Marcar/quitar jefatura"
-                  aria-label="Marcar/quitar jefatura"
-                  @click="toggleHead(pos)"
-                >
-                  <IconCrown class="h-5 w-5" />
-                </AppButton>
-                <AppButton
-                  variant="success-soft"
-                  icon-only
-                  title="Editar puesto"
-                  aria-label="Editar puesto"
-                  @click="openEditPosition(pos)"
-                >
-                  <IconPencil class="h-5 w-5" />
-                </AppButton>
-                <AppButton
-                  variant="danger-soft"
-                  icon-only
-                  title="Eliminar puesto"
-                  aria-label="Eliminar puesto"
-                  @click="removePosition(pos.id)"
-                >
-                  <IconTrash class="h-5 w-5" />
-                </AppButton>
-              </div>
-            </div>
-            <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
-              <template v-if="pos.person_id">
-                <AppTag variant="success">Ocupado</AppTag>
-                <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
-                <div v-if="editable" class="ml-auto flex items-center gap-2">
-                  <AppButton
-                    variant="success-soft"
-                    icon-only
-                    title="Cambiar persona asignada"
-                    aria-label="Cambiar persona asignada"
-                    @click="openAssign(pos.id)"
-                  >
-                    <IconUserEdit class="h-5 w-5" />
-                  </AppButton>
-                  <AppButton
-                    variant="danger-soft"
-                    icon-only
-                    title="Quitar persona del puesto"
-                    aria-label="Quitar persona del puesto"
-                    @click="unassign(pos.id)"
-                  >
-                    <IconUserMinus class="h-5 w-5" />
-                  </AppButton>
+        <template v-else>
+          <!-- LAS TRES CLASES DE PUESTO, COMO SUBPESTAÑAS (2026-11-23). Una plaza con contrato, una
+               jefatura por designación y una función sin contrato propio son cosas distintas, y en
+               una unidad grande iban mezcladas. «Todas» va delante y es la que abre: la mayoría de
+               las unidades tienen dos puestos, y partirlos en tres pestañas los escondería. En
+               «Todas» se ven agrupados por clase; las otras tres filtran. Cada una dice cuántos hay. -->
+          <ProfileSubsectionTabs v-model="clasePuestos" nested :tabs="pestanasDeClase" aria-label="Clases de puesto" class="mb-3" />
+          <AppEmpty v-if="!gruposDePuestos.length">
+            Esta unidad no tiene puestos de esta clase.
+          </AppEmpty>
+          <div v-else class="flex flex-col gap-4">
+            <section v-for="grupo in gruposDePuestos" :key="grupo.clase">
+              <p v-if="clasePuestos === 'todas'" class="deasy-overline mb-2">{{ grupo.rotulo }} · {{ grupo.puestos.length }}</p>
+              <ul class="m-0 flex list-none flex-col gap-2 p-0">
+                <li v-for="pos in grupo.puestos" :key="pos.id" class="rounded-xl border border-line px-3 py-2.5">
+                <div class="flex items-center gap-2">
+                  <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-warning" title="Jefatura" />
+                  <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
+                  <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
+                  <span v-if="!pos.is_active" class="ml-auto text-theme-xs font-semibold text-danger">Inactivo</span>
+                  <div v-if="editable" class="ml-auto flex items-center gap-2">
+                    <AppButton
+                      :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
+                      icon-only
+                      title="Marcar/quitar jefatura"
+                      aria-label="Marcar/quitar jefatura"
+                      @click="toggleHead(pos)"
+                    >
+                      <IconCrown class="h-5 w-5" />
+                    </AppButton>
+                    <AppButton
+                      variant="success-soft"
+                      icon-only
+                      title="Editar puesto"
+                      aria-label="Editar puesto"
+                      @click="openEditPosition(pos)"
+                    >
+                      <IconPencil class="h-5 w-5" />
+                    </AppButton>
+                    <AppButton
+                      variant="danger-soft"
+                      icon-only
+                      title="Eliminar puesto"
+                      aria-label="Eliminar puesto"
+                      @click="removePosition(pos.id)"
+                    >
+                      <IconTrash class="h-5 w-5" />
+                    </AppButton>
+                  </div>
                 </div>
-              </template>
-              <template v-else>
-                <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
+                <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                  <template v-if="pos.person_id">
+                    <AppTag variant="success">Ocupado</AppTag>
+                    <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
+                    <div v-if="editable" class="ml-auto flex items-center gap-2">
+                      <AppButton
+                        variant="success-soft"
+                        icon-only
+                        title="Cambiar persona asignada"
+                        aria-label="Cambiar persona asignada"
+                        @click="openAssign(pos.id)"
+                      >
+                        <IconUserEdit class="h-5 w-5" />
+                      </AppButton>
+                      <AppButton
+                        variant="danger-soft"
+                        icon-only
+                        title="Quitar persona del puesto"
+                        aria-label="Quitar persona del puesto"
+                        @click="unassign(pos.id)"
+                      >
+                        <IconUserMinus class="h-5 w-5" />
+                      </AppButton>
+                    </div>
+                  </template>
+                  <template v-else>
+                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
+                    <AppButton
+                      v-if="editable"
+                      variant="success-soft"
+                      icon-only
+                      class-name="ml-auto"
+                      title="Asignar persona al puesto"
+                      aria-label="Asignar persona al puesto"
+                      @click="openAssign(pos.id)"
+                    >
+                      <IconUserPlus class="h-5 w-5" />
+                    </AppButton>
+                  </template>
+                </div>
+
+                <!-- Acceso al wizard de perfil (visible, con texto) -->
                 <AppButton
                   v-if="editable"
-                  variant="success-soft"
-                  icon-only
-                  class-name="ml-auto"
-                  title="Asignar persona al puesto"
-                  aria-label="Asignar persona al puesto"
-                  @click="openAssign(pos.id)"
+                  variant="neutral-outline"
+                  class-name="mt-2"
+                  @click="openProfileWizard(pos)"
                 >
-                  <IconUserPlus class="h-5 w-5" />
+                  <IconFileDescription class="h-3.5 w-3.5" />
+                  {{ pos.profile ? 'Editar perfil' : 'Definir perfil' }}
                 </AppButton>
-              </template>
-            </div>
 
-            <!-- Acceso al wizard de perfil (visible, con texto) -->
-            <AppButton
-              v-if="editable"
-              variant="neutral-outline"
-              class-name="mt-2"
-              @click="openProfileWizard(pos)"
-            >
-              <IconFileDescription class="h-3.5 w-3.5" />
-              {{ pos.profile ? 'Editar perfil' : 'Definir perfil' }}
-            </AppButton>
-
-            <!-- Buscador de persona para asignar -->
-            <div v-if="editable && assignForId === pos.id" class="deasy-card mt-2 p-2">
-              <input v-model="personQuery" type="text" aria-label="Buscar persona por nombre o cédula" placeholder="Buscar persona (nombre o cédula)…" class="deasy-control" @input="searchPersons" />
-              <div v-if="personSearching" class="mt-1 px-1 text-theme-xs text-muted">Buscando…</div>
-              <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-2 overflow-y-auto p-0">
-                <li v-for="per in personResults" :key="per.id">
-                  <button type="button" class="deasy-option deasy-option--split" @click="pickPerson(per.id)">
-                    <span class="truncate text-body">{{ per.first_name }} {{ per.last_name }}</span>
-                    <span class="ml-2 shrink-0 text-muted">{{ per.cedula }}</span>
-                  </button>
-                </li>
+                <!-- Buscador de persona para asignar -->
+                <div v-if="editable && assignForId === pos.id" class="deasy-card mt-2 p-2">
+                  <input v-model="personQuery" type="text" aria-label="Buscar persona por nombre o cédula" placeholder="Buscar persona (nombre o cédula)…" class="deasy-control" @input="searchPersons" />
+                  <div v-if="personSearching" class="mt-1 px-1 text-theme-xs text-muted">Buscando…</div>
+                  <ul v-else-if="personResults.length" class="m-0 mt-1 flex max-h-40 list-none flex-col gap-2 overflow-y-auto p-0">
+                    <li v-for="per in personResults" :key="per.id">
+                      <button type="button" class="deasy-option deasy-option--split" @click="pickPerson(per.id)">
+                        <span class="truncate text-body">{{ per.first_name }} {{ per.last_name }}</span>
+                        <span class="ml-2 shrink-0 text-muted">{{ per.cedula }}</span>
+                      </button>
+                    </li>
+                  </ul>
+                  <AppEmpty v-else-if="personQuery.trim().length >= 2" :icon="false">Sin resultados.</AppEmpty>
+                </div>
+              </li>
               </ul>
-              <AppEmpty v-else-if="personQuery.trim().length >= 2" :icon="false">Sin resultados.</AppEmpty>
-            </div>
-          </li>
-        </ul>
+            </section>
+          </div>
+        </template>
         </div>
 
         <!-- Pestaña: Procesos de la unidad (alcance) -->
@@ -511,6 +527,7 @@ import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import NodeVigenciaPanel from "./NodeVigenciaPanel.vue";
+import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import AppCheckMenu from "@/shared/components/forms/AppCheckMenu.vue";
 import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
 import UnitNode from "./UnitNode.vue";
@@ -563,6 +580,30 @@ const createContext = ref(null);
 const createForm = ref({ name: "", slug: "", unit_type_id: "" });
 const detailUnit = ref(null);
 const detailPositions = ref([]);
+// LAS CLASES DE PUESTO como subpestañas de «Ocupaciones». El orden es el de la tabla que explicó el
+// dueño: la plaza con contrato, la jefatura por designación, y la función sin contrato propio.
+const CLASES_DE_PUESTO = [
+  { clase: "real", rotulo: "Reales" },
+  { clase: "promocion", rotulo: "Promoción" },
+  { clase: "simbolico", rotulo: "Simbólicas" }
+];
+const claseDe = (pos) => pos.position_type || "real";
+const clasePuestos = ref("todas");
+const pestanasDeClase = computed(() => [
+  { key: "todas", label: "Todas", count: detailPositions.value.length },
+  ...CLASES_DE_PUESTO.map(({ clase, rotulo }) => ({
+    key: clase,
+    label: rotulo,
+    count: detailPositions.value.filter((pos) => claseDe(pos) === clase).length
+  }))
+]);
+// Los grupos que se pintan: todos en «Todas», uno solo al filtrar; y nunca un grupo vacío.
+const gruposDePuestos = computed(() =>
+  CLASES_DE_PUESTO
+    .filter(({ clase }) => clasePuestos.value === "todas" || clasePuestos.value === clase)
+    .map((grupo) => ({ ...grupo, puestos: detailPositions.value.filter((pos) => claseDe(pos) === grupo.clase) }))
+    .filter((grupo) => grupo.puestos.length)
+);
 const detailLoading = ref(false);
 const detailTab = ref("datos");
 // El error de lo que se intenta DENTRO del modal se enseña dentro: en la página quedaba tapado.
@@ -851,6 +892,7 @@ const openDetail = async (unitId) => {
   // La pestaña «Vigencia» se prepara ya con lo que trae el grafo, y se completa con el detalle.
   vigencia.prepararVida(u, []);
   modalError.value = "";
+  clasePuestos.value = "todas";
   if (props.editable) vigencia.cargarActos();
   detailTab.value = "datos";
   detailProcesses.value = [];
