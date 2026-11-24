@@ -10,11 +10,11 @@
 
     <!-- La última vida terminó: se puede abrir otra, pero no sin pedirlo. -->
     <div v-if="vigencia.vidaModo.value === 'cerrada'" class="flex flex-col items-start gap-3">
-      <p class="m-0 text-sm text-icon">{{ sujeto }} sin vida en curso. Reactivar abre una vida nueva; la anterior queda en su historia.</p>
+      <p class="m-0 text-sm text-icon">{{ sujeto }} sin vida en curso. Reactivar abre una vida nueva; la anterior queda en su historia. Lo que se cerró al suprimir no vuelve solo: hay que asignarlo otra vez.</p>
       <div v-if="editable" class="flex flex-wrap items-center gap-2">
         <AppButton variant="primary-outline" @click="$emit('reactivar')">Reactivar</AppButton>
         <!-- Otra cosa distinta: decir que el fin estaba MAL registrado. Sólo para quien puede corregir. -->
-        <AppButton v-if="vigencia.puedeCorregir && vigencia.sePuedeCorregirElFin.value" variant="neutral-outline" @click="vigencia.empezarCorreccionDelFin()">Corregir el fin</AppButton>
+        <AppButton v-if="vigencia.puedeCorregir && vigencia.sePuedeCorregirElFin.value" variant="neutral-outline" @click="vigencia.empezarCorreccionDelFin()">Corregir la fecha del fin</AppButton>
       </div>
     </div>
 
@@ -46,7 +46,7 @@
         <div class="grid grid-cols-2 gap-3">
           <label class="deasy-form-label">
             Rige hasta
-            <input v-model="form.vigente_hasta" type="date" class="deasy-control" :disabled="!editable" />
+            <input v-model="form.vigente_hasta" type="date" class="deasy-control" :disabled="!editable" :max="vigencia.corrigiendoElFin.value ? vigencia.hoy() : undefined" />
           </label>
           <label class="deasy-form-label">
             Origen del fin
@@ -66,6 +66,32 @@
           </select>
         </label>
         <p class="m-0 text-theme-xs text-muted">«Rige hasta» es el primer día en que ya no rige.</p>
+        <p v-if="vigencia.corrigiendoElFin.value" class="m-0 text-theme-xs text-muted">
+          Aquí sólo se corrige la fecha, y a otra que ya haya ocurrido. Un fin pasado no se quita: para que vuelva a regir, cancela y reactiva.
+        </p>
+        <!-- SUPRIMIR, Y LO QUE ARRASTRA: se dice ANTES, que es cuando se puede evitar. -->
+        <AppAlert v-if="vigencia.suprimeMasAdelante.value" variant="info">
+          Dejará de regir el {{ form.vigente_hasta }}. Hasta ese día no se cierra nada, y la fecha se puede cambiar o quitar.
+        </AppAlert>
+        <div v-if="vigencia.suprimeYa.value" class="flex flex-col gap-2">
+          <AppAlert variant="warning">
+            <template v-if="vigencia.efectosQueSeCierran.value.length">
+              Al guardar se {{ cuantos(vigencia.efectosQueSeCierran.value) === 1 ? "cerrará" : "cerrarán" }}
+              <strong>{{ fraseDeEfectos(vigencia.efectosQueSeCierran.value) }}</strong>.
+              No se recuperan al reactivar, y un fin que ya ocurrió no se puede quitar.
+            </template>
+            <template v-else>
+              Suprimir rige desde hoy, y un fin que ya ocurrió no se puede quitar: para que vuelva a regir habrá que reactivarlo.
+            </template>
+            <template v-if="vigencia.efectosQueSeQuedan.value.length">
+              Además hay {{ fraseDeEfectos(vigencia.efectosQueSeQuedan.value) }}: no cambian de padre por su cuenta, y quedarán colgando de algo que ya no rige.
+            </template>
+          </AppAlert>
+          <label class="flex items-center gap-2 text-sm text-strong">
+            <input v-model="form.confirmaSupresion" type="checkbox" :disabled="!editable" />
+            Entiendo que no se puede deshacer
+          </label>
+        </div>
         <!-- Una vida que aún no ha empezado se puede descartar entera; una que ya rige, no: se le pone fin. -->
         <div v-if="editable && vigencia.sePuedeDescartar.value" class="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2.5">
           <p class="m-0 text-theme-xs text-muted">Esta vida todavía no ha empezado. Si no va a ocurrir, se puede descartar.</p>
@@ -113,7 +139,9 @@ import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
-import { etiquetaOrigen } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
+import { etiquetaOrigen, fraseDeEfectos } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
+
+const cuantos = (efectos) => efectos.reduce((suma, e) => suma + e.n, 0);
 
 const props = defineProps({
   /* Lo que devuelve `useNodeVigencia`. Se pasa entero: la pestaña es la cara de ese estado. */

@@ -106,6 +106,7 @@ export const API_ROUTES = {
   ADMIN_SQL_OPERATION_STATS: `${API_PREFIX}/admin/sql/stats/operation`,
   ADMIN_SQL_UNITS_GRAPH: (relationType = "org") => `${API_PREFIX}/admin/sql/units/graph?relation_type=${encodeURIComponent(relationType)}`,
   ADMIN_SQL_UNITS_WITH_PARENT: `${API_PREFIX}/admin/sql/units/with-parent`,
+  ADMIN_SQL_ESTRUCTURA_EFECTOS: (clase, id) => `${API_PREFIX}/admin/sql/estructura/efectos-de-suprimir/${clase}/${id}`,
   ADMIN_SQL_ESTRUCTURA_CORRECCIONES: `${API_PREFIX}/admin/sql/estructura/correcciones`,
   ADMIN_SQL_UNIT_PARENT: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/parent`,
   ADMIN_SQL_UNIT_DETAIL: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/detail`,

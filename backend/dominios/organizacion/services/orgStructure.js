@@ -30,6 +30,7 @@ import {
   cerrarRelacion,
   borrarRelacion
 } from "../datos/unidades.js";
+import { contarEfectosDeSuprimir, CLASES_DE_NODO } from "../datos/consulta/efectosDeSuprimir.js";
 import { planDeMovimiento } from "../../../services/estructura/planDeMovimiento.js";
 import {
   listarVidasDeLosPuestos,
@@ -326,6 +327,16 @@ export default class OrgStructureService {
     return { ok: true };
   }
 
+
+  // Qué se cierra al suprimir una unidad, un puesto o un proceso, y cuánto hay: para advertirlo ANTES.
+  async efectosDeSuprimir(clase, nodoId) {
+    this.ensurePool();
+    const id = Number(nodoId);
+    if (!CLASES_DE_NODO.includes(clase) || !id) {
+      throw new Error("Falta decir qué se va a suprimir.");
+    }
+    return { clase, id, efectos: await contarEfectosDeSuprimir(this.pool, clase, id) };
+  }
 
   // MOVER UNA UNIDAD DE PADRE (frente 27, D-04). Con aristas fechadas no es un UPDATE: qué hay que
   // hacer lo decide `planDeMovimiento` según el estado de la arista de hoy —reemparejar un borrador,

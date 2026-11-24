@@ -43,6 +43,11 @@ export class AdminSqlService {
     return this.httpClient.patch(API_ROUTES.ADMIN_SQL_PROCESS_PARENT(processId), { ...extras, parent_id: parentId });
   }
 
+  /* Qué se cerraría al suprimir una `unidad`, un `puesto` o un `proceso`: para advertirlo antes. */
+  getEfectosDeSuprimir(clase, id) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_ESTRUCTURA_EFECTOS(clase, id));
+  }
+
   /* CORREGIR algo de la estructura que ya rigió: { tabla, id?, cambios, motivo }. Pide un permiso
      propio (`correcciones_estructura.create`) y deja el antes y el después en su bitácora. */
   corregirEstructura(payload) {

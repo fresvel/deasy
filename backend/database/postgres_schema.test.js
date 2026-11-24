@@ -707,6 +707,16 @@ test("la marca de correccion no basta sola: tiene que existir la entrada, de esa
 test("cambiar una fecha que ya ocurrio, de inicio o de fin, exige la correccion registrada", () => {
   const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.exigir_correccion_registrada()")).split("$$ LANGUAGE plpgsql")[0];
   assert.match(cuerpo, /OLD\.vigente_desde <= CURRENT_DATE\s+AND NEW\.vigente_desde IS DISTINCT FROM OLD\.vigente_desde\s+AND NOT correccion_en_curso/);
-  assert.match(cuerpo, /OLD\.vigente_hasta <= CURRENT_DATE\s+AND NEW\.vigente_hasta IS DISTINCT FROM OLD\.vigente_hasta\s+AND NOT correccion_en_curso/);
+  assert.match(cuerpo, /OLD\.vigente_hasta <= CURRENT_DATE\s+AND NEW\.vigente_hasta IS DISTINCT FROM OLD\.vigente_hasta THEN/);
+});
+
+// Decision del dueño, 2026-11-25: un fin que ya ocurrio NO SE QUITA NI SE APLAZA, ni como correccion.
+// Suprimir cierra ademas lo que colgaba del nodo y reabrir no lo devuelve; el camino es reactivar.
+test("quitar o aplazar un fin ya ocurrido se rechaza ANTES de mirar si hay correccion", () => {
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.exigir_correccion_registrada()")).split("$$ LANGUAGE plpgsql")[0];
+  const rechazo = cuerpo.indexOf("IF NEW.vigente_hasta IS NULL OR NEW.vigente_hasta > CURRENT_DATE THEN");
+  const cede = cuerpo.indexOf("Terminó el %, y esa fecha ya ocurrió: cambiarla es una corrección");
+  assert.ok(rechazo > 0, "la regla ya no distingue quitar o aplazar de corregir la fecha");
+  assert.ok(rechazo < cede, "una correccion podria quitar un fin ya ocurrido");
 });
 

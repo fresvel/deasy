@@ -13,7 +13,7 @@
  * Las reglas —una reorganización exige acto, dos vidas no se solapan, el fin lleva su origen— NO
  * están aquí: las impone la base, y lo que rechace llega como mensaje a quien llama a `guardarVida`.
  */
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 import { canAccessResource } from "@/core/utils/accessControl.js";
 
@@ -31,8 +31,19 @@ const VIDA_VACIA = Object.freeze({
   fin_origen: "",
   fin_acto_id: "",
   /* Sólo se usa si lo que se guarda es una corrección. */
-  motivo: ""
+  motivo: "",
+  /* La casilla de «entiendo que no se recupera»: sólo cuenta si la supresión rige ya. */
+  confirmaSupresion: false
 });
+
+const CLASE_DE = Object.freeze({ unit_vigencias: "unidad", position_vigencias: "puesto", process_vigencias: "proceso" });
+
+/* LA FRASE DE LO QUE SE CIERRA: «21 roles asignados y 2 vacantes abiertas». */
+export const fraseDeEfectos = (efectos = []) => {
+  const partes = efectos.map((e) => `${e.n} ${e.n === 1 ? e.singular : e.plural}`);
+  if (partes.length <= 1) return partes[0] || "";
+  return `${partes.slice(0, -1).join(", ")} y ${partes[partes.length - 1]}`;
+};
 
 const ETIQUETA_ORIGEN = Object.freeze({
   carga_inicial: "Carga inicial",
@@ -78,16 +89,58 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     const finCambiado = Boolean(hastaOriginal.value) && hastaOriginal.value <= hoy() && (f.vigente_hasta || "") !== hastaOriginal.value;
     return inicioCambiado || finCambiado;
   });
+
+  /* SUPRIMIR, Y LO QUE ARRASTRA. Poner fin a una vida que no lo tenía es suprimir. Si esa fecha ya
+     llegó —hoy o antes—, la base cierra en el acto lo que colgaba del nodo y NO lo devuelve al
+     reactivar; y un fin que ya ocurrió no se puede quitar. El único momento de evitar el error es
+     antes, así que ahí se dice qué se va a cerrar y se pide confirmarlo. Con fecha futura no se
+     cierra nada todavía: se avisa de cuándo, y de que hasta entonces se puede cambiar. */
+  const nodoId = ref(null);
+  const efectos = ref([]);
+  const suprime = computed(() => vidaModo.value === "editar" && !hastaOriginal.value && Boolean(vidaForm.value.vigente_hasta));
+  const suprimeYa = computed(() => suprime.value && vidaForm.value.vigente_hasta <= hoy());
+  const suprimeMasAdelante = computed(() => suprime.value && vidaForm.value.vigente_hasta > hoy());
+  const efectosQueSeCierran = computed(() => efectos.value.filter((e) => e.seCierra));
+  const efectosQueSeQuedan = computed(() => efectos.value.filter((e) => !e.seCierra));
+  const cargarEfectos = async () => {
+    const clase = CLASE_DE[tabla];
+    if (!clase || !nodoId.value) return;
+    try {
+      const { data } = await adminSqlService.getEfectosDeSuprimir(clase, nodoId.value);
+      efectos.value = data?.efectos || [];
+    } catch {
+      efectos.value = [];
+    }
+  };
+  /* Se piden la primera vez que el formulario pasa a «suprime», no al abrir el modal. */
+  watch(suprime, (ahora) => {
+    if (ahora) cargarEfectos();
+    else vidaForm.value.confirmaSupresion = false;
+  });
+
+  /* Al corregir la fecha de un fin, la nueva tiene que haber ocurrido también: un fin pasado no se
+     quita ni se aplaza —ni como corrección—. */
+  const corrigiendoElFin = ref(false);
+  const finCorregidoValido = computed(() => {
+    const hasta = vidaForm.value.vigente_hasta;
+    return !corrigiendoElFin.value || (Boolean(hasta) && hasta <= hoy());
+  });
+
   const sePuedeGuardar = computed(() =>
     vidaModo.value !== "cerrada"
     && Boolean(vidaForm.value.vigente_desde)
     && (!esCorreccion.value || String(vidaForm.value.motivo || "").trim().length >= MOTIVO_MINIMO)
+    && (!suprimeYa.value || Boolean(vidaForm.value.confirmaSupresion))
+    && finCorregidoValido.value
   );
 
   /* Decide el modo a partir del periodo que cuenta hoy, que es lo que el nodo trae consigo
      (`estado`, `vigencia_id` y sus fechas). `lista` son todas sus vidas, si ya se conocen. */
   const prepararVida = (nodo, lista = null) => {
     if (lista) vidas.value = lista;
+    nodoId.value = nodo?.id ?? null;
+    efectos.value = [];
+    corrigiendoElFin.value = false;
     if (nodo?.estado === "vigente" || nodo?.estado === "programado") {
       vidaModo.value = "editar";
       vidaForm.value = {
@@ -98,7 +151,8 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
         vigente_hasta: nodo.vigente_hasta || "",
         fin_origen: nodo.fin_origen || "",
         fin_acto_id: nodo.fin_acto_id ? String(nodo.fin_acto_id) : "",
-        motivo: ""
+        motivo: "",
+        confirmaSupresion: false
       };
       desdeOriginal.value = nodo.vigente_desde || "";
       hastaOriginal.value = nodo.vigente_hasta || "";
@@ -113,9 +167,9 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     ultimaVida.value = nodo?.estado === "suprimido" && nodo.vigencia_id ? nodo : null;
   };
 
-  /* CORREGIR EL FIN DE UNA VIDA QUE YA TERMINÓ: mover el día en que dejó de regir, o quitarlo —el
-     nodo vuelve a regir como si no se hubiera suprimido—. No es reactivar: reactivar abre una vida
-     NUEVA y deja escrita la anterior; esto dice que la anterior estaba mal cerrada. */
+  /* CORREGIR LA FECHA DEL FIN DE UNA VIDA QUE YA TERMINÓ: «terminó el 20, no el 24». Sólo la fecha,
+     y sólo a otra que también haya ocurrido. QUITAR el fin no se puede —ni así—: para que el nodo
+     vuelva a regir se reactiva, que abre una vida nueva y deja escrita la anterior. */
   const sePuedeCorregirElFin = computed(() => vidaModo.value === "cerrada" && Boolean(ultimaVida.value));
   const empezarCorreccionDelFin = () => {
     const v = ultimaVida.value;
@@ -129,10 +183,12 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
       vigente_hasta: v.vigente_hasta || "",
       fin_origen: v.fin_origen || "",
       fin_acto_id: v.fin_acto_id ? String(v.fin_acto_id) : "",
-      motivo: ""
+      motivo: "",
+      confirmaSupresion: false
     };
     desdeOriginal.value = v.vigente_desde || "";
     hastaOriginal.value = v.vigente_hasta || "";
+    corrigiendoElFin.value = true;
   };
 
   const empezarVidaNueva = () => {
@@ -140,6 +196,7 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     vidaForm.value = { ...VIDA_VACIA };
     desdeOriginal.value = "";
     hastaOriginal.value = "";
+    corrigiendoElFin.value = false;
   };
 
   /* Los actos entre los que elegir cuando el origen es una reorganización. Se piden al abrir el
@@ -209,6 +266,12 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     esCorreccion,
     sePuedeCorregirElFin,
     empezarCorreccionDelFin,
+    corrigiendoElFin,
+    hoy,
+    suprimeYa,
+    suprimeMasAdelante,
+    efectosQueSeCierran,
+    efectosQueSeQuedan,
     puedeCorregir: puedeCorregirLaEstructura(),
     prepararVida,
     empezarVidaNueva,

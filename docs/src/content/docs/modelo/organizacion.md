@@ -183,15 +183,31 @@ Cuatro cosas son corrección y sólo se pueden hacer así, en las vidas de unida
 en las relaciones de los dos árboles:
 
 1. **Cambiar la fecha de inicio de algo que ya empezó a regir.** Es afirmar que rigió desde otro día.
-2. **Cambiar o quitar la fecha de fin de algo que ya terminó.** Mover el día en que dejó de regir, o
-   reabrirlo como si no hubiera terminado nunca. No es lo mismo que **reactivar**, que abre una vida
-   nueva y deja escrita la anterior.
+2. **Cambiar la fecha de fin de algo que ya terminó, a otra que también haya ocurrido.** «Terminó el
+   20, no el 24».
 3. **Cambiar el padre de una relación que ya rige**, sin cerrarla.
 4. **Escribir el origen «corrección»** en un inicio o en un fin — por ejemplo, para cerrar algo que
    rigió por error.
 
 Poner fin a algo que rige **no** es una corrección: es suprimir. Tampoco mover un fin que todavía
-no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido. Y una corrección **no borra**: lo
+no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido.
+
+:::caution[Lo que ni una corrección puede: quitar o aplazar un fin que ya ocurrió]
+Suprimir no es sólo poner una fecha. La base cierra además lo que colgaba del nodo —los roles
+asignados en una unidad y sus vacantes; la ocupación de un puesto y el responsable de sus entregables
+en curso—, y **reabrir la vida no lo devuelve**. Quedaría un nodo «vigente» sin lo suyo, y una
+bitácora diciendo «como si nunca hubiera terminado» cuando el sistema sí lo cerró.
+
+Así que un fin pasado no se quita ni se aplaza. Para que el nodo vuelva a regir se **reactiva**: se
+abre un periodo nuevo y el anterior queda escrito. Si fue un error, la vida nueva lleva origen
+«corrección», con su motivo, y lo que se cerró hay que asignarlo otra vez.
+
+Por eso el aviso va **antes**: al suprimir con fecha de hoy o anterior, la pantalla dice qué se va a
+cerrar, con cifras, y pide confirmarlo. Con fecha futura no se cierra nada todavía, y hasta ese día
+la fecha se puede cambiar o quitar.
+
+Se pudo quitar durante un día (2026-11-24) y se retiró al siguiente.
+::: Y una corrección **no borra**: lo
 que rigió por error se cierra con origen «corrección», y así queda escrito que existió y que fue un
 error.
 

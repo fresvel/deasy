@@ -500,6 +500,15 @@ export const setProcessParent = async (req, res) => {
   }
 };
 
+// Qué se cerraría al suprimir un nodo de la estructura: lo que la pantalla advierte antes de hacerlo.
+export const getEfectosDeSuprimir = async (req, res) => {
+  try {
+    res.json(await service().efectosDeSuprimir(req.params.clase, req.params.id));
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
 // Corrige, con motivo, algo de la estructura que ya rigió (frente 27, D-05). El permiso —propio, y
 // distinto del de editar la estructura— lo exige la ruta.
 export const corregirEstructura = async (req, res) => {

@@ -1343,12 +1343,19 @@ $$ LANGUAGE plpgsql STABLE;
 -- LO QUE SOLO UNA CORRECCION PUEDE HACER, en las tres tablas de vidas y en las dos de relaciones:
 --
 --   · cambiar la fecha de inicio de algo que ya empezo a regir --es decir que rigio desde otro dia--;
---   · cambiar o QUITAR la fecha de fin de algo que ya termino --mover el dia en que dejo de regir, o
---     reabrirlo como si no hubiera terminado nunca-- (decision del dueño, 2026-11-24);
+--   · cambiar la fecha de fin de algo que ya termino, a OTRA FECHA QUE TAMBIEN YA OCURRIO --«termino
+--     el 20, no el 24»--;
 --   · escribir el origen «correccion» en un inicio o en un fin.
 --
 -- Poner fin a algo que rige NO esta aqui: eso es suprimir, y es el camino normal. Tampoco mover un
 -- fin que todavia no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido.
+--
+-- ⚠️ Y HAY UNA COSA QUE NI UNA CORRECCION PUEDE: QUITAR O APLAZAR UN FIN QUE YA OCURRIO. Durante un
+-- dia se pudo (2026-11-24) y se retiro al siguiente, por decision del dueño: suprimir cierra ademas
+-- lo que colgaba del nodo --roles, vacantes, la ocupacion de un puesto--, y reabrir la vida no lo
+-- devuelve. Quedaba un nodo «vigente» sin lo suyo y una bitacora diciendo «como si nunca hubiera
+-- terminado» cuando el sistema si lo cerro. Lo que se hace es REACTIVAR: un periodo nuevo, y el
+-- anterior queda escrito. Por eso el aviso va ANTES de suprimir, que es cuando sirve.
 CREATE OR REPLACE FUNCTION public.exigir_correccion_registrada() RETURNS trigger
   SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
 AS $$
@@ -1360,10 +1367,15 @@ BEGIN
       USING ERRCODE = 'restrict_violation';
   END IF;
   IF TG_OP = 'UPDATE' AND OLD.vigente_hasta <= CURRENT_DATE
-     AND NEW.vigente_hasta IS DISTINCT FROM OLD.vigente_hasta
-     AND NOT correccion_en_curso(TG_TABLE_NAME, NEW.id) THEN
-    RAISE EXCEPTION 'Terminó el %, y esa fecha ya ocurrió: cambiarla o quitarla es una corrección. Regístrala como corrección, con su motivo.', OLD.vigente_hasta
-      USING ERRCODE = 'restrict_violation';
+     AND NEW.vigente_hasta IS DISTINCT FROM OLD.vigente_hasta THEN
+    IF NEW.vigente_hasta IS NULL OR NEW.vigente_hasta > CURRENT_DATE THEN
+      RAISE EXCEPTION 'Terminó el %, y eso ya ocurrió: un fin pasado no se quita ni se aplaza. Para que vuelva a regir se abre un periodo nuevo; el anterior queda escrito.', OLD.vigente_hasta
+        USING ERRCODE = 'restrict_violation';
+    END IF;
+    IF NOT correccion_en_curso(TG_TABLE_NAME, NEW.id) THEN
+      RAISE EXCEPTION 'Terminó el %, y esa fecha ya ocurrió: cambiarla es una corrección. Regístrala como corrección, con su motivo.', OLD.vigente_hasta
+        USING ERRCODE = 'restrict_violation';
+    END IF;
   END IF;
   IF ((NEW.inicio_origen = 'correccion' AND (TG_OP = 'INSERT' OR OLD.inicio_origen IS DISTINCT FROM 'correccion'))
       OR (NEW.fin_origen = 'correccion' AND (TG_OP = 'INSERT' OR OLD.fin_origen IS DISTINCT FROM 'correccion')))
