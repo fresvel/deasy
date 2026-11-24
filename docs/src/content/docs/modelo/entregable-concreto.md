@@ -146,9 +146,13 @@ tenencias —la primera la crea un disparador al insertar, y sin esa cascada nin
 podría borrar— y su receta de runtime.
 
 Una versión, a su vez, sólo se puede borrar mientras no ha recorrido nada: sus recorridos, sus firmas
-y sus observaciones la retienen. Sus archivos subidos y sus anexos sí caen con ella, **y ojo: sólo
-las filas** — los ficheros de MinIO quedan sin dueño, porque una cascada de la base no toca un
-bucket.
+y sus observaciones la retienen. Sus archivos subidos y sus anexos sí caen con ella, y desde el
+2026-11-24 **también sus ficheros del almacén**: una cascada de la base no toca un bucket, así que
+al borrar una versión desde `/admin` se apuntan antes las rutas que nombra y, confirmado el borrado,
+se borran sus objetos. Un fichero que otra versión, otra subida u otro anexo sigue nombrando **se
+conserva**. Hasta esa fecha se quedaban todos: medido, 3 de 3, y nada los limpiaba después.
+
+Lo que esto **no** cubre es un borrado hecho por SQL directo, que no pasa por la aplicación.
 
 :::note[Qué edición de plantilla se usa: aquí no se guarda]
 

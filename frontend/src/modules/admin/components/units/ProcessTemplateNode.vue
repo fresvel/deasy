@@ -1,7 +1,7 @@
 <template>
   <div
-    class="graph-node graph-node--template relative rounded-xl rounded-tl-none border border-brand-200 border-l-4 border-l-brand-400 bg-white px-2.5 py-2 transition-all"
-    :class="data.highlighted ? 'graph-node--resaltado' : ''"
+    class="graph-node graph-node--template graph-node--franja relative rounded-xl rounded-tl-none bg-white px-2.5 py-2 transition-all"
+    :class="[`graph-node--estado-${tonoEstado}`, data.highlighted ? 'graph-node--resaltado' : '']"
     :title="`${data.display_name} · código de plantilla: ${data.template_code}`"
     @mouseenter="hover = true"
     @mouseleave="hover = false"
@@ -25,8 +25,6 @@
       </button>
     </div>
     <p class="m-0 flex items-center gap-2">
-      <!-- El estado de la VERSIÓN que usa la configuración: publicada, borrador o retirada. -->
-      <GraphNodeEstado eje="ciclo" :valor="lifecycleState" />
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.display_name }}</span>
     </p>
     <!-- Sólo la versión, sin caja. El código de plantilla se quitó de aquí (2026-11-24): repetía el
@@ -39,7 +37,7 @@
         :class="[`graph-node__dato--${tonoEstado}`, tonoEstado === 'success' ? '' : 'graph-node__dato--destaca']"
         :title="`Versión vinculada: ${data.storage_version} (${stateLabel})${Number(data.version_count) > 1 ? ` · ${data.version_count} versiones` : ''}`"
       >
-        v{{ data.storage_version }}
+        v{{ data.storage_version }}<span v-if="tonoEstado !== 'success'"> · {{ stateLabel }}</span>
         <span v-if="Number(data.version_count) > 1" class="opacity-70">· {{ data.version_count }}</span>
       </span>
       <IconAlertTriangle
@@ -52,7 +50,6 @@
 </template>
 
 <script setup>
-import GraphNodeEstado from "@/modules/admin/components/units/GraphNodeEstado.vue";
 import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import { ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";

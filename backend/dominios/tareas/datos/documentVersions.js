@@ -75,3 +75,37 @@ export const actualizarEstado = async (connection, documentVersionId, targetStat
     [targetStatus, documentVersionId]
   );
 };
+
+// LOS FICHEROS QUE UNA VERSIÓN TIENE EN EL ALMACÉN (frente 27, F27.P4.T25): los tres que apunta ella
+// misma —el de trabajo, el final y el de datos— y los de sus subidas y sus anexos. Se leen ANTES de
+// borrarla, porque la cascada se lleva las filas que los nombran.
+export const listarFicherosDeLaVersion = async (ejecutor, documentVersionId) => {
+  const [filas] = await ejecutor.query(
+    `SELECT dv.working_file_path AS ruta FROM document_versions dv WHERE dv.id = ?
+     UNION SELECT dv.final_file_path FROM document_versions dv WHERE dv.id = ?
+     UNION SELECT dv.payload_object_path FROM document_versions dv WHERE dv.id = ?
+     UNION SELECT u.file_path FROM document_version_uploads u WHERE u.document_version_id = ?
+     UNION SELECT a.file_path FROM document_attachments a WHERE a.document_version_id = ?`,
+    Array(5).fill(Number(documentVersionId))
+  );
+  return filas.map((fila) => fila.ruta).filter(Boolean);
+};
+
+// De esas rutas, las que TODAVÍA nombra alguna fila: otra versión, otra subida u otro anexo. Un
+// fichero compartido no se borra porque desaparezca uno de los que lo apuntan.
+// Va ruta a ruta, y no con una lista: la capa de consultas reparte un arreglo en varios parámetros,
+// así que un solo marcador no puede llevarlo. Son pocas —las de una versión—.
+export const rutasQueSiguenEnUso = async (ejecutor, rutas) => {
+  const enUso = [];
+  for (const ruta of rutas) {
+    const [filas] = await ejecutor.query(
+      `SELECT (EXISTS (SELECT 1 FROM document_versions dv
+                        WHERE dv.working_file_path = ? OR dv.final_file_path = ? OR dv.payload_object_path = ?)
+            OR EXISTS (SELECT 1 FROM document_version_uploads u WHERE u.file_path = ?)
+            OR EXISTS (SELECT 1 FROM document_attachments a WHERE a.file_path = ?)) AS en_uso`,
+      Array(5).fill(ruta)
+    );
+    if (filas[0]?.en_uso) enUso.push(ruta);
+  }
+  return enUso;
+};

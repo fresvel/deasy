@@ -43,6 +43,7 @@
 //   - `notice`      aviso al usuario que la respuesta devuelve como `__notice`.
 
 import bcrypt from "bcrypt";
+import { borrarFicherosSinDueno, ficherosDeLaVersion } from "../../documents/LimpiezaDeVersion.js";
 import crypto from "node:crypto";
 import { assertPasswordPolicy } from "../../../utils/passwordPolicy.js";
 import { isUniqueViolation, violatedConstraint } from "../../../errors/sqlErrors.js";
@@ -984,6 +985,17 @@ export const TABLE_HOOKS = {
 
     async afterInsertTx(ctx) {
       await ensureFillFlowForDocumentVersion(ctx.connection, Number(ctx.insertId));
+    },
+
+    // BORRAR UNA VERSIÓN SE LLEVA SUS FICHEROS DEL ALMACÉN (F27.P4.T25). Las rutas se apuntan antes
+    // —la cascada borra las filas que las nombran— y los objetos se borran después, confirmado ya el
+    // borrado. El porqué de los dos tiempos, en `LimpiezaDeVersion.js`.
+    async beforeRemove(ctx) {
+      const id = Number(ctx.keyPayload?.id);
+      ctx.state.ficherosDeLaVersion = id ? await ficherosDeLaVersion(id, { connection: ctx.pool }) : [];
+    },
+    async afterRemove(ctx) {
+      await borrarFicherosSinDueno(ctx.state.ficherosDeLaVersion, { connection: ctx.pool });
     },
 
     // Pasar a "listo para firma" arma el flujo de firma en la MISMA transacción que el UPDATE.

@@ -1059,6 +1059,17 @@ export default class SqlAdminService {
       // usuario ve el texto interno de PostgreSQL con nombres de tabla y de constraint.
       throw translateConstraintError(error, tableName, { deleting: true }) || error;
     }
+    // DESPUÉS DE BORRAR, Y CON EL BORRADO YA CONFIRMADO: lo que no puede ir dentro de la transacción
+    // porque la base no lo sabría deshacer —borrar un fichero del almacén—. Un gancho de aquí no
+    // puede fallar el borrado, que ya ocurrió: se ocupa él de sus errores.
+    if (hooks.afterRemove) {
+      try {
+        await hooks.afterRemove(ctx);
+      } catch (error) {
+        // La fila ya no existe: contestar un error aquí sería decir que no se borró.
+        console.warn(`El borrado de ${tableName} se hizo, pero falló lo que venía después:`, error?.message);
+      }
+    }
     return keyPayload;
   }
 }

@@ -209,27 +209,6 @@
         font-weight: 600;
     }
 
-    /* EL CÍRCULO DE ESTADO, junto al nombre del nodo. Relleno con el tono y el icono en blanco; se
-       usan los 600 y no los 500 de la franja porque con blanco encima los 500 no llegan a 3:1
-       (el verde daba 2,6). El tono lo pone el modificador, igual que en `graph-node__dato`. */
-    .graph-node__estado {
-        display: inline-flex;
-        flex: none;
-        align-items: center;
-        justify-content: center;
-        width: 18px;
-        height: 18px;
-        border-radius: 999px;
-        background: var(--estado-fondo, var(--color-gray-500));
-        color: var(--color-white);
-    }
-
-    .graph-node__estado--success { --estado-fondo: var(--color-success-600); }
-    .graph-node__estado--warning { --estado-fondo: var(--color-warning-600); }
-    .graph-node__estado--danger { --estado-fondo: var(--color-error-600); }
-    .graph-node__estado--info { --estado-fondo: var(--color-blue-light-600); }
-    .graph-node__estado--neutral { --estado-fondo: var(--color-gray-500); }
-
     /* La fila de abajo conserva su alto aunque se quede vacía —cuando el estado es el normal ya no
        se escribe—: el dueño pidió que los nodos no cambiaran de altura. */
     .graph-node__fila { min-height: 19px; }
@@ -258,7 +237,9 @@
         --graph-accent: color-mix(in srgb, var(--color-primary) 63%, var(--color-white));
         --graph-accent-solid: var(--color-primary);
         --nodo-borde: var(--color-brand-200);
-        --nodo-franja: var(--color-brand-400);
+        /* La franja dice el estado de la VERSIÓN que usa la configuración, como en los otros tres
+           nodos (2026-11-24); era siempre azul de marca, y el estado sólo se leía en el número. */
+        --nodo-franja: var(--tono-borde, var(--color-brand-400));
         width: 170px;
     }
 

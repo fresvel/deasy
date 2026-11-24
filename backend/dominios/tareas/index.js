@@ -12,7 +12,9 @@ export {
   actualizarArchivoVigente,
   actualizarEstado,
   getMaxDocumentVersionForTaskItem,
-  insertDocumentVersion
+  insertDocumentVersion,
+  listarFicherosDeLaVersion,
+  rutasQueSiguenEnUso
 } from "./datos/documentVersions.js";
 export { getLatestDocumentVersionForTaskItem } from "./datos/consulta/ultimaVersionDelEntregable.js";
 

@@ -59,7 +59,6 @@
     <!-- El nombre tiene la fila entera; el estado va SIEMPRE, también cuando rige, y es lo primero
          de la fila de abajo, igual que en la unidad. Así se lee qué rige sin deducirlo de una ausencia. -->
     <p class="m-0 flex items-center gap-2">
-      <GraphNodeEstado :valor="data.estado" />
       <span class="min-w-0 flex-1 truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
     </p>
     <!-- El estado, sin caja: como en la unidad. Lo que cuelga del proceso se cuenta en el pie. -->
@@ -122,7 +121,6 @@
 </template>
 
 <script setup>
-import GraphNodeEstado from "@/modules/admin/components/units/GraphNodeEstado.vue";
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";

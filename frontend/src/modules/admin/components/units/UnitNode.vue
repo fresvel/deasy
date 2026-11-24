@@ -67,7 +67,6 @@
     </button>
 
     <p class="m-0 flex items-center gap-2">
-      <GraphNodeEstado :valor="data.estado" femenino />
       <span class="min-w-0 flex-1 truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <IconCrown v-if="Number(data.head_count) > 0" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
     </p>
@@ -75,7 +74,11 @@
          del estado y su nombre en gris; la cuenta de puestos, con su icono, sólo toma color cuando
          falta gente. Así la única caja del nodo es el nodo, y lo que no es normal es lo único que
          tiñe. El tono del estado va también en la franja de la izquierda, como en la configuración. -->
-    <!-- El estado va en el círculo de junto al nombre; aquí sólo se ESCRIBE cuando no es el normal. -->
+    <!-- EL ESTADO LO DICE LA FRANJA DE LA IZQUIERDA, y aquí sólo se ESCRIBE cuando no es el normal:
+         si no dice nada, rige; si no rige, lo dice. Hubo un círculo con icono junto al nombre
+         (2026-11-24) y se quitó el mismo día: repetía lo que ya dicen la franja y la pestaña, y le
+         quitaba 26 px al nombre —tres unidades más con el nombre cortado—. Quien no distinga los
+         colores lo lee igual, porque la excepción va con su palabra. -->
     <p class="graph-node__fila m-0 mt-1.5 flex flex-wrap items-center gap-3">
       <span v-if="data.estado !== 'vigente'" class="graph-node__dato graph-node__dato--destaca" :class="`graph-node__dato--${tonoVigencia(data.estado)}`">
         {{ etiquetaVigencia(data.estado, { femenino: true }) }}
@@ -114,7 +117,6 @@
 </template>
 
 <script setup>
-import GraphNodeEstado from "@/modules/admin/components/units/GraphNodeEstado.vue";
 import { coberturaEstado, tonoCobertura, tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";

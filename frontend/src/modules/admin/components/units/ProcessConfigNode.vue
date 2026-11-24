@@ -41,7 +41,6 @@
       </button>
     </div>
     <p class="m-0 flex items-center gap-2">
-      <GraphNodeEstado eje="ciclo" :valor="data.status" />
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.definition_name }}</span>
     </p>
     <!-- El estado y los entregables, sin caja: como en la unidad y el proceso. -->
@@ -73,7 +72,6 @@
 </template>
 
 <script setup>
-import GraphNodeEstado from "@/modules/admin/components/units/GraphNodeEstado.vue";
 import { tonoCicloVida } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
