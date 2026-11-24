@@ -194,6 +194,10 @@ jobs:
       # declarada en scripts/docs/dominios.json con su motivo; la puerta falla con cualquiera nueva.
       - name: Check module map
         run: node scripts/docs/check-mapa-tablas.mjs
+      # Que ninguna referencia del editor de /admin pida un número a pelo: una columna `*_id` del
+      # catálogo sin entrada en el mapa del frontend compila, pasa los tests y el formulario pide el id.
+      - name: Check admin references have a lookup
+        run: node scripts/check-fk-buscador.mjs
       # Las categorías de tabla de `/admin`. Son TRES listas en dos lados —`sqlTables.js`,
       # `AdminView.GROUP_DEFS` y `AdminView.CATEGORIA_UI`— y el fallo es invisible por los tres:
       # una categoría sin grupo deja sus tablas inalcanzables aunque el backend las sirva; un grupo

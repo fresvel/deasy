@@ -206,7 +206,33 @@ export const FK_TABLE_MAP = {
   // La columna conserva su nombre y lo que referencia es un TURNO (paso 3b de la fase 4): la lee el
   // firmador y viaja en la API, asi que renombrarla es otro cambio.
   turno_id: "turnos",
-  signature_status_id: "signature_statuses"
+  signature_status_id: "signature_statuses",
+  // LA ESTRUCTURA CON MEMORIA (frente 27). Estas columnas nacieron sin entrada aquí y el formulario
+  // pedía su NÚMERO: para registrar un acto había que saberse el id del tipo, el de la unidad
+  // emisora y el de la persona. Lo vio el dueño el 2026-11-24. Desde entonces lo vigila
+  // `scripts/check-fk-buscador.mjs`: una columna `*_id` del catálogo sin entrada aquí, falla.
+  tipo_de_acto_id: "tipos_de_acto",
+  unidad_emisora_id: "units",
+  suscrito_por_person_id: "persons",
+  registrado_por_person_id: "persons",
+  acto_id: "actos",
+  inicio_acto_id: "actos",
+  fin_acto_id: "actos",
+  parent_process_id: "processes",
+  child_process_id: "processes",
+  sucesor_unit_id: "units",
+  sucesor_position_id: "unit_positions",
+  sucesor_process_id: "processes",
+  // Y las que ya faltaban de antes, encontradas con la misma cuenta.
+  created_by_person_id: "persons",
+  performed_by_person_id: "persons",
+  uploaded_by_person_id: "persons",
+  origin_unit_id: "units",
+  target_unit_id: "units",
+  scope_unit_id: "units",
+  source_task_item_id: "task_items",
+  derived_from_assignment_id: "role_assignments",
+  parent_version_id: "ediciones"
 };
 
 export const RELATED_RECORD_CONFIG = {

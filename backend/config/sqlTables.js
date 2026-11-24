@@ -442,12 +442,41 @@ export const SQL_TABLES = [
       { name: "tipo_de_acto_id", label: "Tipo de acto", type: "number", required: true },
       { name: "numero", label: "Numero", type: "text", required: true },
       { name: "asunto", label: "Asunto", type: "textarea", required: true },
-      { name: "fecha_emision", label: "Fecha de emision", type: "date", required: true },
-      { name: "fecha_vigencia", label: "Rige desde", type: "date", required: true },
-      { name: "unidad_emisora_id", label: "Unidad emisora", type: "number" },
-      { name: "emisor_externo", label: "Emisor externo", type: "text" },
-      { name: "suscrito_por_person_id", label: "Suscrito por (persona)", type: "number" },
-      { name: "suscrito_por_nombre", label: "Suscrito por (nombre)", type: "text" },
+      { name: "fecha_emision", label: "Fecha de emision", type: "date", required: true, ayuda: "Cuándo se firmó." },
+      { name: "fecha_vigencia", label: "Rige desde", type: "date", required: true, ayuda: "Desde cuándo rige lo que ordena. Puede no ser el día en que se firmó." },
+      // QUIEN LO EMITE ES UNA UNIDAD O UN TEXTO, EXACTAMENTE UNO (`ck_actos_un_solo_emisor`).
+      // `exclusivoCon` se lo dice al formulario: en cuanto uno tiene valor, el otro se bloquea. La
+      // base lo impone igual; esto es para no enterarse al guardar.
+      {
+        name: "unidad_emisora_id",
+        label: "Unidad emisora",
+        type: "number",
+        exclusivoCon: "emisor_externo",
+        ayuda: "Si el órgano está en el sistema. Si no, déjalo vacío y escribe el emisor externo."
+      },
+      {
+        name: "emisor_externo",
+        label: "Emisor externo",
+        type: "text",
+        exclusivoCon: "unidad_emisora_id",
+        ayuda: "Sólo si quien lo emite no es una unidad del sistema: la sede matriz, una autoridad externa."
+      },
+      // Y QUIEN LO SUSCRIBE, COMO MUCHO UNO DE LOS DOS (`ck_actos_un_solo_suscriptor`). Casi siempre
+      // se deja vacío: se deduce de la firma o de quién ocupaba la jefatura.
+      {
+        name: "suscrito_por_person_id",
+        label: "Suscrito por (persona)",
+        type: "number",
+        exclusivoCon: "suscrito_por_nombre",
+        ayuda: "Sólo si no lo firmó el titular: un subrogante, un encargado o un delegado que está en el sistema."
+      },
+      {
+        name: "suscrito_por_nombre",
+        label: "Suscrito por (nombre)",
+        type: "text",
+        exclusivoCon: "suscrito_por_person_id",
+        ayuda: "Lo mismo, cuando esa persona no está en el sistema."
+      },
       {
         name: "en_calidad_de",
         label: "En calidad de",

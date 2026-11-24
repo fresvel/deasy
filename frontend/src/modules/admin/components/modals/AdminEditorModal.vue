@@ -108,6 +108,8 @@
           :disabled="isFieldLocked(field)"
           @update:model-value="updateFormField(field.name, $event)"
         />
+        <!-- La ayuda del campo, si el catálogo la trae (`ayuda`): qué va ahí y cuándo se deja vacío. -->
+        <p v-if="field.ayuda" class="m-0 mt-1 text-theme-xs text-muted">{{ field.ayuda }}</p>
       </div>
     </form>
     <section v-if="showProcessConfigurations" class="mt-5 border-t border-line pt-5">

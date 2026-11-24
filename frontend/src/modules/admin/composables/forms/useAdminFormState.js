@@ -71,6 +71,15 @@ export function useAdminFormState({
     if (field.readOnly) {
       return true;
     }
+    // DOS CAMPOS QUE SE EXCLUYEN (`exclusivoCon`, en el catálogo): en cuanto uno tiene valor, el
+    // otro se bloquea. Es declarativo —lo dice la tabla, no este fichero—: nació con el emisor de
+    // un acto, que es una unidad O un texto, y vale para cualquier pareja así.
+    if (field.exclusivoCon) {
+      const delOtro = formData.value?.[field.exclusivoCon];
+      if (delOtro !== null && delOtro !== undefined && String(delOtro).trim() !== "") {
+        return true;
+      }
+    }
     // EL ALCANCE DE UNA LÍNEA bloquea la columna que no le toca. `cargo_id` NO entra aquí, y esa
     // es la diferencia con la serie: el cargo es el OTRO eje y convive con cualquier alcance.
     if (props.table?.table === "lineas") {
