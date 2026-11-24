@@ -521,7 +521,7 @@ test("unit_vigencias se crea DESPUES de units y de actos: es lo que deshace el c
 });
 
 test("las tablas de vigencias tienen las mismas reglas, con el nombre de su tabla", () => {
-  for (const tabla of ["process_vigencias", "unit_vigencias"]) {
+  for (const tabla of ["process_vigencias", "unit_vigencias", "position_vigencias"]) {
     for (const regla of ["periodo", "fin_con_origen", "inicio_acto", "fin_acto"]) {
       assert.ok(SCHEMA.includes(`CONSTRAINT ck_${tabla}_${regla} CHECK`), `falta ck_${tabla}_${regla}`);
     }
@@ -556,5 +556,41 @@ test("ningun disparador lee con OLD/NEW una columna que su tabla no declara", ()
     }
   }
   assert.ok(cruzados > 30, `se cruzaron solo ${cruzados} lecturas: el test se quedo sin mirar`);
+});
+
+// LA VIGENCIA DE UN PUESTO (frente 27, D-03): cierra el conjunto. Ninguno de los tres nodos de la
+// estructura lleva ya la bandera.
+test("is_active no vuelve a unidades, procesos ni puestos", () => {
+  for (const tabla of ["units", "processes", "unit_positions"]) {
+    const create = bloqueRecorrido(tabla).split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+    assert.ok(!/\bis_active\b/.test(create), `${tabla} vuelve a declarar is_active`);
+  }
+});
+
+test("hay UNA forma de preguntar si un nodo rige, por cada clase de nodo", () => {
+  for (const funcion of ["proceso_rige", "unidad_rige", "puesto_rige"]) {
+    assert.equal((SCHEMA.match(new RegExp(`CREATE OR REPLACE FUNCTION public\\.${funcion}\\(`, "g")) || []).length, 1, funcion);
+  }
+});
+
+test("el efecto de suprimir se escribe una vez y lo llaman dos: el disparador y la tarea", () => {
+  for (const [funcion, disparador] of [
+    ["aplicar_supresion_de_unidad", "trg_unit_vigencias_cierre_fn"],
+    ["aplicar_supresion_de_puesto", "trg_position_vigencias_cierre_fn"],
+  ]) {
+    assert.equal((SCHEMA.match(new RegExp(`CREATE OR REPLACE FUNCTION public\\.${funcion}\\(`, "g")) || []).length, 1, funcion);
+    const cuerpoDisparador = SCHEMA.slice(SCHEMA.indexOf(`FUNCTION public.${disparador}()`));
+    assert.match(cuerpoDisparador.slice(0, 600), new RegExp(`PERFORM ${funcion}\\(`));
+  }
+  const tarea = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.aplicar_vencimientos_de_estructura()"));
+  assert.match(tarea, /aplicar_supresion_de_unidad\(/);
+  assert.match(tarea, /aplicar_supresion_de_puesto\(/);
+});
+
+test("suprimir no destruye lo que se preparaba: el efecto solo actua sobre lo SUPRIMIDO", () => {
+  for (const funcion of ["aplicar_supresion_de_unidad", "aplicar_supresion_de_puesto"]) {
+    const cuerpo = SCHEMA.slice(SCHEMA.indexOf(`FUNCTION public.${funcion}(`)).split("$$ LANGUAGE plpgsql;")[0];
+    assert.match(cuerpo, /IS DISTINCT FROM 'suprimido' THEN\s+RETURN 0;/, funcion);
+  }
 });
 

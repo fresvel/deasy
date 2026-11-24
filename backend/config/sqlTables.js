@@ -1209,12 +1209,33 @@ export const SQL_TABLES = [
         options: ["real", "promocion", "simbolico"],
         defaultValue: "real"
       },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      // EL ESTADO, en vez de `is_active` (frente 27, D-03). DERIVADO, no columna: sale de las vidas
+      // del puesto (`position_vigencias`, la tabla de abajo) y depende del dia en que se pregunta.
+      { name: "estado", label: "Estado", type: "select", options: ["borrador", "programado", "vigente", "suprimido"], readOnly: true, virtual: true },
       { name: "is_unit_head", label: "Jefe de la unidad", type: "boolean", defaultValue: 0 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["title"]
+  },
+  // LAS VIDAS DE UN PUESTO (frente 27, D-03): una fila por cada vez que ha regido.
+  {
+    table: "position_vigencias",
+    label: "Vigencia de puestos",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
+      { name: "vigente_desde", label: "Rige desde", type: "date", required: true },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"], required: true },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
   },
   {
     table: "position_assignments",

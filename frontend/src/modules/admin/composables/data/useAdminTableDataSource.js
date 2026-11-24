@@ -53,7 +53,8 @@ export function useAdminTableDataSource({
     const selectedPositionType = includePositionTypeFilter ? sourceFilters.position_type : "";
     const cargoFilter = selectedCargoId ? { filter_cargo_id: selectedCargoId } : {};
     const positionTypeFilter = selectedPositionType ? { filter_position_type: selectedPositionType } : {};
-    const positionActiveFilter = onlyActive ? { filter_is_active: 1 } : {};
+    // «Sólo los activos» son los puestos que RIGEN: su estado sale de sus vidas (frente 27, D-03).
+    const positionActiveFilter = onlyActive ? { filter_estado: "vigente" } : {};
 
     if (selectedUnitId) {
       const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {

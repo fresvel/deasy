@@ -350,6 +350,15 @@ export default class SqlAdminService {
       selectClause = `SELECT ${selectFields.join(", ")}`;
     }
 
+    // Lo mismo para un PUESTO: su estado sale de `position_vigencia_actual`.
+    if (tableName === "unit_positions" && availableFields.includes("estado")) {
+      columnPrefix = "unit_positions.";
+      const selectFields = physicalFields.map((field) => `${columnPrefix}${field}`);
+      derivedColumns.estado = "COALESCE((SELECT pva.estado FROM position_vigencia_actual pva WHERE pva.position_id = unit_positions.id), 'borrador')";
+      selectFields.push(`${derivedColumns.estado} AS estado`);
+      selectClause = `SELECT ${selectFields.join(", ")}`;
+    }
+
     if (tableName === "processes") {
       // EL PROCESO DE UNA CONFIGURACION SALE DE SU LINEA (frente 25, P22): las columnas sin
       // cualificar de aqui dentro eran de `process_definition_versions`, que llevaba una copia.

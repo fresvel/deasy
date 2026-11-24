@@ -52,7 +52,7 @@ export const resolverPersonasPorCargo = async (connection, participante, context
     INNER JOIN position_assignments pa
       ON pa.position_id = up.id
      AND pa.is_current = 1
-    WHERE up.is_active = 1
+    WHERE puesto_rige(up.id)
       AND pa.person_id IS NOT NULL
       AND up.cargo_id = ?`;
 

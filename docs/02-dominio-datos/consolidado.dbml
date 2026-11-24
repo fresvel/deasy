@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 91 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 92 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -920,6 +920,23 @@ Table "position_assignments" {
   }
 }
 
+Table "position_vigencias" {
+  "id" int4 [pk, not null, increment]
+  "position_id" int4 [not null]
+  "vigente_desde" date [not null]
+  "vigente_hasta" date
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_position_vigencias_sin_solape"]
+    (position_id, vigente_desde) [type: btree, name: "idx_position_vigencias_position"]
+  }
+}
+
 Table "process_definition_period_types" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
@@ -1331,7 +1348,6 @@ Table "unit_positions" {
   "title" varchar(180)
   "profile" jsonb
   "position_type" text [not null, check: `position_type = ANY (ARRAY['real'::text, 'promocion'::text, 'simbolico'::text])`, default: 'real']
-  "is_active" int2 [not null, default: 1]
   "is_unit_head" int2 [not null, default: 0]
   "head_flag" int2 [note: "columna generada (STORED)"]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
@@ -1341,7 +1357,7 @@ Table "unit_positions" {
   Indexes {
     (unit_id, cargo_id, slot_no) [type: btree, unique, name: "uq_unit_cargo_slot"]
     (unit_id, head_flag) [type: btree, unique, name: "uq_unit_head"]
-    (unit_id, cargo_id, is_active) [type: btree, name: "idx_positions_unit_cargo_active"]
+    (unit_id, cargo_id) [type: btree, name: "idx_positions_unit_cargo"]
   }
 }
 
@@ -1550,6 +1566,9 @@ Ref "fk_persons_nacimiento_pais":"paises"."id" ?<? "persons"."nacimiento_pais_id
 Ref "fk_persons_nacionalidad":"paises"."id" ?<? "persons"."nacionalidad_pais_id"
 Ref "fk_position_assignments_person":"persons"."id" <? "position_assignments"."person_id"
 Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
+Ref "fk_position_vigencias_fin_acto":"actos"."id" ?<? "position_vigencias"."fin_acto_id"
+Ref "fk_position_vigencias_inicio_acto":"actos"."id" ?<? "position_vigencias"."inicio_acto_id"
+Ref "fk_position_vigencias_position":"unit_positions"."id" <? "position_vigencias"."position_id"
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
 Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]

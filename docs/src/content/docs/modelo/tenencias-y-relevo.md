@@ -41,7 +41,7 @@ misma el mapa de todas las formas en que puede cambiar un responsable:
 | `original` | el primero, al crearse el entregable | trigger `trg_task_items_after_insert` |
 | `occupancy_start` | alguien se sentó en el puesto | triggers de `position_assignments` |
 | `occupancy_end` | el ocupante se fue y el puesto quedó vacío | trigger de `position_assignments` |
-| `position_deactivated` | el puesto se desactivó | trigger `trg_unit_positions_after_update` |
+| `position_deactivated` | el puesto se suprimió | la función `aplicar_supresion_de_puesto`, desde el disparador de `position_vigencias` o desde la tarea periódica |
 | `reconcile` | una revisión de oficio realineó el responsable | `taskAssignment.js`, a petición |
 | `manual` | un traspaso hecho a propósito por alguien | `handoverTaskItem()` |
 
@@ -128,6 +128,12 @@ anclado a un puesto desactivado espera a alguien que **no existe**. Desde el 202
 puesto cierra las tenencias de sus entregables relevables y abre una sin persona con
 `opened_by = 'position_deactivated'` —una causa que llevaba en el vocabulario desde su creación sin un
 solo emisor—.
+
+Desde el 2026-11-23 un puesto ya no se «desactiva» con una columna: **se le pone fin a su vida**, en
+`position_vigencias` (ver [La organización](/modelo/organizacion/)). El efecto es el mismo, y lo
+aplica una función de la base que llaman dos: un disparador, cuando la supresión ya rige al
+registrarla; y una tarea periódica del backend, cuando se registró con fecha futura y vence sin que
+nadie escriba nada. El nombre de la causa, `position_deactivated`, no cambió.
 
 Lo que **no** hace es reasignar. El modelo no dice qué sustituye a un puesto desactivado —no hay «se
 fusionó con» ni «sus funciones pasan a»—, así que elegir sucesor sería adivinar. Los entregables

@@ -56,6 +56,15 @@ repetirla no hace daño. El desfase entre que llega la fecha y se aplican los ef
 como mucho.
 :::
 
+**Y un puesto tampoco está «activo»: también tiene vidas**, en `position_vigencias`, con la misma
+forma y `puesto_rige(id)` para preguntarlo. Es donde más falta hacía: con una sola vida, un puesto
+que se suprime y se reabre al año sería *otro* puesto, y sus ocupaciones, entregables y relevos
+quedarían colgando del antiguo. Suprimir un puesto **deja sin responsable sus entregables en curso**
+—con la causa `position_deactivated`, y sin tocar los que ya están en firma, que quedan en el panel
+de quien encabeza la unidad— y **no cierra su ocupación**: la persona sigue figurando en un puesto
+que ya no rige. Lo aplica el mismo par que en la unidad: un disparador si la supresión ya rige, y la
+tarea periódica si vence más adelante.
+
 Un puesto se identifica por `(unit_id, cargo_id, slot_no)` —«Coordinador de carrera, plaza 1, de la
 Carrera de Sistemas»— y lleva un `position_type` cerrado por `CHECK` a `real`, `promocion` o
 `simbolico`.
@@ -843,6 +852,7 @@ erDiagram
   units ||--o{ unit_relations : "padre"
   units ||--o{ unit_relations : "hija"
   units ||--o{ unit_vigencias : "sus vidas"
+  unit_positions ||--o{ position_vigencias : "sus vidas"
   relation_unit_types ||--o{ unit_relations : "tipo de vinculo"
   unit_positions ||--o{ position_assignments : "ocupada por"
   persons ||--o{ position_assignments : "ocupa"
@@ -872,6 +882,17 @@ erDiagram
     int inicio_acto_id FK "el acto que la puso en vigor"
     text fin_origen "carga_inicial, reorganizacion, correccion"
     int fin_acto_id FK "el acto que la suprimio"
+    timestamp created_at
+  }
+  position_vigencias {
+    int id PK "UNA VIDA del puesto"
+    int position_id FK
+    date vigente_desde "desde cuando rige"
+    date vigente_hasta "primer dia en que ya no rige"
+    text inicio_origen "carga_inicial, reorganizacion, correccion"
+    int inicio_acto_id FK "el acto que lo puso en vigor"
+    text fin_origen "carga_inicial, reorganizacion, correccion"
+    int fin_acto_id FK "el acto que lo suprimio"
     timestamp created_at
   }
   relation_unit_types {
@@ -909,7 +930,6 @@ erDiagram
     varchar title "titulo propio si difiere del cargo"
     jsonb profile "perfil requerido"
     text position_type "real, promocion, simbolico"
-    smallint is_active
     smallint is_unit_head "si dirige la unidad"
     smallint head_flag "generada, garantiza un solo jefe"
     timestamp created_at

@@ -296,12 +296,22 @@ const seedExamplePositions = async (connection) => {
     const isHead = pos.is_unit_head ? 1 : 0;
     const slotNo = Number(pos.slot_no) || 1;
     const [result] = await connection.query(
-      `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, profile, position_type, is_unit_head, is_active)
-       SELECT ?, ?, ?, ?, NULL, ?, ?, 1 FROM DUAL
+      `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, profile, position_type, is_unit_head)
+       SELECT ?, ?, ?, ?, NULL, ?, ? FROM DUAL
        WHERE NOT EXISTS (
          SELECT 1 FROM unit_positions WHERE unit_id = ? AND cargo_id = ? AND slot_no = ?
        )`,
       [unitId, cargoId, slotNo, pos.title || null, positionType, isHead, unitId, cargoId, slotNo]
+    );
+    // Los puestos de ejemplo RIGEN desde la instalacion, como carga inicial (frente 27, D-03): su
+    // primera vida, si aun no tienen ninguna. Sin ella serian borradores y nadie recibiria trabajo.
+    await connection.query(
+      `INSERT INTO position_vigencias (position_id, vigente_desde, inicio_origen)
+       SELECT up.id, CURRENT_DATE, 'carga_inicial'
+         FROM unit_positions up
+        WHERE up.unit_id = ? AND up.cargo_id = ? AND up.slot_no = ?
+          AND NOT EXISTS (SELECT 1 FROM position_vigencias pv WHERE pv.position_id = up.id)`,
+      [unitId, cargoId, slotNo]
     );
     if (result?.affectedRows) seededCount += 1;
   }

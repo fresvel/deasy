@@ -242,7 +242,7 @@ export const getPositionsForScope = async (connection, rule) => {
     LEFT JOIN position_assignments pa
       ON pa.position_id = up.id
      AND pa.is_current = 1
-    WHERE up.is_active = 1
+    WHERE puesto_rige(up.id)
       AND unidad_rige(u.id)`;
 
   // EL CARGO Y EL AMBITO SALEN DE LA LINEA, no de la regla (frente 25, P10). Antes la regla

@@ -201,7 +201,8 @@
       "units": 2,
       "tipos_de_acto": 0,
       "actos": 2,
-      "unit_vigencias": 2
+      "unit_vigencias": 2,
+      "position_vigencias": 2
     }
   },
   "procesos": {

@@ -42,7 +42,7 @@ export const getActiveUserPositions = async (pool, userId) => {
      INNER JOIN cargos c ON c.id = up.cargo_id
      WHERE pa.person_id = ?
        AND pa.is_current = 1
-       AND up.is_active = 1
+       AND puesto_rige(up.id)
        AND unidad_rige(u.id)
        AND c.is_active = 1
      ORDER BY u.name, c.name, up.slot_no, up.id`,

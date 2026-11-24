@@ -295,7 +295,7 @@
                   <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-warning" title="Jefatura" />
                   <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
                   <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
-                  <span v-if="!pos.is_active" class="ml-auto text-theme-xs font-semibold text-danger">Inactivo</span>
+                  <AppTag v-if="pos.estado !== 'vigente'" :variant="tonoVigencia(pos.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(pos.estado) }}</AppTag>
                   <div v-if="editable" class="ml-auto flex items-center gap-2">
                     <AppButton
                       :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
@@ -453,44 +453,81 @@
       </template>
     </AppModalShell>
 
-    <!-- Editar puesto (cargo, título, tipo, jefatura, activo) -->
+    <!-- EL PUESTO, CON DOS PESTAÑAS: sus datos y su vigencia (frente 27, D-03). El interruptor
+         «Activo» se fue: un puesto ya no se apaga con una casilla, tiene vidas como la unidad y el
+         proceso, y se le ponen y se le quitan con la misma pieza. Lo que falla aquí se dice aquí. -->
     <AppModalShell
       v-if="Boolean(editingPosition)"
       controlled
       :open="Boolean(editingPosition)"
-      title="Editar puesto"
-      content-class="max-w-md"
-      @close="editingPosition = null"
+      :title="editingPosition.cargo_name || editingPosition.title || 'Puesto'"
+      content-class="deasy-dialog-panel--viewport max-w-xl"
+      body-class="flex min-h-0 flex-col"
+      footer-class="shrink-0"
+      @close="closeEditPosition"
     >
-      <div class="flex flex-col gap-3">
-        <label class="deasy-form-label">
-          Cargo
-          <select v-model="editPositionForm.cargo_id" class="deasy-control deasy-control--select">
-            <option value="">Selecciona…</option>
-            <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
-          </select>
-        </label>
-        <label class="deasy-form-label">
-          Título <span class="font-normal text-muted">(opcional)</span>
-          <input v-model="editPositionForm.title" type="text" class="deasy-control" placeholder="Título del puesto" />
-        </label>
-        <label class="deasy-form-label">
-          Tipo
-          <select v-model="editPositionForm.position_type" class="deasy-control deasy-control--select">
-            <option value="real">Real</option>
-            <option value="promocion">Promoción</option>
-            <option value="simbolico">Simbólico</option>
-          </select>
-        </label>
-        <div class="flex items-center gap-6">
+      <div class="deasy-inline-tabs shrink-0" role="tablist">
+        <button
+          v-for="pestana in PESTANAS_DEL_PUESTO"
+          :key="pestana.id"
+          type="button"
+          role="tab"
+          class="deasy-inline-tab"
+          :class="positionTab === pestana.id ? 'deasy-inline-tab--active' : ''"
+          :aria-selected="positionTab === pestana.id"
+          @click="positionTab = pestana.id"
+        >
+          <component :is="pestana.icono" class="h-4 w-4" />
+          {{ pestana.rotulo }}
+        </button>
+      </div>
+
+      <AppAlert v-if="positionError" variant="danger" class="mt-3 shrink-0">{{ positionError }}</AppAlert>
+
+      <div class="mt-4 min-h-0 flex-1 overflow-y-auto">
+        <div v-show="positionTab === 'datos'" class="flex flex-col gap-3">
+          <label class="deasy-form-label">
+            Cargo
+            <select v-model="editPositionForm.cargo_id" class="deasy-control deasy-control--select">
+              <option value="">Selecciona…</option>
+              <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
+            </select>
+          </label>
+          <label class="deasy-form-label">
+            Título <span class="font-normal text-muted">(opcional)</span>
+            <input v-model="editPositionForm.title" type="text" class="deasy-control" placeholder="Título del puesto" />
+          </label>
+          <label class="deasy-form-label">
+            Tipo
+            <select v-model="editPositionForm.position_type" class="deasy-control deasy-control--select">
+              <option value="real">Real</option>
+              <option value="promocion">Promoción</option>
+              <option value="simbolico">Simbólico</option>
+            </select>
+          </label>
           <SToggle v-model="editPositionForm.is_unit_head" label="Jefatura" label-position="end" />
-          <SToggle v-model="editPositionForm.is_active" label="Activo" label-position="end" />
         </div>
 
+        <NodeVigenciaPanel
+          v-show="positionTab === 'vigencia'"
+          :vigencia="vigenciaDelPuesto"
+          :estado="editingPosition.estado"
+          sujeto="Puesto"
+          :editable="editable"
+          @reactivar="empezarVidaDelPuesto"
+        />
       </div>
+
       <template #footer>
-        <AppButton variant="danger-outline" @click="editingPosition = null">Cancelar</AppButton>
-        <AppButton variant="primary-outline" :disabled="!editPositionForm.cargo_id" @click="confirmEditPosition">Guardar</AppButton>
+        <template v-if="positionTab === 'datos'">
+          <AppButton variant="danger-outline" :disabled="savingPosition" @click="closeEditPosition">Cancelar</AppButton>
+          <AppButton variant="primary-outline" :disabled="savingPosition || !editPositionForm.cargo_id" @click="confirmEditPosition">{{ savingPosition ? "Guardando…" : "Guardar" }}</AppButton>
+        </template>
+        <template v-else-if="vigenciaDelPuesto.vidaModo.value !== 'cerrada'">
+          <AppButton variant="danger-outline" :disabled="savingPosition" @click="closeEditPosition">Cancelar</AppButton>
+          <AppButton variant="primary-outline" :disabled="savingPosition || !vigenciaDelPuesto.sePuedeGuardar.value" @click="saveVidaDelPuesto">{{ savingPosition ? "Guardando…" : vigenciaDelPuesto.etiquetaDeGuardarVida.value }}</AppButton>
+        </template>
+        <AppButton v-else variant="neutral-outline" @click="closeEditPosition">Cerrar</AppButton>
       </template>
     </AppModalShell>
 
@@ -514,7 +551,7 @@
 import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import { tonoCicloVida, tonoOrigen, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
+import { tonoCicloVida, tonoOrigen, etiquetaCicloVida, tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
 import { toBlob } from "html-to-image";
@@ -636,7 +673,21 @@ const personQuery = ref("");
 const personResults = ref([]);
 const personSearching = ref(false);
 const editingPosition = ref(null);
-const editPositionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false, is_active: true });
+const editPositionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false });
+// El modal del puesto: dos pestañas, su error dentro, y sus vidas con el mismo composable que la
+// unidad —otra instancia, porque son dos modales que pueden estar abiertos a la vez—.
+const positionTab = ref("datos");
+const positionError = ref("");
+const savingPosition = ref(false);
+const PESTANAS_DEL_PUESTO = [
+  { id: "datos", rotulo: "Datos", icono: IconId },
+  { id: "vigencia", rotulo: "Vigencia", icono: IconCalendarEvent }
+];
+const vigenciaDelPuesto = useNodeVigencia({ tabla: "position_vigencias", claveDelNodo: "position_id" });
+const empezarVidaDelPuesto = () => {
+  vigenciaDelPuesto.empezarVidaNueva();
+  positionError.value = "";
+};
 // Wizard de perfil del puesto (formación/experiencia/capacitación/investigación) → columna JSON `profile`.
 const profileWizardPosition = ref(null);
 const feedback = ref({ kind: "", message: "" });
@@ -882,7 +933,11 @@ const onNodeClick = ({ node }) => {
 };
 
 // Detalle de unidad (drawer): puestos y ocupaciones.
-const openDetail = async (unitId) => {
+// `mantener`: al refrescar tras cambiar un puesto se vuelve a la MISMA pestaña y subpestaña en que
+// se estaba; sin él, guardar un puesto devolvía a «Datos» y había que volver a buscarlo.
+const openDetail = async (unitId, { mantener = false } = {}) => {
+  const pestanaPrevia = detailTab.value;
+  const clasePrevia = clasePuestos.value;
   const u = rawUnitById(unitId);
   detailUnit.value = u ? { id: u.id, name: u.name, estado: u.estado } : { id: unitId, name: "", estado: "borrador" };
   unidadForm.value = {
@@ -894,9 +949,9 @@ const openDetail = async (unitId) => {
   // La pestaña «Vigencia» se prepara ya con lo que trae el grafo, y se completa con el detalle.
   vigencia.prepararVida(u, []);
   modalError.value = "";
-  clasePuestos.value = "todas";
+  clasePuestos.value = mantener ? clasePrevia : "todas";
   if (props.editable) vigencia.cargarActos();
-  detailTab.value = "datos";
+  detailTab.value = mantener ? pestanaPrevia : "datos";
   detailProcesses.value = [];
   detailProcessesLoaded.value = false;
   detailPositions.value = [];
@@ -1023,10 +1078,11 @@ const loadCargos = async () => {
 
 // Tras cambiar puestos/ocupaciones: recarga el detalle (drawer) y el grafo (badges).
 const refreshAfterPositionChange = async () => {
-  if (detailUnit.value?.id) {
-    await openDetail(detailUnit.value.id);
-  }
+  // Primero el grafo: `openDetail` saca de él el estado y la vigencia de la unidad.
   await loadGraph();
+  if (detailUnit.value?.id) {
+    await openDetail(detailUnit.value.id, { mantener: true });
+  }
 };
 
 const confirmAddPosition = async () => {
@@ -1058,27 +1114,52 @@ const openEditPosition = (pos) => {
     cargo_id: pos.cargo_id || "",
     title: pos.title || "",
     position_type: pos.position_type || "real",
-    is_unit_head: Number(pos.is_unit_head) === 1,
-    is_active: Number(pos.is_active) === 1
+    is_unit_head: Number(pos.is_unit_head) === 1
   };
+  positionTab.value = "datos";
+  positionError.value = "";
+  // El puesto ya trae consigo su periodo de hoy y todas sus vidas: llegan con el detalle de la unidad.
+  vigenciaDelPuesto.prepararVida(pos, pos.vigencias || []);
+  vigenciaDelPuesto.cargarActos();
 };
+const closeEditPosition = () => { editingPosition.value = null; };
 const confirmEditPosition = async () => {
   const pos = editingPosition.value;
   const form = editPositionForm.value;
-  editingPosition.value = null;
   if (!pos) return;
+  savingPosition.value = true;
+  positionError.value = "";
   try {
     await adminSqlService.updateUnitPosition(pos.id, {
       cargo_id: form.cargo_id ? Number(form.cargo_id) : undefined,
       title: form.title,
       position_type: form.position_type,
-      is_unit_head: form.is_unit_head ? 1 : 0,
-      is_active: form.is_active ? 1 : 0
+      is_unit_head: form.is_unit_head ? 1 : 0
     });
+    editingPosition.value = null;
     setFeedback("success", "Puesto actualizado.");
     await refreshAfterPositionChange();
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo actualizar el puesto.");
+    positionError.value = e?.response?.data?.message || "No se pudo actualizar el puesto.";
+  } finally {
+    savingPosition.value = false;
+  }
+};
+// Guarda la vida que enseña la pestaña «Vigencia» del puesto: ponerlo en vigor, suprimirlo o reactivarlo.
+const saveVidaDelPuesto = async () => {
+  const pos = editingPosition.value;
+  if (!props.editable || !pos?.id || !vigenciaDelPuesto.sePuedeGuardar.value) return;
+  savingPosition.value = true;
+  positionError.value = "";
+  try {
+    await vigenciaDelPuesto.guardarVida(pos.id);
+    editingPosition.value = null;
+    setFeedback("success", "Vigencia del puesto actualizada.");
+    await refreshAfterPositionChange();
+  } catch (e) {
+    positionError.value = e?.response?.data?.message || "No se pudo guardar la vigencia del puesto.";
+  } finally {
+    savingPosition.value = false;
   }
 };
 

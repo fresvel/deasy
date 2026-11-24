@@ -26,6 +26,7 @@ import {
   insertarRelacion
 } from "../datos/unidades.js";
 import {
+  listarVidasDeLosPuestos,
   siguienteSlot,
   insertarPuesto,
   actualizarPuesto,
@@ -96,8 +97,15 @@ export default class OrgStructureService {
     if (!unit) {
       throw new Error("La unidad no existe.");
     }
-    const positions = await listarPuestosConOcupante(this.pool, id);
+    const puestos = await listarPuestosConOcupante(this.pool, id);
     const vigencias = await listarVidasDeLaUnidad(this.pool, id);
+    // Cada puesto lleva sus vidas: es la historia que enseña su pestaña «Vigencia».
+    const vidasPorPuesto = new Map();
+    for (const vida of await listarVidasDeLosPuestos(this.pool, id)) {
+      if (!vidasPorPuesto.has(vida.position_id)) vidasPorPuesto.set(vida.position_id, []);
+      vidasPorPuesto.get(vida.position_id).push(vida);
+    }
+    const positions = puestos.map((puesto) => ({ ...puesto, vigencias: vidasPorPuesto.get(puesto.id) ?? [] }));
     return {
       unit: { id: unit.id, name: unit.name, label: unit.label },
       vigencias,
@@ -217,7 +225,6 @@ export default class OrgStructureService {
     if (data.cargo_id !== undefined) cambios.cargo_id = Number(data.cargo_id);
     if (data.position_type !== undefined) cambios.position_type = effType;
     if (data.is_unit_head !== undefined) cambios.is_unit_head = effHead;
-    if (data.is_active !== undefined) cambios.is_active = data.is_active ? 1 : 0;
     if (data.profile !== undefined) cambios.profile = this.normalizePositionProfile(data.profile);
     try {
       await actualizarPuesto(this.pool, pid, cambios);

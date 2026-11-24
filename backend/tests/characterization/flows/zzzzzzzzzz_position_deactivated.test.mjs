@@ -44,7 +44,8 @@ after(async () => {
   // Autolimpieza best-effort: reactivar el puesto NO deshace el relevo —no hay trigger de 0→1, y
   // no debería haberlo: reactivar una silla no devuelve el trabajo por su cuenta—, así que lo que
   // se restaura es el puesto, no la tenencia.
-  await query("UPDATE unit_positions SET is_active = 1 WHERE id = $1", [PUESTO]);
+  // Desde el frente 27 un puesto no lleva bandera: «reactivarlo» es quitarle el fin a su vida.
+  await query("UPDATE position_vigencias SET vigente_hasta = NULL, fin_origen = NULL WHERE position_id = $1", [PUESTO]);
   await query("DELETE FROM task_item_tenures WHERE task_item_id IN (SELECT id FROM task_items WHERE title LIKE 'zz char puesto desactivado%')");
   await query("DELETE FROM document_versions WHERE task_item_id IN (SELECT id FROM task_items WHERE title LIKE 'zz char puesto desactivado%')");
   await query("DELETE FROM task_items WHERE title LIKE 'zz char puesto desactivado%'");
@@ -85,7 +86,12 @@ test("desactivar un puesto deja huérfanos SÓLO los entregables que aún no lle
     "y alguno YA en firma: es la mitad que la mutación destapó como no cubierta",
   );
 
-  await query("UPDATE unit_positions SET is_active = 0 WHERE id = $1", [PUESTO]);
+  // SUPRIMIR EL PUESTO (frente 27): su vida termina hoy. Es lo que antes era `is_active = 0`, y
+  // dispara el mismo efecto, ahora desde `position_vigencias`.
+  await query(
+    "UPDATE position_vigencias SET vigente_hasta = CURRENT_DATE, fin_origen = 'carga_inicial' WHERE position_id = $1 AND vigente_hasta IS NULL",
+    [PUESTO]
+  );
 
   const despues = await query(
     `SELECT ti.id, ti.assigned_person_id, t.opened_by

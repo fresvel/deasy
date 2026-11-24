@@ -309,6 +309,7 @@ export const TABLE_RESOURCE_MAP = {
   unit_positions: "people",
   unit_relations: "units",
   unit_vigencias: "units",
+  position_vigencias: "units",
   unit_types: "units",
   units: "units",
   vacancies: "contracts",

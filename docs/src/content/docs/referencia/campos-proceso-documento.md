@@ -99,7 +99,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `title` | varchar(180) | no | — | — |
 | `profile` | jsonb | no | — | — |
 | `position_type` | text | sí | — | `real` · `promocion` · `simbolico` |
-| `is_active` | smallint | sí | — | — |
 | `is_unit_head` | smallint | sí | — | — |
 | `head_flag` | smallint | no | — | — |
 | `created_at` | timestamp | sí | — | — |
@@ -503,4 +502,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**32 tablas · 298 columnas · 74 referencias.** Leídas del catálogo de PostgreSQL.
+**32 tablas · 297 columnas · 74 referencias.** Leídas del catálogo de PostgreSQL.

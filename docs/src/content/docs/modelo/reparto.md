@@ -130,7 +130,7 @@ obligación, y una obligación no puede recortarse por debajo de las normas que 
 
 ## El resultado del reparto son sillas, no personas
 
-Una obligación se resuelve a una lista de **puestos** (`unit_positions` activos, en unidades que **rigen** —`unidad_rige`, que mira sus vidas—).
+Una obligación se resuelve a una lista de **puestos** (`unit_positions` que **rigen**, en unidades que rigen —`puesto_rige` y `unidad_rige`, que miran sus vidas—).
 Quién esté sentado en cada uno se mira en ese momento, y se mira con un `LEFT JOIN` contra
 `position_assignments`: **un puesto vacío sigue siendo un destino válido**.
 

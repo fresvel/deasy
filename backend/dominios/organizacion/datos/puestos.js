@@ -10,7 +10,9 @@
 
 // Las columnas que el editor del organigrama puede cambiar. La lista es CERRADA y es lo que permite
 // construir el SET por interpolación sin abrir una inyección: una clave que no esté aquí se ignora.
-const COLUMNAS_EDITABLES = ["title", "cargo_id", "position_type", "is_unit_head", "is_active", "profile"];
+// SIN `is_active` (frente 27, D-03): un puesto ya no se apaga con una columna. Se le pone fin a su
+// vida en `position_vigencias`, que tiene su propio camino de escritura.
+const COLUMNAS_EDITABLES = ["title", "cargo_id", "position_type", "is_unit_head", "profile"];
 
 // El slot se autoincrementa por (unidad, cargo): "Docente 1", "Docente 2". No es un contador global.
 export const siguienteSlot = async (ejecutor, unitId, cargoId) => {
@@ -23,8 +25,9 @@ export const siguienteSlot = async (ejecutor, unitId, cargoId) => {
 
 export const insertarPuesto = async (ejecutor, { unitId, cargoId, slotNo, title, profile, positionType, isHead }) => {
   const [resultado] = await ejecutor.query(
-    `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, profile, position_type, is_unit_head, is_active)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+    // NACE EN BORRADOR (frente 27, D-03): sin ninguna vida. Ponerlo en vigor es un paso aparte.
+    `INSERT INTO unit_positions (unit_id, cargo_id, slot_no, title, profile, position_type, is_unit_head)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     [unitId, cargoId, slotNo, title, profile, positionType, isHead]
   );
   return Number(resultado.insertId);
@@ -44,6 +47,25 @@ export const actualizarPuesto = async (ejecutor, positionId, cambios = {}) => {
     params
   );
   return columnas.length;
+};
+
+// TODAS LAS VIDAS de los puestos de una unidad, la más reciente primero, con el número del acto de
+// cada extremo. Una sola consulta para toda la unidad: el servicio las reparte por puesto.
+export const listarVidasDeLosPuestos = async (ejecutor, unitId) => {
+  const [filas] = await ejecutor.query(
+    `SELECT pv.id, pv.position_id, pv.vigente_desde::text AS vigente_desde, pv.vigente_hasta::text AS vigente_hasta,
+            pv.inicio_origen, pv.inicio_acto_id, ai.numero AS inicio_acto_numero,
+            pv.fin_origen, pv.fin_acto_id, af.numero AS fin_acto_numero,
+            estado_de_vigencia(pv.vigente_desde, pv.vigente_hasta) AS estado
+       FROM position_vigencias pv
+       INNER JOIN unit_positions p ON p.id = pv.position_id
+       LEFT JOIN actos ai ON ai.id = pv.inicio_acto_id
+       LEFT JOIN actos af ON af.id = pv.fin_acto_id
+      WHERE p.unit_id = ?
+      ORDER BY pv.vigente_desde DESC`,
+    [unitId]
+  );
+  return filas ?? [];
 };
 
 export const existePuesto = async (ejecutor, positionId) => {

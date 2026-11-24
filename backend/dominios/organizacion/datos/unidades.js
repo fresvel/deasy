@@ -22,11 +22,11 @@ export const listarNodosDelGrafo = async (ejecutor) => {
             v.vigencia_id, v.vigente_desde::text AS vigente_desde, v.vigente_hasta::text AS vigente_hasta,
             v.inicio_origen, v.inicio_acto_id, v.fin_origen, v.fin_acto_id,
             COALESCE(v.estado, 'borrador') AS estado,
-            (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_active = 1) AS positions_count,
+            (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND puesto_rige(p.id)) AS positions_count,
             (SELECT COUNT(*) FROM unit_positions p
                INNER JOIN position_assignments pa ON pa.position_id = p.id AND pa.is_current = 1
-              WHERE p.unit_id = u.id AND p.is_active = 1) AS occupied_count,
-            (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_unit_head = 1 AND p.is_active = 1) AS head_count
+              WHERE p.unit_id = u.id AND puesto_rige(p.id)) AS occupied_count,
+            (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_unit_head = 1 AND puesto_rige(p.id)) AS head_count
      FROM units u
      LEFT JOIN unit_types ut ON ut.id = u.unit_type_id
      LEFT JOIN unit_vigencia_actual v ON v.unit_id = u.id

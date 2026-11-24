@@ -558,8 +558,8 @@
     "itemKeys": [
       "cargo_id",
       "created_at",
+      "estado",
       "id",
-      "is_active",
       "is_unit_head",
       "position_type",
       "profile",

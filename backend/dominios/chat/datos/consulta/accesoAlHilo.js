@@ -92,7 +92,7 @@ export const moderadoresDelHilo = async (ejecutor, processId, scopeUnitId) => {
        INNER JOIN unit_positions up
          ON up.unit_id = t.scope_unit_id
         AND up.is_unit_head = 1
-        AND up.is_active = 1
+        AND puesto_rige(up.id)
        INNER JOIN position_assignments pa
          ON pa.position_id = up.id
         AND pa.is_current = 1

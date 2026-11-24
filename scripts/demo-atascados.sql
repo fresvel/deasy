@@ -21,7 +21,8 @@ DELETE FROM task_items WHERE title LIKE 'Informe de laboratorio (demo%';
 DELETE FROM document_versions WHERE task_item_id IN (SELECT id FROM task_items WHERE title LIKE '%(demo:%');
 DELETE FROM task_item_tenures WHERE task_item_id IN (SELECT id FROM task_items WHERE title LIKE '%(demo:%');
 DELETE FROM task_items WHERE title LIKE '%(demo:%';
-UPDATE unit_positions SET is_active = 1 WHERE id = 27;
+-- El puesto 27 vuelve a regir: se le quita el fin a su vida (frente 27: ya no hay bandera).
+UPDATE position_vigencias SET vigente_hasta = NULL, fin_origen = NULL WHERE position_id = 27;
 
 -- ── CASO A ────────────────────────────────────────────────────────────────────────────────
 UPDATE task_items SET document_status = 'Pendiente de firma' WHERE id = 1;
@@ -59,7 +60,8 @@ SELECT ti.task_id, ti.vinculo_id, ti.edicion_id, 'user_added',
        'Pendiente de firma', ti.start_date, ti.end_date
   FROM task_items ti WHERE ti.id = 1;
 
-UPDATE unit_positions SET is_active = 0 WHERE id = 27;
+-- Se suprime el puesto 27: su vida termina hoy.
+UPDATE position_vigencias SET vigente_hasta = CURRENT_DATE, fin_origen = 'carga_inicial' WHERE position_id = 27 AND vigente_hasta IS NULL;
 
 COMMIT;
 
@@ -68,9 +70,9 @@ COMMIT;
 -- El MISMO predicado que usa el panel del jefe. La version anterior de esta consulta etiquetaba
 -- «titular_se_fue» a todo lo que tuviera responsable, sin comprobar si esa persona OCUPA el puesto,
 -- asi que enseñaba como atascados entregables perfectamente sanos.
-SELECT ti.id, ti.responsible_position_id AS puesto, up.is_active AS puesto_activo,
+SELECT ti.id, ti.responsible_position_id AS puesto, puesto_rige(up.id) AS puesto_rige,
        ti.assigned_person_id AS responde, ti.document_status,
-       CASE WHEN up.is_active = 0 THEN 'puesto_desactivado'
+       CASE WHEN NOT puesto_rige(up.id) THEN 'puesto_desactivado'
             WHEN ti.assigned_person_id IS NULL THEN 'sin_responsable'
             ELSE 'titular_se_fue' END AS motivo
   FROM task_items ti
@@ -81,6 +83,6 @@ SELECT ti.id, ti.responsible_position_id AS puesto, up.is_active AS puesto_activ
      OR NOT EXISTS (SELECT 1 FROM position_assignments pa
                      WHERE pa.position_id = ti.responsible_position_id
                        AND pa.is_current = 1 AND pa.person_id = ti.assigned_person_id)
-     OR up.is_active = 0
+     OR NOT puesto_rige(up.id)
    )
  ORDER BY ti.id;

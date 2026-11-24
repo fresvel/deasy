@@ -701,6 +701,14 @@
       "referencia/campos-proceso-documento.md"
     ]
   },
+  "position_vigencias": {
+    "huella": "cfa5f19307c69f0b",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
   "process_definition_period_types": {
     "huella": "ecdf7b3557e275ff",
     "paginas": [
@@ -1067,7 +1075,7 @@
     ]
   },
   "unit_positions": {
-    "huella": "0ac937d7f6bd7449",
+    "huella": "a6fac155d3192f82",
     "paginas": [
       "arquitectura-y-patrones.md",
       "complemento/empleo.md",

@@ -186,7 +186,7 @@ export default class TaskAssignmentService {
          FROM unit_positions up
          INNER JOIN units u ON u.id = up.unit_id
          INNER JOIN cargos c ON c.id = up.cargo_id
-        WHERE up.is_active = 1 AND c.is_active = 1 ${unitFilter}
+        WHERE puesto_rige(up.id) AND c.is_active = 1 ${unitFilter}
         ORDER BY c.name ASC`,
       params
     );
@@ -206,7 +206,7 @@ export default class TaskAssignmentService {
       `SELECT DISTINCT up.unit_id, up.cargo_id
          FROM unit_positions up
          INNER JOIN cargos c ON c.id = up.cargo_id
-        WHERE up.is_active = 1 AND c.is_active = 1 AND up.unit_id IN (?)`,
+        WHERE puesto_rige(up.id) AND c.is_active = 1 AND up.unit_id IN (?)`,
       [list]
     );
     for (const row of rows) {
@@ -486,7 +486,7 @@ export default class TaskAssignmentService {
          SELECT up.unit_id AS unit_id
            FROM unit_positions up
            INNER JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1 AND pa.person_id = ?
-          WHERE up.is_unit_head = 1 AND up.is_active = 1
+          WHERE up.is_unit_head = 1 AND puesto_rige(up.id)
        ),
        scope AS (
          SELECT unit_id FROM headed
@@ -539,7 +539,7 @@ export default class TaskAssignmentService {
          INNER JOIN persons p ON p.id = pa.person_id
          LEFT JOIN cargos c ON c.id = up.cargo_id
         WHERE up.unit_id IN (${placeholders})
-          AND up.is_active = 1
+          AND puesto_rige(up.id)
         -- El ORDER BY va por las columnas PROYECTADAS: con SELECT DISTINCT, PostgreSQL exige que
         -- lo que ordena aparezca en la lista. Ordenar por p.first_name con un DISTINCT que no lo
         -- proyecta es un error de ejecucion, no de sintaxis: otra que solo se ve al llamar.
@@ -561,7 +561,7 @@ export default class TaskAssignmentService {
       `SELECT COUNT(*) AS n
          FROM unit_positions up
          INNER JOIN position_assignments pa ON pa.position_id = up.id AND pa.is_current = 1 AND pa.person_id = ?
-        WHERE up.is_unit_head = 1 AND up.is_active = 1`,
+        WHERE up.is_unit_head = 1 AND puesto_rige(up.id)`,
       [pid]
     );
     if (Number(headRows?.[0]?.n || 0) === 0) {
@@ -579,7 +579,7 @@ export default class TaskAssignmentService {
                 LIMIT 1) AS occupant_person_id,
               -- El estado del DOCUMENTO, que desde el 2026-08-23 vive en el propio entregable.
               ti.document_status AS status,
-              up.unit_id, up.is_active AS position_is_active,
+              up.unit_id, puesto_rige(up.id) AS position_is_active,
               u.name AS unit_name, c.name AS cargo_name,
               EXISTS (SELECT 1 FROM document_versions dv WHERE dv.task_item_id = ti.id) AS started
          FROM task_items ti
@@ -600,7 +600,7 @@ export default class TaskAssignmentService {
             -- puesto que ya no existe, asi que los dos terminos de arriba lo dan por sano. Sin esto,
             -- un entregable EN FASE DE FIRMA anclado a un puesto desactivado no aparecia en ninguna
             -- parte — y es justo el que necesita que lo mire alguien, porque el trigger no lo toca.
-            OR up.is_active = 0
+            OR NOT puesto_rige(up.id)
           )
         ORDER BY up.unit_id ASC, ti.id ASC
         LIMIT 500`,

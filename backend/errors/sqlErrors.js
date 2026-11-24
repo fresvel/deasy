@@ -53,7 +53,8 @@ export const isCheckViolation = (error) => error?.code === PG_CHECK_VIOLATION;
 // asi una tabla nueva de vigencias entra añadiendo su nombre a esta lista, no copiando cuatro frases.
 const TABLAS_DE_VIGENCIA = Object.freeze({
   process_vigencias: "este proceso",
-  unit_vigencias: "esta unidad"
+  unit_vigencias: "esta unidad",
+  position_vigencias: "este puesto"
 });
 
 const reglasDeVida = (tabla) => ({
