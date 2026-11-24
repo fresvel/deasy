@@ -299,12 +299,13 @@
             <!-- Un interruptor, no una pestaña: se combina con la clase elegida a la izquierda. -->
             <AppButton
               :variant="soloVacantes ? 'primary-soft' : 'primary-outline'"
+              icon-only
               :aria-pressed="soloVacantes"
-              :title="soloVacantes ? 'Ver todos los puestos' : 'Ver sólo los puestos sin ocupante'"
+              :title="soloVacantes ? 'Ver todos los puestos' : `Ver sólo los vacantes (${totalDeVacantes})`"
+              :aria-label="soloVacantes ? 'Ver todos los puestos' : `Ver sólo los vacantes (${totalDeVacantes})`"
               @click="soloVacantes = !soloVacantes"
             >
-              <IconFilter class="h-4 w-4" />
-              Vacantes · {{ totalDeVacantes }}
+              <IconFilter class="h-5 w-5" />
             </AppButton>
             <AppButton v-if="editable" variant="primary-outline" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
           </div>
@@ -370,19 +371,10 @@
                     >
                       <IconPencil class="h-5 w-5" />
                     </AppButton>
-                    <AppButton
-                      :variant="pos.profile ? 'primary-soft' : 'neutral-soft'"
-                      icon-only
-                      :title="pos.profile ? 'Editar perfil' : 'Definir perfil'"
-                      :aria-label="pos.profile ? 'Editar perfil' : 'Definir perfil'"
-                      @click="openProfileWizard(pos)"
-                    >
-                      <IconFileDescription class="h-5 w-5" />
-                    </AppButton>
                     <!-- ELIMINAR Y SUPRIMIR NO SON LO MISMO, y sólo se ofrece el que vale. Un puesto
                          que nunca rigió —un borrador— se elimina: fue un error. Uno que rige o va a
                          regir se SUPRIME, poniéndole fecha de fin: lleva a su pestaña «Vigencia».
-                         Uno ya suprimido no tiene ninguna de las dos; se reactiva desde el lápiz. -->
+                         Uno ya suprimido se REACTIVA, que es lo único que le queda por hacer. -->
                     <AppButton
                       v-if="pos.estado === 'borrador'"
                       variant="danger-soft"
@@ -403,13 +395,36 @@
                     >
                       <IconCalendarOff class="h-5 w-5" />
                     </AppButton>
+                    <AppButton
+                      v-else
+                      variant="primary-soft"
+                      icon-only
+                      title="Reactivar puesto"
+                      aria-label="Reactivar puesto"
+                      @click="openEditPosition(pos, 'vigencia')"
+                    >
+                      <IconRestore class="h-5 w-5" />
+                    </AppButton>
                   </div>
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                   <template v-if="pos.person_id">
                     <AppTag variant="success">Ocupado</AppTag>
                     <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
-                    <div v-if="editable" class="ml-auto flex items-center gap-2">
+                  </template>
+                  <span v-else class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
+                  <!-- Lo que se hace con el puesto tal como está: su perfil y quién lo ocupa. -->
+                  <div v-if="editable" class="ml-auto flex items-center gap-2">
+                    <AppButton
+                      variant="primary-soft"
+                      icon-only
+                      :title="pos.profile ? 'Editar perfil' : 'Definir perfil'"
+                      :aria-label="pos.profile ? 'Editar perfil' : 'Definir perfil'"
+                      @click="openProfileWizard(pos)"
+                    >
+                      <IconFileDescription class="h-5 w-5" />
+                    </AppButton>
+                    <template v-if="pos.person_id">
                       <AppButton
                         variant="success-soft"
                         icon-only
@@ -428,22 +443,18 @@
                       >
                         <IconUserMinus class="h-5 w-5" />
                       </AppButton>
-                    </div>
-                  </template>
-                  <template v-else>
-                    <span class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
+                    </template>
                     <AppButton
-                      v-if="editable"
+                      v-else
                       variant="success-soft"
                       icon-only
-                      class-name="ml-auto"
                       title="Asignar persona al puesto"
                       aria-label="Asignar persona al puesto"
                       @click="openAssign(pos.id)"
                     >
                       <IconUserPlus class="h-5 w-5" />
                     </AppButton>
-                  </template>
+                  </div>
                 </div>
 
                 <!-- Buscador de persona para asignar -->
@@ -645,7 +656,7 @@ import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeV
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconAlertTriangle, IconArrowLeft, IconCalendarEvent, IconCalendarOff, IconCrown, IconDownload, IconFileDescription, IconFilter, IconId, IconPencil, IconPlus, IconRefresh, IconSearch, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
+import { IconAlertTriangle, IconArrowLeft, IconCalendarEvent, IconCalendarOff, IconCrown, IconDownload, IconFileDescription, IconFilter, IconId, IconPencil, IconPlus, IconRefresh, IconRestore, IconSearch, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
