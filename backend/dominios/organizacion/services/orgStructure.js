@@ -306,11 +306,16 @@ export default class OrgStructureService {
     // DE QUE, que es lo unico accionable. «Esta referenciado» no le dice a nadie que hacer.
     const dependencias = await contarDependenciasDelPuesto(this.pool, pid);
     if (dependencias.length) {
-      const total = dependencias.reduce((suma, { n }) => suma + n, 0);
       const bloqueos = dependencias.map(({ n, singular, plural }) => `${n} ${n === 1 ? singular : plural}`);
+      const lista = bloqueos.length > 1
+        ? `${bloqueos.slice(0, -1).join(", ")} y ${bloqueos[bloqueos.length - 1]}`
+        : bloqueos[0];
+      // ELIMINAR NO ES DAR DE BAJA, y el mensaje tiene que decir las dos cosas: por qué no, y qué
+      // hacer en su lugar y dónde.
       throw conflict(
-        `No se puede eliminar: ${bloqueos.join(", ")} ${total === 1 ? "depende" : "dependen"} ` +
-        "de este puesto. Suprimelo en su lugar: ponle fecha de fin en su vigencia."
+        `Este puesto no se puede eliminar porque ya tiene historia: ${lista}. ` +
+        "Eliminar es sólo para un puesto creado por error, que nunca rigió. " +
+        "Para darlo de baja, suprímelo: edítalo y, en «Vigencia», ponle fecha de fin."
       );
     }
 

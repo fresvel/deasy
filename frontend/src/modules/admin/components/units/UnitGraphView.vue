@@ -908,6 +908,13 @@ const setFeedback = (kind, message) => {
   feedbackTimer = setTimeout(() => { feedback.value = { kind: "", message: "" }; }, 4000);
 };
 
+// UN ERROR SE ENSEÑA DONDE ESTÁ QUIEN LO PROVOCÓ. El aviso de la página queda DETRÁS del modal de la
+// unidad: lo que falle con él abierto —eliminar un puesto, retirar a su ocupante— se dice dentro.
+const avisarDeError = (mensaje) => {
+  if (detailUnit.value) modalError.value = mensaje;
+  else setFeedback("error", mensaje);
+};
+
 // Auto-layout jerárquico (top-down) con dagre.
 const layout = (rawNodes, rawEdges) => {
   const g = new dagre.graphlib.Graph();
@@ -1156,7 +1163,7 @@ const loadUnitProcesses = async () => {
     detailProcesses.value = data.processes || [];
     detailProcessesLoaded.value = true;
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudieron cargar los procesos.");
+    avisarDeError(e?.response?.data?.message || "No se pudieron cargar los procesos.");
   } finally {
     detailProcessesLoading.value = false;
   }
@@ -1215,6 +1222,7 @@ const refreshAfterPositionChange = async () => {
 
 const confirmAddPosition = async () => {
   if (!detailUnit.value?.id || !positionForm.value.cargo_id) return;
+  modalError.value = "";
   try {
     await adminSqlService.addUnitPosition(detailUnit.value.id, { ...positionForm.value });
     addingPosition.value = false;
@@ -1222,17 +1230,18 @@ const confirmAddPosition = async () => {
     setFeedback("success", "Puesto creado.");
     await refreshAfterPositionChange();
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo crear el puesto.");
+    avisarDeError(e?.response?.data?.message || "No se pudo crear el puesto.");
   }
 };
 
 const removePosition = async (positionId) => {
+  modalError.value = "";
   try {
     await adminSqlService.removeUnitPosition(positionId);
     setFeedback("success", "Puesto eliminado.");
     await refreshAfterPositionChange();
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo eliminar el puesto.");
+    avisarDeError(e?.response?.data?.message || "No se pudo eliminar el puesto.");
   }
 };
 
@@ -1320,26 +1329,28 @@ const saveProfileWizard = async (profile) => {
     setFeedback("success", "Perfil del puesto guardado.");
     await refreshAfterPositionChange();
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo guardar el perfil.");
+    avisarDeError(e?.response?.data?.message || "No se pudo guardar el perfil.");
   }
 };
 
 const toggleHead = async (pos) => {
+  modalError.value = "";
   try {
     await adminSqlService.updateUnitPosition(pos.id, { is_unit_head: pos.is_unit_head ? 0 : 1 });
     await refreshAfterPositionChange();
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo cambiar la jefatura.");
+    avisarDeError(e?.response?.data?.message || "No se pudo cambiar la jefatura.");
   }
 };
 
 const unassign = async (positionId) => {
+  modalError.value = "";
   try {
     await adminSqlService.unassignUnitPosition(positionId);
     setFeedback("success", "Ocupante retirado.");
     await refreshAfterPositionChange();
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo retirar el ocupante.");
+    avisarDeError(e?.response?.data?.message || "No se pudo retirar el ocupante.");
   }
 };
 
@@ -1373,7 +1384,7 @@ const pickPerson = async (personId) => {
     setFeedback("success", "Ocupante asignado.");
     await refreshAfterPositionChange();
   } catch (e) {
-    setFeedback("error", e?.response?.data?.message || "No se pudo asignar el ocupante.");
+    avisarDeError(e?.response?.data?.message || "No se pudo asignar el ocupante.");
   }
 };
 
