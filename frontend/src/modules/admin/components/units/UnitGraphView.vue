@@ -351,7 +351,6 @@
                   <IconCrown v-if="pos.is_unit_head" class="h-4 w-4 shrink-0 text-warning" title="Jefatura" />
                   <span class="truncate text-sm font-semibold text-strong">{{ pos.cargo_name || pos.title || 'Puesto' }}</span>
                   <span class="text-xs text-muted">#{{ pos.slot_no }}</span>
-                  <AppTag v-if="pos.estado !== 'vigente'" :variant="tonoVigencia(pos.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(pos.estado) }}</AppTag>
                   <div v-if="editable" class="ml-auto flex items-center gap-2">
                     <AppButton
                       :variant="pos.is_unit_head ? 'warning-soft' : 'neutral-soft'"
@@ -408,6 +407,9 @@
                   </div>
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                  <!-- UNA SOLA FILA DE PASTILLAS: en qué estado está el puesto —si no es el corriente,
+                       que rija— y, si hay plaza, si está ocupada o vacante. -->
+                  <AppTag v-if="pos.estado !== 'vigente'" :variant="tonoVigencia(pos.estado)" outlined>{{ etiquetaVigencia(pos.estado) }}</AppTag>
                   <template v-if="pos.person_id">
                     <AppTag variant="success" outlined>Ocupado</AppTag>
                     <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
