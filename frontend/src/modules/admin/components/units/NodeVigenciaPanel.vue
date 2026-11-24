@@ -11,7 +11,11 @@
     <!-- La última vida terminó: se puede abrir otra, pero no sin pedirlo. -->
     <div v-if="vigencia.vidaModo.value === 'cerrada'" class="flex flex-col items-start gap-3">
       <p class="m-0 text-sm text-icon">{{ sujeto }} sin vida en curso. Reactivar abre una vida nueva; la anterior queda en su historia.</p>
-      <AppButton v-if="editable" variant="primary-outline" @click="$emit('reactivar')">Reactivar</AppButton>
+      <div v-if="editable" class="flex flex-wrap items-center gap-2">
+        <AppButton variant="primary-outline" @click="$emit('reactivar')">Reactivar</AppButton>
+        <!-- Otra cosa distinta: decir que el fin estaba MAL registrado. Sólo para quien puede corregir. -->
+        <AppButton v-if="vigencia.puedeCorregir && vigencia.sePuedeCorregirElFin.value" variant="neutral-outline" @click="vigencia.empezarCorreccionDelFin()">Corregir el fin</AppButton>
+      </div>
     </div>
 
     <div v-else class="flex flex-col gap-3">
@@ -71,10 +75,10 @@
     </div>
 
     <!-- UNA CORRECCIÓN PIDE SU MOTIVO. Aparece sola cuando lo que se va a guardar lo es: un origen
-         «corrección», o cambiar la fecha de inicio de una vida que ya empezó. -->
+         «corrección», o cambiar una fecha —de inicio o de fin— que ya ocurrió. -->
     <div v-if="vigencia.vidaModo.value !== 'cerrada' && vigencia.esCorreccion.value" class="flex flex-col gap-2">
       <AppAlert v-if="!vigencia.puedeCorregir" variant="warning">
-        Cambiar la fecha de inicio de una vida que ya empezó es una corrección, y registrar correcciones pide un permiso aparte que no tienes.
+        Cambiar una fecha que ya ocurrió es una corrección, y registrar correcciones pide un permiso aparte que no tienes.
       </AppAlert>
       <label v-else class="deasy-form-label">
         Motivo de la corrección

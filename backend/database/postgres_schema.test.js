@@ -703,3 +703,10 @@ test("la marca de correccion no basta sola: tiene que existir la entrada, de esa
   assert.match(extremos, /IF correccion_en_curso\(TG_TABLE_NAME, OLD\.id\) THEN\s+RETURN NEW;/);
 });
 
+// Decision del dueño, 2026-11-24: mover o quitar un fin que YA OCURRIO tambien es correccion.
+test("cambiar una fecha que ya ocurrio, de inicio o de fin, exige la correccion registrada", () => {
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.exigir_correccion_registrada()")).split("$$ LANGUAGE plpgsql")[0];
+  assert.match(cuerpo, /OLD\.vigente_desde <= CURRENT_DATE\s+AND NEW\.vigente_desde IS DISTINCT FROM OLD\.vigente_desde\s+AND NOT correccion_en_curso/);
+  assert.match(cuerpo, /OLD\.vigente_hasta <= CURRENT_DATE\s+AND NEW\.vigente_hasta IS DISTINCT FROM OLD\.vigente_hasta\s+AND NOT correccion_en_curso/);
+});
+

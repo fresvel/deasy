@@ -61,6 +61,10 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
   });
   /* La fecha de inicio con que se abrió el formulario: cambiarla, si ya ocurrió, es una corrección. */
   const desdeOriginal = ref("");
+  /* Y la de fin: cambiarla o quitarla, si ya ocurrió, también lo es. */
+  const hastaOriginal = ref("");
+  /* La última vida de un nodo suprimido: lo que se corrige si su fin estaba mal. */
+  const ultimaVida = ref(null);
   const hoy = () => new Date().toISOString().slice(0, 10);
 
   /* ¿LO QUE SE VA A GUARDAR ES UNA CORRECCIÓN? Dos casos, los mismos que exige la base: que un
@@ -69,8 +73,10 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
   const esCorreccion = computed(() => {
     const f = vidaForm.value;
     if (f.inicio_origen === "correccion" || (f.vigente_hasta && f.fin_origen === "correccion")) return true;
-    return vidaModo.value === "editar" && Boolean(desdeOriginal.value)
-      && desdeOriginal.value <= hoy() && f.vigente_desde !== desdeOriginal.value;
+    if (vidaModo.value !== "editar") return false;
+    const inicioCambiado = Boolean(desdeOriginal.value) && desdeOriginal.value <= hoy() && f.vigente_desde !== desdeOriginal.value;
+    const finCambiado = Boolean(hastaOriginal.value) && hastaOriginal.value <= hoy() && (f.vigente_hasta || "") !== hastaOriginal.value;
+    return inicioCambiado || finCambiado;
   });
   const sePuedeGuardar = computed(() =>
     vidaModo.value !== "cerrada"
@@ -95,17 +101,45 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
         motivo: ""
       };
       desdeOriginal.value = nodo.vigente_desde || "";
+      hastaOriginal.value = nodo.vigente_hasta || "";
+      ultimaVida.value = null;
       return;
     }
     vidaModo.value = nodo?.estado === "suprimido" ? "cerrada" : "nueva";
     vidaForm.value = { ...VIDA_VACIA };
     desdeOriginal.value = "";
+    hastaOriginal.value = "";
+    // Un nodo suprimido trae consigo su última vida —es el periodo que cuenta hoy—.
+    ultimaVida.value = nodo?.estado === "suprimido" && nodo.vigencia_id ? nodo : null;
+  };
+
+  /* CORREGIR EL FIN DE UNA VIDA QUE YA TERMINÓ: mover el día en que dejó de regir, o quitarlo —el
+     nodo vuelve a regir como si no se hubiera suprimido—. No es reactivar: reactivar abre una vida
+     NUEVA y deja escrita la anterior; esto dice que la anterior estaba mal cerrada. */
+  const sePuedeCorregirElFin = computed(() => vidaModo.value === "cerrada" && Boolean(ultimaVida.value));
+  const empezarCorreccionDelFin = () => {
+    const v = ultimaVida.value;
+    if (!v) return;
+    vidaModo.value = "editar";
+    vidaForm.value = {
+      id: v.vigencia_id,
+      vigente_desde: v.vigente_desde || "",
+      inicio_origen: v.inicio_origen || "",
+      inicio_acto_id: v.inicio_acto_id ? String(v.inicio_acto_id) : "",
+      vigente_hasta: v.vigente_hasta || "",
+      fin_origen: v.fin_origen || "",
+      fin_acto_id: v.fin_acto_id ? String(v.fin_acto_id) : "",
+      motivo: ""
+    };
+    desdeOriginal.value = v.vigente_desde || "";
+    hastaOriginal.value = v.vigente_hasta || "";
   };
 
   const empezarVidaNueva = () => {
     vidaModo.value = "nueva";
     vidaForm.value = { ...VIDA_VACIA };
     desdeOriginal.value = "";
+    hastaOriginal.value = "";
   };
 
   /* Los actos entre los que elegir cuando el origen es una reorganización. Se piden al abrir el
@@ -173,6 +207,8 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     etiquetaDeGuardarVida,
     sePuedeGuardar,
     esCorreccion,
+    sePuedeCorregirElFin,
+    empezarCorreccionDelFin,
     puedeCorregir: puedeCorregirLaEstructura(),
     prepararVida,
     empezarVidaNueva,

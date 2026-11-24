@@ -44,8 +44,15 @@ after(async () => {
   // Autolimpieza best-effort: reactivar el puesto NO deshace el relevo —no hay trigger de 0→1, y
   // no debería haberlo: reactivar una silla no devuelve el trabajo por su cuenta—, así que lo que
   // se restaura es el puesto, no la tenencia.
-  // Desde el frente 27 un puesto no lleva bandera: «reactivarlo» es quitarle el fin a su vida.
-  await query("UPDATE position_vigencias SET vigente_hasta = NULL, fin_origen = NULL WHERE position_id = $1", [PUESTO]);
+  // Desde el frente 27 un puesto no lleva bandera, y «reactivarlo» es ABRIRLE UNA VIDA NUEVA.
+  // Hasta el 2026-11-24 esta limpieza le quitaba el fin a la que se acababa de cerrar, que es otra
+  // cosa: reabrir una vida ya terminada reescribe lo ocurrido y es una corrección, y la base lo
+  // rechaza fuera de ese camino. Que esta línea dejara de funcionar ES la regla funcionando.
+  await query(
+    `INSERT INTO position_vigencias (position_id, vigente_desde, inicio_origen)
+     SELECT $1, CURRENT_DATE, 'carga_inicial' WHERE NOT puesto_rige($1)`,
+    [PUESTO]
+  );
   await query("DELETE FROM task_item_tenures WHERE task_item_id IN (SELECT id FROM task_items WHERE title LIKE 'zz char puesto desactivado%')");
   await query("DELETE FROM document_versions WHERE task_item_id IN (SELECT id FROM task_items WHERE title LIKE 'zz char puesto desactivado%')");
   await query("DELETE FROM task_items WHERE title LIKE 'zz char puesto desactivado%'");

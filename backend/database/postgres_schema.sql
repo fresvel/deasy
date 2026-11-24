@@ -1343,9 +1343,12 @@ $$ LANGUAGE plpgsql STABLE;
 -- LO QUE SOLO UNA CORRECCION PUEDE HACER, en las tres tablas de vidas y en las dos de relaciones:
 --
 --   · cambiar la fecha de inicio de algo que ya empezo a regir --es decir que rigio desde otro dia--;
+--   · cambiar o QUITAR la fecha de fin de algo que ya termino --mover el dia en que dejo de regir, o
+--     reabrirlo como si no hubiera terminado nunca-- (decision del dueño, 2026-11-24);
 --   · escribir el origen «correccion» en un inicio o en un fin.
 --
--- Poner fin a algo que rige NO esta aqui: eso es suprimir, y es el camino normal.
+-- Poner fin a algo que rige NO esta aqui: eso es suprimir, y es el camino normal. Tampoco mover un
+-- fin que todavia no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido.
 CREATE OR REPLACE FUNCTION public.exigir_correccion_registrada() RETURNS trigger
   SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
 AS $$
@@ -1354,6 +1357,12 @@ BEGIN
      AND NEW.vigente_desde IS DISTINCT FROM OLD.vigente_desde
      AND NOT correccion_en_curso(TG_TABLE_NAME, NEW.id) THEN
     RAISE EXCEPTION 'Rige desde el %, y esa fecha ya ocurrió: cambiarla es una corrección. Regístrala como corrección, con su motivo.', OLD.vigente_desde
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF TG_OP = 'UPDATE' AND OLD.vigente_hasta <= CURRENT_DATE
+     AND NEW.vigente_hasta IS DISTINCT FROM OLD.vigente_hasta
+     AND NOT correccion_en_curso(TG_TABLE_NAME, NEW.id) THEN
+    RAISE EXCEPTION 'Terminó el %, y esa fecha ya ocurrió: cambiarla o quitarla es una corrección. Regístrala como corrección, con su motivo.', OLD.vigente_hasta
       USING ERRCODE = 'restrict_violation';
   END IF;
   IF ((NEW.inicio_origen = 'correccion' AND (TG_OP = 'INSERT' OR OLD.inicio_origen IS DISTINCT FROM 'correccion'))

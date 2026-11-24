@@ -179,15 +179,19 @@ Una corrección **reescribe la historia**, y por eso pide lo que un cambio norma
   fila y qué dice ahora. Sólo admite altas —ni se modifica ni se borra—, y es **la única memoria**
   de lo que la fila decía.
 
-Tres cosas son corrección y sólo se pueden hacer así, en las vidas de unidades, puestos y procesos y
+Cuatro cosas son corrección y sólo se pueden hacer así, en las vidas de unidades, puestos y procesos y
 en las relaciones de los dos árboles:
 
 1. **Cambiar la fecha de inicio de algo que ya empezó a regir.** Es afirmar que rigió desde otro día.
-2. **Cambiar el padre de una relación que ya rige**, sin cerrarla.
-3. **Escribir el origen «corrección»** en un inicio o en un fin — por ejemplo, para cerrar algo que
+2. **Cambiar o quitar la fecha de fin de algo que ya terminó.** Mover el día en que dejó de regir, o
+   reabrirlo como si no hubiera terminado nunca. No es lo mismo que **reactivar**, que abre una vida
+   nueva y deja escrita la anterior.
+3. **Cambiar el padre de una relación que ya rige**, sin cerrarla.
+4. **Escribir el origen «corrección»** en un inicio o en un fin — por ejemplo, para cerrar algo que
    rigió por error.
 
-Poner fin a algo que rige **no** es una corrección: es suprimir. Y una corrección **no borra**: lo
+Poner fin a algo que rige **no** es una corrección: es suprimir. Tampoco mover un fin que todavía
+no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido. Y una corrección **no borra**: lo
 que rigió por error se cierra con origen «corrección», y así queda escrito que existió y que fue un
 error.
 
