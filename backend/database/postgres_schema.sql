@@ -1466,21 +1466,40 @@ AS $$
 DECLARE
   fila JSONB := to_jsonb(NEW);
   columna TEXT;
+  nodo INT;
   rige BOOLEAN;
+  tiene_vida BOOLEAN;
+  nombre TEXT;
 BEGIN
   IF NEW.vigente_desde IS NULL THEN
     RETURN NEW;
   END IF;
   FOREACH columna IN ARRAY ARRAY[TG_ARGV[2], TG_ARGV[3]] LOOP
+    nodo := (fila ->> columna)::INT;
     EXECUTE format(
       'SELECT EXISTS (SELECT 1 FROM %I v WHERE v.%I = $1 AND v.vigente_desde <= $2 AND (v.vigente_hasta IS NULL OR v.vigente_hasta > $2))',
       TG_ARGV[0], TG_ARGV[1]
-    ) INTO rige USING (fila ->> columna)::INT, NEW.vigente_desde;
+    ) INTO rige USING nodo, NEW.vigente_desde;
     IF NOT rige THEN
-      RAISE EXCEPTION 'Esta relacion empezaria el % y % no rige ese dia. Tiene que regir antes, o hay que cambiar la fecha.',
-        NEW.vigente_desde,
-        CASE WHEN columna = TG_ARGV[2] THEN format('%s padre', CASE TG_ARGV[4] WHEN 'unidad' THEN 'la unidad' ELSE 'el proceso' END)
-             ELSE format('%s hijo', CASE TG_ARGV[4] WHEN 'unidad' THEN 'la unidad' ELSE 'el proceso' END) END
+      -- EL MENSAJE NOMBRA AL NODO Y DICE CUAL DE LAS DOS COSAS PASA. Son dos casos distintos y
+      -- piden cosas distintas: un nodo en BORRADOR no tiene ninguna fecha --hay que ponerlo en
+      -- vigor--; uno con vigencia que no cubre ese dia pide cambiar la fecha de la relacion. Con
+      -- una sola frase para los dos, quien elegia un padre en borrador leia «cambia la fecha» y
+      -- no habia fecha que sirviera (lo vio el dueño el 2026-11-24).
+      EXECUTE format('SELECT name FROM %I WHERE id = $1', CASE TG_ARGV[4] WHEN 'unidad' THEN 'units' ELSE 'processes' END)
+        INTO nombre USING nodo;
+      EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I v WHERE v.%I = $1)', TG_ARGV[0], TG_ARGV[1])
+        INTO tiene_vida USING nodo;
+      IF NOT tiene_vida THEN
+        RAISE EXCEPTION '«%» está en borrador: todavía no tiene fecha de vigencia. %',
+          nombre,
+          CASE WHEN columna = TG_ARGV[2]
+               THEN 'Algo que ya rige no puede depender de un borrador: ponlo en vigor primero.'
+               ELSE 'Su relación tampoco puede tener fecha: ponlo en vigor primero.' END
+          USING ERRCODE = 'restrict_violation';
+      END IF;
+      RAISE EXCEPTION '«%» no rige el %. La relación tiene que empezar dentro de su vigencia: elige otra fecha.',
+        nombre, NEW.vigente_desde
         USING ERRCODE = 'restrict_violation';
     END IF;
   END LOOP;

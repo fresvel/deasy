@@ -163,7 +163,7 @@
             Proceso padre
             <select v-model="editForm.parent_id" class="deasy-control deasy-control--select" :disabled="!editable">
               <option value="">— Sin padre (raíz) —</option>
-              <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
+              <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}{{ opt.estado === 'vigente' ? '' : ` (${etiquetaVigencia(opt.estado).toLowerCase()})` }}</option>
             </select>
           </label>
           <AppAlert v-if="cambioProgramado" variant="info">{{ cambioProgramado }}</AppAlert>
@@ -935,7 +935,7 @@ const guidedUpdateTemplate = (tpl) => {
 const parentOptions = computed(() =>
   (rawGraph.value.nodes || [])
     .filter((p) => String(p.id) !== String(detailProcess.value?.id))
-    .map((p) => ({ id: p.id, name: p.name }))
+    .map((p) => ({ id: p.id, name: p.name, estado: p.estado }))
 );
 
 const saveProcessEdit = async () => {
