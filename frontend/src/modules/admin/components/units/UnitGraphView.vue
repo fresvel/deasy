@@ -86,7 +86,6 @@
         :edges-updatable="editable"
         :delete-key-code="null"
         :only-render-visible-elements="true"
-        fit-view-on-init
         class="h-full"
         @connect="onConnect"
         @node-click="onNodeClick"
@@ -652,6 +651,7 @@ import { toBlob } from "html-to-image";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import dagre from "dagre";
+import { encuadrarAlAbrir } from "@/modules/admin/components/units/graphEncuadre.js";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
@@ -816,7 +816,8 @@ const empezarVidaDelPuesto = () => {
 const profileWizardPosition = ref(null);
 const feedback = ref({ kind: "", message: "" });
 // F-E: buscar/centrar, colapsar ramas, salud, exportar.
-const { fitView } = useVueFlow();
+const { fitView, onNodesInitialized } = useVueFlow();
+encuadrarAlAbrir({ onNodesInitialized, fitView });
 const searchTerm = ref("");
 const collapsedIds = ref(new Set());
 const highlightId = ref(null);

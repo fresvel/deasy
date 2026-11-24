@@ -58,7 +58,6 @@
         :edges-updatable="editable"
         :delete-key-code="null"
         :only-render-visible-elements="true"
-        fit-view-on-init
         class="h-full"
         @connect="onConnect"
         @node-click="onNodeClick"
@@ -390,6 +389,7 @@ import { toBlob } from "html-to-image";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import dagre from "dagre";
+import { encuadrarAlAbrir } from "@/modules/admin/components/units/graphEncuadre.js";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
@@ -413,11 +413,13 @@ const emit = defineEmits([
   "add-template", "clone-template", "guided-update-template", "open-template-editor", "notify"
 ]);
 
-const { fitView } = useVueFlow();
-const NODE_W = 260;
-const NODE_H = 66;
+const { fitView, onNodesInitialized } = useVueFlow();
+encuadrarAlAbrir({ onNodesInitialized, fitView });
+// El ancho es el de `.graph-node--proceso` en graph.css, y el mismo que el de la unidad.
+const NODE_W = 240;
+const NODE_H = 89;
 const CONFIG_W = 210;
-const CONFIG_H = 58;
+const CONFIG_H = 83;
 const TEMPLATE_W = 170;
 const TEMPLATE_H = 58;
 const EDGE_COLOR = "var(--color-edge-proceso)";

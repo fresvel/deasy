@@ -5,9 +5,7 @@
       `graph-node--estado-${tonoVigencia(data.estado)}`,
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
-      data.dimmed ? 'graph-node--apagado' : '',
-      data.childrenCount ? 'rounded-bl-none' : '',
-      data.hasConfigs ? 'rounded-br-none' : ''
+      data.dimmed ? 'graph-node--apagado' : ''
     ]"
     @mouseenter="hover = true"
     @mouseleave="hover = false"
@@ -49,51 +47,59 @@
     <p class="m-0 flex items-center gap-2">
       <span class="min-w-0 flex-1 truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
     </p>
-    <!-- El estado, sin caja: como en la unidad. Lo que cuelga del proceso ya no se cuenta aquí: va
-         en las pestañas de abajo. -->
+    <!-- El estado, sin caja: como en la unidad. Lo que cuelga del proceso se cuenta en el pie. -->
     <p class="m-0 mt-1.5 flex flex-wrap items-center gap-3">
       <span class="graph-node__dato" :class="[`graph-node__dato--${tonoVigencia(data.estado)}`, data.estado === 'vigente' ? '' : 'graph-node__dato--destaca']">
         <span class="graph-node__punto"></span>{{ etiquetaVigencia(data.estado) }}
       </span>
-      <span v-if="!data.hasConfigs" class="graph-node__dato ml-auto">Sin config.</span>
     </p>
 
-    <!-- LO QUE CUELGA DEL PROCESO SALE DE SUS PESTAÑAS (2026-11-24). Un proceso tiene dos clases de
-         hijos —sus subprocesos y sus configuraciones— y las dos salían del mismo punto, distinguidas
-         sólo por el trazo de la línea. Ahora cada clase tiene su pestaña al pie: dice cuántos son,
-         se pulsa para desplegarlos o recogerlos, y de ella parten sus líneas. Siempre en el mismo
-         lado —subprocesos a la izquierda, configuraciones a la derecha— aunque falte una.
-         Rellena cuando hay algo recogido que enseñar; en blanco cuando ya está a la vista. -->
-    <div v-if="data.childrenCount" class="nodrag graph-node__rama graph-node__rama--izquierda" :class="data.collapsed ? 'graph-node__rama--cerrada' : ''">
-      <button
-        type="button"
-        class="graph-node__rama-boton"
-        :title="data.collapsed ? 'Mostrar subprocesos' : 'Ocultar subprocesos'"
-        @click.stop="data.onToggleCollapse?.(data.id)"
-      >
-        <IconChevronRight class="h-3 w-3 transition-transform" :class="data.collapsed ? '' : 'rotate-90'" />
-        {{ data.childrenCount }} {{ data.childrenCount === 1 ? "subproceso" : "subprocesos" }}
-      </button>
-      <Handle id="sub" type="source" :position="Position.Bottom" class="graph-node__handle" />
-    </div>
-    <!-- Sin subprocesos no hay pestaña, pero el conector sigue: de él se arrastra para crear el primero. -->
-    <Handle v-else id="sub" type="source" :position="Position.Bottom" class="graph-node__handle" />
-
-    <div
-      v-if="data.hasConfigs"
-      class="nodrag graph-node__rama graph-node__rama--derecha"
-      :class="[data.configsExpanded ? '' : 'graph-node__rama--cerrada', tonoConfiguraciones === 'success' ? '' : 'graph-node__rama--aviso']"
-    >
-      <button
-        type="button"
-        class="graph-node__rama-boton"
-        :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
-        @click.stop="data.onToggleConfigs?.(data.id)"
-      >
-        <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
-        {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
-      </button>
-      <Handle id="cfg" type="source" :position="Position.Bottom" class="graph-node__handle graph-node__handle--sm" :connectable="false" />
+    <!-- LO QUE CUELGA DEL PROCESO SALE DE SU PIE (2026-11-24). Un proceso tiene dos clases de hijos
+         —subprocesos y configuraciones— y las dos salían del mismo punto. Ahora el nodo acaba en
+         una franja partida en dos mitades, DENTRO de su contorno: cada mitad dice cuántos son, se
+         pulsa para desplegarlos o recogerlos, y de su centro parten sus líneas. Las dos están
+         siempre —aunque una diga que no hay—, así el nodo no cambia de forma y cada clase tiene
+         su lado fijo. Tintada cuando hay algo recogido; gris suave cuando ya está a la vista.
+         (La primera versión eran pestañas colgando por fuera, y parecían bultos.) -->
+    <div class="nodrag graph-node__pie">
+      <div class="graph-node__pie-parte">
+        <button
+          v-if="data.childrenCount"
+          type="button"
+          class="graph-node__pie-boton"
+          :class="data.collapsed ? 'graph-node__pie-boton--cerrado' : ''"
+          :title="data.collapsed ? 'Mostrar subprocesos' : 'Ocultar subprocesos'"
+          @click.stop="data.onToggleCollapse?.(data.id)"
+        >
+          <IconChevronRight class="h-3 w-3 transition-transform" :class="data.collapsed ? '' : 'rotate-90'" />
+          {{ data.childrenCount }} {{ data.childrenCount === 1 ? "subproceso" : "subprocesos" }}
+        </button>
+        <span v-else class="graph-node__pie-vacio">Sin subprocesos</span>
+        <!-- El conector está siempre: de él se arrastra para crear el primer subproceso. -->
+        <Handle id="sub" type="source" :position="Position.Bottom" class="graph-node__handle" />
+      </div>
+      <div class="graph-node__pie-parte">
+        <button
+          v-if="data.hasConfigs"
+          type="button"
+          class="graph-node__pie-boton"
+          :class="[data.configsExpanded ? '' : 'graph-node__pie-boton--cerrado', tonoConfiguraciones === 'success' ? '' : 'graph-node__pie-boton--aviso']"
+          :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
+          @click.stop="data.onToggleConfigs?.(data.id)"
+        >
+          <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
+          {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
+        </button>
+        <span v-else class="graph-node__pie-vacio">Sin config.</span>
+        <Handle
+          id="cfg"
+          type="source"
+          :position="Position.Bottom"
+          class="graph-node__handle graph-node__handle--sm"
+          :class="data.hasConfigs ? '' : 'graph-node__handle--hidden'"
+          :connectable="false"
+        />
+      </div>
     </div>
   </div>
 </template>

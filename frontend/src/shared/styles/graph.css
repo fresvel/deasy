@@ -17,9 +17,19 @@
 
     /* UNIDAD Y PROCESO TIENEN ANCHO FIJO, Y ES EL QUE RESERVA EL TRAZADO (`NODE_W` de cada vista).
        Antes el ancho lo ponía el contenido: la unidad medía de 216 a 296 px sobre 210 reservados
-       —los 17 nodos por encima— y por eso se pisaban. Si cambias uno, cambia el otro. */
-    .graph-node--unidad { width: 240px; }
-    .graph-node--proceso { width: 260px; }
+       —los 17 nodos por encima— y por eso se pisaban. Si cambias uno, cambia el otro. Los dos
+       miden lo mismo a propósito: son la entidad principal de cada mapa. */
+    .graph-node--unidad,
+    .graph-node--proceso { width: 240px; }
+
+    /* Lo que el pie necesita saber del nodo para ir de borde a borde: su relleno y el radio
+       interior de sus esquinas de abajo (el exterior, menos el borde de ese lado). */
+    .graph-node--proceso {
+        --nodo-px: 12px;
+        --nodo-py: 10px;
+        --nodo-radio-der: 11px;
+        --nodo-radio-izq: 8px;
+    }
 
     .graph-node--unidad,
     .graph-node--proceso {
@@ -106,99 +116,64 @@
         color: var(--color-icon);
     }
 
-    /* LAS PESTAÑAS DE ABAJO: DE ELLAS CUELGA LO QUE DEPENDE DEL NODO. Son el espejo de la pestaña
-       del tipo: el contorno baja, rodea el rótulo y vuelve al borde inferior con la misma curva
-       de 6 px. La de arriba dice qué es el nodo; éstas, qué tiene debajo, y se pulsan.
-         · `--izquierda` continúa la franja de estado hacia abajo; `--derecha` cierra por el borde
-           derecho; `--centro` va en el eje, para el nodo que sólo tiene una clase de hijos.
-         · `--cerrada` es «hay algo recogido»: va rellena, como la pestaña activa de un menú, para
-           que llame a pulsarla. Desplegada queda en blanco, parte del nodo.
-       El conector de Vue Flow va DENTRO de la pestaña, así que la línea sale de su centro. */
-    .graph-node__rama {
-        --rama-fondo: var(--color-white);
-        position: absolute;
-        top: 100%;
+    /* EL PIE DEL NODO: DE ÉL CUELGA LO QUE DEPENDE DE ÉL. Una franja dentro del contorno, de borde
+       a borde, bajo una línea fina; partida en tantas mitades como clases de hijos tenga el nodo.
+       Cada parte se pulsa y lleva DENTRO el conector de Vue Flow, así que la línea sale del centro
+       de su parte, por el borde inferior del nodo.
+       Los márgenes negativos deshacen el relleno del nodo, que cada tipo declara en `--nodo-px` y
+       `--nodo-py`; y las esquinas de abajo repiten las del nodo por dentro, porque el nodo no
+       puede recortar con `overflow` —la pestaña del tipo y el aviso viven fuera de su caja—. */
+    .graph-node__pie {
+        display: grid;
+        grid-auto-columns: 1fr;
+        grid-auto-flow: column;
+        margin: 8px calc(-1 * var(--nodo-px)) calc(-1 * var(--nodo-py));
+        border-top: 1px solid var(--color-line);
+        border-radius: 0 0 var(--nodo-radio-der) var(--nodo-radio-izq);
+        overflow: hidden;
+    }
+
+    .graph-node__pie-parte {
+        position: relative;
         display: flex;
-        align-items: center;
-        height: 22px;
-        border: 1px solid var(--nodo-borde);
-        border-top: 0;
-        border-radius: 0 0 6px 6px;
-        background: var(--rama-fondo);
+        height: 24px;
     }
 
-    .graph-node__rama--cerrada { --rama-fondo: var(--color-brand-50); }
+    .graph-node__pie-parte + .graph-node__pie-parte { border-left: 1px solid var(--color-line); }
 
-    .graph-node__rama--izquierda {
-        left: -4px;
-        border-left: 4px solid var(--nodo-franja);
-    }
-
-    .graph-node__rama--derecha { right: -1px; }
-
-    .graph-node__rama--centro {
-        left: 50%;
-        transform: translateX(-50%);
-    }
-
-    /* Las curvas hacia fuera, una a cada lado que no toca el borde del nodo. */
-    .graph-node__rama--izquierda::after,
-    .graph-node__rama--centro::after,
-    .graph-node__rama--derecha::before,
-    .graph-node__rama--centro::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        width: 6px;
-        height: 6px;
-    }
-
-    .graph-node__rama--izquierda::after,
-    .graph-node__rama--centro::after {
-        right: -6px;
-        background: radial-gradient(
-            circle at 100% 100%,
-            transparent 4.6px,
-            var(--nodo-borde) 5.2px,
-            var(--nodo-borde) 5.8px,
-            var(--rama-fondo) 6.4px
-        );
-    }
-
-    .graph-node__rama--derecha::before,
-    .graph-node__rama--centro::before {
-        left: -6px;
-        background: radial-gradient(
-            circle at 0 100%,
-            transparent 4.6px,
-            var(--nodo-borde) 5.2px,
-            var(--nodo-borde) 5.8px,
-            var(--rama-fondo) 6.4px
-        );
-    }
-
-    .graph-node__rama-boton {
+    .graph-node__pie-boton,
+    .graph-node__pie-vacio {
         display: inline-flex;
+        flex: 1;
         align-items: center;
+        justify-content: center;
         gap: 4px;
-        height: 100%;
         padding: 0 8px;
-        border: 0;
-        background: none;
         color: var(--color-muted);
         font-size: 11px;
         font-weight: 600;
         white-space: nowrap;
-        cursor: pointer;
     }
 
-    .graph-node__rama--cerrada .graph-node__rama-boton,
-    .graph-node__rama-boton:hover {
+    .graph-node__pie-vacio { font-weight: 500; }
+
+    /* Desplegado: gris muy suave, parte del nodo. Recogido: el azul claro de la pestaña activa,
+       que es lo que llama a pulsar. */
+    .graph-node__pie-boton {
+        border: 0;
+        background: var(--color-surface);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+
+    .graph-node__pie-boton--cerrado,
+    .graph-node__pie-boton:hover {
+        background: var(--color-brand-50);
         color: var(--color-brand-600);
     }
 
     /* Ninguna configuración activa: la cuenta avisa, recogida o no. */
-    .graph-node__rama--aviso .graph-node__rama-boton { color: var(--color-warning-700); }
+    .graph-node__pie-boton--aviso { color: var(--color-warning-700); }
 
     /* UN DATO DEL NODO SIN CAJA (decisión del dueño, 2026-11-24): texto gris y, si lo lleva, un punto con el
        tono. `--destaca` tiñe también el texto: es para lo que NO es lo normal —suprimido, a
@@ -253,6 +228,10 @@
         --graph-accent-solid: var(--color-icon);
         --nodo-borde: var(--color-line);
         --nodo-franja: var(--tono-borde, var(--color-line-strong));
+        --nodo-px: 10px;
+        --nodo-py: 8px;
+        --nodo-radio-der: 15px;
+        --nodo-radio-izq: 12px;
         /* 210 y no 190: con la pestaña «Configuración» encima, en 190 su curva tocaba la flecha
            que entra por el centro. Va con `CONFIG_W` de ProcessGraphView. */
         width: 210px;
