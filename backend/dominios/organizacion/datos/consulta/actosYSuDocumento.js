@@ -18,6 +18,7 @@ export const listarActosConSuDocumento = async (ejecutor, { soloSinDocumento = f
                  WHEN aa.id IS NOT NULL THEN 'adjunto'
                  ELSE NULL END AS documento,
             aa.file_name AS adjunto_nombre, aa.size_bytes AS adjunto_bytes,
+            ad.document_version_id AS firmado_version_id,
             acto_ordena_algo(a.id) AS ordena_algo
        FROM actos a
        JOIN tipos_de_acto ta ON ta.id = a.tipo_de_acto_id
@@ -84,6 +85,7 @@ export const listarActosDeUnNodo = async (ejecutor, clase, nodoId) => {
                  WHEN aa.id IS NOT NULL THEN 'adjunto'
                  ELSE NULL END AS documento,
             aa.file_name AS adjunto_nombre, aa.size_bytes AS adjunto_bytes,
+            ad.document_version_id AS firmado_version_id,
             STRING_AGG(DISTINCT c.papel, ' · ' ORDER BY c.papel) AS papel
        FROM (${citasDe(clase)}) c
        JOIN actos a ON a.id = c.acto_id
@@ -92,7 +94,7 @@ export const listarActosDeUnNodo = async (ejecutor, clase, nodoId) => {
        LEFT JOIN acto_documentos ad ON ad.acto_id = a.id
        LEFT JOIN acto_adjuntos aa ON aa.acto_id = a.id
       WHERE c.nodo_id = ?
-      GROUP BY a.id, ta.name, u.name, ad.acto_id, aa.id
+      GROUP BY a.id, ta.name, u.name, ad.acto_id, ad.document_version_id, aa.id
       ORDER BY a.fecha_emision DESC, a.id DESC`,
     [Number(nodoId)]
   );

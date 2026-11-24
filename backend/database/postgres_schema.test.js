@@ -829,6 +829,14 @@ test("el fichero de un acto externo: uno de los dos papeles, y cambiarlo es corr
   assert.match(bloqueRecorrido("correcciones_de_estructura"), /'acto_adjuntos'/);
 });
 
+test("el documento firmado de un acto que ya ordena algo no se desenlaza ni se cambia", () => {
+  assert.match(SCHEMA, /BEFORE UPDATE OR DELETE ON acto_documentos\s+FOR EACH ROW EXECUTE FUNCTION proteger_documento_de_acto\(\)/);
+  const regla = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.proteger_documento_de_acto()")).split("$$ LANGUAGE plpgsql;")[0];
+  assert.match(regla, /IF acto_ordena_algo\(OLD\.acto_id\) THEN/);
+  // Aqui NO hay camino de correccion, a diferencia del fichero adjunto.
+  assert.doesNotMatch(regla, /correccion_en_curso/);
+});
+
 test("quitar una equivalencia de algo que ya termino exige una correccion registrada", () => {
   for (const [clase, vidas] of [["unit", "unit_vigencias"], ["position", "position_vigencias"], ["process", "process_vigencias"]]) {
     assert.match(

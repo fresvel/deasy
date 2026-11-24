@@ -4,6 +4,9 @@ import {
   adjuntarFicheroAlActo,
   corregirFicheroDelActo,
   descargarFicheroDelActo,
+  buscarDocumentosFirmadosParaActo,
+  desenlazarDocumentoDeActo,
+  enlazarDocumentoDelActo,
   listarActosDocumentos,
   listarVidasConSuNodo,
   quitarFicheroDelActo,
@@ -163,6 +166,9 @@ router.post("/estructura/correcciones", requireSqlAdminPermission({ resource: "c
 // EL FICHERO DE UN ACTO EXTERNO (F27.P4.T11). Cuatro rutas normales y dos de corrección: lo que
 // separa cambiar un fichero «sin trámite» de corregirlo es el PERMISO, y el permiso lo pone la ruta.
 router.get("/estructura/vidas/:clase", requireSqlAdminPermission({ resource: "units", action: "read" }), listarVidasConSuNodo);
+router.get("/estructura/actos/documentos-firmados", requireSqlAdminPermission({ resource: "units", action: "read" }), buscarDocumentosFirmadosParaActo);
+router.post("/estructura/actos/:id/documento", requireSqlAdminPermission({ resource: "units", action: "update" }), enlazarDocumentoDelActo);
+router.delete("/estructura/actos/:id/documento", requireSqlAdminPermission({ resource: "units", action: "update" }), desenlazarDocumentoDeActo);
 router.get("/estructura/actos/documentos", requireSqlAdminPermission({ resource: "units", action: "read" }), listarActosDocumentos);
 router.get("/estructura/actos/:id/adjunto", requireSqlAdminPermission({ resource: "units", action: "read" }), descargarFicheroDelActo);
 router.post("/estructura/actos/:id/adjunto", requireSqlAdminPermission({ resource: "units", action: "update" }), actoUpload.single("archivo"), adjuntarFicheroAlActo);

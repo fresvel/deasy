@@ -4,6 +4,9 @@
 import {
   abrirAdjuntoDelActo,
   adjuntarAlActo,
+  buscarDocumentosParaUnActo,
+  desenlazarDocumentoFirmado,
+  enlazarDocumentoFirmado,
   listarActosYSuDocumento,
   listarVidasDeLaClase,
   quitarAdjuntoDelActo
@@ -16,6 +19,29 @@ const actor = (req) => Number(req.auth?.userId) || null;
 export const listarVidasConSuNodo = async (req, res) => {
   try {
     res.json(await listarVidasDeLaClase(req.params.clase));
+  } catch (error) {
+    responder(res, error);
+  }
+};
+
+// El documento firmado en el sistema: buscarlo, enlazarlo a un acto y desenlazarlo.
+export const buscarDocumentosFirmadosParaActo = async (req, res) => {
+  try {
+    res.json(await buscarDocumentosParaUnActo(req.query.q));
+  } catch (error) {
+    responder(res, error);
+  }
+};
+export const enlazarDocumentoDelActo = async (req, res) => {
+  try {
+    res.json(await enlazarDocumentoFirmado({ actoId: req.params.id, documentVersionId: req.body?.document_version_id }));
+  } catch (error) {
+    responder(res, error);
+  }
+};
+export const desenlazarDocumentoDeActo = async (req, res) => {
+  try {
+    res.json(await desenlazarDocumentoFirmado({ actoId: req.params.id }));
   } catch (error) {
     responder(res, error);
   }

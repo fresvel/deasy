@@ -511,6 +511,9 @@ export const SQL_TABLES = [
   },
   {
     table: "acto_documentos",
+    // SOLO CONSULTA desde el 2026-11-24 (F27.P4.T24): el formulario pedía una «versión de documento»
+    // suelta. Se enlaza desde «Documentos», en la pantalla de actos, eligiendo por entregable.
+    soloConsulta: "Se enlaza desde «Documentos», en la pantalla de actos, o desde la pestaña «Actos» del nodo.",
     label: "Documento del acto",
     category: "Estructura",
     primaryKeys: ["acto_id"],

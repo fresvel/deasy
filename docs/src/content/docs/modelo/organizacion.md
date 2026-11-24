@@ -1010,6 +1010,18 @@ El enlace al documento va **del documento al acto**, en el dominio de tareas, y 
 está en el nivel 2 para que unidades y procesos puedan apuntarle, `document_versions` está en el 5, y
 una clave ajena no sube de nivel.
 
+### El documento firmado aquí — `acto_documentos`
+
+Cuando el papel de un acto se produjo y se firmó en el sistema, no se sube nada: se **enlaza** a la
+versión de ese documento. Se elige buscando por lo que uno recuerda de él —el entregable, el proceso
+o la unidad—, y sólo se ofrecen los documentos cuya firma terminó y que no están ya enlazados a otro
+acto. Se hace desde «Documentos», en la pantalla de actos, o desde la pestaña «Actos» del nodo.
+
+**Desenlazar es libre mientras el acto no ordena nada.** Desde que una vida o una relación lo cita,
+el enlace no se quita ni se cambia, y aquí **no hay camino de corrección**: el documento se produjo y
+se firmó en el sistema, así que si el enlace estaba mal lo que hay que corregir es qué acto citan las
+vidas, no a qué documento apunta éste. Lo impone la base.
+
 ### El fichero de un acto externo — `acto_adjuntos`
 
 El papel de un acto llega por uno de dos caminos, y **nunca por los dos**: si se produjo y se firmó

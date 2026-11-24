@@ -24,6 +24,7 @@ import {
 } from "../datos/consulta/actosYSuDocumento.js";
 import { CLASES_CON_VIDAS, listarVidasConNombre } from "../datos/consulta/vidasConNombre.js";
 import { registrarCorreccion } from "./correccionesDeEstructura.js";
+import { buscarDocumentosFirmados, desenlazarDocumentoDelActo, enlazarDocumentoAlActo } from "../../tareas/index.js";
 
 const BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
 const PDF = "application/pdf";
@@ -110,6 +111,38 @@ export const abrirAdjuntoDelActo = async (actoId, { connection = getPostgresPool
   if (!fila) throw notFound("Ese acto no tiene fichero adjunto.");
   return { nombre: fila.file_name, tipo: fila.mime_type, bytes: Number(fila.size_bytes), flujo: await getMinioObjectStream(BUCKET, fila.file_path) };
 };
+
+// EL OTRO CAMINO DEL PAPEL: el acto se produjo y se firmó aquí, y se ENLAZA a ese documento (frente
+// 27, F27.P4.T24). El enlace lo escribe el dominio de tareas, dueño de la tabla; aquí está la regla,
+// que es del acto: uno de los dos papeles y nunca los dos, y desenlazar sólo mientras el acto no
+// ordena nada —la base rechaza lo demás, y esto lo dice antes—.
+export const buscarDocumentosParaUnActo = (texto, { connection = getPostgresPool() } = {}) =>
+  buscarDocumentosFirmados(connection, texto);
+
+export const enlazarDocumentoFirmado = async ({ actoId, documentVersionId }) =>
+  conTransaccion(async (conexion) => {
+    const acto = await leerActoParaAdjuntar(conexion, actoId);
+    if (!acto) throw notFound("Ese acto no existe.");
+    if (acto.tieneDocumentoFirmado) throw conflicto(`El acto «${acto.numero}» ya tiene enlazado un documento firmado.`);
+    if (await leerAdjuntoDelActo(conexion, actoId)) {
+      throw conflicto(`El acto «${acto.numero}» ya tiene un fichero adjunto: quítalo antes de enlazarle el documento firmado en el sistema.`);
+    }
+    if (!Number(documentVersionId)) throw badRequest("Hay que decir qué documento se enlaza.");
+    await enlazarDocumentoAlActo(conexion, actoId, documentVersionId);
+    return { acto_id: Number(actoId), document_version_id: Number(documentVersionId) };
+  });
+
+export const desenlazarDocumentoFirmado = async ({ actoId }) =>
+  conTransaccion(async (conexion) => {
+    const acto = await leerActoParaAdjuntar(conexion, actoId);
+    if (!acto) throw notFound("Ese acto no existe.");
+    if (!acto.tieneDocumentoFirmado) throw notFound("Ese acto no tiene enlazado ningún documento firmado.");
+    if (acto.ordenaAlgo) {
+      throw conflicto(`El acto «${acto.numero}» ya ordena cambios de la estructura: su documento firmado no se desenlaza.`);
+    }
+    await desenlazarDocumentoDelActo(conexion, actoId);
+    return { acto_id: Number(actoId), desenlazado: true };
+  });
 
 // LAS VIDAS DE UNA CLASE DE NODO CON SU NOMBRE, para etiquetar una referencia a una vida.
 export const listarVidasDeLaClase = (clase, { connection = getPostgresPool() } = {}) => {

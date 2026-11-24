@@ -27,15 +27,54 @@
           {{ acto.adjunto_nombre }} · {{ enKb(acto.adjunto_bytes) }}
         </span>
         <AppButton v-if="acto.documento === 'adjunto'" variant="neutral-outline" :disabled="ocupado" @click="ver(acto)">Ver</AppButton>
-        <template v-if="editable && pidiendoMotivo?.id !== acto.id">
+        <template v-if="editable && pidiendoMotivo?.id !== acto.id && enlazando !== acto.id">
           <template v-if="!esCorreccion(acto) || puedeCorregir">
             <AppButton v-if="acto.documento === 'adjunto'" variant="danger-outline" :disabled="ocupado" @click="pedir(acto, 'quitar')">Quitar</AppButton>
+            <!-- Los dos caminos del papel, sólo mientras no tiene ninguno: se firmó aquí, o vino de fuera. -->
+            <AppButton v-if="!acto.documento" variant="neutral-outline" :disabled="ocupado" @click="empezarAEnlazar(acto)">Enlazar firmado</AppButton>
             <AppButton variant="primary-outline" :disabled="ocupado" @click="pedir(acto, 'subir')">
               {{ acto.documento === "adjunto" ? "Cambiar" : "Adjuntar PDF" }}
             </AppButton>
           </template>
           <span v-else class="text-theme-xs text-muted">Cambiarlo es una corrección, y pide un permiso que no tienes.</span>
         </template>
+      </div>
+
+      <!-- EL QUE SE FIRMÓ EN EL SISTEMA: se desenlaza sólo mientras el acto no ordena nada. -->
+      <div v-if="acto.documento === 'firmado' && editable && !acto.ordena_algo" class="flex justify-end">
+        <AppButton variant="danger-outline" :disabled="ocupado" @click="desenlazar(acto)">Desenlazar</AppButton>
+      </div>
+
+      <!-- ENLAZAR EL DOCUMENTO FIRMADO EN EL SISTEMA: se busca por lo que uno recuerda de él —el
+           entregable, el proceso o la unidad—, no por un número. -->
+      <div v-if="enlazando === acto.id" class="flex flex-col gap-2">
+        <label class="deasy-form-label">
+          Documento firmado en el sistema
+          <input v-model="busqueda" type="search" class="deasy-control" placeholder="Busca por entregable, proceso o unidad" @input="buscar" />
+        </label>
+        <p v-if="buscando" class="m-0 text-theme-xs text-muted">Buscando…</p>
+        <p v-else-if="!encontrados.length" class="m-0 text-theme-xs text-muted">
+          {{ busqueda.trim() ? "Ningún documento con la firma completa coincide." : "No hay documentos con la firma completa sin enlazar." }}
+        </p>
+        <ul v-else class="m-0 flex list-none flex-col gap-2 p-0">
+          <li
+            v-for="doc in encontrados"
+            :key="doc.id"
+            class="deasy-elegible cursor-pointer rounded-xl px-3 py-2"
+            role="button"
+            tabindex="0"
+            title="Enlazar este documento al acto"
+            @click="enlazar(acto, doc)"
+            @keydown.enter="enlazar(acto, doc)"
+            @keydown.space.prevent="enlazar(acto, doc)"
+          >
+            <span class="block text-sm font-semibold text-strong">{{ doc.entregable }} · v{{ doc.version_label }}</span>
+            <span class="block text-theme-xs text-muted">{{ doc.proceso }} · {{ doc.unidad }} · {{ doc.status }} · {{ doc.fecha }}</span>
+          </li>
+        </ul>
+        <div class="flex justify-end">
+          <AppButton variant="danger-outline" :disabled="ocupado" @click="enlazando = null">Cancelar</AppButton>
+        </div>
       </div>
 
       <!-- CAMBIAR O QUITAR EL FICHERO DE UN ACTO QUE YA ORDENA ALGO ES UNA CORRECCIÓN. -->
@@ -131,6 +170,42 @@ const alElegir = (evento) => {
   if (!archivo || !destino) return null;
   return trabajar(() => adminSqlService.adjuntarAlActo(destino.id, archivo, { motivo: destino.motivo }), "No se pudo subir el fichero.");
 };
+
+/* ENLAZAR EL DOCUMENTO FIRMADO. La búsqueda espera a que se deje de teclear. */
+const enlazando = ref(null);
+const busqueda = ref("");
+const encontrados = ref([]);
+const buscando = ref(false);
+let espera = null;
+const buscarAhora = async () => {
+  buscando.value = true;
+  try {
+    const { data } = await adminSqlService.buscarDocumentosFirmados(busqueda.value.trim());
+    encontrados.value = Array.isArray(data) ? data : [];
+  } catch {
+    encontrados.value = [];
+  } finally {
+    buscando.value = false;
+  }
+};
+const buscar = () => {
+  clearTimeout(espera);
+  espera = setTimeout(buscarAhora, 250);
+};
+const empezarAEnlazar = (acto) => {
+  pidiendoMotivo.value = null;
+  enlazando.value = acto.id;
+  busqueda.value = "";
+  encontrados.value = [];
+  buscarAhora();
+};
+const enlazar = (acto, doc) =>
+  trabajar(async () => {
+    await adminSqlService.enlazarDocumentoAlActo(acto.id, doc.id);
+    enlazando.value = null;
+  }, "No se pudo enlazar el documento.");
+const desenlazar = (acto) =>
+  trabajar(() => adminSqlService.desenlazarDocumentoDelActo(acto.id), "No se pudo desenlazar el documento.");
 
 const ver = async (acto) => {
   error.value = "";

@@ -111,6 +111,8 @@ export const API_ROUTES = {
   ADMIN_SQL_ESTRUCTURA_CORRECCIONES: `${API_PREFIX}/admin/sql/estructura/correcciones`,
   ADMIN_SQL_ESTRUCTURA_VIDAS: (clase) => `${API_PREFIX}/admin/sql/estructura/vidas/${clase}`,
   ADMIN_SQL_ACTOS_DOCUMENTOS: `${API_PREFIX}/admin/sql/estructura/actos/documentos`,
+  ADMIN_SQL_ACTOS_DOCUMENTOS_FIRMADOS: `${API_PREFIX}/admin/sql/estructura/actos/documentos-firmados`,
+  ADMIN_SQL_ACTO_DOCUMENTO: (actoId) => `${API_PREFIX}/admin/sql/estructura/actos/${actoId}/documento`,
   ADMIN_SQL_ACTO_ADJUNTO: (actoId) => `${API_PREFIX}/admin/sql/estructura/actos/${actoId}/adjunto`,
   ADMIN_SQL_UNIT_PARENT: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/parent`,
   ADMIN_SQL_UNIT_DETAIL: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/detail`,

@@ -85,6 +85,19 @@ export class AdminSqlService {
     return motivo ? this.httpClient.post(`${ruta}/correccion/quitar`, { motivo }) : this.httpClient.delete(ruta);
   }
 
+  /* EL DOCUMENTO FIRMADO EN EL SISTEMA: buscarlo por entregable, proceso o unidad, y enlazarlo. */
+  buscarDocumentosFirmados(texto = "") {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_ACTOS_DOCUMENTOS_FIRMADOS, { params: { q: texto } });
+  }
+
+  enlazarDocumentoAlActo(actoId, documentVersionId) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_ACTO_DOCUMENTO(actoId), { document_version_id: documentVersionId });
+  }
+
+  desenlazarDocumentoDelActo(actoId) {
+    return this.httpClient.delete(API_ROUTES.ADMIN_SQL_ACTO_DOCUMENTO(actoId));
+  }
+
   descargarAdjuntoDelActo(actoId) {
     return this.httpClient.get(API_ROUTES.ADMIN_SQL_ACTO_ADJUNTO(actoId), { responseType: "blob" });
   }

@@ -36,3 +36,8 @@ export {
   leerTurnosDelRecorrido,
   turnoAbiertoDelUsuarioEnPasoActual
 } from "./datos/consulta/turnosConSuPaso.js";
+
+// El documento firmado de un acto (frente 27): el enlace vive aquí porque apunta a una versión de
+// documento; lo pide el dominio de la organización, que es el dueño del acto.
+export { desenlazarDocumentoDelActo, enlazarDocumentoAlActo } from "./datos/actoDocumentos.js";
+export { buscarDocumentosFirmados } from "./datos/consulta/documentosFirmados.js";
