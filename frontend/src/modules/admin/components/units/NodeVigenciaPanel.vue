@@ -60,6 +60,11 @@
           </select>
         </label>
         <p class="m-0 text-theme-xs text-muted">«Rige hasta» es el primer día en que ya no rige.</p>
+        <!-- Una vida que aún no ha empezado se puede descartar entera; una que ya rige, no: se le pone fin. -->
+        <div v-if="editable && vigencia.sePuedeDescartar.value" class="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2.5">
+          <p class="m-0 text-theme-xs text-muted">Esta vida todavía no ha empezado. Si no va a ocurrir, se puede descartar.</p>
+          <AppButton variant="danger-outline" @click="$emit('descartar')">Descartar</AppButton>
+        </div>
       </template>
     </div>
 
@@ -99,7 +104,7 @@ const props = defineProps({
   sujeto: { type: String, default: "Nodo" },
   editable: { type: Boolean, default: false }
 });
-defineEmits(["reactivar"]);
+defineEmits(["reactivar", "descartar"]);
 
 /* El formulario vive en el composable; aquí sólo se le da un nombre corto para la plantilla. */
 const form = computed(() => props.vigencia.vidaForm.value);

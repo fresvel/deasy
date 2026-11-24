@@ -137,7 +137,7 @@ Table "vinculos" {
 }
 
 Ref "fk_lineas_anterior":"lineas"."id" ?<? "lineas"."linea_anterior_id"
-Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: cascade]
+Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: restrict]
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
 Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]

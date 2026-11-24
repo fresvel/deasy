@@ -24,6 +24,10 @@
 // tabla. Lo mismo que pasa con `services/admin/SqlAdminService.js`. Quien lo cubre es esta lista, que
 // es cerrada y está a la vista.
 export const DEPENDENCIAS_DE_UN_PUESTO = [
+  // LAS VIDAS (frente 27, D-03): un puesto con alguna vida ya rigió o está programado, y se borra
+  // sólo lo que aún no ha regido. Va la primera porque es la razón de fondo: las demás dicen qué
+  // cuelga del puesto; ésta, que el puesto existió.
+  ["position_vigencias", "position_id", "vida", "vidas"],
   ["position_assignments", "position_id", "ocupacion", "ocupaciones"],
   ["task_items", "responsible_position_id", "entregable", "entregables"],
   ["task_item_tenures", "position_id", "tenencia", "tenencias"],

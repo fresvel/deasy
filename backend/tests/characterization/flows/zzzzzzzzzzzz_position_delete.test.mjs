@@ -58,7 +58,10 @@ test("un puesto CON historia se rechaza nombrando qué lo bloquea, y NO se le to
   const mensaje = String(res.body?.message || "");
   assert.match(mensaje, /ocupaci[oó]n/i, "el mensaje debe NOMBRAR qué bloquea, no decir «está referenciado»");
   assert.match(mensaje, /\d+/, "y con su conteo, que es lo único accionable");
-  assert.match(mensaje, /[Dd]esactiv/, "y apuntar al camino que sí existe");
+  // El camino que sí existe cambió de nombre con el frente 27: un puesto ya no se «desactiva» con
+  // una casilla, se SUPRIME poniéndole fin a su vida. El mensaje tiene que mandar ahí.
+  assert.match(mensaje, /[Ss]uprim/, "y apuntar al camino que sí existe");
+  assert.match(mensaje, /vida/i, "y nombrar la razón de fondo: el puesto ya rigió");
 
   // Lo que de verdad importa: la historia sigue entera.
   const [tras] = await query(

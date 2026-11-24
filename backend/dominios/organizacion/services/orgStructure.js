@@ -278,7 +278,7 @@ export default class OrgStructureService {
       const bloqueos = dependencias.map(({ n, singular, plural }) => `${n} ${n === 1 ? singular : plural}`);
       throw conflict(
         `No se puede eliminar: ${bloqueos.join(", ")} ${total === 1 ? "depende" : "dependen"} ` +
-        "de este puesto. Desactivalo en su lugar."
+        "de este puesto. Suprimelo en su lugar: ponle fecha de fin en su vigencia."
       );
     }
 

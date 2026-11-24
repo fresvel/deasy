@@ -177,6 +177,7 @@
             sujeto="Proceso"
             :editable="editable"
             @reactivar="empezarVidaNueva"
+            @descartar="descartarVida"
           />
 
 <!-- Pestaña: Configuraciones -->
@@ -1009,6 +1010,23 @@ const saveVida = async () => {
     await loadGraph();
   } catch (e) {
     modalError.value = e?.response?.data?.message || "No se pudo guardar la vigencia.";
+  } finally {
+    savingEdit.value = false;
+  }
+};
+
+// Descarta la vida programada del proceso: aún no ha empezado, así que se borra entera.
+const descartarVida = async () => {
+  if (!props.editable || !vigencia.sePuedeDescartar.value) return;
+  savingEdit.value = true;
+  modalError.value = "";
+  try {
+    await vigencia.descartarVida();
+    setFeedback("success", "Vida programada descartada.");
+    detailProcess.value = null;
+    await loadGraph();
+  } catch (e) {
+    modalError.value = e?.response?.data?.message || "No se pudo descartar la vida.";
   } finally {
     savingEdit.value = false;
   }

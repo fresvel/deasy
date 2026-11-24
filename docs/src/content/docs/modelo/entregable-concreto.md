@@ -135,6 +135,11 @@ tenga documento** (`ON DELETE RESTRICT` en `task_items.task_id` y en
 `document_versions.task_item_id`). Antes las dos claves propagaban el borrado, así que eliminar una
 tarea se llevaba sus entregables y, con ellos, cada versión de cada documento.
 
+Y por arriba pasa lo mismo: **borrar un proceso ya no se lleva sus líneas** (`ON DELETE RESTRICT` en
+`lineas.process_id`). La línea es el eslabón del que cuelga el archivo de un proceso, así que no se
+va con nadie; y un proceso que ya rigió no se borra de ninguna forma — ver
+[Qué se puede borrar](/modelo/proceso/#qué-se-puede-borrar).
+
 Ningún camino de la aplicación borra tareas, entregables ni versiones; quien lo hace es el harness
 de pruebas, y ya lo hacía de abajo arriba. Lo que **sí** sigue cayendo con el entregable son sus
 tenencias —la primera la crea un disparador al insertar, y sin esa cascada ningún entregable se

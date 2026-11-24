@@ -1542,7 +1542,7 @@ Ref "fk_estados_civiles_pais":"paises"."id" <? "estados_civiles"."pais_id"
 Ref "fk_generos_pais":"paises"."id" <? "generos"."pais_id"
 Ref "fk_lineas_anterior":"lineas"."id" ?<? "lineas"."linea_anterior_id"
 Ref "fk_lineas_cargo":"cargos"."id" ?<? "lineas"."cargo_id"
-Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: cascade]
+Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: restrict]
 Ref "fk_lineas_unit_type":"unit_types"."id" ?<? "lineas"."unit_type_id"
 Ref "fk_lineas_unit":"units"."id" ?<? "lineas"."unit_id"
 Ref "fk_nomenclatura_pais":"paises"."id" <? "nomenclatura_territorial"."pais_id"

@@ -157,7 +157,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | Columna | Tipo | Obligatorio | Apunta a | Admite |
 |---|---|---|---|---|
 | `id` | int | sí | — | — |
-| `process_id` | int | sí | `processes.id` · se va con el | — |
+| `process_id` | int | sí | `processes.id` · impide borrar | — |
 | `nombre` | varchar(180) | sí | — | — |
 | `cargo_id` | int | no | `cargos.id` · impide borrar | — |
 | `recipient_policy` | text | sí | — | `unit_head` |

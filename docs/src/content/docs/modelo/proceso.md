@@ -203,7 +203,21 @@ creada después de las dos, apunta a ambas sin círculo.
 :::
 
 :::caution[Lo que todavía no hace]
-Esto vale para los tres nodos de la estructura: procesos, **unidades** y **puestos**. Tampoco está construido que la base impida **borrar** un
+Esto vale para los tres nodos de la estructura: procesos, **unidades** y **puestos**.
+
+### Qué se puede borrar
+
+**Sólo lo que aún no ha regido.** La regla está puesta en la vida, y con eso alcanza para el nodo:
+
+| | ¿Se borra? |
+|---|---|
+| Un nodo en **borrador** (sin vidas) | Sí |
+| Una vida **programada** (empieza en el futuro) | Sí: se descarta entera, y el nodo vuelve a borrador |
+| Una vida que **ya empezó** | No. Se le pone fecha de fin |
+| Un nodo con alguna vida | No, mientras la tenga — y una vida empezada no se puede quitar |
+
+Así que un nodo que rigió alguna vez no se borra nunca: se suprime. Y borrar un proceso tampoco se
+lleva ya sus líneas, que es de donde cuelga su archivo. Tampoco está construido que la base impida **borrar** un
 proceso que ya ha regido, ni la corrección con permiso propio: el origen `correccion` existe en el
 vocabulario, pero la pantalla aún no lo ofrece.
 :::

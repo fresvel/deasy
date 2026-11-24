@@ -607,3 +607,23 @@ test("suprimir un puesto cierra su ocupacion despues de dejar huerfanos sus entr
   assert.ok(huerfanos < ocupacion, "la ocupacion se cierra ANTES que los entregables: gana la causa equivocada");
 });
 
+// SE BORRA SOLO LO QUE AUN NO HA REGIDO (frente 27, D-03, punto 5). La regla vive en la VIDA: una
+// vida empezada no se borra, y la clave ajena de la tabla de vidas frena el borrado del nodo
+// mientras tenga alguna. Si a una de las tres tablas le falta el disparador, o su clave ajena pasa
+// a CASCADE, un nodo que ya rigio se puede borrar con todo su historial.
+test("una vida que ya empezo no se borra, en ninguna de las tres tablas de vidas", () => {
+  for (const tabla of ["process_vigencias", "unit_vigencias", "position_vigencias"]) {
+    assert.match(
+      SCHEMA,
+      new RegExp(`BEFORE DELETE ON ${tabla}\\s+FOR EACH ROW EXECUTE FUNCTION rechazar_borrado_de_vida_empezada\\(\\)`),
+      `${tabla} no frena el borrado de una vida empezada`
+    );
+    const create = bloqueRecorrido(tabla);
+    assert.ok(!/ON DELETE CASCADE/.test(create), `${tabla}: borrar el nodo se llevaria sus vidas`);
+  }
+});
+
+test("borrar un proceso no se lleva sus lineas", () => {
+  assert.match(SCHEMA, /CONSTRAINT fk_lineas_process FOREIGN KEY \(process_id\) REFERENCES processes\(id\) ON DELETE RESTRICT/);
+});
+

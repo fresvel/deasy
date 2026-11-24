@@ -75,6 +75,19 @@ const MENSAJES_DE_CHECK = Object.freeze({
 
 export const checkViolationMessage = (error) => MENSAJES_DE_CHECK[violatedConstraint(error)] ?? null;
 
+/**
+ * `restrict_violation` lanzado A PROPOSITO por un disparador nuestro, con su frase ya escrita:
+ * los eslabones inmutables de la cadena de un entregable y el borrado de una vida que ya empezo.
+ * No trae nombre de restriccion --no la hay--, y el mensaje ES la frase: la escribio quien puso la
+ * regla en el esquema, en castellano y para una persona.
+ *
+ * ⚠️ Se distingue de una clave ajena `ON DELETE RESTRICT`, que usa el MISMO codigo, en que aquella
+ * SI trae `constraint`. Esa sigue saliendo como hasta ahora.
+ */
+export const PG_RESTRICT_VIOLATION = "23001";
+export const esRechazoDeUnDisparador = (error) =>
+  error?.code === PG_RESTRICT_VIOLATION && !violatedConstraint(error) && Boolean(error?.message);
+
 /** Violacion de una restriccion de EXCLUSION: dos filas que no pueden coexistir. */
 export const PG_EXCLUSION_VIOLATION = "23P01";
 export const isExclusionViolation = (error) => error?.code === PG_EXCLUSION_VIOLATION;
@@ -246,6 +259,10 @@ export function translateConstraintError(error, tableName, { deleting = false } 
   if (isCheckViolation(error)) {
     const mensaje = checkViolationMessage(error);
     return mensaje ? badRequest(mensaje) : null;
+  }
+  // 409: una regla del esquema dice que ESO, en el estado en que esta, no se puede hacer.
+  if (esRechazoDeUnDisparador(error)) {
+    return conflict(error.message);
   }
   // 409: el estado actual no admite la operacion --ya hay otra fila que ocupa ese sitio--, que es
   // la misma familia que un duplicado.

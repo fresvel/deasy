@@ -238,6 +238,7 @@
           sujeto="Unidad"
           :editable="editable"
           @reactivar="empezarVidaNueva"
+          @descartar="descartarVida"
         />
 
         <!-- Pestaña: Ocupaciones -->
@@ -515,6 +516,7 @@
           sujeto="Puesto"
           :editable="editable"
           @reactivar="empezarVidaDelPuesto"
+          @descartar="descartarVidaDelPuesto"
         />
       </div>
 
@@ -1001,6 +1003,22 @@ const saveUnidad = async () => {
     savingUnidad.value = false;
   }
 };
+// Descarta la vida programada de la unidad: aún no ha empezado, así que se borra entera.
+const descartarVida = async () => {
+  if (!props.editable || !vigencia.sePuedeDescartar.value) return;
+  savingUnidad.value = true;
+  modalError.value = "";
+  try {
+    await vigencia.descartarVida();
+    setFeedback("success", "Vida programada descartada.");
+    closeDetail();
+    await loadGraph();
+  } catch (e) {
+    modalError.value = e?.response?.data?.message || "No se pudo descartar la vida.";
+  } finally {
+    savingUnidad.value = false;
+  }
+};
 // Guarda la vida que enseña la pestaña «Vigencia»: poner en vigor, mover fechas, suprimir o reactivar.
 const saveVida = async () => {
   const unidad = detailUnit.value;
@@ -1141,6 +1159,21 @@ const confirmEditPosition = async () => {
     await refreshAfterPositionChange();
   } catch (e) {
     positionError.value = e?.response?.data?.message || "No se pudo actualizar el puesto.";
+  } finally {
+    savingPosition.value = false;
+  }
+};
+const descartarVidaDelPuesto = async () => {
+  if (!props.editable || !vigenciaDelPuesto.sePuedeDescartar.value) return;
+  savingPosition.value = true;
+  positionError.value = "";
+  try {
+    await vigenciaDelPuesto.descartarVida();
+    editingPosition.value = null;
+    setFeedback("success", "Vida programada del puesto descartada.");
+    await refreshAfterPositionChange();
+  } catch (e) {
+    positionError.value = e?.response?.data?.message || "No se pudo descartar la vida del puesto.";
   } finally {
     savingPosition.value = false;
   }

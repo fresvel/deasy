@@ -512,7 +512,7 @@
     ]
   },
   "lineas": {
-    "huella": "ed3a0d2e01cd6b33",
+    "huella": "ffbec88764def682",
     "paginas": [
       "datos/index.md",
       "datos/motor-de-procesos.md",
@@ -706,7 +706,8 @@
     "paginas": [
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
-      "modelo/organizacion.md"
+      "modelo/organizacion.md",
+      "modelo/tenencias-y-relevo.md"
     ]
   },
   "process_definition_period_types": {

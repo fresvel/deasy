@@ -218,3 +218,18 @@ test("las reglas de una vida se dicen igual para un proceso y para una unidad", 
   assert.match(solape.message, /otra vida de esta unidad/);
 });
 
+test("el rechazo de un disparador nuestro sale con SU frase y como conflicto", () => {
+  const vida = translateConstraintError(
+    { code: "23001", message: "Esta vida ya empezo a regir el 2026-01-10: no se puede borrar. Para terminarla, ponle fecha de fin." },
+    "unit_vigencias",
+    { deleting: true }
+  );
+  assert.equal(vida.statusCode, 409);
+  assert.match(vida.message, /ya empezo a regir/);
+});
+
+test("una clave ajena ON DELETE RESTRICT usa el mismo codigo y NO se confunde con un disparador", () => {
+  // Trae `constraint`: no es una frase nuestra, es el motor. Sigue sin traducirse por este camino.
+  assert.equal(translateConstraintError({ code: "23001", constraint: "fk_task_items_task", message: "update or delete on table..." }, "tasks"), null);
+});
+

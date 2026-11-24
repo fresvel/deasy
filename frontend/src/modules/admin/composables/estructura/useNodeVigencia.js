@@ -112,7 +112,19 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     return adminSqlService.create(tabla, { [claveDelNodo]: nodoId, ...datos });
   };
 
+  /* Se borra sólo lo que aún no ha regido: una vida PROGRAMADA se puede descartar entera —se
+     registró por error, o la reorganización se canceló—. Una que ya empezó no: la base lo rechaza, y
+     por eso el botón sólo se ofrece en la primera. */
+  const sePuedeDescartar = computed(() => {
+    const desde = vidaForm.value.vigente_desde;
+    return vidaModo.value === "editar" && Boolean(vidaForm.value.id) && Boolean(desde)
+      && desde > new Date().toISOString().slice(0, 10);
+  });
+  const descartarVida = () => adminSqlService.remove(tabla, { id: vidaForm.value.id });
+
   return {
+    sePuedeDescartar,
+    descartarVida,
     vidas,
     vidaForm,
     vidaModo,
