@@ -35,7 +35,7 @@
 cuando pregunta «cómo va». La otra, más abajo en §7, es por **tarea de ejecución** (3.0, 3.1,
 3.2…) e incluye trabajo que no es de ningún grupo: la geometría única, los tres gates nuevos, la
 convención de nombres. **Una tarea cerrada no es un grupo cerrado.** Y por encima de las dos está
-el control de ejecución del [plan maestro](./plan-2026-08-13.md#0--control-de-ejecución), donde
+el control de ejecución del [plan maestro](./plan-2026-08-13.md), donde
 todo esto es **una sola fila, F3.2**.
 
 **Al informar del estado se dice de qué tabla se habla.** Si no, pasa lo del 15-08: «7 de 11

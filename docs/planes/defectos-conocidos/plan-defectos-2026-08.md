@@ -258,7 +258,7 @@ aquí).
 ## ~~§6 · Defecto 1.11 — los parámetros de MÁS se ignoran en silencio~~
 
 ✅ **CERRADO el 2026-08-14.** La ficha entera está en
-[`bitacora.md` § 1.11](./bitacora.md#111--los-parametros-de-mas-se-ignoraban-en-silencio-y-la-premisa-era-falsa).
+[`bitacora.md` § 1.11](./bitacora.md#111--los-parámetros-de-más-se-ignoraban-en-silencio-y-la-premisa-era-falsa).
 
 En una línea: **la justificación de la tolerancia era falsa** —se midió y las 484 llamadas están
 equilibradas—, así que `bindParams` **lanza también cuando sobran**. Dejó dos cosas vivas: el gate
@@ -270,7 +270,7 @@ equilibradas—, así que `bindParams` **lanza también cuando sobran**. Dejó d
 
 ✅ **CERRADO el 2026-08-14.** Y **no era lo que decía esta ficha**: afirmaba «un golden que congela un
 hash no determinista» y «9 casos», y **las dos cosas eran falsas**. La ficha corregida está en
-[`bitacora.md` § 1.15](./bitacora.md#115--el-catalogo-de-semillas-nunca-llegaba-a-un-entorno-ya-arrancado).
+[`bitacora.md` § 1.15](./bitacora.md#115--el-catálogo-de-semillas-nunca-llegaba-a-un-entorno-ya-arrancado).
 
 En una línea: el hash **es** determinista, el golden **era** correcto, y lo que mentía era **MinIO** —
 servía una semilla anterior al arreglo del ZIP renderizable. Causa raíz: un centinela que protegía
@@ -281,7 +281,7 @@ ediciones del admin sobre el artifact **y de paso bloqueaba el catálogo, que na
 ## ~~§9 · Defecto 1.16 — orden de parámetros cruzado en `context_ancestor_type`~~
 
 ✅ **CERRADO el 2026-08-14.** Ficha completa en
-[`bitacora.md` § 1.16](./bitacora.md#116--orden-de-parametros-cruzado-en-context_ancestor_type).
+[`bitacora.md` § 1.16](./bitacora.md#116--orden-de-parámetros-cruzado-en-context_ancestor_type).
 
 En una línea: dos `unshift` donde hacía falta **un `unshift` y un `push`**. El censo dice que es la
 **única rama del backend que antepone Y añade a la cola a la vez** — por eso rompió aquí y no en las

@@ -1,7 +1,7 @@
 # Auditoría del artefacto «Del proceso al documento firmado» contra el código — 2026-08-26
 
 > **Qué es esto.** El artefacto `b51be421` se publicó como la sección
-> [`/modelo/`](/modelo/) del sitio, pero **no se trasladó: se reescribió**. Medido con cobertura
+> [`/modelo/`](../src/content/docs/modelo/index.md) del sitio, pero **no se trasladó: se reescribió**. Medido con cobertura
 > de bigramas párrafo a párrafo: **95 de 95 párrafos por debajo del 50 %**.
 >
 > El dueño eligió no restaurar el texto original, sino **auditar afirmación por afirmación** que

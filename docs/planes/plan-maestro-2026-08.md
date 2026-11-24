@@ -294,7 +294,7 @@ que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `do
 > lo que anuncia la regla 2 del [README de planes](./README.md) —un contador replicado en dos
 > sitios acaba contradiciéndose—. El número vive en la tabla del sub-plan y en ningún otro sitio.
 
-> ### ⛔ El estado de este frente vive en [`sistema-diseno-componentes/plan-2026-08-13.md`](./sistema-diseno-componentes/plan-2026-08-13.md#0--control-de-ejecución), NO aquí.
+> ### ⛔ El estado de este frente vive en [`sistema-diseno-componentes/plan-2026-08-13.md`](./sistema-diseno-componentes/plan-2026-08-13.md), NO aquí.
 >
 > **Una sola numeración: `F0`…`F10`.** Si lees un número de fase de este frente en cualquier sitio,
 > es de esa tabla.
