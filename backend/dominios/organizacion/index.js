@@ -35,6 +35,9 @@ export {
   quitarFicheroDelActo,
   quitarFicheroDelActoComoCorreccion
 } from "./controllers/acto_adjunto_controller.js";
+// Los actos que cita un nodo —lo que enseña la pestaña «Actos» de su modal y avisa su nodo en el
+// mapa—: lo pide también el mapa de procesos, que vive fuera de este dominio.
+export { conSusActosSinDocumento, listarActosDelNodo } from "./services/actoAdjuntos.js";
 
 // La institución: quién es, y cuál es su país. Lo preguntan la recuperación de correo y el documento
 // de identidad —para saber qué documento es el «nacional»—.

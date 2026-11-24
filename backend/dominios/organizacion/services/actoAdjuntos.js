@@ -16,7 +16,12 @@ import { conTransaccion, getPostgresPool } from "../../../config/postgres.js";
 import { badRequest, conflict as conflicto, notFound } from "../../../errors/HttpError.js";
 import { minioClient, getMinioObjectStream } from "../../../services/storage/minio_service.js";
 import { insertarAdjunto, leerAdjuntoDelActo, leerAdjuntoParaDescargar, quitarAdjunto, reemplazarAdjunto } from "../datos/actoAdjuntos.js";
-import { leerActoParaAdjuntar, listarActosConSuDocumento } from "../datos/consulta/actosYSuDocumento.js";
+import {
+  contarActosSinDocumentoPorNodo,
+  leerActoParaAdjuntar,
+  listarActosConSuDocumento,
+  listarActosDeUnNodo
+} from "../datos/consulta/actosYSuDocumento.js";
 import { registrarCorreccion } from "./correccionesDeEstructura.js";
 
 const BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
@@ -103,4 +108,14 @@ export const abrirAdjuntoDelActo = async (actoId, { connection = getPostgresPool
   const fila = await leerAdjuntoParaDescargar(connection, actoId);
   if (!fila) throw notFound("Ese acto no tiene fichero adjunto.");
   return { nombre: fila.file_name, tipo: fila.mime_type, bytes: Number(fila.size_bytes), flujo: await getMinioObjectStream(BUCKET, fila.file_path) };
+};
+
+// LOS ACTOS DE UN NODO, para su modal: los que cita una `unidad` o un `proceso`, con su documento.
+export const listarActosDelNodo = (clase, nodoId, { connection = getPostgresPool() } = {}) =>
+  listarActosDeUnNodo(connection, clase, nodoId);
+
+// Y para el mapa: añade a cada nodo cuántos de los actos que cita siguen sin documento.
+export const conSusActosSinDocumento = async (clase, nodos, { connection = getPostgresPool() } = {}) => {
+  const cuenta = await contarActosSinDocumentoPorNodo(connection, clase);
+  return nodos.map((nodo) => ({ ...nodo, actos_sin_documento: cuenta.get(Number(nodo.id)) ?? 0 }));
 };

@@ -40,12 +40,34 @@
           <font-awesome-icon :icon="isProcessDefinitionsTable ? 'list-check' : 'plus'" class="mr-2" />
           {{ isProcessDefinitionsTable ? "Configurar proceso" : "Agregar" }}
         </AdminButton>
+        <!-- EN LA PANTALLA DE ACTOS: cuántos siguen sin documento, y la lista general para adjuntarlo
+             (frente 27, F27.P4.T11). La de cada nodo está en la pestaña «Actos» de su modal; ésta es
+             donde se ve también el acto que todavía no ordena nada. Vive aquí y no en
+             `AdminTableManager` porque la cabecera se monta en cuatro ramas de aquél. -->
+        <AdminButton
+          v-if="esLaTablaDeActos"
+          :variant="actosSinDocumento ? 'warning-soft' : 'neutral-outline'"
+          title="Los actos y su documento"
+          @click="actosAbierto = true"
+        >
+          Documentos<span v-if="actosSinDocumento" class="ml-1 font-semibold">· {{ actosSinDocumento }} sin documento</span>
+        </AdminButton>
+        <ActosDocumentosModal
+          v-if="actosAbierto"
+          :open="actosAbierto"
+          :editable="canUpdate"
+          @close="actosAbierto = false"
+          @cambio="contarActosSinDocumento"
+        />
 </template>
 
 <script setup>
+import { computed, ref, watch } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import ActosDocumentosModal from "@/modules/admin/components/units/ActosDocumentosModal.vue";
+import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
-defineProps({
+const props = defineProps({
   tableHeaderIcon: {
     type: [Array, String],
     default: ""
@@ -89,4 +111,18 @@ defineEmits([
   "sync-template-seeds",
   "create"
 ]);
+
+const esLaTablaDeActos = computed(() => props.table?.table === "actos");
+const actosAbierto = ref(false);
+const actosSinDocumento = ref(0);
+// Si falla no se enseña cifra: es un aviso, no un bloqueo.
+const contarActosSinDocumento = async () => {
+  try {
+    const { data } = await adminSqlService.getActosYSuDocumento({ soloSinDocumento: true });
+    actosSinDocumento.value = Array.isArray(data) ? data.length : 0;
+  } catch {
+    actosSinDocumento.value = 0;
+  }
+};
+watch(esLaTablaDeActos, (es) => { if (es) contarActosSinDocumento(); }, { immediate: true });
 </script>

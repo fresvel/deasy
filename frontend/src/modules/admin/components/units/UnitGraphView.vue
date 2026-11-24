@@ -43,15 +43,6 @@
         >
           <IconAlertTriangle class="mr-1 h-4 w-4" /> Pendientes<span v-if="pendingCount" class="ml-1 font-semibold">· {{ pendingCount }}</span>
         </AppButton>
-        <!-- LOS ACTOS Y SU PAPEL: cuántos siguen sin documento, y la puerta para adjuntárselo. Va aquí
-             porque los actos son lo que ordena los cambios de esta estructura. -->
-        <AppButton
-          :variant="actosSinDocumento ? 'warning-soft' : 'neutral-outline'"
-          title="Los actos y su documento"
-          @click="actosAbierto = true"
-        >
-          <IconFileDescription class="mr-1 h-4 w-4" /> Actos<span v-if="actosSinDocumento" class="ml-1 font-semibold">· {{ actosSinDocumento }} sin documento</span>
-        </AppButton>
         <!-- Los dos botones con rótulo miden lo mismo porque van en una rejilla de columnas iguales:
              el patrón del mapa de procesos. -->
         <div class="grid auto-cols-fr grid-flow-col gap-2">
@@ -166,13 +157,11 @@
           </p>
           <p class="m-0 text-sm text-icon">{{ observacion.detalle }}</p>
           <div class="flex justify-end">
-            <AppButton variant="primary-outline" @click="resolverObservacion(observacion)">Ir a sus puestos</AppButton>
+            <AppButton variant="primary-outline" @click="resolverObservacion(observacion)">{{ observacion.accion || "Ir a sus puestos" }}</AppButton>
           </div>
         </li>
       </ul>
     </AppModalShell>
-
-    <ActosDocumentosModal v-if="actosAbierto" :open="actosAbierto" :editable="editable" @close="actosAbierto = false" @cambio="contarActosSinDocumento" />
 
     <NodeMoverModal :mover="moverUnidad" :acto-options="vigencia.actoOptions.value" />
 
@@ -492,6 +481,13 @@
         </template>
         </div>
 
+        <!-- Pestaña: Actos — los papeles que la pusieron en vigor, la suprimieron o la movieron, cada
+             uno con su documento. Aquí se le adjunta el PDF al que vino de fuera. -->
+        <div v-show="detailTab === 'actos'">
+          <ActosLista v-if="detailActos.length" :actos="detailActos" :editable="editable" @cambio="alCambiarUnActo" />
+          <AppEmpty v-else :icon="false">Ningún acto ordena nada de esta unidad: sus fechas no citan ninguno.</AppEmpty>
+        </div>
+
         <!-- Pestaña: Procesos de la unidad (alcance) -->
         <div v-show="detailTab === 'procesos'">
           <div class="mb-3 flex items-center justify-between gap-2">
@@ -668,7 +664,7 @@ import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
-import ActosDocumentosModal from "@/modules/admin/components/units/ActosDocumentosModal.vue";
+import ActosLista from "@/modules/admin/components/units/ActosLista.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import NodeVigenciaPanel from "./NodeVigenciaPanel.vue";
@@ -728,6 +724,8 @@ const createContext = ref(null);
 const createForm = ref({ name: "", slug: "", unit_type_id: "" });
 const detailUnit = ref(null);
 const detailPositions = ref([]);
+// Los actos que cita la unidad abierta, con su documento.
+const detailActos = ref([]);
 // LAS CLASES DE PUESTO como subpestañas de «Ocupaciones». El orden es el de la tabla que explicó el
 // dueño: la plaza con contrato, la jefatura por designación, y la función sin contrato propio.
 const CLASES_DE_PUESTO = [
@@ -771,6 +769,7 @@ const PESTANAS_DE_LA_UNIDAD = [
   { id: "datos", rotulo: "Datos", icono: IconId },
   { id: "vigencia", rotulo: "Vigencia", icono: IconCalendarEvent },
   { id: "ocupaciones", rotulo: "Ocupaciones", icono: IconUsers },
+  { id: "actos", rotulo: "Actos", icono: IconFileDescription },
   { id: "procesos", rotulo: "Procesos", icono: IconSettings }
 ];
 const unidadForm = ref({ name: "", label: "", slug: "", unit_type_id: "" });
@@ -902,22 +901,26 @@ const healthIssues = (u) => {
       pestana: "ocupaciones"
     });
   }
+  const actos = Number(u.actos_sin_documento) || 0;
+  if (actos) {
+    issues.push({
+      clave: "actos_sin_documento",
+      titulo: `${actos} ${actos === 1 ? "acto" : "actos"} sin documento`,
+      detalle: actos === 1
+        ? "Un acto que ordenó algo de esta unidad está registrado, pero su documento todavía no. Si vino de fuera, adjúntale el PDF."
+        : "Hay actos que ordenaron algo de esta unidad cuyo documento todavía no está. A los que vinieron de fuera, adjúntales el PDF.",
+      pestana: "actos",
+      accion: "Ir a sus actos"
+    });
+  }
   return issues;
 };
-// Los actos que siguen sin documento: la cifra del botón de la barra. Se cuenta al entrar y cada
-// vez que se sube o se quita un fichero. Si falla no se enseña nada: es un aviso, no un bloqueo.
-const actosAbierto = ref(false);
-const actosSinDocumento = ref(0);
-const contarActosSinDocumento = async () => {
-  try {
-    const { data } = await adminSqlService.getActosYSuDocumento({ soloSinDocumento: true });
-    actosSinDocumento.value = Array.isArray(data) ? data.length : 0;
-  } catch {
-    actosSinDocumento.value = 0;
-  }
+// Se subió, se cambió o se quitó el fichero de un acto: se vuelve a pedir la unidad, en la misma
+// pestaña, y el mapa, que es quien cuenta los actos sin documento de cada nodo.
+const alCambiarUnActo = async () => {
+  await loadGraph();
+  if (detailUnit.value?.id) await openDetail(detailUnit.value.id, { mantener: true });
 };
-contarActosSinDocumento();
-
 // El modal de las observaciones de un nodo, y el salto desde cada una a donde se resuelve.
 const observacionesDe = ref(null);
 const openIssues = (unitId) => {
@@ -1221,6 +1224,7 @@ const openDetail = async (unitId, { mantener = false } = {}) => {
     detailUnit.value = { ...(data.unit || {}), id: unitId, name: data.unit?.name ?? detailUnit.value?.name ?? "", estado: u?.estado || "borrador" };
     vigencia.prepararVida(u, data.vigencias || [], data.antecesores || []);
     detailPositions.value = data.positions || [];
+    detailActos.value = data.actos || [];
   } catch (e) {
     setFeedback("error", e?.response?.data?.message || "No se pudo cargar el detalle.");
     detailUnit.value = null;

@@ -1002,7 +1002,9 @@ Cuatro cosas que no son evidentes:
   cuándo rige. Una resolución de diciembre puede regir desde enero.
 - **Un acto sin papel no es un error**: es el estado «referencia registrada, documento pendiente».
   La referencia es obligatoria; el documento puede llegar después. Lo que no puede es pasar
-  inadvertido: el organigrama dice cuántos actos siguen sin documento y los lista.
+  inadvertido: el nodo al que ese acto ordenó algo lo avisa en el mapa, y la pestaña «Actos» de su
+  modal lista los que cita, con su documento. La pantalla de actos lleva además la lista general,
+  que es donde se ve también el acto que todavía no ordena nada.
 
 El enlace al documento va **del documento al acto**, en el dominio de tareas, y no al revés: el acto
 está en el nivel 2 para que unidades y procesos puedan apuntarle, `document_versions` está en el 5, y

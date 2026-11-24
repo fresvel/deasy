@@ -12,6 +12,7 @@ import { conflict } from "../../../errors/HttpError.js";
 import { conTransaccion } from "../../../config/postgres.js";
 import { planDeMovimiento } from "../../estructura/planDeMovimiento.js";
 import { conSusSucesores } from "../../estructura/sucesores.js";
+import { conSusActosSinDocumento, listarActosDelNodo } from "../../../dominios/organizacion/index.js";
 
 export default class ProcessGraphService {
   constructor(pool, { getByKeys } = {}) {
@@ -101,7 +102,7 @@ export default class ProcessGraphService {
          INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
         ORDER BY pdt.process_definition_id, pdt.sort_order ASC`
     );
-    return { nodes, edges, configs, templates };
+    return { nodes: await conSusActosSinDocumento("proceso", nodes, { connection: this.pool }), edges, configs, templates };
   }
 
   // Ciclo: poner parentId como padre de childId lo cerraría si parentId ya es descendiente de childId
@@ -386,6 +387,8 @@ export default class ProcessGraphService {
       },
       vigencias: conSusSucesores(vigencias, sucesores),
       antecesores,
+      // Los actos que lo pusieron en vigor, lo suprimieron o lo movieron, con su documento.
+      actos: await listarActosDelNodo("proceso", id, { connection: this.pool }),
       configurations,
       children,
       runs

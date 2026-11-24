@@ -220,6 +220,12 @@
           </ul>
         </div>
 
+        <!-- Pestaña: Actos — los papeles que lo pusieron en vigor, lo suprimieron o lo movieron. -->
+        <div v-show="detailTab === 'actos'">
+          <ActosLista v-if="detailActos.length" :actos="detailActos" :editable="editable" @cambio="alCambiarUnActo" />
+          <AppEmpty v-else :icon="false">Ningún acto ordena nada de este proceso: sus fechas no citan ninguno.</AppEmpty>
+        </div>
+
         <!-- Pestaña: Sub-procesos -->
         <div v-show="detailTab === 'subprocesos'">
           <div class="mb-3 flex items-center justify-between gap-2">
@@ -532,6 +538,7 @@ import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import dagre from "dagre";
 import { encuadrarAlAbrir, ZOOM_INICIAL } from "@/modules/admin/components/units/graphEncuadre.js";
+import ActosLista from "@/modules/admin/components/units/ActosLista.vue";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
@@ -624,12 +631,21 @@ const PESTANAS_DEL_PROCESO = [
   { id: "datos", rotulo: "Datos", icono: IconId },
   { id: "vigencia", rotulo: "Vigencia", icono: IconCalendarEvent },
   { id: "configuraciones", rotulo: "Configuraciones", icono: IconSettings },
+  { id: "actos", rotulo: "Actos", icono: IconVersions },
   { id: "subprocesos", rotulo: "Sub-procesos", icono: IconSitemap },
   { id: "corridas", rotulo: "Lanzamientos", icono: IconRocket }
 ];
 const detailLoading = ref(false);
 const detailConfigurations = ref([]);
 const detailChildren = ref([]);
+// Los actos que cita el proceso abierto, con su documento.
+const detailActos = ref([]);
+const alCambiarUnActo = async () => {
+  const id = detailProcess.value?.id;
+  if (!id) return;
+  const { data } = await adminSqlService.getProcessDetail(id);
+  detailActos.value = data.actos || [];
+};
 const detailRuns = ref([]);
 const editForm = ref({ name: "", slug: "", parent_id: "" });
 // LAS VIDAS del proceso abierto (frente 27, D-03): el estado de la pestaña «Vigencia». Lo lleva un
@@ -1266,6 +1282,7 @@ const openProcessDetail = async (processId, tab = "datos") => {
     vigencia.prepararVida(detailProcess.value, data.vigencias || [], data.antecesores || []);
     detailConfigurations.value = data.configurations || [];
     detailChildren.value = data.children || [];
+    detailActos.value = data.actos || [];
     detailRuns.value = data.runs || [];
   } catch (e) {
     setFeedback("error", e?.response?.data?.message || "No se pudo cargar el detalle del proceso.");

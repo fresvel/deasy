@@ -33,6 +33,7 @@ import {
   borrarRelacion
 } from "../datos/unidades.js";
 import { contarEfectosDeSuprimir, CLASES_DE_NODO } from "../datos/consulta/efectosDeSuprimir.js";
+import { conSusActosSinDocumento, listarActosDelNodo } from "./actoAdjuntos.js";
 import { planDeMovimiento } from "../../../services/estructura/planDeMovimiento.js";
 import { agruparPor, conSusSucesores } from "../../../services/estructura/sucesores.js";
 import {
@@ -82,7 +83,7 @@ export default class OrgStructureService {
   // relationTypeCode filtra las aristas por tipo (p. ej. 'org'); 'all' devuelve todas.
   async getUnitGraph(relationTypeCode = "org") {
     this.ensurePool();
-    const nodes = await listarNodosDelGrafo(this.pool);
+    const nodes = await conSusActosSinDocumento("unidad", await listarNodosDelGrafo(this.pool), { connection: this.pool });
     const relationTypes = await listarTiposDeRelacion(this.pool);
     const edges = await listarAristasDelGrafo(this.pool, relationTypeCode);
     return { nodes, edges, relationTypes };
@@ -134,6 +135,8 @@ export default class OrgStructureService {
       vigencias,
       // A quién sucede esta unidad: varios antecesores son una fusión.
       antecesores: await listarAntecesoresDeLaUnidad(this.pool, id),
+      // Los actos que la pusieron en vigor, la suprimieron o la movieron, con su documento.
+      actos: await listarActosDelNodo("unidad", id, { connection: this.pool }),
       positions
     };
   }

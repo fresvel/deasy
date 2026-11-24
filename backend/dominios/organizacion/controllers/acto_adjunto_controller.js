@@ -19,11 +19,16 @@ export const listarActosDocumentos = async (req, res) => {
   }
 };
 
+// El nombre del fichero llega en latin1 —así lo entrega quien parte el formulario—, y un nombre con
+// tildes («Resolución 014.pdf») salía estropeado. Se recompone aquí, que es cosa del transporte.
+const conNombreLegible = (archivo) =>
+  archivo ? { ...archivo, originalname: Buffer.from(String(archivo.originalname || ""), "latin1").toString("utf8") } : archivo;
+
 const adjuntar = (comoCorreccion) => async (req, res) => {
   try {
     res.json(await adjuntarAlActo({
       actoId: req.params.id,
-      archivo: req.file,
+      archivo: conNombreLegible(req.file),
       actorId: actor(req),
       motivo: req.body?.motivo,
       comoCorreccion
