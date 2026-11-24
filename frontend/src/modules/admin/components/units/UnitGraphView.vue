@@ -307,30 +307,7 @@
             >
               <IconFilter class="h-5 w-5" />
             </AppButton>
-            <AppButton v-if="editable" variant="primary-outline" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
-          </div>
-        </div>
-
-        <!-- Formulario de nuevo puesto -->
-        <div v-if="editable && addingPosition" class="mb-3 rounded-xl border border-brand-200 bg-brand-50/40 p-3">
-          <div class="flex flex-col gap-2">
-            <select v-model="positionForm.cargo_id" aria-label="Cargo del nuevo puesto" class="deasy-control deasy-control--select">
-              <option value="">Cargo…</option>
-              <option v-for="c in cargos" :key="c.id" :value="c.id">{{ c.name }}</option>
-            </select>
-            <input v-model="positionForm.title" type="text" aria-label="Título del nuevo puesto (opcional)" placeholder="Título (opcional)" class="deasy-control" />
-            <div class="flex items-center gap-3">
-              <select v-model="positionForm.position_type" aria-label="Tipo del nuevo puesto" class="deasy-control deasy-control--select flex-1">
-                <option value="real">Real</option>
-                <option value="promocion">Promoción</option>
-                <option value="simbolico">Simbólico</option>
-              </select>
-              <SToggle v-model="positionForm.is_unit_head" label="Jefatura" label-position="end" />
-            </div>
-            <div class="flex justify-end gap-2">
-              <AppButton variant="danger-outline" @click="addingPosition = false">Cancelar</AppButton>
-              <AppButton variant="primary-outline" :disabled="!positionForm.cargo_id" @click="confirmAddPosition">Crear puesto</AppButton>
-            </div>
+            <AppButton v-if="editable" variant="primary-outline" @click="openNewPosition">+ Puesto</AppButton>
           </div>
         </div>
 
@@ -543,7 +520,7 @@
       v-if="Boolean(editingPosition)"
       controlled
       :open="Boolean(editingPosition)"
-      :title="editingPosition.cargo_name || editingPosition.title || 'Puesto'"
+      :title="editingPosition.id ? (editingPosition.cargo_name || editingPosition.title || 'Puesto') : 'Nuevo puesto'"
       content-class="deasy-dialog-panel--viewport max-w-xl"
       body-class="flex min-h-0 flex-col"
       footer-class="shrink-0"
@@ -591,6 +568,10 @@
           <SToggle v-model="editPositionForm.is_unit_head" label="Jefatura" label-position="end" />
         </div>
 
+        <!-- Un puesto nuevo puede nacer rigiendo o en borrador: se decide aquí, antes de crearlo. -->
+        <p v-if="!editingPosition.id && positionTab === 'vigencia'" class="m-0 mb-3 text-sm text-icon">
+          Si le pones fecha, el puesto se crea y entra en vigor ese día. Sin fecha nace en borrador, y se pone en vigor después.
+        </p>
         <NodeVigenciaPanel
           v-show="positionTab === 'vigencia'"
           :vigencia="vigenciaDelPuesto"
@@ -604,7 +585,12 @@
       </div>
 
       <template #footer>
-        <template v-if="positionTab === 'datos'">
+        <!-- Un puesto NUEVO se crea con un solo botón, esté en la pestaña que esté. -->
+        <template v-if="!editingPosition.id">
+          <AppButton variant="danger-outline" :disabled="savingPosition" @click="closeEditPosition">Cancelar</AppButton>
+          <AppButton variant="primary-outline" :disabled="savingPosition || !sePuedeCrearElPuesto" @click="confirmCreatePosition">{{ savingPosition ? "Creando…" : "Crear puesto" }}</AppButton>
+        </template>
+        <template v-else-if="positionTab === 'datos'">
           <AppButton variant="danger-outline" :disabled="savingPosition" @click="closeEditPosition">Cancelar</AppButton>
           <AppButton variant="primary-outline" :disabled="savingPosition || !editPositionForm.cargo_id" @click="confirmEditPosition">{{ savingPosition ? "Guardando…" : "Guardar" }}</AppButton>
         </template>
@@ -765,8 +751,6 @@ const detailProcessesLoading = ref(false);
 const detailProcessesLoaded = ref(false);
 // Gestión de puestos/ocupaciones en el drawer.
 const cargos = ref([]);
-const addingPosition = ref(false);
-const positionForm = ref({ cargo_id: "", title: "", position_type: "real", is_unit_head: false });
 const assignForId = ref(null);
 const personQuery = ref("");
 const personResults = ref([]);
@@ -847,11 +831,14 @@ const legend = computed(() => {
     .map((rt) => ({ code: rt.code, name: rt.name, color: colorForCode(rt.code) }));
 });
 
-// Salud: una unidad tiene pendientes si no tiene jefatura o no tiene puestos.
+// Salud: una unidad tiene pendientes si no tiene jefatura, no tiene puestos, o le quedan puestos en
+// borrador —creados y sin poner en vigor—, que es trabajo a medias y no se ve desde fuera.
 const healthIssues = (u) => {
   const issues = [];
   if (!Number(u.head_count)) issues.push("Sin jefatura");
   if (!Number(u.positions_count)) issues.push("Sin puestos");
+  const borradores = Number(u.draft_positions_count) || 0;
+  if (borradores) issues.push(`${borradores} ${borradores === 1 ? "puesto" : "puestos"} en borrador`);
   return issues;
 };
 const pendingCount = computed(
@@ -1096,7 +1083,6 @@ const openDetail = async (unitId, { mantener = false } = {}) => {
 const closeDetail = () => {
   detailUnit.value = null;
   detailPositions.value = [];
-  addingPosition.value = false;
   assignForId.value = null;
   editingPosition.value = null;
   profileWizardPosition.value = null;
@@ -1271,17 +1257,55 @@ const refreshAfterPositionChange = async () => {
   }
 };
 
-const confirmAddPosition = async () => {
-  if (!detailUnit.value?.id || !positionForm.value.cargo_id) return;
-  modalError.value = "";
+// UN PUESTO NUEVO SE CREA EN EL MISMO MODAL EN QUE SE EDITA, con sus dos pestañas: así se ve —y se
+// decide— su vigencia antes de crearlo. Antes era un formulario desplegado en la lista, que sólo
+// pedía los datos: el puesto nacía siempre en borrador y había que abrirlo otra vez para que rigiera.
+const openNewPosition = () => {
+  editingPosition.value = { id: null, estado: "borrador" };
+  editPositionForm.value = { cargo_id: "", title: "", position_type: "real", is_unit_head: false };
+  positionTab.value = "datos";
+  positionError.value = "";
+  vigenciaDelPuesto.prepararVida({ estado: "borrador" }, [], []);
+  vigenciaDelPuesto.cargarActos();
+};
+// Con fecha de inicio, la vigencia tiene que estar completa; sin ella, basta el cargo.
+const sePuedeCrearElPuesto = computed(() =>
+  Boolean(editPositionForm.value.cargo_id)
+  && (!vigenciaDelPuesto.vidaForm.value.vigente_desde || vigenciaDelPuesto.sePuedeGuardar.value)
+);
+const confirmCreatePosition = async () => {
+  if (!detailUnit.value?.id || !sePuedeCrearElPuesto.value) return;
+  const form = editPositionForm.value;
+  const vida = { ...vigenciaDelPuesto.vidaForm.value };
+  savingPosition.value = true;
+  positionError.value = "";
+  let creadoId = null;
   try {
-    await adminSqlService.addUnitPosition(detailUnit.value.id, { ...positionForm.value });
-    addingPosition.value = false;
-    positionForm.value = { cargo_id: "", title: "", position_type: "real", is_unit_head: false };
+    const { data } = await adminSqlService.addUnitPosition(detailUnit.value.id, { ...form });
+    creadoId = data?.id ?? null;
+    if (vida.vigente_desde && creadoId) await vigenciaDelPuesto.guardarVida(creadoId);
+    editingPosition.value = null;
     setFeedback("success", "Puesto creado.");
     await refreshAfterPositionChange();
   } catch (e) {
-    avisarDeError(e?.response?.data?.message || "No se pudo crear el puesto.");
+    const mensaje = e?.response?.data?.message || "No se pudo crear el puesto.";
+    if (!creadoId) {
+      positionError.value = mensaje;
+    } else {
+      // El puesto SÍ se creó; lo que falló fue ponerlo en vigor. Se queda abierto, ya como puesto
+      // existente y con lo que se había escrito, para corregirlo sin crear otro.
+      await refreshAfterPositionChange();
+      const creado = detailPositions.value.find((pos) => pos.id === creadoId);
+      if (creado) {
+        openEditPosition(creado, "vigencia");
+        Object.assign(vigenciaDelPuesto.vidaForm.value, vida);
+      } else {
+        editingPosition.value = null;
+      }
+      positionError.value = `El puesto se creó, en borrador, pero no se pudo poner en vigor: ${mensaje}`;
+    }
+  } finally {
+    savingPosition.value = false;
   }
 };
 

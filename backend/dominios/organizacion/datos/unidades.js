@@ -26,7 +26,12 @@ export const listarNodosDelGrafo = async (ejecutor) => {
             (SELECT COUNT(*) FROM unit_positions p
                INNER JOIN position_assignments pa ON pa.position_id = p.id AND pa.is_current = 1
               WHERE p.unit_id = u.id AND puesto_rige(p.id)) AS occupied_count,
-            (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_unit_head = 1 AND puesto_rige(p.id)) AS head_count
+            (SELECT COUNT(*) FROM unit_positions p WHERE p.unit_id = u.id AND p.is_unit_head = 1 AND puesto_rige(p.id)) AS head_count,
+            -- LOS PUESTOS EN BORRADOR: creados, pero sin ninguna vida. Las tres cuentas de arriba solo
+            -- ven los que rigen, asi que un borrador no salia en el nodo y no habia como encontrarlo.
+            (SELECT COUNT(*) FROM unit_positions p
+              WHERE p.unit_id = u.id
+                AND NOT EXISTS (SELECT 1 FROM position_vigencias pv WHERE pv.position_id = p.id)) AS draft_positions_count
      FROM units u
      LEFT JOIN unit_types ut ON ut.id = u.unit_type_id
      LEFT JOIN unit_vigencia_actual v ON v.unit_id = u.id

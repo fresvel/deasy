@@ -908,6 +908,7 @@
     "nodeCount": 14,
     "edgeCount": 12,
     "nodeKeys": [
+      "draft_positions_count",
       "estado",
       "fin_acto_id",
       "fin_origen",

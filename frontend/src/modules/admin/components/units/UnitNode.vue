@@ -54,6 +54,14 @@
         outlined
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</AppTag>
+      <!-- LO QUE QUEDÓ A MEDIAS: puestos creados que todavía no rigen. La cuenta de al lado sólo ve
+           los que rigen, así que sin esto un borrador no se encuentra desde el organigrama. -->
+      <AppTag
+        v-if="Number(data.draft_positions_count) > 0"
+        :variant="tonoVigencia('borrador')"
+        outlined
+        :title="`${data.draft_positions_count} ${Number(data.draft_positions_count) === 1 ? 'puesto creado que todavía no rige' : 'puestos creados que todavía no rigen'}`"
+      >{{ data.draft_positions_count }} en borrador</AppTag>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
