@@ -1,8 +1,8 @@
 <template>
   <div
-    class="graph-node graph-node--template relative rounded-xl rounded-tl-none border border-brand-200 border-l-4 border-l-brand-400 bg-brand-50/50 px-2.5 py-2 transition-all"
+    class="graph-node graph-node--template relative rounded-xl rounded-tl-none border border-brand-200 border-l-4 border-l-brand-400 bg-white px-2.5 py-2 transition-all"
     :class="data.highlighted ? 'graph-node--resaltado' : ''"
-    :title="data.display_name"
+    :title="`${data.display_name} · código de plantilla: ${data.template_code}`"
     @mouseenter="hover = true"
     @mouseleave="hover = false"
   >
@@ -28,9 +28,10 @@
       <IconFileText class="h-3.5 w-3.5 shrink-0 text-primary" />
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.display_name }}</span>
     </p>
-    <!-- El código y la versión, sin caja: como en los demás nodos del mapa. -->
+    <!-- Sólo la versión, sin caja. El código de plantilla se quitó de aquí (2026-11-24): repetía el
+         nombre en forma de slug y cargaba el nodo; sigue en el `title` del nodo, al pasar el ratón.
+         El fondo tintado también se fue: el entregable ya se distingue por su pestaña y su franja. -->
     <p class="m-0 mt-1 flex items-center gap-3">
-      <span class="graph-node__dato block min-w-0 truncate" :title="`Código de plantilla: ${data.template_code}`">{{ data.template_code }}</span>
       <span
         v-if="data.storage_version"
         class="graph-node__dato shrink-0"

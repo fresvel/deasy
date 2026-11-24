@@ -305,35 +305,81 @@
       </template>
     </AppModalShell>
 
-    <!-- Drawer: versiones del entregable (plantilla) -->
-    <div v-if="templateDetail" class="deasy-drawer-overlay" @click.self="closeTemplateVersions">
-      <aside class="deasy-drawer">
-        <div class="flex items-start justify-between gap-2 border-b border-line px-4 py-3">
-          <div class="min-w-0">
-            <p class="deasy-overline text-primary">Entregable · versiones</p>
-            <h3 class="deasy-title deasy-title--block mt-0.5 truncate">{{ templateDetail.displayName || templateDetail.templateCode }}</h3>
-            <p class="m-0 mt-0.5 truncate text-xs text-muted">
-              {{ templateDetail.templateCode }}<span v-if="templateDetail.configName"> · en {{ templateDetail.configName }}</span>
+    <!-- EL ENTREGABLE, EN UN MODAL CON PESTAÑAS (2026-11-24), como el proceso y la unidad. Era el único
+         nodo del mapa que abría un panel lateral: mismo gesto —pulsar un nodo—, otra forma de
+         responder. «Datos» dice qué es y qué versión usa esta configuración; «Versiones», su linaje,
+         desde donde se abre cada una o se cambia la que la configuración usa. -->
+    <AppModalShell
+      v-if="Boolean(templateDetail)"
+      controlled
+      :open="Boolean(templateDetail)"
+      :title="templateDetail.displayName || templateDetail.templateCode"
+      content-class="deasy-dialog-panel--viewport max-w-2xl"
+      body-class="flex min-h-0 flex-col"
+      footer-class="shrink-0"
+      @close="closeTemplateVersions"
+    >
+      <div class="deasy-inline-tabs shrink-0" role="tablist">
+        <button
+          v-for="pestana in PESTANAS_DEL_ENTREGABLE"
+          :key="pestana.id"
+          type="button"
+          role="tab"
+          class="deasy-inline-tab"
+          :class="templateTab === pestana.id ? 'deasy-inline-tab--active' : ''"
+          :aria-selected="templateTab === pestana.id"
+          @click="templateTab = pestana.id"
+        >
+          <component :is="pestana.icono" class="h-4 w-4" />
+          {{ pestana.rotulo }}<span v-if="pestana.id === 'versiones' && templateDetail.versions.length" class="ml-1 font-semibold">· {{ templateDetail.versions.length }}</span>
+        </button>
+      </div>
+
+      <!-- Señal de salud: la config usa una versión NO publicada de este entregable. Va fuera de las
+           pestañas: importa se mire la que se mire. -->
+      <AppAlert v-if="drawerHealthWarning" variant="warning" class="mt-3 shrink-0">
+        <p class="m-0 font-semibold">La configuración usa una versión {{ drawerHealthWarning.pinnedLabel }} de este entregable.</p>
+        <p class="m-0 mt-0.5">
+          <template v-if="drawerHealthWarning.publishedVersion && editable">
+            Debería usar la versión publicada
+            <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="useVersionInConfig(drawerHealthWarning.publishedVersion)">v{{ drawerHealthWarning.publishedVersion.storage_version }}</button>.
+          </template>
+          <template v-else-if="!drawerHealthWarning.publishedVersion">Este entregable no tiene ninguna versión publicada. Publica una o crea una nueva versión.</template>
+        </p>
+      </AppAlert>
+
+      <div class="mt-4 min-h-0 flex-1 overflow-y-auto">
+        <!-- Pestaña: Datos -->
+        <div v-show="templateTab === 'datos'" class="flex flex-col gap-4">
+          <div>
+            <p class="deasy-overline m-0">Entregable</p>
+            <p class="m-0 mt-1 text-sm font-semibold text-strong">{{ templateDetail.displayName || "—" }}</p>
+          </div>
+          <div>
+            <p class="deasy-overline m-0">Código de plantilla</p>
+            <p class="m-0 mt-1 text-sm text-icon">{{ templateDetail.templateCode }}</p>
+          </div>
+          <div>
+            <p class="deasy-overline m-0">Configuración</p>
+            <p class="m-0 mt-1 flex items-center gap-2 text-sm text-icon">
+              {{ templateDetail.configName || "—" }}
+              <AppTag v-if="templateDetail.configStatus" :variant="tonoCicloVida(templateDetail.configStatus)" outlined>{{ configStatusLabel(templateDetail.configStatus) }}</AppTag>
             </p>
           </div>
-          <AppCloseButton @click="closeTemplateVersions" />
+          <div>
+            <p class="deasy-overline m-0">Versión que usa esta configuración</p>
+            <p v-if="templateDetail.loading" class="m-0 mt-1 text-sm text-muted">Cargando…</p>
+            <p v-else-if="versionVinculada" class="m-0 mt-1 flex items-center gap-2 text-sm text-icon">
+              <span class="font-semibold text-strong">v{{ versionVinculada.storage_version }}</span>
+              <AppTag :variant="tonoCicloVida(versionVinculada.lifecycle_state)" outlined>{{ versionStateLabel(versionVinculada.lifecycle_state) }}</AppTag>
+              <span class="text-theme-xs text-muted">{{ formatVersionDate(versionVinculada.created_at) }}</span>
+            </p>
+            <p v-else class="m-0 mt-1 text-sm text-muted">—</p>
+          </div>
         </div>
-        <div v-if="editable" class="flex flex-wrap gap-2 border-b border-line px-4 py-2.5">
-          <AppButton variant="neutral-outline" @click="versionFromDrawer">+ Nueva versión</AppButton>
-          <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary-outline" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
-        </div>
-        <!-- Señal de salud: la config usa una versión NO publicada de este entregable. -->
-        <AppAlert variant="warning" class="border-b" v-if="drawerHealthWarning">
-          <p class="m-0 font-semibold">⚠ La configuración usa una versión {{ drawerHealthWarning.pinnedLabel }} de este entregable.</p>
-          <p class="m-0 mt-0.5">
-            <template v-if="drawerHealthWarning.publishedVersion && editable">
-              Debería usar la versión publicada
-              <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="useVersionInConfig(drawerHealthWarning.publishedVersion)">v{{ drawerHealthWarning.publishedVersion.storage_version }}</button>.
-            </template>
-            <template v-else-if="!drawerHealthWarning.publishedVersion">Este entregable no tiene ninguna versión publicada. Publica una o crea una nueva versión.</template>
-          </p>
-        </AppAlert>
-        <div class="flex-1 overflow-y-auto px-4 py-3">
+
+        <!-- Pestaña: Versiones -->
+        <div v-show="templateTab === 'versiones'">
           <div v-if="templateDetail.loading" class="text-sm text-muted">Cargando…</div>
           <ul v-else-if="templateDetail.versions.length" class="m-0 flex list-none flex-col gap-2 p-0">
             <li
@@ -367,8 +413,16 @@
           </ul>
           <AppEmpty v-else :icon="false">Sin versiones.</AppEmpty>
         </div>
-      </aside>
-    </div>
+      </div>
+
+      <template #footer>
+        <AppButton variant="neutral-outline" @click="closeTemplateVersions">Cerrar</AppButton>
+        <template v-if="editable">
+          <AppButton variant="neutral-outline" @click="versionFromDrawer">+ Nueva versión</AppButton>
+          <AppButton v-if="templateDetail.configStatus === 'active'" variant="primary-outline" @click="guidedFromDrawer">Actualizar (publicar + activar)</AppButton>
+        </template>
+      </template>
+    </AppModalShell>
   </div>
 </template>
 
@@ -382,7 +436,6 @@ import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { tonoCicloVida, tonoCorrida, etiquetaCicloVida, tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
-import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 import { ref, computed, watch, onMounted } from "vue";
 import { VueFlow, MarkerType, useVueFlow } from "@vue-flow/core";
 import { toBlob } from "html-to-image";
@@ -396,7 +449,7 @@ import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
-import { IconArrowLeft, IconCalendarEvent, IconDownload, IconEye, IconId, IconPlus, IconRefresh, IconRocket, IconSettings, IconSitemap, IconUnlink } from "@tabler/icons-vue";
+import { IconArrowLeft, IconCalendarEvent, IconDownload, IconEye, IconId, IconPlus, IconRefresh, IconRocket, IconSettings, IconSitemap, IconUnlink, IconVersions } from "@tabler/icons-vue";
 import ProcessNode from "./ProcessNode.vue";
 import ProcessConfigNode from "./ProcessConfigNode.vue";
 import ProcessTemplateNode from "./ProcessTemplateNode.vue";
@@ -873,11 +926,12 @@ const openConfigFromNode = (cfg) => {
     readonly: cfg.status !== "draft"
   });
 };
-// Clic en un entregable → abre el DRAWER de versiones de ese template_code (no sobrecarga el nodo). Desde ahí
+// Clic en un entregable → abre su MODAL, con las versiones de ese template_code en una pestaña. Desde ahí
 // se ve el linaje (borrador/publicada/retirada), se abre cada versión (editar/ver) y se versiona/actualiza.
 const openTemplateFromNode = (tpl) => {
   if (!tpl?.template_code) return;
   closeDetail();
+  templateTab.value = "datos";
   const cfg = (rawGraph.value.configs || []).find((c) => String(c.definition_id) === String(tpl.definition_id)) || null;
   templateDetail.value = {
     open: true,
@@ -893,8 +947,18 @@ const openTemplateFromNode = (tpl) => {
   loadTemplateVersions();
 };
 
-// --- Drawer de versiones del entregable ---
+// --- El modal del entregable: sus datos y sus versiones ---
 const templateDetail = ref(null);
+const templateTab = ref("datos");
+const PESTANAS_DEL_ENTREGABLE = [
+  { id: "datos", rotulo: "Datos", icono: IconId },
+  { id: "versiones", rotulo: "Versiones", icono: IconVersions }
+];
+// La versión que la configuración tiene vinculada, de entre las del linaje.
+const versionVinculada = computed(() => {
+  const td = templateDetail.value;
+  return td?.versions?.find((v) => String(v.id) === String(td.pinnedArtifactId)) || null;
+});
 const loadTemplateVersions = async () => {
   const code = templateDetail.value?.templateCode;
   if (!code) return;

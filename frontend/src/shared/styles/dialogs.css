@@ -112,31 +112,10 @@
        (Esta regla llevaba ademas un `!important` retirado en la fase 0.1, y su comentario
        explicaba contra que peleaba. Ese adversario tampoco existe.) */
 
-    /* PANEL LATERAL (drawer) — la otra forma de la familia de dialogos: se ancla al borde
-       derecho en vez de al centro, y por eso comparte velo, blanco y nivel de elevacion en
-       vez de tener los suyos. */
-
-    .deasy-drawer-overlay {
-        position: fixed;
-        inset: 0;
-        /* Un escalon POR DEBAJO del 1075 de `AppDialogOverlay.vue`, a proposito: si el
-           cajon y el modal estan abiertos a la vez, el modal —que es el gesto que
-           interrumpe— va encima. Empatados, lo decidia el orden del DOM. */
-        z-index: var(--z-panel-lateral);
-        display: flex;
-        justify-content: flex-end;
-        background: var(--overlay-backdrop);
-        backdrop-filter: blur(3px);
-    }
-
-    .deasy-drawer {
-        display: flex;
-        flex-direction: column;
-        width: min(30rem, 100vw);
-        height: 100%;
-        background: var(--color-white);
-        box-shadow: var(--elev-3-left);
-    }
+    /* [2026-11-24] AQUI ESTABA EL PANEL LATERAL (`deasy-drawer`, con su velo). Su ultimo
+       consumidor era el entregable del mapa de procesos, que ahora abre un modal con pestañas
+       como los demas nodos. Si vuelve a hacer falta un panel anclado al borde, esta en el
+       historial; su altura sigue declarada (`--z-panel-lateral`). */
 
     /* Pestañas del panel: subrayado, no pildora. El `margin-bottom:-1px` monta el borde de la
        pestaña sobre el del contenedor para que se lean como una sola linea. */
