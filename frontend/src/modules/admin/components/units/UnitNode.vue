@@ -91,7 +91,7 @@
       </span>
       <span
         v-if="Number(data.positions_count) > 0"
-        class="graph-node__dato"
+        class="graph-node__dato ml-auto"
         :class="[`graph-node__dato--${tonoPuestos}`, tonoPuestos === 'success' ? '' : 'graph-node__dato--destaca']"
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
       >
