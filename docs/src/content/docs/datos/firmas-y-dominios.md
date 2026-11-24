@@ -84,7 +84,7 @@ Por compatibilidad, los `_id` se exponen como **String** para preservar el contr
 
 - `position_assignments.current_flag` garantiza **un solo ocupante actual por puesto**.
 
-Y una vista, `unit_org_levels`, que con una CTE recursiva sobre `unit_relations` calcula el nivel organizativo, la unidad raiz y las unidades de nivel 2 y 3 de cada unidad.
+Y una vista, `unit_org_levels`, que con una CTE recursiva sobre `unit_arbol_vigente` —las relaciones de `unit_relations` que rigen hoy— calcula el nivel organizativo, la unidad raiz y las unidades de nivel 2 y 3 de cada unidad.
 
 Como subdominio propio esta la **contratación** —`vacancies`, `aplications`, `offers`, `contracts`, `contract_origins` (con herencia por tabla) y `vacancy_visibility`—, del que hay que saber que **cinco de sus ocho tablas no las toca ninguna línea de código**. Se cuenta entero en [Empleo y contratación](/complemento/empleo/).
 

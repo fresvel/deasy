@@ -785,7 +785,7 @@ export const ensureDefaultProcess = async (connection) => {
   let process = await fetchOne(connection, "SELECT id FROM processes WHERE slug = ? LIMIT 1", [DEFAULT_PROCESS_SLUG]);
   if (!process) {
     const [r] = await connection.query(
-      "INSERT INTO processes (name, slug, parent_id) VALUES (?, ?, NULL)",
+      "INSERT INTO processes (name, slug) VALUES (?, ?)",
       [DEFAULT_PROCESS_NAME, DEFAULT_PROCESS_SLUG]
     );
     process = { id: r.insertId };

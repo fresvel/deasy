@@ -116,10 +116,56 @@ errores: la cifra se quedó vieja y ese índice es de la otra variante.
 
 :::
 
-Hay una tercera invariante en el organigrama que no usa ese idioma sino un índice único a secas:
-`uq_unit_relations_child_type` sobre `(child_unit_id, relation_type_id)`. Dicho en cristiano, **una
-unidad tiene como mucho un padre por tipo de relación**: el organigrama orgánico es un árbol, no un
-grafo cualquiera.
+Hay una tercera invariante en el organigrama que no usa ese idioma: **una unidad tiene como mucho un
+padre por tipo de relación**, de modo que el organigrama orgánico es un árbol y no un grafo
+cualquiera. Hasta el 2026-11-23 la guardaba un índice único sobre `(child_unit_id,
+relation_type_id)`. Desde que la relación lleva fechas la frase completa es «un padre **por
+periodo**», y la guarda una restricción de exclusión por rango de fechas — ver
+[De quién depende una unidad, y desde cuándo](#de-quién-depende-una-unidad-y-desde-cuándo).
+
+## De quién depende una unidad, y desde cuándo
+
+`unit_relations` dice qué unidad cuelga de cuál. Desde el **2026-11-23** cada fila es un **periodo**:
+tiene inicio y fin, igual que las vidas de la unidad. Cambiar una unidad de padre **no modifica la
+fila**: le pone fecha de fin y abre otra desde ese mismo día. Así queda escrito de quién dependió
+cada unidad y hasta cuándo, que es lo que una columna «padre» no puede decir.
+
+| | |
+|---|---|
+| Sin fecha de inicio | Es un **borrador**: coloca en el dibujo una unidad que aún no existe para nadie |
+| Con inicio en el futuro | **Programada**: el cambio ya tiene fecha |
+| Rigiendo | Es la que cuenta para repartir trabajo, calcular niveles y resolver ámbitos |
+| Con fin pasado | Historia |
+
+Cuatro reglas, las cuatro en la base:
+
+- **Dos relaciones de la misma unidad no coinciden ni un día** (`ex_unit_relations_sin_solape`, con
+  la extensión `btree_gist`). Es la versión con fechas de «un solo padre».
+- **Una relación empieza cuando sus dos unidades ya rigen.** No se puede colgar una unidad de otra
+  que ese día todavía no existe.
+- **Una relación que ya rige no cambia de padre ni de hija**, y **no se borra**: se le pone fin. Un
+  borrador y una programada sí se pueden cambiar o descartar — nadie dependió de ellas.
+- **La vida de la unidad arrastra a su relación.** Poner en vigor una unidad pone en marcha su
+  borrador de relación, con la misma fecha y el mismo acto; suprimirla la cierra. Es un solo hecho,
+  y no hay que fecharlo dos veces.
+
+Cada extremo lleva su **origen** —carga inicial, reorganización o corrección— y, si es una
+reorganización, el **acto** que la ordena, exactamente como en las vidas.
+
+Hay dos lecturas, y son dos vistas:
+
+- **`unit_arbol_vigente`** — las relaciones que rigen hoy. Es lo que lee todo lo que decide algo: el
+  panel de supervisión de una jefatura y `unit_org_levels`. **La raíz es la unidad sin relación
+  vigente.**
+- **`unit_relacion_actual`** — una por unidad: la que rige; si no, la programada; si no, el
+  borrador; si no, la última que tuvo. Es lo que **dibuja** el organigrama, para que una unidad en
+  borrador o ya suprimida tenga también su sitio.
+
+:::caution[Lo que la base NO decide]
+Qué pasa con las **hijas** de una unidad que se suprime. La base cierra la relación de la unidad
+suprimida con su padre, pero no toca las de sus hijas: adónde van es una decisión de quien
+reorganiza. Hasta que se muevan, siguen colgando de una unidad que ya no rige.
+:::
 
 ## La persona ya no lo lleva todo encima
 
@@ -907,10 +953,16 @@ erDiagram
     timestamp updated_at
   }
   unit_relations {
-    int id PK
+    int id PK "UN PERIODO de dependencia"
     int relation_type_id FK
     int parent_unit_id FK
     int child_unit_id FK
+    date vigente_desde "desde cuando rige, vacio en un borrador"
+    date vigente_hasta "primer dia en que ya no rige"
+    text inicio_origen "carga_inicial, reorganizacion, correccion"
+    int inicio_acto_id FK "el acto que la abrio"
+    text fin_origen "carga_inicial, reorganizacion, correccion"
+    int fin_acto_id FK "el acto que la cerro"
     timestamp created_at
     timestamp updated_at
   }

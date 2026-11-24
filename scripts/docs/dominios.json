@@ -216,7 +216,8 @@
       "process_definition_versions": 4,
       "processes": 4,
       "terms": 4,
-      "process_vigencias": 4
+      "process_vigencias": 4,
+      "process_relations": 4
     }
   },
   "plantillas": {

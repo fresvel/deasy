@@ -367,6 +367,13 @@ export const SQL_TABLES = [
       { name: "relation_type_id", label: "Tipo de relacion", type: "number", required: true },
       { name: "parent_unit_id", label: "Unidad padre", type: "number", required: true },
       { name: "child_unit_id", label: "Unidad hija", type: "number", required: true },
+      // LA ARISTA LLEVA FECHAS (frente 27, D-04). Sin «Rige desde» es un borrador.
+      { name: "vigente_desde", label: "Rige desde", type: "date" },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
@@ -437,7 +444,6 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
-      { name: "parent_id", label: "Proceso padre", type: "number" },
       // EL ESTADO, en vez de `is_active` (frente 27, D-03). DERIVADO, no columna: sale de las vidas
       // del proceso (`process_vigencias`, la tabla de abajo) y depende del dia en que se pregunta.
       // Se puede filtrar por el.
@@ -466,6 +472,28 @@ export const SQL_TABLES = [
       { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
       { name: "fin_acto_id", label: "Acto del fin", type: "number" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // DE QUE PROCESO CUELGA CADA PROCESO (frente 27, D-04): sustituye a `processes.parent_id`. Una
+  // fila por arista, con fechas; cambiar de padre es cerrar una y abrir otra.
+  {
+    table: "process_relations",
+    label: "Relaciones de procesos",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "parent_process_id", label: "Proceso padre", type: "number", required: true },
+      { name: "child_process_id", label: "Proceso hijo", type: "number", required: true },
+      { name: "vigente_desde", label: "Rige desde", type: "date" },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: []
   },

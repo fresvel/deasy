@@ -254,8 +254,9 @@ const seedExampleUnits = async (connection) => {
       const childId = idBySlug.get(unit.slug);
       if (!parentId || !childId) continue;
       await connection.query(
-        `INSERT INTO unit_relations (relation_type_id, parent_unit_id, child_unit_id)
-         SELECT ?, ?, ? FROM DUAL WHERE NOT EXISTS (
+        // RIGEN DESDE LA INSTALACION, como las unidades que unen (frente 27, D-04).
+        `INSERT INTO unit_relations (relation_type_id, parent_unit_id, child_unit_id, vigente_desde, inicio_origen)
+         SELECT ?, ?, ?, CURRENT_DATE, 'carga_inicial' FROM DUAL WHERE NOT EXISTS (
            SELECT 1 FROM unit_relations
            WHERE relation_type_id = ? AND parent_unit_id = ? AND child_unit_id = ?
          )`,

@@ -426,7 +426,6 @@
       "estado",
       "id",
       "name",
-      "parent_id",
       "slug"
     ]
   },
@@ -576,10 +575,16 @@
     "itemKeys": [
       "child_unit_id",
       "created_at",
+      "fin_acto_id",
+      "fin_origen",
       "id",
+      "inicio_acto_id",
+      "inicio_origen",
       "parent_unit_id",
       "relation_type_id",
-      "updated_at"
+      "updated_at",
+      "vigente_desde",
+      "vigente_hasta"
     ]
   },
   "list_unit_types": {
@@ -717,6 +722,10 @@
       "inicio_origen",
       "name",
       "parent_id",
+      "proximo_padre_desde",
+      "proximo_padre_id",
+      "relacion_estado",
+      "relacion_hasta",
       "slug",
       "vigencia_id",
       "vigente_desde",
@@ -916,10 +925,15 @@
     ],
     "edgeKeys": [
       "child_unit_id",
+      "estado",
       "id",
       "parent_unit_id",
+      "proximo_padre_desde",
+      "proximo_padre_id",
       "relation_type_code",
-      "relation_type_id"
+      "relation_type_id",
+      "vigente_desde",
+      "vigente_hasta"
     ]
   },
   "update_error_registro_inexistente": {

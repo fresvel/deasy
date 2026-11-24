@@ -492,7 +492,7 @@ export default class TaskAssignmentService {
          SELECT unit_id FROM headed
          UNION
          SELECT ur.child_unit_id
-           FROM unit_relations ur
+           FROM unit_arbol_vigente ur
            INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
            INNER JOIN scope s ON s.unit_id = ur.parent_unit_id
        )`;

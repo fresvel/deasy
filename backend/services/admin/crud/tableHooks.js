@@ -387,12 +387,21 @@ export const TABLE_HOOKS = {
       if (parentId === childId) {
         throw new Error("Una unidad no puede relacionarse consigo misma.");
       }
-      const [existingParent] = await ctx.pool.query(
-        "SELECT parent_unit_id FROM unit_relations WHERE child_unit_id = ? AND relation_type_id = ? LIMIT 1",
-        [childId, relTypeId]
-      );
-      if (existingParent.length) {
-        throw new Error("Esa unidad ya tiene un padre en este tipo de relación. Quita la relación actual antes de crear otra.");
+      // UN PADRE POR PERIODO (frente 27, D-04), no «un padre»: una relación con fecha que no coincida
+      // con las que ya tiene es legítima, y de eso se ocupa la exclusión de la base. Lo que se corta
+      // aquí es la que llega SIN fecha cuando la unidad ya depende de alguien: sería un segundo
+      // borrador, o un borrador que no va a empezar nunca.
+      if (!ctx.payload.vigente_desde) {
+        const [existingParent] = await ctx.pool.query(
+          `SELECT parent_unit_id FROM unit_relations
+            WHERE child_unit_id = ? AND relation_type_id = ?
+              AND (vigente_hasta IS NULL OR vigente_hasta > CURRENT_DATE)
+            LIMIT 1`,
+          [childId, relTypeId]
+        );
+        if (existingParent.length) {
+          throw new Error("Esa unidad ya tiene un padre en este tipo de relación. Quita la relación actual antes de crear otra.");
+        }
       }
       if (await ctx.service.wouldCreateUnitCycle(parentId, childId, relTypeId)) {
         throw new Error("La relación crearía un ciclo en la jerarquía (la unidad padre ya depende de la hija).");
@@ -408,13 +417,8 @@ export const TABLE_HOOKS = {
       if (parentId === childId) {
         throw new Error("Una unidad no puede relacionarse consigo misma.");
       }
-      const [dupRel] = await ctx.pool.query(
-        "SELECT id FROM unit_relations WHERE child_unit_id = ? AND relation_type_id = ? AND id <> ? LIMIT 1",
-        [childId, relTypeId, Number(ctx.existing.id)]
-      );
-      if (dupRel.length) {
-        throw new Error("Esa unidad ya tiene un padre en este tipo de relación. Quita la relación actual antes de reasignar.");
-      }
+      // Que dos relaciones del mismo hijo no coincidan lo impide la base, por periodo. Y una que ya
+      // rige no cambia de extremos: también lo dice la base, con su frase.
       if (await ctx.service.wouldCreateUnitCycle(parentId, childId, relTypeId)) {
         throw new Error("La relación crearía un ciclo en la jerarquía (la unidad padre ya depende de la hija).");
       }

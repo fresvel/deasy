@@ -74,6 +74,12 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `relation_type_id` | int | sí | `relation_unit_types.id` · impide borrar | — |
 | `parent_unit_id` | int | sí | `units.id` · impide borrar | — |
 | `child_unit_id` | int | sí | `units.id` · impide borrar | — |
+| `vigente_desde` | date | no | — | — |
+| `vigente_hasta` | date | no | — | — |
+| `inicio_origen` | text | no | — | `carga_inicial` · `reorganizacion` · `correccion` |
+| `inicio_acto_id` | int | no | `actos.id` · impide borrar | — |
+| `fin_origen` | text | no | — | `carga_inicial` · `reorganizacion` · `correccion` |
+| `fin_acto_id` | int | no | `actos.id` · impide borrar | — |
 | `created_at` | timestamp | sí | — | — |
 | `updated_at` | timestamp | sí | — | — |
 
@@ -149,7 +155,6 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `id` | int | sí | — | — |
 | `name` | varchar(180) | sí | — | — |
 | `slug` | varchar(180) | sí | — | — |
-| `parent_id` | int | no | `processes.id` · impide borrar | — |
 | `created_at` | timestamp | sí | — | — |
 
 ### `lineas`
@@ -502,4 +507,4 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 
 ---
 
-**32 tablas · 297 columnas · 74 referencias.** Leídas del catálogo de PostgreSQL.
+**32 tablas · 302 columnas · 75 referencias.** Leídas del catálogo de PostgreSQL.

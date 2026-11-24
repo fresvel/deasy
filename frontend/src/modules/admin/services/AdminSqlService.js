@@ -38,8 +38,14 @@ export class AdminSqlService {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_PROCESSES_WITH_PARENT, payload);
   }
 
-  setProcessParent(processId, parentId) {
-    return this.httpClient.patch(API_ROUTES.ADMIN_SQL_PROCESS_PARENT(processId), { parent_id: parentId });
+  /* `extras` = { vigente_desde, origen, acto_id }: sólo hacen falta al mover una relación que ya rige. */
+  setProcessParent(processId, parentId, extras = {}) {
+    return this.httpClient.patch(API_ROUTES.ADMIN_SQL_PROCESS_PARENT(processId), { ...extras, parent_id: parentId });
+  }
+
+  /* payload = { parent_unit_id, relation_type_id, vigente_desde?, origen?, acto_id? } */
+  setUnitParent(unitId, payload) {
+    return this.httpClient.patch(API_ROUTES.ADMIN_SQL_UNIT_PARENT(unitId), payload);
   }
 
   getUnitProcesses(unitId) {

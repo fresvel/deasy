@@ -1,6 +1,6 @@
 ---
 title: "El mapa completo, con todos sus campos"
-description: "Las 37 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+description: "Las 38 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
 sidebar:
   label: "Mapa con campos"
   order: 15.5
@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**37 tablas · 337 columnas · 87 claves ajenas · 10 diagramas.**
+**38 tablas · 353 columnas · 92 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -126,7 +126,7 @@ erDiagram
 
 ## La organización (2 de 2)
 
-**5 tablas** · 42 columnas · 12 claves ajenas propias. Apunta a `persons`, `relation_unit_types`, `unit_positions`, `units`, que salen como caja vacía.
+**5 tablas** · 48 columnas · 14 claves ajenas propias. Apunta a `persons`, `relation_unit_types`, `unit_positions`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -136,6 +136,12 @@ erDiagram
     int relation_type_id FK
     int parent_unit_id FK
     int child_unit_id FK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
     timestamp created_at
     timestamp updated_at
   }
@@ -190,6 +196,8 @@ erDiagram
   actos |o--o{ position_vigencias : "inicio_acto_id"
   unit_positions ||--o{ position_vigencias : "position_id"
   units ||--o{ unit_relations : "child_unit_id"
+  actos |o--o{ unit_relations : "fin_acto_id"
+  actos |o--o{ unit_relations : "inicio_acto_id"
   units ||--o{ unit_relations : "parent_unit_id"
   relation_unit_types ||--o{ unit_relations : "relation_type_id"
   actos |o--o{ unit_vigencias : "fin_acto_id"
@@ -198,15 +206,15 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 3 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 5 claves ajenas desde otros diagramas</summary>
 
-`acto_documentos.acto_id` → `actos` · `process_vigencias.fin_acto_id` → `actos` · `process_vigencias.inicio_acto_id` → `actos`
+`acto_documentos.acto_id` → `actos` · `process_relations.fin_acto_id` → `actos` · `process_relations.inicio_acto_id` → `actos` · `process_vigencias.fin_acto_id` → `actos` · `process_vigencias.inicio_acto_id` → `actos`
 
 </details>
 
 ## Lo que se declara (1 de 2)
 
-**5 tablas** · 40 columnas · 12 claves ajenas propias. Apunta a `actos`, `cargos`, `term_types`, `unit_types`, `units`, que salen como caja vacía.
+**6 tablas** · 50 columnas · 15 claves ajenas propias. Apunta a `actos`, `cargos`, `term_types`, `unit_types`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -215,7 +223,6 @@ erDiagram
     int id PK
     varchar name
     varchar slug UK
-    int parent_id FK
     timestamp created_at
   }
   process_definition_versions {
@@ -239,6 +246,19 @@ erDiagram
     text fin_origen
     int fin_acto_id FK
     timestamp created_at
+  }
+  process_relations {
+    int id PK
+    int parent_process_id FK
+    int child_process_id FK, UK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
+    timestamp created_at
+    timestamp updated_at
   }
   lineas {
     int id PK
@@ -269,10 +289,13 @@ erDiagram
   process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
   term_types ||--o{ process_definition_period_types : "term_type_id"
   lineas ||--o{ process_definition_versions : "linea_id"
+  processes ||--o| process_relations : "child_process_id"
+  actos |o--o{ process_relations : "fin_acto_id"
+  actos |o--o{ process_relations : "inicio_acto_id"
+  processes ||--o{ process_relations : "parent_process_id"
   actos |o--o{ process_vigencias : "fin_acto_id"
   actos |o--o{ process_vigencias : "inicio_acto_id"
   processes ||--o{ process_vigencias : "process_id"
-  processes |o--o{ processes : "parent_id"
 ```
 
 <details>

@@ -44,7 +44,7 @@ flowchart TD
 
 ### `processes`.
 
-Identidad —`name`, `slug` único, `parent_id` autorreferencial— y nada más. Su **vigencia** vive aparte, en `process_vigencias`, con una fila por cada vez que ha regido; de ahí se lee si está en borrador, programado, vigente o suprimido (antes era una bandera `is_active`; ver [el proceso](/modelo/proceso/#un-proceso-no-está-activo-tiene-vidas)). **Sin comportamiento.** Se hizo `DROP` de `unit_id`, `program_id`, `person_id` y `term_id` por vestigiales.
+Identidad —`name` y `slug` único— y nada más. De qué proceso cuelga dejó de ser una columna el 2026-11-23: vive en `process_relations`, con fechas. Su **vigencia** vive aparte, en `process_vigencias`, con una fila por cada vez que ha regido; de ahí se lee si está en borrador, programado, vigente o suprimido (antes era una bandera `is_active`; ver [el proceso](/modelo/proceso/#un-proceso-no-está-activo-tiene-vidas)). **Sin comportamiento.** Se hizo `DROP` de `unit_id`, `program_id`, `person_id` y `term_id` por vestigiales.
 
 ### `lineas` — la línea.
 

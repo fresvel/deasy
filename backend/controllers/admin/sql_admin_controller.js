@@ -490,7 +490,17 @@ export const createProcessWithParent = async (req, res) => {
 
 export const setProcessParent = async (req, res) => {
   try {
-    const result = await service().setProcessParent(req.params.id, req.body?.parent_id ?? null);
+    const result = await service().setProcessParent(req.params.id, req.body?.parent_id ?? null, req.body || {});
+    res.json(result);
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
+// Mueve una unidad de padre (frente 27, D-04): el gemelo de `setProcessParent` para el organigrama.
+export const setUnitParent = async (req, res) => {
+  try {
+    const result = await service().setUnitParent(req.params.id, req.body || {});
     res.json(result);
   } catch (error) {
     res.status(error.statusCode || 400).json({ message: error.message });

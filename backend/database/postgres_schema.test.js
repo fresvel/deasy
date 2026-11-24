@@ -627,3 +627,51 @@ test("borrar un proceso no se lleva sus lineas", () => {
   assert.match(SCHEMA, /CONSTRAINT fk_lineas_process FOREIGN KEY \(process_id\) REFERENCES processes\(id\) ON DELETE RESTRICT/);
 });
 
+// LA ARISTA FECHADA (frente 27, D-04): la misma forma en los dos arboles. Si una de las dos tablas
+// pierde una regla, los arboles dejan de comportarse igual y nada mas lo avisa.
+const ARISTAS = [
+  { tabla: "unit_relations", padre: "parent_unit_id", hijo: "child_unit_id", vidas: "unit_vigencias", arbol: "unit_arbol_vigente", actual: "unit_relacion_actual" },
+  { tabla: "process_relations", padre: "parent_process_id", hijo: "child_process_id", vidas: "process_vigencias", arbol: "process_arbol_vigente", actual: "process_relacion_actual" },
+];
+
+test("las dos tablas de aristas llevan fechas, origen y acto, con las mismas reglas", () => {
+  for (const { tabla, hijo } of ARISTAS) {
+    const create = bloqueRecorrido(tabla);
+    for (const columna of ["vigente_desde", "vigente_hasta", "inicio_origen", "inicio_acto_id", "fin_origen", "fin_acto_id"]) {
+      assert.match(create, new RegExp(`\\b${columna}\\b`), `${tabla} sin ${columna}`);
+    }
+    for (const regla of ["no_propia", "inicio_con_origen", "borrador_sin_fin", "periodo", "fin_con_origen", "inicio_acto", "fin_acto"]) {
+      assert.match(create, new RegExp(`CONSTRAINT ck_${tabla}_${regla} CHECK`), `${tabla} sin ck_${regla}`);
+    }
+    // El solape lo impide una exclusion por rango, y solo entre aristas con fecha.
+    assert.match(create, new RegExp(`CONSTRAINT ex_${tabla}_sin_solape EXCLUDE USING gist \\(\\s+${hijo} WITH =`));
+    assert.match(create, /daterange\(vigente_desde, vigente_hasta, '\[\)'\) WITH &&\s+\) WHERE \(vigente_desde IS NOT NULL\)/);
+    // Y un solo borrador por hijo, que la exclusion no ve.
+    assert.match(SCHEMA, new RegExp(`CREATE UNIQUE INDEX IF NOT EXISTS uq_${tabla}_borrador ON ${tabla} \\(${hijo}[^)]*\\) WHERE vigente_desde IS NULL`));
+  }
+});
+
+test("cada arbol tiene su vista del arbol vigente y la de la arista que cuenta hoy", () => {
+  for (const { arbol, actual, tabla } of ARISTAS) {
+    assert.match(SCHEMA, new RegExp(`CREATE OR REPLACE VIEW \\w+\\.${arbol} AS[\\s\\S]{0,260}FROM ${tabla} a\\s+WHERE esta_vigente\\(`), arbol);
+    assert.match(SCHEMA, new RegExp(`CREATE OR REPLACE VIEW \\w+\\.${actual} AS\\s+SELECT DISTINCT ON`), actual);
+  }
+});
+
+test("las tres reglas de una arista estan enganchadas en los dos arboles", () => {
+  for (const { tabla, padre, hijo, vidas } of ARISTAS) {
+    assert.match(SCHEMA, new RegExp(`BEFORE INSERT OR UPDATE OF vigente_desde, ${padre}, ${hijo} ON ${tabla}\\s+FOR EACH ROW EXECUTE FUNCTION comprobar_arista_en_vida\\('${vidas}'`), `${tabla}: empezar dentro de la vida`);
+    assert.match(SCHEMA, new RegExp(`BEFORE UPDATE OF ${padre}, ${hijo}[^\\n]* ON ${tabla}\\s+FOR EACH ROW\\s+WHEN \\(OLD.vigente_desde <= CURRENT_DATE`), `${tabla}: extremos inmutables`);
+    assert.match(SCHEMA, new RegExp(`BEFORE DELETE ON ${tabla}\\s+FOR EACH ROW EXECUTE FUNCTION rechazar_borrado_de_vida_empezada\\('Esta relacion'\\)`), `${tabla}: borrado`);
+    assert.match(SCHEMA, new RegExp(`AFTER INSERT OR UPDATE OR DELETE ON ${vidas}\\s+FOR EACH ROW EXECUTE FUNCTION sincronizar_aristas_con_vida\\('${tabla}', '${hijo}'`), `${vidas}: la vida arrastra a la arista`);
+  }
+});
+
+test("processes ya no tiene columna de padre, y los niveles salen del arbol vigente", () => {
+  const create = bloqueRecorrido("processes").split("\n").filter((l) => !l.trim().startsWith("--")).join("\n");
+  assert.ok(!/\bparent_id\b/.test(create), "processes vuelve a declarar parent_id");
+  const niveles = SCHEMA.slice(SCHEMA.indexOf("CREATE VIEW organizacion.unit_org_levels AS")).split(";")[0];
+  assert.ok(!/FROM unit_relations\b/.test(niveles), "unit_org_levels lee las aristas sin mirar si rigen");
+  assert.match(niveles, /FROM unit_arbol_vigente ur/);
+});
+

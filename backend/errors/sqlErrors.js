@@ -65,7 +65,26 @@ const reglasDeVida = (tabla) => ({
   [`ck_${tabla}_fin_acto`]: "Suprimir por una reorganización necesita el acto que la ordena."
 });
 
+// LAS REGLAS DE UNA ARISTA FECHADA (frente 27, D-04): las mismas en los dos arboles.
+const TABLAS_DE_ARISTA = Object.freeze({
+  unit_relations: "esta unidad",
+  process_relations: "este proceso"
+});
+
+const reglasDeArista = (tabla) => ({
+  [`ck_${tabla}_no_propia`]: "Un nodo no puede depender de sí mismo.",
+  [`ck_${tabla}_inicio_con_origen`]:
+    "La fecha de inicio y su origen van juntos: elige el origen, o deja las dos cosas en blanco.",
+  [`ck_${tabla}_borrador_sin_fin`]: "Una relación sin fecha de inicio no puede tener fecha de fin.",
+  [`ck_${tabla}_periodo`]: "La fecha de fin no puede ser anterior a la de inicio.",
+  [`ck_${tabla}_fin_con_origen`]:
+    "La fecha de fin y su origen van juntos: elige el origen, o deja las dos cosas en blanco.",
+  [`ck_${tabla}_inicio_acto`]: "Una relación que empieza por una reorganización necesita el acto que la ordena.",
+  [`ck_${tabla}_fin_acto`]: "Una relación que termina por una reorganización necesita el acto que la ordena."
+});
+
 const MENSAJES_DE_CHECK = Object.freeze({
+  ...Object.assign({}, ...Object.keys(TABLAS_DE_ARISTA).map(reglasDeArista)),
   ck_actos_un_solo_emisor:
     "Un acto tiene exactamente un emisor: una unidad o un emisor externo, no los dos ni ninguno.",
   ck_actos_un_solo_suscriptor:
@@ -94,12 +113,16 @@ export const isExclusionViolation = (error) => error?.code === PG_EXCLUSION_VIOL
 
 // Misma idea que los CHECK, y por el mismo motivo: lo unico que identifica la regla es el NOMBRE.
 const MENSAJES_DE_EXCLUSION = Object.freeze(
-  Object.fromEntries(
-    Object.entries(TABLAS_DE_VIGENCIA).map(([tabla, de]) => [
+  Object.fromEntries([
+    ...Object.entries(TABLAS_DE_VIGENCIA).map(([tabla, de]) => [
       `ex_${tabla}_sin_solape`,
       `Ese periodo coincide con otra vida de ${de}: cierra la anterior o cambia las fechas.`
+    ]),
+    ...Object.entries(TABLAS_DE_ARISTA).map(([tabla, de]) => [
+      `ex_${tabla}_sin_solape`,
+      `En esas fechas ${de} ya depende de otro padre: cierra esa relación o cambia las fechas.`
     ])
-  )
+  ])
 );
 
 /** Los nombres de restriccion que este modulo sabe traducir. Lo lee el test que los ata al esquema. */

@@ -7,8 +7,10 @@
 // jerarquia es un subsistema propio, no parte del CRUD.
 
 import { slugify } from "../kernel/primitives.js";
-import { isUniqueViolation } from "../../../errors/sqlErrors.js";
+import { isUniqueViolation, translateConstraintError } from "../../../errors/sqlErrors.js";
 import { conflict } from "../../../errors/HttpError.js";
+import { conTransaccion } from "../../../config/postgres.js";
+import { planDeMovimiento } from "../../estructura/planDeMovimiento.js";
 
 export default class ProcessGraphService {
   constructor(pool, { getByKeys } = {}) {
@@ -22,11 +24,20 @@ export default class ProcessGraphService {
     }
   }
 
-  // --- Jerarquía de procesos (padre→hijo vía processes.parent_id), análoga al organigrama de unidades ---
+  // --- Jerarquía de procesos (padre→hijo vía process_relations, con fechas), análoga al organigrama ---
   async getProcessGraph() {
     this.ensurePool();
     const [nodes] = await this.pool.query(
-      `SELECT p.id, p.name, p.slug, p.parent_id,
+      `SELECT p.id, p.name, p.slug,
+              -- EL PADRE sale de la vista process_relacion_actual: la arista que cuenta hoy --la que
+              -- rige; si no, la programada; si no, el borrador; si no, la ultima--. Es lo que se
+              -- DIBUJA, y por eso un proceso en borrador o ya suprimido tambien tiene su sitio.
+              rel.parent_process_id AS parent_id, rel.estado AS relacion_estado,
+              -- EL CAMBIO QUE YA ESTA PROGRAMADO: cuando termina la relacion de hoy y de quien
+              -- colgara despues. Sin esto, tras fechar un cambio a futuro la pantalla seguiria
+              -- enseñando el padre de hoy como si no hubiera pasado nada.
+              rel.vigente_hasta::text AS relacion_hasta,
+              prox.parent_process_id AS proximo_padre_id, prox.desde AS proximo_padre_desde,
               -- LA VIGENCIA sale de la vista process_vigencia_actual: el periodo que cuenta hoy. Sin fila
               -- alli el proceso no ha regido nunca y es un borrador. Las fechas van como TEXTO
               -- (AAAA-MM-DD): son dias, no instantes.
@@ -44,6 +55,14 @@ export default class ProcessGraphService {
                 WHERE lin.process_id = p.id AND pdv.status = 'active') AS active_count
          FROM processes p
          LEFT JOIN process_vigencia_actual v ON v.process_id = p.id
+         LEFT JOIN process_relacion_actual rel ON rel.child_process_id = p.id
+         LEFT JOIN LATERAL (
+           SELECT pr.parent_process_id, pr.vigente_desde::text AS desde
+             FROM process_relations pr
+            WHERE pr.child_process_id = p.id AND pr.vigente_desde > CURRENT_DATE AND pr.id <> rel.id
+            ORDER BY pr.vigente_desde ASC
+            LIMIT 1
+         ) prox ON TRUE
         ORDER BY p.name ASC`
     );
     const edges = nodes
@@ -51,7 +70,8 @@ export default class ProcessGraphService {
       .map((node) => ({
         id: `pe-${node.parent_id}-${node.id}`,
         parent_process_id: node.parent_id,
-        child_process_id: node.id
+        child_process_id: node.id,
+        estado: node.relacion_estado
       }));
     // Configuraciones (process_definition_versions) por proceso, para el grafo multinivel expandible.
     const [configs] = await this.pool.query(
@@ -84,19 +104,20 @@ export default class ProcessGraphService {
   }
 
   // Ciclo: poner parentId como padre de childId lo cerraría si parentId ya es descendiente de childId
-  // (o son el mismo). CTE recursiva sobre processes.parent_id.
-
-  // Ciclo: poner parentId como padre de childId lo cerraría si parentId ya es descendiente de childId
-  // (o son el mismo). CTE recursiva sobre processes.parent_id.
+  // (o son el mismo). CTE recursiva sobre las aristas QUE NO HAN TERMINADO --las que rigen, las
+  // programadas y los borradores--: son las que pueden coincidir en el tiempo con la nueva.
   async wouldCreateProcessCycle(parentId, childId, connection = this.pool) {
     if (Number(parentId) === Number(childId)) {
       return true;
     }
     const [rows] = await connection.query(
       `WITH RECURSIVE descendants AS (
-         SELECT id FROM processes WHERE parent_id = ?
-         UNION ALL
-         SELECT p.id FROM processes p INNER JOIN descendants d ON p.parent_id = d.id
+         SELECT child_process_id AS id FROM process_relations
+          WHERE parent_process_id = ? AND (vigente_hasta IS NULL OR vigente_hasta > CURRENT_DATE)
+         UNION
+         SELECT pr.child_process_id FROM process_relations pr
+         INNER JOIN descendants d ON pr.parent_process_id = d.id
+          WHERE pr.vigente_hasta IS NULL OR pr.vigente_hasta > CURRENT_DATE
        )
        SELECT 1 FROM descendants WHERE id = ? LIMIT 1`,
       [childId, parentId]
@@ -122,13 +143,24 @@ export default class ProcessGraphService {
       }
     }
     try {
-      const [r] = await this.pool.query(
-        // NACE EN BORRADOR (frente 27, D-03): sin fecha de inicio. Ponerlo en vigor es un paso aparte,
-        // que pide la fecha, su origen y --si es una reorganizacion-- el acto que lo ordena.
-        "INSERT INTO processes (name, slug, parent_id) VALUES (?, ?, ?)",
-        [cleanName, cleanSlug, parentId]
-      );
-      return { id: Number(r.insertId) };
+      // El proceso y su arista van juntos: uno creado sin ella quedaria suelto en el mapa.
+      return await conTransaccion(async (conexion) => {
+        const [r] = await conexion.query(
+          // NACE EN BORRADOR (frente 27, D-03): sin fecha de inicio. Ponerlo en vigor es un paso aparte,
+          // que pide la fecha, su origen y --si es una reorganizacion-- el acto que lo ordena.
+          `INSERT INTO processes (name, slug) VALUES (?, ?)`,
+          [cleanName, cleanSlug]
+        );
+        const id = Number(r.insertId);
+        if (parentId) {
+          // Y SU ARISTA TAMBIEN (D-04): un borrador, que empezara a regir con el proceso.
+          await conexion.query(
+            `INSERT INTO process_relations (parent_process_id, child_process_id) VALUES (?, ?)`,
+            [parentId, id]
+          );
+        }
+        return { id };
+      }, this.pool);
     } catch (error) {
       if (isUniqueViolation(error)) {
         throw conflict("Ya existe un proceso con ese identificador (slug).");
@@ -137,10 +169,11 @@ export default class ProcessGraphService {
     }
   }
 
-  // Reparenta (o desvincula con parentId null) un proceso, con guardia de ciclo.
-
-  // Reparenta (o desvincula con parentId null) un proceso, con guardia de ciclo.
-  async setProcessParent(processId, parentId) {
+  // MUEVE (o desvincula con parentId null) un proceso, con guardia de ciclo. Con aristas fechadas
+  // (frente 27, D-04) no es un UPDATE: que hay que hacer lo decide `planDeMovimiento` segun el estado
+  // de la arista de hoy --reemparejar un borrador, o cerrar la que rige y abrir otra el mismo dia--.
+  // Mover una relacion que ya rige pide `vigente_desde` y `origen`, y `acto_id` si es reorganizacion.
+  async setProcessParent(processId, parentId, { vigente_desde = null, origen = null, acto_id = null } = {}) {
     this.ensurePool();
     const id = Number(processId);
     const newParent = parentId ? Number(parentId) : null;
@@ -156,21 +189,65 @@ export default class ProcessGraphService {
       if (!parent) {
         throw new Error("El proceso padre no existe.");
       }
-      if (await this.wouldCreateProcessCycle(newParent, id)) {
+    }
+    return conTransaccion(async (conexion) => {
+      const [actuales] = await conexion.query(
+        `SELECT rel.id, rel.parent_process_id AS "padreId", rel.estado, rel.vigente_desde::text AS vigente_desde
+           FROM process_relacion_actual rel
+          WHERE rel.child_process_id = ?`,
+        [id]
+      );
+      // Vida EN CURSO --que rige o que esta programada--, no «rige hoy»: ver `planDeMovimiento`.
+      const [rige] = await conexion.query(
+        `SELECT EXISTS (
+           SELECT 1 FROM process_vigencias pv
+            WHERE pv.process_id = ? AND (pv.vigente_hasta IS NULL OR pv.vigente_hasta > CURRENT_DATE)
+         ) AS rige`,
+        [id]
+      );
+      const pasos = planDeMovimiento(actuales[0] ?? null, {
+        padreId: newParent,
+        desde: vigente_desde,
+        origen,
+        actoId: acto_id,
+        hijoConVida: Boolean(rige[0]?.rige)
+      });
+      if (newParent && pasos.length && (await this.wouldCreateProcessCycle(newParent, id, conexion))) {
         throw new Error("La relación crearía un ciclo en la jerarquía de procesos.");
       }
-    }
-    await this.pool.query("UPDATE processes SET parent_id = ? WHERE id = ?", [newParent, id]);
-    return { id, parent_id: newParent };
+      for (const paso of pasos) {
+        if (paso.op === "reemparejar") {
+          await conexion.query(`UPDATE process_relations SET parent_process_id = ? WHERE id = ?`, [paso.padreId, paso.id]);
+        } else if (paso.op === "cerrar") {
+          await conexion.query(
+            `UPDATE process_relations SET vigente_hasta = ?, fin_origen = ?, fin_acto_id = ? WHERE id = ?`,
+            [paso.hasta, paso.origen, paso.actoId, paso.id]
+          );
+        } else if (paso.op === "borrar") {
+          await conexion.query(`DELETE FROM process_relations WHERE id = ?`, [paso.id]);
+        } else {
+          await conexion.query(
+            `INSERT INTO process_relations (parent_process_id, child_process_id, vigente_desde, inicio_origen, inicio_acto_id)
+             VALUES (?, ?, ?, ?, ?)`,
+            [paso.padreId, id, paso.desde, paso.origen, paso.actoId]
+          );
+        }
+      }
+      return { id, parent_id: newParent };
+    }, this.pool).catch((error) => {
+      // Lo que rechaza la base --un solape, un padre que no rige ese dia, una reorganizacion sin
+      // acto-- sale con su frase, no con el texto del motor.
+      throw translateConstraintError(error, "process_relations") || error;
+    });
   }
 
   // Detalle de un proceso para el cockpit del grafo de procesos: el registro en sí (+ nombre del padre),
   // sus configuraciones (process_definition_versions agrupadas por serie/variación, con estado y conteos de
-  // reglas/plantillas/corridas), sus sub-procesos (hijos en el árbol parent_id) y sus corridas (process_runs).
+  // reglas/plantillas/corridas), sus sub-procesos (sus hijos en process_relations) y sus corridas (process_runs).
 
   // Detalle de un proceso para el cockpit del grafo de procesos: el registro en sí (+ nombre del padre),
   // sus configuraciones (process_definition_versions agrupadas por serie/variación, con estado y conteos de
-  // reglas/plantillas/corridas), sus sub-procesos (hijos en el árbol parent_id) y sus corridas (process_runs).
+  // reglas/plantillas/corridas), sus sub-procesos (sus hijos en process_relations) y sus corridas (process_runs).
   async getProcessDetail(processId) {
     this.ensurePool();
     const id = Number(processId);
@@ -178,7 +255,8 @@ export default class ProcessGraphService {
       throw new Error("Proceso inválido.");
     }
     const [processRows] = await this.pool.query(
-      `SELECT p.id, p.name, p.slug, p.parent_id, par.name AS parent_name,
+      `SELECT p.id, p.name, p.slug, rel.parent_process_id AS parent_id, par.name AS parent_name,
+              rel.estado AS relacion_estado, rel.vigente_desde::text AS relacion_desde,
               -- LA VIGENCIA sale de la vista process_vigencia_actual: el periodo que cuenta hoy. Sin fila
               -- alli el proceso no ha regido nunca y es un borrador. Las fechas van como TEXTO
               -- (AAAA-MM-DD): son dias, no instantes.
@@ -186,7 +264,8 @@ export default class ProcessGraphService {
               v.inicio_origen, v.inicio_acto_id, v.fin_origen, v.fin_acto_id,
               COALESCE(v.estado, 'borrador') AS estado
          FROM processes p
-         LEFT JOIN processes par ON par.id = p.parent_id
+         LEFT JOIN process_relacion_actual rel ON rel.child_process_id = p.id
+         LEFT JOIN processes par ON par.id = rel.parent_process_id
          LEFT JOIN process_vigencia_actual v ON v.process_id = p.id
         WHERE p.id = ?
         LIMIT 1`,
@@ -230,9 +309,10 @@ export default class ProcessGraphService {
               (SELECT COUNT(*) FROM process_definition_versions pdv
                  INNER JOIN lineas lin ON lin.id = pdv.linea_id
                 WHERE lin.process_id = c.id AND pdv.status = 'active') AS active_count
-         FROM processes c
+         FROM process_relacion_actual relc
+         INNER JOIN processes c ON c.id = relc.child_process_id
          LEFT JOIN process_vigencia_actual vc ON vc.process_id = c.id
-        WHERE c.parent_id = ?
+        WHERE relc.parent_process_id = ?
         ORDER BY c.name ASC`,
       [id]
     );

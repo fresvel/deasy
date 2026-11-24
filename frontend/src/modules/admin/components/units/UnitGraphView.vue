@@ -104,6 +104,8 @@
     </div>
 
     <!-- Confirmar quitar relación -->
+    <NodeMoverModal :mover="moverUnidad" :acto-options="vigencia.actoOptions.value" />
+
     <AppModalShell
       v-if="Boolean(selectedEdge)"
       controlled
@@ -208,6 +210,7 @@
       <div class="mt-4 min-h-0 flex-1 overflow-y-auto">
         <!-- Pestaña: Datos — la identidad de la unidad -->
         <div v-show="detailTab === 'datos'" class="flex flex-col gap-3">
+          <AppAlert v-if="cambioProgramado" variant="info">{{ cambioProgramado }}</AppAlert>
           <label class="deasy-form-label">
             Nombre
             <input v-model="unidadForm.name" type="text" class="deasy-control" placeholder="Nombre de la unidad" :disabled="!editable" />
@@ -568,6 +571,8 @@ import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import NodeVigenciaPanel from "./NodeVigenciaPanel.vue";
+import NodeMoverModal from "./NodeMoverModal.vue";
+import { useMoverNodo, fraseDelCambioProgramado } from "@/modules/admin/composables/estructura/useMoverNodo.js";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import AppCheckMenu from "@/shared/components/forms/AppCheckMenu.vue";
 import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
@@ -1336,6 +1341,47 @@ const loadUnitTypes = async () => {
   }
 };
 
+// CAMBIAR DE PADRE, por conectar, por arrastrar una arista o por quitarla (frente 27, D-04). Si la
+// relación que la unidad tiene ya rige, pregunta desde cuándo; si es un borrador, la cambia sin más.
+// Devuelve `false` si se canceló. El tipo de relación viaja en `tipoDelMovimiento` porque el
+// composable no sabe de tipos: los procesos no los tienen.
+let tipoDelMovimiento = null;
+const moverUnidad = useMoverNodo({
+  mover: (hijoId, padreId, extras) =>
+    adminSqlService.setUnitParent(Number(hijoId), {
+      ...extras,
+      parent_unit_id: padreId ? Number(padreId) : null,
+      relation_type_id: tipoDelMovimiento
+    })
+});
+// El cambio de padre que ya tiene fecha, dicho en el modal de la unidad: el organigrama dibuja el de hoy.
+const cambioProgramado = computed(() => {
+  const arista = (rawGraph.value.edges || []).find((e) => String(e.child_unit_id) === String(detailUnit.value?.id));
+  if (!arista) return "";
+  return fraseDelCambioProgramado({
+    estado: arista.estado,
+    hasta: arista.vigente_hasta,
+    proximoPadre: arista.proximo_padre_id ? nodeNameById.value.get(String(arista.proximo_padre_id)) || "" : "",
+    proximoDesde: arista.proximo_padre_desde
+  });
+});
+const cambiarPadre = (hijoId, padreId, relationTypeId) => {
+  tipoDelMovimiento = Number(relationTypeId);
+  const arista = (rawGraph.value.edges || []).find(
+    (e) => String(e.child_unit_id) === String(hijoId) && Number(e.relation_type_id) === tipoDelMovimiento
+  );
+  const hijo = (rawGraph.value.nodes || []).find((u) => String(u.id) === String(hijoId));
+  if (!vigencia.actoOptions.value.length) vigencia.cargarActos();
+  return moverUnidad.pedir({
+    hijoId: Number(hijoId),
+    padreId: padreId ? Number(padreId) : null,
+    hijoNombre: hijo?.name || "",
+    padreNombre: padreId ? nodeNameById.value.get(String(padreId)) || "" : "",
+    estadoDeLaArista: arista?.estado,
+    estadoDelNodo: hijo?.estado
+  });
+};
+
 // Fase 4: conectar dos nodos crea la relación padre(source)→hija(target).
 const onConnect = async ({ source, target }) => {
   if (!props.editable || !source || !target || source === target) return;
@@ -1349,11 +1395,7 @@ const onConnect = async ({ source, target }) => {
     return;
   }
   try {
-    await adminSqlService.create("unit_relations", {
-      relation_type_id: rtId,
-      parent_unit_id: Number(source),
-      child_unit_id: Number(target)
-    });
+    if (!(await cambiarPadre(target, source, rtId))) return;
     setFeedback("success", "Relación creada.");
     await loadGraph();
   } catch (e) {
@@ -1382,7 +1424,8 @@ const confirmDeleteEdge = async () => {
   selectedEdge.value = null;
   if (!edge?.data?.relationId) return;
   try {
-    await adminSqlService.remove("unit_relations", { id: edge.data.relationId });
+    // Quitar una relación que ya rige no la borra: le pone fin, y pregunta desde cuándo.
+    if (!(await cambiarPadre(edge.target, null, edge.data.relationTypeId))) return;
     setFeedback("success", "Relación eliminada.");
     await loadGraph();
   } catch (e) {
@@ -1416,12 +1459,12 @@ const onEdgeUpdate = async ({ edge, connection }) => {
   const target = connection?.target;
   if (!relationId || !rtId || !source || !target || source === target) return;
   try {
-    await adminSqlService.remove("unit_relations", { id: relationId });
-    await adminSqlService.create("unit_relations", {
-      relation_type_id: rtId,
-      parent_unit_id: Number(source),
-      child_unit_id: Number(target)
-    });
+    // Antes eran dos llamadas —borrar y crear— y entre las dos la unidad quedaba suelta. Ahora es
+    // una, y si la relación ya rige no se borra: se cierra y se abre otra.
+    if (!(await cambiarPadre(target, source, rtId))) {
+      await loadGraph();
+      return;
+    }
     setFeedback("success", "Relación reasignada.");
     await loadGraph();
   } catch (e) {

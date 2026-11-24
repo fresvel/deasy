@@ -12,7 +12,7 @@
 // desactive en vez de borrarse, que una arista nueva no cierre un ciclo— y la forma de la respuesta.
 // Las consultas viven en `../datos/` si solo nombran tablas de `organizacion`, y en
 // `../datos/consulta/` si cruzan a otro dominio.
-import { isUniqueViolation } from "../../../errors/sqlErrors.js";
+import { isUniqueViolation, translateConstraintError } from "../../../errors/sqlErrors.js";
 import { conflict, notFound } from "../../../errors/HttpError.js";
 import { conTransaccion } from "../../../config/postgres.js";
 import { slugify, normalizeNumericId } from "../../../services/admin/kernel/primitives.js";
@@ -23,8 +23,14 @@ import {
   listarAristasDelGrafo,
   existeCaminoEntreUnidades,
   insertarUnidad,
-  insertarRelacion
+  insertarRelacion,
+  aristaActualDeLaUnidad,
+  laUnidadTieneVidaEnCurso,
+  reemparejarRelacion,
+  cerrarRelacion,
+  borrarRelacion
 } from "../datos/unidades.js";
+import { planDeMovimiento } from "../../../services/estructura/planDeMovimiento.js";
 import {
   listarVidasDeLosPuestos,
   siguienteSlot,
@@ -320,6 +326,47 @@ export default class OrgStructureService {
     return { ok: true };
   }
 
+
+  // MOVER UNA UNIDAD DE PADRE (frente 27, D-04). Con aristas fechadas no es un UPDATE: qué hay que
+  // hacer lo decide `planDeMovimiento` según el estado de la arista de hoy —reemparejar un borrador,
+  // o cerrar la que rige y abrir otra el mismo día—, y aquí sólo se ejecuta, en una transacción.
+  // `parent_unit_id` nulo desvincula.
+  async setUnitParent(unitId, { parent_unit_id = null, relation_type_id, vigente_desde = null, origen = null, acto_id = null } = {}) {
+    this.ensurePool();
+    const hijoId = Number(unitId);
+    const padreId = parent_unit_id ? Number(parent_unit_id) : null;
+    const tipoId = Number(relation_type_id);
+    if (!hijoId || !tipoId) {
+      throw new Error("Falta la unidad o el tipo de relación.");
+    }
+    if (padreId === hijoId) {
+      throw new Error("Una unidad no puede relacionarse consigo misma.");
+    }
+    return conTransaccion(async (conexion) => {
+      const actual = await aristaActualDeLaUnidad(conexion, hijoId, tipoId);
+      const pasos = planDeMovimiento(actual, {
+        padreId,
+        desde: vigente_desde,
+        origen,
+        actoId: acto_id,
+        hijoConVida: await laUnidadTieneVidaEnCurso(conexion, hijoId)
+      });
+      if (padreId && pasos.length && (await this.wouldCreateUnitCycle(padreId, hijoId, tipoId, conexion))) {
+        throw new Error("La relación crearía un ciclo en la jerarquía (la unidad padre ya depende de la hija).");
+      }
+      for (const paso of pasos) {
+        if (paso.op === "reemparejar") await reemparejarRelacion(conexion, paso.id, paso.padreId);
+        else if (paso.op === "cerrar") await cerrarRelacion(conexion, paso.id, paso);
+        else if (paso.op === "borrar") await borrarRelacion(conexion, paso.id);
+        else await insertarRelacion(conexion, { relationTypeId: tipoId, parentUnitId: paso.padreId, childUnitId: hijoId, ...paso });
+      }
+      return { unit_id: hijoId, parent_unit_id: padreId, pasos: pasos.map((p) => p.op) };
+    }, this.pool).catch((error) => {
+      // Lo que rechaza la base --un solape, un padre que no rige ese dia, una reorganizacion sin
+      // acto-- sale con su frase, no con el texto del motor.
+      throw translateConstraintError(error, "unit_relations") || error;
+    });
+  }
 
   // Crea una unidad y, opcionalmente, su relación con un padre en un solo paso atómico (para "+ Hijo/Hermano"
   // desde el organigrama). La nueva unidad es una hoja nueva: no puede formar ciclo ni duplicar padre.

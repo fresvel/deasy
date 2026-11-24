@@ -82,6 +82,8 @@
     </div>
 
     <!-- Confirmar desvincular -->
+    <NodeMoverModal :mover="moverProceso" :acto-options="vigencia.actoOptions.value" />
+
     <AppModalShell
       v-if="Boolean(selectedEdge)"
       controlled
@@ -164,6 +166,7 @@
               <option v-for="opt in parentOptions" :key="opt.id" :value="String(opt.id)">{{ opt.name }}</option>
             </select>
           </label>
+          <AppAlert v-if="cambioProgramado" variant="info">{{ cambioProgramado }}</AppAlert>
         </div>
 
         <div v-if="detailLoading" v-show="detailTab !== 'datos'" class="text-sm text-muted">Cargando…</div>
@@ -371,6 +374,8 @@
 
 <script setup>
 import NodeVigenciaPanel from "./NodeVigenciaPanel.vue";
+import NodeMoverModal from "./NodeMoverModal.vue";
+import { useMoverNodo, fraseDelCambioProgramado } from "@/modules/admin/composables/estructura/useMoverNodo.js";
 import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
 import AppCheckMenu from "@/shared/components/forms/AppCheckMenu.vue";
 import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
@@ -950,7 +955,11 @@ const saveProcessEdit = async () => {
     const current = rawProcessById(ep.id);
     const nextParent = editForm.value.parent_id ? Number(editForm.value.parent_id) : null;
     if (Number(current?.parent_id || 0) !== Number(nextParent || 0)) {
-      await adminSqlService.setProcessParent(ep.id, nextParent);
+      // Si se cancela el «desde cuándo», los datos ya se guardaron pero el modal no se cierra.
+      if (!(await cambiarPadre(ep.id, nextParent))) {
+        await loadGraph();
+        return;
+      }
     }
     // Al guardar bien se cierra: el aviso de éxito va en la página, que vuelve a estar a la vista.
     setFeedback("success", "Proceso actualizado.");
@@ -1038,7 +1047,7 @@ const addChildFromModal = () => {
 };
 const detachChild = async (childId) => {
   try {
-    await adminSqlService.setProcessParent(Number(childId), null);
+    if (!(await cambiarPadre(childId, null))) return;
     setFeedback("success", "Sub-proceso desvinculado.");
     await loadGraph();
     if (detailProcess.value?.id) await openProcessDetail(detailProcess.value.id, "subprocesos");
@@ -1134,13 +1143,43 @@ const confirmCreateProcess = async () => {
   }
 };
 
+// CAMBIAR DE PADRE, por cualquiera de los cinco caminos (frente 27, D-04). Si la relación que el
+// proceso tiene ya rige, pregunta desde cuándo; si es un borrador, la cambia sin más. Devuelve
+// `false` si se canceló.
+const moverProceso = useMoverNodo({
+  mover: (hijoId, padreId, extras) => adminSqlService.setProcessParent(Number(hijoId), padreId ? Number(padreId) : null, extras)
+});
+// El cambio de padre que ya tiene fecha, dicho en el modal del proceso: lo que se ve es el padre de hoy.
+const cambioProgramado = computed(() => {
+  const p = rawProcessById(detailProcess.value?.id);
+  if (!p) return "";
+  return fraseDelCambioProgramado({
+    estado: p.relacion_estado,
+    hasta: p.relacion_hasta,
+    proximoPadre: p.proximo_padre_id ? nodeNameById.value.get(String(p.proximo_padre_id)) || "" : "",
+    proximoDesde: p.proximo_padre_desde
+  });
+});
+const cambiarPadre = (hijoId, padreId) => {
+  const hijo = rawProcessById(hijoId);
+  if (!vigencia.actoOptions.value.length) vigencia.cargarActos();
+  return moverProceso.pedir({
+    hijoId: Number(hijoId),
+    padreId: padreId ? Number(padreId) : null,
+    hijoNombre: hijo?.name || "",
+    padreNombre: padreId ? nodeNameById.value.get(String(padreId)) || "" : "",
+    estadoDeLaArista: hijo?.relacion_estado,
+    estadoDelNodo: hijo?.estado
+  });
+};
+
 // Conectar source→target = anidar target bajo source (su padre pasa a ser source).
 const onConnect = async ({ source, target }) => {
   if (!props.editable || !source || !target || source === target) return;
   // Solo se anidan procesos entre sí (ignora arrastres hacia/desde nodos de configuración).
   if (!isProcessId(source) || !isProcessId(target)) return;
   try {
-    await adminSqlService.setProcessParent(Number(target), Number(source));
+    if (!(await cambiarPadre(target, source))) return;
     setFeedback("success", "Proceso anidado.");
     await loadGraph();
   } catch (e) {
@@ -1160,7 +1199,7 @@ const confirmDeleteEdge = async () => {
   const childId = edge?.data?.childProcessId;
   if (!childId) return;
   try {
-    await adminSqlService.setProcessParent(Number(childId), null);
+    if (!(await cambiarPadre(childId, null))) return;
     setFeedback("success", "Proceso desvinculado.");
     await loadGraph();
   } catch (e) {
@@ -1177,7 +1216,10 @@ const onEdgeUpdate = async ({ edge, connection }) => {
   if (!childId || !source || !target || source === target) return;
   if (!isProcessId(source) || !isProcessId(target)) return;
   try {
-    await adminSqlService.setProcessParent(Number(target), Number(source));
+    if (!(await cambiarPadre(target, source))) {
+      await loadGraph();
+      return;
+    }
     setFeedback("success", "Relación reasignada.");
     await loadGraph();
   } catch (e) {

@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 92 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 93 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -970,6 +970,26 @@ Table "process_definition_versions" {
   }
 }
 
+Table "process_relations" {
+  "id" int4 [pk, not null, increment]
+  "parent_process_id" int4 [not null]
+  "child_process_id" int4 [unique, not null]
+  "vigente_desde" date
+  "vigente_hasta" date
+  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (child_process_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_process_relations_sin_solape"]
+    (child_process_id, vigente_desde) [type: btree, name: "idx_process_relations_child"]
+    parent_process_id [type: btree, name: "idx_process_relations_parent"]
+  }
+}
+
 Table "process_runs" {
   "id" int4 [pk, not null, increment]
   "process_definition_id" int4 [not null]
@@ -1009,7 +1029,6 @@ Table "processes" {
   "id" int4 [pk, not null, increment]
   "name" varchar(180) [not null]
   "slug" varchar(180) [unique, not null]
-  "parent_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
@@ -1366,13 +1385,19 @@ Table "unit_relations" {
   "relation_type_id" int4 [not null]
   "parent_unit_id" int4 [not null]
   "child_unit_id" int4 [not null]
+  "vigente_desde" date
+  "vigente_hasta" date
+  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (parent_unit_id, child_unit_id, relation_type_id) [type: btree, unique, name: "unit_relations_uq"]
-    (child_unit_id, relation_type_id) [type: btree, unique, name: "uq_unit_relations_child_type"]
-    child_unit_id [type: btree, name: "idx_unit_relations_child"]
+    (child_unit_id, relation_type_id) [type: btree, unique, name: "uq_unit_relations_borrador"]
+    (child_unit_id, relation_type_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_unit_relations_sin_solape"]
+    (child_unit_id, vigente_desde) [type: btree, name: "idx_unit_relations_child"]
     parent_unit_id [type: btree, name: "idx_unit_relations_parent"]
   }
 }
@@ -1572,6 +1597,10 @@ Ref "fk_position_vigencias_position":"unit_positions"."id" <? "position_vigencia
 Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
 Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
 Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]
+Ref "fk_process_relations_child":"processes"."id" <? "process_relations"."child_process_id"
+Ref "fk_process_relations_fin_acto":"actos"."id" ?<? "process_relations"."fin_acto_id"
+Ref "fk_process_relations_inicio_acto":"actos"."id" ?<? "process_relations"."inicio_acto_id"
+Ref "fk_process_relations_parent":"processes"."id" <? "process_relations"."parent_process_id"
 Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user_id"
 Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
 Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
@@ -1579,7 +1608,6 @@ Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
 Ref "fk_process_vigencias_fin_acto":"actos"."id" ?<? "process_vigencias"."fin_acto_id"
 Ref "fk_process_vigencias_inicio_acto":"actos"."id" ?<? "process_vigencias"."inicio_acto_id"
 Ref "fk_process_vigencias_process":"processes"."id" <? "process_vigencias"."process_id"
-Ref "fk_processes_parent":"processes"."id" ?<? "processes"."parent_id"
 Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
 Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"
 Ref "fk_role_assignment_relation_types_relation_type":"relation_unit_types"."id" <? "role_assignment_relation_types"."relation_type_id"
@@ -1619,6 +1647,8 @@ Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono
 Ref "fk_unit_positions_cargo":"cargos"."id" <? "unit_positions"."cargo_id"
 Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
 Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"
+Ref "fk_unit_relations_fin_acto":"actos"."id" ?<? "unit_relations"."fin_acto_id"
+Ref "fk_unit_relations_inicio_acto":"actos"."id" ?<? "unit_relations"."inicio_acto_id"
 Ref "fk_unit_relations_parent":"units"."id" <? "unit_relations"."parent_unit_id"
 Ref "fk_unit_relations_relation_type":"relation_unit_types"."id" <? "unit_relations"."relation_type_id"
 Ref "fk_unit_vigencias_fin_acto":"actos"."id" ?<? "unit_vigencias"."fin_acto_id"

@@ -60,20 +60,23 @@ tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
 | | |
 |---|---|
 | Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **38** |
-| Columnas de esas 38 | **365** |
-| Claves foráneas **entre** esas 38 | **95** |
-| Claves foráneas **declaradas en** esas 38 | **98** |
-| Tablas del esquema entero (con chat, empleo y dossier) | **90** |
-| Claves foráneas del esquema entero | **164** |
-| Restricciones `CHECK` del esquema entero | **36** |
+| Columnas de esas 38 | **353** |
+| Claves foráneas **entre** esas 38 | **87** |
+| Claves foráneas **declaradas en** esas 38 | **92** |
+| Tablas del esquema entero (con chat, empleo y dossier) | **93** |
+| Claves foráneas del esquema entero | **173** |
+| Restricciones `CHECK` del esquema entero | **88** |
 
 Las dos cifras de claves foráneas no son la misma, y la diferencia explica una pregunta que sale
-sola: **dos** de las declaradas apuntan **fuera del mapa** —`persons` a `paises` para la nacionalidad, y
-`unit_relations` a `relation_unit_types`—. Por eso la referencia generada de
+sola: **cinco** de las declaradas apuntan **fuera del mapa** —cuatro de `persons` (a `paises` dos
+veces, a `cantones` y a `estados_civiles`) y `unit_relations` a `relation_unit_types`—. Por eso la referencia generada de
 [Campos de la cadena](/referencia/campos-proceso-documento/) cuenta una tabla más que el mapa: sin
 `relation_unit_types` las suyas quedarían colgando.
 
-Eran **tres** hasta el 2026-10-09: la tercera era `fill_flow_steps.relation_type_id`, una columna
+Las siete cifras se volvieron a medir en el catálogo el **2026-11-23**: la tabla llevaba caducada
+desde que entraron las vidas y el acto, y decía 90 tablas y 36 `CHECK`.
+
+De las que apuntan fuera eran **tres** hasta el 2026-10-09: la tercera era `fill_flow_steps.relation_type_id`, una columna
 huérfana cuyo único lector era un ámbito retirado, y se fue con su tabla.
 
 Los **comportamientos** —qué pasa al publicar, qué mira el lanzamiento, hasta dónde llega el

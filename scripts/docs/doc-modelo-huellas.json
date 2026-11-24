@@ -37,7 +37,8 @@
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
       "modelo/proceso.md",
-      "modelo/reparto.md"
+      "modelo/reparto.md",
+      "referencia/campos-proceso-documento.md"
     ]
   },
   "aplications": {
@@ -86,6 +87,7 @@
     "paginas": [
       "complemento/mapa-completo.md",
       "complemento/mapa-con-campos.md",
+      "modelo/index.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
@@ -461,6 +463,7 @@
     "paginas": [
       "complemento/mapa-completo.md",
       "complemento/mapa-con-campos.md",
+      "modelo/index.md",
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
       "modelo/organizacion.md",
@@ -748,6 +751,15 @@
       "referencia/modelo-datos.md"
     ]
   },
+  "process_relations": {
+    "huella": "3043057da7ee7ad4",
+    "paginas": [
+      "datos/motor-de-procesos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md"
+    ]
+  },
   "process_runs": {
     "huella": "2cdfc7e2f84c70be",
     "paginas": [
@@ -772,7 +784,7 @@
     ]
   },
   "processes": {
-    "huella": "500feb945dd19a2e",
+    "huella": "6c3108aaa1946d1e",
     "paginas": [
       "arquitectura-y-patrones.md",
       "backend/index.md",
@@ -1095,7 +1107,7 @@
     ]
   },
   "unit_relations": {
-    "huella": "9797c7b98e490e21",
+    "huella": "e7581d1aa250e222",
     "paginas": [
       "complemento/mapa-con-campos.md",
       "datos/firmas-y-dominios.md",

@@ -7,7 +7,8 @@ sidebar:
 ---
 
 Un **proceso** (`processes`) es apenas un nombre: «Evaluación docente», «Informe semestral». No
-contiene reglas. Puede colgar de otro proceso —`parent_id` es autorreferencial—, formando un árbol.
+contiene reglas. Puede colgar de otro proceso, formando un árbol: de cuál, y desde cuándo, lo dice
+`process_relations` (ver [De qué proceso cuelga](#de-qué-proceso-cuelga-y-desde-cuándo)).
 
 Las reglas viven un piso más abajo, en la **configuración** (`process_definition_versions`). Y aquí
 está la primera decisión de diseño importante: **una configuración no se edita, se versiona**. Cuando
@@ -205,6 +206,24 @@ creada después de las dos, apunta a ambas sin círculo.
 :::caution[Lo que todavía no hace]
 Esto vale para los tres nodos de la estructura: procesos, **unidades** y **puestos**.
 
+### De qué proceso cuelga, y desde cuándo
+
+Hasta el **2026-11-23** el padre de un proceso era una columna de `processes`. Una columna dice de
+quién cuelga **hoy** y nada más: no dice de quién colgó ayer, y con fechas futuras «el padre actual»
+depende del día y no se puede guardar. Ahora vive en **`process_relations`**, una fila por periodo,
+con **la misma forma y las mismas reglas que la relación entre unidades**
+([La organización](/modelo/organizacion/#de-quién-depende-una-unidad-y-desde-cuándo)): dos periodos
+del mismo proceso no coinciden, una relación empieza cuando sus dos procesos ya rigen, la que ya
+rige no se cambia ni se borra —se le pone fin y se abre otra—, y la vida del proceso arrastra a su
+relación.
+
+Sus dos vistas son `process_arbol_vigente` (lo que rige hoy; la raíz es el proceso sin relación
+vigente) y `process_relacion_actual` (lo que dibuja el mapa de procesos).
+
+En la pantalla, mover un proceso cuya relación ya rige pregunta **desde cuándo** y con qué origen;
+uno en borrador se mueve sin más. Y si el cambio tiene fecha futura, el modal lo dice: lo que se ve
+es el padre de hoy.
+
 ### Qué se puede borrar
 
 **Sólo lo que aún no ha regido.** La regla está puesta en la vida, y con eso alcanza para el nodo:
@@ -229,6 +248,8 @@ erDiagram
   processes ||--o{ lineas : "tiene obligaciones"
   processes ||--o{ processes : "puede colgar de otro"
   processes ||--o{ process_vigencias : "sus vidas"
+  processes ||--o{ process_relations : "padre"
+  processes ||--o{ process_relations : "hijo"
   lineas ||--o{ process_definition_versions : "LA IDENTIDAD de una configuracion"
   lineas ||--o{ lineas : "EL LINAJE: sucede a otra"
   unit_types ||--o{ lineas : "el DONDE por tipo"
@@ -242,8 +263,20 @@ erDiagram
     int id PK
     varchar name "Evaluacion docente"
     varchar slug "unico"
-    int parent_id FK "proceso padre, opcional"
     timestamp created_at
+  }
+  process_relations {
+    int id PK "UN PERIODO de dependencia"
+    int parent_process_id FK
+    int child_process_id FK
+    date vigente_desde "desde cuando rige, vacio en un borrador"
+    date vigente_hasta "primer dia en que ya no rige"
+    text inicio_origen "carga_inicial, reorganizacion, correccion"
+    int inicio_acto_id FK "el acto que la abrio"
+    text fin_origen "carga_inicial, reorganizacion, correccion"
+    int fin_acto_id FK "el acto que la cerro"
+    timestamp created_at
+    timestamp updated_at
   }
   process_vigencias {
     int id PK "UNA VIDA del proceso"
