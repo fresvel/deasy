@@ -409,10 +409,12 @@
                 </div>
                 <div class="mt-1 flex flex-wrap items-center gap-2 text-xs">
                   <template v-if="pos.person_id">
-                    <AppTag variant="success">Ocupado</AppTag>
+                    <AppTag variant="success" outlined>Ocupado</AppTag>
                     <span class="truncate text-icon">{{ (pos.person_name || '').trim() }} · {{ pos.cedula }}</span>
                   </template>
-                  <span v-else class="inline-flex items-center rounded-xl bg-surface px-2 py-0.5 font-semibold text-muted ring-1 ring-line">Vacante</span>
+                  <!-- VACANTE ES UN PUESTO QUE RIGE Y NO TIENE A NADIE. Uno suprimido o en borrador no
+                       tiene vacante: no hay plaza que ocupar, y su estado ya lo dice arriba. -->
+                  <AppTag v-else-if="esVacante(pos)" variant="neutral" outlined>Vacante</AppTag>
                   <!-- Lo que se hace con el puesto tal como está: su perfil y quién lo ocupa. -->
                   <div v-if="editable" class="ml-auto flex items-center gap-2">
                     <AppButton
@@ -445,7 +447,7 @@
                       </AppButton>
                     </template>
                     <AppButton
-                      v-else
+                      v-else-if="esVacante(pos)"
                       variant="success-soft"
                       icon-only
                       title="Asignar persona al puesto"
@@ -730,10 +732,11 @@ const gruposDePuestos = computed(() =>
     }))
     .filter((grupo) => grupo.puestos.length)
 );
-// SÓLO LOS VACANTES: los mismos que la lista rotula «Vacante» —sin ocupante—. La cifra del botón es
-// la de la clase elegida, que es lo que se va a ver al pulsarlo.
+// SÓLO LOS VACANTES: los mismos que la lista rotula «Vacante» —un puesto que rige, o va a regir, y
+// no tiene ocupante—. Uno suprimido o en borrador no lo es: no hay plaza que ocupar. La cifra del
+// botón es la de la clase elegida, que es lo que se va a ver al pulsarlo.
 const soloVacantes = ref(false);
-const esVacante = (pos) => !pos.person_id;
+const esVacante = (pos) => !pos.person_id && (pos.estado === "vigente" || pos.estado === "programado");
 const totalDeVacantes = computed(() =>
   detailPositions.value.filter((pos) => (clasePuestos.value === "todas" || claseDe(pos) === clasePuestos.value) && esVacante(pos)).length
 );
