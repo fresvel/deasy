@@ -275,6 +275,7 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     suprimeMasAdelante,
     efectosQueSeCierran,
     efectosQueSeQuedan,
+    cargarEfectos,
     puedeCorregir: puedeCorregirLaEstructura(),
     prepararVida,
     empezarVidaNueva,

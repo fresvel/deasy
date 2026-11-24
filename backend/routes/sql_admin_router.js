@@ -33,6 +33,7 @@ import {
   setUnitParent,
   corregirEstructura,
   getEfectosDeSuprimir,
+  suprimirPuestosDeUnidad,
   getUnitDetail,
   getUnitProcesses,
   getUnitAttachableProcesses,
@@ -150,6 +151,7 @@ router.get("/units/:id/detail", requireSqlAdminPermission({ resource: "units", a
 router.get("/units/:id/processes", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitProcesses);
 router.get("/units/:id/attachable-processes", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitAttachableProcesses);
 router.post("/units/:id/positions", requireSqlAdminPermission({ resource: "people", action: "create" }), addUnitPosition);
+router.post("/units/:id/positions/suprimir", requireSqlAdminPermission({ resource: "people", action: "update" }), suprimirPuestosDeUnidad);
 router.put("/units/positions/:positionId", requireSqlAdminPermission({ resource: "people", action: "update" }), updateUnitPosition);
 router.delete("/units/positions/:positionId", requireSqlAdminPermission({ resource: "people", action: "delete" }), removeUnitPosition);
 router.post("/units/positions/:positionId/assign", requireSqlAdminPermission({ resource: "people", action: "update" }), assignUnitPosition);

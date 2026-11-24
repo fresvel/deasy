@@ -75,6 +75,11 @@ export class AdminSqlService {
     return this.httpClient.put(API_ROUTES.ADMIN_SQL_UNIT_POSITION(positionId), payload);
   }
 
+  /* Suprime de una vez los puestos que rigen en la unidad: { vigente_hasta, fin_origen, fin_acto_id? }. */
+  suprimirPuestosDeUnidad(unitId, payload) {
+    return this.httpClient.post(API_ROUTES.ADMIN_SQL_UNIT_POSITIONS_SUPRIMIR(unitId), payload);
+  }
+
   removeUnitPosition(positionId) {
     return this.httpClient.delete(API_ROUTES.ADMIN_SQL_UNIT_POSITION(positionId));
   }

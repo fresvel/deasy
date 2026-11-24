@@ -40,7 +40,8 @@ import {
   existePuesto,
   borrarPuesto,
   cerrarOcupacionVigente,
-  abrirOcupacion
+  abrirOcupacion,
+  suprimirPuestosDeLaUnidad
 } from "../datos/puestos.js";
 import { listarPuestosConOcupante } from "../datos/consulta/ocupantesDeLaUnidad.js";
 import {
@@ -336,6 +337,24 @@ export default class OrgStructureService {
       throw new Error("Falta decir qué se va a suprimir.");
     }
     return { clase, id, efectos: await contarEfectosDeSuprimir(this.pool, clase, id) };
+  }
+
+  // Suprime de una vez los puestos que rigen en una unidad, todos con la misma fecha: el paso previo
+  // a suprimir la unidad, que no pasa mientras los tenga. Una transacción: o todos, o ninguno.
+  async suprimirPuestosDeUnidad(unitId, { vigente_hasta, fin_origen, fin_acto_id = null } = {}) {
+    this.ensurePool();
+    const id = Number(unitId);
+    const hasta = String(vigente_hasta || "").trim();
+    const origen = String(fin_origen || "").trim();
+    if (!id || !hasta || !origen) {
+      throw new Error("Hace falta la unidad, la fecha de fin y su origen.");
+    }
+    return conTransaccion(async (conexion) => ({
+      unit_id: id,
+      suprimidos: await suprimirPuestosDeLaUnidad(conexion, id, { hasta, origen, actoId: fin_acto_id ? Number(fin_acto_id) : null })
+    }), this.pool).catch((error) => {
+      throw translateConstraintError(error, "position_vigencias") || error;
+    });
   }
 
   // MOVER UNA UNIDAD DE PADRE (frente 27, D-04). Con aristas fechadas no es un UPDATE: qué hay que

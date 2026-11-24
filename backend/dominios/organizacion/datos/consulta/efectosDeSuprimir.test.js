@@ -27,5 +27,5 @@ test("devuelve sólo lo que hay, con su cifra, y nada para una clase que no exis
     { singular: "rol asignado", plural: "roles asignados", seCierra: true, n: 21 }
   ]);
   assert.deepEqual(await contarEfectosDeSuprimir(ejecutor, "otra", 7), []);
-  assert.deepEqual(CLASES_DE_NODO, ["unidad", "puesto", "proceso"]);
+  assert.deepEqual(CLASES_DE_NODO, ["unidad", "puesto", "puestos_de_unidad", "proceso"]);
 });

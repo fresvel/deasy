@@ -31,7 +31,7 @@ const CUENTAS = Object.freeze({
       sql: `SELECT COUNT(*) AS n FROM unit_relations r
              WHERE r.parent_unit_id = ? AND r.vigente_desde IS NOT NULL
                AND (r.vigente_hasta IS NULL OR r.vigente_hasta > CURRENT_DATE)` },
-    { singular: "puesto que rige en ella", plural: "puestos que rigen en ella", seCierra: false,
+    { singular: "puesto que rige en ella", plural: "puestos que rigen en ella", seCierra: false, clave: "puestos",
       sql: `SELECT COUNT(DISTINCT up.id) AS n FROM unit_positions up
               INNER JOIN position_vigencias pv ON pv.position_id = up.id
              WHERE up.unit_id = ? AND (pv.vigente_hasta IS NULL OR pv.vigente_hasta > CURRENT_DATE)` }
@@ -39,9 +39,21 @@ const CUENTAS = Object.freeze({
   puesto: [
     { singular: "ocupación vigente", plural: "ocupaciones vigentes", seCierra: true,
       sql: `SELECT COUNT(*) AS n FROM position_assignments WHERE position_id = ? AND is_current = 1` },
-    { singular: "entregable en curso sin responsable", plural: "entregables en curso sin responsable", seCierra: true,
+    { singular: "entregable en curso (queda sin responsable)", plural: "entregables en curso (quedan sin responsable)", seCierra: true,
       sql: `SELECT COUNT(*) AS n FROM task_items ti
              WHERE ti.responsible_position_id = ? AND ti.document_status IN ${EN_CURSO}` }
+  ],
+  // LOS PUESTOS DE UNA UNIDAD, EN BLOQUE: la suma de lo que cierra suprimirlos todos a la vez. Es
+  // lo mismo que `puesto`, sumado sobre los que rigen en la unidad; se le pasa el id de la unidad.
+  puestos_de_unidad: [
+    { singular: "ocupación vigente", plural: "ocupaciones vigentes", seCierra: true,
+      sql: `SELECT COUNT(*) AS n FROM position_assignments pa
+              INNER JOIN unit_positions up ON up.id = pa.position_id
+             WHERE up.unit_id = ? AND pa.is_current = 1 AND puesto_rige(up.id)` },
+    { singular: "entregable en curso (queda sin responsable)", plural: "entregables en curso (quedan sin responsable)", seCierra: true,
+      sql: `SELECT COUNT(*) AS n FROM task_items ti
+              INNER JOIN unit_positions up ON up.id = ti.responsible_position_id
+             WHERE up.unit_id = ? AND puesto_rige(up.id) AND ti.document_status IN ${EN_CURSO}` }
   ],
   proceso: [
     { singular: "sub-proceso que depende de él", plural: "sub-procesos que dependen de él", seCierra: false,

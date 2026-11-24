@@ -93,3 +93,28 @@ export const abrirOcupacion = async (ejecutor, positionId, personId) => {
     [positionId, personId]
   );
 };
+
+// SUPRIMIR DE UNA VEZ LOS PUESTOS DE UNA UNIDAD, todos con la misma fecha (frente 27).
+//
+// Existe porque una unidad no se suprime mientras tenga puestos que rijan, y hacerlo uno por uno en
+// una unidad de diez era el coste de esa regla. Pone fin a la vida que rige ese día en cada puesto.
+// Cada fin dispara lo de siempre —cierra la ocupación, deja sin responsable los entregables en
+// curso—: es la misma supresión, repetida, en una sola transacción.
+//
+// ⚠️ No toca una vida que empiece DESPUÉS de esa fecha —un puesto programado—: ésa no rige ese día y
+// no se le puede poner un fin anterior a su inicio. Si la hay, la unidad seguirá sin poder
+// suprimirse y la base dirá por qué.
+export const suprimirPuestosDeLaUnidad = async (ejecutor, unitId, { hasta, origen, actoId = null }) => {
+  const [resultado] = await ejecutor.query(
+    `UPDATE position_vigencias pv
+        SET vigente_hasta = ?, fin_origen = ?, fin_acto_id = ?
+       FROM unit_positions up
+      WHERE up.id = pv.position_id
+        AND up.unit_id = ?
+        AND pv.vigente_desde <= ?
+        AND (pv.vigente_hasta IS NULL OR pv.vigente_hasta > ?)`,
+    [hasta, origen, actoId, unitId, hasta, hasta]
+  );
+  return Number(resultado.affectedRows ?? resultado.rowCount ?? 0);
+};
+

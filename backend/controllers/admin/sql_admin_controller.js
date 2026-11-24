@@ -509,6 +509,15 @@ export const getEfectosDeSuprimir = async (req, res) => {
   }
 };
 
+// Suprime de una vez los puestos que rigen en una unidad, con una misma fecha.
+export const suprimirPuestosDeUnidad = async (req, res) => {
+  try {
+    res.json(await service().suprimirPuestosDeUnidad(req.params.id, req.body || {}));
+  } catch (error) {
+    res.status(error.statusCode || 400).json({ message: error.message });
+  }
+};
+
 // Corrige, con motivo, algo de la estructura que ya rigió (frente 27, D-05). El permiso —propio, y
 // distinto del de editar la estructura— lo exige la ruta.
 export const corregirEstructura = async (req, res) => {

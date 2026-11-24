@@ -104,6 +104,43 @@
     </div>
 
     <!-- Confirmar quitar relación -->
+    <!-- SUPRIMIR DE UNA VEZ LOS PUESTOS DE LA UNIDAD: la suma de lo que se cierra, y una sola confirmación. -->
+    <AppModalShell
+      v-if="Boolean(puestosEnBloque)"
+      controlled
+      :open="Boolean(puestosEnBloque)"
+      title="Suprimir los puestos de la unidad"
+      content-class="max-w-md"
+      @close="puestosEnBloque = null"
+    >
+      <div class="flex flex-col gap-3">
+        <p class="m-0 text-sm text-icon">
+          Los <strong>{{ puestosEnBloque.n }}</strong> puestos que rigen en <strong>{{ detailUnit?.name }}</strong>
+          dejarán de regir el <strong>{{ puestosEnBloque.hasta }}</strong>.
+        </p>
+        <AppAlert v-if="puestosEnBloque.error" variant="danger">{{ puestosEnBloque.error }}</AppAlert>
+        <AppAlert v-if="puestosEnBloque.yaRige" variant="warning">
+          <template v-if="puestosEnBloque.efectos.length">
+            Al confirmar se cerrarán <strong>{{ fraseDeEfectos(puestosEnBloque.efectos) }}</strong>. No se recuperan al reactivar, y un fin que ya ocurrió no se puede quitar.
+          </template>
+          <template v-else>Un fin que ya ocurrió no se puede quitar: para que vuelvan a regir habrá que reactivarlos uno por uno.</template>
+        </AppAlert>
+        <AppAlert v-else variant="info">Hasta ese día no se cierra nada, y la fecha de cada puesto se puede cambiar o quitar.</AppAlert>
+        <label v-if="puestosEnBloque.yaRige" class="flex items-center gap-2 text-sm text-strong">
+          <input v-model="puestosEnBloque.confirma" type="checkbox" />
+          Entiendo que no se puede deshacer
+        </label>
+      </div>
+      <template #footer>
+        <AppButton variant="danger-outline" :disabled="puestosEnBloque.guardando" @click="puestosEnBloque = null">Cancelar</AppButton>
+        <AppButton
+          variant="primary-outline"
+          :disabled="puestosEnBloque.guardando || (puestosEnBloque.yaRige && !puestosEnBloque.confirma)"
+          @click="confirmarSuprimirPuestos"
+        >{{ puestosEnBloque.guardando ? "Suprimiendo…" : "Suprimir los puestos" }}</AppButton>
+      </template>
+    </AppModalShell>
+
     <NodeMoverModal :mover="moverUnidad" :acto-options="vigencia.actoOptions.value" />
 
     <AppModalShell
@@ -242,6 +279,7 @@
           :editable="editable"
           @reactivar="empezarVidaNueva"
           @descartar="descartarVida"
+          @suprimir-puestos="abrirSuprimirPuestos"
         />
 
         <!-- Pestaña: Ocupaciones -->
@@ -572,6 +610,7 @@ import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import NodeVigenciaPanel from "./NodeVigenciaPanel.vue";
 import NodeMoverModal from "./NodeMoverModal.vue";
+import { fraseDeEfectos } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
 import { useMoverNodo, fraseDelCambioProgramado } from "@/modules/admin/composables/estructura/useMoverNodo.js";
 import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
 import AppCheckMenu from "@/shared/components/forms/AppCheckMenu.vue";
@@ -1022,6 +1061,52 @@ const descartarVida = async () => {
     modalError.value = e?.response?.data?.message || "No se pudo descartar la vida.";
   } finally {
     savingUnidad.value = false;
+  }
+};
+// SUPRIMIR DE UNA VEZ LOS PUESTOS DE LA UNIDAD. Una unidad no se suprime mientras tenga puestos que
+// rijan; esto es el paso previo, con la fecha y el origen que ya están escritos en su pestaña
+// «Vigencia». Enseña la SUMA de lo que se cierra y pide una sola confirmación. La unidad no se
+// suprime aquí: al volver, su aviso ya no cuenta puestos y se guarda como siempre.
+const puestosEnBloque = ref(null);
+const abrirSuprimirPuestos = async () => {
+  const unidad = detailUnit.value;
+  const f = vigencia.vidaForm.value;
+  if (!props.editable || !unidad?.id || !f.vigente_hasta || !f.fin_origen) return;
+  let efectos = [];
+  try {
+    const { data } = await adminSqlService.getEfectosDeSuprimir("puestos_de_unidad", unidad.id);
+    efectos = data?.efectos || [];
+  } catch {
+    efectos = [];
+  }
+  puestosEnBloque.value = {
+    n: vigencia.efectosQueSeQuedan.value.find((e) => e.clave === "puestos")?.n || 0,
+    hasta: f.vigente_hasta,
+    yaRige: f.vigente_hasta <= vigencia.hoy(),
+    efectos,
+    confirma: false,
+    guardando: false,
+    error: ""
+  };
+};
+const confirmarSuprimirPuestos = async () => {
+  const peticion = puestosEnBloque.value;
+  const f = vigencia.vidaForm.value;
+  if (!peticion || !detailUnit.value?.id) return;
+  peticion.guardando = true;
+  peticion.error = "";
+  try {
+    await adminSqlService.suprimirPuestosDeUnidad(detailUnit.value.id, {
+      vigente_hasta: f.vigente_hasta,
+      fin_origen: f.fin_origen,
+      fin_acto_id: f.fin_origen === "reorganizacion" && f.fin_acto_id ? Number(f.fin_acto_id) : null
+    });
+    puestosEnBloque.value = null;
+    // El aviso de la unidad se vuelve a contar: ya no debería haber puestos que impidan suprimirla.
+    await vigencia.cargarEfectos();
+  } catch (e) {
+    peticion.error = e?.response?.data?.message || "No se pudieron suprimir los puestos.";
+    peticion.guardando = false;
   }
 };
 // Guarda la vida que enseña la pestaña «Vigencia»: poner en vigor, mover fechas, suprimir o reactivar.

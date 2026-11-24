@@ -763,6 +763,7 @@ export default class SqlAdminService {
   createUnitWithParent(...args) { return this.orgStructure.createUnitWithParent(...args); }
   setUnitParent(...args) { return this.orgStructure.setUnitParent(...args); }
   efectosDeSuprimir(...args) { return this.orgStructure.efectosDeSuprimir(...args); }
+  suprimirPuestosDeUnidad(...args) { return this.orgStructure.suprimirPuestosDeUnidad(...args); }
 
   // `transaccion` ({ antes, despues }): trabajo de quien llama que tiene que confirmarse con la
   // escritura, o deshacerse con ella. Si llega, la escritura va en transaccion aunque la tabla no la

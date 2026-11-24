@@ -75,6 +75,16 @@
           No se puede suprimir todavía: hay <strong>{{ fraseDeEfectos(vigencia.efectosQueSeQuedan.value) }}</strong>.
           Hay que resolverlo antes, y puede ser con esta misma fecha: lo que depende de este nodo se mueve a otro padre o se suprime, y sus puestos se suprimen.
         </AppAlert>
+        <!-- Los puestos se pueden suprimir de una vez, con la fecha y el origen que ya están escritos
+             arriba. Lo hace quien usa el panel —la unidad—, que es quien sabe de puestos. -->
+        <div v-if="editable && puestosQueImpiden" class="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2.5">
+          <p class="m-0 text-theme-xs text-muted">
+            {{ form.fin_origen ? "Se pueden suprimir todos de una vez, con esta fecha y este origen." : "Elige el origen del fin para poder suprimirlos de una vez." }}
+          </p>
+          <AppButton variant="danger-outline" :disabled="!form.fin_origen || (form.fin_origen === 'reorganizacion' && !form.fin_acto_id)" @click="$emit('suprimir-puestos')">
+            Suprimir sus {{ puestosQueImpiden }} {{ puestosQueImpiden === 1 ? "puesto" : "puestos" }}
+          </AppButton>
+        </div>
         <template v-else>
           <AppAlert v-if="vigencia.suprimeMasAdelante.value" variant="info">
             Dejará de regir el {{ form.vigente_hasta }}. Hasta ese día no se cierra nada, y la fecha se puede cambiar o quitar.
@@ -145,6 +155,11 @@ import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { etiquetaOrigen, fraseDeEfectos } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
 
+/* Cuántos puestos impiden suprimir, si alguno: sólo lo trae la unidad. */
+const puestosQueImpiden = computed(() => {
+  if (!props.vigencia.suprime.value) return 0;
+  return props.vigencia.efectosQueSeQuedan.value.find((e) => e.clave === "puestos")?.n || 0;
+});
 const cuantos = (efectos) => efectos.reduce((suma, e) => suma + e.n, 0);
 
 const props = defineProps({
@@ -156,7 +171,7 @@ const props = defineProps({
   sujeto: { type: String, default: "Nodo" },
   editable: { type: Boolean, default: false }
 });
-defineEmits(["reactivar", "descartar"]);
+defineEmits(["reactivar", "descartar", "suprimir-puestos"]);
 
 /* El formulario vive en el composable; aquí sólo se le da un nombre corto para la plantilla. */
 const form = computed(() => props.vigencia.vidaForm.value);
