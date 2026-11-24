@@ -1,12 +1,14 @@
 <template>
   <div
-    class="graph-node graph-node--template relative rounded-xl border border-brand-200 border-l-4 border-l-brand-400 bg-brand-50/50 px-2.5 py-1.5 transition-all"
+    class="graph-node graph-node--template relative rounded-xl rounded-tl-none border border-brand-200 border-l-4 border-l-brand-400 bg-brand-50/50 px-2.5 py-1.5 transition-all"
     :class="data.highlighted ? 'graph-node--resaltado' : ''"
     :title="data.display_name"
     @mouseenter="hover = true"
     @mouseleave="hover = false"
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle graph-node__handle--sm" />
+    <!-- Qué clase de nodo es, como en el proceso. La franja de la izquierda sube con ella. -->
+    <span class="graph-node__tipo graph-node__tipo--sm"><span class="graph-node__tipo-texto">Entregable</span></span>
 
     <div v-if="hover && data.editable" class="nodrag nopan graph-node__toolbar graph-node__toolbar--sm">
       <button v-if="data.parentConfigStatus === 'active'" type="button" class="graph-node__btn graph-node__btn--sm graph-node__btn--accent" title="Actualizar plantilla (nueva versión de plantilla + configuración, publica y activa juntas)" @click.stop="data.onGuidedUpdate?.(data)">

@@ -78,6 +78,19 @@
         white-space: nowrap;
     }
 
+    /* LA DE LOS NODOS PEQUEÑOS (configuración y entregable): más baja y con letra de 10 px, para
+       que «Configuración» acabe antes del centro del nodo, por donde entra su flecha.
+       Esos dos nodos llevan a la izquierda una franja de 4 px con su estado: la pestaña la
+       continúa hacia arriba, con el mismo color (`--nodo-franja`). */
+    .graph-node__tipo--sm {
+        left: -4px;
+        height: 18px;
+        padding: 0 6px;
+        border-left: 4px solid var(--nodo-franja);
+        font-size: 10px;
+        line-height: 17px;
+    }
+
     .graph-node--inactivo .graph-node__tipo {
         --tipo-fondo: var(--color-gray-100);
         color: var(--color-icon);
@@ -88,7 +101,11 @@
     .graph-node--config {
         --graph-accent: color-mix(in srgb, var(--color-icon) 57%, var(--color-white));
         --graph-accent-solid: var(--color-icon);
-        width: 190px;
+        --nodo-borde: var(--color-line);
+        --nodo-franja: var(--tono-borde, var(--color-line-strong));
+        /* 210 y no 190: con la pestaña «Configuración» encima, en 190 su curva tocaba la flecha
+           que entra por el centro. Va con `CONFIG_W` de ProcessGraphView. */
+        width: 210px;
         background: var(--color-white);
     }
 
@@ -97,6 +114,8 @@
     .graph-node--template {
         --graph-accent: color-mix(in srgb, var(--color-primary) 63%, var(--color-white));
         --graph-accent-solid: var(--color-primary);
+        --nodo-borde: var(--color-brand-200);
+        --nodo-franja: var(--color-brand-400);
         width: 170px;
     }
 

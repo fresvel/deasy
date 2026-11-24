@@ -1,12 +1,14 @@
 <template>
   <div
-    class="graph-node graph-node--config relative rounded-2xl border-l-4 px-2.5 py-1.5 transition-all"
+    class="graph-node graph-node--config relative rounded-2xl rounded-tl-none border-l-4 px-2.5 py-1.5 transition-all"
     :class="[statusBorderClass, data.highlighted ? 'graph-node--resaltado' : '']"
     :title="data.definition_name"
     @mouseenter="hover = true"
     @mouseleave="hover = false"
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle graph-node__handle--sm" />
+    <!-- Qué clase de nodo es, como en el proceso. La franja de estado de la izquierda sube con ella. -->
+    <span class="graph-node__tipo graph-node__tipo--sm"><span class="graph-node__tipo-texto">Configuración</span></span>
 
     <div v-if="hover && data.editable" class="nodrag nopan graph-node__toolbar graph-node__toolbar--sm">
       <button v-if="data.status === 'draft'" type="button" class="graph-node__btn graph-node__btn--sm" title="Agregar entregable" @click.stop="data.onAddTemplate?.(data)">

@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node graph-node--proceso relative rounded-xl border px-3 py-2 transition-all"
+    class="graph-node graph-node--proceso relative rounded-xl rounded-tl-none border px-3 py-2 transition-all"
     :class="[
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
@@ -10,6 +10,11 @@
     @mouseleave="hover = false"
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle" />
+
+    <!-- LA PESTAÑA DICE QUÉ CLASE DE NODO ES. En este mapa conviven tres —proceso, configuración y
+         entregable— y hasta ahora se distinguían sólo por tamaño y color. Es la misma pestaña de
+         carpeta que lleva la unidad con su tipo. -->
+    <span class="graph-node__tipo"><span class="graph-node__tipo-texto">Proceso</span></span>
 
     <!-- La vuelta de una vista enfocada: como en el organigrama, a la izquierda y siempre a la vista. -->
     <div v-if="data.focused" class="nodrag nopan graph-node__toolbar graph-node__toolbar--izquierda">
