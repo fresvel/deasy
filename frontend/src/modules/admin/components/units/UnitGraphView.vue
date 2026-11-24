@@ -294,8 +294,20 @@
              partirlos en tres pestañas los escondería. En «Todas» se ven agrupados por clase; las
              otras tres filtran. Cada una dice cuántos hay. -->
         <div class="mb-3 flex items-center justify-between gap-2">
-          <ProfileSubsectionTabs v-model="clasePuestos" :tabs="pestanasDeClase" aria-label="Clases de puesto" />
-          <AppButton v-if="editable" variant="neutral-outline" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
+          <ProfileSubsectionTabs v-model="clasePuestos" :tabs="pestanasDeClase" aria-label="Clases de puesto" class="min-w-0" />
+          <div class="flex shrink-0 items-center gap-2">
+            <!-- Un interruptor, no una pestaña: se combina con la clase elegida a la izquierda. -->
+            <AppButton
+              :variant="soloVacantes ? 'primary-soft' : 'primary-outline'"
+              :aria-pressed="soloVacantes"
+              :title="soloVacantes ? 'Ver todos los puestos' : 'Ver sólo los puestos sin ocupante'"
+              @click="soloVacantes = !soloVacantes"
+            >
+              <IconFilter class="h-4 w-4" />
+              Vacantes · {{ totalDeVacantes }}
+            </AppButton>
+            <AppButton v-if="editable" variant="primary-outline" @click="addingPosition = !addingPosition">+ Puesto</AppButton>
+          </div>
         </div>
 
         <!-- Formulario de nuevo puesto -->
@@ -327,7 +339,7 @@
         </AppEmpty>
         <template v-else>
           <AppEmpty v-if="!gruposDePuestos.length">
-            Esta unidad no tiene puestos de esta clase.
+            {{ soloVacantes ? "No hay puestos vacantes aquí." : "Esta unidad no tiene puestos de esta clase." }}
           </AppEmpty>
           <div v-else class="flex flex-col gap-4">
             <section v-for="grupo in gruposDePuestos" :key="grupo.clase">
@@ -359,6 +371,20 @@
                       <IconPencil class="h-5 w-5" />
                     </AppButton>
                     <AppButton
+                      :variant="pos.profile ? 'primary-soft' : 'neutral-soft'"
+                      icon-only
+                      :title="pos.profile ? 'Editar perfil' : 'Definir perfil'"
+                      :aria-label="pos.profile ? 'Editar perfil' : 'Definir perfil'"
+                      @click="openProfileWizard(pos)"
+                    >
+                      <IconFileDescription class="h-5 w-5" />
+                    </AppButton>
+                    <!-- ELIMINAR Y SUPRIMIR NO SON LO MISMO, y sólo se ofrece el que vale. Un puesto
+                         que nunca rigió —un borrador— se elimina: fue un error. Uno que rige o va a
+                         regir se SUPRIME, poniéndole fecha de fin: lleva a su pestaña «Vigencia».
+                         Uno ya suprimido no tiene ninguna de las dos; se reactiva desde el lápiz. -->
+                    <AppButton
+                      v-if="pos.estado === 'borrador'"
                       variant="danger-soft"
                       icon-only
                       title="Eliminar puesto"
@@ -366,6 +392,16 @@
                       @click="removePosition(pos.id)"
                     >
                       <IconTrash class="h-5 w-5" />
+                    </AppButton>
+                    <AppButton
+                      v-else-if="pos.estado !== 'suprimido'"
+                      variant="danger-soft"
+                      icon-only
+                      title="Suprimir puesto"
+                      aria-label="Suprimir puesto"
+                      @click="openEditPosition(pos, 'vigencia')"
+                    >
+                      <IconCalendarOff class="h-5 w-5" />
                     </AppButton>
                   </div>
                 </div>
@@ -409,17 +445,6 @@
                     </AppButton>
                   </template>
                 </div>
-
-                <!-- Acceso al wizard de perfil (visible, con texto) -->
-                <AppButton
-                  v-if="editable"
-                  variant="neutral-outline"
-                  class-name="mt-2"
-                  @click="openProfileWizard(pos)"
-                >
-                  <IconFileDescription class="h-3.5 w-3.5" />
-                  {{ pos.profile ? 'Editar perfil' : 'Definir perfil' }}
-                </AppButton>
 
                 <!-- Buscador de persona para asignar -->
                 <div v-if="editable && assignForId === pos.id" class="deasy-card mt-2 p-2">
@@ -620,7 +645,7 @@ import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeV
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconAlertTriangle, IconArrowLeft, IconCalendarEvent, IconCrown, IconDownload, IconFileDescription, IconId, IconPencil, IconPlus, IconRefresh, IconSearch, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
+import { IconAlertTriangle, IconArrowLeft, IconCalendarEvent, IconCalendarOff, IconCrown, IconDownload, IconFileDescription, IconFilter, IconId, IconPencil, IconPlus, IconRefresh, IconSearch, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
@@ -688,8 +713,18 @@ const pestanasDeClase = computed(() => [
 const gruposDePuestos = computed(() =>
   CLASES_DE_PUESTO
     .filter(({ clase }) => clasePuestos.value === "todas" || clasePuestos.value === clase)
-    .map((grupo) => ({ ...grupo, puestos: detailPositions.value.filter((pos) => claseDe(pos) === grupo.clase) }))
+    .map((grupo) => ({
+      ...grupo,
+      puestos: detailPositions.value.filter((pos) => claseDe(pos) === grupo.clase && (!soloVacantes.value || esVacante(pos)))
+    }))
     .filter((grupo) => grupo.puestos.length)
+);
+// SÓLO LOS VACANTES: los mismos que la lista rotula «Vacante» —sin ocupante—. La cifra del botón es
+// la de la clase elegida, que es lo que se va a ver al pulsarlo.
+const soloVacantes = ref(false);
+const esVacante = (pos) => !pos.person_id;
+const totalDeVacantes = computed(() =>
+  detailPositions.value.filter((pos) => (clasePuestos.value === "todas" || claseDe(pos) === clasePuestos.value) && esVacante(pos)).length
 );
 const detailLoading = ref(false);
 const detailTab = ref("datos");
@@ -1245,7 +1280,7 @@ const removePosition = async (positionId) => {
   }
 };
 
-const openEditPosition = (pos) => {
+const openEditPosition = (pos, pestana = "datos") => {
   editingPosition.value = pos;
   editPositionForm.value = {
     cargo_id: pos.cargo_id || "",
@@ -1253,7 +1288,7 @@ const openEditPosition = (pos) => {
     position_type: pos.position_type || "real",
     is_unit_head: Number(pos.is_unit_head) === 1
   };
-  positionTab.value = "datos";
+  positionTab.value = pestana;
   positionError.value = "";
   // El puesto ya trae consigo su periodo de hoy y todas sus vidas: llegan con el detalle de la unidad.
   vigenciaDelPuesto.prepararVida(pos, pos.vigencias || [], pos.antecesores || []);
