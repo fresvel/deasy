@@ -824,8 +824,9 @@ const healthOnly = ref(false);
 const exporting = ref(false);
 let feedbackTimer = null;
 
-const NODE_W = 210;
-const NODE_H = 64;
+// El ancho es el de `.graph-node--unidad` en graph.css: van juntos.
+const NODE_W = 240;
+const NODE_H = 66;
 
 const relationColorMap = computed(() => {
   const map = new Map();

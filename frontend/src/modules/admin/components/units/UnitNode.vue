@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node relative rounded-xl border px-3 py-2 transition-all"
+    class="graph-node graph-node--unidad relative rounded-xl border px-3 py-2 transition-all"
     :class="[
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
@@ -10,6 +10,12 @@
     @mouseleave="hover = false"
   >
     <Handle type="target" :position="Position.Top" class="graph-node__handle" />
+
+    <!-- EL TIPO DE UNIDAD VA EN UNA PESTAÑA, montada sobre el borde de arriba (2026-11-24). Dice qué
+         clase de cosa es el nodo y casi nunca cambia; abajo queda lo que sí cambia —vigencia y
+         puestos—. Con el tipo y la vigencia dentro, el nodo medía hasta 296 px donde el trazado
+         reserva 210, y se pisaban. Se corta con puntos suspensivos: el nombre entero va en `title`. -->
+    <span class="graph-node__tipo" :title="data.unit_type_name || 'Sin tipo'">{{ data.unit_type_name || 'Sin tipo' }}</span>
 
     <!-- CUANDO EL MAPA SE VE DESDE ESTA UNIDAD, ella es la raíz y lleva la vuelta: a la vista de la que
          se vino y, si se llegó enfocando dos veces, al mapa entero. Va a la izquierda y siempre a la
@@ -66,14 +72,13 @@
     </button>
 
     <p class="m-0 flex items-center gap-2">
-      <span class="max-w-[10.5rem] truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
+      <span class="min-w-0 flex-1 truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <IconCrown v-if="Number(data.head_count) > 0" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
-      <!-- El estado va SIEMPRE, también cuando rige, a la derecha del nombre: como en el proceso. -->
-      <AppTag :variant="tonoVigencia(data.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(data.estado) }}</AppTag>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-2">
-      <AppTag variant="neutral" outlined>{{ data.unit_type_name || 'Sin tipo' }}</AppTag>
+      <!-- El estado va SIEMPRE, también cuando rige, y es lo primero de la fila de abajo: como en el proceso. -->
+      <AppTag :variant="tonoVigencia(data.estado)" outlined>{{ etiquetaVigencia(data.estado) }}</AppTag>
       <AppTag
         v-if="Number(data.positions_count) > 0"
         :variant="tonoPuestos"

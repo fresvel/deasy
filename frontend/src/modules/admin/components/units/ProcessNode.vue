@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node relative rounded-xl border px-3 py-2 transition-all"
+    class="graph-node graph-node--proceso relative rounded-xl border px-3 py-2 transition-all"
     :class="[
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',
       data.highlighted ? 'graph-node--resaltado' : '',
@@ -46,14 +46,14 @@
       </button>
     </div>
 
-    <!-- El estado va SIEMPRE, también cuando rige, y en el mismo sitio que el de la configuración:
-         a la derecha del nombre. Así se lee de un vistazo qué rige sin deducirlo de una ausencia. -->
+    <!-- El nombre tiene la fila entera; el estado va SIEMPRE, también cuando rige, y es lo primero
+         de la fila de abajo, igual que en la unidad. Así se lee qué rige sin deducirlo de una ausencia. -->
     <p class="m-0 flex items-center gap-2">
-      <span class="max-w-[10.5rem] truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
+      <span class="min-w-0 flex-1 truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
-      <AppTag :variant="tonoVigencia(data.estado)" outlined class-name="ml-auto">{{ etiquetaVigencia(data.estado) }}</AppTag>
     </p>
     <p class="m-0 mt-1 flex flex-wrap items-center gap-2">
+      <AppTag :variant="tonoVigencia(data.estado)" outlined>{{ etiquetaVigencia(data.estado) }}</AppTag>
       <button
         v-if="data.hasConfigs"
         type="button"

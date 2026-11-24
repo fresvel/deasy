@@ -15,6 +15,36 @@
         --graph-accent-solid: var(--color-primary);
     }
 
+    /* UNIDAD Y PROCESO TIENEN ANCHO FIJO, Y ES EL QUE RESERVA EL TRAZADO (`NODE_W` de cada vista).
+       Antes el ancho lo ponía el contenido: la unidad medía de 216 a 296 px sobre 210 reservados
+       —los 17 nodos por encima— y por eso se pisaban. Si cambias uno, cambia el otro. */
+    .graph-node--unidad { width: 240px; }
+    .graph-node--proceso { width: 260px; }
+
+    /* LA PESTAÑA DEL TIPO DE UNIDAD: sobre el borde de arriba, a la izquierda. Azul de marca con
+       texto blanco —4.8:1; el azul sobre su tinte claro se quedaba en 4.3:1 a 11 px—, y gris cuando
+       el nodo no rige, para que no llame más que una unidad vigente. El ancho tiene tope: la
+       flecha del padre entra por el centro del nodo (120 px) y la pestaña acaba antes (12 + 96). */
+    .graph-node__tipo {
+        position: absolute;
+        bottom: 100%;
+        left: 12px;
+        max-width: 96px;
+        height: 18px;
+        padding: 0 8px;
+        border-radius: 8px 8px 0 0;
+        background: var(--color-primary);
+        color: var(--color-white);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 18px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .graph-node--inactivo .graph-node__tipo { background: var(--color-icon); }
+
     /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
        Es el gris de los iconos aclarado, no un color propio. */
     .graph-node--config {
@@ -117,12 +147,13 @@
     }
 
     /* EL AVISO DE LA ESQUINA: cuántas observaciones tiene el nodo. Va montado sobre el borde de
-       arriba y metido 10 px hacia dentro del derecho, no en el vértice: a la derecha del nodo sale
+       arriba —14 de sus 20 px por fuera, para no pisar la corona, que quedó en esa esquina al
+       darle la fila entera al nombre— y metido 10 px hacia dentro del derecho, no en el vértice: a la derecha del nodo sale
        la barra de acciones al pasar el ratón, y en el vértice se pisaban. Texto oscuro sobre el
        ámbar claro, no blanco sobre el ámbar vivo: blanco sobre `warning-500` da 2.2:1. */
     .graph-node__aviso {
         position: absolute;
-        top: -10px;
+        top: -14px;
         right: 10px;
         display: inline-flex;
         align-items: center;
