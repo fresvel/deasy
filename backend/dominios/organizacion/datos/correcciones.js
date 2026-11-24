@@ -8,7 +8,7 @@ export const anotarCorreccion = async (ejecutor, { tabla, registroId = null, act
   const [resultado] = await ejecutor.query(
     `INSERT INTO correcciones_de_estructura (tabla, registro_id, actor_person_id, motivo, antes, despues)
      VALUES (?, ?, ?, ?, ?::jsonb, ?::jsonb)`,
-    [tabla, registroId, actorId, motivo, antes ? JSON.stringify(antes) : null, JSON.stringify(despues)]
+    [tabla, registroId, actorId, motivo, antes ? JSON.stringify(antes) : null, despues ? JSON.stringify(despues) : null]
   );
   const id = Number(resultado.insertId);
   await ejecutor.query(`SELECT set_config('deasy.correccion', ?, true)`, [String(id)]);

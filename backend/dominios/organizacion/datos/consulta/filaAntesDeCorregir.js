@@ -16,7 +16,10 @@ export const TABLAS_CON_CORRECCION = Object.freeze([
   "position_vigencias",
   "process_vigencias",
   "unit_relations",
-  "process_relations"
+  "process_relations",
+  "unit_equivalencias",
+  "position_equivalencias",
+  "process_equivalencias"
 ]);
 
 // Devuelve la fila como objeto —sin las dos columnas de sello, que no son parte de lo que dice—, o

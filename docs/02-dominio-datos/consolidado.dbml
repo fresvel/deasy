@@ -374,12 +374,12 @@ Table "contracts" {
 
 Table "correcciones_de_estructura" {
   "id" int8 [pk, not null, increment]
-  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying])::text[])`]
+  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying, 'unit_equivalencias'::character varying, 'position_equivalencias'::character varying, 'process_equivalencias'::character varying])::text[])`]
   "registro_id" int8
   "actor_person_id" int4 [not null]
   "motivo" text [not null, check: `char_length(btrim(motivo)) >= 10`]
   "antes" jsonb
-  "despues" jsonb [not null]
+  "despues" jsonb
   "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {

@@ -790,3 +790,20 @@ test("un sucesor tiene que regir el dia del fin o despues", () => {
   assert.match(cuerpo, /IF antecesor = sucesor THEN/);
   assert.match(cuerpo, /IF fin IS NULL THEN/);
 });
+
+// Decision del dueño, 2026-11-24: quitar un sucesor de un fin que YA OCURRIO es una correccion.
+test("quitar una equivalencia de algo que ya termino exige una correccion registrada", () => {
+  for (const [clase, vidas] of [["unit", "unit_vigencias"], ["position", "position_vigencias"], ["process", "process_vigencias"]]) {
+    assert.match(
+      SCHEMA,
+      new RegExp(`BEFORE DELETE ON ${clase}_equivalencias\\s+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_al_quitar_equivalencia\\('${vidas}'\\)`)
+    );
+    assert.match(bloqueRecorrido("correcciones_de_estructura"), new RegExp(`'${clase}_equivalencias'`));
+  }
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.exigir_correccion_al_quitar_equivalencia()")).split("$$ LANGUAGE plpgsql;")[0];
+  // Con el fin todavia futuro es un plan y se quita sin mas: «menor o igual que hoy».
+  assert.match(cuerpo, /fin <= CURRENT_DATE AND NOT correccion_en_curso\(TG_TABLE_NAME, OLD\.id\)/);
+  // Una baja no tiene «despues»: la columna lo admite, pero algo tiene que quedar.
+  assert.match(bloqueRecorrido("correcciones_de_estructura"), /despues JSONB NULL/);
+  assert.match(SCHEMA, /ck_correcciones_de_estructura_algo CHECK \(antes IS NOT NULL OR despues IS NOT NULL\)/);
+});

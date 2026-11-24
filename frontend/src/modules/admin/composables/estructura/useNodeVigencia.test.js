@@ -124,8 +124,21 @@ describe("useNodeVigencia · sucesores", () => {
     await v.anadirSucesor({ id: "9", etiqueta: "C" });
     expect(adminSqlService.create).toHaveBeenCalledWith("unit_equivalencias", { antecesor_vigencia_id: 3, sucesor_unit_id: 9 });
     expect(v.sucesores.value).toEqual([{ id: 40, nodo_id: 8, nombre: "B" }, { id: 41, nodo_id: 9, nombre: "C" }]);
+    // El fin ya ocurrió: quitar es una corrección, con su motivo, y no pasa por el borrado de siempre.
+    expect(v.quitarEsCorreccion.value).toBe(true);
+    await v.quitarSucesor(40, "  Se enlazó con la escuela equivocada ");
+    expect(adminSqlService.corregirEstructura).toHaveBeenCalledWith({ tabla: "unit_equivalencias", id: 40, quitar: true, motivo: "Se enlazó con la escuela equivocada" });
+    expect(adminSqlService.remove).not.toHaveBeenCalled();
+    expect(v.sucesores.value.map((s) => s.nombre)).toEqual(["C"]);
+  });
+
+  it("con el fin todavía futuro, quitar es cambiar de planes y va por el borrado de siempre", async () => {
+    const { adminSqlService } = await import("@/modules/admin/services/AdminSqlService");
+    const v = nueva();
+    v.prepararVida(vigente({ vigente_hasta: dia(30), fin_origen: "carga_inicial" }), [{ id: 3, vigente_hasta: dia(30), sucesores: [{ id: 40, nodo_id: 8, nombre: "B" }] }]);
+    expect(v.quitarEsCorreccion.value).toBe(false);
     await v.quitarSucesor(40);
     expect(adminSqlService.remove).toHaveBeenCalledWith("unit_equivalencias", { id: 40 });
-    expect(v.sucesores.value.map((s) => s.nombre)).toEqual(["C"]);
+    expect(v.sucesores.value).toEqual([]);
   });
 });

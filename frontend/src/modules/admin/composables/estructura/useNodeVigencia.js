@@ -167,11 +167,21 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     const { data } = await adminSqlService.create(eq.tabla, { antecesor_vigencia_id: vida.id, [eq.sucesor]: Number(id) });
     conSucesoresDe(vida.id, [...(vida.sucesores || []), { id: data?.id, nodo_id: Number(id), nombre: etiqueta }]);
   };
-  const quitarSucesor = async (equivalenciaId) => {
+  /* QUITAR UN SUCESOR DE ALGO QUE YA TERMINÓ ES UNA CORRECCIÓN: pide su permiso y su motivo, y deja
+     en la bitácora lo que decía. Con el fin todavía futuro es un plan, y se quita sin más. */
+  const quitarEsCorreccion = computed(() => {
+    const fin = vidaQueTermina.value?.vigente_hasta;
+    return Boolean(fin) && fin <= hoy();
+  });
+  const quitarSucesor = async (equivalenciaId, motivo = "") => {
     const vida = vidaQueTermina.value;
     const eq = EQUIVALENCIAS_DE[tabla];
     if (!vida || !eq) return;
-    await adminSqlService.remove(eq.tabla, { id: equivalenciaId });
+    if (quitarEsCorreccion.value) {
+      await adminSqlService.corregirEstructura({ tabla: eq.tabla, id: equivalenciaId, quitar: true, motivo: String(motivo).trim() });
+    } else {
+      await adminSqlService.remove(eq.tabla, { id: equivalenciaId });
+    }
     conSucesoresDe(vida.id, (vida.sucesores || []).filter((s) => s.id !== equivalenciaId));
   };
 
@@ -323,6 +333,7 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     sucesores,
     anadirSucesor,
     quitarSucesor,
+    quitarEsCorreccion,
     nodoId,
     prepararVida,
     empezarVidaNueva,

@@ -131,9 +131,28 @@
         Quién continúa lo que termina el {{ vigencia.vidaQueTermina.value.vigente_hasta }}. Con varios sucesores es una división; si otro nodo que termina tiene el mismo, una fusión.
       </p>
       <ul v-if="vigencia.sucesores.value.length" class="m-0 flex list-none flex-col gap-2 p-0">
-        <li v-for="sucesor in vigencia.sucesores.value" :key="sucesor.id" class="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2">
-          <span class="text-sm font-semibold text-strong">{{ sucesor.nombre }}</span>
-          <AppButton v-if="editable" variant="danger-outline" :disabled="ocupado" @click="quitar(sucesor)">Quitar</AppButton>
+        <li v-for="sucesor in vigencia.sucesores.value" :key="sucesor.id" class="flex flex-col gap-2 rounded-xl border border-line px-3 py-2">
+          <div class="flex items-center justify-between gap-3">
+            <span class="text-sm font-semibold text-strong">{{ sucesor.nombre }}</span>
+            <!-- Con el fin ya ocurrido, quitar es una corrección: sólo se ofrece a quien puede. -->
+            <AppButton
+              v-if="editable && quitando !== sucesor.id && (!vigencia.quitarEsCorreccion.value || vigencia.puedeCorregir)"
+              variant="danger-outline"
+              :disabled="ocupado"
+              @click="pedirQuitar(sucesor)"
+            >Quitar</AppButton>
+          </div>
+          <div v-if="quitando === sucesor.id" class="flex flex-col gap-2">
+            <label class="deasy-form-label">
+              Motivo de la corrección
+              <textarea v-model="motivoDeQuitar" rows="2" class="deasy-control" placeholder="Qué estaba mal registrado y por qué"></textarea>
+              <span class="text-theme-xs font-normal text-muted">Ya terminó, así que quitar a quien lo sucedió es una corrección: queda en la bitácora con lo que decía.</span>
+            </label>
+            <div class="flex justify-end gap-2">
+              <AppButton variant="danger-outline" :disabled="ocupado" @click="quitando = null">Cancelar</AppButton>
+              <AppButton variant="danger-soft" :disabled="ocupado || motivoDeQuitar.trim().length < MOTIVO_MINIMO" @click="quitar(sucesor)">Quitar</AppButton>
+            </div>
+          </div>
         </li>
       </ul>
       <p v-else class="m-0 text-sm text-icon">Sin sucesores registrados.</p>
@@ -192,7 +211,7 @@ import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
-import { etiquetaOrigen, fraseDeEfectos } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
+import { etiquetaOrigen, fraseDeEfectos, MOTIVO_MINIMO } from "@/modules/admin/composables/estructura/useNodeVigencia.js";
 
 /* Cuántos puestos impiden suprimir, si alguno: sólo lo trae la unidad. */
 const puestosQueImpiden = computed(() => {
@@ -241,11 +260,24 @@ const anadir = () => conAviso(async () => {
   await props.vigencia.anadirSucesor(candidato);
   elegido.value = "";
 }, "No se pudo registrar el sucesor.");
-const quitar = (sucesor) => conAviso(() => props.vigencia.quitarSucesor(sucesor.id), "No se pudo quitar el sucesor.");
+/* Quitar pide el motivo sólo cuando es una corrección; si no, quita en el acto. */
+const quitando = ref(null);
+const motivoDeQuitar = ref("");
+const quitar = (sucesor) => conAviso(async () => {
+  await props.vigencia.quitarSucesor(sucesor.id, motivoDeQuitar.value);
+  quitando.value = null;
+}, "No se pudo quitar el sucesor.");
+const pedirQuitar = (sucesor) => {
+  if (!props.vigencia.quitarEsCorreccion.value) return quitar(sucesor);
+  motivoDeQuitar.value = "";
+  quitando.value = sucesor.id;
+  return null;
+};
 /* Al pasar a otro nodo, o a otra vida, no se arrastra ni la elección ni el aviso del anterior. */
 watch(() => props.vigencia.vidaQueTermina.value?.id, () => {
   elegido.value = "";
   errorDeSucesores.value = "";
+  quitando.value = null;
 });
 
 /* El formulario vive en el composable; aquí sólo se le da un nombre corto para la plantilla. */

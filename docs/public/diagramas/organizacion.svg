@@ -549,9 +549,7 @@
 <polygon fill="#e7e2dd" stroke="transparent" points="115.37,-5003.86 115.37,-5063.86 656.37,-5063.86 656.37,-5003.86 115.37,-5003.86"/>
 <polygon fill="none" stroke="#29235c" points="115.37,-5003.86 115.37,-5063.86 656.37,-5063.86 656.37,-5003.86 115.37,-5003.86"/>
 <text text-anchor="start" x="126.37" y="-5024.06" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">despues &#160;&#160;&#160;</text>
-<text text-anchor="start" x="529.81" y="-5025.06" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">jsonb</text>
-<text text-anchor="start" x="606.28" y="-5025.06" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c"> </text>
-<text text-anchor="start" x="615.17" y="-5025.06" font-family="Helvetica,sans-Serif" font-weight="bold" font-size="32.00" fill="#29235c">(!)</text>
+<text text-anchor="start" x="568.91" y="-5025.06" font-family="Helvetica,sans-Serif" font-style="italic" font-size="32.00" fill="#29235c">jsonb</text>
 <polygon fill="#e7e2dd" stroke="transparent" points="115.37,-4943.86 115.37,-5003.86 656.37,-5003.86 656.37,-4943.86 115.37,-4943.86"/>
 <polygon fill="none" stroke="#29235c" points="115.37,-4943.86 115.37,-5003.86 656.37,-5003.86 656.37,-4943.86 115.37,-4943.86"/>
 <text text-anchor="start" x="126.37" y="-4964.06" font-family="Helvetica,sans-Serif" font-size="32.00" fill="#29235c">ocurrido_at &#160;&#160;&#160;</text>

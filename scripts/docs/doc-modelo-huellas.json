@@ -280,7 +280,7 @@
     ]
   },
   "correcciones_de_estructura": {
-    "huella": "d2c0d43ac5a177d0",
+    "huella": "817adc4d851024f4",
     "paginas": [
       "complemento/permisos.md",
       "modelo/mapa-completo.md",
@@ -713,6 +713,15 @@
       "referencia/campos-proceso-documento.md"
     ]
   },
+  "position_equivalencias": {
+    "huella": "be86ce62b027e821",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/tenencias-y-relevo.md"
+    ]
+  },
   "position_vigencias": {
     "huella": "cfa5f19307c69f0b",
     "paginas": [
@@ -758,6 +767,15 @@
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md",
       "referencia/modelo-datos.md"
+    ]
+  },
+  "process_equivalencias": {
+    "huella": "597fffd2eb4e61e6",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/proceso.md"
     ]
   },
   "process_relations": {
@@ -1094,6 +1112,14 @@
       "orden-de-lectura.md",
       "referencia/campos-proceso-documento.md",
       "referencia/modelo-datos.md"
+    ]
+  },
+  "unit_equivalencias": {
+    "huella": "090cb12897104f3e",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
     ]
   },
   "unit_positions": {

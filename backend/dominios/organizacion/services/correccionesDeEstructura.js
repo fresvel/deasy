@@ -10,7 +10,7 @@ import { leerFilaAntesDeCorregir, TABLAS_CON_CORRECCION } from "../datos/consult
 export const MOTIVO_MINIMO = 10;
 export { TABLAS_CON_CORRECCION };
 
-export const registrarCorreccion = async (conexion, { tabla, registroId = null, actorId, motivo, cambios }) => {
+export const registrarCorreccion = async (conexion, { tabla, registroId = null, actorId, motivo, cambios, baja = false }) => {
   const porQue = String(motivo ?? "").trim();
   if (porQue.length < MOTIVO_MINIMO) {
     throw badRequest(`Una corrección necesita su motivo, escrito (al menos ${MOTIVO_MINIMO} caracteres).`);
@@ -25,6 +25,9 @@ export const registrarCorreccion = async (conexion, { tabla, registroId = null, 
   // corrige. Una bitácora cuyo «antes» lo dicta el interesado no prueba lo que la fila decía.
   const id = registroId ? Number(registroId) : null;
   const antes = id ? await leerFilaAntesDeCorregir(conexion, tabla, id) : null;
+  if (baja && !id) {
+    throw badRequest("Para quitar algo hay que decir qué.");
+  }
   if (id && !antes) {
     throw badRequest("Lo que se quiere corregir no existe.");
   }
@@ -34,6 +37,7 @@ export const registrarCorreccion = async (conexion, { tabla, registroId = null, 
     actorId: Number(actorId),
     motivo: porQue,
     antes,
-    despues: { ...(antes ?? {}), ...(cambios ?? {}) }
+    // Una baja no tiene «después»: lo que queda de la fila es lo que decía.
+    despues: baja ? null : { ...(antes ?? {}), ...(cambios ?? {}) }
   });
 };

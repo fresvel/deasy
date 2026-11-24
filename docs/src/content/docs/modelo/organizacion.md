@@ -179,8 +179,8 @@ Una corrección **reescribe la historia**, y por eso pide lo que un cambio norma
   fila y qué dice ahora. Sólo admite altas —ni se modifica ni se borra—, y es **la única memoria**
   de lo que la fila decía.
 
-Cuatro cosas son corrección y sólo se pueden hacer así, en las vidas de unidades, puestos y procesos y
-en las relaciones de los dos árboles:
+Cinco cosas son corrección y sólo se pueden hacer así, en las vidas de unidades, puestos y procesos,
+en las relaciones de los dos árboles y en sus equivalencias:
 
 1. **Cambiar la fecha de inicio de algo que ya empezó a regir.** Es afirmar que rigió desde otro día.
 2. **Cambiar la fecha de fin de algo que ya terminó, a otra que también haya ocurrido.** «Terminó el
@@ -188,6 +188,8 @@ en las relaciones de los dos árboles:
 3. **Cambiar el padre de una relación que ya rige**, sin cerrarla.
 4. **Escribir el origen «corrección»** en un inicio o en un fin — por ejemplo, para cerrar algo que
    rigió por error.
+5. **Quitar un sucesor de algo que ya terminó.** Mientras el fin es futuro, la equivalencia es un
+   plan y se quita sin más; cuando ya ocurrió, quitarla es decir que lo escrito estaba mal.
 
 Poner fin a algo que rige **no** es una corrección: es suprimir. Tampoco mover un fin que todavía
 no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido.
@@ -207,9 +209,10 @@ cerrar, con cifras, y pide confirmarlo. Con fecha futura no se cierra nada todav
 la fecha se puede cambiar o quitar.
 
 Se pudo quitar durante un día (2026-11-24) y se retiró al siguiente.
-::: Y una corrección **no borra**: lo
+::: Y una corrección **no borra** una vida ni una relación: lo
 que rigió por error se cierra con origen «corrección», y así queda escrito que existió y que fue un
-error.
+error. La única baja es la de una equivalencia —que no tiene periodo que cerrar—, y de ella queda en
+la bitácora lo que decía, sin «después».
 
 La base no se fía de la aplicación para esto. Quien corrige escribe **primero** su entrada en la
 bitácora, y las reglas que protegen lo que ya rigió sólo ceden si esa entrada existe y es de esa
@@ -264,6 +267,7 @@ Las reglas, que impone la base y son las mismas en las tres:
 | Quién puede suceder | un nodo que **rija ese día o después**. Uno en borrador, o que terminó ese mismo día o antes, no recibe nada |
 | A sí mismo | no. Un nodo que vuelve a regir se **reactiva** |
 | Modificar | no se modifica: se quita y se registra otra |
+| Quitar | libre mientras el fin sea futuro. Si ya ocurrió es una **corrección**: permiso aparte, motivo, y lo que decía queda en la bitácora |
 | Quitarle el fin a una vida con sucesores | se rechaza hasta que se quiten. Lo mismo si el fin se mueve a un día en que alguno ya no rige |
 
 Cada fila guarda además **quién la registró**, que escribe el sistema como en los actos.

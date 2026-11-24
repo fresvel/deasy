@@ -16,7 +16,7 @@ const editorFalso = () => {
     llamadas.push({ op, tabla, a, b: op === "update" ? b : undefined });
     return { ok: true };
   };
-  return { llamadas, update: correr("update"), create: correr("create") };
+  return { llamadas, update: correr("update"), create: correr("create"), remove: correr("remove") };
 };
 
 test("corregir una fila: anota la entrada con la conexión de la transacción y luego actualiza", async () => {
@@ -48,4 +48,34 @@ test("no deja cambiar lo que no es de una corrección, ni de quién es una fila 
   await assert.rejects(c.corregir({ tabla: "unit_relations", id: 4, cambios: { child_unit_id: 9 }, motivo: "un motivo cualquiera" }, { actorId: 1 }), /no puede cambiar: child_unit_id/);
   await assert.rejects(c.corregir({ tabla: "units", id: 4, cambios: { name: "x" }, motivo: "un motivo cualquiera" }, { actorId: 1 }), /no es algo que se corrija/);
   await assert.rejects(c.corregir({ tabla: "unit_vigencias", id: 4, cambios: {}, motivo: "un motivo cualquiera" }, { actorId: 1 }), /no cambia nada/);
+});
+
+// QUITAR UN SUCESOR de algo que ya terminó (decisión del dueño, 2026-11-24): es una corrección, y la
+// única que una equivalencia admite.
+test("quitar una equivalencia: anota la baja y luego borra la fila", async () => {
+  registrarCorreccion.mock.resetCalls();
+  const editor = editorFalso();
+  await nueva(editor).corregir({ tabla: "unit_equivalencias", id: 9, quitar: true, motivo: "Se enlazó con la escuela equivocada" }, { actorId: 1 });
+  assert.deepEqual(registrarCorreccion.mock.calls[0].arguments, [
+    "CONEXION",
+    { tabla: "unit_equivalencias", registroId: 9, actorId: 1, motivo: "Se enlazó con la escuela equivocada", baja: true }
+  ]);
+  assert.deepEqual(editor.llamadas, [{ op: "remove", tabla: "unit_equivalencias", a: { id: 9 }, b: undefined }]);
+});
+
+test("una equivalencia no se modifica por este camino, y una vida no se quita por él", async () => {
+  const editor = editorFalso();
+  await assert.rejects(
+    nueva(editor).corregir({ tabla: "unit_equivalencias", id: 9, cambios: { sucesor_unit_id: 3 }, motivo: "Era otra unidad la sucesora" }, { actorId: 1 }),
+    /no se modifica/
+  );
+  await assert.rejects(
+    nueva(editor).corregir({ tabla: "unit_vigencias", id: 9, quitar: true, motivo: "Esta vida nunca debió existir" }, { actorId: 1 }),
+    /no se quita por este camino/
+  );
+  await assert.rejects(
+    nueva(editor).corregir({ tabla: "unit_equivalencias", quitar: true, motivo: "Se enlazó con la escuela equivocada" }, { actorId: 1 }),
+    /hay que decir qué/
+  );
+  assert.equal(editor.llamadas.length, 0);
 });

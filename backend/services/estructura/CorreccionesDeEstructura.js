@@ -25,6 +25,10 @@ const COLUMNAS = Object.freeze({
   process_relations: { corregibles: [...DE_UN_PERIODO, "parent_process_id"], alAlta: ["child_process_id"] }
 });
 
+// LAS EQUIVALENCIAS SOLO SE CORRIGEN QUITANDOLAS. No tienen columnas corregibles —una equivalencia no
+// se modifica— ni alta por este camino: registrar tarde un sucesor es el camino normal.
+const SOLO_SE_QUITAN = Object.freeze(["unit_equivalencias", "position_equivalencias", "process_equivalencias"]);
+
 export default class CorreccionesDeEstructura {
   // `registrar` es la operación del dominio dueño de la bitácora; se puede pasar otra para probar.
   constructor(editor, registrar = registrarCorreccion) {
@@ -32,9 +36,12 @@ export default class CorreccionesDeEstructura {
     this.registrar = registrar;
   }
 
-  async corregir({ tabla, id = null, cambios, motivo } = {}, { actorId } = {}) {
+  async corregir({ tabla, id = null, cambios, motivo, quitar = false } = {}, { actorId } = {}) {
     if (!TABLAS_CON_CORRECCION.includes(tabla)) {
       throw badRequest("Eso no es algo que se corrija por este camino.");
+    }
+    if (SOLO_SE_QUITAN.includes(tabla) || quitar) {
+      return this.quitar({ tabla, id, motivo, quitar }, { actorId });
     }
     const registroId = id ? Number(id) : null;
     const permitidas = [...COLUMNAS[tabla].corregibles, ...(registroId ? [] : COLUMNAS[tabla].alAlta)];
@@ -52,5 +59,22 @@ export default class CorreccionesDeEstructura {
     return registroId
       ? this.editor.update(tabla, { id: registroId }, datos, { transaccion })
       : this.editor.create(tabla, datos, { transaccion });
+  }
+
+  // QUITAR, COMO CORRECCION: la fila desaparece y en la bitácora queda lo que decía, con el motivo.
+  async quitar({ tabla, id = null, motivo, quitar = false } = {}, { actorId } = {}) {
+    if (!SOLO_SE_QUITAN.includes(tabla) || !quitar) {
+      throw badRequest(SOLO_SE_QUITAN.includes(tabla)
+        ? "Una equivalencia no se modifica: se quita y se registra otra."
+        : "Eso no se quita por este camino.");
+    }
+    const registroId = Number(id);
+    if (!registroId) {
+      throw badRequest("Para quitar algo hay que decir qué.");
+    }
+    const transaccion = {
+      antes: (ctx) => this.registrar(ctx.connection, { tabla, registroId, actorId, motivo, baja: true })
+    };
+    return this.editor.remove(tabla, { id: registroId }, { transaccion });
   }
 }
