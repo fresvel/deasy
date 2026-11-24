@@ -10,14 +10,33 @@
     <!-- Qué clase de nodo es, como en el proceso. La franja de estado de la izquierda sube con ella. -->
     <span class="graph-node__tipo graph-node__tipo--sm graph-node__tipo--franja"><span class="graph-node__tipo-texto">Configuración</span></span>
 
-    <div v-if="hover && data.editable" class="nodrag nopan graph-node__toolbar graph-node__toolbar--sm">
-      <button v-if="data.status === 'draft'" type="button" class="graph-node__btn graph-node__btn--sm" title="Agregar entregable" @click.stop="data.onAddTemplate?.(data)">
+    <!-- La vuelta de una vista enfocada en esta configuración: como en el proceso y la unidad. -->
+    <div v-if="data.focused" class="nodrag nopan graph-node__toolbar graph-node__toolbar--sm graph-node__toolbar--izquierda">
+      <button type="button" class="graph-node__btn graph-node__btn--sm graph-node__btn--accent" title="Volver a la vista anterior" @click.stop="data.onUnfocus?.()">
+        <IconArrowBackUp class="h-4 w-4" />
+      </button>
+      <button v-if="data.focusDepth > 1" type="button" class="graph-node__btn graph-node__btn--sm" title="Volver al mapa completo" @click.stop="data.onUnfocusAll?.()">
+        <IconSitemap class="h-4 w-4" />
+      </button>
+    </div>
+
+    <div v-if="hover && (data.editable || (data.templatesCount && !data.focused))" class="nodrag nopan graph-node__toolbar graph-node__toolbar--sm">
+      <button
+        v-if="data.templatesCount && !data.focused"
+        type="button"
+        class="graph-node__btn graph-node__btn--sm"
+        title="Ver sólo esta configuración y sus entregables"
+        @click.stop="data.onFocus?.(`c-${data.definition_id}`)"
+      >
+        <IconFocusCentered class="h-4 w-4" />
+      </button>
+      <button v-if="data.editable && data.status === 'draft'" type="button" class="graph-node__btn graph-node__btn--sm" title="Agregar entregable" @click.stop="data.onAddTemplate?.(data)">
         <IconFilePlus class="h-4 w-4" />
       </button>
-      <button v-if="data.status !== 'draft'" type="button" class="graph-node__btn graph-node__btn--sm" title="Versionar configuración" @click.stop="data.onVersion?.(data)">
+      <button v-if="data.editable && data.status !== 'draft'" type="button" class="graph-node__btn graph-node__btn--sm" title="Versionar configuración" @click.stop="data.onVersion?.(data)">
         <IconGitBranch class="h-4 w-4" />
       </button>
-      <button type="button" class="graph-node__btn graph-node__btn--sm" title="Agregar configuración hermana" @click.stop="data.onAddSibling?.(data)">
+      <button v-if="data.editable" type="button" class="graph-node__btn graph-node__btn--sm" title="Agregar configuración hermana" @click.stop="data.onAddSibling?.(data)">
         <IconPlus class="h-4 w-4" />
       </button>
     </div>
@@ -39,13 +58,13 @@
           type="button"
           class="graph-node__pie-boton"
           :class="data.templatesExpanded ? '' : 'graph-node__pie-boton--cerrado'"
-          :title="data.templatesExpanded ? 'Ocultar entregables' : 'Mostrar entregables'"
+          :title="`${data.templatesCount} ${data.templatesCount === 1 ? 'entregable' : 'entregables'} · pulsa para ${data.templatesExpanded ? 'ocultarlos' : 'mostrarlos'}`"
           @click.stop="data.onToggleTemplates?.(data.definition_id)"
         >
           <IconChevronRight class="h-3 w-3 transition-transform" :class="data.templatesExpanded ? 'rotate-90' : ''" />
-          {{ data.templatesCount }} entregable{{ data.templatesCount === 1 ? "" : "s" }}
+          <IconFileText class="h-3.5 w-3.5" />{{ data.templatesCount }}
         </button>
-        <span v-else class="graph-node__pie-vacio">Sin entregables</span>
+        <span v-else class="graph-node__pie-vacio" title="Sin entregables"><IconFileText class="h-3.5 w-3.5" />0</span>
         <Handle type="source" :position="Position.Bottom" class="graph-node__handle graph-node__handle--sm" :class="data.templatesCount ? '' : 'graph-node__handle--hidden'" />
       </div>
     </div>
@@ -56,7 +75,7 @@
 import { tonoCicloVida } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { IconChevronRight, IconFilePlus, IconGitBranch, IconPlus } from "@tabler/icons-vue";
+import { IconArrowBackUp, IconChevronRight, IconFilePlus, IconFileText, IconFocusCentered, IconGitBranch, IconPlus, IconSitemap } from "@tabler/icons-vue";
 
 const props = defineProps({
   data: { type: Object, required: true }

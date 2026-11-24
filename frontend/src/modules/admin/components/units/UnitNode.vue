@@ -1,6 +1,6 @@
 <template>
   <div
-    class="graph-node graph-node--unidad graph-node--franja relative rounded-xl rounded-tl-none px-3 py-2.5 transition-all"
+    class="graph-node graph-node--unidad graph-node--franja relative rounded-xl rounded-tl-none px-3 pb-5 pt-2.5 transition-all"
     :class="[
       `graph-node--estado-${tonoVigencia(data.estado)}`,
       data.estado === 'vigente' ? 'graph-node--activo bg-white' : 'graph-node--inactivo bg-white',

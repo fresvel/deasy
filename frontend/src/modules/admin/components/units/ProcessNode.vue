@@ -56,7 +56,9 @@
 
     <!-- LO QUE CUELGA DEL PROCESO SALE DE SU PIE (2026-11-24). Un proceso tiene dos clases de hijos
          —subprocesos y configuraciones— y las dos salían del mismo punto. Ahora el nodo acaba en
-         una franja partida en dos mitades, DENTRO de su contorno: cada mitad dice cuántos son, se
+         una franja partida en dos mitades, DENTRO de su contorno: cada mitad lleva un ICONO y la
+         cifra —no la palabra: «configuración» va a llamarse «línea», y el icono no caduca; el
+         nombre va en `title`—, dice cuántos son, se
          pulsa para desplegarlos o recogerlos, y de su centro parten sus líneas. Las dos están
          siempre —aunque una diga que no hay—, así el nodo no cambia de forma y cada clase tiene
          su lado fijo. Tintada cuando hay algo recogido; gris suave cuando ya está a la vista.
@@ -68,13 +70,13 @@
           type="button"
           class="graph-node__pie-boton"
           :class="data.collapsed ? 'graph-node__pie-boton--cerrado' : ''"
-          :title="data.collapsed ? 'Mostrar subprocesos' : 'Ocultar subprocesos'"
+          :title="`${data.childrenCount} ${data.childrenCount === 1 ? 'subproceso' : 'subprocesos'} · pulsa para ${data.collapsed ? 'mostrarlos' : 'ocultarlos'}`"
           @click.stop="data.onToggleCollapse?.(data.id)"
         >
           <IconChevronRight class="h-3 w-3 transition-transform" :class="data.collapsed ? '' : 'rotate-90'" />
-          {{ data.childrenCount }} {{ data.childrenCount === 1 ? "subproceso" : "subprocesos" }}
+          <IconHierarchy2 class="h-3.5 w-3.5" />{{ data.childrenCount }}
         </button>
-        <span v-else class="graph-node__pie-vacio">Sin subprocesos</span>
+        <span v-else class="graph-node__pie-vacio" title="Sin subprocesos"><IconHierarchy2 class="h-3.5 w-3.5" />0</span>
         <!-- El conector está siempre: de él se arrastra para crear el primer subproceso. -->
         <Handle id="sub" type="source" :position="Position.Bottom" class="graph-node__handle" />
       </div>
@@ -84,13 +86,13 @@
           type="button"
           class="graph-node__pie-boton"
           :class="[data.configsExpanded ? '' : 'graph-node__pie-boton--cerrado', tonoConfiguraciones === 'success' ? '' : 'graph-node__pie-boton--aviso']"
-          :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
+          :title="`${data.active_count || 0} de ${data.definitions_count} configuraciones activas · pulsa para ${data.configsExpanded ? 'ocultarlas' : 'mostrarlas'}`"
           @click.stop="data.onToggleConfigs?.(data.id)"
         >
           <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
-          {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
+          <IconTimeline class="h-3.5 w-3.5" />{{ data.active_count || 0 }}/{{ data.definitions_count }}
         </button>
-        <span v-else class="graph-node__pie-vacio">Sin config.</span>
+        <span v-else class="graph-node__pie-vacio" title="Sin configuraciones"><IconTimeline class="h-3.5 w-3.5" />0</span>
         <Handle
           id="cfg"
           type="source"
@@ -108,7 +110,7 @@
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { IconCornerDownRight, IconChevronRight, IconFocusCentered, IconArrowBackUp, IconSitemap } from "@tabler/icons-vue";
+import { IconCornerDownRight, IconChevronRight, IconFocusCentered, IconArrowBackUp, IconSitemap, IconHierarchy2, IconTimeline } from "@tabler/icons-vue";
 
 const props = defineProps({
   data: { type: Object, required: true }

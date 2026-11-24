@@ -651,7 +651,7 @@ import { toBlob } from "html-to-image";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import dagre from "dagre";
-import { encuadrarAlAbrir } from "@/modules/admin/components/units/graphEncuadre.js";
+import { encuadrarAlAbrir, ZOOM_INICIAL } from "@/modules/admin/components/units/graphEncuadre.js";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
@@ -827,7 +827,7 @@ let feedbackTimer = null;
 
 // El ancho es el de `.graph-node--unidad` en graph.css: van juntos.
 const NODE_W = 240;
-const NODE_H = 66;
+const NODE_H = 76;
 
 const relationColorMap = computed(() => {
   const map = new Map();
@@ -954,7 +954,8 @@ const ramaEnfocada = computed(() => {
 });
 const reencuadrar = () => {
   buildGraph();
-  setTimeout(() => fitView({ duration: 400, padding: 0.25, maxZoom: 1.2 }), 60);
+  // Con el mismo zoom con que abre el mapa: un nodo no cambia de tamaño por ver menos nodos.
+  setTimeout(() => fitView({ duration: 400, minZoom: ZOOM_INICIAL, maxZoom: ZOOM_INICIAL }), 60);
 };
 const enfocar = (unitId) => {
   const id = String(unitId);

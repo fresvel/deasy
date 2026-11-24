@@ -389,7 +389,7 @@ import { toBlob } from "html-to-image";
 import { Background } from "@vue-flow/background";
 import { Controls } from "@vue-flow/controls";
 import dagre from "dagre";
-import { encuadrarAlAbrir } from "@/modules/admin/components/units/graphEncuadre.js";
+import { encuadrarAlAbrir, ZOOM_INICIAL } from "@/modules/admin/components/units/graphEncuadre.js";
 import "@vue-flow/core/dist/style.css";
 import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
@@ -540,8 +540,15 @@ const hiddenByCollapse = computed(() => {
 // entero. Sus configuraciones y entregables le siguen, porque cuelgan de procesos que se ven.
 const pilaDeEnfoque = ref([]);
 const enfocado = computed(() => pilaDeEnfoque.value[pilaDeEnfoque.value.length - 1] || null);
+// TAMBIÉN SE PUEDE ENFOCAR UNA CONFIGURACIÓN (su id en la pila es «c-<definition_id>», como el de
+// su nodo): entonces se ve ella sola con sus entregables, sin procesos.
+const configEnfocada = computed(() => {
+  const id = enfocado.value;
+  if (!id || !id.startsWith("c-")) return null;
+  return (rawGraph.value.configs || []).find((c) => `c-${c.definition_id}` === id) || null;
+});
 const ramaEnfocada = computed(() => {
-  if (!enfocado.value) return null;
+  if (!enfocado.value || enfocado.value.startsWith("c-")) return null;
   const rama = new Set([enfocado.value]);
   const bajar = (id) => {
     (childrenMap.value.get(id) || []).forEach((hijo) => {
@@ -556,7 +563,8 @@ const ramaEnfocada = computed(() => {
 });
 const reencuadrar = () => {
   buildGraph();
-  setTimeout(() => fitView({ duration: 400, padding: 0.25, maxZoom: 1.2 }), 60);
+  // Con el mismo zoom con que abre el mapa: un nodo no cambia de tamaño por ver menos nodos.
+  setTimeout(() => fitView({ duration: 400, minZoom: ZOOM_INICIAL, maxZoom: ZOOM_INICIAL }), 60);
 };
 const enfocar = (processId) => {
   const id = String(processId);
@@ -565,6 +573,10 @@ const enfocar = (processId) => {
     const next = new Set(collapsedIds.value);
     next.delete(id);
     collapsedIds.value = next;
+  }
+  // Una configuración enfocada enseña sus entregables: es lo único que tiene debajo.
+  if (id.startsWith("c-")) {
+    expandedTemplateIds.value = new Set([...expandedTemplateIds.value, id.slice(2)]);
   }
   pilaDeEnfoque.value = [...pilaDeEnfoque.value, id];
   reencuadrar();
@@ -680,11 +692,14 @@ const layout = (rawNodes, rawEdges) => {
 const buildGraph = () => {
   const hidden = hiddenByCollapse.value;
   // Si el proceso enfocado ya no está —se eliminó—, se vuelve al mapa entero.
-  if (enfocado.value && !(rawGraph.value.nodes || []).some((p) => String(p.id) === enfocado.value)) {
-    pilaDeEnfoque.value = [];
-  }
+  const existeLoEnfocado = enfocado.value && (enfocado.value.startsWith("c-")
+    ? Boolean(configEnfocada.value)
+    : (rawGraph.value.nodes || []).some((p) => String(p.id) === enfocado.value));
+  if (enfocado.value && !existeLoEnfocado) pilaDeEnfoque.value = [];
   const rama = ramaEnfocada.value;
-  const apiNodes = (rawGraph.value.nodes || []).filter(
+  const soloConfig = configEnfocada.value;
+  // Con una configuración enfocada no se pinta ningún proceso: sólo ella y lo suyo.
+  const apiNodes = soloConfig ? [] : (rawGraph.value.nodes || []).filter(
     (p) => estadosVisibles.value.has(p.estado) && !hidden.has(String(p.id)) && (!rama || rama.has(String(p.id)))
   );
   const visibleIds = new Set(apiNodes.map((p) => String(p.id)));
@@ -736,10 +751,13 @@ const buildGraph = () => {
     }));
   // Nivel de configuraciones (expand-on-demand): por cada proceso visible y expandido, agrega sus
   // configuraciones como nodos hijos (estilo distinto) con una arista punteada proceso→config.
-  apiNodes.forEach((p) => {
-    const pid = String(p.id);
-    if (!expandedConfigIds.value.has(pid)) return;
+  // De qué procesos se pintan configuraciones: de los visibles y desplegados; o, con una
+  // configuración enfocada, sólo del suyo —que no se pinta— y sólo ella.
+  const duenos = soloConfig ? [String(soloConfig.process_id)] : apiNodes.map((p) => String(p.id));
+  duenos.forEach((pid) => {
+    if (!soloConfig && !expandedConfigIds.value.has(pid)) return;
     (configsByProcess.value.get(pid) || []).forEach((cfg) => {
+      if (soloConfig && cfg.definition_id !== soloConfig.definition_id) return;
       const did = String(cfg.definition_id);
       const cfgTemplates = templatesByConfig.value.get(did) || [];
       rawNodes.push({
@@ -755,10 +773,15 @@ const buildGraph = () => {
           onAddTemplate: addTemplateToConfig,
           onVersion: versionConfig,
           onAddSibling: addSiblingConfig,
+          onFocus: enfocar,
+          onUnfocus: volverDelEnfoque,
+          onUnfocusAll: quitarElEnfoque,
+          focused: enfocado.value === `c-${cfg.definition_id}`,
+          focusDepth: pilaDeEnfoque.value.length,
           highlighted: false
         }
       });
-      rawEdges.push({
+      if (!soloConfig) rawEdges.push({
         id: `pc-${pid}-${cfg.definition_id}`,
         type: "process",
         source: pid,
