@@ -738,3 +738,11 @@ test("suprimir un nodo con hijos se rechaza, en unidades y en procesos", () => {
   assert.match(cuerpo, /r\.vigente_hasta IS NULL OR r\.vigente_hasta > \$3/);
 });
 
+// Decision del dueño, 2026-11-24: una unidad tampoco se suprime mientras tenga puestos que rijan.
+test("suprimir una unidad con puestos que siguen rigiendo se rechaza", () => {
+  assert.match(SCHEMA, /BEFORE INSERT OR UPDATE OF vigente_hasta ON unit_vigencias\s+FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_de_unidad_con_puestos\(\)/);
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.rechazar_supresion_de_unidad_con_puestos()")).split("$$ LANGUAGE plpgsql;")[0];
+  // Suprimir los puestos con la MISMA fecha tiene que bastar: «mayor que», no «mayor o igual».
+  assert.match(cuerpo, /pv\.vigente_hasta IS NULL OR pv\.vigente_hasta > NEW\.vigente_hasta/);
+});
+

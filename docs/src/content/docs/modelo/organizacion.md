@@ -233,6 +233,11 @@ una rama entera se hace de abajo arriba. La pantalla lo dice antes de intentarlo
 
 Lo mismo vale para un proceso con sub-procesos.
 
+**Y una unidad tampoco se suprime mientras tenga puestos que sigan rigiendo.** Es la misma regla por
+el mismo motivo: un puesto que rige en una unidad que no rige es una contradicción, y qué pasa con
+cada uno —con quien lo ocupa y con sus entregables— lo decide quien reorganiza. Se suprimen antes, o
+con la misma fecha.
+
 ## La persona ya no lo lleva todo encima
 
 Hasta el **2026-08-27**, `persons` tenía **23 columnas** y dentro cabía casi todo: la cédula, el

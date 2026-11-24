@@ -73,7 +73,7 @@
         <!-- CON HIJOS NO SE SUPRIME (decisión del dueño, 2026-11-24): hay que decir antes adónde van. -->
         <AppAlert v-if="vigencia.suprime.value && vigencia.efectosQueSeQuedan.value.length" variant="danger">
           No se puede suprimir todavía: hay <strong>{{ fraseDeEfectos(vigencia.efectosQueSeQuedan.value) }}</strong>.
-          Antes tienen que cambiar de padre —puede ser con esta misma fecha— o dejar de regir.
+          Hay que resolverlo antes, y puede ser con esta misma fecha: lo que depende de este nodo se mueve a otro padre o se suprime, y sus puestos se suprimen.
         </AppAlert>
         <template v-else>
           <AppAlert v-if="vigencia.suprimeMasAdelante.value" variant="info">

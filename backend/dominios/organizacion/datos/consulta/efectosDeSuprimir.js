@@ -30,7 +30,11 @@ const CUENTAS = Object.freeze({
     { singular: "unidad que depende de ella", plural: "unidades que dependen de ella", seCierra: false,
       sql: `SELECT COUNT(*) AS n FROM unit_relations r
              WHERE r.parent_unit_id = ? AND r.vigente_desde IS NOT NULL
-               AND (r.vigente_hasta IS NULL OR r.vigente_hasta > CURRENT_DATE)` }
+               AND (r.vigente_hasta IS NULL OR r.vigente_hasta > CURRENT_DATE)` },
+    { singular: "puesto que rige en ella", plural: "puestos que rigen en ella", seCierra: false,
+      sql: `SELECT COUNT(DISTINCT up.id) AS n FROM unit_positions up
+              INNER JOIN position_vigencias pv ON pv.position_id = up.id
+             WHERE up.unit_id = ? AND (pv.vigente_hasta IS NULL OR pv.vigente_hasta > CURRENT_DATE)` }
   ],
   puesto: [
     { singular: "ocupación vigente", plural: "ocupaciones vigentes", seCierra: true,
