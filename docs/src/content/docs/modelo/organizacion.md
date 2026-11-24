@@ -42,12 +42,18 @@ desde la instalación, como carga inicial.
 no le queda otra que rija—, un disparador sobre `unit_vigencias` revoca los roles vigentes asignados
 en esa unidad (`revoked_reason = 'unit_inactivated'`) y cancela las vacantes abiertas de sus puestos.
 
-:::caution[Un fin con fecha futura no dispara nada el día que llega]
-Si la supresión se registra para una fecha que aún no ha llegado, la unidad sigue rigiendo y no pasa
-nada, que es lo correcto. Pero **el día que llega esa fecha tampoco pasa nada**: nadie escribe ninguna
-fila, así que ningún disparador corre, y los roles y las vacantes de esa unidad se quedan como
-estaban. Las consultas que preguntan `unidad_rige` sí dejan de verla desde ese día. Qué ejecuta esos
-efectos al vencer la fecha es una decisión abierta.
+:::note[Y si la supresión tiene fecha futura]
+Registrar hoy que una unidad se suprime el 1 de enero no cambia nada hoy, que es lo correcto. Pero el
+1 de enero **nadie escribe ninguna fila**, y un disparador no tiene reloj: nada lo despierta. Las
+consultas que preguntan `unidad_rige` sí dejan de ver la unidad desde ese día; sus roles y sus
+vacantes, no.
+
+Eso lo aplica una **tarea periódica del backend** (`VencimientosDeEstructura`), al arrancar y después
+cada hora. No lleva lista de pendientes: pregunta a la base qué hay suprimido que todavía conserve
+roles vigentes o vacantes abiertas, y le aplica el mismo efecto que el disparador —es la misma
+función, `aplicar_supresion_de_unidad`—. Por eso se repara sola si el servidor estuvo caído, y
+repetirla no hace daño. El desfase entre que llega la fecha y se aplican los efectos es de una hora
+como mucho.
 :::
 
 Un puesto se identifica por `(unit_id, cargo_id, slot_no)` —«Coordinador de carrera, plaza 1, de la

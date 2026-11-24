@@ -4,6 +4,7 @@ import express from "express";
 import realtimeGateway from "./services/realtime/RealtimeGateway.js";
 import AvisoDeCanalCaido from "./services/canales/AvisoDeCanalCaido.js";
 import VigilanteDeCanales from "./services/canales/VigilanteDeCanales.js";
+import VencimientosDeEstructura from "./services/estructura/VencimientosDeEstructura.js";
 import { userRouter, dossierRouter } from "./dominios/identidad/index.js";
 import internalRouter from "./routes/internal_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
@@ -372,6 +373,13 @@ const startServer = async () => {
   new VigilanteDeCanales({
     avisador: new AvisoDeCanalCaido({ realtime: realtimeGateway() }),
   }).iniciar();
+
+  // ⚠️ LOS VENCIMIENTOS DE LA ESTRUCTURA (frente 27). Una supresión con fecha futura no despierta a
+  // ningún disparador el día que llega: nadie escribe nada. Esta tarea aplica sus efectos —revocar
+  // roles, cancelar vacantes— al arrancar y después cada hora. También vive en este proceso, y
+  // también cuenta con que sea UNA instancia; a diferencia del vigilante, con dos no rompería nada,
+  // porque repetirla no hace daño.
+  new VencimientosDeEstructura().iniciar();
 };
 
 startServer();

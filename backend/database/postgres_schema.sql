@@ -3640,30 +3640,61 @@ FOR EACH ROW EXECUTE FUNCTION trg_persons_after_update_fn();
 -- que el disparador vive ALLI, y actua cuando esa vida termina hoy o antes y a la unidad no le
 -- queda ninguna otra que rija.
 --
--- ⚠️ LO QUE NO CUBRE, Y ES UNA DECISION ABIERTA: un fin con fecha FUTURA. Al registrarlo la unidad
--- sigue rigiendo y aqui no pasa nada; el dia que llega la fecha no se dispara nada, porque nadie
--- escribe ninguna fila. Los roles y las vacantes de esa unidad se quedan como estaban hasta que
--- algo los revise.
+-- ⚠️ UN FIN CON FECHA FUTURA NO LO CUBRE ESTE DISPARADOR, Y NO PUEDE: al registrarlo la unidad
+-- sigue rigiendo y aqui no pasa nada; el dia que llega la fecha nadie escribe ninguna fila, asi que
+-- nada lo despierta. Un disparador no tiene reloj. Eso lo aplica la tarea periodica del backend,
+-- que llama a `aplicar_vencimientos_de_estructura`.
+-- EL EFECTO, ESCRITO UNA VEZ. Lo llaman dos: el disparador de abajo, cuando alguien registra una
+-- supresion que ya rige; y la tarea periodica del backend, para las que vencieron sin que nadie
+-- escribiera nada (decision del dueño del 2026-11-23: «Tarea periódica en el backend»).
+--
+-- SOLO ACTUA SOBRE UNA UNIDAD SUPRIMIDA --su ultima vida termino y no le queda otra por empezar--.
+-- Una unidad en borrador o programada tampoco «rige», y revocarle los roles que alguien le asigno
+-- mientras la preparaba seria destruir trabajo. Por eso pregunta por el estado y no por unidad_rige.
+--
+-- REPETIRLA NO HACE DAÑO: la segunda vez no encuentra roles vigentes ni vacantes abiertas, y
+-- devuelve cero. Es lo que deja a la tarea deducir lo pendiente de los propios datos, sin apuntar
+-- en ningun sitio que ya lo hizo.
+CREATE OR REPLACE FUNCTION public.aplicar_supresion_de_unidad(unidad INT) RETURNS INT
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  afectadas INT := 0;
+  n INT;
+BEGIN
+  IF (SELECT uva.estado FROM unit_vigencia_actual uva WHERE uva.unit_id = unidad) IS DISTINCT FROM 'suprimido' THEN
+    RETURN 0;
+  END IF;
+
+  UPDATE role_assignments
+  SET is_current = 0,
+      end_date = COALESCE(end_date, CURRENT_DATE),
+      revoked_at = now(),
+      revoked_reason = 'unit_inactivated'
+  WHERE unit_id = unidad AND is_current = 1;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  afectadas := afectadas + n;
+
+  UPDATE vacancies v
+  SET status = 'cancelada', closed_at = now()
+  FROM unit_positions up
+  WHERE up.id = v.position_id AND up.unit_id = unidad AND v.status = 'abierta';
+  GET DIAGNOSTICS n = ROW_COUNT;
+  afectadas := afectadas + n;
+
+  RETURN afectadas;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE OR REPLACE FUNCTION public.trg_unit_vigencias_cierre_fn() RETURNS trigger
   -- Un disparador no puede depender del search_path de quien lo dispara.
   SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
 AS $$
 BEGIN
-  IF NEW.vigente_hasta IS NOT NULL
-     AND NEW.vigente_hasta <= CURRENT_DATE
-     AND (TG_OP = 'INSERT' OR OLD.vigente_hasta IS DISTINCT FROM NEW.vigente_hasta)
-     AND NOT unidad_rige(NEW.unit_id) THEN
-    UPDATE role_assignments
-    SET is_current = 0,
-        end_date = COALESCE(end_date, CURRENT_DATE),
-        revoked_at = now(),
-        revoked_reason = 'unit_inactivated'
-    WHERE unit_id = NEW.unit_id AND is_current = 1;
-
-    UPDATE vacancies v
-    SET status = 'cancelada', closed_at = now()
-    FROM unit_positions up
-    WHERE up.id = v.position_id AND up.unit_id = NEW.unit_id AND v.status = 'abierta';
+  -- La funcion ya comprueba que la unidad este suprimida; aqui solo se evita llamarla cuando la
+  -- fila que se escribe no cierra nada.
+  IF NEW.vigente_hasta IS NOT NULL THEN
+    PERFORM aplicar_supresion_de_unidad(NEW.unit_id);
   END IF;
   RETURN NULL;
 END;
@@ -3672,6 +3703,30 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_unit_vigencias_cierre
 AFTER INSERT OR UPDATE ON unit_vigencias
 FOR EACH ROW EXECUTE FUNCTION trg_unit_vigencias_cierre_fn();
+
+-- LO QUE VENCIO Y NADIE APLICO. La tarea periodica del backend llama a esto y nada mas: aqui se
+-- deduce que hay pendiente --unidades ya suprimidas que conservan roles vigentes o vacantes
+-- abiertas-- y se aplica. Devuelve una fila por nodo tocado, para que quien llama pueda dejar
+-- constancia; sin nada pendiente no devuelve ninguna.
+CREATE OR REPLACE FUNCTION public.aplicar_vencimientos_de_estructura()
+  RETURNS TABLE (clase TEXT, nodo_id INT, afectadas INT)
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 'unidad'::text, u.unit_id, aplicar_supresion_de_unidad(u.unit_id)
+    FROM unit_vigencia_actual u
+   WHERE u.estado = 'suprimido'
+     AND (
+       EXISTS (SELECT 1 FROM role_assignments ra WHERE ra.unit_id = u.unit_id AND ra.is_current = 1)
+       OR EXISTS (
+         SELECT 1 FROM vacancies v
+           INNER JOIN unit_positions up ON up.id = v.position_id
+          WHERE up.unit_id = u.unit_id AND v.status = 'abierta'
+       )
+     );
+END;
+$$ LANGUAGE plpgsql;
 
 -- ─────────────────────────────────────────────────────────────────────────────────────────────────
 -- Un solo principal por persona: marcar uno DESMARCA al anterior.
