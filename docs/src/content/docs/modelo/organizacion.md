@@ -265,6 +265,7 @@ Las reglas, que impone la base y son las mismas en las tres:
 |---|---|
 | Quién puede tener sucesores | una vida **con fecha de fin**, haya llegado o no: una supresión programada ya puede decir quién la sucederá |
 | Quién puede suceder | un nodo que **rija ese día o después**. Uno en borrador, o que terminó ese mismo día o antes, no recibe nada |
+| Lo que ya no puede el sucesor | dejar de regir **ese día o antes**, ni perder la vida que lo sostiene. Suprimirlo más tarde sí: lo recibió y después terminó |
 | A sí mismo | no. Un nodo que vuelve a regir se **reactiva** |
 | Modificar | no se modifica: se quita y se registra otra |
 | Quitar | libre mientras el fin sea futuro. Si ya ocurrió es una **corrección**: permiso aparte, motivo, y lo que decía queda en la bitácora |

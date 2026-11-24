@@ -792,6 +792,25 @@ test("un sucesor tiene que regir el dia del fin o despues", () => {
 });
 
 // Decision del dueño, 2026-11-24: quitar un sucesor de un fin que YA OCURRIO es una correccion.
+test("un sucesor no deja de regir el dia del fin que hereda ni antes, ni pierde la vida que lo sostiene", () => {
+  const clases = [
+    ["unit", "unit_vigencias", "unit_id", "sucesor_unit_id", "units", "name"],
+    ["position", "position_vigencias", "position_id", "sucesor_position_id", "unit_positions", "title"],
+    ["process", "process_vigencias", "process_id", "sucesor_process_id", "processes", "name"]
+  ];
+  for (const [clase, vidas, nodoEnVidas, sucesor, nodos, nombre] of clases) {
+    assert.match(
+      SCHEMA,
+      new RegExp(`BEFORE UPDATE OF vigente_hasta OR DELETE ON ${vidas}\\s+FOR EACH ROW\\s+EXECUTE FUNCTION rechazar_fin_incoherente_del_sucesor\\('${clase}_equivalencias', '${sucesor}', '${nodoEnVidas}', '${nodos}', '${nombre}'\\)`)
+    );
+  }
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.rechazar_fin_incoherente_del_sucesor()")).split("$$ LANGUAGE plpgsql;")[0];
+  // Suprimir al sucesor MAS TARDE es legitimo: solo se rechaza un fin que no pasa del heredado.
+  assert.match(cuerpo, /\$3::date <= a\.vigente_hasta/);
+  // Y cuenta cualquier OTRA vida del nodo que rija despues: la que se toca no vale.
+  assert.match(cuerpo, /v\.id <> \$2 AND \(v\.vigente_hasta IS NULL OR v\.vigente_hasta > a\.vigente_hasta\)/);
+});
+
 test("quitar una equivalencia de algo que ya termino exige una correccion registrada", () => {
   for (const [clase, vidas] of [["unit", "unit_vigencias"], ["position", "position_vigencias"], ["process", "process_vigencias"]]) {
     assert.match(

@@ -149,6 +149,15 @@
         box-shadow: var(--focus-ring);
     }
 
+    /* La misma barra, al otro costado: la de «volver» de una vista enfocada. A la derecha salen las
+       acciones del nodo al pasar el ratón, y las dos no pueden compartir sitio. */
+    .graph-node__toolbar--izquierda {
+        left: auto;
+        right: 100%;
+        padding-left: 0;
+        padding-right: 8px;
+    }
+
     .graph-node__toolbar--sm {
         padding-left: 6px;
     }

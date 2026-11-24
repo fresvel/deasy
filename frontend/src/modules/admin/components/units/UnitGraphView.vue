@@ -931,6 +931,50 @@ const hiddenByCollapse = computed(() => {
   return hidden;
 });
 
+// VER EL MAPA DESDE UNA UNIDAD HACIA ABAJO: ella pasa a ser la raíz y lo demás desaparece. Es una
+// pila, no un valor: desde una vista enfocada se puede enfocar otra más abajo, y «volver» regresa a
+// la anterior, no al mapa entero. La rama sale de las relaciones del tipo que se está viendo.
+const pilaDeEnfoque = ref([]);
+const enfocada = computed(() => pilaDeEnfoque.value[pilaDeEnfoque.value.length - 1] || null);
+const ramaEnfocada = computed(() => {
+  if (!enfocada.value) return null;
+  const rama = new Set([enfocada.value]);
+  const bajar = (id) => {
+    (childrenMap.value.get(id) || []).forEach((hijo) => {
+      if (!rama.has(hijo)) {
+        rama.add(hijo);
+        bajar(hijo);
+      }
+    });
+  };
+  bajar(enfocada.value);
+  return rama;
+});
+const reencuadrar = () => {
+  buildGraph();
+  setTimeout(() => fitView({ duration: 400, padding: 0.25, maxZoom: 1.2 }), 60);
+};
+const enfocar = (unitId) => {
+  const id = String(unitId);
+  if (enfocada.value === id) return;
+  // Enfocada, la unidad tiene que enseñar su rama: si estaba colapsada, se despliega.
+  if (collapsedIds.value.has(id)) {
+    const next = new Set(collapsedIds.value);
+    next.delete(id);
+    collapsedIds.value = next;
+  }
+  pilaDeEnfoque.value = [...pilaDeEnfoque.value, id];
+  reencuadrar();
+};
+const volverDelEnfoque = () => {
+  pilaDeEnfoque.value = pilaDeEnfoque.value.slice(0, -1);
+  reencuadrar();
+};
+const quitarElEnfoque = () => {
+  pilaDeEnfoque.value = [];
+  reencuadrar();
+};
+
 const toggleCollapse = (unitId) => {
   const id = String(unitId);
   const next = new Set(collapsedIds.value);
@@ -951,6 +995,8 @@ const searchAndCenter = () => {
     setFeedback("error", "No se encontró ninguna unidad con ese nombre.");
     return;
   }
+  // Si la vista está enfocada en otra rama, se vuelve al mapa entero: lo buscado manda.
+  if (ramaEnfocada.value && !ramaEnfocada.value.has(String(match.id))) pilaDeEnfoque.value = [];
   // Si está oculta por colapso, expande sus ancestros (simple: limpia colapsados).
   if (hiddenByCollapse.value.has(String(match.id))) {
     collapsedIds.value = new Set();
@@ -1032,8 +1078,13 @@ const layout = (rawNodes, rawEdges) => {
 
 const buildGraph = () => {
   const hidden = hiddenByCollapse.value;
+  // Si la unidad enfocada ya no está —se eliminó, o se cambió de tipo de relación—, se vuelve al mapa entero.
+  if (enfocada.value && !(rawGraph.value.nodes || []).some((u) => String(u.id) === enfocada.value)) {
+    pilaDeEnfoque.value = [];
+  }
+  const rama = ramaEnfocada.value;
   const apiNodes = (rawGraph.value.nodes || []).filter(
-    (u) => estadosVisibles.value.has(u.estado) && !hidden.has(String(u.id))
+    (u) => estadosVisibles.value.has(u.estado) && !hidden.has(String(u.id)) && (!rama || rama.has(String(u.id)))
   );
   const visibleIds = new Set(apiNodes.map((u) => String(u.id)));
   const rawNodes = apiNodes.map((u) => {
@@ -1046,8 +1097,12 @@ const buildGraph = () => {
         ...u,
         editable: props.editable,
         onAddChild,
-        onAddSibling,
         onToggleCollapse: toggleCollapse,
+        onFocus: enfocar,
+        onUnfocus: volverDelEnfoque,
+        onUnfocusAll: quitarElEnfoque,
+        focused: enfocada.value === String(u.id),
+        focusDepth: pilaDeEnfoque.value.length,
         onOpenIssues: openIssues,
         healthIssues: issues,
         hasChildren: childrenMap.value.has(String(u.id)),
@@ -1535,11 +1590,6 @@ const relationTypeIdForCreate = () => {
   }
   return (relationTypes.value.find((r) => r.code === "org") || relationTypes.value[0])?.id || null;
 };
-const parentUnitIdOf = (childId) => {
-  const edge = (rawGraph.value.edges || []).find((e) => String(e.child_unit_id) === String(childId));
-  return edge ? edge.parent_unit_id : null;
-};
-
 const openCreateUnit = (mode, parentUnitId, anchorName) => {
   if (!props.editable) return;
   createForm.value = { name: "", slug: "", unit_type_id: "" };
@@ -1548,23 +1598,11 @@ const openCreateUnit = (mode, parentUnitId, anchorName) => {
 const onAddChild = (unitId) => {
   openCreateUnit("child", unitId, nodeNameById.value.get(String(unitId)));
 };
-const onAddSibling = (unitId) => {
-  const parentId = parentUnitIdOf(unitId);
-  openCreateUnit("sibling", parentId, nodeNameById.value.get(String(unitId)));
-};
 
-const createDialogTitle = computed(() =>
-  createContext.value?.mode === "sibling" ? "Agregar unidad hermana" : "Agregar unidad hija"
-);
+const createDialogTitle = computed(() => "Agregar unidad hija");
 const createDialogHint = computed(() => {
   const ctx = createContext.value;
-  if (!ctx) return "";
-  if (ctx.mode === "sibling") {
-    return ctx.parentUnitId
-      ? `Se creará bajo el mismo padre que "${ctx.anchorName}".`
-      : `"${ctx.anchorName}" es una raíz: la nueva unidad se creará sin padre.`;
-  }
-  return `Se creará como hija de "${ctx.anchorName}".`;
+  return ctx ? `Se creará como hija de "${ctx.anchorName}".` : "";
 });
 
 const confirmCreateUnit = async () => {
@@ -1736,7 +1774,11 @@ const onEdgeUpdate = async ({ edge, connection }) => {
 
 watch(estadosVisibles, buildGraph);
 watch(healthOnly, buildGraph);
-watch(activeRelationType, loadGraph);
+watch(activeRelationType, () => {
+  // Otra relación es otro árbol: la rama enfocada deja de significar lo mismo.
+  pilaDeEnfoque.value = [];
+  loadGraph();
+});
 onMounted(() => {
   loadGraph();
   loadUnitTypes();
