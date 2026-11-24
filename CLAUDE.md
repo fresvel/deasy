@@ -446,6 +446,12 @@ Cuatro cosas que ya costaron un arranque fallido:
    `sidebar`; un `[x](/no/existe/)` dentro de un `.md` construye **en verde** y da 404 al hacer clic.
    Y lychee excluye `docs/src/**` a propósito (sus enlaces son rutas de página, no ficheros). Lo
    cubre **`node scripts/docs/check-enlaces-internos.mjs`**, que corre en `docs-links.yml`.
+   ⚠️ **Y los enlaces entre ficheros `.md` de FUERA del sitio —planes, arquitecturas— los mira
+   lychee, que sólo corre en CI.** Ese trabajo estuvo en rojo de octubre a noviembre de 2026 sin
+   que nadie lo viera, y costó dos subidas arreglarlo. Desde el 2026-11-24 se puede ver antes de
+   subir con **`node scripts/docs/check-enlaces-relativos.mjs`**: fichero que no existe, ancla
+   que no existe (las anclas llevan TILDE) y enlaces de raíz. No apuntes un ancla a un título que
+   lleve cifras de avance: cambia con cada cierre.
 
 El servicio vive **solo en `compose.dev.yml`**: qa y prod todavía no despliegan documentación.
 Existía desde marzo en el `docker-compose.yml` monolítico y se perdió al partirlo en base+overlays;
