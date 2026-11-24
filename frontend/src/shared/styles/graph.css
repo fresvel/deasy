@@ -35,7 +35,7 @@
        fondo y `brand-600` de texto, 5.8:1—, y en gris análogo cuando la unidad no rige.
 
        El texto tiene tope de ancho: la flecha del padre entra por el centro del nodo (120 px) y
-       la pestaña, con su curva, acaba en 112. */
+       la pestaña, con su curva, acaba en 110. */
     .graph-node__tipo {
         --tipo-fondo: var(--color-brand-50);
         position: absolute;
@@ -45,7 +45,8 @@
         padding: 0 10px;
         border: 1px solid var(--nodo-borde);
         border-bottom: 0;
-        border-radius: 12px 10px 0 0;
+        /* Radio corto: con 12 px en una pestaña de 20 de alto las esquinas se comían la mitad. */
+        border-radius: 6px 6px 0 0;
         background: var(--tipo-fondo);
         color: var(--color-brand-600);
         font-size: 11px;
@@ -56,16 +57,16 @@
     .graph-node__tipo::after {
         content: "";
         position: absolute;
-        right: -8px;
+        right: -6px;
         bottom: 0;
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
         background: radial-gradient(
             circle at 100% 0,
-            transparent 6.6px,
-            var(--nodo-borde) 7.2px,
-            var(--nodo-borde) 7.8px,
-            var(--tipo-fondo) 8.4px
+            transparent 4.6px,
+            var(--nodo-borde) 5.2px,
+            var(--nodo-borde) 5.8px,
+            var(--tipo-fondo) 6.4px
         );
     }
 
