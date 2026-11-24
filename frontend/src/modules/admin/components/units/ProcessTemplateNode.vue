@@ -25,7 +25,8 @@
       </button>
     </div>
     <p class="m-0 flex items-center gap-2">
-      <IconFileText class="h-3.5 w-3.5 shrink-0 text-primary" />
+      <!-- El estado de la VERSIÓN que usa la configuración: publicada, borrador o retirada. -->
+      <GraphNodeEstado eje="ciclo" :valor="lifecycleState" />
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.display_name }}</span>
     </p>
     <!-- Sólo la versión, sin caja. El código de plantilla se quitó de aquí (2026-11-24): repetía el
@@ -38,7 +39,7 @@
         :class="[`graph-node__dato--${tonoEstado}`, tonoEstado === 'success' ? '' : 'graph-node__dato--destaca']"
         :title="`Versión vinculada: ${data.storage_version} (${stateLabel})${Number(data.version_count) > 1 ? ` · ${data.version_count} versiones` : ''}`"
       >
-        <span class="graph-node__punto"></span>v{{ data.storage_version }}
+        v{{ data.storage_version }}
         <span v-if="Number(data.version_count) > 1" class="opacity-70">· {{ data.version_count }}</span>
       </span>
       <IconAlertTriangle
@@ -51,10 +52,11 @@
 </template>
 
 <script setup>
+import GraphNodeEstado from "@/modules/admin/components/units/GraphNodeEstado.vue";
 import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import { ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
-import { IconFileText, IconGitBranch, IconPlus, IconCopy, IconRefresh, IconAlertTriangle } from "@tabler/icons-vue";
+import { IconGitBranch, IconPlus, IconCopy, IconRefresh, IconAlertTriangle } from "@tabler/icons-vue";
 import { computed } from "vue";
 
 const props = defineProps({

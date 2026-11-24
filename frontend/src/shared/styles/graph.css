@@ -176,8 +176,7 @@
     /* Ninguna configuración activa: la cuenta avisa, recogida o no. */
     .graph-node__pie-boton--aviso { color: var(--color-warning-700); }
 
-    /* UN DATO DEL NODO SIN CAJA (decisión del dueño, 2026-11-24): texto gris y, si lo lleva, un punto con el
-       tono. `--destaca` tiñe también el texto: es para lo que NO es lo normal —suprimido, a
+    /* UN DATO DEL NODO SIN CAJA (decisión del dueño, 2026-11-24): texto gris. `--destaca` tiñe también el texto: es para lo que NO es lo normal —suprimido, a
        medias, sin cubrir—. Los tonos de texto son los 700, que pasan de 4.5:1 sobre blanco. */
     .graph-node__dato {
         display: inline-flex;
@@ -190,23 +189,18 @@
     }
 
     .graph-node__dato--success {
-        --dato-punto: var(--color-success-500);
         --dato-texto: var(--color-success-700);
     }
     .graph-node__dato--warning {
-        --dato-punto: var(--color-warning-500);
         --dato-texto: var(--color-warning-700);
     }
     .graph-node__dato--danger {
-        --dato-punto: var(--color-error-500);
         --dato-texto: var(--color-error-700);
     }
     .graph-node__dato--info {
-        --dato-punto: var(--color-blue-light-500);
         --dato-texto: var(--color-blue-light-700);
     }
     .graph-node__dato--neutral {
-        --dato-punto: var(--color-line-strong);
         --dato-texto: var(--color-muted);
     }
 
@@ -215,12 +209,31 @@
         font-weight: 600;
     }
 
-    .graph-node__punto {
-        width: 8px;
-        height: 8px;
+    /* EL CÍRCULO DE ESTADO, junto al nombre del nodo. Relleno con el tono y el icono en blanco; se
+       usan los 600 y no los 500 de la franja porque con blanco encima los 500 no llegan a 3:1
+       (el verde daba 2,6). El tono lo pone el modificador, igual que en `graph-node__dato`. */
+    .graph-node__estado {
+        display: inline-flex;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
         border-radius: 999px;
-        background: var(--dato-punto, var(--color-line-strong));
+        background: var(--estado-fondo, var(--color-gray-500));
+        color: var(--color-white);
     }
+
+    .graph-node__estado--success { --estado-fondo: var(--color-success-600); }
+    .graph-node__estado--warning { --estado-fondo: var(--color-warning-600); }
+    .graph-node__estado--danger { --estado-fondo: var(--color-error-600); }
+    .graph-node__estado--info { --estado-fondo: var(--color-blue-light-600); }
+    .graph-node__estado--neutral { --estado-fondo: var(--color-gray-500); }
+
+    /* La fila de abajo conserva su alto aunque se quede vacía —cuando el estado es el normal ya no
+       se escribe—: el dueño pidió que los nodos no cambiaran de altura. */
+    .graph-node__fila { min-height: 19px; }
+
 
     /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
        Es el gris de los iconos aclarado, no un color propio. */

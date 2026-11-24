@@ -41,12 +41,13 @@
       </button>
     </div>
     <p class="m-0 flex items-center gap-2">
+      <GraphNodeEstado eje="ciclo" :valor="data.status" />
       <span class="min-w-0 flex-1 truncate text-theme-xs font-semibold text-body">{{ data.definition_name }}</span>
     </p>
     <!-- El estado y los entregables, sin caja: como en la unidad y el proceso. -->
-    <p class="m-0 mt-1 flex flex-wrap items-center gap-3">
-      <span class="graph-node__dato" :class="[`graph-node__dato--${tonoEstado}`, tonoEstado === 'success' ? '' : 'graph-node__dato--destaca']">
-        <span class="graph-node__punto"></span>{{ statusLabel }}
+    <p class="graph-node__fila m-0 mt-1 flex flex-wrap items-center gap-3">
+      <span v-if="tonoEstado !== 'success'" class="graph-node__dato graph-node__dato--destaca" :class="`graph-node__dato--${tonoEstado}`">
+        {{ statusLabel }}
       </span>
     </p>
     <!-- Los entregables cuelgan del pie, como en el proceso. La configuración sólo tiene una clase
@@ -72,6 +73,7 @@
 </template>
 
 <script setup>
+import GraphNodeEstado from "@/modules/admin/components/units/GraphNodeEstado.vue";
 import { tonoCicloVida } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
