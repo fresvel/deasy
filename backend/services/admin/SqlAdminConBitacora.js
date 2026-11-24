@@ -35,10 +35,15 @@ export default class SqlAdminConBitacora {
   }
 
   async create(tabla, datos, contexto) {
+    // QUIEN REGISTRA. Esta envoltura es el unico sitio del camino generico que sabe quien hace la
+    // peticion, asi que es quien entrega los sellos: las columnas que el catalogo marca para que
+    // las escriba el sistema (`sello: "actor"`). No depende de que el recurso sea sensible.
+    const sellos = this.service.sellosDe(tabla, contexto);
     if (!esRecursoSensible(contexto?.recurso)) {
-      return this.service.create(tabla, datos);
+      return this.service.create(tabla, datos, { sellos });
     }
     return this.service.create(tabla, datos, {
+      sellos,
       transaccion: {
         despues: (ctx) => this.bitacora.registrarEscritura({
           ...contexto,

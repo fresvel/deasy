@@ -15,7 +15,7 @@ la siguiente regeneración.
 cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
 :::
 
-**39 tablas · 361 columnas · 92 claves ajenas · 10 diagramas.**
+**39 tablas · 362 columnas · 93 claves ajenas · 10 diagramas.**
 
 ## Cómo leerla
 
@@ -118,15 +118,15 @@ erDiagram
 ```
 
 <details>
-<summary>Llegan 53 claves ajenas desde otros diagramas</summary>
+<summary>Llegan 54 claves ajenas desde otros diagramas</summary>
 
-`actos.suscrito_por_person_id` → `persons` · `actos.unidad_emisora_id` → `units` · `aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `lineas.cargo_id` → `cargos` · `lineas.unit_type_id` → `unit_types` · `lineas.unit_id` → `units` · `participantes_declarados.cargo_id` → `cargos` · `participantes_declarados.persona_id` → `persons` · `participantes_declarados.unit_id` → `units` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `position_vigencias.position_id` → `unit_positions` · `process_runs.created_by_user_id` → `persons` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `turnos.persona_id` → `persons` · `unit_relations.child_unit_id` → `units` · `unit_relations.parent_unit_id` → `units` · `unit_vigencias.unit_id` → `units` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
+`actos.registrado_por_person_id` → `persons` · `actos.suscrito_por_person_id` → `persons` · `actos.unidad_emisora_id` → `units` · `aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `lineas.cargo_id` → `cargos` · `lineas.unit_type_id` → `unit_types` · `lineas.unit_id` → `units` · `participantes_declarados.cargo_id` → `cargos` · `participantes_declarados.persona_id` → `persons` · `participantes_declarados.unit_id` → `units` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `position_vigencias.position_id` → `unit_positions` · `process_runs.created_by_user_id` → `persons` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `turnos.persona_id` → `persons` · `unit_relations.child_unit_id` → `units` · `unit_relations.parent_unit_id` → `units` · `unit_vigencias.unit_id` → `units` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
 
 </details>
 
 ## La organización (2 de 2)
 
-**6 tablas** · 56 columnas · 14 claves ajenas propias. Apunta a `persons`, `relation_unit_types`, `unit_positions`, `units`, que salen como caja vacía.
+**6 tablas** · 57 columnas · 15 claves ajenas propias. Apunta a `persons`, `relation_unit_types`, `unit_positions`, `units`, que salen como caja vacía.
 
 ```mermaid
 erDiagram
@@ -196,9 +196,11 @@ erDiagram
     int suscrito_por_person_id FK
     varchar suscrito_por_nombre
     text en_calidad_de
+    int registrado_por_person_id FK
     timestamp created_at
     timestamp updated_at
   }
+  persons |o--o{ actos : "registrado_por_person_id"
   persons |o--o{ actos : "suscrito_por_person_id"
   tipos_de_acto ||--o{ actos : "tipo_de_acto_id"
   units |o--o{ actos : "unidad_emisora_id"

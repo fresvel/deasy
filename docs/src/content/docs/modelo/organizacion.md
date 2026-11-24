@@ -944,6 +944,11 @@ Cuatro cosas que no son evidentes:
   la jefatura en la fecha de emisión, si no—. `suscrito_por_*` y `en_calidad_de` (`titular`,
   `subrogante`, `encargado`, `delegado`) existen para cuando **no** se puede deducir. En los cuatro
   casos el acto sigue siendo del órgano.
+- **Y quien lo registró es otra persona más**, que no hay que confundir con las dos anteriores: el
+  órgano lo **emite**, alguien lo **suscribe**, y alguien lo **da de alta aquí**. Esto último lo
+  guarda `registrado_por_person_id`, y lo escribe el sistema al crear el acto —nadie lo teclea, y la
+  base no deja cambiarlo—. Importa porque un acto ordena cambios de estructura con sólo existir.
+  Está vacío en lo que no registró una persona: la siembra.
 - **Lleva dos fechas y no son la misma**: `fecha_emision` es cuándo se firmó, `fecha_vigencia` desde
   cuándo rige. Una resolución de diciembre puede regir desde enero.
 - **Un acto sin fila en `acto_documentos` no es un error**: es el estado «referencia registrada,

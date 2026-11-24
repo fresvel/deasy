@@ -68,6 +68,7 @@ Table "actos" {
   "suscrito_por_person_id" int4
   "suscrito_por_nombre" varchar(255)
   "en_calidad_de" text [check: `en_calidad_de = ANY (ARRAY['titular'::text, 'subrogante'::text, 'encargado'::text, 'delegado'::text])`]
+  "registrado_por_person_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
@@ -1509,6 +1510,7 @@ Table "vinculos" {
 
 Ref "fk_acto_documentos_acto":"actos"."id" <? "acto_documentos"."acto_id" [delete: cascade]
 Ref "fk_acto_documentos_version":"document_versions"."id" <? "acto_documentos"."document_version_id"
+Ref "fk_actos_registrado_por":"persons"."id" ?<? "actos"."registrado_por_person_id"
 Ref "fk_actos_suscrito_por":"persons"."id" ?<? "actos"."suscrito_por_person_id"
 Ref "fk_actos_tipo":"tipos_de_acto"."id" <? "actos"."tipo_de_acto_id"
 Ref "fk_actos_unidad_emisora":"units"."id" ?<? "actos"."unidad_emisora_id"

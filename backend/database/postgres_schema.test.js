@@ -746,3 +746,11 @@ test("suprimir una unidad con puestos que siguen rigiendo se rechaza", () => {
   assert.match(cuerpo, /pv\.vigente_hasta IS NULL OR pv\.vigente_hasta > NEW\.vigente_hasta/);
 });
 
+// QUIEN REGISTRO UN ACTO (frente 27, D-05): lo escribe el sistema una vez y no se cambia.
+test("un acto guarda quien lo registro, y esa columna es inmutable", () => {
+  const create = bloqueRecorrido("actos");
+  assert.match(create, /registrado_por_person_id INT NULL/);
+  assert.match(create, /CONSTRAINT fk_actos_registrado_por FOREIGN KEY \(registrado_por_person_id\) REFERENCES persons\(id\)/);
+  assert.match(SCHEMA, /BEFORE UPDATE OF registrado_por_person_id ON actos\s+FOR EACH ROW WHEN \(OLD\.registrado_por_person_id IS DISTINCT FROM NEW\.registrado_por_person_id\)\s+EXECUTE FUNCTION rechazar_cambio_de_sello\('registrado_por_person_id'\)/);
+});
+

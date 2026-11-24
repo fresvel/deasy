@@ -31,7 +31,7 @@
     ]
   },
   "actos": {
-    "huella": "24bb46697ac17393",
+    "huella": "d7518f521cf0d368",
     "paginas": [
       "modelo/mapa-completo.md",
       "modelo/mapa-con-campos.md",
@@ -277,6 +277,15 @@
       "datos/firmas-y-dominios.md",
       "modelo/mapa-con-campos.md",
       "orden-de-lectura.md"
+    ]
+  },
+  "correcciones_de_estructura": {
+    "huella": "d2c0d43ac5a177d0",
+    "paginas": [
+      "complemento/permisos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
     ]
   },
   "direcciones": {

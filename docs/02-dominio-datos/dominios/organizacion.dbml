@@ -28,6 +28,7 @@ Table "actos" {
   "suscrito_por_person_id" int4
   "suscrito_por_nombre" varchar(255)
   "en_calidad_de" text [check: `en_calidad_de = ANY (ARRAY['titular'::text, 'subrogante'::text, 'encargado'::text, 'delegado'::text])`]
+  "registrado_por_person_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
@@ -315,6 +316,7 @@ Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   actos -> acto_documentos   [tareas]
+//   persons -> actos   [identidad]
 //   persons -> actos   [identidad]
 //   paises -> autoidentificaciones_etnicas   [identidad]
 //   paises -> categorias_visa   [identidad]

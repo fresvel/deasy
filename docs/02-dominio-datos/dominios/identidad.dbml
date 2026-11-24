@@ -563,6 +563,7 @@ Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cas
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
 //   persons -> actos   [organizacion]
+//   persons -> actos   [organizacion]
 //   persons -> aplications   [empleo]
 //   paises -> autoidentificaciones_etnicas   [organizacion]
 //   persons -> catalogo_documental   [plantillas]

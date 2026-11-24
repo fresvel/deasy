@@ -765,13 +765,27 @@ export default class SqlAdminService {
   efectosDeSuprimir(...args) { return this.orgStructure.efectosDeSuprimir(...args); }
   suprimirPuestosDeUnidad(...args) { return this.orgStructure.suprimirPuestosDeUnidad(...args); }
 
+  // LOS SELLOS DE UNA TABLA para quien hace la peticion: las columnas que el catalogo marca con
+  // `sello: "actor"` reciben a esa persona. Es DECLARATIVO a proposito: una tabla que quiera guardar
+  // quien registro la fila añade la marca a su campo, no un caso en el editor.
+  sellosDe(tableName, { actorId } = {}) {
+    const actor = Number(actorId);
+    if (!actor) return null;
+    const columnas = getConfig(tableName).fields.filter((field) => field.sello === "actor");
+    return columnas.length ? Object.fromEntries(columnas.map((field) => [field.name, actor])) : null;
+  }
+
   // `transaccion` ({ antes, despues }): trabajo de quien llama que tiene que confirmarse con la
   // escritura, o deshacerse con ella. Si llega, la escritura va en transaccion aunque la tabla no la
   // pida. Hoy lo usa solo la bitacora de accesos sensibles (SqlAdminConBitacora).
-  async create(tableName, data, { transaccion = null } = {}) {
+  //
+  // `sellos` ({ columna: valor }): lo que el SISTEMA escribe en la fila y nadie teclea --quien la
+  // registro--. Entran DESPUES de filtrar lo que mando el usuario, asi que un campo de solo lectura
+  // no se puede falsear desde el cuerpo de la peticion: solo llega por aqui. Ver `sellosDe`.
+  async create(tableName, data, { transaccion = null, sellos = null } = {}) {
     this.ensurePool();
     const config = getConfig(tableName);
-    const payload = pickPayload(config.fields, data);
+    const payload = { ...pickPayload(config.fields, data), ...(sellos ?? {}) };
     const hooks = getTableHooks(tableName);
     const ctx = {
       service: this,

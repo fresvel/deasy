@@ -437,6 +437,9 @@ export const SQL_TABLES = [
         type: "select",
         options: ["titular", "subrogante", "encargado", "delegado"]
       },
+      // QUIEN LO REGISTRO: `sello: "actor"` hace que el editor lo escriba solo al crear, con quien
+      // esta haciendo la peticion. De solo lectura: no se teclea ni se cambia.
+      { name: "registrado_por_person_id", label: "Registrado por", type: "number", readOnly: true, sello: "actor" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],

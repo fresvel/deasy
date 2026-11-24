@@ -1263,11 +1263,17 @@ CREATE TABLE IF NOT EXISTS organizacion.actos (
   suscrito_por_person_id INT NULL,
   suscrito_por_nombre VARCHAR(255) NULL,
   en_calidad_de TEXT NULL CHECK (en_calidad_de IN ('titular', 'subrogante', 'encargado', 'delegado')),
+  -- QUIEN LO REGISTRO en el sistema (frente 27, D-05). No es quien lo suscribio ni quien lo emitio:
+  -- es la persona que lo dio de alta aqui, y eso importa porque un acto ordena cambios de
+  -- estructura con solo existir. Lo escribe el sistema al crear --nadie lo teclea-- y no cambia.
+  -- NULL en lo que no registro una persona: la siembra.
+  registrado_por_person_id INT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT fk_actos_tipo FOREIGN KEY (tipo_de_acto_id) REFERENCES tipos_de_acto(id),
   CONSTRAINT fk_actos_unidad_emisora FOREIGN KEY (unidad_emisora_id) REFERENCES units(id),
   CONSTRAINT fk_actos_suscrito_por FOREIGN KEY (suscrito_por_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_actos_registrado_por FOREIGN KEY (registrado_por_person_id) REFERENCES persons(id),
   CONSTRAINT ck_actos_un_solo_emisor CHECK ((unidad_emisora_id IS NULL) <> (emisor_externo IS NULL)),
   CONSTRAINT ck_actos_un_solo_suscriptor CHECK (suscrito_por_person_id IS NULL OR suscrito_por_nombre IS NULL)
 );
@@ -1278,6 +1284,23 @@ CREATE UNIQUE INDEX IF NOT EXISTS uq_actos_referencia
 CREATE INDEX IF NOT EXISTS idx_actos_unidad_emisora ON actos (unidad_emisora_id);
 CREATE INDEX IF NOT EXISTS idx_actos_vigencia ON actos (fecha_vigencia);
 CREATE OR REPLACE TRIGGER trg_actos_set_updated_at BEFORE UPDATE ON actos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- UN SELLO NO SE REESCRIBE. Sirve a cualquier columna que el sistema escribe una vez --quien
+-- registro, quien creo--: su nombre llega como argumento del disparador.
+CREATE OR REPLACE FUNCTION public.rechazar_cambio_de_sello() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RAISE EXCEPTION 'No se puede cambiar %.%: lo escribe el sistema una sola vez, al crear.', TG_TABLE_NAME, TG_ARGV[0]
+    USING ERRCODE = 'restrict_violation';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_actos_registrado_por_inmutable
+BEFORE UPDATE OF registrado_por_person_id ON actos
+FOR EACH ROW WHEN (OLD.registrado_por_person_id IS DISTINCT FROM NEW.registrado_por_person_id)
+EXECUTE FUNCTION rechazar_cambio_de_sello('registrado_por_person_id');
 
 
 -- LAS CORRECCIONES DE LA ESTRUCTURA (frente 27, D-05, puntos 5 y 7).
