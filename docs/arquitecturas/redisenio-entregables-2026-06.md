@@ -21,7 +21,7 @@ Todas las rutas de este documento son relativas a la raíz del repo (`deasy/`).
 
 - Esquema: [backend/database/postgres_schema.sql](../../backend/database/postgres_schema.sql)
 - Instanciación de tareas: [backend/services/admin/TaskGenerationService.js](../../backend/services/admin/TaskGenerationService.js)
-- Panel/entregables del usuario: [backend/controllers/users/user_controler.js](../../backend/controllers/users/user_controler.js)
+- Panel/entregables del usuario: [backend/controllers/users/user_controler.js](../../backend/dominios/identidad/controllers/user_controler.js)
 - Admin SQL / artifacts: [backend/services/admin/SqlAdminService.js](../../backend/services/admin/SqlAdminService.js)
 - UI de entregables: [frontend/src/modules/home/views/HomeView.vue](../../frontend/src/modules/home/views/HomeView.vue)
   y [frontend/src/modules/home/components/DeliverableCard.vue](../../frontend/src/modules/home/components/DeliverableCard.vue)
