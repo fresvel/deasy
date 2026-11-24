@@ -1,12 +1,12 @@
 # Índice de planes
 
-Generado por `plan indice` el 2026-11-23. **No se edita a mano.**
+Generado por `plan indice` el 2026-11-24. **No se edita a mano.**
 
 ## Gobernados por `plan`
 
 | Proyecto | Frentes | Tareas vivas | Hechas |
 |---|--:|--:|--:|
-| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 17 | 379 | 261 |
+| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 17 | 381 | 264 |
 
 ## Heredados — registrados, sin convertir
 
@@ -14,7 +14,7 @@ Se convierten **el día que se tocan**, no antes. Un heredado vivo más de **30 
 
 | Plan | Estado | Registrado | Nota |
 |---|---|---|---|
-| [Plan maestro — los frentes](plan-maestro-2026-08.md) | 🟡 encurso | 2026-10-23 · hace 31 d ⚠️ | sin convertir A PROPÓSITO: sus filas son FRENTES, no tareas. Los 15 convertidos ya no se cuentan aquí; siguen viviendo dentro de él los frentes 2, 3, 5, 6, 7, 8, 10 y 11, que no tienen documento propio |
+| [Plan maestro — los frentes](plan-maestro-2026-08.md) | 🟡 encurso | 2026-10-23 · hace 32 d ⚠️ | sin convertir A PROPÓSITO: sus filas son FRENTES, no tareas. Los 15 convertidos ya no se cuentan aquí; siguen viviendo dentro de él los frentes 2, 3, 5, 6, 7, 8, 10 y 11, que no tienen documento propio |
 | [Qué pareja (configuración, plantilla) es legal](plantilla-y-linea-de-proceso-2026-10.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F25 del proyecto `deasy`. Aquí sólo queda el razonamiento |
 | [Frente 26 · los ciclos en los grafos del modelo](ciclos-en-los-grafos-2026-10.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F26 del proyecto `deasy`. Aquí sólo queda el razonamiento |
 | [El mapa de módulos: una sola respuesta a «¿dónde vive esto?»](mapa-modulos-2026-10.md) | ➡️ movida | 2026-10-23 | ➡️ CONVERTIDO: es el frente F22 del proyecto `deasy`. Aquí sólo queda el razonamiento |

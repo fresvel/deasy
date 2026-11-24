@@ -220,11 +220,18 @@ corrección. «Carga inicial» no se ofrece ahí —mover algo que ya rige es, p
 la carga—; se queda para colgar por primera vez un nodo que ya tenía vida. (La base sí la admite en
 un fin, porque sirve para cargar historia antigua: una unidad que existió de 2015 a 2020.)
 
-:::caution[Lo que la base NO decide]
-Qué pasa con las **hijas** de una unidad que se suprime. La base cierra la relación de la unidad
-suprimida con su padre, pero no toca las de sus hijas: adónde van es una decisión de quien
-reorganiza. Hasta que se muevan, siguen colgando de una unidad que ya no rige.
-:::
+### Una unidad con hijas no se suprime
+
+Suprimir una unidad cierra **su** relación con su padre. Las de sus **hijas** no las toca: adónde van
+es una decisión de quien reorganiza, y la base no la toma por él — ni las suelta como raíces ni las
+suprime en cascada. Lo que hace es **no dejar suprimir** mientras alguna siga dependiendo de ella
+más allá de la fecha de fin.
+
+Así que el orden lo pone quien reorganiza: primero se mueven las hijas a otro padre —puede ser con
+la misma fecha en que la unidad deja de regir—, o se suprimen ellas; y después, la unidad. Suprimir
+una rama entera se hace de abajo arriba. La pantalla lo dice antes de intentarlo, con la cifra.
+
+Lo mismo vale para un proceso con sub-procesos.
 
 ## La persona ya no lo lleva todo encima
 

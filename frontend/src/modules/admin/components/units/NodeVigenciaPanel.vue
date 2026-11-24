@@ -70,28 +70,32 @@
           Aquí sólo se corrige la fecha, y a otra que ya haya ocurrido. Un fin pasado no se quita: para que vuelva a regir, cancela y reactiva.
         </p>
         <!-- SUPRIMIR, Y LO QUE ARRASTRA: se dice ANTES, que es cuando se puede evitar. -->
-        <AppAlert v-if="vigencia.suprimeMasAdelante.value" variant="info">
-          Dejará de regir el {{ form.vigente_hasta }}. Hasta ese día no se cierra nada, y la fecha se puede cambiar o quitar.
+        <!-- CON HIJOS NO SE SUPRIME (decisión del dueño, 2026-11-24): hay que decir antes adónde van. -->
+        <AppAlert v-if="vigencia.suprime.value && vigencia.efectosQueSeQuedan.value.length" variant="danger">
+          No se puede suprimir todavía: hay <strong>{{ fraseDeEfectos(vigencia.efectosQueSeQuedan.value) }}</strong>.
+          Antes tienen que cambiar de padre —puede ser con esta misma fecha— o dejar de regir.
         </AppAlert>
-        <div v-if="vigencia.suprimeYa.value" class="flex flex-col gap-2">
-          <AppAlert variant="warning">
-            <template v-if="vigencia.efectosQueSeCierran.value.length">
-              Al guardar se {{ cuantos(vigencia.efectosQueSeCierran.value) === 1 ? "cerrará" : "cerrarán" }}
-              <strong>{{ fraseDeEfectos(vigencia.efectosQueSeCierran.value) }}</strong>.
-              No se recuperan al reactivar, y un fin que ya ocurrió no se puede quitar.
-            </template>
-            <template v-else>
-              Suprimir rige desde hoy, y un fin que ya ocurrió no se puede quitar: para que vuelva a regir habrá que reactivarlo.
-            </template>
-            <template v-if="vigencia.efectosQueSeQuedan.value.length">
-              Además hay {{ fraseDeEfectos(vigencia.efectosQueSeQuedan.value) }}: no cambian de padre por su cuenta, y quedarán colgando de algo que ya no rige.
-            </template>
+        <template v-else>
+          <AppAlert v-if="vigencia.suprimeMasAdelante.value" variant="info">
+            Dejará de regir el {{ form.vigente_hasta }}. Hasta ese día no se cierra nada, y la fecha se puede cambiar o quitar.
           </AppAlert>
-          <label class="flex items-center gap-2 text-sm text-strong">
-            <input v-model="form.confirmaSupresion" type="checkbox" :disabled="!editable" />
-            Entiendo que no se puede deshacer
-          </label>
-        </div>
+          <div v-if="vigencia.suprimeYa.value" class="flex flex-col gap-2">
+            <AppAlert variant="warning">
+              <template v-if="vigencia.efectosQueSeCierran.value.length">
+                Al guardar se {{ cuantos(vigencia.efectosQueSeCierran.value) === 1 ? "cerrará" : "cerrarán" }}
+                <strong>{{ fraseDeEfectos(vigencia.efectosQueSeCierran.value) }}</strong>.
+                No se recuperan al reactivar, y un fin que ya ocurrió no se puede quitar.
+              </template>
+              <template v-else>
+                Suprimir rige desde hoy, y un fin que ya ocurrió no se puede quitar: para que vuelva a regir habrá que reactivarlo.
+              </template>
+            </AppAlert>
+            <label class="flex items-center gap-2 text-sm text-strong">
+              <input v-model="form.confirmaSupresion" type="checkbox" :disabled="!editable" />
+              Entiendo que no se puede deshacer
+            </label>
+          </div>
+        </template>
         <!-- Una vida que aún no ha empezado se puede descartar entera; una que ya rige, no: se le pone fin. -->
         <div v-if="editable && vigencia.sePuedeDescartar.value" class="flex items-center justify-between gap-3 rounded-xl border border-line px-3 py-2.5">
           <p class="m-0 text-theme-xs text-muted">Esta vida todavía no ha empezado. Si no va a ocurrir, se puede descartar.</p>

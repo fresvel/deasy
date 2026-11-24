@@ -720,3 +720,21 @@ test("quitar o aplazar un fin ya ocurrido se rechaza ANTES de mirar si hay corre
   assert.ok(rechazo < cede, "una correccion podria quitar un fin ya ocurrido");
 });
 
+// Decision del dueño, 2026-11-24 («Se rechaza»): un nodo no se suprime mientras tenga hijos que
+// sigan mas alla de su fin. En los dos arboles, y antes de escribir el fin.
+test("suprimir un nodo con hijos se rechaza, en unidades y en procesos", () => {
+  for (const [vidas, relaciones, padre] of [
+    ["unit_vigencias", "unit_relations", "parent_unit_id"],
+    ["process_vigencias", "process_relations", "parent_process_id"],
+  ]) {
+    assert.match(
+      SCHEMA,
+      new RegExp(`BEFORE INSERT OR UPDATE OF vigente_hasta ON ${vidas}\\s+FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_con_hijos\\('${relaciones}', '${padre}'`),
+      `${vidas} deja suprimir un nodo con hijos`
+    );
+  }
+  const cuerpo = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.rechazar_supresion_con_hijos()")).split("$$ LANGUAGE plpgsql;")[0];
+  // Mover los hijos con la MISMA fecha del fin tiene que bastar: «mayor que», no «mayor o igual».
+  assert.match(cuerpo, /r\.vigente_hasta IS NULL OR r\.vigente_hasta > \$3/);
+});
+

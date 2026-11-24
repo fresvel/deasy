@@ -1646,8 +1646,9 @@ $$ LANGUAGE plpgsql;
 --      · si el fin se quita o se mueve, la arista que se cerro con el lo sigue;
 --      · y si una vida programada se descarta, su arista vuelve a ser un borrador.
 --
---    ⚠️ NO toca las aristas en las que el nodo es PADRE: que pasa con los hijos de un nodo que se
---    suprime es una decision de quien reorganiza, no un efecto de la base.
+--    ⚠️ NO toca las aristas en las que el nodo es PADRE: adonde van los hijos de un nodo que se
+--    suprime es una decision de quien reorganiza. Lo que la base hace es NO DEJAR SUPRIMIR hasta
+--    que se hayan movido (`rechazar_supresion_con_hijos`, mas abajo).
 --    Argumentos: tabla de aristas, su columna de hijo, columna de nodo en la tabla de vidas.
 CREATE OR REPLACE FUNCTION public.sincronizar_aristas_con_vida() RETURNS trigger
   SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
@@ -1693,6 +1694,54 @@ BEGIN
       'UPDATE %I SET vigente_hasta = NULL, fin_origen = NULL, fin_acto_id = NULL
         WHERE %I = $1 AND vigente_desde >= $2 AND vigente_hasta = $3', TG_ARGV[0], TG_ARGV[1]
     ) USING nodo, NEW.vigente_desde, OLD.vigente_hasta;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 4) UN NODO NO SE SUPRIME MIENTRAS TENGA HIJOS (decision del dueño, 2026-11-24: «Se rechaza»).
+--    Suprimir una unidad con otras colgando, o un proceso con sub-procesos, los dejaba dependiendo
+--    de algo que ya no rige. Adonde van es una decision de quien reorganiza, y por eso la base no
+--    la toma por el: ni los suelta como raices ni los suprime en cascada. Obliga a decirlo ANTES.
+--
+--    Cuenta las relaciones en las que el nodo es PADRE que empezaron dentro de esta vida y siguen
+--    mas alla de su fin. Mover los hijos con la misma fecha del fin basta: su relacion termina ese
+--    dia y no «sigue mas alla». Y suprimir un hijo cierra su relacion, asi que suprimir una rama
+--    de abajo arriba tambien pasa.
+--    Argumentos: tabla de relaciones, su columna de padre, columna del nodo en la tabla de vidas,
+--    sujeto.
+CREATE OR REPLACE FUNCTION public.rechazar_supresion_con_hijos() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  nodo INT := (to_jsonb(NEW) ->> TG_ARGV[2])::INT;
+  hijos INT;
+  nombre TEXT;
+BEGIN
+  IF NEW.vigente_hasta IS NULL THEN
+    RETURN NEW;
+  END IF;
+  EXECUTE format(
+    'SELECT COUNT(*) FROM %1$I r
+      WHERE r.%2$I = $1 AND r.vigente_desde >= $2
+        AND (r.vigente_hasta IS NULL OR r.vigente_hasta > $3)
+        AND NOT EXISTS (
+          SELECT 1 FROM %3$I otra
+           WHERE otra.%4$I = $1 AND otra.id <> $4
+             AND otra.vigente_desde <= r.vigente_desde
+             AND (otra.vigente_hasta IS NULL OR otra.vigente_hasta > r.vigente_desde)
+        )', TG_ARGV[0], TG_ARGV[1], TG_TABLE_NAME, TG_ARGV[2]
+  ) INTO hijos USING nodo, NEW.vigente_desde, NEW.vigente_hasta, NEW.id;
+  IF hijos > 0 THEN
+    EXECUTE format('SELECT name FROM %I WHERE id = $1', CASE TG_ARGV[3] WHEN 'unidad' THEN 'units' ELSE 'processes' END)
+      INTO nombre USING nodo;
+    RAISE EXCEPTION '«%» no se puede suprimir todavía: % después del %. Antes tienen que cambiar de padre o dejar de regir.',
+      nombre,
+      CASE WHEN TG_ARGV[3] = 'unidad'
+           THEN format('%s %s de ella', hijos, CASE WHEN hijos = 1 THEN 'unidad depende' ELSE 'unidades dependen' END)
+           ELSE format('%s %s de él', hijos, CASE WHEN hijos = 1 THEN 'sub-proceso depende' ELSE 'sub-procesos dependen' END) END,
+      NEW.vigente_hasta
+      USING ERRCODE = 'restrict_violation';
   END IF;
   RETURN NEW;
 END;
@@ -1805,6 +1854,11 @@ FOR EACH ROW EXECUTE FUNCTION exigir_correccion_registrada();
 CREATE OR REPLACE TRIGGER trg_unit_vigencias_aristas
 AFTER INSERT OR UPDATE OR DELETE ON unit_vigencias
 FOR EACH ROW EXECUTE FUNCTION sincronizar_aristas_con_vida('unit_relations', 'child_unit_id', 'unit_id');
+
+-- Un nodo no se suprime mientras tenga hijos que sigan mas alla de su fin.
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_sin_hijos
+BEFORE INSERT OR UPDATE OF vigente_hasta ON unit_vigencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_con_hijos('unit_relations', 'parent_unit_id', 'unit_id', 'unidad');
 
 
 CREATE TABLE IF NOT EXISTS empleo.vacancies (
@@ -2249,6 +2303,11 @@ FOR EACH ROW EXECUTE FUNCTION exigir_correccion_registrada();
 CREATE OR REPLACE TRIGGER trg_process_vigencias_aristas
 AFTER INSERT OR UPDATE OR DELETE ON process_vigencias
 FOR EACH ROW EXECUTE FUNCTION sincronizar_aristas_con_vida('process_relations', 'child_process_id', 'process_id');
+
+-- Un nodo no se suprime mientras tenga hijos que sigan mas alla de su fin.
+CREATE OR REPLACE TRIGGER trg_process_vigencias_sin_hijos
+BEFORE INSERT OR UPDATE OF vigente_hasta ON process_vigencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_con_hijos('process_relations', 'parent_process_id', 'process_id', 'proceso');
 
 
 -- AQUI VIVIA `process_definition_series`, Y SE RETIRA (frente 25, P9 — 2026-10-11).

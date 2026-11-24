@@ -131,6 +131,8 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     && Boolean(vidaForm.value.vigente_desde)
     && (!esCorreccion.value || String(vidaForm.value.motivo || "").trim().length >= MOTIVO_MINIMO)
     && (!suprimeYa.value || Boolean(vidaForm.value.confirmaSupresion))
+    // Con hijos no se suprime: la base lo rechazaría, y aquí se dice antes.
+    && !(suprime.value && efectosQueSeQuedan.value.length)
     && finCorregidoValido.value
   );
 
@@ -268,6 +270,7 @@ export function useNodeVigencia({ tabla, claveDelNodo }) {
     empezarCorreccionDelFin,
     corrigiendoElFin,
     hoy,
+    suprime,
     suprimeYa,
     suprimeMasAdelante,
     efectosQueSeCierran,

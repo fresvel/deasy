@@ -12,8 +12,11 @@
 // lo que cierra, esto se queda diciendo otra cosa. Lo vigila `efectosDeSuprimir.test.js`, que lee el
 // esquema y comprueba que cada tabla que una función toca tenga aquí su cuenta.
 //
-// `seCierra: true` es lo que la supresión cierra y no se recupera; `false` es lo que NO toca pero
-// conviene saber — las hijas que se quedarían colgando de un nodo que ya no rige.
+// `seCierra: true` es lo que la supresión cierra y no se recupera. `false` es lo que la IMPIDE: las
+// hijas que seguirían dependiendo del nodo. La base rechaza suprimir mientras las haya
+// (`rechazar_supresion_con_hijos`), así que la pantalla lo dice antes de intentarlo. Aquí se cuentan
+// las relaciones que no han terminado HOY; la regla exacta —las que siguen más allá de la fecha de
+// fin que se elija— la aplica la base.
 const EN_CURSO = "('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')";
 
 const CUENTAS = Object.freeze({
@@ -25,7 +28,9 @@ const CUENTAS = Object.freeze({
               INNER JOIN unit_positions up ON up.id = v.position_id
              WHERE up.unit_id = ? AND v.status = 'abierta'` },
     { singular: "unidad que depende de ella", plural: "unidades que dependen de ella", seCierra: false,
-      sql: `SELECT COUNT(*) AS n FROM unit_arbol_vigente a WHERE a.parent_unit_id = ?` }
+      sql: `SELECT COUNT(*) AS n FROM unit_relations r
+             WHERE r.parent_unit_id = ? AND r.vigente_desde IS NOT NULL
+               AND (r.vigente_hasta IS NULL OR r.vigente_hasta > CURRENT_DATE)` }
   ],
   puesto: [
     { singular: "ocupación vigente", plural: "ocupaciones vigentes", seCierra: true,
@@ -36,7 +41,9 @@ const CUENTAS = Object.freeze({
   ],
   proceso: [
     { singular: "sub-proceso que depende de él", plural: "sub-procesos que dependen de él", seCierra: false,
-      sql: `SELECT COUNT(*) AS n FROM process_arbol_vigente a WHERE a.parent_process_id = ?` }
+      sql: `SELECT COUNT(*) AS n FROM process_relations r
+             WHERE r.parent_process_id = ? AND r.vigente_desde IS NOT NULL
+               AND (r.vigente_hasta IS NULL OR r.vigente_hasta > CURRENT_DATE)` }
   ]
 });
 

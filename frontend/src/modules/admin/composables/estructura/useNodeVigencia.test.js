@@ -67,3 +67,23 @@ describe("useNodeVigencia · corregir la fecha del fin", () => {
     expect(v.sePuedeGuardar.value).toBe(true);
   });
 });
+
+describe("useNodeVigencia · con hijos no se suprime", () => {
+  it("si hay algo que depende del nodo, no deja guardar el fin ni marcando la casilla", async () => {
+    const { adminSqlService } = await import("@/modules/admin/services/AdminSqlService");
+    adminSqlService.getEfectosDeSuprimir.mockResolvedValueOnce({
+      data: { efectos: [{ singular: "unidad que depende de ella", plural: "unidades que dependen de ella", n: 2, seCierra: false }] }
+    });
+    const v = nueva();
+    v.prepararVida(vigente());
+    v.vidaForm.value.vigente_hasta = dia(0);
+    await new Promise((r) => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(v.efectosQueSeQuedan.value).toHaveLength(1);
+    v.vidaForm.value.confirmaSupresion = true;
+    expect(v.sePuedeGuardar.value).toBe(false);
+    // Y con fecha futura tampoco: programar la supresión también pide haberlos movido.
+    v.vidaForm.value.vigente_hasta = dia(30);
+    expect(v.sePuedeGuardar.value).toBe(false);
+  });
+});
