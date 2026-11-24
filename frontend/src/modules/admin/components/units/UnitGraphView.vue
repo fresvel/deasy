@@ -1,7 +1,12 @@
 <template>
   <div class="flex flex-col gap-3">
     <div class="flex flex-wrap items-center justify-between gap-2">
+      <!-- Izquierda: regresar + título + contador + ayuda. «Regresar» vive AQUÍ, en la fila del
+           grafo, igual que en el mapa de procesos; antes estaba arriba, en la barra de la tabla. -->
       <div class="flex items-center gap-2 text-sm text-muted">
+        <AppButton variant="neutral-outline" icon-only title="Regresar" aria-label="Regresar" @click="$emit('go-back')">
+          <IconArrowLeft class="h-4 w-4" />
+        </AppButton>
         <span class="font-semibold text-body">Organigrama</span>
         <span>· {{ nodes.length }} unidades · {{ edges.length }} relaciones</span>
         <AppInfoTip placement="bottom" aria-label="Ayuda del organigrama">
@@ -32,7 +37,9 @@
             <IconPlus class="mr-1 h-4 w-4" /> Unidad
           </AppButton>
         </div>
-        <AppButton variant="neutral-outline" :disabled="loading" @click="loadGraph">Refrescar</AppButton>
+        <AppButton variant="neutral-outline" icon-only :disabled="loading" title="Refrescar" aria-label="Refrescar" @click="loadGraph">
+          <IconRefresh class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
+        </AppButton>
       </div>
     </div>
 
@@ -506,7 +513,7 @@ import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeV
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconCalendarEvent, IconCrown, IconFileDescription, IconId, IconPencil, IconPlus, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
+import { IconArrowLeft, IconCalendarEvent, IconCrown, IconFileDescription, IconId, IconPencil, IconPlus, IconRefresh, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({
@@ -514,7 +521,7 @@ const props = defineProps({
   editable: { type: Boolean, default: true },
   canCreateProcess: { type: Boolean, default: true }
 });
-defineEmits(["create-unit", "create-process"]);
+defineEmits(["create-unit", "create-process", "go-back"]);
 
 /* LA RUEDA DE SERIES vive en `tokens.css` desde F8 (2026-08-20). Aqui solo queda el NOMBRE del
    token, que es lo mismo que hace `estadoTono.js` con los tonos: JavaScript nombra, el CSS pinta.

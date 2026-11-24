@@ -65,7 +65,11 @@
       <template v-if="subtabs" #subtabs>
         <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
       </template>
-      <template #actions>
+      <!-- EN EL ORGANIGRAMA LA BARRA NO PINTA BOTONES (2026-11-23): se quedan el título y las
+           pestañas, que son la navegación. «Agregar» duplicaba al «+ Unidad» del propio grafo —los
+           dos abrían el mismo formulario— y «Regresar» baja a la fila del grafo, como en el mapa de
+           procesos. El organigrama no se queda sin forma de volver: la lleva él. -->
+      <template v-if="!(isUnitsTable && unitGraphMode)" #actions>
         <AdminTableHeader
           :table="table"
           :loading="loading"
@@ -126,6 +130,7 @@
       :editable="canUpdateCurrentTable"
       :can-create-process="canCreateProcessConfiguration"
       class="mb-2"
+      @go-back="handleGoBack"
       @create-unit="openCreate"
       @create-process="openProcessWizardFromScratch"
     />
