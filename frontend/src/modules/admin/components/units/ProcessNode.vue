@@ -57,28 +57,30 @@
       <span class="min-w-0 flex-1 truncate text-sm font-bold text-strong" :title="data.name">{{ data.name }}</span>
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
-    <p class="m-0 mt-1 flex flex-wrap items-center gap-2">
-      <AppTag :variant="tonoVigencia(data.estado)" outlined>{{ etiquetaVigencia(data.estado) }}</AppTag>
+    <!-- PRUEBA (2026-11-24, opción 3): el estado y las configuraciones van en una franja al pie,
+         separada por una línea fina, en texto pequeño. Sólo toma color lo que no es lo normal. La
+         cuenta de configuraciones sigue siendo el botón que las despliega. -->
+    <div class="graph-node__pie">
+      <span class="graph-node__dato" :class="[`graph-node__dato--${tonoVigencia(data.estado)}`, data.estado === 'vigente' ? '' : 'graph-node__dato--destaca']">{{ etiquetaVigencia(data.estado) }}</span>
+      <span aria-hidden="true">·</span>
       <button
         v-if="data.hasConfigs"
         type="button"
-        class="nodrag graph-node__toggle"
+        class="nodrag graph-node__toggle graph-node__dato"
+        :class="[`graph-node__dato--${tonoConfiguraciones}`, tonoConfiguraciones === 'success' ? '' : 'graph-node__dato--destaca']"
         :title="data.configsExpanded ? 'Ocultar configuraciones' : 'Mostrar configuraciones'"
         @click.stop="data.onToggleConfigs?.(data.id)"
       >
-        <AppTag :variant="tonoConfiguraciones" outlined>
-          <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
-          {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
-        </AppTag>
+        <IconChevronRight class="h-3 w-3 transition-transform" :class="data.configsExpanded ? 'rotate-90' : ''" />
+        {{ data.active_count || 0 }}/{{ data.definitions_count }} config.
       </button>
-      <AppTag v-else variant="neutral" outlined>Sin config.</AppTag>
-    </p>
+      <span v-else class="graph-node__dato">Sin config.</span>
+    </div>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
 </template>
 
 <script setup>
-import AppTag from "@/shared/components/data/AppTag.vue";
 import { tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";

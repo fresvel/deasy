@@ -96,6 +96,65 @@
         color: var(--color-icon);
     }
 
+    /* UN DATO DEL NODO SIN CAJA (prueba del 2026-11-24): texto gris y, si lo lleva, un punto con el
+       tono. `--destaca` tiñe también el texto: es para lo que NO es lo normal —suprimido, a
+       medias, sin cubrir—. Los tonos de texto son los 700, que pasan de 4.5:1 sobre blanco. */
+    .graph-node__dato {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--color-muted);
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+    }
+
+    .graph-node__dato--success {
+        --dato-punto: var(--color-success-500);
+        --dato-texto: var(--color-success-700);
+    }
+    .graph-node__dato--warning {
+        --dato-punto: var(--color-warning-500);
+        --dato-texto: var(--color-warning-700);
+    }
+    .graph-node__dato--danger {
+        --dato-punto: var(--color-error-500);
+        --dato-texto: var(--color-error-700);
+    }
+    .graph-node__dato--info {
+        --dato-punto: var(--color-blue-light-500);
+        --dato-texto: var(--color-blue-light-700);
+    }
+    .graph-node__dato--neutral {
+        --dato-punto: var(--color-line-strong);
+        --dato-texto: var(--color-muted);
+    }
+
+    .graph-node__dato--destaca {
+        color: var(--dato-texto, var(--color-muted));
+        font-weight: 600;
+    }
+
+    .graph-node__punto {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--dato-punto, var(--color-line-strong));
+    }
+
+    /* LA FRANJA AL PIE DEL NODO (prueba, opción 3): de borde a borde, bajo una línea fina. Los
+       márgenes negativos deshacen el relleno del nodo (12 a los lados, 8 abajo). */
+    .graph-node__pie {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 8px -12px -8px;
+        padding: 4px 12px;
+        border-top: 1px solid var(--color-line);
+        color: var(--color-muted);
+        font-size: 12px;
+    }
+
     /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
        Es el gris de los iconos aclarado, no un color propio. */
     .graph-node--config {

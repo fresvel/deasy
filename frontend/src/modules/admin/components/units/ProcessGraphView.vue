@@ -415,7 +415,7 @@ const emit = defineEmits([
 
 const { fitView } = useVueFlow();
 const NODE_W = 260;
-const NODE_H = 64;
+const NODE_H = 65;
 const CONFIG_W = 210;
 const CONFIG_H = 64;
 const TEMPLATE_W = 170;

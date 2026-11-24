@@ -80,28 +80,33 @@
       <IconCrown v-if="Number(data.head_count) > 0" class="h-3.5 w-3.5 shrink-0 text-warning" title="Tiene jefatura" />
       <span v-if="data.collapsed" class="text-theme-xs font-semibold text-primary">▸</span>
     </p>
-    <p class="m-0 mt-1 flex flex-wrap items-center gap-2">
-      <!-- El estado va SIEMPRE, también cuando rige, y es lo primero de la fila de abajo: como en el proceso. -->
-      <AppTag :variant="tonoVigencia(data.estado)" outlined>{{ etiquetaVigencia(data.estado) }}</AppTag>
-      <AppTag
+    <!-- PRUEBA (2026-11-24, opción 1): el estado y los puestos van SIN CAJA. Un punto con el tono del
+         estado y su nombre en gris; la cuenta de puestos, con su icono, sólo toma color cuando falta
+         gente. Así la única caja del nodo es el nodo, y lo que no es normal es lo único que tiñe. -->
+    <p class="m-0 mt-1 flex flex-wrap items-center gap-3">
+      <span class="graph-node__dato" :class="[`graph-node__dato--${tonoVigencia(data.estado)}`, data.estado === 'vigente' ? '' : 'graph-node__dato--destaca']">
+        <span class="graph-node__punto"></span>{{ etiquetaVigencia(data.estado) }}
+      </span>
+      <span
         v-if="Number(data.positions_count) > 0"
-        :variant="tonoPuestos"
-        outlined
+        class="graph-node__dato"
+        :class="[`graph-node__dato--${tonoPuestos}`, tonoPuestos === 'success' ? '' : 'graph-node__dato--destaca']"
         :title="`${data.occupied_count || 0} ocupados de ${data.positions_count} puestos`"
-      >{{ data.occupied_count || 0 }}/{{ data.positions_count }} puestos</AppTag>
+      >
+        <IconUsers class="h-3.5 w-3.5" />{{ data.occupied_count || 0 }}/{{ data.positions_count }}
+      </span>
     </p>
     <Handle type="source" :position="Position.Bottom" class="graph-node__handle" />
   </div>
 </template>
 
 <script setup>
-import AppTag from "@/shared/components/data/AppTag.vue";
 import { coberturaEstado, tonoCobertura, tonoVigencia, etiquetaVigencia } from "@/shared/utils/estadoTono.js";
 import { computed, ref } from "vue";
 import { Handle, Position } from "@vue-flow/core";
 import {
   IconCornerDownRight, IconCrown, IconFocusCentered, IconArrowBackUp, IconSitemap,
-  IconAlertTriangle, IconChevronUp, IconChevronDown
+  IconAlertTriangle, IconChevronUp, IconChevronDown, IconUsers
 } from "@tabler/icons-vue";
 
 const props = defineProps({
