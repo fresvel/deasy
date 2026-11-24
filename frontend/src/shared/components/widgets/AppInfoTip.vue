@@ -6,7 +6,23 @@
     @mouseenter="open = true"
     @mouseleave="open = false"
   >
+    <!-- `as-button`: en una barra de botones la ayuda es un botón más, del mismo alto y con el mismo
+         borde que sus vecinos. Sin él, es el icono pequeño de siempre, para ir pegado a un rótulo. -->
+    <AppButton
+      v-if="asButton"
+      variant="neutral-outline"
+      icon-only
+      :aria-label="ariaLabel"
+      :aria-expanded="open"
+      @click.stop="open = !open"
+      @focus="open = true"
+      @blur="open = false"
+      @keydown.escape="open = false"
+    >
+      <IconInfoCircle class="h-4 w-4" stroke-width="2" />
+    </AppButton>
     <button
+      v-else
       type="button"
       class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round transition-colors hover:text-icon"
       :aria-label="ariaLabel"
@@ -32,8 +48,14 @@
 <script setup>
 import { ref, computed } from "vue";
 import { IconInfoCircle } from "@tabler/icons-vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
 
 const props = defineProps({
+  // El disparador como un `AppButton` de icono, para convivir con otros botones en una barra.
+  asButton: {
+    type: Boolean,
+    default: false
+  },
   // Texto del tooltip (alternativa al slot por defecto para contenido enriquecido).
   text: {
     type: String,

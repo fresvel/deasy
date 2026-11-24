@@ -1,15 +1,17 @@
 <template>
   <div class="flex flex-col gap-3">
+    <!-- UNA SOLA FILA DE CONTROLES (2026-11-23). Eran dos —una con el título, el contador y los
+         botones, otra con buscar, resaltar y exportar—, y todo cabe en una. Todo lo que hay aquí
+         mide lo mismo de alto: los que eran una casilla suelta («Resaltar pendientes») y un icono
+         pequeño (la ayuda) son ahora botones como sus vecinos. El rótulo «Organigrama · N unidades ·
+         N relaciones» se fue: repetía la pestaña en la que ya estás. -->
     <div class="flex flex-wrap items-center justify-between gap-2">
-      <!-- Izquierda: regresar + título + contador + ayuda. «Regresar» vive AQUÍ, en la fila del
-           grafo, igual que en el mapa de procesos; antes estaba arriba, en la barra de la tabla. -->
-      <div class="flex items-center gap-2 text-sm text-muted">
+      <!-- Izquierda: volver, ayuda y buscar. -->
+      <div class="flex flex-wrap items-center gap-2">
         <AppButton variant="neutral-outline" icon-only title="Regresar" aria-label="Regresar" @click="$emit('go-back')">
           <IconArrowLeft class="h-4 w-4" />
         </AppButton>
-        <span class="font-semibold text-body">Organigrama</span>
-        <span>· {{ nodes.length }} unidades · {{ edges.length }} relaciones</span>
-        <AppInfoTip placement="bottom" aria-label="Ayuda del organigrama">
+        <AppInfoTip as-button placement="bottom" aria-label="Ayuda del organigrama">
           <template v-if="editable">
             Pulsa una unidad para abrirla: sus datos, su vigencia, sus puestos y sus procesos. Pasa el cursor
             sobre ella para agregarle hijas, o arrastra desde su punto inferior al superior de otra para crear
@@ -20,15 +22,27 @@
             lectura: no tienes permisos para editar.
           </template>
         </AppInfoTip>
+        <input v-model="searchTerm" type="text" aria-label="Buscar unidad" placeholder="Buscar unidad…" class="deasy-control w-52" @keyup.enter="searchAndCenter" />
+        <AppButton variant="neutral-outline" icon-only title="Buscar y centrar" aria-label="Buscar y centrar" @click="searchAndCenter">
+          <IconSearch class="h-4 w-4" />
+        </AppButton>
       </div>
-      <div class="flex flex-wrap items-center gap-3">
-        <label class="flex items-center gap-2 text-xs font-medium text-icon">
-          Relación
-          <select v-model="activeRelationType" class="deasy-control deasy-control--select">
-            <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
-            <option value="all">Todos los tipos</option>
-          </select>
-        </label>
+      <!-- Derecha: qué se ve, crear, y las dos acciones sobre el grafo entero. -->
+      <div class="flex flex-wrap items-center gap-2">
+        <select v-model="activeRelationType" class="deasy-control deasy-control--select w-44" aria-label="Tipo de relación" title="Tipo de relación">
+          <option v-for="rt in relationTypes" :key="rt.id" :value="rt.code">{{ rt.name }}</option>
+          <option value="all">Todos los tipos</option>
+        </select>
+        <!-- «Resaltar pendientes» como un botón que se queda pulsado: es un interruptor, y así mide
+             y se pinta como sus vecinos. El tono cambia al activarlo, y además lo dice `aria-pressed`. -->
+        <AppButton
+          :variant="healthOnly ? 'warning-soft' : 'neutral-outline'"
+          :aria-pressed="healthOnly"
+          title="Resaltar las unidades con pendientes"
+          @click="healthOnly = !healthOnly"
+        >
+          <IconAlertTriangle class="mr-1 h-4 w-4" /> Pendientes<span v-if="pendingCount" class="ml-1 font-semibold">· {{ pendingCount }}</span>
+        </AppButton>
         <!-- Los dos botones con rótulo miden lo mismo porque van en una rejilla de columnas iguales:
              el patrón del mapa de procesos. -->
         <div class="grid auto-cols-fr grid-flow-col gap-2">
@@ -40,21 +54,10 @@
         <AppButton variant="neutral-outline" icon-only :disabled="loading" title="Refrescar" aria-label="Refrescar" @click="loadGraph">
           <IconRefresh class="h-4 w-4" :class="loading ? 'animate-spin' : ''" />
         </AppButton>
+        <AppButton variant="neutral-outline" icon-only :disabled="exporting" title="Exportar PNG" aria-label="Exportar PNG" @click="exportPng">
+          <IconDownload class="h-4 w-4" />
+        </AppButton>
       </div>
-    </div>
-
-    <!-- Controles: buscar/centrar, salud, exportar -->
-    <div class="flex flex-wrap items-center gap-3">
-      <div class="flex items-center gap-2">
-        <input v-model="searchTerm" type="text" aria-label="Buscar unidad" placeholder="Buscar unidad…" class="deasy-control w-52" @keyup.enter="searchAndCenter" />
-        <AppButton variant="neutral-outline" @click="searchAndCenter">Buscar</AppButton>
-      </div>
-      <label class="flex items-center gap-2 text-xs font-medium text-icon">
-        <input v-model="healthOnly" type="checkbox" class="text-warning" />
-        Resaltar pendientes
-        <AppTag v-if="pendingCount" variant="warning">{{ pendingCount }}</AppTag>
-      </label>
-      <AppButton variant="neutral-outline" :disabled="exporting" @click="exportPng">{{ exporting ? "Exportando…" : "Exportar PNG" }}</AppButton>
     </div>
 
     <!-- Leyenda de tipos de relación presentes -->
@@ -513,7 +516,7 @@ import { useNodeVigencia } from "@/modules/admin/composables/estructura/useNodeV
 import UnitNode from "./UnitNode.vue";
 import UnitEdge from "./UnitEdge.vue";
 import UnitPositionProfileWizard from "./UnitPositionProfileWizard.vue";
-import { IconArrowLeft, IconCalendarEvent, IconCrown, IconFileDescription, IconId, IconPencil, IconPlus, IconRefresh, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
+import { IconAlertTriangle, IconArrowLeft, IconCalendarEvent, IconCrown, IconDownload, IconFileDescription, IconId, IconPencil, IconPlus, IconRefresh, IconSearch, IconSettings, IconTrash, IconUserEdit, IconUserMinus, IconUserPlus, IconUsers } from "@tabler/icons-vue";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
 const props = defineProps({

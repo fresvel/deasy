@@ -19,6 +19,25 @@
         @apply flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
     }
 
+    /* EL MARCO DE LA TIRA (2026-11-23): la tira y, cuando no cabe, una flecha a cada lado para
+       recorrerla. La tira ocupa lo que quede y es la que se desplaza; las flechas no se encogen.
+       El grupo anidado NO se estira: conserva su `w-fit`, y el marco lo abraza. */
+    .deasy-inline-tabs-marco {
+        @apply flex min-w-0 max-w-full items-center gap-1;
+    }
+
+    .deasy-inline-tabs-marco > .deasy-inline-tabs {
+        @apply min-w-0 flex-1;
+    }
+
+    .deasy-inline-tabs-marco > .deasy-inline-tabs--anidadas {
+        @apply flex-none;
+    }
+
+    .deasy-inline-tabs-marco > .deasy-btn {
+        @apply shrink-0;
+    }
+
     /* LA PESTAÑA — receta «Underline + icon» de TailAdmin, con dos ajustes pedidos por el dueño
      * (2026-08-15): **icono siempre** y **más alta**.
      *
