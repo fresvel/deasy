@@ -165,7 +165,7 @@ con lo que ocurre al borrar el destino; **Admite** son los únicos valores que l
 | `process_id` | int | sí | `processes.id` · impide borrar | — |
 | `nombre` | varchar(180) | sí | — | — |
 | `cargo_id` | int | no | `cargos.id` · impide borrar | — |
-| `recipient_policy` | text | sí | — | `unit_head` |
+| `recipient_policy` | text | sí | — | `all_matches` · `unit_head` |
 | `unit_scope_type` | text | sí | — | `all_units` · `unit_type` · `unit_exact` |
 | `unit_type_id` | int | no | `unit_types.id` · impide borrar | — |
 | `unit_id` | int | no | `units.id` · impide borrar | — |

@@ -109,6 +109,8 @@ export const API_ROUTES = {
   ADMIN_SQL_ESTRUCTURA_EFECTOS: (clase, id) => `${API_PREFIX}/admin/sql/estructura/efectos-de-suprimir/${clase}/${id}`,
   ADMIN_SQL_ESTRUCTURA_PUESTOS_CANDIDATOS: `${API_PREFIX}/admin/sql/estructura/puestos-candidatos-a-suceder`,
   ADMIN_SQL_ESTRUCTURA_CORRECCIONES: `${API_PREFIX}/admin/sql/estructura/correcciones`,
+  ADMIN_SQL_ACTOS_DOCUMENTOS: `${API_PREFIX}/admin/sql/estructura/actos/documentos`,
+  ADMIN_SQL_ACTO_ADJUNTO: (actoId) => `${API_PREFIX}/admin/sql/estructura/actos/${actoId}/adjunto`,
   ADMIN_SQL_UNIT_PARENT: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/parent`,
   ADMIN_SQL_UNIT_DETAIL: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/detail`,
   ADMIN_SQL_PROCESSES_GRAPH: `${API_PREFIX}/admin/sql/processes/graph`,

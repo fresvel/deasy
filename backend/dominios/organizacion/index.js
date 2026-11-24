@@ -25,6 +25,17 @@ export { default as OrgStructureService } from "./services/orgStructure.js";
 // `/admin`, sobre tablas de dos dominios— entra por aquí a dejar su entrada.
 export { registrarCorreccion, TABLAS_CON_CORRECCION } from "./services/correccionesDeEstructura.js";
 
+// El fichero de un acto externo, y la lista de los actos que siguen sin papel (las rutas viven en
+// `routes/sql_admin_router.js`, que es donde están el permiso de `/admin` y la recepción de ficheros).
+export {
+  adjuntarFicheroAlActo,
+  corregirFicheroDelActo,
+  descargarFicheroDelActo,
+  listarActosDocumentos,
+  quitarFicheroDelActo,
+  quitarFicheroDelActoComoCorreccion
+} from "./controllers/acto_adjunto_controller.js";
+
 // La institución: quién es, y cuál es su país. Lo preguntan la recuperación de correo y el documento
 // de identidad —para saber qué documento es el «nacional»—.
 export { default as InstitucionService } from "./services/InstitucionService.js";

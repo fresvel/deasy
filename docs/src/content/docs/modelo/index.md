@@ -59,13 +59,13 @@ tipo. Las cifras, con su alcance dicho, porque mezclarlos es fácil:
 
 | | |
 |---|---|
-| Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **42** |
-| Columnas de esas 42 | **377** |
-| Claves foráneas **entre** esas 42 | **97** |
-| Claves foráneas **declaradas en** esas 42 | **102** |
-| Tablas del esquema entero (con chat, empleo y dossier) | **97** |
-| Claves foráneas del esquema entero | **183** |
-| Restricciones `CHECK` del esquema entero | **90** |
+| Tablas de la cadena, las que dibuja el [mapa completo](/modelo/mapa-completo/) | **43** |
+| Columnas de esas 43 | **387** |
+| Claves foráneas **entre** esas 43 | **99** |
+| Claves foráneas **declaradas en** esas 43 | **104** |
+| Tablas del esquema entero (con chat, empleo y dossier) | **98** |
+| Claves foráneas del esquema entero | **185** |
+| Restricciones `CHECK` del esquema entero | **91** |
 
 Las dos cifras de claves foráneas no son la misma, y la diferencia explica una pregunta que sale
 sola: **cinco** de las declaradas apuntan **fuera del mapa** —cuatro de `persons` (a `paises` dos

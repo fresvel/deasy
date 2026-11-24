@@ -43,6 +43,15 @@
         >
           <IconAlertTriangle class="mr-1 h-4 w-4" /> Pendientes<span v-if="pendingCount" class="ml-1 font-semibold">· {{ pendingCount }}</span>
         </AppButton>
+        <!-- LOS ACTOS Y SU PAPEL: cuántos siguen sin documento, y la puerta para adjuntárselo. Va aquí
+             porque los actos son lo que ordena los cambios de esta estructura. -->
+        <AppButton
+          :variant="actosSinDocumento ? 'warning-soft' : 'neutral-outline'"
+          title="Los actos y su documento"
+          @click="actosAbierto = true"
+        >
+          <IconFileDescription class="mr-1 h-4 w-4" /> Actos<span v-if="actosSinDocumento" class="ml-1 font-semibold">· {{ actosSinDocumento }} sin documento</span>
+        </AppButton>
         <!-- Los dos botones con rótulo miden lo mismo porque van en una rejilla de columnas iguales:
              el patrón del mapa de procesos. -->
         <div class="grid auto-cols-fr grid-flow-col gap-2">
@@ -162,6 +171,8 @@
         </li>
       </ul>
     </AppModalShell>
+
+    <ActosDocumentosModal v-if="actosAbierto" :open="actosAbierto" :editable="editable" @close="actosAbierto = false" @cambio="contarActosSinDocumento" />
 
     <NodeMoverModal :mover="moverUnidad" :acto-options="vigencia.actoOptions.value" />
 
@@ -657,6 +668,7 @@ import "@vue-flow/core/dist/theme-default.css";
 import "@vue-flow/controls/dist/style.css";
 import AppButton from "@/shared/components/buttons/AppButton.vue";
 import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import ActosDocumentosModal from "@/modules/admin/components/units/ActosDocumentosModal.vue";
 import AppInfoTip from "@/shared/components/widgets/AppInfoTip.vue";
 import SToggle from "@/shared/components/forms/SToggle.vue";
 import NodeVigenciaPanel from "./NodeVigenciaPanel.vue";
@@ -892,6 +904,20 @@ const healthIssues = (u) => {
   }
   return issues;
 };
+// Los actos que siguen sin documento: la cifra del botón de la barra. Se cuenta al entrar y cada
+// vez que se sube o se quita un fichero. Si falla no se enseña nada: es un aviso, no un bloqueo.
+const actosAbierto = ref(false);
+const actosSinDocumento = ref(0);
+const contarActosSinDocumento = async () => {
+  try {
+    const { data } = await adminSqlService.getActosYSuDocumento({ soloSinDocumento: true });
+    actosSinDocumento.value = Array.isArray(data) ? data.length : 0;
+  } catch {
+    actosSinDocumento.value = 0;
+  }
+};
+contarActosSinDocumento();
+
 // El modal de las observaciones de un nodo, y el salto desde cada una a donde se resuelve.
 const observacionesDe = ref(null);
 const openIssues = (unitId) => {

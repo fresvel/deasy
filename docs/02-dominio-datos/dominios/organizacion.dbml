@@ -16,6 +16,19 @@ Project organizacion {
   Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → cantón → parroquia.'''
 }
 
+Table "acto_adjuntos" {
+  "id" int4 [pk, not null, increment]
+  "acto_id" int4 [unique, not null]
+  "file_path" varchar(500) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(120) [not null]
+  "size_bytes" int8 [not null, check: `size_bytes > 0`]
+  "sha256" bpchar(64) [not null]
+  "subido_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
 Table "actos" {
   "id" int4 [pk, not null, increment]
   "tipo_de_acto_id" int4 [not null]
@@ -71,7 +84,7 @@ Table "clases_parroquia" {
 
 Table "correcciones_de_estructura" {
   "id" int8 [pk, not null, increment]
-  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying, 'unit_equivalencias'::character varying, 'position_equivalencias'::character varying, 'process_equivalencias'::character varying])::text[])`]
+  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying, 'unit_equivalencias'::character varying, 'position_equivalencias'::character varying, 'process_equivalencias'::character varying, 'acto_adjuntos'::character varying])::text[])`]
   "registro_id" int8
   "actor_person_id" int4 [not null]
   "motivo" text [not null, check: `char_length(btrim(motivo)) >= 10`]
@@ -320,6 +333,7 @@ Table "units" {
   }
 }
 
+Ref "fk_acto_adjuntos_acto":"actos"."id" <? "acto_adjuntos"."acto_id" [delete: cascade]
 Ref "fk_actos_tipo":"tipos_de_acto"."id" <? "actos"."tipo_de_acto_id"
 Ref "fk_actos_unidad_emisora":"units"."id" ?<? "actos"."unidad_emisora_id"
 Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
@@ -349,6 +363,7 @@ Ref "fk_unit_vigencias_unit":"units"."id" <? "unit_vigencias"."unit_id"
 Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
 
 // ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   persons -> acto_adjuntos   [identidad]
 //   actos -> acto_documentos   [tareas]
 //   persons -> actos   [identidad]
 //   persons -> actos   [identidad]

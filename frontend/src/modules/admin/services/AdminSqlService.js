@@ -59,6 +59,31 @@ export class AdminSqlService {
     return this.httpClient.post(API_ROUTES.ADMIN_SQL_ESTRUCTURA_CORRECCIONES, payload);
   }
 
+  /* LOS ACTOS Y SU PAPEL (frente 27, F27.P4.T11). Cada acto con su documento —«firmado», «adjunto»
+     o ninguno— y si ya ordena algo, que es lo que hace de cambiar su fichero una corrección. */
+  getActosYSuDocumento({ soloSinDocumento = false } = {}) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_ACTOS_DOCUMENTOS, { params: soloSinDocumento ? { sin_documento: 1 } : {} });
+  }
+
+  /* Sube el PDF de un acto externo, o lo cambia. Con `motivo` va por la ruta de correcciones, que
+     pide su permiso: es la que vale cuando el acto ya ordena algo. */
+  adjuntarAlActo(actoId, archivo, { motivo = "" } = {}) {
+    const cuerpo = new FormData();
+    cuerpo.append("archivo", archivo);
+    if (motivo) cuerpo.append("motivo", motivo);
+    const ruta = API_ROUTES.ADMIN_SQL_ACTO_ADJUNTO(actoId);
+    return this.httpClient.post(motivo ? `${ruta}/correccion` : ruta, cuerpo);
+  }
+
+  quitarAdjuntoDelActo(actoId, { motivo = "" } = {}) {
+    const ruta = API_ROUTES.ADMIN_SQL_ACTO_ADJUNTO(actoId);
+    return motivo ? this.httpClient.post(`${ruta}/correccion/quitar`, { motivo }) : this.httpClient.delete(ruta);
+  }
+
+  descargarAdjuntoDelActo(actoId) {
+    return this.httpClient.get(API_ROUTES.ADMIN_SQL_ACTO_ADJUNTO(actoId), { responseType: "blob" });
+  }
+
   /* payload = { parent_unit_id, relation_type_id, vigente_desde?, origen?, acto_id? } */
   setUnitParent(unitId, payload) {
     return this.httpClient.patch(API_ROUTES.ADMIN_SQL_UNIT_PARENT(unitId), payload);

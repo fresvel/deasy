@@ -22,6 +22,14 @@
       "orden-de-lectura.md"
     ]
   },
+  "acto_adjuntos": {
+    "huella": "bc70af5575511ea2",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
   "acto_documentos": {
     "huella": "c87d4bb57f0794f4",
     "paginas": [
@@ -280,7 +288,7 @@
     ]
   },
   "correcciones_de_estructura": {
-    "huella": "817adc4d851024f4",
+    "huella": "0f127559215f8303",
     "paginas": [
       "complemento/permisos.md",
       "modelo/mapa-completo.md",

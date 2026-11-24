@@ -811,6 +811,24 @@ test("un sucesor no deja de regir el dia del fin que hereda ni antes, ni pierde 
   assert.match(cuerpo, /v\.id <> \$2 AND \(v\.vigente_hasta IS NULL OR v\.vigente_hasta > a\.vigente_hasta\)/);
 });
 
+test("el fichero de un acto externo: uno de los dos papeles, y cambiarlo es correccion si el acto ya ordena algo", () => {
+  const tabla = bloqueRecorrido("acto_adjuntos");
+  assert.match(tabla, /acto_id INT NOT NULL UNIQUE/);
+  assert.match(tabla, /sha256 CHAR\(64\) NOT NULL/);
+  assert.match(tabla, /REFERENCES actos\(id\) ON DELETE CASCADE/);
+  assert.match(SCHEMA, /BEFORE INSERT OR UPDATE OR DELETE ON acto_adjuntos\s+FOR EACH ROW EXECUTE FUNCTION proteger_adjunto_de_acto\(\)/);
+  assert.match(SCHEMA, /BEFORE INSERT ON acto_documentos\s+FOR EACH ROW EXECUTE FUNCTION rechazar_documento_si_hay_adjunto\(\)/);
+  const regla = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.proteger_adjunto_de_acto()")).split("$$ LANGUAGE plpgsql;")[0];
+  assert.match(regla, /acto_ordena_algo\(OLD\.acto_id\) AND NOT correccion_en_curso\(TG_TABLE_NAME, OLD\.id\)/);
+  // «Ordena algo» mira las CINCO tablas fechadas: si se añade una sexta que cite actos, tiene que entrar aqui.
+  const ordena = SCHEMA.slice(SCHEMA.indexOf("FUNCTION public.acto_ordena_algo(")).split("$$ LANGUAGE plpgsql")[0];
+  for (const fechada of ["unit_vigencias", "position_vigencias", "process_vigencias", "unit_relations", "process_relations"]) {
+    assert.match(ordena, new RegExp(`FROM ${fechada} `));
+  }
+  assert.equal((SCHEMA.match(/inicio_acto_id INT NULL/g) || []).length, 5);
+  assert.match(bloqueRecorrido("correcciones_de_estructura"), /'acto_adjuntos'/);
+});
+
 test("quitar una equivalencia de algo que ya termino exige una correccion registrada", () => {
   for (const [clase, vidas] of [["unit", "unit_vigencias"], ["position", "position_vigencias"], ["process", "process_vigencias"]]) {
     assert.match(

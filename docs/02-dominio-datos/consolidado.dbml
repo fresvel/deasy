@@ -13,7 +13,7 @@
 
 Project deasy {
   database_type: 'PostgreSQL'
-  Note: '''Modelo de datos de Deasy. 97 tablas. El color de cabecera indica el dominio.'''
+  Note: '''Modelo de datos de Deasy. 98 tablas. El color de cabecera indica el dominio.'''
 }
 
 Table "accesos_sensibles" {
@@ -42,6 +42,19 @@ Table "actions" {
   "name" varchar(120) [not null]
   "description" varchar(255)
   "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "acto_adjuntos" {
+  "id" int4 [pk, not null, increment]
+  "acto_id" int4 [unique, not null]
+  "file_path" varchar(500) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(120) [not null]
+  "size_bytes" int8 [not null, check: `size_bytes > 0`]
+  "sha256" bpchar(64) [not null]
+  "subido_por_person_id" int4
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
   "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 }
@@ -374,7 +387,7 @@ Table "contracts" {
 
 Table "correcciones_de_estructura" {
   "id" int8 [pk, not null, increment]
-  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying, 'unit_equivalencias'::character varying, 'position_equivalencias'::character varying, 'process_equivalencias'::character varying])::text[])`]
+  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying, 'unit_equivalencias'::character varying, 'position_equivalencias'::character varying, 'process_equivalencias'::character varying, 'acto_adjuntos'::character varying])::text[])`]
   "registro_id" int8
   "actor_person_id" int4 [not null]
   "motivo" text [not null, check: `char_length(btrim(motivo)) >= 10`]
@@ -1553,6 +1566,8 @@ Table "vinculos" {
   Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
 }
 
+Ref "fk_acto_adjuntos_acto":"actos"."id" <? "acto_adjuntos"."acto_id" [delete: cascade]
+Ref "fk_acto_adjuntos_subido_por":"persons"."id" ?<? "acto_adjuntos"."subido_por_person_id"
 Ref "fk_acto_documentos_acto":"actos"."id" <? "acto_documentos"."acto_id" [delete: cascade]
 Ref "fk_acto_documentos_version":"document_versions"."id" <? "acto_documentos"."document_version_id"
 Ref "fk_actos_registrado_por":"persons"."id" ?<? "actos"."registrado_por_person_id"

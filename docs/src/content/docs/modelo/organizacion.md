@@ -179,8 +179,8 @@ Una corrección **reescribe la historia**, y por eso pide lo que un cambio norma
   fila y qué dice ahora. Sólo admite altas —ni se modifica ni se borra—, y es **la única memoria**
   de lo que la fila decía.
 
-Cinco cosas son corrección y sólo se pueden hacer así, en las vidas de unidades, puestos y procesos,
-en las relaciones de los dos árboles y en sus equivalencias:
+Seis cosas son corrección y sólo se pueden hacer así, en las vidas de unidades, puestos y procesos,
+en las relaciones de los dos árboles, en sus equivalencias y en el fichero de un acto:
 
 1. **Cambiar la fecha de inicio de algo que ya empezó a regir.** Es afirmar que rigió desde otro día.
 2. **Cambiar la fecha de fin de algo que ya terminó, a otra que también haya ocurrido.** «Terminó el
@@ -190,6 +190,9 @@ en las relaciones de los dos árboles y en sus equivalencias:
    rigió por error.
 5. **Quitar un sucesor de algo que ya terminó.** Mientras el fin es futuro, la equivalencia es un
    plan y se quita sin más; cuando ya ocurrió, quitarla es decir que lo escrito estaba mal.
+6. **Cambiar o quitar el fichero de un acto que ya ordena algo.** Mientras nada lo cita se cambia
+   sin trámite; después es el papel que justifica un cambio (ver
+   [el fichero de un acto externo](#el-fichero-de-un-acto-externo--acto_adjuntos)).
 
 Poner fin a algo que rige **no** es una corrección: es suprimir. Tampoco mover un fin que todavía
 no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido.
@@ -970,13 +973,14 @@ almacén es justo la razón de guardarla.
 ## El papel que ordena un cambio — `actos`
 
 Una unidad no se crea ni se suprime porque sí: lo decide alguien con competencia, y hay un documento
-que lo dice. Hasta el 2026-11-23 el modelo no tenía dónde apuntarlo. Ahora hay tres tablas:
+que lo dice. Hasta el 2026-11-23 el modelo no tenía dónde apuntarlo. Ahora hay cuatro tablas:
 
 | Tabla | Qué guarda |
 |---|---|
 | `tipos_de_acto` | El catálogo: resolución, acta, memorando, oficio, disposición. Se amplía en `/admin` |
 | `actos` | La **referencia** del papel: tipo, número, asunto, quién lo emite y sus dos fechas |
 | `acto_documentos` | El enlace al documento firmado, cuando se produjo aquí |
+| `acto_adjuntos` | El fichero del acto, cuando vino de fuera: dónde está, su huella y quién lo subió |
 
 Cuatro cosas que no son evidentes:
 
@@ -996,17 +1000,38 @@ Cuatro cosas que no son evidentes:
   Está vacío en lo que no registró una persona: la siembra.
 - **Lleva dos fechas y no son la misma**: `fecha_emision` es cuándo se firmó, `fecha_vigencia` desde
   cuándo rige. Una resolución de diciembre puede regir desde enero.
-- **Un acto sin fila en `acto_documentos` no es un error**: es el estado «referencia registrada,
-  documento pendiente». La referencia es obligatoria; el documento puede llegar después.
+- **Un acto sin papel no es un error**: es el estado «referencia registrada, documento pendiente».
+  La referencia es obligatoria; el documento puede llegar después. Lo que no puede es pasar
+  inadvertido: el organigrama dice cuántos actos siguen sin documento y los lista.
 
 El enlace al documento va **del documento al acto**, en el dominio de tareas, y no al revés: el acto
 está en el nivel 2 para que unidades y procesos puedan apuntarle, `document_versions` está en el 5, y
 una clave ajena no sube de nivel.
 
-:::caution[Lo que todavía no hace]
-A un acto **externo** —el que no se produjo ni se firmó aquí— todavía no se le puede adjuntar su
-fichero, y no hay una lista de los actos que siguen sin documento. Está decidido y **sin construir**.
-:::
+### El fichero de un acto externo — `acto_adjuntos`
+
+El papel de un acto llega por uno de dos caminos, y **nunca por los dos**: si se produjo y se firmó
+aquí, se **enlaza** (`acto_documentos`); si vino de fuera —una resolución de la sede matriz, un
+oficio en papel digitalizado—, se **adjunta** su PDF. La base rechaza el segundo cuando ya está el
+primero, en los dos sentidos.
+
+| | |
+|---|---|
+| Qué se guarda | la ruta del fichero en el almacén, su nombre, su tamaño, su huella SHA-256 y quién lo subió |
+| Dónde vive el fichero | en el almacén de documentos, en una ruta que **lleva la huella** de su contenido |
+| Qué se acepta | un PDF, comprobado por su contenido y no por su nombre |
+| Cuántos por acto | uno |
+
+**Cambiarlo depende de si el acto ya ordena algo.** Mientras ninguna vida ni relación lo cita, el
+fichero se sube, se cambia o se quita sin trámite: se subió el que no era. Desde que alguna lo cita
+—el inicio o el fin de una unidad, un puesto, un proceso o una relación—, ese papel es lo que
+justifica un cambio de la estructura, y cambiarlo o quitarlo es una **corrección**: permiso aparte,
+motivo, y lo que la fila decía en la bitácora. Es la misma regla que quitar un sucesor de algo que ya
+terminó, y la impone la base, no sólo la pantalla. Subir el **primer** fichero nunca es una
+corrección, aunque el acto ya ordene algo: es completar lo que faltaba.
+
+**Reemplazar no destruye el anterior.** Como la ruta lleva la huella, el fichero nuevo va a otra
+ruta y el viejo se queda donde estaba; la bitácora de correcciones guarda a cuál apuntaba la fila.
 
 ## El diagrama, con todos sus campos
 

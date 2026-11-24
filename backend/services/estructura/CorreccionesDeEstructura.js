@@ -43,6 +43,11 @@ export default class CorreccionesDeEstructura {
     if (SOLO_SE_QUITAN.includes(tabla) || quitar) {
       return this.quitar({ tabla, id, motivo, quitar }, { actorId });
     }
+    // Lo que tiene bitácora pero no pasa por el editor genérico —el fichero de un acto, que además
+    // hay que subir al almacén— se corrige desde su propia ruta.
+    if (!COLUMNAS[tabla]) {
+      throw badRequest("Eso se corrige desde su propia pantalla, no por este camino.");
+    }
     const registroId = id ? Number(id) : null;
     const permitidas = [...COLUMNAS[tabla].corregibles, ...(registroId ? [] : COLUMNAS[tabla].alAlta)];
     const datos = Object.fromEntries(Object.entries(cambios ?? {}).filter(([columna]) => permitidas.includes(columna)));

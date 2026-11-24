@@ -19,7 +19,10 @@ export const TABLAS_CON_CORRECCION = Object.freeze([
   "process_relations",
   "unit_equivalencias",
   "position_equivalencias",
-  "process_equivalencias"
+  "process_equivalencias",
+  // El fichero de un acto que ya ordena algo: se corrige desde su propia pantalla, no por el
+  // editor genérico (ver `services/actoAdjuntos.js`).
+  "acto_adjuntos"
 ]);
 
 // Devuelve la fila como objeto —sin las dos columnas de sello, que no son parte de lo que dice—, o

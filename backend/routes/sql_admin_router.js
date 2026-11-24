@@ -1,6 +1,14 @@
 import { Router } from "express";
 import multer from "multer";
 import {
+  adjuntarFicheroAlActo,
+  corregirFicheroDelActo,
+  descargarFicheroDelActo,
+  listarActosDocumentos,
+  quitarFicheroDelActo,
+  quitarFicheroDelActoComoCorreccion
+} from "../dominios/organizacion/index.js";
+import {
   getSqlMeta,
   getOperationStats,
   syncTemplateSeeds,
@@ -80,6 +88,9 @@ const draftArtifactUpload = multer({
   }
 });
 
+// El fichero de un acto: un PDF, en memoria (se calcula su huella antes de subirlo al almacén).
+const actoUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 30 * 1024 * 1024, files: 1 } });
+
 router.get("/meta", requireAnyRole(MANAGEMENT_ROLES), getSqlMeta);
 router.get("/stats/operation", requireAnyRole(MANAGEMENT_ROLES), getOperationStats);
 // Las tres rutas del CATALOGO DE GENERADORES. Llevaban `/template_seeds/` hasta el frente 23 (F3.1):
@@ -148,6 +159,14 @@ router.post("/units/with-parent", requireSqlAdminPermission({ resource: "units",
 router.get("/estructura/efectos-de-suprimir/:clase/:id", requireSqlAdminPermission({ resource: "units", action: "read" }), getEfectosDeSuprimir);
 router.get("/estructura/puestos-candidatos-a-suceder", requireSqlAdminPermission({ resource: "units", action: "read" }), getPuestosCandidatosASuceder);
 router.post("/estructura/correcciones", requireSqlAdminPermission({ resource: "correcciones_estructura", action: "create" }), corregirEstructura);
+// EL FICHERO DE UN ACTO EXTERNO (F27.P4.T11). Cuatro rutas normales y dos de corrección: lo que
+// separa cambiar un fichero «sin trámite» de corregirlo es el PERMISO, y el permiso lo pone la ruta.
+router.get("/estructura/actos/documentos", requireSqlAdminPermission({ resource: "units", action: "read" }), listarActosDocumentos);
+router.get("/estructura/actos/:id/adjunto", requireSqlAdminPermission({ resource: "units", action: "read" }), descargarFicheroDelActo);
+router.post("/estructura/actos/:id/adjunto", requireSqlAdminPermission({ resource: "units", action: "update" }), actoUpload.single("archivo"), adjuntarFicheroAlActo);
+router.delete("/estructura/actos/:id/adjunto", requireSqlAdminPermission({ resource: "units", action: "update" }), quitarFicheroDelActo);
+router.post("/estructura/actos/:id/adjunto/correccion", requireSqlAdminPermission({ resource: "correcciones_estructura", action: "create" }), actoUpload.single("archivo"), corregirFicheroDelActo);
+router.post("/estructura/actos/:id/adjunto/correccion/quitar", requireSqlAdminPermission({ resource: "correcciones_estructura", action: "create" }), quitarFicheroDelActoComoCorreccion);
 router.patch("/units/:id/parent", requireSqlAdminPermission({ resource: "units", action: "update" }), setUnitParent);
 router.get("/units/:id/detail", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitDetail);
 router.get("/units/:id/processes", requireSqlAdminPermission({ resource: "units", action: "read" }), getUnitProcesses);
