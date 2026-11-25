@@ -1,24 +1,12 @@
 // Dossier / expediente personal sobre el núcleo relacional (Fase 6, ex-MongoDB).
 // Los datos van por dossierStore (2 tablas: dossiers + dossier_items JSONB);
 // el almacén sigue guardando los PDFs. Engine-transparente vía el adaptador.
-import * as Minio from "minio";
+import { clienteAlmacen } from "../../../services/storage/clienteAlmacen.js";
 import fs from "node:fs";
 import * as store from "../datos/dossier.js";
 
 // --- el almacén: cliente, constantes y helpers (sin cambios respecto a la versión Mongo) ---
-const almacenUrl = new URL(process.env.ALMACEN_ENDPOINT || "http://localhost:9000");
-const almacenUseSSL = String(process.env.ALMACEN_USE_SSL || "").trim() === "1" || almacenUrl.protocol === "https:";
-// Al primer uso, como el resto: aqui no es por el orden de carga de ESM —Minio es un paquete de
-// fuera y no participa en ningun ciclo— sino porque LEE EL ENTORNO al construirse. Importar este
-// controlador en un test fijaba el cliente con las variables que hubiera en ese instante.
-let _almacenClient = null;
-const almacenClient = () => (_almacenClient ??= new Minio.Client({
-  endPoint: almacenUrl.hostname,
-  port: Number(almacenUrl.port || (almacenUseSSL ? 443 : 80)),
-  useSSL: almacenUseSSL,
-  accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER,
-  secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD,
-}));
+const almacenClient = () => clienteAlmacen();
 
 const ALMACEN_DOSSIER_BUCKET = process.env.ALMACEN_DOSSIER_BUCKET || "deasy-dossier";
 const ALMACEN_DOSSIER_PREFIX = process.env.ALMACEN_DOSSIER_PREFIX || "Dosier";

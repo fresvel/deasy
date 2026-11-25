@@ -1,17 +1,6 @@
-import * as Minio from "minio";
+import { clienteAlmacen } from "./clienteAlmacen.js";
 
-const almacenUrl = new URL(process.env.ALMACEN_ENDPOINT || "http://almacen:9000");
-const useSSL =
-  String(process.env.ALMACEN_USE_SSL || "").trim() === "1" ||
-  almacenUrl.protocol === "https:";
-
-export const almacenClient = new Minio.Client({
-  endPoint: almacenUrl.hostname,
-  port: Number(almacenUrl.port || (useSSL ? 443 : 80)),
-  useSSL,
-  accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER || "",
-  secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD || ""
-});
+export const almacenClient = clienteAlmacen();
 
 export const ensureBucketExists = (bucket) =>
   new Promise((resolve, reject) => {
