@@ -668,6 +668,13 @@ object_version_id  la VERSIÓN DE OBJETO ← se lee por aquí, nunca por la clav
 | `…-legal-borradores` | versionado, **mutable** | los `draft`. Cada guardado deja una versión: ése es el **historial de edición** |
 | `…-legal` | versionado + **bloqueo COMPLIANCE** | los `published` y `retired`. **Lo que entra no sale** — ni con la cuenta raíz |
 
+**Una instalación nueva trae los dos textos precargados como borrador.** Son textos genéricos, que
+no nombran a ninguna institución, y viajan dentro del backend (`backend/services/legal/textos/`).
+La instalación crea un borrador de cada clase que todavía no tenga ninguna fila —ni publicada, ni
+en borrador, ni retirada— y **no publica nada**: lo publicado no admite corrección, y qué texto
+acepta la gente lo decide quien administra. Hasta que alguien los publique en `/admin`, el
+registro no deja constancia de ningún consentimiento, y el arranque lo avisa.
+
 **Publicar es copiar los bytes exactos** del borrador al archivo, releerlos **por su versión de
 objeto**, comparar la huella y sólo entonces sellar la fila. Si la huella no cuadra, no se publica.
 

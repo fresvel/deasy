@@ -20,7 +20,6 @@ __pycache__/
 *.swp
 sessions.cdx
 .playwright-mcp/
-docker/.mc/
 signer/trust/roots/*
 signer/trust/extra/*
 !signer/trust/roots/.gitkeep

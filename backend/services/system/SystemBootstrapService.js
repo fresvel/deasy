@@ -10,6 +10,7 @@ import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.j
 import { PAISES, PROVINCIAS_EC, CANTONES_EC, PARROQUIAS_EC } from "../../dominios/organizacion/index.js";
 import { TelefonoService, EmailService, DocumentoIdentidadService } from "../../dominios/identidad/index.js";
 import DocumentosLegales from "../legal/DocumentosLegales.js";
+import { textosIniciales } from "../legal/textosIniciales.js";
 import {
   ACTION_CATALOG,
   ADMIN_ROLE_NAME,
@@ -210,9 +211,22 @@ const conectarArchivoLegal = async () => {
     const legales = new DocumentosLegales();
     await legales.asegurarBuckets();
     const adoptados = await legales.adoptarDelArchivo();
+    // LO QUE NO SE PUDO ADOPTAR SE DEJA PRECARGADO COMO BORRADOR (2026-11-25). Después de adoptar,
+    // y sólo para las clases sin ninguna fila: ver `precargarBorradores`. No publica nada.
+    const precargados = await legales.precargarBorradores(textosIniciales());
+    if (precargados.length) {
+      const detalle = precargados.map((d) => `${d.clase} ${d.version}`).join(", ");
+      console.log(`✅ Textos legales: ${precargados.length} borrador(es) precargados (${detalle})`);
+    }
     if (adoptados.length) {
       const detalle = adoptados.map((d) => `${d.clase} ${d.version} [${d.accion}]`).join(", ");
       console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con el almacén (${detalle})`);
+    } else if (precargados.length) {
+      console.warn(
+        "⚠️  Archivo legal VACIO: los textos estan precargados como BORRADOR y nadie los ha " +
+          "publicado, asi que el alta no registrara consentimiento alguno. Revisalos y publicalos " +
+          "en /admin -> Legal, o --si es el harness-- ejecuta `npm run test:char:legal`."
+      );
     } else {
       // ⚠️ ESTE CASO ESTABA EN SILENCIO Y COSTO UNA TARDE (2026-10-07). El archivo legal vive SOLO en
       // el almacén, asi que en una instalacion nueva esta VACIO y aqui no hay nada que adoptar. No era un

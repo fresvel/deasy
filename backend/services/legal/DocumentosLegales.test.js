@@ -436,3 +436,38 @@ describe("DocumentosLegales · adoptarDelArchivo", () => {
     assert.deepEqual(base.escrituras, []);
   });
 });
+
+describe("DocumentosLegales · precargarBorradores", () => {
+  const TEXTOS = [
+    { clase: CLASES.TERMINOS, version: "v1", texto: "# Terminos" },
+    { clase: CLASES.DATOS, version: "v1", texto: "# Datos" },
+  ];
+
+  it("en una instalacion vacia deja un BORRADOR por clase, con su texto, y no publica nada", async () => {
+    const base = baseFalsa([]);
+    const archivo = archivoFalso();
+    const hechos = await servicio(base, archivo).precargarBorradores(TEXTOS);
+
+    assert.deepEqual(hechos.map((h) => h.clase), [CLASES.TERMINOS, CLASES.DATOS]);
+    assert.deepEqual(base.filas.map((f) => f.estado), ["draft", "draft"]);
+    assert.deepEqual(base.filas.map((f) => f.contenido_hash), [huellaDe("# Terminos"), huellaDe("# Datos")]);
+    assert.equal(archivo.llamadas.some((l) => l.metodo === "archivar"), false, "al archivo bloqueado no entra nada");
+  });
+
+  it("una clase que YA tiene fila no se toca, este publicada, en borrador o retirada", async () => {
+    for (const estado of ["published", "draft", "retired"]) {
+      const base = baseFalsa([publicado({ id: 5, estado, clase: CLASES.TERMINOS, version: "v9" })]);
+      const hechos = await servicio(base, archivoFalso()).precargarBorradores(TEXTOS);
+      assert.deepEqual(hechos.map((h) => h.clase), [CLASES.DATOS], `con la otra clase ${estado}`);
+      assert.equal(base.filas.filter((f) => f.clase === CLASES.TERMINOS).length, 1);
+    }
+  });
+
+  it("llamarla dos veces no duplica nada", async () => {
+    const base = baseFalsa([]);
+    const legales = servicio(base, archivoFalso());
+    await legales.precargarBorradores(TEXTOS);
+    assert.deepEqual(await legales.precargarBorradores(TEXTOS), []);
+    assert.equal(base.filas.length, 2);
+  });
+});
