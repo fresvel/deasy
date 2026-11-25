@@ -1,0 +1,17 @@
+# Enlaces que lychee NO debe comprobar.
+#
+# Regla: aqui solo van cosas que NO se pueden verificar desde CI, nunca enlaces
+# rotos que dan pereza arreglar. Si algo entra aqui, se explica por que.
+
+# --- Hosts locales: no existen en el runner ---
+^https?://localhost
+^https?://127\.0\.0\.1
+^https?://0\.0\.0\.0
+# Nombres de servicio de la red de compose (backend:3030, minio:9000, rabbitmq:15672...)
+^https?://(backend|frontend|postgres|minio|rabbitmq|signer|analytics|docs|nginx-proxy):
+
+# --- Dominios del despliegue: pueden no resolver o estar tras VPN ---
+^https?://([a-z0-9-]+\.)?fresvel\.com
+
+# --- Plantillas sin sustituir dentro de ejemplos de configuracion ---
+\$\{.*\}

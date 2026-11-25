@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="shellRef"
     :labelled-by="labelledBy"
     :title="title"
@@ -11,29 +11,28 @@
   >
     <slot />
     <template #footer>
-      <AdminButton variant="cancel" data-modal-dismiss>
+      <AdminButton variant="danger-outline" data-modal-dismiss>
         Cancelar
       </AdminButton>
-      <AdminButton variant="outlinePrimary" :disabled="clearDisabled" @click="$emit('clear')">
+      <AdminButton variant="primary-outline" :disabled="clearDisabled" @click="$emit('clear')">
         Limpiar
       </AdminButton>
       <AdminButton
-        variant="primary"
+        variant="primary-outline"
         :title="searchTitle"
         :aria-label="searchAriaLabel"
         :disabled="searchDisabled"
-        @click="$emit('search')"
-      >
+        @click="$emit('search')" icon-only>
         <font-awesome-icon icon="search" />
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
 import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 defineProps({
   title: {

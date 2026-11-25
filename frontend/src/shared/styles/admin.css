@@ -1,0 +1,81 @@
+/* ⚠️ El `padding` responsive de `.admin-surface-frame` NO esta aqui: vive en `misc.css`, y
+   las dos reglas tienen que estar en la misma capa o una mata a la otra. Ver alli. */
+
+@layer components {
+    /* ══ `.admin-workspace-frame` Y SU `--table` MURIERON JUNTAS — 2026-08-17, F6.L5 ═══════
+       La base declaraba borde, radio, fondo, sombra y padding; el modificador los ponia los cinco
+       a cero. Y sus DOS unicos consumidores escribian siempre las dos, asi que el resultado neto
+       era **nada** — un `<div>` sin estilo, escrito con dos clases y diez declaraciones.
+       Las plantillas se quedan sin ninguna de las dos, que es lo que ya se veia. */
+
+
+    /* ══ `.admin-surface-frame` SE FUNDIO CON `.deasy-card` — 2026-08-17, F6.L4 ═══════════
+       Medido con la sombra ya retirada: radio, borde, color de borde y fondo eran IDENTICOS a
+       `.deasy-card`. Lo unico que las separaba era un padding de 0.95rem que subia a 1.1rem en
+       ancho — y ese `1.1rem` no es un paso de la escala. Sus tres consumidores escriben ahora
+       `deasy-card p-4`, con lo que ademas muere el tramo responsive que vivia en `misc.css` y
+       ganaba a este SOLO por orden de import, cosa que su propio comentario avisaba de que era
+       fragil: «si una de las dos cambia de capa sin la otra, el padding de ≥640 px muere en
+       silencio — ni el build, ni el lint, ni los tests lo ven». */
+
+
+    /* `.admin-related-tabs` murio el 2026-08-17 (F6.L5): declaraba `padding: .15rem 0 .2rem`
+       —2,4 y 3,2 px, ninguno de la escala— y nada mas. Sus 5 usos lo escriben ahora con dos
+       utilidades de la escala; la diferencia es de menos de un pixel. */
+
+
+    /* ══ LA FAMILIA `admin-page-header*` SE FUNDIO CON LA CABECERA — 2026-08-17, F6.L6 ══════
+       Sus seis clases describian lo mismo que `deasy-hero-*` con otro vocabulario, y hoy son una
+       sola familia `deasy-page-header*` en `misc.css`, con `--hero` y `--section` por unica
+       diferencia. Mandan los valores de la grande, por decision del dueño.
+
+       `__create` NO se fue con ellas: no era una cabecera, era el **ancho minimo de un boton**
+       (8.75rem) y tenia dos consumidores que ni siquiera pasaban por `AppPageHeader`. Lo escriben
+       ahora con la utilidad `min-w-35`, que es el mismo valor.
+
+       Y con la familia se va la ULTIMA regla fuera de capa de este fichero:
+       `.admin-page-header__title` estaba suelta porque su `margin: 0` (shorthand) tapaba un
+       `mt-1` de plantilla… que dejo de existir cuando todo paso por el componente. Llevaba
+       tiempo sin tapar nada. */
+
+
+    /* LA BARRA DE ACCIONES — lo que `admin-page-header` era en sus DOS consumidores de admin y
+       perfil, donde `__main` iba vacío y autocerrado para empujar los botones a la derecha.
+       Un `justify-end` escrito con un elemento de relleno, y con un nombre que prometía un título
+       que no existía. Aquí no hace falta el hueco. */
+    .deasy-action-bar {
+        @apply flex flex-wrap items-start justify-end gap-2;
+    }
+
+    /* Los puntos numerados del asistente de perfiles de puesto. Receta de siempre: 10 % de
+       relleno, 38 % de borde y el token como texto. */
+
+    .profile-step-dot {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 24px;
+        width: 24px;
+        border-radius: 9999px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        border: 1px solid transparent;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .profile-step-dot--idle {
+        background: var(--color-surface);
+        color: var(--color-muted);
+    }
+
+    .profile-step-dot--active {
+        background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+        color: var(--color-primary);
+        border-color: color-mix(in srgb, var(--color-primary) 38%, var(--color-white));
+    }
+
+    .profile-step-dot--done {
+        background: var(--color-primary);
+        color: var(--color-white);
+    }
+}

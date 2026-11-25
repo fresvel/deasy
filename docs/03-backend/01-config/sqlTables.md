@@ -40,14 +40,25 @@ Las siguientes tablas están definidas en la configuración:
 - `process_definition_triggers`: Disparadores de definiciones
 - `tasks`: Tareas
 - `task_items`: Items de tareas
-- `task_assignments`: Asignaciones de tareas
+- `task_item_tenures`: Tenencias de entregables (quién responde de cada uno, desde cuándo y en calidad de qué puesto)
+- `document_version_uploads`: Subidas del entregable (cada corrección del archivo, con su autor)
+
+#### Variaciones de procesos
+
+`process_definition_series.source_type` admite tres alcances administrables:
+
+- `unit_type`: la variacion se identifica por un tipo de unidad.
+- `cargo`: la variacion se identifica por un cargo.
+- `unit_type_cargo`: la variacion se identifica por la combinacion de tipo de unidad y cargo.
+
+El valor `default` es interno y no se ofrece para creacion manual. La serie clasifica la configuracion; los destinatarios efectivos siguen determinados por `process_target_rules`.
 ### Académico
 - `term_types`: Tipos de periodo
 - `terms`: Periodos
 ### Plantillas
 - `template_seeds`: Seeds de plantilla
-- `template_artifacts`: Paquetes de plantilla
-- `process_definition_templates`: Plantillas de procesos definidos
+- `ediciones`: Paquetes de plantilla
+- `vinculos`: Plantillas de procesos definidos
 ### Usuarios
 - `persons`: Usuarios
 ### Seguridad

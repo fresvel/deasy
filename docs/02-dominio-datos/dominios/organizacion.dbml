@@ -1,0 +1,406 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Unidades, puestos y ocupación. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project organizacion {
+  database_type: 'PostgreSQL'
+  Note: '''Unidades, puestos y ocupación — El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → cantón → parroquia.'''
+}
+
+Table "acto_adjuntos" {
+  "id" int4 [pk, not null, increment]
+  "acto_id" int4 [unique, not null]
+  "file_path" varchar(500) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(120) [not null]
+  "size_bytes" int8 [not null, check: `size_bytes > 0`]
+  "sha256" bpchar(64) [not null]
+  "subido_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "actos" {
+  "id" int4 [pk, not null, increment]
+  "tipo_de_acto_id" int4 [not null]
+  "numero" varchar(120) [not null]
+  "asunto" varchar(500) [not null]
+  "fecha_emision" date [not null]
+  "fecha_vigencia" date [not null]
+  "unidad_emisora_id" int4
+  "emisor_externo" varchar(255)
+  "suscrito_por_person_id" int4
+  "suscrito_por_nombre" varchar(255)
+  "en_calidad_de" text [check: `en_calidad_de = ANY (ARRAY['titular'::text, 'subrogante'::text, 'encargado'::text, 'delegado'::text])`]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (tipo_de_acto_id, numero, unidad_emisora_id, emisor_externo) [type: btree, unique, name: "uq_actos_referencia"]
+    unidad_emisora_id [type: btree, name: "idx_actos_unidad_emisora"]
+    fecha_vigencia [type: btree, name: "idx_actos_vigencia"]
+  }
+}
+
+Table "cantones" {
+  "id" int4 [pk, not null, increment]
+  "provincia_id" int4 [not null]
+  "dpa_code" varchar(4)
+  "name" varchar(140) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (provincia_id, name) [type: btree, unique, name: "uq_cantones_provincia_name"]
+    provincia_id [type: btree, name: "idx_cantones_provincia"]
+  }
+}
+
+Table "clases_parroquia" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_clases_parroquia"]
+  }
+}
+
+Table "correcciones_de_estructura" {
+  "id" int8 [pk, not null, increment]
+  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying, 'unit_equivalencias'::character varying, 'position_equivalencias'::character varying, 'process_equivalencias'::character varying, 'acto_adjuntos'::character varying])::text[])`]
+  "registro_id" int8
+  "actor_person_id" int4 [not null]
+  "motivo" text [not null, check: `char_length(btrim(motivo)) >= 10`]
+  "antes" jsonb
+  "despues" jsonb
+  "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (actor_person_id, ocurrido_at) [type: btree, name: "idx_correcciones_de_estructura_actor"]
+    (tabla, registro_id) [type: btree, name: "idx_correcciones_de_estructura_registro"]
+  }
+}
+
+Table "instituciones" {
+  "id" int4 [pk, not null, increment]
+  "nombre" varchar(180) [not null]
+  "pais_id" int4 [not null, note: '''El país del despliegue, y el único motivo por el que esta tabla existe hoy. No lleva restricción de fila única a propósito: `InstitucionService.actual()` falla si hay cero o más de una en vez de elegir en silencio, y es la costura por la que entraría un modelo multi-inquilino.''']
+  "campo_sexo_genero" text [not null, check: `campo_sexo_genero = ANY (ARRAY['sexo'::text, 'genero'::text, 'ambos'::text])`, default: 'ambos']
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''La institución que usa esta instalación, y la primera tabla de CONFIGURACIÓN del sistema: hasta el 2026-08-28 no había ninguna. De su país salen el validador del documento nacional, el nombre local de ese documento («Cédula» en Ecuador, «DNI» en Perú) y el valor que el formulario precarga. Antes eso vivía en el código como un tipo llamado `cedula_ec`.'''
+}
+
+Table "nomenclatura_territorial" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "nivel" int2 [not null, check: `(nivel >= 1) AND (nivel <= 3)`]
+  "singular" varchar(60) [not null]
+  "plural" varchar(60) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, nivel) [type: btree, unique, name: "uq_nomenclatura_pais_nivel"]
+  }
+}
+
+Table "paises" {
+  "id" int4 [pk, not null, increment]
+  "iso_alpha2" bpchar(2) [unique, not null]
+  "name" varchar(120) [not null]
+  "name_en" varchar(120) [not null]
+  "phone_code" varchar(10)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "parroquias" {
+  "id" int4 [pk, not null, increment]
+  "canton_id" int4 [not null]
+  "dpa_code" varchar(6)
+  "name" varchar(160) [not null]
+  "clase_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (canton_id, dpa_code) [type: btree, unique, name: "uq_parroquias_canton_dpa"]
+    canton_id [type: btree, name: "idx_parroquias_canton"]
+    (canton_id, name) [type: btree, name: "idx_parroquias_canton_name"]
+    clase_id [type: btree, name: "idx_parroquias_clase"]
+  }
+}
+
+Table "position_assignments" {
+  "id" int4 [pk, not null, increment]
+  "position_id" int4 [not null]
+  "person_id" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "is_current" int2 [not null, default: 1]
+  "current_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, current_flag) [type: btree, unique, name: "uq_position_current"]
+    (person_id, is_current) [type: btree, name: "idx_assignments_person_current"]
+  }
+}
+
+Table "position_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_position_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_position_id) [type: btree, unique, name: "uq_position_equivalencias_par"]
+    sucesor_position_id [type: btree, name: "idx_position_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UN PUESTO QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no el puesto--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida. El sucesor puede ser de otra unidad.'''
+}
+
+Table "position_vigencias" {
+  "id" int4 [pk, not null, increment]
+  "position_id" int4 [not null]
+  "vigente_desde" date [not null]
+  "vigente_hasta" date
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_position_vigencias_sin_solape"]
+    (position_id, vigente_desde) [type: btree, name: "idx_position_vigencias_position"]
+  }
+}
+
+Table "provincias" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "dpa_code" varchar(2)
+  "name" varchar(120) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, name) [type: btree, unique, name: "uq_provincias_pais_name"]
+    pais_id [type: btree, name: "idx_provincias_pais"]
+  }
+}
+
+Table "relation_unit_types" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(40) [not null]
+  "description" varchar(255)
+  "is_inheritance_allowed" int2 [not null, default: 0]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "tipos_de_acto" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "unit_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_unit_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_unit_id) [type: btree, unique, name: "uq_unit_equivalencias_par"]
+    sucesor_unit_id [type: btree, name: "idx_unit_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UNA UNIDAD QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no la unidad--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida.'''
+}
+
+Table "unit_positions" {
+  "id" int4 [pk, not null, increment]
+  "unit_id" int4 [not null]
+  "slot_no" int4 [not null]
+  "title" varchar(180)
+  "profile" jsonb
+  "position_type" text [not null, check: `position_type = ANY (ARRAY['real'::text, 'promocion'::text, 'simbolico'::text])`, default: 'real']
+  "is_unit_head" int2 [not null, default: 0]
+  "head_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "cargo_id" int4 [not null]
+
+  Indexes {
+    (unit_id, cargo_id, slot_no) [type: btree, unique, name: "uq_unit_cargo_slot"]
+    (unit_id, head_flag) [type: btree, unique, name: "uq_unit_head"]
+    (unit_id, cargo_id) [type: btree, name: "idx_positions_unit_cargo"]
+  }
+}
+
+Table "unit_relations" {
+  "id" int4 [pk, not null, increment]
+  "relation_type_id" int4 [not null]
+  "parent_unit_id" int4 [not null]
+  "child_unit_id" int4 [not null]
+  "vigente_desde" date
+  "vigente_hasta" date
+  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (child_unit_id, relation_type_id) [type: btree, unique, name: "uq_unit_relations_borrador"]
+    (child_unit_id, relation_type_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_unit_relations_sin_solape"]
+    (child_unit_id, vigente_desde) [type: btree, name: "idx_unit_relations_child"]
+    parent_unit_id [type: btree, name: "idx_unit_relations_parent"]
+  }
+}
+
+Table "unit_types" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(120) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "unit_vigencias" {
+  "id" int4 [pk, not null, increment]
+  "unit_id" int4 [not null]
+  "vigente_desde" date [not null]
+  "vigente_hasta" date
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (unit_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_unit_vigencias_sin_solape"]
+    (unit_id, vigente_desde) [type: btree, name: "idx_unit_vigencias_unit"]
+  }
+}
+
+Table "units" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "label" varchar(75)
+  "slug" varchar(180) [not null]
+  "unit_type_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    unit_type_id [type: btree, name: "idx_units_unit_type"]
+  }
+}
+
+Ref "fk_acto_adjuntos_acto":"actos"."id" <? "acto_adjuntos"."acto_id" [delete: cascade]
+Ref "fk_actos_tipo":"tipos_de_acto"."id" <? "actos"."tipo_de_acto_id"
+Ref "fk_actos_unidad_emisora":"units"."id" ?<? "actos"."unidad_emisora_id"
+Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
+Ref "fk_clases_parroquia_pais":"paises"."id" <? "clases_parroquia"."pais_id"
+Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
+Ref "fk_nomenclatura_pais":"paises"."id" <? "nomenclatura_territorial"."pais_id"
+Ref "fk_parroquias_canton":"cantones"."id" <? "parroquias"."canton_id"
+Ref "fk_parroquias_clase":"clases_parroquia"."id" ?<? "parroquias"."clase_id"
+Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
+Ref "fk_position_equivalencias_antecesor":"position_vigencias"."id" <? "position_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_position_equivalencias_sucesor":"unit_positions"."id" <? "position_equivalencias"."sucesor_position_id"
+Ref "fk_position_vigencias_fin_acto":"actos"."id" ?<? "position_vigencias"."fin_acto_id"
+Ref "fk_position_vigencias_inicio_acto":"actos"."id" ?<? "position_vigencias"."inicio_acto_id"
+Ref "fk_position_vigencias_position":"unit_positions"."id" <? "position_vigencias"."position_id"
+Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
+Ref "fk_unit_equivalencias_antecesor":"unit_vigencias"."id" <? "unit_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_unit_equivalencias_sucesor":"units"."id" <? "unit_equivalencias"."sucesor_unit_id"
+Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
+Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"
+Ref "fk_unit_relations_fin_acto":"actos"."id" ?<? "unit_relations"."fin_acto_id"
+Ref "fk_unit_relations_inicio_acto":"actos"."id" ?<? "unit_relations"."inicio_acto_id"
+Ref "fk_unit_relations_parent":"units"."id" <? "unit_relations"."parent_unit_id"
+Ref "fk_unit_relations_relation_type":"relation_unit_types"."id" <? "unit_relations"."relation_type_id"
+Ref "fk_unit_vigencias_fin_acto":"actos"."id" ?<? "unit_vigencias"."fin_acto_id"
+Ref "fk_unit_vigencias_inicio_acto":"actos"."id" ?<? "unit_vigencias"."inicio_acto_id"
+Ref "fk_unit_vigencias_unit":"units"."id" <? "unit_vigencias"."unit_id"
+Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   persons -> acto_adjuntos   [identidad]
+//   actos -> acto_documentos   [tareas]
+//   persons -> actos   [identidad]
+//   persons -> actos   [identidad]
+//   paises -> autoidentificaciones_etnicas   [identidad]
+//   paises -> categorias_visa   [identidad]
+//   units -> chat_conversations   [chat]
+//   unit_positions -> contracts   [empleo]
+//   cantones -> direcciones   [identidad]
+//   paises -> direcciones   [identidad]
+//   provincias -> direcciones   [identidad]
+//   paises -> documentos_identidad   [identidad]
+//   paises -> estados_civiles   [identidad]
+//   paises -> generos   [identidad]
+//   unit_types -> lineas   [procesos]
+//   units -> lineas   [procesos]
+//   paises -> parentescos   [identidad]
+//   units -> participantes_declarados   [plantillas]
+//   cantones -> persons   [identidad]
+//   paises -> persons   [identidad]
+//   paises -> persons   [identidad]
+//   persons -> position_assignments   [identidad]
+//   persons -> position_equivalencias   [identidad]
+//   actos -> process_relations   [procesos]
+//   actos -> process_relations   [procesos]
+//   actos -> process_vigencias   [procesos]
+//   actos -> process_vigencias   [procesos]
+//   relation_unit_types -> role_assignment_relation_types   [identidad]
+//   position_assignments -> role_assignments   [identidad]
+//   units -> role_assignments   [identidad]
+//   unit_positions -> task_item_tenures   [tareas]
+//   units -> task_items   [tareas]
+//   unit_positions -> task_items   [tareas]
+//   units -> task_items   [tareas]
+//   units -> tasks   [tareas]
+//   paises -> telefonos   [identidad]
+//   paises -> tipos_discapacidad   [identidad]
+//   persons -> unit_equivalencias   [identidad]
+//   cargos -> unit_positions   [identidad]
+//   unit_positions -> vacancies   [empleo]
+//   units -> vacancy_visibility   [empleo]

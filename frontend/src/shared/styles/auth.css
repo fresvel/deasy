@@ -1,0 +1,59 @@
+@layer components {
+.deasy-auth-page {
+        @apply min-h-screen px-4 py-6 font-sans text-navy sm:px-6 lg:px-8;
+        background-image:
+            linear-gradient(180deg, rgba(var(--white-rgb), 0.99) 0%, color-mix(in srgb, var(--color-surface) 98%, transparent) 48%, var(--color-surface) 100%),
+            radial-gradient(circle at top left, rgba(var(--navy-menu-rgb), 0.08), transparent 28rem),
+            radial-gradient(circle at bottom right, color-mix(in srgb, var(--color-success) 8%, transparent), transparent 24rem);
+    }
+
+    .deasy-auth-center {
+        @apply flex min-h-[calc(100vh-3rem)] items-center justify-center;
+    }
+
+    .deasy-auth-card {
+        @apply w-full overflow-hidden rounded-xl border bg-white shadow-[var(--elev-3)];
+        border-color: var(--color-line);
+    }
+
+    /* 📌 AQUI VIVIO `.deasy-auth-title` (†2026-08-19, F2.T). Era `text-3xl font-semibold` — 30 px,
+       un tamaño que no existe en ningun otro sitio del sistema — con `text-strong` en vez del
+       `--color-navy` que `tokens.css` reserva para titulares.
+
+       Lo que la condeno no fue el censo: **uno de sus cuatro consumidores ya se corregia solo**.
+       `VerifyEmail` escribia `class="deasy-auth-title text-2xl"`, o sea que se bajaba a 24 px —el
+       nivel `--page` de la escala— pisando su propia clase. La misma señal que dio la vuelta a la
+       versalita: cuando un consumidor arregla la receta por su cuenta, la receta esta mal.
+
+       Sus 4 usos pasan a `deasy-title--page`: 24 px, peso 700, `--color-navy`. */
+
+    .deasy-auth-copy {
+        @apply mt-2 text-sm font-medium leading-6 text-muted;
+    }
+
+    /* ══ EL CAMPO DE AUTENTICACION SE FUNDIO CON EL DEL SISTEMA — 2026-08-17, F6.L2 ═════════
+       `.deasy-auth-field` era una SEGUNDA receta de campo para cuatro vistas, y se diferenciaba
+       del `.deasy-control` que usa el resto de la aplicacion en cinco cosas: radio 16 en vez de 8,
+       alto libre en vez de 44, `py-3` en vez de `py-2.5`, peso 500 en vez de 400 y sin sombra.
+       Ninguna de esas cinco estaba decidida: eran las de un componente que nacio aparte.
+
+       Sus 43 usos pasan a `deasy-control`. El autorrelleno de WebKit, que era lo unico suyo que
+       valia la pena, se generaliza a todos los controles y vive ahora en `forms.css`, junto al
+       suelo — porque el navegador pinta ese fondo sobre CUALQUIER campo, no solo sobre estos. */
+
+
+    .deasy-control--icon-left {
+        @apply pl-11;
+    }
+
+    
+}
+@layer components {
+.deasy-auth-link {
+        @apply text-sm font-semibold transition-colors hover:underline;
+        color: var(--color-primary);
+    }
+
+
+    
+}

@@ -1,0 +1,571 @@
+@layer components {
+    /* NODOS DEL GRAFO (Vue Flow) — una forma y tres variantes. Lo que distingue a un tipo
+       de nodo es el color del conector, y de ahí cuelga todo lo demás por herencia de
+       `--graph-accent`.
+
+       ⚠️ SON DOS TOKENS, NO UNO. `--graph-accent` es el color del CONECTOR y va aclarado a
+       propósito (un punto de 8 px se lee por luminosidad). `--graph-accent-solid` es el
+       mismo color SIN aclarar, y existe porque `.graph-node__btn--accent` lo usa como
+       relleno con texto blanco encima: con el aclarado daba 2.70:1. No los unifiques —
+       oscurecer el acento apagaría los conectores, que es lo único que distingue los
+       tipos de nodo. */
+    .graph-node {
+        /* Unidad y proceso: la entidad principal, el color de marca. */
+        --graph-accent: var(--color-primary);
+        --graph-accent-solid: var(--color-primary);
+    }
+
+    /* UNIDAD Y PROCESO TIENEN ANCHO FIJO, Y ES EL QUE RESERVA EL TRAZADO (`NODE_W` de cada vista).
+       Antes el ancho lo ponía el contenido: la unidad medía de 216 a 296 px sobre 210 reservados
+       —los 17 nodos por encima— y por eso se pisaban. Si cambias uno, cambia el otro. Los dos
+       miden lo mismo a propósito: son la entidad principal de cada mapa. */
+    .graph-node--unidad,
+    .graph-node--proceso { width: 240px; }
+
+    /* Lo que el pie necesita saber del nodo para ir de borde a borde: su relleno y el radio
+       interior de sus esquinas de abajo (el exterior, menos el borde de ese lado). */
+    .graph-node--unidad,
+    .graph-node--proceso {
+        --nodo-px: 12px;
+        --nodo-py: 10px;
+        --nodo-radio-der: 11px;
+        --nodo-radio-izq: 8px;
+    }
+
+    .graph-node--unidad,
+    .graph-node--proceso {
+        --nodo-franja: var(--tono-borde, var(--color-line-strong));
+    }
+
+    /* LA PESTAÑA DEL TIPO DE UNIDAD, COMO LA DE UNA CARPETA. No es una etiqueta pegada encima: es
+       el mismo contorno del nodo, que sube por la izquierda, rodea el texto y baja de vuelta al
+       borde superior con una curva hacia fuera. Tres piezas hacen una sola línea:
+         · la pestaña tapa el borde superior del nodo en su ancho y no tiene borde abajo;
+         · su borde izquierdo continúa el del nodo (por eso va en `left: -1px`, sobre él);
+         · `::after` dibuja la curva de la derecha con un degradado radial —transparente, un
+           píxel del color del borde, y el relleno— y de paso tapa el tramo recto que sobraría.
+       El color del borde llega por `--nodo-borde`, que declara cada estado del nodo: un degradado
+       no puede heredar `border-color`.
+
+       Colores (decisión del dueño): los de la pestaña seleccionada de los menús —`brand-50` de
+       fondo y `brand-600` de texto, 5.8:1—, y en gris análogo cuando la unidad no rige.
+
+       El texto tiene tope de ancho: la flecha del padre entra por el centro del nodo (120 px) y
+       la pestaña, con su curva, acaba en 110. */
+    .graph-node__tipo {
+        --tipo-fondo: var(--color-brand-50);
+        position: absolute;
+        bottom: 100%;
+        left: -1px;
+        height: 20px;
+        padding: 0 10px;
+        border: 1px solid var(--nodo-borde);
+        border-bottom: 0;
+        /* Radio corto: con 12 px en una pestaña de 20 de alto las esquinas se comían la mitad. */
+        border-radius: 6px 6px 0 0;
+        background: var(--tipo-fondo);
+        color: var(--color-brand-600);
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 19px;
+    }
+
+    .graph-node__tipo::after {
+        content: "";
+        position: absolute;
+        right: -6px;
+        bottom: 0;
+        width: 6px;
+        height: 6px;
+        background: radial-gradient(
+            circle at 100% 0,
+            transparent 4.6px,
+            var(--nodo-borde) 5.2px,
+            var(--nodo-borde) 5.8px,
+            var(--tipo-fondo) 6.4px
+        );
+    }
+
+    .graph-node__tipo-texto {
+        display: block;
+        max-width: 84px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* LA DE LOS NODOS PEQUEÑOS (configuración y entregable): más baja y con letra de 10 px, para
+       que «Configuración» acabe antes del centro del nodo, por donde entra su flecha.
+       Esos dos nodos llevan a la izquierda una franja de 4 px con su estado: la pestaña la
+       continúa hacia arriba, con el mismo color (`--nodo-franja`). */
+    .graph-node__tipo--sm {
+        height: 18px;
+        padding: 0 6px;
+        font-size: 10px;
+        line-height: 17px;
+    }
+
+    /* Cuando el nodo lleva a la izquierda la franja de 4 px con su estado —y desde el 2026-11-24
+       la llevan los cuatro—, la pestaña la continúa hacia arriba con el mismo color. */
+    .graph-node__tipo--franja {
+        left: -4px;
+        border-left: 4px solid var(--nodo-franja);
+    }
+
+    .graph-node--inactivo .graph-node__tipo {
+        --tipo-fondo: var(--color-gray-100);
+        color: var(--color-icon);
+    }
+
+    /* EL PIE DEL NODO: DE ÉL CUELGA LO QUE DEPENDE DE ÉL. Una franja dentro del contorno, de borde
+       a borde —sin línea que la separe del cuerpo: la distingue su fondo (el dueño la quitó el
+       2026-11-24)—; partida en tantas mitades como clases de hijos tenga el nodo.
+       Cada parte se pulsa y lleva DENTRO el conector de Vue Flow, así que la línea sale del centro
+       de su parte, por el borde inferior del nodo.
+       Los márgenes negativos deshacen el relleno del nodo, que cada tipo declara en `--nodo-px` y
+       `--nodo-py`; y las esquinas de abajo repiten las del nodo por dentro, porque el nodo no
+       puede recortar con `overflow` —la pestaña del tipo y el aviso viven fuera de su caja—. */
+    .graph-node__pie {
+        display: grid;
+        grid-auto-columns: 1fr;
+        grid-auto-flow: column;
+        margin: 8px calc(-1 * var(--nodo-px)) calc(-1 * var(--nodo-py));
+        border-radius: 0 0 var(--nodo-radio-der) var(--nodo-radio-izq);
+        overflow: hidden;
+    }
+
+    .graph-node__pie-parte {
+        position: relative;
+        display: flex;
+        height: 24px;
+    }
+
+    .graph-node__pie-parte + .graph-node__pie-parte { border-left: 1px solid var(--color-line); }
+
+    .graph-node__pie-boton,
+    .graph-node__pie-vacio {
+        display: inline-flex;
+        flex: 1;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 0 8px;
+        color: var(--color-muted);
+        font-size: 11px;
+        font-weight: 600;
+        white-space: nowrap;
+    }
+
+    .graph-node__pie-vacio { font-weight: 500; }
+
+    /* Desplegado: gris muy suave, parte del nodo. Recogido: el azul claro de la pestaña activa,
+       que es lo que llama a pulsar. */
+    .graph-node__pie-boton {
+        border: 0;
+        background: var(--color-surface);
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+    }
+
+    .graph-node__pie-boton--cerrado,
+    .graph-node__pie-boton:hover {
+        background: var(--color-brand-50);
+        color: var(--color-brand-600);
+    }
+
+    /* Ninguna configuración activa: la cuenta avisa, recogida o no. */
+    .graph-node__pie-boton--aviso { color: var(--color-warning-700); }
+
+    /* UN DATO DEL NODO SIN CAJA (decisión del dueño, 2026-11-24): texto gris. `--destaca` tiñe también el texto: es para lo que NO es lo normal —suprimido, a
+       medias, sin cubrir—. Los tonos de texto son los 700, que pasan de 4.5:1 sobre blanco. */
+    .graph-node__dato {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--color-muted);
+        font-size: 12px;
+        font-weight: 500;
+        line-height: 18px;
+    }
+
+    .graph-node__dato--success {
+        --dato-texto: var(--color-success-700);
+    }
+    .graph-node__dato--warning {
+        --dato-texto: var(--color-warning-700);
+    }
+    .graph-node__dato--danger {
+        --dato-texto: var(--color-error-700);
+    }
+    .graph-node__dato--info {
+        --dato-texto: var(--color-blue-light-700);
+    }
+    .graph-node__dato--neutral {
+        --dato-texto: var(--color-muted);
+    }
+
+    .graph-node__dato--destaca {
+        color: var(--dato-texto, var(--color-muted));
+        font-weight: 600;
+    }
+
+    /* La fila de abajo conserva su alto aunque se quede vacía —cuando el estado es el normal ya no
+       se escribe—: el dueño pidió que los nodos no cambiaran de altura. */
+    .graph-node__fila { min-height: 19px; }
+
+
+    /* Configuración: deliberadamente NEUTRO, para que pese menos que una entidad.
+       Es el gris de los iconos aclarado, no un color propio. */
+    .graph-node--config {
+        --graph-accent: color-mix(in srgb, var(--color-icon) 57%, var(--color-white));
+        --graph-accent-solid: var(--color-icon);
+        --nodo-borde: var(--color-line);
+        --nodo-franja: var(--tono-borde, var(--color-line-strong));
+        --nodo-px: 10px;
+        --nodo-py: 8px;
+        --nodo-radio-der: 15px;
+        --nodo-radio-izq: 12px;
+        /* 210 y no 190: con la pestaña «Configuración» encima, en 190 su curva tocaba la flecha
+           que entra por el centro. Va con `CONFIG_W` de ProcessGraphView. */
+        width: 210px;
+        background: var(--color-white);
+    }
+
+    /* Plantilla: el mismo color de marca, más claro. En un punto de 8 px la luminosidad
+       distingue mejor que el matiz, y así no se añade un tono nuevo a la gama. */
+    .graph-node--template {
+        --graph-accent: color-mix(in srgb, var(--color-primary) 63%, var(--color-white));
+        --graph-accent-solid: var(--color-primary);
+        --nodo-borde: var(--color-brand-200);
+        /* La franja dice el estado de la VERSIÓN que usa la configuración, como en los otros tres
+           nodos (2026-11-24); era siempre azul de marca, y el estado sólo se leía en el número. */
+        --nodo-franja: var(--tono-borde, var(--color-brand-400));
+        width: 170px;
+    }
+
+    /* ── Conectores ─────────────────────────────────────────────────────────────────── */
+
+    /* ── Lienzo ─────────────────────────────────────────────────────────────────────
+       El grafo no tiene alto propio: si no se le da uno, Vue Flow colapsa a 0. `70vh` con
+       un suelo de `28rem` para que en pantallas bajas siga cabiendo un arbol de 3 niveles. */
+
+    .graph-canvas {
+        height: 70vh;
+        min-height: 28rem;
+    }
+
+    /* [2026-11-23] AQUI VIVIA EL CONTROL SEGMENTADO `graph-toggle` (que capas del grafo se ven).
+       Parecia una eleccion excluyente --un carril con una opcion iluminada-- y eran tres
+       interruptores independientes. Lo sustituye `AppCheckMenu`, una lista de casillas. */
+
+    /* [2026-08-15] AQUI VIVIA `graph-icon-btn`, Y SU SITIO ERA UN ERROR DE CLASIFICACION.
+     *
+     * Se llamaba «boton de icono del panel lateral», y ahi esta el fallo: el panel lateral NO es
+     * el lienzo. Es una LISTA de puestos con sus acciones de fila — o sea G2, exactamente lo
+     * mismo que la columna de acciones de una tabla de admin. Editar un puesto desde el
+     * organigrama y editarlo desde la tabla son la misma funcion, asi que son el mismo boton.
+     *
+     * El dia antes de borrarla se le anadio un modificador `--danger` para que «Eliminar puesto»
+     * dejara de llevar utilidades sueltas. Fue arreglar la fachada del sitio equivocado: el
+     * problema no era que le faltara un tono, era que la clase no debia existir. Lo detecto el
+     * dueno mirando la pantalla, no un gate — de ahi que este escrito aqui.
+     *
+     * Lo que SI se queda en este fichero es `graph-node__btn` y `graph-edge-btn`: esos van
+     * encima de los nodos y las aristas DEL LIENZO, escalan con el zoom y tienen caja propia de
+     * 24 px. La regla es donde vive el boton, no en que modulo esta el fichero. */
+
+    /* ── Barra de acciones de una relacion (arista) ──────────────────────────────────
+       Flota sobre el lienzo, de ahi la elevacion. Los dos hover usan los mismos
+       porcentajes que los botones de accion de las tablas: relleno al 10 % sobre blanco y
+       el token como color de texto. */
+
+    .graph-edge-toolbar {
+        display: inline-flex;
+        gap: 4px;
+        padding: 2px;
+        border-radius: 8px;
+        background: var(--color-white);
+        box-shadow: var(--elev-2);
+        transition: opacity 0.15s ease;
+    }
+
+    .graph-edge-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 22px;
+        width: 22px;
+        border-radius: var(--radius-md);
+        color: var(--color-icon);
+        transition: background 0.15s ease, color 0.15s ease;
+    }
+
+    .graph-edge-btn:hover {
+        background: color-mix(in srgb, var(--color-primary) 10%, var(--color-white));
+        color: var(--color-primary);
+    }
+
+    .graph-edge-btn--danger:hover {
+        background: color-mix(in srgb, var(--color-danger) 10%, var(--color-white));
+        color: var(--color-danger);
+    }
+
+    /* ── Barra de acciones ──────────────────────────────────────────────────────────────
+       Al costado derecho del nodo y centrada: libre de los conectores, que van arriba y
+       abajo. `left:100%` + `padding-left` transparente la deja CONTIGUA al nodo, para que
+       el ratón no pierda el hover al desplazarse hacia ella. */
+
+    .graph-node__toolbar {
+        position: absolute;
+        left: 100%;
+        top: 50%;
+        transform: translateY(-50%);
+        padding-left: 8px;
+        display: inline-flex;
+        flex-direction: column;
+        gap: 4px;
+        z-index: var(--z-capa-controles); /* la barra de acciones del nodo */
+    }
+
+    /* EL AVISO DE LA ESQUINA: cuántas observaciones tiene el nodo. Va montado sobre el borde de
+       arriba —14 de sus 20 px por fuera, para no pisar la corona, que quedó en esa esquina al
+       darle la fila entera al nombre— y metido 10 px hacia dentro del derecho, no en el vértice: a la derecha del nodo sale
+       la barra de acciones al pasar el ratón, y en el vértice se pisaban. Texto oscuro sobre el
+       ámbar claro, no blanco sobre el ámbar vivo: blanco sobre `warning-500` da 2.2:1. */
+    .graph-node__aviso {
+        position: absolute;
+        top: -14px;
+        right: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        height: 20px;
+        padding: 0 6px;
+        border-radius: 999px;
+        border: 1px solid var(--color-warning-300);
+        background: var(--color-warning-100);
+        color: var(--color-warning-800);
+        font-size: 11px;
+        font-weight: 700;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .graph-node__aviso:hover {
+        background: var(--color-warning-200);
+        border-color: var(--color-warning-500);
+    }
+
+    .graph-node__aviso:focus-visible {
+        outline: none;
+        box-shadow: var(--focus-ring);
+    }
+
+    /* La misma barra, al otro costado: la de «volver» de una vista enfocada. A la derecha salen las
+       acciones del nodo al pasar el ratón, y las dos no pueden compartir sitio. */
+    .graph-node__toolbar--izquierda {
+        left: auto;
+        right: 100%;
+        padding-left: 0;
+        padding-right: 8px;
+    }
+
+    .graph-node__toolbar--sm {
+        padding-left: 6px;
+    }
+
+    /* ── Botones ────────────────────────────────────────────────────────────────────── */
+
+    .graph-node__btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        height: 30px;
+        width: 30px;
+        border-radius: var(--radius-lg);
+        background: var(--color-white);
+        border: 1px solid var(--color-line);
+        color: var(--color-icon);
+        /* Era `rgba(15, 23, 42, 0.12)` escrito a mano: el MISMO triplete que `--elev-ink-rgb`,
+           que es la tinta de sombra del sistema. Tokenizado el 2026-08-13. */
+        box-shadow: 0 2px 6px rgba(var(--elev-ink-rgb), 0.12);
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+    }
+
+    .graph-node__btn--sm {
+        height: 26px;
+        width: 26px;
+        border-radius: 8px;
+    }
+
+    /* El hover tira del acento del nodo, así que cada tipo se ilumina con SU color sin
+       necesidad de una regla por variante. Mismos porcentajes que los botones de acción
+       de las tablas: relleno bajo, borde medio, texto el token. */
+    .graph-node__btn:hover {
+        background: color-mix(in srgb, var(--graph-accent) 10%, var(--color-white));
+        border-color: color-mix(in srgb, var(--graph-accent) 45%, var(--color-white));
+        color: var(--graph-accent);
+    }
+
+    /* La acción principal del nodo: relleno sólido en vez de contorno. Usa
+       `--graph-accent-solid` —el color sin aclarar— porque aquí lleva texto blanco
+       encima; ver el bloque de arriba. */
+    .graph-node__btn--accent {
+        background: var(--graph-accent-solid);
+        border-color: var(--graph-accent-solid);
+        color: var(--color-white);
+    }
+
+    .graph-node__btn--accent:hover {
+        background: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--black));
+        border-color: color-mix(in srgb, var(--graph-accent-solid) 85%, var(--black));
+        color: var(--color-white);
+    }
+
+    /* EL BORDE IZQUIERDO QUE TIÑE UN NODO DE CONFIGURACION CON SU ESTADO.
+     *
+     * Antes eran tres ternarios con `border-l-emerald-400` / `border-l-amber-400` /
+     * `border-l-line-strong` escritos en el componente. Y decian AMBAR para `draft` mientras la
+     * pastilla del mismo nodo, a dos centimetros, decia neutral — para el mismo dato.
+     *
+     * Ahora el tono lo nombra `estadoTono.js` y el color lo pone aqui, una vez. El paso es el
+     * `-500`: es un BORDE de 4 px, no texto, asi que no le aplica el minimo de 4.5:1 sino el 3:1
+     * de WCAG 1.4.11 para limites de componente, que el `-500` cumple de sobra. */
+    .graph-node--estado {
+        border-top: 1px solid var(--color-line);
+        border-right: 1px solid var(--color-line);
+        border-bottom: 1px solid var(--color-line);
+        border-left: 4px solid var(--tono-borde, var(--color-line-strong));
+    }
+
+    .graph-node--estado-success { --tono-borde: var(--color-success-500); }
+    .graph-node--estado-warning { --tono-borde: var(--color-warning-500); }
+    .graph-node--estado-danger  { --tono-borde: var(--color-error-500); }
+    .graph-node--estado-info    { --tono-borde: var(--color-blue-light-500); }
+    .graph-node--estado-neutral { --tono-borde: var(--color-line-strong); }
+
+    /* ══ EL CONTADOR PULSABLE DE UN NODO — «3 entregables», «2/5 config.» ═══════════════════
+       Se pulsa para desplegar, asi que es un `<button>`, pero su caja es la de una pastilla
+       dentro del nodo.
+
+       ⚠️ NO es un `deasy-tag`, y la diferencia no es de aspecto: **trae su propio contenido**
+       (el `n/m` que el compone y un chevron que rota) y **tiene un estado que una pastilla no
+       tiene** — expandido / colapsado. Son dos de las tres señales de §1-bis del plan de
+       botones, asi que es otro componente. La pastilla dice un valor de un enum; esto dice una
+       razon sobre un continuo.
+
+       ✅ ESE ARGUMENTO SE SOSTUVO AL AUDITARLO (2026-08-20) — PERO SOLO PARA LA MITAD.
+       `graph-node__badge` cubria DOS objetos distintos con el mismo nombre:
+
+         · dos `<button>` con `@click`, `title` que cambia y chevron que rota (`ProcessNode`,
+           `ProcessConfigNode`) — que es lo que este comentario describe, y por eso siguen aqui;
+         · dos `<span>` sin clic, sin estado y sin chevron (`UnitNode`, `ProcessGraphView`), que
+           SI eran pastillas y **no aplicaban esta clase base**: escribian la geometria con
+           utilidades crudas y solo tomaban el `--<tono>`.
+
+       Los dos `<span>` son `AppTag` desde hoy. Y con ellos muere un defecto que ningun gate veia:
+       su `ring-1` —una utilidad, capa `utilities`— **pisaba el `box-shadow` que el modificador
+       declara** en `components`. Medido: declarado `inset 0 0 0 1px var(--color-line)`,
+       renderizado `rgb(71,84,103) 0 0 0 1px`, o sea el anillo por defecto de Tailwind. **Los
+       cuatro tonos pintaban el mismo gris oscuro**: la señal de color moria en el ultimo paso.
+       De regalo, radio 12 donde la clase declara 8 y letra 12 donde declara 11.
+
+       El nombre pasa de `__badge` a `__toggle` porque «badge» era justo lo que invitaba a
+       confundirlo con una pastilla, y de ahi salieron las dos copias.
+
+       🪤 ESTE BLOQUE ESTUVO ROTO DEL 2026-08-15 AL 16, Y NO PINTO NADA.
+       Se anadio con un script que quito la ultima `}` del fichero dando por hecho que cerraba
+       `@layer components`. Cerraba `.vue-flow__handle.graph-node__handle--hidden`, que va
+       **fuera** de la capa a proposito (ver el comentario de los conectores, abajo), asi que
+       las tres reglas quedaron anidadas dentro de ella y compilaron a
+       `.vue-flow__handle.graph-node__handle--hidden .graph-node__toggle` — un selector que no
+       puede casar nunca. Sus dos consumidores salieron sin caja, sin radio y sin tono.
+
+       Y no lo vio NINGUN gate: `css-prune` da verde porque la clase tiene consumidor, y
+       `check-orphan-classes` porque la cadena esta en el CSS construido. **Ninguno de los
+       dieciseis comprobaba que el selector pudiera casar con algun nodo**, que es lo que
+       `check-selector-reach.mjs` mira desde entonces. */
+    /* [2026-11-23] EL CONTADOR QUE DESPLIEGA YA NO TIENE SKIN PROPIO: lleva dentro un `AppTag`.
+       Tenia caja, radio, cinco tonos y un tamaño de letra suyos (11 px), o sea una segunda
+       pastilla que se parecia a la del sistema sin serlo; al lado de la de estado se notaba. Ahora
+       esta regla solo quita al `<button>` lo que el navegador le pone, y la pastilla es la de
+       todos. Los cinco modificadores de tono (`--brand`, `--success`, `--warning`, `--danger`,
+       `--neutral`) se fueron con ella: el tono lo da la variante del `AppTag`. */
+    .graph-node__toggle {
+        display: inline-flex;
+        padding: 0;
+        border: 0;
+        background: none;
+        cursor: pointer;
+        transition: filter 0.15s ease;
+    }
+
+    .graph-node__toggle:hover {
+        filter: brightness(0.95);
+    }
+}
+
+/* CONECTORES — FUERA DE `@layer components` A PROPOSITO, y es el unico caso legitimo del
+   sistema: Vue Flow pinta el conector desde su propia hoja, que va SIN CAPA, y una regla
+   no capada gana SIEMPRE a una capada por especifica que sea. Cualificar con
+   `.vue-flow__handle` NO arregla nada (probado: el punto seguia gris #555 y de 6 px). */
+.vue-flow__handle.graph-node__handle {
+    width: 9px;
+    height: 9px;
+    background: var(--graph-accent);
+    border: 2px solid var(--color-white);
+}
+
+.vue-flow__handle.graph-node__handle--sm {
+    width: 8px;
+    height: 8px;
+}
+
+.vue-flow__handle.graph-node__handle--hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+
+@layer components {
+    /* EL NODO RESALTADO Y EL NODO APAGADO — F12, 2026-08-20.
+     *
+     * `ring-2 ring-brand-400 ring-offset-1` estaba escrito **cuatro veces, byte a byte**, en los
+     * cuatro componentes de nodo (`ProcessNode`, `UnitNode`, `ProcessConfigNode`,
+     * `ProcessTemplateNode`). Y el par activo/inactivo —`border-line-strong bg-white` frente a
+     * `border-line bg-white opacity-80`— otras dos, tambien identicas.
+     *
+     * Cuatro copias exactas de una misma idea es la definicion de lo que este frente persigue: no
+     * hacia falta medir nada, solo ponerlas una al lado de otra. */
+    .graph-node--resaltado {
+        box-shadow: 0 0 0 1px var(--color-white), 0 0 0 3px var(--color-brand-400);
+    }
+
+    .graph-node--apagado { opacity: 0.35; }
+
+    /* ⚠️ EL BORDE VA AQUI Y NO EN LA PLANTILLA, y lo pidio el gate. Al migrar, la rama falsa del
+       ternario quedo como `'border-line … graph-node--inactivo'` y `check:overrides` marco
+       `graph-node--activo · border-color ← .border-line`. **Es un falso positivo de verdad** —las
+       dos ramas de un ternario nunca coexisten— pero el remedio que sugiere es el correcto: si un
+       estado necesita un borde, ese borde tiene nombre. Con las dos ramas nombradas el analisis
+       estatico deja de tener que adivinar. */
+    .graph-node--inactivo {
+        --nodo-borde: var(--color-line);
+        opacity: 0.8;
+        border-color: var(--nodo-borde);
+    }
+
+    .graph-node--activo {
+        --nodo-borde: var(--color-line-strong);
+        border-color: var(--nodo-borde);
+    }
+
+    /* LA FRANJA DE ESTADO EN LA UNIDAD Y EL PROCESO, como la de la configuración: 4 px a la
+       izquierda con el tono de su vigencia (`graph-node--estado-<tono>` pone `--tono-borde`). Va
+       DESPUÉS de `--activo` / `--inactivo` porque esas dos fijan el color de los cuatro lados, y
+       trae el borde entero: en la plantilla ya no hay utilidad `border`, que ganaría a esta regla. */
+    .graph-node--franja {
+        border: 1px solid var(--nodo-borde);
+        border-left: 4px solid var(--nodo-franja);
+    }
+}

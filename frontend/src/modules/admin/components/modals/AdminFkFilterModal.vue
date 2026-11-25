@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="sqlFkFilterModalLabel"
     :title="`Buscar referencia ${fkTable?.label || ''}`"
@@ -7,9 +7,9 @@
     close-action
     @close="$emit('cancel')"
   >
-    <div v-if="!fkFilterFields.length" class="text-sm text-slate-500">
+    <AppEmpty v-if="!fkFilterFields.length">
       No hay campos disponibles para aplicar filtros.
-    </div>
+    </AppEmpty>
     <form v-else class="grid gap-3 md:grid-cols-12">
       <AdminFieldGroup
         v-for="field in fkFilterFields"
@@ -59,25 +59,26 @@
       </AdminFieldGroup>
     </form>
     <template #footer>
-      <AdminButton variant="cancel" @click="$emit('cancel')">
+      <AdminButton variant="danger-outline" @click="$emit('cancel')">
         Cancelar
       </AdminButton>
-      <AdminButton variant="outlinePrimary" @click="$emit('clear')">
+      <AdminButton variant="primary-outline" @click="$emit('clear')">
         Limpiar
       </AdminButton>
-      <AdminButton variant="primary" title="Buscar" aria-label="Buscar" @click="$emit('apply')">
+      <AdminButton variant="primary-outline" title="Buscar" aria-label="Buscar" @click="$emit('apply')" icon-only>
         <font-awesome-icon icon="search" />
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({

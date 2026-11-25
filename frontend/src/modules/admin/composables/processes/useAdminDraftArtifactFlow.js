@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { Modal } from "@/shared/utils/modalController";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
@@ -33,10 +33,14 @@ export function useAdminDraftArtifactFlow({
       pptx: ""
     };
     draftArtifactForm.value = {
-      template_seed_id: "",
+      generador_id: "",
       display_name: "",
       description: "",
-      source_version: "1.0.0"
+      process_definition_id: "",
+      template_scope: "official",
+      schema_fields: [],
+      fill_workflow: { required: true, steps: [] },
+      signature_workflow: { required: true, steps: [] }
     };
     draftArtifactFiles.value = {
       pdf: null,
@@ -48,6 +52,10 @@ export function useAdminDraftArtifactFlow({
 
   const ensureDraftArtifactInstance = () => {
     const modalElement = resolveModalElement(draftArtifactModalRef.value);
+    // Si la instancia cacheada quedó apuntando a un elemento viejo (remontado), se descarta y recrea.
+    if (draftArtifactInstance && draftArtifactInstance.element !== modalElement) {
+      draftArtifactInstance = null;
+    }
     if (!draftArtifactInstance && modalElement) {
       draftArtifactInstance = new Modal(modalElement);
       modalElement.addEventListener("hidden.bs.modal", () => {
@@ -60,10 +68,10 @@ export function useAdminDraftArtifactFlow({
 
   const loadDraftArtifactSeedOptions = async () => {
     try {
-      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("template_seeds"), {
+      const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("generadores_de_documento"), {
         params: {
           filter_is_active: 1,
-          orderBy: "display_name",
+          orderBy: "nombre",
           order: "asc",
           limit: 500
         }
@@ -74,8 +82,8 @@ export function useAdminDraftArtifactFlow({
     }
   };
 
-  const openDraftArtifactModal = async (row = null) => {
-    if (!props.table || props.table.table !== "template_artifacts") {
+  const openDraftArtifactModal = async (row = null, { force = false, show = true, preselectDefinitionId = "", cloneFrom = null } = {}) => {
+    if (!force && (!props.table || props.table.table !== "ediciones")) {
       return;
     }
     draftArtifactError.value = "";
@@ -89,28 +97,80 @@ export function useAdminDraftArtifactFlow({
     if (row) {
       const availableFormats = normalizeAvailableFormats(row.available_formats) || {};
       draftArtifactForm.value = {
-        template_seed_id: row.template_seed_id ? String(row.template_seed_id) : "",
+        generador_id: row.generador_id ? String(row.generador_id) : "",
         display_name: row.display_name ? String(row.display_name) : "",
         description: row.description ? String(row.description) : "",
-        source_version: row.source_version ? String(row.source_version) : "1.0.0"
+        storage_version: row.storage_version ? String(row.storage_version) : "",
+        is_active: Number(row.is_active) === 1 ? 1 : 0,
+        // Ciclo de vida de la versión (draft/published/retired): gobierna edición y acciones del strip.
+        lifecycle_state: row.lifecycle_state ? String(row.lifecycle_state) : "published",
+        // El tipo no se cambia al editar: define el almacenamiento y las opciones de autoría. Se muestra como tag.
+        template_scope: row.template_scope === "ad_hoc" ? "ad_hoc" : "official",
+        schema_fields: []
       };
       draftArtifactExistingFiles.value = {
-        pdf: getFileNameFromObjectKey(availableFormats?.general?.pdf?.entry_object_key),
-        docx: getFileNameFromObjectKey(availableFormats?.general?.docx?.entry_object_key),
-        xlsx: getFileNameFromObjectKey(availableFormats?.general?.xlsx?.entry_object_key),
-        pptx: getFileNameFromObjectKey(availableFormats?.general?.pptx?.entry_object_key)
+        pdf: getFileNameFromObjectKey(availableFormats?.pdf?.entry_object_key),
+        docx: getFileNameFromObjectKey(availableFormats?.docx?.entry_object_key),
+        xlsx: getFileNameFromObjectKey(availableFormats?.xlsx?.entry_object_key),
+        pptx: getFileNameFromObjectKey(availableFormats?.pptx?.entry_object_key)
       };
+      // Carga los campos y flujos actuales (desde MinIO) para edición.
+      try {
+        const { data: schemaData } = await adminSqlService.getTemplateArtifactSchema(row.id);
+        draftArtifactForm.value = {
+          ...draftArtifactForm.value,
+          schema_fields: Array.isArray(schemaData?.fields) ? schemaData.fields : [],
+          fill_workflow: schemaData?.fill_workflow || { required: true, steps: [] },
+          signature_workflow: schemaData?.signature_workflow || { required: true, steps: [] }
+        };
+      } catch {
+        // Si falla la lectura, se continúa con campos/flujos vacíos.
+      }
+    } else if (cloneFrom) {
+      // Crear A PARTIR DE otra plantilla: modo creación (editId vacío) con datos del origen precargados.
+      // No copia los documentos de referencia (binarios en MinIO): el autor los vuelve a adjuntar.
+      draftArtifactForm.value = {
+        generador_id: cloneFrom.generador_id ? String(cloneFrom.generador_id) : "",
+        display_name: cloneFrom.display_name ? `${cloneFrom.display_name} (copia)` : "",
+        description: cloneFrom.description ? String(cloneFrom.description) : "",
+        process_definition_id: preselectDefinitionId ? String(preselectDefinitionId) : "",
+        template_scope: "official",
+        schema_fields: [],
+        fill_workflow: { required: true, steps: [] },
+        signature_workflow: { required: true, steps: [] }
+      };
+      try {
+        const { data: schemaData } = await adminSqlService.getTemplateArtifactSchema(cloneFrom.id);
+        draftArtifactForm.value = {
+          ...draftArtifactForm.value,
+          schema_fields: Array.isArray(schemaData?.fields) ? schemaData.fields : [],
+          fill_workflow: schemaData?.fill_workflow || { required: true, steps: [] },
+          signature_workflow: schemaData?.signature_workflow || { required: true, steps: [] }
+        };
+      } catch {
+        // Si falla la lectura del esquema de origen, se continúa con campos/flujos vacíos.
+      }
     } else {
       draftArtifactForm.value = {
-        template_seed_id: "",
+        generador_id: "",
         display_name: "",
         description: "",
-        source_version: "1.0.0"
+        // Preselecciona la configuración de origen cuando la plantilla se crea desde la edición de una config
+        // (el modo embebido del picker no dispara shown.bs.modal, así que se fija aquí al construir el form).
+        process_definition_id: preselectDefinitionId ? String(preselectDefinitionId) : "",
+        // En admin solo se CREAN plantillas oficiales (de proceso). Las ad_hoc nacen en runtime del usuario.
+        template_scope: "official",
+        schema_fields: [],
+        fill_workflow: { required: true, steps: [] },
+        signature_workflow: { required: true, steps: [] }
       };
     }
     await loadDraftArtifactSeedOptions();
-    ensureDraftArtifactInstance();
-    draftArtifactInstance?.show();
+    // En modo embebido (pestaña Crear dentro del picker) se prepara el form sin abrir el modal standalone.
+    if (show) {
+      ensureDraftArtifactInstance();
+      draftArtifactInstance?.show();
+    }
   };
 
   const closeDraftArtifactModal = () => {
@@ -148,14 +208,31 @@ export function useAdminDraftArtifactFlow({
         throw new Error("No se pudo inferir la cedula del usuario logueado.");
       }
       const form = new FormData();
-      form.append("template_seed_id", draftArtifactForm.value.template_seed_id || "");
+      form.append("generador_id", draftArtifactForm.value.generador_id || "");
       form.append("owner_cedula", ownerCedula);
       if (ownerPersonId) {
         form.append("owner_person_id", ownerPersonId);
       }
       form.append("display_name", draftArtifactForm.value.display_name || "");
       form.append("description", draftArtifactForm.value.description || "");
-      form.append("source_version", draftArtifactForm.value.source_version || "1.0.0");
+      form.append("template_scope", draftArtifactForm.value.template_scope || "official");
+      if (Array.isArray(draftArtifactForm.value.schema_fields) && draftArtifactForm.value.schema_fields.length) {
+        form.append("schema_fields", JSON.stringify(draftArtifactForm.value.schema_fields));
+      }
+      if (draftArtifactForm.value.fill_workflow?.steps?.length) {
+        form.append("fill_workflow", JSON.stringify(draftArtifactForm.value.fill_workflow));
+      }
+      if (draftArtifactForm.value.signature_workflow?.steps?.length) {
+        form.append("signature_workflow", JSON.stringify(draftArtifactForm.value.signature_workflow));
+      }
+      if (draftArtifactForm.value.process_definition_id) {
+        form.append("process_definition_id", String(draftArtifactForm.value.process_definition_id));
+      }
+      // Modo de emisión del vínculo a proceso (single/replicated/routed). El backend lo fija AL CREAR el
+      // link; en edición el modo se administra desde el proceso, así que solo se envía al crear.
+      if (!isEditingDraft) {
+        form.append("item_mode", draftArtifactForm.value.item_mode || "single");
+      }
       if (draftArtifactFiles.value.pdf) {
         form.append("pdf_file", draftArtifactFiles.value.pdf);
       }
@@ -181,17 +258,22 @@ export function useAdminDraftArtifactFlow({
       );
       await fetchRows();
       closeDraftArtifactModal();
+      const baseMessage = response.data?.__notice || (isEditingDraft
+        ? "La plantilla de documento fue actualizada correctamente."
+        : "La plantilla de documento fue creada correctamente.");
+      // Avisos no bloqueantes (p. ej. cargo sin puesto hoy en la ubicación, resoluble por late-binding):
+      // la plantilla se guardó, pero se informa al autor.
+      const warning = response.data?.__warning;
       showFeedbackToast({
-        kind: "success",
-        title: isEditingDraft ? "Artifact actualizado" : "Artifact creado",
-        message: response.data?.__notice || (isEditingDraft
-          ? "El artifact general fue actualizado correctamente."
-          : "El artifact general fue creado correctamente.")
+        kind: warning ? "warning" : "success",
+        title: isEditingDraft ? "Plantilla actualizada" : "Plantilla creada",
+        message: warning ? `${baseMessage} ${warning}`.trim() : baseMessage
       });
+      return response?.data;
     } catch (err) {
       draftArtifactError.value = err?.response?.data?.message || (isEditingDraft
-        ? "No se pudo actualizar el artifact general."
-        : "No se pudo crear el artifact general.");
+        ? "No se pudo actualizar la plantilla de documento."
+        : "No se pudo crear la plantilla de documento.");
     } finally {
       draftArtifactLoading.value = false;
     }

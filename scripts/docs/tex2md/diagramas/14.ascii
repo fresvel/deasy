@@ -1,0 +1,3 @@
+https://host/api/deasy/v1/users   ->  nginx quita /api  ->  backend /deasy/v1/users
+https://host/api/deasy/docs       ->  nginx quita /api  ->  backend /deasy/docs   (Swagger UI)
+https://host/api/socket.io        ->  nginx quita /api  ->  backend /socket.io    (WebSocket)

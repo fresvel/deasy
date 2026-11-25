@@ -1,0 +1,23 @@
+id: F28
+titulo: 'Los órganos de gobierno: unidades colegiadas, sus miembros y a quién gobiernan'
+ciclo: exploratorio
+abierto: '2026-11-23'
+fases:
+  P1:
+    titulo: Qué es una unidad en el modelo
+    etapa: medicion
+  P2:
+    titulo: Qué decidió el dueño
+    etapa: pregunta
+  P3:
+    titulo: La forma elegida
+    etapa: decision
+  P4:
+    titulo: Los órganos, en el esquema y en el código
+    etapa: cambio
+  P5:
+    titulo: Un consejo de punta a punta
+    etapa: verificacion
+  P6:
+    titulo: El modelo publicado
+    etapa: registro

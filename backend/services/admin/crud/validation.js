@@ -1,0 +1,331 @@
+// Validación de reglas de negocio del CRUD administrativo.
+//
+// Extraído de SqlAdminService.js. `validateTableRules` es la última barrera antes de
+// escribir en ~24 tablas del núcleo del motor de procesos. Aquí es pura (no toca la
+// base de datos) y por tanto testeable sin pool: esa propiedad es la razón de que las
+// reglas vivan en este módulo y no en `SqlAdminService.tableHooks.js`, cuyos hooks son
+// asíncronos y con conexión.
+//
+// El cut #10 la convirtió de un `switch (tableName)` de 22 `case` y complejidad cognitiva
+// 99 (la cuarta más alta del repositorio) en `TABLE_RULES`: un registro que asocia cada
+// tabla a una LISTA DE REGLAS aplicadas en orden. Trece tablas quedaron como datos puros
+// (`requires` / `datesInOrder`); las otras nueve aportan además una función propia, porque
+// tienen condicionales compuestas, comparan campos entre sí o mutan el candidato.
+//
+// El ORDEN dentro de la lista es CONTRATO: el primer guard que falla decide el mensaje que
+// ve el usuario. Ojo con las que INTERCALAN — `process_definition_versions` mete el semver
+// entre sus requeridos y `task_items` mete el guard de origen en medio. Normalizarlas a "requeridos primero"
+// cambiaría el mensaje; hay tests unitarios dedicados a clavar justo eso.
+//
+// AVISO sobre el orden de los guards: `SqlAdminService.create()` comprueba los campos
+// requeridos ANTES de llamar aquí, y varias tablas tienen guards propios aún antes.
+// Por eso algunas ramas son inalcanzables desde `create()` — p. ej. la de
+// `unit_relations`, que create() corta con su propio mensaje. Los tests de
+// caracterización (`flows/admin_crud.test.mjs`) fijan el mensaje que emerge de verdad.
+
+import {
+  assertDocumentStatusValue,
+  assertDocumentVersionStatusValue,
+} from "../../documents/DocumentStateService.js";
+import { SEMANTIC_VERSION_REGEX } from "../kernel/versioning.js";
+
+export const parseJsonObject = (value, fieldLabel) => {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    throw new Error(`El campo ${fieldLabel} debe ser un JSON valido.`);
+  }
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new Error("invalid");
+    }
+    return parsed;
+  } catch {
+    throw new Error(`El campo ${fieldLabel} debe ser un JSON valido.`);
+  }
+};
+
+export const ensureDateOrder = (startDate, endDate, label) => {
+  if (startDate && endDate) {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (end < start) {
+      throw new Error(`La fecha de fin debe ser posterior a la fecha de inicio en ${label}.`);
+    }
+  }
+};
+
+// -------------------------------------------------------------------------------------------
+// El registro de reglas por tabla (cut #10). Mismo movimiento que el cut #7 hizo con los
+// injertos de create/update, aquí sobre el `switch (tableName)`: la regla de cada tabla deja
+// de ser control-flow anidado y pasa a ser una LISTA DE REGLAS que se evalúan en orden.
+//
+// El ORDEN dentro de la lista es CONTRATO: el primer campo ausente decide el mensaje que ve el
+// usuario. Por eso las tablas que intercalan condicionales entre sus requeridos (p. ej.
+// `process_definition_versions`, que mete el semver en medio) NO son declarativas y siguen en
+// el switch de abajo.
+// -------------------------------------------------------------------------------------------
+
+/**
+ * Campos obligatorios, evaluados EN ORDEN. La comprobación es `!valor` a propósito: hoy un 0 o
+ * una cadena vacía cuentan como ausentes (`pasos_declarados.orden = 0` se rechaza), y eso
+ * está fijado por los tests.
+ */
+const requires = (...pairs) => (candidate) => {
+  for (const [field, message] of pairs) {
+    if (!candidate[field]) {
+      throw new Error(message);
+    }
+  }
+};
+
+/**
+ * Orden de fechas. La mayoría de tablas usa `start_date`/`end_date`, pero las que versionan
+ * vigencias (`lineas`, `process_definition_versions`) usan `effective_from`/
+ * `effective_to`; de ahí los dos parámetros opcionales.
+ */
+const datesInOrder = (label, startField = "start_date", endField = "end_date") => (candidate) => {
+  ensureDateOrder(candidate[startField], candidate[endField], label);
+};
+
+// --- Reglas propias ---------------------------------------------------------------------------
+// Lo que no cabe en `requires`/`datesInOrder`: condicionales compuestas, comparaciones entre
+// campos y las dos ramas que MUTAN el candidato (`documents` y `document_versions` normalizan
+// el estado in-place; un refactor que se lo comiera rompería la escritura en silencio).
+// Movidas literalmente desde el switch del cut #10, sin reescribir una línea.
+
+const unitRelationNotSelf = (candidate) => {
+  if (candidate.parent_unit_id && candidate.child_unit_id) {
+    if (Number(candidate.parent_unit_id) === Number(candidate.child_unit_id)) {
+      throw new Error("La unidad padre y la unidad hija no pueden ser la misma.");
+    }
+  }
+};
+
+const LINEA_UNIT_SCOPE_TYPES = new Set(["all_units", "unit_type", "unit_exact"]);
+
+const semanticVersionRequired = (candidate) => {
+  if (!candidate.definition_version || !SEMANTIC_VERSION_REGEX.test(String(candidate.definition_version).trim())) {
+    throw new Error("La version de la configuracion debe tener formato semantico de tres segmentos (ej: 1.0.0).");
+  }
+};
+
+// EL ALCANCE DE UNA LINEA Y SU COLUMNA VAN JUNTOS.
+//
+// Sustituye a `seriesSourceConsistent`, que imponia el XOR de la serie: un eje O el otro, nunca los
+// dos. Ese XOR era el problema, no la regla — los cargos del catalogo son genericos, asi que una
+// obligacion como «el Informe de IF de los Coordinadores de Carrera» necesita cargo Y tipo de
+// unidad. Aqui los dos conviven; lo que se valida es que el alcance declarado traiga su columna.
+//
+// La base lo impone igual con `ck_lineas_unit_scope`; esto da el mensaje legible antes del 500.
+const lineaScopeConsistent = (candidate) => {
+  const scope = String(candidate.unit_scope_type || "all_units");
+  if (!LINEA_UNIT_SCOPE_TYPES.has(scope)) {
+    throw new Error("Selecciona un alcance valido para la linea.");
+  }
+  if (scope === "unit_type" && !candidate.unit_type_id) {
+    throw new Error("Una linea por tipo de unidad requiere seleccionar el tipo de unidad.");
+  }
+  if (scope === "unit_exact" && !candidate.unit_id) {
+    throw new Error("Una linea de una unidad concreta requiere seleccionar la unidad.");
+  }
+  if (scope !== "unit_type" && candidate.unit_type_id) {
+    throw new Error("Solo una linea por tipo de unidad admite tipo de unidad.");
+  }
+  if (scope !== "unit_exact" && candidate.unit_id) {
+    throw new Error("Solo una linea de una unidad concreta admite unidad.");
+  }
+  // LA JEFATURA NO LLEVA CARGO (frente 25, P26). La base lo impone con `ck_lineas_jefatura_sin_cargo`;
+  // esto da el mensaje legible antes del 500. Si ya sabes el cargo no necesitas la jefatura, y pedir
+  // los dos resuelve a la interseccion: casi siempre nadie.
+  if (String(candidate.recipient_policy || "all_matches") === "unit_head" && candidate.cargo_id) {
+    throw new Error("Una linea dirigida a la jefatura no lleva cargo: la jefatura ya dice quien es.");
+  }
+};
+
+// AQUI VIVIO LA VALIDACION DE LA REGLA DE REPARTO, y se fue en tres pasos: el ambito con `P10`
+// --era copia de la linea--, la pareja politica/puesto con `P25`, y la tabla entera con `P26`. Lo
+// unico que sobrevivio es la politica, que ahora se valida arriba, en la linea, junto al cargo con
+// el que puede contradecirse.
+
+// `processDefinedNeedsTemplate` VIVIO AQUI hasta el 2026-10-04 (frente 23, F2.1). Exigia el vinculo
+// SOLO cuando `origin_kind = 'process_defined'`, porque se creia que un entregable `user_added`
+// podia no tenerlo. No es asi: las tareas ad-hoc cuelgan del Proceso por defecto y sus dos caminos
+// de alta toman el vinculo de la configuracion activa de ese proceso. Hoy la columna es NOT NULL
+// para todas las filas, asi que la regla es un `requires` sin condicion — y el mensaje se conserva.
+
+// Solo el estado. La otra mitad de esta regla —"item de tarea O propietario"— sostenía el
+// "documento suelto", retirado: un documento no existe sin su entregable, así que `task_item_id`
+// pasó a ser un requerido más y vive abajo, en `TABLE_RULES`. Lo que NO se puede perder es la
+// normalización in-place del estado: muta el candidato y sin ella la escritura guarda el literal
+// legacy sin que ningún error lo delate.
+const documentStatusValue = (candidate) => {
+  if (Object.hasOwn(candidate, "status")) {
+    candidate.status = assertDocumentStatusValue(candidate.status);
+  }
+};
+
+const documentVersionNumberAndStatus = (candidate) => {
+  // La version es la RONDA, y es un entero desde el 2026-08-23: la 1 es el primer intento del flujo
+  // y cada reinicio abre la siguiente. Las CORRECCIONES son el segundo digito y no se escriben aqui
+  // — las lleva `document_version_uploads`, una fila por subida.
+  if (candidate.version !== undefined) {
+    const versionValue = Number(candidate.version);
+    if (!Number.isInteger(versionValue) || versionValue < 1) {
+      throw new Error("La version (ronda) debe ser un entero mayor o igual a 1.");
+    }
+  }
+
+  if (Object.hasOwn(candidate, "status")) {
+    candidate.status = assertDocumentVersionStatusValue(candidate.status);
+  }
+};
+
+// EL CATALOGO DE GENERADORES (frente 23, F3.1). Era `seedCodeAndSourcePath`, y exigia `seed_code` +
+// `source_path` porque TODO generador era una semilla con su paquete en MinIO.
+//
+// Ya no: un generador de tipo `servicio` no tiene paquete, tiene `destino` (cola o endpoint). Asi que
+// lo obligatorio pasa a ser el par IDENTIDAD —`code` + `nombre`— y la ruta fuente se exige SOLO al
+// tipo que la usa. Es la misma regla de antes aplicada a la mitad del catalogo a la que sigue
+// aplicando, no una relajacion: un generador latex sin `source_path` no puede crear una plantilla,
+// y por eso se sigue rechazando.
+const generadorIdentityAndSource = (candidate) => {
+  if (!candidate.code || !candidate.nombre) {
+    throw new Error("Debes registrar el codigo y el nombre del generador.");
+  }
+  if (String(candidate.tipo || "latex") === "latex" && !candidate.source_path) {
+    throw new Error("Un generador de tipo latex necesita la ruta fuente de su paquete.");
+  }
+};
+
+// El bloque `{ }` que envolvía esto en el switch solo existía para acotar el `const`; dentro de
+// una función ya no hace falta.
+const artifactFormatsPresent = (candidate) => {
+  const availableFormats = parseJsonObject(candidate.available_formats, "Formatos disponibles (JSON)");
+  if (!availableFormats || !Object.keys(availableFormats).length) {
+    throw new Error("Debes registrar al menos un formato disponible en available_formats.");
+  }
+};
+
+// --- El registro ------------------------------------------------------------------------------
+const TABLE_RULES = {
+  terms: [
+    datesInOrder("periodos"),
+  ],
+  processes: [],
+  process_definition_period_types: [
+    requires(
+      ["process_definition_id", "Selecciona una configuracion de proceso."],
+      ["term_type_id", "Selecciona el tipo de periodo en que corre el proceso."],
+    ),
+  ],
+  tasks: [
+    requires(
+      ["process_definition_id", "Selecciona una configuracion de proceso."],
+      ["term_id", "Selecciona un periodo para la tarea."],
+    ),
+    datesInOrder("tareas"),
+  ],
+  // LA RECETA, UNA ENTRADA POR TABLA Y PARA LOS DOS LADOS. Aqui habia CINCO entradas --dos
+  // cabeceras, los pasos de entrega y la instancia de entrega-- y las cinco se fueron con sus
+  // tablas en el paso 4 de la fase 4 del frente 24.
+  //
+  // ⚠️ EL ORIGEN DE UN PASO NO SE EXIGE AQUI, y no es un olvido: son DOS columnas excluyentes
+  // (`edicion_id` / `task_item_id`) y lo que hay que validar es que haya EXACTAMENTE UNA. Eso no lo
+  // sabe decir `requires`, que exige presencia campo a campo, y si lo dijera a medias daria un
+  // mensaje peor que el de la base. Lo impone `ck_pasos_declarados_un_origen`.
+  pasos_declarados: [
+    requires(
+      ["accion", "Indica si el paso es de entrega o de firma."],
+      ["orden", "Define el orden del paso."],
+    ),
+  ],
+  participantes_declarados: [
+    requires(
+      ["paso_id", "Selecciona el paso declarado."],
+      ["orden", "Define el orden del participante dentro del paso."],
+    ),
+  ],
+  recorridos: [
+    requires(
+      ["document_version_id", "Selecciona la version de documento."],
+      ["accion", "Indica si el recorrido es de entrega o de firma."],
+    ),
+  ],
+  // UNA ENTRADA PARA LOS DOS LADOS desde el paso 3b de la fase 4 del frente 24. Aqui habia dos
+  // --una por mitad-- y pedian la instancia y el paso viejos; `turnos` pide el recorrido y el
+  // PARTICIPANTE, porque un turno sabe de que declaracion salio y no solo de que paso.
+  turnos: [
+    requires(
+      ["recorrido_id", "Selecciona el recorrido."],
+      ["participante_id", "Selecciona el participante declarado."],
+    ),
+  ],
+  vacancies: [],
+  contracts: [
+    datesInOrder("contratos"),
+  ],
+  role_assignments: [],
+
+  // Tablas con reglas propias (tanda 2).
+  unit_relations: [
+    unitRelationNotSelf,
+  ],
+  process_definition_versions: [
+    // SIN `process_id` (frente 25, P22): la columna era copia de la linea, y exigirla aqui obligaba
+    // a elegir DOS veces el mismo dato. La linea dice de que proceso es.
+    requires(["linea_id", "Selecciona la linea de la configuracion."]),
+    semanticVersionRequired,
+    requires(["effective_from", "Selecciona la fecha de vigencia inicial de la configuracion."]),
+    datesInOrder("configuraciones de proceso", "effective_from", "effective_to"),
+  ],
+  lineas: [
+    requires(["process_id", "Selecciona el proceso de la linea."]),
+    requires(["nombre", "Escribe el nombre de la linea."]),
+    requires(["effective_from", "Selecciona la fecha de vigencia inicial de la linea."]),
+    datesInOrder("lineas de proceso", "effective_from", "effective_to"),
+    lineaScopeConsistent,
+  ],
+  task_items: [
+    requires(["task_id", "Selecciona una tarea."]),
+    // `edicion_id` se exigia aqui hasta el 2026-10-04: era una copia del vinculo y se
+    // retiro (frente 23, F2.1). Lo que hay que elegir es el VINCULO, que es el dato.
+    requires(["vinculo_id", "Selecciona el entregable definido por proceso."]),
+    datesInOrder("items de tarea"),
+  ],
+  // AQUI HABIA UNA REGLA PARA `documents`, y la tabla murio el 2026-08-23 --una cascara 1:1 sobre el
+  // entregable, sin ni una columna propia--. `sqlTables.js` no la expone, asi que la regla era
+  // INALCANZABLE: nadie podia llegar a validarla, y su propio test la mantenia en verde. Se retiro el
+  // 2026-10-09, al pasar por aqui limpiando los nombres de las ocho tablas del recorrido.
+  //
+  // Lo que SI habia que conservar es `documentStatusValue`, que no solo valida: NORMALIZA el estado en
+  // el candidato. Sigue vivo en `document_versions`, que es donde vive hoy el estado del documento.
+  document_versions: [
+    documentVersionNumberAndStatus,
+  ],
+  generadores_de_documento: [
+    generadorIdentityAndSource,
+  ],
+  ediciones: [
+    requires(["base_object_prefix", "Debes registrar el prefijo base del artifact."]),
+    artifactFormatsPresent,
+  ],
+};
+
+/** Aplica en orden las reglas de la tabla. Una tabla sin entrada no tiene reglas. */
+export const validateTableRules = (tableName, candidate) => {
+  // `Array.isArray` y no un `if (rules)` a secas: `tableName` viaja desde la URL y una clave
+  // heredada de Object.prototype ("constructor") devolvería algo no iterable.
+  const rules = TABLE_RULES[tableName];
+  if (!Array.isArray(rules)) {
+    return;
+  }
+  for (const rule of rules) {
+    rule(candidate);
+  }
+};

@@ -1,0 +1,90 @@
+<template>
+  <!-- Ícono de información con tooltip: descarga de la UI los textos de ayuda que de otro modo generan ruido.
+       Se revela al pasar el cursor, al enfocar con teclado o al hacer clic (persistente para táctil/lectura). -->
+  <span
+    class="relative inline-flex"
+    @mouseenter="open = true"
+    @mouseleave="open = false"
+  >
+    <!-- `as-button`: en una barra de botones la ayuda es un botón más, del mismo alto y con el mismo
+         borde que sus vecinos. Sin él, es el icono pequeño de siempre, para ir pegado a un rótulo. -->
+    <AppButton
+      v-if="asButton"
+      variant="neutral-outline"
+      icon-only
+      :aria-label="ariaLabel"
+      :aria-expanded="open"
+      @click.stop="open = !open"
+      @focus="open = true"
+      @blur="open = false"
+      @keydown.escape="open = false"
+    >
+      <IconInfoCircle class="h-4 w-4" stroke-width="2" />
+    </AppButton>
+    <button
+      v-else
+      type="button"
+      class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--round transition-colors hover:text-icon"
+      :aria-label="ariaLabel"
+      :aria-expanded="open"
+      @click.stop="open = !open"
+      @focus="open = true"
+      @blur="open = false"
+      @keydown.escape="open = false"
+    >
+      <IconInfoCircle class="h-4 w-4" stroke-width="2" />
+    </button>
+    <span
+      v-show="open"
+      role="tooltip"
+      class="absolute z-(--z-capa-emergente) w-64 max-w-xs rounded-2xl bg-strong px-3 py-2 text-xs font-medium leading-snug text-white shadow-lg"
+      :class="placementClass"
+    >
+      <slot>{{ text }}</slot>
+    </span>
+  </span>
+</template>
+
+<script setup>
+import { ref, computed } from "vue";
+import { IconInfoCircle } from "@tabler/icons-vue";
+import AppButton from "@/shared/components/buttons/AppButton.vue";
+
+const props = defineProps({
+  // El disparador como un `AppButton` de icono, para convivir con otros botones en una barra.
+  asButton: {
+    type: Boolean,
+    default: false
+  },
+  // Texto del tooltip (alternativa al slot por defecto para contenido enriquecido).
+  text: {
+    type: String,
+    default: ""
+  },
+  ariaLabel: {
+    type: String,
+    default: "Más información"
+  },
+  // Posición de la burbuja respecto al ícono: top | bottom | left | right, y `bottom-start` /
+  // `bottom-end` para alinearla a un borde del ícono en vez de centrarla.
+  placement: {
+    type: String,
+    default: "top"
+  }
+});
+
+const open = ref(false);
+
+const PLACEMENT_CLASSES = {
+  top: "bottom-full left-1/2 mb-2 -translate-x-1/2",
+  bottom: "top-full left-1/2 mt-2 -translate-x-1/2",
+  /* La burbuja mide 16rem y centrada sobresale 8rem a cada lado del ícono: pegado al borde
+     izquierdo de la pantalla, la mitad quedaba recortada por el contenedor. Estas dos la anclan a
+     un borde del ícono y crecen hacia dentro. */
+  "bottom-start": "top-full left-0 mt-2",
+  "bottom-end": "top-full right-0 mt-2",
+  left: "right-full top-1/2 mr-2 -translate-y-1/2",
+  right: "left-full top-1/2 ml-2 -translate-y-1/2"
+};
+const placementClass = computed(() => PLACEMENT_CLASSES[props.placement] || PLACEMENT_CLASSES.top);
+</script>

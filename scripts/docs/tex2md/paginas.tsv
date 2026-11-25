@@ -1,0 +1,22 @@
+# orden	fichero	corta_en	quitar_cabecera	title	description
+1	panorama	# Que es Deasy (el problema de negocio)	no	Qué es Deasy y cómo está montado	El problema de negocio que resuelve, las ocho piezas en contenedores y el recorrido completo de una petición.
+2	backend-capas	# El backend en detalle	si	El backend: capas y routers	La regla no negociable —los controllers son transporte, no lógica— y el inventario de los catorce routers.
+3	backend-arranque	## El punto de entrada: `backend/index.js`	si	El arranque del backend	Qué hace `index.js` al levantarse, en qué orden, y por qué el orden importa.
+4	backend-acceso-a-datos	## El acceso a datos: un adaptador peculiar	si	El adaptador de acceso a datos	Por qué el backend traduce SQL de MySQL a PostgreSQL al vuelo, y qué se paga por ello.
+5	backend-crud-generico	## El CRUD genérico de administración	si	El CRUD genérico de administración	Añadir una tabla al panel es añadir una entrada al catálogo. Con su contrapartida.
+6	backend-auth	## Autenticación y autorización	si	Autenticación y autorización	Dos cosas que se confunden constantemente: quién eres (JWT) y qué puedes hacer (RBAC).
+7	backend-errores-e-integraciones	## Manejo de errores	si	Errores e integraciones externas	El contrato de errores de la API, y las cinco integraciones: RabbitMQ, MinIO, Socket.IO, correo y WhatsApp.
+8	backend-scripts	## Los scripts del backend	si	Los scripts del backend	Qué hace cada script operativo y cuál resetea la base sin avisar.
+9	datos-vocabulario	# La base de datos y el motor de procesos	si	El modelo de datos: vocabulario	Los términos del dominio que hay que tener claros antes de mirar una sola tabla.
+10	datos-motor-de-procesos	## El motor de procesos: serie, regla y flujo	si	El motor de procesos: serie, regla y flujo	La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. Tabla por tabla.
+11	datos-modos-y-plantillas	## `item_mode`: los tres modos de emisión	si	Modos de emisión y plantillas	`single`, `replicated` y `routed`, y el modelo «libro y ediciones» de las plantillas.
+12	datos-firmas-y-dominios	## Firmas	si	Firmas, dossier y el resto del esquema	La cadena de firma, el dossier heredado de MongoDB y los dominios de tablas que faltaban.
+13	frontend-estructura	# El frontend	si	El frontend: estructura, estado y HTTP	Modular por dominio, sin Pinia ni Vuex, y cómo se habla con la API.
+14	frontend-composables-y-deuda	## Composables destacados	si	El frontend: composables, tiempo real y deuda	Los composables que sostienen la app, Socket.IO en el cliente y los God Objects que quedan.
+15	signer	# El microservicio signer	si	El microservicio signer	Por qué hay Node dentro de un servicio Python, la cadena de confianza y los OIDs ecuatorianos.
+16	infra-docker	# Infraestructura y despliegue	si	Docker: base más overlays	Un fichero base y un overlay por ambiente, y la interfaz común de `docker-env.sh`.
+17	infra-nginx	## nginx: dos configuraciones distintas	si	nginx: dos configuraciones distintas	Desarrollo y producción no comparten configuración, y las rutas efectivas no son las que parecen.
+18	infra-cicd-sonar	## CI/CD	si	CI/CD y SonarQube	Los ocho jobs de `cd-multienv.yml`, los dos modos de entrega, y cómo está montado Sonar.
+19	testing	# Testing: dos niveles que no se mezclan	si	Testing: dos niveles que no se mezclan	Unitarios junto al módulo y caracterización contra goldens. Dónde va cada uno y por qué importa.
+20	confusiones	# Cosas que te van a confundir (y no son bugs)	si	Cosas que te van a confundir	Lo que parece un fallo y no lo es. La página que ahorra más tiempo del repositorio.
+0	index	# Por donde empezar a leer	si	Por dónde empezar a leer	La guía de lectura: los tres documentos maestros y las tres cosas que más cuestan.

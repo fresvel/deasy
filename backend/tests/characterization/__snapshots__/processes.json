@@ -1,0 +1,34 @@
+{
+  "program_list": {
+    "status": 200,
+    "isArray": true,
+    "count": 14,
+    "itemKeys": [
+      "created_at",
+      "estado",
+      "id",
+      "label",
+      "name",
+      "slug",
+      "unit_type_id",
+      "unit_type_name",
+      "updated_at"
+    ]
+  },
+  "program_list_active": {
+    "status": 200,
+    "isArray": true,
+    "count": 14,
+    "itemKeys": [
+      "created_at",
+      "estado",
+      "id",
+      "label",
+      "name",
+      "slug",
+      "unit_type_id",
+      "unit_type_name",
+      "updated_at"
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+id: F27
+titulo: 'La estructura con memoria: vigencia del organigrama y del árbol de procesos'
+ciclo: exploratorio
+abierto: '2026-11-17'
+fases:
+  P1:
+    titulo: Lo que hoy no queda escrito
+    etapa: medicion
+  P2:
+    titulo: Qué decidió el dueño
+    etapa: pregunta
+  P3:
+    titulo: La forma elegida
+    etapa: decision
+  P4:
+    titulo: La memoria, en el esquema y en el código
+    etapa: cambio
+  P5:
+    titulo: Las dos lecturas, comprobadas
+    etapa: verificacion
+  P6:
+    titulo: El modelo publicado
+    etapa: registro

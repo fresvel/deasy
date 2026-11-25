@@ -1,0 +1,204 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Motor de procesos. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project procesos {
+  database_type: 'PostgreSQL'
+  Note: '''Motor de procesos — Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. El lanzamiento (`process_runs`) ya no se dibuja aquí: es ejecución y vive en el diagrama de tareas.'''
+}
+
+Table "lineas" {
+  "id" int4 [pk, not null, increment]
+  "process_id" int4 [not null]
+  "nombre" varchar(180) [not null]
+  "cargo_id" int4
+  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text])`, default: 'all_matches']
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['all_units'::text, 'unit_type'::text, 'unit_exact'::text])`, default: 'all_units']
+  "unit_type_id" int4
+  "unit_id" int4
+  "linea_anterior_id" int4
+  "effective_from" date [not null]
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, cargo_id, unit_scope_type, unit_type_id, unit_id) [type: btree, unique, name: "uq_lineas_identidad"]
+    (process_id, nombre) [type: btree, unique, name: "uq_lineas_nombre_por_proceso"]
+    linea_anterior_id [type: btree, name: "idx_lineas_anterior"]
+    (process_id, effective_to) [type: btree, name: "idx_lineas_vigencia"]
+  }
+}
+
+Table "process_definition_period_types" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_type_id" int4 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, term_type_id) [type: btree, unique, name: "uq_process_definition_period_types"]
+    (process_definition_id, is_active) [type: btree, name: "idx_process_definition_period_types_lookup"]
+    term_type_id [type: btree, name: "idx_process_definition_period_types_term_type"]
+  }
+}
+
+Table "process_definition_versions" {
+  "id" int4 [pk, not null, increment]
+  "linea_id" int4 [not null]
+  "definition_version" varchar(20) [not null]
+  "description" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['draft'::text, 'active'::text, 'retired'::text])`, default: 'draft']
+  "active_series_flag" int2 [note: "columna generada (STORED)"]
+  "effective_from" date [not null]
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (linea_id, active_series_flag) [type: btree, unique, name: "uq_process_definition_one_active_linea"]
+    (linea_id, definition_version) [type: btree, unique, name: "uq_process_definition_versions_linea"]
+    linea_id [type: btree, name: "idx_process_definition_versions_linea"]
+    (linea_id, status, effective_from) [type: btree, name: "idx_process_definition_versions_status"]
+  }
+}
+
+Table "process_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_process_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_process_id) [type: btree, unique, name: "uq_process_equivalencias_par"]
+    sucesor_process_id [type: btree, name: "idx_process_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UN PROCESO QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no el proceso--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida.'''
+}
+
+Table "process_relations" {
+  "id" int4 [pk, not null, increment]
+  "parent_process_id" int4 [not null]
+  "child_process_id" int4 [unique, not null]
+  "vigente_desde" date
+  "vigente_hasta" date
+  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (child_process_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_process_relations_sin_solape"]
+    (child_process_id, vigente_desde) [type: btree, name: "idx_process_relations_child"]
+    parent_process_id [type: btree, name: "idx_process_relations_parent"]
+  }
+}
+
+Table "process_vigencias" {
+  "id" int4 [pk, not null, increment]
+  "process_id" int4 [not null]
+  "vigente_desde" date [not null]
+  "vigente_hasta" date
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_process_vigencias_sin_solape"]
+    (process_id, vigente_desde) [type: btree, name: "idx_process_vigencias_process"]
+  }
+}
+
+Table "processes" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "slug" varchar(180) [unique, not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
+}
+
+Table "term_types" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "terms" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(60) [unique, not null]
+  "term_type_id" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date [not null]
+  "is_active" int2 [not null, default: 1]
+
+  Indexes {
+    term_type_id [type: btree, name: "idx_terms_term_type"]
+  }
+}
+
+Table "vinculos" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "edicion_id" int4 [not null]
+  "sort_order" int4 [not null, default: 1]
+  "item_mode" text [not null, check: `item_mode = ANY (ARRAY['single'::text, 'replicated'::text, 'routed'::text])`, default: 'single', note: '''Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, edicion_id) [type: btree, unique, name: "uq_vinculos"]
+  }
+
+  Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
+}
+
+Ref "fk_lineas_anterior":"lineas"."id" ?<? "lineas"."linea_anterior_id"
+Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: restrict]
+Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
+Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
+Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]
+Ref "fk_process_equivalencias_antecesor":"process_vigencias"."id" <? "process_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_process_equivalencias_sucesor":"processes"."id" <? "process_equivalencias"."sucesor_process_id"
+Ref "fk_process_relations_child":"processes"."id" <? "process_relations"."child_process_id"
+Ref "fk_process_relations_parent":"processes"."id" <? "process_relations"."parent_process_id"
+Ref "fk_process_vigencias_process":"processes"."id" <? "process_vigencias"."process_id"
+Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
+Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."process_definition_id" [delete: cascade]
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   processes -> chat_conversations   [chat]
+//   process_definition_versions -> chat_conversations   [chat]
+//   process_definition_versions -> chat_conversations   [chat]
+//   processes -> chat_conversations   [chat]
+//   cargos -> lineas   [identidad]
+//   unit_types -> lineas   [organizacion]
+//   units -> lineas   [organizacion]
+//   persons -> process_equivalencias   [identidad]
+//   actos -> process_relations   [organizacion]
+//   actos -> process_relations   [organizacion]
+//   process_definition_versions -> process_runs   [tareas]
+//   terms -> process_runs   [tareas]
+//   actos -> process_vigencias   [organizacion]
+//   actos -> process_vigencias   [organizacion]
+//   vinculos -> task_items   [tareas]
+//   process_definition_versions -> tasks   [tareas]
+//   terms -> tasks   [tareas]
+//   ediciones -> vinculos   [plantillas]

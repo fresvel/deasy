@@ -14,8 +14,8 @@ RUN apt-get update \
 
 WORKDIR /app
 
-COPY signer/requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+COPY signer/requirements.txt signer/requirements-dev.txt ./
+RUN pip install --no-cache-dir -r requirements.txt -r requirements-dev.txt
 
 COPY signer ./
 
@@ -28,8 +28,13 @@ RUN npm install
 
 WORKDIR /app
 
-RUN mkdir -p /tmp/deasy-signer-workspace /app/trust/roots /app/trust/extra \
-  && chown -R appuser:appuser /app /opt/sigmaker /tmp/deasy-signer-workspace
+# El workspace del firmante NO va bajo /tmp (escritura publica): ahi se desempaqueta el PKCS#12 y
+# se escriben los PDF. Directorio propio del servicio, dueno appuser y 0700, para que la raiz no sea
+# accesible a nadie mas. Se crea en la imagen -no hace falta volumen- porque su contenido es scratch:
+# cada job vive en un `TemporaryDirectory` que se borra al salir y nada debe sobrevivir al reinicio.
+RUN mkdir -p /var/lib/deasy-signer/workspace /app/trust/roots /app/trust/extra \
+  && chown -R appuser:appuser /app /opt/sigmaker /var/lib/deasy-signer \
+  && chmod 0700 /var/lib/deasy-signer/workspace
 
 USER appuser
 

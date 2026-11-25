@@ -1,0 +1,1384 @@
+import bcrypt from "bcrypt";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { getPostgresPool } from "../../config/postgres.js";
+import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
+import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
+import { PAISES, PROVINCIAS_EC, CANTONES_EC, PARROQUIAS_EC } from "../../dominios/organizacion/index.js";
+import { TelefonoService, EmailService, DocumentoIdentidadService } from "../../dominios/identidad/index.js";
+import DocumentosLegales from "../legal/DocumentosLegales.js";
+import {
+  ACTION_CATALOG,
+  ADMIN_ROLE_NAME,
+  PERMISSION_CATALOG,
+  RESOURCE_CATALOG,
+  ROLE_CATALOG,
+  ROLE_PERMISSION_MATRIX,
+  permissionCode
+} from "../../config/rbacCatalog.js";
+
+const BOOTSTRAP_UNIT_TYPE_NAME = "Sistema";
+const BOOTSTRAP_UNIT_NAME = "Raiz del sistema";
+const BOOTSTRAP_UNIT_LABEL = "Sistema";
+const BOOTSTRAP_UNIT_SLUG = "root-system";
+const MANUAL_ROLE_SOURCE = "manual";
+const GESTOR_ROLE_NAME = "GestorProcesos";
+const USUARIO_ROLE_NAME = "Usuario";
+
+const TOKEN_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+const TOKEN_LENGTH = 10;
+
+const fetchOne = async (connection, sql, params = []) => {
+  const [rows] = await connection.query(sql, params);
+  return rows?.[0] ?? null;
+};
+
+const toBoolean = (value) => Number(value || 0) > 0;
+
+const buildError = (message, statusCode = 400) => {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+};
+
+const generateRawToken = () => {
+  const bytes = crypto.randomBytes(TOKEN_LENGTH);
+  let token = "";
+  for (let index = 0; index < TOKEN_LENGTH; index += 1) {
+    token += TOKEN_CHARS[bytes[index] % TOKEN_CHARS.length];
+  }
+  return token;
+};
+
+// EL TOKEN DE FIRMA SE PUEDE FIJAR, y no es lo mismo que sembrar el azar.
+//
+// `crypto.randomBytes` es un CSPRNG: no admite semilla, y sustituirlo por un generador con semilla
+// para que el dev sea reproducible dejaria el token del administrador REAL de cada despliegue
+// calculable por quien conozca el algoritmo. El azar se queda donde esta; lo que se abre es una
+// ENTRADA: quien instala puede decir cual quiere, y si no dice nada se sigue sorteando.
+//
+// Es legitimo porque el token NO ES UN SECRETO: el firmador solo lo usa para LOCALIZAR texto
+// --`find_marker_coordinates(pdf, token)` en `signer/app.py`-- y quien autoriza es el certificado
+// con su contraseña, el permiso RBAC y el turno. El marcador `!-token-!` se IMPRIME dentro del PDF
+// (en blanco) y quien escribe la plantilla LaTeX tiene que conocerlo: es dato de diseño, no credencial.
+// Lo unico que el modelo le exige es ser UNICO, y eso se comprueba abajo.
+//
+// Devuelve `null` cuando no se pide nada, que es la señal de «sortealo».
+export const normalizarTokenDeFirma = (valor) => {
+  const token = String(valor ?? "").trim();
+  if (!token) return null;
+  if (token.length !== TOKEN_LENGTH) {
+    throw buildError(`El token de firma debe tener exactamente ${TOKEN_LENGTH} caracteres.`);
+  }
+  for (const caracter of token) {
+    if (!TOKEN_CHARS.includes(caracter)) {
+      throw buildError("El token de firma solo admite letras y digitos sin acentos.");
+    }
+  }
+  return token;
+};
+
+const generateUniqueTokenWithConnection = async (connection) => {
+  for (let attempts = 0; attempts < 10; attempts += 1) {
+    const token = generateRawToken();
+    const row = await fetchOne(
+      connection,
+      "SELECT id FROM persons WHERE token = ? LIMIT 1",
+      [token]
+    );
+    if (!row) {
+      return token;
+    }
+  }
+  throw buildError("No se pudo generar un token unico para el administrador.", 500);
+};
+
+const normalizeString = (value, { lower = false } = {}) => {
+  const normalized = String(value || "").trim();
+  return lower ? normalized.toLowerCase() : normalized;
+};
+
+const normalizeCedula = (value) => String(value || "").replace(/\D/g, "");
+
+const validateAdminPayload = (payload = {}) => {
+  const cedula = normalizeCedula(payload.cedula);
+  const firstName = normalizeString(payload.first_name);
+  const lastName = normalizeString(payload.last_name);
+  const email = normalizeString(payload.email, { lower: true });
+  const whatsapp = normalizeString(payload.whatsapp);
+  const password = String(payload.password || "");
+  const confirmPassword = String(payload.confirm_password || payload.repassword || "");
+  // Opcional a proposito: vacio = se sortea, que es lo que hace una instalacion de verdad.
+  const signatureToken = normalizarTokenDeFirma(payload.signature_token);
+
+  if (!cedula) throw buildError("La cedula del administrador es requerida.");
+  if (cedula.length < 10) throw buildError("La cedula del administrador no es valida.");
+  if (!firstName) throw buildError("Los nombres del administrador son requeridos.");
+  if (!lastName) throw buildError("Los apellidos del administrador son requeridos.");
+  if (!email) throw buildError("El correo del administrador es requerido.");
+  if (!password) throw buildError("La contraseña del administrador es requerida.");
+  if (password.length < 8) throw buildError("La contraseña debe tener al menos 8 caracteres.");
+  if (!confirmPassword) throw buildError("Debes confirmar la contraseña del administrador.");
+  if (password !== confirmPassword) throw buildError("Las contraseñas no coinciden.");
+
+  return {
+    cedula,
+    first_name: firstName,
+    last_name: lastName,
+    email,
+    whatsapp: whatsapp || null,
+    password,
+    signature_token: signatureToken
+  };
+};
+
+const upsertRole = async (connection, role) => {
+  await connection.query(
+    `INSERT INTO roles (name, description, is_active)
+     VALUES (?, ?, 1)
+     ON DUPLICATE KEY UPDATE
+       description = VALUES(description),
+       is_active = 1`,
+    [role.name, role.description]
+  );
+  const row = await fetchOne(connection, "SELECT id FROM roles WHERE name = ? LIMIT 1", [role.name]);
+  return Number(row.id);
+};
+
+const upsertResource = async (connection, resource) => {
+  await connection.query(
+    `INSERT INTO resources (code, name, description, is_active)
+     VALUES (?, ?, ?, 1)
+     ON DUPLICATE KEY UPDATE
+       name = VALUES(name),
+       description = VALUES(description),
+       is_active = 1`,
+    [resource.code, resource.name, resource.description]
+  );
+  const row = await fetchOne(connection, "SELECT id FROM resources WHERE code = ? LIMIT 1", [resource.code]);
+  return Number(row.id);
+};
+
+const upsertAction = async (connection, action) => {
+  await connection.query(
+    `INSERT INTO actions (code, name, description, is_active)
+     VALUES (?, ?, ?, 1)
+     ON DUPLICATE KEY UPDATE
+       name = VALUES(name),
+       description = VALUES(description),
+       is_active = 1`,
+    [action.code, action.name, action.description]
+  );
+  const row = await fetchOne(connection, "SELECT id FROM actions WHERE code = ? LIMIT 1", [action.code]);
+  return Number(row.id);
+};
+
+const upsertPermission = async (connection, { resourceId, actionId, code, description }) => {
+  await connection.query(
+    `INSERT INTO permissions (resource_id, action_id, code, description, is_active)
+     VALUES (?, ?, ?, ?, 1)
+     ON DUPLICATE KEY UPDATE
+       code = VALUES(code),
+       description = VALUES(description),
+       is_active = 1`,
+    [resourceId, actionId, code, description]
+  );
+  const row = await fetchOne(connection, "SELECT id FROM permissions WHERE code = ? LIMIT 1", [code]);
+  return Number(row.id);
+};
+
+
+// EL ARCHIVO LEGAL, TAMBIEN AQUI — y no solo en el arranque del backend.
+//
+// ⚠️ MEDIDO el 2026-09-02, y por eso existe esta funcion: `test:char:fixture` (y cualquier reset)
+// vacia `documentos_legales` SIN reiniciar el backend, asi que la adopcion del arranque ya paso y no
+// vuelve a pasar. El resultado medido era `GET /legal/documentos` -> `{"documentos":[]}`: nadie
+// tiene nada que aceptar, y `validarAceptacion` pasa EN VACIO porque no hay clases publicadas que
+// exigir. Es exactamente el agujero que este frente vino a cerrar, reabierto por el camino del
+// reset.
+//
+// El sitio correcto es el bootstrap y no un `INSERT` del esquema: la fila necesita el
+// `object_version_id`, que NO EXISTE hasta despues de subir el objeto a MinIO.
+//
+// Best-effort A PROPOSITO: va DESPUES del commit y no tumba un arranque que ya funciono. Un MinIO
+// caido deja el sistema sin textos que aceptar --que se avisa muy alto-- pero no sin instalacion.
+const conectarArchivoLegal = async () => {
+  try {
+    const legales = new DocumentosLegales();
+    await legales.asegurarBuckets();
+    const adoptados = await legales.adoptarDelArchivo();
+    if (adoptados.length) {
+      const detalle = adoptados.map((d) => `${d.clase} ${d.version} [${d.accion}]`).join(", ");
+      console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con MinIO (${detalle})`);
+    } else {
+      // ⚠️ ESTE CASO ESTABA EN SILENCIO Y COSTO UNA TARDE (2026-10-07). El archivo legal vive SOLO en
+      // MinIO, asi que en una instalacion nueva esta VACIO y aqui no hay nada que adoptar. No era un
+      // error —no lanza— pero dejaba el sistema sin un solo texto que aceptar, y el alta registraba
+      // CERO consentimientos sin que nada se quejara. Dos pruebas de caracterizacion fallaban y
+      // parecian un fallo de codigo.
+      console.warn(
+        "⚠️  Archivo legal VACIO: no hay ningun texto publicado, asi que el alta no registrara " +
+          "consentimiento alguno. Publica los textos en /admin -> Legal, o --si es el harness-- " +
+          "ejecuta `npm run test:char:legal`."
+      );
+    }
+    return adoptados;
+  } catch (error) {
+    console.error(`⚠️  ARCHIVO LEGAL NO OPERATIVO tras el bootstrap: ${error.message}`);
+    console.error("⚠️  Sin textos legales publicados NO HAY CONSENTIMIENTO QUE REGISTRAR en el alta.");
+    return [];
+  }
+};
+const seedBaseRbacCatalog = async (connection) => {
+  const roleIds = new Map();
+  const resourceIds = new Map();
+  const actionIds = new Map();
+  const permissionIds = new Map();
+
+  for (const role of ROLE_CATALOG) {
+    roleIds.set(role.name, await upsertRole(connection, role));
+  }
+
+  for (const resource of RESOURCE_CATALOG) {
+    resourceIds.set(resource.code, await upsertResource(connection, resource));
+  }
+
+  for (const action of ACTION_CATALOG) {
+    actionIds.set(action.code, await upsertAction(connection, action));
+  }
+
+  for (const permission of PERMISSION_CATALOG) {
+    const permissionId = await upsertPermission(connection, {
+      resourceId: resourceIds.get(permission.resourceCode),
+      actionId: actionIds.get(permission.actionCode),
+      code: permission.code,
+      description: permission.description
+    });
+    permissionIds.set(permission.code, permissionId);
+  }
+
+  for (const [roleName, resourceMatrix] of Object.entries(ROLE_PERMISSION_MATRIX)) {
+    const roleId = roleIds.get(roleName);
+    if (!roleId) continue;
+    await connection.query("DELETE FROM role_permissions WHERE role_id = ?", [roleId]);
+    for (const [resourceCode, actionCodes] of Object.entries(resourceMatrix)) {
+      for (const actionCode of actionCodes) {
+        const permissionId = permissionIds.get(permissionCode(resourceCode, actionCode));
+        if (!permissionId) continue;
+        await connection.query(
+          "INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES (?, ?)",
+          [roleId, permissionId]
+        );
+      }
+    }
+  }
+
+  return roleIds;
+};
+
+// LOS CINCO VOCABULARIOS DE LA PERSONA, para Ecuador. Cada lista con su fuente, porque el dia que
+// alguien quiera cambiar un valor tiene que saber a quien le esta llevando la contraria:
+//
+//   generos                       Ley Organica de Gestion de la Identidad y Datos Civiles (2016)
+//   estados_civiles               Registro Civil
+//   autoidentificaciones_etnicas  INEC, pregunta 11 del censo
+//   tipos_discapacidad            Ministerio de Salud Publica
+//   parentescos                   IESS (conyuge, conviviente, hijos) + SRI (padres deducibles)
+//
+// Van aqui y no en `postgres_schema.sql` con los otros INSERT de vocabulario, aunque cumplan el
+// tamaño: necesitan el `id` de Ecuador, y `paises` lo siembra esta misma funcion.
+const VOCABULARIOS_PERSONA_EC = {
+  generos: [
+    { code: "masculino", name: "Masculino", orden: 10 },
+    { code: "femenino", name: "Femenino", orden: 20 }
+  ],
+  estados_civiles: [
+    { code: "soltero", name: "Soltero/a", orden: 10 },
+    { code: "union_de_hecho", name: "Unión de hecho", orden: 20 },
+    { code: "casado", name: "Casado/a", orden: 30 },
+    { code: "divorciado", name: "Divorciado/a", orden: 40 },
+    { code: "viudo", name: "Viudo/a", orden: 50 }
+  ],
+  autoidentificaciones_etnicas: [
+    { code: "indigena", name: "Indígena", orden: 10 },
+    { code: "afroecuatoriano", name: "Afroecuatoriano/a", orden: 20 },
+    { code: "negro", name: "Negro/a", orden: 30 },
+    { code: "mulato", name: "Mulato/a", orden: 40 },
+    { code: "montubio", name: "Montubio/a", orden: 50 },
+    { code: "mestizo", name: "Mestizo/a", orden: 60 },
+    { code: "blanco", name: "Blanco/a", orden: 70 },
+    { code: "otro", name: "Otro", orden: 80 }
+  ],
+  tipos_discapacidad: [
+    { code: "fisica", name: "Física", orden: 10 },
+    { code: "intelectual", name: "Intelectual", orden: 20 },
+    { code: "visual", name: "Visual", orden: 30 },
+    { code: "auditiva", name: "Auditiva", orden: 40 },
+    { code: "psicosocial", name: "Psicosocial", orden: 50 },
+    { code: "lenguaje", name: "Lenguaje", orden: 60 }
+  ],
+  // Las categorias de la Ley Organica de Movilidad Humana, agrupadas por condicion migratoria.
+  //
+  // ⚠️ La lista sale del articulado y el reglamento la ha tocado desde 2017: conviene contrastarla
+  // con la Cancilleria antes de darla por buena. El DISEÑO no depende de ella -- es un catalogo y se
+  // edita en /admin--, pero la semilla si.
+  categorias_visa: [
+    { code: "transeunte", name: "Transeúnte", condicion: "Visitante temporal", orden: 10 },
+    { code: "turista", name: "Turista", condicion: "Visitante temporal", orden: 20 },
+    { code: "solicitante_proteccion_internacional", name: "Solicitante de protección internacional", condicion: "Visitante temporal", orden: 30 },
+    { code: "inversionista", name: "Inversionista", condicion: "Residente temporal", orden: 40 },
+    { code: "rentista", name: "Rentista", condicion: "Residente temporal", orden: 50 },
+    { code: "estatuto_migratorio_andino", name: "Estatuto Migratorio Andino", condicion: "Residente temporal", orden: 60 },
+    { code: "mercosur", name: "Acuerdo MERCOSUR", condicion: "Residente temporal", orden: 70 },
+    { code: "cientifico_investigador_academico", name: "Científico, investigador o académico", condicion: "Residente temporal", orden: 80 },
+    { code: "estudiante", name: "Estudiante", condicion: "Residente temporal", orden: 90 },
+    { code: "convenio", name: "Convenio", condicion: "Residente temporal", orden: 100 },
+    { code: "proteccion_asilo", name: "Protección o asilo", condicion: "Residente temporal", orden: 110 },
+    { code: "excepcion", name: "Excepción", condicion: "Residente temporal", orden: 120 },
+    { code: "residente_permanente", name: "Residente permanente", condicion: "Residente permanente", orden: 130 }
+  ],
+  parentescos: [
+    { code: "conyuge", name: "Cónyuge", orden: 10 },
+    { code: "conviviente", name: "Conviviente en unión de hecho", orden: 20 },
+    { code: "hijo", name: "Hijo/a", orden: 30 },
+    { code: "padre", name: "Padre", orden: 40 },
+    { code: "madre", name: "Madre", orden: 50 },
+    { code: "hermano", name: "Hermano/a", orden: 60 },
+    { code: "otro", name: "Otro", orden: 70 }
+  ]
+};
+
+// LA CLASE DE UNA PARROQUIA, para Ecuador. Son tres filas y no salen del fichero del INEC: salen de
+// su CODIFICACION -- 50 es la cabecera cantonal, por debajo urbanas y por encima rurales--, asi que
+// las decide este proyecto y no la fuente.
+//
+// Y no van en `postgres_schema.sql` con los otros cuatro INSERT de vocabulario, aunque cumplan el
+// tamaño: necesitan el `id` de Ecuador, y `paises` lo siembra esta misma funcion.
+const CLASES_PARROQUIA_EC = [
+  { code: "cabecera", name: "Cabecera cantonal", orden: 10 },
+  { code: "urbana", name: "Urbana", orden: 20 },
+  { code: "rural", name: "Rural", orden: 30 }
+];
+
+// COMO SE LLAMA CADA NIVEL EN ECUADOR. Lo consume el formulario para rotular sus desplegables, en
+// vez de escribir "Canton" a fuego: en España el nivel 2 se llama provincia y el 1 comunidad
+// autonoma, asi que el nombre de la tabla no puede servir de etiqueta.
+const NOMENCLATURA_EC = [
+  { nivel: 1, singular: "Provincia", plural: "Provincias" },
+  { nivel: 2, singular: "Cantón", plural: "Cantones" },
+  { nivel: 3, singular: "Parroquia", plural: "Parroquias" }
+];
+
+// La geografia: pais -> provincia -> canton -> parroquia. Va aqui y no en
+// `postgres_schema.sql` porque ahi solo hay cuatro INSERT, todos vocabularios de ocho filas o menos
+// de los que depende el codigo; esto son 1 792 filas. Es la misma decision, y el mismo sitio, que el
+// catalogo base de RBAC de arriba.
+//
+// Va en el arranque OBLIGATORIO, no en "usar datos de ejemplo": sin paises el formulario de registro
+// no puede pedir una direccion.
+//
+// Idempotente por `ON DUPLICATE KEY UPDATE` sobre la clave natural de cada tabla, que para los
+// cantones es (provincia, nombre) y NUNCA el nombre: en Ecuador hay un canton "Bolivar" en Carchi y
+// otro en Manabi, y un "Olmedo" en Loja y otro en Manabi.
+//
+// La de una parroquia NO es (canton, nombre) sino (canton, dpa_code): su nombre no es unico ni
+// dentro de su propio canton -- son 33 casos, y con la clave por nombre el UPSERT las perdia.
+const seedGeographyCatalog = async (connection) => {
+  for (const pais of PAISES) {
+    await connection.query(
+      `INSERT INTO paises (iso_alpha2, name, name_en, phone_code, is_active)
+       VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         name_en = VALUES(name_en),
+         phone_code = VALUES(phone_code),
+         is_active = VALUES(is_active)`,
+      [pais.iso, pais.nombre, pais.nombre_en, pais.prefijo, pais.activo]
+    );
+  }
+
+  const ecuador = await fetchOne(connection, "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1", ["EC"]);
+  if (!ecuador) {
+    throw new Error("No se pudo sembrar la geografia: falta Ecuador en el catalogo de paises.");
+  }
+  const ecuadorId = Number(ecuador.id);
+
+  for (const provincia of PROVINCIAS_EC) {
+    await connection.query(
+      `INSERT INTO provincias (pais_id, dpa_code, name, is_active)
+       VALUES (?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         dpa_code = VALUES(dpa_code),
+         is_active = 1`,
+      [ecuadorId, provincia.dpa, provincia.nombre]
+    );
+  }
+
+  // Un solo SELECT para el mapa de provincias: 222 consultas sueltas dentro del bucle de cantones
+  // seria el mismo trabajo hecho 222 veces. Lo mismo con el de cantones para las 1 314 parroquias.
+  const [provinciaRows] = await connection.query(
+    "SELECT id, dpa_code FROM provincias WHERE pais_id = ?",
+    [ecuadorId]
+  );
+  const provinciaPorDpa = new Map((provinciaRows ?? []).map((row) => [String(row.dpa_code), Number(row.id)]));
+
+  for (const canton of CANTONES_EC) {
+    const provinciaId = provinciaPorDpa.get(canton.provincia_dpa);
+    if (!provinciaId) continue;
+    await connection.query(
+      `INSERT INTO cantones (provincia_id, dpa_code, name, is_active)
+       VALUES (?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         dpa_code = VALUES(dpa_code),
+         is_active = 1`,
+      [provinciaId, canton.dpa, canton.nombre]
+    );
+  }
+
+  // Las clases de parroquia y la nomenclatura van ANTES que las parroquias: la primera porque
+  // `parroquias.clase_id` la referencia; la segunda porque es del mismo pais y se siembra a la vez.
+  for (const clase of CLASES_PARROQUIA_EC) {
+    await connection.query(
+      `INSERT INTO clases_parroquia (pais_id, code, name, orden, is_active)
+       VALUES (?, ?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         orden = VALUES(orden),
+         is_active = 1`,
+      [ecuadorId, clase.code, clase.name, clase.orden]
+    );
+  }
+
+  for (const fila of NOMENCLATURA_EC) {
+    await connection.query(
+      `INSERT INTO nomenclatura_territorial (pais_id, nivel, singular, plural, is_active)
+       VALUES (?, ?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         singular = VALUES(singular),
+         plural = VALUES(plural),
+         is_active = 1`,
+      [ecuadorId, fila.nivel, fila.singular, fila.plural]
+    );
+  }
+
+  const [claseRows] = await connection.query(
+    "SELECT id, code FROM clases_parroquia WHERE pais_id = ?",
+    [ecuadorId]
+  );
+  const clasePorCode = new Map((claseRows ?? []).map((row) => [String(row.code), Number(row.id)]));
+
+  const [cantonRows] = await connection.query(
+    `SELECT c.id, c.dpa_code
+       FROM cantones c
+       INNER JOIN provincias p ON p.id = c.provincia_id
+      WHERE p.pais_id = ?`,
+    [ecuadorId]
+  );
+  const cantonPorDpa = new Map((cantonRows ?? []).map((row) => [String(row.dpa_code), Number(row.id)]));
+
+  // Los cinco vocabularios de la persona. Comparten forma con clases_parroquia, asi que comparten
+  // bucle: la tabla es la clave del objeto y el cuerpo es identico.
+  for (const [tabla, filas] of Object.entries(VOCABULARIOS_PERSONA_EC)) {
+    for (const fila of filas) {
+      // `categorias_visa` lleva una columna mas -- la condicion migratoria-- y por eso sale del
+      // bucle comun en vez de ensuciarlo con un caso especial.
+      if (tabla === "categorias_visa") {
+        await connection.query(
+          `INSERT INTO categorias_visa (pais_id, code, name, condicion, orden, is_active)
+           VALUES (?, ?, ?, ?, ?, 1)
+           ON DUPLICATE KEY UPDATE
+             name = VALUES(name),
+             condicion = VALUES(condicion),
+             orden = VALUES(orden),
+             is_active = 1`,
+          [ecuadorId, fila.code, fila.name, fila.condicion, fila.orden]
+        );
+        continue;
+      }
+      await connection.query(
+        `INSERT INTO ${tabla} (pais_id, code, name, orden, is_active)
+         VALUES (?, ?, ?, ?, 1)
+         ON DUPLICATE KEY UPDATE
+           name = VALUES(name),
+           orden = VALUES(orden),
+           is_active = 1`,
+        [ecuadorId, fila.code, fila.name, fila.orden]
+      );
+    }
+  }
+
+  for (const parroquia of PARROQUIAS_EC) {
+    const cantonId = cantonPorDpa.get(parroquia.canton_dpa);
+    if (!cantonId) continue;
+    await connection.query(
+      `INSERT INTO parroquias (canton_id, dpa_code, name, clase_id, is_active)
+       VALUES (?, ?, ?, ?, 1)
+       ON DUPLICATE KEY UPDATE
+         name = VALUES(name),
+         clase_id = VALUES(clase_id),
+         is_active = 1`,
+      [cantonId, parroquia.dpa, parroquia.nombre, clasePorCode.get(parroquia.clase) ?? null]
+    );
+  }
+};
+
+// La institución de esta instalación. Se siembra ANTES que nada porque de su país sale el validador
+// del documento nacional, y sin ella el alta del admin no sabria como validar su numero.
+//
+// EL PAIS POR DEFECTO ES ECUADOR, y eso NO es lo mismo que el codigo que se acaba de quitar. Antes
+// habia un TIPO llamado `cedula_ec`: Ecuador estaba en una rama del programa. Ahora es el valor
+// inicial de una fila que se edita en /admin, y el codigo no lo menciona. Un despliegue peruano
+// cambia esa fila y todo lo demas le sigue.
+const INSTITUCION_NOMBRE_POR_DEFECTO = "Institución";
+const INSTITUCION_PAIS_POR_DEFECTO = "EC";
+
+const seedInstitucion = async (connection) => {
+  const existente = await fetchOne(connection, "SELECT id FROM instituciones WHERE is_active = 1 ORDER BY id ASC LIMIT 1");
+  if (existente) {
+    return Number(existente.id);
+  }
+
+  const pais = await fetchOne(connection, "SELECT id FROM paises WHERE iso_alpha2 = ? LIMIT 1", [INSTITUCION_PAIS_POR_DEFECTO]);
+  if (!pais) {
+    throw new Error(
+      `No se pudo sembrar la institucion: falta ${INSTITUCION_PAIS_POR_DEFECTO} en el catalogo de paises. ` +
+      "seedGeographyCatalog tiene que correr antes."
+    );
+  }
+
+  const [result] = await connection.query(
+    "INSERT INTO instituciones (nombre, pais_id, is_active) VALUES (?, ?, 1)",
+    [INSTITUCION_NOMBRE_POR_DEFECTO, Number(pais.id)]
+  );
+  return Number(result.insertId);
+};
+
+const ensureBootstrapUnit = async (connection) => {
+  const existingUnit = await fetchOne(
+    connection,
+    "SELECT id FROM units WHERE unidad_rige(id) ORDER BY id ASC LIMIT 1"
+  );
+  if (existingUnit) {
+    return Number(existingUnit.id);
+  }
+
+  let unitType = await fetchOne(
+    connection,
+    "SELECT id FROM unit_types WHERE name = ? LIMIT 1",
+    [BOOTSTRAP_UNIT_TYPE_NAME]
+  );
+
+  if (!unitType) {
+    const [result] = await connection.query(
+      "INSERT INTO unit_types (name, is_active) VALUES (?, 1)",
+      [BOOTSTRAP_UNIT_TYPE_NAME]
+    );
+    unitType = { id: result.insertId };
+  }
+
+  await connection.query(
+    `INSERT INTO units (name, label, slug, unit_type_id)
+     VALUES (?, ?, ?, ?)`,
+    [BOOTSTRAP_UNIT_NAME, BOOTSTRAP_UNIT_LABEL, BOOTSTRAP_UNIT_SLUG, unitType.id]
+  );
+  // RIGE DESDE LA INSTALACION, con origen «carga inicial» (frente 27, D-03): su primera vida es una
+  // fila de `unit_vigencias`. Sin ella la unidad raiz seria un borrador y el sistema recien instalado
+  // no tendria ninguna unidad que rija.
+  await connection.query(
+    `INSERT INTO unit_vigencias (unit_id, vigente_desde, inicio_origen)
+     SELECT id, CURRENT_DATE, 'carga_inicial' FROM units WHERE slug = ?`,
+    [BOOTSTRAP_UNIT_SLUG]
+  );
+
+  const inserted = await fetchOne(
+    connection,
+    "SELECT id FROM units WHERE slug = ? LIMIT 1",
+    [BOOTSTRAP_UNIT_SLUG]
+  );
+
+  return Number(inserted.id);
+};
+
+// Proceso por defecto 'default': paraguas de tareas libres / no clasificadas.
+// Su plantilla base NACE DE UN SEED real (contrato latex/jinja2 + schema), empaquetado dentro del backend
+// en services/system/seeds/informe-general. El bootstrap lo publica a MinIO (catálogo Seeds/ + artifact
+// instanciado System/) y registra la fila generadores_de_documento + ediciones. El flujo de entrega queda
+// simple (1 paso: el dueño llena) y la firma ad-hoc, para ser robusto en instalación virgen.
+const DEFAULT_PROCESS_SLUG = "default";
+const DEFAULT_PROCESS_NAME = "Proceso por defecto";
+// AQUI HABIA UN SEGUNDO CONSTANTE, `DEFAULT_VARIATION = "general"`, Y ERA UN DEFECTO.
+// Iba a `variation_key` mientras `DEFAULT_SERIES_CODE = "default"` iba a `series.code` --las dos
+// se han ido con sus columnas--: dos
+// constantes para una sola cosa, asi que la configuracion del Proceso por defecto era la UNICA
+// fila del sistema con la copia desincronizada de su origen — y medido el 2026-10-11, con los
+// datos de una base sembrada, lo eran LAS DOS que existian: el 100 %. Se va con la columna.
+const DEFAULT_DEFINITION_VERSION = "1.0.0";
+// Periodo sentinela "de todos los tiempos": ancla los procesos sin ciclo de periodo
+// (p. ej. memorandos) y las tareas sueltas. Obligatorio: se crea en el bootstrap.
+const PERMANENT_TERM_TYPE_CODE = "PERM";
+const PERMANENT_TERM_NAME = "Permanente";
+const PERMANENT_TERM_START = "1900-01-01";
+const PERMANENT_TERM_END = "9999-12-31";
+
+// Seed base "informe-general" empaquetado y autocontenido en el backend (contrato latex/jinja2 + schema).
+const BASE_SEED_TYPE = "latex";
+const BASE_SEED_NAME = "informe-general";
+const BASE_SEED_CODE = `${BASE_SEED_TYPE}/${BASE_SEED_NAME}`;
+const BASE_SEED_DISPLAY = "Informe general";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const BASE_SEED_DIR = path.join(__dirname, "seeds", BASE_SEED_NAME);
+
+const DEFAULT_TEMPLATE_CODE = "tpl_informe_general";
+const DEFAULT_TEMPLATE_BUCKET = "deasy-templates";
+const DEFAULT_TEMPLATE_PREFIX = `System/${DEFAULT_TEMPLATE_CODE}/1.0.0/`;
+const DEFAULT_TEMPLATE_SRC_PREFIX = `${DEFAULT_TEMPLATE_PREFIX}template/jinja2/`;
+const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
+
+// El artifact base YA NO LLEVA meta.yaml (sub-paso 7 del §0.8; ver plan-maestro-2026-08.md).
+//
+// Aquí vivía `BASE_META_YAML`: un meta.yaml escrito a mano como literal de código que se subía a
+// MinIO junto al seed y que `WorkflowSyncService` proyectaba a `fill_flow_templates`. Era el ÚNICO
+// productor vivo del resolver `document_owner` —nadie lo autoró nunca desde la web— y sembraba un
+// paso de entrega sobre el vínculo del Proceso por defecto, que es `routed` y cuyo bootstrap declara
+// justo lo contrario (ver el punto 6 de `ensureDefaultProcess`). Además se auto-replicaba:
+// `createTemplateArtifactVersion` copia el prefijo de MinIO en binario, así que cada versión nueva
+// heredaba el paso sin pasar por el formulario.
+//
+// ✅ LA VENTANA QUE ESTO DEJÓ ABIERTA ESTÁ CERRADA (sub-paso 8). Entre el 7 y el 8, la columna
+// `ediciones.meta_object_key` era NOT NULL y el bootstrap la rellenaba con la ruta de un
+// objeto que ya no se subía. El 8 borró la columna, el `meta.yaml` entero y el `WorkflowSyncService`
+// que lo leía: no queda puntero que colgar ni lector que se lo encuentre ausente.
+
+const SEED_CONTENT_TYPES = {
+  ".json": "application/json",
+  ".yaml": "text/yaml",
+  ".yml": "text/yaml",
+  ".j2": "text/plain",
+  ".tex": "text/plain",
+  ".sh": "text/x-shellscript",
+  ".md": "text/markdown",
+  ".png": "image/png",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".bib": "text/plain"
+};
+const guessSeedContentType = (filePath) => SEED_CONTENT_TYPES[path.extname(filePath).toLowerCase()] || "application/octet-stream";
+
+// Lista recursiva de archivos de un directorio como [{ abs, rel }] con rel en formato POSIX.
+const walkSeedFiles = (dir, base = dir) => {
+  const out = [];
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const abs = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...walkSeedFiles(abs, base));
+    } else if (entry.isFile()) {
+      out.push({ abs, rel: path.relative(base, abs).split(path.sep).join("/") });
+    }
+  }
+  return out;
+};
+
+const putBufferObject = (bucket, objectName, buffer, contentType = "application/octet-stream") =>
+  new Promise((resolve, reject) => {
+    minioClient.putObject(bucket, objectName, buffer, buffer.length, { "Content-Type": contentType }, (error, etag) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      resolve(etag);
+    });
+  });
+
+const putSeedFileObject = async (bucket, objectName, absPath) => {
+  const buffer = await fs.promises.readFile(absPath);
+  return putBufferObject(bucket, objectName, buffer, guessSeedContentType(absPath));
+};
+
+// Publica en MinIO el seed base: (1) el árbol completo al catálogo Seeds/ y (2) el artifact instanciado en
+// System/ (src jinja2 + schema.json + data.yaml desde defaults.yaml). SIN meta.yaml desde el sub-paso 7
+// del §0.8: el flujo se autora en la base, no en un YAML (ver el bloque de arriba). Best-effort: un fallo
+// de MinIO no debe abortar el bootstrap (las filas SQL ya quedan registradas y se puede re-publicar).
+//
+// EL CENTINELA `ya_existe` VALE PARA UN DESTINO Y NO PARA EL OTRO, y confundirlos fue el defecto 1.15:
+//
+//   Seeds/<tipo>/<nombre>/**   el CATÁLOGO. Es la copia publicada de `services/system/seeds/` y NADIE
+//                              lo edita a mano -> se republica SIEMPRE que se llame a esta función.
+//   System/<code>/v0001/**     el ARTIFACT instanciado. El admin SÍ lo edita desde la web -> si su
+//                              `main.tex.j2` ya está, no se toca. Ahí el centinela es correcto.
+//
+// Antes un solo `return` temprano gobernaba los dos, y el efecto no era que "no se reescribiera": era
+// que **ningún cambio en `services/system/seeds/**` alcanzaba jamás a un entorno ya arrancado, producción
+// incluida**. Medido el 2026-08-14: el arreglo de `49d41ce4` (2026-08-13, «el ZIP de una plantilla creada
+// por la web ya se puede renderizar») llevaba un día en el repo y estaba ausente de todas las pilas —
+// MinIO servía un `make.sh` sin `data.json`. Lo destapó el `content_hash` de `zzz_artifact_draft`, que
+// es el único sensor que hay sobre el paquete publicado: el golden era correcto y el entorno el que
+// mentía. Agravante: `test:char:fixture` resetea solo `db`, así que los buckets sobreviven a cada
+// corrida (defecto 1.17, cerrado el 2026-08-14).
+//
+// ⚠️ QUIÉN LLAMA A ESTO, Y POR QUÉ IMPORTA. Hasta el 1.17 el único llamador era `ensureDefaultProcess`,
+// que cuelga de `POST /system/bootstrap/initialize` — y ese endpoint **responde 409 en cuanto la
+// instalación deja de ser virgen**. O sea: partir el centinela arreglaba la lógica, pero **no había
+// forma de ejecutarla en un entorno vivo**. Desde el 1.17 la llama también `index.js` en cada arranque
+// (`publishSeedsOnBoot`), que es lo que hace que una semilla actualizada llegue de verdad al
+// desplegar. Si algún día se quita esa llamada, este comentario vuelve a describir una intención en
+// vez de un hecho.
+//
+// Los tres ayudantes de MinIO entran por parámetro CON SU VALOR POR DEFECTO: es la única costura que
+// permite probar el reparto catálogo/artifact sin `mock.module` (que en este Node pide un flag
+// experimental, y cambiar el `test:unit` global por un test sería peor negocio). Ningún llamador pasa
+// nada, así que el comportamiento en producción es idéntico.
+export const publishBaseSeedAssets = async ({
+  ensure = ensureBucketExists,
+  stat = statMinioObject,
+  put = putSeedFileObject,
+  existeSeedDir = () => fs.existsSync(BASE_SEED_DIR),
+  listar = () => walkSeedFiles(BASE_SEED_DIR),
+} = {}) => {
+  const bucket = DEFAULT_TEMPLATE_BUCKET;
+  const mainKey = `${DEFAULT_TEMPLATE_SRC_PREFIX}main.tex.j2`;
+  try {
+    await ensure(bucket);
+    let artifactYaExiste = false;
+    try {
+      await stat(bucket, mainKey);
+      artifactYaExiste = true;
+    } catch {
+      // No existe: se publica también el artifact.
+    }
+    if (!existeSeedDir()) {
+      console.warn("publishBaseSeedAssets: no se encontró el seed base empaquetado en", BASE_SEED_DIR);
+      return { published: false, reason: "seed_no_empaquetado" };
+    }
+
+    const files = listar();
+    // 1. Catálogo Seeds/<tipo>/<nombre>/... — SIEMPRE, mande lo que mande el centinela.
+    for (const file of files) {
+      await put(bucket, `${SEEDS_CATALOG_PREFIX}${file.rel}`, file.abs);
+    }
+    if (artifactYaExiste) {
+      return { published: true, catalogo: true, artifact: false, reason: "artifact_ya_existe" };
+    }
+    // 2. Artifact instanciado System/<code>/v0001/...
+    for (const file of files) {
+      if (file.rel === "schema.json") {
+        await put(bucket, `${DEFAULT_TEMPLATE_PREFIX}schema.json`, file.abs);
+      } else if (file.rel === "defaults.yaml") {
+        await put(bucket, `${DEFAULT_TEMPLATE_PREFIX}data.yaml`, file.abs);
+        await put(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}data.yaml`, file.abs);
+      } else if (file.rel.startsWith("src/")) {
+        await put(bucket, `${DEFAULT_TEMPLATE_SRC_PREFIX}${file.rel.slice("src/".length)}`, file.abs);
+      }
+      // README.md sólo vive en el catálogo Seeds/ (de ahí lo lee `syncTemplateSeedsFromSource` para
+      // describir la semilla). El artifact instanciado ya no lleva meta.yaml.
+    }
+    return { published: true, catalogo: true, artifact: true };
+  } catch (error) {
+    console.warn("publishBaseSeedAssets: no se pudieron publicar los objetos del seed base:", error?.message);
+    return { published: false, reason: error?.message };
+  }
+};
+
+export const ensureDefaultProcess = async (connection) => {
+  // 1. proceso
+  let process = await fetchOne(connection, "SELECT id FROM processes WHERE slug = ? LIMIT 1", [DEFAULT_PROCESS_SLUG]);
+  if (!process) {
+    const [r] = await connection.query(
+      "INSERT INTO processes (name, slug) VALUES (?, ?)",
+      [DEFAULT_PROCESS_NAME, DEFAULT_PROCESS_SLUG]
+    );
+    process = { id: r.insertId };
+    // RIGE DESDE LA INSTALACION, con origen «carga inicial»: es la estructura que el sistema trae al
+    // nacer, y por eso no pide acto (frente 27, D-03 y D-05). Su primera vida es una fila de
+    // `process_vigencias`; sin ella seria un borrador y no saldria en el menu de nadie.
+    await connection.query(
+      "INSERT INTO process_vigencias (process_id, vigente_desde, inicio_origen) VALUES (?, CURRENT_DATE, 'carga_inicial')",
+      [process.id]
+    );
+  }
+  const processId = Number(process.id);
+
+  // 2. LA LINEA (frente 25, P8/P9). Aqui se sembraba antes `process_definition_series`, que se
+  //    retiro con la serie: el nombre de la configuracion ya no se compone --«<Proceso> por
+  //    <Serie>»-- sino que ES el de la linea. La obligacion del proceso por defecto es «cualquier cargo, en
+  //    La obligacion del proceso por defecto es «cualquier cargo, en todas las unidades»: un memo
+  //    lo escribe quien lo necesita, donde lo necesita. Por eso `cargo_id` queda NULL y el alcance
+  //    se NOMBRA `all_units` --los mismos nombres que `process_target_rules`-- en vez de deducirse
+  //    de dos columnas vacias.
+  const defaultDefinitionName = DEFAULT_PROCESS_NAME;
+  let linea = await fetchOne(
+    connection,
+    `SELECT id FROM lineas
+      WHERE process_id = ? AND cargo_id IS NULL AND unit_scope_type = 'all_units' LIMIT 1`,
+    [processId]
+  );
+  if (!linea) {
+    const [r] = await connection.query(
+      `INSERT INTO lineas (process_id, nombre, cargo_id, unit_scope_type, effective_from)
+       VALUES (?, ?, NULL, 'all_units', CURDATE())`,
+      [processId, defaultDefinitionName]
+    );
+    linea = { id: r.insertId };
+  }
+  const lineaId = Number(linea.id);
+
+  // 3. configuración activa
+  let definition = await fetchOne(
+    connection,
+    "SELECT id, status FROM process_definition_versions WHERE linea_id = ? AND definition_version = ? LIMIT 1",
+    [lineaId, DEFAULT_DEFINITION_VERSION]
+  );
+  if (!definition) {
+    const [r] = await connection.query(
+      // SIN `process_id` (frente 25, P22): era copia de la linea, que este mismo arranque acaba de
+      // sembrar con `processId`. Lo escribia dos veces y nada comprobaba que coincidieran.
+      //
+      // Y SIN `name` (frente 25, P23): era OTRA copia, esta de `lineas.nombre` --que la linea de
+      // arriba acaba de recibir con el mismo valor--. El nombre se deriva al leerlo.
+      `INSERT INTO process_definition_versions
+        (linea_id, definition_version, description, status, effective_from)
+       VALUES (?, ?, ?, 'active', CURDATE())`,
+      [lineaId, DEFAULT_DEFINITION_VERSION, "Tareas libres y no clasificadas."]
+    );
+    definition = { id: r.insertId, status: "active" };
+  } else if (definition.status !== "active") {
+    await connection.query("UPDATE process_definition_versions SET status = 'active' WHERE id = ?", [definition.id]);
+  }
+  // AQUI HABIA UNA TERCERA RESINCRONIZACION DEL NOMBRE, y es la que mas dice: el arranque reponia
+  // en cada ejecucion el valor que la copia podia haber perdido. Tres sitios reparando lo mismo
+  // --este, el gancho de `processes` y el `beforeUpdate` del CRUD-- y aun asi renombrar la linea lo
+  // dejaba caducado, porque ninguno de los tres se disparaba con eso.
+  const definitionId = Number(definition.id);
+
+  // 4. EL PRIMER GENERADOR DEL CATALOGO (frente 23, F3.1). Esta fila era «la semilla» —el paquete
+  //    latex/jinja2 que se copia— y sigue siendo exactamente eso; lo que cambio es que ahora es UNO
+  //    de los generadores posibles y no EL mecanismo. `tipo = 'latex'` y `source_path` apuntando al
+  //    catalogo de MinIO; `destino` queda NULL porque un generador latex no llama a nadie.
+  let seedRow = await fetchOne(
+    connection,
+    "SELECT id FROM generadores_de_documento WHERE code = ? LIMIT 1",
+    [BASE_SEED_CODE]
+  );
+  if (!seedRow) {
+    const [r] = await connection.query(
+      `INSERT INTO generadores_de_documento
+        (code, nombre, description, tipo, destino, source_path, preview_path, is_active)
+       VALUES (?, ?, ?, ?, NULL, ?, NULL, 1)`,
+      [BASE_SEED_CODE, BASE_SEED_DISPLAY, "Generador base del sistema (informe general, LaTeX).", BASE_SEED_TYPE, SEEDS_CATALOG_PREFIX]
+    );
+    seedRow = { id: r.insertId };
+  }
+  const generadorId = Number(seedRow.id);
+
+  // 5. entregable base (deliverable) + su versión publicada. Modelo libro/ediciones: la identidad y el
+  //    scope viven en `catalogo_documental`; la versión guarda el storage MinIO y QUIÉN la produce
+  //    (`generador_id`). A QUE LINEA SIRVE no se guarda en ninguna de las dos desde el 2026-10-04
+  //    (frente 23): lo dice su vínculo en `vinculos`, y lo impone el disparador
+  //    `trg_vinculo_formato_un_proceso`.
+  let deliverable = await fetchOne(
+    connection,
+    "SELECT id FROM catalogo_documental WHERE code = ? LIMIT 1",
+    [DEFAULT_TEMPLATE_CODE]
+  );
+  if (!deliverable) {
+    const [r] = await connection.query(
+      `INSERT INTO catalogo_documental
+        (code, display_name, description, template_scope, owner_person_id)
+       VALUES (?, ?, ?, 'official', NULL)`,
+      [
+        DEFAULT_TEMPLATE_CODE,
+        BASE_SEED_DISPLAY,
+        "Plantilla base del proceso por defecto, instanciada del seed informe-general.",
+      ]
+    );
+    deliverable = { id: r.insertId };
+  }
+  const deliverableId = Number(deliverable.id);
+
+  let artifact = await fetchOne(
+    connection,
+    "SELECT id FROM ediciones WHERE catalogo_documental_id = ? LIMIT 1",
+    [deliverableId]
+  );
+  if (!artifact) {
+    const availableFormats = { jinja2: { entry_object_key: DEFAULT_TEMPLATE_SRC_PREFIX } };
+    const [r] = await connection.query(
+      `INSERT INTO ediciones
+        (catalogo_documental_id, storage_version, lifecycle_state, base_object_prefix,
+         available_formats, generador_id, is_active)
+       VALUES (?, '1.0.0', 'published', ?, ?, ?, 1)`,
+      [
+        deliverableId,
+        DEFAULT_TEMPLATE_PREFIX,
+        JSON.stringify(availableFormats),
+        generadorId,
+      ]
+    );
+    artifact = { id: r.insertId };
+  }
+  const artifactId = Number(artifact.id);
+
+  // AQUI SE VOLCABAN LOS 18 CAMPOS del `schema.json` del seed a `template_artifact_fields`
+  //       (sub-paso S6 del §0.4). Se fue con la tabla (frente 23, F4.1): su unico lector en todo el
+  //       sistema era el codigo que la copiaba a la version siguiente. Los 18 campos siguen donde
+  //       siempre estuvieron de verdad —el `schema.json` que `publishBaseSeedAssets` sube unas lineas
+  //       mas abajo—, y de ahi los lee el editor de `/admin`.
+
+  // 5bis. publica en MinIO el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado.
+  //       Idempotente; si la publicación falla (MinIO caído, seed no empaquetado) se PROPAGA el error para
+  //       abortar/rollback el bootstrap: así no quedan filas SQL apuntando a objetos MinIO inexistentes.
+  //       Una re-ejecución es éxito: el catálogo `Seeds/` se republica siempre y el artifact se
+  //       respeta si ya está (`artifact_ya_existe`), pero las dos devuelven `published: true`.
+  const publishResult = await publishBaseSeedAssets();
+  if (!publishResult?.published && publishResult?.reason !== "ya_existe") {
+    throw new Error(
+      `No se pudieron publicar los objetos del seed base en MinIO (${publishResult?.reason || "desconocido"}). ` +
+      "Se aborta el bootstrap para no dejar plantillas apuntando a objetos inexistentes."
+    );
+  }
+
+  // 5. vínculo configuración↔plantilla
+  let pdt = await fetchOne(
+    connection,
+    "SELECT id FROM vinculos WHERE process_definition_id = ? AND edicion_id = ? LIMIT 1",
+    [definitionId, artifactId]
+  );
+  if (!pdt) {
+    const [r] = await connection.query(
+      `INSERT INTO vinculos
+        (process_definition_id, edicion_id, sort_order, item_mode)
+       VALUES (?, ?, 1, 'routed')`,
+      [definitionId, artifactId]
+    );
+    pdt = { id: r.insertId };
+  }
+  const pdtId = Number(pdt.id);
+  // Proceso por defecto = routed comodín: cualquiera crea una tarea y la endosa a alguien
+  // (que puede ser uno mismo). Idempotente para instalaciones previas.
+  await connection.query(
+    "UPDATE vinculos SET item_mode = 'routed' WHERE id = ? AND item_mode <> 'routed'",
+    [pdtId]
+  );
+
+  // 6. Sin flujo predefinido: el proceso por defecto es routed → el usuario DEFINE su flujo
+  // de entrega y firma AL ENVIAR (runtime, materializado por instancia con task_item_id).
+  // Antes se sembraba un paso de entrega `document_owner` (atajo deprecado); retirado (P1.4).
+
+  // 7. periodo sentinela "Permanente" + vínculo de tipo de periodo (corre en Permanente) + regla all_units
+  const permanentTermType = await fetchOne(
+    connection,
+    "SELECT id FROM term_types WHERE code = ? LIMIT 1",
+    [PERMANENT_TERM_TYPE_CODE]
+  );
+  if (!permanentTermType) {
+    throw new Error("No existe el tipo de periodo 'Permanente' (PERM). Revisa el schema/seed de term_types.");
+  }
+  const permanentTermTypeId = Number(permanentTermType.id);
+  let permanentTerm = await fetchOne(
+    connection,
+    "SELECT id FROM terms WHERE term_type_id = ? AND name = ? LIMIT 1",
+    [permanentTermTypeId, PERMANENT_TERM_NAME]
+  );
+  if (!permanentTerm) {
+    const [r] = await connection.query(
+      "INSERT INTO terms (name, term_type_id, start_date, end_date, is_active) VALUES (?, ?, ?, ?, 1)",
+      [PERMANENT_TERM_NAME, permanentTermTypeId, PERMANENT_TERM_START, PERMANENT_TERM_END]
+    );
+    permanentTerm = { id: r.insertId };
+  }
+
+  const periodType = await fetchOne(
+    connection,
+    "SELECT id FROM process_definition_period_types WHERE process_definition_id = ? AND term_type_id = ? LIMIT 1",
+    [definitionId, permanentTermTypeId]
+  );
+  if (!periodType) {
+    await connection.query(
+      "INSERT INTO process_definition_period_types (process_definition_id, term_type_id, is_active) VALUES (?, ?, 1)",
+      [definitionId, permanentTermTypeId]
+    );
+  }
+  // AQUI SE SEMBRABA LA REGLA DE REPARTO, y la tabla se retiro (frente 25, P26). No hay nada que
+  // poner en su lugar: el afinado es `lineas.recipient_policy`, que nace en `all_matches` por
+  // defecto con la linea que este mismo arranque siembra sin acotar.
+
+  return { processId, definitionId, artifactId };
+};
+
+// La cedula del administrador ya no es una columna de `persons`: es su documento principal, dado por
+// verificado igual que lo estaban el correo y el telefono. Ojo: pasa por el MISMO validador que la
+// API, asi que una cedula con el verificador malo hace fallar el arranque — y esta bien: si el
+// bootstrap pudiera saltarse la regla, la regla no seria una garantia.
+const guardarDocumentoDelAdmin = async (connection, personId, cedula) => {
+  if (!cedula) return;
+  const documentos = new DocumentoIdentidadService(connection);
+  const documentoId = await documentos.guardarPrincipal(
+    personId,
+    { tipo: "documento_nacional", numero: cedula },
+    connection
+  );
+  await documentos.marcarVerificado(documentoId, connection);
+};
+
+// El correo del administrador ya no es una columna de `persons`: es su fila principal en `emails`,
+// dada por verificada igual que antes lo daba `verify_email = 1`. Va aqui y no en `EmailService`
+// porque el bootstrap corre en su propia transaccion y tiene que compartirla.
+const guardarCorreoDelAdmin = async (connection, personId, email) => {
+  if (!email) return;
+  const emails = new EmailService(connection);
+  const emailId = await emails.guardarPrincipal(personId, { tipo: "institucional", direccion: email }, connection);
+  await emails.marcarVerificado(emailId, connection);
+};
+
+// El WhatsApp del administrador ya no es una columna de `persons`: es una fila de `telefonos` con su
+// canal declarado y verificado. Se hace aqui, y no en `TelefonoService`, porque el bootstrap corre
+// dentro de su propia transaccion y tiene que compartirla.
+const guardarTelefonoDelAdmin = async (connection, personId, whatsapp) => {
+  const numero = String(whatsapp ?? "").replace(/\D/g, "");
+  if (!numero) return;
+
+  // ⚠️ EL PAIS SALE DE LA INSTITUCION, y no ponerlo dejaba el telefono INVERIFICABLE. Un numero sin
+  // pais no se puede comparar con lo que llega por un canal —`+51 99 111 2233` y `+593 99 111 2233`
+  // solo se distinguen por el prefijo—, asi que `numerosDeTelefono.js` lo rechaza a proposito. El
+  // arranque creaba justo eso: un telefono que nadie podria verificar nunca. Encontrado el
+  // 2026-08-30 al escribir las pruebas de C2b.
+  //
+  // Es el mismo criterio que el documento nacional: el pais no esta en el codigo, esta en una fila.
+  const institucion = await fetchOne(
+    connection,
+    "SELECT pais_id FROM instituciones WHERE is_active = 1 ORDER BY id ASC LIMIT 1"
+  );
+
+  const telefonos = new TelefonoService(connection);
+  const telefonoId = await telefonos.guardarPrincipal(
+    personId,
+    { tipo: "personal", numero, pais_id: institucion?.pais_id ?? null, canales: ["whatsapp"] },
+    connection
+  );
+  // El bootstrap da el numero por bueno, igual que daba `verify_whatsapp = 1`.
+  await telefonos.marcarCanalVerificado(telefonoId, "whatsapp", connection);
+};
+
+const upsertAdminPerson = async (connection, payload) => {
+  const existingPerson = await fetchOne(
+    connection,
+    `SELECT p.id, p.token
+       FROM persons p
+      WHERE EXISTS (
+               -- Acotado al tipo nacional: la unicidad es (tipo, pais, numero) y el numero
+               -- solo no es unico. AQUI acotar es exacto porque este seed CREA un documento
+               -- nacional, asi que buscarlo entre otros tipos era buscar donde nunca escribio.
+               SELECT 1 FROM documentos_identidad d
+                WHERE d.person_id = p.id AND d.numero = ? AND d.tipo = 'documento_nacional'
+             )
+         OR EXISTS (SELECT 1 FROM emails e WHERE e.person_id = p.id AND e.direccion = ?)
+      LIMIT 1`,
+    [payload.cedula, String(payload.email ?? "").trim().toLowerCase()]
+  );
+
+  const passwordHash = await bcrypt.hash(payload.password, 10);
+  // EL ORDEN IMPORTA, y es el que hace reproducible una instalacion de prueba: lo que PIDE el
+  // payload gana al que ya tuviera la persona, porque si no, un `recoverAdmin` sobre una base vieja
+  // se quedaria con el token sorteado de antes y la fixture volveria a moverse. Sin peticion, se
+  // conserva el que hay --nunca se le cambia el marcador a alguien sin pedirlo-- y solo en ultimo
+  // lugar se sortea.
+  const token = payload.signature_token
+    || existingPerson?.token
+    || await generateUniqueTokenWithConnection(connection);
+
+  // El token es UNICO en `persons`: un token pedido que ya es de OTRA persona tiene que fallar aqui
+  // con su motivo, no mas abajo como una violacion de constraint que nadie sabe leer.
+  if (payload.signature_token) {
+    const duenoActual = await fetchOne(
+      connection,
+      "SELECT id FROM persons WHERE token = ? LIMIT 1",
+      [payload.signature_token]
+    );
+    if (duenoActual && Number(duenoActual.id) !== Number(existingPerson?.id ?? 0)) {
+      throw buildError(`El token de firma solicitado ya pertenece a otra persona (id ${duenoActual.id}).`, 409);
+    }
+  }
+
+  if (existingPerson) {
+    await connection.query(
+      `UPDATE persons
+       SET first_name = ?,
+           last_name = ?,
+           password_hash = ?,
+           status = 'Activo',
+           is_active = 1,
+           token = ?
+       WHERE id = ?`,
+      [
+        payload.first_name,
+        payload.last_name,
+        passwordHash,
+        token,
+        existingPerson.id
+      ]
+    );
+    await guardarDocumentoDelAdmin(connection, Number(existingPerson.id), payload.cedula);
+    await guardarCorreoDelAdmin(connection, Number(existingPerson.id), payload.email);
+    await guardarTelefonoDelAdmin(connection, Number(existingPerson.id), payload.whatsapp);
+    return { id: Number(existingPerson.id), token };
+  }
+
+  const [result] = await connection.query(
+    `INSERT INTO persons (
+       first_name,
+       last_name,
+       password_hash,
+       status,
+       is_active,
+       token
+     )
+     VALUES (?, ?, ?, 'Activo', 1, ?)`,
+    [
+      payload.first_name,
+      payload.last_name,
+      passwordHash,
+      token
+    ]
+  );
+
+  await guardarDocumentoDelAdmin(connection, Number(result.insertId), payload.cedula);
+  await guardarCorreoDelAdmin(connection, Number(result.insertId), payload.email);
+  await guardarTelefonoDelAdmin(connection, Number(result.insertId), payload.whatsapp);
+  return { id: Number(result.insertId), token };
+};
+
+const ensureAdminRoleAssignment = async (connection, { personId, roleId, unitId }) => {
+  await connection.query(
+    `UPDATE role_assignments
+     SET is_current = 0,
+         end_date = COALESCE(end_date, CURDATE()),
+         revoked_at = COALESCE(revoked_at, NOW()),
+         revoked_reason = COALESCE(revoked_reason, 'Reasignacion de administrador bootstrap')
+     WHERE person_id = ?
+       AND role_id = ?
+       AND source = ?
+       AND is_current = 1`,
+    [personId, roleId, MANUAL_ROLE_SOURCE]
+  );
+
+  await connection.query(
+    `INSERT INTO role_assignments (
+       role_id,
+       unit_id,
+       source,
+       person_id,
+       max_depth,
+       start_date,
+       is_current,
+       assigned_at
+     )
+     VALUES (?, ?, ?, ?, 0, CURDATE(), 1, NOW())`,
+    [roleId, unitId, MANUAL_ROLE_SOURCE, personId]
+  );
+};
+
+export default class SystemBootstrapService {
+  constructor(pool = getPostgresPool()) {
+    this.pool = pool;
+  }
+
+  ensurePool() {
+    if (!this.pool) {
+      throw buildError("Conexion PostgreSQL no disponible.", 500);
+    }
+  }
+
+  async getBootstrapStatus() {
+    this.ensurePool();
+
+    const [rows] = await this.pool.query(
+      `SELECT
+         (SELECT COUNT(*) FROM persons) AS persons_count,
+         (SELECT COUNT(*) FROM roles WHERE is_active = 1) AS roles_count,
+         (SELECT COUNT(*) FROM permissions WHERE is_active = 1) AS permissions_count,
+         (
+           SELECT COUNT(*)
+           FROM role_assignments ra
+           INNER JOIN roles r ON r.id = ra.role_id
+           INNER JOIN persons p ON p.id = ra.person_id
+           WHERE r.name = ?
+             AND r.is_active = 1
+             AND ra.is_current = 1
+             AND (ra.end_date IS NULL OR ra.end_date >= CURDATE())
+             AND p.is_active = 1
+         ) AS admin_count,
+         (
+           SELECT
+             IF(
+               EXISTS(SELECT 1 FROM process_runs LIMIT 1)
+               OR EXISTS(SELECT 1 FROM tasks LIMIT 1)
+               OR EXISTS(SELECT 1 FROM document_versions LIMIT 1)
+               OR EXISTS(SELECT 1 FROM turnos LIMIT 1)
+               OR EXISTS(SELECT 1 FROM position_assignments LIMIT 1),
+               1,
+               0
+             )
+         ) AS has_operational_data`,
+      [ADMIN_ROLE_NAME]
+    );
+
+    const row = rows?.[0] || {};
+    const hasAnyPerson = Number(row.persons_count || 0) > 0;
+    const hasAnyRole = Number(row.roles_count || 0) > 0;
+    const hasAnyPermission = Number(row.permissions_count || 0) > 0;
+    const hasAnyAdmin = Number(row.admin_count || 0) > 0;
+    const hasOperationalData = toBoolean(row.has_operational_data);
+    const isVirginInstall = !hasAnyAdmin && !hasOperationalData;
+
+    let installationMode = "normal";
+    if (!hasAnyAdmin) {
+      installationMode = isVirginInstall ? "bootstrap" : "recovery_required";
+    }
+
+    return {
+      installationMode,
+      hasAnyPerson,
+      hasAnyRole,
+      hasAnyPermission,
+      hasAnyAdmin,
+      hasOperationalData,
+      isVirginInstall,
+      environment: process.env.NODE_ENV || "development",
+      catalogOptions: getGenericCatalogOptions()
+    };
+  }
+
+  async initializeSystem(payload = {}) {
+    this.ensurePool();
+    const status = await this.getBootstrapStatus();
+    if (status.installationMode !== "bootstrap") {
+      throw buildError(
+        status.installationMode === "recovery_required"
+          ? "La instancia contiene datos operativos y requiere recuperacion administrativa, no reinicializacion desde UI."
+          : "El sistema ya fue inicializado.",
+        409
+      );
+    }
+
+    const adminPayload = validateAdminPayload(payload);
+    // Gestor por defecto OPCIONAL (mismos campos que el admin).
+    const gestorPayload = payload.gestor ? validateAdminPayload(payload.gestor) : null;
+    // Usuario de prueba OPCIONAL (rol base "Usuario"): para validar el flujo operativo (Home/tareas/firmas).
+    const usuarioPayload = payload.usuario ? validateAdminPayload(payload.usuario) : null;
+    // Bloques de catálogos genéricos OPCIONALES a preconfigurar.
+    const preconfig = payload.preconfig && typeof payload.preconfig === "object" ? payload.preconfig : {};
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const roleIds = await seedBaseRbacCatalog(connection);
+      await seedGeographyCatalog(connection);
+      await seedInstitucion(connection);
+      const unitId = await ensureBootstrapUnit(connection);
+      const admin = await upsertAdminPerson(connection, adminPayload);
+      await ensureAdminRoleAssignment(connection, {
+        personId: admin.id,
+        roleId: roleIds.get(ADMIN_ROLE_NAME),
+        unitId
+      });
+      // Gestor por defecto (opcional): persona + rol GestorProcesos.
+      let gestor = null;
+      if (gestorPayload) {
+        const gestorPerson = await upsertAdminPerson(connection, gestorPayload);
+        await ensureAdminRoleAssignment(connection, {
+          personId: gestorPerson.id,
+          roleId: roleIds.get(GESTOR_ROLE_NAME),
+          unitId
+        });
+        // Rol base "Usuario" además del funcional: permite al gestor gestionar su propio dossier (dossier.*).
+        await ensureAdminRoleAssignment(connection, {
+          personId: gestorPerson.id,
+          roleId: roleIds.get(USUARIO_ROLE_NAME),
+          unitId
+        });
+        gestor = {
+          id: gestorPerson.id,
+          cedula: gestorPayload.cedula,
+          email: gestorPayload.email,
+          first_name: gestorPayload.first_name,
+          last_name: gestorPayload.last_name
+        };
+      }
+      // Usuario de prueba (opcional): persona + rol Usuario.
+      let usuario = null;
+      if (usuarioPayload) {
+        const usuarioPerson = await upsertAdminPerson(connection, usuarioPayload);
+        await ensureAdminRoleAssignment(connection, {
+          personId: usuarioPerson.id,
+          roleId: roleIds.get(USUARIO_ROLE_NAME),
+          unitId
+        });
+        usuario = {
+          id: usuarioPerson.id,
+          cedula: usuarioPayload.cedula,
+          email: usuarioPayload.email,
+          first_name: usuarioPayload.first_name,
+          last_name: usuarioPayload.last_name
+        };
+      }
+      await ensureDefaultProcess(connection);
+      // Catálogos genéricos seleccionados (idempotente).
+      const seededCatalog = await seedGenericCatalog(connection, preconfig, roleIds);
+      await connection.commit();
+      await conectarArchivoLegal();
+
+      return {
+        message: "El sistema se inicializo correctamente.",
+        admin: {
+          id: admin.id,
+          cedula: adminPayload.cedula,
+          email: adminPayload.email,
+          first_name: adminPayload.first_name,
+          last_name: adminPayload.last_name
+        },
+        gestor,
+        usuario,
+        preconfig: seededCatalog
+      };
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async recoverAdmin(payload = {}) {
+    this.ensurePool();
+    const adminPayload = validateAdminPayload(payload);
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const roleIds = await seedBaseRbacCatalog(connection);
+      await seedGeographyCatalog(connection);
+      await seedInstitucion(connection);
+      const unitId = await ensureBootstrapUnit(connection);
+      const admin = await upsertAdminPerson(connection, adminPayload);
+      await ensureAdminRoleAssignment(connection, {
+        personId: admin.id,
+        roleId: roleIds.get(ADMIN_ROLE_NAME),
+        unitId
+      });
+      await connection.commit();
+      await conectarArchivoLegal();
+      return {
+        message: "Administrador recuperado correctamente.",
+        admin: {
+          id: admin.id,
+          cedula: adminPayload.cedula,
+          email: adminPayload.email
+        }
+      };
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+}

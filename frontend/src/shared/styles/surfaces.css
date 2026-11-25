@@ -1,0 +1,480 @@
+@layer components {
+    /* ⚠️ AQUI VIVIA `.deasy-section-card`, LA CAJA CONTENEDORA DE PAGINA. Retirada en F13.5
+       (2026-08-21) por decision del dueño: **la pagina no lleva caja**.
+
+       Nunca fue «la caja del sistema»: tenia DOS consumidores en todo el proyecto —el indice de
+       `/admin` y el de `/procesos`— y, peor, los dos la aplicaban tras `v-if="!selectedTable"`,
+       o sea que **aparecia en el indice y desaparecia al elegir una tabla**. Medido: `/admin` daba
+       una caja de pad 32 con borde y radio 16, y `/admin/usuarios/personas/persons` pad 0, borde 0
+       y radio 0. Es el mismo condicional que en F13.3 cambiaba el ancho de la pagina.
+
+       El criterio que la sustituye: **UN BORDE POR OBJETO**. Las tarjetas y las tablas ya traen su
+       propia superficie, asi que una caja blanca alrededor solo dibuja un borde blanco sobre
+       blanco — que es justo lo que hacia la caja doble de `/home/firmas`. El contenido se apoya en
+       el fondo de la pagina, como ya hacian `/home` y `/perfil`. */
+
+
+    
+}
+@layer components {
+.deasy-col-1 {
+        @apply md:w-[8.333333%];
+    }
+
+    .deasy-col-2 {
+        @apply md:w-[16.666667%];
+    }
+
+    .deasy-col-3 {
+        @apply md:w-1/4;
+    }
+
+    .deasy-col-4 {
+        @apply md:w-1/3;
+    }
+
+    .deasy-col-5 {
+        @apply md:w-[41.666667%];
+    }
+
+    .deasy-col-6 {
+        @apply md:w-1/2;
+    }
+
+    .deasy-col-7 {
+        @apply md:w-[58.333333%];
+    }
+
+    .deasy-col-8 {
+        @apply md:w-2/3;
+    }
+
+    .deasy-col-9 {
+        @apply md:w-3/4;
+    }
+
+    .deasy-col-10 {
+        @apply md:w-[83.333333%];
+    }
+
+    .deasy-col-11 {
+        @apply md:w-[91.666667%];
+    }
+
+    .deasy-col-12 {
+        @apply w-full;
+    }
+
+    
+}
+/* Aqui vivia `.card`, sin un solo consumidor: los aciertos de un grep eran `group/card`
+   (utilidad de Tailwind), la clave `{ card: … }` de un mapa de tonos y la variable `card` de un
+   `v-for`. Borrada el 2026-08-13. Su radio de 16px a pelo era ademas el unico del fichero. */
+
+/* BARRA DE DESPLAZAMIENTO DE LOS PANELES — una sola, con la variante `--dark` para las
+   barras laterales oscuras (ahi un pulgar claro solido cantaria; va un velo blanco).
+
+   ⚠️ Los pseudo-elementos `::-webkit-scrollbar` NO son visibles para `getComputedStyle`:
+   la huella de estilos NO los ve. Esto se verifica mirando. */
+
+@layer components {
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: var(--color-line);
+        border-radius: 9999px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: var(--color-line-strong);
+    }
+
+    /* Sobre fondo oscuro (menu de administracion y de procesos). */
+    .custom-scrollbar--dark::-webkit-scrollbar-thumb {
+        background: rgba(var(--white-rgb), 0.2);
+    }
+
+    .custom-scrollbar--dark::-webkit-scrollbar-thumb:hover {
+        background: rgba(var(--white-rgb), 0.32);
+    }
+}
+
+@layer components {
+    /* EL ESTADO VACIO: «aqui no hay nada todavia». Habia 14 escritos a mano en cuatro formas
+       que no se ponian de acuerdo en nada — radio `xl` o `2xl`, borde de 1px o de 2px, fondo
+       transparente o `surface` o `surface/50`, padding de 4 a 8, y el texto en `muted` o en
+       `icon`—. Ninguna de esas diferencias significaba nada distinto: los cuatro dicen lo mismo.
+
+       El borde discontinuo es lo que comunica «vacio», asi que es lo unico que NO se toca. */
+    .deasy-empty {
+        /* ⚠️ TailAdmin NO tiene receta para esto: su kit no trae un «estado vacio». Asi que
+           la forma es la propia de Deasy por necesidad, no por omision — y lo mismo vale para
+           `.deasy-overline`. Lo que si se alinea es el RADIO: esto es una superficie, y las
+           superficies quedaron en `rounded-2xl` al adoptar su card. */
+        /* ⚠️ AHORA ES COLUMNA CENTRADA, no solo texto — F2, 2026-08-19. El patron dejo de ser
+           una frase suelta y paso a ser `AppEmpty`, que puede traer icono y titulo encima del
+           texto. La caja es la misma; lo que cambia es que ordena a sus hijos en vez de suponer
+           que solo hay uno. Con `:icon="false"` y sin titulo queda exactamente como estaba. */
+        @apply flex flex-col items-center justify-center gap-3;
+        @apply rounded-2xl border border-dashed border-line bg-surface px-4 py-6 text-center text-sm font-medium text-muted;
+    }
+
+    /* El titulo del vacio: una linea corta que nombra lo que falta («Sin firmas»). Es opcional —
+       un vacio de una sola frase no lo necesita— y por eso no vive en la base. */
+    .deasy-empty__title {
+        @apply m-0 text-sm font-bold text-strong;
+    }
+
+    /* La version grande, para cuando ocupa una columna entera y no una fila. */
+    .deasy-empty--lg {
+        @apply p-8;
+    }
+}
+
+@layer components {
+    /* LA TARJETA. Solo la SUPERFICIE: radio, borde y fondo. El padding NO entra a proposito —
+       varia con razon segun lo que lleve dentro (`p-4` para un bloque, `px-4 py-3` para una
+       fila, ninguno cuando la tarjeta envuelve una tabla que ya trae el suyo)—, asi que sigue
+       en la plantilla. Meterlo aqui obligaria a un modificador por cada combinacion y eso es
+       reinventar las utilidades, no simplificarlas.
+
+       Aqui decia «no se confunda con `.deasy-section-card`, la superficie GRANDE de una
+       seccion»: esa clase ya no existe —F13.5 la retiro, ver arriba—, asi que la distincion que
+       este parrafo pedia hacer ya no hay que hacerla. */
+    /* ══ LA CAJA DE ICONO — F3.1 del plan, 2026-08-15 ═══════════════════════════════════════
+       El cuadrado centrado que sostiene un icono: en la cabecera de una sección, dentro de un
+       elemento de menú, en un mensaje de estado vacío, delante de una pastilla.
+
+       Medido hoy: **42 usos en 32 recetas distintas** (76 % de unicidad — casi cada uso es su
+       propio copo de nieve), con **once tamaños**, **tres radios** y **once fondos**. Y en el CSS
+       no había ninguna clase: lo que había eran cinco fragmentos privados de otros componentes
+       —`deasy-nav-item__icon`, `deasy-dropzone__icon`, `btnsera-status__icon`,
+       `deasy-form-section__icon`, `deasy-tag__icon`— o sea **cinco componentes reinventando la
+       misma caja**, cada uno dentro de su fichero.
+
+       🪤 El síntoma que lo delataba, y que sigue vivo: **cuatro sitios usan `deasy-alert` como
+       caja de icono** y le tapan el borde después. Un componente de MENSAJE DE ESTADO usado por
+       su color, porque no existía una caja tintada. Eso es exactamente «falta
+       `deasy-icon-box--{tono}`».
+
+       ⚠️ **La escala colapsa once tamaños en cuatro, y eso mueve píxeles.** 16 de las 42 cajas
+       cambian ±4 px (`w-10`→`lg`, `w-12`→`lg`, `w-6`→`sm`), y dos cambian 8. Es el precio de
+       tener una escala en vez de once medidas sueltas, y es el mismo criterio con el que la
+       tarea 3.3 unificó la geometría del botón.
+       ═══════════════════════════════════════════════════════════════════════════════════════ */
+    .deasy-icon-box {
+        @apply inline-flex shrink-0 items-center justify-center rounded-xl;
+    }
+
+    /* Cuatro pasos, +2 cada uno. `md` es el tamaño por defecto y no hace falta declararlo. */
+    .deasy-icon-box--sm { @apply h-7 w-7; }
+    .deasy-icon-box--md { @apply h-9 w-9; }
+    .deasy-icon-box--lg { @apply h-11 w-11; }
+    .deasy-icon-box--xl { @apply h-14 w-14; }
+
+    /* La forma redonda es un eje aparte del tamaño: hay cajas de 28 px redondas y de 56 cuadradas. */
+    .deasy-icon-box--round { @apply rounded-full; }
+
+    /* Los tonos. El relleno es el paso `-50` REAL de cada familia, no una mezcla — el mismo
+       criterio que las variantes suaves del botón (§ `buttons.css`), y por el mismo motivo: el
+       `-50` de TailAdmin está calibrado y una mezcla al 6 % sale más gris. */
+    .deasy-icon-box--neutral { @apply bg-surface text-icon; }
+    .deasy-icon-box--primary { @apply bg-brand-50 text-primary; }
+    .deasy-icon-box--info    { @apply bg-blue-light-50 text-info; }
+    .deasy-icon-box--success { @apply bg-success-50 text-success; }
+    .deasy-icon-box--warning { @apply bg-warning-50 text-warning; }
+    .deasy-icon-box--danger  { @apply bg-error-50 text-danger; }
+
+    /* Sólido: el icono en blanco sobre el color entero. Para cuando la caja ES el acento de la
+       pantalla y no un adorno al lado del texto.
+
+       ⚠️ El eje estaba a MEDIAS: nacio con `primary` e `info` porque eran los dos unicos que el
+       censo de F3.1 encontro, y eso lo convertia en una trampa —pedir `--solid --success` daba
+       texto blanco sobre relleno `-50`, o sea invisible—. Se completan las seis el 2026-08-15,
+       cuando el numero del asistente volvio a sólido por decision del dueño.
+
+       ⚠️ **CADA TONO SE ANCLA AL PASO QUE LE SIRVE A SU CONTENIDO, no todos al mismo.** Parece
+       incoherente y no lo es: lo que hay encima no es igual en todos.
+         · Si encima va un NUMERO o una letra, es texto y pide 4.5:1 (WCAG 1.4.3).
+         · Si encima va un ICONO —una marca de verificacion, una advertencia—, es un componente
+           grafico y pide 3:1 (WCAG 1.4.11).
+       Por eso `primary` se queda en `brand-500` (4.84:1, y encima lleva el numero del paso) y
+       `success` baja al `-600` (3.73:1, y encima lleva SIEMPRE un ✓ — `tonoPaso` solo devuelve
+       `success` cuando el paso esta completo, y ese caso pinta el check, nunca el numero).
+
+       El `-600` de success es ademas decision del dueño (2026-08-15): con el `-700` el verde salia
+       MAS OSCURO que el azul de al lado, cuando el original —`emerald-500`, 2.54:1, que no cumplia
+       ninguno de los dos minimos— era mucho mas claro. El `-600` recupera el equilibrio sin bajar
+       del minimo que le toca.
+
+       🪤 **Si alguna vez pones un numero sobre el verde, este anclaje deja de valer**: 3.73:1 no
+       llega a 4.5. Entonces sube a `--color-success` (`-700`, 5.41:1) y asume que quedara mas
+       oscuro que el azul.
+
+       `neutral` es la otra excepcion y por eso NO lleva `--solid`: un gris claro con texto blanco
+       no se lee a ningun paso. Quien quiera algo apagado usa el tono suave, que ya es gris. */
+    .deasy-icon-box--solid { @apply text-white; }
+    .deasy-icon-box--solid.deasy-icon-box--primary { background: var(--color-primary); }
+    .deasy-icon-box--solid.deasy-icon-box--info    { background: var(--color-info); }
+    .deasy-icon-box--solid.deasy-icon-box--success { background: var(--color-success-600); }
+    .deasy-icon-box--solid.deasy-icon-box--warning { background: var(--color-warning); }
+    .deasy-icon-box--solid.deasy-icon-box--danger  { background: var(--color-danger); }
+
+    /* Con borde: cuando la caja va sobre una superficie del mismo tono que su relleno y necesita
+       un límite propio. WCAG 1.4.11 pide 3:1 para ese límite, que es lo que da el `-200`. */
+    .deasy-icon-box--outlined { @apply border border-line; }
+
+    .deasy-card {
+        @apply rounded-2xl border border-line bg-white;
+    }
+
+    /* ── DOS SUPERFICIES PULSABLES, sacadas del censo de G1 (2026-08-15) ──────────────────
+       Las dos son `<button>` porque se pulsan, pero **no son botones**: no ejecutan una accion
+       sobre un objeto, LLEVAN a una pantalla o SELECCIONAN un elemento. Por §1-bis no salen de
+       `AppButton` —su caja es una tarjeta, no la caja de 40 px del sistema— y por eso viven
+       aqui, con las superficies, y no en `buttons.css`.
+
+       Lo que si era defecto es que estuvieran copiadas. */
+
+    /* LA BALDOSA — el acceso grande del panel de inicio.
+       Diez copias exactas: siete en `HomeView` («Mis procesos», «Centro de firmas», «Mis envios»,
+       «Centro documental», «Mi dossier», «Mis cargos», «Mis unidades») y tres en `FirmarPdf`
+       («Solicitudes recibidas», «Buscar en BD», «Bandeja de pendientes»). Once utilidades cada
+       una, identicas, incluido el `min-h-[19rem]` que fija la altura de la rejilla. */
+    .deasy-tile {
+        @apply flex h-full min-h-76 flex-col rounded-2xl border border-line bg-surface/50 p-6 text-left transition hover:border-blue-light-200 hover:bg-blue-light-50/40 hover:shadow-md;
+    }
+
+    /* ══ LA REJILLA DE BALDOSAS — F13.6, 2026-08-21 ═══════════════════════════════════════════
+       Habia CINCO rejillas distintas para el mismo menu: `xl:grid-cols-3` en `/home`,
+       `xl:grid-cols-4` en firmas, `lg:grid-cols-3` en `/admin` y `/perfil`, con huecos de 16 y de
+       24 segun la pantalla. **Cuatro por fila en pantalla grande, decision del dueño.** El hueco
+       es el paso SECCION de F13.2 (24), no un numero nuevo. */
+    .deasy-tile-grid {
+        @apply grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4;
+    }
+
+    /* ══ LA CAJA INTERIOR DE LA BALDOSA ══════════════════════════════════════════════════════
+       La anatomia que el dueño eligio (2026-08-21): **el titulo va FUERA, sobre el fondo de la
+       baldosa, y debajo una caja que sostiene el icono, el dato y la descripcion**. Es la forma
+       que `/home` y `/home/firmas` ya tenian; `/admin` y `/perfil` la ganan.
+
+       Los fondos tambien los eligio, y son TRES niveles: la pagina en gris, la baldosa en blanco
+       al 50 % (`bg-surface/50`, arriba) y esta caja en blanco SOLIDO. Asi la caja destaca sobre la
+       baldosa y la baldosa sobre la pagina. Antes convivian las dos combinaciones **en la misma
+       rejilla de firmas**: 4 tarjetas blancas con caja sin fondo y 3 al 50 % con caja blanca.
+
+       ⚠️ EL RADIO ES MENOR QUE EL DE LA BALDOSA (12 contra 16) A PROPOSITO. Dos cajas
+       concentricas con el MISMO radio se ven mal: la interior parece sobresalir en las esquinas.
+       Es el mismo motivo por el que `deasy-dropzone__surface` bajo a `rounded-xl` en F4.C.
+
+       ⚠️ Y NO HAY VARIANTE `--punteada`, aunque el dueño la aprobo: **el caso que la necesitaba ya
+       tiene receta**. Las 4 cajas punteadas de firmas son `deasy-dropzone__surface`, que ademas
+       trae su borde de 2 px y su azul por una decision de contraste escrita en `forms.css` (uno
+       discontinuo de 1 px se ve la mitad). Declararla aqui seria una clase sin consumidor —lo que
+       `css-prune` prohibe— y ademas duplicaria esa decision. Si algun dia una baldosa necesita
+       parecer que acepta algo sin serlo, se declara entonces. */
+    .deasy-tile__slot {
+        @apply flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border border-line
+               bg-white px-6 py-8 text-center;
+    }
+
+    /* LA FILA ELEGIBLE — un elemento de una lista que se pulsa para escogerlo.
+       ⚠️ Estaba escrita **doce veces con CUATRO radios distintos** —12, 16, 16 y 19.2 px— para el
+       mismo objeto y a veces en la misma pantalla. Dos de los cuatro eran valores **arbitrarios que
+       existian para caer entre dos pasos de la escala**, que es exactamente el sintoma que el plan
+       describe en §3.1 para `deasy-icon-box`. Se queda uno: el de la escala.
+       📌 Los cuatro se citan por su medida y no por su clase a proposito: `check:no-arbitrary` LEE
+       los comentarios, asi que escribir aqui el nombre de la utilidad que se retiro la mantiene
+       viva en el censo. Es la norma «documenta la clase, no la escribas» del CLAUDE.md, y este
+       comentario la incumplia. */
+    .deasy-picker {
+        @apply relative flex w-full items-center gap-3 rounded-xl border border-line bg-white px-4 py-4 text-left transition duration-200 hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50/40;
+        box-shadow: 0 8px 18px rgba(var(--elev-ink-rgb), 0.05);
+    }
+
+    /* Sin relieve: cuando la fila va DENTRO de una tarjeta que ya tiene su sombra, apilar dos
+       elevaciones hace que la de dentro parezca despegada del papel. */
+    .deasy-picker--flat {
+        @apply hover:translate-y-0;
+        box-shadow: none;
+    }
+
+    /* ══ LA BURBUJA DE MENSAJE — F4, 2026-08-16 ═══════════════════════════════════════════════
+       Ultima receta del censo de las 48, y el unico hueco real de las 23 que quedaban. El chat
+       existe (`WorkspaceChatLauncher.vue`, 803 lineas) y consume SIETE familias del sistema
+       —picker, pestaña en linea, caja de icono, alerta, chip, FAB, boton `--field`—, o sea que
+       estaba bien construido. Pero su objeto central, la burbuja, **no tenia ni una clase**: dos
+       ternarios en la plantilla repartian cuatro tratamientos de color escritos con CUATRO PASOS
+       CONTIGUOS de la misma familia (`blue-light-500/600/700/800`).
+
+       Vive aqui, junto al `--picker`, porque el adjunto de dentro de la burbuja ES un picker; el
+       dia que el chat crezca (cabecera, lista de conversaciones, scroller) se lleva su modulo.
+
+       ── DOS DEFECTOS QUE DESTAPO LA MEDICION ────────────────────────────────────────────────
+       1. **El adjunto de un mensaje PROPIO no pasa AA.** Iba `bg-blue-light-600` (#0086c9) con
+          texto blanco: **4.00:1**, por debajo del 4.5 que pide el texto. Pasa a `-800` (7.55) —
+          y ademas es la direccion correcta: una superficie anidada sobre una burbuja oscura se
+          OSCURECE, no se aclara. Su hover baja al `-900`.
+       2. **El adjunto de un mensaje AJENO no tenia hover.** Declaraba
+          `bg-surface hover:bg-surface`: el mismo color en reposo y con el raton encima. Pasa a
+          `gray-100`, que es el hover que ya usa `--neutral-soft`.
+
+       ── Y UN NOMBRE CRUDO QUE ERA UN TOKEN ──────────────────────────────────────────────────
+       El fondo de la burbuja propia era `bg-blue-light-700`, que es **exactamente**
+       `--color-info` (#026aa2, medido). Mismo pixel, nombre que ahora dice lo que significa.
+
+       El adjunto lee su color de VARIABLES que pone la burbuja, que es el patron que
+       `deliverables.css` ya usa con `--tarjeta-acento`: asi el mismo boton sirve en las dos
+       burbujas sin un selector contextual ni una segunda clase. */
+    .deasy-chat-bubble {
+        @apply max-w-[88%] rounded-xl px-4 py-3;
+    }
+
+    .deasy-chat-bubble--sent {
+        @apply ml-auto text-white;
+        background: var(--color-info);
+        --adjunto-borde: var(--color-blue-light-600);
+        --adjunto-fondo: var(--color-blue-light-800);
+        --adjunto-hover: var(--color-blue-light-900);
+        --adjunto-tinta: var(--color-white);
+    }
+
+    .deasy-chat-bubble--received {
+        @apply mr-auto border border-line bg-white text-strong;
+        --adjunto-borde: var(--color-line);
+        --adjunto-fondo: var(--color-surface);
+        --adjunto-hover: var(--color-gray-100);
+        --adjunto-tinta: var(--color-body);
+    }
+
+    .deasy-chat-attachment {
+        border-color: var(--adjunto-borde);
+        background: var(--adjunto-fondo);
+        color: var(--adjunto-tinta);
+    }
+
+    @media (hover: hover) {
+        .deasy-chat-attachment:hover {
+            background: var(--adjunto-hover);
+        }
+    }
+}
+
+
+@layer components {
+    /* EL TONO DE UN PICKER — F12, 2026-08-20.
+     *
+     * `deasy-picker` declara su borde y su `:hover`, y `HomeView` los pisaba con tres utilidades
+     * crudas —`hover:border-amber-200`, `hover:border-blue-light-200`, `hover:border-emerald-200`—
+     * segun el tono de la accion. `check:overrides` las tenia las TRES en su grupo C.
+     *
+     * `emerald` y `amber` no son ademas familias de la paleta adoptada: `success` y `warning` si. */
+    .deasy-picker--warning:hover { border-color: var(--color-warning-200); }
+    .deasy-picker--info:hover { border-color: var(--color-blue-light-200); }
+    .deasy-picker--success:hover { border-color: var(--color-success-200); }
+
+    /* ⚠️ `--neutral` NO ES REDUNDANTE AUNQUE NO CAMBIE NADA, y lo destapo medir en el navegador.
+       `homeActions` emite CUATRO tonos —`info`, `neutral`, `success`, `warning`— y la clase se
+       compone en runtime (`deasy-picker--${action.tone}`). Sin esta regla, uno de cada cuatro
+       pickers llevaba en el DOM una clase **que no existe en el CSS**: no rompia nada —el hover
+       por defecto ya es este— pero es exactamente la clase de fallo que `check-orphan-classes`
+       persigue, y ese gate **no puede verlo** porque solo lee atributos estaticos.
+       Declararla cierra el vocabulario: los cuatro tonos que el codigo puede emitir existen. */
+    .deasy-picker--neutral:hover { border-color: var(--color-line-strong); }
+
+    /* «ESTO ESTA ELEGIDO» — F12, 2026-08-20.
+     *
+     * Una opcion, tarjeta o fila que el usuario puede escoger. Estaba escrito **catorce veces**
+     * como un ternario en la plantilla, y las catorce decian lo mismo con CINCO tintes distintos:
+     *
+     *     border-blue-light-300 bg-blue-light-50     7 veces (SystemBootstrapView)
+     *     border-blue-light-500 bg-blue-light-50     4 veces (FirmarPdf x3, UserCertificatesPanel)
+     *     border-blue-light-400 bg-blue-light-50     1 vez   (MultiSignerPanel)
+     *     border-brand-400      bg-brand-50/60       2 veces (los dos dialogos de version)
+     *     border-brand-300      bg-brand-50/40       1 vez   (ProcessGraphView)
+     *
+     * Nadie eligio eso: es deriva. Dos ademas con ALFA, que es lo que este repo evita porque el
+     * resultado depende del fondo.
+     *
+     * ⚠️ ESTE BLOQUE DECLARA SOLO EL ESTADO, NO LA GEOMETRIA. El radio, el padding y el `flex` los
+     * pone quien lo usa, porque las catorce tienen forma distinta —una casilla, una tarjeta de
+     * opcion, una fila de certificado— y unificarlas seria otro trabajo. Lo que se unifica es lo
+     * unico que estaba duplicado: **el borde y el fondo que dicen «elegido»**.
+     *
+     * El tinte es `blue-light`, que es el que usaban 12 de los 14. Cambiarlo a marca es una linea
+     * aqui — que es justamente el motivo de que exista este bloque.
+     *
+     * ⚠️ ESTO NO SUSTITUYE A `deasy-picker`, Y LA DISTINCION IMPORTA. `deasy-picker` es el OBJETO
+     * —una fila escogible, con su flex, su padding, su radio y su hover—; esto es el ESTADO. Un
+     * `deasy-picker` que ademas esta elegido lleva **solo el modificador**, no la base: si llevara
+     * las dos, dos reglas de la misma capa se disputarian el borde y el fondo, y ganaria la que
+     * este mas abajo en el fichero. Que es exactamente lo que `check:overrides` vigila.
+     *
+     * La base es para los ONCE sitios que no tienen componente debajo — una casilla de opcion del
+     * asistente de arranque, una tarjeta de nivel de version—, donde el ternario ponia `border-line`
+     * a mano. */
+    .deasy-elegible {
+        @apply border bg-white transition-colors;
+        border-color: var(--color-line);
+    }
+
+    .deasy-elegible:hover {
+        border-color: var(--color-line-strong);
+        background-color: var(--color-surface);
+    }
+
+    /* El `:hover` va tambien en la elegida para que pasar el raton no la «apague». */
+    .deasy-elegible--activa,
+    .deasy-elegible--activa:hover {
+        border-color: var(--color-blue-light-400);
+        background-color: var(--color-blue-light-50);
+    }
+}
+
+
+@layer components {
+    /* UNA SUPERFICIE QUE AVISA — F12, 2026-08-20.
+     *
+     * Una tarjeta o baldosa que reclama atencion porque tiene algo pendiente. `HomeView` lo
+     * pintaba con `border-amber-200 bg-amber-50/30` en la baldosa y `border-amber-200/80` en la
+     * tarjeta de dentro: **dos alfas distintos del mismo color**, y `amber` **no es una familia de
+     * la paleta adoptada** — la que dice «atencion» es `warning`.
+     *
+     * `check:overrides` las tenia las tres (`deasy-tile` x2, `deasy-card` x1) en su grupo C. */
+    .deasy-tile--avisa,
+    .deasy-card--avisa {
+        border-color: var(--color-warning-200);
+    }
+
+    .deasy-tile--avisa {
+        background-color: var(--color-warning-50);
+    }
+
+    /* LA TARJETA QUE SE ELIGE. Nace de elegir el canal de verificación del teléfono, donde tres
+       tarjetas son un grupo de opciones y una está seleccionada.
+     *
+     * Va aquí y no como utilidades sueltas en la plantilla porque `check:overrides` tiene razón:
+     * `border-primary` sobre `.deasy-card` es una utilidad disputándole el borde al componente, y
+     * eso deja de pintar en cuanto alguien reordene las capas. Un estado con nombre no. */
+    .deasy-card--elegible {
+        cursor: pointer;
+        transition: border-color 120ms ease, box-shadow 120ms ease;
+    }
+
+    .deasy-card--elegible:hover {
+        border-color: var(--color-line-strong);
+    }
+
+    .deasy-card--elegida {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 2px var(--color-primary);
+    }
+}

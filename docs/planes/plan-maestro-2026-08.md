@@ -1,0 +1,933 @@
+# Plan maestro — lo que queda por hacer
+
+> **Este es el ÚNICO documento del que se sacan tareas.** Todo lo demás en `docs/planes/` es
+> referencia: se consulta, no se ejecuta.
+>
+> **Medición de partida:** SonarQube en `:9002`, rama `develop`, **2026-08-09**.
+> 373 incidencias · 0 bugs · 8 vulnerabilidades · cobertura 17,7 % · notas **A / C / A**.
+> Cómo reproducirla y la serie histórica: [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md).
+
+---
+
+## Cómo leer este plan
+
+Los frentes van **ordenados por retorno sobre esfuerzo**, no por gravedad. Cada uno dice **qué es**,
+**por qué importa**, **qué hacer** y **cuándo está cerrado**. Los estados son cuatro:
+
+⬜ sin empezar · 🟡 a medias · ⛔ bloqueado por otra cosa · ✅ cerrado, con evidencia y fecha
+
+**Antes de tocar nada, tres lecturas obligatorias:** las reglas de trabajo de
+[`referencia/metodo.md`](./referencia/metodo.md) —destiladas de fallos reales de este repo, romperlas
+cuesta más que el trabajo que ahorran—, la lista de **lo que NO hay que tocar**, en el mismo sitio, y
+la norma de la carpeta en [`CLAUDE.md`](./CLAUDE.md).
+
+---
+
+## §0 · Control de ejecución
+
+**Esta tabla es el estado del plan.** Se lee antes de elegir trabajo y **se actualiza en el mismo
+commit** que la tarea que cambia de estado — la norma completa, en [`CLAUDE.md`](./CLAUDE.md).
+
+Aquí el control es **por frente**. Las tareas concretas viven en el plan de cada uno y **no se repiten
+aquí**; la columna «Control detallado» dice dónde.
+
+| Frente | Qué entrega | Estado | Control detallado | Evidencia · fecha |
+|---|---|---|---|---|
+| **0** · Modelo de dominio | El modelo deja de contradecirse: cero `document_owner`, la base manda y el YAML se fue | ✅ **9 de 9** | [archivado](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) | `30654db` · medido en base · **2026-08-13** |
+| **1** · Defectos conocidos | Defectos que un usuario puede encontrarse, congelados en pruebas | 🟡 **3 abiertos** (1.3, 1.7, 1.19) · **1.10 SUPERSEDIDO** por el modelo de tenencias | [`defectos-conocidos/`](./defectos-conocidos/) — **22 ✅ · 8 ⬜ · 2 ⛔ de 32 tareas** (recontado 2026-08-24) | 1.17 cerrado · **2026-08-14** |
+| **2** · Seguridad | De nota C a B cuesta **una** incidencia; la A exige una decisión de diseño | ⬜ **RE-MEDIDO 2026-10-09: de C a E**, y de 8 vulnerabilidades a **21** (3 BLOCKER). Pero las 3 BLOCKER son del tipo que §7 dice no tocar —dos alfabetos de `TOKEN_CHARS` y la contraseña del PostgreSQL desechable del generador—, así que **lo primero no es código: es marcarlas con justificación**, y hasta entonces la nota dice algo que no es | [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) §2.-1 | Sonar `:9002` · **2026-10-09**, HEAD `b986f9f7` |
+| **3** · Complejidad | Lo que queda son **tres componentes Vue**; el backend ya bajó | 🟡 | aquí + [`referencia/frontend.md`](./referencia/frontend.md) | — |
+| **4** · Sistema de diseño | La paleta existe; ahora tiene que llegar a las plantillas | 🟡 · **el estado está en el sub-plan** (esta columna citaba los «pasos 1-6», numeración muerta que el propio §Frente 4 declara obsoleta) | [`sistema-diseno-componentes/`](./sistema-diseno-componentes/) | 3.ª vuelta reescrita · 2026-08-13 |
+| **5** · Cobertura | El gate no pide 80 % global: pide 80 % **de lo nuevo** | 🟡 F0 ✅ · F1 y F2 ⬜ · **RE-MEDIDO 2026-10-09: 34,7 %** (línea 40,5 %), desde el 23,3 % de agosto. Parte es trabajo real y parte es que **el informe del signer volvió a existir** tras estar roto: publicaba `app.py` al 0 % estando al 89 % | [`referencia/cobertura.md`](./referencia/cobertura.md) · cifras en [`calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) §2.-1 | Sonar `:9002` · **2026-10-09** |
+| **6** · Signer | Cerrar los riesgos de la auditoría del microservicio de firma | 🟡 **3 hechas · 3 planificadas · 1 bloqueada** (recontado 2026-08-24 contra su propio plan; decía «8 de 12») | [`referencia/signer.md`](./referencia/signer.md) | — |
+| **7** · Método e infraestructura | Lo que evita que el resto se degrade: Sonar en CI, barreras de lint, contenedores vacíos | ⬜ | aquí, §Frente 7 | — |
+| **8** · Deuda de volumen | Los ficheros que el plan no registraba, medidos el 2026-08-09 | ⬜ | aquí, §Frente 8 | remedido · 2026-08-13 |
+| **9** · Capa de datos | **Siete fases** sobre el esquema y `config/postgres.js` — y **D7 audita el modelo**, lo que el frente 0 dejó abierto | 🟡 **D7 a 33 de 37**; las otras 6 fases ⬜ | [`plan_data/`](./plan_data/) | **2026-08-24** · lo que queda de D7 son **4 decisiones del dueño** |
+| **10** · Compilador documental | Auditar la rama que ya existe, y **heredó el generador de Jinja** (S8) | ⬜ **el coste subió**: la rama va **1 017 commits por detrás** y toca **57 ficheros**, no 21 | aquí, §Frente 10 | remedido **2026-08-24** |
+| **11** · Editor web de plantillas | **Son dos productos, no uno** | ⬜ | aquí, §Frente 11 | — |
+| **12** · Auditoría del modelo **dirigida por el dueño** | Que el modelo de negocio haga lo que la universidad quiere, no solo lo que el esquema declara. Se recorre la sección `/modelo/` del sitio página por página, y el cambio se decide **en la documentación** y baja al código | ⬜ **0 de 17** | [`auditoria-modelo-negocio-2026-08.md`](./auditoria-modelo-negocio-2026-08.md) | — |
+| **13** · Frontend de la identidad | Las pantallas alcanzan al modelo que se desmontó en nueve tablas: el menú sale de `category`, las claves ajenas se eligen escribiendo, el punto se marca en un mapa | 🟡 **12 de 18** · el editor genérico está cerrado; faltan las pestañas, `/perfil/datos` y el registro | [`frontend-identidad-2026-08.md`](./frontend-identidad-2026-08.md) | **2026-08-28** |
+| **14** · Identidad sin país fijo | El mismo código sirve en cualquier país: `instituciones` con su país, los tres tipos por `CHECK`, el login **sólo correo** — y con él se borra una colisión latente en autenticación, más otras cinco iguales que aparecieron al medir | ✅ **9 de 10** · `I10` es **deuda técnica documentada**: la dirección está fijada —app propia vinculada en el registro, número validado por Telegram— y espera a que la app exista y a que haya limitador de intentos | [`identidad-sin-pais-fijo-2026-08.md`](./identidad-sin-pais-fijo-2026-08.md) | **2026-08-29** |
+| **15** · `channels` y la cadena de verificación | Que una persona pueda **demostrar que un número es suyo**, por Telegram o WhatsApp. Desbloquea `I10` del frente 14 y `F4d` del 13, que llevaban parados porque **`verificado` no lo pone nadie salvo la siembra** | ✅ **10 de 10** · Telegram y WhatsApp verificados con teléfonos reales, el limitador y el vigilante probados contra el sistema en marcha, y la pestaña de administración verificada en el navegador. El SMS se **descartó** el 2026-09-01 | [`channels-verificacion-2026-08.md`](./channels-verificacion-2026-08.md) · diseño en [`arquitecturas/`](../arquitecturas/microservicio-channels.md) | **2026-08-29** |
+| **16** · El versionado de objetos en MinIO | Que sobrescribir un documento firmado deje de **destruir el anterior sin rastro**. Los tres buckets estan SIN VERSIONAR (medido 2026-09-02), y el sistema versiona por SUB-RUTA: hay que decidir si son capas complementarias antes de tocar nada | ⬜ **0 de 5** · abierto por decision del dueño | [`versionado-de-objetos-2026-09.md`](./versionado-de-objetos-2026-09.md) | **2026-09-02** |
+| **17** · LOPDP: consentimiento demostrable y textos legales versionados | Que el sistema pueda PROBAR que alguien acepto, como exige el Art. 5 del Reglamento. Hasta el 2026-09-02 la casilla se validaba en el navegador y NO SE GUARDABA NADA | ✅ **9 de 9** · el texto legal salio de una columna TEXT a DOS buckets (borradores mutable + archivo WORM con retencion COMPLIANCE), publicar copia-verifica-sella, y hay pestaña de administracion verificada en el navegador. El denominador SUBIO de 4 a 9 el 2026-09-02 al medir como se comporta de verdad el bloqueo de objetos. El SELLO se **descartó**. ⏳ Lo unico pendiente NO es nuestro: que el area legal revise los borradores | [`lopdp-consentimiento-2026-09.md`](./lopdp-consentimiento-2026-09.md) · diseño en [`arquitecturas/`](../arquitecturas/documentos-legales-versionados.md) | **2026-09-03** |
+| **18** · El expediente sale del JSON | `dossier_items.data` es un JSONB con diez formas dentro. La documentación defiende ese diseño diciendo que «la forma cambia cada curso», y **eso es falso**: está fijada a mano en los formularios de Vue. Se paga el precio del JSONB sin cobrar su beneficio | ⬜ **0 de 9** · diseño decidido y medido; falta la fuente del catálogo CINE-F | [`expediente-relacional-2026-09.md`](./expediente-relacional-2026-09.md) | **2026-09-04** |
+| **19** · La universidad emisora deja de ser texto | `ies` es texto libre en dos tablas del frente 18. **ROR** (CC0, 27 055 organizaciones de educación) sirve de semilla, pero **no como autoridad**: medido el 2026-09-05, **PUCESE no está en ROR**. Se reutiliza entera la forma de `titulaciones` | ⬜ **0 de 6** · abierto por decisión del dueño; `U3` depende del frente 18 | [`universidades-ror-2026-09.md`](./universidades-ror-2026-09.md) | **2026-09-05** |
+| **20** · Lo que falta saber de una persona | Fecha y lugar de nacimiento, sexo y género, etnia, estado civil, salud, cuentas bancarias, cargas familiares. Siguiente paso del frente 14, que dejó `persons` en once columnas. **Falta la capa `parroquias`** —fuente del INEC medida: **1 311 vigentes** de 1 442— y la salud es **categoría especial de la LOPDP**: hoy **9 roles** pueden leer `people`, siete de los cuales no deberían ver una discapacidad | 🟡 **5 de 12** · P0, P1, P10, P2 y P3 cerrados; P11 abierto al detectar que la nacionalidad no admite varias. La geografía baja hasta la **parroquia** (1 314) y recupera un cantón que faltaba; los cinco vocabularios de la persona, sembrados. `P5` ⛔ por `P8`, y `P7` depende del frente 18 | [`persona-datos-completos-2026-09.md`](./persona-datos-completos-2026-09.md) | **2026-09-05** |
+| **21** · El mapa, y que la dirección se prellene sola | El modal de direcciones usa Leaflet + OSM. Se evaluó cambiarlo y **el coste no es el dinero**: con este volumen Google saldría gratis (10 000 cargas/mes), pero añade un tercero que recibe la IP de cada persona y hay que declararlo. El prellenado por geocodificación inversa **reutiliza el cotejo del frente 18** para casar el texto contra los 222 cantones | 🟡 **1 de 7** · `M1` cerrada: los iconos del marcador dejaban de venir de un CDN de terceros y de una versión que no era la instalada. `M5` depende del `P9` del frente 20 | [`mapa-y-geocodificacion-2026-09.md`](./mapa-y-geocodificacion-2026-09.md) | **2026-09-08** |
+| **22** · El mapa de módulos: una sola respuesta a «¿dónde vive esto?» | Había **cuatro** clasificaciones vivas de «a qué módulo pertenece esta tabla» —el dominio, la carpeta de `services` que la escribe, el recurso de `TABLE_RESOURCE_MAP` y el subgrupo dibujado— y medido el 2026-10-04 **coinciden entre el 20 % y el 35 %**. No faltaba documentación: había cuatro y son incompatibles. Abierto por la pregunta del dueño «ya me está siendo insostenible entender» | 🟡 **21 de 24** · `dominios.json` es la fuente única: **92 tablas** en **8 dominios** y **8 niveles** —los 15 «módulos» que tuvo el primer día se **retiraron** el mismo 2026-10-04—, con dos puertas en CI —ninguna clave ajena sube de nivel (**0 de 179**) y ninguna tabla nueva con dos escritores—. Enseñó que el dominio `identidad` son **tres** cosas apiladas, que **el acceso va encima de la organización**, y que tres tablas con nombre de catálogo no lo son. `F5.1` cerrada: la verificación por canal **sobrevivía a un cambio de número**. `F6` metió las tablas en **8 esquemas de PostgreSQL**, uno por dominio, así que el dominio dejó de ser una afirmación y pasó a ser **dónde está la tabla**. `F6.5` —partir el fichero del esquema— se **descartó por ingeniería y no por coste**: un DDL no es un módulo, y además el nombre de fichero no puede llevar el orden de aplicación. En su lugar se abrió **`F7`: reordenar el backend por dominios**, que es donde el mandato es explícito —Parnas 1972, cierre común, cohesión/acoplamiento— y que llevaba toda la sesión archivado como «descartado por coste» después de que el dueño rechazara ese criterio. `F4` cerrada, y cambió la tesis: los otros dos caminos **no son deriva**, son ejes distintos —permiso y narrativa— que coinciden un 28 % y un 27 % **a propósito**; lo que se vigila es que ninguno crezca hacia un módulo sin declararlo, con el motivo escrito. Se descartó partir en varias bases (102 de 179 claves ajenas cruzan de nivel). Lo de ordenar `backend/` también se había descartado con «62 ficheros habría que partirlos», y **esa cifra era falsa**: medido fichero a fichero el 2026-10-06 son **6** los que hay que partir, **7** son flujos que cruzan dominios por diseño y 46 van a un solo dominio —aunque se parten por dentro entre `services/` y `datos/`—; y de aquellos **6, al remedirlos el 2026-10-07, quedaban 5 y CUATRO no escriben nada**, así que `F7.3` se descartó: un módulo de **lectura** que cruza dominios no infringe nada — por eso `F7` existe, reescrita, con el criterio de dominio como tarea cero. El **piloto** (rama `f7-flujo-piloto`, **fusionada el 2026-10-07** tras 28 commits de divergencia) verificó que un flujo se lee sin sus consultas y descubrió que **la unidad de trabajo no es un fichero, son todos los escritores de una tabla**. Integrarlo destapó que **la comprobación D medía mal** —contaba los dominios de un flujo buscando escrituras DENTRO del fichero, y un flujo sin SQL le parecía que ya no cruzaba—, obligó a abrir dos **puertas parciales** (`tareas` y `plantillas`, hoy sólo con `datos/`) para reconducir tres escrituras que la C destapó, y dejó a la vista un hueco que ninguna puerta cubre: **que un módulo exporte lo que le importan**. Y el dueño fijó el **2026-10-07** las tres palabras: **dominio** (de qué trata) · **nivel** (de qué depende) · **capa** (`routes`/`controllers`/`services`/`datos`), con puerta que lo vigila. `F7.1` declaró los transversales **por fichero** y los **7 flujos**, y al estrechar la exención aparecieron 52 consultas que **dos puertas obligatorias no miraban**. `F7.2` dejó `controllers/` y `routes/` con **cero** consultas y **cero** transacciones, construyó el `conTransaccion` que el frente 9 nunca hizo, y **cerró `F5.5` sola** —la puerta avisó—. `F7.3` se descartó midiendo. `F7.4` lleva **3 de 4**: `chat` y `organizacion` movidos con sus **cuatro capas y la subcapa de lecturas**, `empleo` con la carpeta reservada, `identidad` pendiente — y destapó el **prerrequisito** que lo bloquea: **33 instanciaciones a nivel de módulo en 17 controllers**, el mismo fallo de ESM que mordió cuatro veces en un día. Dos lecciones de medición: **`cargos` es de `identidad`** —el dominio de una tabla se pregunta al mapa, no se adivina por el nombre— y **una puerta a techo cero no es un censo**: `check:sql-aliases` no ve las consultas con comillas dobles ni las de tabla interpolada, y por eso «15 consultas por mover» eran **24**. Y el **prerrequisito quedó cerrado**: de **30** instanciaciones de servicio a nivel de módulo en 16 ficheros a **CERO** —26 por script, 3 a mano y **una que estaba muerta**: `SqlAdminService`, el servicio más grande, construido al cargar el controlador más grande y nunca llamado—, con **puerta nueva a techo cero** (`check:instancias`) en CI. Y con eso se movió la **primera tanda de `identidad`** —la persona: 50 ficheros, 102 imports recalculados—, donde la medición volvió a corregir al plan: «62 ficheros» contaba menciones en comentarios, son **36**, y el dominio no son «tres cosas apiladas» sino **cinco asuntos** (el RBAC ocupa el nivel 0 **y** el 3, así que los niveles no los separan); el RBAC se queda fuera de la puerta por diseño, porque lo usa todo router y dentro obligaría a **todos** los dominios a importar `identidad`. Enseñó que el prerrequisito estaba cerrado **sólo en el alcance recortado a ojo** —la puerta veía 73 ficheros de **203**, con once instanciaciones fuera, una de ellas la que rompió nueve suites—, que mirar los constructores se **retiró midiendo** (13 marcados, 11 inofensivos), y que **un import con comillas simples** sobrevive a cualquier barrido escrito a mano: dejó el backend sin arrancar, y lo cierra la puerta nueva **`check:rutas`**, que resuelve las 679 rutas relativas del backend y era el hueco que `CLAUDE.md` nombraba sin tapar. **`F7.4` cerró con su subcapa**: `identidad` deja `routes/`, `controllers/` y `services/` con **cero consultas** —las 103 en `datos/` (82) y `datos/consulta/` (21)—, `UserRepository` baja de **866 a 708 líneas** y las cuatro transacciones a mano pasan a `conTransaccion`. Y volvió a medir lo que una puerta no ve: **35 consultas del dominio estaban con comillas dobles**, invisibles para las dos puertas del SQL, y pasarlas a plantilla subió lo vigilado de **486 a 521** sentencias sin añadir ninguna. Tres puertas cambiaron por lo que esto destapó: la **E** dejó de marcar la prosa, `check:rutas` aprendió a cazar una ruta que pierde el `./` —14 suites en rojo— y queda escrito el punto ciego que no se cerró: `check:instancias` no ve los campos de clase. Y al medir qué quedaba fuera apareció que **tres de las cinco deudas de escritura eran UNA**: `persons`, `emails` y `chat_notifications` tenían un escritor dentro del dominio dueño y otro fuera, en los mecanismos (`services/mail`, `services/canales`). Cerradas haciendo que el de fuera **pida por la puerta del dueño** —lo que no depende de dónde acaben viviendo esos mecanismos, que sigue sin decidir—, así que **`F5` pasa de 2 a 5 de 6** y la deuda declarada de **5 a 2**, cada una con qué la cierra (F7.5 y la decisión 1 de F7.0). `F5.6` no necesitó el «módulo de avisos» que su propia línea proponía: `chat` ya tenía el creador genérico. Y la comprobación **C** resultó tener la misma ceguera que la **E** —contaba como escrituras los comentarios que explican que ya no se escribe—, arreglado en una sola función para C, D y E | [`mapa-modulos-2026-10.md`](./mapa-modulos-2026-10.md) | **2026-10-04** |
+| **23** · Plantillas y entregables: quitar lo que se dice dos veces | El dueño lo llamó «una masa de puro enredo» y la medición le dio la razón. `catalogo_documental` **no guarda ningún fichero** —es un nombre— y sus 3 columnas de dueño las lee **un solo sitio**: el guardia que las compara con lo que el vínculo ya dice. El esquema **permite** que una versión de plantilla sirva a varias definiciones y el código intenta prohibirlo **comprobando el proceso pero no la variación**. Y «qué versión de plantilla» está escrito **tres veces** sin que nada obligue a que coincidan | ✅ **9 de 9** (2026-10-04) · **las cuatro fases hechas el mismo día**, en dos ramas paralelas: `template_seeds` es hoy `generadores_de_documento` (catálogo de quién produce el PDF, con `tipo` `latex`\|`servicio` bajo CHECK), la declaración se movió a `ediciones.generador_id`, y salieron `template_artifact_fields` y `schema_object_key`. Corregido un error del plan: `generador_id` **no** sustituye a `render_engine`, que vive en `document_versions` y queda fuera del frente. **F1 y F2 también se cerraron** ese día: `trg_pdt_linea_unica` sostiene la pertenencia —el índice único del plan se probó y se descartó porque rompe el clon—, `task_items.edicion_id` se retiró y sus 21 lectores pasan por el vínculo. Efecto lateral medido: quitar `owner_process_id` **deshizo la dependencia circular** entre `plantillas` y `procesos`. Decidido por el dueño: una versión de plantilla sirve a **una sola variación**, sostenido con **un índice único** que hace innecesarios el guardia, las 3 columnas y el rombo | [`plantillas-y-entregables-2026-10.md`](./plantillas-y-entregables-2026-10.md) | **2026-10-04** |
+| **24** · El recorrido documental, unificado | El recorrido del documento estaba **partido en dos mitades simétricas** —entrega y firma— con dos tablas de cabecera que no llevaban datos, y «qué plantilla» se decía con **cuatro** nombres distintos. Decidido por el dueño el 2026-10-08 tras el análisis de la decisión 1 de F7.0 del frente 22 | ✅ **11 de 11** en 6 fases · de **95 tablas a 87** y de **185 claves ajenas a 157**; el **defecto 1.19** cerrado (el JSONB `signers` a filas bajo `CHECK`); `DocumentSignatureWorkflowService` de **1.338 a 856** líneas y `flowRows.js` de **662 a 224**. Y enseñó dos cosas que el plan no buscaba: **un golden caza lo que un unitario con fixture propio no puede** —`canCurrentUserResetWorkflow` devolvía `false` en silencio con sus tres pruebas en verde— y que **renombrar el modelo no renombra la pantalla**: 66 cadenas visibles seguían diciendo «flujo», y hoy lo vigila `check:vocabulario-pantalla`. Adelantó además **4 de las 26 tablas** de la `F7.5` del frente 22, porque colocar bien una tabla NUEVA sale gratis | [`recorrido-unificado-2026-10.md`](./recorrido-unificado-2026-10.md) | **2026-10-09** |
+| **25** · Qué pareja (configuración, plantilla) es legal | **Análisis, no ejecución.** Abierto por una observación del dueño que **corrige una frase del frente 23**: una versión de plantilla no sirve a una *variación* de proceso sino a una **versión de variación**. Y el modelo le da la razón a medias, que es el problema: el enlace de `vinculos` apunta a una **versión** pero `trg_pdt_linea_unica` compara la **línea**, así que una edición puede estar vinculada a varias versiones de la misma variación — y el clon de configuraciones **lo hace a propósito**. Ninguna de las dos direcciones («plantilla nueva → configuración nueva» y su contraria) está impuesta. Tres preguntas: qué pareja es legal, qué obliga a qué, y **qué es una plantilla que no es de ningún proceso** — porque `ad_hoc` existe, está implementado en los dos lados, y su pertenencia bajo el «Proceso por defecto» está sin medir **a propósito**: el dueño pidió no medir antes de decidir, porque medir qué HACE el modelo no dice qué DEBE hacer | 🟡 **13 de 26** · **dejó de ser sólo análisis**: `P1` y `P7` tocaron el esquema —la base garantiza **una sola edición publicada** por formato y que la versión tenga forma de **semver**—. Y la pregunta `C` se cerró con una **prueba falsable que encontró el caso**: la casilla `(user_added, official)` existe y es el **100 %** de lo ad-hoc que funciona hoy, así que el **formato** y el **encargo** son ejes independientes y las dos columnas se quedan. Eso **levanta la condición de la decisión 2 de `F7.0`** del frente 22 —son **dos dominios**— y con ella **desbloquea el tramo `plantillas` de `F7.5`**. De la matriz 2×2 salieron cuatro decisiones del dueño: la casilla `(process_defined, ad_hoc)` **se prohíbe** —era alcanzable y **nadie la validaba**—, la `(user_added, ad_hoc)` **se implementa**, y la `(user_added, official)` **se queda porque bloquearla no quitaría el uso del formato institucional fuera del lanzamiento: lo obligaría a pasar por una COPIA**, que es la avería que `owner_process_id` ya causó. Y enseñó que **los cuatro nombres son el defecto**, con prueba en el código: la pantalla rotula el eje del formato con las palabras del eje del encargo («De usuario (ad-hoc)» / «De proceso (oficial)») y deja uno de los dos valores en latín — van a `origen` `(lanzamiento, encargo)` y `propiedad` `(institucional, personal)`, la distinción que `emails.tipo` ya nombra así. En el modelo se llegó a **`lineas`**, que sustituye a `process_definition_series`: la variación estaba **partida en dos tablas** porque la serie admite un eje **o** el otro, y los cargos son **genéricos** —no existe «Coordinador de Carrera»—, así que ninguno de los cuatro casos del dueño cabía en una serie. Con `linea_anterior_id` aparece además lo que hoy no se puede saber: **si una obligación cambió de manos**. `P11` **salió al frente 26**. Y `P13` ya cerró la primera de esas decisiones: la casilla prohibida la impiden **DOS** disparadores, porque con uno solo se rodea en dos pasos —crear el formato oficial, vincularlo, y cambiarlo a personal después, que es una escritura que no toca `vinculos`—. Y `D1` midió el coste de retirar `variation_key`: de **28 sentencias SQL**, 8 la filtran, 4 la escriben, 2 ordenan por ella y 14 sólo la devuelven, así que **sólo 10 necesitarían un `JOIN` nuevo** y las otras 18 se simplifican o cambian uno que ya pagan. El hallazgo que no se buscaba: **dos índices ÚNICOS están sobre la copia** —la unicidad de «una versión por línea» vigila una etiqueta, no el dato— y esa etiqueta la arrastra un gancho que **dice en su propio comentario que no es transaccional**; medida en una base recién sembrada, **la copia ya está derivada en el 100 % de las filas**. `P8` construyó la tabla **`lineas`** con sus **8 garantías provocadas** una por una, la columna `linea_id` y el arranque sembrándola — y construirla **corrigió dos veces el croquis del propio plan**: el `CHECK` que había anotado **hacía ilegal el único caso que existe** (la línea «sin variación», que hoy es el 100 % de lo que hay) y las columnas se llamaban **`ambito`**, que está **reservado por el frente 18** y el `CLAUDE.md` de la raíz lo dice con esas palabras. Lo cazó que `check-doc-modelo --update` **ampliara la excepción en vez de quejarse**: cuando `--update` toca la lista de excepciones y no sólo las huellas, hay que parar. Los nombres correctos ya estaban en el esquema — `process_target_rules` nombra este mismo concepto `unit_scope_type` + `unit_type_id` + `unit_id`. Y `P2-bis` cerró el cambio: **28 sentencias** movidas a `linea_id`, 34 ocurrencias del frontend, los 3 índices y la fachada de `/admin`, con `variation_key` retirada junto a la **cascada no transaccional** que la arrastraba y al segundo constante del bootstrap. **Aquí los goldens SÍ se movieron, y ese diff es la prueba**: `variation_key` fuera, `linea_id` + `linea_nombre` dentro — y lo que la pantalla enseña pasa de `general` al **nombre** de la línea. Y `P9` retiró la serie entera con sus **seis mecanismos**: el eje único y su `XOR`, el `code` derivado de `slugify(cargo.name)`, **dos cascadas no transaccionales** que se disparaban al renombrar un cargo, el recompositor de nombres «<Proceso> por <Serie>» y la copia. El asistente pide ahora **nombre + cargo + alcance** —los dos ejes juntos, que es lo que la serie no podía—, y el nodo del grafo enseña el nombre de la línea donde enseñaba «General» para toda configuración sin eje. Enseñó además que **`showWhen` en `sqlTables.js` es una pista del FRONTEND**: el backend exige todo campo `required` llegue o no su condición, y la serie sólo pasaba porque su hook rellenaba los nulos antes de la comprobación. Y el **2026-10-12** el dueño retiró `trg_pdt_linea_unica` —la regla «un entregable sirve a una sola línea» que el frente 23 había puesto y que éste ya había corregido una vez—: **rompía la simetría de las dos identidades**. El modelo declara `formato 1─N ediciones` y `línea 1─N configuraciones` al mismo nivel, con un puente que une **versión con versión**; aquella regla imponía algo **entre las identidades** y en un solo sentido, y su enunciado espejo es absurdo —«una línea pertenece a un formato» es falso, porque una obligación produce varios entregables—. El caso que lo destapó: el mismo Informe de IF lo entregan las Coordinaciones de **Carrera** y de **Tecnología**, dos tipos de unidad y por tanto dos líneas, que con la regla vieja obligaban a **duplicar el formato**. El límite pasa a ser el **proceso**, y la simetría deja de depender de que alguien se acuerde: **tres pruebas del esquema** la vigilan, provocadas. Y `P19` retiró **`unit_subtree`**, también por forma: «esta unidad y sus descendientes» **cruza tipos de unidad** y por tanto cargos, incompatible con una regla que hereda el cargo de su línea. Cero filas lo usaban, y con él se fueron **dos CTE recursivas sin protección de ciclos** —dos de los seis grafos del frente 26— y **dos consultas por petición** que traían el organigrama entero. Cuatro tareas se cerraron **sin ejecutarlas**, porque el trabajo las contestó por otra vía: `A1`/`A2` las resolvió la decisión 20, y `E1`/`E2` murieron con la serie | [`plantilla-y-linea-de-proceso-2026-10.md`](./plantilla-y-linea-de-proceso-2026-10.md) | **2026-10-09** |
+| **26** · Los grafos del modelo no se defienden de sus propios ciclos | Son **SEIS** grafos, no cinco: el censo por clave ajena autorreferencial (`conrelid = confrelid`) **no ve `unit_relations`**, que es una tabla de aristas — *buscar «la columna que apunta a su tabla» encuentra los árboles y se le escapan los grafos*. El esquema tiene **cero `CHECK`**: nada impide ni `parent_id = id`. Hay **dos** guardias en código, y comparten el defecto que importa: `WITH RECURSIVE … UNION ALL` sin `CYCLE` ni límite de profundidad, o sea **se cuelgan si el ciclo ya existe** — y la vía que mete el ciclo **rodea al guardia**, porque `parent_id` es un campo `number` libre en el editor genérico de `/admin`. Remate: el guardia está a **`FNDA:0`**, ninguna prueba lo ejecuta | 🟡 **el recuento lo da `plan estado F26`** · abierto por decisión del dueño, que lo sacó del frente 25 (*«para los ciclos frente propio»*). `CI1` cerrada: el censo corrigió **tres** afirmaciones del frente 25 —eran seis grafos y no cinco, hay dos guardias y no ninguno, y hay cinco recorridos recursivos donde se dijo que no había ninguno—. Los datos de hoy están **limpios**, así que un `CHECK` de autoapuntado entra sin migrar una fila | **convertido**: `plan estado F26`; el razonamiento sigue en [`ciclos-en-los-grafos-2026-10.md`](./ciclos-en-los-grafos-2026-10.md) | **2026-10-11** |
+
+> ⚠️ **Esta tabla se auditó contra el repositorio el 2026-08-24** y cuatro filas eran falsas.
+> Lo medido, fila por fila, está en
+> [`auditoria-repo-2026-08-24.md`](./auditoria-repo-2026-08-24.md).
+>
+> ✅ **Los frentes 2 y 5 ya se pueden leer**: aquí decía que no, porque Sonar llevaba apagado desde
+> agosto y los informes de cobertura estaban caducados. **Re-medidos el 2026-10-09** (HEAD
+> `b986f9f7`, 710 commits después de la línea base), con el detalle en
+> [`referencia/calidad-y-medicion.md`](./referencia/calidad-y-medicion.md) §2.-1. Para poder medir
+> hubo que arreglar **dos herramientas que fallaban en silencio** —la cobertura del signer no podía
+> correr, y el escáner sube un análisis VACÍO en verde si se lanza desde un worktree—, así que la
+> medición trae su propia puerta: `scan.sh` comprueba que `ncloc` existe antes de dar el escaneo por
+> bueno.
+
+---
+
+## §0.1 · Punto de entrega — 2026-08-24
+
+> **Si eres un agente que acaba de llegar, empieza por aquí.** Esta sección dice dónde está todo hoy,
+> qué se puede tocar en paralelo sin chocar, y qué está esperando una decisión del dueño.
+
+### El árbol, hoy
+
+`develop` está en `bca2fc11`, con **siete commits del frente 9 recién fusionados** por avance rápido
+(sin conflicto posible: la rama iba 0 commits por detrás). Verificado **después** de fusionar, sobre
+la pila A:
+
+`check:imports` **129** · `check:sql-aliases` **438 consultas / 199 ficheros** ·
+`check:sql-comments` **199** · `test:unit` **650/650** · `test:char:run` **301/301** ·
+`gen-dbml --check` **exit 0**.
+
+| Worktree | Rama | Estado |
+|---|---|---|
+| `deasy` | `develop` | Al día. **Es el árbol principal: no se escribe aquí** (regla de entrada del `CLAUDE.md` raíz) |
+| `deasy-puestos` | `fix/puesto-borrado` | **Ya fusionado, 0 pendiente.** Retirable |
+| `develop-frente4` | `feat/frente4` | **0 commits por delante** de `develop` y limpio. No tiene nada que converger |
+
+**Ramas sin worktree que conviene conocer:**
+
+- `feat/nginx-reverse-proxy` figura **+23 por delante**, y **NO se debe fusionar**: es anterior a la
+  migración a PostgreSQL y su diff reintroduce `mariadb_schema.sql`. Comprobado que **su trabajo ya
+  está en `develop` por otra vía** — `nginx/nginx.conf` y `nginx/scripts/generate-self-signed.sh`
+  existen, y el multifirmador con sus zonas de arrastre vive en `MultiSignerPanel.vue` y
+  `FirmarPdf.vue`. Es un fósil: archivarla o borrarla, no integrarla.
+- `develop-fronted`, `develop-frontend`, `merge/nginx-reverse-proxy`, `refactor/auditoria-sonar` y
+  `main` van **0 por delante**: están contenidas en `develop`.
+
+**Pilas de Docker levantadas:** A monta `deasy`, B monta `develop-frente4`, C monta `deasy-puestos`,
+D libre. Recuerda que **la pila vive con su worktree**, no con la sesión.
+
+### Qué se puede tocar en paralelo, y qué no
+
+Dos agentes que trabajen a la vez chocan por una sola cosa: **el modelo de datos**. Todo lo demás es
+separable. Este es el reparto que no colisiona:
+
+| Se puede trabajar en paralelo | Por qué no choca |
+|---|---|
+| **Frente 3** · partir `HomeView.vue` (5 130 L) y `FirmarPdf.vue` | Componentes Vue. No tocan esquema ni servicios de datos |
+| **Frente 4** · sistema de diseño, 3.ª vuelta | Sólo CSS y plantillas Vue |
+| **Frente 2** · las 8 vulnerabilidades de Sonar | Puntuales y localizadas |
+| **Frente 6** · el microservicio de firma (8 de 12 abiertos) | Es Python, otro repo lógico |
+| **Frente 8** · deuda de volumen | Extracciones mecánicas |
+| **Defectos 1.3 y 1.7** | Uno es un servicio, el otro un bug visual |
+
+| NO se toca en paralelo | Por qué |
+|---|---|
+| **Frente 9 · D7** | Es el modelo. Cuatro decisiones del dueño pendientes, y cada una cambia el esquema |
+| **Frente 9 · D1…D6** | `withTransaction`, vocabulario de estados, migraciones, repositorios, dialecto, validación. Todas tocan la capa que D7 está definiendo |
+| **Defecto 1.19** (`signers`) | Es esquema de firma. Sus tareas `-c` y `-e` están ⛔ |
+| **Frentes 10 y 11** | Compilador y editor de plantillas. Dependen de cómo queden las ediciones (`TD7-a`, `TD7-b`) |
+
+**La regla operativa que se deduce:** quien trabaje el modelo va solo; quien trabaje presentación,
+complejidad o el firmante puede ir en paralelo sin coordinación, cada uno **en su worktree y su pila**.
+
+### Lo que está esperando una decisión del dueño
+
+Son **cuatro de D7** más una del frente 4. Ninguna es trabajo técnico pendiente; son preguntas:
+
+| | Pregunta |
+|---|---|
+| `TD7-a` | Al publicar una edición nueva se retira la anterior y **las configuraciones activas se quedan apuntando a la retirada, en silencio**. ¿Avisar, impedir publicar, o dejarlo? *(Reproducido y medido; el análisis está en la página del modelo.)* |
+| `TD7-b` | Un proceso puede lanzarse con una edición todavía en borrador, y `launch.js` **no mira `lifecycle_state`**. ¿Lo rechaza, o la invariante se sostiene por otro sitio? |
+| `TD7-e` | Los estados de documento, ronda y tarea **no están declarados en la base**. ¿Cuáles bajan, y qué estados de `tasks` son terminales? |
+| `TD7-k2` | Desactivar un puesto **no cierra su ocupación**. ¿Debe cerrarla? |
+
+### El instrumento para auditar el modelo
+
+**[La página del modelo proceso→documento](https://claude.ai/code/artifact/b51be421-a80f-4dac-b6a6-d28d9b2d5f2e)**
+recorre las 38 tablas de la cadena con todos sus campos, en 14 diagramas, y termina con los cinco
+puntos abiertos. Sus campos y relaciones salen del **catálogo de PostgreSQL en ejecución** (385
+columnas, 147 referencias), no del código ni de esta documentación — así que sirve para contrastar
+**este** plan, no sólo el esquema.
+
+> **Un `—` en la última columna no es un descuido: es que ese frente no se ha medido desde que se
+> escribió.** Antes de empezarlo, remídelo — el frente 1 se remidió al abrirlo y **una de sus cinco
+> fichas estaba mal descrita**.
+>
+> Y los frentes cuyo control detallado dice «aquí» **todavía no tienen tabla de tareas**. Escribirla es
+> el primer paso de atacarlos, no un trámite posterior.
+
+---
+
+## Frente 0 · Limpiar el modelo antes de seguir refactorizando — ✅ **CERRADO · 9 de 9** (2026-08-13) · **archivado**
+
+**Ya no hay tareas aquí.** El frente entero —las nueve fichas, los ocho sub-pasos del §0.8 y los
+cuatro hallazgos que tumbaron el plan escrito— vive en
+[`docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/`](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/).
+Se archivó el **2026-08-14** por la regla 1 del [README de planes](./README.md): ocupaba **544 líneas
+en la puerta de entrada del documento del que se sacan tareas**, y no quedaba ninguna.
+
+**Qué era:** el resto del plan refactoriza, y el modelo se contradecía a sí mismo. El caso testigo fue
+`document_owner`, **declarado retirado en un comentario y vivo 250 líneas más arriba en el mismo
+fichero** — un agente con acceso completo al repo lo leyó, lo dio por bueno y salió con el modelo
+equivocado.
+
+**Cómo acabó, medido:** cero `document_owner` en la base · cero `meta.yaml` bajo
+`System/tpl_informe_general/` · el vínculo del Proceso por defecto de 1 flujo a 0. La dirección quedó
+invertida —**la base manda, el YAML se fue**— y con ella murieron `WorkflowSyncService`, tres
+endpoints, `meta_object_key`, cinco resolvers y dos ámbitos, bajo un criterio que sigue vigente:
+**lo que la web no autora, no existe.**
+
+**Lo que dejó vivo, y ya está repartido** (no se repite aquí, regla 2 del README):
+
+| Qué quedó | Dónde está ahora |
+|---|---|
+| El **botón de sincronizar del admin da 404** — era el sub-paso 9, el único de frontend | **Frente 7** |
+| El **generador de Jinja** (S8): no es limpieza, es construcción, y depende del compilador | **Frente 10** |
+| La **fusión `task_items`/`documents`**: el §0.8 la dejó sin urgencia, y toca frontend | Sin decidir — [README del archivo](../docs-md-antiguos/planes-cerrados-2026-08/frente-0-modelo-dominio/) |
+| Las **decisiones del modelo que el frente 0 inventarió y no llegó a validar**: la edición `retired` enlazada, la invariante de `published` sin verificar, y las columnas `*_id` sin FK | **Frente 9 · fase D7** (2026-08-14) |
+
+> Las citas a **`§0.4`, `§0.6`, `§0.8`…** que aparecen más abajo (sobre todo en el frente 10) siguen
+> siendo válidas: **apuntan a ese archivo**, no a una sección desaparecida.
+
+**Y lo que aprendió está en el método, no en el archivo:** las **reglas 14 a 17** de
+[`referencia/metodo.md`](./referencia/metodo.md) —el experimento desechable, y las tres que explican
+por qué **verde no significa ni seguro, ni retirable, ni protegido**— salieron de este frente y se
+promovieron el día del cierre, porque vivían solo en su prosa.
+
+---
+
+## Frente 1 · Defectos conocidos y sin arreglar — 🟡 **15 de 30** · vive en [`defectos-conocidos/`](./defectos-conocidos/)
+
+**Lo más rentable que queda, y con diferencia**, porque no es deuda estética: son fallos que un
+usuario puede encontrarse. Y todos están **congelados en pruebas**, así que el arreglo se verifica
+solo: cuando el defecto muere, su golden cambia, y ese diff **es** la prueba.
+
+**Segundo frente con carpeta propia** (el otro es el 9), desde el **2026-08-14**. El motivo: llevaba
+**catorce fichas en una sola tabla**, nueve de ellas cerradas con párrafos de trescientas palabras, y
+leerlo para saber *qué queda* costaba más que hacerlo. **Las tareas están allí**, con su control de
+ejecución —25 tareas con estado, evidencia y fecha— y no se repiten aquí.
+
+| Defecto | Qué es | Superficie |
+|---|---|---|
+| **1.3** | Con `is_manual` y sin responsable, **cualquiera se apropia** de la solicitud al iniciarla. Congelado en `manual_autoasignacion_efecto` | Backend · servicio |
+| **1.7** | El **sello fantasma**: `previewBoxStyle` nace `{display:'none'}` y la asignación del `pointermove` no incluye `display`, así que el tercer término del `v-if` es siempre cierto | Frontend · `MultiSignerPanel.vue` |
+| **1.10** | La **única bitácora de auditoría** del sistema la puentea el camino automático. Remedido: son **tres** caminos que reasignan sin dejar asiento, no uno, y la tabla no la lee **nadie** (un `INSERT`, cero `SELECT`) | Base de datos · triggers |
+| **1.19** | El JSONB `signers` **no lo valida nadie** y manda sobre la columna que sí. Propaga **tres valores retirados** al versionar, y por eso hay dos `case` que no se pueden borrar: hacerlo dejaría el documento **sin firmante y en silencio**. Detectado el 2026-08-23 | Base de datos · firma |
+| ~~**1.11**~~ | ~~Los parámetros de más se ignoran en silencio~~ — ✅ **cerrado el 2026-08-14**: la premisa que lo justificaba era falsa (484/484 equilibradas) y ahora lanza en las dos direcciones | `backend/config/postgres.js` |
+| ~~**1.15**~~ | ~~La suite de caracterización está ROJA~~ — ✅ **cerrado el 2026-08-14**. No era un golden malo: **MinIO servía una semilla obsoleta** y el golden era correcto. Un centinela protegía las ediciones del admin y de paso bloqueaba el catálogo | Bootstrap · MinIO |
+| ~~**1.16**~~ | ~~Orden de parámetros cruzado en `context_ancestor_type`~~ — ✅ **cerrado el 2026-08-14**: eran dos `unshift` donde hacía falta un `unshift` y un `push`. Censo: 6 en el backend, **el único que antepone Y añade a la cola** | Backend · firma |
+| ~~**1.17**~~ | ~~Nada re-publica la semilla en un entorno ya arrancado~~ — ✅ **cerrado el 2026-08-14**. Se publica en **cada arranque**, así que llega al desplegar; y `test:char:fixture` resetea también `storage`, con lo que **MinIO deja de ser una entrada oculta** al sistema bajo prueba | Bootstrap · arnés |
+| ~~**1.18**~~ | ~~Al editar, `path.basename()` sobre un prefijo renombra el PDF a `pdf`~~ — ✅ **cerrado el 2026-08-14**. El predicado correcto ya existía **duplicado en dos sitios** y faltaba en el tercero. **Primer defecto del frente cuyo golden se mueve**: una línea, y `editar_ok` pasa a valer lo mismo que `crear_ok` | Backend · plantillas |
+
+**Quince cerrados**, en [`defectos-conocidos/bitacora.md`](./defectos-conocidos/bitacora.md) con su
+razonamiento entero — que es donde está el valor: hay **nueve sitios donde la corrección obvia es la
+equivocada**. Entre ellos el **1.9**, que resultó **no ser un defecto**: aplicarle el guard del IDOR
+habría dejado sin chat a 8 de 10 asignados, medido contra la base antes de tocar nada.
+
+El último en caer es el **1.8** (2026-08-14): resultó que **no eran dos documentos en conflicto, sino
+cinco**, y uno de ellos era la documentación **publicada**. Su efecto sobre el frente 7 es que **la
+deuda del contrato de errores ha dejado de crecer por desinformación**; lo que queda allí es migrar.
+
+**Criterio de cierre:** las 22 tareas del control de ejecución cerradas con su evidencia, y la carpeta
+archivada.
+
+---
+
+## Frente 2 · Seguridad: de C a B cuesta una marca; A exige una decisión — ⬜
+
+Quedan **8 vulnerabilidades**, y como siempre en Sonar **la nota la fija la peor, no el volumen**.
+
+- **C → B: una sola incidencia.** `javascript:S2612` en `backend/utils/templateArchive.js:144`, un
+  `chmod 0o755` sobre los `.sh` de un workspace temporal antes de comprimirlo. El comentario del código
+  ya explica por qué hace falta (zip preserva el modo unix y los scripts deben quedar ejecutables) y el
+  directorio se borra tras la descarga. **Es un falso positivo defendible: márcalo con esa
+  justificación**, no lo "arregles".
+- **B → A: NO es alcanzable honestamente hoy**, y conviene decirlo en vez de maquillarlo. De las 7
+  MINOR restantes, **4 son el riesgo R-1**: la contraseña del PKCS#12 viaja por **AMQP sin TLS**. Eso
+  es un riesgo real y aceptado, no un falso positivo. Marcarlo para lucir una A sería mentirle al
+  panel. Las otras 3 (`http://` a MinIO, RabbitMQ y el mailer) son endpoints internos del compose y sí
+  se pueden marcar — **dejan de ser inocuas el día que MinIO salga de la red interna**.
+
+**La decisión pendiente, que es de infraestructura y no de código:** poner TLS en el broker, o aceptar
+R-1 por escrito con su justificación. Detalle en [`referencia/signer.md`](./referencia/signer.md).
+
+**Criterio de cierre:** seguridad en **B** con el `S2612` marcado, y R-1 con una decisión escrita.
+
+---
+
+## Frente 3 · Complejidad: lo que queda son tres componentes Vue — 🟡
+
+De los **~60 `S3776`** abiertos, la cabeza ya no está en el backend.
+
+> **No cites ese número sin re-medirlo.** Al revisar el plan el 2026-08-09 había **tres cifras vivas y
+> distintas** para lo mismo: 58 aquí, **67** en `referencia/calidad-y-medicion.md` §3.2, y **61** en la
+> consulta directa a la API (`resolved=false`). Es deriva normal entre escaneos, pero el contador de
+> `S3776` **no es un indicador de progreso** —los buenos están al final de este documento—, así que
+> vale más re-medirlo el día que se necesite que mantenerlo sincronizado en tres sitios.
+
+| Cogn. | Dónde | Qué hacer |
+|---:|---|---|
+| **350** | `HomeView.vue` (**5 130 L** en un solo componente — remedido 2026-08-13; el trabajo de estilos bajó 85) | **Partirlo.** Su red de regresión es [`referencia/linea-base-homeview.md`](./referencia/linea-base-homeview.md), que existe justo para esto — pero **ojo: dos de sus filas ya no son ciertas** (el aside se rediseñó). No está «intacto»: bajó de 7 445 a 5 215 L. Lo que no se ha hecho es **partirlo** |
+| **290** | `AdminTableManager.vue` | **NO es un God y no se polimorfiza** (ver «lo que no se toca»). Su peso son **dos injertos concentrados** (`process_definition_versions`, `ediciones`): extraerlos como paneles propios |
+| **262** | `FirmarPdf.vue` | God real, 6 responsabilidades. Incluye la peor función del repo, `confirmSign` (44) |
+
+Son **900 puntos, el 11 % de toda la complejidad**, y **ningún patrón de diseño le hace nada a un
+`<template>` de 2 000 líneas**: la única cura es extraer componentes y bajar la lógica a composables
+(ver [`referencia/patrones-diseno.md`](./referencia/patrones-diseno.md) §5). Es trabajo artesanal, se
+verifica en navegador y no admite atajos.
+
+Detrás van, ya en tamaño manejable: `useAdminPresentationAdapters` (44), `useAdminDraftArtifactFlow`
+(39), `SqlAdminService.list()` (36), `genericCatalog` (33), `assignees` (33). Y en el backend hay dos
+que **nadie ha mirado nunca** y tienen el mismo olor que la fase D ya curó: `dossier_controler.js`
+(97 cogn. en 299 ncloc) y `generation/documents.js` (95).
+
+---
+
+## Frente 4 · Sistema de diseño — 🟡 (3.ª vuelta)
+
+> ⚠️ **AQUÍ NO VA EL CONTADOR, Y ESTE TÍTULO LO LLEVABA.** Decía «13 de 25 tareas» el 2026-08-20,
+> cuando iban **33 de 37**: se quedó atrás doce tareas sin que nadie lo notara, que es exactamente
+> lo que anuncia la regla 2 del [README de planes](./README.md) —un contador replicado en dos
+> sitios acaba contradiciéndose—. El número vive en la tabla del sub-plan y en ningún otro sitio.
+
+> ### ⛔ El estado de este frente vive en [`sistema-diseno-componentes/plan-2026-08-13.md`](./sistema-diseno-componentes/plan-2026-08-13.md), NO aquí.
+>
+> **Una sola numeración: `F0`…`F10`.** Si lees un número de fase de este frente en cualquier sitio,
+> es de esa tabla.
+>
+> ⚠️ **Aquí abajo hay una tabla de «pasos 1-6» que ya no se usa, y confundirla con las fases costó
+> una respuesta entera (2026-08-15).** Eran la planificación del 2026-08-09/11 —sobre **el CSS**,
+> que es la 1.ª y la 2.ª vuelta, las dos archivadas— y **sus dos pendientes ya los absorbió la 3.ª**:
+>
+> | Paso viejo | Dónde vive hoy |
+> |---|---|
+> | 1 · Fusionar los `@layer` en conflicto | cerrado en la 1.ª vuelta (`63b901e`) |
+> | 2 · Eliminar componentes muertos | cerrado en la 1.ª vuelta (`9ebe307`) |
+> | 3 · Colapsar `--deasy-*` / `--brand-*` | cerrado en la 2.ª vuelta (`6e60d74`) |
+> | 4 · Cerrar el fork `AdminButton.vue` | **= tarea `F1.3a`**, cerrada el 2026-08-14 |
+> | 5 · Migrar los colores hardcodeados | cerrado el 2026-08-13 |
+> | 6 · Las 33 incidencias de contraste | **= fase `F10`**, sin empezar |
+>
+> **La tabla se conserva porque explica de dónde viene el frente, no porque haya que seguirla.**
+> Y el paso 6 dice «fase F de la 3.ª vuelta»: **eso es un error de escritura de 2026-08-11**, de
+> cuando se confundieron las fases `F0…F10` con las fases `A…I` del plan de calidad, que son de otro
+> documento y de otro tema.
+
+> **Plan, evidencia y bitácora: [`sistema-diseno-componentes/`](./sistema-diseno-componentes/).** El frente ocupaba 20 líneas
+> aquí y necesitaba más: la medición del 2026-08-09 encontró **tres cosas que no estaban en ningún
+> plan** y que iban *antes* de los pasos ya escritos.
+>
+> **Re-auditado el 2026-08-11**, sobre el árbol de `develop` tras el merge `96f1afe`. Lo que sigue
+> **no** es el resumen de los mensajes de commit: cada línea se volvió a medir con `grep`, con
+> `lint:css` dentro del contenedor y —donde había que verlo— con `getComputedStyle` en el navegador.
+> Tres afirmaciones de la versión anterior de esta sección **eran falsas**, y van marcadas como tales
+> más abajo en vez de borradas.
+>
+> ---
+>
+> ⚠️ **ESTA SECCIÓN SE QUEDÓ EN EL 2026-08-11. NO ES EL ESTADO DE HOY.** El desarrollo del frente
+> siguió en `sistema-diseno-componentes/` y el maestro no se actualizó con él. **Manda la tabla de
+> `plan-plantillas-2026-08.md`**, no ésta. Lo que ha cambiado desde entonces:
+>
+> - **La paleta se colapsó el 08-12.** Todo `--brand-*` que se lea aquí abajo está **muerto**: hoy son
+>   `--color-primary`, `--color-line`, `--color-muted`… y **no hay `--color-white`**.
+> - **`@theme` registra 22 colores, no 16**, con una sola declaración cada uno.
+> - **La colisión `dark:` está CERRADA.** Más abajo se marca «⛔ viva»: ya no lo está — hay
+>   `@custom-variant dark` en `tokens.css`, `vue/no-restricted-class` en `error` y `check:no-dark`.
+> - **Son 18 módulos, no 15.** «La estructura nueva» de más abajo cuenta 14 + `index.css`.
+> - **F3 y F4.5 se cerraron el 08-12**, y con ellas el paso 5 con su criterio redefinido.
+> - **El 2026-08-13 se revierte el descarte de TailAdmin**: se adoptan **su paleta** (91 primitivas,
+>   con nuestros 22 tokens como alias encima) y **su markup** (repo HTML free, MIT, con atribución),
+>   **no su código Vue**. Eso contesta las cuatro decisiones que bloqueaban el cierre —foco,
+>   tipografía bajo 14 px, `z-index` y tinte de las suaves—. Rama `develop-styles`, pila **B**.
+
+El orden **no es negociable**, porque hacerlo al revés significa recodificar el conflicto en cada
+sitio donde hoy hay un color escrito a mano. Y la sesión del 2026-08-09 le añadió un principio:
+**borrar antes de migrar** — tokenizar reglas que no aplican a ningún nodo es trabajo que se tira.
+
+| # | Paso | Estado | Evidencia medida el 2026-08-11 |
+|---|---|---|---|
+| 1 | Fusionar los dos `@layer components` en conflicto | ✅ `63b901e` | Ya no existe `tailwind.css`. Los `@layer components` que quedan son **uno por módulo de familia** y no se solapan; las marcas del corte siguen anotadas en `buttons.css:36` y `auth.css:60` |
+| 2 | Eliminar los componentes muertos y su CSS | ✅ `9ebe307` + `331322d` | CSS total 3 997 → **2 054 L** *(cifra del 2026-08-13, como registro de aquel paso)*. ⚠️ **Remedido el 2026-08-24: hoy son 5 845 L en 18 módulos** — el sistema creció casi al triple desde entonces |
+| 3 | Colapsar los tokens `--deasy-*` / `--brand-*` | ✅ `6e60d74` | **Cero `--deasy-*` vivos.** Las 4 apariciones que quedan en el árbol son **comentarios** de `tokens.css` (`:44`, `:51`, `:52`, `:92`) que explican el colapso. Un solo juego, y `@theme` (`tokens.css:23-40`) registra 16 colores en Tailwind — **hoy son 22**, tras el colapso del 08-12 |
+| 4 | Cerrar el fork `AdminButton.vue` | ✅ **cerrado el 2026-08-14** (tarea F1.3a de la 3.ª vuelta) | El fichero **ya no existe**: 88 L y 11 modificadores fuera. Llevaba 2 regresiones de contraste (3.65:1) y el bug de la variante desconocida. La única mención que queda en el árbol es un comentario en `DossierDocumentActions.vue:94`, que era **su único importador** ~~El fichero **sigue vivo**: `frontend/src/modules/admin/components/ui/AdminButton.vue`. Ver abajo: el alcance es más pequeño de lo que decía el plan, y la razón que daba era falsa |
+| 5 | Migrar los colores hardcodeados | ✅ **cerrado el 2026-08-13** | `647030a` + `2f1a158` dejaron `lint:css` en **0 errores**. Pero el contador ve el CSS, no la app. Ver el desglose abajo |
+| 6 | Las 33 incidencias de contraste (`css:S7924`) | ⬜ **sin medir** → **fase F** de la 3.ª vuelta | No se puede consultar: el SonarQube es local y **no se levantó** en esta auditoría. Ver abajo qué se sabe sin él |
+
+### Paso 4 — el fork sigue ahí, pero el plan lo describía mal
+
+**Medido:** `AdminButton.vue` tiene **un solo import real** en todo el frontend,
+`modules/perfil/components/DossierDocumentActions.vue:92`. Sus **seis** usos son todos
+`variant="secondary" size="sm" icon-only` (`:3-87`), o sea **exactamente el caso divergente**:
+
+- `AdminButton.vue:82` → `props.size ? sizeClassMap[props.size] : ""` — aplica el tamaño **siempre**.
+- `AppButton.vue:93` → `props.variant !== "plain" && !props.iconOnly ? … : ""` — lo **omite** con `icon-only`.
+
+Sustituirlo quita `admin-btn--sm px-3 py-2 text-sm` a esos seis botones, así que **sí mueve el
+aspecto** y sigue pidiendo navegador. Lo que ha bajado es el riesgo: no es un fork con veintiún
+consumidores, es un fichero y una fila de botones del dossier.
+
+> ⚠️ **Afirmación falsa corregida.** Esta sección decía que `AdminButton` era el «**único emisor vivo
+> de `admin-btn--*`**». **No lo es, y no lo ha sido nunca desde que existe `AppButton`**:
+> `AppButton.vue:65-94` emite las **dos** familias (`deasy-btn--primary admin-btn--primary`…) en cada
+> botón, que es justo el peaje que `referencia/frontend.md` §3.5 ya describía. Borrar `AdminButton.vue`
+> **no** deja huérfano ningún `.admin-btn--*` del CSS.
+
+> 🪤 **Trampa de nombres, medida.** Hay 14 ficheros que escriben `<AdminButton>` en su plantilla y
+> **no usan este componente**: importan `AppButton.vue` bajo el alias `AdminButton`
+> (p. ej. `AdminFormActions.vue:24`, `AdminLookupField.vue:84`). Buscar `AdminButton` da 100+ líneas
+> y **una sola** es el fork. El grep que vale es `grep -rn "ui/AdminButton" frontend/src`.
+
+### Paso 5 — `lint:css` a cero no es «cero colores»
+
+`bash scripts/docker-env.sh dev exec -T frontend pnpm run lint:css` → **`6 problems (0 errors, 6
+warnings)`**, y los 6 son `!important` documentados en la propia línea (`dialogs.css:83,110`;
+`overrides.css:3,14,70,86`). Eso es real y hay que sostenerlo. Pero es el estado del **CSS**, y el
+grueso del color nunca estuvo ahí:
+
+| Dónde | Cuánto | ¿Lo ve `lint:css`? |
+|---|---:|---|
+| Hex de la **paleta**, `tokens.css` (34 en declaración + 5 en comentarios) | 39 | Sí, y va **silenciado a propósito** (`stylelint-disable color-no-hex` con motivo, `tokens.css:63` y `:106`). Es el sitio correcto |
+| Hex **dentro de `@apply`** en los módulos | **7** | **No.** `forms.css:28,46` (`placeholder:text-[#8a93a8]`), `nav.css:138,142` (`border-[#d6e4f2]`), `tags.css:36` (tres en una línea) |
+| `rgb()/rgba()` con triplete numérico en los módulos | **90** | **No.** El grueso está en `nav.css` (27), `buttons.css` (18) y `overrides.css` (11) |
+| Hex en `.vue` / `.js` | **123** | **No**: `lint:css` es `stylelint "src/**/*.css"`, no mira una sola plantilla |
+| `rgb()/rgba()` en `.vue` / `.js` | **37** | **No** |
+
+Y el número de cabecera: **la cifra «~1 269» no es un colores-hex, es la suma de cuatro categorías de
+`referencia/frontend.md` §3.4** (592 utilidades de paleta + 424 *arbitrary values* + 157 hex + 96
+`rgb()`). Reproduciendo ese criterio hoy sobre `frontend/src` sale **≈1 537**, o sea que **no ha
+bajado: ha subido** con el código nuevo. No es una contradicción con lo anterior — el trabajo del
+frente 4 atacó el hex del CSS, y la masa es *utility soup* de Tailwind en `HomeView.vue` (673),
+`FirmarPdf.vue` (345) y `AdminDraftArtifactModal.vue` (185). **Eso es frente 3, no frente 4.**
+
+**Criterio de cierre del paso 5, redefinido para que sea alcanzable:** los **7 hex de `@apply`** y los
+**90 `rgb()`** de `frontend/src/shared/styles/` a token, con la app idéntica. Lo de `.vue` se cierra
+partiendo los componentes, no tokenizando.
+
+### Paso 6 — lo que se sabe sin SonarQube
+
+No se levantó el servidor, así que **el contador de 33 no está re-medido**. Lo que sí está medido y
+sigue valiendo, de `docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/auditoria-color.md` §5:
+
+- El barrido de parejas `color`+`background` con hex literal en la misma regla —lo único que `S7924`
+  puede ver sin resolver cascada— daba **3 fallos, no 33**. Sonar no resuelve `var()`, no compone
+  `rgba()` sobre el ancestro y no aplica cascada entre ficheros.
+- **El contador y la accesibilidad no son la misma magnitud.** `2f1a158` dejó el CSS sin hex sueltos,
+  así que lo previsible es que `S7924` **baje casi solo en el próximo escaneo sin haber arreglado
+  ningún contraste** — el color no desapareció, se movió a `var()` y a `color-mix()`, que es
+  precisamente lo que la regla no sabe leer.
+- El fallo WCAG 1.4.11 que quedaba vivo era `.hope-action-delete-pdf:hover` a **2,90:1**. `2f1a158`
+  unificó los siete `:hover` de `.hope-action-*` en `color-mix(… 85%, var(--brand-black))`, que
+  oscurece, así que **debería haber subido** — pero eso **no está verificado** y el fondo de esa
+  familia sigue siendo `rgba()` numérico (`buttons.css:266-346`).
+
+**Criterio de cierre:** un escaneo con la cobertura regenerada + una medida de contraste real de
+`.hope-action-*` en navegador. Sin las dos cosas no se sabe si esto está hecho.
+
+### La estructura nueva (2026-08-10, `c45b154`)
+
+`theme.css` y `tailwind.css` **ya no existen**. En su lugar hay **15 ficheros** en
+`frontend/src/shared/styles/` —**hoy son 18**, tras `graph.css`, `deliverables.css` y `signatures.css`—:
+14 módulos por familia más `index.css`, que es **lo único que importa
+`main.js`** (`main.js:6`). El orden de los `@import` **no es alfabético y está explicado dentro del
+propio `index.css`** (`:1-15`): `tokens.css` primero porque todo lo demás lo consume, `overrides.css`
+el último porque tiene que ganar a las reglas de componente por orden, no por `!important`.
+
+> El módulo **`misc.css` existe** y es el 14.º: la tabla de `CLAUDE.md` no lo lista.
+
+**Los `!important` bajaron de 103 a 6**, y los 6 llevan el motivo escrito al lado.
+
+### El defecto del `<header>`: no se perdió, y ahora es peor
+
+La versión anterior de esta sección decía que la causa era
+`html[data-environment="local-dev"] header { … !important }`, que **solo afecta a dev**, y que el
+bloque `local-dev` «sigue ahí». **Las tres cosas son falsas hoy**, y conviene saber por qué:
+
+- `c45b154` **promovió el bloque entero y retiró el gate**: `grep -rn "data-environment" frontend/src`
+  da **0**. Fue lo correcto —el bloque era *el diseño* puesto tras la condición equivocada, y sin él
+  producción se veía **peor**—, pero significa que **ya no hay nada acotado a desarrollo**.
+- La regla sobrevivió intacta salvo el gate y el `!important`. Hoy es **`overrides.css:140`**:
+
+  ```css
+  header {
+    background-color: var(--brand-navy-deep);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  ```
+
+- **Medido en el navegador** (`https://localhost:8443`, con `data-environment` ya inexistente),
+  inyectando el `<header>` de `AppFormModalLayout.vue:14-17` tal cual: `backgroundColor` =
+  `rgb(7, 25, 39)` (= `--brand-navy-deep`) y el `<h2 class="text-slate-950">` encima, o sea texto
+  casi negro sobre fondo casi negro, **≈1,1:1**.
+
+**O sea: el defecto no se corrigió, se generalizó.** Antes salía en el modal «Agregar título
+académico» y solo en dev; ahora la regla es incondicional y alcanza **todo `<header>` sin utilidad de
+fondo propia** — `AppFormModalLayout.vue:14` (que es **todos** los modales de formulario del perfil),
+`ProcessGraphView.vue:142`, `UnitGraphView.vue:174` y `HomeView.vue:875,1023,1048`. Los que llevan
+`bg-white` (`SNotify.vue:14`) o un degradado (`WorkspaceChatLauncher.vue:24`) se salvan porque una
+clase (0,1,0) gana al selector de elemento (0,0,1).
+
+**Arreglo propuesto:** `overrides.css:140` no quiere ser `header`, quiere ser la cabecera del *shell*
+de la aplicación (`SHeader.vue:2`). Darle su clase y dejar el elemento en paz. Es un cambio de una
+línea, pero **cambia el aspecto de seis sitios a la vez**: pide huella de `getComputedStyle`
+antes/después, no build ni tests.
+
+> 📌 ~~`planes-cerrados-2026-08/sistema-diseno/bitacora.md` sigue diciendo que «el bloque `local-dev` de `theme.css` sigue
+> vivo»~~. **Corregido el 2026-08-11**: la bitácora ya registra la sesión del 2026-08-10 donde se
+> promovió (`c45b154`), y con ella el hallazgo de fondo — **`local-dev` no era una variante de
+> desarrollo, era el diseño tras la condición equivocada**, y promoverlo arregló 3 de los 4 fallos de
+> WCAG 1.4.11 que producción tenía.
+
+### Las tres colisiones de `tailadmin-ui`: las tres cerradas
+
+| Colisión | Estado | Evidencia |
+|---|---|---|
+| `rounded-lg` valía 16 px (escala invertida) | ✅ **cerrada** (`cdbc62b`) | No queda ni una declaración `--radius-*` en `frontend/src`. Medido en navegador: `--radius-lg` = **`0.5rem`** (8 px), o sea el valor por defecto de Tailwind v4, y la escala vuelve a ser monótona (`sm 4 < md 6 < lg 8 < xl 12 < 2xl 16`) |
+| No había `@theme`, Tailwind no conocía un solo token | ✅ **cerrada** (`6e60d74`) | `tokens.css:23-40`, 16 colores bajo `--color-*`. Ya existen `bg-brand-primary`, `text-brand-text-strong`… |
+| `dark:` se autoactivaría por `prefers-color-scheme` | ✅ **cerrada el 2026-08-11** — lo que sigue era el estado del 08-11 | `grep -rn "custom-variant" frontend/src` → **0**. Sin `@custom-variant dark`, Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)` y una receta pegada de TailAdmin pintaría en oscuro sobre una app en claro. **Fallo silencioso**, y hoy inocuo solo porque no hay **ni un** `dark:` en el árbol. El aviso está donde toca, en `tokens.css:17-20` |
+
+### La barandilla, y lo que no vigila
+
+- **stylelint** (`frontend/.stylelintrc.json`): `color-no-hex` en **error**, `declaration-no-important`
+  en **warning**. Hoy: **0 errores, 6 avisos**, y ahí se queda.
+- **`eslint-plugin-vue`** (`frontend/eslint.config.cjs:36-37`): `vue/no-static-inline-styles`
+  (`allowBinding: true`) y `vue/prefer-separate-static-class`, ambas en **error** y a cero.
+
+> ⚠️ **Afirmación obsoleta corregida.** Esta sección decía que «`pnpm run lint:css` sale en rojo a
+> propósito (151 hex) y **no debe subir**». Ya no: sale en **verde**. La regla pasa a ser **no debe
+> volver a rojo** — y con el matiz de arriba, que el verde solo cubre el `.css`.
+
+### Los cuatro scripts de `scripts/`
+
+| Script | Qué hace | ¿Se queda? |
+|---|---|---|
+| `css-radios.mjs` | Deshizo la colisión `--radius-*` reescribiendo cada uso al *utility* que pintaba ese mismo valor, en **una sola pasada** (dos `sed` encadenados mandarían los 8 px a 16) | **Un solo uso.** Su trabajo está hecho y no se repite: archivar |
+| `css-modularizar.mjs` | Troceó `theme.css` + `tailwind.css` en los 14 módulos + `index.css`. Sabe descender dentro del `@layer components` y asigna las reglas multi-selector a la familia **más tardía** para que ninguna se adelante | **Un solo uso**, pero su cabecera (`:1-20`) documenta *por qué* el orden de `index.css` es el que es: archivar el script, **conservar el comentario** |
+| `css-prune.mjs` | Poda genérica: trocea una hoja en bloques de primer nivel y borra los que solo mencionan clases sin consumidor, con **invariante de reconstrucción byte a byte** antes de escribir. Tiene modo informe (sin `--apply`) | **Se queda.** Es reutilizable y el modo informe sirve de auditoría periódica |
+| `css-hex-a-token.mjs` | Sustituye hex por `var(--token)` con dos salvaguardas ganadas a golpes: el hex corto que es prefijo del largo (`#fff` dentro de `#fff0ed`) y la autorreferencia que deja el token **sin valor** | **Se queda.** Es la herramienta del paso 5, que sigue abierto |
+
+**Criterio de cierre del frente:** pasos 4, 5 (con el criterio redefinido) y 6 cerrados, más el
+`<header>` de `overrides.css:140` acotado. Entonces `sistema-diseno-componentes/` se archiva y esto se marca ✅.
+
+> **Actualizado el 2026-08-13, con lo medido y no con lo recordado.**
+>
+> - **Paso 5 ✅.** Su mitad de CSS ya estaba cerrada; la de `.vue` se cerró aquí: **2 117 colores de
+>   familia a mano → 201**, y los que quedan no caen en ningún patrón (139 de cola larga en `class`
+>   estático, 62 dentro de una expresión). Pasan a la **fase B** de la 3.ª vuelta.
+> - **El `<header>` de `overrides.css` ✅ acotado**, y de la forma que no estaba prevista: **la regla
+>   se borró entera.** Pintaba sobre los nueve `<header>` del proyecto y cinco quedaban a ≈1,1:1 —
+>   y el único que quería ese aspecto ya lo declaraba por utilidad, con los mismos valores.
+> - **Pasos 4 y 6 siguen abiertos** y **no se tocaron en esta vuelta**. Son las fases **E** y **F**
+>   del plan nuevo, con su medición al día.
+
+> **Actualizado el 2026-08-13.** El paso 5 se cerró con F3 y F4.5 el 08-12. Lo que queda del frente
+> pasa a ser el trabajo de `develop-styles`: adoptar la paleta y el markup de TailAdmin, migrar
+> `slate-*` → `gray-*` para poder **borrar el bloque de repintados de `overrides.css`**, colapsar la
+> capa de clases propias (306 clases en 11 familias de nombres, de las que 133 se usan en un solo
+> fichero) y resolver las 53 reglas fuera de capa — incluida la del `<header>`.
+
+> ⚠️ **La primera vuelta ya está archivada; va la segunda.** El plan del 2026-08-09
+> cerró sus 6 fases y quedó archivado —sus cuatro ficheros sujeto ya no existen—, pero la medición
+> del 2026-08-11 encontró que **la deuda que queda no vive en el CSS**: son **3 590 clases de color de
+> Tailwind en las plantillas** que ningún linter ve, y **`@theme` es el cuello de botella**, no la
+> disciplina (hoy no existen `bg-state-warning` ni `text-brand-text-muted`, así que ~660 de esas
+> apariciones **no tenían alternativa**).
+>
+> **Y la segunda vuelta tambien se cerro, el 2026-08-13.** Esta archivada en
+> [`docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/`](../docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno-plantillas/),
+> y su bitacora sigue valiendo: es donde estan las trampas ya pagadas.
+>
+> **El ejecutable es ahora la TERCERA vuelta:
+> [`sistema-diseno-componentes/plan-2026-08-13.md`](./sistema-diseno-componentes/plan-2026-08-13.md).**
+> Va a por lo que un script no puede decidir: partir `HomeView` y `FirmarPdf` (8 159 lineas entre los
+> dos), los 206 colores que viven en un ternario, el `z-index` y los tags de las tablas de admin.
+>
+> Lo que la segunda vuelta dejo hecho, y que este frente ya puede dar por bueno: la paleta de
+> TailAdmin adoptada en dos capas, seis componentes declarados en un solo sitio, **cero repintados
+> de utilidad**, **cero utilidades de foco en plantillas**, y **cuatro gates encadenados a `lint`**
+> —incluido el patron de nombres de clase, que estaba en `null` y no vigilaba nada—.
+
+---
+
+## Frente 5 · Cobertura — 🟡
+
+Plan propio y ejecutable: [`referencia/cobertura.md`](./referencia/cobertura.md). Su **Fase 0 está
+hecha**; quedan las fases 1 y 2.
+
+**Lo único que hay que retener antes de mirar el 17,7 %:** el gate **no pide 80 % global** —eso sería
+trabajo de años y no es objetivo de nadie— sino **80 % de lo nuevo**. Hoy `new_coverage` va por 39,2 %.
+
+> **La regla que cierra el gate sola: toda línea nueva nace con test.** El global sube como efecto
+> secundario.
+
+Y dos trampas medidas que ahorran semanas: **dos tercios del hueco del frontend son componentes
+`.vue`** (caros y frágiles — los composables son el objetivo bueno), y en el backend **Node solo
+instrumenta lo que algún test carga**, así que la cobertura sube solo al importar módulos nuevos.
+
+---
+
+## Frente 6 · Signer — 🟡
+
+- ⬜ **Trasladar el bloque de identidad a `signer/certificates.py`** (F4 de la auditoría). Ya es
+  mecánico: el corte de complejidad está hecho (142 → 84).
+- ⬜ **La asimetría de las dos fuentes de extensiones**, que es un fallo funcional real y está
+  congelado en un test: la fuente que corre con los certificados de pyHanko **no desenvuelve los
+  `OtherName` del SAN**, así que **una AC que meta ahí la cédula da `signerCedula = None` al validar un
+  PDF**.
+- ⛔ **Tocar la firma sigue bloqueado** hasta que exista una prueba que firme un PDF real y lo valide.
+  Los 266 casos actuales sustituyen pyHanko por dobles.
+- ⬜ **Quedan 8 de los 12 riesgos abiertos** (R-1, R-4, R-5, R-6, R-7, R-9, R-10, R-12), y la
+  auditoría solo marca dos como cerrados: su tabla §7 está desfasada. El más llamativo es **R-10**:
+  el **puerto 4000 del firmante está publicado en los tres entornos** (`4000`, `14000`, `24000`) con
+  `POST /sign` operativo, **sin autenticación y sin ningún consumidor legítimo**.
+- ⬜ Y **la asimetría del SAN no tiene número R**, así que no aparece donde se buscan los riesgos.
+
+---
+
+## Frente 7 · Deuda de método y de infraestructura — ⬜
+
+Pequeña, pero es la que hace que lo demás no se degrade.
+
+| Qué | Por qué importa |
+|---|---|
+| **Sonar en CI** | El workflow ya está escrito y verificado (`.github/workflows/sonar.yml`, hace *skip* en verde sin secrets). **Lo que falta no es código**: el SonarQube es local y ningún runner lo alcanza. Hay que publicarlo con TLS o migrar a SonarCloud |
+| **`no-restricted-imports` sobre `"axios"`** | Sin esa barrera, la migración de `httpClient` se deshace sola con el primer import despistado. Es una regla en `frontend/eslint.config.cjs` con excepción para `httpClient.js` |
+| **Reconstruir las imágenes del backend** | El `unzip` explícito de los Dockerfiles **no está verificado por build** |
+| **`tmpfs: /tmp` del signer en prod** | Ya no cubre el workspace, que se movió a `/var/lib/deasy-signer`. Volverlo a RAM exige `--mount type=tmpfs,tmpfs-mode=0700` con uid: la sintaxis corta dejaría la raíz `root:root 1777`, que es el problema que se cerró |
+| **26 ficheros migrados a `httpClient` sin red unitaria** | Tres no se pudieron ejercitar ni en navegador: `FirmarPdf.vue`, `VerifyEmail.vue`, `SessionExpiryModal.vue` |
+| **El contrato de errores no se cumple** | El backend responde los errores de muchas formas a la vez, y **siguen apareciendo nuevas**. **La cifra vive en un solo sitio** (regla 4 del [CLAUDE.md](./CLAUDE.md)): el censo y su remedición están en [`referencia/contrato-errores-api.md`](./referencia/contrato-errores-api.md) §2 — la que decía aquí no se reproducía. El plan es su §6, fases B–G, **ninguna empezada**, y **empieza por el frontend** (fase B). El defecto 1.8 ya dejó **una sola doctrina escrita**, así que la deuda ha dejado de crecer por desinformación; lo que queda es migrar. Antes de la fase C, leer la nota del §6: **no hay error handler central** |
+| **El botón de sincronizar del admin llama a endpoints borrados** | Herencia del frente 0: su sub-paso 9 era el único de frontend y se quedó fuera. `apiConfig.js:101-102` declara `sync-status` y `resync`; `AdminTableManager.vue:796,804` y `AdminRecordViewerModal.vue:180-188,286-318` cablean el badge y el botón. El backend los borró en el sub-paso 8, así que **hoy dan 404 al pulsarlos** — un botón visible en el admin que no puede funcionar. Verificado el 2026-08-14. Son ~30 líneas en 3 ficheros, y **el criterio de cierre es el navegador**, no el lint |
+| **Duplicación de `createZipArchive`** | Copiado en `templateArchive.js` y `user_controler.storage.js`. Es el 40,5 % de duplicación de `templateArchive` |
+| **`deasy-analytics` es un contenedor vacío desplegado en QA y en producción** | `docker/analytics/Dockerfile` son 9 líneas que acaban en `CMD ["sleep","infinity"]`: sin `COPY`, sin `pip install`, y **no existe ningún directorio `analytics/` en el repo**. Aun así se construye en cada push, se publica en GHCR y corre con `restart: always` (`docker/compose.prod.yml:92`). **Decidir: construirlo o sacarlo del pipeline.** Mantener el sobre vacío cuesta build, superficie en prod y confusión documental |
+| **El bot de WhatsApp no puede arrancar en las imágenes publicadas** | `docker/backend/Dockerfile` fija `PUPPETEER_SKIP_DOWNLOAD=true` (líneas 4 y 31) y **no instala Chromium en ninguna de las dos etapas** — las libs de `apt` que sí instala son las de `node-canvas` (cairo/pango/jpeg/gif/rsvg), no las de un navegador. `services/whatsapp/WhatsAppBot.js` levanta Puppeteer en proceso, así que en QA y prod hay **6 rutas HTTP vivas sobre código que no puede iniciarse**. Decidir: instalar Chromium, o retirar el bot y sus rutas |
+| **`amqplib` es dependencia muerta, y el signer habla por la API de *management*** | Está en `backend/package.json:27` con **cero imports en todo el backend**. Lo que se usa de verdad es `services/infrastructure/rabbitmq_http.js`, que publica y consume por la **API HTTP de gestión** de RabbitMQ (`POST /exchanges/.../publish`, `POST /queues/.../get`), con `rabbit_signer.js:27-41` haciendo *busy-polling* cada segundo hasta 120 s. RabbitMQ documenta que `basic.get` por management API no es un consumidor de producción. Efecto medido: hasta ~240 llamadas HTTP por firma, y **una cola durable huérfana por cada timeout** (`rabbit_signer.js:20` las crea `auto_delete:false` y nadie las borra) |
+
+---
+
+## Frente 8 · Deuda de volumen que el plan no registra — ⬜
+
+Descubierto al medir el repo entero el **2026-08-09** (99 039 líneas de código: frontend 54 074 ·
+backend 40 350 · signer 4 341). El plan maestro publica **una sola** cifra de líneas —HomeView, 5 215—
+y es **exacta al dígito**. El problema no es que mienta: es que **no cubre**. Hay ~16 000 líneas en
+ficheros grandes que solo aparecen en `referencia/`, y `referencia/` **se consulta, no se ejecuta**.
+Resultado: masa sin ruta de trabajo asignada.
+
+| Qué | L | Por qué está aquí |
+|---|---:|---|
+| `backend/services/admin/templates/templateLifecycle.js` | **1 908** | **4.º fichero del repo** y cero menciones en este documento. Su carpeta (`services/admin/templates/`, 4 128 L) es el **6.º directorio**. Contradice de frente el «la cabeza ya no está en el backend» del frente 3 |
+| `frontend/src/shared/components/widgets/WorkspaceChatLauncher.vue` | 813 | **Deuda 100 % invisible: no aparece en NINGÚN fichero de `docs/planes/`.** Componente compartido, 517 L de script |
+| `backend/controllers/users/user_controler.queries.js` | 1 091 | **Fuga de capa autodeclarada**: su propia cabecera dice que es «el candidato natural a promoverse a `services/users/UserWorkspaceRepository.js` cuando se corrija la fuga de capa (SQL crudo en un controller)». El código pide el arreglo y ningún plan lo recoge. Ojo: su CC es ≈0 (824 de sus líneas son literales SQL), así que **esto no es trabajo de complejidad, es de capas** |
+| `backend/services/admin/crud/tableHooks.js` | 1 137 | **El caso que hay que decidir, no asumir.** Su cabecera lo presenta como «el equivalente backend de `FK_TABLE_MAP`» —o sea datos declarativos— pero contiene ~180 bloques de función. No está declarado no-tocar en ninguna parte |
+
+**Y una corrección a la receta del frente 3, medida:** «un `<template>` de 2 000 líneas» **solo aplica
+a HomeView** (2 118 L de marcado frente a 3 011 de script). En los otros diez `.vue` grandes el
+`<script>` es el **60–75 %** — `AdminTableManager` es 1 037 / 3 184. Tratarlos igual desperdicia
+esfuerzo: HomeView pide extraer **componentes**; los demás, **composables**.
+
+**Criterio de cierre:** los cuatro con una decisión escrita (atacar, o declarar no-tocar con su
+motivo). No hace falta refactorizarlos para cerrar el frente; hace falta que dejen de ser invisibles.
+
+---
+
+## Frente 10 · El compilador documental: auditar la rama que existe — ⬜
+
+**Existe, tiene commit propio y nunca se fusionó.** `e53a59a` (2026-04-03), en
+**`origin/feature/compilador-latex`**: *«Compilador: Implementación del micro-servicio de compilación
+de latex»*. **21 ficheros**, y no era un boceto — la carpeta `compiler/` con su README y su superficie
+HTTP, siete servicios en el backend (`DocumentCompilationPipelineService`,
+`DocumentCompilerOrchestratorService`, `DocumentCompilerPayloadService`,
+`DocumentTemplateTechnicalValidatorService` con 366 líneas, `compiler_http.js`…) y su entrada en el
+workflow de CI. **Nada de eso existe en `develop`.**
+
+Su README describe lo que el §0.4 va a necesitar: *«vivir como servicio raíz independiente,
+desplegarse con imagen propia, exponer API de compilación al backend, encapsular render, compilación
+LaTeX, storage y reportes»*, con `POST /compile`, `GET /compile/:jobId` y `POST /validate-template`.
+
+**No tiene nada que ver con `deasy-analytics`** —que sigue en pie, con su `sleep infinity`, porque la
+decisión de sacarlo del pipeline (frente 7) se tomó y **nunca se ejecutó**.
+
+#### Por qué este microservicio SÍ se gana el sueldo, y los demás no
+
+La [pregunta arquitectónica](#la-pregunta-arquitectónica-está-cerrada-2026-08-09) está cerrada: se
+evaluaron 15 arquitecturas y ninguna baja la complejidad. **Este caso es la excepción, y por los
+mismos criterios que descartaron a los demás:**
+
+- Lo que mató partir el backend fue que **el 45 % de las FKs cruzan cualquier frontera** y que **de
+  las 18 transacciones, cero quedan dentro de un solo subdominio**. Un compilador **no toca ni una
+  tabla**: no tiene ninguno de los dos problemas.
+- Los dos aislamientos que sí existen aquí se justifican por **runtime ajeno**: el `signer` está fuera
+  porque pyHanko es Python. LaTeX necesita una imagen de **TeX Live de gigabytes**, y meterla en la
+  imagen del backend —que atiende 162 endpoints— es lo contrario de lo que se hizo al sacar Puppeteer.
+- **Y hay un argumento de seguridad que los otros no tienen: compilar LaTeX es ejecutar código.**
+  `artifacts.js:16-38` ya sanea `\write18`, `\directlua`, `\openout` y `\ShellEscape` — pero eso es
+  una **lista negra**, y las listas negras se rodean. Un contenedor efímero y sin red es una defensa
+  de otra categoría.
+
+#### Lo que hay que auditar antes de fusionar nada
+
+**La rama es de abril, anterior a todo el §0.8**, y su pipeline se construyó sobre el modelo que
+acabamos de retirar — su `DocumentRuntimeService` y su `DocumentCompilerPayloadService` leían el
+`meta.yaml`. **No se fusiona a ciegas.** La auditoría tiene que decir, con evidencia:
+
+1. Qué sobrevive del diseño y qué está construido sobre lo que ya no existe.
+2. Si `DocumentTemplateTechnicalValidatorService` (366 L) cubre lo que el **S4 del §0.4** acaba de
+   hacer a mano —el balance de bloques Jinja— y si lo hace mejor.
+3. Cómo integrarlo **sin heredar la factura del `signer`**, que tiene **8 de 12 riesgos abiertos**:
+   RPC bloqueante con *busy-polling*, cero reintentos, cero DLQ, cero idempotencia, una cola durable
+   huérfana por timeout, y el puerto publicado sin autenticación en los tres entornos.
+   **Ventaja que el signer no tiene: compilar es idempotente por naturaleza** —mismo código, mismo
+   PDF—, así que reintentar es gratis y no hace falta inventar nada.
+
+**Criterio de cierre:** una decisión escrita —retomar la rama, reescribir desde su diseño, o
+descartarla— con el inventario de qué se aprovecha.
+
+> ⚠️ **PRIORIDAD SUBIDA el 2026-08-13.** Cuando se abrió este frente era «material real que estaba a
+> punto de perderse». Ya no: **el compilador es camino crítico de tres cosas a la vez**.
+>
+> 1. **La mitad de ejecución del generador (§0.4 S8).** El generador emite macros que algo tiene que
+>    rellenar con el token del firmante resuelto. Sin compilador, el §0.4 entrega el andamio pero no
+>    el circuito.
+> 2. **La vista previa del editor web (frente 11).** Y ahí es *la* pieza que da el valor — ver el
+>    resultado en segundos en vez de descargar, compilar en local y volver a subir.
+> 3. **La generación automática de PDFs**, que es el segundo mundo entero del modelo de negocio.
+>
+> Deja de ser una curiosidad histórica: **es de lo que cuelgan tres frentes.**
+
+#### Y hereda el S8 del §0.4 — el generador
+
+**Movido aquí el 2026-08-13**, al cerrar el Frente 0. El §0.4 dejó **todo el terreno preparado** —el
+ZIP compila, los campos tienen tabla y son consultables por SQL, el slot de firma es estable— pero
+**el generador en sí es construcción, no limpieza**, y su mitad de ejecución depende de este frente.
+
+**Qué falta, en concreto:**
+
+- **La mitad de autoría**: emitir `template/jinja2/Preambulo/campos.tex.j2` al guardar la plantilla, con
+  una macro por campo configurado y una por paso de firma con su token. Va en la **zona protegida**, y
+  eso no es un detalle: el re-upload rechaza protegidos modificados, así que **el usuario no puede
+  haber editado el fichero generado** — la pregunta de «¿y si ya lo tocó?» se disuelve por mecanismo.
+  Esta mitad **no depende del compilador** y se puede hacer en cualquier momento.
+- **La mitad de ejecución**: rellenar esas macros con los valores del usuario y **el token del firmante
+  resuelto**, y compilar. **Ésta sí depende de este frente.**
+
+**El criterio de éxito no es un test verde** —char fue ciega tres veces en el §0.4—: es **descargar el
+ZIP, compilar y ver el PDF con los tokens dentro**, como ya consiguió el S1 (`rc=0`, 2 páginas,
+`!-9b6D6WnuUE-!` en el texto).
+
+**Y una decisión que sigue abierta:** el modelo de campo **no tiene valor por defecto**
+(`template_artifact_fields` guarda clave, título, código, componente, grupo y obligatoriedad, pero ni
+`default` ni opciones de `select`). Sin eso, «una base con los valores configurados» solo puede emitir
+**nombres**. No bloquea la mitad de autoría —los tokens no necesitan valor— pero hay que decidirlo.
+
+---
+
+## Frente 11 · El editor web de plantillas — ⬜ · **son DOS productos, no uno**
+
+Idea del dueño (2026-08-13). Hoy el gestor sube su plantilla en Word/Excel y **un admin la pasa a
+LaTeX a mano**. La propuesta: un editor tipo Overleaf, en la web, para hacer ese paso.
+
+**Verificado antes de analizar: no existe nada.** Ni CodeMirror, ni Monaco, ni TipTap, ni ninguna
+dependencia de editor en `frontend/package.json`. La única rama relacionada es la del compilador.
+
+#### Producto A — el taller del admin (puntos 1-3) · **viable, y con el andamiaje medio construido**
+
+Controlar las semillas con interfaz de edición, crear las plantillas a partir de los formatos Word que
+la medición marque como prioritarios, y **a la larga, que el gestor las cree solo**.
+
+Técnicamente es: editor de código en el navegador + árbol de ficheros + compilar con vista previa +
+guardar. **Y casi todo lo caro ya existe, sin que se construyera para esto:**
+
+| Lo que necesita | Ya está |
+|---|---|
+| Estructura del paquete y zona editable | `Contenido/` vs protegido, con manifiesto |
+| Validación al guardar | SHA-256 del manifiesto, path traversal, saneo LaTeX |
+| Validar el Jinja | El balance de bloques del **§0.4 S4** |
+| Leer y escribir el paquete | La API de `draft` y `/source` |
+| Compilar | **Frente 10** |
+
+El editor de código es una biblioteca de estantería. **Lo que suele costar un producto así —el sandbox
+de compilación, el modelo de ficheros, la validación de lo que se sube— ya está.**
+
+**Y el punto 3 es el premio estratégico, aunque venía tercero en la lista:** *«que el gestor pueda
+crear las plantillas de manera autónoma»* es **quitar al admin del cuello de botella**, que es la
+lógica del modelo entero — medir, automatizar, delegar.
+
+#### Producto B — el editor del usuario final (punto 4) · **otro producto, decisión aparte**
+
+Que el usuario redacte sus propios informes (memorandos con tablas, figuras, imágenes) en la web.
+
+**No es lo mismo.** El usuario no debe escribir LaTeX, así que hace falta un editor visual **y una
+traducción de texto enriquecido a LaTeX** — tablas anidadas, imágenes posicionadas, saltos de página:
+donde estos proyectos se atascan.
+
+Encaja en el modelo (sería para los `routed`, libres por diseño), pero **su valor es distinto**:
+sustituye «escribo en Word, exporto, subo» por «escribo en la web». Es mejora de **experiencia**, no de
+**control** — y el control es lo que este sistema aporta. **Compartir la palabra «editor» no los hace
+el mismo producto.**
+
+#### La arquitectura: el editor NO es un microservicio
+
+Se propuso como servicio separado. **El compilador sí lo es; el editor no.**
+
+El editor es **frontend**: un navegador que habla con la API que ya existe y con el compilador. **No
+tiene runtime ajeno, no ejecuta código y no tiene estado propio** — que son los tres criterios por los
+que el `signer` y el compilador sí se ganan estar fuera. Meterlo en un servicio propio sería otra app,
+otro despliegue y otra sesión **sin ganar nada**, y es justo el error que
+[la pregunta arquitectónica](#la-pregunta-arquitectónica-está-cerrada-2026-08-09) descartó.
+
+**La forma son tres piezas, no cuatro:** editor (frontend) → backend (API existente) → compilador
+(servicio). *(La excepción sería edición colaborativa en vivo, que sí pide estado y websockets. No se
+ha pedido.)*
+
+#### El empujón en contra, que es lo que hay que tener delante
+
+**¿El dolor del admin es que no tiene buen editor, o que convertir un Word en una plantilla LaTeX
+parametrizada es trabajo de DISEÑO?** Decidir qué es fijo, qué es campo, dónde van las firmas y cómo se
+comporta con datos variables **no es teclear**. Un editor no hace ese trabajo más fácil.
+
+**Pero sí acorta brutalmente el bucle de realimentación**, y ahí es donde se va el tiempo de diseño:
+probar, mirar, ajustar. Hoy ese ciclo es descargar, editar, compilar en local, mirar, volver a subir.
+
+> **Corolario que cambia la prioridad interna: la VISTA PREVIA vale más que el editor.** Si hubiera que
+> partir este frente, lo primero no es el editor de código — es poder compilar y ver el resultado.
+
+**Criterio de cierre:** una decisión escrita sobre el producto A, con su alcance separado del B. **No
+antes del frente 10**: sin compilador, la pieza que da el valor no existe.
+
+---
+
+## Frente 9 · La capa de datos — 🟡 · **D7 a 33 de 37** · vive en [`plan_data/`](./plan_data/)
+
+**Tiene carpeta propia** —como el 1 y el 4— porque trae su propia referencia medida del esquema, y desde
+el 2026-08-14 **también su `§0 · Control de ejecución`**. Nació el
+**2026-08-09** al contestar *«¿conviene una clase por cada tabla?»* —la respuesta es **no**, razonada
+con cifras en su §1—, pero la pregunta obligó a mirar la persistencia entera y aparecieron seis
+problemas que ningún frente de aquí cubría. **Las tareas están allí**, no en este documento:
+
+| | Fase | Por qué |
+|---|---|---|
+| **D7** 🟡 | **Auditoría funcional del modelo** — **26 de 33** (2026-08-23) | Lo que el **frente 0 inventarió y no llegó a validar**, recogido aquí el 2026-08-14 al archivarlo: la edición `retired` que sigue enlazada, la invariante de `published` que descansa en un razonamiento —`launch.js` **no mira `lifecycle_state`**—, y las columnas `*_id` sin FK, dos de ellas por **descuido de tipo** (`BIGINT` contra `persons.id INT`). **Va la primera pese al número**: es la única fase que no es refactor, y sus dos primeras tareas son decisiones del dueño |
+| **D1** | Un solo `withTransaction` | **20 `beginTransaction` a mano en 11 ficheros**, cada uno con su ciclo. El helper correcto ya existe (`crud/tableHooks.js:65-92`) y solo lo usa el CRUD admin |
+| **D2** 🟡 | Un vocabulario de estados — **remedida el 2026-08-23 y muy encogida** | Era «5 sitios con 3 alfabetos» y **su efecto peligroso ya está cerrado**: `task_items.status` se retiró y el relevo dejó de mirarlo. Queda **un** vocabulario (`tasks.status`) repetido en **3 sitios** y sin `CHECK` en la base — que es lo mismo que pide `TD7-e`. Las dos se han convertido en una |
+| **D3** | Migraciones versionadas | El esquema se reaplica entero en cada arranque (`postgres_initializer.js:23-40`). Idempotente para crear, **incapaz de alterar**. Es el mayor riesgo operativo de la capa |
+| **D4** | Repositorios **por agregado** (10, no 67) | Cierra la fuga de capa del frente 8: `user_controler.queries.js` → `UserWorkspaceRepository` |
+| **D5** | Matar el traductor de dialecto | `config/postgres.js`: **241 cognitiva en 391 ncloc**, el más denso del repo, y los defectos 1.5/1.6/1.11 salieron todos de ahí. **D5-b está ⛔ hasta cerrar D5-a** — el cerrojo del 1.11 se retiró al cerrarse su censo (2026-08-14) |
+| **D6** | Validación por esquema en el borde | 0 dependencias de validación; tres capas artesanales desconectadas, y las rutas fuera del CRUD admin sin ninguna |
+
+**No contradice nada de lo de abajo.** Rechaza la clase por tabla y el ORM por el mismo criterio que
+cierra la pregunta arquitectónica: tablas y extracción, no jerarquías. Y respeta la lista de no-tocar
+—el núcleo CRUD de `SqlAdminService` y `sqlTables.js` como datos—: D2 y D4 trabajan **alrededor**.
+
+**Criterio de cierre:** las **siete** fases cerradas con sus criterios, y la carpeta archivada.
+
+**Estado del 2026-08-23.** D7 avanzó de 12 a **24 de 32** en una sesión, y el modelo del entregable
+quedó en tres piezas sin copias: **qué se debe** (`task_items`), **quién lo debe**
+(`task_item_tenures`) y **qué se produjo** (`document_versions` + su bitácora de subidas). Murieron
+tres tablas (`task_assignments`, `task_item_handovers`, `documents`) y seis columnas. Nacieron dos
+gates —`check:sql-comments` y `check:sql-aliases`— porque el SQL de este backend **no lo valida nadie
+hasta que se ejecuta esa rama**, y los dos cazaron defectos reales durante la propia sesión.
+
+**Estado del 2026-08-24 — D7 a 33 de 37, y lo que queda NO es trabajo técnico.** Se cerró la rama
+entera del censo de referencias y la limpieza del esquema:
+
+| | Qué se cerró | Lo que no se esperaba |
+|---|---|---|
+| `TD7-k` | Eliminar un puesto deja de borrar su historia | El endpoint estaba **muerto al 100 %**: sintaxis multi-tabla de MySQL, cualquier llamada daba 400 |
+| `TD7-c` | Censo de columnas sin comprobar, clasificado | Hicieron falta **cinco** categorías, no tres: **3 de las 18 no son referencias** (una generada, un UUID, un id polimórfico) |
+| `TD7-d` | Los dos `BIGINT` contra `persons.id INT` | No es que faltara la restricción: **con ese tipo no se podía declarar**. `performed_by_user_id` → `performed_by_person_id`, fósil de la tabla `users` |
+| `TD7-s` | El esquema DESCRIBE la forma y deja de migrar | Eran **20 operaciones en 11 sentencias**, todas no-op sobre una base nueva, y su precio era `persons.token` declarada **dos veces y en contradicción**. Prueba de que la forma no cambia: `gen-dbml --check` en **exit 0** |
+| `TD7-c2` | `chat_notifications` gana sus dos FKs internas | Era la **única tabla del chat sin ninguna** |
+| `TD7-c4` | El hecho duplicado en `chat_notifications` | El par polimórfico se llenaba con **constantes** y nadie lo leía |
+| `TD7-c3` | **Decisión del dueño**: las «FKs lógicas» al núcleo se comprueban | La premisa era **falsa**: `ChatAuthorizationService` ya resolvía permisos con `INNER JOIN` contra `units`/`processes`/`process_definition_versions`. Y son **once**, no diez — el censo no vio `created_by` por no acabar en `_id` |
+| `TD7-c5` | `dossiers.cedula` retirada | **No era redundante: MENTÍA.** Con la ficha en `0000000001`, el expediente seguía devolviendo `1122334455` |
+
+Medido sobre `develop` tras fusionar: `check:imports` **129** · `check:sql-aliases` **438/199** ·
+`check:sql-comments` **199** · `test:unit` **650/650** · `test:char:run` **301/301** ·
+`gen-dbml --check` **exit 0**.
+
+**Lo que queda de D7 son cuatro decisiones tuyas**, no tareas: `TD7-a` (edición retirada enlazada),
+`TD7-b` (la invariante de `published`), `TD7-e` (qué estados bajan a la base) y `TD7-k2` (si
+desactivar un puesto cierra su ocupación). Ninguna se puede avanzar sin respuesta.
+
+**El modelo entero, explicado y verificado**, está en
+[esta página](https://claude.ai/code/artifact/b51be421-a80f-4dac-b6a6-d28d9b2d5f2e): las 38 tablas de
+la cadena proceso→documento con todos sus campos, 14 diagramas, y los cinco puntos abiertos. Los
+campos salen del catálogo de PostgreSQL en ejecución (385 columnas, 147 referencias), no del código.
+
+---
+
+## Lo que NO se toca, y por qué
+
+Está detallado en [`referencia/metodo.md`](./referencia/metodo.md). El resumen, para que nadie «mejore»
+lo que ya está bien:
+
+- **`backend/config/sqlTables.js`** y su gemelo del frontend: son **datos**. La duplicación es la forma correcta.
+- **`AdminTableManager.vue`**: motor de metadatos legítimo. Extraer los injertos, **sin polimorfismo**.
+- **`useDeliverableView.js`**: proyección de solo lectura, medido. Hacerlo dueño de su estado **invertiría** el acoplamiento.
+- **`_resolveDraftRequest`** (CC 25): es una cascada de guardas y **su ORDEN es contrato** —caracterizado, y el frontend distingue los mensajes—. Convertirla en tabla es tentador y arriesgado.
+- **Los falsos positivos ya marcados** (§7 de la referencia): 28 marcas vivas, entre ellas las 23 de `S1135`, que son la palabra española «todo» en comentarios.
+- **Las 48 incidencias de ternarios anidados y las 28 de regex**: sin fase **a propósito**. Reescribir un ternario cambia estructura, no forma; las regex piden mirarse una a una y solo el ReDoS de `AgregarReferencia` tiene riesgo real. **Es deuda decidida, no olvidada.** Si se atacan, que sea por un motivo concreto, no por bajar el contador.
+
+---
+
+## La pregunta arquitectónica está cerrada (2026-08-09)
+
+Se evaluaron **quince arquitecturas** contra este repo, con medición y no con doctrina: monolítica,
+monolito modular, en capas, N-capas, SOA, microservicios, serverless, event-driven, P2P, space-based,
+hexagonal, clean, onion, DDD, y los patrones CQRS / Event Sourcing / Pipes & Filters / Blackboard /
+Broker. **Ninguna baja la complejidad cognitiva de este sistema.** Queda escrito aquí para que no
+vuelva a plantearse de cero dentro de tres meses.
+
+**Las tres pruebas son internas, no teóricas:**
+
+1. **El signer ya está distribuido al máximo** —proceso propio, runtime propio, RabbitMQ + MinIO— y es
+   **el peor fichero del repositorio** (`app.py`, cogn ~353). La separación no le quitó un punto, y le
+   añadió R-1 y R-10, que **existen únicamente porque está fuera**.
+2. **El realtime se distribuyó y se deshizo, y salió bien.** EMQX exigía un sistema de credenciales y
+   ACL espejo del de la app que nunca se construyó; al colapsarlo dentro (`RealtimeGateway.js:14-20`)
+   la autorización se **reutiliza** en vez de duplicarse.
+3. **`deasy-analytics` es el aviso**: un microservicio sin código lleva meses desplegado en QA y prod.
+   En este repo el sobre del microservicio se paga aunque esté vacío (ver frente 7).
+
+**Lo que impide cualquier corte, medido:** el **45 % de las FKs** cruzan cualquier frontera de dominio
+que se dibuje; hay **ciclos de FK bidireccionales** entre procesos ↔ plantillas ↔ firma, así que
+ningún lado puede ser dueño del dato; y de los **18 puntos de `beginTransaction`, cero quedan dentro
+de un solo subdominio** —todos abarcan 3 o 4—. Cada corte convierte transacciones ACID en sagas, sin
+tracing, sin métricas, sin logging estructurado y con un mantenedor.
+
+**Y las que «sí aplican» ya están implementadas.** Monolito modular y capas: 0 violaciones
+`routes→services`, 0 `services→controllers`, 0 `req`/`res` filtrados a `services/`. Hexagonal/Clean:
+la inyección ya existe (`constructor(pool = getPostgresPool())`), y **sin TypeScript un «puerto» es un
+comentario**. Adoptarlas formalmente es reetiquetar carpetas: **0 puntos de complejidad**.
+
+**El dato que reencuadra el problema:** `HomeView.vue`, con ~350 de complejidad agregada, tiene **cero
+incidencias `S3776` abiertas**. Su complejidad no está en ninguna función —está repartida en cientos
+de ramas planas y 2 118 líneas de `<template>`—, y **ninguna arquitectura opera a esa escala**. Lo que
+sí funcionó aquí está medido cuatro veces y es intra-función: `validateTableRules` 99→0,
+`postgres.js` 108→15, `useAdminSubmitFlow` 67→7, `saveTemplateArtifactDraft` 164→21.
+
+> Esto **extiende** la postura de [`referencia/patrones-diseno.md`](./referencia/patrones-diseno.md)
+> un piso hacia arriba: si los patrones GoF solo se ganan el sueldo en tres sitios de este repo, los
+> patrones **arquitectónicos** no se lo ganan en ninguno.
+
+**Lo único de las quince con retorno medible en complejidad**, y llega por la puerta que este repo ya
+aprueba (quitar duplicación, no añadir jerarquía): **extraer el CTE del subárbol organizacional**,
+hoy duplicado **8 veces en 5 ficheros**, con **dos bloques byte-idénticos dentro de una sola función**
+(`services/admin/generation/assignees.js:11`, cogn 33). Vale **−30 a −50 puntos**. Si se ataca, el SQL
+va probado con `PREPARE` antes de borrar cada copia, y los goldens **no se mueven**.
+
+---
+
+## Una advertencia sobre las expectativas
+
+Entre el 2026-08-06 y el 08-09 las incidencias cayeron de 832 a 373 y la deuda de 4 902 a 2 846
+minutos. **Eso no se va a repetir.** Aquella caída la produjeron seis reglas que se cerraban en bloque
+—imports muertos, `replace`→`replaceAll`, falsos `TODO`, etiquetado de formularios— y **ya están las
+seis cerradas**. Lo que queda pide criterio de una en una.
+
+Medir progreso por el contador de incidencias a partir de aquí lleva a la frustración. Los indicadores
+buenos ahora son otros: **defectos reales cerrados**, **cobertura de lo nuevo**, y que las notas no
+bajen.

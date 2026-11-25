@@ -2,10 +2,12 @@ import {
   PROCESS_DEFINITION_HIDDEN_FIELDS,
   formatTemplateArtifactFieldLabel
 } from "@/modules/admin/services/AdminTableManagerConfig";
+import { etiquetaBooleano } from "@/shared/utils/estadoTono.js";
+import { adminPresentationService } from "@/modules/admin/services/AdminPresentationService";
+import { etiquetaDeVida } from "@/modules/admin/composables/estructura/etiquetasDeVidas.js";
 
 export function useAdminPresentationAdapters({
   props,
-  allTablesMap,
   positionMetaById,
   processIdByDefinitionId,
   processDefinitionMetaById,
@@ -17,6 +19,7 @@ export function useAdminPresentationAdapters({
   formatDateTimeHour,
   formatPositionType,
   formatSelectOptionLabel,
+  hasSelectOptionLabels,
   formatAvailableFormatsSummary
 }) {
   const getViewerFieldsForTable = (tableMeta, { includeVirtual = true } = {}) => {
@@ -32,35 +35,23 @@ export function useAdminPresentationAdapters({
       }
       return true;
     });
-    if (tableMeta.table === "process_target_rules") {
-      const expandedFields = [];
-      fields.forEach((field) => {
-        expandedFields.push(field);
-        if (field.name === "process_definition_id") {
-          expandedFields.push({
-            name: "__process_name",
-            label: "Proceso",
-            type: "text"
-          });
-        }
-      });
-      return expandedFields;
-    }
-    if (tableMeta.table === "template_artifacts") {
+    // AQUI SE EXPANDIAN LOS CAMPOS DE `process_target_rules` con el nombre del proceso. Se fue con
+    // la tabla (frente 25, P26).
+    if (tableMeta.table === "ediciones") {
       return fields.map((field) => formatTemplateArtifactFieldLabel(field));
     }
     if (tableMeta.table === "process_definition_versions") {
       return fields.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
     }
-    if (tableMeta.table === "process_definition_templates" && includeVirtual) {
+    if (tableMeta.table === "vinculos" && includeVirtual) {
       const expandedFields = [];
       fields.forEach((field) => {
         expandedFields.push(field);
         if (field.name === "process_definition_id") {
           expandedFields.push(
-            { name: "__definition_series", label: "Serie", type: "text" },
+            { name: "__definition_series", label: "Variación", type: "text" },
             { name: "__definition_version", label: "Version", type: "text" },
-            { name: "__definition_status", label: "Estado de definicion", type: "text" }
+            { name: "__definition_status", label: "Estado de configuracion", type: "text" }
           );
         }
       });
@@ -92,6 +83,15 @@ export function useAdminPresentationAdapters({
   };
 
   const formatValueForTable = (tableMeta, value, field, row = null) => {
+    // UN PUNTO NO SON DOS NÚMEROS, y la lista tiene que decir lo mismo que el formulario. Va ANTES
+    // del corte por vacío porque el punto se pinta si tiene las DOS coordenadas, y `value` sólo
+    // trae una: con una nula y la otra no, aquí salía "—" y parecía que no había nada guardado.
+    if (field?.type === "geopoint") {
+      const lat = row?.[field?.pair?.lat ?? "latitud"];
+      const lng = row?.[field?.pair?.lng ?? "longitud"];
+      const vacio = (v) => v === null || v === undefined || v === "";
+      return vacio(lat) || vacio(lng) ? "—" : `${lat}, ${lng}`;
+    }
     if (value === null || value === undefined || value === "") {
       if (!["__plaza", "__position_type", "__process_name", "__definition_series", "__definition_version", "__definition_status"].includes(field?.name)) {
         return "—";
@@ -135,7 +135,7 @@ export function useAdminPresentationAdapters({
         return "—";
       }
       if (fieldName === "__definition_series") {
-        return definitionMeta.variation_key || "—";
+        return definitionMeta.linea_nombre || "—";
       }
       if (fieldName === "__definition_version") {
         return definitionMeta.definition_version || "—";
@@ -145,31 +145,49 @@ export function useAdminPresentationAdapters({
     if (["created_at", "updated_at", "created", "updated"].includes(fieldName)) {
       return formatDateTimeHour(value);
     }
-    if (tableMeta?.table === "process_definition_versions" && fieldName === "series_id") {
-      const seriesLabel = getFkCachedLabel("process_definition_series", value);
-      if (seriesLabel !== null && seriesLabel !== undefined && seriesLabel !== "") {
-        return seriesLabel;
-      }
-      return row?.variation_key || value || "—";
+    // LA BITÁCORA DE CORRECCIONES guarda el antes y el después como JSON: se enseña qué cambió.
+    if (tableMeta?.table === "correcciones_de_estructura" && ["antes", "despues"].includes(fieldName)) {
+      return adminPresentationService.formatFilaDeBitacora(value, fieldName === "antes" ? row?.despues : row?.antes);
     }
-    if (tableMeta?.table === "process_target_rules") {
-      if (["effective_from", "effective_to"].includes(fieldName)) {
-        return formatDateOnly(value);
+    // LA VIDA QUE TERMINA, en las equivalencias: su id no dice nada; el nodo y sus fechas, sí.
+    if (fieldName === "antecesor_vigencia_id") {
+      return etiquetaDeVida(tableMeta?.table, value) ?? value;
+    }
+    // UNA FECHA ES UNA FECHA. Sólo algunas columnas se formateaban, por nombre; las demás salían
+    // como llegan de la base, `2026-11-01T00:00:00.000Z`. Ahora decide el TIPO que declara el catálogo.
+    if (field?.type === "date") {
+      return formatDateOnly(value);
+    }
+    if (field?.type === "datetime") {
+      return formatDateTimeHour(value);
+    }
+    if (tableMeta?.table === "process_definition_versions" && fieldName === "linea_id") {
+      // La fila ya trae el nombre por JOIN; la caché de claves ajenas es el respaldo.
+      if (row?.linea_nombre) {
+        return row.linea_nombre;
       }
+      const lineaLabel = getFkCachedLabel("lineas", value);
+      return (lineaLabel !== null && lineaLabel !== undefined && lineaLabel !== "") ? lineaLabel : (value || "—");
+    }
+    if (["effective_from", "effective_to"].includes(fieldName)) {
+      return formatDateOnly(value);
     }
     if (tableMeta?.table === "position_assignments") {
       if (["start_date", "end_date"].includes(field?.name)) {
         return formatDateOnly(value);
       }
     }
-    if (["scope", "artifact_origin", "usage_role", "template_usage_role"].includes(fieldName)) {
+    /* Era una LISTA DE CUATRO NOMBRES escrita a mano, y por eso los otros 16 campos de
+       clasificacion salian en `snake_case` ingles. Ahora se pregunta al vocabulario: si conoce
+       el campo, traduce. Añadir una clasificacion nueva ya no exige acordarse de esta linea. */
+    if (hasSelectOptionLabels(fieldName)) {
       return formatSelectOptionLabel(field, value);
     }
     if (fieldName === "available_formats") {
       return formatAvailableFormatsSummary(value);
     }
     if (field.type === "boolean") {
-      return Number(value) === 1 ? "Si" : "No";
+      return etiquetaBooleano(value);   /* «Si» llevaba cuatro meses sin tilde */
     }
     if (isForeignKeyField(field)) {
       const tableName = resolveFkTable(field.name);
@@ -185,14 +203,6 @@ export function useAdminPresentationAdapters({
 
   const formatCell = (value, field, row = null) =>
     formatValueForTable(props.table, value, field, row);
-
-  const formatDefinitionRuleCell = (row, fieldName) =>
-    formatValueForTable(
-      allTablesMap.value.process_target_rules || { table: "process_target_rules", fields: [] },
-      row?.[fieldName],
-      { name: fieldName },
-      row
-    );
 
   const toDateInputValue = (value) => {
     if (!value) {
@@ -263,7 +273,6 @@ export function useAdminPresentationAdapters({
     buildPersonAssignmentContext,
     formatValueForTable,
     formatCell,
-    formatDefinitionRuleCell,
     toDateInputValue,
     toDateTimeInputValue,
     normalizeComparableFormValue,

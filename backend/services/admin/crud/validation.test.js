@@ -1,0 +1,453 @@
+// Tests unitarios de las reglas de negocio del CRUD administrativo.
+//
+// `validateTableRules` es la última barrera antes de escribir en ~24 tablas del
+// núcleo del motor de procesos (complejidad cognitiva 99). Un `case` roto deja
+// entrar datos inconsistentes: series sin origen, versiones sin semver, documentos
+// huérfanos.
+//
+// Ojo con lo que estos tests NO dicen: en producción, `SqlAdminService.create()`
+// comprueba los campos requeridos antes de llamar aquí, y algunas tablas tienen
+// guards propios aún antes. El mensaje que ve el usuario está fijado por los
+// characterization tests (`flows/admin_crud.test.mjs`); aquí se prueba la función
+// aislada.
+
+import test from "node:test";
+import assert from "node:assert/strict";
+
+import {
+  validateTableRules,
+  ensureDateOrder,
+  parseJsonObject,
+} from "./validation.js";
+
+const throwsWith = (fn, fragment) =>
+  assert.throws(fn, (error) => error.message.includes(fragment), `debía mencionar "${fragment}"`);
+
+// --- Tabla sin reglas ---------------------------------------------------------
+
+test("validateTableRules no hace nada con una tabla sin reglas", () => {
+  assert.doesNotThrow(() => validateTableRules("tabla_cualquiera", {}));
+  assert.doesNotThrow(() => validateTableRules("vacancies", {}));
+  assert.doesNotThrow(() => validateTableRules("processes", {}));
+  assert.doesNotThrow(() => validateTableRules("role_assignments", {}));
+});
+
+// --- Tablas de reglas declarativas -------------------------------------------
+// Diez tablas cuya regla entera es "estos campos, en este orden, y opcionalmente
+// las fechas al final". Antes del cut #10 eran `case` de un switch sin ninguna
+// prueba propia; se fijan aquí porque el orden de los mensajes ES el contrato:
+// el primer campo ausente decide qué ve el usuario.
+
+test("validateTableRules exige los campos del periodo de una configuracion, en orden", () => {
+  throwsWith(
+    () => validateTableRules("process_definition_period_types", {}),
+    "Selecciona una configuracion de proceso.",
+  );
+  throwsWith(
+    () => validateTableRules("process_definition_period_types", { process_definition_id: 1 }),
+    "Selecciona el tipo de periodo en que corre el proceso.",
+  );
+  assert.doesNotThrow(() =>
+    validateTableRules("process_definition_period_types", { process_definition_id: 1, term_type_id: 2 }),
+  );
+});
+
+test("validateTableRules exige configuracion y periodo antes de mirar las fechas de la tarea", () => {
+  throwsWith(() => validateTableRules("tasks", {}), "Selecciona una configuracion de proceso.");
+  throwsWith(
+    () => validateTableRules("tasks", { process_definition_id: 1 }),
+    "Selecciona un periodo para la tarea.",
+  );
+  // Con un requerido ausente gana su mensaje aunque las fechas también estén mal.
+  throwsWith(
+    () => validateTableRules("tasks", { process_definition_id: 1, start_date: "2026-06-01", end_date: "2026-01-01" }),
+    "Selecciona un periodo para la tarea.",
+  );
+  throwsWith(
+    () =>
+      validateTableRules("tasks", {
+        process_definition_id: 1,
+        term_id: 3,
+        start_date: "2026-06-01",
+        end_date: "2026-01-01",
+      }),
+    "en tareas",
+  );
+  assert.doesNotThrow(() => validateTableRules("tasks", { process_definition_id: 1, term_id: 3 }));
+});
+
+// ── LA RECETA ──────────────────────────────────────────────────────────────────────────────────
+//
+// AQUI HABIA TRES CASOS y los tres eran sobre tablas que se retiraron en el paso 4 de la fase 4 del
+// frente 24: la EDICION exigida en las dos cabeceras, la plantilla y el orden en un paso de entrega,
+// y la plantilla y la version en la instancia de entrega.
+//
+// ⚠️ EL ORIGEN DE UN PASO YA NO LO EXIGE ESTA CAPA, y es la unica regla que cambia de sitio en vez de
+// desaparecer. Antes el formulario pedia `edicion_id` y punto. Hoy son DOS columnas excluyentes
+// (`edicion_id` / `task_item_id`) y lo que hay que validar es que haya EXACTAMENTE UNA — algo que
+// `requires`, que exige presencia campo a campo, no sabe decir. Lo dice el `CHECK`
+// `ck_pasos_declarados_un_origen`, y por eso este test afirma que un paso SIN origen pasa por aqui:
+// si alguien añadiera un `requires(["edicion_id", ...])` por inercia, rompería la receta de runtime,
+// que cuelga del entregable.
+test("validateTableRules exige accion y orden en un paso declarado, y NO el origen", () => {
+  throwsWith(() => validateTableRules("pasos_declarados", {}), "Indica si el paso es de entrega o de firma.");
+  throwsWith(
+    () => validateTableRules("pasos_declarados", { accion: "firma" }),
+    "Define el orden del paso.",
+  );
+  // Semántica falsy deliberada: el paso 0 NO es un orden válido hoy.
+  throwsWith(
+    () => validateTableRules("pasos_declarados", { accion: "firma", orden: 0 }),
+    "Define el orden del paso.",
+  );
+  // Sin origen NINGUNO: pasa, y lo rechaza el CHECK. Y con cada uno de los dos, también pasa.
+  assert.doesNotThrow(() => validateTableRules("pasos_declarados", { accion: "firma", orden: 1 }));
+  assert.doesNotThrow(() =>
+    validateTableRules("pasos_declarados", { accion: "entrega", orden: 1, edicion_id: 55 }));
+  assert.doesNotThrow(() =>
+    validateTableRules("pasos_declarados", { accion: "entrega", orden: 1, task_item_id: 300 }));
+});
+
+test("validateTableRules exige el paso y el orden en un participante declarado", () => {
+  throwsWith(() => validateTableRules("participantes_declarados", {}), "Selecciona el paso declarado.");
+  throwsWith(
+    () => validateTableRules("participantes_declarados", { paso_id: 4 }),
+    "Define el orden del participante dentro del paso.",
+  );
+  assert.doesNotThrow(() => validateTableRules("participantes_declarados", { paso_id: 4, orden: 1 }));
+});
+
+test("validateTableRules exige version y accion en un recorrido", () => {
+  throwsWith(() => validateTableRules("recorridos", {}), "Selecciona la version de documento.");
+  throwsWith(
+    () => validateTableRules("recorridos", { document_version_id: 9 }),
+    "Indica si el recorrido es de entrega o de firma.",
+  );
+  assert.doesNotThrow(() =>
+    validateTableRules("recorridos", { document_version_id: 9, accion: "entrega" }));
+});
+
+// Era «instancia y paso en una solicitud de ENTREGA», sobre `fill_requests`. Hoy es un TURNO, de
+// cualquiera de las dos acciones, y lo que se exige cambia con el modelo: el recorrido y el
+// PARTICIPANTE. No es un renombrado: un turno apunta a la declaración que lo produjo, no al paso, y
+// por eso un paso con tres firmantes da tres turnos distinguibles.
+test("validateTableRules exige recorrido y participante en un turno", () => {
+  throwsWith(() => validateTableRules("turnos", {}), "Selecciona el recorrido.");
+  throwsWith(
+    () => validateTableRules("turnos", { recorrido_id: 2 }),
+    "Selecciona el participante declarado.",
+  );
+  assert.doesNotThrow(() =>
+    validateTableRules("turnos", { recorrido_id: 2, participante_id: 5 }),
+  );
+});
+
+// El caso de `task_assignments` vivio aqui hasta el 2026-08-23: exigia tarea y puesto al crear una
+// asignacion desde el editor generico. La tabla se retiro —era una foto del reparto que ningun
+// relevo refrescaba— y con ella su regla: la tenencia no se crea a mano, la abren los triggers y el
+// traspaso, y en el editor es de solo lectura.
+
+test("validateTableRules valida las fechas de periodos y contratos con su propia etiqueta", () => {
+  throwsWith(
+    () => validateTableRules("terms", { start_date: "2026-06-01", end_date: "2026-01-01" }),
+    "en periodos",
+  );
+  throwsWith(
+    () => validateTableRules("contracts", { start_date: "2026-06-01", end_date: "2026-01-01" }),
+    "en contratos",
+  );
+  assert.doesNotThrow(() => validateTableRules("terms", {}));
+  assert.doesNotThrow(() => validateTableRules("contracts", { start_date: "2026-01-01", end_date: "2026-06-01" }));
+});
+
+// --- process_definition_series: origen excluyente ----------------------------
+
+const LINEA_BASE = { process_id: 1, nombre: "Informe de IF", effective_from: "2026-01-01" };
+
+test("validateTableRules exige un alcance válido en una línea", () => {
+  throwsWith(
+    () => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "inventado" }),
+    "alcance valido",
+  );
+});
+
+test("validateTableRules exige la columna que corresponde a cada alcance", () => {
+  throwsWith(
+    () => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "unit_type" }),
+    "requiere seleccionar el tipo de unidad",
+  );
+  throwsWith(
+    () => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "unit_exact" }),
+    "requiere seleccionar la unidad",
+  );
+  throwsWith(
+    () => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "all_units", unit_type_id: 1 }),
+    "Solo una linea por tipo de unidad admite tipo de unidad",
+  );
+});
+
+// ESTE CASO ESTABA AL REVÉS, y el cambio de signo ES el frente 25.
+//
+// La prueba que había aquí se llamaba «prohíbe mezclar tipo de unidad y cargo en una serie» y
+// exigía que el XOR saltara. Ese XOR era el problema: los cargos del catálogo son GENÉRICOS
+// —`Coordinador`, no «Coordinador de Carrera»—, así que «el Informe de IF de los Coordinadores de
+// Carrera» necesita los DOS ejes, y al no caber en la serie había que escribir el otro en la regla
+// de reparto. La variación estaba partida en dos tablas.
+test("una línea SÍ admite cargo y tipo de unidad a la vez: es su razón de ser", () => {
+  assert.doesNotThrow(() => validateTableRules("lineas", {
+    ...LINEA_BASE,
+    nombre: "Informe de IF · Coordinadores de Carrera",
+    cargo_id: 7,
+    unit_scope_type: "unit_type",
+    unit_type_id: 3,
+  }));
+});
+
+test("validateTableRules acepta las líneas bien formadas", () => {
+  assert.doesNotThrow(() => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "all_units" }));
+  assert.doesNotThrow(() => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "unit_type", unit_type_id: 1 }));
+  assert.doesNotThrow(() => validateTableRules("lineas", { ...LINEA_BASE, unit_scope_type: "unit_exact", unit_id: 2 }));
+  // Sin cargo = cualquier cargo. Es el caso de los memos, y es el 100 % de lo que hay sembrado.
+  assert.doesNotThrow(() => validateTableRules("lineas", { ...LINEA_BASE, cargo_id: null, unit_scope_type: "all_units" }));
+});
+
+// --- process_definition_versions: semver de tres segmentos -------------------
+
+test("validateTableRules exige un semver de tres segmentos en la configuración", () => {
+  const base = { process_id: 1, linea_id: 1, effective_from: "2026-01-01" };
+  throwsWith(
+    () => validateTableRules("process_definition_versions", { ...base, definition_version: "1.0" }),
+    "tres segmentos",
+  );
+  assert.doesNotThrow(() =>
+    validateTableRules("process_definition_versions", { ...base, definition_version: "1.0.0" }),
+  );
+});
+
+test("validateTableRules valida el orden de las fechas de vigencia", () => {
+  throwsWith(
+    () =>
+      validateTableRules("process_definition_versions", {
+        process_id: 1,
+        linea_id: 1,
+        definition_version: "1.0.0",
+        effective_from: "2026-06-01",
+        effective_to: "2026-01-01",
+      }),
+    "posterior a la fecha de inicio",
+  );
+});
+
+// --- process_target_rules: LA TABLA YA NO EXISTE -------------------------------
+//
+// Aqui hubo cuatro pruebas en seis dias: el alcance (retirado en `P10`), la pareja politica/puesto
+// en los dos sentidos (retirada en `P25`) y el requerido. La tabla entera se fue en `P26`, asi que
+// lo unico que queda por fijar es que el catalogo no la nombre — si alguien la reintroduce sin
+// reglas, `validateTableRules` la dejaria pasar en silencio.
+test("process_target_rules ya no esta en las reglas de validacion", () => {
+  assert.doesNotThrow(() => validateTableRules("process_target_rules", {}));
+});
+
+// --- task_items: el entregable NO depende del origen -------------------------
+//
+// Esta prueba decia lo contrario hasta el 2026-10-04 («solo si el item nace del proceso») y fijaba
+// `origin_kind: "ad_hoc"` como la excusa para no traer el vinculo. Era la misma creencia falsa que
+// el frente 23 midio: las tareas ad-hoc cuelgan del Proceso por defecto y SI traen vinculo. Hoy la
+// columna es NOT NULL para todas las filas, asi que el requisito no tiene condicion.
+
+test("validateTableRules exige el vinculo venga el item de donde venga", () => {
+  const base = { task_id: 1 };
+  throwsWith(
+    () => validateTableRules("task_items", { ...base }),
+    "entregable definido por proceso",
+  );
+  // Y `origin_kind` ya no lo libera: un entregable anadido por el usuario tambien cuelga de un
+  // vinculo, el de la configuracion activa del proceso por defecto.
+  throwsWith(
+    () => validateTableRules("task_items", { ...base, origin_kind: "ad_hoc" }),
+    "entregable definido por proceso",
+  );
+  assert.doesNotThrow(
+    () => validateTableRules("task_items", { ...base, vinculo_id: 9, start_date: "2026-01-01" }),
+  );
+});
+
+// --- documents / document_versions: NORMALIZACIÓN IN-PLACE -------------------
+// Estas dos ramas no solo validan: MUTAN el candidato. Un refactor que las mueva
+// sin preservar la mutación rompería la escritura sin que ningún error lo delate.
+
+// Los dos primeros casos iban sobre `documents`, cuya regla era INALCANZABLE desde que la tabla murió
+// el 2026-08-23: `sqlTables.js` no la expone, así que nadie podía llegar a validarla y este test la
+// mantenía en verde. La normalización in-place —lo que de verdad había que no perder— vive en
+// `document_versions`, y es lo que estos dos casos afirman ahora.
+test("validateTableRules normaliza el estado de la versión documental in-place", () => {
+  const candidate = { status: "aprobado" };
+  validateTableRules("document_versions", candidate);
+  assert.equal(candidate.status, "Final");
+});
+
+test("validateTableRules no inventa un estado si el candidato no lo trae", () => {
+  const candidate = { version: 1 };
+  validateTableRules("document_versions", candidate);
+  assert.equal("status" in candidate, false);
+});
+
+// Y AQUI SE EXIGIA el item de tarea del documento, sobre esa misma tabla muerta. Lo que el caso
+// protegia --que el «documento suelto», con propietario y sin entregable, no volviera-- lo protege hoy
+// el modelo: no hay tabla donde ponerlo.
+
+test("la versión documental es la RONDA: un entero mayor o igual a 1", () => {
+  // Era `>= 0.1` con decimales. El número mentía: la 0.1 y la 0.2 parecían dos correcciones del
+  // mismo documento y son DOS RONDAS completas —la primera cancelada entera—. Las correcciones son
+  // ahora el segundo dígito y no se escriben aquí: son filas de `document_version_uploads`.
+  throwsWith(() => validateTableRules("document_versions", { version: 0 }), "entero mayor o igual a 1");
+  throwsWith(() => validateTableRules("document_versions", { version: "abc" }), "entero mayor o igual a 1");
+  throwsWith(() => validateTableRules("document_versions", { version: 1.5 }), "entero mayor o igual a 1");
+  assert.doesNotThrow(() => validateTableRules("document_versions", { version: 1 }));
+  assert.doesNotThrow(() => validateTableRules("document_versions", { version: 12 }));
+});
+
+// --- ediciones -------------------------------------------------------
+
+test("validateTableRules exige al menos un formato disponible en el artifact", () => {
+  throwsWith(
+    () => validateTableRules("ediciones", { base_object_prefix: "x", available_formats: "{}" }),
+    "al menos un formato",
+  );
+  assert.doesNotThrow(() =>
+    validateTableRules("ediciones", {
+      base_object_prefix: "x",
+      available_formats: '{"pdf":"x/doc.pdf"}',
+    }),
+  );
+});
+
+// --- Guards INTERCALADOS ------------------------------------------------------
+// Cuatro tablas no comprueban "todos los requeridos y luego lo demás": meten un
+// condicional o las fechas EN MEDIO de sus requeridos. El orden es el contrato —
+// decide qué mensaje ve el usuario — y es lo primero que rompería un refactor que
+// las normalizara a la plantilla declarativa. Estos tests lo clavan.
+
+// ⚠️ EXIGIA DOS: «un proceso base» y «la linea». El proceso salio de la configuracion con `P22`
+// (frente 25, 2026-10-14) porque era copia de la linea, así que pedirlo obligaba a elegir el mismo
+// dato dos veces — y nada comprobaba que las dos elecciones coincidieran.
+test("process_definition_versions intercala el semver entre sus requeridos", () => {
+  throwsWith(() => validateTableRules("process_definition_versions", {}), "Selecciona la linea de la configuracion.");
+  // El semver se exige ANTES que effective_from, aunque este también falte.
+  throwsWith(
+    () => validateTableRules("process_definition_versions", { linea_id: 1 }),
+    "tres segmentos",
+  );
+  throwsWith(
+    () => validateTableRules("process_definition_versions", { linea_id: 1, definition_version: "1.0.0" }),
+    "Selecciona la fecha de vigencia inicial",
+  );
+});
+
+test("task_items pide la tarea, luego el vinculo, y solo despues mira las fechas", () => {
+  throwsWith(() => validateTableRules("task_items", {}), "Selecciona una tarea.");
+  // El orden importa: el requerido del vinculo va ANTES del cruce de fechas, asi que una fila sin
+  // vinculo se queja del vinculo aunque tambien traiga las fechas al reves.
+  throwsWith(
+    () => validateTableRules("task_items", { task_id: 1 }),
+    "entregable definido por proceso",
+  );
+  throwsWith(
+    () =>
+      validateTableRules("task_items", {
+        task_id: 1,
+        origin_kind: "ad_hoc",
+        start_date: "2026-06-01",
+        end_date: "2026-01-01",
+      }),
+    "entregable definido por proceso",
+  );
+  throwsWith(
+    () =>
+      validateTableRules("task_items", {
+        task_id: 1,
+        origin_kind: "ad_hoc",
+        vinculo_id: 3,
+        start_date: "2026-06-01",
+        end_date: "2026-01-01",
+      }),
+    "en items de tarea",
+  );
+});
+
+test("ediciones exige el prefijo base antes de mirar los formatos", () => {
+  throwsWith(
+    () => validateTableRules("ediciones", { available_formats: "{}" }),
+    "Debes registrar el prefijo base del artifact.",
+  );
+  throwsWith(
+    () => validateTableRules("ediciones", { base_object_prefix: "x" }),
+    "al menos un formato",
+  );
+});
+
+// --- Las dos tablas restantes sin cobertura -----------------------------------
+
+test("unit_relations solo compara padre e hija cuando llegan las dos", () => {
+  throwsWith(
+    () => validateTableRules("unit_relations", { parent_unit_id: 4, child_unit_id: 4 }),
+    "no pueden ser la misma",
+  );
+  // Comparación numérica: "4" y 4 son la misma unidad.
+  throwsWith(
+    () => validateTableRules("unit_relations", { parent_unit_id: "4", child_unit_id: 4 }),
+    "no pueden ser la misma",
+  );
+  assert.doesNotThrow(() => validateTableRules("unit_relations", { parent_unit_id: 4, child_unit_id: 5 }));
+  // Con una sola de las dos no valida nada: el mensaje real lo da el hook de create().
+  assert.doesNotThrow(() => validateTableRules("unit_relations", { parent_unit_id: 4 }));
+  assert.doesNotThrow(() => validateTableRules("unit_relations", {}));
+});
+
+test("generadores_de_documento exige la IDENTIDAD siempre, y el paquete solo al tipo latex", () => {
+  // La regla vieja (`seedCodeAndSourcePath`) exigia codigo + ruta fuente a todo el catalogo, porque
+  // todo el catalogo era una semilla con paquete. Un generador `servicio` no tiene paquete: tiene
+  // `destino`. Asi que la ruta fuente se exige por TIPO, y la identidad sigue siendo obligatoria.
+  throwsWith(() => validateTableRules("generadores_de_documento", {}), "codigo y el nombre");
+  throwsWith(() => validateTableRules("generadores_de_documento", { code: "x" }), "codigo y el nombre");
+  throwsWith(() => validateTableRules("generadores_de_documento", { nombre: "N" }), "codigo y el nombre");
+  // Sin `tipo` se asume `latex`, que es lo que hoy hay en el catalogo: la ruta fuente se sigue exigiendo.
+  throwsWith(
+    () => validateTableRules("generadores_de_documento", { code: "x", nombre: "N" }),
+    "ruta fuente"
+  );
+  throwsWith(
+    () => validateTableRules("generadores_de_documento", { code: "x", nombre: "N", tipo: "latex" }),
+    "ruta fuente"
+  );
+  // Un servicio NO necesita paquete.
+  assert.doesNotThrow(
+    () => validateTableRules("generadores_de_documento", { code: "x", nombre: "N", tipo: "servicio" })
+  );
+  assert.doesNotThrow(
+    () => validateTableRules("generadores_de_documento", { code: "x", nombre: "N", source_path: "y" })
+  );
+});
+
+test("document_versions ignora la version cuando el candidato no la trae", () => {
+  assert.doesNotThrow(() => validateTableRules("document_versions", {}));
+});
+
+// --- Helpers extraídos junto a la función -------------------------------------
+
+test("ensureDateOrder solo se queja cuando el fin precede al inicio", () => {
+  assert.doesNotThrow(() => ensureDateOrder("2026-01-01", "2026-06-01", "pruebas"));
+  assert.doesNotThrow(() => ensureDateOrder("2026-01-01", null, "pruebas"), "sin fecha de fin no valida nada");
+  assert.doesNotThrow(() => ensureDateOrder(null, "2026-01-01", "pruebas"));
+  throwsWith(() => ensureDateOrder("2026-06-01", "2026-01-01", "pruebas"), "en pruebas");
+});
+
+test("parseJsonObject acepta objetos y JSON de objeto, y rechaza el resto", () => {
+  assert.deepEqual(parseJsonObject({ a: 1 }, "campo"), { a: 1 });
+  assert.deepEqual(parseJsonObject('{"a":1}', "campo"), { a: 1 });
+  assert.equal(parseJsonObject("", "campo"), null);
+  assert.equal(parseJsonObject(null, "campo"), null);
+  throwsWith(() => parseJsonObject("[1,2]", "campo"), "JSON valido");
+  throwsWith(() => parseJsonObject("{roto", "campo"), "JSON valido");
+  throwsWith(() => parseJsonObject(42, "campo"), "JSON valido");
+});

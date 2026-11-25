@@ -1,0 +1,836 @@
+/* ══ EL BOTON DE FILTRO MURIO AQUI — 2026-08-14 ═══════════════════════════════════════════
+   Eran `deasy-filter-btn` + `--icon` + cuatro reglas de repintado, y hacian dos cosas:
+
+   1. **Cambiar la geometria**: `h-10 rounded-[10px] px-3.5 font-medium`. Existia porque la
+      base del boton era `rounded-2xl` (16 px) y `font-semibold`, y un filtro no se queria ver
+      asi. Con la base ya en la geometria de TailAdmin —radio 8, peso 500— no queda diferencia
+      que declarar: el filtro es un boton normal.
+
+   2. **Repintar la variante desde fuera**, y esto era peor. Colapsaba CINCO variantes en TRES
+      aspectos: `secondary` y `softNeutral` salian identicos, y `primary` y `softPrimary`
+      tambien. O sea que la prop `variant` era una mentira en dos de cada cinco filtros — se
+      pedia un tono suave y salia un solido de marca.
+
+   Al retirarlo, cada boton pasa a declarar la variante que YA renderizaba: seis se
+   corrigieron (`softNeutral` -> `secondary`, `softPrimary` -> `primary`). Cambio visual cero
+   en esos seis, y ahora el DOM dice la verdad.
+
+   Aqui vivia tambien el dimensionado de `.deasy-filter-btn .deasy-fa-icon`, que ya estaba
+   muerto: la clase se retiro de `FontAwesomeIcon.vue` —que renderiza iconos de Tabler, no
+   FontAwesome— y la regla no podia casar con ningun nodo.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+@layer components {
+/* ── LA GEOMETRIA, ADOPTADA DE TAILADMIN EL 2026-08-14 ──────────────────────────────
+   Su base es `inline-flex items-center gap-2` + `text-sm font-medium` + `rounded-lg` +
+   `shadow-theme-xs` + `transition`. Tres deltas frente a lo que habia, y los tres se
+   notan en los 447 botones a la vez:
+
+     radio    16 px (`rounded-2xl`) -> 8 px (`rounded-lg`)
+     peso     600 (`font-semibold`) -> 500 (`font-medium`)
+     sombra   ninguna              -> `shadow-theme-xs`
+
+   ⚠️ El radio era el desorden mas visible del sistema: convivian CINCO geometrias —16 px
+   la base, 10 px el filtro, 10 px el boton de accion, 16 el de cerrar—, y cada una existia
+   porque la anterior no le servia. Con una sola, las familias que solo existian para
+   cambiar la forma se quedan sin motivo.
+
+   ⚠️ EL SUELO SUBIO A 44 — F2, 2026-08-18, y esta nota decia lo contrario hasta hoy.
+   Decia: «`min-h-10` se queda en 40 px y NO sube a los 44 de su receta […] subirlo cambia la
+   altura de fila de cada tabla y cada barra de filtros del proyecto […] va con el resto de la
+   escala en F5». **F5 cerro sin hacerlo**, y el motivo que lo aparcaba habia caducado sin que
+   nadie lo notara: cuando se escribio, el boton de fila heredaba este suelo; desde F3.2/G2 es
+   de SOLO ICONO y declara `h-9 w-9 min-h-9`, asi que es inmune. Medido en la tabla de personas
+   antes de tocar nada: de 188 botones, **172 son de fila a 36 px** y solo 2 con texto a 40.
+   La fila no se movia.
+
+   Lo que lo destapo fue propagar la receta del campo: al pasar los 79 controles sueltos a
+   `.deasy-control` (44 px), el campo y el boton quedaron **a 4 px de distancia en la misma
+   fila** —la barra del organigrama, `Buscar unidad…` junto a `Buscar`— y el escalon se veia.
+
+   El numero no es una preferencia: en TailAdmin, que es el sistema adoptado, el campo es
+   `h-11` y el boton `md` es `px-4 py-3 text-sm` = 12+20+12 = **44**. Los dos iguales. El 40
+   era el resto de lo que Deasy tenia antes. Y 44 es ademas el minimo de objetivo tactil, que
+   es exactamente el motivo con el que F6 subio el campo: dejar el boton —lo que se PULSA— por
+   debajo del umbral y el campo —lo que se escribe— por encima era justo al reves.
+
+   El padding no se toca: `--md` sigue en `px-4 py-2` y el suelo hace el trabajo, igual que
+   antes. No se mueven `--icon` (36), `--field` (52) ni el flotante: declaran su propia talla. */
+.deasy-btn {
+        /* ⚠️ EL `text-sm` VA EN LA BASE, Y NO ES DECORATIVO — F5.4, 2026-08-17.
+           Sin el, un boton sin clase de tamaño —los de solo icono— HEREDABA la letra de donde
+           estuviera (16 px), y los que llevaban `--md` la tenian en 14. Eso no se nota en el
+           texto, porque un boton de icono no lo tiene… pero **los iconos de Tabler se miden en
+           `em`**, asi que heredaban esa diferencia: en la MISMA fila de la MISMA tabla convivian
+           90 iconos de 20 px con 86 de 17,5. Era el ultimo sitio donde el boton dependia de su
+           contexto en vez de su clase. */
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border text-sm font-medium shadow-theme-xs transition-all duration-150 focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    /* ══ EL REPOSO DE TODO BOTON ES CONTORNO. EL HOVER LO RELLENA ══════════════════════════
+       Decision del dueño, 2026-08-16, y en una frase: «outline en reposo y sólido en hover»,
+       para TODOS — tambien para «Guardar».
+
+       Lo que se gana no es solo consistencia. El eje «modo» pasa de TRES valores a DOS:
+
+           antes                                    ahora
+           `{tono}`          relleno del token      `{tono}`      contorno -> solido al hover
+           `{tono}Outline`   contorno               `{tono}Soft`  relleno palido (badge de icono)
+           `{tono}Soft`      relleno al 6 %
+
+       Porque si el reposo de todos es contorno, entonces `primaryOutline` **es** `primary` y
+       `dangerOutline` **es** `danger`: eran la misma cosa con dos nombres en cuanto la regla
+       dejo de tener excepciones. Mueren las dos, 84 usos reasignados. Y `neutralOutline` pierde
+       el sufijo por lo mismo — cuando el contorno es el reposo de todos, nombrarlo es ruido.
+
+       ⚠️ LO QUE ESTO CUESTA, y hay que saberlo: **el pie de un formulario pierde la jerarquia
+       de PESO**. «Guardar» y «Cancelar» eran solido azul contra contorno gris; ahora son dos
+       contornos y lo que los separa es el color, no la presencia. La accion principal deja de
+       tener el unico tratamiento solido de la pantalla. Es un intercambio deliberado: se cambia
+       jerarquia por homogeneidad, y el hover recupera el solido justo cuando lo apuntas.
+
+       ⚠️ POR QUE PASA EL CONTRASTE. El texto ya no va en blanco sobre el token, va en el token
+       sobre blanco — y la razon es la misma que lo justificaba antes, porque el contraste es
+       simetrico: primary 4.84 · success 5.41 · warning 5.43 · danger 6.57. Los cuatro sobre 4.5
+       (AA texto). El borde es el token entero, asi que cumple 1.4.11 (3:1) de sobra. Y al pasar
+       el raton se invierte a blanco sobre el token, que son las mismas cifras.
+
+       Cada variante declara SOLO su tono; la receta esta escrita una vez, y el `:hover` de las
+       cinco vive abajo con el de todas las demas. */
+    .deasy-btn--primary-outline { --tone: var(--color-primary); }
+    .deasy-btn--success-outline { --tone: var(--color-success); }
+    .deasy-btn--warning-outline { --tone: var(--color-warning); }
+    .deasy-btn--danger-outline  { --tone: var(--color-danger); }
+
+    .deasy-btn--primary-outline,
+    .deasy-btn--success-outline,
+    .deasy-btn--warning-outline,
+    .deasy-btn--danger-outline {
+        @apply bg-white;
+        border-color: var(--tone);
+        color: var(--tone);
+    }
+
+    /* EL NEUTRO no se deriva de un token de color, asi que va aparte y con sus propios valores.
+       Era `--secondary`, y su renombrado pago una deuda vieja de la fase 6: `buttons.css`
+       declaraba justo lo que hay aqui —borde `line-strong`, texto `body`— y **no era lo que se
+       veia**, porque dos reglas SIN CAPA de `overrides.css` lo repintaban a borde `line` y texto
+       `strong`. Una regla suelta le gana a cualquier regla capada. Estaban ahi para vencer a
+       `.deasy-table-responsive .deasy-btn--secondary` (0,2,0), que tambien se ha ido; sin ninguna
+       de las dos, el boton renderiza por fin su propia receta, que ademas es la de TailAdmin
+       (`border-gray-300`, `text-gray-700`). */
+    .deasy-btn--neutral-outline {
+        @apply bg-white;
+        border-color: var(--color-line-strong);
+        color: var(--color-body);
+    }
+
+    /* ── LAS CUATRO VARIANTES SUAVES ─────────────────────────────────────────────────
+       Cada una declara SOLO su token; la receta esta una vez, abajo. Antes eran cuatro
+       copias de la misma idea escritas con los tintes -50/-200/-300 de Tailwind, dentro
+       de un `@apply` donde `color-no-hex` no entra.
+
+       ⚠️ `--soft-neutral` NO entra en la receta: su gris no es un estado, no se deriva de
+       un token de color y su hover ya vive en la escala de superficie. */
+    /* Cada variante declara TRES piezas, y cada una tiene su trabajo:
+         --tone         el color del sistema (paso -700). Es el que se usa con TEXTO encima.
+         --tone-soft    el relleno del badge de TailAdmin: su paso -50 REAL, no una mezcla.
+         --tone-bright  el paso -600, el color de icono de su badge. Mas vivo que el -700. */
+    .deasy-btn--primary-soft {
+        --tone: var(--color-primary);
+        --tone-soft: var(--color-brand-50);
+        --tone-bright: var(--color-brand-600);
+    }
+    .deasy-btn--success-soft {
+        --tone: var(--color-success);
+        --tone-soft: var(--color-success-50);
+        --tone-bright: var(--color-success-600);
+    }
+    .deasy-btn--warning-soft {
+        --tone: var(--color-warning);
+        --tone-soft: var(--color-warning-50);
+        --tone-bright: var(--color-warning-600);
+    }
+    .deasy-btn--danger-soft {
+        --tone: var(--color-danger);
+        --tone-soft: var(--color-error-50);
+        --tone-bright: var(--color-error-600);
+    }
+    .deasy-btn--info-soft {
+        --tone: var(--color-info);
+        --tone-soft: var(--color-blue-light-50);
+        /* ⚠️ SU BADGE USA `blue-light-500` AQUI, y es el unico de los cinco que no vale: sobre
+           su propio `-50` da **2.59** y un icono pide 3:1. `-600` da 3.75. Es la misma
+           desviacion que ya hace el tag, y por el mismo motivo. */
+        --tone-bright: var(--color-blue-light-600);
+    }
+
+    /* ⚠️ AQUI VIVIA `--soft-action-upload` — muerta el 2026-08-16, y por medicion.
+       Declaraba `--tone: var(--color-action-upload)` pero sus `--tone-soft` y `--tone-bright`
+       eran **los de la marca**, prestados. Y sus 4 usos eran todos `icon-only`, o sea que
+       siempre renderizaba por la receta de icono de aqui abajo, que solo usa esos dos: fondo
+       `rgb(236,243,255)`, icono `rgb(54,65,245)` — **el mismo pixel que `--primary-soft`**,
+       comprobado en el navegador antes de tocarla. Su tono propio no llegaba a la pantalla.
+       Con ella se va `--color-action-upload` de `tokens.css`, que no tenia otro consumidor. */
+
+    /* ⚠️ EL RELLENO DE REPOSO TIENE DOS VALORES, y no es un matiz: se lo come el contenido que
+       lleva encima. §2.4 de `frontend/CLAUDE.md`, medido — **6 % si encima va TEXTO** (que pide
+       4.5:1) y **10 % si encima va un ICONO** (que pide 3:1). Al 10 % con texto, `--color-warning`
+       da 4.39 y NO pasa AA.
+
+       Antes esto vivia partido: la familia suave al 6 % fijo, y los 12 botones de accion de tabla
+       —que son de icono— con su propia familia al 9, 10 y 11 %, tres porcentajes para una regla.
+       Ahora el eje es UNO: `--tone-fill`, que el modificador de icono sube a 10 %.
+
+       Comprobado antes de unificar: lo que WCAG 1.4.11 exige es el borde contra LA FILA, no
+       contra su propio relleno, y eso **no depende del porcentaje** — success 3.14, danger 3.86,
+       warning 3.23, ver 3.84, subir 3.69. Y el icono sobre el relleno al 10 % queda entre 4.71 y
+       6.43. Las dos condiciones pasan en los seis tonos. */
+    .deasy-btn--primary-soft,
+    .deasy-btn--success-soft,
+    .deasy-btn--warning-soft,
+    .deasy-btn--danger-soft,
+    .deasy-btn--info-soft {
+        border-color: color-mix(in srgb, var(--tone) 71%, var(--color-white));
+        background: color-mix(in srgb, var(--tone) var(--tone-fill, 6%), var(--color-white));
+        color: var(--tone);
+    }
+
+    /* ── EL BOTON DE ICONO SUAVE ES EL BADGE DE TAILADMIN ────────────────────────────
+       Adoptado el 2026-08-14 despues de comparar cuatro tratamientos en el navegador. Su
+       badge claro es `bg-{fam}-50` + `text-{fam}-600` **y NO lleva borde**; lo que teniamos
+       era un relleno DERIVADO con `color-mix` al 10 %, que sale mas gris que su paso `-50`
+       —`#e6f2ed` frente a `#ecfdf3`— y un icono en el `-700`, mas apagado. Se notaba a
+       simple vista, y por eso el dueño lo pidió.
+
+       ⚠️ POR QUE SOLO EL DE ICONO. Encima de un boton suave CON TEXTO va texto, que pide
+       4.5:1, y el `-600` sobre el `-50` da entre 3.34 y 4.44: no llega. Un icono pide 3:1 y
+       si llega. Es el mismo reparto que ya hace `--tone-fill`, y la razon es la misma: lo
+       que decide el color no es la variante, es lo que lleva encima.
+
+       ⚠️ Y POR QUE SIN BORDE. Derivar el borde al 71 % de un tono MAS CLARO lo deja por
+       debajo del minimo: con el `-600`, success da 2.52, warning 2.41 e info 2.64 contra la
+       fila blanca. O borde con el tono oscuro, o sin borde con el claro — y el badge de
+       TailAdmin no lo lleva. Lo que identifica el control pasa a ser el icono, que queda
+       entre 3.34 y 5.83.
+
+       Contraste medido, icono sobre su relleno: success 3.54 · danger 4.44 · warning 3.34 ·
+       info 3.75 · subir 5.83. Los cinco por encima de 3:1. */
+    .deasy-btn--icon.deasy-btn--primary-soft,
+    .deasy-btn--icon.deasy-btn--success-soft,
+    .deasy-btn--icon.deasy-btn--warning-soft,
+    .deasy-btn--icon.deasy-btn--danger-soft,
+    .deasy-btn--icon.deasy-btn--info-soft {
+        border-color: transparent;
+        background: var(--tone-soft);
+        color: var(--tone-bright);
+    }
+
+    /* El neutro no se deriva de un token de color —su gris no es un estado— asi que no entra en
+       la receta de arriba y lleva su `:hover` pegado, en la escala de superficie. */
+    .deasy-btn--neutral-soft {
+        @apply border-line bg-surface text-strong hover:border-line-strong hover:bg-gray-100 hover:text-navy;
+    }
+
+    /* ══ AQUI VIVIAN LAS SOLIDAS — 2026-08-16 ══════════════════════════════════════════════
+       `--success`, `--warning` y `--danger` declaraban relleno del token y texto blanco. Hoy su
+       reposo es el contorno de arriba y ese relleno es su `:hover`. Se conservan las dos cosas
+       que aquel bloque habia aprendido y siguen valiendo:
+
+       · `--success` llevo `emerald-600`, que contra texto blanco da 3.65:1 y NO llega al 4.5 de
+         AA; `--color-success` da 5.41. `--danger` paso de `red-600` (4.77) a 6.57. Esas cifras
+         son las que ahora sostienen el hover, porque el contraste es simetrico: da igual que el
+         blanco este encima o debajo.
+       · el eje `--tone`: cada variante declara su token y la receta se escribe una vez. Eran
+         tres cuerpos identicos salvo el nombre del color, y ahora son cuatro con `--primary`.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
+
+    /* ── EL HOVER DE TODAS, EN UN SITIO ──────────────────────────────────────────────
+       `@media (hover: hover)` es exactamente lo que Tailwind compila a partir de
+       `@apply hover:` — comprobado en el CSS construido. Escrito asi porque un
+       `hover:bg-[color-mix(in_srgb,var(--tone)_16%,var(--color-white))]` son 55
+       caracteres para decir «16 %».
+
+       ⚠️ NO SE PUEDE VERIFICAR CON DEVTOOLS MCP: ese Chrome dice `(hover: hover) = false`
+       —no tiene raton— asi que nada de este bloque existe alli, aunque el elemento si entre
+       en `:hover`. Se lee la regla del CSSOM. Cuarta trampa de `frontend/CLAUDE.md`.
+
+       ── LA DIRECCION, §5.2: el hover es el MISMO color, mas presente ────────────────
+       Nunca otro color y nunca mas claro. Antes las siete iban cada una a su aire con la
+       escala de Tailwind, y tres aclaraban el borde al pasar el raton.
+
+       Y desde el 2026-08-16 la regla es mas fuerte, por decision del dueño — **el reposo de
+       todo boton es contorno y el hover lo RELLENA**. No es solo consistencia:
+
+         · lo que habia en los contornos era «contorno con un 6 % de relleno», que es casi
+           invisible. Es el mismo defecto que §5.2 documenta del boton de eliminar, medido a
+           ΔE 1.08: la regla existia y el ojo no la veia.
+         · un contorno que se rellena dice lo que va a pasar al pulsar. Un contorno que se
+           oscurece un poco no dice nada.
+         · y mata la ultima anomalia del sistema: `--secondary` hovereaba a AZUL y `--cancel`
+           a ROJO, o sea las dos unicas variantes que cambiaban de color en vez de intensificar
+           el suyo. Las dos eran accidentes con fecha, no diseño.
+
+       Con la regla aplicada a los cuatro tonos, `--primary` deja de ser la excepcion que era:
+       hasta hoy **no tenia `:hover` propio** —el unico boton del sistema que no reaccionaba al
+       raton— y no se le daba uno para no repintar los primarios de golpe. Ahora reacciona como
+       los demas, y el cambio de golpe es justo lo que se pidio.
+
+       ⚠️ `--neutral` ES LA EXCEPCION QUE QUEDA, y va declarada: el neutro NO TIENE SOLIDO. Un
+       gris oscuro relleno convertiria en botones casi negros los 81 «Buscar», «Recargar» y
+       «Regresar» de la aplicacion al pasar el raton. Hoverea a su propia forma suave —el
+       relleno de `--neutral-soft`— que es la misma direccion: mas presente, no otro color. */
+    @media (hover: hover) {
+        .deasy-btn--primary-soft:hover,
+        .deasy-btn--success-soft:hover,
+        .deasy-btn--warning-soft:hover,
+        .deasy-btn--danger-soft:hover,
+        .deasy-btn--info-soft:hover {
+            border-color: color-mix(in srgb, var(--tone) 85%, var(--color-white));
+            background: color-mix(in srgb, var(--tone) 16%, var(--color-white));
+            color: color-mix(in srgb, var(--tone) 85%, var(--black));
+        }
+
+        /* El de icono no recupera el borde al pasar el raton: intensifica el relleno y
+           oscurece el icono, que es la direccion de §5.2 —el mismo color, mas presente— sin
+           introducir un limite que en reposo no existe. El 16 % derivado queda por debajo del
+           paso `-50`, asi que el hover se ve mas, no menos. */
+        .deasy-btn--icon.deasy-btn--primary-soft:hover,
+        .deasy-btn--icon.deasy-btn--success-soft:hover,
+        .deasy-btn--icon.deasy-btn--warning-soft:hover,
+        .deasy-btn--icon.deasy-btn--danger-soft:hover,
+        .deasy-btn--icon.deasy-btn--info-soft:hover {
+            border-color: transparent;
+            background: color-mix(in srgb, var(--tone) 16%, var(--color-white));
+            color: color-mix(in srgb, var(--tone) 85%, var(--black));
+        }
+
+        /* CONTORNO -> SOLIDO. El texto pasa a blanco, y los cuatro tonos lo aguantan con su
+           relleno entero: primary 4.84 · success 5.41 · warning 5.43 · danger 6.57. Los cuatro
+           por encima de 4.5 (AA para texto) — son las MISMAS cifras que justificaban el texto
+           blanco cuando estas variantes eran solidas en reposo, porque el contraste no depende
+           de cual de los dos colores esta encima. */
+        .deasy-btn--primary-outline:hover,
+        .deasy-btn--success-outline:hover,
+        .deasy-btn--warning-outline:hover,
+        .deasy-btn--danger-outline:hover {
+            border-color: var(--tone);
+            background: var(--tone);
+            color: var(--color-white);
+        }
+
+        .deasy-btn--neutral-outline:hover {
+            border-color: var(--color-line-strong);
+            background: var(--color-gray-100);
+            color: var(--color-navy);
+        }
+
+        /* ⚠️ AQUI ESTABA EL HOVER DE LAS SOLIDAS —el token al 85 % hacia negro— y borrarlo era
+           OBLIGATORIO, no limpieza: venia DESPUES del bloque de arriba con la misma
+           especificidad (0,2,0), asi que le habria ganado por orden de aparicion y los cuatro
+           tonos seguirian oscureciendo en vez de rellenar. La regla nueva no habria pintado y
+           el CSS habria compilado igual de bien. */
+    }
+
+    /* LA ✕ DE LA ESQUINA. Una sola declaracion, y desde el 2026-08-14 un solo radio.
+       Tenia TRES: la base daba 8 px, esta lo subia a 16 (`rounded-2xl`, resto de la geometria
+       anterior) y `dialogs.css` lo volvia a bajar a 8.8 px (`0.55rem`) para los que viven
+       dentro de un panel — que son casi todos. Tres reglas para un boton.
+
+       Los valores que se quedan son los del diálogo, no los de aqui: `--color-line-field` de
+       borde y `--color-icon` de icono, que es lo que de verdad renderizaban las ✕ de los
+       modales. Las dos que viven fuera de un panel (`AdminFeedbackToast` y la del velo) se
+       alinean con ellas. */
+    .deasy-btn--close {
+        @apply h-9 w-9 min-h-9 rounded-lg border bg-white p-0 hover:border-line-strong hover:bg-surface hover:text-navy;
+        border-color: var(--color-line-strong);
+        color: var(--color-icon);
+    }
+
+    /* ── NAVEGACION DE SECCION — no es un boton, y por eso ya no se llama asi ────────
+       Era `deasy-btn--menu`, una "variante" del boton. No lo era: tiene **estado activo**, y
+       eso es lo que separa navegar de ejecutar — un boton no esta "activo". Ademas traia una
+       geometria que ningun boton tiene (ancho minimo de 9.5rem, gradiente propio, y el salto de
+       1px al pasar el raton que a los de accion se les quito por homogeneidad).
+
+       Se queda como BLOQUE propio hasta que G7/G8 construyan el componente de navegacion; ahi
+       se pliega con las pestañas y los elementos de menu. Lo que importa hoy es que el boton
+       deje de fingir que es esto.
+
+       ── LA FORMA ES EL «BUTTON GROUP» DE TAILADMIN (2026-08-14) ──────────────────────
+       Su mecanica son tres piezas y las tres importan:
+         · el CONTENEDOR lleva la sombra (`.deasy-section-nav-group`), no cada boton;
+         · el borde se dibuja con `ring-1 ring-inset`, no con `border`, para que el
+           solapamiento no sume grosor;
+         · `first:rounded-l-lg last:rounded-r-lg` redondea SOLO los extremos, y el `-ml-px`
+           desde el segundo colapsa los bordes contiguos en una sola linea.
+
+       Se adopta su variante PRIMARY y no la secondary: en su demo la secondary deja el
+       activo en `text-gray-800` y el inactivo en `gray-700`, que a ojo es lo mismo — un
+       selector de seccion tiene que decir cual esta puesto. En primary el activo es solido
+       y el inactivo va en contorno, que es la distincion que hace falta.
+
+       Contraste: `--color-primary` sobre blanco da 4.84 (texto del inactivo) y el blanco
+       sobre `--color-primary`, lo mismo por simetria. Las dos pasan AA. */
+    .deasy-section-nav-group {
+        @apply inline-flex items-center shadow-theme-xs;
+    }
+
+    .deasy-section-nav {
+        @apply inline-flex items-center gap-2 bg-white px-4 py-3 text-sm font-medium text-primary ring-1 ring-inset ring-primary transition first:rounded-l-lg last:rounded-r-lg;
+    }
+
+    .deasy-section-nav + .deasy-section-nav {
+        margin-left: -1px;
+    }
+
+    .deasy-section-nav--active {
+        @apply bg-primary text-white;
+    }
+
+    /* [2026-08-15] AQUI ESTABA `deasy-section-nav--stacked`, Y DURO UN DIA.
+     *
+     * Se creo para el selector de modos del chat, tratandolo como un «grupo de botones de
+     * seccion». El dueño lo miro y dijo lo evidente: eso es una pestaña, y todas las pestañas
+     * tienen que verse igual. Tenia razon — elegir el modo del chat y elegir la seccion de un
+     * entregable son la misma accion, asi que el bloque es `deasy-inline-tab` (nav.css) con su
+     * modificador `--stacked`, no un bloque aparte que se le parece. */
+
+    @media (hover: hover) {
+        .deasy-section-nav:hover {
+            @apply bg-primary text-white;
+        }
+    }
+
+    /* EL ICONO LO MIDE EL BOTON, NO LA LIBRERIA — F5.4, 2026-08-17.
+       Los botones ya median todos igual y aun asi se veian distintos, porque **el icono de
+       dentro no lo gobernaba nadie**. Medido en la tabla de personas: 91 iconos de 17,5 px
+       conviviendo con 86 de 20, en las mismas filas. Son dos librerias con dos criterios:
+       · los `tabler-icon` se miden en `em`, asi que heredaban la letra del boton;
+       · los SVG en linea de las acciones de fila traen `width="20" height="20"` **en el
+         atributo**, o sea que no heredaban nada.
+       Ninguno de los dos es del sistema. Aqui se fija uno: 20 px, que es el de las recetas
+       adoptadas y el que deja 8 px de aire a cada lado dentro del cuadrado de 36.
+
+       ⚠️ Se declara como DESCENDIENTE (`.deasy-btn svg`) y no como hijo directo a proposito:
+       la mitad de los iconos van envueltos en un `<span>`. Y una utilidad en la plantilla
+       sigue ganando —vive en `@layer utilities`, que va despues de `components`—, asi que el
+       boton flotante del chat conserva sus 32 px sin necesidad de excepcion. */
+    .deasy-btn svg,
+    .deasy-btn img {
+        @apply h-5 w-5;
+    }
+
+    /* ANCHO MINIMO — para el boton de crear de una cabecera, cuyo rotulo cambia segun la tabla
+       («Agregar», «Configurar proceso»…) y sin un suelo saltaria de tamaño entre pantallas.
+       Venia de `admin-page-header__create`, que vivia en la familia de la CABECERA aunque no era
+       una cabecera: era esto. Se muda aqui con F6.L6 (2026-08-17). */
+    .deasy-btn--wide {
+        min-width: 8.75rem;
+    }
+
+    .deasy-btn--md {
+        @apply px-4 py-2;   /* la letra la pone la base, para todos por igual */
+    }
+
+    /* EL BOTON CUADRADO DE ICONO. Absorbe `hope-action-btn`, que era su copia con otro nombre:
+       misma caja (era 2.25rem = h-9/w-9; hoy 2.75rem), mismo `padding: 0`.
+
+       · `--tone-fill: 10%` — encima va un icono, no texto. Ver la receta suave mas arriba.
+       · `rounded-lg` (8 px) y `shadow-theme-xs` son la geometria ADOPTADA de TailAdmin, que
+         estrena aqui. El resto de los botones la reciben en la tarea 3.3; hasta entonces convive
+         con el `rounded-2xl` heredado del bloque, y es a proposito: 35 nodos son suficientes para
+         calibrar el aspecto y demasiado pocos para que una equivocacion cueste cara.
+       ⚠️ El `min-h-11` NO es redundante con el `h-11`: `.deasy-btn` declara un suelo, y un
+         `min-height` mayor gana a la altura. Sin el, el boton saldria del ancho del icono por el
+         alto del suelo y dejaria de ser cuadrado. Hoy los dos valen 44 y el par parece
+         redundante; se conserva porque **es lo que mantiene la caja cuadrada el dia que el suelo
+         vuelva a subir**, que es exactamente lo que paso en agosto. Antes lo tapaba de rebote la
+         regla de densidad de tabla (`min-height: 2rem`), que ya no le aplica — o sea que el fallo
+         aparecio al arreglar otra cosa, y lo caza `getComputedStyle` en el navegador, no el CSS
+         servido.
+
+       · Lo que NO se hereda de `hope-action-btn`: su `margin: 0 0.15rem` —el espacio entre
+         botones lo pone el contenedor con `gap`, no el boton— y su `transform: translateY(-1px)`
+         al pasar el raton, que ningun otro boton del sistema tiene. Homogeneizar es que el mismo
+         boton se comporte igual en todas partes. */
+    /* ⚠️ 44 PX DESDE EL 2026-08-20, Y ANTES ERAN 36. Lo pidio el dueño al ver que «Regresar»,
+       «Buscar» y «Actualizar» se habian quedado pequeños al lado de «Agregar».
+       No fue una regresion de un cambio suyo: **fue quedarse quieto mientras el resto subia**. El
+       boton con texto paso de 40 a 44 el 18-08 (F5.4, para dejar de ir a 4 px del campo), y este
+       se quedo en 36 — el escalon paso de 4 px a 8 y ahi si se ve.
+
+       Un boton mide 44, tenga texto o no: el de solo icono es el MISMO objeto con la huella
+       cuadrada, que es lo que dice F5.4 —«un boton con texto mide lo mismo en TODA la
+       aplicacion»— aplicado al que no lo tiene.
+
+       🪤 EL MIEDO ERA EL ALTO DE FILA, Y SE MIDIO ANTES DE TOCAR NADA. `--icon` lo comparten los
+       4 botones de barra y las **172 acciones de fila** de la tabla de personas, y el propio
+       comentario de `min-h-9` presumia de hacerlas «inmunes cuando el suelo sube». Simulado a 44
+       en los 172: **la fila sigue midiendo 85 px y la tabla 3715 — delta CERO**. El alto de fila
+       lo gobierna el texto de las celdas, no el boton, que iba sobrado de sitio. */
+    .deasy-btn--icon {
+        @apply h-11 w-11 min-h-11 rounded-lg p-0 shadow-theme-xs;
+        --tone-fill: 10%;
+    }
+
+    
+}
+@layer components {
+    /* ⚠️ EL `:not(--icon)` ES LO QUE DESBLOQUEA LA FASE 3, y no es un parche.
+       Esta regla es de DENSIDAD: aprieta el padding, el tamaño de letra y la altura de los
+       botones dentro de una tabla. Nada de eso le aplica a un boton CUADRADO de icono, que no
+       tiene texto ni padding y cuya caja es su definicion.
+
+       Y era el ultimo motivo por el que los 12 `hope-action-*` no podian entrar en una capa: al
+       ser (0,2,0) le ganaba a cualquier `.deasy-btn--*` (0,1,0), asi que los botones de accion
+       solo conservaban su cuadrado por estar FUERA DE CAPA. Medido en su dia: capados sin esto,
+       239 nodos del organigrama se pintaban como un secundario cualquiera. Excluyendo la forma
+       que la regla no gobierna, la familia entera pudo morir. */
+    /* ══ AQUI VIVIA LA CUARTA GEOMETRIA DEL BOTON — muerta el 2026-08-17 ═══════════════════
+       Un boton dentro de una tabla media **32 px con letra de 13 y radio 12**, frente a los
+       40 / 14 / 8 de fuera. No era una variante: era la POSICION cambiando el objeto, y por eso
+       nadie podia responder a «¿el Agregar de una tabla es del mismo tamaño que el del
+       organigrama?». No lo era.
+
+       La regla se defendia como densidad, y el argumento es real —una tabla de admin pinta 172
+       botones a la vez—. Pero la densidad se pide, no se hereda: si un boton tiene que ser mas
+       pequeño, eso es un tamaño con nombre que el llamante elige, no algo que le pase por estar
+       dentro de un contenedor. Con `sm` retirado (medido: no era un tamaño) y esta regla fuera,
+       **un boton con texto mide lo mismo en toda la aplicacion, sin excepcion** — 40 px cuando
+       se escribio esto, **44 desde F2 (2026-08-18)**, para que coincida con el campo.
+
+       ⚠️ Su `:not(--icon)` no era un parche y conviene no perder el motivo: la regla era (0,2,0)
+       y le ganaba a cualquier `.deasy-btn--*` (0,1,0), asi que los botones cuadrados de accion
+       solo conservaban su forma por vivir FUERA de capa. Al morir la regla, esa presion
+       desaparece entera.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
+
+    /* ══ AQUI VIVIAN LAS DOS REGLAS DE `--secondary` EN TABLA — muertas el 2026-08-16 ══════
+       Y con ellas se paga la deuda de fase 6 que este fichero llevaba meses señalando.
+
+       El nudo era circular y las dos puntas estaban escritas: `.deasy-table-responsive
+       .deasy-btn--secondary` (0,2,0) vivia AQUI, dentro de `@layer components`, repintando el
+       reposo; y dos reglas SIN CAPA de `overrides.css` existian **solo para ganarle** —una regla
+       suelta le gana a cualquier regla capada, tenga la especificidad que tenga—. Resultado: el
+       reposo lo decidia `overrides.css`, el `:hover` gris de aqui NO PINTABA NUNCA (verificado
+       sobre el CSS construido el 2026-08-14), y la receta declarada en la variante tampoco
+       llegaba al DOM. Tres reglas para un boton, y la que se leia no era ninguna de las tres.
+
+       Al renombrar `--secondary` a `--neutral-outline` (F4) el nudo se deshace solo: sin la
+       pareja suelta de `overrides.css` no hace falta nada que le gane, y la variante renderiza
+       por fin lo que declara. La decision que esta regla guardaba —que en tabla el secundario
+       hoverea GRIS y no azul de marca— no se tira: es exactamente lo que hace hoy el
+       `:hover` de `--neutral-outline`, y ahora en toda la aplicacion, no solo dentro de una
+       tabla. Un caso especial menos en el camino generico.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
+
+    /* ⚠️ DENTRO DE UNA TABLA, `--primary-soft` ES UN CONTORNO PALIDO, y es a proposito: se
+       probaron los dos tratamientos sobre la tabla de personas (178 botones a la vez) y el
+       relleno hacia que la columna pesara mas que los datos.
+
+       Y por eso su `:hover` NO adopta el contorno->solido: aqui el reposo ya es mas claro que
+       fuera, asi que el salto a solido seria el doble de brusco que en cualquier otro sitio.
+       Es la unica excepcion a la regla, y esta acotada a un contexto.
+
+       (Acompañaba a `--primary-outline`, que ya no existe: al pasar TODO el sistema a contorno
+       en reposo, esa variante era `--primary` con otro nombre.) */
+    /* ══ Y AQUI EL COLOR TAMBIEN CAMBIABA POR CONTEXTO — muerto el 2026-08-17 ═════════════
+       `--primary-soft` se pintaba mas palido dentro de una tabla que fuera. Estaba razonado
+       —se probo sobre la tabla de personas, 178 botones a la vez, y el relleno pesaba mas que
+       los datos— y aun asi es el mismo defecto que la regla de arriba con otra propiedad: el
+       boton deja de ser lo que dice su clase y pasa a depender de donde este. Si en una tabla
+       hace falta un tono mas palido, eso es una VARIANTE que se pide. */
+
+    /* ══ Y AQUI SE FORZABA `--primary` A SOLIDO DENTRO DE UNA TABLA — muerto el 2026-08-16 ══
+       Era la ultima regla que contradecia la decision del dueño: el «Agregar» de la cabecera de
+       cada tabla habria seguido siendo el unico boton relleno de toda la aplicacion, y por vivir
+       en un selector (0,2,0) le habria ganado a la variante sin que nadie lo notara. Ahora el
+       primario de tabla es contorno como el de fuera, con la densidad que le da la regla de
+       `:not(--icon)` de mas arriba —que es lo unico que un contexto tiene derecho a cambiar—.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
+
+}
+@layer components {
+    /* ══ LA FAMILIA `deasy-auth-button` MURIO AQUI — 2026-08-15, G9 ════════════════════════
+       Eran tres clases (`--secondary`, `--compact`) en 11 usos de las cinco vistas de acceso, y
+       eran **la quinta geometria**: la que el inventario listaba como «propia» y la unica que
+       sobrevivio a la unificacion de la tarea 3.3.
+
+           radio    16 px (`rounded-2xl`)   frente a los 8 del sistema
+           peso     600 (`font-semibold`)   frente a 500
+           sombra   `shadow-none`           frente a `shadow-theme-xs`
+           fondo    `var(--gradient-angled)`  un DEGRADADO, donde el resto usa color plano
+
+       ⚠️ **Se pierde el degradado del boton de «Ingresar», y es a proposito.** Por §1-bis la
+       funcion de «Ingresar» es la misma que la de «Guardar»: ejecutar la accion principal de un
+       formulario. Un degradado es aspecto, no estructura ni contrato, asi que no justifica una
+       familia aparte — justificaria como mucho una variante, y una variante que solo usan cinco
+       pantallas de las cuarenta es una excepcion disfrazada.
+
+       Se lleva por delante dos cosas mas:
+         · `--gradient-angled` en `tokens.css`, que **no tenia otro consumidor**;
+         · dos reglas de `overrides.css` FUERA DE CAPA que repintaban `--secondary`, o sea deuda
+           de la fase 6 que se va sin tocarla.
+
+       Lo unico que hacia falta de verdad era el ancho completo, y eso es `--block`, aqui abajo.
+       ══════════════════════════════════════════════════════════════════════════════════════ */
+
+    /* ANCHO COMPLETO — el boton ocupa la fila.
+       Es lo unico que `deasy-auth-button` aportaba y el sistema no tenia: el pie de un formulario
+       de acceso quiere el boton de lado a lado. Antes viajaba como `w-full` en el atributo, o
+       peor, venia de serie en el bloque y habia que DESHACERLO con `w-auto px-5` / `w-auto px-6`
+       — dos paddings distintos en la misma barra, asi que los botones de cada lado no median
+       igual. Ahora se pide cuando se necesita, que es al reves y es lo correcto. */
+    .deasy-btn--block {
+        @apply w-full;
+    }
+
+    /* A LA ALTURA DEL CAMPO — cuando el boton va PEGADO a un input o a un textarea y las dos
+       cajas tienen que casar. El composer del chat lo necesita dos veces (adjuntar y enviar,
+       junto a un textarea de `min-h-13`), y los dos lo llevaban como `h-[52px]` en el atributo
+       — uno de ellos ademas con `w-[52px]`, o sea la medida repetida en dos ejes y en dos
+       botones. 52 px NO es un tamaño del sistema (los tres son 32/36/44) y por eso no entra en
+       la escala: es una medida de ALINEACION, y el nombre lo dice. (2026-08-15, G10.) */
+    .deasy-btn--field {
+        @apply h-13 min-h-13;
+    }
+
+    /* Y si ademas es de solo icono, cuadrado — si no, hereda el ancho de `--icon` (36 px) y
+       queda un rectangulo de 36×52 al lado del textarea. */
+    .deasy-btn--field.deasy-btn--icon {
+        @apply w-13;
+    }
+
+    /* EL BOTON FLOTANTE — uno solo en toda la aplicacion: el que abre el chat.
+       Va `fixed` sobre el contenido, asi que no puede compartir la caja del sistema: necesita
+       ser redondo, grande y con sombra de elevacion para despegarse de la pagina. Estaba entero
+       en el `class-name`, 18 utilidades. */
+    .deasy-fab {
+        @apply fixed bottom-6 right-4 inline-flex h-14 w-14 items-center justify-center rounded-xl border border-line bg-white text-info transition hover:-translate-y-0.5 hover:border-blue-light-200 hover:bg-blue-light-50 focus:outline-none focus:ring-4 sm:right-6 sm:h-16 sm:w-16;
+        z-index: var(--z-boton-chat);
+        box-shadow: 0 1px 2px rgba(var(--elev-ink-rgb), 0.05), 0 14px 34px rgba(var(--elev-ink-rgb), 0.12);
+    }
+
+
+}
+/* ══ LOS 12 BOTONES DE ACCION DE TABLA MURIERON AQUI — 2026-08-14 ═══════════════════════
+   Eran `hope-action-btn` + 12 modificadores, ENTEROS FUERA DE CAPA, y este fichero y
+   `overrides.css` los sostenian a medias: aqui la caja y los `:hover`, alli los reposos.
+
+   No eran un componente aparte: eran `.deasy-btn--icon` con la familia suave, escritos otra
+   vez con otro nombre. La prueba, byte a byte: su `:hover` es la receta de `--soft-*`
+   (borde 85 %, relleno 16 %, texto 85 % sobre negro) y su caja es la de `--icon`
+   (2.25rem cuadrados, `padding: 0`). Lo unico que de verdad los distinguia era el relleno de
+   reposo —9, 10 y 11 % frente al 6 %—, y eso no era una variante: es la regla de §2.4 para lo
+   que lleva un ICONO encima. Hoy es el eje `--tone-fill`.
+
+   Los 12 colapsan a cinco tonos: success (editar, seleccionar, asignar, lanzar), danger
+   (borrar x2), `--soft-info` (ver), `--soft-action-upload` (versionar, descargar,
+   subir) y warning (borrar PDF, retirar).
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+
+/* ══ AQUI HABIA UN TERCER TAMAÑO, Y NO SE LLAMABA DE NINGUNA MANERA — F5.4, 2026-08-17 ══
+   Dos reglas cambiaban el boton segun DONDE estuviera, no segun lo que fuera:
+
+       .deasy-action-bar .admin-btn,
+       .admin-page-header__actions .admin-btn      { min-height: 2.45rem }   -> 39.2 px
+       … .deasy-btn--md   { padding-inline: 1rem; font-size: 0.94rem }       -> 15.04 px
+
+   O sea que el MISMO `md` se pintaba con dos letras distintas —14 px en la barra del
+   organigrama y 15.04 en su cabecera— y los botones de icono de esas zonas subian de 36 a
+   39.2. Tres alturas y dos letras para dos tamaños declarados.
+
+   Lo vio el dueño mirando la pantalla, no ningun gate: `check:control-size` vigila que una
+   PLANTILLA no pise la altura de un control, y esto la pisaba desde el CSS y por contexto.
+   Ninguna medicion del componente aislado lo encuentra — hay que mirar el boton EN SU SITIO.
+
+   Se retiran las dos. Un `md` mide lo mismo en toda la aplicacion: 40 px al escribir esto,
+   **44 desde F2 (2026-08-18)**, y 14 px de letra.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+
+
+/* ── BtnSera — el boton de estado del envio a la SERA, con su tooltip y su modal ───────
+   ⚠️ Las clases `btnsera*` y `sera-*` las COMPONE `BtnSera.vue` desde un mapa: un grep de
+   la clase literal las da por muertas. Y el prefijo es obligatorio — dentro de su
+   `<style scoped>` se llamaban `.icon` y `.tooltip`, que en un modulo alcanzarian a los
+   26 `.icon` de otros ocho componentes. */
+
+@layer components {
+    .btnsera {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.25rem;
+      height: 2.25rem;
+      border: none;
+      border-radius: 9999px;
+      background: transparent;
+      cursor: pointer;
+      transition: transform 0.2s ease, color 0.2s ease, background-color 0.2s ease;
+      --tooltip-bg: var(--color-accent);
+    }
+
+    .btnsera:hover {
+      transform: scale(1.04);
+      background: color-mix(in srgb, var(--color-navy) 4%, transparent);
+    }
+
+    .btnsera__icon {
+      width: 1.25rem;
+      height: 1.25rem;
+      stroke-width: 2.1;
+    }
+
+    /* El color del boton Y el de su tooltip salen del mismo sitio: el tooltip hereda
+       `--tooltip-bg`, asi que basta declararlo una vez por estado. */
+
+    .sera-send {
+      color: var(--color-accent);
+      --tooltip-bg: var(--color-accent);
+    }
+
+    .sera-review {
+      color: var(--color-success);
+      --tooltip-bg: var(--color-success);
+    }
+
+    .sera-certified {
+      color: var(--color-gold);
+      --tooltip-bg: var(--color-gold);
+    }
+
+    .sera-denied {
+      color: var(--color-danger);
+      --tooltip-bg: var(--color-danger);
+    }
+
+    .btnsera__tooltip {
+      visibility: hidden;
+      position: absolute;
+      top: 50%;
+      left: calc(100% + 8px);
+      transform: translateY(-50%);
+      background-color: var(--tooltip-bg);
+      color: var(--color-white);
+      padding: 0.35rem 0.5rem;
+      border-radius: var(--radius-md);
+      font-size: 0.8rem;
+      line-height: 1.2;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+      pointer-events: none;
+      z-index: var(--z-capa-emergente); /* el globo del boton, sobre sus hermanos */
+    }
+
+    .btnsera:hover .btnsera__tooltip {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    /* ── El modal de estado ─────────────────────────────────────────────────────────── */
+
+    .btnsera-status__body {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btnsera-status__icon {
+      width: 3rem;
+      height: 3rem;
+      border-radius: 9999px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .btnsera-status__icon-svg {
+      width: 1.5rem;
+      height: 1.5rem;
+    }
+
+    .btnsera-status__copy {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+    }
+
+    .btnsera-status__label {
+      font-size: 1rem;
+      color: var(--color-navy);
+    }
+
+    .btnsera-status__message {
+      margin: 0;
+      color: var(--color-muted);
+      font-size: 0.92rem;
+      line-height: 1.45;
+    }
+
+    .btnsera-status--pending {
+      color: var(--color-accent);
+      background: color-mix(in srgb, var(--color-accent) 12%, var(--color-white));
+    }
+
+    .btnsera-status--reviewed {
+      color: var(--color-success);
+      background: color-mix(in srgb, var(--color-success) 12%, var(--color-white));
+    }
+
+    .btnsera-status--certified {
+      color: var(--color-gold);
+      background: color-mix(in srgb, var(--color-gold) 14%, var(--color-white));
+    }
+
+    .btnsera-status--denied {
+      color: var(--color-danger);
+      background: color-mix(in srgb, var(--color-danger) 12%, var(--color-white));
+    }
+
+    /* LA ACCION EN LINEA — «Quitar», «Desvincular»
+     *
+     * No es un `deasy-btn` y no debe serlo: el bloque base pone caja, borde, alto minimo (44 px
+     * desde F2; 40 cuando se escribio esto) y sombra, y esto vive DENTRO de una linea de lista, al lado del texto que retira. Si fuera
+     * un modificador de `deasy-btn` tendria que deshacer las cinco cosas que el bloque pone, que
+     * es la senal de que no era una variante. Bloque propio, como `deasy-tab` (§2-bis).
+     *
+     * Estaba escrito CUATRO veces (2026-08-15, G5): `ProcessGraphView` («Desvincular»),
+     * `UnitGraphView` («Quitar», dos veces) y `GeneralTaskModal` («Quitar»). Y las cuatro copias
+     * discrepaban en las dos unicas cosas que tenian:
+     *
+     *   - el tamano, `text-theme-xs` en tres y `text-theme-xs` (= 11.2 px) en la cuarta. Distintos
+     *     de verdad, pero por 0.2 px: nadie lo decidio, se copio mal.
+     *   - el hover, `hover:underline` en tres y `hover:text-danger` en la cuarta — que sobre un
+     *     texto que YA es `text-danger` no hace absolutamente nada. O sea que uno de los cuatro
+     *     no tenia realimentacion al pasar el raton.
+     *
+     * Se queda el subrayado: sobre un texto de 11 px, cambiar de color no se percibe, y el
+     * subrayado es ademas lo que WCAG pide cuando el color es el unico distintivo. */
+    .deasy-inline-action {
+        @apply cursor-pointer border-0 bg-transparent p-0 text-theme-xs font-semibold transition-colors hover:underline focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .deasy-inline-action--danger {
+        @apply text-danger;
+    }
+
+    /* Los otros tres tonos salieron al censar G2 por estructura (2026-08-15): la fila de una
+       configuracion en el panel de procesos lleva SEIS de estas —«Editar», «Reglas»,
+       «Disparadores», «Plantillas», «Ver», «Lanzar»— y las seis estaban escritas a mano con
+       `font-semibold text-X hover:underline`. Mismo objeto que el «Quitar» de arriba, y por eso
+       mismo bloque: lo unico que cambia es el tono. */
+    .deasy-inline-action--primary {
+        @apply text-primary;
+    }
+
+    .deasy-inline-action--neutral {
+        @apply text-icon;
+    }
+
+    .deasy-inline-action--success {
+        @apply text-success;
+    }
+}

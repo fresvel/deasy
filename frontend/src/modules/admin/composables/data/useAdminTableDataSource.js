@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 
@@ -53,7 +53,8 @@ export function useAdminTableDataSource({
     const selectedPositionType = includePositionTypeFilter ? sourceFilters.position_type : "";
     const cargoFilter = selectedCargoId ? { filter_cargo_id: selectedCargoId } : {};
     const positionTypeFilter = selectedPositionType ? { filter_position_type: selectedPositionType } : {};
-    const positionActiveFilter = onlyActive ? { filter_is_active: 1 } : {};
+    // «Sólo los activos» son los puestos que RIGEN: su estado sale de sus vidas (frente 27, D-03).
+    const positionActiveFilter = onlyActive ? { filter_estado: "vigente" } : {};
 
     if (selectedUnitId) {
       const response = await axios.get(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
@@ -191,10 +192,10 @@ export function useAdminTableDataSource({
       }
 
       const [artifactResponse, linkedResponse] = await Promise.all([
-        axios.get(API_ROUTES.ADMIN_SQL_TABLE("template_artifacts"), {
+        axios.get(API_ROUTES.ADMIN_SQL_TABLE("ediciones"), {
           params: artifactParams
         }),
-        axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+        axios.get(API_ROUTES.ADMIN_SQL_TABLE("vinculos"), {
           params: {
             limit: 5000
           }
@@ -203,7 +204,7 @@ export function useAdminTableDataSource({
 
       const linkedArtifactIds = new Set(
         (linkedResponse.data || [])
-          .map((row) => row?.template_artifact_id)
+          .map((row) => row?.edicion_id)
           .filter((value) => value !== null && value !== undefined && value !== "")
           .map((value) => String(value))
       );
@@ -213,7 +214,7 @@ export function useAdminTableDataSource({
       );
     } catch {
       unassignedTemplateArtifactRows.value = [];
-      unassignedTemplateArtifactError.value = "No se pudo cargar los artifacts sin definicion.";
+      unassignedTemplateArtifactError.value = "No se pudo cargar los artifacts sin configuracion.";
     } finally {
       unassignedTemplateArtifactLoading.value = false;
     }
@@ -264,8 +265,16 @@ export function useAdminTableDataSource({
           }
         });
       }
-      if (props.table?.table === "template_artifacts") {
+      if (props.table?.table === "ediciones") {
         Object.entries(templateArtifactInlineFilters.value).forEach(([key, value]) => {
+          if (value !== "" && value !== null && value !== undefined) {
+            filters[`filter_${key}`] = typeof value === "string" ? value.trim() : value;
+          }
+        });
+      }
+      // Filtros iniciales genéricos (p. ej. al abrir desde el resumen de operación). Aplica a cualquier tabla.
+      if (props.initialFilters) {
+        Object.entries(props.initialFilters).forEach(([key, value]) => {
           if (value !== "" && value !== null && value !== undefined) {
             filters[`filter_${key}`] = typeof value === "string" ? value.trim() : value;
           }

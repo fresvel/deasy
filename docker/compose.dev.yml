@@ -6,23 +6,18 @@ services:
       - "${PROXY_HTTP_PORT}:80"
       - "${PROXY_HTTPS_PORT}:443"
 
-  mariadb:
+  postgres:
     ports:
-      - "3306:3306"
-
-  mongodb:
-    ports:
-      - "27017:27017"
+      - "${POSTGRES_PORT:-5432}:5432"
 
   rabbitmq:
+    # Enlazado a 127.0.0.1 a proposito. Antes se publicaba en TODAS las interfaces, y con
+    # `loopback_users.guest = false` + usuario guest administrador eso dejaba la UI de gestion
+    # —que muestra el CUERPO de los mensajes, y ahi viaja `certPassword`— al alcance de la red.
+    # En dev se conserva el acceso local por comodidad; en qa y prod no se publica nada.
     ports:
-      - "5672:5672"
-      - "15672:15672"
-
-  emqx:
-    ports:
-      - "1883:1883"
-      - "18083:18083"
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      - "127.0.0.1:${RABBITMQ_MGMT_PORT:-15672}:15672"
 
   minio:
     ports:
@@ -35,23 +30,30 @@ services:
       dockerfile: docker/backend/Dockerfile.dev
     env_file:
       - .env.dev
-    volumes:
-      - ../backend:/app/backend
-      - ../tools/templates:/app/tools/templates:ro
-      - backend_node_modules_v2:/app/backend/node_modules
-      - uploads_data:/app/backend/uploads
-      - storage_data:/app/backend/storage
-
-  storage-uploader:
-    build:
-      context: ..
-      dockerfile: docker/backend/Dockerfile.dev
-    env_file:
-      - .env.dev
+      # Los SECRETOS DE VERDAD van aqui, y no en `.env.dev`, que ESTA VERSIONADO. El token de un bot
+      # de Telegram no es una credencial de laboratorio: quien lo tiene lee todo lo que se le
+      # escriba al bot y puede hablar en su nombre. `.gitignore` ya excluye `docker/.env.*.runtime`.
+      # Es opcional: sin el fichero, la pila arranca igual y los canales quedan sin configurar.
+      - path: .env.dev.runtime
+        required: false
     volumes:
       - ../backend:/app/backend
       - backend_node_modules_v2:/app/backend/node_modules
-      - storage_data:/app/backend/storage
+    # ⚠️ UNA SOLA INSTANCIA, y no es una preferencia: HOY el tiempo real la exige.
+    #
+    # Socket.IO guarda las conexiones EN LA MEMORIA DEL PROCESO --un socket es un cable TCP contra
+    # un proceso concreto-- y no hay adaptador. Con dos instancias, quien este conectado a la A no
+    # recibe lo que emite la B: el aviso de «telefono verificado», el chat y las notificaciones se
+    # pierden PARA ALGUNOS usuarios, de forma intermitente y SIN ERROR EN NINGUNA PARTE.
+    #
+    # Estaba en una instancia por DEFECTO, no por decision: nadie lo habia escrito, asi que un
+    # `--scale backend=2` para «tener mas disponibilidad» rompia el tiempo real en silencio. Es el
+    # mismo patron que ya costo caro en `channels`, donde si estaba dicho.
+    #
+    # ⚠️ SE LEVANTA AÑADIENDO EL ADAPTADOR (Redis), NO QUITANDO ESTA LINEA.
+    # Ver docs/arquitecturas/app-movil-y-tiempo-real.md §5.
+    deploy:
+      replicas: 1
 
   frontend:
     build:
@@ -63,6 +65,81 @@ services:
       - ../frontend:/app/frontend
       - frontend_node_modules:/app/frontend/node_modules
 
+  # Solo en dev: en dev el sitio se SIRVE desde el codigo montado, con recarga en caliente,
+  # asi que aqui no hay imagen que publicar. Vive en este overlay y no en `compose.base.yml`
+  # a proposito, porque qa y prod aun no despliegan documentacion.
+  #
+  # Existia desde marzo en el `docker-compose.yml` monolitico y se perdio al partirlo en
+  # base + overlays; el Dockerfile y `DOCS_PORT` sobrevivieron en los cuatro `.env`. No fue
+  # una decision, fue un descuido: esto lo restituye.
+  docs:
+    build:
+      context: ..
+      dockerfile: docker/docs/Dockerfile
+    env_file:
+      - .env.dev
+    ports:
+      - "${DOCS_PORT:-4321}:4321"
+    volumes:
+      - ../docs:/app/docs
+      # Sombrea el node_modules de la imagen, como en backend y frontend. Consecuencia:
+      # una dependencia nueva se instala DENTRO del contenedor, no en el host.
+      - docs_node_modules:/app/docs/node_modules
+
+  # ── Explorador del modelo de datos (opcional) ─────────────────────────────────────────
+  # Azimutt (MIT) sirve para EXPLORAR el esquema de forma interactiva: buscar una tabla,
+  # abrir solo sus vecinas, seguir una relacion. Es lo que los diagramas estaticos por
+  # dominio no pueden dar.
+  #
+  # Va detras del perfil `explorer` A PROPOSITO: son DOS contenedores mas (la aplicacion
+  # necesita su propia base) y es una herramienta que se abre de vez en cuando, no parte
+  # de la aplicacion. Con cuatro pilas, arrancarlo por defecto serian ocho contenedores
+  # comiendo RAM sin que nadie los mire.
+  #
+  #   bash scripts/stack.sh c --profile explorer up -d azimutt
+  #
+  # Su base es PROPIA y no la del proyecto, tambien a proposito: `test:char:run` resetea
+  # la base de dev, y con ella se llevaria por delante los diagramas guardados aqui.
+  azimutt:
+    image: ghcr.io/azimuttapp/azimutt:main
+    profiles: [explorer]
+    restart: unless-stopped
+    depends_on:
+      azimutt-db:
+        condition: service_healthy
+    environment:
+      PHX_HOST: localhost
+      PORT: "4000"
+      # Secreto de DESARROLLO. Vale porque esta pila no se publica; para cualquier
+      # despliegue real hay que generar uno propio (>= 64 bytes aleatorios).
+      SECRET_KEY_BASE: ${AZIMUTT_SECRET_KEY_BASE}
+      DATABASE_URL: postgresql://azimutt:azimutt@azimutt-db:5432/azimutt
+      FILE_STORAGE_ADAPTER: local
+      AUTH_PASSWORD: "true"
+      # Variable documentada por Azimutt. Sin ella, una organizacion nueva nace en plan
+      # `free`, que NO PUEDE GUARDAR PROYECTOS: el diagrama se pierde al cerrar la pestaña.
+      # El codigo es MIT y esta es su propia palanca de configuracion, pero su modelo de
+      # negocio vive de los planes: si esto pasa a uso de equipo, toca apoyarles.
+      ORGANIZATION_DEFAULT_PLAN: pro
+    ports:
+      - "${AZIMUTT_PORT:-4700}:4000"
+
+  azimutt-db:
+    image: postgres:17
+    profiles: [explorer]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: azimutt
+      POSTGRES_PASSWORD: azimutt
+      POSTGRES_DB: azimutt
+    volumes:
+      - azimutt_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U azimutt -d azimutt"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
   signer:
     build:
       context: ..
@@ -70,37 +147,117 @@ services:
     env_file:
       - .env.dev
     ports:
-      - "4000:4000"
+      - "${SIGNER_PORT:-4000}:4000"
     volumes:
       - ../signer:/app
+
+  # El buzón de correo de DESARROLLO. Recibe todo lo que el backend envíe y lo enseña en una web;
+  # no reenvía nada a internet, así que no hay forma de escribirle sin querer a una persona real.
+  #
+  # ⚠️ Existe para que el envío se EJERCITE de verdad. La alternativa cómoda —escribir el código en
+  # el registro del servidor y no enviar— deja sin probar justo el camino que importa, y encima lo
+  # deja sin probar el día que se vuelve obligatorio.
+  mailpit:
+    image: axllent/mailpit:v1.21
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+    ports:
+      # Sólo la web. El puerto SMTP (1025) NO se publica: lo usa el backend por la red interna.
+      - "${MAILPIT_PORT:-8025}:8025"
+
+  # El microservicio de canales de mensajería. Ver `docs/arquitecturas/microservicio-channels.md`.
+  channels:
+    build:
+      context: ..
+      dockerfile: docker/channels/Dockerfile
+    env_file:
+      - .env.dev
+      - path: .env.dev.runtime
+        required: false
+    environment:
+      # En la red interna, y NO por el proxy: nginx devuelve 404 para `/api/internal/` a propósito.
+      DEASY_API_URL: http://backend:3030/deasy/v1
+    depends_on:
+      - backend
+    # ⚠️ SE LEVANTA SOLO SI SE CAE, como el resto de la pila. Sin esto, el 2026-08-31 el contenedor
+    # murio de un SIGKILL y estuvo TRECE HORAS parado sin que nada lo dijera: el bot dejo de
+    # responder a todo el mundo y no habia error en ninguna parte --el backend seguia emitiendo
+    # llaves tan contento, y la pantalla seguia pintando el QR.
+    #
+    # Es el mismo silencio de siempre: cada pieza funcionando y el conjunto roto.
+    restart: unless-stopped
+    # ⚠️ DIEZ SEGUNDOS NO LE BASTAN A CHROMIUM, y diez es lo que da Docker por defecto: manda SIGTERM
+    # y a los 10 s remata con SIGKILL. Cerrar la sesion de WhatsApp Web tarda mas, asi que CADA
+    # reinicio lo mataba a medias y dejaba el perfil sucio. Se veia en dos sitios: el arranque
+    # siguiente decia siempre «el proceso anterior no cerro limpio» --un mensaje pensado para los
+    # apagones, saltando en cada reinicio normal-- y la sesion tenia que resincronizar entera, lo que
+    # el 2026-09-01 dejo el canal MAS DE SEIS MINUTOS sin recibir, dos veces seguidas.
+    stop_grace_period: 60s
+    # ⚠️ SIN PUERTO PUBLICADO, como el firmador: al navegador no se le ha perdido nada aquí.
+    #
+    # ⚠️ Y UNA SOLA INSTANCIA, que no es una preferencia sino una atadura de los canales:
+    #   · El sondeo de Telegram entrega cada actualización UNA vez. Dos procesos sondeando se roban
+    #     los mensajes entre ellos y el síntoma es intermitente e incomprensible.
+    #   · La sesión de WhatsApp (C5) vive en el proceso que la abrió.
+    # Por eso no se escala con `--scale`, y por eso hace falta UN BOT POR ENTORNO.
+    deploy:
+      replicas: 1
+    volumes:
+      - ../channels:/app
+      - channels_node_modules:/app/node_modules
+      # ⚠️ LA SESIÓN DE WHATSAPP VIVE AQUÍ. Sin este volumen, cada reinicio pide volver a escanear el
+      # QR desde el teléfono dedicado — y eso no es un incordio, es un canal caído hasta que alguien
+      # se dé cuenta y lo vincule a mano.
+      #
+      # 🔴 Y AQUÍ HAY DATOS PERSONALES, aunque nadie lo decidiera: esto es un perfil de Chromium con
+      # un WhatsApp Web de verdad dentro. Medido el 2026-09-01 con UN solo teléfono de pruebas: 253 MB,
+      # de los cuales 44 MB son el IndexedDB de web.whatsapp.com, y el número de quien escribió aparece
+      # 25 veces en claro. Los CUERPOS de los mensajes sí están cifrados, pero las claves viven en este
+      # mismo perfil --es lo que permite que la sesión sobreviva al reinicio--, así que eso protege de
+      # un `grep`, no de quien tenga el volumen.
+      #
+      # Consecuencias prácticas: este volumen necesita la misma política que la base (quién accede,
+      # cuánto se guarda, si va a copias). Y si va a copias, excluir `Cache`, `Code Cache` y
+      # `component_crx_cache` --110 MB de los 253, y no hace falta conservar ninguno--.
+      #
+      # ⚠️ NO lo borres «por limpiar»: ahí vive la sesión, y borrarlo deja el canal caído hasta que
+      # alguien escanee un QR con el teléfono en la mano.
+      #
+      # El análisis completo, en docs/arquitecturas/channels-mas-de-una-intencion.md §5.
+      - channels_whatsapp:/app/.wwebjs_auth
 
   analytics:
     build:
       context: ..
       dockerfile: docker/analytics/Dockerfile
 
+# Los nombres llevan el ESPACIO DE NOMBRES de la pila (`DEASY_STACK`), que por defecto es `dev`.
+# Sin esa variable todo se comporta exactamente igual que siempre: `docker-env.sh dev` no se entera.
+# Con ella, `scripts/stack.sh <a|b|c|d>` levanta pilas paralelas que NO comparten ni base, ni MinIO,
+# ni node_modules, ni red. Compartirlos era el fallo: aunque cambies el nombre del proyecto, dos
+# pilas con el MISMO volumen de postgres se pisan, y `test:char:run` resetea la base de la otra.
 volumes:
-  mariadb_data:
-    name: deasy_dev_mariadb_data
-  mongodb_data:
-    name: deasy_dev_mongodb_data
+  postgres_data:
+    name: deasy_${DEASY_STACK:-dev}_postgres_data
   rabbitmq_data:
-    name: deasy_dev_rabbitmq_data
-  emqx_data:
-    name: deasy_dev_emqx_data
-  emqx_log:
-    name: deasy_dev_emqx_log
+    name: deasy_${DEASY_STACK:-dev}_rabbitmq_data
   minio_data:
-    name: deasy_dev_minio_data
+    name: deasy_${DEASY_STACK:-dev}_minio_data
   backend_node_modules_v2:
-    name: deasy_dev_backend_node_modules
+    name: deasy_${DEASY_STACK:-dev}_backend_node_modules
+  channels_node_modules:
+    name: deasy_${DEASY_STACK:-dev}_channels_node_modules
+  channels_whatsapp:
+    name: deasy_${DEASY_STACK:-dev}_channels_whatsapp
   frontend_node_modules:
-    name: deasy_dev_frontend_node_modules
-  uploads_data:
-    name: deasy_dev_uploads_data
-  storage_data:
-    name: deasy_dev_storage_data
+    name: deasy_${DEASY_STACK:-dev}_frontend_node_modules
+  docs_node_modules:
+    name: deasy_${DEASY_STACK:-dev}_docs_node_modules
+  azimutt_data:
+    name: deasy_${DEASY_STACK:-dev}_azimutt_data
 
 networks:
   default:
-    name: deasy_dev_network
+    name: deasy_${DEASY_STACK:-dev}_network

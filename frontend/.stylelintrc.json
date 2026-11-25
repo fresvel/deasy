@@ -1,0 +1,58 @@
+{
+  "extends": "stylelint-config-standard",
+  "ignoreFiles": [
+    "dist/**",
+    "node_modules/**",
+    "coverage/**"
+  ],
+  "rules": {
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "apply",
+          "config",
+          "custom-variant",
+          "layer",
+          "plugin",
+          "reference",
+          "source",
+          "tailwind",
+          "theme",
+          "utility",
+          "variant"
+        ]
+      }
+    ],
+    "color-no-hex": true,
+    "declaration-no-important": true,
+    "color-function-alias-notation": null,
+    "color-hex-length": null,
+    "number-max-precision": null,
+    "property-no-vendor-prefix": null,
+    "import-notation": null,
+    "at-rule-empty-line-before": null,
+    "length-zero-no-unit": null,
+    "no-duplicate-selectors": null,
+    "custom-property-pattern": null,
+    "selector-class-pattern": [
+      "^((deasy|graph|btnsera|sera|profile|pdf-preview|custom|signature-workspace|theme|process-dialog)(-[a-z0-9]+)*(__[a-z0-9]+(-[a-z0-9]+)*)?(--[a-z0-9]+(-[a-z0-9]+)*)?|(router-link-active|vue-flow__[a-z-]+)|(text-muted|font-bold))$",
+      {
+        "message": "Una clase propia va en BEM con prefijo de familia: deasy-bloque__elemento--modificador. Las familias que no son `deasy-` son legado y no admiten nombres NUEVOS; los terceros y las dos utilidades que aun se cualifican (`text-muted`, `font-bold`) estan listados aparte en la regla. Si necesitas anadir una utilidad de Tailwind aqui, pregunta primero por que hay una regla que la nombra: esa es la deuda que `overrides.css` termino de pagar el 2026-08-13."
+      }
+    ],
+    "no-descending-specificity": null,
+    "declaration-block-no-redundant-longhand-properties": null,
+    "alpha-value-notation": null,
+    "color-function-notation": null,
+    "media-feature-range-notation": null,
+    "shorthand-property-no-redundant-values": null,
+    "value-keyword-case": null,
+    "declaration-empty-line-before": null,
+    "comment-empty-line-before": null,
+    "rule-empty-line-before": null,
+    "custom-property-empty-line-before": null,
+    "comment-whitespace-inside": null,
+    "no-empty-source": null
+  }
+}

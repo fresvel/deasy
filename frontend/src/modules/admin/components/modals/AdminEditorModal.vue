@@ -1,66 +1,78 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="sqlEditorModalLabel"
     :title="editorMode === 'create' ? `Añadir ${table?.label || 'registro'}` : 'Editar registro'"
     size="xl"
     :content-class="isProcessTable ? 'process-dialog-content' : ''"
   >
-    <div v-if="modalError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <AppAlert v-if="modalError">
       {{ modalError }}
-    </div>
+    </AppAlert>
+    <!-- ⚠️ Este formulario vacío existe para que Chrome NO ofrezca las credenciales guardadas en el
+         campo de nacionalidad.
+         El gestor de contraseñas ignora `autocomplete="off"` a propósito, y clasifica como
+         «usuario» el campo de texto que precede a una contraseña DENTRO DEL MISMO FORMULARIO
+         —saltándose los `select` y las casillas—. En el alta de persona ese campo es el combobox de
+         nacionalidad, que por eso sugería el correo del administrador.
+         Marcar la contraseña como `new-password` no bastó: eso dice que no es un inicio de sesión,
+         pero el candidato a usuario se sigue eligiendo igual.
+         El atributo `form` de HTML reasocia un control a otro formulario ESTÉ DONDE ESTÉ en el DOM,
+         así que la contraseña se queda donde está en la rejilla y a la vez sale del formulario que
+         contiene los demás campos. El de aquí abajo no tiene ningún campo de texto, así que no hay
+         a quién clasificar como usuario.
+         El `<form>` de los campos no envía nada —el botón Guardar está fuera y emite un evento—,
+         de modo que reasociar un control no cambia el envío. -->
+    <form :id="secretFormId" class="hidden"></form>
     <form class="grid gap-3 md:grid-cols-12">
       <div v-for="field in visibleFormFields" :key="field.name" class="md:col-span-6">
-        <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">
+        <label :for="fieldId(field.name)" class="deasy-form-label deasy-form-label--inline">
           {{ field.label || field.name }}
-          <span v-if="field.required" class="text-red-600">*</span>
+          <span v-if="field.required" class="text-danger">*</span>
         </label>
-        <div v-if="isInputField(field) && isForeignKeyField(field)" class="relative">
-          <AdminLookupField
-            :model-value="fkDisplay[field.name]"
-            :placeholder="field.placeholder || ''"
-            :disabled="isFieldLocked(field)"
-            prevent-button-mouse-down
-            @update:model-value="$emit('update-inline-fk-display', field.name, $event)"
-            @focus="$emit('open-inline-fk-suggestions', field)"
-            @blur="$emit('schedule-inline-fk-close', field.name)"
-            @clear="$emit('clear-inline-fk-selection', field.name)"
-            @search="$emit('open-fk-search', field)"
-          />
-          <div
-            v-if="shouldShowInlineFkSuggestions(field.name)"
-            class="fk-inline-suggestions overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg"
-            @mousedown.prevent
-          >
-            <div v-if="inlineFkLoading[field.name]" class="px-4 py-3 text-sm text-slate-500">
-              Buscando...
-            </div>
-            <template v-else-if="(inlineFkSuggestions[field.name] || []).length">
-              <AdminButton
-                v-for="option in inlineFkSuggestions[field.name]"
-                :key="`${field.name}-${option.id}`"
-                variant="plain"
-                class-name="w-full justify-start rounded-none border-0 border-b border-slate-100 px-4 py-3 text-left text-sm font-medium text-slate-700 last:border-b-0 hover:bg-slate-50"
-                @mousedown.prevent="$emit('select-inline-fk-suggestion', field, option)"
-              >
-                {{ formatInlineFkOption(field, option) }}
-              </AdminButton>
-            </template>
-            <div v-else class="px-4 py-3 text-sm text-slate-500">
-              Sin coincidencias. Usa Buscar.
-            </div>
-          </div>
-        </div>
+        <!-- Una columna ajena se elige escribiendo: el desplegable filtra según se teclea. Sin
+             botones al lado — el de buscar abría un modal de tabla que ya no hace falta cuando la
+             lista está debajo del campo, y el de limpiar se sustituye por vaciar la caja
+             (`clear-on-empty-query`). El desplegable, el debounce y el teclado los pone
+             `AdminLookupField`; aquí sólo se dice de dónde salen las opciones y qué hacer con la
+             elegida. -->
+        <AdminLookupField
+          v-if="isInputField(field) && isForeignKeyField(field)"
+          :id="fieldId(field.name)"
+          :model-value="fkDisplay[field.name]"
+          :placeholder="field.placeholder || 'Escribe para buscar…'"
+          :disabled="isFieldLocked(field)"
+          :suggest-provider="buildFkSuggestProvider(field)"
+          :show-clear="false"
+          :show-search="false"
+          clear-on-empty-query
+          @select="$emit('select-fk-option', field, $event)"
+          @clear="$emit('clear-fk-selection', field.name)"
+        />
+        <!-- Un punto no son dos números. `geopoint` declara UN control para DOS columnas
+             (`pair: { lat, lng }`), y la segunda va marcada con `pairedWith` para que el
+             formulario no la pinte también por su cuenta. -->
+        <AppMapPicker
+          v-else-if="field.type === 'geopoint'"
+          :lat="formData[field.pair?.lat ?? 'latitud']"
+          :lng="formData[field.pair?.lng ?? 'longitud']"
+          :disabled="isFieldLocked(field)"
+          :required="Boolean(field.required)"
+          @update:point="$emit('update-geopoint', field, $event)"
+        />
         <AdminInputField
           v-else-if="isInputField(field)"
+          :id="fieldId(field.name)"
           :model-value="formData[field.name]"
           :type="inputType(field)"
           :placeholder="field.placeholder || ''"
           :disabled="isFieldLocked(field)"
+          :form="inputType(field) === 'password' ? secretFormId : ''"
           @update:model-value="updateFormField(field.name, $event)"
         />
         <AdminInputField
           v-else-if="field.type === 'textarea'"
+          :id="fieldId(field.name)"
           :model-value="formData[field.name]"
           as="textarea"
           :rows="3"
@@ -69,6 +81,7 @@
         />
         <AdminSelectField
           v-else-if="field.type === 'select'"
+          :id="fieldId(field.name)"
           :model-value="formData[field.name]"
           :disabled="isFieldLocked(field)"
           @update:model-value="updateFormField(field.name, $event)"
@@ -79,84 +92,177 @@
             {{ formatSelectOptionLabel(field, option) }}
           </option>
         </AdminSelectField>
-        <AdminSelectField
+        <SToggle
           v-else-if="field.type === 'boolean'"
-          :model-value="formData[field.name]"
+          :id="fieldId(field.name)"
+          :model-value="Number(formData[field.name]) === 1"
           :disabled="isFieldLocked(field)"
-          @update:model-value="updateFormField(field.name, $event)"
-        >
-          <option value="1">Si</option>
-          <option value="0">No</option>
-        </AdminSelectField>
+          label-position="end"
+          field-aligned
+          @change="(value) => updateFormField(field.name, value ? '1' : '0')"
+        />
         <AdminInputField
           v-else
+          :id="fieldId(field.name)"
           :model-value="formData[field.name]"
           :disabled="isFieldLocked(field)"
           @update:model-value="updateFormField(field.name, $event)"
         />
+        <!-- La ayuda del campo, si el catálogo la trae (`ayuda`): qué va ahí y cuándo se deja vacío. -->
+        <p v-if="field.ayuda" class="m-0 mt-1 text-theme-xs text-muted">{{ field.ayuda }}</p>
       </div>
     </form>
-    <div v-if="table?.table === 'process_definition_versions'" class="definition-checklist mt-4">
-      <div class="definition-checklist-head">
+    <section v-if="showProcessConfigurations" class="mt-5 border-t border-line pt-5">
+      <div class="mb-3 flex flex-wrap items-start justify-between gap-3">
+        <div class="min-w-0">
+          <p class="deasy-overline">Configuraciones</p>
+          <h6 class="deasy-title deasy-title--block mt-1 flex items-center gap-2">
+            <span>Configuraciones del proceso</span>
+            <span class="inline-flex h-5 min-w-5 items-center justify-center rounded bg-surface px-1.5 text-xs font-bold text-icon">
+              {{ processConfigurationRows.length }}
+            </span>
+          </h6>
+          <p class="m-0 mt-1 text-xs font-medium leading-5 text-muted">
+            Agrega nuevas configuraciones y elimina borradores que aun no deben usarse en el proceso.
+          </p>
+        </div>
+        <AdminButton
+          v-if="canCreateProcessConfiguration"
+          variant="primary-outline"
+          @click="$emit('add-process-configuration')"
+        >
+          <font-awesome-icon icon="plus" />
+          <span>Agregar configuracion</span>
+        </AdminButton>
+      </div>
+      <AppAlert
+        v-if="processConfigurationError">
+        {{ processConfigurationError }}
+      </AppAlert>
+      <div v-if="processConfigurationLoading" class="deasy-card px-4 py-6 text-center text-sm font-medium text-muted">
+        Cargando configuraciones vinculadas...
+      </div>
+      <AppDataTable
+        v-else
+        :fields="processConfigurationTableFields"
+        :rows="processConfigurationRows"
+        :row-key="(row) => row.id"
+        empty-text="Este proceso aun no tiene configuraciones."
+        table-class="min-w-full border-separate border-spacing-0 text-sm"
+        responsive-class="overflow-x-auto deasy-card"
+        scroll-class=""
+      >
+        <template #cell="{ row, field }">
+          <AppTag v-if="field.name === 'status'" :variant="tonoCicloVida(row[field.name])">
+            {{ etiquetaCicloVida(row[field.name]) }}
+          </AppTag>
+          <template v-else>
+            {{ formatProcessConfigurationCell(row, field) }}
+          </template>
+        </template>
+        <template #actions="{ row }">
+          <AdminTableActions
+            :show-view="false"
+            :show-edit="false"
+            :show-delete="canDeleteProcessConfigurationRow(row)"
+            delete-message="Eliminar configuracion"
+            @delete="$emit('delete-process-configuration', row)"
+          />
+        </template>
+      </AppDataTable>
+      <p
+        v-if="canDeleteProcessConfiguration && processConfigurationRows.some((row) => !canDeleteProcessConfigurationRow(row))"
+        class="m-0 mt-2 text-xs font-medium text-muted"
+      >
+        Las configuraciones activas o retiradas no se eliminan desde este bloque; gestionalas con versionado o cambio de estado.
+      </p>
+    </section>
+    <div v-if="table?.table === 'process_definition_versions'" class="mt-4">
+      <div>
         <strong>Checklist de activacion</strong>
-        <span v-if="processDefinitionChecklistLoading" class="text-sm text-slate-500">Validando...</span>
-        <span v-else-if="!selectedRow?.id || editorMode === 'create'" class="text-sm text-slate-500">
-          Disponible despues de guardar la definicion.
+        <span v-if="processDefinitionChecklistLoading" class="text-sm text-muted">Validando...</span>
+        <span v-else-if="!selectedRow?.id || editorMode === 'create'" class="text-sm text-muted">
+          Disponible despues de guardar la configuracion.
         </span>
       </div>
-      <div class="definition-checklist-items">
-        <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.rules }">
+      <div>
+        <div :class="{ 'is-complete': processDefinitionChecklist.rules }">
           <font-awesome-icon :icon="processDefinitionChecklist.rules ? 'check' : 'times'" />
-          <span>Al menos una regla activa</span>
+          <span>Al menos una regla de alcance activa</span>
         </div>
-        <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.triggers }">
+        <div :class="{ 'is-complete': processDefinitionChecklist.triggers }">
           <font-awesome-icon :icon="processDefinitionChecklist.triggers ? 'check' : 'times'" />
-          <span>Al menos un disparador activo</span>
+          <span>Al menos un tipo de periodo activo</span>
         </div>
-        <div class="definition-checklist-item" :class="{ 'is-complete': processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts }">
-          <font-awesome-icon :icon="(processDefinitionChecklist.artifacts || !requiresDefinitionArtifacts) ? 'check' : 'times'" />
-          <span>{{ requiresDefinitionArtifacts ? "Al menos un paquete vinculado" : "No requiere paquetes" }}</span>
+        <div :class="{ 'is-complete': processDefinitionChecklist.artifacts }">
+          <font-awesome-icon :icon="processDefinitionChecklist.artifacts ? 'check' : 'times'" />
+          <span>Al menos un paquete (plantilla) vinculado</span>
         </div>
       </div>
     </div>
     <template #footer>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="outlinePrimary"
+        variant="primary-outline"
         @click="$emit('open-definition-rules')"
       >
         <font-awesome-icon icon="sitemap" />
-        Reglas
+        Alcance
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="outlinePrimary"
+        variant="primary-outline"
         @click="$emit('open-definition-triggers')"
       >
         <font-awesome-icon icon="sitemap" />
-        Disparadores
+        Periodos
       </AdminButton>
       <AdminButton
         v-if="table?.table === 'process_definition_versions' && editorMode === 'edit' && selectedRow?.id"
-        variant="outlinePrimary"
+        variant="primary-outline"
         @click="$emit('open-definition-artifacts')"
       >
         <font-awesome-icon icon="link" />
         Paquetes
       </AdminButton>
-      <AdminButton variant="cancel" data-modal-dismiss>Cancelar</AdminButton>
-      <AdminButton variant="primary" @click="$emit('submit')">Guardar</AdminButton>
+      <AdminButton variant="danger-outline" data-modal-dismiss>Cancelar</AdminButton>
+      <AdminButton
+        :variant="table?.table === 'processes' && editorMode === 'create' ? 'neutral-outline' : 'primary-outline'"
+        @click="$emit('submit')"
+      >
+        Guardar
+      </AdminButton>
+      <AdminButton
+        v-if="table?.table === 'processes' && editorMode === 'create'"
+        variant="primary-outline"
+        @click="$emit('submit-and-configure')"
+      >
+        <font-awesome-icon icon="plus" />
+        Guardar y agregar configuracion
+      </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { computed, ref, useId } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppMapPicker from "@/shared/components/inputs/AppMapPicker.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { tonoCicloVida, etiquetaCicloVida } from "@/shared/utils/estadoTono.js";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
+import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   editorMode: { type: String, default: "create" },
@@ -165,38 +271,61 @@ const props = defineProps({
   modalError: { type: String, default: "" },
   visibleFormFields: { type: Array, default: () => [] },
   fkDisplay: { type: Object, default: () => ({}) },
-  inlineFkLoading: { type: Object, default: () => ({}) },
-  inlineFkSuggestions: { type: Object, default: () => ({}) },
   formData: { type: Object, default: () => ({}) },
   processDefinitionChecklistLoading: { type: Boolean, default: false },
   processDefinitionChecklist: { type: Object, default: () => ({}) },
-  requiresDefinitionArtifacts: { type: Boolean, default: false },
+  processConfigurationLoading: { type: Boolean, default: false },
+  processConfigurationError: { type: String, default: "" },
+  processConfigurationRows: { type: Array, default: () => [] },
+  processConfigurationTableFields: { type: Array, default: () => [] },
+  canCreateProcessConfiguration: { type: Boolean, default: false },
+  canDeleteProcessConfiguration: { type: Boolean, default: false },
   selectedRow: { type: Object, default: null },
   isInputField: { type: Function, required: true },
   isForeignKeyField: { type: Function, required: true },
+  // Devuelve el `suggestProvider` de una columna ajena. Lo construye el gestor de FK,
+  // que es quien sabe a qué tabla apunta cada columna.
+  buildFkSuggestProvider: { type: Function, required: true },
   isFieldLocked: { type: Function, required: true },
   inputType: { type: Function, required: true },
-  shouldShowInlineFkSuggestions: { type: Function, required: true },
-  formatInlineFkOption: { type: Function, required: true },
-  formatSelectOptionLabel: { type: Function, required: true }
+  formatSelectOptionLabel: { type: Function, required: true },
+  formatProcessConfigurationCell: { type: Function, required: true },
+  canDeleteProcessConfigurationRow: { type: Function, required: true }
 });
 
 const emit = defineEmits([
   "update:form-data",
-  "update-inline-fk-display",
-  "open-inline-fk-suggestions",
-  "schedule-inline-fk-close",
-  "clear-inline-fk-selection",
-  "open-fk-search",
-  "select-inline-fk-suggestion",
+  "select-fk-option",
+  "update-geopoint",
+  "clear-fk-selection",
   "handle-select-change",
+  "add-process-configuration",
+  "delete-process-configuration",
   "open-definition-rules",
   "open-definition-triggers",
   "open-definition-artifacts",
+  "submit-and-configure",
   "submit"
 ]);
 
 const modalRef = ref(null);
+// Un id por instancia: puede haber más de un editor montado (el de la tabla y el de una clave ajena).
+const secretFormId = `deasy-editor-secreto-${useId()}`;
+
+const showProcessConfigurations = computed(() =>
+  props.table?.table === "processes"
+  && props.editorMode === "edit"
+  && Boolean(props.selectedRow?.id)
+);
+
+
+
+/* Este fichero era el UNICO del repo que ya tenia el esquema correcto —`draft` gris, `retired`
+   ambar— y su comentario explicaba por que. F3.3 no lo cambio: alineo a los demas con el, y
+   ahora los dos mapas que vivian aqui (el de clase y el de etiqueta) son `estadoTono.js`.
+
+   Lo que se pierde es la clase CRUDA `deasy-tag--*`, que se escribia saltandose `AppTag` y por
+   tanto sin validacion ninguna. */
 
 const updateFormField = (fieldName, value) => {
   emit("update:form-data", {

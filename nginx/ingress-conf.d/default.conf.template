@@ -69,6 +69,12 @@ server {
   }
 
   location /api/ {
+    # 200m como en el proxy de aplicacion, y por el mismo motivo: `POST /sign/batch/start` manda
+    # el lote completo en un multipart. El porque, medido, esta en
+    # `nginx/app-conf.d/default.conf.template`; si una de las dos sube, la otra tambien, o el
+    # publico rechaza lo que el local acepta.
+    client_max_body_size 200m;
+
     rewrite ^/api/(.*)$ /$1 break;
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;
@@ -116,6 +122,12 @@ server {
   }
 
   location /api/ {
+    # 200m como en el proxy de aplicacion, y por el mismo motivo: `POST /sign/batch/start` manda
+    # el lote completo en un multipart. El porque, medido, esta en
+    # `nginx/app-conf.d/default.conf.template`; si una de las dos sube, la otra tambien, o el
+    # publico rechaza lo que el local acepta.
+    client_max_body_size 200m;
+
     rewrite ^/api/(.*)$ /$1 break;
     proxy_http_version 1.1;
     proxy_set_header Host $http_host;

@@ -1,28 +1,29 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     title="Vista previa del PDF"
     labelled-by="dossier-pdf-preview-modal-title"
     size="xl"
     dialog-class="items-center"
-    content-class="profile-admin-skin"
+    content-class="deasy-dialog-panel--plain"
     body-class="p-0"
   >
     <div class="pdf-preview-shell">
       <div v-if="pdfUrl" class="pdf-preview-frame">
         <iframe :src="pdfUrl" title="Vista previa del PDF" class="pdf-preview-iframe"></iframe>
       </div>
-      <div v-else class="pdf-preview-empty">
+      <AppEmpty class="min-h-72" v-else>
         No hay PDF disponible para visualizar.
-      </div>
+      </AppEmpty>
     </div>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { onBeforeUnmount, ref } from "vue";
 import { Modal } from "@/shared/utils/modalController";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 
 const modalRef = ref(null);
 const pdfUrl = ref("");
@@ -64,31 +65,3 @@ defineExpose({
   openFromBlob
 });
 </script>
-
-<style scoped lang="postcss">
-.pdf-preview-shell {
-  min-height: 70vh;
-  background: #f8fafc;
-}
-
-.pdf-preview-frame {
-  height: 70vh;
-}
-
-.pdf-preview-iframe {
-  width: 100%;
-  height: 100%;
-  border: 0;
-  display: block;
-  background: white;
-}
-
-.pdf-preview-empty {
-  min-height: 18rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #64748b;
-  font-size: 0.95rem;
-}
-</style>

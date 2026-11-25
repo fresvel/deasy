@@ -1,0 +1,112 @@
+version: 1
+heredados:
+- ruta: plan-maestro-2026-08.md
+  titulo: Plan maestro — los frentes
+  estado: encurso
+  nota: 'sin convertir A PROPÓSITO: sus filas son FRENTES, no tareas. Los 15 convertidos
+    ya no se cuentan aquí; siguen viviendo dentro de él los frentes 2, 3, 5, 6, 7,
+    8, 10 y 11, que no tienen documento propio'
+  registrado: '2026-10-23'
+- ruta: plantilla-y-linea-de-proceso-2026-10.md
+  titulo: Qué pareja (configuración, plantilla) es legal
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F25 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: ciclos-en-los-grafos-2026-10.md
+  titulo: Frente 26 · los ciclos en los grafos del modelo
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F26 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: mapa-modulos-2026-10.md
+  titulo: 'El mapa de módulos: una sola respuesta a «¿dónde vive esto?»'
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F22 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: expediente-relacional-2026-09.md
+  titulo: El expediente sale del JSON
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F18 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: versionado-de-objetos-2026-09.md
+  titulo: El versionado de objetos en MinIO
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F16 del proyecto `deasy`. Su control se ESCRIBIÓ
+    (no se migró: el documento no tenía filas), a partir de su §5 y sus cinco preguntas
+    del §3'
+  registrado: '2026-10-23'
+- ruta: universidades-ror-2026-09.md
+  titulo: Frente 19 · la universidad que emite el título deja de ser texto
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F19 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: mapa-y-geocodificacion-2026-09.md
+  titulo: El mapa, y que la dirección se prellene sola
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F21 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: persona-datos-completos-2026-09.md
+  titulo: Lo que falta saber de una persona
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F20 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: frontend-identidad-2026-08.md
+  titulo: Frontend de la identidad
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F13 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: identidad-sin-pais-fijo-2026-08.md
+  titulo: Identidad sin país fijo
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F14 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: lopdp-consentimiento-2026-09.md
+  titulo: 'LOPDP: consentimiento demostrable y textos legales versionados'
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F17 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: auditoria-modelo-negocio-2026-08.md
+  titulo: Auditoría del modelo dirigida por el dueño
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F12 del proyecto `deasy`. Aquí sólo queda el
+    razonamiento'
+  registrado: '2026-10-23'
+- ruta: channels-verificacion-2026-08.md
+  titulo: Frente 15 · verificar un número por Telegram o WhatsApp
+  estado: cerrada
+  nota: cerrado; se consulta por el porqué del SMS descartado
+  registrado: '2026-10-23'
+- ruta: plantillas-y-entregables-2026-10.md
+  titulo: Frente 23 · quitar lo que se dice dos veces sobre «qué plantilla»
+  estado: cerrada
+  nota: cerrado
+  registrado: '2026-10-23'
+- ruta: recorrido-unificado-2026-10.md
+  titulo: Frente 24 · el recorrido documental unificado
+  estado: cerrada
+  nota: cerrado
+  registrado: '2026-10-23'
+- ruta: defectos-conocidos/plan-defectos-2026-08.md
+  titulo: Defectos conocidos y sin arreglar
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F1 del proyecto `deasy`. Aquí sólo queda el razonamiento'
+  registrado: '2026-10-23'
+- ruta: plan_data/plan-datos-2026-08.md
+  titulo: La capa de datos
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F9 del proyecto `deasy`. Aquí sólo queda el razonamiento'
+  registrado: '2026-10-23'
+- ruta: sistema-diseno-componentes/plan-2026-08-13.md
+  titulo: Sistema de diseño
+  estado: movida
+  nota: '➡️ CONVERTIDO: es el frente F4 del proyecto `deasy`. Aquí sólo queda el razonamiento'
+  registrado: '2026-10-23'

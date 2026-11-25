@@ -8,20 +8,21 @@
     @submit="onSubmit" 
     @cancel="onCancel"
   >
-    <div class="w-full space-y-2">
-      <label for="cert-tema" class="profile-field-label">Nombre de la certificación</label>
+    <div class="w-full">
+      <label :for="fieldId('titulo')" class="deasy-form-label">Nombre de la certificación</label>
       <textarea
-        id="cert-tema"
-        class="profile-textarea"
+        :id="fieldId('titulo')"
+        class="deasy-control deasy-control--textarea"
         rows="2"
         v-model="form.titulo"
         placeholder="Ej. Certificación en Gestión de Proyectos"
       ></textarea>
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Institución emisora</label>
+    <div class="w-full">
+      <label :for="fieldId('institucion')" class="deasy-form-label">Institución emisora</label>
       <s-select
+        :id="fieldId('institucion')"
         :options="instituciones"
         v-model="form.institucion"
         class="w-full mb-2"
@@ -29,15 +30,17 @@
       <input
         v-if="form.institucion === 'Otra'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
+        aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">Ámbito</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Ámbito</label>
       <s-select
+        :id="fieldId('tipo')"
         :options="['Nacional', 'Internacional']"
         v-model="form.tipo"
       />
@@ -56,11 +59,11 @@
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label for="cert-descripcion" class="profile-field-label">Descripción (opcional)</label>
+    <div class="w-full">
+      <label :for="fieldId('descripcion')" class="deasy-form-label">Descripción (opcional)</label>
       <textarea
-        id="cert-descripcion"
-        class="profile-textarea"
+        :id="fieldId('descripcion')"
+        class="deasy-control deasy-control--textarea"
         rows="2"
         v-model="form.descripcion"
         placeholder="Información adicional relevante"
@@ -91,13 +94,18 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
-import { Modal } from "@/shared/utils/modalController";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
+
 import DossierService from "@/modules/dossier/services/DossierService";
 import SInput from "@/shared/components/forms/SInput.vue";
 import SSelect from "@/shared/components/forms/SSelect.vue";
 import SDate from "@/shared/components/forms/SDate.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   editingItem: {
@@ -106,7 +114,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["certificacion-added", "certificacion-updated"]);
+const emit = defineEmits(["certificacion-added", "certificacion-updated", "close"]);
 
 const isEditing = computed(() => !!props.editingItem);
 const hasExistingDocument = computed(() => !!props.editingItem?.url_documento);
@@ -126,7 +134,6 @@ const errorMessage = ref("");
 const selectedFile = ref(null);
 
 const instituciones = [
-  "Pontificia Universidad Católica del Ecuador",
   "Escuela Politécnica Nacional",
   "Universidad Central del Ecuador",
   "Ministerio de Educación",
@@ -146,12 +153,10 @@ const resetForm = () => {
   selectedFile.value = null;
 };
 
-const closeModal = () => {
-  const modalElement = document.getElementById("certificacionModal");
-  if (!modalElement) return;
-  const modalInstance = Modal.getInstance(modalElement);
-  modalInstance?.hide();
-};
+// El cierre se pide al padre, que es quien monta el modal. Antes se hacia
+// document.getElementById("<x>Modal") contra un id que declara el padre: acoplamiento invisible
+// para el compilador --renombrar ese id dejaba el modal imposible de cerrar y nadie se enteraba--.
+const closeModal = () => emit("close");
 
 // Cargar datos si estamos editando
 watch(() => props.editingItem, (newVal) => {
@@ -251,10 +256,7 @@ const onSubmit = async () => {
       emit("certificacion-updated", response.data);
     } else {
       const response = await DossierService.createCertificacion(payload);
-      // Extraer el ID del nuevo registro (último en el array certificaciones)
-      const list = response.data?.certificaciones || [];
-      const newRecord = list[list.length - 1];
-      recordId = newRecord?._id;
+      recordId = response.createdId ?? null;
       emit("certificacion-added", response.data);
     }
 

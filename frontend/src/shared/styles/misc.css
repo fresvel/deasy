@@ -1,0 +1,207 @@
+@layer components {
+    /* ══════════════════════════════════════════════════════════════════════════════════════════
+       LA CABECERA DE PAGINA — UNA sola familia, F6.L6 · 2026-08-17
+       ══════════════════════════════════════════════════════════════════════════════════════════
+
+       Antes eran DOS describiendo lo mismo con dos vocabularios: `deasy-hero-*` (12 clases) y
+       `admin-page-header*` (6). `AppPageHeader.vue` ya habia colapsado la PLANTILLA en agosto,
+       pero el CSS seguia partido, y los tres pares equivalentes discrepaban en TODO:
+
+         titulo        20 px (24 en ancho) · peso 700   frente a   16,8 px fijo · peso 700
+         descripcion   12 px · peso 500 · tope 48rem    frente a   14 px · peso 400 · sin tope
+         hueco         por `gap` (6 px)                 frente a   por `margin` (4 px)
+
+       **Mandan los valores de la grande**, por decision del dueño (2026-08-17). La CAJA no: una
+       cabecera de seccion vive dentro de un panel que ya tiene borde y sombra, y meterle otra
+       dentro se veria mal. De ahi los dos modificadores.
+
+       Tres defectos que salieron al medir y se arreglan aqui:
+         · la linea inferior de la seccion usaba `--color-surface`, un token de FONDO: **1,05:1
+           contra blanco**, o sea invisible. Pasa a `--color-line`, como el resto del sistema.
+         · la descripcion declaraba `md:text-theme-xs`, exactamente el mismo valor que su base:
+           una media query que no cambia nada.
+         · el titulo de seccion era `inline-flex` con `gap: 0.65rem` para ordenar hermanos en
+           linea… que no existen: la plantilla interpola solo texto.
+       ══════════════════════════════════════════════════════════════════════════════════════════ */
+    .deasy-page-header {
+        @apply flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between;
+    }
+
+    /* CON CAJA — la portada de una seccion, que se sostiene sola. */
+    .deasy-page-header--hero {
+        @apply overflow-hidden rounded-xl border border-line bg-white p-5 text-navy shadow-[var(--elev-1)] md:p-6;
+        background-image: none;
+    }
+
+    /* SIN CAJA — va dentro de un panel que ya la tiene; solo se separa con una linea. */
+    .deasy-page-header--section {
+        @apply border-b border-line pt-1.5 pb-3.5;
+    }
+
+    .deasy-page-header__main {
+        @apply flex min-w-0 flex-col gap-3;
+    }
+
+    .deasy-page-header__main--with-media {
+        @apply sm:flex-row sm:items-center sm:gap-4;
+    }
+
+    .deasy-page-header__copy {
+        @apply flex min-w-0 flex-1 flex-col gap-1;
+    }
+
+    .deasy-page-header__media {
+        @apply shrink-0;
+    }
+
+    .deasy-page-header__media-card {
+        @apply flex h-16 w-16 items-center justify-center rounded-2xl border border-line bg-surface text-strong shadow-none sm:h-[4.5rem] sm:w-[4.5rem];
+    }
+
+    .deasy-page-header__media-card--avatar {
+        @apply overflow-hidden p-0;
+    }
+
+    .deasy-page-header__title {
+        @apply m-0 text-xl font-bold leading-[1.05] tracking-tight text-navy md:text-2xl;
+    }
+
+    .deasy-page-header__description {
+        @apply m-0 max-w-3xl text-theme-xs font-medium leading-4.5 text-icon;
+    }
+
+    .deasy-page-header__actions {
+        @apply flex w-full shrink-0 justify-start lg:w-auto lg:justify-end;
+    }
+
+    .deasy-page-header__actions--compact {
+        @apply w-full lg:w-auto;
+    }
+
+    /* ══ AQUI VIVIA `deasy-hero-back-button` — muerto el 2026-08-16 ═══════════════════════════
+       Era **LA QUINTA GEOMETRIA**, la que `buttons.css` daba por eliminada el 14-ago. Sobrevivio
+       dos dias a la unificacion por un motivo que vale la pena anotar: es un `<button>` CRUDO con
+       una clase `deasy-*`, y todos los gates de boton tratan cualquier clase con ese prefijo como
+       «bloque propio del sistema» y dejan de mirarla. O sea que el prefijo que marca lo nuestro
+       era tambien el que lo hacia invisible.
+
+       Medido antes de retirarlo, contra el boton del sistema con texto:
+
+           alto     50 px          frente a 40    (y 50 no es NINGUNO de los tres: 36/40/46)
+           radio    16 px          frente a 8
+           peso     600            frente a 500
+           fondo    gray-50        frente a blanco
+           borde    gray-200       frente a gray-300
+           texto    #1d2939        frente a #344054
+           icono    CAJA PROPIA de 32x32, radio 12.8 px (`rounded-[0.8rem]`, que no es un paso
+                    de la escala) y con su propio borde — una caja dentro de una caja
+
+       Sus 7 usos hacen exactamente lo mismo que el «Regresar» de la cabecera de tabla —salir de
+       aqui hacia arriba— y ese ya era `AppButton` con `neutral-outline`. Lo unico que de verdad
+       los separaba es que este lleva etiqueta y aquel es de solo icono, y eso es el mismo
+       componente con o sin texto, no dos componentes. Habia ademas un TERCER sitio que ya lo
+       hacia bien (`ProcessGraphView.vue:6`), que es la prueba de que no faltaba nada.
+
+       El icono baja al slot: `AppButton` ya trae `gap-2`, asi que la caja intermedia sobraba.
+       Y la etiqueta se unifica en «Volver» — habia cuatro «Volver» y tres «Volver atras» para el
+       mismo control, y «atras» no añade nada a «volver».
+       ══════════════════════════════════════════════════════════════════════════════════════════ */
+
+
+}
+@layer components {
+/* EL OJO DE MOSTRAR/OCULTAR CONTRASEÑA — y lo que costo que no llevara tamano.
+       Esta tres veces (login y las dos del registro) y hasta el 2026-08-15 se pintaba de DOS
+       formas: dos con `deasy-inline-icon-button h-9 w-9` y la del login con `pr-4 text-muted`
+       sueltas, sin la clase. O sea que el mismo ojo tenia dos cajas segun la pantalla. */
+    .deasy-inline-icon-button {
+        @apply inline-flex h-9 w-9 items-center justify-center rounded-2xl text-muted transition-colors hover:bg-gray-100 hover:text-primary focus:outline-none focus:ring-2 focus:ring-primary/15;
+    }
+
+    
+}
+/* ══ AQUI VIVIA EL PADDING RESPONSIVE DE `.admin-surface-frame` — muerto el 2026-08-17 ══════
+   La clase se fundio con `.deasy-card` (ver `admin.css`), y con ella se va el aviso que este
+   bloque llevaba escrito: ganaba a la declaracion de `admin.css` solo porque `index.css` importa
+   este fichero DESPUES, y un cambio de capa en cualquiera de las dos lo habria matado en
+   silencio. Hoy el padding lo pone la plantilla con una utilidad, y no depende del orden. */
+
+@layer components {
+    .theme-info-panel {
+        background-color: var(--info-soft);
+        border-radius: 12px;
+        border: 1px solid var(--color-line);
+    }
+}
+
+@layer components {
+    /* EL OVERLINE: el rotulo pequeno en versalitas que va encima de un titulo o
+       de un dato. Habia 75 escritos a mano en DIEZ formas, y entre ellas cuatro tamanos de
+       fuente distintos —`text-theme-xs` (9.6px), `text-theme-xs`, `text-theme-xs` (11.2px) y
+       `text-xs`—, cuatro valores de `tracking`, dos pesos y dos colores. Nadie distingue 9.6
+       de 11 de 11.2 px: eran tres formas de escribir el mismo escalon.
+
+       ⚠️ SE LLAMABA `deasy-eyebrow` HASTA EL 2026-08-15. El dueño lo renombro al preguntar «¿que
+       es el kicker?», y la pregunta destapo que el sistema tenia TRES nombres para esto: `eyebrow`
+       aqui, `kicker` en el hero y un `admin-page-header__eyebrow` que duró un dia. `overline` es
+       el termino que usan Material Design y la mayoria de sistemas, asi que lo reconoce quien
+       venga de fuera; y al no ser ninguno de los dos que ya convivian, obliga a renombrar los dos
+       sin dejar un «ganador» a medias.
+
+       📌 Y EL 2026-08-15, EN EL MISMO DIA, `deasy-hero-kicker` SE COLAPSO AQUI TAMBIEN. Era la
+       tercera forma: no un rotulo de texto sino una PASTILLA —borde, fondo, radio, `px-3 py-1`,
+       `tracking-[0.2em]`—. El dueño la descarto por aspecto («el kicker no me gusta para nada») y
+       pidio una sola forma, tomada de TailAdmin. Con eso mueren las tres.
+
+       ⚠️ SE ADOPTA SU FORMA, NO SU COLOR, y la diferencia esta medida. Su rotulo de grupo
+       (`menu-group-title`) es 12 px, peso **400**, versalitas, SIN interletra y en `gray-400`. Los
+       tres primeros se adoptan —de ahi que este bloque pase de `font-bold` a `font-medium` y
+       pierda el `tracking-wide`—, pero su gris da **2.58:1 sobre blanco** y no llega a AA. Se
+       queda `--color-muted` (gray-600, 7.69:1), que `frontend/CLAUDE.md` llama «el SUELO, nada mas
+       claro para texto». La norma del repo gana a la fuente de diseño, que es justo lo que la
+       propia skill de TailAdmin dice.
+
+       Esto contesta media F6.1 en la practica: la escala por debajo de 14px tiene DOS
+       escalones y este es el de abajo, `text-theme-xs` (12/18), que es el de la paleta
+       adoptada. Se lleva de paso 38 de los `text-[…]` arbitrarios. */
+    /* ⚠️ EL PESO Y EL AIRE SE CORRIGIERON EL 2026-08-19 (F2), y la correccion la decidio MEDIR
+       quien la usa. Esta regla nacio copiando la forma del `menu-group-title` de TailAdmin
+       —12 px, peso bajo, SIN interletra—, y ahi estaba el error: eso es el rotulo de grupo de una
+       BARRA LATERAL, no un ante-titulo. Al auditar F2 salio el veredicto:
+
+           peso        de 46 versalitas escritas a mano, **CERO** usaron `font-medium`
+                       (25 `bold`, 21 `semibold`)
+           interletra  **45 de 46** pusieron alguna; la receta no ponia ninguna
+                       (`wide` 14 · `wider` 13 · `widest` 3 · y 15 ARBITRARIAS: 0.12/0.14/0.16em)
+
+       Cuarenta y seis autores independientes votaron contra la receta y ninguno a favor. Eso no es
+       deriva: es que la receta perdio la discusion. Se adopta el punto medio de lo que escribieron
+       —peso 600 y `tracking-wide`—, que ademas deja sitio por encima para el titulo de seccion de
+       14 px, que es OTRO objeto y pesa mas. */
+    .deasy-overline {
+        @apply m-0 text-theme-xs font-semibold uppercase tracking-wide text-muted;
+    }
+
+    /* ⚠️ NO LLEVA TONOS DE ESTADO, Y ES DELIBERADO — F2, 2026-08-19.
+       Seis usos escriben el color suelto (`deasy-overline text-success`, `… text-info`), y nueve
+       familias del sistema —`btn`, `tag`, `icon-box`, `alert`, `dot`, `flow-step`,
+       `inline-action`, `nav-feedback`, `pdf-action`— si declaran sus tonos. La tentacion es
+       copiarlas. No se hace, y el motivo es lo que un modificador ES:
+
+       `deasy-btn--danger` existe porque una variante cambia **fondo, borde Y texto**: eso es una
+       receta, y una receta necesita nombre. Un overline en `text-success` cambia **una sola
+       propiedad**. Ponerle nombre a eso es ceremonia — y ademas dejaria cuatro modificadores con
+       UN consumidor cada uno, que es justo lo que la regla de F1.3e evita.
+
+       Componer una utilidad de color sobre una receta tipografica no es sobreescribir: es como
+       funciona el sistema, igual que `deasy-card p-4` o `deasy-empty col-span-full`. La receta
+       declara la FORMA; el color es del llamante.
+
+       Y de los seis, solo cuatro son estado: los otros dos son un `<summary>` en color de enlace
+       y un enfasis en `text-primary`. Meterlos en un tono de estado habria sido nombrar mal. */
+
+    /* Cuando va sobre un titulo y necesita separarse de el. */
+    .deasy-overline--spaced {
+        @apply mb-1 block;
+    }
+}

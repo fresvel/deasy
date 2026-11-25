@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Backend - Errores conocidos
 
 ## Esquema MariaDB desalineado con el codigo
@@ -5,7 +10,7 @@
 - Error tipico: `Unknown column 'launch_mode' in 'SELECT'`
 - Contexto: el codigo backend ya fue actualizado, pero la base sigue con un esquema anterior.
 - Estado: esperado si se cambiaron tablas como `tasks`, `task_items`, `documents` o `signature_flow_templates` y no se recreo el esquema.
-- Impacto: listados, CRUDs y paneles del dashboard pueden fallar aunque el frontend este correcto.
+- Impacto: listados, CRUDs y paneles del home pueden fallar aunque el frontend este correcto.
 
 ## Causa habitual
 

@@ -1,21 +1,16 @@
 <template>
   <div
-    class="signature-box absolute flex flex-col items-center justify-center p-1 rounded-sm backdrop-blur-[1px] transition-colors group z-20"
-    :class="[
-      isActive ? 'border-sky-500 bg-sky-500/20 ring-4 ring-sky-500 ring-opacity-30 border-solid' : 'border-dashed border-sky-400 bg-sky-400/10 hover:border-sky-500 hover:bg-sky-500/20',
-      isPreview ? 'pointer-events-none opacity-60 z-30' : 'pointer-events-auto custom-drag-cursor',
-      isDragging ? 'opacity-80 scale-105 shadow-xl ring-2 custom-dragging-cursor' : 'shadow-sm',
-      customClass
-    ]"
-    :style="[computedStyle, { borderWidth: '2px' }]"
+    class="deasy-firma-caja absolute flex flex-col items-center justify-center p-1 rounded-lg backdrop-blur-[1px] transition-colors group z-(--z-capa-elemento)"
+    :class="[ isActive ? 'deasy-firma-caja--activa' : '', isPreview ? 'pointer-events-none opacity-60 z-(--z-capa-activo)' : 'pointer-events-auto custom-drag-cursor', isDragging ? 'deasy-firma-caja--arrastrando opacity-80 scale-105 custom-dragging-cursor' : 'shadow-elev-1' ]"
+    :style="computedStyle"
     @mousedown.stop.prevent="startDrag"
     @click.stop="onClick"
-    @mouseenter="$emit('hover-enter')"
-    @mouseleave="$emit('hover-leave')"
+    @mouseenter="avisarEntrada"
+    @mouseleave="avisarSalida"
   >
-    <div class="h-full w-full border border-sky-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40 pointer-events-none">
-      <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-sky-600 drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
-      <span class="text-[9px] sm:text-[10px] font-bold text-sky-800 bg-white/90 px-1.5 py-0.5 rounded shadow-sm border border-sky-200 uppercase tracking-widest text-center truncate max-w-full">
+    <div class="h-full w-full border border-blue-light-400/50 border-dashed rounded relative flex flex-col items-center justify-center bg-white/40 pointer-events-none">
+      <IconSignature class="w-6 h-6 sm:w-8 sm:h-8 text-info drop-shadow mb-1 opacity-75 group-hover:opacity-100 group-hover:scale-110 transition-all duration-300" />
+      <span class="deasy-overline sm:text-theme-xs text-info bg-white/90 px-1.5 py-0.5 rounded border border-blue-light-200 text-center truncate max-w-full">
         {{ label || 'Firma' }}
       </span>
     </div>
@@ -23,13 +18,13 @@
     <!-- Botón eliminar rápido en hover o seleccionado -->
     <div 
       v-if="!isPreview"
-      class="absolute right-0 top-0 z-30 flex translate-x-[calc(100%+0.5rem)] flex-col gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      class="absolute right-0 top-0 z-(--z-capa-controles) flex translate-x-[calc(100%+0.5rem)] flex-col gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
       :class="{ 'opacity-100': isActive }"
     >
       <button
         v-if="allowDelete"
         @click.stop="$emit('delete')"
-        class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-rose-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-rose-600/92 active:scale-95"
+        class="deasy-pdf-action deasy-pdf-action--danger"
       >
         <IconTrash class="w-3.5 h-3.5" />
       </button>
@@ -38,7 +33,7 @@
 
     <div
       v-if="!isPreview && $slots.navigation"
-      class="absolute bottom-0 left-0 right-0 z-30 flex translate-y-[calc(100%+0.4rem)] flex-col items-stretch gap-1 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
+      class="absolute bottom-0 left-0 right-0 z-(--z-capa-controles) flex translate-y-[calc(100%+0.4rem)] flex-col items-stretch gap-2 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity"
       :class="{ 'opacity-100': isActive }"
     >
       <slot name="navigation"></slot>
@@ -65,10 +60,41 @@ const props = defineProps({
   isPreview: { type: Boolean, default: false },
   label: { type: String, default: '' },
   allowDelete: { type: Boolean, default: true },
-  customClass: { type: String, default: '' }
 });
 
 const emit = defineEmits(['update:position', 'delete', 'select', 'drag-start', 'drag-end', 'hover-enter', 'hover-leave']);
+
+// ⚠️ ESTA CAJA PROMETE AVISAR CUANDO EL PUNTERO SALE, Y TIENE QUE CUMPLIRLO AL DESAPARECER.
+//
+// `hover-leave` salia solo de `@mouseleave`, y el navegador NO dispara `mouseleave` sobre un
+// elemento que se desmonta con el puntero dentro. Quien escucha se queda creyendo que el puntero
+// sigue encima para siempre.
+//
+// El efecto medido el 2026-11-10: en el multifirmador, los botones «Siguiente documento» y
+// «Siguiente pagina» viven DENTRO de esta caja, asi que pulsarlos la desmonta con el puntero
+// encima. `isHoveringField` se quedaba en `true` y la vista previa de la estampa --que se pinta con
+// `!isHoveringField`-- no volvia a aparecer en los documentos siguientes hasta que un clic de
+// colocacion creaba otra caja de la que salir. Navegando con el boton de la cabecera del modal no
+// pasaba: para llegar ahi el puntero sale de la caja y `mouseleave` SI se dispara. Mismo bucle con
+// el boton de borrar, y en los dos componentes que usan esta caja.
+//
+// Se arregla aqui y no en quien escucha porque el incumplimiento es de esta caja: con esto, todo
+// consumidor presente y futuro recibe el par completo sin saber nada de esto.
+const punteroDentro = ref(false);
+
+const avisarEntrada = () => {
+  if (punteroDentro.value) return;
+  punteroDentro.value = true;
+  emit('hover-enter');
+};
+
+// Idempotente a proposito: se llama desde `mouseleave` Y desde el desmontaje, y solo uno de los dos
+// ocurre en cada caso --pero nada garantiza que no ocurran los dos--.
+const avisarSalida = () => {
+  if (!punteroDentro.value) return;
+  punteroDentro.value = false;
+  emit('hover-leave');
+};
 
 const isDragging = ref(false);
 let dragStartX = 0;
@@ -196,15 +222,8 @@ onBeforeUnmount(() => {
     window.removeEventListener('mousemove', onDrag);
     window.removeEventListener('mouseup', stopDrag);
   }
+  // El aviso que el navegador no va a dar.
+  avisarSalida();
 });
 
 </script>
-
-<style scoped>
-.custom-drag-cursor {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='white' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 12.5v-7.5a1.5 1.5 0 0 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'%3E%3C/path%3E%3Cpath d='M14 5.5a1.5 1.5 0 1 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M17 7.5a1.5 1.5 0 1 1 3 0v8.5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -5.012 -2.7l-3.196 -4.8a1.996 1.996 0 0 1 2.14 -3.111l3.86 1.311'%3E%3C/path%3E%3C/svg%3E") 12 12, grab;
-}
-.custom-drag-cursor:active, .custom-dragging-cursor {
-  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='lightgray' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 12.5v-7.5a1.5 1.5 0 0 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'%3E%3C/path%3E%3Cpath d='M14 5.5a1.5 1.5 0 1 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M17 7.5a1.5 1.5 0 1 1 3 0v8.5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -5.012 -2.7l-3.196 -4.8a1.996 1.996 0 0 1 2.14 -3.111l3.86 1.311'%3E%3C/path%3E%3C/svg%3E") 12 12, grabbing !important;
-}
-</style>

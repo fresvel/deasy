@@ -1,17 +1,51 @@
 <template>
-  <div class="mb-4 w-full">
-    <div class="rounded-[1.8rem] border border-white/16 bg-[linear-gradient(180deg,rgba(120,179,223,0.92)_0%,rgba(130,185,228,0.82)_100%)] shadow-[0_22px_40px_rgba(6,12,24,0.24)] p-4 backdrop-blur-sm">
+  <!-- ⚠️ EL CENTRADO VIVE AQUI DESDE EL 2026-08-16, y antes no hacia falta: la forma `compact`
+       nacio para el rail de 80 px, que la centraba con su propio `items-center`. Al morir el rail
+       (F4.C·B) el avatar se quedo pegado a la izquierda de una columna de 282, y no se noto hasta
+       medir la distancia al centro. Una forma que depende de que su contenedor la centre no esta
+       terminada: el centrado es suyo. -->
+  <div v-if="compact" class="flex w-full justify-center">
+    <button
+      type="button"
+      class="deasy-nav-avatar group"
+      :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
+      :title="username"
+      :aria-label="`Perfil de ${username}`"
+      @click="handleImageClick"
+    >
+      <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-2xl bg-white object-cover">
+      <span
+        v-if="signatureMarker"
+        class="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-navy-deep bg-emerald-400"
+        aria-hidden="true"
+      ></span>
+    </button>
+    <input
+      v-if="editable"
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      aria-label="Selecciona una foto de perfil"
+      class="hidden"
+      @change="onFileChange"
+    >
+  </div>
+
+  <div v-else class="mb-3 w-full">
+    <div
+      class="deasy-card overflow-hidden p-3"
+    >
       <div class="flex items-center gap-3">
         <div 
           class="relative shrink-0 transition-transform hover:scale-[1.03]"
           :class="{ 'cursor-pointer': editable, 'cursor-default': !editable }"
           @click="handleImageClick"
         >
-          <div class="relative w-16 h-16 sm:w-18 sm:h-18 p-1 rounded-full bg-white/40 border border-white/55 shadow-inner group">
-            <img :src="displayPhoto" alt="User Avatar" class="w-full h-full object-cover rounded-full block bg-white/70">
+          <div class="deasy-card group relative h-12 w-12 p-1">
+            <img :src="displayPhoto" alt="User Avatar" class="block h-full w-full rounded-full bg-white object-cover">
             <div 
               v-if="editable" 
-              class="absolute inset-1 flex items-center justify-center bg-[#036065]/82 text-white text-[10px] font-semibold rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-center px-1"
+              class="absolute inset-1 flex items-center justify-center rounded-full bg-navy/80 px-1 text-center text-theme-xs font-semibold text-white opacity-0 transition-opacity duration-200 group-hover:opacity-100"
             >
               <span>Foto</span>
             </div>
@@ -21,21 +55,22 @@
             ref="fileInput"
             type="file"
             accept="image/*"
+            aria-label="Selecciona una foto de perfil"
             class="hidden"
             @change="onFileChange"
           >
         </div>
 
         <div class="min-w-0 flex-1">
-          <h3 class="m-0 truncate text-lg font-semibold leading-tight text-white">
+          <h3 class="deasy-title deasy-title--section truncate leading-tight">
             {{ username }}
           </h3>
-          <p class="mt-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/78">
-            Cuenta institucional
+          <p class="deasy-overline mt-1">
+            {{ subtitle }}
           </p>
-          <div v-if="signatureMarker" class="mt-2 rounded-xl bg-white/18 px-3 py-1.5">
-            <p class="m-0 text-[11px] font-semibold uppercase tracking-[0.14em] text-white/72">Token firma</p>
-            <p class="mt-1 text-xs font-mono text-white/92 truncate">
+          <div v-if="showSignatureDetails && signatureMarker" class="deasy-card mt-2 px-2.5 py-1.5">
+            <p class="deasy-overline">Token firma</p>
+            <p class="mt-1 truncate font-mono text-xs text-body">
               {{ signatureMarker }}
             </p>
           </div>
@@ -57,11 +92,23 @@ const props = defineProps({
         type: String,
         default: 'Usuario'
     },
+    subtitle: {
+        type: String,
+        default: 'Cuenta institucional'
+    },
     signatureMarker: {
         type: String,
         default: ''
     },
+    showSignatureDetails: {
+        type: Boolean,
+        default: true
+    },
     editable: {
+        type: Boolean,
+        default: false
+    },
+    compact: {
         type: Boolean,
         default: false
     }

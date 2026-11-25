@@ -1,19 +1,24 @@
 import bcrypt from "bcrypt";
-import fs from "fs/promises";
-import path from "path";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { getPostgresPool } from "../../config/postgres.js";
 import { transporter } from "../../lib/mailer.js";
 import { generateVerificationCode } from "../../utils/email/generateCode.js";
+import { actualizarHashDeContrasena } from "../../dominios/identidad/index.js";
 
 /**
  * Enviar código de recuperación de contraseña
  */
 export const sendResetCodeService = async (email) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   const [[user]] = await pool.query(
-    "SELECT id FROM users WHERE email = ?",
-    [email]
+    `SELECT p.id
+       FROM persons p
+       JOIN emails e ON e.person_id = p.id AND e.is_active = 1
+      WHERE e.direccion = ? AND p.is_active = 1
+      LIMIT 1`,
+    [String(email ?? "").trim().toLowerCase()]
   );
 
   if (!user) return;
@@ -23,13 +28,13 @@ export const sendResetCodeService = async (email) => {
   const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min
 
   await pool.query(
-    "DELETE FROM password_reset_codes WHERE user_id = ? AND used = 0",
+    "DELETE FROM password_reset_codes WHERE person_id = ? AND used = 0",
     [user.id]
   );
 
 
   await pool.query(
-    `INSERT INTO password_reset_codes (user_id, code_hash, expires_at)
+    `INSERT INTO password_reset_codes (person_id, code_hash, expires_at)
      VALUES (?, ?, ?)`,
     [user.id, codeHash, expiresAt]
   );
@@ -54,18 +59,22 @@ export const sendResetCodeService = async (email) => {
  * Verificar código de recuperación
  */
 export const verifyResetCodeService = async (email, code) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   const [[user]] = await pool.query(
-    "SELECT id FROM users WHERE email = ?",
-    [email]
+    `SELECT p.id
+       FROM persons p
+       JOIN emails e ON e.person_id = p.id AND e.is_active = 1
+      WHERE e.direccion = ? AND p.is_active = 1
+      LIMIT 1`,
+    [String(email ?? "").trim().toLowerCase()]
   );
 
   if (!user) return false;
 
   // Tomamos el último código no usado
   const [[row]] = await pool.query(
-    "SELECT id, code_hash, expires_at, used FROM password_reset_codes WHERE user_id = ? ORDER BY created_at DESC LIMIT 1",
+    "SELECT id, code_hash, expires_at, used FROM password_reset_codes WHERE person_id = ? ORDER BY created_at DESC LIMIT 1",
     [user.id]
   );
 
@@ -88,12 +97,16 @@ export const verifyResetCodeService = async (email, code) => {
  * Resetear contraseña
  */
 export const resetPasswordService = async (email, code, password) => {
-  const pool = getMariaDBPool();
+  const pool = getPostgresPool();
 
   // 1️⃣ Buscar usuario
   const [[user]] = await pool.query(
-    "SELECT id FROM users WHERE email = ?",
-    [email]
+    `SELECT p.id
+       FROM persons p
+       JOIN emails e ON e.person_id = p.id AND e.is_active = 1
+      WHERE e.direccion = ? AND p.is_active = 1
+      LIMIT 1`,
+    [String(email ?? "").trim().toLowerCase()]
   );
   if (!user) throw new Error("Usuario no encontrado");
 
@@ -104,11 +117,11 @@ export const resetPasswordService = async (email, code, password) => {
   // 3️⃣ Hash de la nueva contraseña
   const passwordHash = await bcrypt.hash(password, 10);
 
-  // 4️⃣ Actualizar contraseña
-  await pool.query(
-    "UPDATE users SET password_hash = ? WHERE id = ?",
-    [passwordHash, user.id]
-  );
+  // 4️⃣ Actualizar contraseña — POR LA PUERTA DE `identidad`, que es su dueño.
+  // Aquí había un `UPDATE persons SET password_hash` propio, y era la deuda F5.3: la misma escritura
+  // hecha desde dos sitios, así que cambiar cómo se guarda una contraseña había que acordarse de
+  // hacerlo en los dos.
+  await actualizarHashDeContrasena(pool, user.id, passwordHash);
 
   // 5️⃣ Marcar SOLO este código como usado
   await pool.query(

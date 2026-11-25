@@ -1,0 +1,749 @@
+---
+title: "El mapa completo, con todos sus campos"
+description: "Las 43 tablas de la cadena proceso → documento, agrupadas como en el mapa, con todas sus columnas y claves ajenas. Se genera desde el esquema."
+sidebar:
+  label: "Mapa con campos"
+  order: 15.5
+---
+
+:::note[Esta página se genera: no se edita a mano]
+La escribe `scripts/docs/gen-mapa-campos.mjs` cada vez que corre `bash scripts/docs/gen-dbml.sh`,
+a partir del esquema, y la puerta de CI falla si se separa de él. Una edición a mano se pierde en
+la siguiente regeneración.
+
+**La agrupación sale de [el mapa completo](/modelo/mapa-completo/)**: si una tabla cambia de subgrupo allí,
+cambia aquí. **Los campos y las relaciones salen del esquema, sin elegir**: están todos.
+:::
+
+**43 tablas · 387 columnas · 104 claves ajenas · 10 diagramas.**
+
+## Cómo leerla
+
+- Cada **caja con campos** es una tabla del grupo, con **todas** sus columnas: tipo, nombre y, si
+  lo es, `PK` (clave primaria), `FK` (clave ajena) o `UK` (única).
+- **Cada clave ajena se dibuja una sola vez: en el diagrama de la tabla que la guarda.** Si apunta a
+  una tabla de otro diagrama, esa tabla sale como **caja vacía**; sus campos están en el suyo.
+- Las claves que **llegan** desde otros diagramas se listan debajo de cada uno, en un desplegable.
+  Dibujarlas también hacía ilegible cualquier grupo con una tabla a la que apunta medio esquema,
+  como `persons`.
+- En cada línea, `||` quiere decir que la clave ajena es obligatoria y `|o` que admite nulos; `o{`
+  son varias filas y `o|` como mucho una. La etiqueta es la columna que guarda la clave.
+- Un subgrupo grande va en varios diagramas seguidos, y algunos se leen de izquierda a derecha:
+  se decidió midiendo la letra de cada uno, para que ninguno baje de 12 px a ancho de columna.
+- Para acercar, **Ctrl + rueda** sobre el diagrama, o su botón de pantalla completa.
+
+## La organización (1 de 2)
+
+**8 tablas** · 76 columnas · 17 claves ajenas propias. Apunta a `actos`, `cantones`, `estados_civiles`, `paises`, `relation_unit_types`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  unit_types {
+    int id PK
+    varchar name
+    smallint is_active
+    timestamp created_at
+    timestamp updated_at
+  }
+  units {
+    int id PK
+    varchar name
+    varchar label
+    varchar slug
+    int unit_type_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  unit_positions {
+    int id PK
+    int unit_id FK
+    int slot_no
+    varchar title
+    jsonb profile
+    text position_type
+    smallint is_unit_head
+    smallint head_flag
+    timestamp created_at
+    timestamp updated_at
+    int cargo_id FK
+  }
+  cargos {
+    int id PK
+    varchar code UK
+    varchar name UK
+    varchar description
+    smallint is_active
+    timestamp created_at
+    timestamp updated_at
+  }
+  position_assignments {
+    int id PK
+    int position_id FK
+    int person_id FK
+    date start_date
+    date end_date
+    smallint is_current
+    smallint current_flag
+    timestamp created_at
+    timestamp updated_at
+  }
+  persons {
+    int id PK
+    varchar first_name
+    varchar last_name
+    int nacionalidad_pais_id FK
+    date fecha_nacimiento
+    int nacimiento_pais_id FK
+    int nacimiento_canton_id FK
+    text sexo
+    int estado_civil_id FK
+    varchar password_hash
+    text status
+    text photo_url
+    smallint is_active
+    varchar token UK
+    timestamp created_at
+    timestamp updated_at
+  }
+  unit_relations {
+    int id PK
+    int relation_type_id FK
+    int parent_unit_id FK
+    int child_unit_id FK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  unit_vigencias {
+    int id PK
+    int unit_id FK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
+    timestamp created_at
+  }
+  estados_civiles |o--o{ persons : "estado_civil_id"
+  cantones |o--o{ persons : "nacimiento_canton_id"
+  paises |o--o{ persons : "nacimiento_pais_id"
+  paises |o--o{ persons : "nacionalidad_pais_id"
+  persons ||--o{ position_assignments : "person_id"
+  unit_positions ||--o{ position_assignments : "position_id"
+  cargos ||--o{ unit_positions : "cargo_id"
+  units ||--o{ unit_positions : "unit_id"
+  units ||--o{ unit_relations : "child_unit_id"
+  actos |o--o{ unit_relations : "fin_acto_id"
+  actos |o--o{ unit_relations : "inicio_acto_id"
+  units ||--o{ unit_relations : "parent_unit_id"
+  relation_unit_types ||--o{ unit_relations : "relation_type_id"
+  actos |o--o{ unit_vigencias : "fin_acto_id"
+  actos |o--o{ unit_vigencias : "inicio_acto_id"
+  units ||--o{ unit_vigencias : "unit_id"
+  unit_types ||--o{ units : "unit_type_id"
+```
+
+<details>
+<summary>Llegan 58 claves ajenas desde otros diagramas</summary>
+
+`acto_adjuntos.subido_por_person_id` → `persons` · `actos.registrado_por_person_id` → `persons` · `actos.suscrito_por_person_id` → `persons` · `actos.unidad_emisora_id` → `units` · `aplications.person_id` → `persons` · `persona_autoidentificacion.person_id` → `persons` · `cargo_role_map.cargo_id` → `cargos` · `catalogo_documental.owner_person_id` → `persons` · `chat_conversations.created_by` → `persons` · `chat_conversations.scope_unit_id` → `units` · `chat_messages.sender_person_id` → `persons` · `chat_notifications.recipient_person_id` → `persons` · `chat_conversation_participants.person_id` → `persons` · `chat_message_reads.person_id` → `persons` · `contracts.person_id` → `persons` · `contracts.position_id` → `unit_positions` · `direcciones.person_id` → `persons` · `document_attachments.uploaded_by_person_id` → `persons` · `document_signatures.signer_user_id` → `persons` · `document_version_uploads.uploaded_by_person_id` → `persons` · `document_workflow_observations.author_person_id` → `persons` · `document_workflow_observations.resolved_by_person_id` → `persons` · `documentos_identidad.person_id` → `persons` · `dossiers.person_id` → `persons` · `emails.person_id` → `persons` · `lineas.cargo_id` → `cargos` · `lineas.unit_type_id` → `unit_types` · `lineas.unit_id` → `units` · `participantes_declarados.cargo_id` → `cargos` · `participantes_declarados.persona_id` → `persons` · `participantes_declarados.unit_id` → `units` · `password_reset_codes.person_id` → `persons` · `person_certificates.person_id` → `persons` · `position_equivalencias.registrado_por_person_id` → `persons` · `position_equivalencias.sucesor_position_id` → `unit_positions` · `position_vigencias.position_id` → `unit_positions` · `process_equivalencias.registrado_por_person_id` → `persons` · `process_runs.created_by_user_id` → `persons` · `role_assignments.person_id` → `persons` · `role_assignments.derived_from_assignment_id` → `position_assignments` · `role_assignments.unit_id` → `units` · `task_item_tenures.person_id` → `persons` · `task_item_tenures.position_id` → `unit_positions` · `task_items.assigned_person_id` → `persons` · `task_items.created_by_person_id` → `persons` · `task_items.origin_unit_id` → `units` · `task_items.responsible_position_id` → `unit_positions` · `task_items.target_unit_id` → `units` · `tasks.scope_unit_id` → `units` · `telefonos.person_id` → `persons` · `turnos.persona_id` → `persons` · `unit_equivalencias.antecesor_vigencia_id` → `unit_vigencias` · `unit_equivalencias.registrado_por_person_id` → `persons` · `unit_equivalencias.sucesor_unit_id` → `units` · `vacancies.position_id` → `unit_positions` · `vacancy_visibility.unit_id` → `units` · `signature_batch_jobs.user_id` → `persons` · `task_item_tenures.performed_by_person_id` → `persons`
+
+</details>
+
+## La organización (2 de 2)
+
+**7 tablas** · 56 columnas · 15 claves ajenas propias. Apunta a `persons`, `unit_positions`, `unit_vigencias`, `units`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  correcciones_de_estructura {
+    bigint id PK
+    varchar tabla
+    bigint registro_id
+    int actor_person_id
+    text motivo
+    jsonb antes
+    jsonb despues
+    timestamp ocurrido_at
+  }
+  position_vigencias {
+    int id PK
+    int position_id FK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
+    timestamp created_at
+  }
+  unit_equivalencias {
+    int id PK
+    int antecesor_vigencia_id FK
+    int sucesor_unit_id FK
+    int registrado_por_person_id FK
+    timestamp created_at
+  }
+  position_equivalencias {
+    int id PK
+    int antecesor_vigencia_id FK
+    int sucesor_position_id FK
+    int registrado_por_person_id FK
+    timestamp created_at
+  }
+  tipos_de_acto {
+    int id PK
+    varchar code UK
+    varchar name
+    timestamp created_at
+    timestamp updated_at
+  }
+  actos {
+    int id PK
+    int tipo_de_acto_id FK
+    varchar numero
+    varchar asunto
+    date fecha_emision
+    date fecha_vigencia
+    int unidad_emisora_id FK
+    varchar emisor_externo
+    int suscrito_por_person_id FK
+    varchar suscrito_por_nombre
+    text en_calidad_de
+    int registrado_por_person_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  acto_adjuntos {
+    int id PK
+    int acto_id FK, UK
+    varchar file_path
+    varchar file_name
+    varchar mime_type
+    bigint size_bytes
+    char sha256
+    int subido_por_person_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  actos ||--o| acto_adjuntos : "acto_id"
+  persons |o--o{ acto_adjuntos : "subido_por_person_id"
+  persons |o--o{ actos : "registrado_por_person_id"
+  persons |o--o{ actos : "suscrito_por_person_id"
+  tipos_de_acto ||--o{ actos : "tipo_de_acto_id"
+  units |o--o{ actos : "unidad_emisora_id"
+  position_vigencias ||--o{ position_equivalencias : "antecesor_vigencia_id"
+  persons |o--o{ position_equivalencias : "registrado_por_person_id"
+  unit_positions ||--o{ position_equivalencias : "sucesor_position_id"
+  actos |o--o{ position_vigencias : "fin_acto_id"
+  actos |o--o{ position_vigencias : "inicio_acto_id"
+  unit_positions ||--o{ position_vigencias : "position_id"
+  unit_vigencias ||--o{ unit_equivalencias : "antecesor_vigencia_id"
+  persons |o--o{ unit_equivalencias : "registrado_por_person_id"
+  units ||--o{ unit_equivalencias : "sucesor_unit_id"
+```
+
+<details>
+<summary>Llegan 9 claves ajenas desde otros diagramas</summary>
+
+`acto_documentos.acto_id` → `actos` · `process_relations.fin_acto_id` → `actos` · `process_relations.inicio_acto_id` → `actos` · `process_vigencias.fin_acto_id` → `actos` · `process_vigencias.inicio_acto_id` → `actos` · `unit_relations.fin_acto_id` → `actos` · `unit_relations.inicio_acto_id` → `actos` · `unit_vigencias.fin_acto_id` → `actos` · `unit_vigencias.inicio_acto_id` → `actos`
+
+</details>
+
+## Lo que se declara (1 de 2)
+
+**6 tablas** · 50 columnas · 16 claves ajenas propias. Apunta a `actos`, `cargos`, `persons`, `unit_types`, `units`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  processes {
+    int id PK
+    varchar name
+    varchar slug UK
+    timestamp created_at
+  }
+  process_definition_versions {
+    int id PK
+    int linea_id FK
+    varchar definition_version
+    varchar description
+    text status
+    smallint active_series_flag
+    date effective_from
+    date effective_to
+    timestamp created_at
+  }
+  process_vigencias {
+    int id PK
+    int process_id FK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
+    timestamp created_at
+  }
+  process_relations {
+    int id PK
+    int parent_process_id FK
+    int child_process_id FK, UK
+    date vigente_desde
+    date vigente_hasta
+    text inicio_origen
+    int inicio_acto_id FK
+    text fin_origen
+    int fin_acto_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  process_equivalencias {
+    int id PK
+    int antecesor_vigencia_id FK
+    int sucesor_process_id FK
+    int registrado_por_person_id FK
+    timestamp created_at
+  }
+  lineas {
+    int id PK
+    int process_id FK
+    varchar nombre
+    int cargo_id FK
+    text recipient_policy
+    text unit_scope_type
+    int unit_type_id FK
+    int unit_id FK
+    int linea_anterior_id FK
+    date effective_from
+    date effective_to
+    timestamp created_at
+  }
+  lineas |o--o{ lineas : "linea_anterior_id"
+  cargos |o--o{ lineas : "cargo_id"
+  processes ||--o{ lineas : "process_id"
+  unit_types |o--o{ lineas : "unit_type_id"
+  units |o--o{ lineas : "unit_id"
+  lineas ||--o{ process_definition_versions : "linea_id"
+  process_vigencias ||--o{ process_equivalencias : "antecesor_vigencia_id"
+  persons |o--o{ process_equivalencias : "registrado_por_person_id"
+  processes ||--o{ process_equivalencias : "sucesor_process_id"
+  processes ||--o| process_relations : "child_process_id"
+  actos |o--o{ process_relations : "fin_acto_id"
+  actos |o--o{ process_relations : "inicio_acto_id"
+  processes ||--o{ process_relations : "parent_process_id"
+  actos |o--o{ process_vigencias : "fin_acto_id"
+  actos |o--o{ process_vigencias : "inicio_acto_id"
+  processes ||--o{ process_vigencias : "process_id"
+```
+
+<details>
+<summary>Llegan 8 claves ajenas desde otros diagramas</summary>
+
+`chat_conversations.process_id` → `processes` · `chat_conversations.scope_current_definition_id` → `process_definition_versions` · `chat_conversations.scope_origin_definition_id` → `process_definition_versions` · `chat_conversations.scope_process_id` → `processes` · `process_definition_period_types.process_definition_id` → `process_definition_versions` · `process_runs.process_definition_id` → `process_definition_versions` · `tasks.process_definition_id` → `process_definition_versions` · `vinculos.process_definition_id` → `process_definition_versions`
+
+</details>
+
+## Lo que se declara (2 de 2)
+
+**6 tablas** · 47 columnas · 8 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  process_definition_period_types {
+    int id PK
+    int process_definition_id FK
+    int term_type_id FK
+    smallint is_active
+    timestamp created_at
+  }
+  term_types {
+    int id PK
+    varchar code UK
+    varchar name UK
+    varchar description
+    smallint is_active
+    timestamp created_at
+    timestamp updated_at
+  }
+  catalogo_documental {
+    int id PK
+    varchar code UK
+    varchar display_name
+    varchar description
+    text template_scope
+    int owner_person_id FK
+    timestamp created_at
+  }
+  ediciones {
+    int id PK
+    int catalogo_documental_id FK
+    varchar storage_version
+    text lifecycle_state
+    varchar base_object_prefix
+    jsonb available_formats
+    int generador_id FK
+    varchar content_hash
+    int parent_version_id FK
+    smallint publicada_flag
+    smallint is_active
+    timestamp created_at
+  }
+  generadores_de_documento {
+    int id PK
+    varchar code UK
+    varchar nombre
+    varchar description
+    text tipo
+    varchar destino
+    varchar source_path
+    varchar preview_path
+    smallint is_active
+    timestamp created_at
+  }
+  vinculos {
+    int id PK
+    int process_definition_id FK
+    int edicion_id FK
+    int sort_order
+    text item_mode
+    timestamp created_at
+  }
+  persons |o--o{ catalogo_documental : "owner_person_id"
+  catalogo_documental ||--o{ ediciones : "catalogo_documental_id"
+  generadores_de_documento |o--o{ ediciones : "generador_id"
+  ediciones |o--o{ ediciones : "parent_version_id"
+  process_definition_versions ||--o{ process_definition_period_types : "process_definition_id"
+  term_types ||--o{ process_definition_period_types : "term_type_id"
+  process_definition_versions ||--o{ vinculos : "process_definition_id"
+  ediciones ||--o{ vinculos : "edicion_id"
+```
+
+<details>
+<summary>Llegan 4 claves ajenas desde otros diagramas</summary>
+
+`document_versions.edicion_id` → `ediciones` · `pasos_declarados.edicion_id` → `ediciones` · `task_items.vinculo_id` → `vinculos` · `terms.term_type_id` → `term_types`
+
+</details>
+
+## Lo que ocurre (1 de 3)
+
+**3 tablas** · 27 columnas · 9 claves ajenas propias. Apunta a `persons`, `process_definition_versions`, `term_types`, `units`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  process_runs {
+    int id PK
+    int process_definition_id FK
+    int term_id FK
+    text run_mode
+    int source_run_id FK
+    int created_by_user_id FK
+    varchar reason
+    text status
+    timestamp created_at
+    timestamp updated_at
+  }
+  terms {
+    int id PK
+    varchar name UK
+    int term_type_id FK
+    date start_date
+    date end_date
+    smallint is_active
+  }
+  tasks {
+    int id PK
+    int process_definition_id FK
+    int process_run_id FK
+    int term_id FK
+    int scope_unit_id FK
+    int normalized_scope_unit_id
+    text description
+    date start_date
+    date end_date
+    varchar status
+    timestamp created_at
+  }
+  persons |o--o{ process_runs : "created_by_user_id"
+  process_definition_versions ||--o{ process_runs : "process_definition_id"
+  process_runs |o--o{ process_runs : "source_run_id"
+  terms |o--o{ process_runs : "term_id"
+  process_definition_versions ||--o{ tasks : "process_definition_id"
+  process_runs |o--o{ tasks : "process_run_id"
+  units ||--o{ tasks : "scope_unit_id"
+  terms ||--o{ tasks : "term_id"
+  term_types ||--o{ terms : "term_type_id"
+```
+
+<details>
+<summary>Llega 1 clave ajena desde otros diagramas</summary>
+
+`task_items.task_id` → `tasks`
+
+</details>
+
+## Lo que ocurre (2 de 3)
+
+**3 tablas** · 45 columnas · 14 claves ajenas propias. Apunta a `ediciones`, `persons`, `tasks`, `unit_positions`, `units`, `vinculos`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  task_items {
+    int id PK
+    int task_id FK
+    int vinculo_id FK
+    text origin_kind
+    varchar title
+    int sort_order
+    int created_by_person_id FK
+    int source_task_item_id FK
+    int target_unit_id FK
+    int process_definition_template_key
+    int responsible_position_id FK
+    int responsible_position_key
+    int assigned_person_id FK
+    varchar document_status
+    int origin_unit_id FK
+    date start_date
+    date end_date
+    timestamp user_started_at
+    timestamp created_at
+  }
+  task_item_tenures {
+    int id PK
+    int task_item_id FK
+    int person_id FK
+    int position_id FK
+    timestamp started_at
+    timestamp ended_at
+    text opened_by
+    smallint work_started
+    varchar reason
+    int performed_by_person_id FK
+    smallint current_flag
+    timestamp created_at
+  }
+  document_versions {
+    int id PK
+    int task_item_id FK
+    int version
+    int version_minor
+    text version_label
+    int edicion_id FK
+    varchar payload_hash
+    varchar payload_object_path
+    varchar working_file_path
+    varchar final_file_path
+    varchar format
+    varchar render_engine
+    varchar status
+    timestamp created_at
+  }
+  ediciones |o--o{ document_versions : "edicion_id"
+  task_items ||--o{ document_versions : "task_item_id"
+  task_items ||--o{ task_item_tenures : "task_item_id"
+  persons |o--o{ task_item_tenures : "person_id"
+  unit_positions |o--o{ task_item_tenures : "position_id"
+  persons |o--o{ task_items : "assigned_person_id"
+  persons |o--o{ task_items : "created_by_person_id"
+  units |o--o{ task_items : "origin_unit_id"
+  unit_positions ||--o{ task_items : "responsible_position_id"
+  task_items |o--o{ task_items : "source_task_item_id"
+  units |o--o{ task_items : "target_unit_id"
+  tasks ||--o{ task_items : "task_id"
+  vinculos ||--o{ task_items : "vinculo_id"
+  persons |o--o{ task_item_tenures : "performed_by_person_id"
+```
+
+<details>
+<summary>Llegan 8 claves ajenas desde otros diagramas</summary>
+
+`acto_documentos.document_version_id` → `document_versions` · `document_attachments.document_version_id` → `document_versions` · `document_signatures.document_version_id` → `document_versions` · `document_version_uploads.document_version_id` → `document_versions` · `document_workflow_observations.task_item_id` → `task_items` · `document_workflow_observations.document_version_id` → `document_versions` · `pasos_declarados.task_item_id` → `task_items` · `recorridos.document_version_id` → `document_versions`
+
+</details>
+
+## Lo que ocurre (3 de 3)
+
+**3 tablas** · 24 columnas · 6 claves ajenas propias. Apunta a `actos`, `document_versions`, `persons`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  document_version_uploads {
+    int id PK
+    int document_version_id FK
+    int minor
+    varchar file_path
+    varchar file_name
+    varchar mime_type
+    bigint size_bytes
+    int uploaded_by_person_id FK
+    varchar note
+    timestamp created_at
+  }
+  document_attachments {
+    int id PK
+    int document_version_id FK
+    text kind
+    varchar file_path
+    varchar file_name
+    varchar mime_type
+    bigint size_bytes
+    varchar description
+    int uploaded_by_person_id FK
+    int sort_order
+    timestamp created_at
+  }
+  acto_documentos {
+    int acto_id PK, FK
+    int document_version_id FK
+    timestamp created_at
+  }
+  actos ||--o| acto_documentos : "acto_id"
+  document_versions ||--o{ acto_documentos : "document_version_id"
+  persons |o--o{ document_attachments : "uploaded_by_person_id"
+  document_versions ||--o{ document_attachments : "document_version_id"
+  persons |o--o{ document_version_uploads : "uploaded_by_person_id"
+  document_versions ||--o{ document_version_uploads : "document_version_id"
+```
+
+## El recorrido del documento
+
+**4 tablas** · 36 columnas · 10 claves ajenas propias. Apunta a `cargos`, `document_versions`, `ediciones`, `persons`, `task_items`, `units`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  pasos_declarados {
+    int id PK
+    text accion
+    int edicion_id FK
+    int task_item_id FK
+    int orden
+    varchar code
+    varchar nombre
+    timestamp created_at
+  }
+  participantes_declarados {
+    int id PK
+    int paso_id FK
+    int orden
+    text resolver_type
+    int persona_id FK
+    int cargo_id FK
+    text unit_scope_type
+    int unit_id FK
+    varchar slot
+    timestamp created_at
+  }
+  recorridos {
+    int id PK
+    int document_version_id FK
+    text accion
+    text estado
+    int paso_actual
+    timestamp created_at
+    timestamp updated_at
+  }
+  turnos {
+    int id PK
+    int recorrido_id
+    text accion
+    int participante_id FK
+    int persona_id FK
+    text estado
+    smallint manual
+    timestamp solicitado
+    timestamp notificado
+    timestamp respondido
+    varchar nota_respuesta
+  }
+  cargos |o--o{ participantes_declarados : "cargo_id"
+  pasos_declarados ||--o{ participantes_declarados : "paso_id"
+  persons |o--o{ participantes_declarados : "persona_id"
+  units |o--o{ participantes_declarados : "unit_id"
+  ediciones |o--o{ pasos_declarados : "edicion_id"
+  task_items |o--o{ pasos_declarados : "task_item_id"
+  document_versions ||--o{ recorridos : "document_version_id"
+  participantes_declarados ||--o{ turnos : "participante_id"
+  persons |o--o{ turnos : "persona_id"
+  recorridos |o--o{ turnos : "recorrido_id, accion"
+```
+
+<details>
+<summary>Llegan 2 claves ajenas desde otros diagramas</summary>
+
+`document_signatures.turno_id` → `turnos` · `document_workflow_observations.turno_id` → `turnos`
+
+</details>
+
+## La firma en sí
+
+**2 tablas** · 15 columnas · 4 claves ajenas propias. Apunta a `document_versions`, `persons`, `turnos`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  document_signatures {
+    int id PK
+    int turno_id FK
+    int document_version_id FK
+    int signer_user_id FK
+    int signature_status_id FK
+    varchar note_short
+    varchar signed_file_path
+    timestamp signed_at
+    timestamp created_at
+  }
+  signature_statuses {
+    int id PK
+    varchar code UK
+    varchar name
+    varchar description
+    smallint is_active
+    timestamp created_at
+  }
+  document_versions ||--o{ document_signatures : "document_version_id"
+  persons ||--o{ document_signatures : "signer_user_id"
+  signature_statuses ||--o{ document_signatures : "signature_status_id"
+  turnos |o--o{ document_signatures : "turno_id"
+```
+
+## Fuera de los subgrupos
+
+**1 tabla** · 11 columnas · 5 claves ajenas propias. Apunta a `document_versions`, `persons`, `task_items`, `turnos`, que salen como caja vacía.
+
+```mermaid
+erDiagram
+  %% generado por scripts/docs/gen-mapa-campos.mjs: no se edita a mano
+  document_workflow_observations {
+    int id PK
+    int task_item_id FK
+    int document_version_id FK
+    int turno_id FK
+    text phase
+    text kind
+    text message
+    int author_person_id FK
+    int resolved_by_person_id FK
+    timestamp resolved_at
+    timestamp created_at
+  }
+  persons ||--o{ document_workflow_observations : "author_person_id"
+  task_items ||--o{ document_workflow_observations : "task_item_id"
+  persons |o--o{ document_workflow_observations : "resolved_by_person_id"
+  turnos |o--o{ document_workflow_observations : "turno_id"
+  document_versions ||--o{ document_workflow_observations : "document_version_id"
+```

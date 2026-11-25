@@ -37,6 +37,9 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
   tini \
   zip \
+  # `unzip` lo traia por herencia la imagen base (buildpack-deps); se declara explicito porque
+  # kernel/storage.js invoca /usr/bin/unzip por ruta absoluta (S4036) y no puede depender de eso.
+  unzip \
   ca-certificates \
   libcairo2 \
   libpango-1.0-0 \

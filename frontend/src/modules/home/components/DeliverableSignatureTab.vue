@@ -1,0 +1,130 @@
+<template>
+<AppEmpty v-if="signatureFlowState.loading">
+  Consultando la secuencia de firmas...
+</AppEmpty>
+<AppAlert v-else-if="signatureFlowState.error">
+  {{ signatureFlowState.error }}
+</AppAlert>
+<div v-else-if="signatureFlowState.snapshot" class="flex flex-col gap-6">
+  <section class="deasy-card p-4 flex flex-col gap-4">
+    <div class="flex flex-wrap items-center justify-between gap-2">
+      <div>
+        <h3 class="deasy-title deasy-title--section">Resumen del recorrido</h3>
+        <p class="text-xs text-muted m-0">Documento y estado actual de firmas.</p>
+      </div>
+      <AppTag :variant="signatureFlowState.snapshot?.canOperate ? 'success' : 'warning'">
+        {{ signatureFlowState.snapshot?.recorrido?.statusCode ? signatureFlowState.snapshot.recorrido.statusCode : capitalize(signatureFlowState.snapshot?.currentStatus) || 'Pendiente' }}
+      </AppTag>
+    </div>
+    <div class="grid gap-3 md:grid-cols-3">
+      <div class="deasy-card p-4">
+        <p class="deasy-overline mb-1">Documento</p>
+        <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.subject?.title || 'Documento sin título' }}</p>
+      </div>
+      <div class="deasy-card p-4">
+        <p class="deasy-overline mb-1">Paso actual</p>
+        <p class="text-sm font-semibold text-strong m-0">{{ getCurrentSignatureStepOrder(signatureFlowState.snapshot) || '—' }}</p>
+      </div>
+      <div class="deasy-card p-4">
+        <p class="deasy-overline mb-1">Turnos</p>
+        <p class="text-sm font-semibold text-strong m-0">{{ signatureFlowState.snapshot.turnos?.length || 0 }}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="deasy-card p-4 flex flex-col gap-3">
+    <div class="flex items-center justify-between gap-2">
+      <h3 class="deasy-title deasy-title--section">Pasos del recorrido</h3>
+      <AppTag variant="neutral">
+        {{ (signatureFlowState.snapshot.pasos || []).length }} pasos
+      </AppTag>
+    </div>
+    <AppEmpty v-if="!signatureFlowState.snapshot.pasos?.length">
+      Aún no hay pasos de firma: el recorrido de firma se genera al completarse la entrega del documento.
+    </AppEmpty>
+    <div v-else class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <div
+        v-for="step in signatureFlowState.snapshot.pasos"
+        :key="`combined-signature-step-${step.id || step.step_order}`"
+        class="deasy-flow-step"
+        :class="`deasy-flow-step--${tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))}`"
+      >
+        <div class="deasy-flow-step__accent"></div>
+        <div class="flex flex-wrap justify-between items-start gap-3 pt-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="deasy-icon-box deasy-icon-box--md deasy-icon-box--neutral">
+              {{ step.step_order || '—' }}
+            </span>
+            <div class="flex flex-col gap-2">
+              <p class="text-sm font-bold text-strong m-0">Paso {{ step.step_order || '—' }}</p>
+              <p class="deasy-overline">Firma</p>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-2 justify-end">
+            <AppTag
+              :variant="tonoPasoFirma(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot)))"
+            >
+              {{ getSignatureStepStatusLabel(getSignatureStepStatusCode(step, signatureFlowState.snapshot.turnos, getCurrentSignatureStepOrder(signatureFlowState.snapshot))) }}
+            </AppTag>
+            <AppTag :variant="step.assignees?.length ? 'success' : 'warning'">
+              {{ step.assignees?.length ? `${step.assignees.length} firmante(s)` : 'Sin responsables' }}
+            </AppTag>
+          </div>
+        </div>
+        <div class="mt-3 flex flex-col gap-2">
+          <p class="deasy-overline">Firmante</p>
+          <p class="mt-0.5 text-sm font-semibold text-body m-0 leading-snug">
+            {{ getSignatureStepAssignedSummary(step, signatureFlowState.snapshot.turnos) }}
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <DeliverableObservations
+    :observations="observations"
+    :loading="observationsLoading"
+    :can-add="observationsCanAdd"
+    :submitting="submittingObservation"
+    :resolving-id="resolvingObservationId"
+    phase="signature"
+    title="Observaciones de firma"
+    subtitle="Notas, devoluciones y rechazos del recorrido de firma."
+    empty-text="Sin observaciones de firma."
+    @add="$emit('add-observation', $event)"
+    @resolve="$emit('resolve-observation', $event)"
+  />
+</div>
+<AppEmpty v-else>
+  No hay datos de firmas disponibles para este entregable.
+</AppEmpty>
+</template>
+
+<script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
+// Pestaña FIRMAS del modal de detalle: resumen del flujo, pasos de firma con sus firmantes
+// y el hilo de observaciones de firma.
+// Extraída de HomeView.vue en la Fase C. Componente PRESENTACIONAL.
+import AppTag from '@/shared/components/data/AppTag.vue';
+import DeliverableObservations from '@/modules/home/components/DeliverableObservations.vue';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+import {
+  getSignatureStepStatusCode,
+  getSignatureStepStatusLabel,
+} from '@/modules/home/views/homeView.helpers.js';
+import { tonoPasoFirma } from '@/shared/utils/estadoTono.js';
+
+defineProps({
+  signatureFlowState: { type: Object, required: true },
+  observations: { type: Array, default: () => [] },
+  observationsLoading: { type: Boolean, default: false },
+  observationsCanAdd: { type: Boolean, default: false },
+  submittingObservation: { type: Boolean, default: false },
+  resolvingObservationId: { type: [Number, String], default: null },
+  capitalize: { type: Function, required: true },
+  getCurrentSignatureStepOrder: { type: Function, required: true },
+  getSignatureStepAssignedSummary: { type: Function, required: true },
+});
+
+defineEmits(['add-observation', 'resolve-observation']);
+</script>

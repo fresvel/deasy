@@ -1,0 +1,1205 @@
+---
+title: "La organización: quién existe y dónde está sentado"
+description: "Unidad, cargo, puesto y ocupación —la silla y su ocupante son cosas distintas—, y quién es la persona: sus documentos, correos, teléfonos y direcciones, cada uno en su tabla."
+sidebar:
+  label: "2 · La organización"
+  order: 2
+---
+
+Antes de que haya procesos tiene que haber una universidad. Deasy la modela con una distinción que es
+la clave de todo el sistema de responsabilidades: **la silla y quien está sentado en ella son cosas
+distintas**.
+
+## Las cuatro piezas
+
+| | Qué es | Tabla |
+|---|---|---|
+| **Unidad** | Una parte de la institución: una facultad, una carrera, una dirección | `units` |
+| **Cargo** | Un rol genérico («Decano», «Coordinador de carrera»). Catálogo; no pertenece a ninguna unidad | `cargos` |
+| **Puesto** | **La silla**: *este* cargo *en esta* unidad, con su número de plaza. Existe aunque nadie la ocupe | `unit_positions` |
+| **Ocupación** | Una persona sentada en esa silla durante un periodo | `position_assignments` |
+
+Las unidades se relacionan entre sí formando el organigrama, y esa relación **tiene tipo propio**
+(`relation_unit_types`): la orgánica —código `org`, la que siembra el propio esquema— es la jerárquica
+de toda la vida, pero puede haber otras. Cada tipo declara además si **hereda permisos hacia abajo**
+(`is_inheritance_allowed`).
+
+**Una unidad no está «activa»: tiene vidas.** Desde el 2026-11-23 `units` no lleva `is_active`. Su
+vigencia vive en `unit_vigencias`, con una fila por cada vez que la unidad ha regido —puede regir,
+suprimirse y volver a regir—, y de ahí se lee si está en borrador, programada, vigente o suprimida.
+Es exactamente la forma de los procesos, contada en
+[El proceso](/modelo/proceso/#un-proceso-no-está-activo-tiene-vidas): las mismas cuatro lecturas, el
+mismo periodo semiabierto, las mismas reglas —una reorganización exige acto, dos vidas no se
+solapan— y la misma función que lo pregunta, aquí `unidad_rige(id)`.
+
+En la unidad esa forma no es sólo conveniente: **es la única posible**. El acto apunta a la unidad
+que lo emite, así que si la unidad apuntase al acto que la creó las dos tablas se necesitarían
+mutuamente y no habría orden en que crearlas. `unit_vigencias` se declara después de las dos y
+apunta a ambas. Una unidad **nace en borrador**, sin ninguna vida; las que el sistema instala rigen
+desde la instalación, como carga inicial.
+
+**Suprimir una unidad tiene efectos, y los dispara la base.** Cuando su vida termina hoy o antes —y
+no le queda otra que rija—, un disparador sobre `unit_vigencias` revoca los roles vigentes asignados
+en esa unidad (`revoked_reason = 'unit_inactivated'`) y cancela las vacantes abiertas de sus puestos.
+
+:::note[Y si la supresión tiene fecha futura]
+Registrar hoy que una unidad se suprime el 1 de enero no cambia nada hoy, que es lo correcto. Pero el
+1 de enero **nadie escribe ninguna fila**, y un disparador no tiene reloj: nada lo despierta. Las
+consultas que preguntan `unidad_rige` sí dejan de ver la unidad desde ese día; sus roles y sus
+vacantes, no.
+
+Eso lo aplica una **tarea periódica del backend** (`VencimientosDeEstructura`), al arrancar y después
+cada hora. No lleva lista de pendientes: pregunta a la base qué hay suprimido que todavía conserve
+roles vigentes o vacantes abiertas, y le aplica el mismo efecto que el disparador —es la misma
+función, `aplicar_supresion_de_unidad`—. Por eso se repara sola si el servidor estuvo caído, y
+repetirla no hace daño. El desfase entre que llega la fecha y se aplican los efectos es de una hora
+como mucho.
+:::
+
+**Y un puesto tampoco está «activo»: también tiene vidas**, en `position_vigencias`, con la misma
+forma y `puesto_rige(id)` para preguntarlo. Es donde más falta hacía: con una sola vida, un puesto
+que se suprime y se reabre al año sería *otro* puesto, y sus ocupaciones, entregables y relevos
+quedarían colgando del antiguo. Suprimir un puesto **deja sin responsable sus entregables en curso**
+—con la causa `position_deactivated`, y sin tocar los que ya están en firma, que quedan en el panel
+de quien encabeza la unidad— y **cierra su ocupación**: la persona deja de figurar como titular de
+un puesto que ya no rige, y pierde el rol que ese puesto le daba. Reactivar el puesto no la devuelve:
+hay que volver a designarla. Lo aplica el mismo par que en la unidad: un disparador si la supresión ya rige, y la
+tarea periódica si vence más adelante.
+
+Un puesto se identifica por `(unit_id, cargo_id, slot_no)` —«Coordinador de carrera, plaza 1, de la
+Carrera de Sistemas»— y lleva un `position_type` cerrado por `CHECK` a `real`, `promocion` o
+`simbolico`.
+
+Una ocupación tiene fecha de inicio y, cuando la persona se va, fecha de fin. **Solo puede haber una
+ocupación vigente por silla**, y eso no es una costumbre del código: lo impone la base y no se puede
+saltar.
+
+:::note[Por qué importa esta separación]
+
+Porque los documentos se le deben **al puesto**, no a la persona. Cuando alguien deja el cargo, lo que
+debía no desaparece ni se queda huérfano: pasa a quien ocupe esa silla después. Toda la mecánica de
+relevos se apoya en esto — el ancla de un entregable es `task_items.responsible_position_id`, que es
+obligatoria.
+
+:::
+
+## Reglas de negocio que no viven en el código
+
+Deasy repite un mismo idioma: una **columna generada** que vale algo solo en un caso y `NULL` en el
+resto, más un índice único sobre ella. Como los `NULL` no chocan entre sí en un índice único, el
+índice restringe *solo* el caso que interesa.
+
+En esta página el idioma aparece dos veces:
+
+- `unit_positions.head_flag` + `uq_unit_head` — **un solo jefe por unidad**.
+- `position_assignments.current_flag` + `uq_position_current` — **una sola ocupación vigente por
+  silla**.
+
+:::tip[El idioma se usa doce veces]
+
+Medido contra el catálogo el **2026-08-27**: hay **catorce** índices únicos apoyados en una columna
+generada, y son de **dos variantes distintas** que conviene no mezclar.
+
+**Doce de la variante bandera** (`CASE WHEN … THEN 1 ELSE NULL END`): los dos de esta página, más una
+vacante abierta por puesto, un seleccionado por vacante, una oferta enviada por postulación, una
+asignación de rol vigente por `(persona, rol, unidad, origen)`, una configuración activa por
+`(proceso, variación)`, un solo turno abierto por entregable (`uq_task_item_tenure_current`) y las
+**cuatro** de los satélites de la persona —un correo, un teléfono, una dirección y un documento
+principales—, que entraron el 2026-08-27.
+
+**Dos de la variante COALESCE** (nunca nula): `uq_tasks_definition_term_scope` sobre
+`tasks.normalized_scope_unit_id`, que da la **idempotencia del lanzamiento**, y
+`uq_task_items_defined_target`, que se apoya en las dos columnas `_key` de `task_items`.
+
+⚠️ Antes esta nota decía «nueve» y metía `uq_task_items_defined_target` entre las de bandera. Son dos
+errores: la cifra se quedó vieja y ese índice es de la otra variante.
+
+:::
+
+Hay una tercera invariante en el organigrama que no usa ese idioma: **una unidad tiene como mucho un
+padre por tipo de relación**, de modo que el organigrama orgánico es un árbol y no un grafo
+cualquiera. Hasta el 2026-11-23 la guardaba un índice único sobre `(child_unit_id,
+relation_type_id)`. Desde que la relación lleva fechas la frase completa es «un padre **por
+periodo**», y la guarda una restricción de exclusión por rango de fechas — ver
+[De quién depende una unidad, y desde cuándo](#de-quién-depende-una-unidad-y-desde-cuándo).
+
+## De quién depende una unidad, y desde cuándo
+
+`unit_relations` dice qué unidad cuelga de cuál. Desde el **2026-11-23** cada fila es un **periodo**:
+tiene inicio y fin, igual que las vidas de la unidad. Cambiar una unidad de padre **no modifica la
+fila**: le pone fecha de fin y abre otra desde ese mismo día. Así queda escrito de quién dependió
+cada unidad y hasta cuándo, que es lo que una columna «padre» no puede decir.
+
+| | |
+|---|---|
+| Sin fecha de inicio | Es un **borrador**: coloca en el dibujo una unidad que aún no existe para nadie |
+| Con inicio en el futuro | **Programada**: el cambio ya tiene fecha |
+| Rigiendo | Es la que cuenta para repartir trabajo, calcular niveles y resolver ámbitos |
+| Con fin pasado | Historia |
+
+Cuatro reglas, las cuatro en la base:
+
+- **Dos relaciones de la misma unidad no coinciden ni un día** (`ex_unit_relations_sin_solape`, con
+  la extensión `btree_gist`). Es la versión con fechas de «un solo padre».
+- **Una relación empieza cuando sus dos unidades ya rigen.** No se puede colgar una unidad de otra
+  que ese día todavía no existe.
+- **Una relación que ya rige no cambia de padre ni de hija**, y **no se borra**: se le pone fin. Un
+  borrador y una programada sí se pueden cambiar o descartar — nadie dependió de ellas.
+- **La vida de la unidad arrastra a su relación.** Poner en vigor una unidad pone en marcha su
+  borrador de relación, con la misma fecha y el mismo acto; suprimirla la cierra. Es un solo hecho,
+  y no hay que fecharlo dos veces.
+
+Cada extremo lleva su **origen** —carga inicial, reorganización o corrección— y, si es una
+reorganización, el **acto** que la ordena, exactamente como en las vidas.
+
+Hay dos lecturas, y son dos vistas:
+
+- **`unit_arbol_vigente`** — las relaciones que rigen hoy. Es lo que lee todo lo que decide algo: el
+  panel de supervisión de una jefatura y `unit_org_levels`. **La raíz es la unidad sin relación
+  vigente.**
+- **`unit_relacion_actual`** — una por unidad: la que rige; si no, la programada; si no, el
+  borrador; si no, la última que tuvo. Es lo que **dibuja** el organigrama, para que una unidad en
+  borrador o ya suprimida tenga también su sitio.
+
+## Corregir no es reorganizar
+
+Cambiar algo que **ya rigió** puede ser dos cosas opuestas, y el sistema las separa:
+
+| | Qué pasó en la realidad | Qué se escribe |
+|---|---|---|
+| **Reorganización** | La institución movió algo | Se cierra un periodo y se abre otro, con el acto que lo ordena |
+| **Corrección** | Estaba mal registrado desde el principio | Se arregla la fila **en su sitio**, con un motivo, y queda en una bitácora lo que decía antes |
+
+Una corrección **reescribe la historia**, y por eso pide lo que un cambio normal no:
+
+- **Un permiso propio**, `correcciones_estructura`, distinto del de editar la estructura. Quien
+  administra unidades o procesos no lo tiene.
+- **Un motivo escrito.**
+- **El antes y el después**, en `correcciones_de_estructura`: quién, cuándo, por qué, qué decía la
+  fila y qué dice ahora. Sólo admite altas —ni se modifica ni se borra—, y es **la única memoria**
+  de lo que la fila decía.
+
+Seis cosas son corrección y sólo se pueden hacer así, en las vidas de unidades, puestos y procesos,
+en las relaciones de los dos árboles, en sus equivalencias y en el fichero de un acto:
+
+1. **Cambiar la fecha de inicio de algo que ya empezó a regir.** Es afirmar que rigió desde otro día.
+2. **Cambiar la fecha de fin de algo que ya terminó, a otra que también haya ocurrido.** «Terminó el
+   20, no el 24».
+3. **Cambiar el padre de una relación que ya rige**, sin cerrarla.
+4. **Escribir el origen «corrección»** en un inicio o en un fin — por ejemplo, para cerrar algo que
+   rigió por error.
+5. **Quitar un sucesor de algo que ya terminó.** Mientras el fin es futuro, la equivalencia es un
+   plan y se quita sin más; cuando ya ocurrió, quitarla es decir que lo escrito estaba mal.
+6. **Cambiar o quitar el fichero de un acto que ya ordena algo.** Mientras nada lo cita se cambia
+   sin trámite; después es el papel que justifica un cambio (ver
+   [el fichero de un acto externo](#el-fichero-de-un-acto-externo--acto_adjuntos)).
+
+Poner fin a algo que rige **no** es una corrección: es suprimir. Tampoco mover un fin que todavía
+no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido.
+
+:::caution[Lo que ni una corrección puede: quitar o aplazar un fin que ya ocurrió]
+Suprimir no es sólo poner una fecha. La base cierra además lo que colgaba del nodo —los roles
+asignados en una unidad y sus vacantes; la ocupación de un puesto y el responsable de sus entregables
+en curso—, y **reabrir la vida no lo devuelve**. Quedaría un nodo «vigente» sin lo suyo, y una
+bitácora diciendo «como si nunca hubiera terminado» cuando el sistema sí lo cerró.
+
+Así que un fin pasado no se quita ni se aplaza. Para que el nodo vuelva a regir se **reactiva**: se
+abre un periodo nuevo y el anterior queda escrito. Si fue un error, la vida nueva lleva origen
+«corrección», con su motivo, y lo que se cerró hay que asignarlo otra vez.
+
+Por eso el aviso va **antes**: al suprimir con fecha de hoy o anterior, la pantalla dice qué se va a
+cerrar, con cifras, y pide confirmarlo. Con fecha futura no se cierra nada todavía, y hasta ese día
+la fecha se puede cambiar o quitar.
+
+Se pudo quitar durante un día (2026-11-24) y se retiró al siguiente.
+::: Y una corrección **no borra** una vida ni una relación: lo
+que rigió por error se cierra con origen «corrección», y así queda escrito que existió y que fue un
+error. La única baja es la de una equivalencia —que no tiene periodo que cerrar—, y de ella queda en
+la bitácora lo que decía, sin «después».
+
+La base no se fía de la aplicación para esto. Quien corrige escribe **primero** su entrada en la
+bitácora, y las reglas que protegen lo que ya rigió sólo ceden si esa entrada existe y es de esa
+tabla y de esa fila. No hay forma de saltarse una sin dejar escrito por qué.
+
+En la pantalla, mover un nodo cuya relación ya rige pregunta **qué pasó**: reorganización o
+corrección. «Carga inicial» no se ofrece ahí —mover algo que ya rige es, por definición, posterior a
+la carga—; se queda para colgar por primera vez un nodo que ya tenía vida. (La base sí la admite en
+un fin, porque sirve para cargar historia antigua: una unidad que existió de 2015 a 2020.)
+
+### Una unidad con hijas no se suprime
+
+Suprimir una unidad cierra **su** relación con su padre. Las de sus **hijas** no las toca: adónde van
+es una decisión de quien reorganiza, y la base no la toma por él — ni las suelta como raíces ni las
+suprime en cascada. Lo que hace es **no dejar suprimir** mientras alguna siga dependiendo de ella
+más allá de la fecha de fin.
+
+Así que el orden lo pone quien reorganiza: primero se mueven las hijas a otro padre —puede ser con
+la misma fecha en que la unidad deja de regir—, o se suprimen ellas; y después, la unidad. Suprimir
+una rama entera se hace de abajo arriba. La pantalla lo dice antes de intentarlo, con la cifra.
+
+Lo mismo vale para un proceso con sub-procesos.
+
+**Y una unidad tampoco se suprime mientras tenga puestos que sigan rigiendo.** Es la misma regla por
+el mismo motivo: un puesto que rige en una unidad que no rige es una contradicción, y qué pasa con
+cada uno —con quien lo ocupa y con sus entregables— lo decide quien reorganiza. Se suprimen antes, o
+con la misma fecha.
+
+### Qué sucede a lo que se suprime
+
+Una reorganización real casi nunca borra sin más: **funde** dos unidades en una, o **parte** una en
+tres. Por eso lo que continúa a un nodo suprimido no es un enlace «sucede a» en su fila, sino una
+tabla aparte —`unit_equivalencias`, `position_equivalencias` y, para los procesos,
+`process_equivalencias`—, donde un antecesor puede tener **varios sucesores** (división) y un sucesor
+**varios antecesores** (fusión).
+
+Tres cosas que no son evidentes:
+
+- **El antecesor es una vida, no un nodo.** Lo que tiene sucesores es «la vez que rigió hasta tal
+  día»: una unidad puede suprimirse, reactivarse y volver a suprimirse, y cada fin tiene los suyos.
+  La fila guarda `antecesor_vigencia_id` y nada más de su lado.
+- **La equivalencia no tiene fecha ni acto propios.** Desde cuándo vale es la fecha de fin de esa
+  vida, y el acto que la ordena es el de ese fin. Repetirlos aquí serían dos datos diciendo lo mismo.
+- **Hay una tabla por clase de nodo**, para que sea la base quien compruebe que a una unidad la
+  sucede una unidad y a un puesto, un puesto. El puesto sucesor puede estar en otra unidad.
+
+Las reglas, que impone la base y son las mismas en las tres:
+
+| | |
+|---|---|
+| Quién puede tener sucesores | una vida **con fecha de fin**, haya llegado o no: una supresión programada ya puede decir quién la sucederá |
+| Quién puede suceder | un nodo que **rija ese día o después**. Uno en borrador, o que terminó ese mismo día o antes, no recibe nada |
+| Lo que ya no puede el sucesor | dejar de regir **ese día o antes**, ni perder la vida que lo sostiene. Suprimirlo más tarde sí: lo recibió y después terminó |
+| A sí mismo | no. Un nodo que vuelve a regir se **reactiva** |
+| Modificar | no se modifica: se quita y se registra otra |
+| Quitar | libre mientras el fin sea futuro. Si ya ocurrió es una **corrección**: permiso aparte, motivo, y lo que decía queda en la bitácora |
+
+**Reactivar un nodo que tiene sucesores registrados se permite, con aviso.** Puede ser un hecho
+nuevo —la unidad se dividió y tiempo después vuelve a existir— o la forma de deshacer una supresión
+equivocada; el sistema no sabe cuál de las dos, y quien reactiva sí. Por eso no se rechaza: al abrir
+la vida nueva, la pantalla dice qué sucesores tiene la anterior y que reactivar no los cambia. Siguen
+constando en la historia de esa vida, y si la supresión fue un error se quitan antes, como corrección.
+| Quitarle el fin a una vida con sucesores | se rechaza hasta que se quiten. Lo mismo si el fin se mueve a un día en que alguno ya no rige |
+
+Cada fila guarda además **quién la registró**, que escribe el sistema como en los actos.
+
+Registrar un sucesor **no mueve nada**: los entregables de un puesto suprimido siguen quedando sin
+responsable y se listan para quien decide. La equivalencia dice adónde fue a parar lo que había, para
+quien lo busque después; no reparte el trabajo.
+
+## La persona ya no lo lleva todo encima
+
+Hasta el **2026-08-27**, `persons` tenía **23 columnas** y dentro cabía casi todo: la cédula, el
+correo, el WhatsApp, dos banderas de «verificado» y **siete** campos de dirección. Hoy tiene **once**,
+y todas son de la persona: cómo se llama, de qué país es, cómo entra y si está activa.
+
+Lo demás se fue a **cinco tablas satélite**, y no por gusto de normalizar. Cada una resolvió un
+problema concreto que la columna no podía:
+
+| Tabla | Qué guarda | Qué arregla |
+|---|---|---|
+| `documentos_identidad` | El documento, con su **clase**, su **país emisor** y su número | `cedula` era una columna sola: no se sabía si «AB123456» era un pasaporte o una cédula mal tecleada, y **un extranjero no podía registrarse** |
+| `emails` | Los correos, con su tipo y su verificación | `email` era uno solo, y `verify_email` una bandera de la *persona* |
+| `telefonos` | Los números, con su país | Igual: `whatsapp` era un número y `verify_whatsapp` una bandera |
+| `canales_mensajeria` + `telefono_canales` | Qué canales tiene cada número, y **cuál está verificado** | La bandera vieja no decía verificado **en qué**: no distinguía «este número existe» de «este número tiene WhatsApp» |
+| `direcciones` | La dirección, con su tipo y sus coordenadas | Había **dos modelos** que no se hablaban: `direccion` (texto libre, lo que veía `/admin`) y las seis `*_residencia`/`calle_*` que escribía el registro |
+
+Y por debajo, un **catálogo geográfico encadenado**: `paises` → `provincias` → `cantones` →
+`parroquias`. Los países salen del CLDR que trae Node, con su código ISO-3166; el resto, del
+**Clasificador Geográfico Estadístico del INEC**.
+
+⚠️ **La tabla `cantones` se llamó `ciudades` hasta el 2026-09-08**, y era un nombre falso: nunca
+guardó ciudades. La cabecera cantonal —que sí es la ciudad homónima— tiene ahora fila propia en
+`parroquias`.
+
+Y **ningún nombre geográfico es universal**: en Suiza un cantón es el nivel de **arriba**, y en
+Francia una subdivisión electoral. `provincias` tiene el mismo problema —es el nivel 1 en Ecuador y
+el 2 en España—. Por eso la **etiqueta que ve el usuario** no sale del nombre de la tabla, sino de
+**`nomenclatura_territorial`** según `instituciones.pais_id`.
+
+### Cambiar el número tira lo que se había probado del anterior
+
+Verificar un teléfono no es marcar una casilla: es **un canal demostrando que ese número le escribió**.
+Y esa demostración habla de **un número**, no de una fila.
+
+Cuando alguien corrige su teléfono, la fila se **reutiliza** —mismo `telefonos.id`, número nuevo—, así
+que todo lo que colgaba de ella pasaría a hablar de un número que nadie ha probado. Por eso, cuando el
+número o su país cambian de verdad:
+
+- **los canales se desverifican** (`telefono_canales.verificado` vuelve a 0) — la *declaración* de que
+  ese número tiene WhatsApp sigue en pie, porque declarar nunca fue verificar; lo que deja de ser
+  cierto es la prueba;
+- **las llaves pendientes se tiran** (`telefono_verification_keys`) — se emitieron contra el número
+  anterior.
+
+Es lo mismo que ya hacía `emails` al cambiar la dirección, y desde el **2026-10-04** lo hace el propio
+guardado del teléfono. Antes lo hacía **una** de las tres pantallas que pueden cambiar un número, así
+que el resultado dependía de por dónde hubieras entrado: corregir el número desde el perfil dejaba los
+canales marcados como verificados. Medido antes y después del arreglo.
+
+### El país no está en el código: está en una fila
+
+Hasta el **2026-08-29**, el documento nacional se llamaba `cedula_ec` y su validador colgaba del tipo.
+Ecuador estaba **dentro del programa**: en un despliegue peruano, el documento nacional habría seguido
+llamándose «cédula» y validándose con el dígito verificador ecuatoriano.
+
+Hoy son tres piezas, y ninguna nombra un país:
+
+**`instituciones`** es la primera tabla de **configuración** del sistema —antes no había ninguna— y
+guarda el país de esta instalación. Se edita en `/admin`, y se lee por `GET /system/institucion`, que
+es **público** como el catálogo geográfico: lo consume el **registro**, que por definición usa quien
+todavía no tiene cuenta y necesita saber cómo se llama aquí el documento nacional.
+
+No lleva restricción de fila única a propósito: es la puerta por la que entraría un modelo
+multi-inquilino, y `InstitucionService.actual()` **falla si hay cero o más de una** en vez de elegir
+en silencio — elegir «la primera» ante dos daría un país equivocado, y con él un validador
+equivocado, sin que nadie entendiera por qué se rechaza un número.
+
+**Las clases de documento son un `CHECK`**, como en `emails`, `telefonos` y `direcciones`:
+`documento_nacional` · `documento_extranjero` · `pasaporte` · `visa`. Son fijas y el código se
+ramifica con ellas. Antes eran un catálogo de tres filas con clave ajena: la única del grupo que lo
+hacía así.
+
+:::caution[El cuarto valor entró, y costó lo que esta página avisaba que costaría]
+
+Aquí ponía que **«un cuarto valor no debe poder crearse porque nadie sabría qué hacer con él»**. La
+`visa` entró el **2026-09-09**, y la frase resultó ser una predicción exacta: **dos** sitios del
+código no supieron qué hacer con ella, y los dos por la misma premisa tácita —*todo lo que no es un
+pasaporte es el documento de identidad nacional de algún país*—.
+
+1. El **validador** le aplicó la regla de la cédula, y rechazaba visas ecuatorianas válidas con «la
+   cédula ecuatoriana tiene exactamente 10 dígitos».
+2. Peor: `guardarPrincipal` **reescribe la fila principal en su sitio**, así que un `PATCH
+   /users/me` con `tipo: visa` no añadía una visa — **convertía en visa la cédula de la persona**, y
+   su documento de identidad desaparecía sin dejar rastro.
+
+Lo que cierra el hueco no es un parche en cada sitio, es una **línea explícita en el modelo**: de las
+cuatro clases, **tres acreditan identidad y una acredita permanencia**. La visa dice *que puedes
+estar aquí*, no *quién eres*, y quien la tiene se identifica con su pasaporte. Por eso **la visa no
+puede ser el documento principal**, y el servicio la rechaza ahí con un 400 que explica el motivo.
+
+Si algún día entra un quinto valor, esta es la pregunta que hay que responder antes: *¿acredita
+identidad, o acredita otra cosa?*
+
+:::
+
+**La visa lleva su categoría, y esa sí es un catálogo.** `categorias_visa` tiene `pais_id` porque
+las categorías las define **una autoridad nacional**: un `CHECK` es global por definición y no puede
+valer una cosa en Ecuador y otra en Colombia. Las 13 filas sembradas son las de la **Ley Orgánica de
+Movilidad Humana**, agrupadas por `condicion` en visitante temporal (3), residente temporal (9) y
+residente permanente (1).
+
+La columna `documentos_identidad.categoria_visa_id` es nulable, y `chk_documentos_categoria_visa`
+garantiza que **sólo la visa la lleve**: en una cédula o un pasaporte tiene que ser `NULL`. Sin la
+categoría la fila no dice nada útil — «Visa (Ecuador)» no distingue a un residente permanente de un
+turista.
+
+**El validador y el nombre local se resuelven POR PAÍS**, en un registro de código
+(`documentosPorPais.js`). No hay una entrada por país del mundo: hay **una por país con regla**, y las
+demás caen a una comprobación genérica. «Cédula (Ecuador)» no se guarda — se **compone** del país; en
+un despliegue peruano la misma pantalla dice «DNI (Perú)» sin tocar una línea.
+
+:::note[El pasaporte es siempre alfanumérico]
+
+Mande el país lo que mande. Los números de pasaporte no llevan dígito verificador público —los que
+hay viven en la MRZ, no en el número—, y aplicarles el validador del país rechazaría pasaportes
+ecuatorianos perfectamente válidos por no tener diez dígitos.
+
+**Y la visa, igual**: su número lo pone la autoridad migratoria con su propio formato, y no es una
+cédula. Los dos caen al genérico —de 5 a 20 caracteres `[A-Z0-9]`—. El que **sí** pasa por el
+validador del país es `documento_extranjero`, porque ése es el documento nacional de otro país.
+
+:::
+
+### Cuatro reglas que no son de gusto
+
+**Hay uno principal de cada cosa, y lo impone la base.** Un correo, un teléfono, un documento y una
+dirección principales por persona —la dirección, una por tipo—. Es el mismo idioma de la columna
+generada que usa el organigrama para el jefe de unidad. Sin eso, «manda el correo a esta persona» no
+tendría respuesta.
+
+**Cambiar el valor desverifica.** Si la verificación sobreviviera al cambio, bastaría verificar un
+correo propio y luego apuntarlo a otro para heredar la confianza. Con el documento va más lejos:
+además **suelta su escaneo**, porque ese PDF es del documento viejo y dejarlo colgando parecería un
+respaldo que no existe.
+
+**La unicidad de un documento es `(tipo, país, número)`, no el número.** Un número de pasaporte es
+único **dentro del país que lo emite**: «AB123456» puede ser ecuatoriano *y* español. Por eso el país
+emisor es **obligatorio** — al documento nacional no se le pregunta, se lo pone un trigger desde
+`instituciones`, pero se guarda igual.
+
+**El número se normaliza** —mayúsculas, sin espacios ni guiones—, así que `ab-123 456` y `AB123456`
+son el mismo documento.
+
+:::caution[El documento NO es una llave]
+
+En `persons` no está: se retiró como columna el 2026-08-27. Y desde el **2026-08-29 tampoco sirve
+para entrar** — el acceso es **sólo por correo**.
+
+No se quitó por la unicidad, aunque la consulta del acceso la ignoraba —resolvía `numero = ?` a
+secas, así que podía emparejar a la persona equivocada—. Se quitó por la **estabilidad**: un
+pasaporte se renueva **con número nuevo**, y quien entrara con él perdería su acceso al renovarlo. El
+correo lo controla la persona y no caduca.
+
+El documento sigue siendo el dato legal de la identidad, y sirve para **recuperar el correo** si se
+acompaña de la contraseña (`POST /users/recuperar-correo`).
+
+:::
+
+### Los diagramas de la identidad
+
+Van **tres**, y no es capricho: en uno solo median 2966 px de ancho y salían a 7 px de letra
+efectiva, por debajo del listón de legibilidad del sitio. Partidos por lo que uno busca —quién eres,
+cómo se te localiza y dónde vives— se leen, y además se corresponden con las tres preguntas.
+
+**Quién eres.** El documento, con su clase y su país emisor, y lo que la persona declara de sí misma y la ley protege:
+
+```mermaid
+erDiagram
+  %% parcial: estas columnas son las que explican esto; todas estan en el mapa con campos
+  persons ||--o{ documentos_identidad : "se identifica con"
+  paises ||--o{ documentos_identidad : "quien lo emitio"
+  categorias_visa ||--o{ documentos_identidad : "que clase de visa"
+  paises ||--o{ categorias_visa : "que autoridad las define"
+  instituciones ||--|| paises : "de que pais es este despliegue"
+  persons ||--o| persona_autoidentificacion : "declara"
+
+  persona_autoidentificacion {
+    int person_id PK "y FK · una fila por persona"
+    int genero_id FK "SENSIBLE · LOPDP Art. 4"
+    int autoidentificacion_etnica_id FK "SENSIBLE · LOPDP Art. 4"
+  }
+  documentos_identidad {
+    int person_id FK
+    text tipo "CHECK: nacional, extranjero, pasaporte, visa"
+    int pais_id FK "OBLIGATORIO. Al nacional se lo pone un trigger"
+    int categoria_visa_id FK "nulable · SOLO si tipo = visa"
+    varchar numero "mayusculas, sin separadores"
+    smallint verificado
+    smallint principal_flag "generada, uno solo por persona. La visa NO puede serlo"
+    varchar escaneo_ref "minio del PDF escaneado"
+    timestamp escaneo_subido_at
+  }
+  categorias_visa {
+    int pais_id FK "la definen autoridades NACIONALES"
+    varchar code
+    varchar name
+    varchar condicion "visitante temporal · residente temporal · residente permanente"
+  }
+  instituciones {
+    varchar nombre
+    int pais_id FK "de aqui sale cual es el documento NACIONAL"
+  }
+```
+
+**Cómo se te localiza.** Los correos y los teléfonos, cada canal con su propia verificación:
+
+```mermaid
+---
+config:
+  elk:
+    nodePlacementStrategy: SIMPLE
+---
+erDiagram
+  %% parcial: estas columnas son las que explican esto; todas estan en el mapa con campos
+  persons ||--o{ emails : "recibe en"
+  persons ||--o{ telefonos : "se le llama a"
+  telefonos ||--o{ telefono_canales : "esta en"
+  canales_mensajeria ||--o{ telefono_canales : "que canal"
+  telefonos ||--o{ telefono_verification_keys : "se prueba con"
+  canales_mensajeria ||--o{ telefono_verification_keys : "por que canal se probo"
+
+  emails {
+    int person_id FK
+    text tipo "personal, institucional"
+    varchar direccion "unica en TODO el sistema, en minusculas"
+    smallint verificado
+    smallint principal_flag "generada, uno por persona"
+  }
+  telefonos {
+    int person_id FK
+    text tipo "personal, trabajo"
+    int pais_id FK "de aqui sale el prefijo"
+    varchar numero "local, sin prefijo"
+    smallint principal_flag "generada, uno por persona y tipo"
+  }
+  telefono_canales {
+    int telefono_id FK
+    int canal_id FK
+    smallint verificado "verificado EN ESE CANAL"
+    timestamp verificado_at
+  }
+  canales_mensajeria {
+    varchar code "whatsapp, telegram, signal"
+    smallint is_active "signal apagado: sin implementacion"
+  }
+  telefono_verification_keys {
+    int telefono_id FK
+    char llave_hash "SHA-256; la llave en claro NO se guarda"
+    timestamp expira_at "quince minutos"
+    timestamp consumida_at "un solo uso"
+    int canal_id FK "por cual se acabo probando"
+  }
+```
+
+### Cómo se prueba que un número es tuyo
+
+Un teléfono no se verifica solo, y **la verificación es por canal**: que un número tenga WhatsApp no
+dice que tenga Telegram. Por eso la bandera vive en `telefono_canales` y no en `telefonos`.
+
+El circuito tiene una regla que lo explica entero: **escribe siempre el usuario, nunca nosotros**.
+El sistema compone un enlace con una llave dentro —`t.me/<bot>?start=<llave>`, `wa.me/<numero>?text=<llave>`,
+—, y espera. Cuando el mensaje llega, el transporte ya
+prueba de qué número viene.
+
+**Quién compara es parte del diseño.** El canal aporta un hecho que su transporte prueba —«este
+número mandó esta llave»— y **el backend dicta el veredicto**, porque es el único que sabe de qué
+país es el número guardado. Hacerlo al revés no es un matiz: comparando sin el país sólo se puede
+mirar la cola del número, y entonces `+51 99 111 2233` y `+593 99 111 2233` son el mismo teléfono.
+Con eso bastaría para registrar el número de otra persona y verificarlo desde una línea propia.
+
+⚠️ **Y de ahí que un teléfono sin país no se pueda verificar.** `telefonos.pais_id` admite nulo, y
+sin prefijo no hay comparación internacional posible. Lo mismo vale para un número guardado **con el
+prefijo dentro** de `numero` —esa columna guarda la parte local— porque compone `593593…`, que no es
+el teléfono de nadie. Los dos casos se avisan **al pedir la llave**, no al final del camino: un fallo
+del dato no se le cuenta a nadie como un fallo suyo.
+
+De ahí salen tres propiedades que no son casualidad:
+
+- **Ningún canal cuesta por mensaje.** No enviamos nada, así que no existe el ataque de coste que
+  sufre cualquier sistema que manda un mensaje a un número que le dicten.
+- **Ninguno de los dos regala el número, y es lo que los hace válidos.** Telegram no lo entrega: el
+  bot lo pide con un botón, y hay que exigir que el contacto sea de quien escribe — si no, cualquiera
+  reenvía la tarjeta de otra persona. WhatsApp entrega un identificador de conversación que desde 2026
+  suele ser **opaco** (`@lid`), del que no se deduce el teléfono: hay que preguntárselo a WhatsApp y
+  **rechazar si no contesta con un número**.
+- **Lo que ambos conservan es quién afirma el número: la plataforma, sobre una sesión que ella misma
+  autenticó** — no quien escribe. Ésa es la propiedad que hace válida una verificación entrante.
+
+:::caution[Por qué no hay SMS, y no lo habrá]
+El catálogo tuvo una cuarta fila, `sms`, y **se descartó el 2026-09-01**. La razón es justo la
+propiedad de arriba: **el SMS entrante no la tiene**. Su número de origen lo rellena el emisor y es
+falsificable desde una pasarela SMPP ([10.1145/3615667](https://doi.org/10.1145/3615667)), lo que se
+ha llevado hasta un ataque completo ([10.1145/3696011](https://doi.org/10.1145/3696011)).
+
+Aplicado aquí el ataque es directo **y somos nosotros quienes damos la llave**: alguien registra una
+cuenta declarando el teléfono de otro, recibe una llave válida y la devuelve falsificando el origen.
+No da acceso a ninguna cuenta —hace falta la contraseña— pero **suplanta la identidad en el alta y
+bloquea el número de la víctima**. Y es peor contra un número **extranjero**, que es justo a quien
+este sistema atiende a propósito: la falsificación internacional funcionó en **todas** las operadoras
+del estudio.
+
+Se suma que **en Ecuador no existe alquilar un número que reciba** (Twilio: *"Two-way SMS supported:
+No"*; las operadoras sustituyen el remitente por un número local). Y la alternativa saliente —mandar
+nosotros un código— cuesta por mensaje, abre el fraude de bombeo de SMS y **no aporta nada a quien ya
+puede usar WhatsApp o Telegram**.
+:::
+
+De la llave se guarda **sólo su huella SHA-256**, nunca el texto. Se elige SHA-256 y no bcrypt a
+propósito: aquí hace falta **buscar por la llave** que llega, y una huella con sal no se puede buscar.
+No es una contraseña —dura quince minutos, se usa una vez y es aleatoria de 256 bits—, así que lo que
+bcrypt protege (adivinar a fuerza bruta un secreto elegido por una persona) no aplica.
+
+## Si un canal se cae y nadie mira — `canales_bitacora`
+
+Hay una pantalla que enseña cómo están los canales de mensajería. **Arregló que el estado mintiera;
+no arregló que nadie mire.** El 2026-08-31 el servicio estuvo **trece horas** parado: la información
+habría estado disponible todo ese tiempo, para quien hubiera abierto la pantalla — y nadie la abrió,
+porque nadie sospechaba.
+
+**`canales_bitacora` guarda una fila por CAMBIO de estado**, no por comprobación: se mira cada
+minuto, y anotar cada vuelta serían 1 440 filas al día por canal para decir «sigue bien». Un `hasta`
+nulo significa «sigue así ahora mismo».
+
+```
+canal      'telegram' · 'whatsapp' · 'servicio'
+salud      sano · degradado · «sin vincular» · bloqueado · caido
+desde      cuándo empezó ·  hasta  cuándo dejó de estarlo (nulo = ahora)
+```
+
+⚠️ **`servicio` es un canal más, y es el que importaba aquel día.** Es el propio microservicio: si
+**no contesta**, eso es un estado y hay que poder contarlo. Sin esa fila, un servicio muerto se vería
+como «no ha cambiado nada» — que es exactamente el silencio de las trece horas.
+
+:::tip[Lo que contesta, y la pantalla no]
+**«¿Cuánto llevaba roto?»** La pantalla enseña el ahora; la bitácora, el rato. Es la única pregunta
+que un diseño por eventos habría respondido igual de bien — con la diferencia de que **un proceso
+muerto no puede mandar eventos**, y preguntando su silencio sí queda anotado.
+:::
+
+Y de aquí sale el aviso: cuando un canal lleva **más de cinco minutos** mal, se avisa **una vez** —
+por correo y por notificación— a quien tenga el permiso `channels.read`. Una vez, no una por vuelta:
+un vigilante que avisa de más deja de leerse, y entonces el aviso que importaba se pierde entre los
+que no.
+
+⚠️ **El aviso nunca va por Telegram ni por WhatsApp**, aunque el sistema sepa hablar por ahí: el
+fallo que hay que notificar es justo el que impide notificarlo.
+
+## Lo que se acepta al registrarse — `documentos_legales` y `consentimientos`
+
+Al crear una cuenta hay que aceptar **dos cosas, y por separado**: los **términos de uso** y el
+**tratamiento de datos personales**.
+
+⚠️ **No es una decisión de diseño: lo impone el Art. 8 de la LOPDP**, que exige que el consentimiento
+sea **específico** y que, *«cuando se pretenda fundar el tratamiento […] para una pluralidad de
+finalidades»*, **conste que se otorga para todas ellas**. Una sola casilla para las dos cosas no
+cumple.
+
+Y hay una razón que se ve mejor en el reverso: **los términos son un contrato** (base legal: Art.
+7.5) y **el tratamiento de datos es consentimiento** (Art. 8). El segundo **se puede revocar**; el
+primero no funciona así. Con una casilla única, revocar una revocaría la otra.
+
+### `documentos_legales` — el índice; el texto vive en MinIO
+
+```
+clase              'terminos_de_uso' · 'tratamiento_de_datos'
+version            'v1'                    ← la versión de NEGOCIO: lo que alguien aceptó
+estado             draft · published · retired
+contenido_hash     SHA-256 ← lo que hace demostrable QUÉ decía
+bucket             dónde vive el texto ahora mismo
+object_key         terminos_de_uso/v1.md
+object_version_id  la VERSIÓN DE OBJETO ← se lee por aquí, nunca por la clave
+```
+
+⚠️ **La tabla no guarda el texto: lo indexa.** Desde el 2026-09-02 el contenido vive en MinIO, en
+**dos buckets** con propósitos opuestos:
+
+| Bucket | | Qué guarda |
+|---|---|---|
+| `…-legal-borradores` | versionado, **mutable** | los `draft`. Cada guardado deja una versión: ése es el **historial de edición** |
+| `…-legal` | versionado + **bloqueo COMPLIANCE** | los `published` y `retired`. **Lo que entra no sale** — ni con la cuenta raíz |
+
+**Publicar es copiar los bytes exactos** del borrador al archivo, releerlos **por su versión de
+objeto**, comparar la huella y sólo entonces sellar la fila. Si la huella no cuadra, no se publica.
+
+:::caution[Por qué `object_version_id` y no basta la clave]
+El bloqueo de objetos protege **la versión, no el nombre**. Está medido: un objeto bloqueado **se
+puede sobrescribir** —la versión vieja sobrevive intacta, pero quien lea *«el objeto que hay en esa
+clave»* recibe lo nuevo—, y un borrado normal deja un marcador que lo hace **desaparecer del
+listado**.
+
+Por eso el sistema lee **siempre por `object_version_id`**. Sin esa columna, la inmutabilidad del
+archivo no serviría de nada: la prueba seguiría ahí, pero nadie la estaría leyendo.
+:::
+
+⚠️ **Y hay dos ejes de versión que no se confunden**: la versión de **objeto** (MinIO) cuenta *cómo
+evolucionó el borrador* —cuarenta guardados, cuarenta versiones—; la versión de **negocio** (`v1`,
+`v2`) cuenta *qué aceptó esta persona* — cuarenta guardados, **una** fila.
+
+**Sólo puede haber una versión publicada por clase**, o «qué aceptó» tendría dos respuestas.
+
+⚠️ **`retired` no es borrar.** Una versión retirada **se conserva para siempre**: hay gente cuya
+prueba de consentimiento apunta a ella.
+
+### `consentimientos` — la prueba
+
+```
+person_id · documento_id · aceptado_at · ip · revocado_at
+```
+
+⚠️ **Hasta el 2026-09-02 esto no existía.** Había una casilla en el formulario que se validaba **en
+el navegador** y moría ahí: no viajaba al servidor y ninguna tabla la recibía. Una validación de
+JavaScript **no prueba nada** — se salta con la consola abierta.
+
+:::caution[Lo que la ley pide, y por qué la huella es la pieza clave]
+El **Art. 5 del Reglamento** dice que el consentimiento *«deberá ser **demostrado** por el
+responsable que lo obtiene, cuando así sea requerido por la autoridad competente»*. Demostrar son
+**cuatro** cosas: **quién**, **a qué**, **cuándo** y **qué decía el texto**.
+
+La cuarta es la que se olvida, y sin ella las otras tres no valen: guardar «aceptó la versión 2» no
+prueba nada si nadie puede demostrar qué decía la versión 2. Por eso se guarda **la huella del
+texto**, y no sólo su número de versión.
+:::
+
+:::note[Y por qué NO hay clave ajena a `persons`]
+Parece un descuido y es deliberado. La **Ley (Art. 18.4)** y el **Reglamento (Art. 11.2)** dicen que
+la eliminación **no procede** cuando los datos son necesarios *«para la formulación, el ejercicio o
+la defensa de reclamaciones»* — y la prueba de que alguien consintió **es exactamente eso**.
+
+Con una clave ajena, borrar a la persona sería imposible o se llevaría la prueba por delante. Sin
+ella, **la fila sobrevive a la persona**, que es lo que la norma permite. Del resto de sus datos no
+se conserva nada por este motivo.
+:::
+
+## Cuántas veces se puede intentar — `intentos_limitados`
+
+Hay una tabla que no guarda datos de nadie y sin embargo protege a todos: **`intentos_limitados`**
+apunta *qué se intentó* y *contra qué se cuenta*, y nada más.
+
+```
+accion       'login' · 'validar_cedula' · 'registro'…
+sujeto       una IP · un correo+ip · un person_id
+ocurrido_at  cuándo
+```
+
+**Lo que se cuenta importa más que el número**, y ahí hay dos formas clásicas de equivocarse:
+
+- **Sólo por IP** — una institución sale a internet **por NAT**, así que el campus entero comparte
+  una IP pública. «Cinco intentos por IP» deja fuera a toda una facultad al quinto despiste de
+  cualquiera.
+- **Sólo por cuenta** — entonces el limitador **es el arma**: quien sepa tu correo te bloquea
+  fallando adrede.
+
+Por eso el sujeto **se elige por acción**, y en el acceso es el **par correo + IP**: ataca a quien de
+verdad está fallando, sin castigar al vecino de red ni permitir bloquear una cuenta ajena. Y **nunca
+se bloquea**: se responde `429` con `Retry-After` y se olvida, porque un bloqueo persistente es una
+denegación de servicio que se le regala a cualquiera.
+
+Dos detalles que explican la forma de la tabla:
+
+- **`sujeto` es un texto y no una clave ajena.** Lo que se cuenta cambia con la acción, y hay
+  acciones **anónimas** en las que no existe ninguna fila a la que apuntar.
+- **Sólo entra lo que se frena**, y en el acceso **sólo los fallos**. Registrar cada petición
+  doblaría las escrituras del sistema para no usarlas; contar los aciertos castigaría a quien
+  trabaja.
+
+:::caution[Vive en la base, y no es por comodidad]
+Un contador en memoria del proceso **dejaría de proteger en cuanto hubiera dos instancias del
+backend**: cada una contaría su mitad. Hoy hay una sola —y está fijada en el `compose` a propósito,
+porque el tiempo real también lo exige— pero el contador ya está donde tiene que estar para el día
+que deje de serlo.
+:::
+
+**Pedir una llave nueva borra la anterior.** Si pides otra es porque la primera no te sirvió, y dejar
+dos vivas duplica lo que hay que adivinar sin darte nada.
+
+Y el estado de una llave **no es un sí o un no, son cuatro**: válida, desconocida, caducada y
+consumida. Se distinguen porque al usuario le dicen cosas distintas — «este enlace no vale» le hace
+revisar lo que hizo; «caducó» y «ya la usaste» le dicen que repita **sin cambiar nada**.
+
+**Dónde vives.** La dirección y el catálogo geográfico que la hace un dato y no una redacción:
+
+```mermaid
+erDiagram
+  %% parcial: estas columnas son las que explican esto; todas estan en el mapa con campos
+  paises ||--o{ provincias : "se divide en"
+  provincias ||--o{ cantones : "se divide en"
+  cantones ||--o{ parroquias : "se divide en"
+  clases_parroquia |o--o{ parroquias : "cabecera, urbana o rural"
+  paises ||--o{ nomenclatura_territorial : "como se llama cada nivel"
+  cantones ||--o{ direcciones : "canton"
+  persons ||--o{ direcciones : "vive o trabaja en"
+  paises ||--o{ persons : "nacionalidad"
+
+  direcciones {
+    int person_id FK
+    text tipo "residencia, trabajo"
+    int canton_id FK
+    varchar sector
+    varchar barrio
+    varchar calle_primaria
+    varchar calle_secundaria
+    varchar referencia
+    numeric latitud "nula: casi nada se geocodifica"
+    numeric longitud
+    smallint principal_flag "generada, una por persona y tipo"
+  }
+  paises {
+    int id PK
+    char iso_alpha2 "ISO-3166, derivado del CLDR"
+    varchar name
+    varchar phone_code "prefijo telefonico"
+  }
+  provincias {
+    int pais_id FK
+    varchar dpa_code "codigo oficial del INEC"
+    varchar name
+  }
+  cantones {
+    int provincia_id FK
+    varchar dpa_code "4 digitos"
+    varchar name
+  }
+  parroquias {
+    int canton_id FK
+    varchar dpa_code "6 digitos · SU IDENTIDAD, no el nombre"
+    varchar name
+    int clase_id FK "nulable"
+  }
+  clases_parroquia {
+    int pais_id FK
+    varchar code "cabecera | urbana | rural"
+    varchar name
+    smallint orden
+  }
+  nomenclatura_territorial {
+    int pais_id FK
+    smallint nivel "1, 2 o 3"
+    varchar singular "Canton"
+    varchar plural "Cantones"
+  }
+```
+
+La dirección lleva además **sector** y **barrio**, en texto y no en catálogo: no los fija ninguna
+autoridad —no hay un clasificador del INEC de barrios— y los nombra la gente. Un catálogo ahí sería
+una lista abierta que nadie mantiene.
+
+### Lo que la persona declara de sí misma
+
+`persons` pasó de **11 columnas a 17**, y se quedó en **15** cuando el género y la etnia salieron a su propia tabla (ver más abajo). Todas las nuevas son **nulables** a propósito: el registro
+público pide lo mínimo y esto se completa después en el perfil; obligatorias, romperían el alta.
+
+**Tres cosas que no se ven a simple vista.**
+
+**`nacionalidad_pais_id` y `nacimiento_pais_id` no son lo mismo**, aunque los dos apunten a `paises`:
+quien nace en Colombia puede ser ecuatoriano por naturalización. La primera ya existía —y nació justo
+de deshacer una confusión parecida entre dos campos que se llamaban «país»—, así que la distinción
+queda escrita en el esquema para no volver a tropezar.
+
+**Del lugar de nacimiento se guarda sólo el cantón, y la provincia se deduce.** Guardar los dos sería
+una redundancia que puede discrepar; guardar sólo la hoja lo hace **imposible** — es la clave ajena
+la que garantiza que el cantón pertenece a su provincia. Y **la parroquia no se guarda**: su nombre
+no es único ni dentro de su propio cantón, así que como dato de nacimiento no distingue.
+
+Quien nació fuera lleva `nacimiento_pais_id` y el cantón **nulo**, porque sólo Ecuador tiene cantones
+sembrados. ⚠️ Que el cantón pertenezca al país declarado **no lo puede comprobar un `CHECK`** —haría
+falta un `JOIN`—: lo valida el servicio, en el único sitio por el que pasan todas las escrituras.
+
+**`sexo` y `genero` no comparten vocabulario, y es correcto.** La cédula rotula el sexo
+`HOMBRE/MUJER` y el género —cuando se sustituye— `MASCULINO/FEMENINO`. Son dos campos legales
+distintos, no dos nombres del mismo.
+
+:::caution[El género y la etnia no están en `persons`]
+Entraron como columnas el 2026-09-08 y salieron dos días después a **`persona_autoidentificacion`**,
+una fila por persona con `person_id` de clave. No es cosmética: la LOPDP (Art. 4) los nombra entre los
+**datos sensibles** —«etnia, identidad de género»—, y `persons` la leen nueve roles por `people.read`,
+entre ellos `GestorFirmas`. Leer el nombre de alguien autorizaba a leer su etnia.
+
+El permiso se da sobre una **tabla**, no sobre una columna —el editor de `/admin` no sabe ocultar
+columnas por rol—, así que la tabla aparte es lo que permite protegerlos con su propio recurso,
+`datos_sensibles`. `sexo` y el estado civil **no** están en la lista de la ley, y se quedan en
+`persons`. Quién lee lo sensible y cómo queda el rastro, en [Permisos](/complemento/permisos/).
+:::
+
+### Lo que el titular lee de sí mismo
+
+La persona **escribe** los siete campos —los cinco de `persons` y los dos de
+`persona_autoidentificacion`— por `PATCH /users/me`, y **los lee por `GET /users/me`**: los dos
+devuelven un objeto **`datos_personales`** con **las mismas claves que acepta el `PATCH`**, para que
+el formulario lea y escriba lo mismo.
+
+| Clave | De dónde sale |
+|---|---|
+| `fecha_nacimiento` | `persons`, como `AAAA-MM-DD` —la forma que se escribe, no una marca de tiempo con zona— |
+| `nacimiento_pais_id` · `nacimiento_canton_id` · `sexo` · `estado_civil_id` | `persons` |
+| `nacimiento_provincia_id` | **Deducida** de `cantones.provincia_id`. Sólo se lee: el `PATCH` la ignora |
+| `genero_id` · `autoidentificacion_etnica_id` | `persona_autoidentificacion` |
+
+**Va en un objeto aparte, y no suelto entre los demás campos del usuario**, porque el resto de ese
+objeto se compone igual para quien no es el titular. Aparte, se ve de un vistazo qué es sólo del
+titular, y una prueba puede afirmar que **no aparece** donde no debe.
+
+**No viaja por `findById`.** Esa lectura la usan el chat, el tiempo real, la firma, el flujo de
+llenado y la puerta de verificación: meter ahí el género y la etnia los pondría en cada uno de esos
+caminos, que no los necesitan. Los lee **una consulta propia**, y sólo la llaman los dos manejadores
+de `/users/me`.
+
+**Tampoco va en la respuesta del login**, ni en los listados de personas (`GET /users`): el login
+abre sesión y no necesita saber nada de eso. Es la **minimización** de la LOPDP (Art. 39): por
+defecto, sólo lo necesario.
+
+**Y esa lectura no deja rastro en `accesos_sensibles`.** La bitácora responde a «quién vio lo de esta
+persona», y la persona no es un tercero —la misma regla que ya aplica el editor de `/admin`—.
+
+⚠️ **El navegador no los guarda.** La respuesta de `/users/me` se copiaba entera en `localStorage`,
+así que el género y la etnia se habrían quedado ahí sin caducidad. `storeUser`
+(`frontend/src/core/utils/accessControl.js`) guarda el usuario **sin `datos_personales`**: se piden a
+`/users/me` cada vez.
+
+### Los vocabularios de la persona
+
+Cinco catálogos con la misma forma —`pais_id`, `code`, `name`, `orden`— que describen **cómo se
+declara una persona**: `generos`, `estados_civiles`, `autoidentificaciones_etnicas`,
+`tipos_discapacidad` y `parentescos`.
+
+**Van a tabla y no a `CHECK` por una regla, no por gusto**: lo que define una **autoridad nacional**
+va a catálogo con `pais_id`; lo universal se queda en `CHECK`. Un `CHECK` es global por definición y
+no puede tener un valor para Ecuador y otro para Colombia.
+
+Por eso el **tipo de sangre** no está aquí —ocho valores de biología, iguales en todas partes— y el
+**sexo** tampoco: es el dato administrativo del documento.
+
+| Catálogo | Filas | Quién lo define |
+|---|---:|---|
+| `generos` | 2 | Ley Orgánica de Gestión de la Identidad (2016) |
+| `estados_civiles` | 5 | Registro Civil — incluye la **unión de hecho** |
+| `autoidentificaciones_etnicas` | 8 | INEC, pregunta 11 del censo |
+| `tipos_discapacidad` | 6 | Ministerio de Salud Pública |
+| `parentescos` | 7 | IESS y SRI |
+
+⚠️ **El género tiene dos valores y no es simplificación nuestra.** La ley de 2016 permite
+**sustituir** el campo «sexo» por «género» en la cédula, **una sola vez y sólo entre masculino y
+femenino**. La cédula lleva **uno u otro**, nunca los dos.
+
+Y de ahí sale una columna en `instituciones`: **`campo_sexo_genero`** (`sexo` · `genero` · `ambos`)
+decide qué pide esta instalación. Preguntar por los dos a todo el mundo es pedir un dato que su
+documento no tiene — y en otros países hay documentos con marcador no binario, o sin campo ninguno.
+Es la misma costura que `pais_id`: lo decide la institución, no el código.
+
+:::note[De dónde salen esas filas]
+
+**232 países**, del CLDR que ya trae Node, con su ISO-3166 derivado por nombre. **24 provincias, 222
+cantones y 1 314 parroquias**, del *Clasificador Geográfico Estadístico 2025* del INEC.
+
+Y **tres** trampas que costó encontrar, todas en el mismo fichero:
+
+**Un asterisco marca lo histórico.** Santa Elena, Santo Domingo, La Concordia y los de Orellana
+aparecen dos veces, en su provincia vieja y en la nueva.
+
+**Dos asteriscos NO son un asterisco.** `**` es una llamada a pie de página y la jurisdicción **sigue
+vigente**. El único caso es `**CANTÓN LA CONCORDIA`, cuya nota cita el decreto que lo creó en 2013.
+Hasta el 2026-09-08 el extractor hacía `startswith("*")` y **La Concordia no estaba en el catálogo**,
+con sus cuatro parroquias huérfanas. El invariante decía 221 y **consagraba el fallo**: son 222.
+
+**La provincia 90 no es una provincia.** El fichero cierra con «90 ZONAS EN ESTUDIO», territorios en
+disputa sin provincia ni cantón. Se excluye entera.
+
+Y sobre los nombres: **el de un cantón sólo es único dentro de su provincia** —hay un «Bolívar» en
+Carchi y otro en Manabí—, y **el de una parroquia no es único ni dentro de su propio cantón**: la
+cabecera de Azogues se llama «Azogues» y también una parroquia urbana de dentro. Son **33** casos, y
+por eso la identidad de una parroquia es su **código DPA**.
+
+:::
+
+:::note[Por qué el escaneo guarda una referencia y no una URL]
+
+`documentos_identidad.escaneo_ref` guarda `minio://<bucket>/<objeto>`, no una dirección web. Una URL
+pública lleva dentro el endpoint del entorno, así que mover la pila o cambiar de dominio invalidaría
+todas las filas. La ruta del objeto sí es derivable —cuelga del id de la persona y del documento—,
+pero **su existencia no**: una referencia vacía significa «sin escaneo», y saberlo sin preguntarle al
+almacén es justo la razón de guardarla.
+
+:::
+
+## El papel que ordena un cambio — `actos`
+
+Una unidad no se crea ni se suprime porque sí: lo decide alguien con competencia, y hay un documento
+que lo dice. Hasta el 2026-11-23 el modelo no tenía dónde apuntarlo. Ahora hay cuatro tablas:
+
+| Tabla | Qué guarda |
+|---|---|
+| `tipos_de_acto` | El catálogo: resolución, acta, memorando, oficio, disposición. Se amplía en `/admin` |
+| `actos` | La **referencia** del papel: tipo, número, asunto, quién lo emite y sus dos fechas |
+| `acto_documentos` | El enlace al documento firmado, cuando se produjo aquí |
+| `acto_adjuntos` | El fichero del acto, cuando vino de fuera: dónde está, su huella y quién lo subió |
+
+Cuatro cosas que no son evidentes:
+
+- **Quien emite es el órgano, no la persona ni su puesto.** La competencia para decidir es de la
+  Dirección o del Consejo, y por eso un memorando se numera con la sigla de la unidad y la serie
+  continúa cuando cambia el titular. El emisor es una unidad (`unidad_emisora_id`) **o** un texto
+  (`emisor_externo`, para un órgano que no está en el sistema): exactamente uno de los dos, y lo
+  impone la base.
+- **Quien firma se deduce casi siempre** —de la firma, si el acto se produjo aquí; de quién ocupaba
+  la jefatura en la fecha de emisión, si no—. `suscrito_por_*` y `en_calidad_de` (`titular`,
+  `subrogante`, `encargado`, `delegado`) existen para cuando **no** se puede deducir. En los cuatro
+  casos el acto sigue siendo del órgano.
+- **Y quien lo registró es otra persona más**, que no hay que confundir con las dos anteriores: el
+  órgano lo **emite**, alguien lo **suscribe**, y alguien lo **da de alta aquí**. Esto último lo
+  guarda `registrado_por_person_id`, y lo escribe el sistema al crear el acto —nadie lo teclea, y la
+  base no deja cambiarlo—. Importa porque un acto ordena cambios de estructura con sólo existir.
+  Está vacío en lo que no registró una persona: la siembra.
+- **Lleva dos fechas y no son la misma**: `fecha_emision` es cuándo se firmó, `fecha_vigencia` desde
+  cuándo rige. Una resolución de diciembre puede regir desde enero.
+- **Un acto sin papel no es un error**: es el estado «referencia registrada, documento pendiente».
+  La referencia es obligatoria; el documento puede llegar después. Lo que no puede es pasar
+  inadvertido: el nodo al que ese acto ordenó algo lo avisa en el mapa, y la pestaña «Actos» de su
+  modal lista los que cita, con su documento. La pantalla de actos lleva además la lista general,
+  que es donde se ve también el acto que todavía no ordena nada.
+
+El enlace al documento va **del documento al acto**, en el dominio de tareas, y no al revés: el acto
+está en el nivel 2 para que unidades y procesos puedan apuntarle, `document_versions` está en el 5, y
+una clave ajena no sube de nivel.
+
+### El documento firmado aquí — `acto_documentos`
+
+Cuando el papel de un acto se produjo y se firmó en el sistema, no se sube nada: se **enlaza** a la
+versión de ese documento. Se elige buscando por lo que uno recuerda de él —el entregable, el proceso
+o la unidad—, y sólo se ofrecen los documentos cuya firma terminó y que no están ya enlazados a otro
+acto. Se hace desde «Documentos», en la pantalla de actos, o desde la pestaña «Actos» del nodo.
+
+**Desenlazar es libre mientras el acto no ordena nada.** Desde que una vida o una relación lo cita,
+el enlace no se quita ni se cambia, y aquí **no hay camino de corrección**: el documento se produjo y
+se firmó en el sistema, así que si el enlace estaba mal lo que hay que corregir es qué acto citan las
+vidas, no a qué documento apunta éste. Lo impone la base.
+
+### El fichero de un acto externo — `acto_adjuntos`
+
+El papel de un acto llega por uno de dos caminos, y **nunca por los dos**: si se produjo y se firmó
+aquí, se **enlaza** (`acto_documentos`); si vino de fuera —una resolución de la sede matriz, un
+oficio en papel digitalizado—, se **adjunta** su PDF. La base rechaza el segundo cuando ya está el
+primero, en los dos sentidos.
+
+| | |
+|---|---|
+| Qué se guarda | la ruta del fichero en el almacén, su nombre, su tamaño, su huella SHA-256 y quién lo subió |
+| Dónde vive el fichero | en el almacén de documentos, en una ruta que **lleva la huella** de su contenido |
+| Qué se acepta | un PDF, comprobado por su contenido y no por su nombre |
+| Cuántos por acto | uno |
+
+**Cambiarlo depende de si el acto ya ordena algo.** Mientras ninguna vida ni relación lo cita, el
+fichero se sube, se cambia o se quita sin trámite: se subió el que no era. Desde que alguna lo cita
+—el inicio o el fin de una unidad, un puesto, un proceso o una relación—, ese papel es lo que
+justifica un cambio de la estructura, y cambiarlo o quitarlo es una **corrección**: permiso aparte,
+motivo, y lo que la fila decía en la bitácora. Es la misma regla que quitar un sucesor de algo que ya
+terminó, y la impone la base, no sólo la pantalla. Subir el **primer** fichero nunca es una
+corrección, aunque el acto ya ordene algo: es completar lo que faltaba.
+
+**Reemplazar no destruye el anterior.** Como la ruta lleva la huella, el fichero nuevo va a otra
+ruta y el viejo se queda donde estaba; la bitácora de correcciones guarda a cuál apuntaba la fila.
+
+## El diagrama, con todos sus campos
+
+```mermaid
+erDiagram
+  unit_types ||--o{ units : "clasifica"
+  units ||--o{ unit_positions : "tiene sillas"
+  cargos ||--o{ unit_positions : "define el rol de"
+  units ||--o{ unit_relations : "padre"
+  units ||--o{ unit_relations : "hija"
+  units ||--o{ unit_vigencias : "sus vidas"
+  unit_positions ||--o{ position_vigencias : "sus vidas"
+  unit_vigencias ||--o{ unit_equivalencias : "la vida que termina"
+  units ||--o{ unit_equivalencias : "la sucede"
+  position_vigencias ||--o{ position_equivalencias : "la vida que termina"
+  unit_positions ||--o{ position_equivalencias : "lo sucede"
+  relation_unit_types ||--o{ unit_relations : "tipo de vinculo"
+  unit_positions ||--o{ position_assignments : "ocupada por"
+  persons ||--o{ position_assignments : "ocupa"
+
+  unit_types {
+    int id PK
+    varchar name "Facultad, Carrera, Direccion"
+    smallint is_active
+    timestamp created_at
+    timestamp updated_at
+  }
+  units {
+    int id PK
+    varchar name "nombre completo"
+    varchar label "nombre corto para pantalla"
+    varchar slug "identificador en URL"
+    int unit_type_id FK
+    timestamp created_at
+    timestamp updated_at
+  }
+  unit_vigencias {
+    int id PK "UNA VIDA de la unidad"
+    int unit_id FK
+    date vigente_desde "desde cuando rige"
+    date vigente_hasta "primer dia en que ya no rige"
+    text inicio_origen "carga_inicial, reorganizacion, correccion"
+    int inicio_acto_id FK "el acto que la puso en vigor"
+    text fin_origen "carga_inicial, reorganizacion, correccion"
+    int fin_acto_id FK "el acto que la suprimio"
+    timestamp created_at
+  }
+  position_vigencias {
+    int id PK "UNA VIDA del puesto"
+    int position_id FK
+    date vigente_desde "desde cuando rige"
+    date vigente_hasta "primer dia en que ya no rige"
+    text inicio_origen "carga_inicial, reorganizacion, correccion"
+    int inicio_acto_id FK "el acto que lo puso en vigor"
+    text fin_origen "carga_inicial, reorganizacion, correccion"
+    int fin_acto_id FK "el acto que lo suprimio"
+    timestamp created_at
+  }
+  unit_equivalencias {
+    int id PK "UN SUCESOR de una vida que termina"
+    int antecesor_vigencia_id FK "la vida, no la unidad"
+    int sucesor_unit_id FK
+    int registrado_por_person_id FK "lo escribe el sistema"
+    timestamp created_at
+  }
+  position_equivalencias {
+    int id PK "UN SUCESOR de una vida que termina"
+    int antecesor_vigencia_id FK "la vida, no el puesto"
+    int sucesor_position_id FK "puede ser de otra unidad"
+    int registrado_por_person_id FK "lo escribe el sistema"
+    timestamp created_at
+  }
+  relation_unit_types {
+    int id PK
+    varchar code "org"
+    varchar name
+    varchar description
+    smallint is_inheritance_allowed "si hereda permisos hacia abajo"
+    smallint is_active
+    timestamp created_at
+    timestamp updated_at
+  }
+  unit_relations {
+    int id PK "UN PERIODO de dependencia"
+    int relation_type_id FK
+    int parent_unit_id FK
+    int child_unit_id FK
+    date vigente_desde "desde cuando rige, vacio en un borrador"
+    date vigente_hasta "primer dia en que ya no rige"
+    text inicio_origen "carga_inicial, reorganizacion, correccion"
+    int inicio_acto_id FK "el acto que la abrio"
+    text fin_origen "carga_inicial, reorganizacion, correccion"
+    int fin_acto_id FK "el acto que la cerro"
+    timestamp created_at
+    timestamp updated_at
+  }
+  cargos {
+    int id PK
+    varchar code "identificador estable, unico"
+    varchar name "Decano, Coordinador"
+    varchar description
+    smallint is_active
+    timestamp created_at
+    timestamp updated_at
+  }
+  unit_positions {
+    int id PK "LA SILLA"
+    int unit_id FK
+    int cargo_id FK
+    int slot_no "numero de plaza"
+    varchar title "titulo propio si difiere del cargo"
+    jsonb profile "perfil requerido"
+    text position_type "real, promocion, simbolico"
+    smallint is_unit_head "si dirige la unidad"
+    smallint head_flag "generada, garantiza un solo jefe"
+    timestamp created_at
+    timestamp updated_at
+  }
+  position_assignments {
+    int id PK "LA OCUPACION"
+    int position_id FK
+    int person_id FK
+    date start_date
+    date end_date "vacia mientras siga vigente"
+    smallint is_current
+    smallint current_flag "generada, garantiza una sola vigente"
+    timestamp created_at
+    timestamp updated_at
+  }
+  persons {
+    int id PK
+    varchar first_name
+    varchar last_name
+    int nacionalidad_pais_id FK "de que pais ES, no donde nacio"
+    date fecha_nacimiento
+    int nacimiento_pais_id FK "DONDE nacio"
+    int nacimiento_canton_id FK "la provincia se DEDUCE de el"
+    text sexo "CHECK · hombre | mujer"
+    int estado_civil_id FK
+    varchar password_hash
+    text status "Inactivo, Activo, Verificado, Reportado"
+    text photo_url
+    smallint is_active
+    varchar token "marca de firma en el PDF"
+    timestamp created_at
+    timestamp updated_at
+  }
+```
+
+:::note[Un campo que sorprende]
+
+`persons.token` son diez caracteres únicos por persona (`VARCHAR(10) NOT NULL UNIQUE`). No son de
+seguridad: son **la marca que se escribe dentro del PDF** para que el firmador sepa exactamente en qué
+página y en qué coordenadas estampar la firma de esa persona. Es el hilo que une la organización con
+la firma.
+
+:::

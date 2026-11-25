@@ -1,5 +1,5 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="sqlFkCreateModalLabel"
     :title="`Crear referencia ${fkTable?.label || ''}`"
@@ -7,12 +7,12 @@
     close-action
     @close="$emit('cancel')"
   >
-    <div v-if="fkCreateError" class="mb-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+    <AppAlert v-if="fkCreateError">
       {{ fkCreateError }}
-    </div>
-    <div v-if="!fkCreateFields.length" class="text-sm text-slate-500">
+    </AppAlert>
+    <AppEmpty v-if="!fkCreateFields.length">
       No hay campos editables disponibles para crear esta referencia.
-    </div>
+    </AppEmpty>
     <form v-else class="grid gap-3 md:grid-cols-12">
       <AdminFieldGroup
         v-for="field in fkCreateFields"
@@ -45,14 +45,12 @@
             {{ formatSelectOptionLabel(field, option) }}
           </option>
         </AdminSelectField>
-        <AdminSelectField
+        <SToggle
           v-else-if="field.type === 'boolean'"
-          :model-value="fkCreateForm[field.name]"
-          @update:model-value="updateField(field.name, $event)"
-        >
-          <option value="1">Si</option>
-          <option value="0">No</option>
-        </AdminSelectField>
+          :model-value="Number(fkCreateForm[field.name]) === 1"
+          label-position="end"
+          @change="(value) => updateField(field.name, value ? '1' : '0')"
+        />
         <AdminInputField
           v-else
           :model-value="fkCreateForm[field.name]"
@@ -63,30 +61,33 @@
     </form>
     <template #footer>
       <AdminButton
-        variant="cancel"
+        variant="danger-outline"
         :disabled="fkCreateLoading"
         @click="$emit('cancel')"
       >
         Cancelar
       </AdminButton>
       <AdminButton
-        variant="primary"
+        variant="primary-outline"
         :disabled="!canCreateFkReference || fkCreateLoading"
         @click="$emit('submit')"
       >
         {{ fkCreateLoading ? "Guardando..." : "Guardar y seleccionar" }}
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { ref } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 
 const props = defineProps({
   fkTable: {

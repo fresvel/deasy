@@ -12,8 +12,40 @@ export const PROCESS_INLINE_HIDDEN_FIELDS = new Set([
   "version_parent_version_id"
 ]);
 
+// CÓMO SE LEE UNA FILA AJENA: LA LISTA ES UNA, Y ESTÁ AQUÍ POR HABER SIDO DOS.
+//
+// Dos sitios contestan «¿qué columna de esta fila es su nombre?» y hasta el 2026-10-14 cada uno
+// llevaba su propia lista, divergidas:
+//
+//   `resolveDisplayField` (AdminTableManager.vue)  name·title·email·direccion·numero·label·code·slug
+//   `formatFkOptionLabel` (AdminPresentationService) name·title·email·label·code·slug·id
+//
+// La segunda no tenía `direccion` ni `numero`. Esas dos entraron el 2026-08-28 para que el editor
+// dejara de pintar un número donde va el teléfono o el correo —el motivo está escrito junto a la
+// otra lista— y se añadieron **sólo a una**. Resultado medido sobre las 60 tablas del catálogo:
+// `telefonos`, `emails` y `documentos_identidad` seguían rotuladas con su `id` en el desplegable.
+//
+// Y ninguna de las dos tenía `nombre`, que es como se llama la columna en las tablas nuevas: por
+// eso «Sucede a la línea» ofrecía «5» en vez de «Informe de Gestión Docente». Lo vio el dueño.
+//
+// Las dos la usan distinto —una busca un NOMBRE DE COLUMNA en los metadatos de la tabla, la otra el
+// primer VALOR definido de una fila— y por eso no se puede unificar la función; la lista sí, que es
+// donde estaba la deuda. `id` no entra aquí: es el último recurso de quien la consume, no una forma
+// de llamarse.
+export const FK_LABEL_FIELDS = [
+  "name",
+  "nombre",
+  "title",
+  "email",
+  "direccion",
+  "numero",
+  "label",
+  "code",
+  "slug"
+];
+
 export const PROCESS_DEFINITION_HIDDEN_FIELDS = new Set([
-  "variation_key"
+  "linea_id"
 ]);
 
 export const personCargoTableFields = [
@@ -57,80 +89,64 @@ export const unassignedTemplateArtifactTableFields = [
   { name: "display_name", label: "Nombre" },
   { name: "available_formats", label: "Formatos" },
   { name: "template_code", label: "Codigo" },
-  { name: "source_version", label: "Version fuente" },
-  { name: "storage_version", label: "Version storage" },
+  { name: "storage_version", label: "Version" },
   { name: "is_active", label: "Activo" }
 ];
 
-export const processDefinitionActivationRuleTableFields = [
-  { name: "unit_scope_type", label: "Alcance" },
-  { name: "destination", label: "Destino" },
-  { name: "is_active", label: "Activo" }
-];
+// Y AQUI `processDefinitionActivationRuleTableFields`, la del panel de activacion: llego a pintar
+// tres columnas y dos mentian --«Alcance» vacia desde `P10` y «Activo» un «No» fijo desde `P18-d`--.
+// Se fue entera con la tabla (frente 25, P26).
 
 export const processDefinitionActivationTriggerTableFields = [
-  { name: "trigger_mode", label: "Modo" },
   { name: "term_type_id", label: "Tipo de periodo" },
   { name: "is_active", label: "Activo" }
 ];
 
 export const processDefinitionActivationArtifactTableFields = [
-  { name: "template_artifact_id", label: "Paquete" },
-  { name: "usage_role", label: "Rol" },
-  { name: "instance_mode", label: "Modo de instancia" },
-  { name: "creates_task", label: "Genera tarea" }
+  { name: "edicion_id", label: "Plantilla documental" }
 ];
 
 export const definitionArtifactsTableFields = [
   { name: "id", label: "ID" },
-  { name: "template_artifact_id", label: "Artifact" },
-  { name: "usage_role", label: "Rol" },
-  { name: "instance_mode", label: "Modo de instancia" },
-  { name: "creates_task", label: "Genera tarea" },
-  { name: "is_required", label: "Requerido" },
+  { name: "edicion_id", label: "Plantilla documental" },
+  { name: "item_mode", label: "Modo de emisión" },
   { name: "sort_order", label: "Orden" }
 ];
 
 export const definitionTriggersTableFields = [
   { name: "id", label: "ID" },
-  { name: "trigger_mode", label: "Modo" },
   { name: "term_type_id", label: "Tipo de periodo" },
   { name: "is_active", label: "Activo" }
 ];
 
-export const definitionRulesTableFields = [
-  { name: "id", label: "ID" },
-  { name: "unit_scope_type", label: "Alcance" },
-  { name: "unit_id", label: "Unidad" },
-  { name: "unit_type_id", label: "Tipo de unidad" },
-  { name: "cargo_id", label: "Cargo" },
-  { name: "position_id", label: "Puesto" },
-  { name: "recipient_policy", label: "Entrega" },
-  { name: "is_active", label: "Activo" }
-];
+// AQUI ESTABA `definitionRulesTableFields`, la rejilla del gestor de reglas. Se fue con la tabla
+// (frente 25, P26).
 
 export const recordViewerSummaryTableFields = [
   { name: "label", label: "Campo" },
   { name: "value", label: "Valor" }
 ];
 
-export const fkViewerSummaryTableFields = [
-  { name: "label", label: "Campo" },
-  { name: "value", label: "Valor" }
-];
-
 export const FK_TABLE_MAP = {
   parent_id: "processes",
-  parent_task_id: "tasks",
   process_id: "processes",
-  series_id: "process_definition_series",
+  linea_id: "lineas",
+  // LA LÍNEA A LA QUE SUCEDE ES UNA LÍNEA, y hasta el 2026-10-14 el formulario pedía un número
+  // a pelo. Lo vio el dueño. Que el ID sea lo que se guarda no quiere decir que sea lo que se
+  // pregunta: el buscador lo resuelve igual que para cualquier otra clave ajena del admin.
+  linea_anterior_id: "lineas",
   process_definition_id: "process_definition_versions",
   process_run_id: "process_runs",
   source_run_id: "process_runs",
-  process_definition_template_id: "process_definition_templates",
-  fill_flow_template_id: "fill_flow_templates",
-  fill_flow_step_id: "fill_flow_steps",
-  template_seed_id: "template_seeds",
+  vinculo_id: "vinculos",
+  // LA RECETA Y LA EJECUCION DEL RECORRIDO. Aqui habia SEIS entradas --dos cabeceras, dos pasos, la
+  // instancia de entrega y las dos de firma-- y son cuatro, porque las dos mitades son la misma
+  // pareja de tablas (paso 4 de la fase 4 del frente 24).
+  paso_id: "pasos_declarados",
+  participante_id: "participantes_declarados",
+  recorrido_id: "recorridos",
+  persona_id: "persons",
+  generador_id: "generadores_de_documento",
   term_type_id: "term_types",
   term_id: "terms",
   task_id: "tasks",
@@ -139,34 +155,84 @@ export const FK_TABLE_MAP = {
   parent_unit_id: "units",
   child_unit_id: "units",
   relation_type_id: "relation_unit_types",
-  template_id: "signature_flow_templates",
-  template_artifact_id: "template_artifacts",
+  // Identidad y geografía (2026-08-28). Sin esto, el editor pinta el número crudo: un
+  // `pais_id: 60` en vez de "Ecuador".
+  pais_id: "paises",
+  provincia_id: "provincias",
+  canton_id: "cantones",
+  parroquia_id: "parroquias",
+  clase_id: "clases_parroquia",
+  genero_id: "generos",
+  estado_civil_id: "estados_civiles",
+  autoidentificacion_etnica_id: "autoidentificaciones_etnicas",
+  tipo_discapacidad_id: "tipos_discapacidad",
+  parentesco_id: "parentescos",
+  categoria_visa_id: "categorias_visa",
+  nacimiento_pais_id: "paises",
+  nacimiento_canton_id: "cantones",
+  nacionalidad_pais_id: "paises",
+  canal_id: "canales_mensajeria",
+  telefono_id: "telefonos",
+  // La nacionalidad es una columna REAL de `persons`. Sin esta entrada el formulario pide un NÚMERO
+  // («pais_id») en vez de ofrecer el catálogo, y quien da de alta tiene que saberse los ids.
+  //
+  // Aquí hubo tres entradas más —`documento_pais_id`, `telefono_pais_id`, `documento_tipo_id`— para
+  // los campos virtuales del alta de persona. Se fueron con ellos el 2026-08-28: no son columnas de
+  // ninguna tabla, así que sin el formulario que las inventaba no las pedía nadie.
+  nacionalidad_pais_id: "paises",
+  edicion_id: "ediciones",
   task_item_id: "task_items",
-  document_id: "documents",
+  // `document_id: "documents"` vivio aqui hasta el paso 4 de la fase 4 del frente 24. La tabla
+  // murio el 2026-08-23 --era una cascara 1:1 sobre el entregable, sin ni una columna propia-- y
+  // esta entrada se quedo apuntando al vacio: el editor pedia un catalogo que no existe.
   document_version_id: "document_versions",
-  document_fill_flow_id: "document_fill_flows",
   owner_person_id: "persons",
   created_by_user_id: "persons",
   person_id: "persons",
+  // La bitacora de accesos sensibles: de quien es el dato y quien accedio.
+  titular_person_id: "persons",
+  actor_person_id: "persons",
   responsible_position_id: "unit_positions",
   role_id: "roles",
   permission_id: "permissions",
   resource_id: "resources",
   action_id: "actions",
   cargo_id: "cargos",
-  required_cargo_id: "cargos",
   signer_user_id: "persons",
   position_id: "unit_positions",
   assigned_person_id: "persons",
   vacancy_id: "vacancies",
   role_assignment_id: "role_assignments",
-  signature_request_id: "signature_requests",
-  signature_type_id: "signature_types",
+  // La columna conserva su nombre y lo que referencia es un TURNO (paso 3b de la fase 4): la lee el
+  // firmador y viaja en la API, asi que renombrarla es otro cambio.
+  turno_id: "turnos",
   signature_status_id: "signature_statuses",
-  step_id: "signature_flow_steps",
-  step_type_id: "signature_types",
-  instance_id: "signature_flow_instances",
-  status_id: "signature_request_statuses"
+  // LA ESTRUCTURA CON MEMORIA (frente 27). Estas columnas nacieron sin entrada aquí y el formulario
+  // pedía su NÚMERO: para registrar un acto había que saberse el id del tipo, el de la unidad
+  // emisora y el de la persona. Lo vio el dueño el 2026-11-24. Desde entonces lo vigila
+  // `scripts/check-fk-buscador.mjs`: una columna `*_id` del catálogo sin entrada aquí, falla.
+  tipo_de_acto_id: "tipos_de_acto",
+  unidad_emisora_id: "units",
+  suscrito_por_person_id: "persons",
+  registrado_por_person_id: "persons",
+  acto_id: "actos",
+  inicio_acto_id: "actos",
+  fin_acto_id: "actos",
+  parent_process_id: "processes",
+  child_process_id: "processes",
+  sucesor_unit_id: "units",
+  sucesor_position_id: "unit_positions",
+  sucesor_process_id: "processes",
+  // Y las que ya faltaban de antes, encontradas con la misma cuenta.
+  created_by_person_id: "persons",
+  performed_by_person_id: "persons",
+  uploaded_by_person_id: "persons",
+  origin_unit_id: "units",
+  target_unit_id: "units",
+  scope_unit_id: "units",
+  source_task_item_id: "task_items",
+  derived_from_assignment_id: "role_assignments",
+  parent_version_id: "ediciones"
 };
 
 export const RELATED_RECORD_CONFIG = {
@@ -176,41 +242,44 @@ export const RELATED_RECORD_CONFIG = {
     { table: "contracts", label: "Contratos", foreignKey: "person_id", orderBy: "start_date", order: "desc" }
   ],
   processes: [
-    { table: "process_definition_versions", label: "Definiciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" }
+    { table: "process_definition_versions", label: "Configuraciones", foreignKey: "process_id", orderBy: "effective_from", order: "desc" }
   ],
   process_definition_versions: [
-    { table: "process_definition_triggers", label: "Disparadores", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
-    { table: "process_target_rules", label: "Reglas de alcance", foreignKey: "process_definition_id", orderBy: "priority", order: "asc" },
-    { table: "process_definition_templates", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
+    { table: "process_definition_period_types", label: "Periodos del proceso", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
+    { table: "vinculos", label: "Plantillas", foreignKey: "process_definition_id", orderBy: "sort_order", order: "asc" },
     { table: "process_runs", label: "Corridas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" },
     { table: "tasks", label: "Tareas", foreignKey: "process_definition_id", orderBy: "created_at", order: "desc" }
   ],
   process_runs: [
     { table: "tasks", label: "Tareas", foreignKey: "process_run_id", orderBy: "created_at", order: "desc" }
   ],
-  process_definition_templates: [
-    { table: "fill_flow_templates", label: "Flujos de llenado", foreignKey: "process_definition_template_id", orderBy: "created_at", order: "desc" },
-    { table: "signature_flow_templates", label: "Flujos de firma", foreignKey: "process_definition_template_id", orderBy: "created_at", order: "desc" }
+  // Los recorridos autorados cuelgan de la EDICIÓN, no del vínculo: el escalón del vínculo murió en
+  // la fase 2 del frente 24 y su columna ya no existe. Un vínculo alcanza su recorrido A TRAVÉS de
+  // la edición que enlaza, así que aquí no hay nada que listar.
+  // UNA ENTRADA PARA LOS DOS LADOS: los pasos de entrega y de firma de una edicion son la misma
+  // tabla, con su columna `accion`.
+  ediciones: [
+    { table: "pasos_declarados", label: "Pasos del recorrido", foreignKey: "edicion_id", orderBy: "orden", order: "asc" }
   ],
-  fill_flow_templates: [
-    { table: "fill_flow_steps", label: "Pasos de llenado", foreignKey: "fill_flow_template_id", orderBy: "step_order", order: "asc" }
+  pasos_declarados: [
+    { table: "participantes_declarados", label: "Participantes", foreignKey: "paso_id", orderBy: "orden", order: "asc" }
   ],
   tasks: [
-    { table: "task_items", label: "Items", foreignKey: "task_id", orderBy: "sort_order", order: "asc" },
-    { table: "task_assignments", label: "Asignaciones", foreignKey: "task_id", orderBy: "assigned_at", order: "desc" }
+    { table: "task_items", label: "Items", foreignKey: "task_id", orderBy: "sort_order", order: "asc" }
   ],
   task_items: [
-    { table: "documents", label: "Documentos", foreignKey: "task_item_id", orderBy: "created_at", order: "desc" }
-  ],
-  documents: [
-    { table: "document_versions", label: "Versiones del documento", foreignKey: "document_id", orderBy: "created_at", order: "desc" }
+    // Aqui ponia `documents`, la tabla que murio el 2026-08-23: las versiones cuelgan del ENTREGABLE.
+    { table: "document_versions", label: "Versiones", foreignKey: "task_item_id", orderBy: "created_at", order: "desc" },
+    // Sustituye a las «Asignaciones» (`task_assignments`), que colgaban de la TAREA. La tenencia
+    // cuelga del ENTREGABLE, que es el grano al que de verdad se responde: una tarea reparte varios
+    // entregables y cada uno tiene su propio responsable y su propia sucesión.
+    { table: "task_item_tenures", label: "Tenencias", foreignKey: "task_item_id", orderBy: "started_at", order: "desc" }
   ],
   document_versions: [
-    { table: "document_fill_flows", label: "Flujos de llenado", foreignKey: "document_version_id", orderBy: "created_at", order: "desc" },
-    { table: "signature_flow_instances", label: "Flujos de firma", foreignKey: "document_version_id", orderBy: "created_at", order: "desc" }
+    { table: "recorridos", label: "Recorridos", foreignKey: "document_version_id", orderBy: "created_at", order: "desc" }
   ],
-  document_fill_flows: [
-    { table: "fill_requests", label: "Solicitudes de llenado", foreignKey: "document_fill_flow_id", orderBy: "requested_at", order: "desc" }
+  recorridos: [
+    { table: "turnos", label: "Turnos", foreignKey: "recorrido_id", orderBy: "solicitado", order: "desc" }
   ],
   units: [
     { table: "unit_positions", label: "Puestos", foreignKey: "unit_id", orderBy: "created_at", order: "desc" },

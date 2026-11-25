@@ -1,0 +1,295 @@
+{
+  "ajena_admin_approve": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
+    }
+  },
+  "ajena_admin_cancel": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
+    }
+  },
+  "ajena_admin_reject": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
+    }
+  },
+  "ajena_admin_return": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
+    }
+  },
+  "ajena_admin_start": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
+    }
+  },
+  "ajena_gestor_start": {
+    "status": 403,
+    "body": {
+      "error": "No puedes operar un turno de entrega asignado a otro usuario."
+    }
+  },
+  "approve_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "flowStatus": "completado",
+      "message": "Turno de entrega actualizado.",
+      "status": "completado",
+      "turnoId": "<normalized>"
+    }
+  },
+  "approve_sin_pdf": {
+    "status": 409,
+    "body": {
+      "error": "El último paso del flujo de entrega requiere un PDF en working para habilitar la firma."
+    }
+  },
+  "approve_sin_pdf_rollback": {
+    "status": "pendiente"
+  },
+  "cancel_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "flowStatus": "pendiente",
+      "message": "Turno de entrega actualizado.",
+      "status": "cancelado",
+      "turnoId": "<normalized>"
+    }
+  },
+  "id_cero": {
+    "status": 400,
+    "body": {
+      "error": "Turno de entrega inválido."
+    }
+  },
+  "id_no_numerico_approve": {
+    "status": 400,
+    "body": {
+      "error": "Turno de entrega inválido."
+    }
+  },
+  "id_no_numerico_cancel": {
+    "status": 400,
+    "body": {
+      "error": "Turno de entrega inválido."
+    }
+  },
+  "id_no_numerico_reject": {
+    "status": 400,
+    "body": {
+      "error": "Turno de entrega inválido."
+    }
+  },
+  "id_no_numerico_return": {
+    "status": 400,
+    "body": {
+      "error": "Turno de entrega inválido."
+    }
+  },
+  "id_no_numerico_start": {
+    "status": 400,
+    "body": {
+      "error": "Turno de entrega inválido."
+    }
+  },
+  "inexistente_approve": {
+    "status": 404,
+    "body": {
+      "error": "Turno de entrega no encontrado."
+    }
+  },
+  "inexistente_cancel": {
+    "status": 404,
+    "body": {
+      "error": "Turno de entrega no encontrado."
+    }
+  },
+  "inexistente_reject": {
+    "status": 404,
+    "body": {
+      "error": "Turno de entrega no encontrado."
+    }
+  },
+  "inexistente_return": {
+    "status": 404,
+    "body": {
+      "error": "Turno de entrega no encontrado."
+    }
+  },
+  "inexistente_start": {
+    "status": 404,
+    "body": {
+      "error": "Turno de entrega no encontrado."
+    }
+  },
+  "manual_autoasignacion": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "flowStatus": "en_progreso",
+      "message": "Turno de entrega actualizado.",
+      "status": "en_progreso",
+      "turnoId": "<normalized>"
+    }
+  },
+  "manual_autoasignacion_efecto": {
+    "reclamada_por_el_gestor": true,
+    "status": "en_progreso"
+  },
+  "reject_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "flowStatus": "rechazado",
+      "message": "Turno de entrega actualizado.",
+      "status": "rechazado",
+      "turnoId": "<normalized>"
+    }
+  },
+  "return_efecto": {
+    "status": "pendiente",
+    "response_note": "faltan datos en el formulario"
+  },
+  "return_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "flowStatus": "pendiente",
+      "message": "Turno de entrega actualizado.",
+      "status": "devuelto",
+      "turnoId": "<normalized>"
+    }
+  },
+  "sin_responsable_gestor": {
+    "status": 409,
+    "body": {
+      "error": "El turno de entrega no tiene un responsable resoluble."
+    }
+  },
+  "sin_responsable_usuario": {
+    "status": 409,
+    "body": {
+      "error": "El turno de entrega no tiene un responsable resoluble."
+    }
+  },
+  "sin_token_approve": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_cancel": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_reject": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_return": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "sin_token_start": {
+    "status": 401,
+    "body": {
+      "message": "Token requerido"
+    }
+  },
+  "start_ok": {
+    "status": 200,
+    "body": {
+      "documentVersionId": "<normalized>",
+      "flowStatus": "en_progreso",
+      "message": "Turno de entrega actualizado.",
+      "status": "en_progreso",
+      "turnoId": "<normalized>"
+    }
+  },
+  "start_repetido_409": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de en_progreso usando la acción start."
+    }
+  },
+  "terminal_cancelado_approve": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de cancelado usando la acción approve."
+    }
+  },
+  "terminal_completado_approve": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de completado usando la acción approve."
+    }
+  },
+  "terminal_completado_cancel": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de completado usando la acción cancel."
+    }
+  },
+  "terminal_completado_reject": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de completado usando la acción reject."
+    }
+  },
+  "terminal_completado_return": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de completado usando la acción return."
+    }
+  },
+  "terminal_completado_start": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de completado usando la acción start."
+    }
+  },
+  "terminal_rechazado_approve": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rechazado usando la acción approve."
+    }
+  },
+  "terminal_rechazado_cancel": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rechazado usando la acción cancel."
+    }
+  },
+  "terminal_rechazado_reject": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rechazado usando la acción reject."
+    }
+  },
+  "terminal_rechazado_return": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rechazado usando la acción return."
+    }
+  },
+  "terminal_rechazado_start": {
+    "status": 409,
+    "body": {
+      "error": "La solicitud no puede pasar de rechazado usando la acción start."
+    }
+  }
+}

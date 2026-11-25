@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Backend - Setup (tecnico)
 
 ## Requisitos
@@ -33,12 +38,12 @@ npm run start
 
 Servidor por defecto:
 
-- http://localhost:3000/easym/v1/
+- http://localhost:3000/deasy/v1/
 
 ## Swagger
 
-- UI: http://localhost:3000/easym/docs
-- JSON: http://localhost:3000/easym/docs.json
+- UI: http://localhost:3000/deasy/docs
+- JSON: http://localhost:3000/deasy/docs.json
 
 ## Notas de DB
 

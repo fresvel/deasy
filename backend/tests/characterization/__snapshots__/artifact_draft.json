@@ -1,0 +1,140 @@
+{
+  "crear_efectos": {
+    "lifecycle_state": "draft",
+    "storage_version": "1.0.0",
+    "vinculado_al_proceso": true,
+    "item_mode": "single"
+  },
+  "crear_ok": {
+    "status": 200,
+    "body": {
+      "__notice": "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.",
+      "available_formats": {
+        "jinja2": {
+          "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/jinja2/"
+        },
+        "pdf": {
+          "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/pdf/"
+        }
+      },
+      "base_object_prefix": "System/draft_zzz-char-draft/1.0.0/",
+      "content_hash": "c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1",
+      "description": null,
+      "display_name": "zzz char draft",
+      "generador_id": 1,
+      "id": "<normalized>",
+      "is_active": 1,
+      "owner_person_id": 1,
+      "storage_version": "1.0.0",
+      "template_code": "draft_zzz-char-draft",
+      "template_scope": "official"
+    }
+  },
+  "defecto_deliverable_huerfano": {
+    "status": 400,
+    "body": {
+      "message": "El proceso destino seleccionado no existe."
+    },
+    "deliverable_superviviente": null
+  },
+  "editar_ok": {
+    "status": 200,
+    "body": {
+      "__notice": "La plantilla de documento fue actualizada y cargada correctamente en MinIO.",
+      "available_formats": {
+        "jinja2": {
+          "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/jinja2/"
+        },
+        "pdf": {
+          "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/pdf/"
+        }
+      },
+      "base_object_prefix": "System/draft_zzz-char-draft/1.0.0/",
+      "content_hash": "c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1",
+      "description": "editado por el characterization test",
+      "display_name": "zzz char draft",
+      "generador_id": null,
+      "id": "<normalized>",
+      "is_active": 1,
+      "owner_person_id": 1,
+      "storage_version": "1.0.0",
+      "template_code": "draft_zzz-char-draft",
+      "template_scope": "official"
+    }
+  },
+  "error_artifact_inexistente": {
+    "status": 400,
+    "body": {
+      "message": "El artifact seleccionado no existe."
+    }
+  },
+  "error_publicada_inmutable": {
+    "status": 400,
+    "body": {
+      "message": "Esta plantilla está publicada (inmutable). Crea una nueva versión para editarla."
+    }
+  },
+  "error_sin_cedula": {
+    "status": 400,
+    "body": {
+      "message": "No se pudo inferir la cedula del usuario actual para crear el borrador."
+    }
+  },
+  "error_sin_documento": {
+    "status": 400,
+    "body": {
+      "message": "Debes adjuntar al menos un documento de referencia (PDF, Word, Excel o PowerPoint)."
+    }
+  },
+  "error_sin_nombre": {
+    "status": 400,
+    "body": {
+      "message": "Ingresa el nombre del artifact borrador."
+    }
+  },
+  "error_sin_paso_de_flujo": {
+    "status": 400,
+    "body": {
+      "message": "Debes definir al menos un paso en el flujo de entrega."
+    }
+  },
+  "error_sin_proceso": {
+    "status": 400,
+    "body": {
+      "message": "Debes seleccionar el proceso (o 'default') al que pertenece esta plantilla."
+    }
+  },
+  "reintento_tras_fallo": {
+    "status": 200,
+    "deliverable_owner": {
+      "code": "draft_zzz-char-huerfano",
+      "template_scope": "official",
+      "tiene_vinculo": "1"
+    }
+  },
+  "routed_sin_flujo_ok": {
+    "status": 200,
+    "body": {
+      "__notice": "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.",
+      "available_formats": {
+        "jinja2": {
+          "entry_object_key": "System/draft_zzz-char-routed/1.0.0/template/jinja2/"
+        },
+        "pdf": {
+          "entry_object_key": "System/draft_zzz-char-routed/1.0.0/template/pdf/"
+        }
+      },
+      "base_object_prefix": "System/draft_zzz-char-routed/1.0.0/",
+      "content_hash": "c43d7b58d85f039ef58c87d14c78ba2a65eb4e7e5625feaa940cd3b2b112afd1",
+      "description": null,
+      "display_name": "zzz char routed",
+      "generador_id": 1,
+      "id": "<normalized>",
+      "is_active": 1,
+      "owner_person_id": 1,
+      "storage_version": "1.0.0",
+      "template_code": "draft_zzz-char-routed",
+      "template_scope": "official"
+    }
+  }
+}

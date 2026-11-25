@@ -1,0 +1,146 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Vacantes, postulaciones y contratos. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project empleo {
+  database_type: 'PostgreSQL'
+  Note: '''Vacantes, postulaciones y contratos — El ciclo de contratación: vacante, postulación, oferta y contrato, con el origen del contrato desglosado.'''
+}
+
+Table "aplications" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "vacancy_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['aplicado'::text, 'preseleccionado'::text, 'entrevista'::text, 'rechazado'::text, 'retirado'::text, 'seleccionado'::text])`, default: 'aplicado']
+  "selected_flag" int2 [note: "columna generada (STORED)"]
+  "applied_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "note" varchar(255)
+
+  Indexes {
+    (vacancy_id, person_id) [type: btree, unique, name: "uq_application_once"]
+    (vacancy_id, selected_flag) [type: btree, unique, name: "uq_one_selected_per_vacancy"]
+    (person_id, applied_at) [type: btree, name: "idx_applications_person_time"]
+    (vacancy_id, status) [type: btree, name: "idx_applications_vacancy_status"]
+  }
+}
+
+Table "contract_origin_recruitment" {
+  "contract_id" int4 [pk, not null]
+  "offer_id" int4 [unique, not null]
+  "vacancy_id" int4 [unique, not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "contract_origin_renewal" {
+  "contract_id" int4 [pk, not null]
+  "renewed_from_contract_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    renewed_from_contract_id [type: btree, name: "idx_renewed_from_contract"]
+  }
+}
+
+Table "contract_origins" {
+  "contract_id" int4 [pk, not null]
+  "origin_type" text [not null, check: `origin_type = ANY (ARRAY['recruitment'::text, 'renewal'::text])`]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "contracts" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "position_id" int4 [not null]
+  "relation_type" varchar(60) [not null]
+  "dedication" varchar(30) [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "status" text [not null, check: `status = ANY (ARRAY['activo'::text, 'finalizado'::text, 'cancelado'::text])`, default: 'activo']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, status) [type: btree, name: "idx_contracts_person_status"]
+    (position_id, status) [type: btree, name: "idx_contracts_position_status"]
+  }
+}
+
+Table "offers" {
+  "id" int4 [pk, not null, increment]
+  "application_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['enviada'::text, 'aceptada'::text, 'rechazada'::text, 'retractada'::text, 'expirada'::text])`, default: 'enviada']
+  "active_flag" int2 [note: "columna generada (STORED)"]
+  "terms_snapshot" text
+  "sent_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "responded_at" timestamp
+  "expires_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (application_id, active_flag) [type: btree, unique, name: "uq_one_active_offer_per_application"]
+    (application_id, status) [type: btree, name: "idx_offers_application_status"]
+  }
+}
+
+Table "vacancies" {
+  "id" int4 [pk, not null, increment]
+  "title" varchar(180) [not null]
+  "category" varchar(120)
+  "dedication" varchar(30) [not null]
+  "relation_type" varchar(60) [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['abierta'::text, 'cubierta'::text, 'cerrada'::text, 'cancelada'::text])`, default: 'abierta']
+  "open_flag" int2 [note: "columna generada (STORED)"]
+  "profile_ref" varchar(64)
+  "opened_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "closed_at" timestamp
+  "position_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, open_flag) [type: btree, unique, name: "uq_one_open_vacancy_per_position"]
+    (position_id, status) [type: btree, name: "idx_vacancies_position_status"]
+  }
+}
+
+Table "vacancy_visibility" {
+  "id" int4 [pk, not null, increment]
+  "vacancy_id" int4 [not null]
+  "unit_id" int4
+  "role_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    role_id [type: btree, name: "idx_vacancy_visibility_role"]
+    unit_id [type: btree, name: "idx_vacancy_visibility_unit"]
+    vacancy_id [type: btree, name: "idx_vacancy_visibility_vacancy"]
+  }
+}
+
+Ref "fk_applications_vacancy":"vacancies"."id" <? "aplications"."vacancy_id"
+Ref "fk_contract_origin_recruitment_contract":"contract_origins"."contract_id" <? "contract_origin_recruitment"."contract_id" [delete: cascade]
+Ref "fk_contract_origin_recruitment_offer":"offers"."id" <? "contract_origin_recruitment"."offer_id"
+Ref "fk_contract_origin_recruitment_vacancy":"vacancies"."id" <? "contract_origin_recruitment"."vacancy_id"
+Ref "fk_contract_origin_renewal_contract":"contract_origins"."contract_id" <? "contract_origin_renewal"."contract_id" [delete: cascade]
+Ref "fk_contract_origin_renewal_from":"contracts"."id" <? "contract_origin_renewal"."renewed_from_contract_id"
+Ref "fk_contract_origins_contract":"contracts"."id" <? "contract_origins"."contract_id" [delete: cascade]
+Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
+Ref "fk_vacancy_visibility_vacancy":"vacancies"."id" <? "vacancy_visibility"."vacancy_id"
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   persons -> aplications   [identidad]
+//   persons -> contracts   [identidad]
+//   unit_positions -> contracts   [organizacion]
+//   unit_positions -> vacancies   [organizacion]
+//   roles -> vacancy_visibility   [identidad]
+//   units -> vacancy_visibility   [organizacion]

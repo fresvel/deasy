@@ -8,13 +8,13 @@ La carpeta `/config` dentro del directorio `/backend` contiene archivos de confi
 
 #### `apiPaths.js`
 Este archivo define las rutas y prefijos de la API REST utilizada por el backend. Incluye:
-- Prefijo base de la API (`/easym/v1`)
+- Prefijo base de la API (`/deasy/v1`)
 - Rutas específicas para diferentes módulos (academia, usuarios, tutorías, admin, etc.)
 - Rutas generadas automáticamente combinando el prefijo con las rutas específicas
 - Rutas para documentación (docs y docs.json)
 
-#### `mariadb.js`
-Configura la conexión a la base de datos MariaDB utilizando un pool de conexiones. Funciones principales:
+#### `postgres.js`
+Configura la conexión a la base de datos PostgreSQL utilizando un pool de conexiones. Funciones principales:
 - Validación de variables de entorno requeridas para la conexión
 - Creación de un pool de conexiones con configuración base
 - Funciones para obtener el pool, nombre de la base de datos y configuración base

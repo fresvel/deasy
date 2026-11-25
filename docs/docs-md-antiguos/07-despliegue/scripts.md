@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Despliegue - Scripts
 
 ## start-services.sh
@@ -215,7 +220,7 @@ Credenciales demo en `backend/scripts/seeds/pucese.seed.json`:
 - `drop_legacy_tables.mjs`: elimina tablas legacy ya reemplazadas.
 - `migrate_process_definition_series.mjs`: migracion de series/versiones de definiciones de proceso.
 - `migrate_process_templates.mjs`: migracion de vinculos de procesos-plantillas.
-- `migrate_template_artifact_owner_fk.mjs`: ajusta columna/indice/FK de owner en template_artifacts.
+- `migrate_template_artifact_owner_fk.mjs`: ajusta columna/indice/FK de owner en ediciones.
 - `migrate_template_artifact_stage_enum.mjs`: expande enum de `artifact_stage`.
 - `migrate_template_artifacts_to_json.mjs`: migra contenido de artifacts a representacion JSON.
 - `migrate_template_artifact_origin.mjs`: normaliza origen de artifacts y objetos relacionados.
@@ -240,7 +245,7 @@ Uso operativo recomendado:
 
 Variables relevantes:
 
-- `API_BASE`: base de la API (default `http://localhost:3030/easym/v1`)
+- `API_BASE`: base de la API (default `http://localhost:3030/deasy/v1`)
 - `SEED_PASSWORD`: password de los usuarios demo
 - `SEED`: semilla para generar sufijo deterministico (`SEED_SUFFIX` tiene prioridad)
 - `SEED_SUFFIX`: sufijo explicito para IDs/correos demo
@@ -252,6 +257,6 @@ Variables relevantes:
 
 Variables relevantes:
 
-- `API_BASE`: base de la API (default `http://localhost:3030/easym/v1`)
+- `API_BASE`: base de la API (default `http://localhost:3030/deasy/v1`)
 - `SEED_PASSWORD`: password de usuarios generados
 - `SEED`: semilla deterministica para asignaciones y UUID pseudoaleatorios

@@ -1,0 +1,8 @@
+id: F22
+titulo: 'El mapa de módulos: una sola respuesta a «¿dónde vive esto?»'
+ciclo: incremental
+abierto: '2026-10-26'
+fases:
+  P1:
+    titulo: Lo migrado del plan heredado
+    etapa: cambio

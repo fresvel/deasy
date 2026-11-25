@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
 export function useAdminFkLabels({
@@ -129,7 +129,7 @@ export function useAdminFkLabels({
       return;
     }
     if (
-      tableMeta?.table !== "process_definition_templates"
+      tableMeta?.table !== "vinculos"
       && !rowsToScan.some((row) => row?.process_definition_id !== null && row?.process_definition_id !== undefined && row?.process_definition_id !== "")
     ) {
       return;

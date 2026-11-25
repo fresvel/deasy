@@ -1,25 +1,30 @@
 <template>
+  <!-- [F4.C 2026-08-16] DOS DELTAS ADOPTADOS de su receta de notifications:
+       · radio 16 -> 12 (`rounded-2xl` -> `rounded-xl`). Era el ultimo panel del sistema en 16 px;
+         el dropzone y la tabla ya habian bajado a 12.
+       · `bg-white/95 backdrop-blur` -> BLANCO SOLIDO. El alfa hacia que el color del aviso
+         dependiera de lo que hubiera debajo —el mismo toast en dos grises segun la pantalla—, que
+         es el anti-patron que este repo evita en todo lo demas. Su receta lo pinta opaco. Con el
+         se va el desenfoque, que solo estaba ahi para disimular ese problema. -->
   <div
     v-if="visible"
-    class="admin-feedback-toast fixed right-6 top-6 z-1080 w-full max-w-md rounded-2xl border bg-white/95 p-4 shadow-2xl backdrop-blur"
+    class="deasy-card fixed right-6 top-6 z-(--z-aviso) w-full max-w-md p-4 shadow-theme-lg"
     :class="`is-${kind}`"
     role="status"
     aria-live="polite"
   >
-    <div class="admin-feedback-toast-body flex items-start gap-3">
-      <div class="admin-feedback-toast-copy min-w-0 flex-1">
-        <strong class="admin-feedback-toast-title block text-sm font-bold text-slate-900">{{ title }}</strong>
-        <div class="admin-feedback-toast-message mt-1 text-sm text-slate-600">{{ message }}</div>
+    <div class="flex items-start gap-3">
+      <div class="min-w-0 flex-1">
+        <strong class="block text-sm font-bold text-navy">{{ title }}</strong>
+        <div class="mt-1 text-sm text-icon">{{ message }}</div>
       </div>
-      <AdminButton variant="close" size="sm" icon-only title="Cerrar" aria-label="Cerrar" @click="$emit('close')">
-        <font-awesome-icon icon="times" />
-      </AdminButton>
+      <AppCloseButton @click="$emit('close')" />
     </div>
   </div>
 </template>
 
 <script setup>
-import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
 
 defineProps({
   visible: {

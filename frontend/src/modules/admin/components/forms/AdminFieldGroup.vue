@@ -1,12 +1,14 @@
 <template>
   <div :class="groupClass">
     <label
-      v-if="label"
-      class="admin-field-label mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700"
+      v-if="label || $slots.labelSuffix"
+      :for="labelFor || undefined"
+      class="deasy-form-label deasy-form-label--inline"
       :class="labelClass"
     >
       {{ label }}
-      <span v-if="required" class="text-red-600">*</span>
+      <span v-if="required" class="text-danger">*</span>
+      <slot name="labelSuffix" />
     </label>
     <slot />
   </div>
@@ -15,6 +17,12 @@
 <script setup>
 defineProps({
   label: {
+    type: String,
+    default: ""
+  },
+  // Id del control que el consumidor renderiza en el slot por defecto. Se emite como <label for>
+  // para que la etiqueta quede asociada al control (a11y); si no se pasa, no se renderiza el atributo.
+  labelFor: {
     type: String,
     default: ""
   },

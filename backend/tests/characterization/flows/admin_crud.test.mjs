@@ -1,0 +1,1182 @@
+// Characterization: CRUD genérico de admin y grafos (SqlAdminService).
+//
+// Esta es la RED DE SEGURIDAD para partir `SqlAdminService` (6851 líneas). Antes
+// de este fichero, sus dos funciones más complejas — `create()` (complejidad
+// cognitiva 163) y `update()` (218) — no tenían ni un solo test, igual que el
+// grafo de unidades y el de procesos.
+//
+// Lo que se fija aquí:
+//   1. El CONTRATO DE ERRORES de create/update. Son mensajes sin ids, así que el
+//      golden es estable y captura el orden real de los guards. Ojo: en `create()`
+//      la comprobación de campos requeridos corre ANTES que `validateTableRules`,
+//      y varias tablas tienen guards propios aún antes; el mensaje que emerge no
+//      es necesariamente el del `case` correspondiente del switch.
+//   2. El round-trip create -> update -> delete sobre una tabla simple.
+//   3. La forma de los grafos y detalles. `processes/graph`, `processes/:id/detail`
+//      y `units/:id/processes` estuvieron ROTOS en PostgreSQL (usaban FIELD(), una
+//      función de MySQL) sin que ningún test lo notara. Estos casos son su guardia
+//      de regresión.
+
+import { test, before } from "node:test";
+import assert from "node:assert/strict";
+import { get, post, put, patch, del } from "../lib/http.mjs";
+import { tokenFor } from "../lib/auth.mjs";
+import { normalize, listFingerprint } from "../lib/normalize.mjs";
+import { matchSnapshot } from "../lib/snapshot.mjs";
+import { waitForReady } from "../lib/readiness.mjs";
+import { FIXTURE } from "../config.mjs";
+
+const SUITE = "admin_crud";
+
+before(async () => {
+  await waitForReady();
+});
+
+// Huella de un grafo: su tamaño y el contrato de claves de nodos/aristas. Fijar
+// cada nodo sería ruidoso y frágil; lo que queremos detectar es que el endpoint
+// deje de responder o cambie de forma.
+const graphFingerprint = (response) => {
+  const body = response.body ?? {};
+  const keysOf = (list) => {
+    const keys = new Set();
+    for (const item of Array.isArray(list) ? list : []) {
+      if (item && typeof item === "object") Object.keys(item).forEach((k) => keys.add(k));
+    }
+    return [...keys].sort();
+  };
+  return {
+    status: response.status,
+    topLevelKeys: Object.keys(body).sort(),
+    nodeCount: Array.isArray(body.nodes) ? body.nodes.length : null,
+    edgeCount: Array.isArray(body.edges) ? body.edges.length : null,
+    nodeKeys: keysOf(body.nodes),
+    edgeKeys: keysOf(body.edges),
+  };
+};
+
+// --- 1. Contrato de errores de POST /admin/sql/:table -------------------------
+
+const CREATE_ERROR_CASES = [
+  ["tabla_desconocida", "tabla_inexistente", {}],
+  ["campo_requerido_ausente", "unit_types", {}],
+  ["unit_relations_consigo_misma", "unit_relations", { parent_unit_id: 2, child_unit_id: 2, relation_type_id: 1 }],
+  ["linea_sin_datos", "lineas", {}],
+  ["version_sin_linea", "process_definition_versions", {}],
+  ["tarea_sin_configuracion", "tasks", {}],
+];
+
+for (const [key, table, body] of CREATE_ERROR_CASES) {
+  test(`POST /admin/sql/${table} inválido -> error de negocio (${key})`, async () => {
+    const token = await tokenFor("admin");
+    const res = await post(`/admin/sql/${table}`, { token, body });
+    matchSnapshot(SUITE, `create_error_${key}`, { status: res.status, body: normalize(res.body) });
+  });
+}
+
+// --- 2. Contrato de errores de PUT /admin/sql/:table --------------------------
+
+const UPDATE_ERROR_CASES = [
+  ["tabla_desconocida", "tabla_inexistente", { keys: { id: 1 }, data: {} }],
+  ["registro_inexistente", "unit_types", { keys: { id: 999999 }, data: { name: "X" } }],
+  ["sin_llave_primaria", "unit_types", { keys: {}, data: { name: "X" } }],
+];
+
+for (const [key, table, body] of UPDATE_ERROR_CASES) {
+  test(`PUT /admin/sql/${table} inválido -> error de negocio (${key})`, async () => {
+    const token = await tokenFor("admin");
+    const res = await put(`/admin/sql/${table}`, { token, body });
+    matchSnapshot(SUITE, `update_error_${key}`, { status: res.status, body: normalize(res.body) });
+  });
+}
+
+// --- 3. Round-trip create -> update -> delete ---------------------------------
+// Sobre `unit_types`, cuya cuenta no fija ningún otro golden. Se limpia al final,
+// así que la fixture queda como estaba.
+
+test("POST/PUT/DELETE /admin/sql/unit_types -> ciclo de vida completo", async () => {
+  const token = await tokenFor("admin");
+
+  const created = await post("/admin/sql/unit_types", {
+    token,
+    body: { name: "Tipo caracterización", is_active: 1 },
+  });
+  matchSnapshot(SUITE, "roundtrip_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+
+  const id = created.body?.id;
+  assert.ok(id, "create debe devolver el id de la fila insertada");
+
+  const updated = await put("/admin/sql/unit_types", {
+    token,
+    body: { keys: { id }, data: { name: "Tipo caracterización (renombrado)" } },
+  });
+  matchSnapshot(SUITE, "roundtrip_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+
+  const removed = await del("/admin/sql/unit_types", { token, body: { keys: { id } } });
+  matchSnapshot(SUITE, "roundtrip_delete", {
+    status: removed.status,
+    body: normalize(removed.body, { maskIdKeys: true }),
+  });
+
+  // La fila ya no existe: actualizarla debe fallar igual que un id inventado.
+  const afterDelete = await put("/admin/sql/unit_types", {
+    token,
+    body: { keys: { id }, data: { name: "Zombi" } },
+  });
+  assert.equal(afterDelete.status, 400, "actualizar una fila borrada debe fallar");
+});
+
+// --- 4. Grafos y detalles (guardia de regresión de FIELD()) -------------------
+
+test("GET /admin/sql/units/graph -> grafo de unidades", async () => {
+  const token = await tokenFor("admin");
+  const res = await get("/admin/sql/units/graph", { token });
+  matchSnapshot(SUITE, "units_graph", graphFingerprint(res));
+});
+
+test("GET /admin/sql/processes/graph -> grafo de procesos", async () => {
+  const token = await tokenFor("admin");
+  const res = await get("/admin/sql/processes/graph", { token });
+  assert.equal(res.status, 200, `processes/graph debe responder 200: ${JSON.stringify(res.body)}`);
+  matchSnapshot(SUITE, "processes_graph", graphFingerprint(res));
+});
+
+test("GET /admin/sql/units/:id/detail -> detalle de unidad", async () => {
+  const token = await tokenFor("admin");
+  const res = await get(`/admin/sql/units/${FIXTURE.unitId}/detail`, { token });
+  matchSnapshot(SUITE, "unit_detail", {
+    status: res.status,
+    topLevelKeys: Object.keys(res.body ?? {}).sort(),
+    unit: normalize(res.body?.unit, { maskIdKeys: true }),
+    positionCount: Array.isArray(res.body?.positions) ? res.body.positions.length : null,
+  });
+});
+
+test("GET /admin/sql/processes/:id/detail -> detalle de proceso", async () => {
+  const token = await tokenFor("admin");
+  const res = await get(`/admin/sql/processes/${FIXTURE.processId}/detail`, { token });
+  assert.equal(res.status, 200, `processes/:id/detail debe responder 200: ${JSON.stringify(res.body)}`);
+  matchSnapshot(SUITE, "process_detail", {
+    status: res.status,
+    topLevelKeys: Object.keys(res.body ?? {}).sort(),
+    process: normalize(res.body?.process, { maskIdKeys: true }),
+    configurationCount: Array.isArray(res.body?.configurations) ? res.body.configurations.length : null,
+  });
+});
+
+test("GET /admin/sql/units/:id/processes -> procesos de la unidad", async () => {
+  const token = await tokenFor("admin");
+  const res = await get(`/admin/sql/units/${FIXTURE.unitId}/processes`, { token });
+  assert.equal(res.status, 200, `units/:id/processes debe responder 200: ${JSON.stringify(res.body)}`);
+  matchSnapshot(SUITE, "unit_processes", {
+    status: res.status,
+    topLevelKeys: Object.keys(res.body ?? {}).sort(),
+    processCount: Array.isArray(res.body?.processes) ? res.body.processes.length : null,
+  });
+});
+
+// El schema del artifact procesa available_formats con parseAvailableFormats. Fija su
+// contrato de claves: guardia de la unificación de esa función (antes triplicada).
+test("GET /admin/sql/ediciones/:id/schema -> esquema del artifact", async () => {
+  const token = await tokenFor("admin");
+  const res = await get("/admin/sql/ediciones/1/schema", { token });
+  assert.equal(res.status, 200, `schema debe responder 200: ${JSON.stringify(res.body)}`);
+  matchSnapshot(SUITE, "template_artifact_schema", {
+    status: res.status,
+    topLevelKeys: Object.keys(res.body ?? {}).sort(),
+  });
+});
+
+// --- 5. Contrato de LECTURA del list() genérico ------------------------------
+// El motor de lectura de SqlAdminService (`list`) no tenía NINGÚN test. Se fija su
+// huella (status + conteo + contrato de columnas) sobre las tablas que el refactor
+// por Extract Class va a tocar: si mover código altera qué columnas devuelve el list
+// de una tabla, o rompe la consulta, esto lo detecta. Conteo y claves son deterministas
+// con el bootstrap+seed de la fixture. Es la guardia del futuro `SqlCrudEngine`.
+const LIST_TABLES = [
+  "persons", "units", "unit_types", "unit_relations", "relation_unit_types",
+  "cargos", "unit_positions", "position_assignments", "term_types", "terms",
+  "processes", "lineas", "process_definition_versions",
+  "generadores_de_documento", "ediciones",
+  "tasks", "task_items", "task_item_tenures", "document_versions",
+  "roles", "permissions", "role_permissions", "cargo_role_map",
+];
+
+for (const table of LIST_TABLES) {
+  test(`GET /admin/sql/${table} -> contrato de lectura del list()`, async () => {
+    const token = await tokenFor("admin");
+    const res = await get(`/admin/sql/${table}`, { token });
+    matchSnapshot(SUITE, `list_${table}`, listFingerprint(res));
+  });
+}
+
+// --- 6. Endpoints de LECTURA de los subsistemas (guardia del Extract Class) ---
+// Cada uno vive en un subsistema que el refactor separará en su propia clase
+// (versionado de definiciones, target-scope/series, task-assignment, artifacts).
+// Son GET puros, sin efectos. Se fija su forma de respuesta; el valor concreto no
+// importa, sí que el endpoint siga respondiendo con la misma forma tras mover el código.
+test("GET /admin/sql/ediciones/versions -> versiones de artifacts", async () => {
+  const token = await tokenFor("admin");
+  const res = await get("/admin/sql/ediciones/versions", { token });
+  matchSnapshot(SUITE, "template_artifact_versions", listFingerprint(res));
+});
+
+const READ_SUBSYSTEM_CASES = [
+  ["activation_diff", `/admin/sql/process_definitions/${FIXTURE.definitionId}/activation-diff`],
+  ["target_scope", `/admin/sql/process_definitions/${FIXTURE.definitionId}/target-scope`],
+  ["resolvable_cargos", `/admin/sql/process_definitions/${FIXTURE.definitionId}/resolvable-cargos`],
+  ["linea_scope", `/admin/sql/process_definitions/${FIXTURE.definitionId}/linea-scope`],
+  ["stuck_task_items", "/admin/sql/task-items/stuck"],
+  ["unit_attachable_processes", `/admin/sql/units/${FIXTURE.unitId}/attachable-processes`],
+];
+
+// Huella estable para respuestas que pueden ser array u objeto: solo forma, sin
+// contenido volátil (un objeto se reduce a sus claves de primer nivel).
+const readShape = (res) => ({
+  status: res.status,
+  shape: Array.isArray(res.body)
+    ? {
+        isArray: true,
+        count: res.body.length,
+        itemKeys: [
+          ...new Set(res.body.flatMap((r) => (r && typeof r === "object" ? Object.keys(r) : []))),
+        ].sort(),
+      }
+    : { isArray: false, topLevelKeys: Object.keys(res.body ?? {}).sort() },
+});
+
+for (const [key, path] of READ_SUBSYSTEM_CASES) {
+  test(`GET ${path} -> ${key}`, async () => {
+    const token = await tokenFor("admin");
+    const res = await get(path, { token });
+    matchSnapshot(SUITE, `read_${key}`, readShape(res));
+  });
+}
+
+// --- 7. SUCCESS de los grafts por-tabla (red para el registro de hooks del cut #7) ------------
+// create()/update() tienen ~20 ramas `if (tableName === X)` que TRANSFORMAN el payload por tabla
+// (hash de password, validación de cabeza de unidad, ids derivados...). El cut #7 las convertirá en
+// un registro de hooks; estos round-trips capturan la SALIDA OBSERVABLE del graft en su camino de
+// ÉXITO, que el refactor debe preservar. Son AUTOLIMPIANTES (crear -> fijar -> borrar) para no
+// alterar los conteos de las huellas `list_*` de la sección 5. El mapa de cobertura completo
+// (qué graft se cubre cómo, y la estrategia por-tabla del cut #7) está en
+// docs/planes/referencia/god-objects-2026-07.md.
+
+test("POST /admin/sql/persons -> graft: hashea la contraseña (no la devuelve) y genera token", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/persons", {
+    token,
+    body: {
+      first_name: "Caracterizacion",
+      last_name: "Grafts",
+      password: "Demo1234!",
+      cargo_id: 1,
+      role_id: 1,
+    },
+  });
+  matchSnapshot(SUITE, "graft_persons_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+  const id = created.body?.id;
+  assert.ok(id, "persons create debe devolver el id de la fila insertada");
+  // El graft de persons es de SEGURIDAD: hashea la contraseña y NUNCA la devuelve, y genera un token.
+  assert.ok(!("password" in (created.body || {})), "la respuesta NO debe exponer 'password'");
+  assert.ok(!("password_hash" in (created.body || {})), "la respuesta NO debe exponer 'password_hash'");
+  assert.ok(created.body?.token, "el graft de persons debe generar un token");
+
+  await del("/admin/sql/persons", { token, body: { keys: { id } } });
+});
+
+test("POST /admin/sql/unit_positions -> graft: valida cabeza/tipo y crea el puesto", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/unit_positions", {
+    token,
+    body: { unit_id: FIXTURE.unitId, cargo_id: 1, slot_no: 99, is_unit_head: 0, position_type: "real" },
+  });
+  matchSnapshot(SUITE, "graft_unit_positions_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+  const id = created.body?.id;
+  assert.ok(id, "unit_positions create debe devolver el id de la fila insertada");
+
+  await del("/admin/sql/unit_positions", { token, body: { keys: { id } } });
+});
+
+// El graft de update de unit_positions NO es el mismo que el de create: calcula los valores
+// EFECTIVOS mezclando `updates` con la fila existente antes de validar. Aquí `position_type` no
+// viaja en el PUT, así que sale de `existing` — si el merge se rompiera, la validación de cabeza
+// de unidad se haría contra `undefined` y este 200 pasaría a 400.
+// Necesita una unidad SIN cabeza (la unidad de la fixture ya tiene una y chocaría con uq_unit_head),
+// así que fabrica la suya.
+test("PUT /admin/sql/unit_positions -> graft: valida cabeza/tipo sobre el merge con la fila existente", async () => {
+  const token = await tokenFor("admin");
+  const unitTypes = await get("/admin/sql/unit_types", { token });
+  const unitTypeId = unitTypes.body?.[0]?.id;
+  assert.ok(unitTypeId, "hace falta al menos un tipo de unidad en la fixture");
+
+  const unit = await post("/admin/sql/units", {
+    token,
+    body: { name: "Unidad caracterización puesto", slug: "unidad-caract-puesto", unit_type_id: unitTypeId },
+  });
+  const unitId = unit.body?.id;
+  assert.ok(unitId, "units create debe devolver id");
+
+  const created = await post("/admin/sql/unit_positions", {
+    token,
+    body: { unit_id: unitId, cargo_id: 1, slot_no: 1, is_unit_head: 0, position_type: "real" },
+  });
+  const id = created.body?.id;
+  assert.ok(id, "unit_positions create debe devolver id");
+
+  // `position_type` NO viaja en el PUT: sale de `existing`. Si el merge se rompiera, la validación
+  // correría contra `undefined` y este 200 pasaría a 400.
+  const updated = await put("/admin/sql/unit_positions", {
+    token,
+    body: { keys: { id }, data: { is_unit_head: 1 } },
+  });
+  matchSnapshot(SUITE, "graft_unit_positions_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+  assert.equal(updated.status, 200, `el merge debe permitir cabeza sobre un puesto real: ${JSON.stringify(updated.body)}`);
+
+  // Y el guard SÍ salta en el sentido contrario: el tipo llega en el PUT y la cabeza de `existing`.
+  const rejected = await put("/admin/sql/unit_positions", {
+    token,
+    body: { keys: { id }, data: { position_type: "simbolico" } },
+  });
+  matchSnapshot(SUITE, "graft_unit_positions_update_head_rechazada", {
+    status: rejected.status,
+    body: normalize(rejected.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/unit_positions", { token, body: { keys: { id } } });
+  await del("/admin/sql/units", { token, body: { keys: { id: unitId } } });
+});
+
+// `persons` tiene graft en AMBOS métodos y ambos son de seguridad. El de update rehashea la
+// contraseña que llega en claro y no debe devolverla nunca.
+test("PUT /admin/sql/persons -> graft: rehashea la contraseña y no la devuelve", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/persons", {
+    token,
+    body: {
+      first_name: "Caracterizacion",
+      last_name: "GraftsUpdate",
+      password: "Demo1234!",
+      cargo_id: 1,
+      role_id: 1,
+    },
+  });
+  const id = created.body?.id;
+  assert.ok(id, "persons create debe devolver id");
+
+  const updated = await put("/admin/sql/persons", {
+    token,
+    body: { keys: { id }, data: { password: "Otra1234!" } },
+  });
+  matchSnapshot(SUITE, "graft_persons_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+  assert.ok(!("password" in (updated.body || {})), "la respuesta NO debe exponer 'password'");
+  assert.ok(!("password_hash" in (updated.body || {})), "la respuesta NO debe exponer 'password_hash'");
+
+  await del("/admin/sql/persons", { token, body: { keys: { id } } });
+});
+
+// `unit_relations` valida jerarquía: unicidad de padre por tipo de relación y ausencia de ciclos.
+// Necesita una unidad hija SIN padre en ese tipo, así que la fabrica y la limpia.
+test("POST/PUT /admin/sql/unit_relations -> graft: padre único por tipo y sin ciclos", async () => {
+  const token = await tokenFor("admin");
+  const unitTypes = await get("/admin/sql/unit_types", { token });
+  const unitTypeId = unitTypes.body?.[0]?.id;
+  assert.ok(unitTypeId, "hace falta al menos un tipo de unidad en la fixture");
+
+  const childUnit = await post("/admin/sql/units", {
+    token,
+    body: { name: "Unidad caracterización rel", slug: "unidad-caract-rel", unit_type_id: unitTypeId },
+  });
+  const childUnitId = childUnit.body?.id;
+  assert.ok(childUnitId, "units create debe devolver id");
+
+  const created = await post("/admin/sql/unit_relations", {
+    token,
+    body: { parent_unit_id: FIXTURE.unitId, child_unit_id: childUnitId, relation_type_id: 1 },
+  });
+  matchSnapshot(SUITE, "graft_unit_relations_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+  const relationId = created.body?.id;
+  assert.ok(relationId, "unit_relations create debe devolver id");
+
+  // Un segundo padre para la misma hija y tipo debe rechazarse (unicidad del graft).
+  const duplicated = await post("/admin/sql/unit_relations", {
+    token,
+    body: { parent_unit_id: 1, child_unit_id: childUnitId, relation_type_id: 1 },
+  });
+  matchSnapshot(SUITE, "graft_unit_relations_padre_duplicado", {
+    status: duplicated.status,
+    body: normalize(duplicated.body),
+  });
+
+  // Reasignar el padre por PUT sí es válido: el graft de update excluye la propia fila del duplicado.
+  const updated = await put("/admin/sql/unit_relations", {
+    token,
+    body: { keys: { id: relationId }, data: { parent_unit_id: 1 } },
+  });
+  matchSnapshot(SUITE, "graft_unit_relations_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/unit_relations", { token, body: { keys: { id: relationId } } });
+  await del("/admin/sql/units", { token, body: { keys: { id: childUnitId } } });
+});
+
+// `vacancies` es el ÚNICO graft que corre DESPUÉS de validateTableRules: el orden importa y este
+// caso lo fija (un puesto simbólico no admite vacante).
+test("POST /admin/sql/vacancies -> graft: solo puestos reales o de promoción", async () => {
+  const token = await tokenFor("admin");
+  const position = await post("/admin/sql/unit_positions", {
+    token,
+    body: { unit_id: FIXTURE.unitId, cargo_id: 1, slot_no: 97, is_unit_head: 0, position_type: "real" },
+  });
+  const positionId = position.body?.id;
+  assert.ok(positionId, "unit_positions create debe devolver id");
+
+  const created = await post("/admin/sql/vacancies", {
+    token,
+    body: {
+      position_id: positionId,
+      title: "Vacante caracterización",
+      dedication: "TC",
+      relation_type: "dependencia",
+    },
+  });
+  matchSnapshot(SUITE, "graft_vacancies_create", {
+    status: created.status,
+    body: normalize(created.body, { maskIdKeys: true }),
+  });
+  assert.equal(created.status, 200, `la vacante sobre un puesto real debe crearse: ${JSON.stringify(created.body)}`);
+  const vacancyId = created.body?.id;
+
+  // El graft corre DESPUÉS de validateTableRules: con todos los campos presentes, el mensaje que
+  // emerge es el suyo, no el de "datos incompletos".
+  const inexistente = await post("/admin/sql/vacancies", {
+    token,
+    body: {
+      position_id: 999999,
+      title: "Vacante fantasma",
+      dedication: "TC",
+      relation_type: "dependencia",
+    },
+  });
+  matchSnapshot(SUITE, "graft_vacancies_puesto_inexistente", {
+    status: inexistente.status,
+    body: normalize(inexistente.body),
+  });
+
+  if (vacancyId) {
+    await del("/admin/sql/vacancies", { token, body: { keys: { id: vacancyId } } });
+  }
+  await del("/admin/sql/unit_positions", { token, body: { keys: { id: positionId } } });
+});
+
+// `cargos`, `unit_types` y `processes` comparten un graft POST-UPDATE en el camino genérico:
+// renombrarlos regenera los nombres de las configuraciones de proceso que dependen de ellos.
+// (`unit_types` ya lo ejercita el round-trip de la sección 3.)
+test("PUT /admin/sql/cargos -> graft: renombrar refresca los nombres de configuraciones", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/cargos", {
+    token,
+    body: { code: "CARACT", name: "Cargo caracterización", is_active: 1 },
+  });
+  const id = created.body?.id;
+  assert.ok(id, "cargos create debe devolver id");
+
+  const updated = await put("/admin/sql/cargos", {
+    token,
+    body: { keys: { id }, data: { name: "Cargo caracterización (renombrado)" } },
+  });
+  matchSnapshot(SUITE, "graft_cargos_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/cargos", { token, body: { keys: { id } } });
+});
+
+// --- 7b. Violaciones de restricción de la BD (contrato de mensaje al usuario) -----------------
+// El backend mapeaba estas violaciones a mensajes de negocio comparando `error.code` con códigos
+// de MySQL (`ER_DUP_ENTRY`, `ER_ROW_IS_REFERENCED`). La base es PostgreSQL desde la migración, que
+// usa SQLSTATE (`23505`, `23503`), así que TODOS esos mapeos llevan muertos desde entonces y el
+// usuario recibe el mensaje crudo del constraint. Estos goldens fijan qué ve hoy, para que el
+// arreglo se vea como un cambio DELIBERADO del golden y no se pueda colar una regresión después.
+
+// La unicidad del documento SE MUDÓ DE TABLA. Hasta el 2026-08-27 la cédula era una columna de
+// `persons` con su UNIQUE, y este test creaba una persona repetida para provocar el choque. Desde
+// que el modelo admite pasaportes vive en `documentos_identidad`, con unicidad sobre
+// (tipo, país, número) — porque un número de pasaporte sólo es único dentro del país que lo emite.
+//
+// El test se muda con ella: lo que protege sigue siendo lo mismo —que un duplicado responda con un
+// error legible y no con el mensaje crudo de PostgreSQL—, sólo que contra la tabla que hoy tiene la
+// restricción. Dejarlo apuntando a `persons` lo habría dejado en verde sin comprobar nada.
+// Marcar un principal DESMARCA al anterior. La regla vive en un trigger de la base
+// (`trg_principal_unico_fn`), no en el CRUD, para que la cumpla todo el que escriba; este test fija
+// el efecto observable por HTTP, que es lo que el admin ve.
+//
+// Antes de eso el indice unico solo sabia prohibir: un segundo correo principal devolvia un 409 que
+// ademas filtraba `principal_flag`, una columna generada que no existe en ninguna pantalla.
+test("POST /admin/sql/emails con principal=1 -> degrada al principal anterior", async () => {
+  const token = await tokenFor("admin");
+  const existentes = await get("/admin/sql/emails?limit=1", { token });
+  const anterior = Array.isArray(existentes.body) ? existentes.body[0] : null;
+  assert.ok(anterior?.person_id, "hace falta un correo sembrado");
+
+  const creado = await post("/admin/sql/emails", {
+    token,
+    body: {
+      person_id: anterior.person_id,
+      tipo: "personal",
+      // Fija, no con `Date.now()`: el golden guarda el cuerpo de la respuesta, y una direccion con
+      // marca de tiempo lo movia en CADA captura. El test la borra al terminar y `test:char:run`
+      // resetea la base, asi que no colisiona con `uq_emails_direccion`.
+      direccion: "principal-caract@test.local",
+      principal: 1
+    }
+  });
+  matchSnapshot(SUITE, "principal_emails_degrada_anterior", {
+    status: creado.status,
+    body: normalize(creado.body, { maskIdKeys: true })
+  });
+
+  const despues = await get(`/admin/sql/emails?filter_person_id=${anterior.person_id}`, { token });
+  const filas = Array.isArray(despues.body) ? despues.body : [];
+  const principales = filas.filter((fila) => Number(fila.principal) === 1);
+  assert.equal(principales.length, 1, "la persona debe quedar con UN solo correo principal");
+  assert.equal(principales[0].id, creado.body?.id, "el principal debe ser el recien creado");
+
+  await del("/admin/sql/emails", { token, body: { keys: { id: creado.body.id } } });
+  await put("/admin/sql/emails", { token, body: { keys: { id: anterior.id }, data: { principal: 1 } } });
+});
+
+// El AMBITO de la regla no es el mismo en las cuatro tablas, y esta es la mitad que se rompe: de
+// correo y documento hay uno principal POR PERSONA, pero de telefono y direccion hay uno por persona
+// Y TIPO — el de casa y el del trabajo son los dos principales, cada uno en lo suyo.
+//
+// Sin este caso, quitarle `tipo` al ambito del trigger pasaba desapercibido: el test de correos
+// seguia en verde porque su ambito SI es solo la persona. Comprobado mutando el trigger.
+test("POST /admin/sql/telefonos con principal=1 -> degrada sólo dentro de su tipo", async () => {
+  const token = await tokenFor("admin");
+  const personas = await get("/admin/sql/persons?limit=1", { token });
+  const personId = (Array.isArray(personas.body) ? personas.body[0] : null)?.id;
+  assert.ok(personId, "hace falta una persona sembrada");
+
+  const crear = (tipo, numero) => post("/admin/sql/telefonos", {
+    token,
+    body: { person_id: personId, tipo, pais_id: 60, numero, principal: 1 }
+  });
+
+  const personal = await crear("personal", "0999777001");
+  const trabajo = await crear("trabajo", "0999777002");
+  const segundoPersonal = await crear("personal", "0999777003");
+
+  const listado = await get(`/admin/sql/telefonos?filter_person_id=${personId}`, { token });
+  const filas = (Array.isArray(listado.body) ? listado.body : []).filter((f) => Number(f.principal) === 1);
+  const principalPorTipo = Object.fromEntries(filas.map((f) => [f.tipo, f.id]));
+
+  matchSnapshot(SUITE, "principal_telefonos_por_tipo", {
+    status: segundoPersonal.status,
+    principalesPorTipo: Object.keys(principalPorTipo).sort()
+  });
+
+  assert.equal(filas.length, 2, "debe quedar UN principal por tipo, no uno en total");
+  assert.equal(principalPorTipo.personal, segundoPersonal.body?.id, "el personal principal es el último creado");
+  assert.equal(principalPorTipo.trabajo, trabajo.body?.id, "el de trabajo NO lo toca un cambio en personal");
+
+  for (const creado of [personal, trabajo, segundoPersonal]) {
+    await del("/admin/sql/telefonos", { token, body: { keys: { id: creado.body.id } } });
+  }
+});
+
+// El camino que el trigger `trg_documentos_pais_nacional` existe para cubrir, y que ninguna prueba
+// tocaba: el CRUD generico escribe DIRECTO a la tabla, y el formulario NO ENSEÑA el pais cuando el
+// tipo es el nacional (`showWhen`). Sin el trigger, dar de alta un documento nacional desde /admin
+// muere con un NOT NULL. Comprobado quitandolo del esquema: sin este caso, las 304 seguian en verde.
+test("POST /admin/sql/documentos_identidad nacional SIN país -> lo hereda de la institución", async () => {
+  const token = await tokenFor("admin");
+  const personas = await get("/admin/sql/persons?limit=1", { token });
+  const personId = (Array.isArray(personas.body) ? personas.body[0] : null)?.id;
+  assert.ok(personId, "hace falta una persona sembrada");
+
+  const institucion = await get("/system/institucion");
+  const paisEsperado = institucion.body?.pais?.id;
+  assert.ok(paisEsperado, "hace falta la institución sembrada");
+
+  const creado = await post("/admin/sql/documentos_identidad", {
+    token,
+    body: { person_id: personId, tipo: "documento_nacional", numero: "1710034065" }
+  });
+  matchSnapshot(SUITE, "documento_nacional_hereda_pais", {
+    status: creado.status,
+    body: normalize(creado.body, { maskIdKeys: true })
+  });
+  assert.equal(creado.status, 200, "el alta no puede fallar por un país que el formulario no pide");
+
+  const leido = await get(`/admin/sql/documentos_identidad?filter_numero=1710034065`, { token });
+  const fila = (Array.isArray(leido.body) ? leido.body : [])[0];
+  assert.equal(Number(fila?.pais_id), Number(paisEsperado), "el país es el de la institución");
+
+  await del("/admin/sql/documentos_identidad", { token, body: { keys: { id: creado.body.id } } });
+});
+
+// Y el otro lado de la misma regla: lo que la base SI exige de verdad tiene que decirse legible.
+test("POST /admin/sql/documentos_identidad pasaporte sin país -> «Falta «Pais emisor».»", async () => {
+  const token = await tokenFor("admin");
+  const personas = await get("/admin/sql/persons?limit=1", { token });
+  const personId = (Array.isArray(personas.body) ? personas.body[0] : null)?.id;
+
+  const res = await post("/admin/sql/documentos_identidad", {
+    token,
+    body: { person_id: personId, tipo: "pasaporte", numero: "ZZ998877" }
+  });
+  matchSnapshot(SUITE, "documento_sin_pais_obligatorio", {
+    status: res.status,
+    body: normalize(res.body)
+  });
+});
+
+test("POST /admin/sql/documentos_identidad con número duplicado -> violación de unicidad", async () => {
+  const token = await tokenFor("admin");
+  const existente = await get("/admin/sql/documentos_identidad?limit=1", { token });
+  const fila = Array.isArray(existente.body) ? existente.body[0] : null;
+  assert.ok(fila?.numero, "hace falta un documento sembrado para poder duplicarlo");
+  const res = await post("/admin/sql/documentos_identidad", {
+    token,
+    body: {
+      person_id: fila.person_id,
+      tipo: fila.tipo,
+      pais_id: fila.pais_id,
+      numero: fila.numero,
+    },
+  });
+  matchSnapshot(SUITE, "constraint_documentos_numero_duplicado", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+});
+
+test("POST /admin/sql/unit_positions con cargo inexistente -> violación de clave foránea", async () => {
+  const token = await tokenFor("admin");
+  const res = await post("/admin/sql/unit_positions", {
+    token,
+    body: { unit_id: FIXTURE.unitId, cargo_id: 999999, slot_no: 96, is_unit_head: 0, position_type: "real" },
+  });
+  matchSnapshot(SUITE, "constraint_unit_positions_cargo_inexistente", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+});
+
+test("DELETE /admin/sql/cargos referenciado -> violación de clave foránea", async () => {
+  const token = await tokenFor("admin");
+  const res = await del("/admin/sql/cargos", { token, body: { keys: { id: 1 } } });
+  matchSnapshot(SUITE, "constraint_cargos_referenciado", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+});
+
+// El mismo defecto fuera del CRUD genérico: el endpoint de puestos tenía su propio mensaje
+// ("La unidad ya tiene una jefatura asignada") que tampoco dispara.
+test("POST /admin/sql/units/:id/positions con segunda jefatura -> violación de unicidad", async () => {
+  const token = await tokenFor("admin");
+  const res = await post(`/admin/sql/units/${FIXTURE.unitId}/positions`, {
+    token,
+    body: { cargo_id: 1, slot_no: 95, is_unit_head: 1, position_type: "real" },
+  });
+  matchSnapshot(SUITE, "constraint_segunda_jefatura", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+  // Si por lo que sea entró, no dejar basura en la fixture.
+  if (res.status === 200 && res.body?.id) {
+    await del(`/admin/sql/units/positions/${res.body.id}`, { token });
+  }
+});
+
+// --- 8. Grafts de ESTADO COMPLEJO (cadena proceso -> serie -> borrador -> hijos) --------------
+// Estos grafts no se pueden ejercitar sueltos: exigen un contexto de BORRADOR de configuración.
+// El test lo fabrica entero y lo destruye en orden inverso, así que sigue siendo autolimpiante.
+// Fija de una vez: identidad derivada de la serie, nombre y variation_key generados por el motor
+// de versionado, `ensureDraftDefinitionContext` de los tres hijos, el clonado transaccional con su
+// aviso, y el orden de los guards de activación (que corren DENTRO de la transacción).
+
+test("cadena de configuración -> grafts de process_definition_* sobre un borrador real", async () => {
+  const token = await tokenFor("admin");
+  const cargos = await get("/admin/sql/cargos?limit=5", { token });
+  const cargoId = cargos.body?.[0]?.id;
+  const termTypes = await get("/admin/sql/term_types?limit=5", { token });
+  const termTypeId = termTypes.body?.[0]?.id;
+  assert.ok(cargoId && termTypeId, "la fixture debe traer cargos y tipos de periodo");
+
+  const proceso = await post("/admin/sql/processes", {
+    token,
+    body: { name: "Proceso cadena caracterización", slug: "proceso-cadena-caract", is_active: 1 },
+  });
+  const procesoId = proceso.body?.id;
+  assert.ok(procesoId, "processes create debe devolver id");
+
+  // LA LÍNEA LLEVA LOS DOS EJES. Aquí se creaba una SERIE, que admitía uno O el otro y DERIVABA su
+  // identidad de `slugify(cargo.name)`; la línea lleva cargo Y alcance, y su nombre lo escribe quien
+  // la crea. La unicidad `(proceso, cargo, alcance)` la impone `uq_lineas_identidad`.
+  const linea = await post("/admin/sql/lineas", {
+    token,
+    body: {
+      process_id: procesoId,
+      nombre: "Cadena de caracterización · Jefes",
+      cargo_id: cargoId,
+      unit_scope_type: "all_units",
+      effective_from: "2026-01-01",
+    },
+  });
+  matchSnapshot(SUITE, "graft_linea_create", {
+    status: linea.status,
+    body: normalize(linea.body, { maskIdKeys: true }),
+  });
+  assert.equal(linea.status, 200, `lineas create debe responder 200: ${JSON.stringify(linea.body)}`);
+  const lineaId = linea.body?.id;
+
+  // La MISMA pareja (cargo, alcance) dentro del mismo proceso es la misma obligación: colisiona.
+  const lineaDuplicada = await post("/admin/sql/lineas", {
+    token,
+    body: {
+      process_id: procesoId,
+      nombre: "Otra con los mismos ejes",
+      cargo_id: cargoId,
+      unit_scope_type: "all_units",
+      effective_from: "2026-01-01",
+    },
+  });
+  matchSnapshot(SUITE, "graft_linea_ejes_duplicados", {
+    status: lineaDuplicada.status,
+    body: normalize(lineaDuplicada.body),
+  });
+
+  // El graft de versiones fuerza status=draft. YA NO ESCRIBE NINGÚN NOMBRE (frente 25, P23): el
+  // nombre era una columna copia de `lineas.nombre` y hoy se deriva al leer, con la identidad
+  // entera —la línea Y la versión—, así que la respuesta del POST no lo trae y lo comprueba la
+  // lectura de abajo.
+  const version = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: {
+      process_id: procesoId,
+      linea_id: lineaId,
+      definition_version: "1.0.0",
+      effective_from: "2026-01-01",
+    },
+  });
+  matchSnapshot(SUITE, "graft_pdv_create_draft", {
+    status: version.status,
+    body: normalize(version.body, { maskIdKeys: true }),
+  });
+  assert.equal(version.status, 200, `pdv create debe responder 200: ${JSON.stringify(version.body)}`);
+  assert.equal(version.body?.status, "draft", "una configuración nueva nace siempre en draft");
+  const definicionId = version.body?.id;
+
+  // EL NOMBRE SE DERIVA, Y ES LA IDENTIDAD ENTERA. Esta aserción decía «el graft debe generar el
+  // nombre», y lo que generaba era una copia de `lineas.nombre`: dos configuraciones de la misma
+  // línea se llamaban igual, y renombrar la línea las dejaba a las dos con el nombre viejo (se
+  // provocó en el navegador antes de quitarlo). Ahora se lee, no se escribe.
+  const leida = (await get(`/admin/sql/process_definition_versions?filter_id=${definicionId}`, { token }))
+    .body?.find((row) => row.id === definicionId);
+  assert.equal(
+    leida?.name,
+    "Cadena de caracterización · Jefes · 1.0.0",
+    `el nombre se deriva de la línea y la versión: ${JSON.stringify(leida)}`
+  );
+
+  // Crear directamente en 'active' está prohibido.
+  const versionActiva = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: {
+      process_id: procesoId,
+      linea_id: lineaId,
+      definition_version: "9.0.0",
+      effective_from: "2026-01-01",
+      status: "active",
+    },
+  });
+  matchSnapshot(SUITE, "graft_pdv_create_activa_rechazada", {
+    status: versionActiva.status,
+    body: normalize(versionActiva.body),
+  });
+
+
+  const periodo = await post("/admin/sql/process_definition_period_types", {
+    token,
+    body: { process_definition_id: definicionId, term_type_id: termTypeId },
+  });
+  matchSnapshot(SUITE, "graft_period_types_create", {
+    status: periodo.status,
+    body: normalize(periodo.body, { maskIdKeys: true }),
+  });
+  const periodoId = periodo.body?.id;
+
+  // Clonar: el INSERT y la copia de los hijos van en la MISMA transacción, y el resultado trae
+  // un __notice con el resumen de lo clonado.
+  const clon = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: {
+      process_id: procesoId,
+      linea_id: lineaId,
+      definition_version: "2.0.0",
+      effective_from: "2026-02-01",
+      source_process_definition_id: definicionId,
+    },
+  });
+  matchSnapshot(SUITE, "graft_pdv_create_clon", {
+    status: clon.status,
+    body: normalize(clon.body, { maskIdKeys: true }),
+  });
+  const clonId = clon.body?.id;
+
+  // Los guards de ACTIVACIÓN corren dentro de la transacción, en orden: reglas -> periodos ->
+  // publicar plantillas borrador -> artefactos. Esta configuración no tiene entregables, así que
+  // el golden fija en qué guard se detiene.
+  const activacion = await put("/admin/sql/process_definition_versions", {
+    token,
+    body: { keys: { id: definicionId }, data: { status: "active" } },
+  });
+  matchSnapshot(SUITE, "graft_pdv_update_activacion", {
+    status: activacion.status,
+    body: normalize(activacion.body, { maskIdKeys: true }),
+  });
+
+  // La identidad de una configuración es inmutable aunque esté en borrador.
+  const cambioSerie = await put("/admin/sql/process_definition_versions", {
+    token,
+    body: { keys: { id: definicionId }, data: { linea_id: 999999 } },
+  });
+  matchSnapshot(SUITE, "graft_pdv_update_serie_inmutable", {
+    status: cambioSerie.status,
+    body: normalize(cambioSerie.body),
+  });
+
+  // RENOMBRAR UNA LÍNEA YA NO ARRASTRA NADA, y ese es el cambio. Antes esto editaba una serie, y
+  // cambiar su `code` disparaba una cascada NO transaccional que reescribía el `variation_key` y
+  // el nombre de todas sus configuraciones. La línea tiene nombre propio: cambiarlo es un UPDATE.
+  const lineaEditada = await put("/admin/sql/lineas", {
+    token,
+    body: { keys: { id: lineaId }, data: { nombre: "Cadena de caracterización · Jefes (renombrada)" } },
+  });
+  matchSnapshot(SUITE, "graft_linea_update", {
+    status: lineaEditada.status,
+    body: normalize(lineaEditada.body, { maskIdKeys: true }),
+  });
+
+  for (const [table, id] of [
+    ["process_definition_versions", clonId],
+    ["process_definition_period_types", periodoId],
+    ["process_definition_versions", definicionId],
+    ["lineas", lineaId],
+    ["processes", procesoId],
+  ]) {
+    if (id) {
+      await del(`/admin/sql/${table}`, { token, body: { keys: { id } } });
+    }
+  }
+});
+
+// --- 7c. Jerarquía de procesos (escritura) -----------------------------------------------------
+// `getProcessGraph`/`getProcessDetail` ya estaban fijados (sección 4, la guardia de FIELD()), pero
+// los dos caminos de ESCRITURA de la jerarquía —crear un proceso colgando de otro y reasignar su
+// padre— no tenían cobertura, incluida la detección de ciclos. Es la red del cut #9.
+
+test("POST/PATCH /admin/sql/processes -> crear con padre, reasignar y rechazar ciclos", async () => {
+  const token = await tokenFor("admin");
+
+  const hijo = await post("/admin/sql/processes/with-parent", {
+    token,
+    body: { name: "Proceso hijo caracterización", parent_id: FIXTURE.processId },
+  });
+  matchSnapshot(SUITE, "process_with_parent_create", {
+    status: hijo.status,
+    body: normalize(hijo.body, { maskIdKeys: true }),
+  });
+  assert.equal(hijo.status, 201, `with-parent debe responder 201: ${JSON.stringify(hijo.body)}`);
+  const hijoId = hijo.body?.id;
+
+  // El slug se deriva del nombre, así que repetir el nombre choca con la unicidad.
+  const duplicado = await post("/admin/sql/processes/with-parent", {
+    token,
+    body: { name: "Proceso hijo caracterización", parent_id: FIXTURE.processId },
+  });
+  matchSnapshot(SUITE, "process_with_parent_slug_duplicado", {
+    status: duplicado.status,
+    body: normalize(duplicado.body),
+  });
+
+  const nieto = await post("/admin/sql/processes/with-parent", {
+    token,
+    body: { name: "Proceso nieto caracterización", parent_id: hijoId },
+  });
+  const nietoId = nieto.body?.id;
+  assert.ok(nietoId, "el nieto debe crearse");
+
+  // Colgar el hijo de su propio nieto cerraría el ciclo.
+  const ciclo = await patch(`/admin/sql/processes/${hijoId}/parent`, { token, body: { parent_id: nietoId } });
+  matchSnapshot(SUITE, "process_parent_ciclo", { status: ciclo.status, body: normalize(ciclo.body) });
+
+  // Reasignar a la raíz sí vale.
+  const reasignado = await patch(`/admin/sql/processes/${nietoId}/parent`, { token, body: { parent_id: FIXTURE.processId } });
+  matchSnapshot(SUITE, "process_parent_reasignado", {
+    status: reasignado.status,
+    body: normalize(reasignado.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/processes", { token, body: { keys: { id: nietoId } } });
+  await del("/admin/sql/processes", { token, body: { keys: { id: hijoId } } });
+});
+
+// --- 8b. Injertos de remove() ------------------------------------------------------------------
+// `remove()` tiene sus propios injertos por tabla (el cut #7 solo tocó create/update): guards de
+// "solo en borrador" para la configuración y sus hijas, y una rama TRANSACCIONAL que borra en
+// cascada los flujos derivados antes del vínculo. Esta sección es su red.
+
+const REMOVE_GUARD_CASES = [
+  ["configuracion_activa", "process_definition_versions", 1],
+  ["plantilla_de_configuracion_activa", "vinculos", 1],
+  // El tercer caso era `signature_flow_templates`, la cabecera del flujo de firma. Se retiro en el
+  // paso 4 de la fase 4 del frente 24 y el guard equivalente vive hoy en `pasos_declarados`.
+  ["paso_de_recorrido_de_configuracion_activa", "pasos_declarados", 1],
+];
+
+for (const [key, table, id] of REMOVE_GUARD_CASES) {
+  test(`DELETE /admin/sql/${table} sobre configuración activa -> guard de borrador (${key})`, async () => {
+    const token = await tokenFor("admin");
+    const res = await del(`/admin/sql/${table}`, { token, body: { keys: { id } } });
+    matchSnapshot(SUITE, `remove_guard_${key}`, { status: res.status, body: normalize(res.body) });
+  });
+}
+
+// El camino de ÉXITO de desenlazar una plantilla de una configuración. Se fabrica el borrador
+// clonando la configuración sembrada — que se lleva consigo la plantilla — y se destruye al final.
+//
+// ESTE CASO PROBABA UNA CASCADA, Y LA CASCADA YA NO DEBE OCURRIR. Hasta la fase 2 del frente 24 la
+// cabecera de un recorrido colgaba del VÍNCULO, sus claves ajenas no eran ON DELETE CASCADE y el
+// borrado fallaba si no se limpiaban antes; el caso fabricaba una cabecera y un paso por CRUD y
+// comprobaba que desaparecían. Muerto el escalón del vínculo, el recorrido autorado es de la
+// EDICIÓN y **sobrevive al vínculo a propósito**: desenlazar una plantilla de una configuración no
+// puede borrar el recorrido que esa plantilla lleva escrito.
+//
+// Por eso ya no se fabrica nada: el sujeto de la cascada no existe. Lo que queda —que el vínculo se
+// borre y con qué respuesta— sigue siendo el golden. Que el recorrido de la edición sólo se edite
+// en borrador lo cubren los hooks de `pasos_declarados`/`participantes_declarados` y el unitario
+// de `flowRows`; que un vínculo con entregables no se pueda borrar lo cubre su clave ajena.
+test("DELETE /admin/sql/vinculos -> desenlaza la plantilla de la configuración", async () => {
+  const token = await tokenFor("admin");
+  const source = (await get("/admin/sql/process_definition_versions", { token })).body?.[0];
+  assert.ok(source?.id, "la fixture debe traer una configuración");
+
+  const clone = await post("/admin/sql/process_definition_versions", {
+    token,
+    body: {
+      linea_id: source.linea_id,
+      definition_version: "9.9.9",
+      // DENTRO de la vigencia de su línea: la obligación del «Proceso por defecto» la siembra el
+      // arranque con la fecha de hoy, y una norma no puede regir antes que la obligación que
+      // desarrolla (frente 25, P18-c). Antes esto decía `2026-03-01` y el disparador lo rechaza.
+      effective_from: new Date().toISOString().slice(0, 10),
+      source_process_definition_id: source.id,
+    },
+  });
+  assert.equal(clone.status, 200, `el clon debe crearse: ${JSON.stringify(clone.body)}`);
+  const cloneId = clone.body?.id;
+
+  const links = (await get("/admin/sql/vinculos", { token })).body || [];
+  const link = links.find((row) => row.process_definition_id === cloneId);
+  assert.ok(link, "el clon debe traerse la plantilla de la configuración origen");
+
+  const removed = await del("/admin/sql/vinculos", { token, body: { keys: { id: link.id } } });
+  matchSnapshot(SUITE, "remove_process_definition_templates_cascada", {
+    status: removed.status,
+    body: normalize(removed.body, { maskIdKeys: true }),
+  });
+  assert.equal(removed.status, 200, `el borrado debe funcionar: ${JSON.stringify(removed.body)}`);
+
+  // El efecto observable: el vínculo se va, y el recorrido autorado de la edición NO, porque no era
+  // suyo. Se comprueba contra la edición que el vínculo enlazaba.
+  const recorridos = ((await get("/admin/sql/pasos_declarados", { token })).body || [])
+    .filter((row) => Number(row.edicion_id) === Number(link.edicion_id));
+  const vinculosAhora = (await get("/admin/sql/vinculos", { token })).body || [];
+  assert.equal(
+    vinculosAhora.some((row) => row.id === link.id),
+    false,
+    "el vínculo debe haber desaparecido",
+  );
+  assert.deepEqual(
+    recorridos.map((row) => Number(row.edicion_id)),
+    recorridos.map(() => Number(link.edicion_id)),
+    "los recorridos que queden siguen colgando de la edición, no del vínculo borrado",
+  );
+
+  await del("/admin/sql/process_definition_versions", { token, body: { keys: { id: cloneId } } });
+});
+
+// UN FORMATO NO CRUZA DE PROCESO, PROVOCADO POR HTTP (frente 25 — 2026-10-12).
+//
+// ⚠️ ESTA PRUEBA MEDÍA OTRA REGLA, Y EL CAMBIO DE REGLA ES EL APRENDIZAJE. Hasta hoy decía «un
+// entregable sirve a UNA SOLA LÍNEA» y la imponía `trg_pdt_linea_unica`. Se retiró por decisión
+// del dueño porque ROMPÍA LA SIMETRÍA del modelo: subordinaba el formato a la obligación, y su
+// enunciado espejo —«una línea pertenece a un formato»— es falso, porque una obligación produce
+// varios entregables. El caso que lo destapó: el mismo Informe de IF lo entregan las Coordinaciones
+// de Carrera y las de Tecnología, que son dos líneas; con la regla vieja había que duplicar el
+// formato.
+//
+// Lo que queda es un escalón más flojo: el formato sirve a varias líneas del MISMO proceso y no
+// cruza a otro. Lo impone `trg_vinculo_formato_un_proceso`.
+//
+// ESTE CASO ES EL OTRO LADO DE UN PAR, y hace falta que sean dos: «el clon debe crearse» fija que
+// lo legítimo pasa, y éste que lo ilegítimo muere. Un disparador que nadie provoca no es una
+// protección, es una intención.
+test("POST /admin/sql/vinculos de otro proceso -> lo rechaza el disparador", async () => {
+  const token = await tokenFor("admin");
+
+  // El entregable que YA tiene dueño: el que sembró el bootstrap en el Proceso por defecto.
+  const links = (await get("/admin/sql/vinculos", { token })).body || [];
+  const linkExistente = links[0];
+  assert.ok(linkExistente?.edicion_id, "la fixture debe traer un vínculo sembrado");
+
+  const cargos = (await get("/admin/sql/cargos?limit=5", { token })).body || [];
+  const cargoId = cargos[cargos.length - 1]?.id;
+  assert.ok(cargoId, "la fixture debe traer cargos");
+
+  const proceso = await post("/admin/sql/processes", {
+    token,
+    body: { name: "Proceso ajeno caracterización pertenencia", slug: "proceso-ajeno-pertenencia", is_active: 1 },
+  });
+  const procesoId = proceso.body?.id;
+  assert.ok(procesoId, `el proceso ajeno debe crearse: ${JSON.stringify(proceso.body)}`);
+
+  const lineaAjena = await post("/admin/sql/lineas", {
+    token,
+    body: {
+      process_id: procesoId,
+      nombre: "Línea de un proceso ajeno",
+      cargo_id: cargoId,
+      unit_scope_type: "all_units",
+      effective_from: "2026-04-01",
+    },
+  });
+  const lineaAjenaId = lineaAjena.body?.id;
+  assert.ok(lineaAjenaId, `la línea ajena debe crearse: ${JSON.stringify(lineaAjena.body)}`);
+
+  const definicion = await post("/admin/sql/process_definition_versions", {
+    token,
+    // SIN `process_id`: la configuración lo perdió con `P22` (frente 25) — era copia de su línea.
+    body: { linea_id: lineaAjenaId, definition_version: "1.0.0", effective_from: "2026-04-01" },
+  });
+  const definicionAjenaId = definicion.body?.id;
+  assert.ok(definicionAjenaId, `la configuración ajena debe crearse: ${JSON.stringify(definicion.body)}`);
+
+  // ⚠️ EL `finally` NO ES ADORNO. La primera version dejaba la limpieza al final del cuerpo, y
+  // cuando el golden todavia no existia el `matchSnapshot` lanzo antes de llegar a ella: la
+  // configuracion borrador sobrevivio y rompio «tras publicar, la configuracion anterior queda
+  // retirada y la nueva activa», en OTRA suite, que cuenta las definiciones de TODA la base. Un
+  // caso que siembra estado global lo tiene que recoger pase lo que pase.
+  try {
+    const cruzado = await post("/admin/sql/vinculos", {
+      token,
+      body: {
+        process_definition_id: definicionAjenaId,
+        edicion_id: linkExistente.edicion_id,
+        item_mode: "single",
+      },
+    });
+    matchSnapshot(SUITE, "pertenencia_vinculo_de_otro_proceso", {
+      status: cruzado.status,
+      body: normalize(cruzado.body),
+    });
+    assert.equal(cruzado.status, 400, `el vínculo cruzado debe rechazarse: ${JSON.stringify(cruzado.body)}`);
+    assert.match(
+      String(cruzado.body?.message || ""),
+      /ya se usa en otro proceso/,
+      "el mensaje tiene que explicarle a una persona qué pasa, no filtrar el nombre de una restricción",
+    );
+
+    // Y no dejó el vínculo a medias: lo que el disparador rechaza no se escribe.
+    const despues = (await get("/admin/sql/vinculos", { token })).body || [];
+    assert.equal(
+      despues.filter((row) => Number(row.process_definition_id) === Number(definicionAjenaId)).length,
+      0,
+      "el vínculo rechazado no debe existir",
+    );
+  } finally {
+    for (const [table, id] of [
+      ["process_definition_versions", definicionAjenaId],
+      ["lineas", lineaAjenaId],
+      ["processes", procesoId],
+    ]) {
+      if (id) {
+        await del(`/admin/sql/${table}`, { token, body: { keys: { id } } });
+      }
+    }
+  }
+});
+
+// `ediciones` es el único graft que PROHÍBE la creación por CRUD admin de plano.
+test("POST /admin/sql/ediciones -> graft: creación prohibida por CRUD admin", async () => {
+  const token = await tokenFor("admin");
+  const res = await post("/admin/sql/ediciones", { token, body: { name: "X" } });
+  matchSnapshot(SUITE, "graft_template_artifacts_create_prohibido", {
+    status: res.status,
+    body: normalize(res.body),
+  });
+});
+
+// Las tablas de RUNTIME (documents, document_versions, *_requests...) no las tocan los flujos de
+// la app — TaskGenerationService y compañía hacen INSERT directo. Su CRUD admin es funcionalidad
+// de borde.
+//
+// Desde que se retiró el "documento suelto", un documento SOLO existe colgado de su entregable, y
+// cada entregable estrena el suyo al insertarse (`task_items.afterInsertTx` +
+// `uq_documents_task_item`). O sea: por CRUD admin ya no se puede crear un documento nuevo, y lo
+// único que queda por caracterizar del graft de create es su guard. Los dos casos siguientes usan
+// el documento que trae la fixture, y NINGUNO escribe: así no mueven los conteos de las suites de
+// ejecución, que comparten base con esta.
+// Aqui vivian los dos casos de INJERTO de `documents` —que el item de tarea exista al crear, y que
+// sea inmutable al editar—. La tabla se retiro el 2026-08-23: era una cascara 1:1 sobre el
+// entregable sin ni una columna propia, y las versiones cuelgan ya de el. Sin tabla no hay injerto
+// que probar, y la regla que protegian —«un documento pertenece a un entregable y no cambia de
+// dueño»— la garantiza ahora la propia forma del modelo: no hay documento sin entregable porque
+// el documento ES el entregable.
+test("PUT /admin/sql/processes -> graft: renombrar refresca los nombres de configuraciones", async () => {
+  const token = await tokenFor("admin");
+  const created = await post("/admin/sql/processes", {
+    token,
+    body: { name: "Proceso caracterización", slug: "proceso-caracterizacion", is_active: 1 },
+  });
+  const id = created.body?.id;
+  assert.ok(id, "processes create debe devolver id");
+
+  const updated = await put("/admin/sql/processes", {
+    token,
+    body: { keys: { id }, data: { name: "Proceso caracterización (renombrado)" } },
+  });
+  matchSnapshot(SUITE, "graft_processes_update", {
+    status: updated.status,
+    body: normalize(updated.body, { maskIdKeys: true }),
+  });
+
+  await del("/admin/sql/processes", { token, body: { keys: { id } } });
+});

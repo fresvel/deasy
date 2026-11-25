@@ -1,0 +1,620 @@
+// TemplateArtifactService — ciclo de vida de los template artifacts (publicar/retirar/versionar,
+// esquema, fuente, activacion) extraido de SqlAdminService.js (God #1) por Extract Class (cut #3).
+// Se DEJA FUERA saveTemplateArtifactDraft (542 L, God-method que llama 6 colaboradores de scope/workflow):
+// necesita su propia descomposicion. El resto solo depende de this.pool + getByKeys (inyectado), como
+// OrgStructureService. SqlAdminService mantiene 11 delegadores; el controller y saveTemplateArtifactDraft
+// (que llama estos metodos) no se tocan.
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import crypto from "node:crypto";
+import {
+  copyMinioObjectBinary,
+  listMinioObjects,
+  putMinioObjectFromText,
+  readMinioObjectAsText,
+  unzipToDirectory,
+  walkFiles,
+} from "../kernel/storage.js";
+import {
+  checkJinjaBlockBalance,
+  parseAvailableFormats,
+  sanitizeLatexSource,
+  schemaObjectKeyForPrefix
+} from "./artifacts.js";
+import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
+import { bumpSemanticVersion } from "../kernel/versioning.js";
+import {
+  MINIO_TEMPLATES_BUCKET,
+  CONTRACT_FORMAT,
+  EDITABLE_CONTENT_SUBPATH,
+} from "../kernel/constants.js";
+
+// Config espejo del env (mismo valor que SqlAdminService.js). Deuda menor: unificar en un modulo de
+// constantes compartido. Son deterministas (env + literal), asi que ambos modulos leen lo mismo.
+
+export default class TemplateArtifactService {
+  // `readObjectAsText` se inyecta con el mismo patrón que `getByKeys` (que ya estaba) y por el mismo
+  // motivo: sin punto de inyección, la lectura de MinIO no tiene red unitaria — y el defecto que
+  // cierra el §0.4 S2 vive justo ahí. Por defecto es la función real, así que el único llamador de
+  // producción (`SqlAdminService.js:164`) no cambia.
+  constructor(pool, { getByKeys, readObjectAsText = readMinioObjectAsText } = {}) {
+    this.pool = pool;
+    this._getByKeys = getByKeys;
+    this._readObjectAsText = readObjectAsText;
+  }
+
+  ensurePool() {
+    if (!this.pool) {
+      throw new Error("La conexion con PostgreSQL no esta disponible.");
+    }
+  }
+
+
+  async getTemplateArtifact(artifactId, connection = this.pool) {
+    this.ensurePool();
+    const [rows] = await connection.query(
+      `SELECT
+         ta.id,
+         d.code AS template_code,
+         d.display_name,
+         ta.storage_version,
+         d.template_scope
+       FROM ediciones ta
+       LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+       WHERE ta.id = ?
+       LIMIT 1`,
+      [artifactId]
+    );
+    return rows?.[0] ?? null;
+  }
+
+
+
+  // Todas las versiones de un template_code (para el drawer de versiones del grafo): linaje completo con su
+  // estado, ordenadas de la más nueva a la más antigua.
+  async getTemplateVersions(templateCode) {
+    this.ensurePool();
+    const code = String(templateCode || "").trim();
+    if (!code) return [];
+    const [rows] = await this.pool.query(
+      `SELECT ta.id, d.code AS template_code, d.display_name, ta.storage_version, ta.lifecycle_state, ta.is_active,
+              ta.parent_version_id, d.template_scope, ta.created_at
+         FROM ediciones ta
+         INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+        WHERE d.code = ?
+        ORDER BY ta.created_at DESC, ta.id DESC`,
+      [code]
+    );
+    return rows;
+  }
+
+
+  // Lee el schema.json de un artifact desde MinIO y lo devuelve como lista de campos
+  // editables en la web (formato inverso de buildSchemaJsonFromFields).
+  async getTemplateArtifactSchema(artifactId) {
+    this.ensurePool();
+    const artifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    const bucket = MINIO_TEMPLATES_BUCKET;
+    // Los campos del formulario se leen de `schema.json` en MinIO, y un fallo SUBE.
+    //
+    // Aquí vivía un `catch {}` que devolvía `{}` ante cualquier fallo de MinIO. Es el MISMO borrado
+    // silencioso que el sub-paso 5 del §0.8 quitó del lector de flujo, unas líneas más abajo y en
+    // este mismo fichero: un «vacío» inventado no es un aviso cosmético, es lo que el editor carga
+    // **y lo que el siguiente guardado escribe** — o sea, `schema.json` reducido a `"{}\n"` y todos
+    // los campos configurados perdidos, sin que nadie viera un error.
+    //
+    // Medido antes de tocarlo (experimento desechable, §0.4 S2): con el lector anulado y devolviendo
+    // `{}` siempre, `test:char:run` da **281/281 en verde**. La caracterización es ciega a esto **por
+    // construcción**: el único caso que llega al endpoint descarta `fields` del golden a propósito
+    // (`zzzzzzz_schema_flow_reread.test.mjs:217`). Por eso la red que cubre esta línea es unitaria.
+    //
+    // El JSON mal formado se trata igual que el fallo de red, y a propósito: `schema.json` lo escribe
+    // el propio backend, así que un JSON roto es corrupción del paquete, no una entrada del usuario.
+    // La clave se DERIVA del prefijo (frente 23, F4.2): `schema_object_key` era una columna que
+    // guardaba exactamente esto. Ver `schemaObjectKeyForPrefix` en `artifacts.js`.
+    const schemaObjectKey = schemaObjectKeyForPrefix(artifact.base_object_prefix);
+    const schemaText = await this._readObjectAsText(bucket, schemaObjectKey);
+    let schema;
+    try {
+      schema = JSON.parse(schemaText || "{}");
+    } catch (error) {
+      const failure = new Error(
+        `El esquema de campos de la plantilla esta corrupto y no se pudo leer (${schemaObjectKey}).`
+      );
+      failure.cause = error;
+      throw failure;
+    }
+    const properties = schema?.properties || {};
+    const requiredSet = new Set(Array.isArray(schema?.required) ? schema.required : []);
+    const fields = Object.entries(properties).map(([key, def]) => ({
+      key: def?.["x-deasy-data-key"] || key,
+      title: def?.title || key,
+      field_code: def?.["x-deasy-field-code"] || "",
+      component: def?.["x-deasy-ui"]?.component || "text",
+      group: def?.["x-deasy-ui"]?.group || "general",
+      required: requiredSet.has(def?.["x-deasy-data-key"] || key),
+    }));
+
+    // Lee los workflows (fill/signatures) DE LA BASE en formato editable por la web.
+    //
+    // Sub-paso 5 del §0.8: antes se reconstruían desde el `meta.yaml` de MinIO, envueltos en un
+    // `catch {}` mudo que devolvía «esta plantilla no define flujo» ante cualquier fallo. Ese catch
+    // NO vuelve: aquí un flujo vacío inventado no es un aviso cosmético, es lo que el editor carga y
+    // lo que el siguiente guardado escribe — o sea, el borrado del flujo. Un error de base sube.
+    //
+    // `readAuthoredFlowForArtifact` devuelve la MISMA estructura que `buildWorkflowsDocument`
+    // (`workflows.js`), que es la que este aplanado ya consumía: el mapeo de abajo no cambia, y por
+    // eso la respuesta del endpoint sigue siendo equivalente campo a campo. Verificado contra la
+    // salida capturada antes del cambio.
+    const workflows = await readAuthoredFlowForArtifact(this.pool, artifact.id);
+    const fill = workflows?.fill || {};
+    const fillWorkflow = {
+      required: fill?.required !== false,
+      steps: (Array.isArray(fill?.steps) ? fill.steps : []).map((s, i) => ({
+        order: Number(s?.order) || i + 1,
+        code: s?.code || "",
+        name: s?.name || "",
+        resolver_type: s?.resolver?.type || "task_assignee",
+        selection_mode: s?.resolver?.selection_mode || "auto_one",
+        cargo_id: s?.resolver?.cargo_id || null,
+        cargo_code: s?.resolver?.cargo_code || "",
+        unit_scope_type: s?.resolver?.unit_scope_type || "context_exact",
+        unit_id: s?.resolver?.unit_id || null,
+        unit_type_id: s?.resolver?.unit_type_id || null,
+        person_id: s?.resolver?.person_id || null,
+        position_id: s?.resolver?.position_id || null,
+        // SIEMPRE `[]`, y se CONSERVA (§0.6, cierre del censo de fósiles). El flujo llega de la base
+        // (`readAuthoredFlowForArtifact`) y ahí `field_refs` no tiene columna ni se relee, así que
+        // `s?.field_refs` es siempre `undefined`. Se queda porque esto es el CONTRATO HTTP que
+        // consume el editor: la clave está fijada en el golden `schema_flow_reread` y el frontend la
+        // lee. Quitarla movería un golden por una razón que no es de comportamiento.
+        // Lo que la mataría: retirarla del formulario (frontend, hoy un literal `[]`) y recapturar
+        // ese golden, en el mismo commit. Y lo que la haría real es lo contrario: darle columna,
+        // que es modelar los campos del formulario (§0.8, decisión 3 — fuera de alcance).
+        field_refs: Array.isArray(s?.field_refs) ? s.field_refs : [],
+        required: s?.required !== false,
+      })),
+    };
+    const sig = workflows?.signatures || {};
+    // Aplana un resolutor a los campos que usa el formulario web de firmante.
+    const flattenSigner = (resolver = {}) => ({
+      resolver_type: resolver?.type || "cargo_in_scope",
+      selection_mode: resolver?.selection_mode || "auto_all",
+      cargo_id: resolver?.cargo_id || null,
+      cargo_code: resolver?.cargo_code || "",
+      unit_scope_type: resolver?.unit_scope_type || "context_exact",
+      unit_id: resolver?.unit_id || null,
+      unit_type_id: resolver?.unit_type_id || null,
+      person_id: resolver?.person_id || null,
+      position_id: resolver?.position_id || null,
+    });
+    const signatureWorkflow = {
+      required: sig?.required === true,
+      steps: (Array.isArray(sig?.steps) ? sig.steps : []).map((s, i) => {
+        // Multi-firmante: `signers: [...]`. Back-compat: un paso con un único `resolver`.
+        const rawSigners = Array.isArray(s?.signers) && s.signers.length
+          ? s.signers
+          : (s?.resolver ? [s.resolver] : []);
+        return {
+          order: Number(s?.order) || i + 1,
+          code: s?.code || "",
+          name: s?.name || "",
+          approval_mode: s?.approval_mode || "and",
+          required_signers_min: s?.required_signers_min || 1,
+          required: s?.required !== false,
+          signers: rawSigners.map(flattenSigner),
+        };
+      }),
+    };
+
+    return {
+      artifact_id: Number(artifactId),
+      template_code: artifact.template_code,
+      display_name: artifact.display_name,
+      fields,
+      fill_workflow: fillWorkflow,
+      signature_workflow: signatureWorkflow,
+    };
+  }
+
+
+  // True si la plantilla está vinculada a algún proceso y TODOS sus vínculos son 'routed' (que NO autoran
+  // flujo: se define al enviar). Se usa para relajar el readiness "≥1 paso de entrega" en publish/activate
+  // por id (sin contexto de link). Si tiene algún vínculo no-routed, o ninguno, se mantiene el readiness.
+  async isArtifactRoutedOnly(artifactId, connection = this.pool) {
+    const [rows] = await connection.query(
+      "SELECT item_mode FROM vinculos WHERE edicion_id = ?",
+      [Number(artifactId)]
+    );
+    if (!rows.length) return false;
+    return rows.every((row) => String(row.item_mode) === "routed");
+  }
+
+
+  // Activa/desactiva una plantilla. is_active es el único estado del ciclo de vida (Activo/Inactivo).
+  // Al activar se exige que la plantilla tenga al menos un paso de flujo de entrega EN LA BASE
+  // (regla: una plantilla de proceso no se usa sin flujo de entrega). La firma puede ser ad-hoc.
+  // Sub-paso 4 del §0.8: antes se contaba sobre el `meta.yaml` de MinIO — ver `hasFillStepsForArtifact`.
+  async setTemplateArtifactActive(artifactId, active) {
+    this.ensurePool();
+    const nextActive = active ? 1 : 0;
+    const artifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    const current = Number(artifact.is_active) === 1 ? 1 : 0;
+    if (current === nextActive) {
+      return { artifact_id: Number(artifactId), is_active: nextActive, changed: false };
+    }
+    if (nextActive === 1 && !(await this.isArtifactRoutedOnly(Number(artifactId)))) {
+      if (!(await hasFillStepsForArtifact(this.pool, artifact.id))) {
+        throw new Error("No se puede activar: la plantilla debe definir al menos un paso de flujo de entrega.");
+      }
+    }
+
+    await this.pool.query(
+      "UPDATE ediciones SET is_active = ? WHERE id = ?",
+      [nextActive, Number(artifactId)]
+    );
+
+    return { artifact_id: Number(artifactId), is_active: nextActive, previous_is_active: current, changed: true };
+  }
+
+
+  // F5 — "una sola publicada por ENTREGABLE": retira las demás versiones publicadas del mismo catalogo_documental_id
+  // (== mismo catalogo_documental_id) que la versión dada. NO publica la versión dada (eso lo hace quien llama).
+  async retirePriorPublishedSiblings(connection, artifactId) {
+    const [rows] = await connection.query(
+      "SELECT catalogo_documental_id FROM ediciones WHERE id = ? LIMIT 1",
+      [Number(artifactId)]
+    );
+    const delivId = rows?.[0]?.catalogo_documental_id || null;
+    if (delivId) {
+      await connection.query(
+        `UPDATE ediciones SET lifecycle_state = 'retired', is_active = 0
+          WHERE catalogo_documental_id = ? AND id <> ? AND lifecycle_state = 'published'`,
+        [delivId, Number(artifactId)]
+      );
+    }
+  }
+
+
+  // Máquina de estados de la VERSIÓN de plantilla (Fase 0). publicar: draft|retired → published, exige al menos
+  // un paso de flujo de entrega (readiness) y retira la versión publicada previa del MISMO ENTREGABLE
+  // (una sola publicada por entregable). La nueva queda usable (is_active=1). Atómico.
+  async publishTemplateArtifact(artifactId) {
+    this.ensurePool();
+    const id = Number(artifactId);
+    const artifact = await this._getByKeys("ediciones", { id });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    if (String(artifact.lifecycle_state || "") === "published") {
+      return { artifact_id: id, lifecycle_state: "published", changed: false };
+    }
+    // routed NO autora flujo (se define al enviar): se omite el readiness si la plantilla es routed-only.
+    if (!(await this.isArtifactRoutedOnly(id))) {
+      if (!(await hasFillStepsForArtifact(this.pool, artifact.id))) {
+        throw new Error("No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega.");
+      }
+    }
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      // Una sola publicada por ENTREGABLE: retira las otras publicadas del mismo deliverable.
+      await this.retirePriorPublishedSiblings(connection, id);
+      await connection.query(
+        "UPDATE ediciones SET lifecycle_state = 'published', is_active = 1 WHERE id = ?",
+        [id]
+      );
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+    return {
+      artifact_id: id,
+      lifecycle_state: "published",
+      is_active: 1,
+      changed: true,
+      __notice: `Plantilla ${artifact.template_code} v${artifact.storage_version} publicada.`,
+    };
+  }
+
+
+  // Retira una versión: no enlazable a configs nuevas, pero se conserva para auditoría (los documentos ya
+  // emitidos siguen pineados a ella). No la borra.
+  async retireTemplateArtifact(artifactId) {
+    this.ensurePool();
+    const id = Number(artifactId);
+    const artifact = await this._getByKeys("ediciones", { id });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    if (String(artifact.lifecycle_state || "") === "retired") {
+      return { artifact_id: id, lifecycle_state: "retired", changed: false };
+    }
+    await this.pool.query(
+      "UPDATE ediciones SET lifecycle_state = 'retired', is_active = 0 WHERE id = ?",
+      [id]
+    );
+    return { artifact_id: id, lifecycle_state: "retired", changed: true };
+  }
+
+
+  // Crea una nueva versión (storage_version semver) clonando un artifact existente. Nace inactiva
+  // (is_active=0): el gestor la activa cuando esté lista. El nivel de cambio (patch/minor/major) lo elige
+  // quien crea la versión.
+  //
+  // CLONAR ES COPIAR BYTES **Y FILAS** (sub-paso 6 del §0.8). Los objetos de MinIO se copian en
+  // binario; el FLUJO ya no vive ahí, vive en la base, así que hay que copiarlo aparte o la versión
+  // nace sin flujo. Medido antes del cambio: publicarla respondía 400 «la plantilla debe definir al
+  // menos un paso de flujo de entrega». Ver `copyAuthoredFlowToArtifact` para qué cabecera se copia
+  // (la que el editor mostraría para el padre) y cuál NO (la de runtime, que es de un envío concreto).
+  async createTemplateArtifactVersion(artifactId, bumpLevel = "minor") {
+    this.ensurePool();
+    const artifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    const bucket = MINIO_TEMPLATES_BUCKET;
+    const templateCode = String(artifact.template_code);
+    const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode, bumpLevel);
+    // El entregable se identifica por código (siempre existe tras backfill/creación). Robusto aunque getByKeys
+    // no traiga catalogo_documental_id (la columna no está en la config de sqlTables).
+    const [delivRows] = await this.pool.query(
+      "SELECT id, display_name FROM catalogo_documental WHERE code = ? LIMIT 1",
+      [templateCode]
+    );
+    const deliverableId = delivRows?.[0]?.id || null;
+    // AQUI SE DERIVABA UN `displayName` para el `name` de las cabeceras de flujo. Las cabeceras se
+    // retiraron en el paso 4 de la fase 4 del frente 24 y ese rotulo no lo consultaba nadie.
+    const oldVersion = String(artifact.storage_version || "");
+    const oldPrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
+    const versionSuffixRe = new RegExp(`${oldVersion.replace(/[.\\]/g, "\\$&")}/?$`);
+    const newPrefix = oldVersion ? oldPrefix.replace(versionSuffixRe, `${nextStorageVersion}/`) : oldPrefix;
+    if (newPrefix === oldPrefix) {
+      throw new Error("No se pudo derivar la ruta de la nueva versión.");
+    }
+
+    // Copia los objetos de la versión actual a la nueva ruta en MinIO.
+    const objectNames = await listMinioObjects(bucket, oldPrefix, true);
+    if (!objectNames.length) {
+      throw new Error("La versión actual no tiene objetos en MinIO para clonar.");
+    }
+    for (const objectName of objectNames) {
+      if (!objectName.startsWith(oldPrefix)) continue;
+      const relative = objectName.slice(oldPrefix.length);
+      if (!relative) continue;
+      // Copia binaria (preserva bytes y content-type); NO leer/escribir como texto (corrompe binarios).
+      await copyMinioObjectBinary(bucket, objectName, `${newPrefix}${relative}`);
+    }
+
+    // Re-mapea los entry_object_key de available_formats del prefijo viejo al nuevo (antes quedaban
+    // apuntando a la versión anterior).
+    const remappedFormats = parseAvailableFormats(artifact.available_formats);
+    for (const entry of Object.values(remappedFormats || {})) {
+      if (entry?.entry_object_key && String(entry.entry_object_key).startsWith(oldPrefix)) {
+        entry.entry_object_key = `${newPrefix}${String(entry.entry_object_key).slice(oldPrefix.length)}`;
+      }
+    }
+    // Identidad/scope/owner viven en `catalogo_documental`; la versión solo hereda catalogo_documental_id (mismo entregable).
+    //
+    // LA VERSIÓN Y SU FLUJO, EN UNA TRANSACCIÓN, por el mismo motivo que `_persistDraftToDatabase`
+    // (sub-paso 3): el flujo cuelga del artifact por FK, así que sin ella un fallo al copiarlo
+    // dejaría una versión ya insertada y SIN FLUJO — que es exactamente el estado inpublicable que
+    // este sub-paso viene a cerrar, y que nadie vería hasta intentar publicarla. La copia de MinIO
+    // se queda FUERA a propósito: ocurre antes y ningún `ROLLBACK` la revierte.
+    const connection = await this.pool.getConnection();
+    let newArtifactId;
+    try {
+      await connection.beginTransaction();
+      const [result] = await connection.query(
+        `INSERT INTO ediciones (
+          storage_version, lifecycle_state, base_object_prefix,
+          available_formats, generador_id, content_hash, parent_version_id, catalogo_documental_id, is_active
+        ) VALUES (?, 'draft', ?, ?, ?, ?, ?, ?, 0)`,
+        [
+          nextStorageVersion,
+          newPrefix,
+          JSON.stringify(remappedFormats || {}),
+          // El generador se HEREDA de la version padre: una version nueva de la misma plantilla la
+          // sigue produciendo el mismo servicio. Antes este dato vivia en `catalogo_documental`, o sea que
+          // se heredaba por no tocarlo; ahora es columna de la edicion y hay que copiarlo.
+          artifact.generador_id ?? null,
+          artifact.content_hash,
+          Number(artifactId),
+          deliverableId,
+        ]
+      );
+      newArtifactId = Number(result.insertId);
+      await copyAuthoredFlowToArtifact(connection, {
+        sourceArtifactId: Number(artifactId),
+        targetArtifactId: newArtifactId,
+      });
+      // AQUI SE COPIABAN LOS CAMPOS a la version hija (`copySchemaFieldsToArtifact`). Era el UNICO
+      // lector de `template_artifact_fields` en todo el sistema —la tabla existia para copiarse a si
+      // misma—, y con ella se va (frente 23, F4.1). El `schema.json` de la hija sigue llegando por la
+      // copia binaria de MinIO de mas arriba, que es de donde el editor lo lee.
+      await connection.commit();
+    } catch (error) {
+      await connection.rollback().catch(() => {});
+      throw error;
+    } finally {
+      connection.release();
+    }
+
+    return {
+      id: newArtifactId,
+      template_code: templateCode,
+      storage_version: nextStorageVersion,
+      base_object_prefix: newPrefix,
+      template_scope: artifact.template_scope || "official",
+      lifecycle_state: "draft",
+      parent_version_id: Number(artifactId),
+      is_active: 0,
+      __notice: `Nueva versión ${nextStorageVersion} creada (en borrador). Publícala cuando esté lista.`,
+    };
+  }
+
+
+  // Aplica una re-subida de código (ZIP del subárbol process/jinja2/src) editado por el admin:
+  // verifica que los archivos protegidos no cambiaron (hash vs manifest), que solo se tocó Contenido/,
+  // sanea contra inyecciones LaTeX y, si todo es válido, crea una NUEVA versión con el contenido editado.
+  // Solo AdminSistema (gate también en la ruta).
+  async applyTemplateArtifactSource(artifactId, zipFilePath, actor = {}) {
+    this.ensurePool();
+    if (!Array.isArray(actor?.roleNames) || !actor.roleNames.includes("AdminSistema")) {
+      const error = new Error("Solo AdminSistema puede editar el código de la plantilla.");
+      error.statusCode = 403;
+      throw error;
+    }
+    const artifact = await this._getByKeys("ediciones", { id: Number(artifactId) });
+    if (!artifact) {
+      throw new Error("El artifact seleccionado no existe.");
+    }
+    const bucket = MINIO_TEMPLATES_BUCKET;
+    const basePrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
+    const formats = parseAvailableFormats(artifact.available_formats);
+    const jinjaEntry = formats?.[CONTRACT_FORMAT]?.entry_object_key;
+    if (!jinjaEntry) {
+      throw new Error("La plantilla no tiene un contrato jinja2 editable.");
+    }
+    const srcRelPrefix = String(jinjaEntry).startsWith(basePrefix)
+      ? String(jinjaEntry).slice(basePrefix.length)
+      : EDITABLE_CONTENT_SUBPATH.replace(/Contenido\/$/, "");
+    const editablePrefix = EDITABLE_CONTENT_SUBPATH.startsWith(srcRelPrefix)
+      ? EDITABLE_CONTENT_SUBPATH.slice(srcRelPrefix.length)
+      : "Contenido/";
+
+    let manifest;
+    try {
+      manifest = JSON.parse(await readMinioObjectAsText(bucket, `${basePrefix}manifest.json`));
+    } catch {
+      throw new Error("La plantilla no tiene manifest.json de integridad. Vuelve a generarla con el flujo actual.");
+    }
+    const protectedMap = manifest?.protected || {};
+
+    const workDir = await fs.promises.mkdtemp(path.join(os.tmpdir(), "tpl-source-"));
+    try {
+      await unzipToDirectory(zipFilePath, workDir);
+      const uploaded = walkFiles(workDir)
+        .map((abs) => ({ abs, rel: path.relative(workDir, abs).replaceAll("\\", "/") }))
+        .filter((entry) => !path.basename(entry.rel).startsWith("."));
+      if (!uploaded.length) {
+        throw new Error("El ZIP no contiene archivos.");
+      }
+
+      const violations = [];
+      const editedContent = [];
+      const seenProtected = new Set();
+      for (const entry of uploaded) {
+        if (entry.rel.includes("..") || entry.rel.startsWith("/")) {
+          violations.push(`Ruta no permitida: ${entry.rel}`);
+          continue;
+        }
+        const fullRel = `${srcRelPrefix}${entry.rel}`;
+        if (Object.hasOwn(protectedMap, fullRel)) {
+          const hash = crypto.createHash("sha256").update(fs.readFileSync(entry.abs)).digest("hex");
+          if (hash !== protectedMap[fullRel]) {
+            violations.push(`Archivo protegido modificado: ${entry.rel}`);
+          }
+          seenProtected.add(fullRel);
+        } else if (entry.rel.startsWith(editablePrefix)) {
+          const contenido = fs.readFileSync(entry.abs, "utf8");
+          violations.push(...sanitizeLatexSource(entry.rel, contenido));
+          // Balance de bloques Jinja (§0.4 S4), sobre EXACTAMENTE el mismo conjunto que el saneo
+          // LaTeX, y sólo sobre los `.j2`. Las dos acotaciones son deliberadas:
+          //
+          // · SÓLO LA ZONA EDITABLE, aunque hoy el Jinja viva sobre todo en `Preambulo/` (medido:
+          //   24 etiquetas `[[%` en el seed, todas fuera de `Contenido/`). Porque `Preambulo/` es
+          //   PROTEGIDO: su rama de arriba ya exige que el SHA-256 case con el manifiesto, así que
+          //   sus bytes son, por construcción, idénticos a los ya publicados. Validarlos sería
+          //   revisar contenido que el usuario no ha escrito y NO PUEDE ARREGLAR — cambiarlo hace
+          //   fallar el hash —, es decir, un error sin salida que dejaría la plantilla ineditable.
+          //   La zona editable es la única por donde entra Jinja nuevo, y es donde emitirá el
+          //   generador del §0.4 S8.
+          //
+          // · SÓLO LOS `.j2`, porque el render sólo procesa `*.j2` (`make.sh` recorre y filtra por
+          //   esa extensión). En un `.tex` suelto —`Contenido/tables/tabla_01.tex` es uno— un
+          //   `[[%` es texto literal que nadie interpreta, y marcarlo sería un falso positivo.
+          if (entry.rel.endsWith(".j2")) {
+            violations.push(...checkJinjaBlockBalance(entry.rel, contenido));
+          }
+          editedContent.push(entry);
+        } else {
+          violations.push(`Archivo no permitido (solo se edita ${editablePrefix} y no se añaden archivos al contrato): ${entry.rel}`);
+        }
+      }
+      // No se permite borrar archivos protegidos del contrato (los que viven bajo el src).
+      for (const key of Object.keys(protectedMap)) {
+        if (key.startsWith(srcRelPrefix) && !seenProtected.has(key)) {
+          violations.push(`Falta un archivo protegido del contrato: ${key.slice(srcRelPrefix.length)}`);
+        }
+      }
+      if (violations.length) {
+        const error = new Error(`La re-subida no cumple el contrato:\n- ${violations.slice(0, 25).join("\n- ")}`);
+        error.statusCode = 422;
+        throw error;
+      }
+      if (!editedContent.length) {
+        throw new Error("No se detectaron cambios en el contenido editable (Contenido/).");
+      }
+
+      const version = await this.createTemplateArtifactVersion(artifactId, "patch");
+      for (const entry of editedContent) {
+        await putMinioObjectFromText(
+          bucket,
+          `${version.base_object_prefix}${srcRelPrefix}${entry.rel}`,
+          fs.readFileSync(entry.abs, "utf8"),
+          "text/plain"
+        );
+      }
+      return {
+        id: version.id,
+        storage_version: version.storage_version,
+        base_object_prefix: version.base_object_prefix,
+        edited_files: editedContent.length,
+        __notice: `Código verificado y actualizado en nueva versión ${version.storage_version} (inactiva). Archivos de contenido actualizados: ${editedContent.length}.`
+      };
+    } finally {
+      fs.rmSync(workDir, { recursive: true, force: true });
+    }
+  }
+
+
+  // Devuelve la siguiente storage_version semver para un código. La primera versión es 1.0.0; si ya existe
+  // alguna, sube desde la mayor por el nivel elegido (patch/minor/major). Garantiza unicidad y monotonía.
+  async getNextStorageVersionForTemplateCode(templateCode, level = "minor", connection = this.pool) {
+    const [rows] = await connection.query(
+      `SELECT ta.storage_version
+       FROM ediciones ta
+       INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+       WHERE d.code = ?`,
+      [templateCode]
+    );
+    let maxKey = -1;
+    let maxVersion = "";
+    for (const row of rows || []) {
+      const match = String(row.storage_version || "").trim().match(/^(\d+)\.(\d+)\.(\d+)$/);
+      if (!match) {
+        continue;
+      }
+      const key = Number(match[1]) * 1e6 + Number(match[2]) * 1e3 + Number(match[3]);
+      if (key > maxKey) {
+        maxKey = key;
+        maxVersion = `${match[1]}.${match[2]}.${match[3]}`;
+      }
+    }
+    if (!maxVersion) {
+      return "1.0.0";
+    }
+    return bumpSemanticVersion(maxVersion, level);
+  }
+}

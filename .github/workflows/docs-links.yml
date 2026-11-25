@@ -1,0 +1,146 @@
+# Comprobador de enlaces de la documentación.
+#
+# ── Por qué existe ────────────────────────────────────────────────────────────────────────
+# Hasta el 2026-08-11 la documentación era la ÚNICA capa del repositorio sin ninguna puerta:
+# el código tiene tests unitarios, characterization, `check:imports`, `lint:css` y Sonar, pero
+# nada fallaba cuando un documento mentía. El resultado medido en esa fecha:
+#
+#   · 23 enlaces con rutas ABSOLUTAS a `/home/fresvel/Sharepoint/DIR/Deploy/deasy/...`,
+#     una máquina que ya no aloja el repositorio.
+#   · Las 34 rutas de documentación del `README.md` raíz — la puerta de entrada — muertas.
+#     Las 34. Apuntaban al árbol anterior a la reorganización de `docs/`.
+#
+# Ninguna de las dos cosas rompía nada, y por eso sobrevivieron meses. Este workflow es la
+# puerta que faltaba: a partir de aquí, un enlace roto es un CI en rojo.
+#
+# ── Por qué SOLO enlaces locales (--offline) ──────────────────────────────────────────────
+# Comprobar URLs externas en cada PR suena mejor de lo que es: los 429 de GitHub, los 503
+# transitorios y los sitios tras Cloudflare ponen el CI en rojo por motivos que no tienen
+# nada que ver con el cambio. Una puerta en la que no se confía se ignora, y una puerta que
+# se ignora no es una puerta. Así que el gate bloqueante mira SOLO enlaces a ficheros del
+# repositorio — que es exactamente la clase de rotura que se midió — y las URLs externas se
+# revisan aparte, semanalmente y sin bloquear (segundo job).
+name: docs-links
+
+on:
+  pull_request:
+    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/*.mjs', 'scripts/docs/doc-modelo-*.json', 'docs/planes/herramienta/*', 'docs/planes/**/*.yaml', 'backend/database/postgres_schema.sql', '.github/workflows/docs-links.yml']
+  push:
+    branches: [develop, main]
+    paths: ['**/*.md', '**/*.mdx', '.lycheeignore', 'scripts/docs/*.mjs', 'scripts/docs/doc-modelo-*.json', 'docs/planes/herramienta/*', 'docs/planes/**/*.yaml', 'backend/database/postgres_schema.sql', '.github/workflows/docs-links.yml']
+  schedule:
+    # Lunes 06:00 UTC — solo para el job de enlaces externos.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Bloqueante: enlaces a ficheros del repositorio ──────────────────────────────────────
+  enlaces-internos:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar enlaces relativos
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # --offline: no sale a la red; resuelve enlaces relativos contra el árbol.
+          #
+          # Exclusiones, y el motivo de cada una:
+          #   docs/docs-md-antiguos/**  el archivo. Está lleno de referencias muertas A
+          #                             PROPÓSITO (describe el sistema de antes); gatear sobre
+          #                             él sería ruido puro y empujaría a "arreglar" historia.
+          #   docs/src/**               el contenido del sitio Astro. Sus enlaces son RUTAS DE
+          #                             PÁGINA (`/guias/entorno-dev/`), no ficheros, así que
+          #                             lychee los daría por rotos. Lo cubre el job
+          #                             `enlaces-del-sitio` de más abajo.
+          #
+          # ⚠️ Aquí ponía «el build de Astro ya los valida». Era FALSO y costó un enlace roto
+          # que vivió del 2026-08-24 al 26 sin que nadie lo viera: el build de Astro valida
+          # los `slug` del `sidebar` de `astro.config.mjs`, y NADA más. Un `[x](/no/existe/)`
+          # dentro de un `.md` construye en verde y da 404 al hacer clic.
+          args: >-
+            --offline
+            --no-progress
+            --include-fragments
+            --exclude-path docs/docs-md-antiguos
+            --exclude-path docs/src
+            --exclude-path node_modules
+            "**/*.md"
+          fail: true
+
+  # ── Bloqueante: enlaces internos DEL SITIO (rutas de página, no ficheros) ───────────────
+  # Lo que lychee no puede mirar. No necesita instalar nada: es Node puro sobre el árbol.
+  enlaces-del-sitio:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Comprobar rutas de página del sitio
+        run: node scripts/docs/check-enlaces-internos.mjs
+
+      # Que las páginas sigan hablando del modelo que EXISTE: nombres muertos, tablas que no
+      # cuenta nadie, y tablas que cambiaron sin que su página se revisara. Es la única puerta
+      # que tiene la prosa del sitio — el build de Astro pasa en verde con una página que miente.
+      - name: Comprobar que la doc describe el modelo real
+        run: node scripts/docs/check-doc-modelo.mjs
+
+      # Que una misma tabla dibujada en varios erDiagram no se contradiga. El gate de arriba
+      # NO lo caza: para el, un nombre que sigue existiendo en el esquema es correcto aunque
+      # el diagrama que lo usa sea el diseño anterior. Asi convivieron dos `expediente_titulos`
+      # -- nueve columnas en uno, seis en otro-- en la MISMA pagina, hasta que lo vio el dueño.
+      - name: Comprobar que los diagramas no se contradicen
+        run: node scripts/docs/check-diagramas-coherentes.mjs
+
+      # Que el PLAN no mienta. Sin esto podriamos commitear un cambio cerrado sin verificar, una
+      # evidencia vacia o una fecha relativa, y CI lo dejaria pasar en verde -- exactamente lo que
+      # la norma «las puertas corren en CI» existe para evitar.
+      #
+      # ── Por que aqui corre la puerta REAL, y antes no podia ───────────────────────────────
+      # Hasta el 2026-10-26 esto era `node scripts/planes/check-plan.mjs`: una reimplementacion
+      # en JavaScript de `plan verificar`, escrita porque la skill `plan-trabajo` vive en el
+      # $HOME de una persona y este runner clona el repositorio y nada mas. Funcionaba, y tenia
+      # el defecto de toda segunda implementacion: habia que mantenerla igual A MANO, con las
+      # reglas copiadas en `plan-reglas.json` y una comprobacion H que comparaba las dos listas
+      # para que la divergencia no fuese silenciosa -- o sea, maquinaria para vigilar un
+      # problema que no hacia falta tener.
+      #
+      # Desde el 2026-10-26 cada proyecto lleva su copia de solo lectura del programa y del
+      # vocabulario en `docs/planes/herramienta/`, fijada a una version. **La copia viaja en el
+      # repositorio**, asi que el runner SI la ve: lo que comprueba el portatil y lo que
+      # comprueba CI son el mismo programa, byte a byte, y no hay nada que sincronizar. Subirla
+      # de version es un acto deliberado (`plan actualizar`, que antes enseña que pondria en
+      # rojo), no un efecto colateral de tocar la skill.
+      #
+      # `PLAN_RAIZ` le dice donde esta la raiz del plan; sin ella busca `.plan/` hacia arriba.
+      - name: Instalar PyYAML para la puerta del plan
+        run: pip install pyyaml
+      - name: Comprobar que el plan no se contradice
+        run: PLAN_RAIZ=docs/planes python3 docs/planes/herramienta/plan verificar
+
+  # ── No bloqueante: URLs externas ────────────────────────────────────────────────────────
+  enlaces-externos:
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Comprobar URLs externas (informativo)
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --no-progress
+            --max-retries 3
+            --timeout 20
+            --accept 200,203,206,429
+            --exclude-path docs/docs-md-antiguos
+            --exclude-path node_modules
+            "**/*.md"
+          fail: false

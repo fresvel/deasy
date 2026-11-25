@@ -1,257 +1,302 @@
 <template>
-  <div>
-    <AppButton
-      variant="plain"
-      class-name="fixed bottom-6 right-4 z-[90] inline-flex h-16 w-16 items-center justify-center rounded-full border border-sky-200/90 bg-gradient-to-br from-white via-sky-50 to-sky-100 text-sky-700 shadow-[0_18px_45px_rgba(2,132,199,0.22)] ring-1 ring-white/80 transition hover:-translate-y-1 hover:from-white hover:to-sky-50 focus:outline-none focus:ring-4 focus:ring-sky-200/70 sm:right-6 sm:h-[4.5rem] sm:w-[4.5rem]"
-      aria-label="Abrir chat"
-      title="Abrir chat"
-      @click="openLauncher"
-    >
-      <span class="absolute inset-1.25 rounded-full border border-white/70 bg-white/55" />
-      <IconMessages class="relative z-10 h-7 w-7 sm:h-8 sm:w-8" />
-    </AppButton>
+  <!-- ⚠️ SIN ENVOLTORIO A PROPOSITO (F13.3, 2026-08-21). Aqui habia un `<div>` que solo
+       existia para dar raiz unica, costumbre de Vue 2. Sus TRES hijos son `fixed` —el FAB
+       por `.deasy-fab`, el velo y el panel por su clase—, asi que el envoltorio era una caja
+       EN FLUJO de altura cero. No se notaba... hasta que `.deasy-page` paso a ser una pila:
+       como item flex de altura 0 cobraba los 24 px de hueco igual, y `/procesos` se comia
+       24 px muertos al final. Vue 3 admite fragmentos; la raiz sobra. -->
+  <AppButton
+    variant="plain"
+    class-name="deasy-fab"
+    aria-label="Abrir chat"
+    title="Abrir chat"
+    @click="openLauncher" icon-only>
+    <IconMessages class="relative z-(--z-capa-base) h-7 w-7 sm:h-8 sm:w-8" />
+  </AppButton>
 
-    <div
-      v-if="showChat"
-      class="fixed inset-0 z-95 bg-slate-950/30 backdrop-blur-[2px]"
-      @click="closePanel"
-    />
+  <div
+    v-if="showChat"
+    class="fixed inset-0 z-(--z-velo-chat) bg-navy/30 backdrop-blur-[2px]"
+    @click="closePanel"
+  />
 
-    <aside
-      v-if="showChat"
-      class="fixed inset-x-3 bottom-3 z-100 flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl shadow-slate-900/20 sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
-      aria-label="Panel global de chat"
-    >
-      <header class="border-b border-slate-200 bg-white px-4 py-4 sm:px-5">
-        <div class="flex items-start justify-between gap-3">
+  <aside
+    v-if="showChat"
+    class="deasy-card fixed inset-x-3 bottom-3 z-(--z-panel-chat) flex max-h-[calc(100vh-1.5rem)] flex-col overflow-hidden shadow-[0_1px_2px_rgba(var(--elev-ink-rgb),0.04),0_24px_64px_rgba(var(--elev-ink-rgb),0.16)] sm:inset-x-auto sm:right-6 sm:top-24 sm:bottom-6 sm:w-[min(27.5rem,calc(100vw-3rem))]"
+    aria-label="Panel global de chat"
+  >
+    <header class="border-b border-line bg-gradient-to-b from-white to-surface/70 px-4 py-4 sm:px-5">
+      <div class="flex items-center justify-between gap-3">
+        <div class="flex min-w-0 items-center gap-3">
+          <span class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info deasy-icon-box--solid shadow-[0_8px_20px_rgba(37,99,235,0.28)]">
+            <component :is="view === 'conversation' ? activeModeIcon : IconMessages" class="h-5 w-5" :stroke="1.9" />
+          </span>
           <div class="min-w-0">
-            <p class="m-0 text-xs font-bold uppercase tracking-[0.18em] text-sky-600">Chat</p>
-            <h3 class="m-0 mt-1 truncate text-base font-bold text-slate-900">
-              {{ view === 'conversation' ? (thread?.title || 'Chat del proceso') : 'Bandeja de chats' }}
-            </h3>
-            <p class="m-0 mt-1 text-xs font-medium text-slate-500">
+            <h3 class="deasy-title deasy-title--block truncate">{{ headerTitle }}</h3>
+            <p v-if="headerSubtitle" class="m-0 mt-0.5 truncate text-xs font-medium text-muted">
               {{ headerSubtitle }}
             </p>
           </div>
-
-          <AppButton
-            variant="plain"
-            class-name="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-            aria-label="Cerrar chat"
-            title="Cerrar chat"
-            @click="closePanel"
-          >
-            <IconX class="h-5 w-5" />
-          </AppButton>
         </div>
 
-        <div class="mt-4 flex items-center gap-2">
-          <AppButton
-            v-if="view === 'conversation'"
-            variant="plain"
-            class-name="inline-flex h-10 items-center justify-center rounded-2xl border border-slate-200 bg-slate-50 px-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
-            @click="view = 'inbox'"
-          >
-            <IconArrowLeft class="h-4 w-4" />
-            Volver
-          </AppButton>
+        <AppCloseButton class="shrink-0" label="Cerrar chat" @click="closePanel" />
+      </div>
 
-          <div class="grid flex-1 grid-cols-3 gap-2">
-            <button
-              v-for="mode in modeOptions"
-              :key="mode"
-              type="button"
-              class="rounded-2xl border px-3 py-2 text-xs font-bold transition"
-              :class="activeMode === mode ? 'border-sky-200 bg-sky-50 text-sky-700' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300 hover:text-slate-700'"
-              @click="switchMode(mode)"
+      <div class="mt-4">
+        <AppButton
+          v-if="view === 'conversation'"
+          variant="neutral-outline"
+          @click="view = 'inbox'"
+        >
+          <IconArrowLeft class="h-4 w-4" />
+          Volver
+        </AppButton>
+
+        <nav v-else class="deasy-inline-tabs deasy-inline-tabs--stacked" role="tablist" aria-label="Modo del chat">
+          <button
+            v-for="mode in modeOptions"
+            :key="mode"
+            type="button"
+            :title="modeLabels[mode]"
+            :aria-label="modeLabels[mode]"
+            :aria-pressed="activeMode === mode"
+            role="tab"
+            class="deasy-inline-tab deasy-inline-tab--stacked"
+            :class="{ 'deasy-inline-tab--active': activeMode === mode }"
+            @click="switchMode(mode)"
+          >
+            <component :is="modeIcons[mode]" class="deasy-inline-tab__icon" :stroke="1.8" />
+            <span>{{ modeLabels[mode] }}</span>
+          </button>
+        </nav>
+      </div>
+
+      <label
+        v-if="view !== 'conversation'"
+        aria-label="Buscar conversación"
+        class="deasy-card mt-3 flex items-center gap-2 px-3 py-2.5 transition focus-within:border-blue-light-400 focus-within:ring-4 focus-within:ring-blue-light-500/10"
+      >
+        <IconSearch class="h-4 w-4 text-muted" />
+        <input
+          v-model="searchQuery"
+          type="search"
+          class="w-full border-0 p-0 text-sm font-medium text-body outline-none placeholder:text-muted"
+          placeholder="Buscar conversación"
+        >
+      </label>
+    </header>
+
+    <div class="min-h-0 flex-1 bg-surface/70">
+      <div v-if="loading" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+        <div class="h-12 w-12 animate-pulse rounded-full border border-blue-light-100 bg-blue-light-50" />
+        <p class="m-0 text-sm font-semibold">Cargando chat...</p>
+      </div>
+
+      <AppAlert class="m-4" v-else-if="error">
+        {{ error }}
+      </AppAlert>
+
+      <div v-else-if="view === 'conversation'" class="flex h-full min-h-0 flex-col">
+        <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+          <div v-if="messages.length" class="flex flex-col gap-3">
+            <article
+              v-for="message in messages"
+              :key="message.id"
+              class="deasy-chat-bubble"
+              :class="Number(message.sender_person_id) === Number(currentPersonId)
+                ? 'deasy-chat-bubble--sent'
+                : 'deasy-chat-bubble--received'"
             >
-              {{ modeLabels[mode] }}
+              <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
+                {{ message.content || 'Adjunto sin texto' }}
+              </p>
+              <div v-if="message.attachments?.length" class="mt-3 flex flex-col gap-2">
+                <button
+                  v-for="(attachment, attachmentIndex) in message.attachments"
+                  :key="`${message.id}-${attachmentIndex}-${attachment.path}`"
+                  type="button"
+                  class="deasy-picker deasy-picker--flat deasy-chat-attachment justify-between"
+                  @click="downloadAttachment(message, attachmentIndex)"
+                >
+                  <span class="truncate">{{ attachment.filename }}</span>
+                  <IconDownload class="h-4 w-4 shrink-0" />
+                </button>
+              </div>
+              <div
+                class="mt-2 flex items-center gap-2 text-theme-xs font-bold"
+                :class="Number(message.sender_person_id) === Number(currentPersonId) ? 'text-white/80' : 'text-muted'"
+              >
+                <span>{{ Number(message.sender_person_id) === Number(currentPersonId) ? 'Tú' : `Persona #${message.sender_person_id}` }}</span>
+                <span>·</span>
+                <span>{{ formatDateTime(message.created_at) }}</span>
+              </div>
+            </article>
+          </div>
+        </div>
+
+        <footer class="border-t border-line bg-white px-4 py-4 sm:px-5">
+          <div v-if="pendingAttachments.length" class="mb-3 flex flex-wrap gap-2">
+            <span
+              v-for="(file, index) in pendingAttachments"
+              :key="`${file.name}-${index}`"
+              class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs font-semibold text-icon"
+            >
+              <span class="max-w-40 truncate">{{ file.name }}</span>
+              <button type="button" class="deasy-chip-remove" @click="removePendingAttachment(index)">
+                <IconX class="h-3.5 w-3.5" />
+              </button>
+            </span>
+          </div>
+          <div class="flex items-end gap-3">
+            <input ref="attachmentInputRef" type="file" aria-label="Adjuntar archivos" class="hidden" multiple @change="handleAttachmentSelection">
+            <AppButton
+              variant="plain"
+              class-name="deasy-btn--field shrink-0"
+              aria-label="Adjuntar archivos"
+              title="Adjuntar archivos"
+              @click="attachmentInputRef?.click?.()" icon-only>
+              <IconPaperclip class="h-5 w-5" />
+            </AppButton>
+            <textarea
+              ref="composerRef"
+              v-model="draft"
+              rows="1"
+              aria-label="Mensaje del chat"
+              class="max-h-40 min-h-13 flex-1 resize-none border px-4 py-3 text-sm font-medium text-strong outline-none transition placeholder:text-muted"
+              placeholder="Escribe un mensaje"
+              @input="resizeComposer"
+              @keydown.enter.exact.prevent="sendMessage"
+            />
+            <AppButton
+              variant="primary-outline"
+              class-name="deasy-btn--field shrink-0"
+              :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
+              @click="sendMessage"
+            >
+              {{ submitting ? 'Enviando...' : 'Enviar' }}
+            </AppButton>
+          </div>
+        </footer>
+      </div>
+
+      <template v-else-if="activeMode === 'processes'">
+        <div v-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+          <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
+            <IconInbox class="h-6 w-6" />
+          </div>
+          <p class="m-0 text-sm font-bold text-body">Sin contexto de proceso</p>
+          <p class="m-0 max-w-xs text-sm font-medium text-muted">
+            Abre primero un proceso desde Home para dejar disponible su thread en el launcher global.
+          </p>
+        </div>
+
+        <div v-else class="px-4 pb-4 pt-4 sm:px-5">
+          <div v-if="filteredThreadItems.length" class="flex flex-col gap-3">
+            <button
+              v-for="item in filteredThreadItems"
+              :key="item.id"
+              type="button"
+              class="deasy-picker deasy-picker--flat"
+              @click="openThreadItem(item)"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="m-0 truncate text-sm font-bold text-navy">{{ item.title }}</p>
+                  <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <span class="deasy-overline block">
+                    {{ item.lastMessageAtLabel }}
+                  </span>
+                  <span
+                    v-if="Number(item.unreadCount || 0) > 0"
+                    class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-theme-xs font-bold text-white"
+                  >
+                    {{ item.unreadCount }}
+                  </span>
+                </div>
+              </div>
+              <p class="m-0 mt-3 text-sm font-medium text-icon">
+                {{ item.summary || 'Sin mensajes todavía. Usa este espacio para dar seguimiento al proceso.' }}
+              </p>
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <div v-else-if="activeMode === 'units'" class="flex h-full flex-col">
+        <div v-if="filteredUnitItems.length" class="px-4 pb-4 pt-4 sm:px-5">
+          <div class="flex flex-col gap-3">
+            <button
+              v-for="item in filteredUnitItems"
+              :key="item.unitId"
+              type="button"
+              class="deasy-picker deasy-picker--flat"
+              @click="openUnitItem(item)"
+            >
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="m-0 truncate text-sm font-bold text-navy">{{ item.title }}</p>
+                  <p class="m-0 mt-1 text-xs font-medium text-muted">{{ item.scopeLabel }}</p>
+                </div>
+                <div class="shrink-0 text-right">
+                  <span class="deasy-overline block">
+                    {{ item.lastMessageAtLabel }}
+                  </span>
+                  <span
+                    v-if="Number(item.unreadCount || 0) > 0"
+                    class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-blue-light-600 px-2 py-0.5 text-theme-xs font-bold text-white"
+                  >
+                    {{ item.unreadCount }}
+                  </span>
+                </div>
+              </div>
+              <p class="m-0 mt-3 text-sm font-medium text-icon">
+                {{ item.summary || 'Sin mensajes todavía. Saluda a los miembros de tu unidad.' }}
+              </p>
             </button>
           </div>
         </div>
 
-        <label class="mt-3 flex items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2.5">
-          <IconSearch class="h-4 w-4 text-slate-400" />
-          <input
-            v-model="searchQuery"
-            type="search"
-            class="w-full border-0 bg-transparent p-0 text-sm font-medium text-slate-700 outline-none placeholder:text-slate-400"
-            placeholder="Buscar conversación"
-          >
-        </label>
-      </header>
-
-      <div class="min-h-0 flex-1 bg-slate-50/70">
-        <div v-if="loading" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-          <div class="h-12 w-12 animate-pulse rounded-full border border-sky-100 bg-sky-50" />
-          <p class="m-0 text-sm font-semibold">Cargando chat...</p>
-        </div>
-
-        <div v-else-if="error" class="m-4 rounded-3xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-700">
-          {{ error }}
-        </div>
-
-        <div v-else-if="activeMode !== 'processes'" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
-            <IconMessages class="h-6 w-6" />
-          </div>
-          <p class="m-0 text-sm font-bold text-slate-700">Modo en preparación</p>
-          <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
-            {{ activeMode === 'groups' ? 'Los chats grupales se integrarán en este mismo panel.' : 'Los chats individuales se integrarán en este mismo panel.' }}
-          </p>
-        </div>
-
-        <div v-else-if="!storedContext.processId" class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-slate-500">
-          <div class="flex h-12 w-12 items-center justify-center rounded-full bg-white text-slate-400 shadow-sm">
-            <IconInbox class="h-6 w-6" />
-          </div>
-          <p class="m-0 text-sm font-bold text-slate-700">Sin contexto de proceso</p>
-          <p class="m-0 max-w-xs text-sm font-medium text-slate-500">
-            Abre primero un proceso desde el dashboard para dejar disponible su thread en el launcher global.
-          </p>
-        </div>
-
-        <div v-else-if="view === 'inbox'" class="flex h-full flex-col">
-          <div class="px-4 pb-4 pt-4 sm:px-5">
-            <div v-if="filteredThreadItems.length" class="flex flex-col gap-3">
-              <button
-                v-for="item in filteredThreadItems"
-                :key="item.id"
-                type="button"
-                class="rounded-3xl border border-slate-200 bg-white px-4 py-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-sky-200 hover:shadow-md"
-                @click="openThreadItem(item)"
-              >
-                <div class="flex items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <p class="m-0 truncate text-sm font-bold text-slate-900">{{ item.title }}</p>
-                    <p class="m-0 mt-1 text-xs font-medium text-slate-500">{{ item.scopeLabel }}</p>
-                  </div>
-                  <div class="shrink-0 text-right">
-                    <span class="block text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                      {{ item.lastMessageAtLabel }}
-                    </span>
-                    <span
-                      v-if="Number(item.unreadCount || 0) > 0"
-                      class="mt-1 inline-flex min-w-6 items-center justify-center rounded-full bg-sky-600 px-2 py-0.5 text-[11px] font-bold text-white"
-                    >
-                      {{ item.unreadCount }}
-                    </span>
-                  </div>
-                </div>
-                <p class="m-0 mt-3 text-sm font-medium text-slate-600">
-                  {{ item.summary || 'Sin mensajes todavía. Usa este espacio para dar seguimiento al proceso.' }}
-                </p>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div v-else class="flex h-full min-h-0 flex-col">
-          <div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
-            <div v-if="messages.length" class="flex flex-col gap-3">
-              <article
-                v-for="message in messages"
-                :key="message.id"
-                class="max-w-[88%] rounded-3xl px-4 py-3 shadow-sm"
-                :class="Number(message.sender_person_id) === Number(currentPersonId)
-                  ? 'ml-auto bg-sky-700 text-white'
-                  : 'mr-auto border border-slate-200 bg-white text-slate-800'"
-              >
-                <p class="m-0 whitespace-pre-wrap wrap-break-word text-sm font-medium leading-6">
-                  {{ message.content || 'Adjunto sin texto' }}
-                </p>
-                <div v-if="message.attachments?.length" class="mt-3 flex flex-col gap-2">
-                  <button
-                    v-for="(attachment, attachmentIndex) in message.attachments"
-                    :key="`${message.id}-${attachmentIndex}-${attachment.path}`"
-                    type="button"
-                    class="inline-flex items-center justify-between gap-3 rounded-2xl border px-3 py-2 text-left text-xs font-semibold"
-                    :class="Number(message.sender_person_id) === Number(currentPersonId)
-                      ? 'border-white/20 bg-white/10 text-white hover:bg-white/15'
-                      : 'border-slate-200 bg-slate-50 text-slate-700 hover:bg-slate-100'"
-                    @click="downloadAttachment(message, attachmentIndex)"
-                  >
-                    <span class="truncate">{{ attachment.filename }}</span>
-                    <IconDownload class="h-4 w-4 shrink-0" />
-                  </button>
-                </div>
-                <div
-                  class="mt-2 flex items-center gap-2 text-[11px] font-bold"
-                  :class="Number(message.sender_person_id) === Number(currentPersonId) ? 'text-white/80' : 'text-slate-400'"
-                >
-                  <span>{{ Number(message.sender_person_id) === Number(currentPersonId) ? 'Tú' : `Persona #${message.sender_person_id}` }}</span>
-                  <span>·</span>
-                  <span>{{ formatDateTime(message.created_at) }}</span>
-                </div>
-              </article>
-            </div>
-          </div>
-
-          <footer class="border-t border-slate-200 bg-white px-4 py-4 sm:px-5">
-            <div v-if="pendingAttachments.length" class="mb-3 flex flex-wrap gap-2">
-              <span
-                v-for="(file, index) in pendingAttachments"
-                :key="`${file.name}-${index}`"
-                class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600"
-              >
-                <span class="max-w-40 truncate">{{ file.name }}</span>
-                <button type="button" class="text-slate-400 transition hover:text-slate-600" @click="removePendingAttachment(index)">
-                  <IconX class="h-3.5 w-3.5" />
-                </button>
-              </span>
-            </div>
-            <div class="flex items-end gap-3">
-              <input ref="attachmentInputRef" type="file" class="hidden" multiple @change="handleAttachmentSelection">
-              <AppButton
-                variant="plain"
-                class-name="inline-flex h-[52px] w-[52px] shrink-0 items-center justify-center rounded-[18px] border border-slate-200 bg-slate-50 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
-                aria-label="Adjuntar archivos"
-                title="Adjuntar archivos"
-                @click="attachmentInputRef?.click?.()"
-              >
-                <IconPaperclip class="h-5 w-5" />
-              </AppButton>
-              <textarea
-                ref="composerRef"
-                v-model="draft"
-                rows="1"
-                class="max-h-40 min-h-13 flex-1 resize-none rounded-[22px] border border-slate-200 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-sky-300 focus:bg-white focus:ring-4 focus:ring-sky-100"
-                placeholder="Escribe un mensaje"
-                @input="resizeComposer"
-                @keydown.enter.exact.prevent="sendMessage"
-              />
-              <AppButton
-                variant="primary"
-                size="sm"
-                class-name="h-[52px] shrink-0 rounded-[18px] px-4"
-                :disabled="submitting || (!String(draft || '').trim() && !pendingAttachments.length)"
-                @click="sendMessage"
-              >
-                {{ submitting ? 'Enviando...' : 'Enviar' }}
-              </AppButton>
-            </div>
-          </footer>
-        </div>
+        <AppEmpty v-else :icon="IconBuildingCommunity" title="Sin unidades" class="h-full">No perteneces a ninguna unidad con miembros para conversar.</AppEmpty>
       </div>
-    </aside>
-  </div>
+
+      <div v-else class="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-muted">
+        <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round">
+          <IconMessages class="h-6 w-6" />
+        </div>
+        <p class="m-0 text-sm font-bold text-body">Modo en preparación</p>
+        <p class="m-0 max-w-xs text-sm font-medium text-muted">
+          {{ activeMode === 'groups' ? 'Los chats grupales se integrarán en este mismo panel.' : 'Los chats individuales se integrarán en este mismo panel.' }}
+        </p>
+      </div>
+    </div>
+  </aside>
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import AppButton from '@/shared/components/buttons/AppButton.vue';
+import AppCloseButton from '@/shared/components/buttons/AppCloseButton.vue';
 import ProcessDefinitionPanelService from '@/core/services/ProcessDefinitionPanelService.js';
+import realtimeClient from '@/core/services/realtimeClient.js';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import {
   IconArrowLeft,
+  IconBuildingCommunity,
   IconDownload,
   IconInbox,
   IconMessages,
   IconPaperclip,
+  IconRoute,
   IconSearch,
+  IconUser,
+  IconUsersGroup,
   IconX
 } from '@tabler/icons-vue';
 
-const props = defineProps({
+defineProps({
   currentPersonId: {
     type: [Number, String],
     default: null
@@ -269,6 +314,7 @@ const activeMode = ref('processes');
 const view = ref('inbox');
 const searchQuery = ref('');
 const thread = ref(null);
+const unitItems = ref([]);
 const messages = ref([]);
 const draft = ref('');
 const pendingAttachments = ref([]);
@@ -281,12 +327,22 @@ const storedContext = ref({
   accessibleScopeUnitIds: []
 });
 let pollTimer = null;
+let offMessage = null;
+let offNotification = null;
+let subscribedConversationId = null;
 
-const modeOptions = ['processes', 'groups', 'users'];
+const modeOptions = ['processes', 'units', 'groups', 'users'];
 const modeLabels = {
   processes: 'Procesos',
+  units: 'Unidades',
   groups: 'Grupos',
   users: 'Usuarios'
+};
+const modeIcons = {
+  processes: IconRoute,
+  units: IconBuildingCommunity,
+  groups: IconUsersGroup,
+  users: IconUser
 };
 
 const threadItems = computed(() => {
@@ -311,17 +367,36 @@ const filteredThreadItems = computed(() => {
   );
 });
 
+const filteredUnitItems = computed(() => {
+  const normalized = String(searchQuery.value || '').trim().toLowerCase();
+  if (!normalized) return unitItems.value;
+  return unitItems.value.filter((item) =>
+    [item.title, item.summary, item.scopeLabel]
+      .map((value) => String(value || '').toLowerCase())
+      .some((value) => value.includes(normalized))
+  );
+});
+
+const activeModeIcon = computed(() => modeIcons[activeMode.value] || IconMessages);
+
+const headerTitle = computed(() => {
+  if (view.value === 'conversation') {
+    return thread.value?.title || 'Conversación';
+  }
+  return 'Chat';
+});
+
 const headerSubtitle = computed(() => {
   if (view.value === 'conversation') {
-    return 'Seguimiento del proceso y sus entregables';
+    if (activeMode.value === 'units') {
+      return 'Miembros de la unidad';
+    }
+    if (activeMode.value === 'processes') {
+      return 'Seguimiento del proceso';
+    }
+    return '';
   }
-  if (activeMode.value === 'groups') {
-    return 'Modo grupos';
-  }
-  if (activeMode.value === 'users') {
-    return 'Modo usuarios';
-  }
-  return 'Modo procesos';
+  return '';
 });
 
 const loadStoredContext = () => {
@@ -381,10 +456,7 @@ const closePanel = () => {
   view.value = 'inbox';
   draft.value = '';
   pendingAttachments.value = [];
-  if (pollTimer) {
-    window.clearInterval(pollTimer);
-    pollTimer = null;
-  }
+  teardownConversationRealtime();
 };
 
 const resolveScopeUnitId = () => {
@@ -432,11 +504,58 @@ const openProcessThread = async ({ openConversation = false } = {}) => {
   }
 };
 
+const loadUnits = async () => {
+  loading.value = true;
+  error.value = '';
+  try {
+    const response = await service.listChatUnits();
+    const rows = Array.isArray(response?.data) ? response.data : [];
+    unitItems.value = rows.map((row) => {
+      const conversation = row?.conversation || null;
+      const memberCount = Number(row?.member_count || 0);
+      return {
+        unitId: Number(row?.unit_id) || null,
+        title: row?.label || `Unidad #${row?.unit_id}`,
+        scopeLabel: `${memberCount} ${memberCount === 1 ? 'miembro' : 'miembros'}`,
+        summary: conversation?.mobile_summary || '',
+        unreadCount: Number(conversation?.unread_count || 0),
+        lastMessageAt: conversation?.last_message_at || null,
+        lastMessageAtLabel: conversation?.last_message_at ? formatDateTime(conversation.last_message_at) : 'Nuevo'
+      };
+    }).filter((item) => item.unitId);
+  } catch (currentError) {
+    error.value = currentError?.response?.data?.message || currentError?.message || 'No se pudieron cargar las unidades.';
+  } finally {
+    loading.value = false;
+  }
+};
+
+const openUnitItem = async (item) => {
+  if (!item?.unitId) return;
+  loading.value = true;
+  error.value = '';
+  try {
+    const response = await service.createOrGetUnitThread(item.unitId);
+    thread.value = response?.data || null;
+    if (thread.value?.id) {
+      await loadMessages(thread.value.id);
+      await markRead(thread.value.id);
+    }
+    view.value = 'conversation';
+  } catch (currentError) {
+    error.value = currentError?.response?.data?.message || currentError?.message || 'No se pudo abrir el chat de la unidad.';
+  } finally {
+    loading.value = false;
+  }
+};
+
 const openLauncher = async () => {
   loadStoredContext();
   showChat.value = true;
   if (activeMode.value === 'processes' && storedContext.value.processId) {
     await openProcessThread({ openConversation: false });
+  } else if (activeMode.value === 'units') {
+    await loadUnits();
   }
 };
 
@@ -501,8 +620,13 @@ const sendMessage = async () => {
     pendingAttachments.value = [];
     await loadMessages(thread.value.id);
     await markRead(thread.value.id);
-    const refreshedThread = await service.getProcessThread(storedContext.value.processId, resolveScopeUnitId());
-    thread.value = refreshedThread?.data || thread.value;
+    if (activeMode.value === 'processes' && storedContext.value.processId) {
+      const refreshedThread = await service.getProcessThread(storedContext.value.processId, resolveScopeUnitId());
+      thread.value = refreshedThread?.data || thread.value;
+    } else {
+      const refreshedThread = await service.getConversation(thread.value.id);
+      thread.value = refreshedThread?.data || thread.value;
+    }
   } catch (currentError) {
     error.value = currentError?.response?.data?.message || currentError?.message || 'No se pudo enviar el mensaje.';
   } finally {
@@ -529,8 +653,12 @@ const switchMode = async (mode) => {
   activeMode.value = mode;
   view.value = 'inbox';
   error.value = '';
+  thread.value = null;
+  messages.value = [];
   if (mode === 'processes' && storedContext.value.processId) {
     await openProcessThread({ openConversation: false });
+  } else if (mode === 'units') {
+    await loadUnits();
   }
 };
 
@@ -568,40 +696,99 @@ watch(
   { immediate: true }
 );
 
+const refreshActiveConversation = async (conversationId) => {
+  if (loading.value || submitting.value) return;
+  if (!conversationId || thread.value?.id !== conversationId) return;
+  try {
+    await loadMessages(conversationId);
+    await markRead(conversationId);
+  } catch {
+    // no-op: la próxima emisión o el fallback reintentarán
+  }
+};
+
+const teardownConversationRealtime = () => {
+  if (offMessage) {
+    offMessage();
+    offMessage = null;
+  }
+  if (subscribedConversationId) {
+    realtimeClient.unsubscribeConversation(subscribedConversationId);
+    subscribedConversationId = null;
+  }
+  if (pollTimer) {
+    window.clearInterval(pollTimer);
+    pollTimer = null;
+  }
+};
+
+const setupConversationRealtime = async (conversationId) => {
+  teardownConversationRealtime();
+  if (!conversationId) return;
+
+  realtimeClient.connect();
+  subscribedConversationId = conversationId;
+  await realtimeClient.subscribeConversation(conversationId);
+
+  // Evento en tiempo real: nuevo mensaje en la conversación abierta.
+  offMessage = realtimeClient.on('chat.message.created', (envelope) => {
+    const incomingId = envelope?.conversation?.id;
+    if (incomingId && incomingId === conversationId) {
+      refreshActiveConversation(conversationId);
+    }
+  });
+
+  // Red de seguridad: si el socket está caído, refresca a baja frecuencia.
+  pollTimer = window.setInterval(() => {
+    if (realtimeClient.isConnected()) return;
+    refreshActiveConversation(conversationId);
+  }, 60000);
+};
+
 watch(
   () => [showChat.value, view.value, thread.value?.id],
   () => {
-    if (pollTimer) {
-      window.clearInterval(pollTimer);
-      pollTimer = null;
-    }
     if (showChat.value && view.value === 'conversation' && thread.value?.id) {
-      pollTimer = window.setInterval(async () => {
-        if (loading.value || submitting.value || !thread.value?.id) return;
-        try {
-          await loadMessages(thread.value.id);
-          await markRead(thread.value.id);
-        } catch {
-          // no-op fallback polling
-        }
-      }, 12000);
+      setupConversationRealtime(thread.value.id);
+    } else {
+      teardownConversationRealtime();
     }
   },
   { immediate: true }
 );
 
+const handleRealtimeNotification = async () => {
+  // Refresca el badge de no leídos del inbox cuando llega un aviso mientras no
+  // se está viendo la conversación (esa vista ya se refresca por mensajes).
+  if (!showChat.value || view.value === 'conversation') return;
+  try {
+    if (activeMode.value === 'processes' && storedContext.value.processId) {
+      const refreshed = await service.getProcessThread(storedContext.value.processId, resolveScopeUnitId());
+      thread.value = refreshed?.data || thread.value;
+    } else if (activeMode.value === 'units') {
+      await loadUnits();
+    }
+  } catch {
+    // no-op
+  }
+};
+
 onMounted(() => {
   loadStoredContext();
+  realtimeClient.connect();
+  offNotification = realtimeClient.on('chat.notification.created', handleRealtimeNotification);
   window.addEventListener('storage', loadStoredContext);
   window.addEventListener('workspace-chat:open-process', handleOpenProcessEvent);
   window.addEventListener('workspace-chat:context-updated', handleStorageUpdateEvent);
 });
 
 onBeforeUnmount(() => {
-  if (pollTimer) {
-    window.clearInterval(pollTimer);
-    pollTimer = null;
+  teardownConversationRealtime();
+  if (offNotification) {
+    offNotification();
+    offNotification = null;
   }
+  realtimeClient.disconnect();
   window.removeEventListener('storage', loadStoredContext);
   window.removeEventListener('workspace-chat:open-process', handleOpenProcessEvent);
   window.removeEventListener('workspace-chat:context-updated', handleStorageUpdateEvent);

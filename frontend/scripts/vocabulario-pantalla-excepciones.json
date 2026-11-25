@@ -1,0 +1,53 @@
+{
+  "_readme": [
+    "Frases donde una palabra RETIRADA del modelo sigue siendo correcta en castellano.",
+    "Cada una lleva su motivo y los ficheros donde vale: una excepcion suelta valdria en toda la",
+    "aplicacion y es justo lo que no se quiere. La puerta tambien falla si una excepcion deja de",
+    "usarse, para que la lista no se convierta en un cementerio.",
+    "NO añadas una entrada para callar la puerta: si no puedes escribir el motivo, el rotulo esta mal.",
+    "LO QUE ESTA PUERTA NO VIGILA, y conviene saberlo:",
+    "  · «Solicitar» / «Solicitante»: son otro verbo, no el nombre de las tablas retiradas.",
+    "  · «llenado»: «En llenado» y «Pendiente de llenado» son VALORES VIVOS de document_status, que",
+    "    comparan los disparadores de relevo del esquema. Traducirlos romperia los filtros, asi que la",
+    "    palabra no entra en la lista de muertas y no hace falta indultarla.",
+    "  · una frase falsa que no use ninguna palabra retirada. Esto reduce el hueco; no lo cierra."
+  ],
+  "frases": {
+    "Iniciar solicitud": {
+      "motivo": "VERBO, el mismo caso: es la accion que CREA los turnos, no uno de ellos.",
+      "ficheros": [
+        "src/modules/firmas/components/FirmarPdf.vue"
+      ]
+    },
+    "Solicitud singular": {
+      "motivo": "VERBO: distingue pedir firma de a un documento frente al lote. No nombra una fila.",
+      "ficheros": [
+        "src/modules/home/components/HomeSignatureEntry.vue"
+      ]
+    },
+    "solicitud de equipo": {
+      "motivo": "EJEMPLO de titulo que el usuario teclea en el campo («Ej. Memorando interno, solicitud de equipo…»). Es su castellano, no nuestro vocabulario.",
+      "ficheros": [
+        "src/modules/home/components/GeneralTaskModal.vue"
+      ]
+    },
+    "Este flujo": {
+      "motivo": "Espaniol corriente: «este flujo crea la plantilla y la sube a MinIO» habla del ASISTENTE, no del recorrido de un documento.",
+      "ficheros": [
+        "src/modules/admin/components/modals/AdminDraftArtifactModal.vue"
+      ]
+    },
+    "flujo operativo": {
+      "motivo": "Espaniol corriente: «probar el flujo operativo (Home, tareas, firmas)» es el recorrido de la PERSONA por la aplicacion.",
+      "ficheros": [
+        "src/modules/auth/views/SystemBootstrapView.vue"
+      ]
+    },
+    "consistencia del flujo": {
+      "motivo": "Espaniol corriente: avisa de que editar tablas tecnicas a mano puede romper el funcionamiento. No nombra el recorrido de un documento en concreto.",
+      "ficheros": [
+        "src/modules/admin/components/tables/AdminTableManager.vue"
+      ]
+    }
+  }
+}

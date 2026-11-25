@@ -1,0 +1,5411 @@
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+-- LOS OCHO ESQUEMAS: UNO POR TEMA
+--
+-- Un esquema de PostgreSQL es una carpeta dentro de la base. Con esto, el tema de una tabla deja de
+-- ser una afirmacion en un fichero y pasa a ser DONDE ESTA LA TABLA: que
+-- 'signature_requests' es de firmas lo dice la propia base de datos.
+--
+-- LAS 555 CONSULTAS DEL BACKEND NO CAMBIAN. El search_path de abajo hace que PostgreSQL resuelva
+-- los nombres sin cualificar igual que antes. Lo que cambia es que AHORA SE PUEDE cualificar, y que
+-- 'pg_dump -n firmas' saca un tema entero.
+--
+-- Y POR ESO SOLO HAY QUE CUALIFICAR LOS 'CREATE TABLE'. Un CREATE sin cualificar crearia la tabla
+-- en el PRIMER esquema del search_path, que seria el equivocado. Todo lo demas --los REFERENCES,
+-- los 163 indices, los 56 disparadores, los INSERT-- se resuelve por el search_path y se queda
+-- exactamente como estaba.
+--
+-- ⚠️ POR QUE HAY 'ALTER TABLE ... SET SCHEMA', CUANDO ESTE FICHERO NO TENIA NI UN ALTER.
+-- 'CREATE TABLE IF NOT EXISTS firmas.x' NO VE una 'public.x' que ya exista: crearia una tabla nueva
+-- y VACIA en 'firmas' y dejaria la vieja, con todos los datos, en 'public'. En silencio, y el
+-- sistema arrancaria como si la base estuviera recien instalada. Estas lineas mueven lo que ya
+-- hubiera: son idempotentes ('IF EXISTS' no falla si no esta) y NO TOCAN NI UNA FILA, porque
+-- 'SET SCHEMA' solo cambia donde vive la tabla. En una base nueva no hacen nada.
+--
+-- Los indices y los disparadores se mueven CON su tabla; no hay que decirles nada.
+--
+-- ⚠️ Las funciones van en 'public' explicitamente. Sin el 'public.' se crearian en el primer
+-- esquema del search_path, y en una base que ya existe quedarian DUPLICADAS con las de 'public'.
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+
+CREATE SCHEMA IF NOT EXISTS identidad;
+CREATE SCHEMA IF NOT EXISTS organizacion;
+CREATE SCHEMA IF NOT EXISTS procesos;
+CREATE SCHEMA IF NOT EXISTS plantillas;
+CREATE SCHEMA IF NOT EXISTS tareas;
+CREATE SCHEMA IF NOT EXISTS firmas;
+CREATE SCHEMA IF NOT EXISTS chat;
+CREATE SCHEMA IF NOT EXISTS empleo;
+
+-- LA UNICA EXTENSION DEL ESQUEMA (frente 27, decision D-04 del 2026-11-23).
+--
+-- `btree_gist` deja escribir una restriccion de EXCLUSION que mezcla una igualdad con un rango: «dos
+-- filas del MISMO nodo no pueden tener periodos que se solapen». Sin ella esa regla solo se puede
+-- comprobar con un disparador, y un disparador que lee sin bloquear deja pasar el solape cuando dos
+-- sesiones escriben a la vez (medido en el frente 26). PostgreSQL 17 no tiene `WITHOUT OVERLAPS`,
+-- que es de la 18.
+--
+-- Viene con PostgreSQL; crearla pide un usuario con permiso para ello, que en las pilas de compose
+-- es el de la aplicacion.
+CREATE EXTENSION IF NOT EXISTS btree_gist WITH SCHEMA public;
+
+SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public;
+
+-- ⚠️ AQUI NO HAY NINGUNA REUBICACION, Y ES EL CONTRATO DE ESTE FICHERO (TD7-s, decision del
+-- dueño): describe LA FORMA y nada mas. Una base con forma vieja no se pone al dia sola; se
+-- recrea. Lo vigila 'postgres_schema.test.js', que falla si aparece un ALTER TABLE, un ALTER
+-- COLUMN, un UPDATE de relleno o un bloque DO.
+--
+-- Y hace falta saberlo, porque el reparto en esquemas tiene una trampa: sobre una base que ya
+-- existe, 'CREATE TABLE IF NOT EXISTS firmas.x' NO VE la 'public.x' que ya esta. Crearia una tabla
+-- nueva y VACIA en 'firmas' y dejaria la vieja, con todos los datos, en 'public'. En silencio.
+--
+-- Asi que una base anterior a los esquemas se RESETEA ('scripts/reset-system.sh'), o se reubica a
+-- mano con 'scripts/migrar-a-esquemas.sql' antes de arrancar.
+
+CREATE OR REPLACE FUNCTION public.set_updated_at() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- LA VIGENCIA DE UN NODO DE LA ESTRUCTURA SE LEE DE DOS FECHAS (frente 27, decision D-03).
+--
+-- Una unidad, un proceso o un puesto ya no llevan una bandera `is_active`: llevan PERIODOS, uno por
+-- cada vez que han regido, con desde cuando y hasta cuando. De las dos fechas de un periodo salen
+-- estas lecturas, y TODAS dependen del dia en que se pregunta, que es por lo que esto es una funcion
+-- y no una columna guardada:
+--
+--     sin inicio                     -> borrador     (un nodo sin ningun periodo; ver abajo)
+--     inicio que aun no llega        -> programado   (tiene acto y fecha, todavia no rige)
+--     inicio cumplido y fin sin llegar -> vigente
+--     fin cumplido                   -> suprimido    (la fila se queda; deja de regir)
+--
+-- El periodo es SEMIABIERTO: rige desde `desde` inclusive hasta `hasta` EXCLUSIVE. «Se suprime
+-- desde el 1 de enero» es hasta = 1 de enero, y ese dia ya no rige. Es la misma convencion que
+-- usaran las relaciones fechadas, para que dos periodos seguidos no se solapen ni dejen hueco.
+--
+-- Hay UNA sola definicion, y es esta. Quien necesite saber si algo rige llama a la funcion: la
+-- condicion no se copia en cada consulta.
+CREATE OR REPLACE FUNCTION public.estado_de_vigencia(desde DATE, hasta DATE) RETURNS TEXT
+  LANGUAGE sql STABLE
+AS $$
+  SELECT CASE
+    WHEN desde IS NULL THEN 'borrador'
+    WHEN desde > CURRENT_DATE THEN 'programado'
+    WHEN hasta IS NOT NULL AND hasta <= CURRENT_DATE THEN 'suprimido'
+    ELSE 'vigente'
+  END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.esta_vigente(desde DATE, hasta DATE) RETURNS BOOLEAN
+  LANGUAGE sql STABLE
+AS $$
+  SELECT desde IS NOT NULL AND desde <= CURRENT_DATE AND (hasta IS NULL OR hasta > CURRENT_DATE);
+$$;
+
+-- Canonical schema aligned to docs/02-dominio-datos/consolidado.dbml
+
+-- ── GEOGRAFIA ────────────────────────────────────────────────────────────────────────────────────
+-- Catalogo encadenado pais -> provincia -> canton -> parroquia. Existe porque
+-- `persons` guardaba pais, provincia y ciudad como VARCHAR sueltos, y ademas DOS VECES: la columna
+-- `pais` que edita /admin y las `*_residencia` que escribe el registro, que no se hablaban entre si.
+--
+-- Los datos NO se escriben a mano: los genera backend/scripts/geografia/gen_catalogo.mjs y los
+-- siembra el bootstrap (seedGeographyCatalog). Paises del CLDR de Node con su ISO-3166 alfa-2;
+-- provincias, cantones y parroquias del Clasificador Geografico Estadistico 2025 del INEC.
+--
+-- POR QUE VAN EN EL BOOTSTRAP Y NO AQUI: en este fichero solo hay cuatro INSERT, todos vocabularios
+-- de ocho filas o menos de los que depende el codigo. Esto son 1 792 filas.
+--
+-- LA UNICIDAD DE UN CANTON ES (provincia, nombre), NUNCA el nombre: en Ecuador hay un canton
+-- "Bolivar" en Carchi y otro en Manabi, y un "Olmedo" en Loja y otro en Manabi.
+--
+-- ESTA TABLA SE LLAMABA "ciudades" HASTA EL 2026-09-08, y era un nombre falso: nunca guardo
+-- ciudades, guardo el CANTON -- el nivel que la division politica pone debajo de la provincia--. La
+-- cabecera cantonal, que si es la ciudad homonima, tiene ahora fila propia en `parroquias`.
+--
+-- ⚠️ NINGUN NOMBRE GEOGRAFICO ES UNIVERSAL, y este menos: en SUIZA un canton es el nivel de ARRIBA
+-- (el estado federado) y en FRANCIA es una subdivision electoral que ni siquiera es un gobierno
+-- local. Y `provincias` tiene el mismo problema -- es el nivel 1 en Ecuador y el 2 en España--. Por
+-- eso la ETIQUETA que ve el usuario NO sale del nombre de la tabla: sale de `nomenclatura_territorial`
+-- segun `instituciones.pais_id`. El nombre de la tabla es interfaz de programador; la etiqueta, del
+-- usuario.
+CREATE TABLE IF NOT EXISTS organizacion.paises (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  iso_alpha2 CHAR(2) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  name_en VARCHAR(120) NOT NULL,
+  phone_code VARCHAR(10) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_paises_set_updated_at BEFORE UPDATE ON paises FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- LA INSTITUCION QUE USA ESTA INSTALACION.
+--
+-- Es la primera tabla de CONFIGURACION del sistema: hasta el 2026-08-28 no habia ninguna, y por eso
+-- cosas que dependen del despliegue estaban escritas en el codigo. La que motiva esta tabla es el
+-- PAIS: de el salen el validador del documento nacional, su nombre local ("Cedula" en Ecuador,
+-- "DNI" en Peru) y el pais que el formulario precarga. Sin esto, "cedula_ec" era un TIPO del
+-- sistema en vez del nombre que un pais le da a su documento.
+--
+-- NO LLEVA RESTRICCION DE FILA UNICA, y es deliberado. Hoy hay una, pero la tabla es la puerta por
+-- la que entraria un modelo multi-inquilino, y un CHECK de singleton habria que quitarlo entonces —
+-- con el agravante de que este fichero no tiene ni un ALTER, asi que quitarlo no seria gratis.
+-- Quien resuelve "cual es la mia" es `InstitucionService.actual()`, que FALLA si hay cero o mas de
+-- una en vez de elegir en silencio. Ese metodo es la costura por donde entraria la resolucion del
+-- inquilino el dia que haya varias.
+CREATE TABLE IF NOT EXISTS organizacion.instituciones (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  nombre VARCHAR(180) NOT NULL,
+  pais_id INT NOT NULL REFERENCES paises(id),
+  -- QUE PIDE ESTA INSTITUCION: el sexo, el genero, o los dos.
+  --
+  -- No es una preferencia de formulario: en Ecuador la Ley Organica de Gestion de la Identidad
+  -- (2016) permite SUSTITUIR el campo "sexo" por "genero" en la cedula, una sola vez y solo entre
+  -- masculino y femenino. La cedula lleva UNO U OTRO, nunca los dos, asi que preguntar por los dos
+  -- a todo el mundo es pedir un dato que su documento no tiene.
+  --
+  -- Y en otros paises la cosa cambia -- hay documentos con marcador no binario y otros sin campo
+  -- ninguno--, asi que es la misma costura que `pais_id`: lo decide la institucion, no el codigo.
+  --
+  -- Gobierna `persons.sexo` y `persona_autoidentificacion.genero_id` -- el genero salio de `persons`
+  -- en P8 por ser dato sensible--. Los dos son NULABLES para que cualquiera de las tres politicas
+  -- sea consistente.
+  campo_sexo_genero TEXT NOT NULL DEFAULT 'ambos'
+    CHECK (campo_sexo_genero IN ('sexo','genero','ambos')),
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_instituciones_set_updated_at BEFORE UPDATE ON instituciones FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+
+CREATE TABLE IF NOT EXISTS organizacion.provincias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  dpa_code VARCHAR(2) NULL,
+  name VARCHAR(120) NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_provincias_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_provincias_pais_name ON provincias (pais_id, name);
+CREATE INDEX IF NOT EXISTS idx_provincias_pais ON provincias (pais_id);
+CREATE OR REPLACE TRIGGER trg_provincias_set_updated_at BEFORE UPDATE ON provincias FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS organizacion.cantones (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  provincia_id INT NOT NULL,
+  -- Codigo DPA del INEC: 4 digitos, los dos primeros los de la provincia.
+  dpa_code VARCHAR(4) NULL,
+  name VARCHAR(140) NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_cantones_provincia FOREIGN KEY (provincia_id) REFERENCES provincias(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_cantones_provincia_name ON cantones (provincia_id, name);
+CREATE INDEX IF NOT EXISTS idx_cantones_provincia ON cantones (provincia_id);
+CREATE OR REPLACE TRIGGER trg_cantones_set_updated_at BEFORE UPDATE ON cantones FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- LA CLASE DE UNA PARROQUIA. Catalogo y no CHECK, y no es celo: `cabecera / urbana / rural` es la
+-- codificacion del INEC, no una clasificacion universal -- muchos paises no tienen parroquias, y los
+-- que las tienen no las clasifican asi--. La regla del modelo es que lo que define una autoridad
+-- NACIONAL va a catalogo con pais_id y solo lo universal se queda en CHECK.
+CREATE TABLE IF NOT EXISTS organizacion.clases_parroquia (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  orden SMALLINT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_clases_parroquia_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_clases_parroquia ON clases_parroquia (pais_id, code);
+CREATE OR REPLACE TRIGGER trg_clases_parroquia_set_updated_at BEFORE UPDATE ON clases_parroquia FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- LA PARROQUIA: el nivel que faltaba, y sin el no hay lugar de nacimiento completo -- que es como lo
+-- pide una cedula ecuatoriana.
+CREATE TABLE IF NOT EXISTS organizacion.parroquias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  canton_id INT NOT NULL,
+  -- Codigo DPA del INEC: 6 digitos, los cuatro primeros los del canton.
+  dpa_code VARCHAR(6) NULL,
+  name VARCHAR(160) NOT NULL,
+  -- NULABLE a proposito: un pais cuya codificacion no clasifique sus divisiones de tercer nivel no
+  -- tendra filas en el catalogo, y con NOT NULL no se podria sembrar.
+  clase_id INT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_parroquias_canton FOREIGN KEY (canton_id) REFERENCES cantones(id),
+  CONSTRAINT fk_parroquias_clase FOREIGN KEY (clase_id) REFERENCES clases_parroquia(id)
+);
+-- LA IDENTIDAD DE UNA PARROQUIA ES SU CODIGO DPA, NO SU NOMBRE, y aqui la leccion va un nivel mas
+-- hondo que en cantones: el nombre no es unico NI DENTRO DE SU PROPIO CANTON. La cabecera cantonal
+-- de Azogues se llama "Azogues" y una de las parroquias urbanas de dentro tambien -- son 33 casos--.
+-- Con la clave (canton, nombre) la siembra perdia esas 33 EN SILENCIO: el UPSERT las tomaba por la
+-- misma fila y sembraba 1 281 en vez de 1 314.
+--
+-- Va sobre (canton_id, dpa_code) y no sobre dpa_code a secas porque el codigo es de la nomenclatura
+-- ECUATORIANA y otro pais podria repetirlo. Y es un unico COMPLETO y no parcial porque el adaptador
+-- de PostgreSQL descarta los parciales al inferir el target de ON CONFLICT (`indpred IS NULL` en
+-- config/postgres.js), asi que un unico parcial dejaria el UPSERT sin destino.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_parroquias_canton_dpa ON parroquias (canton_id, dpa_code);
+CREATE INDEX IF NOT EXISTS idx_parroquias_canton ON parroquias (canton_id);
+CREATE INDEX IF NOT EXISTS idx_parroquias_canton_name ON parroquias (canton_id, name);
+CREATE INDEX IF NOT EXISTS idx_parroquias_clase ON parroquias (clase_id);
+CREATE OR REPLACE TRIGGER trg_parroquias_set_updated_at BEFORE UPDATE ON parroquias FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- ── VOCABULARIOS DE LA PERSONA ───────────────────────────────────────────────────────────────────
+-- Cinco catalogos con la MISMA forma -- pais_id, code, name, orden--, y van a tabla y no a CHECK por
+-- la regla que fijo el frente 20: lo que define una autoridad NACIONAL va a catalogo con pais_id; lo
+-- universal se queda en CHECK. Un CHECK es global por definicion y no puede tener un valor para
+-- Ecuador y otro para Colombia.
+--
+-- Por eso el tipo de sangre NO esta aqui: son ocho valores de biologia, iguales en todas partes, y
+-- se queda en un CHECK de `persona_salud`. Y el SEXO tampoco: es el dato administrativo del
+-- documento y va en CHECK sobre `persons`.
+--
+-- Tablas SEPARADAS y no una generica con columna `eje`, que es lo que hace el resto del esquema.
+-- El ejemplo que habia aqui --`signature_statuses` y `signature_request_statuses`, identicas en
+-- forma y viviendo aparte-- ya no vale: la segunda murio en la fase 3 del frente 24 justamente por
+-- ser un catalogo donde bastaba un CHECK.
+--
+-- LOS CONSUMEN P2 (persons), P5 (persona_salud) y P7 (cargas_familiares); hasta entonces son
+-- catalogos sin referencias, y eso es el orden declarado del frente, no un olvido.
+
+-- EL GENERO.
+-- DOS valores en Ecuador, y no es una simplificacion nuestra: la Ley Organica de Gestion de la
+-- Identidad (2016) dice que la sustitucion de "sexo" por "genero" en la cedula solo admite masculino
+-- o femenino. Va a catalogo y no a CHECK porque OTRO pais puede tener mas -- hay documentos con
+-- marcador no binario-- y porque la lista se revisa mas a menudo de lo que un CHECK permite.
+CREATE TABLE IF NOT EXISTS identidad.generos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  orden SMALLINT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_generos_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_generos ON generos (pais_id, code);
+CREATE OR REPLACE TRIGGER trg_generos_set_updated_at BEFORE UPDATE ON generos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- EL ESTADO CIVIL.
+-- Lo fija el Registro Civil de cada pais, y la lista ecuatoriana incluye la UNION DE HECHO, que en
+-- otros ordenamientos no existe o se llama de otra forma. Ese es exactamente el motivo de catalogo.
+CREATE TABLE IF NOT EXISTS identidad.estados_civiles (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  orden SMALLINT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_estados_civiles_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_estados_civiles ON estados_civiles (pais_id, code);
+CREATE OR REPLACE TRIGGER trg_estados_civiles_set_updated_at BEFORE UPDATE ON estados_civiles FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- LA AUTOIDENTIFICACION ETNICA.
+-- Las ocho del censo del INEC. Va a catalogo por dos hechos medibles: la lista CAMBIA -- "montubio"
+-- se incorporo en 2010-- y NINGUN otro pais la usa. Un CHECK con estos ocho valores seria una
+-- afirmacion sobre el mundo entero que solo vale para Ecuador.
+CREATE TABLE IF NOT EXISTS identidad.autoidentificaciones_etnicas (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(100) NOT NULL,
+  orden SMALLINT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_autoidentificaciones_etnicas_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_autoidentificaciones_etnicas ON autoidentificaciones_etnicas (pais_id, code);
+CREATE OR REPLACE TRIGGER trg_autoidentificaciones_etnicas_set_updated_at BEFORE UPDATE ON autoidentificaciones_etnicas FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- EL TIPO DE DISCAPACIDAD.
+-- Los seis que reconoce el Ministerio de Salud del Ecuador. Otros paises clasifican distinto, y por
+-- eso es catalogo.
+--
+-- OJO PARA P5: si una persona tiene varias, la cedula ecuatoriana muestra solo la PREDOMINANTE, asi
+-- que una sola clave ajena en `persona_salud` es correcto y no una tabla puente. El porcentaje y el
+-- carne son de esa tarea, no de aqui.
+CREATE TABLE IF NOT EXISTS identidad.tipos_discapacidad (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  orden SMALLINT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_tipos_discapacidad_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tipos_discapacidad ON tipos_discapacidad (pais_id, code);
+CREATE OR REPLACE TRIGGER trg_tipos_discapacidad_set_updated_at BEFORE UPDATE ON tipos_discapacidad FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- EL PARENTESCO de una carga familiar.
+-- Lo fija el IESS -- conyuge o conviviente, e hijos-- y el SRI añade a los padres como carga
+-- deducible. Otro pais tiene otras figuras, y por eso es catalogo.
+--
+-- OJO PARA P7: una carga con discapacidad reconocida NO tiene limite de edad. Esa regla es de la
+-- tarea, no del catalogo.
+CREATE TABLE IF NOT EXISTS identidad.parentescos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  code VARCHAR(40) NOT NULL,
+  name VARCHAR(80) NOT NULL,
+  orden SMALLINT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_parentescos_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_parentescos ON parentescos (pais_id, code);
+CREATE OR REPLACE TRIGGER trg_parentescos_set_updated_at BEFORE UPDATE ON parentescos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- LA CATEGORIA DE UNA VISA.
+--
+-- Catalogo con pais_id, como los otros vocabularios de la persona: las categorias las fija la ley
+-- migratoria de CADA pais -- en Ecuador, la Ley Organica de Movilidad Humana-- y no hay nada
+-- universal que valga para todos.
+--
+-- `condicion` es TEXTO Y NO UN CHECK a proposito. La ley ecuatoriana agrupa sus categorias en tres
+-- condiciones (visitante temporal, residente temporal, residente permanente), pero esos nombres son
+-- DE ESA LEY: como la fila ya esta acotada por pais_id, un CHECK global seria falso para otro pais.
+CREATE TABLE IF NOT EXISTS identidad.categorias_visa (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  code VARCHAR(60) NOT NULL,
+  name VARCHAR(120) NOT NULL,
+  condicion VARCHAR(60) NULL,
+  orden SMALLINT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_categorias_visa_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_categorias_visa ON categorias_visa (pais_id, code);
+CREATE OR REPLACE TRIGGER trg_categorias_visa_set_updated_at BEFORE UPDATE ON categorias_visa FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- COMO SE LLAMA CADA NIVEL EN CADA PAIS. Existe porque los niveles NO SE ALINEAN: "Provincia" es el
+-- nivel 1 en Ecuador y el 2 en España, donde encima del suyo esta la comunidad autonoma. Ningun
+-- nombre de tabla puede ser correcto en los dos sitios; el NUMERO de nivel si lo es.
+--
+-- Lo resuelve InstitucionService.paisActual(), igual que el documento nacional: el formulario pide
+-- las etiquetas una vez y rotula sus tres desplegables.
+CREATE TABLE IF NOT EXISTS organizacion.nomenclatura_territorial (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  pais_id INT NOT NULL,
+  -- 1 = provincias · 2 = cantones · 3 = parroquias.
+  nivel SMALLINT NOT NULL CHECK (nivel BETWEEN 1 AND 3),
+  singular VARCHAR(60) NOT NULL,
+  plural VARCHAR(60) NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_nomenclatura_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_nomenclatura_pais_nivel ON nomenclatura_territorial (pais_id, nivel);
+CREATE OR REPLACE TRIGGER trg_nomenclatura_set_updated_at BEFORE UPDATE ON nomenclatura_territorial FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- Las tres tablas del organigrama que solo tenian created_at (unit_types, relation_unit_types y
+-- unit_relations) llevan updated_at desde el 2026-08-27. NO es simetria: en este esquema la AUSENCIA
+-- de updated_at es la marca de las tablas de solo-anadir. Las tres estan en el editor generico de
+-- /admin (config/sqlTables.js), o sea que reciben UPDATE, y sin la columna corrompian esa senal
+-- ademas de perder el dato. La mas grave era unit_relations: un UPDATE ahi MUEVE una unidad en el
+-- organigrama, y es la tabla que alimenta la vista recursiva unit_org_levels, que resuelve el
+-- alcance de reglas y flujos. Se podia reorganizar media universidad sin dejar la hora.
+--
+-- Lo que esto NO da: dice cuando, no QUIEN ni QUE cambio. Si hace falta auditoria real del
+-- organigrama, eso es una tabla de historia, no una columna.
+CREATE TABLE IF NOT EXISTS organizacion.unit_types (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  name VARCHAR(120) NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_unit_types_set_updated_at BEFORE UPDATE ON unit_types FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS organizacion.units (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  name VARCHAR(180) NOT NULL,
+  label VARCHAR(75) NULL,
+  slug VARCHAR(180) NOT NULL,
+  unit_type_id INT NOT NULL,
+  -- SIN `is_active` (frente 27, D-03). La vigencia de una unidad vive en `unit_vigencias`, mas
+  -- abajo: una fila por cada vez que ha regido. NO puede ir aqui ni aunque se quisiera: el acto
+  -- apunta a la unidad que lo emite, y si la unidad apuntase al acto que la creo las dos tablas se
+  -- necesitarian mutuamente y no habria orden en que crearlas.
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_units_unit_type FOREIGN KEY (unit_type_id) REFERENCES unit_types(id)
+);
+CREATE INDEX IF NOT EXISTS idx_units_unit_type ON units (unit_type_id);
+CREATE OR REPLACE TRIGGER trg_units_set_updated_at BEFORE UPDATE ON units FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS identidad.persons (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  first_name VARCHAR(120) NOT NULL,
+  last_name VARCHAR(120) NOT NULL,
+  -- La NACIONALIDAD. Antes era `pais VARCHAR(80)` y convivia con `pais_residencia`, que es lo que
+  -- escribe el registro y lo que su formulario etiqueta simplemente "Pais". Dos campos que se
+  -- llamaban pais, y el que veia /admin estaba vacio en las 43 filas de la semilla.
+  nacionalidad_pais_id INT NULL,
+
+  -- ── LO QUE LA PERSONA DECLARA DE SI MISMA ──────────────────────────────────────────────────────
+  -- Todo NULABLE, y no por dejadez: el registro publico pide lo minimo y esto se completa despues
+  -- en el perfil. Ponerlas obligatorias romperia el alta.
+  fecha_nacimiento DATE NULL,
+
+  -- DONDE NACIO, y NO es `nacionalidad_pais_id`: quien nace en Colombia puede ser ecuatoriano por
+  -- naturalizacion. Ese campo ya nacio de deshacer una confusion parecida entre `pais` y
+  -- `pais_residencia`, asi que conviene decirlo aqui y no volver a tropezar.
+  nacimiento_pais_id INT NULL,
+  -- EL CANTON, Y LA PROVINCIA SE DEDUCE DE EL (cantones.provincia_id). Guardar los dos seria una
+  -- redundancia que puede discrepar; guardar solo la hoja lo hace IMPOSIBLE, y es la clave ajena la
+  -- que garantiza que el canton pertenece a su provincia. La parroquia NO se guarda: su nombre no es
+  -- unico ni dentro de su propio canton -- 33 casos--, asi que como dato de nacimiento no distingue.
+  --
+  -- NULO cuando se nacio fuera: solo Ecuador tiene cantones sembrados. Con el pais basta.
+  -- Que el canton pertenezca al pais declarado NO lo puede comprobar un CHECK (haria falta un JOIN):
+  -- lo valida el servicio, reutilizando la resolucion por niveles de DireccionService.
+  nacimiento_canton_id INT NULL,
+
+  -- EL SEXO, dato administrativo del documento. CHECK y no catalogo porque es universal.
+  --
+  -- OJO: el vocabulario NO es el mismo que el de `generos`, y no es un descuido. La cedula
+  -- ecuatoriana rotula el sexo HOMBRE/MUJER y el genero -- cuando se sustituye-- MASCULINO/FEMENINO.
+  -- Son dos campos legales distintos, no dos nombres del mismo.
+  sexo TEXT NULL CHECK (sexo IN ('hombre','mujer')),
+
+  -- ⚠️ EL GENERO Y LA AUTOIDENTIFICACION ETNICA YA NO ESTAN AQUI. Entraron en P2 (2026-09-08) y
+  -- salieron en P8 (2026-09-10), y no por gusto: la LOPDP los nombra entre los datos SENSIBLES
+  -- (Art. 4: «etnia, identidad de genero») y `persons` la leen NUEVE roles por `people.read`, entre
+  -- ellos GestorFirmas, cuyo trabajo es un flujo de firma. Leer el nombre de alguien autorizaba a
+  -- leer su etnia. Viven en `persona_autoidentificacion`, con su propio recurso.
+  --
+  -- `sexo` y el estado civil NO estan en esa lista, y por eso se quedan.
+  estado_civil_id INT NULL,
+
+  password_hash VARCHAR(255) NOT NULL,
+  status TEXT CHECK (status IN ('Inactivo','Activo','Verificado','Reportado')) DEFAULT 'Inactivo',
+  photo_url TEXT DEFAULT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  token VARCHAR(10) NOT NULL UNIQUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_persons_nacionalidad FOREIGN KEY (nacionalidad_pais_id) REFERENCES paises(id),
+  CONSTRAINT fk_persons_nacimiento_pais FOREIGN KEY (nacimiento_pais_id) REFERENCES paises(id),
+  CONSTRAINT fk_persons_nacimiento_canton FOREIGN KEY (nacimiento_canton_id) REFERENCES cantones(id),
+  CONSTRAINT fk_persons_estado_civil FOREIGN KEY (estado_civil_id) REFERENCES estados_civiles(id)
+);
+CREATE INDEX IF NOT EXISTS idx_persons_nacionalidad ON persons (nacionalidad_pais_id);
+CREATE INDEX IF NOT EXISTS idx_persons_nacimiento_canton ON persons (nacimiento_canton_id);
+CREATE OR REPLACE TRIGGER trg_persons_set_updated_at BEFORE UPDATE ON persons FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ── LA AUTOIDENTIFICACION: EL GENERO Y LA ETNIA ────────────────────────────────────────────────
+-- Datos SENSIBLES segun la LOPDP (Art. 4) y por tanto categoria especial (Art. 25.a). Una fila por
+-- persona: la clave primaria ES la ajena, el idioma de subtipo que fijo el frente 18.
+--
+-- POR QUE UNA TABLA Y NO DOS COLUMNAS DE `persons`: el permiso se da sobre una TABLA. El editor de
+-- /admin no sabe ocultar columnas segun el rol, y enseñarle seria coser un caso especial en su
+-- camino generico. Aparte, la protegen su recurso -- `datos_sensibles`, que leen el titular por su
+-- perfil, GestorTalentoHumano y AdminSistema, y Auditor NO-- y la bitacora `accesos_sensibles`.
+--
+-- Todo NULABLE: se declara en el perfil, no en el alta, y que se pregunte el genero lo decide
+-- `instituciones.campo_sexo_genero`.
+CREATE TABLE IF NOT EXISTS identidad.persona_autoidentificacion (
+  person_id INT PRIMARY KEY,
+  genero_id INT NULL,
+  autoidentificacion_etnica_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_autoidentificacion_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_autoidentificacion_genero FOREIGN KEY (genero_id) REFERENCES generos(id),
+  CONSTRAINT fk_autoidentificacion_etnia FOREIGN KEY (autoidentificacion_etnica_id) REFERENCES autoidentificaciones_etnicas(id)
+);
+CREATE OR REPLACE TRIGGER trg_persona_autoidentificacion_set_updated_at BEFORE UPDATE ON persona_autoidentificacion FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- ── CORREOS ──────────────────────────────────────────────────────────────────────────────────────
+-- Una persona, muchos correos, cada uno con su tipo (personal | institucional).
+--
+-- ESTO TOCA EL LOGIN, y es lo que lo hace delicado: `persons.email` era UNIQUE y se entraba por el
+-- (`findByCedulaOrEmail`). Al pasar a 1:N hacen falta DOS garantias, no una:
+--
+--   1. `uq_emails_direccion`: la direccion es unica EN TODO EL SISTEMA. Sin esto, dos personas
+--      podrian declarar el mismo correo y el login no sabria a quien dejar entrar.
+--   2. `uq_emails_principal`: UN principal por persona -bandera generada + indice unico parcial, el
+--      mismo idioma que `uq_unit_head` o `uq_position_current`-. Sin esto, "manda el correo a esta
+--      persona" no tiene respuesta: es la ambiguedad que el modelo viejo evitaba por tener una sola
+--      columna, y que hay que reponer a proposito.
+--
+-- Ojo: el principal es UNO POR PERSONA, no uno por tipo. Con la direccion y el telefono si tiene
+-- sentido tener a la vez una principal de residencia y una de trabajo; con el correo no: el login y
+-- las notificaciones necesitan UNO.
+--
+-- La verificacion vive AQUI (`verificado`), no en `persons`. `verify_email` era una bandera de la
+-- persona teniendo un solo correo; con varios, verificar "a la persona" no significa nada.
+CREATE TABLE IF NOT EXISTS identidad.emails (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('personal','institucional')),
+  direccion VARCHAR(180) NOT NULL,
+  verificado SMALLINT NOT NULL DEFAULT 0,
+  verificado_at TIMESTAMP NULL,
+  principal SMALLINT NOT NULL DEFAULT 0,
+  principal_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN principal = 1 THEN 1 ELSE NULL END) STORED,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_emails_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_emails_direccion ON emails (direccion);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_emails_principal ON emails (person_id, principal_flag);
+CREATE INDEX IF NOT EXISTS idx_emails_person ON emails (person_id);
+CREATE OR REPLACE TRIGGER trg_emails_set_updated_at BEFORE UPDATE ON emails FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- ── DOCUMENTOS DE IDENTIDAD ──────────────────────────────────────────────────────────────────────
+-- Una persona, muchos documentos. Sustituye a `persons.cedula VARCHAR(20) UNIQUE`.
+--
+-- POR QUE. Esa columna cargaba TRES cosas a la vez: el numero, el TIPO de documento (implicito,
+-- "cedula ecuatoriana") y el PAIS emisor (implicito, Ecuador). De ahi salian tres problemas:
+--
+--   1. No se podia saber si "AB123456" era un pasaporte o una cedula mal tecleada. El formulario
+--      decia "Cedula o Pasaporte" y BORRABA todo lo que no fuera digito, asi que un extranjero no
+--      podia registrarse y su documento se mutilaba en silencio.
+--   2. No se podia validar el digito verificador de las que SI eran cedulas, porque no se sabia
+--      cuales lo eran.
+--   3. LA UNICIDAD GLOBAL ESTABA MAL. Un numero de pasaporte es unico POR PAIS EMISOR, no en el
+--      mundo: "AB123456" puede ser un pasaporte ecuatoriano Y uno español. `UNIQUE(cedula)` solo
+--      funcionaba porque implicitamente habia un tipo y un pais.
+--
+-- Por eso la unicidad aqui es (tipo, pais, numero), no el numero suelto.
+--
+-- Y hay UN principal por persona: es el que se enseña y por el que se entra, igual que con el
+-- correo. Mismo idioma que el resto del esquema: bandera generada + indice unico parcial.
+--
+-- La VERIFICACION vive en el documento, no en la persona: `validateCedulaEc()` valida UN documento
+-- contra el registro civil, no "a la persona".
+
+
+CREATE TABLE IF NOT EXISTS identidad.documentos_identidad (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  -- LAS CUATRO CLASES, y son las mismas en cualquier pais.
+  --
+  -- ⚠️ TRES SON DE IDENTIDAD Y LA CUARTA NO. Una VISA no dice quien eres: dice que se te permite
+  -- estar. Se guarda aqui igual, y no por comodidad -- lo decidio el dueño el 2026-09-08-- sino
+  -- porque necesita LO MISMO que las otras tres: numero, fecha de emision, fecha de caducidad y
+  -- escaneo. Y como FILA PROPIA y no como columna del pasaporte, que es lo importante: un pasaporte
+  -- caduca en 2030 y la visa que lleva dentro en 2027, asi que meterla en la misma fila obligaria a
+  -- esa fila a tener DOS fechas de caducidad.
+  --
+  -- Para una visa, `pais_id` es QUIEN LA CONCEDE -- Ecuador--, no la nacionalidad de la persona.
+  --
+  -- Aqui hubo una clave ajena a una tabla `tipos_documento` de TRES FILAS, y era la excepcion de su
+  -- propio grupo: `emails`, `telefonos` y `direcciones` resuelven su vocabulario con un CHECK. El
+  -- criterio del esquema es claro -- vocabulario cerrado sobre el que el codigo se ramifica, CHECK;
+  -- catalogo que crece y alguien administra, tabla -- y esto es lo primero: son fijas y el codigo
+  -- decide con ellas.
+  --
+  -- ⚠️ AQUI PONIA "y un valor nuevo NO DEBE poder crearse porque nadie sabria que hacer con el", y
+  -- el cuarto valor lo desmintio A MEDIAS: se creo, pero la advertencia acerto en lo que importaba.
+  -- Al entrar `visa` hubo DOS sitios que no supieron que hacer con ella, los dos por la misma
+  -- premisa tacita -- todo lo que no es un pasaporte es el documento nacional de algun pais --: el
+  -- validador le aplico la regla de la cedula, y `guardarPrincipal` CONVIRTIO en visa la cedula de
+  -- la persona en vez de anadir una fila. Lo que cierra eso no es un parche por sitio, es la linea
+  -- de abajo en `principal`. Si algun dia entra un quinto valor, la pregunta que hay que responder
+  -- ANTES es: ¿acredita identidad, o acredita otra cosa?
+  --
+  -- `documento_nacional` no dice de que pais: eso lo dice `pais_id`, y de quien es "el nacional" lo
+  -- dice `instituciones.pais_id`. Antes esta fila se llamaba `cedula_ec` y por eso Ecuador estaba
+  -- metido en el vocabulario del sistema.
+  tipo TEXT NOT NULL CHECK (tipo IN ('documento_nacional','documento_extranjero','pasaporte','visa')),
+  -- LA CATEGORIA DE LA VISA, y solo tiene sentido cuando `tipo` es 'visa'. El CHECK lo comprueba y
+  -- puede hacerlo porque mira UNA SOLA FILA: no hace falta un JOIN.
+  categoria_visa_id INT NULL,
+  -- OBLIGATORIO. La unicidad de un documento es (tipo, pais, numero) y sin pais no se sostiene: el
+  -- indice usaba `COALESCE(pais_id, 0)` para que las filas sin pais agruparan entre si, y ese cero
+  -- era un pais inventado. Al documento NACIONAL no se le pregunta -- se lo pone el trigger de mas
+  -- abajo desde `instituciones` -- pero se GUARDA, que es lo que mantiene el modelo uniforme.
+  pais_id INT NOT NULL,
+  numero VARCHAR(40) NOT NULL,
+  verificado SMALLINT NOT NULL DEFAULT 0,
+  verificado_at TIMESTAMP NULL,
+  emitido_el DATE NULL,
+  expira_el DATE NULL,
+  -- El PDF del documento escaneado, como referencia `minio://<bucket>/<objeto>` y NUNCA como URL:
+  -- una URL publica lleva dentro el endpoint del entorno, asi que mover la pila o cambiar de
+  -- dominio invalidaria todas las filas. La URL, si hace falta, se compone al leer. El expediente
+  -- si guarda URL completa (`dossier_items.url_documento`) y es justo el ejemplo a no repetir.
+  --
+  -- El objeto cuelga del ID de la persona y del documento —`users/<person_id>/documentos/<id>.pdf`—,
+  -- por lo mismo que las demas rutas desde el paso D: un numero de documento puede cambiar.
+  --
+  -- NULA significa "sin escaneo subido". Es el dato: saberlo sin preguntarle a MinIO es la razon de
+  -- guardar la referencia en vez de derivarla, porque la ruta si es derivable pero su EXISTENCIA no.
+  escaneo_ref VARCHAR(255) NULL,
+  escaneo_subido_at TIMESTAMP NULL,
+  -- EL DOCUMENTO POR EL QUE SE IDENTIFICA la persona. Uno por persona, y lo garantiza el indice
+  -- unico parcial sobre `principal_flag` sin necesidad de trigger.
+  --
+  -- ⚠️ LA VISA NO PUEDE SERLO, y no es una regla de gusto: de las cuatro clases, tres acreditan
+  -- identidad y la visa acredita permanencia. Quien tiene visa se identifica con su pasaporte. La
+  -- base no lo puede expresar -- seria un CHECK sobre dos columnas de la misma fila, que si podria,
+  -- pero dejaria fuera el motivo -- asi que lo impone `DocumentoIdentidadService`, con
+  -- `TIPOS_QUE_ACREDITAN_IDENTIDAD`, y lo cubre una prueba unitaria.
+  principal SMALLINT NOT NULL DEFAULT 0,
+  principal_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN principal = 1 THEN 1 ELSE NULL END) STORED,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_documentos_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_documentos_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
+  CONSTRAINT fk_documentos_categoria_visa FOREIGN KEY (categoria_visa_id) REFERENCES categorias_visa(id),
+  CONSTRAINT chk_documentos_categoria_visa CHECK (categoria_visa_id IS NULL OR tipo = 'visa')
+);
+-- (tipo, pais, numero) y NO el numero suelto: ver el punto 3 de arriba. `normalized_pais_id` existe
+-- porque un NULL no compara igual a otro NULL en un indice unico, y un documento sin pais emisor
+-- declarado tiene que seguir siendo unico dentro de su tipo.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_documentos_numero ON documentos_identidad (tipo, pais_id, numero);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_documentos_principal ON documentos_identidad (person_id, principal_flag);
+CREATE INDEX IF NOT EXISTS idx_documentos_person ON documentos_identidad (person_id);
+CREATE INDEX IF NOT EXISTS idx_documentos_numero ON documentos_identidad (numero);
+CREATE OR REPLACE TRIGGER trg_documentos_set_updated_at BEFORE UPDATE ON documentos_identidad FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+
+
+-- ── DIRECCIONES ──────────────────────────────────────────────────────────────────────────────────
+-- Una persona, muchas direcciones, cada una con su tipo.
+--
+-- POR QUE EXISTE. `persons` tenia SIETE columnas de direccion y, peor, DOS MODELOS que no se
+-- hablaban: `direccion` (texto libre) que exponia el editor de /admin, y las seis
+-- `*_residencia`/`calle_*`/`codigo_postal` que escribe el formulario de registro y que
+-- `config/sqlTables.js` ni siquiera mostraba. Ninguno de los dos se rellenaba: las 43 filas de la
+-- semilla los tenian todos vacios.
+--
+-- `codigo_postal` NO sobrevive: nadie lo leia fuera del formulario.
+--
+-- LATITUD Y LONGITUD SON NUEVAS Y NACEN NULAS. No "dejan de ser NOT NULL": en el esquema entero no
+-- habia ni una columna de coordenadas. Nulas porque la inmensa mayoria de direcciones no se van a
+-- geocodificar nunca, y una columna obligatoria que nadie puede rellenar bloquea el alta.
+--
+-- El pais, la provincia y el canton son CLAVES AJENAS al catalogo, no texto. Nulas para que una
+-- direccion del extranjero pueda dar pais sin que existan sus provincias en el catalogo, que solo
+-- tiene sembrado Ecuador.
+CREATE TABLE IF NOT EXISTS identidad.direcciones (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('residencia','trabajo')),
+  pais_id INT NULL,
+  provincia_id INT NULL,
+  canton_id INT NULL,
+  -- SECTOR Y BARRIO. Texto y no catalogo, y esta vez la regla del frente 20 dice justo eso: no los
+  -- fija ninguna autoridad nacional -- no hay un clasificador del INEC de barrios-- y los nombra la
+  -- gente. Un catalogo aqui seria una lista abierta que nadie mantiene.
+  --
+  -- Van ANTES de las calles porque es el orden en que se dicta una direccion en Ecuador: primero
+  -- donde queda, despues la calle.
+  sector VARCHAR(180) NULL,
+  barrio VARCHAR(180) NULL,
+  calle_primaria VARCHAR(180) NULL,
+  calle_secundaria VARCHAR(180) NULL,
+  referencia VARCHAR(255) NULL,
+  latitud NUMERIC(9,6) NULL,
+  longitud NUMERIC(9,6) NULL,
+  -- "Cual es LA direccion de esta persona" tiene que tener respuesta, o el perfil no sabe cual
+  -- enseñar. Mismo idioma que el resto del esquema (uq_unit_head, uq_position_current...): bandera
+  -- generada nula + indice unico parcial, que deja UNA principal por persona y tipo y no limita
+  -- cuantas puede haber.
+  principal SMALLINT NOT NULL DEFAULT 0,
+  principal_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN principal = 1 THEN 1 ELSE NULL END) STORED,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_direcciones_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_direcciones_pais FOREIGN KEY (pais_id) REFERENCES paises(id),
+  CONSTRAINT fk_direcciones_provincia FOREIGN KEY (provincia_id) REFERENCES provincias(id),
+  CONSTRAINT fk_direcciones_canton FOREIGN KEY (canton_id) REFERENCES cantones(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_direcciones_principal ON direcciones (person_id, tipo, principal_flag);
+CREATE INDEX IF NOT EXISTS idx_direcciones_person ON direcciones (person_id);
+CREATE OR REPLACE TRIGGER trg_direcciones_set_updated_at BEFORE UPDATE ON direcciones FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- ── TELEFONOS Y CANALES DE MENSAJERIA ────────────────────────────────────────────────────────────
+-- Una persona, muchos telefonos; un telefono, muchos canales.
+--
+-- POR QUE. `persons` tenia `whatsapp VARCHAR(30)` y `verify_whatsapp SMALLINT`: UN numero y UNA
+-- bandera para UN canal. El dia que entre Telegram no hay donde ponerlo, y "verificado" no dice
+-- verificado EN QUE.
+--
+-- UN TELEFONO PERTENECE A UNA SOLA PERSONA, y no es una preferencia de modelado: el numero es un
+-- canal de PRUEBA DE IDENTIDAD -lo valida un servicio externo, `validateWhatsappEc()`- y compartido
+-- deja "a quien acabo de verificar" sin respuesta. Lo impone `uq_telefonos_numero` sobre
+-- (pais_id, numero), no un comentario: sin ese indice, dos personas podrian tener la misma fila.
+--
+-- El numero se guarda LOCAL y el prefijo sale de `paises.phone_code`, en vez de concatenados. Asi
+-- el prefijo se corrige en un sitio si un pais lo cambia, y la unicidad compara lo que debe.
+--
+-- NO HAY COLUMNA DE OPERADORA, y es una decision del dueno del 2026-08-27 tras plantearse: con
+-- portabilidad numerica la operadora de un numero cambia sin que nadie avise, asi que guardarla es
+-- tener un campo que se pudre solo. Si alguna vez hace falta, se consulta al usarla.
+CREATE TABLE IF NOT EXISTS identidad.telefonos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  tipo TEXT NOT NULL CHECK (tipo IN ('personal','trabajo')),
+  pais_id INT NULL,
+  numero VARCHAR(30) NOT NULL,
+  principal SMALLINT NOT NULL DEFAULT 0,
+  principal_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN principal = 1 THEN 1 ELSE NULL END) STORED,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_telefonos_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE,
+  CONSTRAINT fk_telefonos_pais FOREIGN KEY (pais_id) REFERENCES paises(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_telefonos_numero ON telefonos (pais_id, numero);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_telefonos_principal ON telefonos (person_id, tipo, principal_flag);
+CREATE INDEX IF NOT EXISTS idx_telefonos_person ON telefonos (person_id);
+CREATE OR REPLACE TRIGGER trg_telefonos_set_updated_at BEFORE UPDATE ON telefonos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- El catalogo de canales es una TABLA y no un CHECK a proposito. El dueno lo pidio ampliable
+-- ("whatsapp, telegram, signal... se irian creando"), y en este esquema un CHECK nuevo NO se aplica
+-- a una base que ya existe: no queda ni un ALTER TABLE desde TD7-s, asi que ampliar el vocabulario
+-- obligaria a recrear. Una fila, en cambio, se inserta.
+CREATE TABLE IF NOT EXISTS identidad.canales_mensajeria (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(80) NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_canales_mensajeria_set_updated_at BEFORE UPDATE ON canales_mensajeria FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- `is_active` significa QUE ESTE CANAL FUNCIONA HOY, y es como ya lo lee `TelefonoService`
+-- (`WHERE code = ? AND is_active = 1`). No es una etiqueta: si el registro ofrece los canales
+-- activos, ofrece exactamente los que pueden verificar un numero.
+--
+-- Por eso `signal` entra en CERO: esta en el catalogo porque el dueno lo pidio ampliable, pero NO
+-- TIENE IMPLEMENTACION. Hasta el 2026-08-29 decia 1, y eso habria ofrecido al usuario un canal que
+-- no funciona.
+--
+-- Y `sms` NO ESTA, y no es un olvido: se DESCARTO el 2026-09-01, para siempre. El SMS entrante no
+-- prueba el numero -- la cabecera de origen la rellena el emisor y es falsificable desde una pasarela
+-- SMPP (DOI 10.1145/3615667; el ataque completo, 10.1145/3696011). Y aqui nosotros DAMOS la llave, asi
+-- que el ataque sale gratis: alguien declara el telefono de otro, recibe una llave valida y la
+-- devuelve falsificando el origen. Ademas, en Ecuador no existe alquilar un numero que reciba
+-- (Twilio: "Two-way SMS supported: No"). El porque completo, en el frente 15 del plan.
+INSERT INTO canales_mensajeria (code, name, is_active)
+SELECT v.code, v.name, v.activo
+FROM (VALUES
+  ('whatsapp','WhatsApp', 1),
+  ('telegram','Telegram', 1),
+  ('signal','Signal', 0)
+) AS v(code, name, activo)
+WHERE NOT EXISTS (SELECT 1 FROM canales_mensajeria c WHERE c.code = v.code);
+
+
+-- La verificacion es POR CANAL, que es lo que el modelo viejo no podia decir: `verify_whatsapp` era
+-- una bandera suelta que no distinguia "este numero existe" de "este numero tiene WhatsApp".
+CREATE TABLE IF NOT EXISTS identidad.telefono_canales (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  telefono_id INT NOT NULL,
+  canal_id INT NOT NULL,
+  verificado SMALLINT NOT NULL DEFAULT 0,
+  verificado_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_telefono_canales_telefono FOREIGN KEY (telefono_id) REFERENCES telefonos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_telefono_canales_canal FOREIGN KEY (canal_id) REFERENCES canales_mensajeria(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_telefono_canales ON telefono_canales (telefono_id, canal_id);
+
+
+-- LA LLAVE CON LA QUE ALGUIEN DEMUESTRA QUE UN NUMERO ES SUYO.
+--
+-- La persona la lleva a un canal -- un QR de Telegram, un enlace de WhatsApp -- que envia
+-- ella-- y el microservicio `channels` la trae de vuelta. Aqui se comprueba y se consume.
+-- El diseno completo esta en docs/arquitecturas/microservicio-channels.md.
+--
+-- SE CIFRA CON SHA-256 Y NO CON BCRYPT, al reves que `email_verification_codes`, y el motivo no es
+-- descuido:
+--
+--   · bcrypt lleva SAL, asi que el mismo texto da un hash distinto cada vez y NO SE PUEDE BUSCAR
+--     por el. El correo puede permitirselo porque el usuario dice de que correo habla y la busqueda
+--     va por `email_id`. Aqui el servicio SOLO TIENE LA LLAVE: encontrar de que telefono es *es* la
+--     operacion.
+--   · Y basta: bcrypt existe para secretos de poca entropia -- contrasenas, seis digitos -- donde
+--     hay que frenar a quien prueba a ciegas. Una llave aleatoria de 256 bits no se adivina
+--     probando. Es lo que se usa para credenciales de API.
+--
+-- SE MARCA COMO CONSUMIDA EN VEZ DE BORRARSE, tambien a proposito: asi se distingue "esa llave no
+-- existe" de "esa llave ya se uso", y al usuario se le puede decir "este enlace ya se uso, pide
+-- otro" en vez de "no valido", que no explica nada.
+--
+-- `canal_id` es CLAVE AJENA al catalogo y no un CHECK. Se penso al reves y estaba mal: verificar
+-- por Telegram demuestra que el numero es suyo Y que tiene Telegram, que es exactamente el hecho
+-- que `telefono_canales` guarda. Con un CHECK aparte habria dos vocabularios para un solo suceso.
+CREATE TABLE IF NOT EXISTS identidad.telefono_verification_keys (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  telefono_id INT NOT NULL,
+  llave_hash CHAR(64) NOT NULL,
+  expira_at TIMESTAMP NOT NULL,
+  -- NULA mientras no se use. Al consumirla se apuntan las dos cosas: cuando y POR DONDE.
+  consumida_at TIMESTAMP NULL,
+  canal_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_tvk_telefono FOREIGN KEY (telefono_id) REFERENCES telefonos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_tvk_canal FOREIGN KEY (canal_id) REFERENCES canales_mensajeria(id)
+);
+-- UNICO: la llave es la que se busca, y dos filas con la misma serian dos telefonos verificables
+-- con el mismo enlace.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tvk_llave ON telefono_verification_keys (llave_hash);
+CREATE INDEX IF NOT EXISTS idx_tvk_telefono ON telefono_verification_keys (telefono_id);
+CREATE INDEX IF NOT EXISTS idx_tvk_expira ON telefono_verification_keys (expira_at);
+
+
+-- LO QUE SE HA INTENTADO Y CUENTA PARA UN LIMITE.
+--
+-- NO ES UNA BITACORA GENERAL: aqui solo entra lo que se frena. Registrar cada peticion doblaria las
+-- escrituras del sistema para no usarlas.
+--
+-- ⚠️ VIVE EN LA BASE Y NO EN MEMORIA, y eso ya estaba decidido: el unico freno que existia
+-- (`reenviarMiCodigo`) lo dice por escrito -- «un contador en memoria dejaria de proteger en cuanto
+-- hubiera dos instancias». Ahora mismo hay UNA sola instancia del backend, pero el dia que haya dos
+-- este contador seguira siendo uno.
+--
+-- ⚠️ `sujeto` ES UN TEXTO A PROPOSITO, no una clave ajena. Lo que se cuenta cambia con la accion --una
+-- IP, un correo+ip, un person_id-- y hay acciones ANONIMAS en las que no existe ninguna fila a la que
+-- apuntar. Atarlo al modelo dejaria fuera justo los casos que mas hay que frenar.
+--
+-- El porque de cada regla, en docs/arquitecturas/limitador-de-intentos.md.
+CREATE TABLE IF NOT EXISTS identidad.intentos_limitados (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- Que se intento: 'login', 'validar_cedula', 'registro'... El catalogo vive en el codigo
+  -- (`REGLAS`), no aqui: una accion sin regla no se cuenta, asi que una fila huerfana no hace daño.
+  accion VARCHAR(60) NOT NULL,
+  -- CONTRA QUE se cuenta. Su forma la decide la accion.
+  sujeto VARCHAR(160) NOT NULL,
+  ocurrido_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+-- La consulta del limitador es SIEMPRE (accion, sujeto, ventana): este indice es su forma exacta.
+-- Sin el, cada peticion frenada recorreria la tabla entera, y entonces el limitador seria el ataque.
+CREATE INDEX IF NOT EXISTS idx_intentos_ventana
+  ON intentos_limitados (accion, sujeto, ocurrido_at DESC);
+
+
+-- EL HISTORIAL DE CAIDAS DE LOS CANALES (C10).
+--
+-- Una fila por CAMBIO de estado, no por comprobacion: anotando cada vuelta serian 1 440 filas al dia
+-- por canal para decir «sigue bien».
+--
+-- ⚠️ Esto es lo unico que un diseño por EVENTOS daba y el de PREGUNTAR no. Se consigue igual
+-- preguntando, y con una ventaja que los eventos no tienen: un servicio MUERTO tambien queda anotado
+-- --que es justo el caso que importa, y del que un proceso caido no puede avisar--.
+--
+-- Contesta «¿cuanto llevaba roto?», que es la pregunta que nadie pudo responder el 2026-08-31,
+-- cuando el servicio estuvo TRECE HORAS parado sin que nada lo dijera.
+CREATE TABLE IF NOT EXISTS identidad.canales_bitacora (
+  id        BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- 'telegram' | 'whatsapp' | 'servicio'. «servicio» es el propio channels: si NO CONTESTA, eso es
+  -- un estado y hay que poder contarlo -- es el unico que importaba el dia de las trece horas.
+  canal     VARCHAR(40) NOT NULL,
+  salud     VARCHAR(20) NOT NULL,
+  evidencia VARCHAR(20) NULL,
+  detalle   TEXT NULL,
+  desde     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Se cierra al cambiar de estado. NULO significa «sigue asi ahora mismo», y es lo que se consulta
+  -- para saber cuanto lleva.
+  hasta     TIMESTAMP NULL,
+  -- Para no avisar dos veces de lo mismo: el aviso va en la TRANSICION, no en el estado.
+  avisado_at TIMESTAMP NULL
+);
+CREATE INDEX IF NOT EXISTS idx_canales_bitacora ON canales_bitacora (canal, desde DESC);
+
+
+-- LOS TEXTOS LEGALES QUE UNA PERSONA ACEPTA, VERSION A VERSION.
+--
+-- Sigue el patron de `ediciones` --version, estado de ciclo de vida, huella del contenido--
+-- porque es el mismo problema y no hace falta un mecanismo nuevo.
+--
+-- ⚠️ AQUI NO HAY NI UNA LETRA DEL TEXTO. Esta tabla dice DONDE esta (bucket, clave y version de
+-- objeto) y QUE DECIA (la huella); el texto vive en MinIO. Una columna TEXT no demuestra nada: quien
+-- puede escribir en la base puede reescribir el texto y recalcular su huella en la misma sentencia,
+-- y no queda rastro. El archivo con bloqueo de objetos si: una vez escrito no lo borra nadie.
+--
+-- ⚠️ SON DOS BUCKETS, Y ESO ES LO QUE SEPARA BORRADOR DE PUBLICADO. El borrador se guarda en un
+-- bucket versionado y corriente --cada guardado es una version de objeto, y ESE es el historial de
+-- edicion--; lo publicado se copia a uno con retencion COMPLIANCE. Con un solo bucket bloqueado,
+-- cada pulsacion de «guardar» seria inmutable diez años. Publicar es lo que mueve el texto de un
+-- bucket al otro, y es IRREVERSIBLE.
+CREATE TABLE IF NOT EXISTS identidad.documentos_legales (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- 'terminos_de_uso' | 'tratamiento_de_datos'. Son DOS documentos y DOS casillas porque el Art. 8
+  -- de la LOPDP exige que el consentimiento sea ESPECIFICO y que, con varias finalidades, CONSTE
+  -- para todas ellas. Ademas los terminos son un CONTRATO (Art. 7.5), no consentimiento de datos.
+  clase VARCHAR(60) NOT NULL,
+  version VARCHAR(40) NOT NULL,
+  -- ⚠️ SHA-256 del texto EXACTO que se enseño. Sin esto se guarda «acepto la version 2» y no se
+  -- puede demostrar que decia la version 2 — que es justo lo que el Art. 5 del Reglamento exige
+  -- poder demostrar. Mientras el documento es borrador dice que hay escrito ahora; al publicar se
+  -- recalcula sobre los bytes que de verdad entran en el archivo.
+  contenido_hash CHAR(64) NULL,
+  -- Donde esta el texto AHORA. Siendo borrador apunta al bucket de borradores; al publicar pasa a
+  -- apuntar al archivo. Nulos solo en el instante entre crear la fila y su primer guardado.
+  bucket VARCHAR(120) NULL,
+  object_key VARCHAR(500) NULL,
+  -- ⚠️ LA VERSION DE OBJETO, Y POR ESO SE LEE SIEMPRE POR ELLA Y JAMAS POR LA CLAVE. El bloqueo del
+  -- archivo protege la VERSION, no la clave: un objeto bloqueado SE PUEDE SOBRESCRIBIR --la version
+  -- vieja sobrevive intacta, pero quien lea «el objeto en esa clave» recibe lo nuevo--. Sin esta
+  -- columna, tener archivo inmutable y no usarlo. Se rellena al publicar y no antes: un borrador no
+  -- tiene ninguna version que sea LA suya.
+  object_version_id VARCHAR(120) NULL,
+  -- draft: se puede editar. published: se puede aceptar, y ya no se toca. retired: no se ofrece,
+  -- PERO SE CONSERVA -- hay gente cuya prueba apunta a el.
+  estado TEXT CHECK (estado IN ('draft','published','retired')) NOT NULL DEFAULT 'draft',
+  publicado_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_documento_legal ON documentos_legales (clase, version);
+-- UNA sola version publicada por clase: con dos, «que acepto» seria ambiguo.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_documento_legal_vigente
+  ON documentos_legales (clase) WHERE estado = 'published';
+
+
+-- LA PRUEBA DE QUE ALGUIEN ACEPTO, QUE ES LO QUE HOY NO EXISTE.
+--
+-- ⚠️ HASTA AHORA NO SE GUARDABA NADA. Habia una casilla en el formulario que se validaba EN EL
+-- NAVEGADOR y moria ahi: no viajaba al backend y ninguna tabla la recibia. Una validacion de
+-- JavaScript no prueba nada, se salta con la consola abierta.
+--
+-- El Art. 5 del Reglamento es literal: el consentimiento «debera ser DEMOSTRADO por el responsable
+-- que lo obtiene, cuando asi sea requerido por la autoridad competente». Y el Art. 10.k de la Ley
+-- exige ACREDITAR. Demostrable son cuatro cosas: quien, a que, cuando, y QUE DECIA EL TEXTO -- esa
+-- ultima la aporta `documentos_legales.contenido_hash`.
+CREATE TABLE IF NOT EXISTS identidad.consentimientos (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- ⚠️ SIN CLAVE AJENA, Y ES DELIBERADO. La Ley (Art. 18.4) y el Reglamento (Art. 11.2) dicen que la
+  -- eliminacion NO PROCEDE cuando los datos son necesarios «para la formulacion, el ejercicio o la
+  -- defensa de reclamaciones» -- y la prueba de que alguien consintio es exactamente eso. Con una
+  -- clave ajena, borrar a la persona seria imposible o se llevaria la prueba por delante; sin ella,
+  -- la fila SOBREVIVE a la persona, que es lo que la norma permite.
+  person_id INT NOT NULL,
+  documento_id INT NOT NULL,
+  aceptado_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Situa el acto. No se publica ni se usa para nada mas.
+  ip VARCHAR(60) NULL,
+  -- La revocatoria es un derecho (Art. 8 de la Ley, Art. 6 del Reglamento). Se MARCA, no se borra:
+  -- el tratamiento anterior fue licito --la revocatoria no tiene efectos retroactivos-- y borrar el
+  -- rastro destruiria la prueba de que lo fue.
+  revocado_at TIMESTAMP NULL,
+  CONSTRAINT fk_consentimiento_documento FOREIGN KEY (documento_id) REFERENCES documentos_legales(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_consentimiento ON consentimientos (person_id, documento_id);
+CREATE INDEX IF NOT EXISTS idx_consentimiento_persona ON consentimientos (person_id);
+
+-- LA BITACORA DE ACCESOS A DATOS SENSIBLES Y DE PAGO (frente 20, P8).
+--
+-- ⚠️ NO LA EXIGE LA LEY CON ESE NOMBRE, y conviene no venderla asi. El «registro de actividades de
+-- tratamiento» del Art. 38 del Reglamento es OTRA COSA: el inventario de fines, destinatarios y
+-- plazos. Esta tabla es una medida tecnica que elegimos, apoyada en el Art. 41.4 de la Ley, que
+-- manda considerar el «acceso no autorizado o exceso de autorizacion». Sin rastro, un exceso de
+-- autorizacion no se puede ni detectar -- y P8 encontro uno: diecinueve tablas que caian al permiso
+-- de procesos sin que nadie lo supiera.
+--
+-- QUE SE APUNTA: cada lectura hecha por alguien que NO es el titular, y toda escritura. Una pagina de
+-- 50 filas son hasta 50 entradas: es el coste de poder responder «quien vio lo de esta persona».
+--
+-- POR DONDE ENTRA una escritura, y las cuatro quedan, con su entrada EN LA MISMA TRANSACCION: el editor
+-- de /admin, el perfil del titular (PATCH /users/me: su documento, su genero y su etnia), el alta del
+-- registro y el escaneo del documento, que tambien pueden subir o bajar AdminSistema y Talento Humano.
+-- NO se apunta la semilla del sistema -- el bootstrap y los datos de ejemplo--: ahi no escribe una persona.
+--
+-- ⚠️ SOLO ADMITE ALTAS. El trigger de abajo rechaza UPDATE y DELETE, y el editor de /admin rechaza
+-- el alta a mano (hook en tableHooks.js): una bitacora que se puede corregir no prueba nada.
+CREATE TABLE IF NOT EXISTS identidad.accesos_sensibles (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- ⚠️ SIN CLAVES AJENAS, por el mismo motivo que `consentimientos`: la evidencia tiene que
+  -- sobrevivir a la persona. Con una FK, borrarla seria imposible o se llevaria el rastro.
+  titular_person_id INT NOT NULL,
+  actor_person_id INT NOT NULL,
+  recurso TEXT NOT NULL CHECK (recurso IN ('datos_sensibles','datos_pago')),
+  tabla VARCHAR(60) NOT NULL,
+  registro_id BIGINT NULL,
+  accion TEXT NOT NULL CHECK (accion IN ('read','create','update','delete')),
+  -- En una escritura, QUE campos cambiaron: los NOMBRES, nunca los valores. Copiar aqui la
+  -- discapacidad de alguien convertiria la bitacora en otra copia del dato que protege -- y esta la
+  -- lee Auditor--. En `datos_pago` (P6) llevara el numero de cuenta anterior y el nuevo, ENMASCARADOS.
+  detalle JSONB NULL,
+  ip VARCHAR(60) NULL,
+  ocurrido_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_accesos_sensibles_titular ON accesos_sensibles (titular_person_id, ocurrido_at);
+CREATE INDEX IF NOT EXISTS idx_accesos_sensibles_actor ON accesos_sensibles (actor_person_id, ocurrido_at);
+
+CREATE OR REPLACE FUNCTION public.rechazar_modificacion_de_bitacora() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  -- Sirve a todas las bitacoras del esquema: la de accesos sensibles y la de correcciones.
+  RAISE EXCEPTION 'Esta bitacora solo admite altas: % no esta permitido.', TG_OP;
+END;
+$$ LANGUAGE plpgsql;
+CREATE OR REPLACE TRIGGER trg_accesos_sensibles_solo_altas BEFORE UPDATE OR DELETE ON accesos_sensibles FOR EACH ROW EXECUTE FUNCTION rechazar_modificacion_de_bitacora();
+
+-- ⚠️ LA VERSION 1 DE CADA TEXTO YA NO SE SIEMBRA AQUI, Y NO ES UNA PREFERENCIA DE ESTILO: DESDE QUE
+-- EL TEXTO VIVE EN MinIO, UN `INSERT` NO PUEDE SEMBRARLO. SQL no sabe escribir en un bucket, y una
+-- fila publicada sin objeto detras seria un documento sin texto: la pantalla de registro no tendria
+-- nada que enseñar y la huella no apuntaria a nada verificable.
+--
+-- El texto inicial entra por el bucket de borradores (la importacion de MinIO), y la fila la sella
+-- `DocumentosLegales.publicar()`, que es el unico camino que copia los bytes al archivo, los relee
+-- por su version de objeto y comprueba la huella. Cualquier otro atajo produciria una fila que dice
+-- apuntar a una prueba sin apuntar a ninguna.
+
+CREATE OR REPLACE TRIGGER trg_telefono_canales_set_updated_at BEFORE UPDATE ON telefono_canales FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+
+CREATE TABLE IF NOT EXISTS identidad.person_certificates (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  label VARCHAR(180) NOT NULL,
+  original_filename VARCHAR(255) NOT NULL,
+  bucket VARCHAR(120) NOT NULL,
+  object_name VARCHAR(500) NOT NULL,
+  is_default SMALLINT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_person_certificates_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_person_certificates_person ON person_certificates (person_id);
+CREATE INDEX IF NOT EXISTS idx_person_certificates_default ON person_certificates (person_id, is_default);
+CREATE OR REPLACE TRIGGER trg_person_certificates_set_updated_at BEFORE UPDATE ON person_certificates FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS organizacion.relation_unit_types (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(40) NOT NULL,
+  description VARCHAR(255) NULL,
+  is_inheritance_allowed SMALLINT NOT NULL DEFAULT 0,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_relation_unit_types_set_updated_at BEFORE UPDATE ON relation_unit_types FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+INSERT INTO relation_unit_types (code, name, description, is_inheritance_allowed, is_active)
+SELECT
+  'org',
+  'Organica',
+  'Relacion jerarquica organizacional',
+  1,
+  1
+WHERE NOT EXISTS (
+  SELECT 1
+  FROM relation_unit_types
+  WHERE code = 'org'
+);
+
+-- `unit_relations` SE DECLARA MAS ABAJO, tras `actos` y las vidas de la unidad (frente 27, D-04):
+-- desde que la arista lleva fechas apunta al acto que la abrio y al que la cerro.
+
+
+CREATE TABLE IF NOT EXISTS identidad.cargos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(120) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL UNIQUE,
+  description VARCHAR(255) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_cargos_set_updated_at BEFORE UPDATE ON cargos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS organizacion.unit_positions (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  unit_id INT NOT NULL,
+  slot_no INT NOT NULL,
+  title VARCHAR(180) NULL,
+  profile JSONB NULL,
+  position_type TEXT CHECK (position_type IN ('real','promocion','simbolico')) NOT NULL DEFAULT 'real',
+  -- SIN `is_active` (frente 27, D-03): la vigencia de un puesto vive en `position_vigencias`, con
+  -- una fila por cada vez que ha regido. Un puesto suprimido se puede reactivar y conserva su
+  -- historia de ocupaciones, entregables y relevos, que es justo por lo que el dueño pidio las vidas.
+  is_unit_head SMALLINT NOT NULL DEFAULT 0,
+  head_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN is_unit_head = 1 THEN 1 ELSE NULL END) STORED,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  cargo_id INT NOT NULL,
+  CONSTRAINT fk_unit_positions_unit FOREIGN KEY (unit_id) REFERENCES units(id),
+  CONSTRAINT fk_unit_positions_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_unit_cargo_slot ON unit_positions (unit_id, cargo_id, slot_no);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_unit_head ON unit_positions (unit_id, head_flag);
+CREATE INDEX IF NOT EXISTS idx_positions_unit_cargo ON unit_positions (unit_id, cargo_id);
+CREATE OR REPLACE TRIGGER trg_unit_positions_set_updated_at BEFORE UPDATE ON unit_positions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS organizacion.position_assignments (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  position_id INT NOT NULL,
+  person_id INT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NULL,
+  is_current SMALLINT NOT NULL DEFAULT 1,
+  current_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN is_current = 1 THEN 1 ELSE NULL END) STORED,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_position_assignments_position FOREIGN KEY (position_id) REFERENCES unit_positions(id),
+  CONSTRAINT fk_position_assignments_person FOREIGN KEY (person_id) REFERENCES persons(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_position_current ON position_assignments (position_id, current_flag);
+CREATE INDEX IF NOT EXISTS idx_assignments_person_current ON position_assignments (person_id, is_current);
+CREATE OR REPLACE TRIGGER trg_position_assignments_set_updated_at BEFORE UPDATE ON position_assignments FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- EL ACTO: EL PAPEL QUE ORDENA UN CAMBIO DE ESTRUCTURA (frente 27, decision D-05).
+--
+-- Una reorganizacion la decide alguien con competencia y hay un documento que lo dice. Hasta aqui el
+-- modelo no tenia donde apuntarlo: en `organizacion` y `procesos` no habia ni una columna con quien
+-- hizo un cambio ni con que lo justificaba.
+--
+-- Es una entidad y no una columna «resolucion» en cada fila, porque un mismo acto mueve varias
+-- unidades, procesos y relaciones a la vez, y como columna no habria forma de preguntar «que cambio
+-- esta resolucion».
+--
+-- Vive en `organizacion`, nivel 2, para que unidades (2) y procesos (4) puedan apuntarle sin que
+-- ninguna clave ajena suba de nivel. Por lo mismo NO apunta al documento firmado: ese enlace va al
+-- reves, en `tareas.acto_documentos`.
+CREATE TABLE IF NOT EXISTS organizacion.tipos_de_acto (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(80) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_tipos_de_acto_set_updated_at BEFORE UPDATE ON tipos_de_acto FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+INSERT INTO tipos_de_acto (code, name)
+SELECT v.code, v.name
+FROM (VALUES
+  ('resolucion', 'Resolución'),
+  ('acta', 'Acta'),
+  ('memorando', 'Memorando'),
+  ('oficio', 'Oficio'),
+  ('disposicion', 'Disposición')
+) AS v(code, name)
+WHERE NOT EXISTS (SELECT 1 FROM tipos_de_acto t WHERE t.code = v.code);
+
+-- QUIEN LO EMITE ES EL ORGANO, NO LA PERSONA NI SU PUESTO. La competencia para decidir es del
+-- organo --la Direccion de Escuela, el Consejo--, y por eso un memorando se numera con la sigla de
+-- la UNIDAD y la serie continua cuando cambia el titular. Asi que el emisor es una unidad, o un
+-- texto cuando el organo no esta en el sistema (la sede matriz, una autoridad externa): exactamente
+-- uno de los dos.
+--
+-- QUIEN LO FIRMA SE DEDUCE casi siempre --de la firma, si el acto se produjo aqui; de quien ocupaba
+-- la jefatura de la unidad en la fecha de emision, si no--. `suscrito_por_*` y `en_calidad_de` son
+-- para cuando NO se puede deducir: firmo un subrogante, un encargado o un delegado. En los tres
+-- casos el acto sigue siendo del organo.
+--
+-- DOS FECHAS, y no son la misma: `fecha_emision` es cuando se firmo y `fecha_vigencia` desde cuando
+-- rige. Una resolucion de diciembre puede regir desde enero, o reconocer algo que ya pasaba.
+CREATE TABLE IF NOT EXISTS organizacion.actos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  tipo_de_acto_id INT NOT NULL,
+  numero VARCHAR(120) NOT NULL,
+  asunto VARCHAR(500) NOT NULL,
+  fecha_emision DATE NOT NULL,
+  fecha_vigencia DATE NOT NULL,
+  unidad_emisora_id INT NULL,
+  emisor_externo VARCHAR(255) NULL,
+  suscrito_por_person_id INT NULL,
+  suscrito_por_nombre VARCHAR(255) NULL,
+  en_calidad_de TEXT NULL CHECK (en_calidad_de IN ('titular', 'subrogante', 'encargado', 'delegado')),
+  -- QUIEN LO REGISTRO en el sistema (frente 27, D-05). No es quien lo suscribio ni quien lo emitio:
+  -- es la persona que lo dio de alta aqui, y eso importa porque un acto ordena cambios de
+  -- estructura con solo existir. Lo escribe el sistema al crear --nadie lo teclea-- y no cambia.
+  -- NULL en lo que no registro una persona: la siembra.
+  registrado_por_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_actos_tipo FOREIGN KEY (tipo_de_acto_id) REFERENCES tipos_de_acto(id),
+  CONSTRAINT fk_actos_unidad_emisora FOREIGN KEY (unidad_emisora_id) REFERENCES units(id),
+  CONSTRAINT fk_actos_suscrito_por FOREIGN KEY (suscrito_por_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_actos_registrado_por FOREIGN KEY (registrado_por_person_id) REFERENCES persons(id),
+  CONSTRAINT ck_actos_un_solo_emisor CHECK ((unidad_emisora_id IS NULL) <> (emisor_externo IS NULL)),
+  CONSTRAINT ck_actos_un_solo_suscriptor CHECK (suscrito_por_person_id IS NULL OR suscrito_por_nombre IS NULL)
+);
+-- La REFERENCIA de un acto --tipo, numero y quien lo emite-- no se repite. Con NULLS NOT DISTINCT
+-- porque de los dos emisores uno siempre es NULL, y sin ello dos filas iguales no chocarian.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_actos_referencia
+  ON actos (tipo_de_acto_id, numero, unidad_emisora_id, emisor_externo) NULLS NOT DISTINCT;
+CREATE INDEX IF NOT EXISTS idx_actos_unidad_emisora ON actos (unidad_emisora_id);
+CREATE INDEX IF NOT EXISTS idx_actos_vigencia ON actos (fecha_vigencia);
+CREATE OR REPLACE TRIGGER trg_actos_set_updated_at BEFORE UPDATE ON actos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- UN SELLO NO SE REESCRIBE. Sirve a cualquier columna que el sistema escribe una vez --quien
+-- registro, quien creo--: su nombre llega como argumento del disparador.
+CREATE OR REPLACE FUNCTION public.rechazar_cambio_de_sello() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RAISE EXCEPTION 'No se puede cambiar %.%: lo escribe el sistema una sola vez, al crear.', TG_TABLE_NAME, TG_ARGV[0]
+    USING ERRCODE = 'restrict_violation';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_actos_registrado_por_inmutable
+BEFORE UPDATE OF registrado_por_person_id ON actos
+FOR EACH ROW WHEN (OLD.registrado_por_person_id IS DISTINCT FROM NEW.registrado_por_person_id)
+EXECUTE FUNCTION rechazar_cambio_de_sello('registrado_por_person_id');
+
+
+-- LAS CORRECCIONES DE LA ESTRUCTURA (frente 27, D-05, puntos 5 y 7).
+--
+-- Cambiar algo que YA RIGIO puede ser dos cosas opuestas. Una REORGANIZACION es un hecho nuevo: la
+-- institucion movio algo, y eso se escribe cerrando un periodo y abriendo otro. Una CORRECCION es
+-- reconocer que lo escrito estaba mal desde el principio, y entonces no hay hecho nuevo que fechar:
+-- se arregla la fila en su sitio. Lo segundo REESCRIBE la historia, y por eso pide tres cosas que lo
+-- primero no: un permiso propio --distinto del de editar la estructura--, un motivo escrito, y que
+-- quede aqui lo que la fila decia antes y lo que dice despues.
+--
+-- Esta tabla es LA UNICA MEMORIA de lo que una fila decia antes de corregirse.
+--
+-- ⚠️ SOLO ADMITE ALTAS, como `identidad.accesos_sensibles`, y SIN CLAVES AJENAS por el mismo motivo:
+-- la prueba tiene que sobrevivir a la fila corregida y a quien la corrigio.
+CREATE TABLE IF NOT EXISTS organizacion.correcciones_de_estructura (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  tabla VARCHAR(60) NOT NULL CHECK (tabla IN (
+    'unit_vigencias', 'position_vigencias', 'process_vigencias', 'unit_relations', 'process_relations',
+    'unit_equivalencias', 'position_equivalencias', 'process_equivalencias',
+    'acto_adjuntos'
+  )),
+  -- NULL cuando la correccion ES un alta: una vida o una relacion que falto registrar.
+  registro_id BIGINT NULL,
+  actor_person_id INT NOT NULL,
+  motivo TEXT NOT NULL,
+  antes JSONB NULL,
+  -- NULL cuando la correccion ES una baja: quitar un sucesor de algo que ya termino. Entonces lo
+  -- unico que queda de la fila es su «antes».
+  despues JSONB NULL,
+  ocurrido_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT ck_correcciones_de_estructura_motivo CHECK (char_length(btrim(motivo)) >= 10),
+  CONSTRAINT ck_correcciones_de_estructura_algo CHECK (antes IS NOT NULL OR despues IS NOT NULL)
+);
+CREATE INDEX IF NOT EXISTS idx_correcciones_de_estructura_registro ON correcciones_de_estructura (tabla, registro_id);
+CREATE INDEX IF NOT EXISTS idx_correcciones_de_estructura_actor ON correcciones_de_estructura (actor_person_id, ocurrido_at);
+CREATE OR REPLACE TRIGGER trg_correcciones_de_estructura_solo_altas BEFORE UPDATE OR DELETE ON correcciones_de_estructura FOR EACH ROW EXECUTE FUNCTION rechazar_modificacion_de_bitacora();
+
+-- ¿ESTA ESCRITURA ES UNA CORRECCION REGISTRADA? Quien corrige escribe primero su entrada en la
+-- bitacora y deja el id en `deasy.correccion`, un ajuste que vive lo que la transaccion. Las reglas
+-- que protegen lo que ya rigio preguntan aqui antes de rechazar.
+--
+-- ⚠️ NO BASTA CON EL AJUSTE: tiene que existir la entrada, y ser de ESA tabla y de ESA fila. Asi
+-- nadie se salta una regla sin dejar escrito por que: el permiso lo comprueba la aplicacion, pero
+-- que haya rastro lo garantiza la base.
+--
+-- La excepcion es lo que una escritura ARRASTRA (profundidad mayor que uno): corregir el inicio de
+-- una vida mueve el de su relacion, y esa segunda escritura va bajo la misma correccion.
+CREATE OR REPLACE FUNCTION public.correccion_en_curso(de_tabla TEXT, de_registro BIGINT) RETURNS BOOLEAN
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  marca TEXT := current_setting('deasy.correccion', true);
+BEGIN
+  IF marca IS NULL OR marca = '' THEN
+    RETURN FALSE;
+  END IF;
+  RETURN EXISTS (
+    SELECT 1 FROM correcciones_de_estructura c
+     WHERE c.id = marca::BIGINT
+       AND (pg_trigger_depth() > 1
+            OR (c.tabla = de_tabla AND (c.registro_id IS NULL OR c.registro_id = de_registro)))
+  );
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- EL FICHERO DE UN ACTO EXTERNO (frente 27, D-05 punto 3; F27.P4.T11).
+--
+-- Un acto es su REFERENCIA, y el papel puede faltar. Si se produjo y se firmo aqui, el papel es un
+-- documento del sistema y se enlaza (`tareas.acto_documentos`). Si vino de fuera --una resolucion de
+-- la sede matriz, un oficio en papel digitalizado-- se ADJUNTA, y esta es su fila: donde esta el
+-- fichero, que es, cuanto pesa, su huella y quien lo subio. Un acto tiene uno de los dos o ninguno,
+-- nunca los dos; y «ninguno» no es un error, es el estado «documento pendiente» que hay que poder ver.
+--
+-- EL FICHERO VIVE EN EL ALMACEN, EN UNA RUTA QUE LLEVA SU HUELLA. Reemplazarlo no pisa el anterior:
+-- el objeto viejo se queda donde estaba, y lo que cambia es a cual apunta esta fila.
+--
+-- CUANDO SE PUEDE CAMBIAR (decision del dueño, 2026-11-24, la misma regla que quitar un sucesor):
+-- mientras el acto no ordena nada, el fichero se cambia o se quita sin tramite --se subio el que no
+-- era--. Desde que una vida o una relacion lo cita, ese papel es lo que justifica un cambio de la
+-- estructura: cambiarlo o quitarlo es una correccion, con su permiso, su motivo, y lo que la fila
+-- decia en la bitacora.
+CREATE TABLE IF NOT EXISTS organizacion.acto_adjuntos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  acto_id INT NOT NULL UNIQUE,
+  file_path VARCHAR(500) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NOT NULL,
+  size_bytes BIGINT NOT NULL CHECK (size_bytes > 0),
+  sha256 CHAR(64) NOT NULL,
+  -- Quien lo subio. Lo escribe el sistema; NULL solo si lo cargo algo que no es una persona.
+  subido_por_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_acto_adjuntos_acto FOREIGN KEY (acto_id) REFERENCES actos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_acto_adjuntos_subido_por FOREIGN KEY (subido_por_person_id) REFERENCES persons(id)
+);
+CREATE OR REPLACE TRIGGER trg_acto_adjuntos_set_updated_at BEFORE UPDATE ON acto_adjuntos FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- ¿ESTE ACTO YA ORDENA ALGO? Lo cita el inicio o el fin de una vida --de unidad, de puesto, de
+-- proceso-- o de una relacion --entre unidades, entre procesos--. Son las cinco tablas fechadas.
+CREATE OR REPLACE FUNCTION public.acto_ordena_algo(de_acto INT) RETURNS BOOLEAN
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RETURN EXISTS (SELECT 1 FROM unit_vigencias v WHERE v.inicio_acto_id = de_acto OR v.fin_acto_id = de_acto)
+      OR EXISTS (SELECT 1 FROM position_vigencias v WHERE v.inicio_acto_id = de_acto OR v.fin_acto_id = de_acto)
+      OR EXISTS (SELECT 1 FROM process_vigencias v WHERE v.inicio_acto_id = de_acto OR v.fin_acto_id = de_acto)
+      OR EXISTS (SELECT 1 FROM unit_relations r WHERE r.inicio_acto_id = de_acto OR r.fin_acto_id = de_acto)
+      OR EXISTS (SELECT 1 FROM process_relations r WHERE r.inicio_acto_id = de_acto OR r.fin_acto_id = de_acto);
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+CREATE OR REPLACE FUNCTION public.proteger_adjunto_de_acto() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  acto RECORD;
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    -- O el documento firmado aqui, o el fichero adjunto: no los dos.
+    IF EXISTS (SELECT 1 FROM acto_documentos d WHERE d.acto_id = NEW.acto_id) THEN
+      RAISE EXCEPTION 'Este acto ya tiene enlazado el documento que se firmó en el sistema: no se le adjunta otro fichero.'
+        USING ERRCODE = 'restrict_violation';
+    END IF;
+    RETURN NEW;
+  END IF;
+  -- De que acto es no cambia nunca: se adjunta a otro, no se muda.
+  IF TG_OP = 'UPDATE' AND NEW.acto_id IS DISTINCT FROM OLD.acto_id THEN
+    RAISE EXCEPTION 'Un fichero adjunto no se pasa de un acto a otro.' USING ERRCODE = 'restrict_violation';
+  END IF;
+  -- Borrar el acto entero se lleva su adjunto: si el acto ordenara algo, su propia clave lo frenaria.
+  IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN
+    RETURN OLD;
+  END IF;
+  IF acto_ordena_algo(OLD.acto_id) AND NOT correccion_en_curso(TG_TABLE_NAME, OLD.id) THEN
+    SELECT a.numero INTO acto FROM actos a WHERE a.id = OLD.acto_id;
+    RAISE EXCEPTION 'El acto «%» ya ordena cambios de la estructura: % su fichero es una corrección. Regístrala como corrección, con su motivo.',
+      acto.numero, CASE WHEN TG_OP = 'DELETE' THEN 'quitar' ELSE 'cambiar' END
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_acto_adjuntos_protegido
+BEFORE INSERT OR UPDATE OR DELETE ON acto_adjuntos
+FOR EACH ROW EXECUTE FUNCTION proteger_adjunto_de_acto();
+
+-- LO QUE SOLO UNA CORRECCION PUEDE HACER, en las tres tablas de vidas y en las dos de relaciones:
+--
+--   · cambiar la fecha de inicio de algo que ya empezo a regir --es decir que rigio desde otro dia--;
+--   · cambiar la fecha de fin de algo que ya termino, a OTRA FECHA QUE TAMBIEN YA OCURRIO --«termino
+--     el 20, no el 24»--;
+--   · escribir el origen «correccion» en un inicio o en un fin.
+--
+-- Poner fin a algo que rige NO esta aqui: eso es suprimir, y es el camino normal. Tampoco mover un
+-- fin que todavia no ha llegado: eso es cambiar de planes, no reescribir lo ocurrido.
+--
+-- ⚠️ Y HAY UNA COSA QUE NI UNA CORRECCION PUEDE: QUITAR O APLAZAR UN FIN QUE YA OCURRIO. Durante un
+-- dia se pudo (2026-11-24) y se retiro al siguiente, por decision del dueño: suprimir cierra ademas
+-- lo que colgaba del nodo --roles, vacantes, la ocupacion de un puesto--, y reabrir la vida no lo
+-- devuelve. Quedaba un nodo «vigente» sin lo suyo y una bitacora diciendo «como si nunca hubiera
+-- terminado» cuando el sistema si lo cerro. Lo que se hace es REACTIVAR: un periodo nuevo, y el
+-- anterior queda escrito. Por eso el aviso va ANTES de suprimir, que es cuando sirve.
+CREATE OR REPLACE FUNCTION public.exigir_correccion_registrada() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  IF TG_OP = 'UPDATE' AND OLD.vigente_desde <= CURRENT_DATE
+     AND NEW.vigente_desde IS DISTINCT FROM OLD.vigente_desde
+     AND NOT correccion_en_curso(TG_TABLE_NAME, NEW.id) THEN
+    RAISE EXCEPTION 'Rige desde el %, y esa fecha ya ocurrió: cambiarla es una corrección. Regístrala como corrección, con su motivo.', OLD.vigente_desde
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF TG_OP = 'UPDATE' AND OLD.vigente_hasta <= CURRENT_DATE
+     AND NEW.vigente_hasta IS DISTINCT FROM OLD.vigente_hasta THEN
+    IF NEW.vigente_hasta IS NULL OR NEW.vigente_hasta > CURRENT_DATE THEN
+      RAISE EXCEPTION 'Terminó el %, y eso ya ocurrió: un fin pasado no se quita ni se aplaza. Para que vuelva a regir se abre un periodo nuevo; el anterior queda escrito.', OLD.vigente_hasta
+        USING ERRCODE = 'restrict_violation';
+    END IF;
+    IF NOT correccion_en_curso(TG_TABLE_NAME, NEW.id) THEN
+      RAISE EXCEPTION 'Terminó el %, y esa fecha ya ocurrió: cambiarla es una corrección. Regístrala como corrección, con su motivo.', OLD.vigente_hasta
+        USING ERRCODE = 'restrict_violation';
+    END IF;
+  END IF;
+  IF ((NEW.inicio_origen = 'correccion' AND (TG_OP = 'INSERT' OR OLD.inicio_origen IS DISTINCT FROM 'correccion'))
+      OR (NEW.fin_origen = 'correccion' AND (TG_OP = 'INSERT' OR OLD.fin_origen IS DISTINCT FROM 'correccion')))
+     AND NOT correccion_en_curso(TG_TABLE_NAME, NEW.id) THEN
+    RAISE EXCEPTION 'El origen «corrección» sólo se registra como corrección: pide un permiso propio y un motivo escrito.'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+
+-- LAS VIDAS DE UNA UNIDAD (frente 27, D-03). La misma forma que `process_vigencias`, y por las
+-- mismas razones: una unidad puede regir, suprimirse y volver a regir, y cada vez es una fila. Sin
+-- ninguna es un BORRADOR.
+--
+-- Va AQUI, despues de `units` y de `actos`, porque apunta a las dos. Es lo que deshace el circulo:
+-- el acto dice que unidad lo emitio, y esta tabla dice que acto creo o suprimio cada unidad.
+CREATE TABLE IF NOT EXISTS organizacion.unit_vigencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  unit_id INT NOT NULL,
+  vigente_desde DATE NOT NULL,
+  vigente_hasta DATE NULL,
+  inicio_origen TEXT NOT NULL CHECK (inicio_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  inicio_acto_id INT NULL,
+  fin_origen TEXT NULL CHECK (fin_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  fin_acto_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_unit_vigencias_unit FOREIGN KEY (unit_id) REFERENCES units(id),
+  CONSTRAINT fk_unit_vigencias_inicio_acto FOREIGN KEY (inicio_acto_id) REFERENCES actos(id),
+  CONSTRAINT fk_unit_vigencias_fin_acto FOREIGN KEY (fin_acto_id) REFERENCES actos(id),
+  CONSTRAINT ck_unit_vigencias_periodo CHECK (vigente_hasta IS NULL OR vigente_hasta >= vigente_desde),
+  CONSTRAINT ck_unit_vigencias_fin_con_origen CHECK ((vigente_hasta IS NULL) = (fin_origen IS NULL)),
+  CONSTRAINT ck_unit_vigencias_inicio_acto CHECK (inicio_origen <> 'reorganizacion' OR inicio_acto_id IS NOT NULL),
+  CONSTRAINT ck_unit_vigencias_fin_acto CHECK (
+    (fin_origen IS DISTINCT FROM 'reorganizacion' OR fin_acto_id IS NOT NULL)
+    AND (fin_acto_id IS NULL OR vigente_hasta IS NOT NULL)
+  ),
+  CONSTRAINT ex_unit_vigencias_sin_solape EXCLUDE USING gist (
+    unit_id WITH =,
+    daterange(vigente_desde, vigente_hasta, '[)') WITH &&
+  )
+);
+CREATE INDEX IF NOT EXISTS idx_unit_vigencias_unit ON unit_vigencias (unit_id, vigente_desde);
+
+-- El periodo que cuenta hoy, uno por unidad: el que rige; si no, el proximo; si no, el ultimo.
+DROP VIEW IF EXISTS organizacion.unit_vigencia_actual;
+CREATE VIEW organizacion.unit_vigencia_actual AS
+SELECT DISTINCT ON (uv.unit_id)
+  uv.unit_id,
+  uv.id AS vigencia_id,
+  uv.vigente_desde,
+  uv.vigente_hasta,
+  uv.inicio_origen,
+  uv.inicio_acto_id,
+  uv.fin_origen,
+  uv.fin_acto_id,
+  estado_de_vigencia(uv.vigente_desde, uv.vigente_hasta) AS estado
+FROM unit_vigencias uv
+ORDER BY
+  uv.unit_id,
+  CASE estado_de_vigencia(uv.vigente_desde, uv.vigente_hasta)
+    WHEN 'vigente' THEN 0
+    WHEN 'programado' THEN 1
+    ELSE 2
+  END,
+  CASE WHEN uv.vigente_desde > CURRENT_DATE THEN uv.vigente_desde END ASC,
+  uv.vigente_desde DESC;
+
+-- ¿RIGE HOY ESTA UNIDAD? La unica forma de preguntarlo: sustituye a `units.is_active = 1` en las
+-- consultas que reparten trabajo, arman el menu de una persona o listan destinatarios.
+CREATE OR REPLACE FUNCTION public.unidad_rige(unidad INT) RETURNS BOOLEAN
+  LANGUAGE sql STABLE
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM unit_vigencias uv
+     WHERE uv.unit_id = unidad AND esta_vigente(uv.vigente_desde, uv.vigente_hasta)
+  );
+$$;
+
+
+-- LAS VIDAS DE UN PUESTO (frente 27, D-03). La misma forma que las de la unidad y las del proceso.
+-- Es donde mas falta hacia: con una sola vida, un puesto que se suprime y se reabre al año seria
+-- OTRO puesto, y sus ocupaciones, entregables y relevos quedarian colgando del antiguo.
+CREATE TABLE IF NOT EXISTS organizacion.position_vigencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  position_id INT NOT NULL,
+  vigente_desde DATE NOT NULL,
+  vigente_hasta DATE NULL,
+  inicio_origen TEXT NOT NULL CHECK (inicio_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  inicio_acto_id INT NULL,
+  fin_origen TEXT NULL CHECK (fin_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  fin_acto_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_position_vigencias_position FOREIGN KEY (position_id) REFERENCES unit_positions(id),
+  CONSTRAINT fk_position_vigencias_inicio_acto FOREIGN KEY (inicio_acto_id) REFERENCES actos(id),
+  CONSTRAINT fk_position_vigencias_fin_acto FOREIGN KEY (fin_acto_id) REFERENCES actos(id),
+  CONSTRAINT ck_position_vigencias_periodo CHECK (vigente_hasta IS NULL OR vigente_hasta >= vigente_desde),
+  CONSTRAINT ck_position_vigencias_fin_con_origen CHECK ((vigente_hasta IS NULL) = (fin_origen IS NULL)),
+  CONSTRAINT ck_position_vigencias_inicio_acto CHECK (inicio_origen <> 'reorganizacion' OR inicio_acto_id IS NOT NULL),
+  CONSTRAINT ck_position_vigencias_fin_acto CHECK (
+    (fin_origen IS DISTINCT FROM 'reorganizacion' OR fin_acto_id IS NOT NULL)
+    AND (fin_acto_id IS NULL OR vigente_hasta IS NOT NULL)
+  ),
+  CONSTRAINT ex_position_vigencias_sin_solape EXCLUDE USING gist (
+    position_id WITH =,
+    daterange(vigente_desde, vigente_hasta, '[)') WITH &&
+  )
+);
+CREATE INDEX IF NOT EXISTS idx_position_vigencias_position ON position_vigencias (position_id, vigente_desde);
+
+-- El periodo que cuenta hoy, uno por puesto: el que rige; si no, el proximo; si no, el ultimo.
+DROP VIEW IF EXISTS organizacion.position_vigencia_actual;
+CREATE VIEW organizacion.position_vigencia_actual AS
+SELECT DISTINCT ON (pv.position_id)
+  pv.position_id,
+  pv.id AS vigencia_id,
+  pv.vigente_desde,
+  pv.vigente_hasta,
+  pv.inicio_origen,
+  pv.inicio_acto_id,
+  pv.fin_origen,
+  pv.fin_acto_id,
+  estado_de_vigencia(pv.vigente_desde, pv.vigente_hasta) AS estado
+FROM position_vigencias pv
+ORDER BY
+  pv.position_id,
+  CASE estado_de_vigencia(pv.vigente_desde, pv.vigente_hasta)
+    WHEN 'vigente' THEN 0
+    WHEN 'programado' THEN 1
+    ELSE 2
+  END,
+  CASE WHEN pv.vigente_desde > CURRENT_DATE THEN pv.vigente_desde END ASC,
+  pv.vigente_desde DESC;
+
+-- ¿RIGE HOY ESTE PUESTO? Sustituye a `unit_positions.is_active = 1` en el reparto de tareas, el menu
+-- de una persona y los destinatarios de un paso.
+CREATE OR REPLACE FUNCTION public.puesto_rige(puesto INT) RETURNS BOOLEAN
+  LANGUAGE sql STABLE
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM position_vigencias pv
+     WHERE pv.position_id = puesto AND esta_vigente(pv.vigente_desde, pv.vigente_hasta)
+  );
+$$;
+
+
+-- SE BORRA SOLO LO QUE AUN NO HA REGIDO (frente 27, D-03, punto 5). En palabras del dueño: «si tengo
+-- una unidad que rige desde mañana... la puedo borrar hoy pero ya no mañana».
+--
+-- La regla se pone en la VIDA y no en el nodo, y con eso basta para los dos:
+--
+--   · una vida que ya empezo no se borra: se le pone fin. Borrarla seria borrar que el nodo existio;
+--   · un nodo con alguna vida no se puede borrar mientras la tenga --la clave ajena de su tabla de
+--     vidas lo frena--, y una vida empezada no se puede quitar. Asi que un nodo que ya rigio no se
+--     borra nunca, sin escribirle un disparador propio;
+--   · un borrador (sin vidas) se borra sin mas, y uno programado, quitandole antes su vida futura.
+--
+-- Vale para las tres tablas de vidas: la funcion es una y no lee mas que la fecha de inicio.
+CREATE OR REPLACE FUNCTION public.rechazar_borrado_de_vida_empezada() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  IF OLD.vigente_desde <= CURRENT_DATE THEN
+    -- El sujeto llega como argumento del disparador: «Esta vida» si no se dice, «Esta relacion» en
+    -- las aristas, que comparten la regla.
+    RAISE EXCEPTION '% ya empezo a regir el %: no se puede borrar. Para terminarla, ponle fecha de fin.',
+      COALESCE(TG_ARGV[0], 'Esta vida'), OLD.vigente_desde
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_borrado
+BEFORE DELETE ON unit_vigencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_borrado_de_vida_empezada();
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_correccion
+BEFORE INSERT OR UPDATE ON unit_vigencias
+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_registrada();
+
+CREATE OR REPLACE TRIGGER trg_position_vigencias_borrado
+BEFORE DELETE ON position_vigencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_borrado_de_vida_empezada();
+CREATE OR REPLACE TRIGGER trg_position_vigencias_correccion
+BEFORE INSERT OR UPDATE ON position_vigencias
+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_registrada();
+
+
+-- LAS TRES REGLAS DE UNA ARISTA FECHADA (frente 27, D-04). Son funciones unicas para los dos
+-- arboles: lo que cambia --que tabla, que columnas-- llega como argumento del disparador.
+
+-- 1) Una arista empieza cuando sus dos nodos ya rigen. Un borrador (sin fecha) no se comprueba:
+--    sirve para colocar en el dibujo un nodo que todavia no existe para nadie.
+--    Argumentos: tabla de vidas, su columna de nodo, columna del padre, columna del hijo, sujeto.
+CREATE OR REPLACE FUNCTION public.comprobar_arista_en_vida() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  fila JSONB := to_jsonb(NEW);
+  columna TEXT;
+  nodo INT;
+  rige BOOLEAN;
+  tiene_vida BOOLEAN;
+  nombre TEXT;
+BEGIN
+  IF NEW.vigente_desde IS NULL THEN
+    RETURN NEW;
+  END IF;
+  FOREACH columna IN ARRAY ARRAY[TG_ARGV[2], TG_ARGV[3]] LOOP
+    nodo := (fila ->> columna)::INT;
+    EXECUTE format(
+      'SELECT EXISTS (SELECT 1 FROM %I v WHERE v.%I = $1 AND v.vigente_desde <= $2 AND (v.vigente_hasta IS NULL OR v.vigente_hasta > $2))',
+      TG_ARGV[0], TG_ARGV[1]
+    ) INTO rige USING nodo, NEW.vigente_desde;
+    IF NOT rige THEN
+      -- EL MENSAJE NOMBRA AL NODO Y DICE CUAL DE LAS DOS COSAS PASA. Son dos casos distintos y
+      -- piden cosas distintas: un nodo en BORRADOR no tiene ninguna fecha --hay que ponerlo en
+      -- vigor--; uno con vigencia que no cubre ese dia pide cambiar la fecha de la relacion. Con
+      -- una sola frase para los dos, quien elegia un padre en borrador leia «cambia la fecha» y
+      -- no habia fecha que sirviera (lo vio el dueño el 2026-11-24).
+      EXECUTE format('SELECT name FROM %I WHERE id = $1', CASE TG_ARGV[4] WHEN 'unidad' THEN 'units' ELSE 'processes' END)
+        INTO nombre USING nodo;
+      EXECUTE format('SELECT EXISTS (SELECT 1 FROM %I v WHERE v.%I = $1)', TG_ARGV[0], TG_ARGV[1])
+        INTO tiene_vida USING nodo;
+      IF NOT tiene_vida THEN
+        RAISE EXCEPTION '«%» está en borrador: todavía no tiene fecha de vigencia. %',
+          nombre,
+          CASE WHEN columna = TG_ARGV[2]
+               THEN 'Algo que ya rige no puede depender de un borrador: ponlo en vigor primero.'
+               ELSE 'Su relación tampoco puede tener fecha: ponlo en vigor primero.' END
+          USING ERRCODE = 'restrict_violation';
+      END IF;
+      RAISE EXCEPTION '«%» no rige el %. La relación tiene que empezar dentro de su vigencia: elige otra fecha.',
+        nombre, NEW.vigente_desde
+        USING ERRCODE = 'restrict_violation';
+    END IF;
+  END LOOP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 2) Una arista que ya rige no cambia de padre ni de hijo. El WHEN de cada disparador decide cuando.
+CREATE OR REPLACE FUNCTION public.rechazar_cambio_de_arista_empezada() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  -- Salvo que sea una CORRECCION registrada: entonces la relacion estaba mal escrita desde el
+  -- principio y se arregla en su sitio, con su entrada en la bitacora.
+  IF correccion_en_curso(TG_TABLE_NAME, OLD.id) THEN
+    RETURN NEW;
+  END IF;
+  RAISE EXCEPTION 'Esta relacion rige desde el %: no se le cambia el padre ni el hijo. Se le pone fecha de fin y se abre otra.', OLD.vigente_desde
+    USING ERRCODE = 'restrict_violation';
+END;
+$$ LANGUAGE plpgsql;
+
+-- 3) La vida de un nodo arrastra a la arista en la que es HIJO, para que quien pone en vigor o
+--    suprime un nodo no tenga que fechar ademas su arista --es el mismo hecho, con el mismo acto--:
+--
+--      · al abrirse una vida, el borrador de arista empieza con ella;
+--      · si la vida cambia de inicio, la arista que empezo con ella la sigue;
+--      · al cerrarse, se cierra la arista que seguia abierta, con el mismo origen y el mismo acto;
+--      · si el fin se quita o se mueve, la arista que se cerro con el lo sigue;
+--      · y si una vida programada se descarta, su arista vuelve a ser un borrador.
+--
+--    ⚠️ NO toca las aristas en las que el nodo es PADRE: adonde van los hijos de un nodo que se
+--    suprime es una decision de quien reorganiza. Lo que la base hace es NO DEJAR SUPRIMIR hasta
+--    que se hayan movido (`rechazar_supresion_con_hijos`, mas abajo).
+--    Argumentos: tabla de aristas, su columna de hijo, columna de nodo en la tabla de vidas.
+CREATE OR REPLACE FUNCTION public.sincronizar_aristas_con_vida() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  nodo INT;
+BEGIN
+  IF TG_OP = 'DELETE' THEN
+    nodo := (to_jsonb(OLD) ->> TG_ARGV[2])::INT;
+    EXECUTE format(
+      'UPDATE %I SET vigente_desde = NULL, inicio_origen = NULL, inicio_acto_id = NULL,
+                     vigente_hasta = NULL, fin_origen = NULL, fin_acto_id = NULL
+        WHERE %I = $1 AND vigente_desde = $2', TG_ARGV[0], TG_ARGV[1]
+    ) USING nodo, OLD.vigente_desde;
+    RETURN OLD;
+  END IF;
+
+  nodo := (to_jsonb(NEW) ->> TG_ARGV[2])::INT;
+
+  IF TG_OP = 'INSERT' THEN
+    EXECUTE format(
+      'UPDATE %I SET vigente_desde = $2, inicio_origen = $3, inicio_acto_id = $4
+        WHERE %I = $1 AND vigente_desde IS NULL', TG_ARGV[0], TG_ARGV[1]
+    ) USING nodo, NEW.vigente_desde, NEW.inicio_origen, NEW.inicio_acto_id;
+  ELSIF NEW.vigente_desde IS DISTINCT FROM OLD.vigente_desde THEN
+    EXECUTE format(
+      'UPDATE %I SET vigente_desde = $2 WHERE %I = $1 AND vigente_desde = $3', TG_ARGV[0], TG_ARGV[1]
+    ) USING nodo, NEW.vigente_desde, OLD.vigente_desde;
+  END IF;
+
+  IF NEW.vigente_hasta IS NOT NULL THEN
+    IF TG_OP = 'INSERT' OR NEW.vigente_hasta IS DISTINCT FROM OLD.vigente_hasta
+       OR NEW.fin_origen IS DISTINCT FROM OLD.fin_origen OR NEW.fin_acto_id IS DISTINCT FROM OLD.fin_acto_id THEN
+      EXECUTE format(
+        'UPDATE %I SET vigente_hasta = $2, fin_origen = $3, fin_acto_id = $4
+          WHERE %I = $1 AND vigente_desde >= $5 AND vigente_desde <= $2
+            AND (vigente_hasta IS NULL OR vigente_hasta > $2 OR vigente_hasta = $6)', TG_ARGV[0], TG_ARGV[1]
+      ) USING nodo, NEW.vigente_hasta, NEW.fin_origen, NEW.fin_acto_id, NEW.vigente_desde,
+              CASE WHEN TG_OP = 'UPDATE' THEN OLD.vigente_hasta END;
+    END IF;
+  ELSIF TG_OP = 'UPDATE' AND OLD.vigente_hasta IS NOT NULL THEN
+    EXECUTE format(
+      'UPDATE %I SET vigente_hasta = NULL, fin_origen = NULL, fin_acto_id = NULL
+        WHERE %I = $1 AND vigente_desde >= $2 AND vigente_hasta = $3', TG_ARGV[0], TG_ARGV[1]
+    ) USING nodo, NEW.vigente_desde, OLD.vigente_hasta;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- 4) UN NODO NO SE SUPRIME MIENTRAS TENGA HIJOS (decision del dueño, 2026-11-24: «Se rechaza»).
+--    Suprimir una unidad con otras colgando, o un proceso con sub-procesos, los dejaba dependiendo
+--    de algo que ya no rige. Adonde van es una decision de quien reorganiza, y por eso la base no
+--    la toma por el: ni los suelta como raices ni los suprime en cascada. Obliga a decirlo ANTES.
+--
+--    Cuenta las relaciones en las que el nodo es PADRE que empezaron dentro de esta vida y siguen
+--    mas alla de su fin. Mover los hijos con la misma fecha del fin basta: su relacion termina ese
+--    dia y no «sigue mas alla». Y suprimir un hijo cierra su relacion, asi que suprimir una rama
+--    de abajo arriba tambien pasa.
+--    Argumentos: tabla de relaciones, su columna de padre, columna del nodo en la tabla de vidas,
+--    sujeto.
+CREATE OR REPLACE FUNCTION public.rechazar_supresion_con_hijos() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  nodo INT := (to_jsonb(NEW) ->> TG_ARGV[2])::INT;
+  hijos INT;
+  nombre TEXT;
+BEGIN
+  IF NEW.vigente_hasta IS NULL THEN
+    RETURN NEW;
+  END IF;
+  EXECUTE format(
+    'SELECT COUNT(*) FROM %1$I r
+      WHERE r.%2$I = $1 AND r.vigente_desde >= $2
+        AND (r.vigente_hasta IS NULL OR r.vigente_hasta > $3)
+        AND NOT EXISTS (
+          SELECT 1 FROM %3$I otra
+           WHERE otra.%4$I = $1 AND otra.id <> $4
+             AND otra.vigente_desde <= r.vigente_desde
+             AND (otra.vigente_hasta IS NULL OR otra.vigente_hasta > r.vigente_desde)
+        )', TG_ARGV[0], TG_ARGV[1], TG_TABLE_NAME, TG_ARGV[2]
+  ) INTO hijos USING nodo, NEW.vigente_desde, NEW.vigente_hasta, NEW.id;
+  IF hijos > 0 THEN
+    EXECUTE format('SELECT name FROM %I WHERE id = $1', CASE TG_ARGV[3] WHEN 'unidad' THEN 'units' ELSE 'processes' END)
+      INTO nombre USING nodo;
+    RAISE EXCEPTION '«%» no se puede suprimir todavía: % después del %. Antes tienen que cambiar de padre o dejar de regir.',
+      nombre,
+      CASE WHEN TG_ARGV[3] = 'unidad'
+           THEN format('%s %s de ella', hijos, CASE WHEN hijos = 1 THEN 'unidad depende' ELSE 'unidades dependen' END)
+           ELSE format('%s %s de él', hijos, CASE WHEN hijos = 1 THEN 'sub-proceso depende' ELSE 'sub-procesos dependen' END) END,
+      NEW.vigente_hasta
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- LA ARISTA FECHADA: de quien depende cada unidad (frente 27, D-04).
+--
+-- Una fila por arista, con inicio y fin. Cambiar de padre NO es un UPDATE: es cerrar una fila y
+-- abrir otra, y asi queda escrito de quien dependio cada nodo y hasta cuando. Las fechas se leen
+-- como en el nodo (D-03): sin inicio la arista es un BORRADOR, se admiten futuras, y solo se borra
+-- la que aun no rige. Cada extremo lleva su origen y, si es una reorganizacion, su acto (D-05).
+--
+-- LA RAIZ es el nodo sin arista vigente.
+CREATE TABLE IF NOT EXISTS organizacion.unit_relations (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  relation_type_id INT NOT NULL,
+  parent_unit_id INT NOT NULL,
+  child_unit_id INT NOT NULL,
+  vigente_desde DATE NULL,
+  vigente_hasta DATE NULL,
+  inicio_origen TEXT NULL CHECK (inicio_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  inicio_acto_id INT NULL,
+  fin_origen TEXT NULL CHECK (fin_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  fin_acto_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_unit_relations_relation_type FOREIGN KEY (relation_type_id) REFERENCES relation_unit_types(id),
+  CONSTRAINT fk_unit_relations_parent FOREIGN KEY (parent_unit_id) REFERENCES units(id),
+  CONSTRAINT fk_unit_relations_child FOREIGN KEY (child_unit_id) REFERENCES units(id),
+  CONSTRAINT fk_unit_relations_inicio_acto FOREIGN KEY (inicio_acto_id) REFERENCES actos(id),
+  CONSTRAINT fk_unit_relations_fin_acto FOREIGN KEY (fin_acto_id) REFERENCES actos(id),
+  CONSTRAINT ck_unit_relations_no_propia CHECK (parent_unit_id <> child_unit_id),
+  -- Un borrador no tiene nada mas que su padre y su hijo.
+  CONSTRAINT ck_unit_relations_inicio_con_origen CHECK ((vigente_desde IS NULL) = (inicio_origen IS NULL)),
+  CONSTRAINT ck_unit_relations_borrador_sin_fin CHECK (vigente_desde IS NOT NULL OR vigente_hasta IS NULL),
+  CONSTRAINT ck_unit_relations_periodo CHECK (vigente_hasta IS NULL OR vigente_hasta >= vigente_desde),
+  CONSTRAINT ck_unit_relations_fin_con_origen CHECK ((vigente_hasta IS NULL) = (fin_origen IS NULL)),
+  CONSTRAINT ck_unit_relations_inicio_acto CHECK (
+    (inicio_origen IS DISTINCT FROM 'reorganizacion' OR inicio_acto_id IS NOT NULL)
+    AND (inicio_acto_id IS NULL OR vigente_desde IS NOT NULL)
+  ),
+  CONSTRAINT ck_unit_relations_fin_acto CHECK (
+    (fin_origen IS DISTINCT FROM 'reorganizacion' OR fin_acto_id IS NOT NULL)
+    AND (fin_acto_id IS NULL OR vigente_hasta IS NOT NULL)
+  ),
+  -- DOS ARISTAS DEL MISMO HIJO NO COINCIDEN NI UN DIA. Sustituye al indice unico de antes, que
+  -- solo sabia decir «un padre»: con fechas, un hijo tiene un padre POR PERIODO.
+  CONSTRAINT ex_unit_relations_sin_solape EXCLUDE USING gist (
+    child_unit_id WITH =,
+    relation_type_id WITH =,
+    daterange(vigente_desde, vigente_hasta, '[)') WITH &&
+  ) WHERE (vigente_desde IS NOT NULL)
+);
+-- Y un solo borrador por hijo: la exclusion no mira las filas sin fecha.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_unit_relations_borrador ON unit_relations (child_unit_id, relation_type_id) WHERE vigente_desde IS NULL;
+CREATE INDEX IF NOT EXISTS idx_unit_relations_parent ON unit_relations (parent_unit_id);
+CREATE INDEX IF NOT EXISTS idx_unit_relations_child ON unit_relations (child_unit_id, vigente_desde);
+CREATE OR REPLACE TRIGGER trg_unit_relations_set_updated_at BEFORE UPDATE ON unit_relations FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- EL ARBOL VIGENTE: las aristas que rigen hoy. Es lo que leen el reparto, los ambitos y los niveles.
+CREATE OR REPLACE VIEW organizacion.unit_arbol_vigente AS
+SELECT a.id, a.relation_type_id, a.parent_unit_id, a.child_unit_id, a.vigente_desde, a.vigente_hasta
+  FROM unit_relations a
+ WHERE esta_vigente(a.vigente_desde, a.vigente_hasta);
+
+-- LA ARISTA QUE CUENTA HOY, una por hijo: la que rige; si no, la programada; si no, el borrador; si
+-- no, la ultima que tuvo. Es lo que DIBUJA el grafo: un nodo en borrador o ya suprimido tambien
+-- tiene un sitio en el dibujo, aunque no este en el arbol vigente.
+CREATE OR REPLACE VIEW organizacion.unit_relacion_actual AS
+SELECT DISTINCT ON (a.child_unit_id, a.relation_type_id)
+  a.id, a.relation_type_id, a.parent_unit_id, a.child_unit_id,
+  a.vigente_desde, a.vigente_hasta, a.inicio_origen, a.inicio_acto_id, a.fin_origen, a.fin_acto_id,
+  estado_de_vigencia(a.vigente_desde, a.vigente_hasta) AS estado
+FROM unit_relations a
+ORDER BY
+  a.child_unit_id, a.relation_type_id,
+  CASE estado_de_vigencia(a.vigente_desde, a.vigente_hasta)
+    WHEN 'vigente' THEN 0
+    WHEN 'programado' THEN 1
+    WHEN 'borrador' THEN 2
+    ELSE 3
+  END,
+  CASE WHEN a.vigente_desde > CURRENT_DATE THEN a.vigente_desde END ASC,
+  a.vigente_desde DESC NULLS LAST;
+
+-- Una arista empieza DENTRO de la vida de sus dos nodos; el fin del hijo lo arrastra su vida (ver
+-- `sincronizar_aristas_con_vida`).
+CREATE OR REPLACE TRIGGER trg_unit_relations_en_vida
+BEFORE INSERT OR UPDATE OF vigente_desde, parent_unit_id, child_unit_id ON unit_relations
+FOR EACH ROW EXECUTE FUNCTION comprobar_arista_en_vida('unit_vigencias', 'unit_id', 'parent_unit_id', 'child_unit_id', 'unidad');
+
+-- UNA ARISTA QUE YA RIGE NO CAMBIA DE EXTREMOS: se le pone fin y se abre otra.
+CREATE OR REPLACE TRIGGER trg_unit_relations_extremos_inmutables
+BEFORE UPDATE OF parent_unit_id, child_unit_id, relation_type_id ON unit_relations
+FOR EACH ROW
+WHEN (OLD.vigente_desde <= CURRENT_DATE AND (
+  OLD.parent_unit_id IS DISTINCT FROM NEW.parent_unit_id OR OLD.child_unit_id IS DISTINCT FROM NEW.child_unit_id
+  OR OLD.relation_type_id IS DISTINCT FROM NEW.relation_type_id
+))
+EXECUTE FUNCTION rechazar_cambio_de_arista_empezada();
+
+CREATE OR REPLACE TRIGGER trg_unit_relations_borrado
+BEFORE DELETE ON unit_relations
+FOR EACH ROW EXECUTE FUNCTION rechazar_borrado_de_vida_empezada('Esta relacion');
+CREATE OR REPLACE TRIGGER trg_unit_relations_correccion
+BEFORE INSERT OR UPDATE ON unit_relations
+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_registrada();
+
+-- La vida del nodo arrastra a su arista: empieza con el y termina con el.
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_aristas
+AFTER INSERT OR UPDATE OR DELETE ON unit_vigencias
+FOR EACH ROW EXECUTE FUNCTION sincronizar_aristas_con_vida('unit_relations', 'child_unit_id', 'unit_id');
+
+-- Un nodo no se suprime mientras tenga hijos que sigan mas alla de su fin.
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_sin_hijos
+BEFORE INSERT OR UPDATE OF vigente_hasta ON unit_vigencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_con_hijos('unit_relations', 'parent_unit_id', 'unit_id', 'unidad');
+
+-- NI MIENTRAS TENGA PUESTOS QUE SIGAN RIGIENDO (decision del dueño, 2026-11-24: «en unidades tambien
+-- debe rechazar, es logico»). Es la misma regla que la de las hijas, por el mismo motivo: un puesto
+-- que rige en una unidad que no rige es una contradiccion, y que pasa con cada uno --y con quien lo
+-- ocupa, y con sus entregables-- lo decide quien reorganiza, no la base. Se suprimen antes, o con la
+-- misma fecha.
+--
+-- Cuenta las vidas de sus puestos que empezaron dentro de esta vida de la unidad y siguen mas alla
+-- de su fin. No es generica como la de los hijos: aqui lo que cuelga no es una relacion fechada
+-- sino el puesto, que pertenece a la unidad por su columna.
+CREATE OR REPLACE FUNCTION public.rechazar_supresion_de_unidad_con_puestos() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  puestos INT;
+BEGIN
+  IF NEW.vigente_hasta IS NULL THEN
+    RETURN NEW;
+  END IF;
+  SELECT COUNT(DISTINCT up.id) INTO puestos
+    FROM unit_positions up
+    INNER JOIN position_vigencias pv ON pv.position_id = up.id
+   WHERE up.unit_id = NEW.unit_id
+     AND pv.vigente_desde >= NEW.vigente_desde
+     AND (pv.vigente_hasta IS NULL OR pv.vigente_hasta > NEW.vigente_hasta)
+     AND NOT EXISTS (
+       SELECT 1 FROM unit_vigencias otra
+        WHERE otra.unit_id = NEW.unit_id AND otra.id <> NEW.id
+          AND otra.vigente_desde <= pv.vigente_desde
+          AND (otra.vigente_hasta IS NULL OR otra.vigente_hasta > pv.vigente_desde)
+     );
+  IF puestos > 0 THEN
+    RAISE EXCEPTION '«%» no se puede suprimir todavía: % en ella después del %. Suprime antes sus puestos; puede ser con esa misma fecha.',
+      (SELECT u.name FROM units u WHERE u.id = NEW.unit_id),
+      format('%s %s', puestos, CASE WHEN puestos = 1 THEN 'puesto sigue rigiendo' ELSE 'puestos siguen rigiendo' END),
+      NEW.vigente_hasta
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_sin_puestos
+BEFORE INSERT OR UPDATE OF vigente_hasta ON unit_vigencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_de_unidad_con_puestos();
+
+-- LAS EQUIVALENCIAS: QUE SUCEDE A LO QUE SE SUPRIME (frente 27, D-05, punto 6).
+--
+-- Una reorganizacion real funde y parte: dos unidades pasan a ser una, un proceso se divide en
+-- tres. Por eso no es un enlace «sucede a» en la fila del nodo, sino una tabla aparte: un antecesor
+-- puede tener VARIOS sucesores (division) y un sucesor VARIOS antecesores (fusion).
+--
+-- EL ANTECESOR ES UNA VIDA, NO UN NODO. Lo que tiene sucesores es «la vez que rigio hasta el dia
+-- tal»: un nodo puede suprimirse, reactivarse y volver a suprimirse, y cada fin tiene los suyos.
+-- Y asi la equivalencia no repite nada: desde cuando vale es la fecha de fin de esa vida, y el acto
+-- que la ordena es el de ese fin. Dos datos que dicen lo mismo acaban contradiciendose.
+--
+-- Hay una tabla POR CLASE de nodo para que sea la base quien compruebe que a una unidad la sucede
+-- una unidad. Las tres comparten sus reglas, que llegan como argumento del disparador:
+--
+--   1. Solo tiene sucesores una vida CON FECHA DE FIN, haya llegado o no: una supresion programada
+--      ya puede decir quien la sucedera.
+--   2. Un nodo no se sucede a si mismo.
+--   3. El sucesor tiene que REGIR el dia del fin o despues. Uno en borrador, o suprimido antes, no
+--      recibe nada.
+--   4. Una equivalencia NO SE MODIFICA: se quita y se registra otra. Y quitarla, si el fin ya
+--      ocurrio, es una correccion.
+--   5. A una vida con sucesores no se le quita el fin, ni se le mueve a una fecha en la que alguno
+--      ya no rija: antes hay que quitarlos.
+--   6. Y por el otro lado: un sucesor no deja de regir el dia del fin que hereda ni antes, ni se
+--      le descarta la vida que lo hace sucesor. La regla 3 solo se miraba al registrar.
+--
+-- Argumentos: tabla de vidas, su columna de nodo, columna del sucesor, tabla de nodos y su columna
+-- de nombre.
+CREATE OR REPLACE FUNCTION public.comprobar_equivalencia() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  sucesor INT := (to_jsonb(NEW) ->> TG_ARGV[2])::INT;
+  antecesor INT;
+  fin DATE;
+  nombre_antecesor TEXT;
+  nombre_sucesor TEXT;
+  con_vidas BOOLEAN;
+  rige_despues BOOLEAN;
+BEGIN
+  EXECUTE format('SELECT v.%1$I, v.vigente_hasta FROM %2$I v WHERE v.id = $1', TG_ARGV[1], TG_ARGV[0])
+    INTO antecesor, fin USING NEW.antecesor_vigencia_id;
+  IF antecesor IS NULL THEN
+    RETURN NEW; -- la clave ajena dira que esa vida no existe
+  END IF;
+  EXECUTE format('SELECT n.%1$I FROM %2$I n WHERE n.id = $1', TG_ARGV[4], TG_ARGV[3]) INTO nombre_antecesor USING antecesor;
+  EXECUTE format('SELECT n.%1$I FROM %2$I n WHERE n.id = $1', TG_ARGV[4], TG_ARGV[3]) INTO nombre_sucesor USING sucesor;
+  IF fin IS NULL THEN
+    RAISE EXCEPTION '«%» no tiene fecha de fin: solo lo que se suprime tiene sucesores.', nombre_antecesor
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF antecesor = sucesor THEN
+    RAISE EXCEPTION '«%» no puede sucederse a sí mismo. Si vuelve a regir, se reactiva.', nombre_antecesor
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  EXECUTE format(
+    'SELECT COUNT(*) > 0, COALESCE(bool_or(v.vigente_hasta IS NULL OR v.vigente_hasta > $2), FALSE)
+       FROM %1$I v WHERE v.%2$I = $1', TG_ARGV[0], TG_ARGV[1]
+  ) INTO con_vidas, rige_despues USING sucesor, fin;
+  IF NOT con_vidas THEN
+    RAISE EXCEPTION '«%» está en borrador: para suceder a «%» tiene que regir. Ponlo en vigor antes.', nombre_sucesor, nombre_antecesor
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  IF NOT rige_despues THEN
+    RAISE EXCEPTION '«%» no rige el % ni después: no puede suceder a «%», que termina ese día.', nombre_sucesor, fin, nombre_antecesor
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.rechazar_cambio_de_equivalencia() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RAISE EXCEPTION 'Una equivalencia no se modifica: se quita y se registra otra.'
+    USING ERRCODE = 'restrict_violation';
+END;
+$$ LANGUAGE plpgsql;
+
+-- QUITAR UN SUCESOR DE ALGO QUE YA TERMINO ES UNA CORRECCION (decision del dueño, 2026-11-24).
+-- Mientras el fin es futuro, la equivalencia es un plan y se quita sin mas. Cuando ya ocurrio, es
+-- historia: quitarla es decir que lo escrito estaba mal, y eso pide lo mismo que mover una fecha
+-- pasada --permiso propio, motivo, y que quede en la bitacora lo que decia--. Sin esto seria la
+-- unica pieza de la memoria que se borra sin dejar huella.
+-- Argumento: la tabla de vidas.
+CREATE OR REPLACE FUNCTION public.exigir_correccion_al_quitar_equivalencia() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  fin DATE;
+BEGIN
+  EXECUTE format('SELECT v.vigente_hasta FROM %I v WHERE v.id = $1', TG_ARGV[0]) INTO fin USING OLD.antecesor_vigencia_id;
+  IF fin IS NOT NULL AND fin <= CURRENT_DATE AND NOT correccion_en_curso(TG_TABLE_NAME, OLD.id) THEN
+    RAISE EXCEPTION 'Terminó el %, y eso ya ocurrió: quitar a quien lo sucedió es una corrección. Regístrala como corrección, con su motivo.', fin
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN OLD;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Argumentos: tabla de equivalencias, su columna de sucesor, columna del nodo en la tabla de
+-- vidas, tabla de nodos, su columna de nombre.
+CREATE OR REPLACE FUNCTION public.rechazar_fin_incoherente_con_sucesores() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  cuantos INT;
+  quien TEXT;
+BEGIN
+  IF NEW.vigente_hasta IS NULL THEN
+    EXECUTE format('SELECT COUNT(*) FROM %1$I e WHERE e.antecesor_vigencia_id = $1', TG_ARGV[0])
+      INTO cuantos USING NEW.id;
+    IF cuantos > 0 THEN
+      RAISE EXCEPTION 'Esta vida tiene % registrado%: quítalo% antes de quitarle la fecha de fin.',
+        CASE WHEN cuantos = 1 THEN 'un sucesor' ELSE cuantos || ' sucesores' END,
+        CASE WHEN cuantos = 1 THEN '' ELSE 's' END,
+        CASE WHEN cuantos = 1 THEN '' ELSE 's' END
+        USING ERRCODE = 'restrict_violation';
+    END IF;
+    RETURN NEW;
+  END IF;
+  EXECUTE format(
+    'SELECT n.%5$I FROM %1$I e
+       JOIN %4$I n ON n.id = e.%2$I
+      WHERE e.antecesor_vigencia_id = $1
+        AND NOT EXISTS (
+          SELECT 1 FROM %6$I v
+           WHERE v.%3$I = e.%2$I AND (v.vigente_hasta IS NULL OR v.vigente_hasta > $2)
+        )
+      LIMIT 1', TG_ARGV[0], TG_ARGV[1], TG_ARGV[2], TG_ARGV[3], TG_ARGV[4], TG_TABLE_NAME
+  ) INTO quien USING NEW.id, NEW.vigente_hasta;
+  IF quien IS NOT NULL THEN
+    RAISE EXCEPTION 'El fin no puede pasar al %: «%» está registrado como sucesor y ese día ya no rige. Quítalo antes.', NEW.vigente_hasta, quien
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- EL OTRO LADO DE LA REGLA 3 (2026-11-24). Que el sucesor rija el dia del fin o despues se
+-- comprobaba al registrar la equivalencia y al mover el fin del antecesor, pero no al tocar al
+-- SUCESOR: se le podia poner un fin anterior al que hereda, o descartar su unica vida, y quedaba
+-- escrito que algo que ya no existia recibio lo de otro. Aqui se mira al cerrar o borrar una vida:
+-- si el nodo es sucesor de alguien y con ese cambio ya no le queda ninguna vida que rija despues
+-- de ese fin, se rechaza. Suprimir al sucesor MAS TARDE es legitimo y pasa.
+-- Argumentos: los mismos que la funcion anterior.
+CREATE OR REPLACE FUNCTION public.rechazar_fin_incoherente_del_sucesor() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  nodo INT := (to_jsonb(OLD) ->> TG_ARGV[2])::INT;
+  hasta DATE := CASE WHEN TG_OP = 'DELETE' THEN NULL ELSE NEW.vigente_hasta END;
+  quien TEXT;
+  fin DATE;
+  nombre TEXT;
+BEGIN
+  IF TG_OP = 'UPDATE' AND hasta IS NULL THEN
+    RETURN NEW;
+  END IF;
+  EXECUTE format(
+    'SELECT n.%5$I, a.vigente_hasta FROM %1$I e
+       JOIN %6$I a ON a.id = e.antecesor_vigencia_id
+       JOIN %4$I n ON n.id = a.%3$I
+      WHERE e.%2$I = $1
+        AND ($3::date IS NULL OR $3::date <= a.vigente_hasta)
+        AND NOT EXISTS (
+          SELECT 1 FROM %6$I v
+           WHERE v.%3$I = $1 AND v.id <> $2 AND (v.vigente_hasta IS NULL OR v.vigente_hasta > a.vigente_hasta)
+        )
+      ORDER BY a.vigente_hasta DESC
+      LIMIT 1', TG_ARGV[0], TG_ARGV[1], TG_ARGV[2], TG_ARGV[3], TG_ARGV[4], TG_TABLE_NAME
+  ) INTO quien, fin USING nodo, OLD.id, hasta;
+  IF quien IS NULL THEN
+    RETURN COALESCE(NEW, OLD);
+  END IF;
+  EXECUTE format('SELECT n.%1$I FROM %2$I n WHERE n.id = $1', TG_ARGV[4], TG_ARGV[3]) INTO nombre USING nodo;
+  IF TG_OP = 'DELETE' THEN
+    RAISE EXCEPTION '«%» está registrado como sucesor de «%», que termina el %, y esta es la vida que lo sostiene. Quita antes esa sucesión.', nombre, quien, fin
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RAISE EXCEPTION '«%» está registrado como sucesor de «%», que termina el %: no puede dejar de regir ese día ni antes. Ponle un fin posterior, o quita antes esa sucesión.', nombre, quien, fin
+    USING ERRCODE = 'restrict_violation';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TABLE IF NOT EXISTS organizacion.unit_equivalencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  antecesor_vigencia_id INT NOT NULL,
+  sucesor_unit_id INT NOT NULL,
+  registrado_por_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Una vida que nunca empezo se descarta entera, y sus sucesores previstos se van con ella.
+  CONSTRAINT fk_unit_equivalencias_antecesor FOREIGN KEY (antecesor_vigencia_id) REFERENCES unit_vigencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_unit_equivalencias_sucesor FOREIGN KEY (sucesor_unit_id) REFERENCES units(id),
+  CONSTRAINT fk_unit_equivalencias_registrado_por FOREIGN KEY (registrado_por_person_id) REFERENCES persons(id),
+  CONSTRAINT uq_unit_equivalencias_par UNIQUE (antecesor_vigencia_id, sucesor_unit_id)
+);
+CREATE INDEX IF NOT EXISTS idx_unit_equivalencias_sucesor ON unit_equivalencias (sucesor_unit_id);
+CREATE OR REPLACE TRIGGER trg_unit_equivalencias_coherente
+BEFORE INSERT ON unit_equivalencias
+FOR EACH ROW EXECUTE FUNCTION comprobar_equivalencia('unit_vigencias', 'unit_id', 'sucesor_unit_id', 'units', 'name');
+CREATE OR REPLACE TRIGGER trg_unit_equivalencias_quitar
+BEFORE DELETE ON unit_equivalencias
+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_al_quitar_equivalencia('unit_vigencias');
+CREATE OR REPLACE TRIGGER trg_unit_equivalencias_inmutable
+BEFORE UPDATE ON unit_equivalencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_cambio_de_equivalencia();
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_con_sucesores
+BEFORE UPDATE OF vigente_hasta ON unit_vigencias
+FOR EACH ROW WHEN (OLD.vigente_hasta IS DISTINCT FROM NEW.vigente_hasta)
+EXECUTE FUNCTION rechazar_fin_incoherente_con_sucesores('unit_equivalencias', 'sucesor_unit_id', 'unit_id', 'units', 'name');
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_como_sucesor
+BEFORE UPDATE OF vigente_hasta OR DELETE ON unit_vigencias
+FOR EACH ROW
+EXECUTE FUNCTION rechazar_fin_incoherente_del_sucesor('unit_equivalencias', 'sucesor_unit_id', 'unit_id', 'units', 'name');
+
+CREATE TABLE IF NOT EXISTS organizacion.position_equivalencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  antecesor_vigencia_id INT NOT NULL,
+  sucesor_position_id INT NOT NULL,
+  registrado_por_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Una vida que nunca empezo se descarta entera, y sus sucesores previstos se van con ella.
+  CONSTRAINT fk_position_equivalencias_antecesor FOREIGN KEY (antecesor_vigencia_id) REFERENCES position_vigencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_position_equivalencias_sucesor FOREIGN KEY (sucesor_position_id) REFERENCES unit_positions(id),
+  CONSTRAINT fk_position_equivalencias_registrado_por FOREIGN KEY (registrado_por_person_id) REFERENCES persons(id),
+  CONSTRAINT uq_position_equivalencias_par UNIQUE (antecesor_vigencia_id, sucesor_position_id)
+);
+CREATE INDEX IF NOT EXISTS idx_position_equivalencias_sucesor ON position_equivalencias (sucesor_position_id);
+CREATE OR REPLACE TRIGGER trg_position_equivalencias_coherente
+BEFORE INSERT ON position_equivalencias
+FOR EACH ROW EXECUTE FUNCTION comprobar_equivalencia('position_vigencias', 'position_id', 'sucesor_position_id', 'unit_positions', 'title');
+CREATE OR REPLACE TRIGGER trg_position_equivalencias_quitar
+BEFORE DELETE ON position_equivalencias
+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_al_quitar_equivalencia('position_vigencias');
+CREATE OR REPLACE TRIGGER trg_position_equivalencias_inmutable
+BEFORE UPDATE ON position_equivalencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_cambio_de_equivalencia();
+CREATE OR REPLACE TRIGGER trg_position_vigencias_con_sucesores
+BEFORE UPDATE OF vigente_hasta ON position_vigencias
+FOR EACH ROW WHEN (OLD.vigente_hasta IS DISTINCT FROM NEW.vigente_hasta)
+EXECUTE FUNCTION rechazar_fin_incoherente_con_sucesores('position_equivalencias', 'sucesor_position_id', 'position_id', 'unit_positions', 'title');
+CREATE OR REPLACE TRIGGER trg_position_vigencias_como_sucesor
+BEFORE UPDATE OF vigente_hasta OR DELETE ON position_vigencias
+FOR EACH ROW
+EXECUTE FUNCTION rechazar_fin_incoherente_del_sucesor('position_equivalencias', 'sucesor_position_id', 'position_id', 'unit_positions', 'title');
+
+
+
+CREATE TABLE IF NOT EXISTS empleo.vacancies (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  title VARCHAR(180) NOT NULL,
+  category VARCHAR(120) NULL,
+  dedication VARCHAR(30) NOT NULL,
+  relation_type VARCHAR(60) NOT NULL,
+  status TEXT CHECK (status IN ('abierta','cubierta','cerrada','cancelada')) NOT NULL DEFAULT 'abierta',
+  open_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN status = 'abierta' THEN 1 ELSE NULL END) STORED,
+  profile_ref VARCHAR(64) NULL,
+  opened_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  closed_at TIMESTAMP NULL,
+  position_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_vacancies_position FOREIGN KEY (position_id) REFERENCES unit_positions(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_one_open_vacancy_per_position ON vacancies (position_id, open_flag);
+CREATE INDEX IF NOT EXISTS idx_vacancies_position_status ON vacancies (position_id, status);
+CREATE OR REPLACE TRIGGER trg_vacancies_set_updated_at BEFORE UPDATE ON vacancies FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS empleo.aplications (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  vacancy_id INT NOT NULL,
+  status TEXT CHECK (status IN ('aplicado','preseleccionado','entrevista','rechazado','retirado','seleccionado')) NOT NULL DEFAULT 'aplicado',
+  selected_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN status = 'seleccionado' THEN 1 ELSE NULL END) STORED,
+  applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  note VARCHAR(255) NULL,
+  CONSTRAINT fk_applications_vacancy FOREIGN KEY (vacancy_id) REFERENCES vacancies(id),
+  CONSTRAINT fk_applications_person FOREIGN KEY (person_id) REFERENCES persons(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_application_once ON aplications (vacancy_id, person_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_one_selected_per_vacancy ON aplications (vacancy_id, selected_flag);
+CREATE INDEX IF NOT EXISTS idx_applications_vacancy_status ON aplications (vacancy_id, status);
+CREATE INDEX IF NOT EXISTS idx_applications_person_time ON aplications (person_id, applied_at);
+CREATE OR REPLACE TRIGGER trg_aplications_set_updated_at BEFORE UPDATE ON aplications FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS empleo.offers (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  application_id INT NOT NULL,
+  status TEXT CHECK (status IN ('enviada','aceptada','rechazada','retractada','expirada')) NOT NULL DEFAULT 'enviada',
+  active_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN status = 'enviada' THEN 1 ELSE NULL END) STORED,
+  terms_snapshot TEXT NULL,
+  sent_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  responded_at TIMESTAMP NULL,
+  expires_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_offers_application FOREIGN KEY (application_id) REFERENCES aplications(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_one_active_offer_per_application ON offers (application_id, active_flag);
+CREATE INDEX IF NOT EXISTS idx_offers_application_status ON offers (application_id, status);
+
+
+CREATE TABLE IF NOT EXISTS empleo.contracts (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  position_id INT NOT NULL,
+  relation_type VARCHAR(60) NOT NULL,
+  dedication VARCHAR(30) NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NULL,
+  status TEXT CHECK (status IN ('activo','finalizado','cancelado')) NOT NULL DEFAULT 'activo',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_contracts_person FOREIGN KEY (person_id) REFERENCES persons(id),
+  CONSTRAINT fk_contracts_position FOREIGN KEY (position_id) REFERENCES unit_positions(id)
+);
+CREATE INDEX IF NOT EXISTS idx_contracts_person_status ON contracts (person_id, status);
+CREATE INDEX IF NOT EXISTS idx_contracts_position_status ON contracts (position_id, status);
+CREATE OR REPLACE TRIGGER trg_contracts_set_updated_at BEFORE UPDATE ON contracts FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS identidad.roles (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  name VARCHAR(120) NOT NULL UNIQUE,
+  description VARCHAR(255) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1
+);
+
+
+CREATE TABLE IF NOT EXISTS empleo.vacancy_visibility (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  vacancy_id INT NOT NULL,
+  unit_id INT NULL,
+  role_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_vacancy_visibility_vacancy FOREIGN KEY (vacancy_id) REFERENCES vacancies(id),
+  CONSTRAINT fk_vacancy_visibility_unit FOREIGN KEY (unit_id) REFERENCES units(id),
+  CONSTRAINT fk_vacancy_visibility_role FOREIGN KEY (role_id) REFERENCES roles(id)
+);
+CREATE INDEX IF NOT EXISTS idx_vacancy_visibility_vacancy ON vacancy_visibility (vacancy_id);
+CREATE INDEX IF NOT EXISTS idx_vacancy_visibility_unit ON vacancy_visibility (unit_id);
+CREATE INDEX IF NOT EXISTS idx_vacancy_visibility_role ON vacancy_visibility (role_id);
+
+
+CREATE TABLE IF NOT EXISTS identidad.resources (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(80) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  description VARCHAR(255) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_resources_set_updated_at BEFORE UPDATE ON resources FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS identidad.actions (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(120) NOT NULL,
+  description VARCHAR(255) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_actions_set_updated_at BEFORE UPDATE ON actions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS identidad.permissions (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  resource_id INT NOT NULL,
+  action_id INT NOT NULL,
+  code VARCHAR(120) NOT NULL,
+  description VARCHAR(255) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_permissions_resource FOREIGN KEY (resource_id) REFERENCES resources(id),
+  CONSTRAINT fk_permissions_action FOREIGN KEY (action_id) REFERENCES actions(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_permissions_resource_action ON permissions (resource_id, action_id);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_permissions_code ON permissions (code);
+CREATE INDEX IF NOT EXISTS idx_permissions_resource ON permissions (resource_id);
+CREATE INDEX IF NOT EXISTS idx_permissions_action ON permissions (action_id);
+CREATE OR REPLACE TRIGGER trg_permissions_set_updated_at BEFORE UPDATE ON permissions FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS identidad.role_permissions (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  role_id INT NOT NULL,
+  permission_id INT NOT NULL,
+  CONSTRAINT fk_role_permissions_role FOREIGN KEY (role_id) REFERENCES roles(id),
+  CONSTRAINT fk_role_permissions_permission FOREIGN KEY (permission_id) REFERENCES permissions(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_role_permissions ON role_permissions (role_id, permission_id);
+
+
+CREATE TABLE IF NOT EXISTS identidad.role_assignments (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  role_id INT NOT NULL,
+  unit_id INT NOT NULL,
+  derived_from_assignment_id INT NULL,
+  source TEXT CHECK (source IN ('manual','derived')) NOT NULL DEFAULT 'manual',
+  person_id INT NOT NULL,
+  max_depth INT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NULL,
+  is_current SMALLINT NOT NULL DEFAULT 1,
+  current_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN is_current = 1 THEN 1 ELSE NULL END) STORED,
+  assigned_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  revoked_at TIMESTAMP NULL,
+  revoked_reason VARCHAR(255) NULL,
+  CONSTRAINT fk_role_assignments_role FOREIGN KEY (role_id) REFERENCES roles(id),
+  CONSTRAINT fk_role_assignments_unit FOREIGN KEY (unit_id) REFERENCES units(id),
+  CONSTRAINT fk_role_assignments_person FOREIGN KEY (person_id) REFERENCES persons(id),
+  CONSTRAINT fk_role_assignments_position_assignment FOREIGN KEY (derived_from_assignment_id) REFERENCES position_assignments(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_role_assignment_current ON role_assignments (person_id, role_id, unit_id, source, current_flag);
+CREATE INDEX IF NOT EXISTS idx_role_assignments_person ON role_assignments (person_id);
+CREATE INDEX IF NOT EXISTS idx_role_assignments_unit ON role_assignments (unit_id);
+
+
+CREATE TABLE IF NOT EXISTS identidad.role_assignment_relation_types (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  relation_type_id INT NOT NULL,
+  role_assignment_id INT NOT NULL,
+  CONSTRAINT fk_role_assignment_relation_types_role_assignment FOREIGN KEY (role_assignment_id) REFERENCES role_assignments(id),
+  CONSTRAINT fk_role_assignment_relation_types_relation_type FOREIGN KEY (relation_type_id) REFERENCES relation_unit_types(id)
+);
+CREATE INDEX IF NOT EXISTS idx_role_assignment_relation_types ON role_assignment_relation_types (role_assignment_id, relation_type_id);
+
+
+CREATE TABLE IF NOT EXISTS identidad.cargo_role_map (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  role_id INT NOT NULL,
+  cargo_id INT NOT NULL,
+  CONSTRAINT fk_cargo_role_map_role FOREIGN KEY (role_id) REFERENCES roles(id),
+  CONSTRAINT fk_cargo_role_map_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_cargo_role_map ON cargo_role_map (cargo_id, role_id);
+
+
+CREATE TABLE IF NOT EXISTS empleo.contract_origins (
+  contract_id INT NOT NULL PRIMARY KEY,
+  origin_type TEXT CHECK (origin_type IN ('recruitment','renewal')) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_contract_origins_contract FOREIGN KEY (contract_id) REFERENCES contracts(id) ON DELETE CASCADE
+);
+
+
+CREATE TABLE IF NOT EXISTS empleo.contract_origin_recruitment (
+  contract_id INT NOT NULL PRIMARY KEY,
+  offer_id INT NOT NULL UNIQUE,
+  vacancy_id INT NOT NULL UNIQUE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_contract_origin_recruitment_contract FOREIGN KEY (contract_id) REFERENCES contract_origins(contract_id) ON DELETE CASCADE,
+  CONSTRAINT fk_contract_origin_recruitment_offer FOREIGN KEY (offer_id) REFERENCES offers(id),
+  CONSTRAINT fk_contract_origin_recruitment_vacancy FOREIGN KEY (vacancy_id) REFERENCES vacancies(id)
+);
+
+
+CREATE TABLE IF NOT EXISTS empleo.contract_origin_renewal (
+  contract_id INT NOT NULL PRIMARY KEY,
+  renewed_from_contract_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_contract_origin_renewal_contract FOREIGN KEY (contract_id) REFERENCES contract_origins(contract_id) ON DELETE CASCADE,
+  CONSTRAINT fk_contract_origin_renewal_from FOREIGN KEY (renewed_from_contract_id) REFERENCES contracts(id)
+);
+CREATE INDEX IF NOT EXISTS idx_renewed_from_contract ON contract_origin_renewal (renewed_from_contract_id);
+
+
+-- Procesos, tareas y documentos
+CREATE TABLE IF NOT EXISTS procesos.processes (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  name VARCHAR(180) NOT NULL,
+  slug VARCHAR(180) NOT NULL UNIQUE,
+  -- SIN `parent_id` (frente 27, D-04): de que proceso cuelga vive en `process_relations`, con fechas.
+  -- SIN `is_active` (frente 27, D-03). Era la unica memoria del proceso y no tenia fecha: apagarla
+  -- no decia cuando dejo de existir, quien lo decidio ni con que papel. Su vigencia vive en
+  -- `process_vigencias`, justo debajo: una fila por cada vez que el proceso ha regido.
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- LAS VIDAS DE UN PROCESO (frente 27, D-03 en su forma del 2026-11-23).
+--
+-- Un proceso puede regir, suprimirse y volver a regir: cada vez es una FILA de aqui. Sin ninguna
+-- fila el proceso es un BORRADOR; con ellas, su estado se lee del periodo que toque con
+-- `estado_de_vigencia` --programado si aun no empieza, vigente si rige, suprimido si ya termino--.
+--
+-- Antes eran seis columnas en la fila del proceso, y eso solo admitia UNA vida: reactivar habia que
+-- hacerlo creando otro proceso, que perdia la historia del anterior. Con filas, el hueco entre dos
+-- vidas queda a la vista.
+--
+-- Cada extremo del periodo lleva su ORIGEN y, si lo hubo, el ACTO que lo ordeno. Como la fecha, el
+-- origen y el acto estan en la MISMA fila, «una reorganizacion exige acto» es un CHECK y no un
+-- disparador. Es tambien lo que deja que `units` tenga la misma forma: el acto apunta a la unidad
+-- que lo emite, la unidad no puede apuntar al acto que la creo sin que las dos tablas se necesiten
+-- mutuamente, y una tabla aparte, creada despues de ambas, apunta a las dos sin circulo.
+--
+-- El periodo es SEMIABIERTO: rige desde `vigente_desde` inclusive hasta `vigente_hasta` exclusive.
+CREATE TABLE IF NOT EXISTS procesos.process_vigencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  process_id INT NOT NULL,
+  vigente_desde DATE NOT NULL,
+  vigente_hasta DATE NULL,
+  inicio_origen TEXT NOT NULL CHECK (inicio_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  inicio_acto_id INT NULL,
+  fin_origen TEXT NULL CHECK (fin_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  fin_acto_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_process_vigencias_process FOREIGN KEY (process_id) REFERENCES processes(id),
+  CONSTRAINT fk_process_vigencias_inicio_acto FOREIGN KEY (inicio_acto_id) REFERENCES actos(id),
+  CONSTRAINT fk_process_vigencias_fin_acto FOREIGN KEY (fin_acto_id) REFERENCES actos(id),
+  -- El fin no puede ser anterior al inicio.
+  CONSTRAINT ck_process_vigencias_periodo CHECK (vigente_hasta IS NULL OR vigente_hasta >= vigente_desde),
+  -- La fecha de fin lleva su origen, y no hay origen de fin sin fecha.
+  CONSTRAINT ck_process_vigencias_fin_con_origen CHECK ((vigente_hasta IS NULL) = (fin_origen IS NULL)),
+  -- EL ORIGEN DECIDE SI EL ACTO ES OBLIGATORIO: una reorganizacion lo exige; la carga inicial y la
+  -- correccion, no. Y un acto de fin no cuelga de un periodo que sigue abierto.
+  CONSTRAINT ck_process_vigencias_inicio_acto CHECK (inicio_origen <> 'reorganizacion' OR inicio_acto_id IS NOT NULL),
+  CONSTRAINT ck_process_vigencias_fin_acto CHECK (
+    (fin_origen IS DISTINCT FROM 'reorganizacion' OR fin_acto_id IS NOT NULL)
+    AND (fin_acto_id IS NULL OR vigente_hasta IS NOT NULL)
+  ),
+  -- DOS VIDAS DEL MISMO PROCESO NO SE SOLAPAN. Un periodo abierto llega hasta el infinito, asi que
+  -- esto impide tambien abrir una vida nueva sin cerrar la anterior.
+  CONSTRAINT ex_process_vigencias_sin_solape EXCLUDE USING gist (
+    process_id WITH =,
+    daterange(vigente_desde, vigente_hasta, '[)') WITH &&
+  )
+);
+CREATE INDEX IF NOT EXISTS idx_process_vigencias_process ON process_vigencias (process_id, vigente_desde);
+
+-- EL PERIODO QUE CUENTA HOY, uno por proceso: el que rige; si no hay ninguno, el proximo que va a
+-- empezar; y si tampoco, el ultimo que termino. Es de donde sale el estado que ve la pantalla. Un
+-- proceso que no aparece aqui no tiene ninguna vida: es un borrador.
+--
+-- `DROP` + `CREATE` y no `CREATE OR REPLACE`: este ultimo no deja cambiar las columnas de una vista
+-- que ya existe, y fallaria el arranque el dia que se le añada una.
+DROP VIEW IF EXISTS procesos.process_vigencia_actual;
+CREATE VIEW procesos.process_vigencia_actual AS
+SELECT DISTINCT ON (pv.process_id)
+  pv.process_id,
+  pv.id AS vigencia_id,
+  pv.vigente_desde,
+  pv.vigente_hasta,
+  pv.inicio_origen,
+  pv.inicio_acto_id,
+  pv.fin_origen,
+  pv.fin_acto_id,
+  estado_de_vigencia(pv.vigente_desde, pv.vigente_hasta) AS estado
+FROM process_vigencias pv
+ORDER BY
+  pv.process_id,
+  CASE estado_de_vigencia(pv.vigente_desde, pv.vigente_hasta)
+    WHEN 'vigente' THEN 0
+    WHEN 'programado' THEN 1
+    ELSE 2
+  END,
+  CASE WHEN pv.vigente_desde > CURRENT_DATE THEN pv.vigente_desde END ASC,
+  pv.vigente_desde DESC;
+
+-- ¿RIGE HOY ESTE PROCESO? La unica forma de preguntarlo. Tres consultas del menu de una persona lo
+-- necesitan, y escribir el EXISTS tres veces es como una de ellas acaba mirando otra cosa.
+CREATE OR REPLACE FUNCTION public.proceso_rige(proceso INT) RETURNS BOOLEAN
+  LANGUAGE sql STABLE
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM process_vigencias pv
+     WHERE pv.process_id = proceso AND esta_vigente(pv.vigente_desde, pv.vigente_hasta)
+  );
+$$;
+
+-- La misma regla de borrado que las vidas de unidades y puestos: ver `rechazar_borrado_de_vida_empezada`.
+CREATE OR REPLACE TRIGGER trg_process_vigencias_borrado
+BEFORE DELETE ON process_vigencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_borrado_de_vida_empezada();
+CREATE OR REPLACE TRIGGER trg_process_vigencias_correccion
+BEFORE INSERT OR UPDATE ON process_vigencias
+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_registrada();
+
+-- LA ARISTA FECHADA: de que proceso cuelga cada proceso (frente 27, D-04).
+--
+-- Una fila por arista, con inicio y fin. Cambiar de padre NO es un UPDATE: es cerrar una fila y
+-- abrir otra, y asi queda escrito de quien dependio cada nodo y hasta cuando. Las fechas se leen
+-- como en el nodo (D-03): sin inicio la arista es un BORRADOR, se admiten futuras, y solo se borra
+-- la que aun no rige. Cada extremo lleva su origen y, si es una reorganizacion, su acto (D-05).
+--
+-- LA RAIZ es el nodo sin arista vigente.
+--
+-- Sustituye a `processes.parent_id`: una columna «padre» no puede decir de quien colgo ayer, y con
+-- fechas futuras «el padre actual» depende del dia y no se puede guardar.
+CREATE TABLE IF NOT EXISTS procesos.process_relations (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  parent_process_id INT NOT NULL,
+  child_process_id INT NOT NULL,
+  vigente_desde DATE NULL,
+  vigente_hasta DATE NULL,
+  inicio_origen TEXT NULL CHECK (inicio_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  inicio_acto_id INT NULL,
+  fin_origen TEXT NULL CHECK (fin_origen IN ('carga_inicial', 'reorganizacion', 'correccion')),
+  fin_acto_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_process_relations_parent FOREIGN KEY (parent_process_id) REFERENCES processes(id),
+  CONSTRAINT fk_process_relations_child FOREIGN KEY (child_process_id) REFERENCES processes(id),
+  CONSTRAINT fk_process_relations_inicio_acto FOREIGN KEY (inicio_acto_id) REFERENCES actos(id),
+  CONSTRAINT fk_process_relations_fin_acto FOREIGN KEY (fin_acto_id) REFERENCES actos(id),
+  CONSTRAINT ck_process_relations_no_propia CHECK (parent_process_id <> child_process_id),
+  -- Un borrador no tiene nada mas que su padre y su hijo.
+  CONSTRAINT ck_process_relations_inicio_con_origen CHECK ((vigente_desde IS NULL) = (inicio_origen IS NULL)),
+  CONSTRAINT ck_process_relations_borrador_sin_fin CHECK (vigente_desde IS NOT NULL OR vigente_hasta IS NULL),
+  CONSTRAINT ck_process_relations_periodo CHECK (vigente_hasta IS NULL OR vigente_hasta >= vigente_desde),
+  CONSTRAINT ck_process_relations_fin_con_origen CHECK ((vigente_hasta IS NULL) = (fin_origen IS NULL)),
+  CONSTRAINT ck_process_relations_inicio_acto CHECK (
+    (inicio_origen IS DISTINCT FROM 'reorganizacion' OR inicio_acto_id IS NOT NULL)
+    AND (inicio_acto_id IS NULL OR vigente_desde IS NOT NULL)
+  ),
+  CONSTRAINT ck_process_relations_fin_acto CHECK (
+    (fin_origen IS DISTINCT FROM 'reorganizacion' OR fin_acto_id IS NOT NULL)
+    AND (fin_acto_id IS NULL OR vigente_hasta IS NOT NULL)
+  ),
+  -- DOS ARISTAS DEL MISMO HIJO NO COINCIDEN NI UN DIA. Sustituye al indice unico de antes, que
+  -- solo sabia decir «un padre»: con fechas, un hijo tiene un padre POR PERIODO.
+  CONSTRAINT ex_process_relations_sin_solape EXCLUDE USING gist (
+    child_process_id WITH =,
+    daterange(vigente_desde, vigente_hasta, '[)') WITH &&
+  ) WHERE (vigente_desde IS NOT NULL)
+);
+-- Y un solo borrador por hijo: la exclusion no mira las filas sin fecha.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_process_relations_borrador ON process_relations (child_process_id) WHERE vigente_desde IS NULL;
+CREATE INDEX IF NOT EXISTS idx_process_relations_parent ON process_relations (parent_process_id);
+CREATE INDEX IF NOT EXISTS idx_process_relations_child ON process_relations (child_process_id, vigente_desde);
+CREATE OR REPLACE TRIGGER trg_process_relations_set_updated_at BEFORE UPDATE ON process_relations FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- EL ARBOL VIGENTE: las aristas que rigen hoy. Es lo que leen el reparto, los ambitos y los niveles.
+CREATE OR REPLACE VIEW procesos.process_arbol_vigente AS
+SELECT a.id, a.parent_process_id, a.child_process_id, a.vigente_desde, a.vigente_hasta
+  FROM process_relations a
+ WHERE esta_vigente(a.vigente_desde, a.vigente_hasta);
+
+-- LA ARISTA QUE CUENTA HOY, una por hijo: la que rige; si no, la programada; si no, el borrador; si
+-- no, la ultima que tuvo. Es lo que DIBUJA el grafo: un nodo en borrador o ya suprimido tambien
+-- tiene un sitio en el dibujo, aunque no este en el arbol vigente.
+CREATE OR REPLACE VIEW procesos.process_relacion_actual AS
+SELECT DISTINCT ON (a.child_process_id)
+  a.id, a.parent_process_id, a.child_process_id,
+  a.vigente_desde, a.vigente_hasta, a.inicio_origen, a.inicio_acto_id, a.fin_origen, a.fin_acto_id,
+  estado_de_vigencia(a.vigente_desde, a.vigente_hasta) AS estado
+FROM process_relations a
+ORDER BY
+  a.child_process_id,
+  CASE estado_de_vigencia(a.vigente_desde, a.vigente_hasta)
+    WHEN 'vigente' THEN 0
+    WHEN 'programado' THEN 1
+    WHEN 'borrador' THEN 2
+    ELSE 3
+  END,
+  CASE WHEN a.vigente_desde > CURRENT_DATE THEN a.vigente_desde END ASC,
+  a.vigente_desde DESC NULLS LAST;
+
+-- Una arista empieza DENTRO de la vida de sus dos nodos; el fin del hijo lo arrastra su vida (ver
+-- `sincronizar_aristas_con_vida`).
+CREATE OR REPLACE TRIGGER trg_process_relations_en_vida
+BEFORE INSERT OR UPDATE OF vigente_desde, parent_process_id, child_process_id ON process_relations
+FOR EACH ROW EXECUTE FUNCTION comprobar_arista_en_vida('process_vigencias', 'process_id', 'parent_process_id', 'child_process_id', 'proceso');
+
+-- UNA ARISTA QUE YA RIGE NO CAMBIA DE EXTREMOS: se le pone fin y se abre otra.
+CREATE OR REPLACE TRIGGER trg_process_relations_extremos_inmutables
+BEFORE UPDATE OF parent_process_id, child_process_id ON process_relations
+FOR EACH ROW
+WHEN (OLD.vigente_desde <= CURRENT_DATE AND (
+  OLD.parent_process_id IS DISTINCT FROM NEW.parent_process_id OR OLD.child_process_id IS DISTINCT FROM NEW.child_process_id
+))
+EXECUTE FUNCTION rechazar_cambio_de_arista_empezada();
+
+CREATE OR REPLACE TRIGGER trg_process_relations_borrado
+BEFORE DELETE ON process_relations
+FOR EACH ROW EXECUTE FUNCTION rechazar_borrado_de_vida_empezada('Esta relacion');
+CREATE OR REPLACE TRIGGER trg_process_relations_correccion
+BEFORE INSERT OR UPDATE ON process_relations
+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_registrada();
+
+-- La vida del nodo arrastra a su arista: empieza con el y termina con el.
+CREATE OR REPLACE TRIGGER trg_process_vigencias_aristas
+AFTER INSERT OR UPDATE OR DELETE ON process_vigencias
+FOR EACH ROW EXECUTE FUNCTION sincronizar_aristas_con_vida('process_relations', 'child_process_id', 'process_id');
+
+-- Un nodo no se suprime mientras tenga hijos que sigan mas alla de su fin.
+CREATE OR REPLACE TRIGGER trg_process_vigencias_sin_hijos
+BEFORE INSERT OR UPDATE OF vigente_hasta ON process_vigencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_supresion_con_hijos('process_relations', 'parent_process_id', 'process_id', 'proceso');
+
+-- Las equivalencias de los procesos: la misma forma y las mismas reglas que las de las unidades.
+CREATE TABLE IF NOT EXISTS procesos.process_equivalencias (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  antecesor_vigencia_id INT NOT NULL,
+  sucesor_process_id INT NOT NULL,
+  registrado_por_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Una vida que nunca empezo se descarta entera, y sus sucesores previstos se van con ella.
+  CONSTRAINT fk_process_equivalencias_antecesor FOREIGN KEY (antecesor_vigencia_id) REFERENCES process_vigencias(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_equivalencias_sucesor FOREIGN KEY (sucesor_process_id) REFERENCES processes(id),
+  CONSTRAINT fk_process_equivalencias_registrado_por FOREIGN KEY (registrado_por_person_id) REFERENCES persons(id),
+  CONSTRAINT uq_process_equivalencias_par UNIQUE (antecesor_vigencia_id, sucesor_process_id)
+);
+CREATE INDEX IF NOT EXISTS idx_process_equivalencias_sucesor ON process_equivalencias (sucesor_process_id);
+CREATE OR REPLACE TRIGGER trg_process_equivalencias_coherente
+BEFORE INSERT ON process_equivalencias
+FOR EACH ROW EXECUTE FUNCTION comprobar_equivalencia('process_vigencias', 'process_id', 'sucesor_process_id', 'processes', 'name');
+CREATE OR REPLACE TRIGGER trg_process_equivalencias_quitar
+BEFORE DELETE ON process_equivalencias
+FOR EACH ROW EXECUTE FUNCTION exigir_correccion_al_quitar_equivalencia('process_vigencias');
+CREATE OR REPLACE TRIGGER trg_process_equivalencias_inmutable
+BEFORE UPDATE ON process_equivalencias
+FOR EACH ROW EXECUTE FUNCTION rechazar_cambio_de_equivalencia();
+CREATE OR REPLACE TRIGGER trg_process_vigencias_con_sucesores
+BEFORE UPDATE OF vigente_hasta ON process_vigencias
+FOR EACH ROW WHEN (OLD.vigente_hasta IS DISTINCT FROM NEW.vigente_hasta)
+EXECUTE FUNCTION rechazar_fin_incoherente_con_sucesores('process_equivalencias', 'sucesor_process_id', 'process_id', 'processes', 'name');
+CREATE OR REPLACE TRIGGER trg_process_vigencias_como_sucesor
+BEFORE UPDATE OF vigente_hasta OR DELETE ON process_vigencias
+FOR EACH ROW
+EXECUTE FUNCTION rechazar_fin_incoherente_del_sucesor('process_equivalencias', 'sucesor_process_id', 'process_id', 'processes', 'name');
+
+
+
+-- AQUI VIVIA `process_definition_series`, Y SE RETIRA (frente 25, P9 — 2026-10-11).
+--
+-- Era «(cargo XOR tipo de unidad) + un `code` derivado con slugify», y la sustituye `lineas`, mas
+-- arriba en este fichero. El motivo esta medido y escrito alli: la serie admitia UN EJE O EL OTRO
+-- mientras los cargos del catalogo son GENERICOS, asi que el eje que no cabia habia que ponerlo en
+-- `process_target_rules` --y se podia elegir cual iba donde--. La variacion estaba PARTIDA EN DOS
+-- TABLAS, y de ahi venia «llegabamos a lo mismo desde dos lugares».
+--
+-- CON ELLA SE VAN SEIS MECANISMOS, y ninguno era accidental: todos existian para sostener una
+-- identidad DERIVADA.
+--
+--   source_type + su CHECK                    el eje unico, que era la causa
+--   code = slugify(cargo.name)                la identidad derivada
+--   resolveProcessDefinitionSeriesIdentity    la derivaba en cada alta
+--   refreshSeriesNamesOnRename x2             dos cascadas NO transaccionales al renombrar un
+--                                             cargo o un tipo de unidad
+--   refreshProcessDefinitionVersionNames      recomponia «<Proceso> por <Serie>» detras de ellas
+--   variation_key + su hook                   la copia del code en cada configuracion (P2-bis)
+--
+-- La linea tiene nombre ESCRITO por una persona y su identidad son sus dos ejes, impuestos por
+-- `uq_lineas_identidad` con `NULLS NOT DISTINCT`. Renombrar un cargo ya no cambia el nombre de nada.
+
+-- LA LINEA: la OBLIGACION de un proceso — que documento, DE QUIEN y DONDE (frente 25, P8 — 2026-10-11).
+--
+-- Sustituye a `process_definition_series`, y el motivo es medido: la serie admite UN EJE O EL OTRO
+-- —su `CHECK` lo impone y `validation.js` lo repite— mientras que los cargos son GENERICOS. Medido en
+-- el catalogo: `Coordinador`, `Docente`, `Responsable`, `Director`, `Prorrector`, `Asistente`, `Jefe`.
+-- NO existe «Coordinador de Carrera» ni «Director de Investigacion»: el «de Carrera» sale de en que
+-- unidad esta el puesto, no del cargo. Asi que ninguna de las cuatro obligaciones reales del dueño
+-- cabia en una serie:
+--
+--   «el Informe de IF de los Coordinadores de Carrera»  -> Coordinador + tipo Carrera
+--   «el de los Directores de Escuela»                   -> Director    + tipo Escuela
+--   «el de la Direccion de Investigacion»               -> Director    + ESA unidad
+--   «el de los Docentes de una Carrera»                 -> Docente     + tipo Carrera
+--
+-- Como la serie solo acepta uno, el otro eje habia que ponerlo en `process_target_rules` — y se podia
+-- elegir cual iba donde. `(Coordinador en la serie, Carrera en la regla)` y
+-- `(Carrera en la serie, Coordinador en la regla)` pasan las dos, significan cosas distintas y al
+-- usuario le parecen iguales. ESA era la causa de «llegabamos a lo mismo desde dos lugares»: la
+-- variacion estaba PARTIDA EN DOS TABLAS. Aqui los dos ejes viven juntos.
+--
+-- EL ALCANCE SE NOMBRA, NO SE DEDUCE DE UN NULL, y los nombres NO son nuevos: son exactamente los de
+-- `process_target_rules` —`unit_scope_type` + `unit_type_id` + `unit_id`—, que es la tabla que ya
+-- expresa este mismo concepto en este mismo esquema, y los mismos que usa
+-- `participantes_declarados`. Mismo concepto, mismo nombre, mismo vocabulario. Cuando llegue el
+-- renombrado al castellano, las tres se renombran juntas.
+--
+-- ⚠️ ESTA COLUMNA SE LLAMO `ambito` DURANTE MEDIA HORA, y la puerta lo caz: `ambito` y `alcance`
+-- estan en la lista de nombres muertos de `doc-modelo-excepciones.json`, RESERVADOS POR EL FRENTE 18
+-- para el expediente relacional —el «ambito» de un titulo, que es otro significado de la misma
+-- palabra—. El `CLAUDE.md` de la raiz lo dice con esas palabras y aun asi se uso. Lo delato
+-- `check-doc-modelo.mjs --update`, que al re-grabar AMPLIO la excepcion de `ambito` con las cinco
+-- paginas nuevas: o sea que el gate se habria callado tapando el choque, que es exactamente lo que la
+-- norma prohibe. La leccion: cuando `--update` toca la lista de EXCEPCIONES y no solo las huellas,
+-- para y mira que acabas de hacer.
+--
+-- EL CASO «SIN VARIACION» ES EL QUE MANDA EN LA FORMA. El plan de este frente habia anotado
+-- `CHECK num_nonnulls(...) = 1`, y al medir resulto que eso HACE ILEGAL EL UNICO CASO QUE EXISTE: la
+-- unica serie de una base sembrada es `source_type = 'default'` —el «sin variacion» de los memos y
+-- oficios—, que no tiene ni cargo ni tipo de unidad. No es un caso raro: hoy es el 100 % de lo que
+-- hay. Por eso `all_units` es un valor con nombre y el DEFAULT de la columna.
+--
+-- `cargo_id` SI puede ser NULL, y ahi no hace falta discriminador: «un cargo concreto» o «cualquier
+-- cargo» son DOS estados, y dos estados los distingue un NULL sin ambiguedad. El alcance tiene TRES,
+-- y tres necesitan nombre.
+--
+-- `unit_subtree` NO esta entre los valores, a proposito: el refinamiento «esta unidad y sus
+-- descendientes» es de la REGLA, dentro del alcance de la linea (tarea `P10`). La linea dice DONDE
+-- vive la obligacion; la regla, como se reparte dentro de ahi.
+--
+-- `NULLS NOT DISTINCT` EN EL UNICO, y sin esto la identidad no se sostiene: en PostgreSQL
+-- `NULL <> NULL`, asi que un unico corriente dejaria crear DOS lineas «sin variacion» del mismo
+-- proceso. Disponible desde PostgreSQL 15 y aqui corre 17.
+--
+-- EL LINAJE (`linea_anterior_id`) es la decision 10 del dueño, y resuelve algo que hoy NO SE PUEDE
+-- SABER: si una obligacion cambio de manos. Hoy `series_id` se elige EN CADA VERSION, asi que se
+-- puede escribir «v1 por Coordinador, v2 por Director» y el resultado es una historia FALSA —dos
+-- versiones que obligan a gente distinta sin que nada diga que hubo un traspaso—, con el contador de
+-- version mintiendo ademas, porque se calcula por linea. Con la linea eso no se puede escribir: si
+-- cambia el cargo que produce el documento ES OTRA LINEA (decision 12), y `linea_anterior_id` declara
+-- el relevo. Es la idea de `task_item_tenures` un nivel mas arriba: alli se releva el RESPONSABLE,
+-- aqui la OBLIGACION.
+--
+-- Y NACE PROTEGIDA DE CICLOS, que es lo que pide el §5 del frente 26: `ck_lineas_no_sucede_a_si_misma`
+-- cuesta una linea en una tabla nueva y es la historia entera de las otras cinco claves ajenas
+-- autorreferenciales del esquema, que no lo tienen. La proteccion de ciclos de longitud mayor que uno
+-- es de ese frente, con el mecanismo que elija su `CI2`.
+CREATE TABLE IF NOT EXISTS procesos.lineas (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  process_id INT NOT NULL,
+  nombre VARCHAR(180) NOT NULL,
+  cargo_id INT NULL,
+  -- EL TERCER ESTADO DEL «QUIEN» (frente 25, P26 — 2026-10-15). `cargo_id` sabe decir dos cosas --un
+  -- cargo, o NULL para «cualquiera del ambito»-- y no sabe decir la TERCERA: «el que manda aqui, sea
+  -- quien sea», porque el cargo de la jefatura VARIA por tipo de unidad (Escuela->Director,
+  -- Carrera->Coordinador, Jefatura->Jefe, Prorrectorado->Prorrector). Una obligacion que es UNA
+  -- --«el responsable de cada unidad entrega su informe»-- necesitaria cuatro lineas por cargo.
+  --
+  -- ESTO VIVIA EN `process_target_rules.recipient_policy`, y por eso «a quien alcanza esta
+  -- obligacion» se contestaba leyendo DOS tablas: el cargo y el ambito aqui, el afinado alla. Es la
+  -- misma enfermedad que mataron `P22` (el proceso), `P23` (el nombre) y `P10` (las cuatro copias):
+  -- un solo eje escrito en dos sitios. Aqui no puede contradecirse porque es la misma fila.
+  recipient_policy TEXT CHECK (recipient_policy IN ('all_matches', 'unit_head')) NOT NULL DEFAULT 'all_matches',
+  unit_scope_type TEXT CHECK (unit_scope_type IN ('all_units', 'unit_type', 'unit_exact')) NOT NULL DEFAULT 'all_units',
+  unit_type_id INT NULL,
+  unit_id INT NULL,
+  linea_anterior_id INT NULL,
+  effective_from DATE NOT NULL,
+  effective_to DATE NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- SIN CASCADA (frente 27, D-03): borrar un proceso se llevaba sus lineas, y con ellas sus
+  -- configuraciones. Una linea es de donde cuelga el archivo de un proceso --el entregable llega a
+  -- ella por una cadena que ya no se puede mover--, asi que no se va con nadie: se borra a proposito
+  -- y de abajo arriba, o no se borra.
+  CONSTRAINT fk_lineas_process FOREIGN KEY (process_id) REFERENCES processes(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_lineas_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id),
+  CONSTRAINT fk_lineas_unit_type FOREIGN KEY (unit_type_id) REFERENCES unit_types(id),
+  CONSTRAINT fk_lineas_unit FOREIGN KEY (unit_id) REFERENCES units(id),
+  CONSTRAINT fk_lineas_anterior FOREIGN KEY (linea_anterior_id) REFERENCES lineas(id),
+  -- El alcance y su columna van juntos: cada valor exige exactamente su destino y prohibe el otro.
+  CONSTRAINT ck_lineas_unit_scope CHECK (
+       (unit_scope_type = 'all_units'  AND unit_type_id IS NULL     AND unit_id IS NULL)
+    OR (unit_scope_type = 'unit_type'  AND unit_type_id IS NOT NULL AND unit_id IS NULL)
+    OR (unit_scope_type = 'unit_exact' AND unit_type_id IS NULL     AND unit_id IS NOT NULL)
+  ),
+  -- Lo que el frente 26 va a pedirle a las otras cinco autorreferenciales. En una tabla nueva, gratis.
+  -- LA JEFATURA NO LLEVA CARGO, y no es capricho: si ya sabes el cargo no necesitas la jefatura, y
+  -- pedir los dos resuelve a la INTERSECCION --«el Docente que ademas sea jefe de su unidad»--, que
+  -- es casi siempre NADIE y nunca lo que alguien quiso decir.
+  CONSTRAINT ck_lineas_jefatura_sin_cargo CHECK (recipient_policy <> 'unit_head' OR cargo_id IS NULL),
+  CONSTRAINT ck_lineas_no_sucede_a_si_misma CHECK (id IS DISTINCT FROM linea_anterior_id),
+  CONSTRAINT ck_lineas_vigencia CHECK (effective_to IS NULL OR effective_to >= effective_from)
+);
+-- LA IDENTIDAD de la linea son sus dos ejes dentro de su proceso. `NULLS NOT DISTINCT` porque
+-- «cualquier cargo» y «todas las unidades» son NULL y tienen que colisionar entre si.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_lineas_identidad
+  ON lineas (process_id, cargo_id, unit_scope_type, unit_type_id, unit_id) NULLS NOT DISTINCT;
+-- Y el nombre no se repite dentro de un proceso, porque es lo que se lee en pantalla. OJO: a
+-- diferencia de `uq_process_definition_series_code`, que era UNICO GLOBAL —asi que dos procesos no
+-- podian tener los dos una variacion «Coordinador»—, este es POR PROCESO. La serie era un catalogo
+-- compartido; la linea es de su proceso.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_lineas_nombre_por_proceso ON lineas (process_id, nombre);
+CREATE INDEX IF NOT EXISTS idx_lineas_anterior ON lineas (linea_anterior_id);
+CREATE INDEX IF NOT EXISTS idx_lineas_vigencia ON lineas (process_id, effective_to);
+
+
+CREATE TABLE IF NOT EXISTS procesos.process_definition_versions (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- SIN `process_id` (frente 25, P22 — 2026-10-14). Era una COPIA, y de las que no sostenia nadie:
+  -- `linea_id` es NOT NULL y `lineas` ya dice de que proceso es, asi que era 100 % derivable.
+  -- Provocado antes de quitarla: una configuracion que decia ser del proceso B colgando de la linea
+  -- del proceso A entraba SIN RESISTENCIA --decia 9, su linea decia 8--. Misma forma que
+  -- `variation_key` (P2-bis) y que las cuatro de la regla (P10), pero PEOR: aquellas tenian guardia.
+  --
+  -- Y no era inofensiva: `trg_vinculo_formato_un_proceso_fn` la leia para decidir si un formato ya
+  -- servia a OTRO proceso, asi que comparaba el proceso DECLARADO en vez del real.
+  --
+  -- LA LINEA a la que pertenece esta version, y ES SU IDENTIDAD (frente 25, P2-bis — 2026-10-11).
+  --
+  -- AQUI VIVIA `variation_key VARCHAR(120) NOT NULL DEFAULT 'general'`, y era una COPIA de
+  -- `process_definition_series.code`. Medido en `D1`: de las 28 sentencias que la mencionaban, 8 la
+  -- FILTRABAN por la pareja `(process_id, variation_key)` y hoy son `WHERE linea_id = ?` —una columna
+  -- y un parametro menos—, 4 la escribian llevando `series_id` EN LA MISMA LISTA de columnas, y los
+  -- tres indices de abajo pierden una columna cada uno.
+  --
+  -- Y LO QUE DE VERDAD ARREGLA: dos de esos tres indices son UNICOS, asi que la unicidad de «una
+  -- version por linea» y de «una sola activa por linea» estaba impuesta SOBRE LA COPIA. La copia la
+  -- arrastraba un gancho del CRUD que lo decia de si mismo —«No es transaccional (no lo era
+  -- antes)»— con un UPDATE masivo: si se quedaba a medias, los dos unicos pasaban a vigilar
+  -- etiquetas viejas. Y la copia YA ESTABA DERIVADA: el bootstrap usaba dos constantes para una sola
+  -- cosa (`DEFAULT_SERIES_CODE = 'default'` a `series.code` y `DEFAULT_VARIATION = 'general'` a
+  -- `variation_key`), asi que en una base sembrada las DOS configuraciones que existian tenian la
+  -- etiqueta distinta de su origen. El 100 %.
+  --
+  -- `series_id` SE FUE CON LA SERIE en `P9`, el mismo dia: la pantalla pide la linea directamente.
+  linea_id INT NOT NULL,
+  definition_version VARCHAR(20) NOT NULL,
+  -- SIN `name` (frente 25, P23 -- 2026-10-14). Era UNA COPIA DE `lineas.nombre`, y de las que ni
+  -- siquiera identificaban: dos configuraciones de la misma linea tenian el MISMO nombre, asi que
+  -- la columna que servia para nombrar no distinguia. Medido en la base sembrada: la 1.0.0 y la
+  -- 1.1.0 de la linea 1 decian las dos «Proceso por defecto».
+  --
+  -- Y estaba CADUCADA, provocado en el navegador: renombrar la linea 1 dejo a sus dos
+  -- configuraciones con el nombre viejo. La rutina que resincronizaba
+  -- (`refreshProcessDefinitionVersionNames`) colgaba de `processes.afterUpdate` --renombrar el
+  -- PROCESO, que desde `P9` ya no decide este nombre-- y no habia ni un gancho de `lineas`. O sea:
+  -- el unico disparador que existia era el unico que ya no podia cambiar nada.
+  --
+  -- Hoy se DERIVA, con la identidad entera: `nombre_configuracion(lineas.nombre,
+  -- definition_version)`, definida una vez mas abajo. La columna, la rutina y la ambiguedad se van
+  -- de una vez, y la fachada de /admin lo sigue exponiendo como `name` porque la pregunta --«como
+  -- se llama esta configuracion»-- no ha cambiado; lo que cambia es que ya no hay dos verdades.
+  description VARCHAR(255) NULL,
+  status TEXT CHECK (status IN ('draft', 'active', 'retired')) NOT NULL DEFAULT 'draft',
+  active_series_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN status = 'active' THEN 1 ELSE NULL END) STORED,
+  effective_from DATE NOT NULL,
+  effective_to DATE NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- LA CASCADA SE MUDA AQUI, y no es un parche: es la relacion de verdad. Borrar un proceso borraba
+  -- sus configuraciones por `process_id`; con la copia fuera el camino es proceso -> linea ->
+  -- configuracion, y `linea_id` no tenia cascada. Provocado: borrar una linea con configuraciones
+  -- fallaba con `violates foreign key constraint`, asi que sin esto borrar un proceso habria dejado
+  -- de funcionar. Y es mas correcto que el atajo: la norma cuelga de la obligacion.
+  CONSTRAINT fk_process_definition_versions_linea FOREIGN KEY (linea_id) REFERENCES lineas(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_process_definition_versions_linea ON process_definition_versions (linea_id);
+-- Los tres pasan de la pareja-mas-copia a UNA columna: la linea ya es de un proceso, asi que
+-- `process_id` tambien sobraba. Tres columnas a dos, tres a dos, y cuatro a tres.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_versions_linea ON process_definition_versions (linea_id, definition_version);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_one_active_linea ON process_definition_versions (linea_id, active_series_flag);
+CREATE INDEX IF NOT EXISTS idx_process_definition_versions_status ON process_definition_versions (linea_id, status, effective_from);
+
+-- EL NOMBRE DE UNA CONFIGURACION, EN UN SOLO SITIO. Sustituye a la columna `name` de arriba.
+--
+-- Es una funcion y no la expresion repetida en cada consulta porque la leen DIECISIETE sentencias
+-- en nueve ficheros: con la expresion suelta, el formato quedaria escrito diecisiete veces y seria
+-- la misma enfermedad que la columna --una regla en N sitios que nadie sincroniza--. Aqui el
+-- separador se cambia una vez.
+--
+-- Se llama SIN CUALIFICAR desde el codigo (el `search_path` la resuelve) para que las puertas de
+-- SQL no lean `procesos.` como un alias de tabla sin declarar.
+CREATE OR REPLACE FUNCTION procesos.nombre_configuracion(nombre_linea TEXT, version TEXT)
+RETURNS TEXT
+LANGUAGE sql
+IMMUTABLE
+AS $$
+  SELECT CONCAT_WS(' · ',
+    NULLIF(BTRIM(COALESCE(nombre_linea, '')), ''),
+    NULLIF(BTRIM(COALESCE(version, '')), '')
+  )
+$$;
+
+
+-- AQUI VIVIA `process_target_rules`, Y SE RETIRO ENTERA (frente 25, P26 — 2026-10-15).
+--
+-- Nacio el 2026-07-03, cuando no habia nada encima: la regla ERA la declaracion. `P8` le subio los
+-- dos ejes a `lineas`, `P10` le quito las cuatro copias que se habian quedado atras y `priority`,
+-- `P18-d` su vigencia y su interruptor, y `P25` el puesto exacto. Lo que quedo fue UNA columna con
+-- DOS valores --`all_matches` y `unit_head`-- y una tabla entera alrededor de ella.
+--
+-- Y las dos no se podian ni combinar: `unit_head` esta CONTENIDO en `all_matches`, asi que varias
+-- reglas en una configuracion o eran la misma o una absorbia a la otra. La cardinalidad que
+-- justificaba la tabla se habia ido con el puesto.
+--
+-- La columna esta hoy en `lineas.recipient_policy`, que es donde vive el resto del «quien». Con eso
+-- se fue tambien la pierna de la activacion que contaba REGLAS: contaba filas, no destinatarios, asi
+-- que lo unico que garantizaba era que alguien habia pulsado «Agregar regla» y guardado.
+
+
+-- EL CATALOGO DE GENERADORES: QUIEN PRODUCE EL PDF (frente 23, F3.1 — 2026-10-04).
+--
+-- ESTA TABLA SE LLAMABA `template_seeds` Y SIGNIFICABA OTRA COSA. Era «la SEMILLA»: un paquete de
+-- partida —un proyecto LaTeX+Jinja2 completo en MinIO— que se COPIABA entero por cada version de
+-- plantilla. Era UNA fila (`latex/informe-general`) y era EL mecanismo: no habia ningun camino para
+-- definir un documento que no pasara por escribir `.tex.j2`.
+--
+-- Lo medido que obligo al cambio (frente 23, §E del plan): de ese mecanismo solo se construyo la
+-- COPIA. No existe el formulario web que rellene los campos, no existe el renderizador (nada ejecuta
+-- el `make.sh` de la semilla) y no existe el editor de campos. La decision del dueno fue desacoplar:
+-- el llenado web lo haran SERVICIOS programados caso a caso, y la semilla LaTeX pasa a ser UNO de
+-- los generadores posibles, no EL mecanismo.
+--
+-- Asi que la tabla no se borra: cambia de SIGNIFICADO. Deja de ser «el esqueleto que se copia» y
+-- pasa a ser «el servicio que produce este documento». Quien lo declara es
+-- `ediciones.generador_id`.
+--
+-- QUE SE CONSERVO DE LA SEMILLA, Y POR QUE:
+--   · `source_path` — es el prefijo de MinIO del proyecto LaTeX, y `_materializeDraftFormats`
+--     (`templateLifecycle.js`) lo necesita para copiar `src/`, `defaults.yaml` y `render/` al crear
+--     una plantilla. Sin el no se puede crear ninguna. Pasa a NULL porque un generador de tipo
+--     `servicio` no copia ningun paquete: no tiene prefijo que ofrecer.
+--   · `preview_path` — lo rellena el descubrimiento de paquetes publicados (`syncTemplateSeeds`) y
+--     lo sirven las rutas de vista previa y descarga del catalogo. Tiene productor y lector.
+--   · `description` — se edita y se lista en `/admin`. Conserva su nombre a proposito: lo que se
+--     renombra es lo que CAMBIA de significado (`seed_code`, `display_name`, `seed_type`), no lo que
+--     sigue queriendo decir lo mismo.
+--
+-- `destino` ES LA COLUMNA NUEVA, y es NULL por el mismo motivo por el que `source_path` lo es: son
+-- las dos mitades excluyentes del catalogo. Un generador `latex` trae un paquete y no tiene a quien
+-- llamar; un generador `servicio` tiene una cola o un endpoint y no trae paquete. Se guarda como
+-- texto libre y NO como dos columnas (`cola` + `endpoint`) a proposito: hoy no hay ni un consumidor,
+-- y partirla antes de saber como se invoca seria inventar la forma del contrato por adelantado.
+--
+-- EL `CHECK` DE `tipo` ADMITE DOS VALORES Y NO MAS. `latex` es la semilla que ya existe —la primera
+-- fila del catalogo, la que siembra el bootstrap— y `servicio` es todo lo que se programe desde los
+-- Word. Un tercer tipo entra anadiendolo aqui, que es justo lo que un `VARCHAR(40)` libre
+-- (lo que era `seed_type`) no obligaba a hacer.
+CREATE TABLE IF NOT EXISTS plantillas.generadores_de_documento (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(180) NOT NULL,
+  nombre VARCHAR(180) NOT NULL,
+  description VARCHAR(255) NULL,
+  tipo TEXT CONSTRAINT chk_generadores_de_documento_tipo CHECK (tipo IN ('latex', 'servicio')) NOT NULL DEFAULT 'servicio',
+  -- A quien se le pide el PDF: nombre de cola o URL de endpoint. NULL para `latex`, que no llama a nadie.
+  destino VARCHAR(255) NULL,
+  -- El prefijo de MinIO del paquete que se copia. NULL para `servicio`, que no copia nada.
+  source_path VARCHAR(255) NULL,
+  preview_path VARCHAR(255) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_generadores_de_documento_code ON generadores_de_documento (code);
+
+
+-- ENTREGABLE (el "libro"): la IDENTIDAD ESTABLE de un documento, la que sobrevive a las versiones
+-- de su plantilla. Sin ella, la v1 y la v2 serian dos cosas sin relacion.
+-- Sus VERSIONES viven en ediciones (ediciones.catalogo_documental_id -> catalogo_documental.id).
+-- template_scope ('official'|'ad_hoc') es un atributo del entregable (permisos/edición).
+--
+-- A QUE LINEA PERTENECE NO SE GUARDA AQUI, Y ES EL CAMBIO DEL 2026-10-04 (frente 23, F1.2).
+-- `owner_process_id` y `owner_variation_key` vivieron aqui, con su clave ajena a `processes` y el
+-- indice `idx_catalogo_documental_owner` sobre las dos. Se retiran, y el motivo es que NINGUNA de las 33
+-- consultas que leen esta tabla las seleccionaba ni filtraba por ellas: las 33 hacen
+-- `JOIN catalogo_documental ON id = catalogo_documental_id` para sacar el NOMBRE. El indice no lo podia aprovechar
+-- ninguna.
+--
+-- Su unico lector en todo el sistema era `assertDeliverableBelongsToConfigLine`, el guardia que las
+-- comparaba con la definicion. Y ese es el circulo entero: la columna duplicaba un dato que ya se
+-- alcanza por el vinculo (`vinculos` -> `process_definition_versions` ->
+-- `processes`), la duplicacion obligaba a un guardia que comprobara que coinciden, y el guardia era
+-- el unico lector de la columna. La pertenencia se DERIVA por el vinculo.
+--
+-- Y QUIEN LA IMPONE es `trg_vinculo_formato_un_proceso`, al final de este fichero: al vincular una edicion,
+-- todas las definiciones ya vinculadas a cualquier edicion de ese mismo entregable tienen que
+-- compartir `(process_id, variation_key)` con la que se vincula. Cubre mas que el guardia que se
+-- retiro —el clon, los scripts y un INSERT a mano no pasaban por el—, y no necesita que el dato
+-- este copiado aqui para comprobarlo.
+--
+-- `owner_person_id` SE QUEDA, y no es lo mismo: es la persona dueña de un entregable `ad_hoc` —el
+-- que alguien crea para si, fuera de toda configuracion—, no la linea de proceso a la que sirve.
+--
+-- Efecto lateral medido: sin `owner_process_id` desaparece la dependencia circular entre los temas
+-- `plantillas` y `procesos`.
+CREATE TABLE IF NOT EXISTS plantillas.catalogo_documental (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(180) NOT NULL,
+  display_name VARCHAR(180) NOT NULL,
+  description VARCHAR(255) NULL,
+  template_scope TEXT CHECK (template_scope IN ('official','ad_hoc')) NOT NULL DEFAULT 'official',
+  owner_person_id INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_catalogo_documental_owner_person FOREIGN KEY (owner_person_id) REFERENCES persons(id)
+);
+-- SIN `template_seed_id` (frente 23, F3.1/F3.2 — 2026-10-04). Apuntaba a la semilla de la que nacio
+-- el entregable. No se perdio: es `ediciones.generador_id`, un nivel mas abajo, porque
+-- quien produce el PDF lo declara la EDICION y no el nombre. Y ya se exponia asi: `sqlTables.js`
+-- lista «Semilla» como campo de `ediciones` y `SqlAdminService` la traia por JOIN desde
+-- aqui. La columna solo hace honesta una fachada que ya existia.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_catalogo_documental_code ON catalogo_documental (code);
+
+
+-- ediciones = una EDICIÓN/versión de un entregable. La identidad (código, nombre, descripción),
+-- el scope (official/ad_hoc) y la persona propietaria viven en `catalogo_documental` (modelo
+-- "libro/ediciones"); esta tabla guarda el estado/almacenamiento de la versión y QUIÉN produce su
+-- PDF (`generador_id`). A QUE LINEA DE PROCESO SIRVE esta edición no se guarda en ninguna de las
+-- dos desde el 2026-10-04: lo dice su vínculo en `vinculos`, y lo impone el
+-- disparador `trg_vinculo_formato_un_proceso`.
+CREATE TABLE IF NOT EXISTS plantillas.ediciones (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  catalogo_documental_id INT NOT NULL,
+  -- LA VERSION DE ESTA EDICION, y es un SEMVER de tres segmentos: el codigo la parsea asi para
+  -- calcular la siguiente (`bumpSemanticVersion`, probada: "1.2.3" + major -> "2.0.0"). Da nombre
+  -- tambien a su carpeta en MinIO, que es de donde le viene el prefijo `storage_` del nombre viejo.
+  --
+  -- ⚠️ EL `CHECK` ES DE HOY (frente 25, P7) y tapa un hueco que no reventaba: hasta el 2026-10-11 la
+  -- base aceptaba `"1.0"` o `"v2"`, y `getNextStorageVersionForTemplateCode` **se salta en silencio**
+  -- (`continue`) toda fila que no case el patron. O sea que una version mal formada no corrompia
+  -- nada, pero dejaba CIEGO al calculo de la siguiente: el error que veias era «ya existe esa
+  -- version» --del unico de abajo-- en vez de «hay una version mal formada». Ahora no entra.
+  storage_version VARCHAR(20) NOT NULL
+    CHECK (storage_version ~ '^[0-9]+\.[0-9]+\.[0-9]+$'),
+  -- Lo que nace, nace SIN PUBLICAR. El default seguro es el que falla cerrado: un INSERT que se
+  -- olvide de esta columna deja una fila que el gate de activacion RECHAZA hasta que alguien la
+  -- publique a proposito, en vez de una plantilla publicada que nunca paso por el gate.
+  lifecycle_state TEXT CHECK (lifecycle_state IN ('draft','published','retired')) NOT NULL DEFAULT 'draft',
+  base_object_prefix VARCHAR(255) NOT NULL,
+  available_formats JSONB NOT NULL,
+  -- QUIEN PRODUCE EL PDF de esta edicion (frente 23, F3.2). NULL = todavia no se ha declarado; no se
+  -- pone NOT NULL porque las ediciones que ya existen no tienen por que tener generador y el fichero
+  -- del esquema no converge bases anteriores (TD7-s).
+  --
+  -- NO SUSTITUYE A `render_engine`, y el plan decia que si: es un error que se corrigio al
+  -- ejecutarlo. `render_engine` esta en `document_versions`, no aqui, y dice «con que motor se
+  -- renderizo ESTA ronda» — un hecho de la ejecucion. Esta columna es una DECLARACION de la
+  -- plantilla. Son dos cosas distintas y las dos se quedan.
+  generador_id INT NULL,
+  content_hash VARCHAR(64) NULL,
+  parent_version_id INT NULL,
+  -- Vale 1 SOLO si esta publicada; NULL en `draft` y en `retired`. La sostiene
+  -- `uq_ediciones_una_publicada`, al final de este bloque, y el porque esta ahi.
+  publicada_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN lifecycle_state = 'published' THEN 1 ELSE NULL END) STORED,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_ediciones_parent FOREIGN KEY (parent_version_id) REFERENCES ediciones(id),
+  CONSTRAINT fk_ediciones_catalogo FOREIGN KEY (catalogo_documental_id) REFERENCES catalogo_documental(id),
+  CONSTRAINT fk_ediciones_generador FOREIGN KEY (generador_id) REFERENCES generadores_de_documento(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_ediciones_storage ON ediciones (catalogo_documental_id, storage_version);
+-- UNA SOLA EDICION PUBLICADA POR ENTREGABLE, y desde hoy lo garantiza la BASE (frente 25, P1).
+--
+-- POR QUE HACIA FALTA. La regla existia y la imponia SOLO el codigo: `_retirePriorPublishedSiblings`
+-- en `services/admin/templates/templateLifecycle.js`, llamado desde sus dos caminos de publicacion.
+-- Un script, un `INSERT` a mano o un camino nuevo se la saltaban sin que nada avisara. El lado del
+-- PROCESO si tenia red --`uq_process_definition_one_active_linea`, que entonces se llamaba
+-- `..._series`-- y el de la plantilla no: una
+-- asimetria que nadie habia visto hasta que se busco.
+--
+-- EL TRUCO ES EL `NULL`. PostgreSQL no considera iguales dos NULL, asi que la columna generada vale
+-- 1 solo cuando la edicion esta publicada y NULL en cualquier otro estado. Resultado: muchos
+-- borradores y muchas retiradas conviven, y publicadas hay UNA. Es el mismo patron que sostiene las
+-- otras catorce unicidades condicionales del esquema.
+--
+-- ⚠️ ESTO VUELVE OBLIGATORIO EL ORDEN «retirar y luego publicar». Hoy ya es el que hay --medido el
+-- 2026-10-11: los dos sitios retiran antes-- asi que no rompe nada. Lo que cambia es que si alguien
+-- escribe un camino que publique primero, FALLARA EN EL ACTO en vez de dejar dos publicadas.
+--
+-- ⚠️ Y NO DICE NADA sobre a que configuracion esta vinculada esa edicion publicada, ni a cuantas.
+-- Eso lo gobierna `vinculos` y es la pregunta A del frente 25. Son dos garantias independientes.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_ediciones_una_publicada ON ediciones (catalogo_documental_id, publicada_flag);
+CREATE INDEX IF NOT EXISTS idx_ediciones_state ON ediciones (lifecycle_state);
+CREATE INDEX IF NOT EXISTS idx_ediciones_catalogo ON ediciones (catalogo_documental_id);
+
+-- SIN `meta_object_key` (sub-paso 8 del §0.8 del plan maestro). Apuntaba al `meta.yaml` del paquete
+-- de MinIO, que ya no se emite: el flujo —su unica seccion que no era copia literal de una columna
+-- de esta misma tabla— vive en `fill_flow_*` / `signature_flow_*` desde el sub-paso 3, y no queda
+-- ningun lector que abra ese fichero.
+
+
+-- NO HAY `template_artifact_fields`, Y NO ES UN OLVIDO (frente 23, F4.1 — 2026-10-04).
+--
+-- AQUI VIVIA esa tabla: una fila por cada campo que el usuario iba a rellenar en la web (`field_order`,
+-- `data_key`, `field_code`, `title`, `ui_component`, `ui_group`, `is_required`), reflejo del
+-- `schema.json` de la semilla LaTeX. Nacio para ser el esqueleto del generador que iba a emitir el
+-- Jinja2 con los tokens de firma colocados.
+--
+-- POR QUE SE FUE. Lo medido (frente 23, §E del plan): de ese generador solo se construyo el reflejo.
+-- El renderizador no existe —nada ejecuta el `make.sh` de la semilla—, el JOIN con
+-- `signature_flow_steps.slot` que justificaba las columnas no se escribio nunca, y el UNICO lector de
+-- las 18 filas en todo el sistema era `copySchemaFieldsToArtifact`: el codigo que las copiaba a la
+-- version siguiente. La tabla existia para copiarse a si misma. Y la prueba del vacio esta escrita en
+-- el propio repo: con el escritor de campos anulado del todo, `test:char:run` daba 281/281 en verde.
+--
+-- QUE PASA EL DIA QUE UN GENERADOR TENGA QUE DECIRLE A LA WEB QUE PREGUNTAR. Ese contrato hara falta
+-- —un servicio que produce un PDF tiene que poder declarar sus entradas—, y tendra que vivir en algun
+-- sitio. ESE SITIO NO ES ESTA TABLA RESUCITADA, y la razon es que el modelo cambio debajo: ahora el
+-- productor es `generadores_de_documento`, no una semilla que se copia, asi que el contrato cuelga del
+-- GENERADOR (uno por servicio, estable) y no de cada EDICION de cada plantilla (una copia por version,
+-- que es exactamente lo que no pagaba nada aqui). Quien lo necesite, lo disena entonces, con un
+-- consumidor delante: un esquema declarado por un servicio sin nadie que lo pinte vuelve a ser esto.
+--
+-- EL `schema.json` DE MINIO NO SE HA IDO. Sigue siendo el fichero que el editor de `/admin` lee y
+-- escribe (`getTemplateArtifactSchema` / `buildSchemaJsonFromFields`). Lo que se fue es su REFLEJO en
+-- la base, y el puntero `ediciones.schema_object_key` (F4.2), que era
+-- `base_object_prefix` + `schema.json` — una copia derivable, y por tanto una tercera forma de decir
+-- lo mismo. Hoy la clave se deriva al leer.
+
+
+CREATE TABLE IF NOT EXISTS procesos.vinculos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  process_definition_id INT NOT NULL,
+  edicion_id INT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 1,
+  item_mode TEXT CHECK (item_mode IN ('single', 'replicated', 'routed')) NOT NULL DEFAULT 'single',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_vinculos_definicion FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_vinculos_edicion FOREIGN KEY (edicion_id) REFERENCES ediciones(id)
+);
+-- ⚠️ ESTE UNICO ES DE LA PAREJA A PROPOSITO, Y SE INTENTO CAMBIAR. F1.1 del frente 23 escribia
+-- `CREATE UNIQUE INDEX ... (edicion_id)` a secas y se probo: rompe el versionado de
+-- configuraciones, porque clonar una definicion copia sus vinculos con el MISMO artefacto a una
+-- definicion nueva de la MISMA linea. Medido en `admin_crud.test.mjs` («el clon debe crearse»):
+-- 329 de 330 con el unico sobre la columna sola, 330 de 330 con este.
+--
+-- Lo que este unico sostiene es lo suyo: no se repite el mismo vinculo dentro de una misma
+-- configuracion. LA REGLA DE PERTENENCIA —un entregable sirve a una sola linea— la impone
+-- `trg_vinculo_formato_un_proceso`, al final de este fichero, que es un disparador y no un indice porque la
+-- regla mira `(process_id, variation_key)` y `variation_key` vive en `process_definition_versions`:
+-- pedirla en un indice obligaria a copiar esa columna aqui.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_vinculos ON vinculos (process_definition_id, edicion_id);
+
+
+CREATE TABLE IF NOT EXISTS procesos.term_types (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(80) NOT NULL UNIQUE,
+  description VARCHAR(255) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE OR REPLACE TRIGGER trg_term_types_set_updated_at BEFORE UPDATE ON term_types FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+INSERT INTO term_types (id, code, name, description, is_active)
+VALUES
+  (1, 'SEM', 'Semestre', 'Periodo academico semestral', 1),
+  (2, 'TRI', 'Trimestre', 'Periodo academico trimestral', 1),
+  (3, 'INT', 'Intensivo', 'Periodo academico intensivo', 1),
+  (4, 'CUS', 'Custom', 'Periodo operativo personalizado', 1),
+  (5, 'PERM', 'Permanente', 'Periodo sentinela de todos los tiempos', 1)
+ON CONFLICT (id) DO UPDATE SET
+  code = EXCLUDED.code,
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  is_active = EXCLUDED.is_active;
+
+-- Tipos de periodo en que corre una configuracion de proceso (M:N). Reemplaza a la antigua
+-- process_definition_triggers: ya no hay "modo de disparo"; un proceso simplemente se vincula
+-- a uno o varios term_types (incluido el sentinela 'Permanente') en los que puede lanzarse.
+CREATE TABLE IF NOT EXISTS procesos.process_definition_period_types (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  process_definition_id INT NOT NULL,
+  term_type_id INT NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_process_definition_period_types_definition FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_process_definition_period_types_term_type FOREIGN KEY (term_type_id) REFERENCES term_types(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_process_definition_period_types ON process_definition_period_types (process_definition_id, term_type_id);
+CREATE INDEX IF NOT EXISTS idx_process_definition_period_types_lookup ON process_definition_period_types (process_definition_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_process_definition_period_types_term_type ON process_definition_period_types (term_type_id);
+
+
+CREATE TABLE IF NOT EXISTS procesos.terms (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  name VARCHAR(60) NOT NULL UNIQUE,
+  term_type_id INT NOT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  CONSTRAINT fk_terms_term_type FOREIGN KEY (term_type_id) REFERENCES term_types(id)
+);
+CREATE INDEX IF NOT EXISTS idx_terms_term_type ON terms (term_type_id);
+
+
+CREATE TABLE IF NOT EXISTS tareas.process_runs (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  process_definition_id INT NOT NULL,
+  term_id INT NULL,
+  run_mode TEXT CHECK (run_mode IN ('automatic', 'manual')) NOT NULL DEFAULT 'manual',
+  source_run_id INT NULL,
+  created_by_user_id INT NULL,
+  reason VARCHAR(255) NULL,
+  status TEXT CHECK (status IN ('pending', 'active', 'completed', 'cancelled')) NOT NULL DEFAULT 'active',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_process_runs_definition FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id),
+  CONSTRAINT fk_process_runs_term FOREIGN KEY (term_id) REFERENCES terms(id),
+  CONSTRAINT fk_process_runs_source FOREIGN KEY (source_run_id) REFERENCES process_runs(id),
+  CONSTRAINT fk_process_runs_creator FOREIGN KEY (created_by_user_id) REFERENCES persons(id)
+);
+CREATE INDEX IF NOT EXISTS idx_process_runs_definition ON process_runs (process_definition_id, status);
+CREATE INDEX IF NOT EXISTS idx_process_runs_term ON process_runs (term_id);
+CREATE OR REPLACE TRIGGER trg_process_runs_set_updated_at BEFORE UPDATE ON process_runs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+CREATE TABLE IF NOT EXISTS tareas.tasks (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  process_definition_id INT NOT NULL,
+  process_run_id INT NULL,
+  term_id INT NOT NULL,
+  -- La unidad de la tarea. Pasa a NOT NULL el 2026-08-23: los dos escritores (el lanzamiento y la
+  -- tarea ad-hoc) la rellenan siempre, y era lo unico que sostenia el COALESCE de mas abajo.
+  scope_unit_id INT NOT NULL,
+  normalized_scope_unit_id INT GENERATED ALWAYS AS (COALESCE(scope_unit_id, 0)) STORED,
+  -- `created_by_user_id` VIVIO AQUI hasta el 2026-08-23. Estaba NULL en 12 de 13 tareas: el
+  -- lanzamiento automatico no lo rellena, y quien lanza una CORRIDA ya consta en
+  -- `process_runs.created_by_user_id` con su run_mode, su reason y su status. El unico caso donde
+  -- significaba algo era la tarea ad-hoc — y ahi el dato vive mas cerca y mas fino, en
+  -- `task_items.created_by_person_id`: quien encargo ESE entregable.
+  -- `responsible_position_id` VIVIO AQUI hasta el 2026-08-23. No era un responsable: el lanzamiento
+  -- lo ponia como `unitPositions[0]`, o sea el puesto de menor `slot_no` de la unidad — determinista
+  -- pero arbitrario. Y sus 27 lecturas hacian todas lo mismo: unir con `unit_positions` PARA SACAR
+  -- LA UNIDAD, que ya esta aqui al lado en `scope_unit_id`. Medido: coinciden en las 13 tareas.
+  -- El responsable de verdad vive en `task_items.responsible_position_id`, uno por entregable.
+  description TEXT NULL,
+  -- `comments_thread_ref` VIVIO AQUI hasta el 2026-08-23. Fosil con CERO lecturas y CERO
+  -- escrituras: los comentarios viven en `document_workflow_observations`.
+  start_date DATE NOT NULL,
+  end_date DATE NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'pendiente',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_tasks_process_definition FOREIGN KEY (process_definition_id) REFERENCES process_definition_versions(id),
+  CONSTRAINT fk_tasks_process_run FOREIGN KEY (process_run_id) REFERENCES process_runs(id),
+  CONSTRAINT fk_tasks_term FOREIGN KEY (term_id) REFERENCES terms(id),
+  CONSTRAINT fk_tasks_scope_unit FOREIGN KEY (scope_unit_id) REFERENCES units(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_tasks_definition_term_scope ON tasks (process_definition_id, term_id, normalized_scope_unit_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_definition_term ON tasks (process_definition_id, term_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_process_run ON tasks (process_run_id);
+CREATE INDEX IF NOT EXISTS idx_tasks_scope_unit ON tasks (scope_unit_id);
+
+
+CREATE TABLE IF NOT EXISTS tareas.task_items (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  task_id INT NOT NULL,
+  -- EL VINCULO, Y LA UNICA FUENTE DE «QUE VERSION DE PLANTILLA» (frente 23, F2.1 — 2026-10-04).
+  --
+  -- OBLIGATORIO desde hoy. Era `NULL` por una creencia que resulto falsa y que ya habia costado
+  -- cuatro correcciones: «un entregable ad-hoc no tiene vinculo». Si lo tiene. Las tareas ad-hoc
+  -- cuelgan del PROCESO POR DEFECTO (`GENERAL_PROCESS_SLUG = "default"`, `GeneralTaskService.js`),
+  -- que existe exactamente para eso, y sus dos caminos de alta toman el vinculo de la configuracion
+  -- activa de ese proceso. Medido: solo DOS ficheros insertan en esta tabla, los dos lo ponen, y en
+  -- los datos eran todas las filas de todas las filas, ad-hoc incluidas.
+  vinculo_id INT NOT NULL,
+  -- `edicion_id` VIVIO AQUI hasta el 2026-10-04. Era una COPIA del vinculo de la linea de
+  -- arriba: `vinculos` ya dice con que version de plantilla se trabaja, y este
+  -- entregable ya apunta a ese vinculo. Coincidian hoy porque solo existe una version de cada
+  -- plantilla; NADA obligaba a que coincidieran, y una plantilla versionada las habria separado en
+  -- silencio.
+  --
+  -- Quien la necesite la lee por el vinculo, con el JOIN que la mayoria de sus lectores ya hacia:
+  --   JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+  --   JOIN ediciones tar          ON tar.id = pdt.edicion_id
+  -- El `LEFT JOIN` que esos lectores usaban sobre esta columna era pura defensa contra el NULL que
+  -- ya no existe.
+  origin_kind TEXT CHECK (origin_kind IN ('process_defined','user_added')) NOT NULL DEFAULT 'process_defined',
+  title VARCHAR(180) NULL,
+  sort_order INT NOT NULL DEFAULT 1,
+  created_by_person_id INT NULL,
+  source_task_item_id INT NULL,
+  target_unit_id INT NULL,
+  -- `target_position_id` y `target_person_id` VIVIERON AQUI hasta el 2026-08-23. Eran el «Para:»
+  -- del documento —a quien iba DIRIGIDO— y no hay que confundirlos con quien lo PRODUCE, que es
+  -- `responsible_position_id`: son receptor y emisor, no dos nombres del mismo dato.
+  --
+  -- Se retiran porque el destinatario es DERIVABLE: quien firma al final es a quien va dirigido, y
+  -- desde el 2026-08-23 un envio EXIGE su flujo, asi que ese dato siempre esta. Guardarlo aparte
+  -- era mantener a mano un resumen del flujo que ademas podia mentir — el cliente lo calculaba
+  -- como «el PRIMER firmante», asi que con dos pasos nombraba al aprobador intermedio.
+  process_definition_template_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN vinculo_id ELSE NULL END) STORED,
+  -- OBLIGATORIO desde el 2026-08-23. Es el ANCLA del entregable: el PUESTO que responde de el, que
+  -- es lo durable —un puesto sobrevive a quien lo ocupa— y el punto por el que enganchan los cuatro
+  -- caminos de relevo y su tenencia. Sin el, un entregable no se lo debe nadie.
+  --
+  -- Podia quedar vacia por UN solo camino de los cinco: `ensureTaskItemsForTask`, el respaldo del
+  -- lanzamiento para cuando la regla de alcance no encontraba a nadie. Sembraba trabajo huerfano
+  -- mientras la misma respuesta declaraba `has_assignees: false`. Ese respaldo se retiro.
+  responsible_position_id INT NOT NULL,
+  -- La identidad de un entregable definido por proceso: su tarea, su plantilla y QUIEN LO PRODUCE.
+  -- Antes la formaban los dos destinos, o sea el receptor — que es el eje equivocado para decir
+  -- «un entregable por persona que lo entrega», que es lo que el dueño decidio el 2026-08-23.
+  -- El `COALESCE(responsible_position_id, 0)` que llevaba dentro sobra desde que la columna es
+  -- NOT NULL: estaba para que un entregable sin puesto no rompiera la unicidad colandose como NULL.
+  responsible_position_key INT GENERATED ALWAYS AS (CASE WHEN origin_kind = 'process_defined' THEN responsible_position_id ELSE NULL END) STORED,
+  assigned_person_id INT NULL,
+  -- LAS DOS COLUMNAS QUE ERAN DE `documents`, mudadas el 2026-08-23 (paso 6a de la fusion).
+  --
+  -- `documents` es una cascara 1:1 sobre este entregable: un solo INSERT en todo el backend y
+  -- siempre con `task_item_id`. De sus cinco columnas, `owner_person_id` ya se retiro (era una
+  -- copia del responsable), y `title` y `comments_thread_ref` eran letra muerta —la primera se
+  -- escribia y NADIE la leia; la segunda es un fosil de cuando los comentarios vivian fuera de
+  -- PostgreSQL, y estaba tambien en `tasks`—. Estas dos son las unicas con uso real.
+  --
+  -- `document_status` se llama asi y no `status` A PROPOSITO: `task_items.status` vivio aqui hasta
+  -- el 2026-08-23 y se retiro por no tener escritores. Reutilizar el nombre invitaria a confundir
+  -- la que no los tenia con esta, que si: la escribe `transitionDocumentState` derivandola del
+  -- estado de la VERSION.
+  document_status VARCHAR(30) NOT NULL DEFAULT 'Inicial',
+  origin_unit_id INT NULL,
+  start_date DATE NOT NULL,
+  end_date DATE NULL,
+  user_started_at TIMESTAMP NULL,
+  -- `status` VIVIO AQUI hasta el 2026-08-23. Tenia CERO escritores —los cinco `UPDATE task_items`
+  -- del repo escriben `assigned_person_id` o `user_started_at`— asi que se quedaba en 'pendiente'
+  -- para siempre. Y lo leian siete sitios, con DOS vocabularios que no comparten ni un literal:
+  -- el panel filtraba 'completada'/'cancelada' y el relevo 'completed'/'completado'/... — ninguno
+  -- de los cuales es 'pendiente', asi que el filtro del relevo NO EXCLUIA NADA y todo entregable
+  -- era reasignable para siempre, firmado incluido. Lo pendiente se lee ahora del DOCUMENTO.
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- SIN CASCADA (frente 27, D-03): borrar una tarea se llevaba sus entregables, y con ellos sus
+  -- documentos. Ningun camino de la aplicacion contaba con ello; quien necesita borrar --el harness
+  -- de pruebas-- ya lo hace de abajo arriba. Ahora la base lo exige.
+  CONSTRAINT fk_task_items_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_task_items_vinculo FOREIGN KEY (vinculo_id) REFERENCES vinculos(id),
+  CONSTRAINT fk_task_items_created_by FOREIGN KEY (created_by_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_task_items_source FOREIGN KEY (source_task_item_id) REFERENCES task_items(id),
+  CONSTRAINT fk_task_items_target_unit FOREIGN KEY (target_unit_id) REFERENCES units(id),
+  CONSTRAINT fk_task_items_responsible_position FOREIGN KEY (responsible_position_id) REFERENCES unit_positions(id),
+  CONSTRAINT fk_task_items_assigned_person FOREIGN KEY (assigned_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_task_items_origin_unit FOREIGN KEY (origin_unit_id) REFERENCES units(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_task_items_defined_target ON task_items (task_id, process_definition_template_key, responsible_position_key);
+CREATE INDEX IF NOT EXISTS idx_task_items_task ON task_items (task_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_task_items_origin ON task_items (origin_kind);
+CREATE INDEX IF NOT EXISTS idx_task_items_definition_template ON task_items (vinculo_id);
+CREATE INDEX IF NOT EXISTS idx_task_items_created_by ON task_items (created_by_person_id);
+CREATE INDEX IF NOT EXISTS idx_task_items_source ON task_items (source_task_item_id);
+CREATE INDEX IF NOT EXISTS idx_task_items_target_unit ON task_items (target_unit_id);
+CREATE INDEX IF NOT EXISTS idx_task_items_dates ON task_items (start_date, end_date);
+CREATE INDEX IF NOT EXISTS idx_task_items_user_started ON task_items (user_started_at);
+
+
+-- `task_assignments` VIVIO AQUI hasta el 2026-08-23. Guardaba «en esta tarea, este puesto lo lleva
+-- esta persona», con indice unico (task_id, position_id) — o sea UNA fila por puesto, incapaz de
+-- guardar una sucesion. Se escribia una sola vez, en el lanzamiento, y NO la refrescaba ninguno de
+-- los cuatro caminos de relevo: era una FOTO del reparto que envejecia desde el primer cambio de
+-- ocupante. Medido: por ella, quien dejaba un puesto conservaba acceso al entregable para siempre.
+-- Todo lo que decia esta ahora en `task_item_tenures`, al grano del ENTREGABLE y con historia.
+
+
+-- LA TENENCIA DE UN ENTREGABLE: quien responde de el, desde cuando y en calidad de que.
+--
+-- POR QUE NACE (2026-08-23). «Quien lo lleva» vivia en TRES copias y DOS se pudrian:
+--
+--   task_items.assigned_person_id       lo movian los 4 caminos de relevo   -> vivo
+--   documents.owner_person_id           lo movia 1 de los 4                 -> podrido
+--   task_assignments.assigned_person_id no lo movia NINGUNO                 -> podrido
+--
+-- La de `task_assignments` es una FOTO del reparto en el instante del lanzamiento: se escribe
+-- ahi, se relee en la misma transaccion para alimentar a `task_items`, y no la vuelve a tocar
+-- nadie. Como consecuencia medida, quien deja un puesto conservaba acceso al entregable para
+-- siempre — la fuente `puesto_responsable_asignado` la leia.
+--
+-- Y ninguna de las tres podia guardar una SUCESION: `task_assignments` tiene indice unico
+-- (task_id, position_id), o sea una sola fila por puesto. El historial vivia aparte, en
+-- `task_item_handovers`, como EVENTOS (de A a B el dia T). Eventos y periodos son isomorfos,
+-- pero los periodos responden directas las preguntas que hace este sistema — y sobre todo dejan
+-- que «un solo responsable vigente» sea un INDICE y no una convencion que el codigo cumple si no
+-- se equivoca.
+CREATE TABLE IF NOT EXISTS tareas.task_item_tenures (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  task_item_id INT NOT NULL,
+
+  -- QUIEN responde. `NULL` a proposito: asi se representa el ABANDONO. Un entregable siempre
+  -- tiene exactamente una tenencia abierta; si su responsable deja el puesto y no hay sucesor, se
+  -- cierra la suya y se abre otra SIN persona. «¿Desde cuando esta abandonado?» pasa a ser un
+  -- campo (`started_at`) y no un calculo.
+  person_id INT NULL,
+
+  -- EN CALIDAD DE QUE respondia. Parece una copia del ancla `task_items.responsible_position_id`
+  -- y no lo es: una tenencia CERRADA es inmutable, asi que no puede envejecer. Esa es justo la
+  -- diferencia con `task_assignments`, que pretendia ser el estado actual y nadie la refrescaba.
+  -- Difiere del ancla en el caso legitimo: una SUPLENCIA por traspaso manual, donde la persona
+  -- responde sin ocupar el puesto (aqui `NULL`, con `opened_by = 'manual'`).
+  position_id INT NULL,
+
+  started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  ended_at   TIMESTAMP NULL,
+
+  -- POR QUE se abrio esta tenencia. Es el vocabulario que tenia `task_item_handovers.trigger_kind`
+  -- mas `original`, que alli no existia porque el primer reparto no dejaba asiento: el historial
+  -- empezaba en el segundo responsable.
+  opened_by TEXT CHECK (opened_by IN (
+    'original', 'occupancy_start', 'occupancy_end',
+    'position_deactivated', 'reconcile', 'manual'
+  )) NOT NULL DEFAULT 'original',
+
+  -- ¿El entregable YA LLEVABA TRABAJO DENTRO cuando se abrio esta tenencia? Instantanea, como
+  -- `position_id`: se sella al abrir y no se recalcula. Distingue «releve algo que nadie habia
+  -- tocado» de «releve algo a medias», que es la pregunta que hace una auditoria y que el asiento
+  -- viejo no sabia responder (DR1, 2026-08-23).
+  work_started SMALLINT NOT NULL DEFAULT 0,
+
+  reason VARCHAR(255) NULL,
+  -- Solo lo rellena el traspaso a proposito. En un relevo automatico no lo hizo nadie, y
+  -- `opened_by` ya dice la causa.
+  --
+  -- Nacio `performed_by_user_id BIGINT` y las dos cosas estaban mal (TD7-d, 2026-08-24): `user` es
+  -- un fosil de la tabla `users`, que ya no existe —la identidad es `persons`—, y el BIGINT contra
+  -- `persons.id INT` hacia la FK IMPOSIBLE. No es que se decidiera no ponerla: no se podia.
+  performed_by_person_id INT NULL REFERENCES persons(id),
+
+  -- Unicidad parcial con el MISMO idiom que `uq_position_current` (:172), que hace esto mismo un
+  -- piso mas abajo con la ocupacion de un puesto.
+  current_flag SMALLINT GENERATED ALWAYS AS (CASE WHEN ended_at IS NULL THEN 1 ELSE NULL END) STORED,
+
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_task_item_tenures_item FOREIGN KEY (task_item_id) REFERENCES task_items(id) ON DELETE CASCADE,
+  CONSTRAINT fk_task_item_tenures_person FOREIGN KEY (person_id) REFERENCES persons(id),
+  CONSTRAINT fk_task_item_tenures_position FOREIGN KEY (position_id) REFERENCES unit_positions(id)
+);
+
+-- LA INVARIANTE. Como mucho UNA tenencia abierta por entregable, y lo dice la base.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_task_item_tenure_current
+  ON task_item_tenures (task_item_id, current_flag);
+CREATE INDEX IF NOT EXISTS idx_task_item_tenures_person ON task_item_tenures (person_id);
+CREATE INDEX IF NOT EXISTS idx_task_item_tenures_position ON task_item_tenures (position_id);
+
+
+-- `documents` VIVIO AQUI hasta el 2026-08-23. Era una relacion 1:1 estricta con `task_items`
+-- —impuesta por `uq_documents_task_item`, y en la practica por haber UN SOLO `INSERT INTO
+-- documents` en todo el backend, siempre con `task_item_id`— y NINGUNA de sus cinco columnas era un
+-- hecho suyo:
+--
+--   owner_person_id      copia de `task_items.assigned_person_id`, refrescada por 1 de los 4 relevos
+--   title                se escribia y no la leia nadie
+--   comments_thread_ref  fosil sin codigo; los comentarios viven en document_workflow_observations
+--   status               derivada de `document_versions.status`, con matriz de transiciones muerta
+--   origin_unit_id       cache de `target_unit_id` / la unidad del puesto / `tasks.scope_unit_id`
+--
+-- Las dos ultimas se mudaron a `task_items` y las tres primeras se retiraron. Lo que quedaba era una
+-- fila de union entre el entregable y sus versiones, asi que las versiones pasan a colgar del
+-- entregable y la mesa de en medio desaparece.
+
+
+-- FOSILES QUE SE CONSERVAN, con su motivo (§0.6, cierre del censo de fosiles):
+--
+--   payload_object_path, render_engine -> SIN PRODUCTOR. Los dos escritores de la tabla son
+--     `generation/documents.js` (no las lista en su INSERT) y `DocumentWorkflowResetService.js`
+--     (que solo copia de la version anterior). Resultado: nacen NULL y se copia el NULL de version
+--     en version. Medido sobre una base recien sembrada: 0 de 3 filas con valor.
+--
+-- POR QUE NO SE SUELTAN. Porque no son ramas muertas de codigo, son SUPERFICIE PUBLICADA: las dos
+-- estan expuestas en el CRUD generico (`config/sqlTables.js`, ademas en `searchFields`) y sus
+-- nombres aparecen literalmente en tres goldens (`admin_crud`, `execution`,
+-- `default_process_routed`). Soltarlas mueve goldens, y un golden que se mueve en una limpieza es
+-- justo la senal que este repo usa para decir "no estaba muerto". Es un cambio de contrato, no una
+-- retirada.
+--
+-- QUE LAS MATARIA, en este orden: quitarlas de `sqlTables.js`, recapturar esos tres goldens y un
+-- borrarlas de este fichero. Desde `TD7-s` (2026-08-24) no hace falta nada mas: el esquema DESCRIBE
+-- la forma y la base se recrea, asi que quitar la columna de su `CREATE TABLE` ES el borrado.
+--
+-- Y OJO ANTES DE HACERLO: `render_engine` es justo donde escribiria el generador de codigo base del
+-- §0.4. Puede que lo que le falte no sea una retirada, sino su primer productor.
+CREATE TABLE IF NOT EXISTS tareas.document_versions (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- CUELGA DEL ENTREGABLE, no de un documento. Hasta el 2026-08-23 habia una tabla `documents` en
+  -- medio, en relacion 1:1 estricta con `task_items` —un solo INSERT en todo el backend y siempre
+  -- con `task_item_id`—, y sin una sola columna propia: las suyas eran copias, derivadas o fosiles.
+  -- Era un salto de mesa que no aportaba ningun hecho.
+  task_item_id INT NOT NULL,
+  -- LA RONDA. Entero desde el 2026-08-23; antes era `DECIMAL(4,1)` y el numero MENTIA: la 0.1 y la
+  -- 0.2 parecian dos correcciones del mismo documento y eran DOS RONDAS COMPLETAS —la primera
+  -- cancelada entera y la segunda empezando de cero—. Ahora cada digito dice lo suyo:
+  --   1 -> 2   se reinicio el flujo: ronda nueva, con su llenado y su firma
+  --   1.0 -> 1.1  se corrigio el archivo dentro de la misma ronda
+  --
+  -- Y el decimal no daba para eso: UN solo digito, o sea nueve correcciones y a la decima chocabas
+  -- contra el 2.0, que significa otra cosa.
+  version INT NOT NULL DEFAULT 1,
+
+  -- LA CORRECCION VIGENTE. Cache de `MAX(minor)` de `document_version_uploads`, con UN SOLO
+  -- escritor: la subida del archivo. Se guarda para no tener que hacer una subconsulta en los
+  -- trece sitios que proyectan la version.
+  version_minor INT NOT NULL DEFAULT 0,
+
+  -- La etiqueta que se enseña, compuesta por la base. Asi los trece proyectores no componen nada y
+  -- el frontend sigue recibiendo un campo con el mismo nombre — de tipo texto, porque `1.10` tiene
+  -- que poder existir y como numero seria `1.1`.
+  version_label TEXT GENERATED ALWAYS AS (version::text || '.' || version_minor::text) STORED,
+  -- CON QUE VERSION DE PLANTILLA SE GENERO *ESTA RONDA*. NO es una copia del entregable (frente 23,
+  -- F2.2 — 2026-10-04): es un hecho propio de la ronda, y el unico de los tres sitios donde «que
+  -- version de plantilla» estaba escrito que dice algo que no diga ya otro.
+  --
+  -- La diferencia importa el dia que una plantilla tenga dos versiones publicadas: la ronda 1 se
+  -- genero con la v1 y la ronda 2 con la v2, y el entregable sigue siendo el mismo. Por eso se
+  -- queda, mientras `task_items.edicion_id` —que si era copia— se retiro.
+  --
+  -- Y por eso NO se rellena copiando del entregable, sino LEYENDO EL VINCULO
+  -- (`vinculos.edicion_id` del `vinculo_id` de la
+  -- tarea-entregable): la version vigente en el momento de abrir la ronda. Sigue siendo NULL-able
+  -- porque hoy nada renderiza; sera obligatoria en cuanto haya render.
+  edicion_id INT NULL,
+  payload_hash VARCHAR(64) NULL,
+  payload_object_path VARCHAR(255) NULL,
+  working_file_path VARCHAR(255) NULL,
+  final_file_path VARCHAR(255) NULL,
+  format VARCHAR(40) NULL,
+  render_engine VARCHAR(80) NULL,
+  status VARCHAR(30) NOT NULL DEFAULT 'Borrador',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- SIN CASCADA (frente 27, D-03): un entregable con documento no se borra. Lo que SI sigue cayendo
+  -- con el entregable son sus turnos (`task_item_tenures`, porque el primero lo crea un disparador al
+  -- insertar y sin esa cascada ninguno se podria borrar) y su receta de runtime (`pasos_declarados`).
+  CONSTRAINT fk_document_versions_task_item FOREIGN KEY (task_item_id) REFERENCES task_items(id) ON DELETE RESTRICT,
+  CONSTRAINT fk_document_versions_artifact FOREIGN KEY (edicion_id) REFERENCES ediciones(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_document_versions ON document_versions (task_item_id, version);
+CREATE INDEX IF NOT EXISTS idx_document_versions_item ON document_versions (task_item_id);
+
+
+-- CADA SUBIDA DEL ARCHIVO DE UN ENTREGABLE. Es la version MENOR: una fila por correccion.
+--
+-- POR QUE NACE (2026-08-23). `working_file_path` guarda el archivo VIGENTE y se sobrescribe en cada
+-- subida, asi que hasta hoy no constaba en ninguna parte QUIEN elaboro un documento ni que hubo
+-- antes. Ojo con el matiz: en MinIO no se perdia nada —el nombre del objeto lleva sello de tiempo y
+-- UUID, asi que cada subida escribe un objeto nuevo— lo que se perdia era el PUNTERO. Los ficheros
+-- anteriores quedaban huerfanos, no borrados.
+--
+-- Y habia una incoherencia que lo delataba: `document_attachments` —el material de APOYO— si guarda
+-- `uploaded_by_person_id`. De un anexo sabias quien lo subio; del entregable, no.
+--
+-- SE DESCARTO guardarlo como JSON dentro de `document_versions`, que era la otra propuesta. El
+-- motivo no es teorico: este repo YA tiene un JSONB de este tipo —`signature_flow_steps.signers`— y
+-- es un agujero abierto y documentado: ningun CHECK lo cubre, la copia de versionado lo propaga
+-- verbatim, y hay dos ramas de codigo que no se pueden borrar porque un paso legado podria traer un
+-- valor retirado por ahi. Consultarlo obliga a buscar cadenas de texto dentro del JSON.
+CREATE TABLE IF NOT EXISTS tareas.document_version_uploads (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  document_version_id INT NOT NULL,
+  -- 1, 2, 3... dentro de la ronda. Es el segundo digito de la etiqueta.
+  minor INT NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  file_name VARCHAR(255) NULL,
+  mime_type VARCHAR(120) NULL,
+  size_bytes BIGINT NULL,
+  uploaded_by_person_id INT NULL,
+  note VARCHAR(255) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_document_version_uploads_version FOREIGN KEY (document_version_id) REFERENCES document_versions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_document_version_uploads_person FOREIGN KEY (uploaded_by_person_id) REFERENCES persons(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_document_version_uploads ON document_version_uploads (document_version_id, minor);
+CREATE INDEX IF NOT EXISTS idx_document_version_uploads_person ON document_version_uploads (uploaded_by_person_id);
+CREATE INDEX IF NOT EXISTS idx_document_versions_artifact ON document_versions (edicion_id);
+
+
+-- Anexos heterogéneos de un entregable: archivos auxiliares (evidencias, soportes)
+-- adicionales al documento principal de una versión documental.
+CREATE TABLE IF NOT EXISTS tareas.document_attachments (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  document_version_id INT NOT NULL,
+  kind TEXT CHECK (kind IN ('annex', 'evidence', 'source', 'other')) NOT NULL DEFAULT 'annex',
+  file_path VARCHAR(255) NOT NULL,
+  file_name VARCHAR(255) NOT NULL,
+  mime_type VARCHAR(120) NULL,
+  size_bytes BIGINT NULL,
+  description VARCHAR(255) NULL,
+  uploaded_by_person_id INT NULL,
+  sort_order INT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_document_attachments_version FOREIGN KEY (document_version_id) REFERENCES document_versions(id) ON DELETE CASCADE,
+  CONSTRAINT fk_document_attachments_uploader FOREIGN KEY (uploaded_by_person_id) REFERENCES persons(id)
+);
+CREATE INDEX IF NOT EXISTS idx_document_attachments_version ON document_attachments (document_version_id, sort_order);
+CREATE INDEX IF NOT EXISTS idx_document_attachments_uploader ON document_attachments (uploaded_by_person_id);
+
+
+-- EL DOCUMENTO DE UN ACTO, CUANDO SE PRODUJO Y SE FIRMO AQUI (frente 27, D-05).
+--
+-- El enlace va DEL DOCUMENTO AL ACTO y vive en `tareas`, no al reves: el acto esta en el nivel 2 y
+-- `document_versions` en el 5, y una clave ajena no sube de nivel.
+--
+-- Un acto tiene como mucho un documento (la clave primaria es el acto). Y que NO tenga fila aqui no
+-- es un error: es el estado «referencia registrada, documento pendiente», que el dueño pidio que se
+-- pueda ver. La version enlazada queda ademas retenida: esta clave no propaga el borrado.
+CREATE TABLE IF NOT EXISTS tareas.acto_documentos (
+  acto_id INT PRIMARY KEY,
+  document_version_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_acto_documentos_acto FOREIGN KEY (acto_id) REFERENCES actos(id) ON DELETE CASCADE,
+  CONSTRAINT fk_acto_documentos_version FOREIGN KEY (document_version_id) REFERENCES document_versions(id)
+);
+CREATE INDEX IF NOT EXISTS idx_acto_documentos_version ON acto_documentos (document_version_id);
+
+-- El otro lado de «uno de los dos»: a un acto con fichero adjunto no se le enlaza ademas un documento.
+CREATE OR REPLACE FUNCTION public.rechazar_documento_si_hay_adjunto() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM acto_adjuntos a WHERE a.acto_id = NEW.acto_id) THEN
+    RAISE EXCEPTION 'Este acto ya tiene un fichero adjunto: quítalo antes de enlazarle el documento firmado en el sistema.'
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_acto_documentos_sin_adjunto
+BEFORE INSERT ON acto_documentos
+FOR EACH ROW EXECUTE FUNCTION rechazar_documento_si_hay_adjunto();
+
+-- EL DOCUMENTO FIRMADO DE UN ACTO QUE YA ORDENA ALGO NO SE DESENLAZA NI SE CAMBIA (F27.P4.T24).
+-- Es la misma idea que protege al fichero adjunto: desde que una vida o una relacion cita el acto,
+-- su papel es lo que justifica un cambio de la estructura. La diferencia es que aqui no hay camino
+-- de correccion: el documento se produjo y se firmo en el sistema, y si el enlace estaba mal lo que
+-- hay que corregir es el acto que citan las vidas, no a que documento apunta este.
+-- Mientras el acto no ordena nada, el enlace se quita sin mas.
+CREATE OR REPLACE FUNCTION public.proteger_documento_de_acto() RETURNS trigger
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  numero TEXT;
+BEGIN
+  -- Borrar el acto entero se lleva su enlace: si ordenara algo, su propia clave lo frenaria.
+  IF TG_OP = 'DELETE' AND pg_trigger_depth() > 1 THEN
+    RETURN OLD;
+  END IF;
+  IF acto_ordena_algo(OLD.acto_id) THEN
+    SELECT a.numero INTO numero FROM actos a WHERE a.id = OLD.acto_id;
+    RAISE EXCEPTION 'El acto «%» ya ordena cambios de la estructura: su documento firmado no se desenlaza ni se cambia.', numero
+      USING ERRCODE = 'restrict_violation';
+  END IF;
+  RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_acto_documentos_protegido
+BEFORE UPDATE OR DELETE ON acto_documentos
+FOR EACH ROW EXECUTE FUNCTION proteger_documento_de_acto();
+
+
+CREATE TABLE IF NOT EXISTS firmas.signature_statuses (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  code VARCHAR(40) NOT NULL UNIQUE,
+  name VARCHAR(80) NOT NULL,
+  description VARCHAR(255) NULL,
+  is_active SMALLINT NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+
+-- AQUI VIVIA `signature_request_statuses`, y murio en la fase 3 del frente 24. Era un catalogo de
+-- cinco codigos para el estado de una solicitud y de una instancia de FIRMA, mientras el lado de
+-- ENTREGA resolvia exactamente lo mismo con `status TEXT` y un CHECK. Dos mecanismos para un solo
+-- concepto, y encima en dos idiomas: la firma en español y la entrega en ingles.
+--
+-- Se unifico en CHECK, y no por gusto: es la decision que este repositorio ya habia tomado y
+-- escrito en `DocumentoIdentidadService` --«con el vocabulario cerrado en un CHECK, validar es
+-- comparar contra tres cadenas: sin red, sin base y sin poder equivocarse de catalogo»--, y es lo
+-- que ya hacen `item_mode`, `lifecycle_state`, `template_scope`, `resolver_type` y
+-- `unit_scope_type`. Cada lectura del estado de una firma costaba una CONSULTA al catalogo.
+--
+-- ⚠️ NO CONFUNDIR CON `signature_statuses`, que sigue viva arriba y NO se toca: esa es el estado del
+-- HECHO de firmar (`document_signatures.signature_status_id`) --firmado, fallido, invalido--, no el
+-- de la solicitud. Son identicas en forma y distintas en significado, que es justo lo que hacia
+-- facil mezclarlas.
+
+
+INSERT INTO signature_statuses (code, name, description, is_active)
+VALUES
+  ('firmado', 'Firmado', 'La firma se generó y validó correctamente.', 1),
+  ('fallido', 'Fallido', 'La firma no se pudo generar por error operativo.', 1),
+  ('invalido', 'Inválido', 'La firma se generó pero no validó correctamente.', 1),
+  ('cancelado', 'Cancelado', 'La firma fue cancelada o descartada.', 1)
+ON CONFLICT (code) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  is_active = EXCLUDED.is_active;
+
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+-- AQUI VIVIAN LAS OCHO TABLAS DEL RECORRIDO PARTIDO EN DOS, y se retiraron en el paso 4 de la
+-- fase 4 del frente 24 (2026-10-09). Las sustituyen las CUATRO de mas abajo.
+--
+--   plantillas.fill_flow_templates        firmas.signature_flow_templates     -> pasos_declarados
+--   plantillas.fill_flow_steps            firmas.signature_flow_steps            participantes_declarados
+--   plantillas.document_fill_flows        firmas.signature_flow_instances     -> recorridos
+--   plantillas.fill_requests              firmas.signature_requests              turnos
+--
+-- ⚠️ ESTO NO BORRA NADA DE UNA BASE QUE YA EXISTA. Es el contrato TD7-s: este fichero describe la
+-- FORMA, no converge una base anterior, y aqui no hay ni un `ALTER` ni un `DROP`. Sobre una base
+-- viva las ocho tablas siguen ahi, con sus filas, y nadie las lee. El camino es
+-- `scripts/reset-system.sh` --decision del dueno: no hay datos en produccion-- o un `DROP TABLE`
+-- a mano, en este orden: solicitudes, instancias, pasos, cabeceras.
+--
+-- LO QUE SE LLEVARON CONSIGO, y conviene no perder el criterio:
+--
+-- · DIECISIETE COLUMNAS que no decidian nada. El censo esta en el §10 del plan, con lo que se midio
+--   de cada una. Las cuatro que mas costaban: el JSONB `signers` --1->N sin validar, mandando sobre
+--   columnas que SI tenian CHECK, y propagado verbatim por la copia de versionado--, el cupo
+--   (`approval_mode` + `required_signers_min`/`_max`, cuyo `or` dejaba solicitudes hermanas abiertas
+--   e inoperables), `is_required` (cuya variante 0 era un bloqueo silencioso y mas tarde, no
+--   «opcional») y `selection_mode` (cuyo `auto_one` era «el id mas bajo»).
+--
+-- · EL CRITERIO DEL DUENO SOBRE LOS RESOLUTORES, que sigue vigente y por eso se repite aqui:
+--   **lo que la web no autora, no existe**. `document_owner`, `position`, `manual_pick` y los
+--   ambitos `context_subtree` / `context_ancestor_type` se retiraron del CHECK cuando el `meta.yaml`
+--   --su unico productor-- desaparecio. Sobrevivieron un ano mas EN EL CODIGO porque el JSONB podia
+--   traerlos sin pasar por ningun CHECK; a filas, no pueden. Y con ellos cayeron `unit_subtree`,
+--   `unit_type` y `relation_type_id`, que ninguna pantalla producia.
+--
+-- · DOS FOSILES SIMETRICOS, `anchor_refs` (firma) y `field_refs` (entrega): contratos sin productor
+--   ni consumidor. El primero se escribia siempre `[]` y se releia; el segundo no llego a tener
+--   columna. `field_refs` SIGUE en el contrato HTTP del editor como literal `[]` --el golden
+--   `schema_flow_reread` lo fija-- y lo que lo mataria es retirarlo del formulario.
+--
+-- · Y EL INDICE DEL `slot`, que era `(template_id, slot)`. Al bajar el hueco al PARTICIPANTE --un
+--   firmante, un hueco-- la regla pasa a cruzar dos tablas y ya no cabe en un indice: hoy la impone
+--   `trg_participantes_slot_unico`, con su porque escrito alli.
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+
+
+
+-- `task_item_handovers` VIVIO AQUI hasta el 2026-08-23. Era el asiento de auditoria del traspaso,
+-- y guardaba EVENTOS: «paso de A a B el dia T». Se pliega dentro de `task_item_tenures`, que guarda
+-- los mismos hechos como PERIODOS —«B lo tuvo del dia T al dia U»—. Son isomorfos: de dos eventos
+-- consecutivos sale un periodo y viceversa, asi que no se pierde nada. Lo que se gana es que
+-- «un solo responsable vigente» pasa de convencion a INDICE, y que aparecen dos datos que el
+-- asiento no tenia: en calidad de que puesto respondia, y la tenencia `original` del reparto
+-- inicial (el historial empezaba en el SEGUNDO responsable).
+
+
+
+
+
+
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+-- EL RECORRIDO UNIFICADO · frente 24, fase 4
+--
+-- Cuatro tablas que sustituyen a OCHO. El recorrido documental estaba partido en dos mitades
+-- simetricas --entrega y firma-- con cuatro tablas cada una: cabecera, pasos, instancia y
+-- solicitud. Las dos mitades son el MISMO mecanismo; lo que cambia es la accion que se pide.
+--
+--   pasos_declarados          la RECETA: que paso es
+--   participantes_declarados  a QUIEN se le pide (era el JSONB `signers`, a filas)
+--   recorridos                la RONDA en marcha
+--   turnos                    a quien le TOCO
+--
+-- Y la cabecera no sobrevive: de sus 7 columnas solo se leian `id` e `is_active`; su `name` se
+-- escribia y no se consultaba nunca, y `description` no la tocaba nadie. El paso lleva hoy su
+-- propio origen, asi que la tabla intermedia no tenia nada que agrupar.
+--
+-- ⚠️ ESTAS CUATRO CONVIVEN CON LAS OCHO VIEJAS mientras dure la fase 4. Nacen vacias: nadie las
+-- escribe todavia. Las viejas se retiran en el ultimo paso, cuando ya no las referencie nadie.
+--
+-- ⚠️ NO HAY MIGRACION, por decision del dueno: no hay datos en produccion, asi que el esquema
+-- describe la forma y la base se RECREA (`scripts/reset-system.sh`). Es el contrato TD7-s.
+--
+-- El diseno campo a campo, con lo que se midio para retirar cada columna, esta en
+-- `docs/planes/recorrido-unificado-2026-10.md` §3 y §10.
+-- ══════════════════════════════════════════════════════════════════════════════════════════════
+
+-- LA RECETA. Un paso pide UNA ACCION --entregar o firmar-- y cuelga de UN origen.
+--
+-- `accion` se llama asi y no `lado` a proposito: `lado` nombraba la estructura que esta tabla
+-- elimina. Despues de unificar no hay dos lados, hay pasos de dos clases.
+--
+-- EL ORIGEN SON DOS COLUMNAS Y UN CHECK, no una columna polimorfica: con un `origen_id` generico
+-- se pierden las claves ajenas, que es lo que impide apuntar a una edicion que ya no existe. Es la
+-- misma forma que la fase 2 dejo en las cabeceras.
+--   edicion_id    -> la receta AUTORADA en la edicion (modos `single` y `replicated`)
+--   task_item_id  -> la receta definida AL ENVIAR el entregable (modo `routed`)
+CREATE TABLE IF NOT EXISTS plantillas.pasos_declarados (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  accion TEXT CONSTRAINT chk_pasos_declarados_accion CHECK (accion IN ('entrega', 'firma')) NOT NULL,
+  edicion_id INT NULL,
+  task_item_id INT NULL,
+  orden INT NOT NULL,
+  code VARCHAR(120) NULL,
+  nombre VARCHAR(180) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_pasos_declarados_edicion FOREIGN KEY (edicion_id) REFERENCES ediciones(id),
+  CONSTRAINT fk_pasos_declarados_entregable FOREIGN KEY (task_item_id) REFERENCES task_items(id) ON DELETE CASCADE,
+  CONSTRAINT ck_pasos_declarados_un_origen CHECK (num_nonnulls(edicion_id, task_item_id) = 1)
+);
+-- LA UNICIDAD QUE NO EXISTIA. Hoy hay CERO indices unicos sobre las anclas de los flujos, y el
+-- codigo lo compensa con `ORDER BY id DESC LIMIT 1` --o sea, "el ultimo que se escribio gana"--.
+-- Dos indices y no uno porque el origen son dos columnas excluyentes; parciales porque la columna
+-- que no es el origen va a NULL.
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pasos_declarados_edicion
+  ON pasos_declarados (edicion_id, accion, orden) WHERE edicion_id IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pasos_declarados_entregable
+  ON pasos_declarados (task_item_id, accion, orden) WHERE task_item_id IS NOT NULL;
+
+-- A QUIEN SE LE PIDE. Era el JSONB `signers` de `signature_flow_steps`, y pasa a filas.
+--
+-- POR QUE A FILAS: ese JSONB llevaba 1..N firmantes con su propio resolutor, NO lo validaba nadie
+-- --`parseStepSigners` cambia de convencion de nombres, no comprueba contra catalogo-- y MANDABA
+-- sobre las columnas del paso, que si tienen CHECK. Ademas el versionado lo copiaba verbatim, asi
+-- que un valor retirado se propagaba solo a cada version nueva. Es el defecto 1.19.
+--
+-- Y de paso deshace una duplicacion: en firma el resolutor estaba escrito DOS VECES --en las
+-- columnas del paso y dentro del JSONB-- y ganaba el JSONB.
+--
+-- LA ENTREGA TIENE EXACTAMENTE UNA FILA POR PASO. Su constructor es una lista plana de personas y
+-- cada una es un paso; la firma es la que admite varios. Con esto la asimetria deja de ser dos
+-- tablas distintas y pasa a ser un caso particular de la misma.
+CREATE TABLE IF NOT EXISTS plantillas.participantes_declarados (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  paso_id INT NOT NULL,
+  orden INT NOT NULL DEFAULT 1,
+  -- COMO SE ENCUENTRA A LA PERSONA. Tres valores y no nueve: los seis que se retiraron en el
+  -- sub-paso 8 del §0.8 eran inalcanzables --ningun productor vivo podia emitirlos-- y solo
+  -- sobrevivian porque el JSONB se saltaba el CHECK. A filas, ya no se lo salta.
+  resolver_type TEXT CONSTRAINT chk_participantes_resolver_type
+    CHECK (resolver_type IN ('task_assignee', 'specific_person', 'cargo_in_scope')) NOT NULL DEFAULT 'task_assignee',
+  persona_id INT NULL,
+  cargo_id INT NULL,
+  -- DONDE SE BUSCA ESE CARGO. TRES valores, y eran cinco: `unit_subtree` y `unit_type` NO LOS
+  -- PRODUCE NINGUNA PANTALLA --el editor de pasos ofrece dos ambitos y el constructor de runtime
+  -- emite `unit_exact` o `all_units`--. Ojo al confundirlos con los de `process_target_rules`, que
+  -- es OTRA columna con el mismo nombre: aquella reparte el proceso, esta busca una persona.
+  --   unit_exact    -> la unidad escrita en el participante
+  --   context_exact -> la unidad DEL DOCUMENTO. Es lo que hace el paso reutilizable: "el
+  --                    coordinador de la carrera a la que pertenezca esto", declarado una vez
+  --   all_units     -> sin acotar
+  unit_scope_type TEXT CONSTRAINT chk_participantes_unit_scope_type
+    CHECK (unit_scope_type IN ('unit_exact', 'context_exact', 'all_units')) NOT NULL DEFAULT 'context_exact',
+  unit_id INT NULL,
+  -- EL HUECO EN EL PAPEL, y esta aqui y no en el paso por un fallo medido. Un `slot` es un sitio
+  -- fisico: la maqueta imprime ahi el token de UNA persona (`{{ signatures.<slot>.token }}`), queda
+  -- impreso en el PDF como texto, y el firmador BUSCA ESE TEXTO para estampar en sus coordenadas.
+  -- Con N firmantes y un solo hueco, el paso imprimia el token del primero y los demas no tenian
+  -- marca: el firmador lanzaba `Token marker not found in PDF`. Un firmante, un hueco.
+  slot VARCHAR(80) NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_participantes_declarados_paso FOREIGN KEY (paso_id) REFERENCES pasos_declarados(id) ON DELETE CASCADE,
+  CONSTRAINT fk_participantes_declarados_persona FOREIGN KEY (persona_id) REFERENCES persons(id),
+  CONSTRAINT fk_participantes_declarados_cargo FOREIGN KEY (cargo_id) REFERENCES cargos(id),
+  CONSTRAINT fk_participantes_declarados_unidad FOREIGN KEY (unit_id) REFERENCES units(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_participantes_declarados_orden
+  ON participantes_declarados (paso_id, orden);
+
+-- LA RONDA EN MARCHA. Una por version de documento y accion: la de entrega y la de firma son dos
+-- recorridos de la misma ronda.
+CREATE TABLE IF NOT EXISTS tareas.recorridos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  document_version_id INT NOT NULL,
+  accion TEXT CONSTRAINT chk_recorridos_accion CHECK (accion IN ('entrega', 'firma')) NOT NULL,
+  estado TEXT CONSTRAINT chk_recorridos_estado
+    CHECK (estado IN ('pendiente', 'en_progreso', 'completado', 'rechazado', 'cancelado')) NOT NULL DEFAULT 'pendiente',
+  paso_actual INT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_recorridos_version FOREIGN KEY (document_version_id) REFERENCES document_versions(id),
+  -- Hace falta para la clave ajena COMPUESTA de `turnos`: ver el porque alli.
+  CONSTRAINT uq_recorridos_id_accion UNIQUE (id, accion)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_recorridos_version_accion
+  ON recorridos (document_version_id, accion);
+CREATE OR REPLACE TRIGGER trg_recorridos_set_updated_at BEFORE UPDATE ON recorridos
+  FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+-- A QUIEN LE TOCO. Un turno por persona convocada.
+--
+-- ⚠️ `accion` ESTA DUPLICADA AQUI A PROPOSITO, y la clave ajena compuesta es lo que impide que
+-- mienta. El motivo: `devuelto` solo es legal en entrega --un paso de entrega se devuelve para
+-- rehacer, y firmando eso no existe: una firma dada no se deshace, se hace una ronda nueva-- y ese
+-- CHECK necesita ver la accion, que vive en `recorridos`. Con la columna aqui y la FK compuesta
+-- contra `recorridos(id, accion)`, PostgreSQL garantiza que las dos digan lo mismo.
+CREATE TABLE IF NOT EXISTS tareas.turnos (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  recorrido_id INT NOT NULL,
+  accion TEXT CONSTRAINT chk_turnos_accion CHECK (accion IN ('entrega', 'firma')) NOT NULL,
+  participante_id INT NOT NULL,
+  persona_id INT NULL,
+  estado TEXT CONSTRAINT chk_turnos_estado
+    CHECK (estado IN ('pendiente', 'en_progreso', 'completado', 'rechazado', 'devuelto', 'cancelado')) NOT NULL DEFAULT 'pendiente',
+  -- `manual` marca un turno SIN PERSONA RESUELTA, y no es el `selection_mode = manual` que se
+  -- retiro: aquel decia "ni lo intentes" y este dice "no se encontro a nadie". Lo escribe quien
+  -- materializa, y en entrega es lo que hace posible el auto-reclamo.
+  manual SMALLINT NOT NULL DEFAULT 0,
+  solicitado TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  notificado TIMESTAMP NULL,
+  respondido TIMESTAMP NULL,
+  nota_respuesta VARCHAR(255) NULL,
+  CONSTRAINT fk_turnos_recorrido FOREIGN KEY (recorrido_id, accion) REFERENCES recorridos(id, accion) ON DELETE CASCADE,
+  CONSTRAINT fk_turnos_participante FOREIGN KEY (participante_id) REFERENCES participantes_declarados(id),
+  CONSTRAINT fk_turnos_persona FOREIGN KEY (persona_id) REFERENCES persons(id),
+  CONSTRAINT ck_turnos_devuelto_solo_entrega CHECK (estado <> 'devuelto' OR accion = 'entrega')
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_turnos ON turnos (recorrido_id, participante_id, persona_id);
+CREATE INDEX IF NOT EXISTS idx_turnos_participante ON turnos (recorrido_id, participante_id);
+
+
+CREATE TABLE IF NOT EXISTS tareas.document_workflow_observations (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  task_item_id INT NOT NULL,
+  document_version_id INT NOT NULL,
+  -- EL TURNO al que la observacion se refiere. Fueron DOS columnas --`fill_request_id` y
+  -- `signature_request_id`-- mientras entrega y firma tenian cada una su tabla de solicitudes.
+  -- Colapsadas en esta el 2026-10-09 (paso 4-bis de la fase 4 del frente 24): las dos apuntaban ya
+  -- a `turnos`, o sea eran la misma clave ajena escrita dos veces, y cual de las dos valia lo decia
+  -- `phase` --que sigue aqui y sigue siendo quien lo dice--. Nulo = observacion sin turno (la que
+  -- escribe el endpoint manual del hilo, que comenta el entregable y no un paso concreto).
+  turno_id INT NULL,
+  phase TEXT CHECK (phase IN ('review','signature')) NOT NULL,
+  kind TEXT CHECK (kind IN ('observation','return_reason','rejection_reason','internal_note')) NOT NULL DEFAULT 'observation',
+  message TEXT NOT NULL,
+  author_person_id INT NOT NULL,
+  -- `target_person_id` VIVIO AQUI hasta el 2026-08-23. Era el «a quien va dirigida» de un modelo
+  -- de auditoria origen→destino que quedo obsoleto: hoy eso lo cuentan los flujos, y quien firma
+  -- al final ES el destinatario. Medido antes de borrarlo: 2 observaciones, CERO con destinatario,
+  -- el frontend no lo pintaba en ningun sitio, y salia del cuerpo de la peticion SIN VALIDAR — asi
+  -- que como fuente de acceso habria sido una via de escalada: dar permiso nombrando a alguien.
+  resolved_by_person_id INT NULL,
+  resolved_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_document_workflow_observations_item FOREIGN KEY (task_item_id) REFERENCES task_items(id),
+  CONSTRAINT fk_document_workflow_observations_version FOREIGN KEY (document_version_id) REFERENCES document_versions(id),
+  CONSTRAINT fk_document_workflow_observations_turno FOREIGN KEY (turno_id) REFERENCES turnos(id),
+  CONSTRAINT fk_document_workflow_observations_author FOREIGN KEY (author_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_document_workflow_observations_resolver FOREIGN KEY (resolved_by_person_id) REFERENCES persons(id)
+);
+CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_item ON document_workflow_observations (task_item_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_version ON document_workflow_observations (document_version_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_turno ON document_workflow_observations (turno_id);
+CREATE INDEX IF NOT EXISTS idx_document_workflow_observations_author ON document_workflow_observations (author_person_id);
+
+
+CREATE TABLE IF NOT EXISTS tareas.document_signatures (
+  id INT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- EL TURNO DE FIRMA. Se llamo `signature_request_id` hasta el 2026-10-09 (paso 4-bis), por la
+  -- tabla `signature_requests` que murio en el 3b.
+  turno_id INT NULL,
+  document_version_id INT NOT NULL,
+  signer_user_id INT NOT NULL,
+  signature_status_id INT NOT NULL,
+  note_short VARCHAR(255) NULL,
+  signed_file_path VARCHAR(255) NULL,
+  signed_at TIMESTAMP NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  -- Es el enganche entre los DOS EJES: el turno dice QUIEN respondio y cuando, y esta tabla dice
+  -- si la firma VALE. Separados a proposito desde el 3b --un turno respondido con firma invalida es
+  -- un hecho que las dos columnas de antes no podian contar a la vez.
+  CONSTRAINT fk_document_signatures_turno FOREIGN KEY (turno_id) REFERENCES turnos(id),
+  CONSTRAINT fk_document_signatures_document FOREIGN KEY (document_version_id) REFERENCES document_versions(id),
+  CONSTRAINT fk_document_signatures_signer FOREIGN KEY (signer_user_id) REFERENCES persons(id),
+  CONSTRAINT fk_document_signatures_status FOREIGN KEY (signature_status_id) REFERENCES signature_statuses(id)
+);
+
+
+DROP VIEW IF EXISTS organizacion.unit_org_levels;
+-- Los niveles salen del ARBOL VIGENTE (frente 27, D-04): la raiz es la unidad sin arista vigente.
+CREATE VIEW organizacion.unit_org_levels AS
+WITH RECURSIVE org_tree AS (
+  SELECT
+    u.id AS unit_id,
+    CAST(NULL AS INTEGER) AS parent_unit_id,
+    1 AS org_level,
+    u.id AS root_unit_id,
+    CAST(NULL AS INTEGER) AS level2_unit_id,
+    CAST(NULL AS INTEGER) AS level3_unit_id
+  FROM units u
+  WHERE NOT EXISTS (
+    SELECT 1
+    FROM unit_arbol_vigente ur
+    INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
+    WHERE ur.child_unit_id = u.id
+  )
+  UNION ALL
+  SELECT
+    child.id AS unit_id,
+    ur.parent_unit_id AS parent_unit_id,
+    parent.org_level + 1 AS org_level,
+    parent.root_unit_id AS root_unit_id,
+    CASE WHEN parent.org_level = 1 THEN child.id ELSE parent.level2_unit_id END AS level2_unit_id,
+    CASE WHEN parent.org_level = 2 THEN child.id ELSE parent.level3_unit_id END AS level3_unit_id
+  FROM unit_arbol_vigente ur
+  INNER JOIN relation_unit_types rt ON rt.id = ur.relation_type_id AND rt.code = 'org'
+  INNER JOIN units child ON child.id = ur.child_unit_id
+  INNER JOIN org_tree parent ON parent.unit_id = ur.parent_unit_id
+)
+SELECT
+  unit_id,
+  parent_unit_id,
+  org_level,
+  root_unit_id,
+  level2_unit_id,
+  level3_unit_id,
+  COALESCE(level3_unit_id, level2_unit_id, unit_id) AS group_unit_id
+FROM org_tree;
+
+-- Estado de los jobs de firma masiva (POST /sign/batch/start). Persistido para sobrevivir reinicios del
+-- backend (antes vivía en un Map en memoria). `results` guarda el detalle por archivo como JSON.
+CREATE TABLE IF NOT EXISTS firmas.signature_batch_jobs (
+  job_id CHAR(36) PRIMARY KEY,
+  -- Es `persons.id` (sale de `req.user.uid`). Era BIGINT contra un INT, asi que la FK no se podia
+  -- poner (TD7-d, 2026-08-24). El nombre `user_id` SI se queda: asoma como `userId` en el contrato
+  -- HTTP y en `sign_batch.json`, y renombrarlo moveria un golden a cambio de nada.
+  user_id INT NULL REFERENCES persons(id),
+  sign_mode VARCHAR(40) NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'queued',
+  total INT NOT NULL DEFAULT 0,
+  processed INT NOT NULL DEFAULT 0,
+  success_count INT NOT NULL DEFAULT 0,
+  failed_count INT NOT NULL DEFAULT 0,
+  results JSONB NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_signature_batch_jobs_user ON signature_batch_jobs (user_id);
+CREATE INDEX IF NOT EXISTS idx_signature_batch_jobs_status ON signature_batch_jobs (status);
+CREATE OR REPLACE TRIGGER trg_signature_batch_jobs_set_updated_at BEFORE UPDATE ON signature_batch_jobs FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+
+-- Tablas de códigos de auth. Índices renombrados con prefijo (en PG el nombre es global).
+-- El codigo apunta al CORREO, no a la persona: desde que hay varios, verificar "a la persona"
+-- no dice cual de ellos.
+CREATE TABLE IF NOT EXISTS identidad.email_verification_codes (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  email_id INT NOT NULL,
+  code_hash VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_email_verification_codes_email FOREIGN KEY (email_id) REFERENCES emails(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_evc_email_id ON email_verification_codes (email_id);
+CREATE INDEX IF NOT EXISTS idx_evc_expires_at ON email_verification_codes (expires_at);
+
+CREATE TABLE IF NOT EXISTS identidad.password_reset_codes (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  person_id INT NOT NULL,
+  code_hash VARCHAR(255) NOT NULL,
+  expires_at TIMESTAMP NOT NULL,
+  used SMALLINT DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_password_reset_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_prc_person_id ON password_reset_codes (person_id);
+CREATE INDEX IF NOT EXISTS idx_prc_expires_at ON password_reset_codes (expires_at);
+
+
+-- ============================================================================
+-- Chat / notificaciones (núcleo relacional — Fase 5). Los person_id /
+-- process_id / unit_id / definition_id son FKs lógicas al núcleo relacional
+-- (persons/processes/units/process_definition_versions); no se ponen constraints
+-- para no acoplar. last_message_id se deja sin FK (evita ciclo con chat_messages).
+--
+-- ⚠️ ESE CRITERIO MIRA HACIA AFUERA, Y SOLO HACIA AFUERA. Dentro del dominio las referencias SI
+-- llevan constraint: las seis FKs de estas seis tablas apuntan unas a otras. `chat_notifications`
+-- se quedó sin las suyas por descuido y no por criterio, y estuvo así hasta `TD7-c2` (2026-08-24).
+-- El precio de la decisión de afuera está medido y escrito en `docs/planes/plan_data/censo-fks-ausentes.md`.
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS chat.chat_conversations (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  type TEXT NOT NULL CHECK (type IN ('direct','group','thread','process_thread','unit')),
+  title TEXT,
+  process_id INT,
+  scope_process_id INT,
+  scope_unit_id INT,
+  stable_key VARCHAR(255),
+  scope_current_definition_id INT,
+  scope_origin_definition_id INT,
+  created_by INT NOT NULL,
+  last_message_id BIGINT,
+  last_message_at TIMESTAMP,
+  archived_at TIMESTAMP,
+  mobile_summary TEXT,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  -- Politica por defecto, la de las otras 18 claves a `persons`: NO SE BORRA una fila que alguien
+  -- referencia. La base responde con el nombre de la restriccion y el borrado no ocurre.
+  --
+  -- Las cinco de ambito son las que mas duelen sin comprobar, y no por integridad abstracta:
+  -- `ChatAuthorizationService` resuelve el permiso con `INNER JOIN` contra `units`, `processes` y
+  -- `process_definition_versions`. Si el destino desaparece, la fila se cae del join y LA
+  -- CONVERSACION SE VUELVE INVISIBLE PARA TODOS, sin error y sin que nadie sepa por que.
+  CONSTRAINT fk_chat_conv_process FOREIGN KEY (process_id) REFERENCES processes(id),
+  CONSTRAINT fk_chat_conv_scope_process FOREIGN KEY (scope_process_id) REFERENCES processes(id),
+  CONSTRAINT fk_chat_conv_scope_unit FOREIGN KEY (scope_unit_id) REFERENCES units(id),
+  CONSTRAINT fk_chat_conv_scope_current_definition FOREIGN KEY (scope_current_definition_id) REFERENCES process_definition_versions(id),
+  CONSTRAINT fk_chat_conv_scope_origin_definition FOREIGN KEY (scope_origin_definition_id) REFERENCES process_definition_versions(id),
+  -- `created_by` es una persona, y el censo de `TD7-c` NO LA VIO porque buscaba columnas acabadas
+  -- en `_id`. La convencion de nombres escondia una referencia.
+  CONSTRAINT fk_chat_conv_created_by FOREIGN KEY (created_by) REFERENCES persons(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_conversations_stable_key ON chat_conversations (stable_key) WHERE stable_key IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_chat_conversations_process ON chat_conversations (type, process_id);
+CREATE OR REPLACE TRIGGER trg_chat_conversations_set_updated_at BEFORE UPDATE ON chat_conversations FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS chat.chat_conversation_participants (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  conversation_id BIGINT NOT NULL,
+  person_id INT NOT NULL,
+  role VARCHAR(20) NOT NULL DEFAULT 'member',
+  joined_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  left_at TIMESTAMP,
+  CONSTRAINT fk_chat_participants_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_participants_person FOREIGN KEY (person_id) REFERENCES persons(id)
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_chat_participant ON chat_conversation_participants (conversation_id, person_id);
+CREATE INDEX IF NOT EXISTS idx_chat_participant_person ON chat_conversation_participants (person_id, conversation_id);
+
+CREATE TABLE IF NOT EXISTS chat.chat_messages (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  conversation_id BIGINT NOT NULL,
+  sender_person_id INT NOT NULL,
+  content TEXT NOT NULL DEFAULT '',
+  content_type VARCHAR(20) NOT NULL DEFAULT 'text' CHECK (content_type IN ('text','system','attachment')),
+  reply_to_message_id BIGINT,
+  edited_at TIMESTAMP,
+  deleted_at TIMESTAMP,
+  delivery_state VARCHAR(20),
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_chat_messages_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_messages_reply FOREIGN KEY (reply_to_message_id) REFERENCES chat_messages(id) ON DELETE SET NULL,
+  -- NO lleva CASCADE a proposito: borrar a una persona no puede llevarse la conversacion de los
+  -- demas. El mensaje es de quien lo escribio, pero el hilo es de todos los que participaron.
+  CONSTRAINT fk_chat_messages_sender FOREIGN KEY (sender_person_id) REFERENCES persons(id)
+);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation ON chat_messages (conversation_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_messages_sender ON chat_messages (sender_person_id, created_at);
+
+CREATE TABLE IF NOT EXISTS chat.chat_message_attachments (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  message_id BIGINT NOT NULL,
+  sort_order INT NOT NULL DEFAULT 0,
+  path VARCHAR(500) NOT NULL,
+  filename VARCHAR(255) NOT NULL,
+  mime VARCHAR(120),
+  size BIGINT NOT NULL DEFAULT 0,
+  CONSTRAINT fk_chat_attachments_message FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_chat_attachments_message ON chat_message_attachments (message_id, sort_order);
+
+CREATE TABLE IF NOT EXISTS chat.chat_message_reads (
+  message_id BIGINT NOT NULL,
+  person_id INT NOT NULL,
+  read_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (message_id, person_id),
+  CONSTRAINT fk_chat_reads_message FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_reads_person FOREIGN KEY (person_id) REFERENCES persons(id)
+);
+
+CREATE TABLE IF NOT EXISTS chat.chat_notifications (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  recipient_person_id INT NOT NULL,
+  type VARCHAR(80) NOT NULL,
+  title TEXT NOT NULL,
+  body TEXT NOT NULL,
+  -- SIN el par polimorfico `entity_type`/`entity_id` (`TD7-c4`, 2026-08-24). Guardaba EL MISMO
+  -- HECHO que `conversation_id`, y peor: su unico escritor lo llenaba con constantes
+  -- (`'conversation'` + `String(conversation.id)`), nadie consultaba por el, el frontend no lo leia,
+  -- y al ser `VARCHAR(64)` polimorfico no podia llevar clave ajena.
+  --
+  -- Sobrevive la pareja tipada, y no es arbitrario: se consulta (`chatStore.js`, las notificaciones
+  -- de UNA conversacion), tiene integridad referencial desde `TD7-c2`, y `message_id` guarda un
+  -- hecho que el par NO PODIA guardar — un par polimorfico apunta a UNA entidad, y una notificacion
+  -- de chat apunta a dos.
+  --
+  -- Si algun dia hacen falta notificaciones que no sean de chat, la pregunta es si esta tabla se
+  -- generaliza o nace otra. No es motivo para conservar hoy dos columnas que nadie lee.
+  --
+  -- NULABLES a proposito: no toda notificacion tiene por que colgar de un mensaje concreto.
+  conversation_id BIGINT,
+  message_id BIGINT,
+  channel VARCHAR(20) NOT NULL DEFAULT 'in_app',
+  read_at TIMESTAMP,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  -- Estas dos FKs faltaban, y era omision y no postura (`TD7-c2`, 2026-08-24). El «no se ponen
+  -- constraints para no acoplar» de la cabecera del bloque cubre lo que apunta al NUCLEO relacional
+  -- —`persons`, `units`, `processes`—; estas dos apuntan a las hermanas del propio dominio, y las
+  -- otras cuatro tablas del chat SI las llevan. `chat_notifications` era la unica sin ninguna.
+  --
+  -- CASCADE, y no `SET NULL` como `chat_messages.reply_to_message_id`: una respuesta ES CONTENIDO y
+  -- sobrevive a que borren su padre, pero una notificacion es un PUNTERO —su razon de existir es
+  -- «pincha aqui y vas al mensaje»—. Sin destino queda un enlace muerto. Misma politica que sus
+  -- hermanas accesorias (`participants`, `attachments`, `reads`).
+  CONSTRAINT fk_chat_notif_recipient FOREIGN KEY (recipient_person_id) REFERENCES persons(id),
+  CONSTRAINT fk_chat_notif_conversation FOREIGN KEY (conversation_id) REFERENCES chat_conversations(id) ON DELETE CASCADE,
+  CONSTRAINT fk_chat_notif_message FOREIGN KEY (message_id) REFERENCES chat_messages(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_chat_notif_recipient_created ON chat_notifications (recipient_person_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_chat_notif_recipient_read ON chat_notifications (recipient_person_id, read_at);
+
+
+-- ============================================================================
+-- Dossier / expediente personal (núcleo relacional — Fase 6). Documento
+-- heterogéneo (CV con secciones) leído siempre como árbol completo → 2 tablas
+-- con `data` JSONB (el ítem tal cual); `sera`/funcion_catedra/campos del ítem
+-- viven ahí dentro.
+--
+-- Decía «accedido por cédula» y era del diseño VIEJO de Mongo: `dossierStore.js`
+-- lee por `person_id`, que además tiene índice único. Corregido en `TD7-c3`.
+--
+-- `person_id` ERA una «FK lógica» sin comprobar; desde `TD7-c3` (2026-08-24) la
+-- base la comprueba. Y con CASCADE, a diferencia del chat: un expediente es el
+-- CV de ESA persona y no significa nada sin ella — mismo criterio que
+-- `person_certificates`. Un mensaje de chat no: ése pertenece a un hilo de
+-- varios, y por eso allí la política es no dejar borrar.
+
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS identidad.dossiers (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  -- SIN `cedula` (`TD7-c5`, 2026-08-24). Guardaba una COPIA de `persons.cedula` que se escribia una
+  -- sola vez al crear el expediente y no se actualizaba NUNCA — cero `UPDATE dossiers` en todo el
+  -- backend—, mientras la cedula de la ficha SI cambia (campo editable del CRUD y reescritura del
+  -- bootstrap). Medido antes de quitarla: cambiando la cedula de la persona a '0000000001', el
+  -- expediente seguia devolviendo la vieja. No era redundante: era una copia que MENTIA.
+  --
+  -- Nadie la buscaba tampoco: `findDossierByCedula` —pese al nombre— resuelve cedula -> persona en
+  -- `persons` y luego busca por `person_id`. Su indice `idx_dossiers_cedula` no servia a ninguna
+  -- consulta. Hoy la cedula sale de la ficha, en el mismo `SELECT`, gracias a la clave ajena que
+  -- puso `TD7-c3`.
+  person_id INT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_dossiers_person FOREIGN KEY (person_id) REFERENCES persons(id) ON DELETE CASCADE
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uq_dossiers_person ON dossiers (person_id);
+CREATE OR REPLACE TRIGGER trg_dossiers_set_updated_at BEFORE UPDATE ON dossiers FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE TABLE IF NOT EXISTS identidad.dossier_items (
+  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  dossier_id BIGINT NOT NULL,
+  section VARCHAR(20) NOT NULL,
+  data JSONB NOT NULL DEFAULT '{}',
+  url_documento TEXT NOT NULL DEFAULT '',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_dossier_items_dossier FOREIGN KEY (dossier_id) REFERENCES dossiers(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_dossier_items ON dossier_items (dossier_id, section, id);
+
+-- ============================================================================
+-- Triggers de negocio (equivalentes a un bloque DELIMITER // de MySQL).
+-- SIGNAL->RAISE EXCEPTION, INSERT IGNORE->ON CONFLICT DO NOTHING,
+-- IFNULL->COALESCE, CURDATE()->CURRENT_DATE, NOW()->now(),
+-- UPDATE t JOIN...->UPDATE t ... FROM..., y sin prefijo de alias en SET.
+-- ============================================================================
+
+-- 1) Guard de activación: exige >=1 regla de reparto y >=1 tipo de periodo activo.
+--
+-- ⚠️ La regla NO se filtra por vigencia ni por `is_active`: no los tiene (frente 25, P18-d). Nace y
+-- muere con su version de la obligacion, asi que basta con que exista. El tipo de periodo si: esa
+-- tabla conserva su `is_active`.
+CREATE OR REPLACE FUNCTION public.trg_pdv_before_update_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  -- SIN `rule_count` (frente 25, P26): contaba FILAS de `process_target_rules`, no destinatarios, asi
+  -- que con la politica por defecto lo unico que exigia era que alguien hubiera pulsado «Agregar
+  -- regla». La tabla se retiro y el afinado vive en la LINEA, que toda configuracion tiene por una
+  -- clave ajena NOT NULL: ya no hay nada que se pueda olvidar.
+  active_period_type_count int := 0;
+BEGIN
+  IF NEW.status = 'active' AND OLD.status <> 'active' THEN
+    SELECT COUNT(*) INTO active_period_type_count
+    FROM process_definition_period_types
+    WHERE process_definition_id = NEW.id AND is_active = 1;
+    IF active_period_type_count < 1 THEN
+      RAISE EXCEPTION 'No se puede activar una definicion si no tiene al menos un tipo de periodo activo en Periodos del proceso.';
+    END IF;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_process_definition_versions_before_update
+BEFORE UPDATE ON process_definition_versions
+FOR EACH ROW EXECUTE FUNCTION trg_pdv_before_update_fn();
+
+-- 2) Ocupación de puesto: deriva role_assignments y enlaza task_items abiertos.
+--
+-- "Abierto y NO INICIADO" es `ti.user_started_at IS NULL`. Antes se preguntaba por la ausencia de
+-- documento, y eso NUNCA se cumplía: el documento se crea al lanzar, en la misma transacción que el
+-- entregable (los cinco caminos que insertan en `task_items` llaman a `ensureDocumentForTaskItem`
+-- antes de confirmar). La condición significaba "no toques nada que se haya lanzado", y todo lo
+-- estaba: la rama era código muerto. `user_started_at` se sella una sola vez, en el `start` de un
+-- paso de entrega (FillRequestWorkflowService), que es de verdad el momento en que alguien empieza.
+-- LA TENENCIA SE ABRE SOLA. Hay CINCO caminos que insertan en `task_items` (dos del lanzamiento
+-- automatico, dos de la tarea ad-hoc y las replicas), y parchear los cinco es exactamente como se
+-- perdio antes: uno se olvida. Aqui no puede olvidarse ninguno.
+CREATE OR REPLACE FUNCTION public.trg_task_items_after_insert_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+  VALUES (NEW.id, NEW.assigned_person_id, NEW.responsible_position_id, 'original', 'Reparto inicial', 0);
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_task_items_after_insert
+AFTER INSERT ON task_items
+FOR EACH ROW EXECUTE FUNCTION trg_task_items_after_insert_fn();
+
+
+-- LA LINEA DE UN ENTREGABLE QUEDA SELLADA, Y SE SELLA HACIENDO INMUTABLE LA CADENA (frente 27,
+-- decision D-02 del 2026-11-18).
+--
+-- Un entregable llega a su PROCESO por cuatro eslabones, los cuatro obligatorios:
+--
+--     task_items.task_id -> tasks.process_definition_id -> process_definition_versions.linea_id
+--                        -> lineas.process_id
+--
+-- y hasta hoy los cuatro se podian cambiar una vez escritos. Ningun codigo de la aplicacion lo hace
+-- --el lanzamiento y la tarea suelta solo los escriben al crear--, pero el editor generico de /admin
+-- si puede, y cambiar uno RECLASIFICA documentos hacia atras y sin rastro: mover una configuracion de
+-- linea se lleva de golpe todos los entregables de todas sus tareas.
+--
+-- No se copia la linea al entregable. Seria el mismo dato dicho dos veces, y este esquema ya retiro
+-- una copia asi: `process_definition_versions.process_id`, que duplicaba `lineas.process_id` (frente
+-- 25, P22). Con la cadena inmutable la linea se sigue leyendo por sus tres claves y no puede moverse.
+--
+-- El `WHEN` deja pasar el UPDATE que reescribe el MISMO valor: el editor generico manda la fila
+-- entera al guardar, y rechazarle un eslabon que no ha tocado seria castigar cualquier otra edicion.
+--
+-- EL CUARTO ESLABON, `lineas.process_id`, ENTRO DESPUES Y CORRIGIENDO ESTE MISMO COMENTARIO. Aqui
+-- ponia que era «el unico eslabon que tiene que poder cambiar» y que ahi iria la vigencia. Era
+-- falso, y bastaba mirar la tabla: la linea YA tiene vigencia propia (effective_from, effective_to)
+-- y sucesion (linea_anterior_id), y el proceso es parte de su IDENTIDAD --sus dos indices unicos
+-- empiezan por process_id--. Una linea que pasa a otro proceso es una linea NUEVA que sucede a la
+-- anterior. Lo que una reorganizacion mueve es el PROCESO dentro de su arbol, y esa es la arista que
+-- llevara fechas (F27.P3.T1).
+--
+-- Lo que este sello NO cubre: el BORRADO, que es la decision D-03.
+CREATE OR REPLACE FUNCTION public.rechazar_cambio_de_eslabon() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RAISE EXCEPTION 'No se puede cambiar %.% una vez escrito: es un eslabon de la cadena que fija la linea y el proceso de un entregable.',
+    TG_TABLE_NAME, TG_ARGV[0]
+    USING ERRCODE = 'restrict_violation';
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_task_items_tarea_inmutable
+BEFORE UPDATE OF task_id ON task_items
+FOR EACH ROW WHEN (OLD.task_id IS DISTINCT FROM NEW.task_id)
+EXECUTE FUNCTION rechazar_cambio_de_eslabon('task_id');
+
+CREATE OR REPLACE TRIGGER trg_tasks_configuracion_inmutable
+BEFORE UPDATE OF process_definition_id ON tasks
+FOR EACH ROW WHEN (OLD.process_definition_id IS DISTINCT FROM NEW.process_definition_id)
+EXECUTE FUNCTION rechazar_cambio_de_eslabon('process_definition_id');
+
+CREATE OR REPLACE TRIGGER trg_configuracion_linea_inmutable
+BEFORE UPDATE OF linea_id ON process_definition_versions
+FOR EACH ROW WHEN (OLD.linea_id IS DISTINCT FROM NEW.linea_id)
+EXECUTE FUNCTION rechazar_cambio_de_eslabon('linea_id');
+
+CREATE OR REPLACE TRIGGER trg_lineas_proceso_inmutable
+BEFORE UPDATE OF process_id ON lineas
+FOR EACH ROW WHEN (OLD.process_id IS DISTINCT FROM NEW.process_id)
+EXECUTE FUNCTION rechazar_cambio_de_eslabon('process_id');
+
+
+-- Y `task_items.assigned_person_id` pasa a ser una CACHE DE UN SOLO ESCRITOR: este trigger.
+--
+-- No se retira la columna porque tiene 21 referencias en 7 ficheros y esta en los dos caminos
+-- calientes (el motor de acceso y el panel), donde meteria un JOIN. Lo que se retira es la
+-- posibilidad de que se desincronice: antes la escribian CUATRO sitios y hoy solo hay UNA forma de
+-- cambiar de responsable — cerrar una tenencia y abrir otra.
+--
+-- Es el mismo patron que `position_assignments.is_current` + `uq_position_current` un piso mas
+-- abajo, no una invencion.
+CREATE OR REPLACE FUNCTION public.trg_task_item_tenures_sync_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  -- Solo manda la tenencia ABIERTA. Al cerrar una no se toca nada: lo pone la siguiente, y entre
+  -- las dos no hay hueco porque van en la misma transaccion.
+  IF NEW.ended_at IS NULL THEN
+
+    -- ── LAS SOLICITUDES SIGUEN AL RESPONSABLE (decision DR3, 2026-08-23) ────────────────────
+    --
+    -- Sin esto el entregable cambiaba de manos pero el TRABAJO no: el guard de la solicitud dice
+    -- literalmente «No puedes operar un turno de entrega asignado a otro usuario», asi que
+    -- quien llegaba recibia un 403 sobre su propio entregable y quien se fue era el unico que
+    -- tecnicamente podia actuar.
+    --
+    -- ⚠️ LA REGLA ES «ALINEAR AL VIGENTE», NO «MOVER DE X A Y», y la diferencia importa: un relevo
+    -- pasa por un estado INTERMEDIO SIN PERSONA (se cierra la tenencia del que se va, se abre una
+    -- abandonada, y luego la del que llega). Con «mover de X a Y» la solicitud llegaba a NULL en el
+    -- primer paso y en el segundo ya no coincidia con nadie — medido, se quedaba huerfana. Alinear
+    -- es ademas idempotente, que es lo que quieres en un trigger que corre en cinco caminos.
+    --
+    -- SOLO ALCANZA A `task_assignee`, o sea a lo que esta a nombre de alguien POR SER EL
+    -- RESPONSABLE del entregable. Un paso por CARGO nombra a quien ocupe ese cargo —otra persona,
+    -- otro puesto— y no tiene que ver con este relevo; uno de `specific_person` nombra a alguien a
+    -- proposito y heredarlo seria falsearlo. Y no se hereda una firma YA DADA: solo viajan las
+    -- solicitudes SIN RESPONDER.
+    -- Sobre `turnos` desde la fase 4 del frente 24, y el `resolver_type` lo trae ahora el
+    -- PARTICIPANTE declarado, no el paso: un paso puede pedir a varias personas y cada una tiene su
+    -- forma de ser encontrada. Solo viaja la del responsable.
+    --
+    -- ⚠️ ERAN DOS `UPDATE`, UNO POR LADO, Y SON UNO DESDE EL PASO 3b. No se quita el filtro por
+    -- accion: NO HAY NINGUNO QUE QUITAR -- la regla es la misma en los dos lados y ahora las dos
+    -- mitades son la misma tabla. El relevo alcanza al turno de entrega y al de firma por igual.
+    --
+    -- Y EL DE FIRMA LLEVABA UNA GUARDA DEFENSIVA QUE AQUI YA NO HACE FALTA:
+    --   AND (sfs.signers IS NULL OR sfs.signers::text NOT LIKE "%specific_person%")
+    -- Estaba porque el JSONB "signers" podia traer un resolutor que la columna no reflejaba --el
+    -- defecto 1.19-- y ante la duda era mejor no mover: mover mal una firma es peor que no moverla.
+    -- Con los firmantes en filas bajo CHECK la duda no existe, asi que la guarda se va. Es el efecto
+    -- mas concreto de cerrar ese defecto: una regla menos escrita "por si acaso".
+    UPDATE turnos tu
+       SET persona_id = NEW.person_id
+      FROM participantes_declarados pa, recorridos r, document_versions dv
+     WHERE pa.id = tu.participante_id
+       AND r.id = tu.recorrido_id
+       AND dv.id = r.document_version_id
+       AND dv.task_item_id = NEW.task_item_id
+       AND tu.respondido IS NULL
+       AND pa.resolver_type = 'task_assignee'
+       AND tu.persona_id IS DISTINCT FROM NEW.person_id;
+
+    UPDATE task_items ti
+       SET assigned_person_id = NEW.person_id
+     WHERE ti.id = NEW.task_item_id
+       AND ti.assigned_person_id IS DISTINCT FROM NEW.person_id;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_task_item_tenures_sync
+AFTER INSERT OR UPDATE ON task_item_tenures
+FOR EACH ROW EXECUTE FUNCTION trg_task_item_tenures_sync_fn();
+
+
+-- SE DESACTIVA UN PUESTO: sus entregables dejan de tener a quien esperar (decision DR2 del dueño,
+-- 2026-08-23).
+--
+-- POR QUE HACE FALTA. Desactivar un puesto NO es quedarse sin ocupante, y la diferencia hace daño:
+-- un entregable huerfano por vacante espera a alguien que VA A VENIR; uno anclado a un puesto
+-- desactivado espera a alguien que NO EXISTE. Y hasta hoy no pasaba absolutamente nada — medido:
+-- ningun trigger tocaba `unit_positions`, y la ocupacion NI SIQUIERA SE CIERRA, asi que la persona
+-- seguia figurando como titular vigente de un puesto que la institucion ya no reconoce. El trabajo
+-- se quedaba en el limbo sin aparecer en ninguna parte.
+--
+-- Estrena `position_deactivated`, que llevaba en el vocabulario de causas desde su creacion SIN UN
+-- SOLO EMISOR: un nombre reservado para un camino que no existia.
+--
+-- ⚠️ NO ALCANZA A TODO, y es por coherencia con DR1: un entregable ya EN FASE DE FIRMA no puede
+-- quedarse sin responsable —hay gente convocada con solicitudes a su nombre—, asi que solo se
+-- LISTA para el jefe de la unidad, que decide. Los cerrados no se tocan: no queda trabajo.
+--
+-- ⚠️ Y NO REASIGNA NADA. Que puesto sucede a uno suprimido se puede registrar --es
+-- position_equivalencias--, pero eso es memoria y no reparto: un puesto puede partirse en varios, y
+-- a cual va cada entregable no lo sabe la base. Lo decide una persona, desde el panel de supervision.
+--
+-- ⚠️ DESDE EL FRENTE 27 UN PUESTO NO SE «DESACTIVA» CON UN UPDATE: se le pone fin a su vida, en
+-- `position_vigencias`. El efecto es el mismo de siempre, pero vive en una FUNCION que llaman dos:
+-- el disparador de abajo, cuando la supresion ya rige al registrarla, y la tarea periodica del
+-- backend, cuando vence una fecha futura sin que nadie escriba nada.
+--
+-- Solo actua sobre un puesto SUPRIMIDO --su ultima vida termino y no hay otra por empezar--: uno en
+-- borrador tampoco rige, y no tiene trabajo que dejar huerfano.
+--
+-- Repetirla no hace daño: tras aplicarse, el turno abierto de cada entregable ya es el de causa
+-- `position_deactivated`, y la segunda vez no encuentra ninguno distinto que cerrar.
+CREATE OR REPLACE FUNCTION public.aplicar_supresion_de_puesto(puesto INT) RETURNS INT
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  afectadas INT := 0;
+  n INT;
+BEGIN
+  IF (SELECT pva.estado FROM position_vigencia_actual pva WHERE pva.position_id = puesto) IS DISTINCT FROM 'suprimido' THEN
+    RETURN 0;
+  END IF;
+
+  UPDATE task_item_tenures t
+     SET ended_at = now()
+    FROM task_items ti
+   WHERE ti.id = t.task_item_id
+     AND t.ended_at IS NULL
+     AND t.opened_by <> 'position_deactivated'
+     AND ti.responsible_position_id = puesto
+     AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma');
+
+  INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+  SELECT ti.id, NULL, puesto, 'position_deactivated', 'El puesto responsable se desactivo',
+         CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
+    FROM task_items ti
+   WHERE ti.responsible_position_id = puesto
+     AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+     AND NOT EXISTS (
+       SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
+     );
+  GET DIAGNOSTICS afectadas = ROW_COUNT;
+
+  -- Y SE CIERRA SU OCUPACION (decision del dueño del 2026-11-23). Hasta aqui suprimir un puesto
+  -- dejaba a la persona figurando como titular vigente de un puesto que ya no rige, y conservando
+  -- el rol que ese puesto le daba.
+  --
+  -- ⚠️ VA DESPUES DE LOS ENTREGABLES, Y EL ORDEN IMPORTA. Cerrar una ocupacion tiene su propio
+  -- disparador, que deja huerfanos los entregables de quien se va con la causa `occupancy_end`
+  -- --«se fue el titular, vendra otro»--. Aqui la causa es otra: el puesto dejo de existir y no va
+  -- a venir nadie. Como los entregables ya tienen abierto su turno de `position_deactivated`, aquel
+  -- disparador no encuentra nada que cerrar ni que abrir, y la causa correcta se conserva. Lo que
+  -- si hace, y se quiere, es revocar el rol derivado de esa ocupacion.
+  --
+  -- La fecha de fin es la del puesto: el primer dia en que ya no rige.
+  UPDATE position_assignments pa
+     SET is_current = 0,
+         end_date = COALESCE(pa.end_date, (SELECT pva.vigente_hasta FROM position_vigencia_actual pva WHERE pva.position_id = puesto), CURRENT_DATE)
+   WHERE pa.position_id = puesto AND pa.is_current = 1;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  afectadas := afectadas + n;
+
+  RETURN afectadas;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.trg_position_vigencias_cierre_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  IF NEW.vigente_hasta IS NOT NULL THEN
+    PERFORM aplicar_supresion_de_puesto(NEW.position_id);
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_position_vigencias_cierre
+AFTER INSERT OR UPDATE ON position_vigencias
+FOR EACH ROW EXECUTE FUNCTION trg_position_vigencias_cierre_fn();
+
+
+CREATE OR REPLACE FUNCTION public.trg_position_assignments_after_insert_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  IF NEW.is_current = 1 THEN
+    INSERT INTO role_assignments
+      (person_id, role_id, unit_id, source, derived_from_assignment_id, max_depth, start_date, is_current, assigned_at)
+    SELECT NEW.person_id, crm.role_id, up.unit_id, 'derived', NEW.id, 0, NEW.start_date, 1, now()
+    FROM unit_positions up
+    INNER JOIN cargo_role_map crm ON crm.cargo_id = up.cargo_id
+    WHERE up.id = NEW.position_id
+    ON CONFLICT DO NOTHING;
+
+    -- CERRAR y ABRIR, en dos sentencias y no en un CTE con `RETURNING`: el indice unico
+    -- `uq_task_item_tenure_current` no admite dos tenencias abiertas del mismo entregable, y en un
+    -- CTE que modifica datos el orden en que se aplican los efectos al indice no esta garantizado.
+    -- Separadas, el cierre esta hecho antes de que la apertura mire.
+    --
+    -- `user_started_at IS NULL` protege lo que alguien ya abrio: un relevo automatico no le quita a
+    -- nadie un documento que esta escribiendo. Lo que pasa con ESO —empezado y sin terminar— sigue
+    -- siendo un hueco de politica; esta en el §4 del analisis y no lo resuelve este trigger.
+    UPDATE task_item_tenures t
+       SET ended_at = now()
+      FROM task_items ti
+     WHERE ti.id = t.task_item_id
+       AND t.ended_at IS NULL
+       AND ti.responsible_position_id = NEW.position_id
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+       AND (t.person_id IS NULL OR t.person_id <> NEW.person_id);
+
+    -- Recoge tanto a los que acaban de cerrarse como a los ABANDONADOS que esperaban ocupante.
+    -- Si la tenencia abierta ya era de NEW.person_id no se cerro nada y aqui no entra: idempotente.
+    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+    SELECT ti.id, NEW.person_id, NEW.position_id, 'occupancy_start', 'Alta de ocupacion del puesto',
+           CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
+      FROM task_items ti
+     WHERE ti.responsible_position_id = NEW.position_id
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+       AND NOT EXISTS (
+         SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
+       );
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_position_assignments_after_insert
+AFTER INSERT ON position_assignments
+FOR EACH ROW EXECUTE FUNCTION trg_position_assignments_after_insert_fn();
+
+-- 3) Cambio de ocupación: revoca derivados / reasigna o vacía task_items abiertos.
+CREATE OR REPLACE FUNCTION public.trg_position_assignments_after_update_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  IF OLD.is_current = 1 AND NEW.is_current = 0 THEN
+    UPDATE role_assignments
+    SET is_current = 0,
+        end_date = COALESCE(NEW.end_date, CURRENT_DATE),
+        revoked_at = now(),
+        revoked_reason = 'position_assignment_closed'
+    WHERE source = 'derived' AND derived_from_assignment_id = OLD.id AND is_current = 1;
+
+    -- BAJA. Se cierra la tenencia de quien se va y se abre una SIN PERSONA: el entregable queda
+    -- abandonado, y «desde cuando» es el `started_at` de esa fila. Antes esto ponia
+    -- `assigned_person_id = NULL` y la fecha del abandono no se guardaba en ninguna parte.
+    UPDATE task_item_tenures t
+       SET ended_at = now()
+      FROM task_items ti
+     WHERE ti.id = t.task_item_id
+       AND t.ended_at IS NULL
+       AND t.person_id = OLD.person_id
+       AND ti.responsible_position_id = NEW.position_id
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma');
+
+    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+    SELECT ti.id, NULL, NEW.position_id, 'occupancy_end', 'Fin de ocupacion del puesto',
+           CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
+      FROM task_items ti
+     WHERE ti.responsible_position_id = NEW.position_id
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+       AND NOT EXISTS (
+         SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
+       );
+  END IF;
+  IF NEW.is_current = 1 THEN
+    -- ALTA. Identica a la del trigger de INSERT: cerrar, y abrir para quien se quedo sin tenencia.
+    UPDATE task_item_tenures t
+       SET ended_at = now()
+      FROM task_items ti
+     WHERE ti.id = t.task_item_id
+       AND t.ended_at IS NULL
+       AND ti.responsible_position_id = NEW.position_id
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+       AND (t.person_id IS NULL OR t.person_id <> NEW.person_id);
+
+    INSERT INTO task_item_tenures (task_item_id, person_id, position_id, opened_by, reason, work_started)
+    SELECT ti.id, NEW.person_id, NEW.position_id, 'occupancy_start', 'Alta de ocupacion del puesto',
+           CASE WHEN ti.user_started_at IS NULL THEN 0 ELSE 1 END
+      FROM task_items ti
+     WHERE ti.responsible_position_id = NEW.position_id
+       AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+       AND NOT EXISTS (
+         SELECT 1 FROM task_item_tenures t WHERE t.task_item_id = ti.id AND t.ended_at IS NULL
+       );
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_position_assignments_after_update
+AFTER UPDATE ON position_assignments
+FOR EACH ROW EXECUTE FUNCTION trg_position_assignments_after_update_fn();
+
+-- 4) Persona inactivada: cierra sus asignaciones de puesto y de rol.
+CREATE OR REPLACE FUNCTION public.trg_persons_after_update_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  IF OLD.is_active = 1 AND NEW.is_active = 0 THEN
+    UPDATE position_assignments
+    SET is_current = 0, end_date = COALESCE(end_date, CURRENT_DATE)
+    WHERE person_id = NEW.id AND is_current = 1;
+
+    UPDATE role_assignments
+    SET is_current = 0,
+        end_date = COALESCE(end_date, CURRENT_DATE),
+        revoked_at = now(),
+        revoked_reason = 'person_inactivated'
+    WHERE person_id = NEW.id AND is_current = 1;
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_persons_after_update
+AFTER UPDATE ON persons
+FOR EACH ROW EXECUTE FUNCTION trg_persons_after_update_fn();
+
+-- 5) Unidad SUPRIMIDA: revoca roles y cancela vacantes abiertas.
+--
+-- ⚠️ ESTE DISPARADOR VIVIA SOBRE `units` Y LEIA `OLD.is_active`, Y ROMPIO TODA ACTUALIZACION DE UNA
+-- UNIDAD durante unas horas del 2026-11-23: la columna se retiro (frente 27, D-03) y el disparador
+-- se quedo. PostgreSQL no valida el cuerpo de una funcion plpgsql al crearla, asi que el esquema se
+-- aplicaba sin queja y el fallo --`record "old" has no field "is_active"`-- solo salia al hacer un
+-- UPDATE. No lo vio ninguna puerta, ni las 317 pruebas de caracterizacion: ninguna actualiza una
+-- unidad. Lo vigila desde entonces `postgres_schema.test.js`.
+--
+-- Una unidad ya no se «inactiva» con un UPDATE: se le pone fin a su vida, en `unit_vigencias`. Asi
+-- que el disparador vive ALLI, y actua cuando esa vida termina hoy o antes y a la unidad no le
+-- queda ninguna otra que rija.
+--
+-- ⚠️ UN FIN CON FECHA FUTURA NO LO CUBRE ESTE DISPARADOR, Y NO PUEDE: al registrarlo la unidad
+-- sigue rigiendo y aqui no pasa nada; el dia que llega la fecha nadie escribe ninguna fila, asi que
+-- nada lo despierta. Un disparador no tiene reloj. Eso lo aplica la tarea periodica del backend,
+-- que llama a `aplicar_vencimientos_de_estructura`.
+-- EL EFECTO, ESCRITO UNA VEZ. Lo llaman dos: el disparador de abajo, cuando alguien registra una
+-- supresion que ya rige; y la tarea periodica del backend, para las que vencieron sin que nadie
+-- escribiera nada (decision del dueño del 2026-11-23: «Tarea periódica en el backend»).
+--
+-- SOLO ACTUA SOBRE UNA UNIDAD SUPRIMIDA --su ultima vida termino y no le queda otra por empezar--.
+-- Una unidad en borrador o programada tampoco «rige», y revocarle los roles que alguien le asigno
+-- mientras la preparaba seria destruir trabajo. Por eso pregunta por el estado y no por unidad_rige.
+--
+-- REPETIRLA NO HACE DAÑO: la segunda vez no encuentra roles vigentes ni vacantes abiertas, y
+-- devuelve cero. Es lo que deja a la tarea deducir lo pendiente de los propios datos, sin apuntar
+-- en ningun sitio que ya lo hizo.
+CREATE OR REPLACE FUNCTION public.aplicar_supresion_de_unidad(unidad INT) RETURNS INT
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  afectadas INT := 0;
+  n INT;
+BEGIN
+  IF (SELECT uva.estado FROM unit_vigencia_actual uva WHERE uva.unit_id = unidad) IS DISTINCT FROM 'suprimido' THEN
+    RETURN 0;
+  END IF;
+
+  UPDATE role_assignments
+  SET is_current = 0,
+      end_date = COALESCE(end_date, CURRENT_DATE),
+      revoked_at = now(),
+      revoked_reason = 'unit_inactivated'
+  WHERE unit_id = unidad AND is_current = 1;
+  GET DIAGNOSTICS n = ROW_COUNT;
+  afectadas := afectadas + n;
+
+  UPDATE vacancies v
+  SET status = 'cancelada', closed_at = now()
+  FROM unit_positions up
+  WHERE up.id = v.position_id AND up.unit_id = unidad AND v.status = 'abierta';
+  GET DIAGNOSTICS n = ROW_COUNT;
+  afectadas := afectadas + n;
+
+  RETURN afectadas;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE FUNCTION public.trg_unit_vigencias_cierre_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  -- La funcion ya comprueba que la unidad este suprimida; aqui solo se evita llamarla cuando la
+  -- fila que se escribe no cierra nada.
+  IF NEW.vigente_hasta IS NOT NULL THEN
+    PERFORM aplicar_supresion_de_unidad(NEW.unit_id);
+  END IF;
+  RETURN NULL;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_unit_vigencias_cierre
+AFTER INSERT OR UPDATE ON unit_vigencias
+FOR EACH ROW EXECUTE FUNCTION trg_unit_vigencias_cierre_fn();
+
+-- LO QUE VENCIO Y NADIE APLICO. La tarea periodica del backend llama a esto y nada mas: aqui se
+-- deduce que hay pendiente --unidades ya suprimidas que conservan roles vigentes o vacantes
+-- abiertas-- y se aplica. Devuelve una fila por nodo tocado, para que quien llama pueda dejar
+-- constancia; sin nada pendiente no devuelve ninguna.
+CREATE OR REPLACE FUNCTION public.aplicar_vencimientos_de_estructura()
+  RETURNS TABLE (clase TEXT, nodo_id INT, afectadas INT)
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT 'unidad'::text, u.unit_id, aplicar_supresion_de_unidad(u.unit_id)
+    FROM unit_vigencia_actual u
+   WHERE u.estado = 'suprimido'
+     AND (
+       EXISTS (SELECT 1 FROM role_assignments ra WHERE ra.unit_id = u.unit_id AND ra.is_current = 1)
+       OR EXISTS (
+         SELECT 1 FROM vacancies v
+           INNER JOIN unit_positions up ON up.id = v.position_id
+          WHERE up.unit_id = u.unit_id AND v.status = 'abierta'
+       )
+     );
+
+  -- Un puesto ya suprimido que aun tiene una ocupacion vigente, o entregables en curso con un turno
+  -- abierto que NO es el de «puesto desactivado»: su supresion vencio y nadie la aplico.
+  RETURN QUERY
+  SELECT 'puesto'::text, p.position_id, aplicar_supresion_de_puesto(p.position_id)
+    FROM position_vigencia_actual p
+   WHERE p.estado = 'suprimido'
+     AND (
+       EXISTS (SELECT 1 FROM position_assignments pa WHERE pa.position_id = p.position_id AND pa.is_current = 1)
+       OR EXISTS (
+       SELECT 1
+         FROM task_items ti
+         INNER JOIN task_item_tenures t ON t.task_item_id = ti.id AND t.ended_at IS NULL
+        WHERE ti.responsible_position_id = p.position_id
+          AND t.opened_by <> 'position_deactivated'
+          AND ti.document_status IN ('Inicial', 'Pendiente de llenado', 'En proceso', 'Observado', 'Listo para firma')
+       )
+     );
+END;
+$$ LANGUAGE plpgsql;
+
+-- ─────────────────────────────────────────────────────────────────────────────────────────────────
+-- Un solo principal por persona: marcar uno DESMARCA al anterior.
+--
+-- Cuatro tablas tienen "el principal" (correo, telefono, direccion, documento) y un indice unico
+-- parcial que lo impone via `principal_flag`, una columna GENERADA que vale 1 cuando principal = 1
+-- y NULL en el resto -- NULL no colisiona en un indice unico, asi que puede haber muchos secundarios
+-- y como mucho un principal.
+--
+-- El indice solo sabia PROHIBIR. Marcar un segundo correo como principal respondia
+--   Ya existe otro registro con esa combinacion de Persona, principal_flag
+-- que ademas filtra el nombre de una columna generada que nadie ve en pantalla. Lo que quiere
+-- cualquiera al marcar un principal nuevo es que el viejo deje de serlo.
+--
+-- POR QUE AQUI Y NO EN EL CRUD DEL ADMIN: la regla es un invariante del dato, no una comodidad de
+-- una pantalla. Puesta en la base la cumple todo el que escriba -- el editor generico, el perfil,
+-- el bootstrap y cualquier script futuro -- y vive junto al indice que la obliga. Es el mismo
+-- criterio de los otros nueve triggers del fichero.
+--
+-- EL AMBITO CAMBIA SEGUN LA TABLA y por eso va por argumentos en vez de cuatro funciones calcadas:
+-- un correo o un documento principal es UNO POR PERSONA, pero de telefono y direccion hay uno por
+-- persona Y TIPO (el de casa y el del trabajo son los dos principales, cada uno en lo suyo).
+--
+-- Va BEFORE y no AFTER a proposito: el desmarcado tiene que estar hecho antes de que el indice mire
+-- la fila nueva. Es la misma cautela que documenta `trg_position_assignments_after_insert_fn` al
+-- cerrar y abrir tenencias en dos sentencias.
+--
+-- No hay recursion infinita aunque el UPDATE vuelva a disparar este mismo trigger: las filas que
+-- toca quedan con principal = 0 y la primera guarda las devuelve intactas.
+CREATE OR REPLACE FUNCTION public.trg_principal_unico_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  filtro text := '';
+  i int;
+BEGIN
+  IF NEW.principal IS DISTINCT FROM 1 THEN
+    RETURN NEW;
+  END IF;
+
+  FOR i IN 0 .. TG_NARGS - 1 LOOP
+    -- IS NOT DISTINCT FROM y no `=`: una columna de ambito NULL (un telefono sin tipo) tiene que
+    -- agrupar con los demas NULL, y `=` los dejaria a todos fuera.
+    filtro := filtro || format(' AND %I IS NOT DISTINCT FROM ($1).%I', TG_ARGV[i], TG_ARGV[i]);
+  END LOOP;
+
+  EXECUTE format(
+    'UPDATE %I SET principal = 0 WHERE principal = 1 AND id <> ($1).id%s',
+    TG_TABLE_NAME, filtro
+  ) USING NEW;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_emails_principal_unico
+BEFORE INSERT OR UPDATE ON emails
+FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id');
+
+CREATE OR REPLACE TRIGGER trg_documentos_principal_unico
+BEFORE INSERT OR UPDATE ON documentos_identidad
+FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id');
+
+CREATE OR REPLACE TRIGGER trg_telefonos_principal_unico
+BEFORE INSERT OR UPDATE ON telefonos
+FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id', 'tipo');
+
+CREATE OR REPLACE TRIGGER trg_direcciones_principal_unico
+BEFORE INSERT OR UPDATE ON direcciones
+FOR EACH ROW EXECUTE FUNCTION trg_principal_unico_fn('person_id', 'tipo');
+
+-- ─────────────────────────────────────────────────────────────────────────────────────────────────
+-- El pais del documento NACIONAL lo pone la institucion.
+--
+-- `documentos_identidad.pais_id` es obligatorio, pero al documento nacional no se le pregunta: por
+-- definicion lo emite el pais de la institucion, y preguntarlo invita a poner otro y a romper la
+-- unicidad (tipo, pais, numero). El servicio ya lo rellenaba, pero el CRUD generico de /admin
+-- escribe DIRECTO a la tabla y ahi el campo va oculto: sin este trigger, dar de alta un documento
+-- nacional desde el admin fallaria con un error de columna nula que no le dice nada a nadie.
+--
+-- Va en la base y no en un hook por el mismo motivo que `trg_principal_unico_fn`: es un invariante
+-- del dato, asi que lo cumple todo el que escriba. Y va BEFORE porque PostgreSQL evalua el NOT NULL
+-- sobre la fila YA modificada por los triggers BEFORE -- si fuera AFTER, la insercion habria muerto
+-- antes de llegar aqui.
+CREATE OR REPLACE FUNCTION public.trg_documentos_pais_nacional_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+BEGIN
+  IF NEW.tipo = 'documento_nacional' AND NEW.pais_id IS NULL THEN
+    SELECT i.pais_id INTO NEW.pais_id
+      FROM instituciones i
+     WHERE i.is_active = 1
+     ORDER BY i.id ASC
+     LIMIT 1;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_documentos_pais_nacional
+BEFORE INSERT OR UPDATE ON documentos_identidad
+FOR EACH ROW EXECUTE FUNCTION trg_documentos_pais_nacional_fn();
+
+
+-- 6) UN FORMATO NO CRUZA DE PROCESO (frente 25 — 2026-10-12).
+--
+-- AQUI VIVIA `trg_pdt_linea_unica`, que decia «un entregable sirve a UNA SOLA LINEA», y se retira
+-- por decision del dueño: «ya no me interesa esa restriccion».
+--
+-- POR QUE SE VA, Y NO ES POR COMODIDAD: ROMPIA LA SIMETRIA DEL MODELO. El modelo declara dos
+-- identidades AL MISMO NIVEL, cada una con sus versiones, y un puente que une VERSION con VERSION:
+--
+--     formato   1 ---- N   ediciones          el papel y sus versiones
+--     linea     1 ---- N   configuraciones    la obligacion y su historia
+--                  vinculos: edicion <-> configuracion
+--
+-- El disparador no hablaba de eso: imponia una regla entre las dos IDENTIDADES, y en un solo
+-- sentido. La prueba de que era la pieza asimetrica es que SU ENUNCIADO ESPEJO ES ABSURDO:
+--
+--     «un FORMATO pertenece a UNA linea»   <- estaba impuesto
+--     «una LINEA pertenece a UN formato»   <- es falso y nadie lo quiere: una obligacion produce
+--                                             varios entregables, el informe y su anexo
+--
+-- Una regla cierta en un sentido y absurda en el otro subordina una identidad a la otra. Y eso
+-- contradecia lo que este mismo frente habia decidido dos dias antes al cerrar la matriz de los dos
+-- ejes: EL FORMATO VIVE AÑOS Y EL ENCARGO VIVE UN PERIODO, y «un formato institucional sirve a
+-- MILES de encargos». Si el formato pertenece a una obligacion, su vida queda acotada por ella.
+--
+-- EL CASO QUE LO DESTAPO, y que con el disparador no tenia solucion limpia: el mismo Informe de
+-- Investigacion Formativa lo entregan las Coordinaciones de CARRERA y las de TECNOLOGIA, que son
+-- dos tipos de unidad distintos y por tanto DOS LINEAS. Con el disparador habria que DUPLICAR EL
+-- FORMATO --la averia que este frente lleva tres dias quitando-- o meter los dos ambitos dentro de
+-- una sola linea, y entonces no se podria retirar uno sin el otro: la vigencia y el linaje son de
+-- la linea entera.
+--
+-- LO QUE SE QUEDA EN SU LUGAR, y es la opcion que eligio el dueño: el formato no cruza de PROCESO.
+-- Un formato sirve a varias lineas del MISMO proceso --Carrera y Tecnologia lo son-- y no se puede
+-- vincular a una linea de otro. Es un escalon mas flojo, no una regla nueva: la pertenencia se
+-- sigue DERIVANDO del vinculo y no hay ninguna columna que mantener. Si algun dia aparece el caso
+-- del «Acta de Reunion» --un formato que de verdad sirve a varios procesos-- esto se afloja otro
+-- escalon o se retira; queda dicho para que no haya que volver a razonarlo.
+--
+-- LO QUE SIGUE SIENDO CIERTO, y por eso el disparador existe y no desaparece del todo: aqui no se
+-- lo salta nadie. El clon, los scripts de siembra y un INSERT a mano no pasan por ningun hook.
+CREATE OR REPLACE FUNCTION public.trg_vinculo_formato_un_proceso_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  entregable_id int;
+  entregable_code varchar(180);
+  destino_process_id int;
+  vinculos_de_otro_proceso int := 0;
+BEGIN
+  -- Re-vincular es lo que se vigila. Un UPDATE que solo mueve `sort_order` o `item_mode` no cambia
+  -- la pertenencia, asi que no hay nada que comprobar y no se paga el JOIN.
+  IF TG_OP = 'UPDATE'
+     AND NEW.edicion_id = OLD.edicion_id
+     AND NEW.process_definition_id = OLD.process_definition_id THEN
+    RETURN NEW;
+  END IF;
+
+  -- EL FORMATO, no la edicion. La regla es del papel: sus ediciones son la v1 y la v2 de la misma
+  -- cosa, y lo que no puede repartirse entre dos procesos es la cosa.
+  SELECT d.id, d.code
+    INTO entregable_id, entregable_code
+    FROM ediciones ta
+    INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+   WHERE ta.id = NEW.edicion_id;
+
+  -- EL PROCESO SALE DE LA LINEA (frente 25, P22). Leia `pdv.process_id`, que era una copia que
+  -- podia MENTIR: esta comprobacion es la que impide que un formato sirva a dos procesos, y con la
+  -- copia comparaba el proceso declarado, no el real.
+  SELECT lin.process_id
+    INTO destino_process_id
+    FROM process_definition_versions pdv
+   INNER JOIN lineas lin ON lin.id = pdv.linea_id
+   WHERE pdv.id = NEW.process_definition_id;
+
+  -- Si una de las dos filas no existe, la cuenta sale 0 y la clave ajena rechaza la fila despues.
+  SELECT COUNT(*)
+    INTO vinculos_de_otro_proceso
+    FROM vinculos otro
+    INNER JOIN ediciones otro_ta ON otro_ta.id = otro.edicion_id
+    INNER JOIN process_definition_versions otro_pdv ON otro_pdv.id = otro.process_definition_id
+    INNER JOIN lineas otro_lin ON otro_lin.id = otro_pdv.linea_id
+   WHERE otro_ta.catalogo_documental_id = entregable_id
+     AND otro.id <> COALESCE(NEW.id, -1)
+     AND otro_lin.process_id <> destino_process_id;
+
+  IF vinculos_de_otro_proceso > 0 THEN
+    RAISE EXCEPTION 'El entregable "%" ya se usa en otro proceso y no se puede vincular aqui. Crea o usa un entregable propio de este proceso.', entregable_code;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_vinculo_formato_un_proceso
+BEFORE INSERT OR UPDATE ON vinculos
+FOR EACH ROW EXECUTE FUNCTION trg_vinculo_formato_un_proceso_fn();
+
+
+-- 7) UN FORMATO PERSONAL NUNCA DETRAS DE UNA OBLIGACION INSTITUCIONAL (frente 25, P13 — 2026-10-11).
+--
+-- La regla, con las palabras del dueño sobre esa combinacion: «esto no debe ser permitido». Y lo que
+-- se prohibe es exactamente una de las cuatro casillas de la matriz de los dos ejes:
+--
+--                         | catalogo_documental.template_scope
+--   task_items.origin_kind|  official                     | ad_hoc
+--   ----------------------+-------------------------------+---------------------------------
+--   process_defined       |  (1) la institucion obliga    |  (3) PROHIBIDA por este disparador
+--                         |      con su formato           |
+--   user_added            |  (2) alguien encarga con el   |  (4) alguien encarga con el suyo
+--                         |      formato de la institucion|      (la abre P14)
+--
+-- POR QUE IMPORTA, y no es teorico: la casilla (3) era ALCANZABLE y no la validaba nadie. Provocado
+-- el 2026-10-11 en una transaccion revertida —un `catalogo_documental` con `template_scope='ad_hoc'`,
+-- su edicion, y un vinculo de esa edicion a una configuracion institucional— y paso sin un solo
+-- error: ni CHECK, ni disparador, ni guardia de JavaScript. `trg_vinculo_formato_un_proceso` comprueba la LINEA,
+-- no de quien es el formato, asi que son dos garantias independientes sobre la misma tabla.
+--
+-- Lo que pasaria: la institucion obliga a cientos de personas a entregar un documento cuyo formato
+-- es PRIVADO de alguien. Quien lo tenga puede cambiarlo, versionarlo o quedarse sin acceso, y la
+-- obligacion institucional se queda sin papel.
+--
+-- SON DOS DISPARADORES Y HACEN FALTA LOS DOS, porque la prohibicion tiene dos lados y uno solo se
+-- rodea trivialmente: crear el formato como `official`, vincularlo, y DESPUES hacerle un
+-- `UPDATE ... SET template_scope = 'ad_hoc'`. Esa escritura no toca `vinculos`, asi que el primer
+-- disparador no la ve. El segundo cierra ese camino.
+--
+-- POR QUE UN DISPARADOR Y NO UN CHECK. La regla cruza dos tablas: el vinculo apunta a una EDICION y
+-- la propiedad vive en su CATALOGO. Un CHECK solo ve su propia fila. Y copiar `template_scope` a
+-- `ediciones` para poder exigirlo con una clave ajena compuesta es justo la duplicacion que el frente
+-- 23 quito (`owner_process_id`) y que este frente esta quitando (`variation_key`): la copia obliga a
+-- un guardia que compruebe que coincide, y el guardia acaba siendo su unico lector.
+--
+-- HOY NO RECHAZA NI UNA FILA, y es a proposito: medido el 2026-10-11, no existe ni un formato
+-- `ad_hoc` en el sistema —ningun camino lo crea— y cero vinculos apuntan a uno. Entra sin migrar
+-- nada. Lo que cambia es que el dia que P14 abra la casilla (4), la (3) ya estara cerrada.
+--
+-- ⚠️ CUANDO P15 RENOMBRE los cuatro valores (`template_scope`->`propiedad`, con
+-- `institucional`|`personal`), estos dos disparadores y sus mensajes se renombran con ellos. El
+-- nombre dice `oficial` porque hoy el valor es `official`.
+CREATE OR REPLACE FUNCTION public.trg_vinculo_solo_formato_oficial_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  formato_code varchar(180);
+  formato_scope text;
+BEGIN
+  -- Mover `sort_order`, `item_mode` o la configuracion destino no cambia DE QUIEN es el formato, asi
+  -- que no hay nada que comprobar y no se paga el JOIN. Que el formato de esta misma edicion no se
+  -- vuelva personal por detras lo vigila el otro disparador, no este.
+  IF TG_OP = 'UPDATE' AND NEW.edicion_id = OLD.edicion_id THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT d.code, d.template_scope
+    INTO formato_code, formato_scope
+    FROM ediciones ta
+    INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+   WHERE ta.id = NEW.edicion_id;
+
+  -- Si la edicion no existe, `formato_scope` sale NULL y la clave ajena rechaza la fila despues.
+  -- Este disparador no es el sitio donde se comprueba que la edicion exista.
+  IF formato_scope IS NOT NULL AND formato_scope <> 'official' THEN
+    RAISE EXCEPTION 'El formato "%" es personal y no puede estar detras de una obligacion institucional. Un vinculo solo admite formatos oficiales.', formato_code;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_vinculo_solo_formato_oficial
+BEFORE INSERT OR UPDATE ON vinculos
+FOR EACH ROW EXECUTE FUNCTION trg_vinculo_solo_formato_oficial_fn();
+
+-- El otro lado: un formato que YA esta vinculado no puede volverse personal. Sin esto, la
+-- prohibicion de arriba se rodea en dos pasos.
+CREATE OR REPLACE FUNCTION public.trg_formato_vinculado_sigue_oficial_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  vinculos_vivos int := 0;
+BEGIN
+  -- Solo se vigila el cambio que quita la condicion de oficial. Volverse oficial no rompe nada, y
+  -- un UPDATE que no toca la columna tampoco.
+  IF NEW.template_scope IS NOT DISTINCT FROM OLD.template_scope OR NEW.template_scope = 'official' THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT COUNT(*)
+    INTO vinculos_vivos
+    FROM vinculos pdt
+    INNER JOIN ediciones ta ON ta.id = pdt.edicion_id
+   WHERE ta.catalogo_documental_id = NEW.id;
+
+  IF vinculos_vivos > 0 THEN
+    RAISE EXCEPTION 'El formato "%" esta vinculado a % configuracion(es) y no puede pasar a personal. Desvinculalo primero.', NEW.code, vinculos_vivos;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_formato_vinculado_sigue_oficial
+BEFORE UPDATE ON catalogo_documental
+FOR EACH ROW EXECUTE FUNCTION trg_formato_vinculado_sigue_oficial_fn();
+
+-- 8) SUCEDER A UNA LINEA OBLIGA A HABERLA RETIRADO (frente 25, P8 — 2026-10-11).
+--
+-- Decision 11 del dueño: «si deberia obligar a retirar». `linea_anterior_id` no es un puntero
+-- decorativo: declara que una obligacion PASO A OTRAS MANOS, y dos lineas vigentes a la vez sobre la
+-- misma obligacion significan que la institucion la exige dos veces.
+--
+-- Asi que el orden es «retirar y luego suceder», impuesto por la base — el mismo que `P1` impuso para
+-- publicar una edicion, y por el mismo motivo: si alguien escribe un camino que lo haga al reves,
+-- FALLA EN EL ACTO en vez de dejar el sistema con dos verdades.
+--
+-- LO QUE ESTO NO IMPIDE, Y ES DELIBERADO (tarea `P12`): que DOS lineas sucedan a la MISMA anterior.
+-- Una obligacion que se parte en dos es real —«el informe lo hacian los coordinadores; ahora lo hacen
+-- los de carrera y los de escuela por separado»— asi que la bifurcacion se permite. Lo que no se
+-- puede declarar con una sola columna es la FUSION inversa, y queda dicho aqui para que nadie lo
+-- busque: dos lineas que se juntan en una solo pueden apuntar las dos a la nueva como «anterior» si
+-- se invierte el sentido, que seria otro modelo.
+CREATE OR REPLACE FUNCTION public.trg_linea_anterior_retirada_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  anterior_nombre varchar(180);
+  anterior_hasta date;
+BEGIN
+  IF NEW.linea_anterior_id IS NULL THEN
+    RETURN NEW;
+  END IF;
+  -- Un UPDATE que no toca el linaje no tiene nada que comprobar.
+  IF TG_OP = 'UPDATE' AND NEW.linea_anterior_id IS NOT DISTINCT FROM OLD.linea_anterior_id THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT l.nombre, l.effective_to
+    INTO anterior_nombre, anterior_hasta
+    FROM lineas l
+   WHERE l.id = NEW.linea_anterior_id;
+
+  -- Si la fila no existe, la clave ajena rechaza despues. Este disparador no comprueba eso.
+  IF anterior_nombre IS NOT NULL AND anterior_hasta IS NULL THEN
+    RAISE EXCEPTION 'La linea "%" sigue vigente y no puede ser sucedida. Retirala primero poniendo su fecha de fin.', anterior_nombre;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_linea_anterior_retirada
+BEFORE INSERT OR UPDATE ON lineas
+FOR EACH ROW EXECUTE FUNCTION trg_linea_anterior_retirada_fn();
+
+-- 9) LA VIGENCIA DE UNA NORMA CABE DENTRO DE LA DE SU OBLIGACION (frente 25, P18-c — 2026-10-12).
+--
+-- Habia TRES vigencias apiladas --linea, configuracion y regla-- filtradas cada una por su cuenta y
+-- SIN NINGUNA COMPROBACION que exigiera que la de dentro cupiera en la de fuera. Una configuracion
+-- podia regir mientras su obligacion estaba derogada, que es un sinsentido: la norma desarrolla la
+-- obligacion, no puede sobrevivirla.
+--
+-- La de la REGLA se fue entera con `P18-d`, asi que quedan dos niveles y una sola contencion.
+--
+-- POR QUE UN DISPARADOR Y NO UN CHECK: la regla cruza dos tablas --la ventana de la configuracion
+-- contra la de su linea-- y un CHECK solo ve su propia fila. Mismo motivo que los otros cuatro
+-- disparadores de este frente, y la misma alternativa descartada: copiar las fechas de la linea
+-- aqui seria la duplicacion que este frente lleva una semana quitando.
+--
+-- SE VIGILAN LOS DOS LADOS, porque la contencion se puede romper desde arriba o desde abajo:
+--   · al escribir una configuracion, que su ventana quepa en la de su linea;
+--   · al RECORTAR la linea, que no deje fuera a ninguna de sus configuraciones.
+-- Sin el segundo, retirar una linea con fecha pasada dejaria normas vigentes fuera de su obligacion.
+CREATE OR REPLACE FUNCTION public.trg_norma_dentro_de_su_obligacion_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  linea_nombre varchar(180);
+  linea_desde date;
+  linea_hasta date;
+BEGIN
+  IF TG_OP = 'UPDATE'
+     AND NEW.linea_id IS NOT DISTINCT FROM OLD.linea_id
+     AND NEW.effective_from IS NOT DISTINCT FROM OLD.effective_from
+     AND NEW.effective_to IS NOT DISTINCT FROM OLD.effective_to THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT l.nombre, l.effective_from, l.effective_to
+    INTO linea_nombre, linea_desde, linea_hasta
+    FROM lineas l
+   WHERE l.id = NEW.linea_id;
+
+  -- Si la linea no existe, la clave ajena rechaza la fila despues.
+  IF linea_nombre IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  IF NEW.effective_from < linea_desde THEN
+    RAISE EXCEPTION 'La configuracion no puede regir antes que su linea "%", que empieza el %.', linea_nombre, linea_desde;
+  END IF;
+
+  IF linea_hasta IS NOT NULL AND (NEW.effective_to IS NULL OR NEW.effective_to > linea_hasta) THEN
+    RAISE EXCEPTION 'La configuracion no puede regir despues que su linea "%", que termina el %.', linea_nombre, linea_hasta;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_norma_dentro_de_su_obligacion
+BEFORE INSERT OR UPDATE ON process_definition_versions
+FOR EACH ROW EXECUTE FUNCTION trg_norma_dentro_de_su_obligacion_fn();
+
+-- El otro lado: recortar una linea no puede dejar fuera a sus configuraciones.
+CREATE OR REPLACE FUNCTION public.trg_linea_no_recorta_sus_normas_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  normas_fuera int := 0;
+BEGIN
+  IF NEW.effective_from IS NOT DISTINCT FROM OLD.effective_from
+     AND NEW.effective_to IS NOT DISTINCT FROM OLD.effective_to THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT COUNT(*)
+    INTO normas_fuera
+    FROM process_definition_versions pdv
+   WHERE pdv.linea_id = NEW.id
+     AND (pdv.effective_from < NEW.effective_from
+          OR (NEW.effective_to IS NOT NULL
+              AND (pdv.effective_to IS NULL OR pdv.effective_to > NEW.effective_to)));
+
+  IF normas_fuera > 0 THEN
+    RAISE EXCEPTION 'La linea "%" tiene % configuracion(es) que quedarian fuera de esa vigencia. Ajustalas primero.', NEW.nombre, normas_fuera;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_linea_no_recorta_sus_normas
+BEFORE UPDATE ON lineas
+FOR EACH ROW EXECUTE FUNCTION trg_linea_no_recorta_sus_normas_fn();
+
+
+-- UN HUECO NO SE REPITE DENTRO DEL MISMO DOCUMENTO (frente 24, fase 4).
+--
+-- Hasta ahora esta regla cabia en un indice: el `slot` vivia en el PASO y la unicidad era
+-- `(template_id, slot)`. Al bajarlo al PARTICIPANTE --un firmante, un hueco-- el ambito de la regla
+-- pasa a cruzar dos tablas: el hueco es del participante y el origen es del paso. Eso no cabe en un
+-- indice, exactamente igual que le pasa a `trg_vinculo_formato_un_proceso`, y se resuelve igual.
+--
+-- POR QUE IMPORTA, medido: el slot se acuñaba por posicion, asi que insertar un paso en medio le
+-- daba el slot que otro firmante ya tenia. Dos participantes con el mismo hueco significan dos
+-- firmas apuntando a la MISMA marca del PDF, y la peticion respondia 200 --en silencio, y con valor
+-- legal--. La validacion de autoria da un 422 legible, pero no cubre a los otros dos escritores: el
+-- recorrido de runtime y la copia de versionado.
+CREATE OR REPLACE FUNCTION public.trg_participantes_slot_unico_fn() RETURNS trigger
+  -- Un disparador no puede depender del search_path de quien lo dispara.
+  SET search_path = identidad, organizacion, procesos, plantillas, tareas, firmas, chat, empleo, public
+AS $$
+DECLARE
+  repetidos int := 0;
+BEGIN
+  -- Sin hueco no hay colision. Los participantes de ENTREGA no lo llevan.
+  IF NEW.slot IS NULL THEN
+    RETURN NEW;
+  END IF;
+
+  SELECT COUNT(*)
+    INTO repetidos
+    FROM participantes_declarados otro
+    INNER JOIN pasos_declarados paso_otro ON paso_otro.id = otro.paso_id
+    INNER JOIN pasos_declarados paso_nuevo ON paso_nuevo.id = NEW.paso_id
+   WHERE otro.id <> NEW.id
+     AND otro.slot = NEW.slot
+     AND paso_otro.accion = paso_nuevo.accion
+     AND paso_otro.edicion_id IS NOT DISTINCT FROM paso_nuevo.edicion_id
+     AND paso_otro.task_item_id IS NOT DISTINCT FROM paso_nuevo.task_item_id;
+
+  IF repetidos > 0 THEN
+    RAISE EXCEPTION
+      'El hueco de firma "%" ya esta usado por otro firmante de este documento: dos firmas apuntarian a la misma marca del PDF.',
+      NEW.slot;
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_participantes_slot_unico
+BEFORE INSERT OR UPDATE ON participantes_declarados
+FOR EACH ROW EXECUTE FUNCTION trg_participantes_slot_unico_fn();

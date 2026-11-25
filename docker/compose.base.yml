@@ -1,30 +1,30 @@
 services:
-  mariadb:
-    image: mariadb:11.4
+  # Único motor de datos (migración a PostgreSQL completa; MariaDB y Mongo retirados).
+  postgres:
+    image: postgres:17
     restart: unless-stopped
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -p\"$${MARIADB_ROOT_PASSWORD}\" --silent"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 10s
 
-  mongodb:
-    image: mongo:7
-    restart: unless-stopped
-    volumes:
-      - mongodb_data:/data/db
-
   rabbitmq:
     image: rabbitmq:3-management
     restart: unless-stopped
+    environment:
+      # OJO: RabbitMQ solo honra estas dos variables en el PRIMER arranque, con el volumen de
+      # datos vacio. En un despliegue que ya existe hay que crear el usuario a mano una vez:
+      # ver scripts/rabbitmq-migrar-usuario.sh
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
       - ./rabbitmq/rabbitmq.conf:/etc/rabbitmq/rabbitmq.conf:ro
@@ -34,16 +34,6 @@ services:
       timeout: 5s
       retries: 20
       start_period: 10s
-
-  emqx:
-    image: emqx/emqx:latest
-    restart: unless-stopped
-    environment:
-      EMQX_ALLOW_ANONYMOUS: "true"
-    volumes:
-      - emqx_data:/opt/emqx/data
-      - emqx_log:/opt/emqx/log
-      - ./emqx/emqx.conf:/opt/emqx/etc/emqx.conf:ro
 
   minio:
     image: minio/minio:RELEASE.2025-02-18T16-25-55Z
@@ -55,6 +45,17 @@ services:
     volumes:
       - minio_data:/data
 
+  # Se lanza A MANO, y el perfil es lo que lo hace posible sin que arranque en cada `up`. El
+  # comando esta documentado en `docs/07-despliegue/COMANDOS_PROYECTO.md`:
+  #
+  #   bash scripts/docker-env.sh dev --profile storage-init run --rm minio-bootstrap
+  #   bash scripts/stack.sh c --profile storage-init run --rm minio-bootstrap
+  #
+  # ⚠️ Y por eso mismo NO es la barrera del bucket legal. Como no corre solo, el bucket de
+  # archivo puede acabar creandolo el backend por el camino perezoso (`makeBucket(bucket, "")`,
+  # SIN bloqueo) -- y el bloqueo solo se puede pedir al CREAR el bucket, asi que eso seria
+  # irreversible. Esto lo crea BIEN y se niega si ya existe mal; impedir el camino perezoso es
+  # cosa del arranque del backend.
   minio-bootstrap:
     image: minio/mc:RELEASE.2025-02-21T16-00-46Z
     profiles:
@@ -76,6 +77,10 @@ services:
       MINIO_USERS_PREFIX: ${MINIO_USERS_PREFIX}
       MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
       MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
+      MINIO_LEGAL_BUCKET: ${MINIO_LEGAL_BUCKET}
+      MINIO_LEGAL_DRAFTS_BUCKET: ${MINIO_LEGAL_DRAFTS_BUCKET}
+      MINIO_LEGAL_RETENTION_MODE: ${MINIO_LEGAL_RETENTION_MODE}
+      MINIO_LEGAL_RETENTION_DAYS: ${MINIO_LEGAL_RETENTION_DAYS}
     entrypoint: ["/bin/sh", "/bootstrap.sh"]
     volumes:
       - ./minio/bootstrap.sh:/bootstrap.sh:ro
@@ -83,50 +88,17 @@ services:
     depends_on:
       - minio
 
-  minio-publish-seeds:
-    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
-    profiles:
-      - storage-publish-seeds
-    restart: "no"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
-      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
-    entrypoint: ["/bin/sh", "/publish-seeds.sh"]
-    volumes:
-      - ./minio/publish-template-seeds.sh:/publish-seeds.sh:ro
-      - ../tools/templates/seeds:/publish:ro
-    depends_on:
-      - minio
-
-  minio-publish:
-    image: minio/mc:RELEASE.2025-02-21T16-00-46Z
-    profiles:
-      - storage-publish
-    restart: "no"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
-      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
-    entrypoint: ["/bin/sh", "/publish.sh"]
-    volumes:
-      - ./minio/publish-templates.sh:/publish.sh:ro
-      - ../tools/templates/dist/Plantillas:/publish:ro
-    depends_on:
-      - minio
-
   backend:
     restart: unless-stopped
     environment:
-      MARIADB_HOST: mariadb
-      MARIADB_PORT: 3306
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
-      URI_MONGO: ${URI_MONGO}
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       PORT: ${BACKEND_PORT}
+      ORIGIN1: ${ORIGIN1}
+      ORIGIN2: ${ORIGIN2}
       MINIO_ENDPOINT: http://minio:9000
       MINIO_PUBLIC_ENDPOINT: http://localhost:${MINIO_API_PORT}
       MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
@@ -146,48 +118,22 @@ services:
       MINIO_USERS_PREFIX: ${MINIO_USERS_PREFIX}
       MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
       MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
+      MINIO_LEGAL_BUCKET: ${MINIO_LEGAL_BUCKET}
+      MINIO_LEGAL_DRAFTS_BUCKET: ${MINIO_LEGAL_DRAFTS_BUCKET}
+      MINIO_LEGAL_RETENTION_MODE: ${MINIO_LEGAL_RETENTION_MODE}
+      MINIO_LEGAL_RETENTION_DAYS: ${MINIO_LEGAL_RETENTION_DAYS}
       RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
       RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
       RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
-      RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
-      RABBITMQ_URL: amqp://rabbitmq:5672
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request
       SIGN_RESPONSE_QUEUE_PREFIX: deasy.sign.response
     depends_on:
-      mariadb:
-        condition: service_healthy
-      mongodb:
-        condition: service_started
-      rabbitmq:
-        condition: service_healthy
-      emqx:
-        condition: service_started
-
-  storage-uploader:
-    restart: unless-stopped
-    environment:
-      MARIADB_HOST: mariadb
-      MARIADB_PORT: 3306
-      MARIADB_DATABASE: ${MARIADB_DATABASE}
-      MARIADB_USER: ${MARIADB_USER}
-      MARIADB_PASSWORD: ${MARIADB_PASSWORD}
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_USE_SSL: 0
-      RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
-      RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
-      RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
-      RABBITMQ_STORAGE_QUEUE: ${RABBITMQ_STORAGE_QUEUE}
-    command: ["node", "workers/storage_uploader.js"]
-    depends_on:
-      mariadb:
+      postgres:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
-      minio:
-        condition: service_started
 
   frontend:
     restart: unless-stopped
@@ -203,7 +149,11 @@ services:
       MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
       SIGNER_PORT: "4000"
       SIGMAKER_DIR: /opt/sigmaker
-      RABBITMQ_URL: amqp://rabbitmq:5672
+      # Ruta propia del servicio (la crea la imagen con dueno appuser y modo 0700). Explicita a
+      # proposito: el default historico caia en /tmp, de escritura publica, y ahi se desempaqueta
+      # el PKCS#12 ademas de los PDF de entrada, limpio y firmado.
+      SIGNER_WORKSPACE_DIR: /var/lib/deasy-signer/workspace
+      RABBITMQ_URL: amqp://${RABBITMQ_USER}:${RABBITMQ_PASSWORD}@rabbitmq:5672
       SIGN_REQUEST_QUEUE: deasy.sign.request
       SIGN_VALIDATE_REQUEST_QUEUE: deasy.sign.validate.request
       PYHANKO_TSA_URL: ${PYHANKO_TSA_URL:-}
@@ -218,17 +168,10 @@ services:
     restart: unless-stopped
     profiles:
       - workers
-    volumes:
-      - storage_data:/data
 
 volumes:
-  mariadb_data:
-  mongodb_data:
+  postgres_data:
   rabbitmq_data:
-  emqx_data:
-  emqx_log:
   minio_data:
   backend_node_modules_v2:
   frontend_node_modules:
-  uploads_data:
-  storage_data:

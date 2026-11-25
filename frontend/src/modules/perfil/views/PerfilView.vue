@@ -1,169 +1,129 @@
 <template>  
-  <div class="min-h-screen bg-slate-100 font-sans flex flex-col">
-    <app-workspace-header :menu-open="vmenu" current-section="perfil" @menu-toggle="handleHeaderToggle" @notify="toggleNotify" @sign="isSigningView = !isSigningView">
-        <div v-if="areas && areas.length" class="flex items-stretch gap-2 overflow-x-auto p-1 scrollbar-thin scrollbar-thumb-white/30 scrollbar-track-transparent">
-          <button
-            v-for="(item, index) in areas"
-            :key="index"
-            class="inline-flex items-center justify-center sm:justify-start gap-2 min-w-11 sm:min-w-25 lg:min-w-35 px-2 sm:px-3 py-2 rounded-xl border-none cursor-pointer transition-all shrink-0 group hover:-translate-y-px" :title="item.name"
-            :class="item.active ? 'bg-white/95 text-sky-700 shadow-[0_10px_20px_rgba(2,132,199,0.26)]' : 'bg-white/10 text-white/95 hover:bg-white/20'"
-            type="button"
-            @click="onheadClick(item)"
-          >
-             <component :is="resolveAreaIcon(item.name)" class="w-5 h-5 shrink-0" />
-            <span class="text-sm font-semibold leading-tight hidden sm:inline-flex items-center gap-1.5 whitespace-nowrap overflow-hidden text-ellipsis">{{ item.name }}</span>
-          </button>
-        </div>
-    </app-workspace-header>
+  <AppWorkspaceShell
+    :menu-open="vmenu"
+    :show-notify="vnotify"
+    current-section="perfil"
+    :photo="userPhoto"
+    :username="userFullName"
+    sidebar-subtitle="Dossier profesional"
+    :signature-marker="signatureMarker"
+    editable
+    @menu-toggle="toggleMenu"
+    @close-mobile="closeMenu"
+    @notify="toggleNotify"
+    @notify-close="closeNotify"
+    @sign="router.push({ name: 'home-signatures' })"
+    @photo-selected="handlePhotoSelected"
+    @primary-nav="revealSidebarForNav"
+  >
+    <template #header>
+      <AppContextHeader :title="profileContextTitle" :subtitle="profileContextSubtitle" />
+    </template>
 
-    <div class="flex flex-col xl:flex-row w-full flex-1 max-w-640 mx-auto items-stretch">
-      <app-workspace-sidebar :show="vmenu" :photo="userPhoto" :username="userFullName" :signature-marker="signatureMarker" :editable="true" @close-mobile="vmenu = false" @photo-selected="handlePhotoSelected">
+    <template #sidebar>
         <div class="flex flex-col">
-            <div class="deasy-nav-meta mt-3 mb-2">
-                Secciones
-            </div>
-
             <div class="deasy-nav-group mt-2">
               <div class="deasy-nav-shell">
               <div class="deasy-nav-section">
                 <button
                   class="deasy-nav-group-title"
-                  :class="{ 'deasy-nav-item--subtle-active': showCoordinacion }"
+                  :class="{ 'deasy-nav-item--subtle-active': showDossierMenu }"
                   type="button"
-                  @click="showCoordinacion = !showCoordinacion"
+                  @click="showDossierMenu = !showDossierMenu"
                 >
-                    <span class="flex items-center gap-3.5 text-base font-semibold">
-                      <span class="deasy-nav-glyph" :class="workspaceIconToneClass(coordinacionIconMeta.tone, 'deasy-nav-glyph')">
-                        <component :is="coordinacionIconMeta.icon" class="h-5 w-5 shrink-0" />
+                    <span class="flex items-center gap-4 text-base font-semibold">
+                      <span class="deasy-nav-glyph" :class="workspaceIconToneClass(dossierIconMeta.tone, 'deasy-nav-glyph')">
+                        <component :is="dossierIconMeta.icon" class="h-5 w-5 shrink-0" />
                       </span>
-                      <span class="truncate">Coordinación</span>
+                      <span class="truncate">Dossier profesional</span>
                     </span>
                 </button>
 
-                <div v-show="showCoordinacion" class="deasy-nav-tree">
-                    <button v-for="(item, index) of mainmenu" :key="index"
+                <div v-show="showDossierMenu" class="deasy-nav-tree">
+                    <!-- router-link, no button: la seccion activa la decide la URL, no un string. -->
+                    <router-link
+                      :to="{ name: 'perfil' }"
                       class="deasy-nav-item"
-                      :class="item.active ? 'deasy-nav-item--active' : ''"
-                      type="button"
-                      @click="onmenuClick(item.label)">
-                      <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(profileMenuIconMeta(item).tone)">
-                        <component :is="profileMenuIconMeta(item).icon" class="h-4.5 w-4.5 shrink-0" />
+                      :class="$route.name === 'perfil' ? 'deasy-nav-item--active' : ''"
+                    >
+                      <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(inicioIconMeta.tone)">
+                        <component :is="inicioIconMeta.icon" class="h-4.5 w-4.5 shrink-0" />
                       </span>
-                      <span class="deasy-nav-item__label">{{ item.label }}</span>
-                      <span v-if="item.key" class="ml-auto inline-flex items-center rounded-lg border border-[#bfd7ee] bg-[#e2f2fa] px-2 py-0.5 text-[10px] font-bold text-[#21517a] shrink-0">
-                        {{ dossierCounts[item.key] ?? 0 }}
+                      <span class="deasy-nav-item__label">Inicio</span>
+                    </router-link>
+                    <router-link
+                      v-for="section of PROFILE_SECTIONS"
+                      :key="section.slug"
+                      :to="{ name: section.name }"
+                      class="deasy-nav-item"
+                      :class="$route.name === section.name ? 'deasy-nav-item--active' : ''"
+                    >
+                      <span class="deasy-nav-item__icon" :class="workspaceIconToneClass(sectionIconMeta(section).tone)">
+                        <component :is="sectionIconMeta(section).icon" class="h-4.5 w-4.5 shrink-0" />
                       </span>
-                    </button>
-                </div>
-              </div>
-
-              <div class="deasy-nav-section">
-                <button
-                  class="deasy-nav-group-title"
-                  :class="{ 'deasy-nav-item--subtle-active': showDocencia }"
-                  type="button"
-                  @click="showDocencia = !showDocencia"
-                >
-                  <span class="flex items-center gap-3.5 text-base font-semibold">
-                    <span class="deasy-nav-glyph" :class="workspaceIconToneClass(docenciaIconMeta.tone, 'deasy-nav-glyph')">
-                      <component :is="docenciaIconMeta.icon" class="h-5 w-5 shrink-0" />
-                    </span>
-                    <span class="truncate">Docencia</span>
-                  </span>
-                </button>
-                <div v-show="showDocencia" class="deasy-nav-tree">
+                      <span class="deasy-nav-item__label">{{ section.label }}</span>
+                      <span v-if="section.countKey" class="ml-auto inline-flex items-center rounded-2xl border border-[#bfd7ee] bg-[#e2f2fa] px-2 py-0.5 text-theme-xs font-bold text-[#21517a] shrink-0">
+                        {{ dossierCounts[section.countKey] ?? 0 }}
+                      </span>
+                    </router-link>
                 </div>
               </div>
               </div>
             </div>
         </div>
-      </app-workspace-sidebar>
+    </template>
 
-      <s-body :showmenu="vmenu" :shownotify="vnotify">
-        <div v-if="area=='Perfil'" id="validar" class="w-full">
-            <ProfileHomePanel
-              v-if="process==='Inicio'"
-              :current-user="currentUser"
-              :photo="userPhoto"
-              :dossier-counts="dossierCounts"
-              @navigate-section="onmenuClick"
-              @go-back="goBackFromProfileHome"
-            />
-            <TitulosView v-else-if="process==='Formación'"></TitulosView>
-            <LaboralView v-else-if="process==='Experiencia'"></LaboralView>
-            <ReferenciasView v-else-if="process==='Referencias'"></ReferenciasView>
-            <CapacitacionView v-else-if="process==='Capacitación'"></CapacitacionView>
-            <CertificacionView v-else-if="process==='Certificación'"></CertificacionView>
-            <InvestigacionView v-else-if="process==='Investigación'"></InvestigacionView>
-            <CertificadosFirmaView v-else-if="process==='Certificados de firma'"></CertificadosFirmaView>
+        <!-- Aqui habia una cadena de 8 v-else-if sobre `process`, un string en espanol con tilde. Cada
+             seccion tiene ya su ruta: el router decide, y una URL que no casa falla ruidosamente. -->
+        <div id="validar">
+            <router-view />
         </div>
-        <div v-else-if="area=='Academia'" class="w-full">
-            <IndexAcademia v-if="process=='index'" area="area" perfil="perfil"></IndexAcademia>
-            <LogrosView :tareas="tareas" v-else-if="process=='Logros Académicos'"></LogrosView>
-        </div>
-        <div v-else-if="area=='Firmar'" class="w-full">
-            <!-- <FirmarPdf v-if="area=='Firmar'"></FirmarPdf> -->
-             <div class="p-6 text-center text-slate-500 bg-white rounded-2xl m-4">Módulo de firma en migración (no disponible temporalmente)</div>
-        </div>
-      </s-body>
-        
-      <s-message :show="vnotify" @close="vnotify = false" />
-      <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
-    </div>
-  </div>
+  </AppWorkspaceShell>
+
+  <WorkspaceChatLauncher :current-person-id="currentUser?.id || currentUser?._id || null" />
 </template>
           
     <script setup>  
     
     
-import { ref, computed, onMounted, onBeforeUnmount, watch} from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, provide } from 'vue';
+import AppContextHeader from "@/shared/components/layout/AppContextHeader.vue";
+import { useWorkspaceChrome } from '@/shared/composables/useWorkspaceChrome.js';
 import { useRoute, useRouter } from 'vue-router';
-import axios from 'axios';
-    import AppWorkspaceSidebar from '@/layouts/menus/AppWorkspaceSidebar.vue';
-    import SMessage from '@/layouts/core/SNotify.vue';
-    import SBody from '@/layouts/core/SBody.vue';
-    import AppWorkspaceHeader from '@/layouts/headers/AppWorkspaceHeader.vue';
+import axios from '@/core/services/httpClient';
+    import AppWorkspaceShell from '@/layouts/workspace/AppWorkspaceShell.vue';
     import WorkspaceChatLauncher from '@/shared/components/widgets/WorkspaceChatLauncher.vue';
-    import {
-      resolveWorkspaceAreaIcon,
+import {
       resolveWorkspaceProfileMenuIcon,
       resolveWorkspaceSectionIcon,
       workspaceIconToneClass,
     } from '@/shared/utils/workspaceNavIcons.js';
-import TitulosView from '@/modules/perfil/views/TitulosView.vue';
-import LaboralView from '@/modules/perfil/views/LaboralView.vue';
-import ReferenciasView from '@/modules/perfil/views/ReferenciasView.vue';
-import CertificacionView from '@/modules/perfil/views/CertificacionView.vue';
-import CapacitacionView from '@/modules/perfil/views/CapacitacionView.vue';
-import ProfileHomePanel from '@/modules/perfil/components/ProfileHomePanel.vue';
-import InvestigacionView from '@/modules/perfil/views/InvestigacionView.vue';
-import CertificadosFirmaView from '@/modules/perfil/views/CertificadosFirmaView.vue';
+// Las secciones ya no se importan aqui: cada una es una ruta hija y las monta el <router-view>.
+import { PROFILE_SECTIONS, PROFILE_CONTEXT } from '@/modules/perfil/profileSections.js';
 
-import IndexAcademia from '@/modules/academia/views/AcademiaView.vue';
-import LogrosView from '@/modules/academia/views/LogrosView.vue';
-
-// import FirmarPdf from '@/views/funciones/FirmarPdf.vue';
-
-    import EasymServices from '@/shared/services/EasymServices';
     import { API_PREFIX, API_ROUTES } from '@/core/config/apiConfig';
+import {
+  DEFAULT_USER_PHOTO,
+  invalidateUserPhoto,
+  resolveUserPhotoUrl
+} from '@/core/services/userPhotoService.js';
+// El usuario se guarda sin `datos_personales`: lo sensible no se queda en el navegador.
+import { storeUser } from '@/core/utils/accessControl.js';
 
 const router = useRouter();
     const route = useRoute();
-    const service = new EasymServices();
-const API_BASE_URL = API_ROUTES.BASE;
 
 const goBackFromProfileHome = () => {
   if (typeof window !== 'undefined' && window.history.length > 1) {
     router.back();
     return;
   }
-  router.push('/dashboard');
+  router.push('/home');
 };
 
     // Obtener datos del usuario desde localStorage
     const currentUser = ref(null);
-    const defaultPhoto = '/images/avatar.png';
-    const userPhoto = ref(defaultPhoto);
+    const userPhoto = ref(DEFAULT_USER_PHOTO);
     const userFullName = computed(() => {
         if (currentUser.value) {
             const firstName = currentUser.value.first_name ?? '';
@@ -180,17 +140,6 @@ const goBackFromProfileHome = () => {
         const rawToken = currentUser.value?.signatureToken ?? currentUser.value?.token ?? '';
         return rawToken ? `!-${rawToken}-!` : '';
     });
-
-    const resolvePhotoUrl = (value) => {
-        if (!value) {
-            return defaultPhoto;
-        }
-        if (value.startsWith('data:') || value.startsWith('http://') || value.startsWith('https://')) {
-            return value;
-        }
-        const sanitized = value.replace(/^\/+/, '');
-        return `${API_BASE_URL.replace(/\/$/, '')}/${sanitized}`;
-    };
 
     const refreshCurrentUser = async () => {
         const token = localStorage.getItem('token');
@@ -211,8 +160,8 @@ const goBackFromProfileHome = () => {
                     ...data.user
                 };
                 currentUser.value = mergedUser;
-                userPhoto.value = resolvePhotoUrl(mergedUser.photoUrl);
-                localStorage.setItem('user', JSON.stringify(mergedUser));
+                userPhoto.value = await resolveUserPhotoUrl(mergedUser);
+                storeUser(mergedUser);
             }
         } catch (error) {
             console.error('Error al refrescar perfil del usuario:', error);
@@ -228,58 +177,7 @@ const goBackFromProfileHome = () => {
         investigacion: 0
     });
 
-    const buildPerfilMenu = () => ([
-        {
-            label: 'Inicio',
-            key: null,
-            icon: 'user',
-            active: true,
-        },
-        {
-            label: 'Formación',
-            key: 'formacion',
-            icon: 'certificate',
-            active: false,
-        },
-        {
-            label: 'Experiencia',
-            key: 'experiencia',
-            icon: 'check-double',
-            active: false,
-        },
-        {
-            label: 'Referencias',
-            key: 'referencias',
-            icon: 'id-card',
-            active: false,
-        },
-        {
-            label: 'Capacitación',
-            key: 'capacitacion',
-            icon: 'square-check',
-            active: false,
-        },
-        {
-            label: 'Certificación',
-            key: 'certificacion',
-            icon: 'check-circle',
-            active: false,
-        },
-        {
-            label: 'Investigación',
-            key: 'investigacion',
-            icon: 'certificate',
-            active: false,
-        },
-        {
-            label: 'Certificados de firma',
-            key: null,
-            icon: 'id-card',
-            active: false,
-        }
-    ]);
 
-    const mainmenu=ref(buildPerfilMenu())
     
     
     const loadDossierCounts = async () => {
@@ -308,19 +206,17 @@ const goBackFromProfileHome = () => {
         }
     };
 
-    onMounted(() => {
+    onMounted(async () => {
         const userDataString = localStorage.getItem('user');
         if (userDataString) {
             try {
                 currentUser.value = JSON.parse(userDataString);
                 console.log('👤 Usuario cargado:', currentUser.value);
 
-                userPhoto.value = resolvePhotoUrl(currentUser.value?.photoUrl);
+                userPhoto.value = await resolveUserPhotoUrl(currentUser.value);
                 refreshCurrentUser();
                 
-                // Cargar tareas con la cédula del usuario
                 if (currentUser.value.cedula) {
-                    service.getTareasPendientes(currentUser.value.cedula);
                     loadDossierCounts();
                 }
             } catch (error) {
@@ -334,23 +230,30 @@ const goBackFromProfileHome = () => {
         }
     });
 
-    service.getEasymAreas()
-    const areas =service.getEasymdata().areas
-    const tareas=service.getEasymdata().tareas
-    
-const isClient = typeof window !== 'undefined';
+const { isClient, menuOpen: vmenu, showNotify: vnotify, toggleMenu, closeMenu, toggleNotify, closeNotify, revealSidebarForNav } =
+  useWorkspaceChrome();
 
-const coordinacionIconMeta = resolveWorkspaceSectionIcon('Coordinación');
-const docenciaIconMeta = resolveWorkspaceSectionIcon('Docencia');
-const profileMenuIconMeta = (item = {}) => resolveWorkspaceProfileMenuIcon(item.icon, item.label);
+const dossierIconMeta = resolveWorkspaceSectionIcon('Perfil');
+const inicioIconMeta = resolveWorkspaceProfileMenuIcon('user', 'Inicio');
+const sectionIconMeta = (section) => resolveWorkspaceProfileMenuIcon(section.icon, section.label);
 
-const resolveAreaIcon = (name) => {
-    return resolveWorkspaceAreaIcon(name).icon;
-};
+// ProfileHomePanel pasa a ser ruta hija, asi que ya no puede recibir props del padre. El contexto va por
+// provide/inject: es lo idiomatico para que un layout comparta datos con lo que monta el <router-view>,
+// y evita colar props a todas las secciones --que no los quieren-- solo para que llegue a una.
+provide(PROFILE_CONTEXT, {
+  currentUser,
+  photo: userPhoto,
+  dossierCounts,
+  goBack: goBackFromProfileHome
+});
 
-    const vmenu = ref(isClient ? window.innerWidth >= 1280 : true);
-    const vnotify = ref(false);
-    const process= ref("Inicio")
+// La cabecera sale de la ruta activa, no de un string de estado.
+const activeSection = computed(() => PROFILE_SECTIONS.find((s) => s.name === route.name) || null);
+const profileContextTitle = computed(() => activeSection.value?.label || 'Dossier profesional');
+const profileContextSubtitle = computed(() =>
+  activeSection.value ? '' : 'Vista general de tu perfil académico y profesional'
+);
+
 
     let isDesktopStatus = isClient ? window.innerWidth >= 1280 : true;
 
@@ -363,26 +266,7 @@ const resolveAreaIcon = (name) => {
         }
     };
 
-    const area= ref("Perfil")
-    const showCoordinacion = ref(true);
-    const showDocencia = ref(false);
-    const menuSectionIcons = {
-        coordinacion: 'id-card',
-        docencia: 'certificate'
-    };
-    
-    
-    const toggleVmenu = () => {
-        vmenu.value = !vmenu.value;
-    };
-      
-    const toggleNotify = () => {
-        vnotify.value = !vnotify.value;
-    };
-    
-    const navigateToPerfil = () => {
-        router.push('/perfil');
-    };
+    const showDossierMenu = ref(true);
     
     
     
@@ -396,7 +280,7 @@ const resolveAreaIcon = (name) => {
             formData.append('photo', file);
 
             const { data } = await axios.put(
-                `${API_PREFIX}/users/${currentUser.value.cedula}/photo`,
+                `${API_PREFIX}/users/${currentUser.value.id ?? currentUser.value._id}/photo`,
                 formData,
                 {
                     headers: {
@@ -405,12 +289,13 @@ const resolveAreaIcon = (name) => {
                 }
             );
 
-            const updatedPhoto = resolvePhotoUrl(data?.user?.photoUrl);
-            if (updatedPhoto) {
+            if (data?.user?.photoUrl) {
                 currentUser.value.photoUrl = data.user.photoUrl;
-                userPhoto.value = updatedPhoto;
+                // La foto anterior sigue cacheada bajo la misma cedula: hay que tirarla.
+                invalidateUserPhoto(currentUser.value.id ?? currentUser.value._id);
+                userPhoto.value = await resolveUserPhotoUrl(currentUser.value);
             }
-            localStorage.setItem('user', JSON.stringify(currentUser.value));
+            storeUser(currentUser.value);
         } catch (error) {
             console.error('Error al actualizar la foto de perfil:', error);
         }
@@ -423,131 +308,11 @@ const resolveAreaIcon = (name) => {
         }
     });
 
-    const handleHeaderToggle = () => {
-        toggleVmenu();
-    };
-
-    const syncAreaState = (areaName) => {
-        area.value = areaName;
-        for (const el of areas.value) {
-            el.active = el.name === areaName;
-        }
-    };
-
-    const openSigningWorkspace = () => {
-        syncAreaState('Firmar');
-        process.value = 'Firmar';
-        router.replace({ path: '/perfil', query: { view: 'firmar' } });
-    };
-
-    const syncViewFromRoute = () => {
-        if (route.query?.view === 'firmar') {
-            syncAreaState('Firmar');
-            process.value = 'Firmar';
-            return;
-        }
-        if (area.value === 'Firmar') {
-            syncAreaState('Perfil');
-            mainmenu.value = buildPerfilMenu();
-            process.value = 'Inicio';
-        }
-    };
-    
-
-    const onmenuClick=(item)=>{
-        if (area.value === 'Firmar') {
-            syncAreaState('Perfil');
-            router.replace({ path: '/perfil' });
-        }
-        for (const el of mainmenu.value){
-            if(el.label === item){
-                el.active =true;
-                process.value=el.label;
-                //el.func()
-            }else{
-                el.active = false;
-            }
-        }
-    }
-    
-
-    const onheadClick=(item)=>{
-        syncAreaState(item.name);
-        switch(item.name){
-            case 'Perfil':
-                mainmenu.value = buildPerfilMenu();
-                process.value="Inicio";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Academia':
-                console.log("Academia detected")
-                mainmenu.value=[
-                    {
-                        label: 'Logros Académicos',
-                        key: null,
-                        icon: 'certificate',
-                        active: true,
-                    },
-                    {
-                        label: 'Tutorías',
-                        key: null,
-                        icon: 'check-double',
-                        active: false,
-                    },
-                    {
-                        label: 'Horarios',
-                        key: null,
-                        icon: 'info-circle',
-                        active: false,
-                    },
-                    {
-                        label: 'Gestión',
-                        key: null,
-                        icon: 'id-card',
-                        active: false,
-                    },
-                    {
-                        label: 'Eventos',
-                        key: null,
-                        icon: 'globe',
-                        active: false,
-                    }
-                ]
-                process.value="index";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Investigación':
-                mainmenu.value=[]
-                process.value="Investigación";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Vinculación':
-                mainmenu.value=[]
-                process.value="Vinculación";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Internacionalización':
-                mainmenu.value=[]
-                process.value="Internacionalización";
-                router.replace({ path: '/perfil' });
-                break;
-            case 'Firmar':
-                openSigningWorkspace();
-                break;
-            case 'Message':
-                break;
-            default:
-                break;
-        }
-    }
-
-    watch(() => route.query.view, () => {
-        syncViewFromRoute();
-    });
-
-    onMounted(() => {
-        syncViewFromRoute();
-    });
+    // Aqui vivia el conmutador de pestanas: `process`/`area`, `onmenuClick` --que recorria el menu
+    // comparando ETIQUETAS en espanol con tilde-- y el par openSigningWorkspace/syncViewFromRoute del
+    // deep-link `?view=firmar`. Ese ultimo era doblemente muerto: apuntaba a un modulo desactivado ("en
+    // migracion") y su unico emisor, openSigningWorkspace, no se llamaba desde ningun sitio. Ahora la
+    // seccion la decide la URL y el router valida el destino.
 
 
       

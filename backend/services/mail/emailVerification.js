@@ -1,19 +1,32 @@
 import bcrypt from "bcrypt";
-import { getMariaDBPool } from "../../config/mariadb.js";
+import { getPostgresPool } from "../../config/postgres.js";
+import { marcarEmailVerificado, marcarPersonaVerificada } from "../../dominios/identidad/index.js";
 
-export const verifyEmailCode = async (userId, code) => {
-  const pool = getMariaDBPool();
+export const verifyEmailCode = async (personId, code) => {
+  const pool = getPostgresPool();
+
+  // 0️⃣ El código ya no cuelga de la persona sino de SU CORREO, porque desde que hay varios,
+  // "verificar a la persona" no dice cuál. La firma sigue tomando `personId` a propósito: quien
+  // llama tiene el id de la persona, no el del correo, y el que se verifica es el principal.
+  const [correos] = await pool.query(
+    "SELECT id FROM emails WHERE person_id = ? AND principal = 1 AND is_active = 1 LIMIT 1",
+    [personId]
+  );
+  if (!correos.length) {
+    throw new Error("NO_CODE");
+  }
+  const emailId = Number(correos[0].id);
 
   // 1️⃣ Buscar código activo
   const [rows] = await pool.query(
     `
     SELECT id, code_hash, expires_at
     FROM email_verification_codes
-    WHERE user_id = ?
+    WHERE email_id = ?
     ORDER BY created_at DESC
     LIMIT 1
     `,
-    [userId]
+    [emailId]
   );
 
   if (!rows.length) {
@@ -39,16 +52,15 @@ export const verifyEmailCode = async (userId, code) => {
     throw new Error("INVALID_CODE");
   }
 
-  // 4️⃣ Marcar usuario como verificado
-  await pool.query(
-    `
-    UPDATE users
-    SET verify_email = 1,
-        status = 'Verificado'
-    WHERE id = ?
-    `,
-    [userId]
-  );
+  // 4️⃣ Marcar EL CORREO como verificado, y a la persona como verificada. Son dos cosas
+  // distintas desde el paso 5: el correo lleva su propia marca y su fecha; el estado de la persona
+  // sigue siendo el de siempre.
+  //
+  // LAS DOS POR LA PUERTA DE `identidad`, que es su dueño. Aquí estaban escritas a mano, y el
+  // `UPDATE emails SET verificado = 1` era LITERALMENTE el mismo que `EmailService` ya hacía: la
+  // deuda F5.2.
+  await marcarEmailVerificado(pool, emailId);
+  await marcarPersonaVerificada(pool, personId);
 
   // 5️⃣ Eliminar código (one-time use)
   await pool.query(

@@ -1,0 +1,10 @@
+routes/       "que URL?"       Solo define paths y encadena middlewares
+   |
+   v
+controllers/  "transporte"     Valida entrada, llama a UN servicio, responde HTTP
+   |
+   v
+services/     "la logica"      Reglas de negocio, transacciones, maquinas de estado
+   |
+   v
+config/postgres.js             Acceso a datos (pool de conexiones)

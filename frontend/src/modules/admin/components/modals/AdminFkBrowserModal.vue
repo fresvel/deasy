@@ -1,13 +1,26 @@
 <template>
-  <AdminModalShell
+  <AppModalShell
     ref="modalRef"
     labelled-by="sqlFkModalLabel"
-    :title="`Buscar referencia ${fkTable?.label || ''}`"
-    :dialog-class="isFkTemplateArtifacts || isFkProcessDefinitions ? 'modal-xl' : 'modal-lg'"
+    :title="modalTitle"
+    :size="isFkTemplateArtifacts || isFkProcessDefinitions ? 'lg' : 'md'"
   >
+    <!-- Solo plantillas: dos pestañas — Crear una nueva, o Seleccionar una existente (lista filtrable). -->
+    <div v-if="createTabEnabled" class="mt-1 mb-3">
+      <div class="deasy-inline-tabs" role="tablist" aria-label="Crear o seleccionar plantilla">
+        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'create' }" :aria-selected="activeTab === 'create'" @click="$emit('update:activeTab', 'create')"><IconPlus class="deasy-inline-tab__icon" /><span class="truncate">Crear nueva</span></button>
+        <button type="button" role="tab" class="deasy-inline-tab" :class="{ 'deasy-inline-tab--active': activeTab === 'select' }" :aria-selected="activeTab === 'select'" @click="$emit('update:activeTab', 'select')"><IconListSearch class="deasy-inline-tab__icon" /><span class="truncate">Seleccionar existente</span></button>
+      </div>
+    </div>
+
+    <div v-if="createTabEnabled" v-show="activeTab === 'create'">
+      <slot name="create" />
+    </div>
+
+    <div v-show="!createTabEnabled || activeTab === 'select'">
     <div class="grid gap-3 md:grid-cols-12 md:items-end mb-3">
       <template v-if="isFkUnits">
-        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-7">
+        <AdminFieldGroup label="Busqueda" label-class="text-body" group-class="md:col-span-7">
           <AdminInputField
             :model-value="fkSearch"
             placeholder="Buscar referencia"
@@ -15,7 +28,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Tipo de unidad" label-class="text-slate-700" group-class="md:col-span-4">
+        <AdminFieldGroup label="Tipo de unidad" label-class="text-body" group-class="md:col-span-4">
           <AdminSelectField
             :model-value="fkPositionFilters.unit_type_id"
             :disabled="fkPositionFilterLoading"
@@ -28,21 +41,19 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
-            variant="secondary"
-            class-name="fk-inline-clear-btn"
+            variant="neutral-outline"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!fkPositionFilters.unit_type_id"
-            @click="$emit('clear-fk-unit-position-filters')"
-          >
+            @click="$emit('clear-fk-unit-position-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
       </template>
       <template v-else-if="isFkProcessDefinitions">
-        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Busqueda" label-class="text-body" group-class="md:col-span-3">
           <AdminInputField
             :model-value="fkSearch"
             placeholder="Buscar referencia"
@@ -50,7 +61,7 @@
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Proceso" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Proceso" label-class="text-body" group-class="md:col-span-3">
           <AdminSelectField
             :model-value="fkFilters.process_id"
             @update:model-value="updateFilter('process_id', $event)"
@@ -62,53 +73,47 @@
             </option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Serie" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Variación" label-class="text-body" group-class="md:col-span-3">
           <AdminInputField
-            :model-value="fkFilters.variation_key"
-            placeholder="Filtrar por serie"
-            @update:model-value="updateFilter('variation_key', $event)"
+            :model-value="fkFilters.linea_id"
+            placeholder="Filtrar por variación"
+            @update:model-value="updateFilter('linea_id', $event)"
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
-            variant="secondary"
-            class-name="fk-inline-clear-btn"
+            variant="neutral-outline"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkProcessDefinitionFilters"
-            @click="$emit('clear-fk-process-definition-filters')"
-          >
+            @click="$emit('clear-fk-process-definition-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
       </template>
       <template v-else-if="isFkTemplateArtifacts">
-        <AdminFieldGroup label="Busqueda" label-class="text-slate-700" group-class="md:col-span-3">
+        <AdminFieldGroup label="Busqueda" label-class="text-body" group-class="md:col-span-4">
           <AdminInputField
             :model-value="fkSearch"
-            placeholder="Buscar referencia"
+            placeholder="Buscar por nombre"
             @update:model-value="$emit('update:fkSearch', $event)"
             @input="$emit('debounced-search')"
           />
         </AdminFieldGroup>
-        <AdminFieldGroup label="Codigo" label-class="text-slate-700" group-class="md:col-span-3">
-          <AdminInputField
-            :model-value="fkFilters.template_code"
-            placeholder="Filtrar por codigo"
-            @update:model-value="updateFilter('template_code', $event)"
-            @input="$emit('debounced-search')"
-          />
+        <AdminFieldGroup label="Proceso" label-class="text-body" group-class="md:col-span-4">
+          <AdminSelectField
+            :model-value="fkFilters.process_id"
+            @update:model-value="updateFilter('process_id', $event)"
+            @change="$emit('template-artifact-filter-change')"
+          >
+            <option value="">Todos</option>
+            <option v-for="row in fkProcessDefinitionProcessOptions" :key="row.id" :value="String(row.id)">
+              {{ formatFkOptionLabel("processes", row) }}
+            </option>
+          </AdminSelectField>
         </AdminFieldGroup>
-        <AdminFieldGroup label="Version storage" label-class="text-slate-700" group-class="md:col-span-3">
-          <AdminInputField
-            :model-value="fkFilters.storage_version"
-            placeholder="Filtrar por version"
-            @update:model-value="updateFilter('storage_version', $event)"
-            @input="$emit('debounced-search')"
-          />
-        </AdminFieldGroup>
-        <AdminFieldGroup label="Activo" label-class="text-slate-700" group-class="md:col-span-2">
+        <AdminFieldGroup label="Activo" label-class="text-body" group-class="md:col-span-3">
           <AdminSelectField
             :model-value="fkFilters.is_active"
             @update:model-value="updateFilter('is_active', $event)"
@@ -119,20 +124,18 @@
             <option value="0">No</option>
           </AdminSelectField>
         </AdminFieldGroup>
-        <div class="md:col-span-1 md:flex md:items-end md:justify-end fk-inline-clear-col">
+        <div class="md:col-span-1 md:flex md:items-end md:justify-end">
           <AdminButton
-            variant="secondary"
-            class-name="fk-inline-clear-btn"
+            variant="neutral-outline"
             title="Limpiar filtro"
             aria-label="Limpiar filtro"
             :disabled="!hasFkTemplateArtifactFilters"
-            @click="$emit('clear-fk-template-artifact-filters')"
-          >
+            @click="$emit('clear-fk-template-artifact-filters')" icon-only>
             <font-awesome-icon icon="times" />
           </AdminButton>
         </div>
       </template>
-      <AdminFieldGroup v-else label="Busqueda" label-class="text-slate-700" group-class="md:col-span-12">
+      <AdminFieldGroup v-else label="Busqueda" label-class="text-body" group-class="md:col-span-12">
         <AdminInputField
           :model-value="fkSearch"
           placeholder="Buscar referencia"
@@ -142,8 +145,20 @@
       </AdminFieldGroup>
     </div>
 
+    <div v-if="isFkTemplateArtifacts && hasProcessFilterContext" class="mb-3 flex items-center gap-2">
+      <!-- Era un `role="switch"` de 13 lineas escrito a mano, con su propio ancho (36 px frente a
+           los 44 de SToggle) y su propio color activo (`blue-light-600` en vez de `primary`).
+           SToggle existe desde antes y ya lo usan el wizard de procesos y el editor de borradores. -->
+      <SToggle
+        :model-value="processContextFilterActive"
+        label="Solo plantillas de este proceso"
+        label-position="end"
+        @update:model-value="toggleProcessContextFilter"
+      />
+    </div>
+
     <div v-if="isFkUnitPositions" class="mb-3 grid gap-3 md:grid-cols-12 md:items-end">
-      <AdminFieldGroup label="Tipo de unidad" label-class="text-slate-700" group-class="md:col-span-4">
+      <AdminFieldGroup label="Tipo de unidad" label-class="text-body" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.unit_type_id"
           :disabled="fkPositionFilterLoading"
@@ -156,7 +171,7 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Unidad" label-class="text-slate-700" group-class="md:col-span-4">
+      <AdminFieldGroup label="Unidad" label-class="text-body" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.unit_id"
           :disabled="!fkPositionFilters.unit_type_id || fkPositionFilterLoading"
@@ -169,7 +184,7 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <AdminFieldGroup label="Cargo" label-class="text-slate-700" group-class="md:col-span-4">
+      <AdminFieldGroup label="Cargo" label-class="text-body" group-class="md:col-span-4">
         <AdminSelectField
           :model-value="fkPositionFilters.cargo_id"
           :disabled="fkPositionFilterLoading"
@@ -182,23 +197,21 @@
           </option>
         </AdminSelectField>
       </AdminFieldGroup>
-      <div class="md:col-span-12 md:flex md:justify-end fk-inline-clear-col">
+      <div class="md:col-span-12 md:flex md:justify-end">
         <AdminButton
-          variant="secondary"
-          class-name="fk-inline-clear-btn"
+          variant="neutral-outline"
           title="Limpiar filtro"
           aria-label="Limpiar filtro"
           :disabled="!fkPositionFilters.unit_type_id && !fkPositionFilters.unit_id && !fkPositionFilters.cargo_id"
-          @click="$emit('clear-fk-unit-position-filters')"
-        >
+          @click="$emit('clear-fk-unit-position-filters')" icon-only>
           <font-awesome-icon icon="times" />
         </AdminButton>
       </div>
     </div>
 
-    <div v-if="fkLoading" class="text-sm text-slate-500">Cargando...</div>
-    <div v-else-if="fkError" class="admin-inline-error" role="alert">{{ fkError }}</div>
-    <AdminDataTable
+    <div v-if="fkLoading" class="text-sm text-muted">Cargando...</div>
+    <div v-else-if="fkError" role="alert">{{ fkError }}</div>
+    <AppDataTable
       v-else
       :fields="fkSearchTableFields"
       :rows="fkRows"
@@ -209,24 +222,23 @@
           {{ formatFkPrimaryCell(row) }}
         </template>
         <template v-else-if="field.name === 'available_formats'">
-          <div class="available-formats-cell">
+          <div>
             <template v-if="getAvailableFormatSections(row[field.name]).length">
               <div
                 v-for="section in getAvailableFormatSections(row[field.name])"
                 :key="section.mode"
-                class="available-formats-group"
-                :class="{ 'is-inline': section.mode === 'general' }"
+                :class="{ 'is-inline': section.mode === 'reference' }"
               >
-                <span class="available-formats-mode">{{ section.label }}</span>
-                <div class="available-formats-badges">
-                  <span
+                <span>{{ section.label }}</span>
+                <div>
+                  <AppTag
                     v-for="entry in section.entries"
                     :key="`${section.mode}-${entry.format}`"
-                    class="available-formats-badge"
-                    :style="getAvailableFormatBadgeStyle(section.mode, entry)"
+                    variant="neutral"
+                    outlined
                   >
                     {{ entry.formatLabel }}
-                  </span>
+                  </AppTag>
                 </div>
               </div>
             </template>
@@ -238,12 +250,10 @@
         </template>
       </template>
       <template #actions="{ row }">
-        <div class="inline-flex items-center gap-1 fk-row-actions">
+        <div class="inline-flex items-center gap-2">
           <AdminButton
-            variant="secondary"
-            size="sm"
+            variant="info-soft"
             icon-only
-            class-name="hope-action-btn hope-action-view"
             title="Visualizar"
             aria-label="Visualizar"
             @click="$emit('open-fk-viewer', row)"
@@ -251,10 +261,8 @@
             <font-awesome-icon icon="eye" />
           </AdminButton>
           <AdminButton
-            variant="secondary"
-            size="sm"
+            variant="success-soft"
             icon-only
-            class-name="hope-action-btn hope-action-select"
             title="Seleccionar"
             aria-label="Seleccionar"
             @click="$emit('select-fk-row', row)"
@@ -263,43 +271,55 @@
           </AdminButton>
         </div>
       </template>
-    </AdminDataTable>
+    </AppDataTable>
+    </div>
     <template #footer>
-      <AdminButton
-        v-if="canOpenFkFilterModal"
-        variant="secondary"
-        title="Buscar"
-        aria-label="Buscar"
-        @click="$emit('open-fk-filter')"
-      >
-        <font-awesome-icon icon="search" />
-      </AdminButton>
-      <AdminButton
-        variant="outlinePrimary"
-        :disabled="!canCreateFkReference"
-        @click="$emit('open-fk-create')"
-      >
-        <font-awesome-icon icon="plus" class="mr-2" />
-        Crear nuevo
-      </AdminButton>
-      <AdminButton variant="outlineDanger" data-modal-dismiss>
+      <template v-if="!createTabEnabled || activeTab === 'select'">
+        <AdminButton
+          v-if="canOpenFkFilterModal"
+          variant="neutral-outline"
+          title="Buscar"
+          aria-label="Buscar"
+          @click="$emit('open-fk-filter')" icon-only>
+          <font-awesome-icon icon="search" />
+        </AdminButton>
+        <AdminButton
+          v-if="!createTabEnabled"
+          variant="primary-outline"
+          :disabled="!canCreateFkReference"
+          :title="fkCreateActionLabel"
+          :aria-label="fkCreateActionLabel"
+          @click="$emit('open-fk-create')"
+        >
+          <font-awesome-icon icon="plus" class="mr-2" />
+          {{ fkCreateActionLabel }}
+        </AdminButton>
+      </template>
+      <AdminButton variant="neutral-outline" data-modal-dismiss>
         Cerrar
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { IconListSearch, IconPlus } from "@tabler/icons-vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
+import AppTag from "@/shared/components/data/AppTag.vue";
+import { computed, ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({
   fkTable: { type: Object, default: null },
+  // Habilita las pestañas Crear/Seleccionar (solo en el flujo de plantillas dentro de config de proceso).
+  createTabEnabled: { type: Boolean, default: false },
+  // Pestaña activa (v-model): "select" | "create".
+  activeTab: { type: String, default: "select" },
   isFkUnits: { type: Boolean, default: false },
   isFkProcessDefinitions: { type: Boolean, default: false },
   isFkTemplateArtifacts: { type: Boolean, default: false },
@@ -314,6 +334,9 @@ const props = defineProps({
   fkProcessDefinitionProcessOptions: { type: Array, default: () => [] },
   hasFkProcessDefinitionFilters: { type: Boolean, default: false },
   hasFkTemplateArtifactFilters: { type: Boolean, default: false },
+  // process_id del proceso al que pertenece la configuración desde la que se abrió el picker. Habilita el
+  // switch que acota la lista de plantillas existentes a ese proceso.
+  processFilterContextId: { type: [String, Number], default: "" },
   fkLoading: { type: Boolean, default: false },
   fkError: { type: String, default: "" },
   fkSearchTableFields: { type: Array, default: () => [] },
@@ -327,7 +350,6 @@ const props = defineProps({
   formatFkPrimaryCell: { type: Function, required: true },
   formatFkListCell: { type: Function, required: true },
   getAvailableFormatSections: { type: Function, required: true },
-  getAvailableFormatBadgeStyle: { type: Function, required: true }
 });
 
 const emit = defineEmits([
@@ -346,16 +368,41 @@ const emit = defineEmits([
   "open-fk-viewer",
   "select-fk-row",
   "open-fk-filter",
-  "open-fk-create"
+  "open-fk-create",
+  "update:activeTab"
 ]);
 
 const modalRef = ref(null);
+
+const modalTitle = computed(() => {
+  if (props.isFkTemplateArtifacts) {
+    return "Seleccionar plantilla";
+  }
+  return `Buscar referencia ${props.fkTable?.label || ""}`;
+});
+
+const fkCreateActionLabel = computed(() =>
+  props.isFkTemplateArtifacts ? "Crear plantilla" : "Crear nuevo"
+);
 
 const updateFilter = (fieldName, value) => {
   emit("update:fkFilters", {
     ...props.fkFilters,
     [fieldName]: value
   });
+};
+
+// El switch "Solo de este proceso" es un atajo: deja el filtro Proceso fijado al proceso de la configuración
+// de origen. Su estado se deriva del filtro vigente, así el select Proceso y el switch quedan sincronizados.
+const hasProcessFilterContext = computed(() => String(props.processFilterContextId ?? "") !== "");
+const processContextFilterActive = computed(() =>
+  hasProcessFilterContext.value
+  && String(props.fkFilters.process_id ?? "") === String(props.processFilterContextId)
+);
+const toggleProcessContextFilter = () => {
+  const next = processContextFilterActive.value ? "" : String(props.processFilterContextId ?? "");
+  emit("update:fkFilters", { ...props.fkFilters, process_id: next });
+  emit("template-artifact-filter-change");
 };
 
 const updatePositionFilter = (fieldName, value) => {

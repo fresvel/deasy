@@ -1,0 +1,628 @@
+// Characterization: LOS PASOS DE FLUJO TAL COMO QUEDAN EN LA BASE.
+//
+// Por qué existe (sub-paso 0 de `docs/planes/plan-maestro-2026-08.md` §0.8). Se va a INVERTIR la
+// dirección del flujo: hoy el formulario web escribe el `meta.yaml`, lo sube a MinIO y
+// `workflowSync` lo proyecta a `fill_flow_steps` / `signature_flow_steps` con DELETE+INSERT;
+// después, el formulario escribirá directo en la base y el `meta.yaml` desaparecerá.
+//
+// La red que había NO sirve para eso. `zzz_artifact_draft` fija `content_hash`, que es el hash del
+// directorio del paquete de MinIO — y ese directorio INCLUYE el `meta.yaml`. En cuanto dejemos de
+// escribir el flujo en ese fichero el hash cambia POR CONSTRUCCIÓN, sin decir nada sobre si el flujo
+// sigue siendo el mismo. Es pesar la caja en vez de mirar lo que hay dentro.
+//
+// Este flow mira dentro: observa las filas de flujo en PostgreSQL. Cuando llegue la inversión, estos
+// goldens deben salir IDÉNTICOS. Si salen idénticos, la inversión no cambió el comportamiento; si se
+// mueven, el diff señala el paso y la columna exactos.
+//
+// ⚠️ EL ORÁCULO NO PUEDE SER `GET /ediciones/:id/schema`. Cuando se escribió esto, ese
+// endpoint leía el flujo del `meta.yaml`: habría medido justo lo que el sub-paso 3 iba a cambiar.
+// Desde el sub-paso 5 ya lee de la base, y SIGUE sin servir de oráculo — devuelve el flujo APLANADO
+// en forma de formulario, colapsa los dos portadores en una vista sola sin decir de cuál leyó, y no
+// expone `can_reject`. Su ida y vuelta se caracteriza aparte, en `zzzzzzz_schema_flow_reread`. El
+// oráculo de ESTE flow es la BASE.
+//
+// ⚠️ EL PREFIJO "zzzzzz_" ES DELIBERADO (seis zetas, una más que `zzzzz_task_item_relay`). Los flows
+// corren en orden alfabético con --test-concurrency=1 y la colación del contenedor es POSIX (byte a
+// byte: '_' 0x5F < 'z' 0x7A), así que "zzzzz_task_item_relay" < "zzzzzz_flow_steps_db" y este corre
+// el ÚLTIMO. Tiene que ser el último por dos razones independientes:
+//   · ESCRIBE: autorar un borrador con flujo inserta en catalogo_documental, ediciones,
+//     vinculos y las cuatro tablas de flujo, y mueve sus secuencias. Corriendo
+//     antes movería las huellas `list_*` de admin_crud y los ids de los flows que escriben.
+//   · LEE EL ESTADO ACUMULADO: el golden de plantilla incluye lo que dejan `zz_template_lifecycle`
+//     (la configuración clonada y su artifact v1.1.0) y `zzz_artifact_draft` (que limpia lo suyo).
+//     Eso NO es contaminación: la v1.1.0 heredó su flujo por la copia BINARIA de MinIO, sin que nadie
+//     lo autorara, y es exactamente el caso que el sub-paso 5 («el versionado copia FILAS, no bytes»)
+//     tiene que arreglar. Congelarlo aquí es lo que le da un antes y un después.
+//
+// LOS DOS ORÍGENES VAN EN CLAVES SEPARADAS, y no por orden: solo uno va a cambiar.
+//   · `plantilla_*` — lo escribía `workflowSync` desde el YAML. **Es lo que la inversión cambia.**
+//   · `runtime_*`   — lo escribe `materializeRuntimeFlowForTaskItem` (modo `routed`), que YA escribe
+//     directo en la base y no se toca. Es el GRUPO DE CONTROL: si se mueve durante la inversión, es
+//     que hemos tocado algo que no tocaba.
+// El discriminante es la columna `task_item_id`: NULL = flujo de plantilla, no-NULL = flujo de
+// runtime (`generation/documents.js:246,278` lo escribe siempre con el task_item).
+//
+// DENTRO DEL ORIGEN «PLANTILLA» YA SOLO QUEDA UN PORTADOR, y esa es la novedad del sub-paso 8:
+//   · el de la PLANTILLA (`edicion_id`) — lo escribe el formulario web DIRECTO en la base,
+//     uno solo, compartido por todas las configuraciones donde el entregable esté enlazado.
+//   · el del VÍNCULO (`vinculo_id`) lo sembraba el sync leyendo la sección
+//     `workflows:` del `meta.yaml`. Retirada la sección, no quedó quien lo escribiera, y la fase 2
+//     del frente 24 **borró la columna**: ya no es «un portador que nadie usa», es ninguno.
+// Lo que separa en el golden una cabecera autorada de una de runtime es `process_definition_id` e
+// `item_mode` —conceptos del VÍNCULO, que la autorada no alcanza y salen `null`—. El portador de
+// verdad se comprueba sobre la fila CRUDA en `unicaCabeceraDeLaPlantilla`, antes de normalizar:
+// `normalize` enmascara las claves de id **aunque valgan `null`**, así que un portador vacío y uno
+// relleno se verían igual.
+// La identidad de negocio la resuelven los dos por el mismo `LEFT JOIN`, gracias al `COALESCE`.
+//
+// SOBRE EL ENMASCARADO. Se enmascaran los ids ESTRUCTURALES (el `id` de la propia fila y los que la
+// cuelgan de otra: `fill_flow_template_id`, `template_id`,
+// `task_item_id`, `edicion_id`, `catalogo_documental_id`), porque su valor depende del orden de
+// siembra y de qué secuencias movieron los flows anteriores, no del comportamiento. En su lugar cada
+// plantilla de flujo lleva su identidad de NEGOCIO (`process_definition_id`, `deliverable_code`,
+// `storage_version`, `lifecycle_state`, `item_mode`), que sí es estable y además se lee.
+// Los ids con significado de negocio NO se enmascaran — `assigned_person_id`, `unit_id`,
+// `unit_type_id`, `relation_type_id`, `cargo_id`, `position_id`, `required_cargo_id` y los del JSONB
+// `signers` (en sus DOS convenciones de nombre; ver `MASK_OPTS`): **esos SON el «quién»**, y el
+// «quién» es justo lo que la inversión no puede cambiar.
+//
+// `anchor_refs` se deja fuera a propósito: es el predecesor muerto de `slot` (siempre `[]`, nadie lo
+// consume). Incluirlo movería el golden por una razón que no es de comportamiento. `created_at`
+// tampoco entra: es el reloj de siembra.
+//
+// ✅ `fill_flow_steps.code` y `fill_flow_steps.name` YA SE CAPTURAN (sub-paso 3, este commit). Existían
+// como columnas desde el 1-bis pero nadie las escribía: `normalizeFillSteps` las descartaba y el
+// INSERT no las listaba, así que el nombre que el usuario pone a cada paso de ENTREGA vivía solo
+// dentro del `meta.yaml` y la inversión lo habría perdido. Entran en `FILL_STEP_COLUMNS` en el mismo
+// commit que las empieza a escribir, y el diff dice los nombres: eso es lo que había que demostrar.
+//
+// ⚠️ El precio es que `runtime_entrega` —el grupo de control— también gana las dos claves, porque la
+// consulta de pasos es la MISMA para los dos orígenes. Salen en `null`, y ese `null` no es un
+// descuido: es la prueba positiva de que `materializeRuntimeFlowForTaskItem` no se tocó. El
+// movimiento está en lo que se OBSERVA, no en lo que el runtime hace.
+//
+// `anchor_refs` sigue fuera: es el predecesor muerto de `slot`.
+//
+// ⚠️ CORRECCIÓN (§0.6, cierre del censo de fósiles): esta nota y su gemela de arriba anunciaban que
+// el §0.8 borraría la columna en el sub-paso 7 primero y en el 8 después. NO OCURRIÓ NINGUNA DE LAS
+// DOS: el sub-paso 8 se llevó los resolutores del `CHECK`, no la columna. `anchor_refs` sigue en
+// `signature_flow_steps`, expuesta en el CRUD genérico y nombrada en los goldens de `admin_crud`, y
+// se CONSERVA con esa decisión escrita en `DocumentSignatureWorkflowService.js`. Lo que sí se retiró
+// es su única lectura, que no alimentaba a nadie. Dejar aquí el anuncio de una retirada que no pasó
+// es exactamente el mecanismo que describe el §0.7.
+
+import { test, before, after } from "node:test";
+import assert from "node:assert/strict";
+import { get, patch, post } from "../lib/http.mjs";
+import { tokenFor } from "../lib/auth.mjs";
+import { normalize } from "../lib/normalize.mjs";
+import { matchSnapshot } from "../lib/snapshot.mjs";
+import { waitForReady } from "../lib/readiness.mjs";
+import { query, cleanupDraftArtifactByCode, closeDb } from "../lib/db.mjs";
+import { FIXTURE, USERS } from "../config.mjs";
+
+const SUITE = "flow_steps_db";
+
+const DRAFT_PATH = "/admin/sql/ediciones/draft";
+
+// El borrador que este flow autora. `code` es determinista: `draft_<slugify(display_name)>`.
+const AUTHORED_NAME = "zzzzzz char flujo en base";
+const AUTHORED_CODE = "draft_zzzzzz-char-flujo-en-base";
+
+// Ids estructurales fuera, ids de negocio dentro. Ver la cabecera.
+const MASK_OPTS = {
+  maskIdKeys: true,
+  keep: [
+    "process_definition_id",
+    "assigned_person_id",
+    "unit_id",
+    "unit_type_id",
+    "relation_type_id",
+    "cargo_id",
+    "position_id",
+    "required_cargo_id",
+    // Y ahora el JSONB `signers`, que lleva el «quién» DENTRO. Ojo, porque aquí hay una trampa
+    // medida, no supuesta: **los dos productores guardan `signers` con convenciones de nombre
+    // distintas**. `materializeRuntimeFlowForTaskItem` serializa lo que llegó del formulario y sale
+    // en snake_case (`{"type","person_id","cargo_id",…}`, `generation/documents.js:288`);
+    // `workflowSync` serializa la salida de `normalizeSignatureSigner` y sale en camelCase
+    // (`{"resolverType","assignedPersonId","requiredCargoId",…}`, `workflows.js:265-276`). Con solo
+    // las snake_case en esta lista, el primer golden capturado enmascaró a los firmantes autorados
+    // —`requiredCargoId: "<normalized>"`— y el golden decía «alguien» donde tiene que decir quién.
+    // Van las DOS familias. Si el §0.8 unifica la convención al escribir directo, este golden se
+    // mueve, y ESE movimiento es información: sería un cambio de contrato del JSONB.
+    "person_id",
+    "assignedPersonId",
+    "requiredCargoId",
+    "unitId",
+    "unitTypeId",
+    "positionId",
+    "relationTypeId",
+    "cargoId",
+  ],
+};
+
+// PDF mínimo pero válido en estructura (mismo que usa `zzz_artifact_draft`).
+const REFERENCE_PDF = {
+  filename: "referencia.pdf",
+  contentType: "application/pdf",
+  content:
+    "%PDF-1.4\n" +
+    "1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n" +
+    "2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n" +
+    "3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]>>endobj\n" +
+    "trailer<</Root 1 0 R>>\n" +
+    "%%EOF\n",
+};
+
+// --- Lectura del oráculo: las filas de flujo, agrupadas por su plantilla ------------------------
+//
+// El origen se elige por `task_item_id`. `esRuntime=false` trae además la identidad de negocio del
+// portador (configuración + entregable + versión), que es lo que sustituye a los ids enmascarados.
+
+// ── UNA SOLA PAREJA DE TABLAS PARA LOS DOS LADOS (frente 24, fase 4, paso 4) ────────────────────
+//
+// Aqui habia DOS lectores de ~30 lineas cada uno, con dos juegos de columnas que «no se solapaban
+// del todo» --entrega tenia `relation_type_id`/`can_reject`, firma tenia
+// `slot`/`approval_mode`/`required_signers_*`/`signers`-- y dos cabeceras que habia que juntar con
+// sus pasos. Hoy es UNA consulta con un `accion`.
+//
+// LO QUE SE VA CON ELLAS, y por que el golden de este fichero SE MUEVE a proposito:
+//
+//   · las CABECERAS. Sus 10 columnas (`name`, `description`, `is_active`...) no las consultaba nadie
+//     salvo `id` e `is_active`. El paso lleva su propio origen.
+//   · DIECISIETE columnas de paso que no decidian nada (§10 del plan).
+//   · Y LA TRAMPA DEL JSONB `signers`, que este fichero documentaba con una nota de doce lineas: dos
+//     productores, dos convenciones de nombre en la MISMA columna, y un golden que decia «alguien»
+//     donde tenia que decir quien porque la mascara solo conocia una de las dos familias. A filas,
+//     la pregunta no existe: un firmante es una fila con columnas tipadas.
+//
+// EL ORIGEN SIGUE ELIGIENDOSE IGUAL, que es lo que mantiene las cinco claves del golden: `edicion_id`
+// es lo AUTORADO y `task_item_id` lo definido AL ENVIAR, con un `CHECK` que exige exactamente uno.
+
+const PASO_COLUMNAS = `
+  p.id,
+  p.accion,
+  p.task_item_id,
+  p.orden,
+  p.code,
+  p.nombre,
+  pdt.process_definition_id,
+  pdt.item_mode,
+  d.code AS deliverable_code,
+  ta.storage_version,
+  ta.lifecycle_state`;
+
+const PARTICIPANTE_COLUMNAS = `
+  pa.id, pa.paso_id, pa.orden, pa.resolver_type, pa.persona_id, pa.cargo_id,
+  pa.unit_scope_type, pa.unit_id, pa.slot`;
+
+// LEFT JOIN a proposito: si un vinculo se quedara sin edicion, la fila debe SALIR en el golden (con
+// nulos) en vez de desaparecer en silencio.
+//
+// ⚠️ EL VINCULO SE ALCANZA POR EL ENTREGABLE, no por el paso. La fase 2 del frente 24 borro
+// `vinculo_id` de la receta, asi que `pdt` entra por `task_items.vinculo_id` --el entregable si sabe
+// de que vinculo nacio--. La receta autorada sigue con `pdt` en NULL y su edicion por `edicion_id`.
+async function readReceta({ runtime, accion, deliverableCode = null }) {
+  const pasos = await query(
+    `SELECT ${PASO_COLUMNAS}
+       FROM pasos_declarados p
+       LEFT JOIN task_items ti ON ti.id = p.task_item_id
+       LEFT JOIN vinculos pdt ON pdt.id = ti.vinculo_id
+       LEFT JOIN ediciones ta
+              ON ta.id = COALESCE(pdt.edicion_id, p.edicion_id)
+       LEFT JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+      WHERE p.accion = $1::text
+        AND p.task_item_id IS ${runtime ? "NOT NULL" : "NULL"}
+        AND ($2::text IS NULL OR d.code = $2::text)
+      ORDER BY d.code, ta.storage_version, pdt.process_definition_id, p.orden, p.id`,
+    [accion, deliverableCode],
+  );
+  const ids = pasos.map((row) => row.id);
+  const participantes = ids.length
+    ? await query(
+        `SELECT ${PARTICIPANTE_COLUMNAS}
+           FROM participantes_declarados pa
+          WHERE pa.paso_id = ANY($1::int[])
+          ORDER BY pa.paso_id, pa.orden`,
+        [ids],
+      )
+    : [];
+  return attachParticipantes(pasos, participantes);
+}
+
+// Anida los participantes bajo su paso y les quita la clave de agrupacion (ya la lleva el padre).
+// Asi el golden se lee como la receta, no como un volcado de dos tablas.
+//
+// La clave se llamaba `steps` y es `participantes`: un paso con tres firmantes son tres filas, que es
+// justo lo que el JSONB escondia.
+function attachParticipantes(pasos, participantes) {
+  return pasos.map((paso) => ({
+    ...paso,
+    participantes: participantes
+      .filter((parte) => Number(parte.paso_id) === Number(paso.id))
+      .map(({ paso_id: _pasoId, ...resto }) => resto),
+  }));
+}
+
+const readFillFlows = (opciones) => readReceta({ ...opciones, accion: "entrega" });
+const readSignatureFlows = (opciones) => readReceta({ ...opciones, accion: "firma" });
+
+// La receta de runtime cuelga de un `task_item`, cuyo id es autoincremental. Se sustituye por su
+// identidad legible para que el golden diga de QUE entregable es.
+async function readRuntimeAnchors() {
+  return query(
+    `SELECT ti.id AS task_item_id, ti.title, ti.origin_kind
+       FROM task_items ti
+      WHERE EXISTS (SELECT 1 FROM pasos_declarados p WHERE p.task_item_id = ti.id)
+      ORDER BY ti.id`,
+  );
+}
+
+before(async () => {
+  await waitForReady();
+  // Idempotencia: si una corrida anterior murió a medias, los restos se limpian antes de empezar.
+  await cleanupDraftArtifactByCode(AUTHORED_CODE);
+});
+
+after(async () => {
+  await cleanupDraftArtifactByCode(AUTHORED_CODE);
+  await closeDb();
+});
+
+// --- 1) Origen PLANTILLA: lo que quedaba proyectado desde el `meta.yaml` -------------------------
+//
+// Estas dos claves se capturan ANTES de autorar nada, así que retratan lo que dejan el bootstrap y
+// los flows anteriores. Fue el estado que el sub-paso 3 tenía que reproducir sin moverse.
+//
+// LAS DOS ESTÁN VACÍAS DESDE EL SUB-PASO 7, y ése es su valor: la de entrega llevaba las TRES filas
+// que sembró `BASE_META_YAML` —la del vínculo v1.0.0, la del vínculo v1.1.0 que la actualización
+// guiada heredó, y la que el sub-paso 6 copió al portador `edicion_id`—, las tres con un
+// paso `document_owner` que nadie autoró nunca. Retirado el productor, el bootstrap no siembra
+// ningún flujo: es el criterio de cierre de §0.2 y §0.3, medido aquí en filas.
+// Si alguna vuelve a llenarse, es que reapareció un productor fuera del formulario.
+
+test("origen PLANTILLA · flujos de ENTREGA en la base", async () => {
+  const flows = await readFillFlows({ runtime: false });
+  assert.equal(flows.length, 0, "tras el sub-paso 7 ningún flujo de entrega nace fuera del formulario");
+  matchSnapshot(SUITE, "plantilla_entrega", normalize(flows, MASK_OPTS));
+});
+
+test("origen PLANTILLA · flujos de FIRMA en la base", async () => {
+  // Ya salía vacío antes del sub-paso 7 (`BASE_META_YAML` declaraba `signatures: steps: []`, así que
+  // el sync no creaba nada del lado de la firma). Sigue vacío por un motivo más fuerte: no queda
+  // productor. Congelarlo es lo que hace visible el día en que deje de estarlo.
+  const flows = await readSignatureFlows({ runtime: false });
+  assert.equal(flows.length, 0, "tras el sub-paso 7 ningún flujo de firma nace fuera del formulario");
+  matchSnapshot(SUITE, "plantilla_firma", normalize(flows, MASK_OPTS));
+});
+
+// --- 2) Origen RUNTIME: el GRUPO DE CONTROL ------------------------------------------------------
+//
+// `materializeRuntimeFlowForTaskItem` ya escribe directo en la base. La inversión NO debe tocarlo:
+// si estas dos claves se mueven, es que el cambio se salió de su sitio.
+
+test("origen RUNTIME · el entregable que ancla los flujos materializados al enviar", async () => {
+  const anchors = await readRuntimeAnchors();
+  assert.ok(anchors.length, "el setup debe dejar una tarea ad-hoc routed con su flujo materializado");
+  matchSnapshot(SUITE, "runtime_anclas", normalize(anchors, MASK_OPTS));
+});
+
+test("origen RUNTIME · flujos de ENTREGA en la base (control)", async () => {
+  const flows = await readFillFlows({ runtime: true });
+  assert.ok(flows.length, "el setup routed debe materializar un flujo de entrega de runtime");
+  matchSnapshot(SUITE, "runtime_entrega", normalize(flows, MASK_OPTS));
+});
+
+test("origen RUNTIME · flujos de FIRMA en la base (control)", async () => {
+  const flows = await readSignatureFlows({ runtime: true });
+  assert.ok(flows.length, "el setup routed debe materializar un flujo de firma de runtime");
+  matchSnapshot(SUITE, "runtime_firma", normalize(flows, MASK_OPTS));
+});
+
+// --- 3) AUTORÍA COMPLETA: el camino que la inversión reescribe entero ----------------------------
+//
+// Lo anterior retrata un flujo de entrega de UN paso y ningún flujo de firma: no basta para
+// caracterizar la proyección. Aquí se autora un borrador con los DOS lados y con las columnas que
+// hoy nadie ejercita — `cargo_id`/`required_cargo_id` con su unidad, `can_reject` derivado del
+// orden, `approval_mode`/`required_signers_min` y el JSONB `signers` multi-firmante.
+//
+// Es exactamente el camino del sub-paso 3: formulario web -> meta.yaml -> MinIO -> workflowSync ->
+// filas. Después de la inversión será formulario web -> filas, en una transacción. **Las filas
+// tienen que salir iguales**, y esta clave es la que lo dice.
+
+const autorado = { artifactId: null, cargoId: null };
+
+test("autoría · se resuelve el cargo DOCENTE de la fixture (el «quién» del paso por cargo)", async () => {
+  const token = await tokenFor("admin");
+  const res = await get("/admin/sql/cargos", { token });
+  assert.equal(res.status, 200, `list cargos debe responder 200: ${JSON.stringify(res.body)}`);
+  const rows = Array.isArray(res.body) ? res.body : (res.body?.data ?? res.body?.rows ?? []);
+  const docente = rows.find((row) => String(row.code) === FIXTURE.unitPositionCargoCode);
+  assert.ok(docente, `la fixture debe traer el cargo ${FIXTURE.unitPositionCargoCode}`);
+  autorado.cargoId = Number(docente.id);
+});
+
+test("autoría · POST draft con flujo de ENTREGA y de FIRMA -> 200", async () => {
+  const token = await tokenFor("admin");
+  assert.ok(autorado.cargoId, "depende del paso anterior");
+
+  // Entrega: paso 1 responsable del entregable, paso 2 por cargo en una unidad fija. El segundo
+  // paso existe para fijar `can_reject`, que NO se lee del formulario: lo DERIVA el orden
+  // (`workflows.js:170-172`). Un solo paso nunca lo demostraría.
+  const fillWorkflow = JSON.stringify({
+    required: true,
+    steps: [
+      { order: 1, name: "Entrega del responsable", resolver_type: "task_assignee", selection_mode: "auto_one" },
+      {
+        order: 2,
+        name: "Revision por cargo",
+        resolver_type: "cargo_in_scope",
+        cargo_id: autorado.cargoId,
+        unit_scope_type: "unit_exact",
+        unit_id: FIXTURE.unitId,
+        selection_mode: "auto_one",
+      },
+    ],
+  });
+
+  // Firma: paso 1 de un firmante por cargo; paso 2 con DOS firmantes y `at_least`, que es lo único
+  // que ejercita `approval_mode`, `required_signers_min` y el JSONB `signers` con más de un elemento.
+  // `required: true` no es decorativo: `isArtifactSignatureWorkflowSyncEnabled` (`artifacts.js:108`)
+  // exige que lo esté o el sync no materializa NADA del lado de la firma.
+  const porCargo = {
+    resolver_type: "cargo_in_scope",
+    cargo_id: autorado.cargoId,
+    unit_scope_type: "unit_exact",
+    unit_id: FIXTURE.unitId,
+    selection_mode: "auto_all",
+  };
+  const signatureWorkflow = JSON.stringify({
+    required: true,
+    steps: [
+      { order: 1, code: "firma_cargo", name: "Firma por cargo", signers: [porCargo] },
+      {
+        order: 2,
+        code: "firma_conjunta",
+        name: "Firma conjunta",
+        approval_mode: "at_least",
+        required_signers_min: 1,
+        signers: [porCargo, { ...porCargo, selection_mode: "auto_one" }],
+      },
+    ],
+  });
+
+  const res = await post(DRAFT_PATH, {
+    token,
+    form: {
+      display_name: AUTHORED_NAME,
+      owner_cedula: USERS.admin.cedula,
+      process_definition_id: String(FIXTURE.definitionId),
+      fill_workflow: fillWorkflow,
+      signature_workflow: signatureWorkflow,
+      pdf_file: REFERENCE_PDF,
+    },
+  });
+
+  assert.equal(res.status, 200, `autorar el borrador debe responder 200: ${JSON.stringify(res.body)}`);
+  // Aquí se comprobaba `workflow_sync_failed === false`, porque el sync corría FUERA de la
+  // transacción y podía fallar dejando un 200 con las filas sin escribir — un golden vacío
+  // mentiroso. Retirado el sync (sub-paso 8 del §0.8), el flujo se escribe dentro de la MISMA
+  // transacción que el borrador: un fallo al escribirlo no devuelve 200, lo deshace todo. El propio
+  // `res.status` es ahora la comprobación, y el golden de abajo la remata.
+  autorado.artifactId = res.body?.id;
+  assert.ok(autorado.artifactId, "debe devolverse el id del artifact creado");
+});
+
+// SE ACABÓ LA ESCRITURA DOBLE (§0.8, sub-paso 8). Hasta este commit el formulario dejaba DOS
+// cabeceras por lado —la del vínculo, que sembraba el sync leyendo el `meta.yaml`, y la de la
+// plantilla, que escribe el formulario directo— y esta comprobación exigía que fueran idénticas paso
+// a paso. Retirada la sección `workflows:` del YAML, el sync no tiene de dónde leer y **la copia del
+// vínculo ya no nace**: queda UNA cabecera por lado, la del portador `edicion_id`.
+//
+// Lo que se comprueba ahora es esa unicidad, y es la prueba positiva del desmontaje: si alguna vez
+// vuelve a aparecer una segunda cabecera colgada del vínculo, es que reapareció un productor fuera
+// del formulario.
+//
+// ⚠️ YA NO SE CUENTAN CABECERAS, porque no hay: se retiraron en el paso 4 de la fase 4 del frente 24.
+// Lo que esta comprobación afirmaba —«una por lado, la del portador `edicion_id`»— se vuelve una
+// propiedad de CADA PASO: todos cuelgan de la edición y ninguno de un entregable de runtime. Es la
+// misma prueba positiva del desmontaje, sobre las filas que de verdad quedan.
+const pasosDeLaPlantilla = (pasos, lado, cuantos) => {
+  assert.equal(pasos.length, cuantos, `${lado}: los pasos autorados deben materializarse`);
+  for (const paso of pasos) {
+    assert.ok(
+      !("vinculo_id" in paso),
+      `${lado}: cuelga de la EDICION; el portador por vínculo ya no existe (fase 2, frente 24)`,
+    );
+    assert.equal(paso.task_item_id, null, `${lado}: y nunca de un entregable de runtime`);
+    assert.ok(paso.participantes.length, `${lado}: un paso sin participantes no pide nada a nadie`);
+  }
+};
+
+test("autoría · flujo de ENTREGA autorado, tal como quedó en la base", async () => {
+  assert.ok(autorado.artifactId, "depende del paso anterior");
+  const pasos = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  pasosDeLaPlantilla(pasos, "entrega", 2);
+  matchSnapshot(SUITE, "autorado_entrega", normalize(pasos, MASK_OPTS));
+});
+
+test("autoría · flujo de FIRMA autorado, tal como quedó en la base", async () => {
+  assert.ok(autorado.artifactId, "depende del paso anterior");
+  const pasos = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  pasosDeLaPlantilla(pasos, "firma", 2);
+  matchSnapshot(SUITE, "autorado_firma", normalize(pasos, MASK_OPTS));
+});
+
+// --- 4) EL VERSIONADO COPIA FILAS (sub-paso 6 del §0.8) ------------------------------------------
+//
+// `createTemplateArtifactVersion` copia los objetos de MinIO EN BINARIO. Mientras el flujo vivía
+// dentro del `meta.yaml`, la versión nueva lo heredaba con los bytes y nadie notó que no se copiaba
+// ninguna FILA. Con el flujo en la base eso dejaba a la versión sin flujo, con dos consecuencias
+// medidas contra dev: publicarla respondía 400 «la plantilla debe definir al menos un paso de flujo
+// de entrega», y el lector del editor necesitó un tercer escalón (subir al padre) para no enseñarla
+// vacía.
+//
+// Se versiona la plantilla AUTORADA de la sección 3 —no la de la fixture— porque es la única que
+// tiene los DOS lados: la fixture no define flujo de firma (`BASE_META_YAML` lo declara vacío) y una
+// copia que solo probara la entrega no diría nada del `slot`, el `approval_mode` ni el JSONB
+// `signers`.
+//
+// ⚠️ VA AL FINAL DEL FICHERO A PROPÓSITO. Las claves `autorado_*` fotografían los flujos de este
+// entregable ANTES de versionarlo; la versión añade una tercera cabecera por lado, así que
+// ejecutarlo antes movería aquellos goldens por un motivo que no es el suyo.
+
+const versionado = { hijaId: null };
+
+test("versionado · POST /ediciones/:id/version sobre la plantilla autorada -> 200", async () => {
+  const token = await tokenFor("admin");
+  assert.ok(autorado.artifactId, "depende de la autoría");
+  const res = await post(`/admin/sql/ediciones/${autorado.artifactId}/version`, {
+    token,
+    body: { bump_level: "minor" },
+  });
+  assert.equal(res.status, 200, `versionar debe responder 200: ${JSON.stringify(res.body)}`);
+  versionado.hijaId = res.body?.id;
+  assert.ok(versionado.hijaId, "debe devolverse el id de la versión nueva");
+});
+
+// Compara la copia con su origen: MISMOS pasos, IDS DISTINTOS. Es más fuerte que el snapshot —que
+// enmascara los ids y no podría distinguir «copiado» de «compartido»— y es justo la propiedad que
+// el sub-paso promete.
+//
+// ⚠️ SE AGRUPA POR VERSIÓN, y antes no hacía falta: cada versión tenía SU cabecera, así que la lista
+// traía dos elementos y bastaba desempaquetarlos. Sin cabeceras la lista son pasos de las dos
+// versiones mezclados, ordenados por `storage_version`, y hay que separarlos por ella.
+const copiaFiel = (pasos, lado) => {
+  const versiones = [...new Set(pasos.map((paso) => paso.storage_version))].sort();
+  assert.equal(versiones.length, 2, `${lado}: el padre y la hija, dos versiones`);
+  const [vPadre, vHija] = versiones;
+  const delPadre = pasos.filter((paso) => paso.storage_version === vPadre);
+  const deLaHija = pasos.filter((paso) => paso.storage_version === vHija);
+
+  for (const paso of deLaHija) {
+    assert.ok(!("vinculo_id" in paso), `${lado}: la hija cuelga de SU edición, y de nada más`);
+    assert.equal(paso.task_item_id, null, `${lado}: y NUNCA de un entregable de runtime`);
+  }
+
+  // MISMO CONTENIDO, IDS DISTINTOS. Es más fuerte que el snapshot —que enmascara los ids y no podría
+  // distinguir «copiado» de «compartido»— y es justo la propiedad que la copia promete. Y ahora
+  // alcanza a los PARTICIPANTES, que es donde vive el «quién»: antes el de firma viajaba dentro de un
+  // JSONB que el lector de copia releía tal cual, así que una copia que lo perdiera habría pasado.
+  const sinIds = (lista) => lista.map(({ id: _id, storage_version: _v, participantes, ...resto }) => ({
+    ...resto,
+    participantes: participantes.map(({ id: _pid, ...parte }) => parte),
+  }));
+  assert.deepEqual(sinIds(deLaHija), sinIds(delPadre), `${lado}: la hija tiene los mismos pasos y participantes`);
+
+  const idsPadre = new Set(delPadre.flatMap((paso) => [Number(paso.id), ...paso.participantes.map((x) => Number(x.id))]));
+  for (const paso of deLaHija) {
+    assert.equal(idsPadre.has(Number(paso.id)), false, `${lado}: los pasos son filas NUEVAS, no las del padre`);
+    for (const parte of paso.participantes) {
+      assert.equal(idsPadre.has(Number(parte.id)), false, `${lado}: y sus participantes también`);
+    }
+  }
+};
+
+test("versionado · la hija hereda los pasos de ENTREGA como filas propias", async () => {
+  assert.ok(versionado.hijaId, "depende del paso anterior");
+  const pasos = await readFillFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  // CUATRO PASOS Y NO DOS CABECERAS: dos del padre y dos de la hija. La cuenta cambia de unidad
+  // --pasos en vez de cabeceras-- pero dice lo mismo: la copia existe y es de la version nueva.
+  assert.equal(pasos.length, 4, "los dos pasos del padre y sus dos copias en la hija");
+  assert.ok(pasos.some((paso) => paso.storage_version === "1.1.0"), "la version nueva tiene los suyos");
+  copiaFiel(pasos, "entrega");
+  matchSnapshot(SUITE, "versionado_entrega", normalize(pasos, MASK_OPTS));
+});
+
+test("versionado · la hija hereda los pasos de FIRMA como filas propias", async () => {
+  assert.ok(versionado.hijaId, "depende del paso anterior");
+  const pasos = await readSignatureFlows({ runtime: false, deliverableCode: AUTHORED_CODE });
+  assert.equal(pasos.length, 4, "los dos pasos de firma del padre y sus dos copias en la hija");
+  // Y LOS TRES FIRMANTES VIAJAN: el paso que lleva dos y el que lleva uno. Antes esto no se podia
+  // afirmar aqui --los firmantes vivian dentro del JSONB-- y el golden era lo unico que lo cubria.
+  assert.equal(
+    pasos.reduce((total, paso) => total + paso.participantes.length, 0), 6,
+    "tres firmantes por version: el paso de dos y el de uno",
+  );
+  copiaFiel(pasos, "firma");
+  matchSnapshot(SUITE, "versionado_firma", normalize(pasos, MASK_OPTS));
+});
+
+test("versionado · versionar NO materializa ningún flujo de runtime para el entregable", async () => {
+  // El error grave que este sub-paso podía cometer: copiar la cabecera que cuelga de un `task_item`,
+  // o sea el flujo que un usuario definió al enviar UN entregable concreto en modo `routed`. Eso
+  // convertiría la decisión de un envío en la definición de todas las versiones futuras.
+  assert.ok(versionado.hijaId, "depende del paso anterior");
+  const entrega = await readFillFlows({ runtime: true, deliverableCode: AUTHORED_CODE });
+  const firma = await readSignatureFlows({ runtime: true, deliverableCode: AUTHORED_CODE });
+  assert.deepEqual([entrega.length, firma.length], [0, 0], "ninguna cabecera con task_item_id");
+});
+
+test("versionado · publicar la versión recién creada YA NO falla por «sin flujo de entrega»", async () => {
+  // El defecto que cierra el sub-paso, medido antes contra dev: el gate cuenta FILAS
+  // (`hasFillStepsForArtifact`, sub-paso 4) y la versión no tenía ninguna, así que respondía
+  //   400 {"message":"No se puede publicar: la plantilla debe definir al menos un paso de flujo de entrega."}
+  // Con las filas copiadas, el gate encuentra el flujo por el portador de la propia versión.
+  const token = await tokenFor("admin");
+  assert.ok(versionado.hijaId, "depende del paso anterior");
+  const res = await patch(`/admin/sql/ediciones/${versionado.hijaId}/publish`, { token, body: {} });
+  assert.equal(res.status, 200, `publicar la versión debe responder 200: ${JSON.stringify(res.body)}`);
+  assert.equal(res.body?.lifecycle_state, "published");
+});
+
+// --- 5) LA VENTANA DEL SUB-PASO 7, CERRADA (sub-paso 8 del §0.8) ---------------------------------
+//
+// El sub-paso 7 retiró `BASE_META_YAML` y dejó a propósito una ventana abierta: la columna
+// `ediciones.meta_object_key` era `NOT NULL` y seguía apuntando a un `meta.yaml` que ya no
+// se subía. Se midió entonces qué se rompía DE VERDAD con eso, y la respuesta fue UNA cosa:
+//
+//   POST /admin/sql/ediciones/:id/resync
+//     -> 400 {"message":"The specified key does not exist."}
+//
+// (Los otros dos caminos temidos —los hooks de `vinculos` sin `catch`— no se
+// alcanzaban con la plantilla base porque antes intercepta la pared de línea, 422, o el guard de
+// borrador, 400; y el clonado degradaba el fallo a aviso.)
+//
+// El 8 tenía la obligación de cerrarla, no de heredarla. Estos tres casos son su prueba, y miden las
+// DOS mitades del cierre:
+//   · el ROUTER — los tres endpoints del sync ya no existen, así que el que reventaba no se puede ni
+//     invocar. Un 404 aquí es lo que antes era un 400 con un error de MinIO dentro;
+//   · el ESQUEMA — la columna que apuntaba a la nada ya no está, así que no queda puntero que nadie
+//     pueda dereferenciar más adelante. Sin esta segunda mitad el 404 sería solo una ruta escondida.
+//
+// Se usa la plantilla base del Proceso por defecto (`artifact 1`), que es EXACTAMENTE la que tenía
+// el puntero colgando.
+
+const ARTIFACT_BASE_ID = 1;
+
+test("ventana 7 · POST :id/resync — el endpoint que reventaba ya no existe", async () => {
+  const token = await tokenFor("admin");
+  const res = await post(`/admin/sql/ediciones/${ARTIFACT_BASE_ID}/resync`, { token, body: {} });
+  assert.equal(res.status, 404, `resync debe ser 404, no el 400 de MinIO: ${JSON.stringify(res.body)}`);
+});
+
+test("ventana 7 · sync-status y workflows/reconcile tampoco existen", async () => {
+  const token = await tokenFor("admin");
+  const status = await get(`/admin/sql/ediciones/${ARTIFACT_BASE_ID}/sync-status`, { token });
+  assert.equal(status.status, 404, `sync-status debe ser 404: ${JSON.stringify(status.body)}`);
+  const reconcile = await post("/admin/sql/ediciones/workflows/reconcile", { token, body: {} });
+  assert.equal(reconcile.status, 404, `workflows/reconcile debe ser 404: ${JSON.stringify(reconcile.body)}`);
+});
+
+test("ventana 7 · `meta_object_key` ya no existe como columna, así que no hay puntero colgando", async () => {
+  const columnas = await query(
+    `SELECT column_name
+       FROM information_schema.columns
+      WHERE table_name = 'ediciones'
+        AND column_name = 'meta_object_key'`,
+  );
+  assert.deepEqual(columnas, [], "la columna del sub-paso 7 debe estar borrada");
+
+  // Y la plantilla base sigue siendo perfectamente usable sin ella: su editor abre (lee de la base)
+  // y responde con el flujo vacío, que es la verdad. Antes esto dependía de un fichero de MinIO.
+  const token = await tokenFor("admin");
+  const schema = await get(`/admin/sql/ediciones/${ARTIFACT_BASE_ID}/schema`, { token });
+  assert.equal(schema.status, 200, `el editor de la plantilla base debe abrir: ${JSON.stringify(schema.body)}`);
+  assert.equal(schema.body?.fill_workflow?.steps?.length, 0);
+});

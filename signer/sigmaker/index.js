@@ -45,102 +45,99 @@ function wrapText(ctx, text, maxWidth) {
  * @param {string} options.finalPath  URL que se codificará en el QR (ruta pública del doc firmado)
  * @param {string} options.logoPath   ruta absoluta al logo PNG de PUCE
  */
-export function generateStampImage({ outputPath, stampText, finalPath, logoPath }) {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const timestamp = getGuayaquilDate();
-      const qrText = `\n${stampText}\n${timestamp}`;
+export async function generateStampImage({ outputPath, stampText, finalPath, logoPath }) {
+  const timestamp = getGuayaquilDate();
+  const qrText = `\n${stampText}\n${timestamp}`;
 
-      const qrOptions = {
-        errorCorrectionLevel: 'H',
-        margin: 2,
-        width: 220,
-        color: { dark: '#000000', light: '#FFFFFF' },
-      };
+  const qrOptions = {
+    errorCorrectionLevel: 'H',
+    margin: 2,
+    width: 220,
+    color: { dark: '#000000', light: '#FFFFFF' },
+  };
 
-      // El QR codifica la ruta final pública del documento firmado
-      const qrBuffer = await QRCode.toBuffer(finalPath || qrText, qrOptions);
-      const qrImage = await loadImage(qrBuffer);
-      const logo = await loadImage(logoPath);
+  // El QR codifica la ruta final pública del documento firmado
+  const qrBuffer = await QRCode.toBuffer(finalPath || qrText, qrOptions);
+  const qrImage = await loadImage(qrBuffer);
+  const logo = await loadImage(logoPath);
 
-      const rawLines = qrText.split('\n');
-      const line1 = rawLines[0];   // vacío (compatibilidad con formato original)
-      const line2 = rawLines[1];   // nombre del firmante
-      const fecha = rawLines[2];   // fecha
+  const rawLines = qrText.split('\n');
+  const line1 = rawLines[0];   // vacío (compatibilidad con formato original)
+  const line2 = rawLines[1];   // nombre del firmante
+  const fecha = rawLines[2];   // fecha
 
-      const textWidth = 450;
-      const spacing = 25;
-      const fontSize = 40;
-      const lineHeight = fontSize + 6;
-      const fontFamily = 'Red Hat Mono';
+  const textWidth = 450;
+  const spacing = 25;
+  const fontSize = 40;
+  const lineHeight = fontSize + 6;
+  const fontFamily = 'Red Hat Mono';
 
-      const testCanvas = createCanvas(10, 10);
-      const testCtx = testCanvas.getContext('2d');
-      testCtx.font = `${fontSize}px '${fontFamily}'`;
+  const testCanvas = createCanvas(10, 10);
+  const testCtx = testCanvas.getContext('2d');
+  testCtx.font = `${fontSize}px '${fontFamily}'`;
 
-      const wrappedName = wrapText(testCtx, line2, textWidth);
+  const wrappedName = wrapText(testCtx, line2, textWidth);
 
-      const logoScale = 0.1;
-      const logoW = logo.width * logoScale;
-      const logoH = logo.height * logoScale;
-      const logoTopMargin = -20;
-      const logoBottomMargin = 20;
+  const logoScale = 0.1;
+  const logoW = logo.width * logoScale;
+  const logoH = logo.height * logoScale;
+  const logoTopMargin = -20;
+  const logoBottomMargin = 20;
 
-      const blockHeight =
-        lineHeight +
-        wrappedName.length * lineHeight +
-        logoTopMargin +
-        logoH + logoBottomMargin +
-        lineHeight;
+  const blockHeight =
+    lineHeight +
+    wrappedName.length * lineHeight +
+    logoTopMargin +
+    logoH + logoBottomMargin +
+    lineHeight;
 
-      const totalHeight = Math.max(qrImage.height, blockHeight) + spacing * 2;
-      const totalWidth = qrImage.width + textWidth + spacing * 3;
+  const totalHeight = Math.max(qrImage.height, blockHeight) + spacing * 2;
+  const totalWidth = qrImage.width + textWidth + spacing * 3;
 
-      const canvas = createCanvas(totalWidth, totalHeight);
-      const ctx = canvas.getContext('2d');
+  const canvas = createCanvas(totalWidth, totalHeight);
+  const ctx = canvas.getContext('2d');
 
-      ctx.fillStyle = '#FFFFFF00';
-      ctx.fillRect(0, 0, totalWidth, totalHeight);
+  ctx.fillStyle = '#FFFFFF00';
+  ctx.fillRect(0, 0, totalWidth, totalHeight);
 
-      const qrY = (totalHeight - qrImage.height) / 2;
-      ctx.drawImage(qrImage, spacing, qrY);
+  const qrY = (totalHeight - qrImage.height) / 2;
+  ctx.drawImage(qrImage, spacing, qrY);
 
-      const blockY = totalHeight - blockHeight;
-      const textX = qrImage.width + spacing * 2;
-      let textY = blockY;
+  const blockY = totalHeight - blockHeight;
+  const textX = qrImage.width + spacing * 2;
+  let textY = blockY;
 
-      ctx.fillStyle = '#000000';
-      ctx.font = `${fontSize}px '${fontFamily}'`;
-      ctx.textAlign = 'left';
+  ctx.fillStyle = '#000000';
+  ctx.font = `${fontSize}px '${fontFamily}'`;
+  ctx.textAlign = 'left';
 
-      ctx.fillText(line1, textX, textY);
-      textY += lineHeight;
+  ctx.fillText(line1, textX, textY);
+  textY += lineHeight;
 
-      wrappedName.forEach((line) => {
-        ctx.fillText(line, textX, textY);
-        textY += lineHeight;
-      });
+  wrappedName.forEach((line) => {
+    ctx.fillText(line, textX, textY);
+    textY += lineHeight;
+  });
 
-      textY += logoTopMargin;
-      ctx.drawImage(logo, textX, textY, logoW, logoH);
-      textY += logoH + logoBottomMargin;
+  textY += logoTopMargin;
+  ctx.drawImage(logo, textX, textY, logoW, logoH);
+  textY += logoH + logoBottomMargin;
 
-      ctx.fillStyle = '#0066CC';
-      ctx.font = `24px '${fontFamily}'`;
-      ctx.textAlign = 'center';
-      const fechaX = textX + logoW / 2;
-      ctx.fillText(fecha, fechaX, textY);
+  ctx.fillStyle = '#0066CC';
+  ctx.font = `24px '${fontFamily}'`;
+  ctx.textAlign = 'center';
+  const fechaX = textX + logoW / 2;
+  ctx.fillText(fecha, fechaX, textY);
 
-      const out = fs.createWriteStream(outputPath);
-      canvas.createPNGStream().pipe(out);
-      out.on('finish', () => {
-        console.log(`[sigmaker] Stamp image generated: ${outputPath}`);
-        resolve();
-      });
-      out.on('error', reject);
+  const out = fs.createWriteStream(outputPath);
+  canvas.createPNGStream().pipe(out);
 
-    } catch (err) {
-      reject(err);
-    }
+  // Solo el volcado a disco necesita callbacks; el resto ya es async/await.
+  return new Promise((resolve, reject) => {
+    out.on('finish', () => {
+      console.log(`[sigmaker] Stamp image generated: ${outputPath}`);
+      resolve();
+    });
+    out.on('error', reject);
   });
 }

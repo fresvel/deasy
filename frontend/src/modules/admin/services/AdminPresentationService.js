@@ -1,3 +1,5 @@
+import { FK_LABEL_FIELDS } from "@/modules/admin/services/AdminTableManagerConfig";
+
 class AdminPresentationService {
   formatDateOnly(value) {
     if (!value) {
@@ -33,44 +35,156 @@ class AdminPresentationService {
     return `${date.getFullYear()}-${this.pad2(date.getMonth() + 1)}-${this.pad2(date.getDate())} ${this.pad2(date.getHours())}`;
   }
 
+  /* Escribia «Promocion» y «Simbolico» SIN TILDE mientras `UnitGraphView` y `HomeView` escribian
+     las mismas tres palabras CON tilde. Ahora las tres salen del vocabulario unico, acentuadas. */
   formatPositionType(value) {
     if (value === null || value === undefined || value === "") {
       return "—";
     }
-    return {
-      real: "Real",
-      promocion: "Promocion",
-      simbolico: "Simbolico"
-    }[value] || value;
+    return this.formatSelectOptionLabel({ name: "position_type" }, value);
+  }
+
+  /* EL VOCABULARIO DE LAS CLASIFICACIONES, EN UN SOLO SITIO.
+   *
+   * Hasta el 2026-08-20 esto era una cadena de cuatro `if` y conocia **4 de los 20 campos de
+   * clasificacion** que declara `sqlTables.js`: los otros 16 salian en `snake_case` INGLES en
+   * la tabla de admin (`routed`, `auto_one`, `task_assignee`, `process_defined`, `at_least`…).
+   * No se noto mientras eran texto plano; al pasar a pastilla se ve, que es justo lo que una
+   * pastilla hace bien.
+   *
+   * ⚠️ NINGUNA DE ESTAS PALABRAS ES INVENTADA: todas salen de donde la aplicacion YA las decia
+   * —los `<option>` del asistente de plantilla, `itemModeLabel` del panel de artefactos y
+   * `APPROVAL_LABEL` del modal de borrador—, porque inventar un segundo nombre para el mismo
+   * codigo es la enfermedad que este frente lleva cuatro fases matando.
+   *
+   * ⚠️ Y hay divergencias CONOCIDAS que NO se tocan aqui porque son de otro contexto:
+   * `UnitGraphView` llama `unit_exact` «Esta unidad» donde esta tabla dice «Unidad exacta».
+   * Son cinco diccionarios de etiqueta repartidos por el frontend; unificarlos es trabajo
+   * aparte y esta anotado.
+   *
+   * ✅ Una de esas divergencias SE CERRO el 2026-08-23, y no cambiando la etiqueta: el codigo
+   * que la sostenia no existia. `one_per_unit` se llamaba «Un puesto por unidad» aqui y
+   * «Jefatura de la unidad» en el organigrama, y no hacia ninguna de las dos —cogia el puesto
+   * de menor `slot_no`—. Ahora es `unit_head`, hace lo que dice, y tiene UN solo nombre. */
+  static SELECT_OPTION_LABELS = {
+    scope: { owner: "Propietario", collaborator: "Operativo" },
+    source_type: { unit_type: "Tipo de unidad", cargo: "Cargo", default: "Predeterminada" },
+    unit_scope_type: {
+      unit_exact: "Unidad exacta",
+      unit_type: "Tipo de unidad",
+      all_units: "Todas las unidades",
+      context_exact: "Unidad del contexto"
+    },
+    recipient_policy: {
+      // SIN `exact_position` (frente 25, P25): la politica se retiro con su columna.
+      all_matches: "Todos los puestos coincidentes",
+      unit_head: "Jefatura de la unidad"
+    },
+    run_mode: { automatic: "Automatica", manual: "Manual" },
+    origin_kind: { process_defined: "Definido por el proceso", user_added: "Añadido por el usuario" },
+    template_scope: { official: "Oficial", ad_hoc: "Ad hoc" },
+    item_mode: { single: "Simple", replicated: "Replicado", routed: "Ruteado" },
+    source: { manual: "Manual", derived: "Derivado" },
+    position_type: { real: "Real", promocion: "Promoción", simbolico: "Simbólico" },
+    /* ⚠️ SOLO LOS TRES VIVOS, Y ES DELIBERADO. Los tres retirados --`document_owner`, `position` y
+       `manual_pick`-- saldrian con su codigo crudo si aparecieran, y esa es la señal correcta: darles
+       etiqueta bonita habria disfrazado de normal un dato que no deberia existir.
+       Y desde el 2026-10-09 NO PUEDEN APARECER: los firmantes pasaron del JSONB a filas bajo CHECK, que
+       era la via por la que un valor retirado se colaba sin que la base lo rechazara. */
+    resolver_type: {
+      task_assignee: "Responsable del entregable",
+      cargo_in_scope: "Por cargo",
+      specific_person: "Persona concreta"
+    },
+    /* Aqui habia dos diccionarios mas, `selection_mode` y `approval_mode`. Se fueron con sus columnas
+       el 2026-10-09 (§10 del plan): el primero elegia «el id mas bajo» y el segundo era el cupo. */
+    dedication: { TC: "Tiempo completo", MT: "Medio tiempo", TP: "Tiempo parcial" },
+    relation_type: { dependencia: "Dependencia", servicios: "Servicios", promocion: "Promoción" },
+    /* LA ESTRUCTURA CON MEMORIA (frente 27). Salían como códigos —`carga_inicial`, `titular`,
+       `unit_vigencias`— en las listas y en los desplegables del editor. */
+    inicio_origen: { carga_inicial: "Carga inicial", reorganizacion: "Reorganización", correccion: "Corrección" },
+    fin_origen: { carga_inicial: "Carga inicial", reorganizacion: "Reorganización", correccion: "Corrección" },
+    en_calidad_de: { titular: "Titular", subrogante: "Subrogante", encargado: "Encargado", delegado: "Delegado" },
+    /* Qué se corrigió, en la bitácora de correcciones: el nombre de la tabla, dicho en castellano. */
+    tabla: {
+      unit_vigencias: "Vigencia de una unidad",
+      position_vigencias: "Vigencia de un puesto",
+      process_vigencias: "Vigencia de un proceso",
+      unit_relations: "Relación entre unidades",
+      process_relations: "Relación entre procesos",
+      unit_equivalencias: "Sucesor de una unidad",
+      position_equivalencias: "Sucesor de un puesto",
+      process_equivalencias: "Sucesor de un proceso",
+      acto_adjuntos: "Fichero de un acto"
+    }
+  };
+
+  /* Cómo se llama cada columna de las tablas que se corrigen, para la bitácora. Las que apuntan a
+     otra fila llevan «(id)»: el valor que se enseña es su identificador, no su nombre. */
+  static COLUMNAS_DE_LA_ESTRUCTURA = {
+    vigente_desde: "rige desde",
+    vigente_hasta: "rige hasta",
+    inicio_origen: "origen del inicio",
+    fin_origen: "origen del fin",
+    inicio_acto_id: "acto del inicio (id)",
+    fin_acto_id: "acto del fin (id)",
+    unit_id: "unidad (id)",
+    position_id: "puesto (id)",
+    process_id: "proceso (id)",
+    parent_unit_id: "unidad padre (id)",
+    child_unit_id: "unidad hija (id)",
+    parent_process_id: "proceso padre (id)",
+    child_process_id: "proceso hijo (id)",
+    relation_type_id: "tipo de relación (id)",
+    antecesor_vigencia_id: "vida que termina (id)",
+    sucesor_unit_id: "unidad sucesora (id)",
+    sucesor_position_id: "puesto sucesor (id)",
+    sucesor_process_id: "proceso sucesor (id)",
+    acto_id: "acto (id)",
+    file_name: "fichero",
+    file_path: "ruta en el almacén",
+    mime_type: "tipo",
+    size_bytes: "tamaño en bytes",
+    sha256: "huella"
+  };
+
+  /* LO QUE DECÍA UNA FILA, LEGIBLE — para la bitácora de correcciones, que guarda el antes y el
+     después como JSON. `otro` es la otra mitad: con ella sólo se enseñan las claves que cambian, que
+     es lo que se quiere saber; sin ella (un alta o una baja), la fila entera. */
+  formatFilaDeBitacora(valor, otro = null) {
+    const leer = (v) => {
+      if (!v) return null;
+      if (typeof v === "object") return v;
+      try { return JSON.parse(v); } catch { return null; }
+    };
+    const fila = leer(valor);
+    if (!fila) {
+      return valor ? String(valor) : "—";
+    }
+    const pareja = leer(otro);
+    /* Lo que no dice nada de la fila —su id y los sellos— no se enseña. */
+    const SIN_INTERES = ["id", "registrado_por_person_id", "subido_por_person_id"];
+    const claves = Object.keys(fila).filter((k) => !SIN_INTERES.includes(k) && (!pareja || JSON.stringify(fila[k]) !== JSON.stringify(pareja[k])));
+    const decir = (k) => {
+      const v = fila[k];
+      const texto = v === null || v === undefined || v === "" ? "—" : this.formatSelectOptionLabel({ name: k }, v);
+      return `${AdminPresentationService.COLUMNAS_DE_LA_ESTRUCTURA[k] ?? k.replaceAll("_", " ")}: ${texto}`;
+    };
+    return claves.length ? claves.map(decir).join(" · ") : "sin cambios";
+  }
+
+  hasSelectOptionLabels(fieldName) {
+    return Object.hasOwn(AdminPresentationService.SELECT_OPTION_LABELS, String(fieldName || ""));
   }
 
   formatSelectOptionLabel(field, value) {
-    if (field?.name === "artifact_origin") {
-      return {
-        process: "Proceso",
-        general: "General"
-      }[value] || value;
+    const mapa = AdminPresentationService.SELECT_OPTION_LABELS[field?.name];
+    if (!mapa) {
+      return value;
     }
-    if (field?.name === "usage_role" || field?.name === "template_usage_role") {
-      return {
-        primary: "Principal",
-        attachment: "Adjunto",
-        support: "Soporte"
-      }[value] || value;
-    }
-    if (field?.name === "instance_mode") {
-      return {
-        single_document: "Un documento",
-        owner_many_documents: "Multiples documentos del dueño"
-      }[value] || value;
-    }
-    if (field?.name === "scope") {
-      return {
-        owner: "Propietario",
-        collaborator: "Operativo"
-      }[value] || value;
-    }
-    return value;
+    /* `dedication` son siglas en MAYUSCULA (`TC`); el resto son codigos en minuscula. Se prueba
+       el valor tal cual antes de normalizar para no perder las siglas. */
+    return mapa[value] ?? mapa[String(value ?? "").trim().toLowerCase()] ?? value;
   }
 
   prettifyFormatName(value) {
@@ -84,7 +198,7 @@ class AdminPresentationService {
     if (value === null || value === undefined || value === "") {
       return "";
     }
-    const normalized = String(value).replace(/\\/g, "/").replace(/\/+$/g, "");
+    const normalized = String(value).replaceAll("\\", "/").replaceAll(/\/+$/g, "");
     const parts = normalized.split("/").filter(Boolean);
     const fileName = parts.length ? parts[parts.length - 1] : "";
     if (fileName.toLowerCase() === "src") {
@@ -111,52 +225,65 @@ class AdminPresentationService {
     return parsed;
   }
 
+  // El rol se deriva del formato (ya no se almacena el eje "mode"): jinja2 = contrato, latex = render,
+  // el resto = documento de referencia. Espejo de FORMAT_ROLE del backend.
+  formatRole(format) {
+    return { jinja2: "contract", latex: "render" }[String(format || "").toLowerCase()] || "reference";
+  }
+
   getAvailableFormatSections(value) {
     const parsed = this.normalizeAvailableFormats(value);
     if (!parsed) {
       return [];
     }
-    const modeLabels = {
-      process: "Proceso",
-      general: "General"
-    };
-    return Object.entries(parsed)
-      .map(([mode, formats]) => {
-        if (!formats || typeof formats !== "object" || Array.isArray(formats)) {
-          return null;
-        }
-        const entries = Object.entries(formats)
-          .map(([format, meta]) => ({
-            format,
-            formatLabel: this.prettifyFormatName(format),
-            entryObjectKey:
-              meta && typeof meta === "object" && !Array.isArray(meta)
-                ? meta.entry_object_key || meta.entryObjectKey || ""
-                : ""
-          }))
-          .filter((entry) => entry.format);
-        if (!entries.length) {
-          return null;
-        }
-        return {
-          mode,
-          label: modeLabels[mode] || mode,
-          entries
-        };
-      })
-      .filter(Boolean);
+    const roleLabels = { contract: "Contrato", reference: "Referencia", render: "Render" };
+    const roleOrder = ["contract", "reference", "render"];
+    // available_formats es plano: { <format>: { entry_object_key } }. Se agrupa por rol derivado.
+    const groups = {};
+    for (const [format, meta] of Object.entries(parsed)) {
+      if (!format || !meta || typeof meta !== "object" || Array.isArray(meta)) {
+        continue;
+      }
+      const role = this.formatRole(format);
+      (groups[role] = groups[role] || []).push({
+        format,
+        formatLabel: this.prettifyFormatName(format),
+        entryObjectKey: meta.entry_object_key || meta.entryObjectKey || ""
+      });
+    }
+    return roleOrder
+      .filter((role) => groups[role]?.length)
+      .map((role) => ({
+        // `mode` se conserva por compatibilidad con componentes que lo usan como clave/estilo: ahora es el rol.
+        mode: role,
+        role,
+        label: roleLabels[role] || role,
+        entries: groups[role]
+      }));
   }
 
-  getAvailableFormatBadgeStyle(mode, entry) {
-    const color = this.getDefaultAvailableFormatColor(mode, entry?.format);
-    const backgroundColor = this.toRgbaFromHex(color, 0.2);
-    const borderColor = this.toRgbaFromHex(color, 0.44);
-    return {
-      color,
-      backgroundColor: backgroundColor || undefined,
-      borderColor: borderColor || undefined
-    };
-  }
+  /* [2026-08-20 · F8] AQUI ESTABA `getAvailableFormatBadgeStyle`, Y CON EL DOS AYUDANTES:
+   * `getDefaultAvailableFormatColor` —un mapa de SEIS HEX CRUDOS, `jinja2 #18b7a3`,
+   * `latex #8b5cf6`, `docx #2563eb`, `pdf #ef4444`, `xlsx #16a34a`— y `toRgbaFromHex`, que los
+   * convertia a `rgba()` con alfa 0.2 y 0.44 para aplicarlos como **`:style` en linea**.
+   *
+   * Tres cosas mal a la vez, y ninguna la veia ningun gate:
+   *   1. un color decidido en JavaScript (es F8 en una linea);
+   *   2. con ALFA, o sea que el resultado depende del fondo — lo mismo que `deasy-progress`
+   *      documenta haber quitado;
+   *   3. como estilo EN LINEA, que no es una clase y por tanto es invisible incluso a
+   *      `check-orphan-classes`, que mide contra el CSS construido.
+   *
+   * 🪤 Y no era solo deuda: **los SEIS fallaban el contraste AA**, entre 2.10:1 y 3.89:1, porque
+   * el texto iba del color puro sobre su propio tinte al 20 %. `contraste.mjs` no podia verlo: lee
+   * los tokens de `tokens.css`, y esto eran hex en un `.js`. La pastilla neutral del sistema da
+   * 4.51:1.
+   *
+   * Ahora son `<AppTag variant="neutral" outlined>`. Y el color NO se sustituye por otro: los
+   * formatos son valores PARES entre si —`docx` no es mejor que `pdf`— y la doctrina de F9.D dice
+   * que una clasificacion no toma tonos de juicio. Ademas dos de aquellos colores mentian: `pdf`
+   * en ROJO y `xlsx` en VERDE gastaban los dos colores que en este sistema significan error y
+   * exito. Lo que distingue un formato de otro es su ETIQUETA, que ya la lleva escrita. */
 
   formatAvailableFormatsSummary(value) {
     const parts = this.getAvailableFormatSections(value).map(
@@ -170,37 +297,32 @@ class AdminPresentationService {
       return "—";
     }
     if (tableName === "process_definition_versions") {
-      const parts = [row.variation_key, row.definition_version, row.name]
+      const parts = [row.linea_nombre, row.definition_version, row.name]
         .filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
       if (parts.length) {
         return parts.join(" · ");
       }
     }
-    if (tableName === "process_definition_templates") {
+    if (tableName === "vinculos") {
       const parts = [
         row.process_definition_id ? `Def ${row.process_definition_id}` : null,
-        row.template_artifact_id
-          ? (getFkCachedLabel("template_artifacts", row.template_artifact_id) || `Paquete ${row.template_artifact_id}`)
-          : null,
-        this.formatSelectOptionLabel({ name: "usage_role" }, row.usage_role)
+        row.edicion_id
+          ? (getFkCachedLabel("ediciones", row.edicion_id) || `Paquete ${row.edicion_id}`)
+          : null
       ].filter((part) => part !== null && part !== undefined && String(part).trim() !== "");
       if (parts.length) {
         return parts.join(" · ");
       }
     }
-    if (tableName === "template_artifacts") {
+    if (tableName === "ediciones") {
       return this.getFirstDefinedValue(row.display_name, row.template_code, row.id);
     }
-    if (tableName === "template_seeds") {
-      return this.getFirstDefinedValue(row.display_name, row.seed_code, row.id);
-    }
+    // Aquí había una lista escrita a mano —y un caso especial para `generadores_de_documento` que
+    // sólo existía porque a la lista le faltaba `nombre`—. Era la SEGUNDA copia; el porqué y lo que
+    // costaba están junto a `FK_LABEL_FIELDS`. `id` va al final como último recurso: no es una forma
+    // de llamarse, es lo que queda cuando la fila no tiene ninguna.
     return this.getFirstDefinedValue(
-      row.name,
-      row.title,
-      row.email,
-      row.label,
-      row.code,
-      row.slug,
+      ...FK_LABEL_FIELDS.map((field) => row[field]),
       row.id
     );
   }
@@ -223,31 +345,7 @@ class AdminPresentationService {
     return normalized;
   }
 
-  toRgbaFromHex(hex, alpha) {
-    const expanded = this.expandHexColor(hex);
-    if (!expanded || expanded.length !== 6) {
-      return "";
-    }
-    const red = Number.parseInt(expanded.slice(0, 2), 16);
-    const green = Number.parseInt(expanded.slice(2, 4), 16);
-    const blue = Number.parseInt(expanded.slice(4, 6), 16);
-    if ([red, green, blue].some((value) => Number.isNaN(value))) {
-      return "";
-    }
-    return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
-  }
-
-  getDefaultAvailableFormatColor(mode, format) {
-    return {
-      "process:jinja2": "#18b7a3",
-      "general:latex": "#8b5cf6",
-      "general:docx": "#2563eb",
-      "general:pdf": "#ef4444",
-      "general:xlsx": "#16a34a"
-    }[`${mode}:${format}`] || "#8a94a6";
-  }
-
-  getFirstDefinedValue(...values) {
+getFirstDefinedValue(...values) {
     const match = values.find((value) => value !== null && value !== undefined && value !== "");
     return match !== undefined ? String(match) : "—";
   }

@@ -500,8 +500,8 @@ Table tasks {
 Table task_items {
   id int [pk, increment]
   task_id int [not null, ref: > tasks.id]
-  process_definition_template_id int [not null, ref: > process_definition_templates.id]
-  template_artifact_id int [not null, ref: > template_artifacts.id]
+  vinculo_id int [not null, ref: > vinculos.id]
+  edicion_id int [not null, ref: > ediciones.id]
   template_usage_role varchar(30) [not null, default: 'manual_fill', note: "Snapshot de usage_role al instanciar"]
   sort_order int [not null, default: 1]
   responsible_position_id int [ref: > unit_positions.id]
@@ -510,9 +510,9 @@ Table task_items {
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (task_id, process_definition_template_id) [name: 'uq_task_items_task_template', unique]
+    (task_id, vinculo_id) [name: 'uq_task_items_task_template', unique]
     (task_id, sort_order) [name: 'idx_task_items_task']
-    (template_artifact_id) [name: 'idx_task_items_artifact']
+    (edicion_id) [name: 'idx_task_items_artifact']
   }
 }
 
@@ -531,7 +531,7 @@ Table task_assignments {
   }
 }
 
-Table template_artifacts {
+Table ediciones {
   id int [pk, increment]
   template_seed_id int [ref: > template_seeds.id]
   owner_person_id int [ref: > persons.id, note: "FK al propietario cuando el artifact es de usuario"]
@@ -553,7 +553,7 @@ Table template_artifacts {
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (template_code, storage_version) [name: "uq_template_artifacts_storage", unique]
+    (template_code, storage_version) [name: "uq_ediciones_storage", unique]
     (artifact_origin) [name: "idx_template_artifacts_origin"]
   }
 }
@@ -574,10 +574,10 @@ Table template_seeds {
   }
 }
 
-Table process_definition_templates {
+Table vinculos {
   id int [pk, increment]
   process_definition_id int [not null, ref: > process_definition_versions.id]
-  template_artifact_id int [not null, ref: > template_artifacts.id]
+  edicion_id int [not null, ref: > ediciones.id]
   usage_role varchar(20) [not null, default: 'manual_fill', note: "system_render|manual_fill|attachment|support"]
   creates_task boolean [not null, default: true, note: "Si esta activo, esta plantilla dispara una tarea automatica por periodo."]
   is_required boolean [not null, default: true]
@@ -585,7 +585,7 @@ Table process_definition_templates {
   created_at datetime [not null, default: `CURRENT_TIMESTAMP`]
 
   Indexes {
-    (process_definition_id, template_artifact_id, usage_role) [name: "uq_process_definition_templates", unique]
+    (process_definition_id, edicion_id, usage_role) [name: "uq_vinculos", unique]
   }
 }
 
@@ -621,7 +621,7 @@ Table document_versions {
 
 Table signature_flow_templates {
   id int [pk, increment]
-  process_definition_template_id int [not null, ref: > process_definition_templates.id]
+  vinculo_id int [not null, ref: > vinculos.id]
   name varchar(180) [not null]
   description varchar(255)
   is_active boolean [not null, default: true]

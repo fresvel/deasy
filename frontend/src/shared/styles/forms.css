@@ -1,0 +1,854 @@
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   EL SUELO DE TODO CONTROL — F6.L2, 2026-08-17
+   ══════════════════════════════════════════════════════════════════════════════════════════════
+
+   Lo que recibe un `<input>`, `<select>` o `<textarea>` que no lleva clase de componente. Vive en
+   `@layer base` a proposito: es un valor por defecto, y tiene que PERDER contra la receta de
+   cualquier componente y contra cualquier utilidad de la plantilla. Justo lo contrario de lo que
+   hacia hasta hoy.
+
+   ── DE DONDE VIENE, Y POR QUE IMPORTA ─────────────────────────────────────────────────────────
+
+   Estas tres reglas vivian en `overrides.css` **fuera de `@layer`**, y una regla sin capa gana
+   SIEMPRE a una capada por especifica que sea. Consecuencias medidas, ninguna querida:
+
+     · **223 utilidades escritas sobre controles no llegaban al DOM** — radios, bordes, fondos y
+       focos. Se retiraron en L1 tras comprobar que no pintaban.
+     · **El estado de error del campo no se veia.** `deasy-control--error` pide borde rojo y fondo
+       rosa; llegaba solo el color del texto. Lo usa el formulario de crear cuenta.
+     · **Los 40 campos de autenticacion** declaran 16 px de radio y pintaban 8.
+
+   Con el suelo aqui, las tres se arreglan solas: `components` va despues de `base`, asi que la
+   receta de cada componente vuelve a mandar sobre lo suyo.
+
+   ⚠️ `.deasy-auth-field` ESTABA en la lista de selectores de la primera regla, y era un accidente:
+   todos sus consumidores son `<input>` o `<select>`, asi que `input` ya los alcanza. Lo unico que
+   añadia era imponerles 8 px de radio por encima del `rounded-2xl` de su propia receta. Fuera.
+
+   ⚠️ NO PARTAS LA PRIMERA REGLA POR DECLARACION. Se intento bajar solo el `background-color` y
+   aparecieron 10 nodos: dos controles con `bg-…/alfa` que salian blancos y ocho `input` ocultos
+   que perdian el fondo. Fondo y radio viajan juntos.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+@layer base {
+    input,
+    select,
+    textarea {
+        background-color: var(--color-white);
+        border-radius: var(--radius-lg);
+        color: var(--color-body);
+    }
+
+    /* EL AUTORRELLENO DE WEBKIT. Venia de la receta de autenticacion y se generaliza al
+       suelo: el navegador pinta su amarillo sobre CUALQUIER campo recordado, no solo sobre los
+       de login. El `box-shadow` de 1000px es el truco estandar —no se puede sobrescribir su
+       `background-color`— y la transicion de 9999s impide que reaparezca al enfocar. */
+    input:-webkit-autofill,
+    input:-webkit-autofill:hover,
+    input:-webkit-autofill:focus {
+        -webkit-text-fill-color: var(--color-body);
+        -webkit-box-shadow: 0 0 0px 1000px var(--color-white) inset;
+        box-shadow: 0 0 0px 1000px var(--color-white) inset;
+        transition: background-color 9999s ease-in-out 0s;
+    }
+
+    /* EL BORDE EN REPOSO SE DECLARA UNA SOLA VEZ, Y ES ESTE.
+       Era `--color-line` (gray-200) y sube a `--color-line-strong` (gray-300), que es lo que ya
+       declaraban por su cuenta la receta del sistema (`.deasy-control`, 228 usos) y la de
+       autenticacion, y lo que **42 plantillas escribian a mano** sobre controles sueltos antes de
+       que L1 lo retirara. El gray-200 era el suelo accidental, no el valor del sistema.
+
+       ⚠️ Y no es cosmetica: mientras cada receta declaraba SU borde en reposo con una clase,
+       ninguna regla de ELEMENTO podia ganarle — ni el `:focus` de aqui abajo ni el estado de
+       error, que es (0,1,0) igual que ellas y perdia por orden de import. Por eso el campo en
+       error no se veia. Declarandolo aqui una vez y quitandolo de las recetas, los ESTADOS pasan
+       a ser lo unico que reclama esa propiedad, y ganan sin trucos de especificidad. */
+    input,
+    select,
+    textarea {
+        border-color: var(--color-line-strong);
+    }
+
+    /* EL FOCO, Y ES UNO SOLO.
+       Hasta hoy habia DOS azules conviviendo: los controles del sistema se enfocaban con
+       `--color-primary` (#465fff) y los campos sin clase con `--color-brand-300` (#9cb9ff), que
+       era la receta de TailAdmin. Gana el primero, y no por gusto: **el palido da 1,9:1 contra
+       blanco y el minimo de WCAG 1.4.11 para un indicador de foco es 3:1**. El fuerte da 4,84.
+       El anillo (`--focus-ring`) nunca estuvo en disputa: es un `box-shadow` que nadie pisa. */
+    input:focus,
+    select:focus,
+    textarea:focus {
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+        outline: none;
+    }
+}
+
+@layer components {
+/* El `mb-4` es la separacion con lo que viene DEBAJO, que casi siempre es una tabla. Sin el,
+       el borde inferior de este contenedor y el borde superior de la tabla quedan pegados y se
+       leen como una sola caja partida. Va aqui —en el contenedor de filtros— y no en la tabla,
+       porque el filtro es quien sabe que esta separandose de lo que filtra. */
+.deasy-filter-shell {
+        @apply mb-4 rounded-xl border bg-white p-4 shadow-none md:p-4;
+        border-color: var(--color-line);
+    }
+
+    /* ⚠️ La variante embebida SI hereda ese `mb-4`. Se penso lo contrario —«vive dentro de otro
+       bloque que ya separa»— y era falso: medido en la tabla de personas, el contenedor de
+       filtros y `.deasy-table-responsive` estaban a **0.0 px**, pegados. Lo que quita
+       `--embedded` es el MARCO (borde, fondo, padding), no la separacion con lo que filtra. */
+
+    .deasy-filter-shell--embedded {
+        @apply rounded-none border-0 bg-transparent p-0 md:p-0;
+    }
+
+    .deasy-filter-grid {
+        @apply grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-6 xl:items-center;
+    }
+
+    .deasy-filter-grid--admin {
+        @apply lg:grid-cols-12;
+    }
+
+    /* ⚠️ AQUI VIVIA `.deasy-filter-search-span`, el tramo ancho que el buscador ocupaba en la
+       rejilla de filtros. Retirada el 2026-08-21: desde que el buscador vive en la barra
+       (`deasy-table-toolbar__filtro`, que ya crece con `flex-1`), no hay rejilla que abarcar y la
+       clase se quedo sin consumidor. La caza `css-prune`, no yo. */
+
+    .deasy-filter-field {
+        @apply flex flex-col gap-2;
+    }
+
+    /* EL CONTROL DE UN FILTRO — es `deasy-control` con otro nombre, y se demuestra midiendo:
+       misma altura (44), mismo radio (8), mismo padding (16/10), misma sombra, mismo borde
+       (`gray-300`) y misma fuente (14). Lo unico que difiere es el color del TEXTO —`text-strong`
+       (gray-800) frente a `text-body` (gray-700)— y ese medio escalon no sostiene una familia
+       aparte: un filtro no es un tipo de control distinto, es el mismo control en otro sitio.
+
+       Se queda como modificador vacio a proposito, para no tocar sus 39 consumidores de golpe:
+       hereda todo de `deasy-control` y solo declara lo suyo. (2026-08-15, F4.) */
+
+    /* El disparador de un desplegable propio — se ve como un `<select>` porque HACE de `<select>`,
+       pero es un `<button>` porque el nativo no admite seleccion multiple con casillas. Solo
+       cambia la distribucion interna: la etiqueta a la izquierda y el chevron a la derecha.
+       (2026-08-15, censo estructural de G6: ese reparto viajaba en el atributo.) */
+    .deasy-control--trigger {
+        @apply flex items-center justify-between gap-2 text-left;
+    }
+
+    /* Una opcion dentro de ese desplegable. NO es un boton del sistema: no ejecuta una accion,
+       marca una eleccion — por eso no lleva caja, ni borde, ni variante. Estaba escrita dos veces
+       en `HomeView` con nueve utilidades cada una, y las dos discrepaban en el peso y el color:
+       `font-medium text-icon` para cada proceso y `font-semibold text-body` para el «Todos» de
+       arriba. Esa diferencia SI es intencionada —el «Todos» manda sobre la lista— asi que se
+       queda, pero como modificador. (2026-08-15, censo estructural de G6.) */
+    .deasy-option {
+        @apply flex w-full cursor-pointer items-center gap-2 rounded-lg border-0 bg-transparent px-2.5 py-2 text-left text-sm font-medium text-icon transition-colors hover:bg-surface focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .deasy-option--strong {
+        @apply font-semibold text-body;
+    }
+
+    /* En pila: las opciones se separan con una linea en vez de con espacio, y por eso pierden el
+       radio (una esquina redondeada dentro de una columna continua deja una muesca). */
+    .deasy-option--stacked {
+        @apply rounded-none border-b border-line last:border-b-0;
+    }
+
+    /* Con dato a la derecha: nombre a la izquierda, cedula o contador al otro extremo. */
+    .deasy-option--split {
+        @apply justify-between;
+    }
+
+    /* `.admin-select-field` murio el 2026-08-17 (F6.L5): declaraba `padding-right: 2.75rem` y
+       `.deasy-control--select`, que el mismo elemento ya lleva, declara `pr-11` — el MISMO valor.
+       Un duplicado exacto sostenido por un nombre de otra familia. */
+
+        .deasy-filter-search-row {
+        @apply flex items-center gap-2;
+    }
+
+    /* El buscador de una barra de filtros era la receta ESCRITA OTRA VEZ, palabra por palabra,
+       mas un `min-width: 0` que necesita por vivir en un flex. Solo sobrevive eso. */
+    .deasy-control--flex {
+        min-width: 0;
+    }
+
+    .deasy-filter-toolbar {
+        @apply flex flex-wrap items-center justify-between gap-3 border-t pt-3;
+        border-color: var(--color-surface);
+    }
+
+    .deasy-filter-summary {
+        @apply text-sm font-medium text-muted;
+    }
+
+    .deasy-filter-summary strong,
+    .deasy-filter-summary span.font-bold {
+        color: var(--color-navy);
+    }
+
+    .deasy-filter-actions {
+        @apply flex flex-wrap items-center gap-2 justify-end;
+    }
+
+    
+}
+@layer components {
+.deasy-field-wrapper {
+        @apply mb-3 w-full px-2;
+    }
+
+    
+}
+@layer components {
+/* 📌 AQUI VIVIO LA SEGUNDA FAMILIA DE ETIQUETA, `.deasy-field-label` (†2026-08-18, F2).
+       Decia `mb-2 block text-sm font-semibold text-strong`: la receta ENTERA, con **8 px de
+       margen inferior en vez de 6**. Eso era todo lo que la separaba de `.deasy-form-label`
+       en sus 3 usos. Una familia entera por 2 px. */
+
+    /* TERCERA FAMILIA, COLAPSADA SOBRE LA RECETA (2026-08-15, F4). Media 38 px de alto y 12/8 de
+       padding, frente a los 44 y 16/10 del sistema: una tercera altura de control en la misma
+       aplicacion, con 5 consumidores.
+
+       🪤 Su `rounded-2xl` NUNCA PINTO. La regla de elemento de `overrides.css` —fuera de capa—
+       impone `border-radius: 0.5rem` a todo `input`, y fuera de capa gana a `@layer components`.
+       Medido: 8 px, no 16. O sea que el unico eje en el que esta familia parecia distinta ya
+       estaba unificado por accidente; lo que de verdad la separaba era la altura. */
+    /* ⚠️ AQUI HABIA UN `--tw-ring-color` ESCRITO A MANO, y era la segunda forma de pintar el
+       mismo anillo en este fichero. Dos motivos para retirarlo, y el orden importa:
+
+       1. **No pintaba.** El anillo del campo enfocado lo pone `overrides.css` FUERA DE CAPA
+          (`input:focus { box-shadow: var(--focus-ring) }`), y fuera de capa gana a todo lo
+          capado. Medido: el `ring-4` de aqui nunca llegaba al DOM.
+       2. `--tw-ring-*` es variable INTERNA de Tailwind, no API. Si cambia de nombre en una
+          actualizacion, el anillo se apaga y no falla el build, ni el lint, ni los tests.
+
+       El anillo del proyecto es UNO y se llama `--focus-ring` (`tokens.css`). El dia que la
+       fase 6 cape la regla suelta de `overrides.css`, hay que decidir ahi si el foco cambia de
+       color por estado — que es la decision §4.2, no una linea de este fichero. */
+    /* ══ AQUI HABIA UN SEGUNDO FOCO, Y PERDIA SIEMPRE — borrado el 2026-08-17 (F6.L2) ══════
+       Declaraba el borde como `color-mix(--color-primary 44%, transparent)`, o sea un azul
+       palido y semitransparente, y un `bg-white` que el suelo ya pone. Convivia con el foco
+       canonico de mas abajo —misma clase, misma especificidad, misma capa— que va despues y le
+       ganaba por orden. Nunca se vio. */
+
+    /* ⚠️ EL PLACEHOLDER SE QUEDA EN `--color-muted`, el mismo que el del campo normal de
+       arriba. Antes esta regla lo repintaba de `red-300`: **1.92:1**, y WCAG trata el
+       placeholder como texto, o sea que pide 4.5. Un rojo palido no llega ahi sin
+       confundirse con el valor escrito —el rojo que si cumple sobre este fondo es el 90 %
+       del token, a un paso del color del texto—, asi que la salida no es aclarar el rojo:
+       es que el placeholder de un campo en error sea el mismo de siempre. 5.40:1.
+
+       ⚠️ Y HOY EL BORDE Y EL FONDO DE AQUI NO PINTAN: los tapa el grupo `.deasy-field-*`
+       de `overrides.css`, que sigue FUERA DE CAPA. Medido en el DOM: un campo con esta
+       clase da `--color-line-strong` de borde y blanco de fondo. Lo unico que llega es el
+       `color`. No es deuda que entre este commit —ya era asi con los tintes de Tailwind—
+       pero se escribe para que nadie lo mida y crea que la migracion lo rompio. Se
+       encienden cuando §4.2 decida borde y foco de los 228 controles. */
+    /* EL FOCO DE LA RECETA — capado el 2026-08-17 (F6.L2), y **colocado aqui a proposito**.
+       Estuvo fuera de `@layer` porque el grupo de `overrides.css` que fijaba el borde en reposo
+       tambien lo estaba. Aquel grupo es ahora el suelo de `@layer base` de este fichero, asi que
+       `components` le gana y esta regla vale sin saltarse el sistema.
+
+       ⚠️ VA ANTES DE LOS ESTADOS, Y NO ES CAPRICHO. `.deasy-control:focus` y
+       `.deasy-control--error:focus` tienen **la misma especificidad** (0,2,0), asi que entre ellas
+       decide el ORDEN del fichero. Al capar esta regla la deje al final por comodidad y se comio
+       el borde rojo del campo en error: mientras escribias, el campo invalido se veia AZUL. Lo
+       vio el dueño en `/register`, no ningun gate — ninguno mira quien gana. */
+    .deasy-control:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: var(--focus-ring);
+    }
+
+    .deasy-control--error {
+        border-color: color-mix(in srgb, var(--color-danger) 71%, var(--color-white));
+        background: color-mix(in srgb, var(--color-danger) 6%, var(--color-white));
+        color: var(--color-danger);
+    }
+
+    /* Mismo caso que el foco normal de arriba: el `--tw-ring-color` no llegaba al DOM. */
+    .deasy-control--error:focus {
+        @apply bg-white;
+        border-color: var(--color-danger);
+    }
+
+    .deasy-field-message {
+        @apply mt-1 text-xs font-medium text-muted;
+    }
+
+    /* Era `red-500`: 3.81:1, por debajo de AA para un texto que ADEMAS es el que explica
+       el error. El token da 6.57. */
+    .deasy-field-message--error {
+        @apply text-danger;
+    }
+
+    
+}
+@layer components {
+.deasy-dropzone {
+        @apply flex flex-col gap-3;
+    }
+
+    .deasy-dropzone__header {
+        @apply flex items-center justify-between;
+    }
+
+    .deasy-dropzone__title {
+        @apply m-0 text-lg font-semibold text-strong;
+    }
+
+    /* Solo el `m-0`: la tipografia la trae `deasy-rotulo`. */
+    .deasy-dropzone__label {
+        @apply m-0;
+    }
+
+    /* ── LA ZONA DE SUBIDA ───────────────────────────────────────────────────────────
+       Sus tres estados eran el ultimo color de familia propia fuera de la paleta:
+       `sky-200/300/500` para «vacia», `emerald-400/500` para «llena». Ahora derivan de
+       `--color-info` (el azul de accion) y `--color-success`, con la misma escala
+       que el resto: 71 % el borde en reposo, 85 % al pasar el raton o al arrastrar.
+
+       El borde AQUI no es decorativo: es discontinuo y de 2 px, y es lo unico que dibuja
+       la zona. `sky-200` daba **1.33:1** contra el blanco; al 71 % da 3.83.
+
+       ═══ F4, 2026-08-15 · ESTA RECETA DE TAILADMIN NO SE ADOPTA, Y ESO ES EL RESULTADO ═══
+
+       Medida en su demo de `form-elements`, su zona de subida es: borde **1 px** `gray-300`
+       discontinuo, fondo `gray-50`, radio `rounded-xl`, padding 20 px. Cuatro de esos cinco ejes
+       se descartan, y no por gusto:
+
+       **Su borde sobre su fondo da 1.41:1.** Es lo unico que dibuja la caja, asi que WCAG 1.4.11
+       le pide 3:1. Y es practicamente el mismo numero que el `sky-200` (1.33:1) que ESTE PROYECTO
+       YA DESCARTO por ese motivo, con la medicion escrita cuatro parrafos mas arriba. Adoptarlo
+       seria deshacer una decision de accesibilidad tomada con datos para parecerse mas a la
+       fuente. `frontend/CLAUDE.md` gana a TailAdmin, y este es el caso de manual.
+
+       De ahi que se queden el borde de 2 px (uno discontinuo de 1 px se ve la mitad), el fondo
+       blanco (es contra el que se midieron los 3.83) y el azul de accion.
+
+       ✅ Lo unico que SI se adopta es el RADIO: `rounded-2xl` (16) -> `rounded-xl` (12), que
+       ademas alinea esta caja con la de la tabla, bajada el mismo dia por la misma razon. */
+    .deasy-dropzone__surface {
+        @apply relative flex flex-1 flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed bg-white px-5 py-6 text-center transition-all;
+        border-color: color-mix(in srgb, var(--color-info) 71%, var(--color-white));
+    }
+
+    .deasy-dropzone__surface--card {
+        @apply min-h-[12rem];
+    }
+
+    .deasy-dropzone__surface--compact,
+    .deasy-dropzone__surface--inline {
+        @apply min-h-0 px-4 py-3;
+    }
+
+    .deasy-dropzone__surface--clickable {
+        @apply cursor-pointer;
+    }
+
+    .deasy-dropzone__surface--active {
+        @apply shadow-[var(--focus-ring)];
+        border-color: var(--color-info);
+        background: color-mix(in srgb, var(--color-info) 6%, var(--color-white));
+    }
+
+    .deasy-dropzone__surface--filled {
+        @apply border-solid;
+        border-color: color-mix(in srgb, var(--color-success) 71%, var(--color-white));
+        background: color-mix(in srgb, var(--color-success) 6%, var(--color-white));
+    }
+
+    @media (hover: hover) {
+        .deasy-dropzone__surface--clickable:hover {
+            border-color: color-mix(in srgb, var(--color-info) 85%, var(--color-white));
+            background: color-mix(in srgb, var(--color-info) 4%, var(--color-white));
+        }
+
+        .deasy-dropzone__surface--filled:hover {
+            border-color: color-mix(in srgb, var(--color-success) 85%, var(--color-white));
+            background: color-mix(in srgb, var(--color-success) 6%, var(--color-white));
+        }
+    }
+
+    .deasy-dropzone__surface--filled .deasy-dropzone__icon,
+    .deasy-dropzone__surface--filled .deasy-dropzone__action {
+        @apply text-success;
+    }
+
+    /* Era `emerald-600`: 3.65:1, por debajo de AA. El token da 5.48. */
+    .deasy-dropzone__surface--filled .deasy-dropzone__help {
+        @apply text-success;
+    }
+
+    .deasy-dropzone__surface--disabled {
+        @apply cursor-not-allowed border-line bg-gray-100 opacity-70;
+    }
+
+    .deasy-dropzone__icon {
+        @apply h-8 w-8 shrink-0 text-info;
+    }
+
+    .deasy-dropzone__icon--compact,
+    .deasy-dropzone__icon--inline {
+        @apply h-5 w-5;
+    }
+
+    .deasy-dropzone__input {
+        @apply absolute inset-0 cursor-pointer opacity-0;
+    }
+
+    .deasy-dropzone__trigger {
+        @apply m-0 flex w-full flex-col items-center justify-center gap-1 text-center pointer-events-none;
+    }
+
+    .deasy-dropzone__trigger--compact,
+    .deasy-dropzone__trigger--inline {
+        @apply items-start text-left;
+    }
+
+    /* [2026-08-20 · F11] `.deasy-dropzone__action` era el gemelo exacto de
+       `deasy-deliverable-action__text`. Su cuerpo lo pone ahora `deasy-rotulo` en la plantilla; lo
+       unico suyo era el color en contexto `--filled`, que sigue mas arriba. */
+
+
+    .deasy-dropzone__help {
+        @apply text-xs leading-[1.35] text-muted;
+    }
+
+    .deasy-dropzone__selected {
+        @apply flex items-center justify-between gap-3 rounded-2xl border px-3.5 py-2.5;
+        border-color: var(--color-line);
+        background: color-mix(in srgb, var(--color-info) 6%, var(--color-white));
+    }
+
+    .deasy-dropzone__file-name {
+        @apply break-words text-sm font-semibold text-navy;
+    }
+
+    
+}
+@layer components {
+.deasy-form-section {
+        @apply rounded-xl border border-line bg-white p-4 shadow-sm sm:p-5;
+    }
+
+    .deasy-form-section + .deasy-form-section {
+        @apply mt-5;
+    }
+
+    .deasy-form-section__header {
+        @apply mb-4 flex items-center gap-3 border-b border-surface pb-3;
+    }
+
+    /* El azul de este chip era `blue-600` sobre `blue-50`, y no significaba «informativo»
+       ni «accion»: era el acento de la marca escrito con la paleta de Tailwind. Es
+       `--color-primary`, con la misma escala que el resto de chips. */
+    .deasy-form-section__icon {
+        @apply inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border;
+        border-color: color-mix(in srgb, var(--color-primary) 71%, var(--color-white));
+        background: color-mix(in srgb, var(--color-primary) 6%, var(--color-white));
+        color: var(--color-primary);
+    }
+
+    /* 📌 AQUI VIVIO `.deasy-form-section__title` (†2026-08-19, F2). Era `text-base font-semibold
+       tracking-tight text-navy`: el nivel `--block` de la escala de titulares con otro nombre y un
+       peso menos. Sus 3 usos —los apartados de «Crear cuenta»— pasan a `deasy-title--block`. */
+
+    .deasy-form-grid {
+        @apply grid grid-cols-1 gap-4 md:grid-cols-2;
+    }
+
+    /* LA ETIQUETA DE CAMPO. Existia desde siempre y se estaba IGNORANDO: habia 52 etiquetas
+       escritas a mano en cuatro formas casi iguales —`mb-2 inline-flex … font-semibold`,
+       `block … font-medium`, `block … font-semibold`, la misma con el `mb-2` al final— que
+       diferian en margen, peso y color sin que ninguna diferencia fuera una decision.
+       Es la regla de tres de §6.1: si el mismo punado de utilidades aparece tres veces, se le
+       da nombre. Y una etiqueta NO necesita componente Vue: no tiene estado ni markup propio,
+       solo texto. El nivel correcto es la clase. */
+    /* EL ROTULO — F11, 2026-08-20.
+     *
+     * `clases-gemelas.mjs` encontro TRES clases con este mismo cuerpo repartidas por dos ficheros:
+     * `deasy-deliverable-action__text` (3 usos, `deliverables.css`), `deasy-dropzone__action` (1)
+     * y `deasy-dropzone__label` (1, con un `m-0` de mas). El detector las dio al 100 % y al 75 %.
+     *
+     * ⚠️ Y AL PONERLAS AL LADO SALIO UNA CUARTA, que no era gemela sino LA MADRE:
+     * **`deasy-form-label` declara exactamente esto** mas `block` y su margen. O sea que las tres
+     * eran «la etiqueta del sistema, sin la parte de disposicion» — y `deasy-form-label` es la
+     * receta mas poblada del proyecto (141 usos tras F2).
+     *
+     * Por eso NO se colapsan sobre ella —heredarian el `block` y los 6 px de hueco, que romperian
+     * sus cinco sitios— sino que las DOS salen de la misma declaracion. Una regla, dos selectores,
+     * cero duplicado. */
+    .deasy-rotulo,
+    .deasy-form-label {
+        @apply text-sm font-semibold text-strong;
+    }
+
+    .deasy-form-label {
+        @apply block;
+        margin-bottom: var(--label-gap);
+    }
+
+    /* LA OTRA FORMA DEL PAR: la etiqueta ENVUELVE su campo en vez de ir encima.
+       Se escribe asi en los dos grafos (17 casos) y en `/home`. Ahi el `margin-bottom` de arriba
+       no separa nada —el campo esta DENTRO—, y hasta hoy el hueco lo ponia un `mt-1.5` escrito en
+       cada plantilla. Con esto lo pone el sistema, y el token es el mismo: el hueco entre una
+       etiqueta y su campo es uno, se escriba el par como se escriba. */
+    .deasy-form-label > :is(input, select, textarea) {
+        margin-top: var(--label-gap);
+    }
+
+    /* La variante que lleva un icono al lado: deja de ser bloque para poder alinearlo.
+
+       ⚠️ `--inline` NO QUIERE DECIR «al lado del campo», y probarlo costo una regresion.
+       El 2026-08-18 le añadi `mb-0` razonando que una etiqueta junto a su campo no tiene nada
+       debajo que separar. Medido acto seguido en `/admin/usuarios/personas/persons` -> Agregar:
+       **sus 13 etiquetas usan esta variante y van ENCIMA del campo** —el `inline-flex` esta ahi
+       para alinear el asterisco de obligatorio, no para ponerse al lado— y el hueco cayo de 8 px
+       a 2. De 26 consumidores, exactamente UNO va al lado. Revertido.
+       Lo que la variante dice es «el CONTENIDO de la etiqueta se dispone en linea»; donde va la
+       etiqueta respecto de su campo lo decide el contenedor, y eso no tiene modificador. */
+    .deasy-form-label--inline {
+        @apply inline-flex items-center gap-1;
+    }
+
+    
+}
+/* LOS CAMPOS DEL DOSSIER. ⚠️ El `border-radius` y el `background` de aqui abajo estan
+   MUERTOS: los tapan los dos grupos `.profile-*` de `overrides.css`, que siguen fuera de
+   capa. Tocarlos no pinta nada. La unica regla que no pudo capar es el `:focus`, mas
+   abajo. */
+
+@layer components {
+    /* 📌 Y AQUI LA TERCERA, `.profile-field-label` (†2026-08-18, F2), con **59 usos** — la
+       familia de etiqueta mas poblada del proyecto, y ni siquiera se llamaba `deasy-`.
+       Declaraba solo peso y color, sin tamaño ni bloque ni margen, asi que heredaba el resto
+       del contexto. Medido antes de colapsarla: **14 px, peso 600 y `--color-strong`, o sea
+       exactamente lo que ya dice la receta**; lo unico que cambia al pasarla es el hueco hasta
+       el campo, de **1 px a 6**, que es el del sistema. Un peine de 59 dientes que solo servia
+       para apretar la etiqueta contra su campo. */
+
+    /* 📌 AQUI VIVIO LA CUARTA FAMILIA DE CONTROL, `profile-*` (†2026-08-15, F4). Era la mas
+       alejada de las cuatro: 52 px de alto frente a 44, fuente de 15.2 frente a 14, y su propia
+       sombra. Sus 49 consumidores usan la receta del sistema; lo unico suyo que sobrevive es la
+       altura minima del area de texto, abajo, porque una caja de varias lineas no tiene altura de
+       control. Su `border-radius: 1rem` no hace falta migrarlo: **nunca pinto** —la regla de
+       elemento de `overrides.css` impone 8 px desde fuera de capa— asi que ya se veia a 8. */
+}
+
+
+@layer components {
+    .profile-inline-note {
+        display: block;
+        margin-top: 0.4rem;
+        font-size: 0.78rem;
+        color: var(--color-muted);
+    }
+
+    /* Aqui los iconos del buscador (limpiar / buscar) se declaraban a 6 px, y el motivo escrito
+       era «menos redondos que el boton estandar» — cuando el estandar era 16 px. El 2026-08-14
+       la base adopto los 8 px de TailAdmin, asi que la diferencia pasa a ser de 2 px y el motivo
+       desaparece con ella. Retirada: una geometria para todos.
+       (De paso muere una regla que ganaba por ORDEN DE `@import`, no por especificidad — de las
+       que se rompen sin avisar si alguien reordena `index.css`.) */
+}
+
+/* DOS TAMAÑOS DE ZONA DE SUBIDA. La variante se escribe en la RAIZ del `<PdfDropField>`
+   (`--workspace` / `--rail`) y estas reglas apuntan a sus descendientes.
+
+   ⚠️ Las clases `__surface`, `__title`, `__trigger`, `__action`, `__help` y `__selected`
+   las COMPONE `PdfDropField.vue`: un grep las da por muertas.
+
+   ⚠️ El carril del multifirmador no se puede llevar a pantalla sin subir PDFs de verdad
+   (`workspaceMode === 'multi'`), asi que la huella no lo mide. Verificalo a mano. */
+
+@layer components {
+    /* Tarjeta grande del escritorio de firmas: titulo a la izquierda y mas aire. */
+
+    .deasy-dropzone--workspace .deasy-dropzone__surface--card {
+        min-height: 9.75rem;
+        padding-top: 1.25rem;
+        padding-bottom: 1.25rem;
+    }
+
+    .deasy-dropzone--workspace .deasy-dropzone__title {
+        margin-bottom: 1rem;
+        text-align: left;
+    }
+
+    .deasy-dropzone--workspace .deasy-dropzone__trigger {
+        gap: 0.25rem;
+    }
+
+    /* Carril del multifirmador: la misma zona, comprimida para caber en una columna. */
+
+    .deasy-dropzone--rail .deasy-dropzone__surface {
+        flex: none;
+        width: 100%;
+    }
+
+    .deasy-dropzone--rail .deasy-dropzone__surface--card {
+        min-height: 5.75rem;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+    }
+
+    .deasy-dropzone--rail .deasy-dropzone__trigger {
+        gap: 0.25rem;
+    }
+
+    /* [2026-08-20 · F11] AQUI HABIA `font-size: 0.95rem` — 15,2 px, que NO ES UN PASO DE LA
+       ESCALA (12 · 14 · 16 · 18 · 24). Sobrevivio a F5.1, que barrio los tamaños sueltos, porque
+       aquella cazaba utilidades `text-[…]` y esto era una declaracion de CSS CRUDO dentro de una
+       regla CONTEXTUAL — el mismo hueco que F5.2 documenta para los 7 `border-radius` que ningun
+       gate mira.
+       Y ademas era «el contexto cambiando el objeto», que es lo que F5.4 mato en el boton: el
+       texto de subir un fichero no mide distinto por estar en un carril. Un solo consumidor
+       (`MultiSignerPanel:13`), que ahora lee 14 px como el resto. */
+
+    .deasy-dropzone--rail .deasy-dropzone__help {
+        font-size: 0.75rem;
+    }
+
+    .deasy-dropzone--rail .deasy-dropzone__selected {
+        margin-top: 0.75rem;
+        padding-top: 0.625rem;
+        padding-bottom: 0.625rem;
+        align-items: flex-start;
+    }
+}
+
+@layer components {
+    /* EL CONTROL DE TEXTO CANONICO — 2026-08-13.
+       Sustituye a las CUATRO variantes del mismo campo que convivian en administracion, cada una
+       con su propia idea de la forma: `AdminInputField` (`rounded-2xl` + `border-line-strong` +
+       `text-body`), `AdminSelectField` (`rounded-[10px]` + `border-line-strong` + `text-strong` +
+       `font-medium`), `AdminLookupField` (sobre una clase FANTASMA que ningun CSS declaraba) y las
+       15 copias sueltas de `AdminDraftArtifactModal`. Eran el mismo control escrito de cuatro
+       maneras, y las diferencias no eran decisiones: eran deriva.
+
+       ⚠️ Colapsarlas es casi gratis, y merece la pena saber por que: el RADIO y el COLOR de borde
+       sobre un control **no pintaban nada**. La regla de elemento `input, select, textarea` de
+       `overrides.css` sigue fuera de capa y les gana, asi que los cuatro radios distintos ya
+       renderizaban 8 px igual.
+
+       ⚠️ PERO EL `border` A SECAS —el ANCHO— NO ES LO MISMO Y SI HACE FALTA. El reset de Tailwind
+       pone `border-width: 0` en todo, y la regla de elemento solo declara el `border-color`. Al
+       colapsar las cuatro cadenas se cayo, y los 29 controles del modal se quedaron con
+       `border-top-width: 0px`: sin borde. No lo vio el CSS ni el lint — lo cazo la medida en el
+       DOM, comparando la forma de los 29. */
+    .deasy-control {
+        /* LA FORMA ES LA DE TAILADMIN — adoptada el 2026-08-13. Su input canonico:
+             h-11 w-full rounded-lg border px-4 py-2.5 shadow-theme-xs
+
+           Cambia respecto a lo de antes: la altura sube de 40 a 44 px (mejor objetivo tactil),
+           el padding horizontal de 14 a 16 px, el vertical de 8 a 10, y aparece una sombra
+           minima donde antes habia `shadow-none`.
+
+           ⚠️ EL `h-11` SOLO GANA SI LA PLANTILLA NO ESCRIBE `h-10`. Una utilidad de Tailwind
+           vive en `@layer utilities` y le gana a esta clase, que esta en `components`. Al
+           adoptar la altura hubo que quitar el `h-10 py-2` de los tres campos de admin; si
+           vuelve a aparecer en una plantilla, la altura del sistema deja de aplicar y no
+           avisa nadie.
+
+           ⚠️ El RADIO y el COLOR de borde siguen viniendo de la regla de elemento sin capa de
+           `overrides.css`, que gana a esto. `rounded-lg` se escribe igual porque es el mismo
+           valor (8 px) y porque el dia que esa regla baje de capa, esto ya dice la verdad. */
+        /* ⚠️ NI `bg-white` NI `text-body`: son del SUELO, no de la receta — F6.L2, 2026-08-17.
+           Mientras esta clase los declaraba, el estado de error no podia pisarlos: `--error` es
+           (0,1,0) igual que ella, y el fondo rosa y el texto rojo se quedaban en el camino. Medido:
+           un campo con `deasy-control deasy-control--error` recibia el borde rojo y **nada mas**.
+           La regla que queda es geometria; el color de partida lo pone `@layer base`. */
+        @apply h-11 w-full rounded-lg border px-4 py-2.5 text-sm shadow-theme-xs transition-colors duration-150;
+        @apply placeholder:text-muted;
+        /* ⚠️ EL BORDE SE DECLARA AQUI, y hasta hoy no lo hacia. Su receta es `border-gray-300`; al
+           no decirlo, caia al `--color-line` (gray-200) de la regla de elemento de `overrides.css`
+           y quedaba **un escalon mas claro que las otras tres familias de control**, que si lo
+           declaraban. Medido el 2026-08-15: gray-200 en la receta y gray-300 en las otras TRES
+           familias que entonces existian. La receta era la unica desalineada — y hoy es la unica
+           que queda, porque las tres se colapsaron sobre ella. */
+        /* (El borde en reposo ya no se declara aqui: lo pone el suelo de `@layer base` de este
+           mismo fichero, para que los ESTADOS puedan ganarle. Ver la nota de arriba.) */
+        /* DESHABILITADO — la receta completa, no media. Le faltaban las dos senales que hacen
+           que un campo bloqueado se LEA como bloqueado en vez de solo resistirse: el borde baja
+           un escalon (`gray-100`, mas claro que el `gray-300` normal) y el marcador de posicion
+           se apaga. Sin ellas, un campo deshabilitado y uno vacio se ven igual. */
+        @apply disabled:cursor-not-allowed disabled:border-gray-100 disabled:bg-surface disabled:text-muted disabled:placeholder:text-gray-300;
+    }
+
+    /* El `<select>` añade lo suyo: sitio para la flecha y supresion del adorno del navegador. */
+    .deasy-control--select {
+        @apply appearance-none pr-11;
+    }
+
+    /* EL AREA DE TEXTO. Es lo unico que sobrevive de la familia `profile-*`, y por un motivo que no
+       es historico: una caja de VARIAS LINEAS no puede tener la altura fija de un control. Renuncia
+       al `h-11` y pone un suelo, dejando que crezca. */
+    .deasy-control--textarea {
+        @apply h-auto min-h-22 resize-y py-2.5;
+    }
+
+    /* EL INPUT REAL DEL INTERRUPTOR — invisible, pero es quien lleva el estado y quien recibe el
+       teclado. Era `sr-only` a secas; tiene nombre propio desde que las casillas se estilaron
+       (2026-08-15, F4), porque el bloque de `input[type="checkbox"]` tiene que poder excluirlo y
+       la norma de stylelint solo admite clases de la familia `deasy-` en un selector. Nombrarlo
+       sale mas barato que abrir una excepcion en la norma. */
+    .deasy-toggle__input {
+        @apply sr-only;
+    }
+}
+
+@layer components {
+    /* ═══ CASILLA Y BOTON DE RADIO ═════════════════════════════════════════════════════════
+     *
+     * ⚠️ ESTE BLOQUE ESTA FUERA DE `@layer` A LA FUERZA, y es la razon por la que vive en
+     * `overrides.css` y no en `forms.css`, que seria su sitio natural.
+     *
+     * Se escribio primero dentro de `@layer components` y **tres de sus declaraciones no llegaron al
+     * DOM**: el radio salia a 8 px, el borde en `gray-200` y el marcado en blanco. No es un problema
+     * de especificidad —`input[type="checkbox"]` es mas especifico que `input`— sino de CAPAS: la
+     * regla de elemento de este mismo fichero (`input, select, textarea { border-radius; background }`)
+     * esta fuera de capa, y **una regla sin capa gana SIEMPRE a una que este dentro**, por especifica
+     * que sea. Es exactamente la trampa que F6 existe para desactivar.
+     *
+     * 📌 El dia que F6.1 baje esa regla de elemento a `@layer base`, este bloque puede volver a
+     * `forms.css` sin tocar una linea de su contenido.
+     *
+     * Hasta el 2026-08-15 (F4) estos dos controles no tenian **ni una linea de CSS**: salian
+     * nativos, 13x13 px, con el gris del sistema operativo. Doce usos en la aplicacion.
+     *
+     * 🪤 El plan decia que heredaban `border-radius: 0.5rem` de la regla de elemento de
+     * `overrides.css` y salian «cuadrados de 8 px». Al medirlos, `getComputedStyle` daba **0 px**:
+     * con `appearance: auto` el navegador pinta su propio control y el radio declarado no llega a
+     * verse. El diagnostico era optimista — no estaban mal dimensionados, estaban SIN ESTILAR.
+     *
+     * ── POR QUE NO SE COPIA SU MARKUP ──────────────────────────────────────────────────────
+     *
+     * La receta de TailAdmin esconde el input real (`sr-only`) y pinta una caja al lado con Alpine.
+     * Eso obligaria a reescribir los doce consumidores y a meterles estado. Se adopta su FORMA
+     * —caja de 20 px, `rounded-md`, borde `gray-300` de 1.25 px, marcado en la marca con el check
+     * en blanco— con `appearance: none` y CSS puro, que no toca ni un consumidor y ademas conserva
+     * el control nativo: teclado, `:focus-visible` y lectores de pantalla siguen funcionando solos.
+     * Su markup es de 2020 y el CSS ya no lo necesita.
+     *
+     * `--color-line-strong` no es una aproximacion: es alias de `--color-gray-300`, el mismo borde
+     * que su receta. */
+
+    input[type="checkbox"]:not(.deasy-toggle__input),
+    input[type="radio"]:not(.deasy-toggle__input) {
+        @apply h-5 w-5 shrink-0 cursor-pointer appearance-none bg-white transition-colors;
+        border: 1.25px solid var(--color-line-strong);
+        border-radius: var(--radius-md);
+    }
+
+    /* La unica diferencia de forma entre los dos, y es la que los distingue de un vistazo: uno
+       admite varias respuestas y el otro una. Redondo = excluyente. */
+    input[type="radio"]:not(.deasy-toggle__input) {
+        border-radius: 9999px;
+    }
+
+    input[type="checkbox"]:not(.deasy-toggle__input):checked,
+    input[type="radio"]:not(.deasy-toggle__input):checked {
+        background-color: var(--color-primary);
+        border-color: var(--color-primary);
+    }
+
+    /* El check y el punto van como fondo y no como pseudo-elemento: un `input` es un elemento
+       reemplazado y no admite `::before` de forma fiable en todos los navegadores. */
+    input[type="checkbox"]:not(.deasy-toggle__input):checked {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14' fill='none'%3E%3Cpath d='M11.6666 3.5L5.24992 9.91667L2.33325 7' stroke='white' stroke-width='1.94437' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+        background-position: center;
+        background-repeat: no-repeat;
+    }
+
+    input[type="radio"]:not(.deasy-toggle__input):checked {
+        background-image: radial-gradient(circle, var(--color-white) 0 3.5px, transparent 3.5px);
+    }
+
+    @media (hover: hover) {
+        input[type="checkbox"]:not(.deasy-toggle__input, :disabled):hover,
+        input[type="radio"]:not(.deasy-toggle__input, :disabled):hover {
+            border-color: var(--color-primary);
+        }
+    }
+
+    input[type="checkbox"]:not(.deasy-toggle__input):disabled,
+    input[type="radio"]:not(.deasy-toggle__input):disabled {
+        @apply cursor-not-allowed;
+        border-color: var(--color-line);
+        background-color: var(--color-surface);
+    }
+}
+
+
+@layer components {
+    /* LA MARCA DE UNA CASILLA — F12, 2026-08-20.
+     *
+     * El cuadradito de 16 px con el tick dentro, cuando la casilla NO es un `<input>` nativo sino
+     * un `<button>` que la simula. `HomeView` lo escribia **dos veces, identico**:
+     * `border-brand-500 bg-brand-500 text-white` frente a `border-line-strong`.
+     *
+     * ⚠️ No es `deasy-control--checkbox`, y por eso no se colapsa: aquella estila el `<input>`
+     * NATIVO y hereda su `:checked`. Aqui no hay input — el estado lo lleva el componente— asi que
+     * hace falta un modificador. Misma pinta, dos mecanismos. */
+    .deasy-check {
+        @apply flex h-4 w-4 shrink-0 items-center justify-center rounded border;
+        border-color: var(--color-line-strong);
+    }
+
+    .deasy-check--marcada {
+        border-color: var(--color-primary);
+        background-color: var(--color-primary);
+        color: var(--color-white);
+    }
+}
+
+
+@layer components {
+    /* LA OPCION DE UN DESPLEGABLE DE BUSQUEDA — F12, 2026-08-20.
+     *
+     * `AdminLookupField` pintaba la opcion bajo el cursor con `bg-blue-light-50 text-info` en un
+     * ternario. No es `deasy-elegible`: aquella dice «esto lo has escogido» y esto dice «aqui esta
+     * el cursor» — el estado dura lo que dura la navegacion con las flechas. */
+    .deasy-lookup__option {
+        @apply flex cursor-pointer items-center justify-between gap-3 px-3 py-2 text-sm transition-colors duration-100;
+        color: var(--color-body);
+    }
+
+    .deasy-lookup__option:hover { background-color: var(--color-surface); }
+
+    .deasy-lookup__option--activa {
+        background-color: var(--color-blue-light-50);
+        color: var(--color-info);
+    }
+}
+
+/* EL DESPLEGABLE CON CASILLAS (`AppCheckMenu`) — 2026-11-23.
+   El disparador es un `AppButton` y no tiene skin propio: aqui solo va el ancla y el panel. El
+   panel es la card base con la elevacion de lo que se abre encima, la misma receta que el menu de
+   perfil; se ancla a la DERECHA porque vive al final de una barra de acciones. */
+@layer components {
+    .deasy-check-menu {
+        @apply relative flex;
+    }
+
+    /* El disparador llena el ancho que le de su contenedor: asi se puede igualar con los botones
+       vecinos poniendolos en una rejilla, sin escribirle un ancho a ninguno. */
+    .deasy-check-menu > .deasy-btn {
+        @apply flex-1;
+    }
+
+    .deasy-check-menu__panel {
+        @apply absolute right-0 top-full z-(--z-capa-emergente) mt-2 flex min-w-full flex-col gap-1 rounded-2xl border border-line bg-white p-2 shadow-theme-lg;
+    }
+
+    .deasy-check-menu__item {
+        @apply flex cursor-pointer items-center gap-2 whitespace-nowrap rounded-xl px-2 py-1.5 text-sm text-body transition-colors duration-100;
+    }
+
+    .deasy-check-menu__item:hover { background-color: var(--color-surface); }
+}
+

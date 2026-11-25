@@ -1,0 +1,121 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Plantillas y entregables. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project plantillas {
+  database_type: 'PostgreSQL'
+  Note: '''Plantillas y entregables — El modelo \'libro y ediciones\': `catalogo_documental` porta la identidad y `ediciones` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.'''
+}
+
+Table "catalogo_documental" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(180) [unique, not null]
+  "display_name" varchar(180) [not null]
+  "description" varchar(255)
+  "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
+  "owner_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `ediciones` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
+}
+
+Table "ediciones" {
+  "id" int4 [pk, not null, increment]
+  "catalogo_documental_id" int4 [not null]
+  "storage_version" varchar(20) [not null, check: `(storage_version)::text ~ '^[0-9]+\.[0-9]+\.[0-9]+$'::text`]
+  "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
+  "base_object_prefix" varchar(255) [not null]
+  "available_formats" jsonb [not null]
+  "generador_id" int4 [note: '''QUIEN produce el PDF de esta edicion. Estaba en `catalogo_documental.template_seed_id` y se movio aqui, no se duplico: la fachada del admin ya lo listaba como campo de `ediciones` y lo traia por JOIN. NO sustituye a `document_versions.render_engine`, que dice con que motor se renderizo UNA ronda concreta —un hecho de la ejecucion, no una declaracion de la plantilla.''']
+  "content_hash" varchar(64)
+  "parent_version_id" int4
+  "publicada_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (catalogo_documental_id, storage_version) [type: btree, unique, name: "uq_ediciones_storage"]
+    (catalogo_documental_id, publicada_flag) [type: btree, unique, name: "uq_ediciones_una_publicada"]
+    catalogo_documental_id [type: btree, name: "idx_ediciones_catalogo"]
+    lifecycle_state [type: btree, name: "idx_ediciones_state"]
+  }
+
+  Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `catalogo_documental`, que es quien porta la identidad.'''
+}
+
+Table "generadores_de_documento" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(180) [unique, not null]
+  "nombre" varchar(180) [not null]
+  "description" varchar(255)
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['latex'::text, 'servicio'::text])`, default: 'servicio']
+  "destino" varchar(255) [note: '''A quien se le pide el PDF: nombre de cola o URL de endpoint. NULL para `latex`, que no llama a nadie. Es texto libre y no dos columnas a proposito: hoy no hay ni un consumidor, y partirla antes de saber como se invoca seria inventar la forma del contrato por adelantado.''']
+  "source_path" varchar(255)
+  "preview_path" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''EL CATALOGO DE QUIEN PRODUCE EL PDF. Era `template_seeds` y significaba otra cosa: «la semilla», un proyecto LaTeX+Jinja2 en MinIO que se COPIABA entero por cada version de plantilla, y que era EL mecanismo —no habia camino para definir un documento sin escribir `.tex.j2`. Del mecanismo solo se construyo la copia (no hay renderizador, ni formulario, ni editor de campos), asi que el frente 23 lo desacoplo: el llenado web lo haran servicios programados caso a caso y la semilla LaTeX pasa a ser UNO de los generadores, el primero del catalogo. `tipo` separa las dos mitades: `latex` trae paquete (`source_path`) y no llama a nadie; `servicio` tiene `destino` (cola o endpoint) y no trae paquete.'''
+}
+
+Table "participantes_declarados" {
+  "id" int4 [pk, not null, increment]
+  "paso_id" int4 [not null]
+  "orden" int4 [not null, default: 1]
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'task_assignee']
+  "persona_id" int4
+  "cargo_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'context_exact'::text, 'all_units'::text])`, default: 'context_exact']
+  "unit_id" int4
+  "slot" varchar(80) [note: '''EL HUECO EN EL PAPEL: el nombre con el que la maqueta embebe el token de este firmante (`{{ signatures.<slot>.token }}`), que queda impreso en el PDF y que el firmador busca para estampar en sus coordenadas. Es del PARTICIPANTE y no del paso: con un hueco por paso, un paso de tres firmantes imprimia el token del primero y los otros dos no tenian marca. Nulo en entrega.''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (paso_id, orden) [type: btree, unique, name: "uq_participantes_declarados_orden"]
+  }
+
+  Note: '''QUIEN HACE EL PASO: un participante por cada persona o cargo que el paso convoca, en su `orden`. Un paso de entrega tiene UNO; uno de firma puede tener varios. Antes los firmantes vivian dentro de un JSONB sin validar que mandaba sobre las columnas del paso --el defecto 1.19--; a filas entran bajo los mismos dos CHECK que cierran su vocabulario.'''
+}
+
+Table "pasos_declarados" {
+  "id" int4 [pk, not null, increment]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`, note: '''ENTREGA o FIRMA. Es el discriminador que permite que las dos mitades del recorrido sean la misma tabla: lo que cambia entre ellas no es la estructura, es la accion que se pide.''']
+  "edicion_id" int4
+  "task_item_id" int4
+  "orden" int4 [not null]
+  "code" varchar(120)
+  "nombre" varchar(180)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (edicion_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_edicion"]
+    (task_item_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_entregable"]
+  }
+
+  Note: '''LA RECETA: un paso del recorrido documental, de ENTREGA o de FIRMA segun su `accion`. Sustituye a las cuatro tablas de receta que habia --dos cabeceras y dos de pasos-- y no tiene cabecera: el paso lleva su propio ORIGEN, que es o la edicion que lo autora (`edicion_id`) o el entregable que lo definio al enviar (`task_item_id`, modo `routed`), con un CHECK que exige exactamente uno.'''
+}
+
+Ref "fk_ediciones_catalogo":"catalogo_documental"."id" <? "ediciones"."catalogo_documental_id"
+Ref "fk_ediciones_generador":"generadores_de_documento"."id" ?<? "ediciones"."generador_id"
+Ref "fk_ediciones_parent":"ediciones"."id" ?<? "ediciones"."parent_version_id"
+Ref "fk_participantes_declarados_paso":"pasos_declarados"."id" <? "participantes_declarados"."paso_id" [delete: cascade]
+Ref "fk_pasos_declarados_edicion":"ediciones"."id" ?<? "pasos_declarados"."edicion_id"
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   persons -> catalogo_documental   [identidad]
+//   ediciones -> document_versions   [tareas]
+//   cargos -> participantes_declarados   [identidad]
+//   persons -> participantes_declarados   [identidad]
+//   units -> participantes_declarados   [organizacion]
+//   task_items -> pasos_declarados   [tareas]
+//   participantes_declarados -> turnos   [tareas]
+//   ediciones -> vinculos   [procesos]
