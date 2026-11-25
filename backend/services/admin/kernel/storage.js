@@ -7,11 +7,8 @@ import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { spawn } from "node:child_process";
-import * as Minio from "minio";
+import { clienteAlmacen } from "../../storage/clienteAlmacen.js";
 
-const almacenUrl = new URL(process.env.ALMACEN_ENDPOINT || "http://localhost:9000");
-const almacenUseSSL = String(process.env.ALMACEN_USE_SSL || "").trim() === "1" || almacenUrl.protocol === "https:";
-let almacenClientInstance = null;
 
 const walkFiles = (dirPath, collected = []) => {
   if (!fs.existsSync(dirPath)) {
@@ -88,18 +85,7 @@ const unzipToDirectory = (zipPath, destDir) => new Promise((resolve, reject) => 
   proc.on("close", (code) => (code === 0 ? resolve(true) : reject(new Error(stderr.trim() || "No se pudo descomprimir el ZIP."))));
 });
 
-const getAlmacenClient = () => {
-  if (!almacenClientInstance) {
-    almacenClientInstance = new Minio.Client({
-      endPoint: almacenUrl.hostname,
-      port: Number(almacenUrl.port || (almacenUseSSL ? 443 : 80)),
-      useSSL: almacenUseSSL,
-      accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER || "",
-      secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD || ""
-    });
-  }
-  return almacenClientInstance;
-};
+const getAlmacenClient = () => clienteAlmacen();
 
 const listAlmacenObjects = (bucket, prefix, recursive = true) => new Promise((resolve, reject) => {
   const objects = [];

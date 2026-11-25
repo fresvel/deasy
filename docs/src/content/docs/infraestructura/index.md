@@ -106,6 +106,12 @@ Tres cosas son distintas y conviene saberlas:
 La imagen va fijada por su huella, y la variable `ALMACEN_IMAGE` permite apuntar a otra sin tocar
 los ficheros de compose. El cliente que crea los buckets sigue siendo `mc`, desde una copia
 congelada publicada junto a las imágenes del proyecto (`ALMACEN_MC_IMAGE`).
+
+La aplicación habla con el almacén con la librería cliente `minio` —un cliente S3 genérico, con
+licencia Apache 2.0, que conserva el nombre de su autor—. El backend la construye en **un solo
+sitio**, `backend/services/storage/clienteAlmacen.js`, y ahí se le pide que acompañe cada subida
+con su suma MD5: Versity la exige para escribir en un bucket con bloqueo. Las referencias a un
+objeto que guarda la base tienen la forma `s3://<bucket>/<objeto>`.
 :::
 
 ## `scripts/docker-env.sh`: la interfaz comun

@@ -6,7 +6,7 @@ Generado por `plan indice` el 2026-11-25. **No se edita a mano.**
 
 | Proyecto | Frentes | Tareas vivas | Hechas |
 |---|--:|--:|--:|
-| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 18 | 408 | 293 |
+| [Deasy · procesos, plantillas y documentos firmados](deasy/) | 18 | 410 | 294 |
 
 ## Heredados — registrados, sin convertir
 

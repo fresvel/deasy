@@ -1,5 +1,7 @@
-pyhanko
-pdfplumber
-pika
-minio
-cryptography
+# Fijadas el 2026-11-25 a lo instalado y probado (266 pruebas). Sin número, cada imagen nueva
+# tomaba la última versión que existiera ese día.
+pyhanko==0.37.0
+pdfplumber==0.11.10
+pika==1.4.4
+minio==7.2.20
+cryptography==50.0.2
