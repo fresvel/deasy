@@ -78,8 +78,7 @@ Con el stack Docker de `dev`:
 
 - Aplicacion via proxy HTTP: `http://localhost:8088`
 - Aplicacion via proxy HTTPS: `https://localhost:8443`
-- MinIO API: `http://localhost:9000`
-- MinIO Console: `http://localhost:9001`
+- Almacén (API S3, Versity Gateway): `http://localhost:9000` — sin consola web
 - RabbitMQ UI: `http://127.0.0.1:15672` (**solo dev, y solo desde la propia maquina**)
 - Signer: `http://localhost:4000`
 
@@ -428,8 +427,7 @@ Dev:
 - PostgreSQL: `5432`
 - RabbitMQ AMQP: `5672` — **enlazado a `127.0.0.1`**
 - RabbitMQ UI: `15672` — **enlazado a `127.0.0.1`**
-- MinIO API: `9000`
-- MinIO Console: `9001`
+- Almacén (API S3): `9000`
 - Signer: `4000`
 
 QA:

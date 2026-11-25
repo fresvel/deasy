@@ -22,7 +22,6 @@ services:
   minio:
     ports:
       - "${MINIO_API_PORT}:9000"
-      - "${MINIO_CONSOLE_PORT}:9001"
 
   backend:
     build:
@@ -243,8 +242,8 @@ volumes:
     name: deasy_${DEASY_STACK:-dev}_postgres_data
   rabbitmq_data:
     name: deasy_${DEASY_STACK:-dev}_rabbitmq_data
-  minio_data:
-    name: deasy_${DEASY_STACK:-dev}_minio_data
+  versity_data:
+    name: deasy_${DEASY_STACK:-dev}_versity_data
   backend_node_modules_v2:
     name: deasy_${DEASY_STACK:-dev}_backend_node_modules
   channels_node_modules:

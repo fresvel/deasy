@@ -50,7 +50,7 @@ Consecuencia concreta: `qa` y `prod` **no cargan** `compose.proxy.yml`, así que
 | Proxy              | `nginx-proxy` en el propio stack                | un stack `ingress` separado                                                 |
 | Puertos del proxy  | 8088 / 8443                                     | el ingress pública 80 / 443                                                 |
 | PostgreSQL         | 5432                                            | 15432 (qa) / 25432 (prod), **sólo en `127.0.0.1`**                          |
-| MinIO              | 9000 / 9001                                     | 9100 / 9101 y 9200 / 9201, **sólo en `127.0.0.1`**                          |
+| Almacén (API S3)   | 9000                                            | 9100 / 9101 y 9200 / 9201, **sólo en `127.0.0.1`**                          |
 | Buckets            | `deasy-*`                                       | `deasy-qa-*` y `deasy-prod-*`                                               |
 | PAdES-LTA          | desactivado                                     | **activado en prod**                                                        |
 | Endurecimiento     | —                                               | `no-new-privileges`, `read_only` en frontend, `tmpfs`, healthchecks propios |
@@ -75,20 +75,33 @@ El comentario del compose explica el motivo: la interfaz de gestion de RabbitMQ 
 |:------------------|:------------------------|:---------------------------------------------------------------------------|
 | `postgres`        | `postgres:17`           | healthcheck `pg_isready`; único motor de datos                             |
 | `rabbitmq`        | `rabbitmq:3-management` | healthcheck `rabbitmq-diagnostics ping`                                    |
-| `minio`           | copia propia de MinIO   | `server /data --console-address ":9001"`. Ver la nota de abajo             |
+| `minio`           | Versity Gateway         | pasarela S3 sobre un directorio; conserva el nombre. Ver la nota de abajo  |
 | `minio-bootstrap` | copia propia de `mc`    | perfil `storage-init`; crea los buckets y hace `mc mirror` de las semillas |
 | `backend`         | sin imagen en base      | la define cada overlay                                                     |
 | `frontend`        | sin imagen en base      | idem                                                                       |
 | `signer`          | sin imagen en base      | `SIGNER_PORT=4000`, `SIGMAKER_DIR=/opt/sigmaker`                           |
 | `analytics`       | sin imagen en base      | perfil `workers`; hoy es un marcador de posición                           |
 
-:::caution[Las imágenes de MinIO salen del registro del proyecto]
-Los repositorios `minio/minio` y `minio/mc` desaparecieron de Docker Hub, y en noviembre de 2026 un
-despliegue falló por eso: una máquina sin la imagen en caché ya no podía instalar el sistema. Desde
-entonces compose usa una **copia** de las dos imágenes, sin modificar y con su misma etiqueta,
-publicada junto a las del proyecto (`deasy-minio` y `deasy-minio-mc`). Es una copia congelada de
-febrero de 2025: no recibe parches. Las variables `MINIO_IMAGE` y `MINIO_MC_IMAGE` permiten
-apuntar a otra imagen sin tocar los ficheros de compose.
+:::caution[El almacén es Versity Gateway, y el servicio se sigue llamando `minio`]
+Hasta noviembre de 2026 el almacén de objetos era MinIO. Su edición comunitaria dejó de publicarse
+—los repositorios desaparecieron de Docker Hub y un despliegue falló por eso—, así que se cambió
+por **Versity Gateway**, que tiene licencia Apache 2.0 y habla el mismo protocolo, S3. El servicio
+de compose y las variables `MINIO_*` conservan su nombre: el backend y el firmador no notan el
+cambio.
+
+Tres cosas son distintas y conviene saberlas:
+
+- **Los objetos son ficheros corrientes** dentro del volumen, y el bloqueo del archivo legal y las
+  versiones se guardan en los **atributos extendidos** de esos ficheros. Una copia del volumen que
+  no los conserve (`cp -r`, un `tar` sin `--xattrs`) los pierde **sin avisar**: los ficheros
+  llegan enteros y el archivo deja de estar bloqueado. `cp -a` sí los conserva.
+- **No lee un volumen de MinIO.** El almacén usa un volumen propio y arranca vacío; el anterior
+  queda en disco sin montar.
+- **No hay consola web** en el puerto 9001. El almacén se inspecciona con un cliente S3.
+
+La imagen va fijada por su huella, y la variable `ALMACEN_IMAGE` permite apuntar a otra sin tocar
+los ficheros de compose. El cliente que crea los buckets sigue siendo `mc`, desde una copia
+congelada publicada junto a las imágenes del proyecto (`MINIO_MC_IMAGE`).
 :::
 
 ## `scripts/docker-env.sh`: la interfaz comun

@@ -147,7 +147,12 @@ sync_legal_seed() {
   local_path="/import/Legal"
   if [ -d "$local_path" ]; then
     echo "Sembrando textos legales publicados en ${MINIO_ALIAS}/${LEGAL_BUCKET} (sin sobrescribir)..."
-    mc mirror --exclude '.*' "$local_path" "${MINIO_ALIAS}/${LEGAL_BUCKET}"
+    # `--md5` NO es opcional. Versity, como S3, rechaza un PUT a un bucket con retención por
+    # defecto si no trae Content-MD5 («Content-MD5 OR x-amz-checksum- HTTP header is required for
+    # Put Object requests with Object Lock parameters»), y `mc mirror` a secas no lo manda. Medido:
+    # `--checksum SHA256` NO vale («The SHA256 you specified did not match the calculated
+    # checksum»); `--md5` sí, y sigue omitiendo lo que ya existe.
+    mc mirror --md5 --exclude '.*' "$local_path" "${MINIO_ALIAS}/${LEGAL_BUCKET}"
     SYNC_COUNT=$((SYNC_COUNT + 1))
   fi
 }

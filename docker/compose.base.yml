@@ -35,28 +35,40 @@ services:
       retries: 20
       start_period: 10s
 
-  # ⚠️ LA IMAGEN SALE DEL REGISTRO DEL PROYECTO, NO DE DOCKER HUB (2026-11-24). Los repositorios
-  # `minio/minio` y `minio/mc` DESAPARECIERON de Docker Hub —404— y en Quay no están estas
-  # etiquetas: el primer despliegue en meses falló con «pull access denied … repository does not
-  # exist», y las pilas de desarrollo seguían vivas sólo porque tenían la imagen en caché. Una
-  # máquina nueva ya no podía instalar el sistema.
+  # EL ALMACÉN ES VERSITY GATEWAY DESDE EL 2026-11-25 (frente 29), y el servicio se sigue llamando
+  # `minio` a propósito: es el nombre que llevan el backend y el firmador en `MINIO_ENDPOINT`, y lo
+  # que hablan con él es S3. Lo que corre es una pasarela S3 (Apache 2.0) sobre un directorio:
+  #   /data/s3          los objetos, como ficheros corrientes (metadatos en xattrs `user.*`)
+  #   /data/versioning  las versiones NO vigentes (sin esto no hay versionado ni Object Lock)
+  # Los dos van en UN volumen a propósito: pasar una versión de un árbol a otro es un rename.
   #
-  # Lo que hay en `ghcr.io/…/deasy-minio` y `deasy-minio-mc` es UNA COPIA, byte a byte, de las dos
-  # imágenes que usaba el proyecto, con la MISMA etiqueta para que se sepa cuál es. MinIO es AGPL y
-  # redistribuirla sin modificar está permitido. Es una copia CONGELADA: no recibe parches. Qué
-  # hacer a medio plazo —otra imagen, otro almacén— es una decisión abierta.
+  # ⚠️ EL BLOQUEO Y LAS VERSIONES VIVEN EN LOS ATRIBUTOS EXTENDIDOS. Una copia del volumen que no
+  # los conserve (`cp -r`, un tar sin `--xattrs`) los pierde EN SILENCIO: los ficheros llegan
+  # enteros y el archivo legal deja de estar bloqueado. `cp -a` sí los conserva.
   #
-  # `MINIO_IMAGE` y `MINIO_MC_IMAGE` permiten apuntar a otra sin tocar este fichero; el valor por
-  # defecto va aquí y no en los `.env` para que ningún entorno tenga que cambiar el suyo.
+  # ⚠️ NO LEE UN VOLUMEN DE MINIO. Por eso el volumen es otro (`versity_data`): el `minio_data` de
+  # una instalación anterior se queda en disco sin montar, y el almacén arranca vacío.
+  #
+  # Por qué se dejó MinIO: su edición comunitaria dejó de publicarse —los repositorios
+  # desaparecieron de Docker Hub en 2026 y la última imagen es de septiembre de 2025—. Los tres
+  # ensayos que llevaron aquí están en `docs/planes/deasy/tareas/F29.P1.T*.md`.
+  #
+  # La imagen va fijada por digest. `ALMACEN_IMAGE` permite apuntar a otra sin tocar este fichero.
   minio:
-    image: ${MINIO_IMAGE:-ghcr.io/fresvel/deasy-minio:RELEASE.2025-02-18T16-25-55Z}
+    image: ${ALMACEN_IMAGE:-ghcr.io/versity/versitygw:v1.11.0@sha256:8319a530d08d537426e2f855bae5280709795dc73a3f0c347973ef915d6343c5}
     restart: unless-stopped
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-    command: server /data --console-address ":9001"
+      ROOT_ACCESS_KEY: ${MINIO_ROOT_USER}
+      ROOT_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      VGW_PORT: ":9000"
+      VGW_HEALTH: /_health
+      VGW_BACKEND: posix
+      VGW_BACKEND_ARGS: /data/s3
+      VGW_VERSIONING_DIR: /data/versioning
+    # La pasarela no crea sus directorios raíz: se crean antes de cederle el proceso.
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /data/s3 /data/versioning && exec /usr/local/bin/docker-entrypoint.sh"]
     volumes:
-      - minio_data:/data
+      - versity_data:/data
 
   # Se lanza A MANO, y el perfil es lo que lo hace posible sin que arranque en cada `up`. El
   # comando esta documentado en `docs/07-despliegue/COMANDOS_PROYECTO.md`:
@@ -69,6 +81,9 @@ services:
   # SIN bloqueo) -- y el bloqueo solo se puede pedir al CREAR el bucket, asi que eso seria
   # irreversible. Esto lo crea BIEN y se niega si ya existe mal; impedir el camino perezoso es
   # cosa del arranque del backend.
+  # El cliente sigue siendo `mc`, y su imagen SÍ es la copia congelada del registro del proyecto
+  # (`minio/mc` desapareció de Docker Hub con el servidor). Es un cliente S3 de un solo uso: no
+  # escucha en ningún puerto. Cambiarlo por otro es F29.P3.T7.
   minio-bootstrap:
     image: ${MINIO_MC_IMAGE:-ghcr.io/fresvel/deasy-minio-mc:RELEASE.2025-02-21T16-00-46Z}
     profiles:
@@ -185,6 +200,6 @@ services:
 volumes:
   postgres_data:
   rabbitmq_data:
-  minio_data:
+  versity_data:
   backend_node_modules_v2:
   frontend_node_modules:

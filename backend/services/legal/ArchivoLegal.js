@@ -74,13 +74,22 @@ const juntarStream = (stream) => new Promise((resolve, reject) => {
 const clienteDeEntorno = () => {
   const url = new URL(process.env.MINIO_ENDPOINT || "http://minio:9000");
   const useSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || url.protocol === "https:";
-  return new Minio.Client({
+  const cliente = new Minio.Client({
     endPoint: url.hostname,
     port: Number(url.port || (useSSL ? 443 : 80)),
     useSSL,
     accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || "",
     secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || "",
   });
+  // ⚠️ ESTA LÍNEA NO ES UN AJUSTE: SIN ELLA NO SE ARCHIVA NADA. Versity, como S3 y al revés que
+  // MinIO, RECHAZA un PUT a un bucket con retención por defecto si no trae Content-MD5 o
+  // x-amz-checksum-* («Content-MD5 OR x-amz-checksum- HTTP header is required for Put Object
+  // requests with Object Lock parameters»). minio-js 8.0.7 sólo manda Content-MD5 cuando NO firma
+  // el cuerpo con SHA-256, que es lo que hace por sí solo bajo TLS; por HTTP plano hay que
+  // pedírselo, y putObject no deja pasar esa cabecera por sus metadatos (la prefija con
+  // x-amz-meta-). Medido en F29.P1.T2: sin esto, el sembrado del archivo legal muere.
+  cliente.enableSHA256 = false;
+  return cliente;
 };
 
 export default class ArchivoLegal {
