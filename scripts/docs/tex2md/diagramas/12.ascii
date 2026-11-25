@@ -1,0 +1,9 @@
+trust/roots/   <- CAs raiz acreditadas en Ecuador
+                  firmasegura-root-ca-1.pem
+                  icert-ec-root.pem
+                  security-data-root-ca-2.pem
+
+trust/extra/   <- sus subordinadas (se cargan como other_certs, NO como anclas)
+                  firmasegura-subca-1.pem
+                  icert-ec-subordinate.pem
+                  security-data-subca-2.pem

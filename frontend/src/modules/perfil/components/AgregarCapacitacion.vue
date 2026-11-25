@@ -8,20 +8,21 @@
     @submit="onSubmit" 
     @cancel="onCancel"
   >
-    <div class="w-full space-y-2">
-      <label for="cap-tema" class="profile-field-label">Tema</label>
+    <div class="w-full">
+      <label :for="fieldId('tema')" class="deasy-form-label">Tema</label>
       <textarea
-        id="cap-tema"
-        class="profile-textarea"
+        :id="fieldId('tema')"
+        class="deasy-control deasy-control--textarea"
         rows="2"
         v-model="form.tema"
         placeholder="Nombre del evento o curso"
       ></textarea>
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Institución</label>
+    <div class="w-full">
+      <label :for="fieldId('institucion')" class="deasy-form-label">Institución</label>
       <s-select
+        :id="fieldId('institucion')"
         :options="instituciones"
         v-model="form.institucion"
         class="w-full mb-2"
@@ -29,31 +30,35 @@
       <input
         v-if="form.institucion === 'Otra'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
+        aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">Tipo</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Tipo</label>
       <s-select
+        :id="fieldId('tipo')"
         :options="['Docente', 'Profesional']"
         v-model="form.tipo"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">Rol</label>
+      <label :for="fieldId('rol')" class="deasy-form-label">Rol</label>
       <s-select
+        :id="fieldId('rol')"
         :options="['Asistencia', 'Instructor', 'Aprobación']"
         v-model="form.rol"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">País</label>
+      <label :for="fieldId('pais')" class="deasy-form-label">País</label>
       <s-select
+        :id="fieldId('pais')"
         :options="escountries"
         v-model="form.pais"
       />
@@ -108,14 +113,19 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
-import { Modal } from "@/shared/utils/modalController";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
+
 import DossierService from "@/modules/dossier/services/DossierService";
 import SInput from "@/shared/components/forms/SInput.vue";
 import SSelect from "@/shared/components/forms/SSelect.vue";
 import SDate from "@/shared/components/forms/SDate.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import { escountries } from "@/core/constants/countries";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   editingItem: {
@@ -124,7 +134,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["capacitacion-added", "capacitacion-updated"]);
+const emit = defineEmits(["capacitacion-added", "capacitacion-updated", "close"]);
 
 const isEditing = computed(() => !!props.editingItem);
 const hasExistingDocument = computed(() => !!props.editingItem?.url_documento);
@@ -146,7 +156,6 @@ const errorMessage = ref("");
 const selectedFile = ref(null);
 
 const instituciones = [
-  "Pontificia Universidad Católica del Ecuador",
   "Escuela Politécnica Nacional",
   "Universidad Central del Ecuador",
   "Universidad de las Américas",
@@ -168,12 +177,10 @@ const resetForm = () => {
   selectedFile.value = null;
 };
 
-const closeModal = () => {
-  const modalElement = document.getElementById("capacitacionModal");
-  if (!modalElement) return;
-  const modalInstance = Modal.getInstance(modalElement);
-  modalInstance?.hide();
-};
+// El cierre se pide al padre, que es quien monta el modal. Antes se hacia
+// document.getElementById("<x>Modal") contra un id que declara el padre: acoplamiento invisible
+// para el compilador --renombrar ese id dejaba el modal imposible de cerrar y nadie se enteraba--.
+const closeModal = () => emit("close");
 
 // Cargar datos si estamos editando
 watch(() => props.editingItem, (newVal) => {
@@ -282,10 +289,7 @@ const onSubmit = async () => {
       emit("capacitacion-updated", response.data);
     } else {
       const response = await DossierService.createCapacitacion(payload);
-      // Extraer el ID del nuevo registro (último en el array formacion)
-      const list = response.data?.formacion || [];
-      const newRecord = list[list.length - 1];
-      recordId = newRecord?._id;
+      recordId = response.createdId ?? null;
       emit("capacitacion-added", response.data);
     }
 

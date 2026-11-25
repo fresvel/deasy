@@ -2,21 +2,21 @@
 
 ## Declaracion formal del estado actual
 
-El stack actual definido en `docker/docker-compose.yml` equivale formalmente al
-ambiente `dev`.
+El stack se define con `docker/compose.base.yml` mas los overlays por ambiente y
+se ejecuta via `scripts/docker-env.sh`. El ambiente `dev` es su expresion para
+desarrollo.
 
 Se considera `dev` porque hoy:
 
 - usa bind mounts del codigo fuente local,
 - ejecuta servicios orientados a desarrollo interactivo,
-- concentra configuracion en un unico archivo `.env`,
-- no separa todavia recursos, redes ni compose por ambiente.
+- concentra configuracion en `docker/.env` + `docker/.env.dev`.
 
 ## Decision de transicion
 
 Mientras se completa la migracion multiambiente:
 
-- `docker/docker-compose.yml` se toma como baseline de `dev`,
+- `docker/compose.base.yml` + overlays por ambiente son el unico baseline,
 - `docker/.env` se mantiene como compatibilidad temporal del stack actual,
 - `docker/.env.dev` se mantiene versionado para `dev`,
 - `docker/.env.qa` y `docker/.env.prod` quedan versionados como base saneada
@@ -38,8 +38,9 @@ docker compose \
   up -d
 ```
 
-`docker/docker-compose.yml` se conserva temporalmente como referencia del stack
-anterior mientras termina la migracion de los siguientes puntos.
+El stack unico es `compose.base.yml` con overlays por ambiente ejecutados via
+`scripts/docker-env.sh`; el antiguo `docker/docker-compose.yml` monolitico fue
+eliminado.
 
 ## Aislamiento de persistencia y proyecto
 
@@ -55,7 +56,7 @@ Mapa actual:
 - `prod` -> proyecto `deasy-prod`
 - `ingress` -> proyecto `deasy-ingress`
 
-Con esto, MariaDB, MongoDB, RabbitMQ, EMQX, MinIO, uploads y storage quedan
+Con esto, PostgreSQL, RabbitMQ, el almacén, uploads y storage quedan
 aislados por stack aunque los ambientes convivan en el mismo host.
 
 ## Matriz de puertos y redes
@@ -70,15 +71,14 @@ adicional administrada por `ingress` para la entrada pública:
 
 Puertos de referencia:
 
-- `dev`: proxy HTTP `8088`, proxy HTTPS `8443`, MariaDB `3306`, MongoDB
-  `27017`, RabbitMQ AMQP `5672`, RabbitMQ UI `15672`, EMQX MQTT `1883`, EMQX
-  UI `18083`, MinIO API `9000`, MinIO Console `9001`, signer `4000`
-- `qa`: MariaDB `13306`, MongoDB `12717`, RabbitMQ AMQP `15672`, RabbitMQ UI
-  `15673`, EMQX MQTT `11883`, EMQX UI `18084`, MinIO API `9100`, MinIO Console
-  `9101`, signer `14000`
-- `prod`: MariaDB `23306`, MongoDB `22717`, RabbitMQ AMQP `25672`, RabbitMQ UI
-  `25673`, EMQX MQTT `21883`, EMQX UI `28084`, MinIO API `9200`, MinIO Console
-  `9201`, signer `24000`
+- `dev`: proxy HTTP `8088`, proxy HTTPS `8443`, PostgreSQL `5432`, RabbitMQ AMQP
+  `5672`, RabbitMQ UI `15672`, almacén (API S3) `9000`, signer
+  `4000`. El chat en tiempo real usa WebSockets (Socket.IO) sobre el mismo puerto
+  HTTP del backend, sin puerto adicional.
+- `qa`: PostgreSQL `15432`, RabbitMQ AMQP `15672`, RabbitMQ UI `15673`, almacén
+  (API S3) `9100`, signer `14000`
+- `prod`: PostgreSQL `25432`, RabbitMQ AMQP `25672`, RabbitMQ UI `25673`, almacén
+  (API S3) `9200`, signer `24000`
 - `ingress`: HTTP `80`, HTTPS `443`
 
 ## Uso previsto por ambiente
@@ -291,12 +291,15 @@ Wrappers actuales:
 - `scripts/deploy-env.sh`: compatibilidad para el flujo iniciado por GitHub
   Actions.
 - `scripts/docker-env.sh`: interfaz comun para ejecutar compose por ambiente.
-- `scripts/seed-db.sh`: ejecuta `seed_pucese.mjs` dentro del contenedor
-  `backend` por ambiente.
-- `scripts/reset-db.sh`: ejecuta `reset_mariadb.mjs` dentro del contenedor
-  `backend` por ambiente.
-- `scripts/migrate-db.sh`: ejecuta migraciones SQL de `backend/scripts/`
-  dentro del contenedor `backend`.
+- `scripts/reset-db.sh`: ejecuta el script de reset (resetea el esquema
+  PostgreSQL) dentro del contenedor `backend` por ambiente.
+- `scripts/reset-system.sh`: regresa el sistema al estado base (vacia esquema
+  PostgreSQL + buckets del almacén) para arrancar el bootstrap; recicla los servicios
+  de app. Flags `--keep-db`, `--keep-almacen`, `--rebuild`, `--no-restart`.
+
+El mecanismo de migraciones incrementales fue retirado con la
+migracion a PostgreSQL: `backend/database/postgres_schema.sql` es la unica fuente
+de verdad del esquema (se aplica al arrancar).
 
 Esta separacion evita duplicar logica de despliegue entre CI/CD y operacion
 manual o programada desde el servidor.
@@ -304,9 +307,8 @@ manual o programada desde el servidor.
 Ejemplos:
 
 ```bash
-bash scripts/seed-db.sh dev capture
+bash scripts/reset-system.sh dev
 bash scripts/reset-db.sh qa
-bash scripts/migrate-db.sh dev --list
 ```
 
 Politica de prod para operaciones DB:
@@ -368,7 +370,7 @@ Notas operativas:
 
 - `RUNTIME_ENV_FILE` debe contener el archivo completo del ambiente, fuera del
   repositorio, incluyendo como minimo `ORIGIN1`, `ORIGIN2`, `JWT_SECRET`,
-  `JWT_REFRESH`, usuarios reales y passwords reales de MariaDB y MinIO.
+  `JWT_REFRESH`, usuarios reales y passwords reales de PostgreSQL y del almacén.
 - `DEPLOY_PATH` debe ser distinto por environment en GitHub:
   - `qa` -> `/srv/deasy-qa`
   - `prod` -> `/srv/deasy-prod`

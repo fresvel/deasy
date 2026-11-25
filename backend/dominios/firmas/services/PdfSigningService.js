@@ -1,0 +1,429 @@
+// Plan de almacenamiento y firma de un PDF — lo que antes vivía dentro de
+// `controllers/sign/sign_controller.js` (fase D del plan de calidad, §5-D).
+//
+// Responsabilidad: a partir de la petición de firma, decidir DÓNDE vive el PDF (una versión
+// documental del flujo, o el espacio personal de quien firma), validar que se puede firmar y
+// pedirle al microservicio de firma que lo haga. La persistencia de la evidencia de workflow
+// también vive aquí porque es la misma transacción de negocio.
+//
+// CONTRATO DE ERRORES. Todo lo que es culpa del cliente —falta el certificado, la contraseña, el
+// sello, el certificado no es suyo— sale con `statusCode` (ver `errors/HttpError.js`) para que el
+// controller lo devuelva como 4xx. Antes TODO salía como 500 y la validación de entrada se
+// presentaba como error de servidor; el diff de los goldens `sign_sin_*` de
+// `tests/characterization/flows/zzzz_sign_batch.test.mjs` es la prueba del arreglo.
+// Lo que NO lleva `statusCode` —el almacén caído, PostgreSQL caído, el firmante sin responder— sigue
+// siendo 500, que es lo que es.
+
+import fs from "node:fs";
+import { randomUUID } from "node:crypto";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+import { conTransaccion, getPostgresPool } from "../../../config/postgres.js";
+
+// ⚠️ AL PRIMER USO, NUNCA AL IMPORTAR. Aqui habia `const pool = getPostgresPool();` en la columna
+// cero, capturando el valor del momento del import: si el modulo entra antes de que exista la
+// conexion, queda `undefined` para siempre. Funcionaba por orden de carga, y meter el dominio tras
+// una puerta es exactamente lo que cambia ese orden.
+import { puedeAccederAlDocumento, rutasDeLaRonda } from "../datos/consulta/documentos.js";
+
+const pool = () => {
+  const p = getPostgresPool();
+  if (!p) throw new Error("La conexión a PostgreSQL no está disponible.");
+  return p;
+};
+import { UserRepository, UserCertificateRepository } from "../../identidad/index.js";
+import { badRequest, notFound } from "../../../errors/HttpError.js";
+import { requestSignerJob } from "../../../services/infrastructure/rabbit_signer.js";
+import { formatTokenForSigner } from "../../../utils/tokenGenerator.js";
+import {
+  assertSignatureRequestCanBeSigned,
+  registerSignatureEvidence,
+} from "../../../services/documents/DocumentSignatureWorkflowService.js";
+import {
+  ensureBucketExists,
+  statAlmacenObject,
+  uploadFileToAlmacen
+} from "../../../services/storage/almacen_service.js";
+
+let _userRepository = null;
+const userRepository = () => (_userRepository ??= new UserRepository());
+let _certificateRepository = null;
+const certificateRepository = () => (_certificateRepository ??= new UserCertificateRepository());
+
+export const ALMACEN_DOCUMENTS_BUCKET = process.env.ALMACEN_DOCUMENTS_BUCKET || "deasy-documents";
+const ALMACEN_DOCUMENTS_PREFIX = String(process.env.ALMACEN_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
+export const ALMACEN_SPOOL_BUCKET = process.env.ALMACEN_SPOOL_BUCKET || "deasy-spool";
+export const ALMACEN_USERS_BUCKET = process.env.ALMACEN_USERS_BUCKET || "deasy-users";
+
+const sanitizeStorageSegment = (value, fallback = "na") =>
+  String(value ?? fallback)
+    .trim()
+    .replace(/[^a-zA-Z0-9._-]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "") || fallback;
+
+export const resolveStoredDocumentObject = (storedPath) => {
+  const normalizedPath = String(storedPath || "").trim().replace(/^\/+/, "");
+  if (!normalizedPath) {
+    return null;
+  }
+  if (normalizedPath.startsWith(`${ALMACEN_DOCUMENTS_PREFIX}/`)) {
+    return {
+      bucket: ALMACEN_DOCUMENTS_BUCKET,
+      objectName: normalizedPath,
+      relativePath: normalizedPath.slice(ALMACEN_DOCUMENTS_PREFIX.length + 1)
+    };
+  }
+  return {
+    bucket: ALMACEN_DOCUMENTS_BUCKET,
+    objectName: `${ALMACEN_DOCUMENTS_PREFIX}/${normalizedPath}`,
+    relativePath: normalizedPath
+  };
+};
+
+// Resuelve a la persona autenticada. Vive aquí y no en el controller porque `buildSignContext`
+// necesita hacerlo EN SU SITIO dentro de la cadena de validación (después del sello, antes del
+// certificado) y ese orden es contrato caracterizado.
+export const resolveSigningUser = async (rawUserId) => {
+  const userId = Number(rawUserId);
+  if (!userId || Number.isNaN(userId)) {
+    throw new Error("Usuario autenticado inválido.");
+  }
+  const user = await userRepository().findById(userId);
+  if (!user) {
+    throw new Error("Usuario no encontrado.");
+  }
+  return user;
+};
+
+// LA RUTA CUELGA DEL ID DE LA PERSONA, NO DE SU CEDULA. Cambiado el 2026-08-27 al abrir el modelo a
+// pasaportes: un documento de identidad PUEDE CAMBIAR -un pasaporte se renueva con numero nuevo, un
+// extranjero se nacionaliza y obtiene cedula- y usarlo como direccion de los ficheros significa que
+// cambiar de documento le pierde los archivos a la persona. `persons.id` no cambia nunca.
+export const buildValidationSpoolPath = (user, sessionId, fileName = "documento.pdf") => {
+  const safeName = String(fileName || "documento.pdf")
+    .replace(/[^\w.\-]+/g, "_")
+    .replace(/^\.+/, "") || "documento.pdf";
+  return `users/${user.id}/validation/${sessionId}/${safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`}`;
+};
+
+// El segundo argumento existe para las pruebas: en producción nadie lo pasa.
+export const buildSignContext = async (
+  { body = {}, userId },
+  {
+    resolveUser = resolveSigningUser,
+    findOwnedCertificate = (ownerId, certificateId) => certificateRepository().findOwnedById(ownerId, certificateId),
+    statObject = statAlmacenObject,
+  } = {},
+) => {
+  const {
+    certificate_id: certificateIdRaw,
+    password,
+    stampText,
+    sign_mode: signModeRaw,
+    token: tokenRaw,
+    use_timestamp: useTimestampRaw,
+    tsa_url: tsaUrlRaw,
+    allow_untrusted_signer: allowUntrustedSignerRaw,
+    turno_id: turnoIdRaw,
+    document_version_id: documentVersionIdRaw,
+  } = body;
+  const certificateId = Number(certificateIdRaw);
+  if (!certificateId || Number.isNaN(certificateId)) {
+    throw badRequest("Debes seleccionar un certificado guardado.");
+  }
+  if (!password) {
+    throw badRequest("Debes ingresar la contraseña del certificado.");
+  }
+  if (!stampText?.trim()) {
+    throw badRequest("Debes indicar el texto del sello.");
+  }
+
+  const user = await resolveUser(userId);
+  const certificate = await findOwnedCertificate(user.id, certificateId);
+  if (!certificate) {
+    // 404 y no 403: `findOwnedById` ya filtra por dueño, así que un certificado ajeno y uno
+    // inexistente son indistinguibles a propósito (no se puede sondear el catálogo de otro).
+    throw notFound("Certificado no encontrado para este usuario.");
+  }
+  try {
+    await statObject(certificate.bucket, certificate.object_name);
+  } catch (error) {
+    // El mensaje al usuario es accionable y se conserva, pero antes se TRAGABA la causa: con el almacén
+    // caído se le decía "vuelve a cargar tus certificados", que es mentira. La causa real va al log
+    // y viaja como `cause` (el controller la expone en `details`). Sigue siendo 500: es infra.
+    console.error("[PdfSigningService] No se pudo leer el certificado en el almacenamiento", {
+      bucket: certificate.bucket,
+      objectName: certificate.object_name,
+    }, error);
+    throw new Error(
+      "El certificado seleccionado ya no está disponible en almacenamiento. Vuelve a cargar tus certificados y elige uno válido.",
+      { cause: error },
+    );
+  }
+
+  const signMode = String(signModeRaw || "coordinates").trim().toLowerCase();
+  if (!["coordinates", "token"].includes(signMode)) {
+    throw badRequest("Modo de firma inválido.");
+  }
+
+  const hasDocumentFields = Boolean(body.document_fields);
+  const fields =
+    signMode === "coordinates"
+      ? hasDocumentFields
+        ? (() => {
+            try {
+              return parseFields(body.fields);
+            } catch {
+              return [];
+            }
+          })()
+        : parseFields(body.fields)
+      : [];
+  const resolvedToken = signMode === "token"
+    ? (() => {
+        // ⚠️ `user.token` ADEMAS de `user.signatureToken`, y no es cinturon y tirantes.
+        //
+        // Quien llega aqui viene de `resolveSigningUser`, que usa `findById` --la FILA de `persons`,
+        // donde la columna se llama `token`--, no `toPublicUser`, que es el unico que la renombra a
+        // `signatureToken`. Asi que la reserva leia una propiedad que ese objeto nunca tiene.
+        //
+        // En la firma de a uno no se notaba: el frontend manda el marcador en el campo `token` y
+        // `tokenRaw` gana siempre. En la firma MASIVA en modo token no lo mandaba, caia a la
+        // reserva, y la reserva valia `undefined`: «El usuario no tiene token de firma configurado.»
+        // para una persona que lo tiene en la base. Medido el 2026-11-10 con `usuario`, que tiene
+        // token, contra `POST /sign/batch/start` con `sign_mode=token`.
+        const rawToken = String(tokenRaw || user.signatureToken || user.token || "").trim();
+        if (!rawToken) {
+          throw badRequest("El usuario no tiene token de firma configurado.");
+        }
+        return rawToken.startsWith("!-") ? rawToken : formatTokenForSigner(rawToken);
+      })()
+    : null;
+
+  return {
+    user,
+    certificate,
+    signMode,
+    fields,
+    resolvedToken,
+    password,
+    stampText: stampText.trim(),
+    useTimestamp: asBoolean(useTimestampRaw),
+    allowUntrustedSigner: asBoolean(allowUntrustedSignerRaw),
+    tsaUrl: String(tsaUrlRaw || "").trim() || undefined,
+    turnoId: turnoIdRaw ? Number(turnoIdRaw) : null,
+    documentVersionId: documentVersionIdRaw ? Number(documentVersionIdRaw) : null,
+  };
+};
+
+// La consulta vive en `datos/consulta/documentos.js`: lee `document_versions`, que es de `tareas`.
+const getDocumentVersionStorageContext = (documentVersionId) => rutasDeLaRonda(documentVersionId);
+
+export const buildStandaloneUserSignedPath = (user, sessionId, originalName = "documento.pdf") => {
+  const safeName = sanitizeStorageSegment(originalName, "documento.pdf");
+  const fileName = safeName.toLowerCase().endsWith(".pdf") ? safeName : `${safeName}.pdf`;
+  return `users/${user.id}/signed/${sessionId}/${fileName}`;
+};
+
+export const resolveSigningStoragePlan = async ({ context, file }) => {
+  if (context.documentVersionId) {
+    const documentVersion = await getDocumentVersionStorageContext(context.documentVersionId);
+    if (!documentVersion?.id) {
+      throw notFound("No se encontró la versión documental indicada para la firma.");
+    }
+
+    const resolvedWorkingObject = resolveStoredDocumentObject(documentVersion.working_file_path);
+    if (!resolvedWorkingObject?.objectName) {
+      throw new Error("La versión documental no tiene un working_file_path válido para firmar.");
+    }
+    if (!resolvedWorkingObject.objectName.toLowerCase().endsWith(".pdf")) {
+      throw new Error("El working_file_path de la versión documental no apunta a un PDF.");
+    }
+
+    return {
+      mode: "workflow",
+      bucket: resolvedWorkingObject.bucket,
+      objectPath: resolvedWorkingObject.objectName,
+      storedPath: resolvedWorkingObject.relativePath,
+      downloadPath: resolvedWorkingObject.relativePath,
+      documentVersionId: Number(documentVersion.id)
+    };
+  }
+
+  const sessionId = randomUUID();
+  const storedPath = buildStandaloneUserSignedPath(context.user, sessionId, file?.originalname);
+  return {
+    mode: "standalone",
+    bucket: ALMACEN_USERS_BUCKET,
+    objectPath: storedPath,
+    storedPath,
+    downloadPath: storedPath,
+    documentVersionId: null
+  };
+};
+
+export const processSinglePdfSigning = async ({ file, context }) => {
+  try {
+    const storagePlan = await resolveSigningStoragePlan({ context, file });
+
+    await ensureBucketExists(storagePlan.bucket);
+    if (storagePlan.mode === "standalone") {
+      await uploadFileToAlmacen(storagePlan.bucket, storagePlan.objectPath, file.path, {
+        "Content-Type": "application/pdf"
+      });
+    } else {
+      await statAlmacenObject(storagePlan.bucket, storagePlan.objectPath);
+    }
+
+    console.info("[PdfSigningService] processSinglePdfSigning storage plan", {
+      mode: storagePlan.mode,
+      bucket: storagePlan.bucket,
+      objectPath: storagePlan.objectPath,
+      documentVersionId: storagePlan.documentVersionId,
+      signMode: context.signMode,
+    });
+
+    let lastResult = null;
+    if (context.signMode === "token") {
+      lastResult = await requestSignerJob({
+        signType: "token",
+        almacenBucket: storagePlan.bucket,
+        almacenPdfPath: storagePlan.objectPath,
+        almacenCertBucket: context.certificate.bucket,
+        almacenCertPath: context.certificate.object_name,
+        certPassword: context.password,
+        stampText: context.stampText,
+        finalPath: storagePlan.objectPath,
+        use_timestamp: context.useTimestamp,
+        allow_untrusted_signer: context.allowUntrustedSigner,
+        tsaUrl: context.tsaUrl,
+        token: context.resolvedToken
+      });
+    } else {
+      const resolvedFields = await resolveFieldsForPdf(file.path, context.fields);
+      for (const field of resolvedFields) {
+        lastResult = await requestSignerJob({
+          signType: "coordinates",
+          almacenBucket: storagePlan.bucket,
+          almacenPdfPath: storagePlan.objectPath,
+          almacenCertBucket: context.certificate.bucket,
+          almacenCertPath: context.certificate.object_name,
+          certPassword: context.password,
+          stampText: context.stampText,
+          finalPath: storagePlan.objectPath,
+          use_timestamp: context.useTimestamp,
+          allow_untrusted_signer: context.allowUntrustedSigner,
+          tsaUrl: context.tsaUrl,
+          coordinates: {
+            page: field.page,
+            x: field.x,
+            y: field.y
+          }
+        });
+      }
+    }
+
+    console.info("[PdfSigningService] signer result", {
+      status: lastResult?.status || null,
+      signedPath: lastResult?.signedPath || storagePlan.downloadPath,
+      validationPerformed: Boolean(lastResult?.validation?.performed),
+      validationBottomLine: lastResult?.validation?.bottomLine ?? null,
+      validationWarningAccepted: Boolean(lastResult?.validation?.warningAccepted),
+    });
+
+    return {
+      ...lastResult,
+      message: lastResult?.message || "Documento firmado correctamente.",
+      signedBucket: storagePlan.bucket,
+      signedPath: storagePlan.downloadPath,
+      finalPath: storagePlan.storedPath,
+      fieldsCount: context.signMode === "token"
+        ? Number(lastResult?.signature?.matchCount || 0)
+        : context.fields.length,
+      signMode: context.signMode
+    };
+  } finally {
+    if (file?.path) {
+      fs.unlink(file.path, () => {});
+    }
+  }
+};
+
+export const assertSignContextBeforeSigning = async (context) => {
+  if (!context?.turnoId) {
+    return null;
+  }
+  // Una LECTURA, asi que basta el pool: pedir una conexion dedicada sin `beginTransaction` no
+  // protegia nada y se podia quedar sin soltar por cualquier camino que no pasara por el `finally`.
+  // Habia siete asi en el backend y las cerro F7.2; esta se quedo fuera del barrido.
+  return assertSignatureRequestCanBeSigned({ connection: pool(), context });
+};
+
+export const parseFields = (rawFields) => {
+  let parsed;
+  try {
+    parsed = JSON.parse(rawFields || "[]");
+  } catch {
+    throw badRequest("La configuración de campos de firma no es un JSON válido.");
+  }
+  if (!Array.isArray(parsed) || !parsed.length) {
+    throw badRequest("Debe incluir al menos un campo de firma.");
+  }
+  return parsed.map((field) => ({
+    page: Number(field.page),
+    pageReference: String(field.pageReference || "start"),
+    pageValue: Number(field.pageValue || field.page),
+    pageOffset: Number(field.pageOffset || 0),
+    x: Number(field.x),
+    y: Number(field.y)
+  }));
+};
+
+const getPdfPageCount = async (filePath) => {
+  const pdfData = new Uint8Array(fs.readFileSync(filePath));
+  const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+  return Number(pdf.numPages || 0);
+};
+
+// El tercer argumento existe para las pruebas: en producción nadie lo pasa.
+export const resolveFieldsForPdf = async (filePath, fields, { getPageCount = getPdfPageCount } = {}) => {
+  const totalPages = await getPageCount(filePath);
+  return fields.map((field) => {
+    let page = Number(field.page || 1);
+    if (field.pageReference === "end") {
+      page = Math.max(1, totalPages - Number(field.pageOffset || 0));
+    } else if (field.pageReference === "start") {
+      page = Math.min(totalPages || 1, Math.max(1, Number(field.pageValue || field.page || 1)));
+    }
+    return {
+      ...field,
+      page
+    };
+  });
+};
+
+const asBoolean = (value) =>
+  String(value ?? "").trim().toLowerCase() === "true" || String(value ?? "").trim() === "1";
+
+export const persistSignatureWorkflowResult = async ({ context, result }) => {
+  if (!context.turnoId && !context.documentVersionId) {
+    return null;
+  }
+  // Era el patron de transaccion COPIADO A MANO --`getConnection` + `beginTransaction` + `commit` +
+  // `rollback` + `release`--, que vivia duplicado en 19 ficheros hasta que F7.2 construyo
+  // `conTransaccion`. Este se quedo fuera de aquel barrido.
+  return conTransaccion((connection) => registerSignatureEvidence({ connection, context, result }));
+};
+
+// ¿Puede esta persona leer un documento firmado que NO está en su espacio personal? Lo autoriza
+// cualquiera de los TRES papeles del entregable: quien responde de él, quien lo encargó o quien
+// tiene que firmarlo. Eran cuatro hasta el 2026-08-23, y el que sobraba era «dueño del documento»:
+// una copia del primero que sólo refrescaba uno de los cuatro caminos de relevo. La consulta vivía
+// en el controller.
+//
+// La versión cuelga DIRECTAMENTE del entregable desde el 2026-08-23: la tabla `documents` que había
+// en medio era una cascara 1:1 sin ni una columna propia, y se retiró con ella el JOIN que hacía
+// falta para saltarla.
+export const userCanAccessStoredDocument = ({ userId, requestedPath }) =>
+  puedeAccederAlDocumento({ userId, requestedPath });
+

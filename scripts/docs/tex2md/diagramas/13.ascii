@@ -1,0 +1,5 @@
+dev     = compose.base.yml + compose.proxy.yml + compose.dev.yml
+qa      = compose.base.yml + compose.qa.yml
+prod    = compose.base.yml + compose.prod.yml
+ingress = compose.ingress.yml              (stack independiente)
+ingress-bootstrap = compose.ingress.bootstrap.yml   (solo HTTP, para el desafio ACME)

@@ -1,0 +1,1254 @@
+{
+  "accesos_sensibles": {
+    "huella": "8e6a59e9f9b629ca",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "actions": {
+    "huella": "b4d77c7f3319504f",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "infraestructura/cicd-sonar.md",
+      "infraestructura/index.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "acto_adjuntos": {
+    "huella": "bc70af5575511ea2",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "acto_documentos": {
+    "huella": "c87d4bb57f0794f4",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "actos": {
+    "huella": "d7518f521cf0d368",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/proceso.md",
+      "modelo/reparto.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "aplications": {
+    "huella": "bd5d570319ca9b9b",
+    "paginas": [
+      "complemento/empleo.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "autoidentificaciones_etnicas": {
+    "huella": "401054bd83c03c45",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "canales_bitacora": {
+    "huella": "8f7b4f65bd2392ea",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "canales_mensajeria": {
+    "huella": "2c034e322bc71770",
+    "paginas": [
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "cantones": {
+    "huella": "acc24b5dcfc5ed0e",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/index.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "cargo_role_map": {
+    "huella": "a428aecb0100dc47",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "cargos": {
+    "huella": "f36bc357bc16f900",
+    "paginas": [
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "datos/firmas-y-dominios.md",
+      "datos/motor-de-procesos.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/proceso.md",
+      "modelo/reparto.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "catalogo_documental": {
+    "huella": "20e4b3d5c939b9d4",
+    "paginas": [
+      "confusiones.md",
+      "datos/index.md",
+      "datos/modos-y-plantillas.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/siembra.md",
+      "modelo/vinculo.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "categorias_visa": {
+    "huella": "1e3040a7e3bb96c6",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "chat_conversation_participants": {
+    "huella": "944588962ee2fb08",
+    "paginas": [
+      "complemento/conversacion.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "chat_conversations": {
+    "huella": "6f82c3247b029fa6",
+    "paginas": [
+      "complemento/conversacion.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "chat_message_attachments": {
+    "huella": "26a75b487afa53cb",
+    "paginas": [
+      "complemento/conversacion.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "chat_message_reads": {
+    "huella": "0fe7a662cc751576",
+    "paginas": [
+      "complemento/conversacion.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "chat_messages": {
+    "huella": "60b397fca2c38418",
+    "paginas": [
+      "complemento/conversacion.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "chat_notifications": {
+    "huella": "0591630db83d84d1",
+    "paginas": [
+      "complemento/conversacion.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "clases_parroquia": {
+    "huella": "f617eb4bc78f9ec6",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "consentimientos": {
+    "huella": "8d9bd1a36479e5f9",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "contract_origin_recruitment": {
+    "huella": "6efb4e6e51dbb49f",
+    "paginas": [
+      "complemento/empleo.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "contract_origin_renewal": {
+    "huella": "bffd764889bdf204",
+    "paginas": [
+      "complemento/empleo.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "contract_origins": {
+    "huella": "1e10a3f9a39f4b91",
+    "paginas": [
+      "complemento/empleo.md",
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "contracts": {
+    "huella": "1c9aafcb188ad0fd",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/empleo.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "correcciones_de_estructura": {
+    "huella": "0f127559215f8303",
+    "paginas": [
+      "complemento/permisos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "direcciones": {
+    "huella": "f2ddc8d066296be7",
+    "paginas": [
+      "backend/acceso-a-datos.md",
+      "backend/auth.md",
+      "complemento/index.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "document_attachments": {
+    "huella": "5844f7893fe36791",
+    "paginas": [
+      "datos/firmas-y-dominios.md",
+      "modelo/documento.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "document_signatures": {
+    "huella": "d56117b56585f2d2",
+    "paginas": [
+      "complemento/credenciales.md",
+      "complemento/firma-en-lote.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "modelo/flujo-de-firma.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "document_version_uploads": {
+    "huella": "1805504cbb9a74ed",
+    "paginas": [
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "modelo/documento.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "document_versions": {
+    "huella": "b7dd0f2713169479",
+    "paginas": [
+      "complemento/credenciales.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "modelo/cierre.md",
+      "modelo/documento.md",
+      "modelo/entregable-concreto.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/flujo-de-firma.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "document_workflow_observations": {
+    "huella": "18141bad2cbed0fb",
+    "paginas": [
+      "datos/firmas-y-dominios.md",
+      "modelo/cierre.md",
+      "modelo/disparo.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "documentos_identidad": {
+    "huella": "40ca8816f2d185b5",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "documentos_legales": {
+    "huella": "5e17080f126708e9",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "dossier_items": {
+    "huella": "9f0e9265d01fef2d",
+    "paginas": [
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "dossiers": {
+    "huella": "9eb6fb92149066ef",
+    "paginas": [
+      "complemento/conversacion.md",
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "ediciones": {
+    "huella": "6f498e4fb95cb7f8",
+    "paginas": [
+      "arquitectura-y-patrones.md",
+      "confusiones.md",
+      "datos/index.md",
+      "datos/modos-y-plantillas.md",
+      "modelo/documento.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/index.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/siembra.md",
+      "modelo/vinculo.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "email_verification_codes": {
+    "huella": "b035a2e1ea09e668",
+    "paginas": [
+      "complemento/credenciales.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "emails": {
+    "huella": "ba9f16dff71233d1",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/credenciales.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "confusiones.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "estados_civiles": {
+    "huella": "fcc617dff13cf279",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/index.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "generadores_de_documento": {
+    "huella": "82d7b52a4bef2c3c",
+    "paginas": [
+      "datos/index.md",
+      "datos/modos-y-plantillas.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/siembra.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "generos": {
+    "huella": "775c1b43bc42cc02",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "instituciones": {
+    "huella": "dd803f496c74503d",
+    "paginas": [
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "intentos_limitados": {
+    "huella": "a05bd61beca54de8",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "lineas": {
+    "huella": "ffbec88764def682",
+    "paginas": [
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "modelo/entregable-concreto.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md",
+      "modelo/reparto.md",
+      "modelo/siembra.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "nomenclatura_territorial": {
+    "huella": "8fd3f31d2ccf2213",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "offers": {
+    "huella": "f5230af47aca45f8",
+    "paginas": [
+      "complemento/empleo.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/lo-que-no-cierra.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "paises": {
+    "huella": "041ed8209cbf6d2a",
+    "paginas": [
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/index.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "parentescos": {
+    "huella": "e6c18c9760cd47a5",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "parroquias": {
+    "huella": "f8a47149d5d9cec3",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "participantes_declarados": {
+    "huella": "5d80a1fe1ff10a70",
+    "paginas": [
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/modos-y-plantillas.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/flujo-de-firma.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "pasos_declarados": {
+    "huella": "53e3ea3776eedf70",
+    "paginas": [
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "password_reset_codes": {
+    "huella": "cd00af5e18d552e8",
+    "paginas": [
+      "complemento/credenciales.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "permissions": {
+    "huella": "bb331c1d630dc49a",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "person_certificates": {
+    "huella": "2bda935b0ef67ed7",
+    "paginas": [
+      "complemento/credenciales.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "persona_autoidentificacion": {
+    "huella": "d9169b35f1b2dc2c",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "persons": {
+    "huella": "8dba2e2897226513",
+    "paginas": [
+      "backend/acceso-a-datos.md",
+      "backend/auth.md",
+      "complemento/conversacion.md",
+      "complemento/credenciales.md",
+      "complemento/empleo.md",
+      "complemento/expediente.md",
+      "complemento/firma-en-lote.md",
+      "complemento/index.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/cierre.md",
+      "modelo/disparo.md",
+      "modelo/documento.md",
+      "modelo/entregable-concreto.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/flujo-de-firma.md",
+      "modelo/index.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/tenencias-y-relevo.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "position_assignments": {
+    "huella": "d72ad191f14652c1",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/empleo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/reparto.md",
+      "modelo/tenencias-y-relevo.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "position_equivalencias": {
+    "huella": "be86ce62b027e821",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/tenencias-y-relevo.md"
+    ]
+  },
+  "position_vigencias": {
+    "huella": "cfa5f19307c69f0b",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/tenencias-y-relevo.md"
+    ]
+  },
+  "process_definition_period_types": {
+    "huella": "ecdf7b3557e275ff",
+    "paginas": [
+      "datos/motor-de-procesos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md",
+      "modelo/siembra.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "process_definition_versions": {
+    "huella": "f59cba4adf47013b",
+    "paginas": [
+      "arquitectura-y-patrones.md",
+      "complemento/conversacion.md",
+      "complemento/expediente.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "modelo/disparo.md",
+      "modelo/entregable-concreto.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md",
+      "modelo/reparto.md",
+      "modelo/siembra.md",
+      "modelo/vinculo.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "process_equivalencias": {
+    "huella": "597fffd2eb4e61e6",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/proceso.md"
+    ]
+  },
+  "process_relations": {
+    "huella": "3043057da7ee7ad4",
+    "paginas": [
+      "datos/motor-de-procesos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md"
+    ]
+  },
+  "process_runs": {
+    "huella": "2cdfc7e2f84c70be",
+    "paginas": [
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "modelo/disparo.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "process_vigencias": {
+    "huella": "75224f520dfa060a",
+    "paginas": [
+      "datos/motor-de-procesos.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md"
+    ]
+  },
+  "processes": {
+    "huella": "6c3108aaa1946d1e",
+    "paginas": [
+      "arquitectura-y-patrones.md",
+      "backend/index.md",
+      "complemento/conversacion.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "frontend/composables-y-deuda.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md",
+      "modelo/siembra.md",
+      "modelo/vinculo.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "provincias": {
+    "huella": "06b83c7ca5ca7eef",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "recorridos": {
+    "huella": "c6e4f96d8bbc0e23",
+    "paginas": [
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "modelo/entregable-concreto.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/flujo-de-firma.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "relation_unit_types": {
+    "huella": "9d4521aa85b77f10",
+    "paginas": [
+      "complemento/index.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/index.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "resources": {
+    "huella": "f6bd948b8b9994f5",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "role_assignment_relation_types": {
+    "huella": "79676cc6c1db33b8",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "role_assignments": {
+    "huella": "484de205b41616b6",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "role_permissions": {
+    "huella": "46911e0afdcb8f7d",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "roles": {
+    "huella": "5d997f6de63f019f",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/empleo.md",
+      "complemento/expediente.md",
+      "complemento/index.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "signature_batch_jobs": {
+    "huella": "b8b3da8acd08ab19",
+    "paginas": [
+      "complemento/firma-en-lote.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "signature_statuses": {
+    "huella": "836a3000aad5dfbd",
+    "paginas": [
+      "complemento/credenciales.md",
+      "complemento/expediente.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "modelo/flujo-de-firma.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "task_item_tenures": {
+    "huella": "7ae7e7e06bd46737",
+    "paginas": [
+      "datos/firmas-y-dominios.md",
+      "datos/motor-de-procesos.md",
+      "modelo/entregable-concreto.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/reparto.md",
+      "modelo/tenencias-y-relevo.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "task_items": {
+    "huella": "4943c98b22626db7",
+    "paginas": [
+      "complemento/expediente.md",
+      "confusiones.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/modos-y-plantillas.md",
+      "datos/motor-de-procesos.md",
+      "modelo/cierre.md",
+      "modelo/disparo.md",
+      "modelo/documento.md",
+      "modelo/entregable-concreto.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/tenencias-y-relevo.md",
+      "modelo/vinculo.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "tasks": {
+    "huella": "117429c3ce8272c6",
+    "paginas": [
+      "backend/index.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "modelo/disparo.md",
+      "modelo/entregable-concreto.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "telefono_canales": {
+    "huella": "bdc455024149d6f5",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "telefono_verification_keys": {
+    "huella": "d3f9012fbaa0c291",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "telefonos": {
+    "huella": "1b780e004e822387",
+    "paginas": [
+      "backend/auth.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "term_types": {
+    "huella": "e2d989f2787caddc",
+    "paginas": [
+      "complemento/expediente.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "terms": {
+    "huella": "a141545e7a9ab0f1",
+    "paginas": [
+      "frontend/index.md",
+      "modelo/disparo.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/proceso.md",
+      "modelo/siembra.md",
+      "orden-de-lectura.md",
+      "panorama.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "tipos_de_acto": {
+    "huella": "46e33ee9ef0fc73b",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "tipos_discapacidad": {
+    "huella": "bddf9858f96acd0c",
+    "paginas": [
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "turnos": {
+    "huella": "b12cb45204c5c6fe",
+    "paginas": [
+      "complemento/credenciales.md",
+      "complemento/firma-en-lote.md",
+      "datos/firmas-y-dominios.md",
+      "datos/index.md",
+      "datos/motor-de-procesos.md",
+      "modelo/cierre.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/flujo-de-firma.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/tenencias-y-relevo.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "unit_equivalencias": {
+    "huella": "090cb12897104f3e",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "unit_positions": {
+    "huella": "a6fac155d3192f82",
+    "paginas": [
+      "arquitectura-y-patrones.md",
+      "complemento/empleo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/disparo.md",
+      "modelo/entregable-concreto.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/reparto.md",
+      "modelo/tenencias-y-relevo.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "unit_relations": {
+    "huella": "e7581d1aa250e222",
+    "paginas": [
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/index.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "unit_types": {
+    "huella": "bc2dc25e196b08ab",
+    "paginas": [
+      "backend/crud-generico.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/proceso.md",
+      "modelo/reparto.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  },
+  "unit_vigencias": {
+    "huella": "b999a8715afbb1c3",
+    "paginas": [
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md"
+    ]
+  },
+  "units": {
+    "huella": "3f5f0a184eba2803",
+    "paginas": [
+      "arquitectura-y-patrones.md",
+      "backend/auth.md",
+      "backend/index.md",
+      "complemento/conversacion.md",
+      "complemento/empleo.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "complemento/permisos.md",
+      "datos/firmas-y-dominios.md",
+      "frontend/composables-y-deuda.md",
+      "modelo/disparo.md",
+      "modelo/entregable-concreto.md",
+      "modelo/flujo-de-entrega.md",
+      "modelo/lo-que-no-cierra.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/organizacion.md",
+      "modelo/proceso.md",
+      "modelo/reparto.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md",
+      "referencia/modelo-datos.md"
+    ]
+  },
+  "vacancies": {
+    "huella": "1e55b2b9ac8fcc86",
+    "paginas": [
+      "complemento/empleo.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "vacancy_visibility": {
+    "huella": "eea8c24cb3f5dbac",
+    "paginas": [
+      "complemento/empleo.md",
+      "complemento/mapa-completo.md",
+      "complemento/mapa-con-campos.md",
+      "datos/firmas-y-dominios.md",
+      "modelo/mapa-con-campos.md",
+      "orden-de-lectura.md"
+    ]
+  },
+  "vinculos": {
+    "huella": "d22d030bbd41d110",
+    "paginas": [
+      "datos/index.md",
+      "datos/modos-y-plantillas.md",
+      "datos/motor-de-procesos.md",
+      "modelo/entregable-concreto.md",
+      "modelo/entregable-y-ediciones.md",
+      "modelo/mapa-completo.md",
+      "modelo/mapa-con-campos.md",
+      "modelo/siembra.md",
+      "modelo/vinculo.md",
+      "modelo/vocabularios-de-estado.md",
+      "orden-de-lectura.md",
+      "referencia/campos-proceso-documento.md"
+    ]
+  }
+}

@@ -1,0 +1,66 @@
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+ * LOS TITULARES — la escala de encabezados del sistema.
+ *
+ * POR QUE NACE, Y POR QUE ES UN MODULO PROPIO
+ * Al auditar la versalita (F2, 2026-08-19) salio que el problema no era la versalita: era que
+ * **de 82 encabezados `<h1..h6>` del frontend, solo 13 pasaban por el sistema**. Los otros 69
+ * estaban escritos a mano combinando **seis tamaños** (14, 16, 18, 20, 24, 30 px) y **seis pesos**
+ * (semibold, bold, extrabold, black, y dos heredados) a ojo.
+ *
+ * Y lo mas caro no eran los tamaños raros, sino esto: en 14 px **conviven dos dialectos repartidos
+ * por MODULO** — admin escribe 7 en caja normal y color `strong`; home escribe 22 en VERSALITA y
+ * color `body`. Mismo nivel, misma medida, mismo peso, distinta caja segun donde caiga. Es la
+ * misma forma que F5.4 mato en el boton: el contexto cambiando al objeto.
+ *
+ * LA ESCALA SALE DE LOS DATOS, NO DE UNA PREFERENCIA
+ * Cada nivel se fijo en el peso que ya era dominante en su habitat, medido antes de tocar nada:
+ *
+ *     pagina    24 px · bold       3 usos   titulo de una vista entera
+ *     panel     18 px · semibold  16 usos   las tarjetas de inicio, los paneles de firmas
+ *     bloque    16 px · bold      15 usos   dentro de un modal o un cajon
+ *     seccion   14 px · bold      34 usos   un apartado dentro de un panel
+ *
+ * Los tres tamaños sueltos se absorben porque son uno de cada, no un nivel: 30 px (Terminos) sube
+ * a `--page`, y los dos de 20 px de `FirmarPdf` bajan a `--panel`.
+ *
+ * ⚠️ EL COLOR ES `--color-navy` Y NO `--color-strong`, y no es un detalle: el token se declara en
+ * `tokens.css` con el comentario «titulares» al lado. Las dos clases del sistema que ya existian
+ * —`deasy-form-section__title` y `deasy-dialog-title`— lo usaban; los 69 a mano derivaron a
+ * `strong` (un escalon mas claro) y algunos a `body` (dos escalones). El token dice cual es.
+ *
+ * ⚠️ EL NIVEL DE 14 px VA EN CAJA NORMAL — decision del dueño (2026-08-19), contra la mayoria
+ * (22 versalita frente a 12 normales). El motivo no es el recuento: es que `deasy-overline` acaba
+ * de quedar como LA versalita del sistema a 12 px, y su papel es decir «esto ROTULA, no titula».
+ * Con una segunda versalita a 14 px —dos pixeles y un peso de distancia— esa señal se pierde y hay
+ * que explicar cual toca cada vez. Una sola versalita, y es la de 12.
+ *
+ * ⚠️ VA ANTES QUE LAS FAMILIAS DE COMPONENTE en `index.css` y despues de `base.css`: es
+ * tipografia, no un componente, y cualquier familia que quiera un titular propio tiene que poder
+ * ganarle. Mover este `@import` cambia quien gana; esta explicado en `index.css`.
+ * ═════════════════════════════════════════════════════════════════════════════════════════════ */
+
+@layer components {
+    .deasy-title {
+        @apply m-0 tracking-tight text-navy;
+    }
+
+    /* El titulo de una vista entera. */
+    .deasy-title--page {
+        @apply text-2xl font-bold;
+    }
+
+    /* El de una tarjeta o un panel de la pagina. */
+    .deasy-title--panel {
+        @apply text-lg font-semibold;
+    }
+
+    /* El de un bloque dentro de un modal o un cajon. */
+    .deasy-title--block {
+        @apply text-base font-bold;
+    }
+
+    /* El de un apartado dentro de un panel. El mas usado de los cuatro. */
+    .deasy-title--section {
+        @apply text-sm font-bold;
+    }
+}

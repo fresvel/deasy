@@ -1,0 +1,120 @@
+<template>
+  <div class="flex flex-col gap-4">
+    <AppAlert variant="success" v-if="!embedded && context">
+      <div class="flex flex-wrap items-center gap-2">
+        <strong class="text-sm text-success">{{ context.name || `Configuracion #${context.id}` }}</strong>
+        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
+          {{ context.linea_nombre || "—" }}
+        </span>
+        <span class="inline-flex items-center rounded-xl bg-white/80 px-2 py-0.5 text-xs font-semibold text-icon ring-1 ring-line">
+          {{ context.definition_version || "—" }}
+        </span>
+      </div>
+    </AppAlert>
+
+    <AppAlert v-if="error">{{ error }}</AppAlert>
+    <AppAlert v-if="context && !canManage" variant="info">
+      Esta configuracion no esta en draft. Solo puedes gestionar plantillas cuando la configuracion este en draft.
+    </AppAlert>
+
+    <div class="flex items-center justify-between gap-3">
+      <h6 class="deasy-title deasy-title--section">Plantillas del proceso</h6>
+      <AdminButton
+        v-if="canManage"
+        variant="primary-outline"
+        @click="$emit('open-fk-search')"
+      >
+        <font-awesome-icon icon="search" class="mr-2" />
+        Agregar plantilla
+      </AdminButton>
+    </div>
+
+    <div v-if="loading" class="text-sm text-muted">Cargando plantillas vinculadas...</div>
+    <AppDataTable
+      v-else
+      :fields="displayTableFields"
+      :rows="rows"
+      :row-key="(row) => row.id"
+      empty-text="Sin plantillas vinculadas."
+      table-class="min-w-full border-separate border-spacing-0 text-sm"
+      responsive-class="mt-3 overflow-x-auto deasy-card"
+      scroll-class=""
+    >
+      <template #cell="{ row, field }">
+        <template v-if="field.name === 'edicion_id'">
+          {{ formatCell(row.edicion_id, { name: 'edicion_id' }) }}
+        </template>
+        <template v-else-if="field.name === 'item_mode'">
+          <select v-if="canManage" aria-label="Modo de emisión de la plantilla" :value="row.item_mode || 'single'" class="deasy-control deasy-control--select" @change="$emit('set-item-mode', { row, itemMode: $event.target.value })">
+            <option value="single">Simple (1 entregable)</option>
+            <option value="replicated">Replicado (N con etiqueta)</option>
+            <option value="routed">Ruteado (endosar a alguien)</option>
+          </select>
+          <span v-else class="text-xs font-semibold text-icon">{{ itemModeLabel(row.item_mode) }}</span>
+          <p v-if="row.item_mode === 'routed'" class="mt-1 m-0 text-theme-xs leading-tight text-warning">
+            El recorrido (entrega/firma) se define AL ENVIAR, no aquí.
+          </p>
+        </template>
+        <template v-else>
+          {{ row[field.name] ?? "—" }}
+        </template>
+      </template>
+      <template #actions="{ row }">
+        <AdminTableActions
+          edit-tooltip="Editar plantilla"
+          delete-message="Eliminar plantilla"
+          :show-edit="canManage"
+          :show-delete="canManage"
+          @view="$emit('view-row', row)"
+          @edit="$emit('edit-row', row)"
+          @delete="$emit('delete-row', row)"
+ />
+      </template>
+    </AppDataTable>
+  </div>
+</template>
+
+<script setup>
+import { computed } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
+import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+import AdminButton from "@/shared/components/buttons/AppButton.vue";
+
+const props = defineProps({
+  context: { type: Object, default: null },
+  error: { type: String, default: "" },
+  canManage: { type: Boolean, default: false },
+  // Props heredadas del wrapper (ya no se usan tras quitar la tarjeta de selección); se declaran para
+  // evitar que caigan como atributos sueltos en el div raíz.
+  canSubmit: { type: Boolean, default: false },
+  labels: { type: Object, default: () => ({}) },
+  form: { type: Object, default: () => ({}) },
+  editId: { type: [String, Number], default: "" },
+  loading: { type: Boolean, default: false },
+  rows: { type: Array, default: () => [] },
+  tableFields: { type: Array, default: () => [] },
+  embedded: { type: Boolean, default: false },
+  formatCell: { type: Function, required: true }
+});
+
+defineEmits(["update:form", "clear-selection", "open-fk-search", "submit", "reset", "view-row", "edit-row", "delete-row", "set-item-mode"]);
+
+const itemModeLabel = (mode) => ({
+  single: "Simple",
+  replicated: "Replicado",
+  routed: "Ruteado"
+}[String(mode || "single")] || "Simple");
+
+// El orden (sort_order) es interno y creates_task es siempre "sí"; no se muestran como columnas.
+const HIDDEN_ARTIFACT_COLUMNS = new Set(["creates_task", "sort_order"]);
+const displayTableFields = computed(() =>
+  props.tableFields
+    .filter((field) => !HIDDEN_ARTIFACT_COLUMNS.has(field.name))
+    .map((field) =>
+      field.name === "edicion_id"
+        ? { ...field, label: "Plantilla" }
+        : field
+    )
+);
+</script>

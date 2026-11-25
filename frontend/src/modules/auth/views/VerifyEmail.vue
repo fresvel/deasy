@@ -1,72 +1,76 @@
 <template>
-  <div class="min-h-screen bg-slate-100 flex items-center justify-center p-4 font-sans">
-    <div class="max-w-md w-full bg-white rounded-4xl shadow-xl shadow-slate-300/50 p-5 sm:p-12 border border-slate-200 relative overflow-hidden">
-      
-      <!-- Go back button -->
-      <router-link to="/" class="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-sky-600 transition-colors mb-8 group focus:outline-none focus:ring-2 focus:ring-sky-500/40 rounded-lg pr-2">
-        <IconArrowLeft class="h-4 w-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
-        Volver al login
-      </router-link>
+  <AuthLayout size="md">
+    <AppLogo size="lg" class-name="mb-8" />
+    
+    <!-- Go back button -->
+    <router-link to="/" class="inline-flex items-center text-sm font-semibold text-muted hover:text-info transition-colors mb-8 group focus:outline-none focus:ring-2 rounded-2xl pr-2">
+      <IconArrowLeft class="h-4 w-4 mr-1.5 group-hover:-translate-x-1 transition-transform" />
+      Volver al login
+    </router-link>
 
-      <div class="mb-8 flex flex-col items-center text-center">
-        <div class="w-14 h-14 bg-sky-50 rounded-2xl flex items-center justify-center text-sky-600 mb-6">
-          <IconMailCheck class="h-7 w-7" />
-        </div>
-        <h1 class="text-2xl font-bold text-slate-800 tracking-tight">Verificar correo</h1>
-        <p class="text-slate-500 mt-2.5 font-medium text-sm">
-          Hemos enviado un código a <br class="hidden sm:block" />
-          <strong class="text-slate-800">{{ email || 'tu correo' }}</strong>
-        </p>
+    <div class="mb-8 flex flex-col items-center text-center">
+      <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--info mb-6">
+        <IconMailCheck class="h-7 w-7" />
       </div>
-
-      <div class="mb-8 flex justify-center w-full">
-        <div class="flex justify-between gap-2 sm:gap-4 w-full max-w-full sm:max-w-88 px-2 sm:px-0">
-          <input
-            v-for="(digit, index) in code"
-            :key="index"
-            ref="inputs"
-            type="text"
-            inputmode="numeric"
-            pattern="[0-9]*"
-            maxlength="1"
-            class="flex-1 w-full min-w-0 h-12 sm:h-14 text-center text-lg sm:text-2xl font-bold text-slate-800 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:border-sky-500 focus:ring-4 focus:ring-sky-500/20 outline-none transition-all shadow-sm"
-            v-model="code[index]"
-            @input="onInput(index, $event)"
-            @keydown.backspace="onBackspace(index, $event)"
-            @paste.prevent="onPaste"
-          />
-        </div>
-      </div>
-
-      <div v-if="error" class="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-xl flex items-start gap-3">
-        <IconAlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
-        <p>{{ error }}</p>
-      </div>
-
-      <div v-if="success" class="mb-6 p-4 bg-green-50 border border-green-100 text-green-600 text-sm font-semibold rounded-xl flex items-start gap-3">
-        <IconCheck class="w-5 h-5 shrink-0 mt-0.5" />
-        <p>¡Correo verificado correctamente! Redirigiendo...</p>
-      </div>
-
-      <button
-        type="button"
-        class="w-full bg-sky-600 hover:bg-sky-700 text-white font-semibold py-2.5 px-4 rounded-xl transition-all focus:outline-none focus:ring-4 focus:ring-sky-500/30 flex items-center justify-center gap-2 shadow-md shadow-sky-600/20 disabled:opacity-70 disabled:cursor-not-allowed hover:shadow-lg hover:shadow-sky-600/30 active:scale-[0.98]"
-        :disabled="loading || !isCodeComplete"
-        @click="submit"
-      >
-        <span v-if="loading" class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-        <span>{{ loading ? 'Verificando...' : 'Verificar correo' }}</span>
-      </button>
-
+      <h1 class="deasy-title deasy-title--page">Verificar correo</h1>
+      <p class="deasy-auth-copy">
+        Hemos enviado un código a <br class="hidden sm:block" />
+        <strong class="text-strong">{{ email || 'tu correo' }}</strong>
+      </p>
     </div>
-  </div>
+
+    <div class="mb-8 flex justify-center w-full">
+      <div class="flex justify-between gap-2 sm:gap-4 w-full max-w-full sm:max-w-88 px-2 sm:px-0">
+        <input
+          v-for="(digit, index) in code"
+          :key="index"
+          ref="inputs"
+          :aria-label="`Dígito ${index + 1} del código de verificación`"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          maxlength="1"
+          class="flex-1 w-full min-w-0 h-12 sm:h-14 text-center text-lg sm:text-2xl font-bold text-strong border outline-none transition-all"
+          v-model="code[index]"
+          @input="onInput(index, $event)"
+          @keydown.backspace="onBackspace(index)"
+          @paste.prevent="onPaste"
+        />
+      </div>
+    </div>
+
+    <AppAlert class="mb-6 flex items-start gap-3" v-if="error">
+      <IconAlertCircle class="w-5 h-5 shrink-0 mt-0.5" />
+      <p>{{ error }}</p>
+    </AppAlert>
+
+    <AppAlert variant="success" class="mb-6 flex items-start gap-3" v-if="success">
+      <IconCheck class="w-5 h-5 shrink-0 mt-0.5" />
+      <p>¡Correo verificado correctamente! Redirigiendo...</p>
+    </AppAlert>
+
+    <button
+      type="button"
+      class="deasy-btn deasy-btn--primary-outline deasy-btn--block"
+      :disabled="loading || !isCodeComplete"
+      @click="submit"
+    >
+      <span v-if="loading" class="deasy-spinner deasy-spinner--md"></span>
+      <span>{{ loading ? 'Verificando...' : 'Verificar correo' }}</span>
+    </button>
+
+  </AuthLayout>
 </template>
 
 <script setup>
 import { ref, computed, nextTick } from 'vue'
+import { resolveApiErrorMessage } from '@/shared/utils/apiError.js';
+import AuthLayout from '@/layouts/auth/AuthLayout.vue';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+import axios from '@/core/services/httpClient'
 import { API_ROUTES } from '@/core/config/apiConfig'
+import AppLogo from '@/shared/components/layout/AppLogo.vue'
 import { 
   IconArrowLeft, 
   IconMailCheck, 
@@ -103,7 +107,7 @@ const onInput = async (index, event) => {
   }
 }
 
-const onBackspace = async (index, event) => {
+const onBackspace = async (index) => {
   if (!code.value[index] && index > 0) {
     const prevInput = inputs.value[index - 1]
     if (prevInput) {
@@ -158,7 +162,7 @@ const submit = async () => {
     }, 1500)
 
   } catch (err) {
-    error.value = err.response?.data?.error || err.response?.data?.message || 'El código ingresado es inválido o ha expirado.'
+    error.value = resolveApiErrorMessage(err, 'El código ingresado es inválido o ha expirado.')
   } finally {
     loading.value = false
   }

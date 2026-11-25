@@ -1,20 +1,22 @@
+// EL PUNTO DE MONTAJE DE `/sign`, y hoy reparte entre DOS dominios.
+//
+// Las siete rutas del acto de firmar --`POST /`, `/validate`, `/batch`, `/batch/start`,
+// `GET /batch/:jobId`, `/batch/:jobId/download`, `/download`-- se fueron a `dominios/firmas/` en
+// F7.5 (frente 22) y entran por su puerta. Las SEIS que quedan aqui operan TURNOS y RECORRIDOS, que
+// son tablas de `tareas`: se iran con ese dominio cuando le toque su tanda.
+//
+// ⚠️ ESTE FICHERO SIGUE SIENDO EL PUNTO DE MONTAJE A PROPOSITO. Montar el router del dominio desde
+// aqui con `router.use` mantiene **las URL exactamente como estaban**, asi que el contrato HTTP no
+// se mueve ni un golden — que es la regla: un refactor no cambia un golden.
 import express from "express";
-import multer from "multer";
-import os from "os";
 import { authMiddleware } from "../middlewares/auth.js";
-import {
-  downloadSignBatch,
-  downloadSigned,
-  getSignBatchStatus,
-  getSignatureFlow,
-  requestSign,
-  requestSignBatch,
-  requestSignBatchStart,
-  validateSignedDocument
-} from "../controllers/sign/sign_controller.js";
+import { loadAccessContext, requirePermissions } from "../middlewares/rbac.js";
+import { handleUploadError } from "../middlewares/uploadError.js";
+import { firmasRouter } from "../dominios/firmas/index.js";
 import {
   approveFillRequest,
   cancelFillRequest,
+  getSignatureFlow,
   rejectFillRequest,
   returnFillRequest,
   startFillRequest,
@@ -22,55 +24,20 @@ import {
 
 const router = express.Router();
 
-const upload = multer({
-  dest: os.tmpdir(),
-  limits: { fileSize: 30 * 1024 * 1024 },
-  fileFilter: (req, file, cb) => {
-    if (file.fieldname === "pdf" && file.mimetype === "application/pdf") {
-      return cb(null, true);
-    }
-    cb(new Error(`Tipo de archivo no permitido: ${file.fieldname}`));
-  }
-});
+// Primero el dominio `firmas`: sus siete rutas, con su propio `multer`.
+router.use(firmasRouter);
 
-router.post(
-  "/",
-  authMiddleware,
-  upload.fields([{ name: "pdf", maxCount: 1 }]),
-  requestSign
-);
+// ── Lo que sigue es de `tareas` ─────────────────────────────────────────────────────────────────
+router.post("/fill-requests/:requestId/start", authMiddleware, loadAccessContext, requirePermissions("fill_flows.update"), startFillRequest);
+router.post("/fill-requests/:requestId/approve", authMiddleware, loadAccessContext, requirePermissions("fill_flows.update"), express.json(), approveFillRequest);
+router.post("/fill-requests/:requestId/return", authMiddleware, loadAccessContext, requirePermissions("fill_flows.update"), express.json(), returnFillRequest);
+router.post("/fill-requests/:requestId/reject", authMiddleware, loadAccessContext, requirePermissions("fill_flows.update"), express.json(), rejectFillRequest);
+router.post("/fill-requests/:requestId/cancel", authMiddleware, loadAccessContext, requirePermissions("fill_flows.update"), express.json(), cancelFillRequest);
 
-router.post(
-  "/validate",
-  authMiddleware,
-  upload.fields([{ name: "pdf", maxCount: 1 }]),
-  validateSignedDocument
-);
+router.get("/documents/:documentVersionId/signature-flow", authMiddleware, loadAccessContext, requirePermissions("signature_flows.read"), getSignatureFlow);
 
-router.post(
-  "/batch",
-  authMiddleware,
-  upload.fields([{ name: "pdf", maxCount: 30 }]),
-  requestSignBatch
-);
-
-router.post(
-  "/batch/start",
-  authMiddleware,
-  upload.fields([{ name: "pdf", maxCount: 30 }]),
-  requestSignBatchStart
-);
-
-router.get("/batch/:jobId", authMiddleware, getSignBatchStatus);
-router.get("/batch/:jobId/download", authMiddleware, downloadSignBatch);
-
-router.post("/fill-requests/:requestId/start", authMiddleware, startFillRequest);
-router.post("/fill-requests/:requestId/approve", authMiddleware, express.json(), approveFillRequest);
-router.post("/fill-requests/:requestId/return", authMiddleware, express.json(), returnFillRequest);
-router.post("/fill-requests/:requestId/reject", authMiddleware, express.json(), rejectFillRequest);
-router.post("/fill-requests/:requestId/cancel", authMiddleware, express.json(), cancelFillRequest);
-
-router.get("/download", authMiddleware, downloadSigned);
-router.get("/documents/:documentVersionId/signature-flow", authMiddleware, getSignatureFlow);
+// Va al final a proposito: recoge lo que multer rechaza en CUALQUIERA de las rutas de arriba,
+// incluidas las del router del dominio.
+router.use(handleUploadError);
 
 export default router;

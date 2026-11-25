@@ -3,43 +3,31 @@ name: deasy-qa
 x-runtime-env-file: &qa_runtime_env_file
   - ${DEASY_CONTAINER_ENV_FILE:-.env.qa}
 
+# ⚠️ LOS PUERTOS DE LA BASE, DEL ALMACÉN Y DEL FIRMADOR SE PUBLICAN SÓLO EN `127.0.0.1` (2026-11-24).
+# Se publicaban en todas las interfaces, o sea hacia internet si el cortafuegos del servidor no los
+# cerraba: PostgreSQL, la API del almacén y el firmador. Ninguno tiene por qué recibir
+# tráfico de fuera —el backend les habla por la red de contenedores, y lo público entra por el
+# proxy—. Siguen alcanzables DESDE el servidor, que es para lo que sirven: `psql` local, o un túnel
+# de SSH para hablarle al almacén con un cliente S3 (`ssh -L 9100:127.0.0.1:9100 …`).
+#
+# El almacén es Versity Gateway desde el 2026-11-25 (ver `compose.base.yml`). No publica consola
+# web: la de MinIO, en el 9001, se fue con él.
 services:
-  mariadb:
+  postgres:
     env_file: *qa_runtime_env_file
     ports:
-      - "13306:3306"
-
-  mongodb:
-    env_file: *qa_runtime_env_file
-    ports:
-      - "12717:27017"
+      - "127.0.0.1:15432:5432"
 
   rabbitmq:
     env_file: *qa_runtime_env_file
-    ports:
-      - "15672:5672"
-      - "15673:15672"
+    # SIN `ports`: el broker solo se alcanza por la red interna de compose. Backend y signer usan
+    # `rabbitmq:5672` y `http://rabbitmq:15672/api`, asi que publicarlo al host no daba servicio a
+    # nadie: solo exponia la UI de gestion, que permite leer el cuerpo de los mensajes.
 
-  emqx:
+  almacen:
     env_file: *qa_runtime_env_file
     ports:
-      - "11883:1883"
-      - "18084:18083"
-
-  minio:
-    env_file: *qa_runtime_env_file
-    ports:
-      - "${MINIO_API_PORT}:9000"
-      - "${MINIO_CONSOLE_PORT}:9001"
-
-  minio-bootstrap:
-    env_file: *qa_runtime_env_file
-
-  minio-publish-seeds:
-    env_file: *qa_runtime_env_file
-
-  minio-publish:
-    env_file: *qa_runtime_env_file
+      - "127.0.0.1:${ALMACEN_API_PORT}:9000"
 
   backend:
     image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
@@ -50,11 +38,6 @@ services:
       public-ingress:
         aliases:
           - deasy-qa-backend
-
-  storage-uploader:
-    image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
-    pull_policy: always
-    env_file: *qa_runtime_env_file
 
   frontend:
     image: ${IMAGE_REGISTRY}/${FRONTEND_IMAGE_REPOSITORY}:${FRONTEND_IMAGE_TAG}
@@ -71,7 +54,7 @@ services:
     pull_policy: always
     env_file: *qa_runtime_env_file
     ports:
-      - "14000:4000"
+      - "127.0.0.1:14000:4000"
 
   analytics:
     image: ${IMAGE_REGISTRY}/${ANALYTICS_IMAGE_REPOSITORY}:${ANALYTICS_IMAGE_TAG}
@@ -79,26 +62,18 @@ services:
     env_file: *qa_runtime_env_file
 
 volumes:
-  mariadb_data:
-    name: deasy_qa_mariadb_data
-  mongodb_data:
-    name: deasy_qa_mongodb_data
+  postgres_data:
+    name: deasy_qa_postgres_data
   rabbitmq_data:
     name: deasy_qa_rabbitmq_data
-  emqx_data:
-    name: deasy_qa_emqx_data
-  emqx_log:
-    name: deasy_qa_emqx_log
-  minio_data:
-    name: deasy_qa_minio_data
+  # El almacén es Versity Gateway y NO lee un volumen de MinIO: usa el suyo. Si en el servidor
+  # queda un `deasy_qa_minio_data` de antes, ya no lo monta nadie.
+  versity_data:
+    name: deasy_qa_versity_data
   backend_node_modules_v2:
     name: deasy_qa_backend_node_modules
   frontend_node_modules:
     name: deasy_qa_frontend_node_modules
-  uploads_data:
-    name: deasy_qa_uploads_data
-  storage_data:
-    name: deasy_qa_storage_data
 
 networks:
   default:

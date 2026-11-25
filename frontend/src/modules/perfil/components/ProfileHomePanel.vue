@@ -1,74 +1,71 @@
 <template>
-  <div class="px-4 py-8 mx-auto max-w-7xl sm:px-6 lg:px-8 w-full flex flex-col font-sans">
+  <div class="flex flex-col font-sans">
     
-    <section class="deasy-hero-shell mb-8">
-      <div class="deasy-hero-layout">
-        <div class="deasy-hero-main deasy-hero-main--with-media text-center sm:text-left">
-          <div class="deasy-hero-media flex flex-col items-center gap-3 sm:items-start">
-            <div class="deasy-hero-media-card deasy-hero-media-card--avatar">
-              <img class="h-16 w-16 rounded-[1rem] object-cover bg-white/70 sm:h-[4.5rem] sm:w-[4.5rem]" :src="photo" alt="Foto de perfil" />
-            </div>
-          </div>
-          <div class="deasy-hero-copy sm:pt-0">
-            <div class="deasy-hero-kicker">Perfil académico</div>
-            <h1 class="deasy-hero-title">{{ displayName }}</h1>
-            <p class="deasy-hero-description">
-              Gestiona tu dossier académico y tu información profesional.
-            </p>
-          </div>
-        </div>
-        <div class="deasy-hero-side deasy-hero-side--compact">
-          <button type="button" class="deasy-hero-back-button" @click="$emit('go-back')">
-            <span class="deasy-hero-back-button__icon">
-              <IconArrowLeft class="h-4.5 w-4.5" />
-            </span>
-            <span>Volver atrás</span>
-          </button>
-        </div>
-      </div>
-    </section>
+    <AppPageHeader
+      size="hero"
+      shell-class="mb-8"
+      overline="Perfil académico"
+      :title="displayName"
+      description="Gestiona tu dossier académico y tu información profesional."
+      avatar-media
+      centered
+      compact-actions
+    >
+      <template #media><img class="h-full w-full object-cover" :src="photo" alt="Foto de perfil" /></template>
+      <template #actions>
+        <AppButton variant="neutral-outline" @click="goBack">
+          <IconArrowLeft class="h-4.5 w-4.5" />
+          <span>Volver</span>
+        </AppButton>
+      </template>
+    </AppPageHeader>
 
     <!-- Sections Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="deasy-tile-grid">
+      <!-- Cada tarjeta navega a la ruta de su seccion. Antes emitia la ETIQUETA al padre, que la
+           comparaba contra su propio menu: si las dos listas divergian, el clic se tragaba en silencio. -->
       <AppNavCard
         v-for="section in sectionCards"
-        :key="section.label"
-        layout="stacked"
+        :key="section.slug"
         :title="section.label"
         :description="section.meta"
-        :icon="getIcon(section.icon)"
+        :icon="getIcon(section.cardIcon)"
         icon-class="w-6 h-6 stroke-[1.5]"
         show-arrow
-        class-name="min-h-[140px]"
-        @click="$emit('navigate-section', section.label)"
+        @click="router.push({ name: section.name })"
       />
     </div>
   </div>
 </template>
 
 <script setup>
-import { computed, defineProps, defineEmits } from "vue";
+/**
+ * Inicio del dossier: es la ruta hija por defecto de /perfil.
+ *
+ * Ya no recibe props ni emite: como lo monta el <router-view> de PerfilView, el contexto le llega por
+ * inject y navega por su cuenta. Su lista propia de secciones tambien desaparecio: era una copia a mano
+ * del menu lateral, y el acuerdo entre ambas era una etiqueta con tilde. Ahora las dos leen
+ * PROFILE_SECTIONS.
+ */
+import { computed, inject } from "vue";
+import AppPageHeader from '@/shared/components/layout/AppPageHeader.vue';
+import AppButton from '@/shared/components/buttons/AppButton.vue';
+import { useRouter } from "vue-router";
 import AppNavCard from "@/shared/components/layout/AppNavCard.vue";
-import { 
+import {
   IconCertificate, IconChecks, IconId, IconSquareCheck, IconCircleCheck, IconGlobe, IconArrowLeft
 } from '@tabler/icons-vue';
+import { PROFILE_CONTEXT, PROFILE_SECTIONS, cardIconFor } from "@/modules/perfil/profileSections.js";
 
-const props = defineProps({
-  currentUser: {
-    type: Object,
-    default: null
-  },
-  photo: {
-    type: String,
-    default: "/images/avatar.png"
-  },
-  dossierCounts: {
-    type: Object,
-    default: () => ({})
-  }
-});
-
-defineEmits(["navigate-section", "go-back"]);
+const router = useRouter();
+/* 🪤 `photo` ES UN REF Y EN EL TEMPLATE NO LLEVA `.value`. El markup escribia
+   `:src="photo.value"` y la foto NO SE VEIA NUNCA: `PerfilView` provee `photo: userPhoto`, que es
+   un `ref`, y Vue **auto-desenvuelve** los refs devueltos por `setup` al usarlos en la plantilla.
+   Asi que ahi `photo` YA es la URL y `photo.value` es `undefined` — Vue omite el atributo sin
+   avisar y solo queda el texto alternativo. Visible desde siempre, invisible para el build, el
+   lint y los 339 tests; lo caza mirar la pantalla, que es la norma de este repo para lo visual.
+   (Encontrado el 2026-08-15 al verificar F3.4.) */
+const { currentUser, photo, dossierCounts, goBack } = inject(PROFILE_CONTEXT);
 
 const getIcon = (name) => {
   const map = {
@@ -82,33 +79,22 @@ const getIcon = (name) => {
   return map[name] || IconCircleCheck;
 };
 
-const sections = [
-  { label: "Formación", key: "formacion", icon: "certificate" },
-  { label: "Experiencia", key: "experiencia", icon: "check-double" },
-  { label: "Referencias", key: "referencias", icon: "id-card" },
-  { label: "Capacitación", key: "capacitacion", icon: "square-check" },
-  { label: "Certificación", key: "certificacion", icon: "check-circle" },
-  { label: "Investigación", key: "investigacion", icon: "globe" },
-  { label: "Certificados de firma", key: null, icon: "id-card" }
-];
-
 const sectionCards = computed(() =>
-  sections.map((section) => {
-    const count = Number(props.dossierCounts?.[section.key] ?? 0);
+  PROFILE_SECTIONS.map((section) => {
+    const count = Number(dossierCounts.value?.[section.countKey] ?? 0);
     return {
       ...section,
-      meta: section.key ? `${count} ${count === 1 ? "registro" : "registros"}` : "Gestiona tus certificados digitales"
+      cardIcon: cardIconFor(section),
+      meta: section.countKey
+        ? `${count} ${count === 1 ? "registro" : "registros"}`
+        : "Gestiona tus certificados digitales"
     };
   })
 );
 
 const displayName = computed(() => {
-  const firstName = props.currentUser?.first_name ?? "";
-  const lastName = props.currentUser?.last_name ?? "";
+  const firstName = currentUser.value?.first_name ?? "";
+  const lastName = currentUser.value?.last_name ?? "";
   return `${firstName} ${lastName}`.trim() || "Usuario";
 });
 </script>
-
-<style scoped>
-/* Scoped styles removed in favor of Tailwind CSS */
-</style>

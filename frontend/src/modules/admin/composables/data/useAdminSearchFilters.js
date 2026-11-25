@@ -1,8 +1,7 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
 export function useAdminSearchFilters({
-  props,
   formData,
   fkDisplay,
   fkTable,
@@ -27,7 +26,6 @@ export function useAdminSearchFilters({
   getUnitPositionSearchInstance,
   isUnitPositionsTable,
   isPositionAssignmentsTable,
-  isPositionFilterTable,
   fetchRows,
   loadVacantPositions,
   loadUnassignedTemplateArtifacts,
@@ -36,6 +34,7 @@ export function useAdminSearchFilters({
   loadUnitPositionUnitOptions,
   loadVacantPositionUnitOptions,
   openFkSearch,
+  resolveFkSuggestions,
   resolveDisplayField,
   fetchFkLabel,
   getFkCachedLabel,
@@ -76,7 +75,7 @@ export function useAdminSearchFilters({
   const clearProcessFilter = async () => {
     processFilters.value = {
       parent_id: "",
-      is_active: ""
+      estado: ""
     };
     processFilterLabels.value = {
       parent_id: ""
@@ -251,10 +250,7 @@ export function useAdminSearchFilters({
     try {
       await axios.put(API_ROUTES.ADMIN_SQL_TABLE("unit_positions"), {
         keys: { id: positionId },
-        data: {
-          is_active: 0,
-          deactivated_at: new Date().toISOString().slice(0, 19).replace("T", " ")
-        }
+        data: { is_active: 0 }
       });
       await loadVacantPositions();
     } catch {}
@@ -333,10 +329,60 @@ export function useAdminSearchFilters({
     });
   };
 
+  // --- Recomendaciones inline (combobox) para los filtros de búsqueda ---
+  // Construye un proveedor de sugerencias ligado a un campo FK. Reutiliza el
+  // fetcher headless `resolveFkSuggestions` (mismas reglas de negocio que el modal).
+  const buildFilterSuggestProvider = (fieldName) => async (searchText) => {
+    const { rows, tableObj } = await resolveFkSuggestions(fieldName, { q: searchText });
+    if (!tableObj || !rows?.length) {
+      return [];
+    }
+    const displayField = resolveDisplayField(tableObj);
+    return rows.map((row) => {
+      const labelValue = row?.[displayField] ?? row?.id;
+      return {
+        id: row?.id ?? "",
+        label: labelValue !== null && labelValue !== undefined ? String(labelValue) : "",
+        row
+      };
+    });
+  };
+
+  const processParentSuggestProvider = buildFilterSuggestProvider("parent_id");
+  const templateProcessSuggestProvider = buildFilterSuggestProvider("process_id");
+  const documentTaskSuggestProvider = buildFilterSuggestProvider("task_id");
+
+  const selectProcessFilterOption = (fieldName, option) => {
+    if (!fieldName) {
+      return;
+    }
+    processFilters.value = { ...processFilters.value, [fieldName]: option?.id ?? "" };
+    processFilterLabels.value = { ...processFilterLabels.value, [fieldName]: option?.label ?? "" };
+  };
+
+  const selectTemplateProcessFilterOption = (option) => {
+    templateFilters.value = { ...templateFilters.value, process_id: option?.id ?? "" };
+    templateFilterLabels.value = { process_id: option?.label ?? "" };
+  };
+
+  const selectDocumentFilterOption = (fieldName, option) => {
+    if (!fieldName) {
+      return;
+    }
+    documentFilters.value = { ...documentFilters.value, [fieldName]: option?.id ?? "" };
+    documentFilterLabels.value = { ...documentFilterLabels.value, [fieldName]: option?.label ?? "" };
+  };
+
   return {
     openProcessSearch,
     openDocumentSearch,
     openUnitPositionSearch,
+    processParentSuggestProvider,
+    templateProcessSuggestProvider,
+    documentTaskSuggestProvider,
+    selectProcessFilterOption,
+    selectTemplateProcessFilterOption,
+    selectDocumentFilterOption,
     applyProcessFilter,
     clearProcessFilter,
     clearProcessParentFilter,

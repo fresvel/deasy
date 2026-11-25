@@ -17,5 +17,25 @@ export default defineConfig({
         alias: {
             '@': path.resolve(__dirname, 'src')
         }
+    },
+    // Vitest. Las utilidades puras (accessControl, etc.) reciben su input por parámetro,
+    // así que no necesitan DOM: environment node basta. Los tests viven junto al código
+    // que prueban, como *.test.js.
+    test: {
+        environment: 'node',
+        include: ['src/**/*.{test,spec}.{js,mjs}'],
+        // La cobertura la consume SonarQube (sonar.javascript.lcov.reportPaths). `all: true`
+        // es lo que hace que el informe cuente TODO src/, y no solo los ficheros que algún
+        // test llegó a importar: sin eso, la cobertura sale inflada y no mide nada.
+        coverage: {
+            provider: 'v8',
+            // `lcovonly` y no `lcov`: este ultimo genera ademas un informe HTML en
+            // coverage/lcov-report/ que nadie lee y que eslint se pone a analizar.
+            reporter: ['text-summary', 'lcovonly'],
+            reportsDirectory: 'coverage',
+            all: true,
+            include: ['src/**/*.{js,vue}'],
+            exclude: ['src/**/*.{test,spec}.{js,mjs}']
+        }
     }
 })

@@ -1,0 +1,337 @@
+// Acceso SQL directo — EXCLUSIVAMENTE para el teardown de los flows que escriben.
+//
+// Por qué existe (y por qué es una excepción, no la nueva norma):
+// el harness es deliberadamente HTTP-only, porque lo que fijamos es el CONTRATO HTTP.
+// Pero el borrador de plantilla escribe en cinco sitios y la limpieza NO se puede hacer
+// por HTTP. Medido contra dev:
+//   - `catalogo_documental` no está en `config/sqlTables.js` ni tiene método de servicio que la
+//     borre: NO existe ninguna ruta que elimine esa fila.
+//   - `DELETE /admin/sql/vinculos` responde 400 mientras la
+//     configuración destino no esté en `draft` (la de la fixture está `active`).
+//   - y sin borrar el vínculo, `DELETE /admin/sql/ediciones` responde 409 por FK.
+// Dejar las filas rompería la regla de round-trips autolimpiantes.
+//
+// REGLA: esto se usa para LIMPIAR, nunca para ASERTAR. Una aserción contra SQL dejaría de
+// verificar el contrato observable y empezaría a verificar el esquema.
+//
+// EXCEPCIÓN, con nombre y fecha: `flows/zzzzzz_flow_steps_db.test.mjs` (2026-08-10) SÍ asierta
+// contra SQL, y usa el `query` de aquí para hacerlo. No es una grieta en la regla, es su límite:
+// el §0.8 del plan maestro va a mover el flujo del `meta.yaml` a la base, y NO EXISTE contrato HTTP
+// que observe el resultado. `GET /ediciones/:id/schema` parece servir y no sirve, y desde el
+// sub-paso 5 sigue sin servir aunque ya lea de la base: devuelve el flujo APLANADO en forma de
+// formulario, colapsa los dos portadores en una sola vista y no dice de cuál leyó, así que no puede
+// observar la escritura doble ni el `can_reject` derivado. Y lo que se fija por HTTP del paquete es
+// el `content_hash` del almacén, que INCLUYE el `meta.yaml` y cambiará por construcción sin decir nada
+// del flujo. Cuando lo que hay que caracterizar es el estado que un cambio va a reescribir, y
+// ninguna ruta lo expone, el oráculo es la base. Fuera de ese flow, sigue valiendo la regla.
+//
+// SEGUNDA EXCEPCIÓN, con nombre y fecha: `flows/zzzzzzzz_default_process_routed.test.mjs`
+// (2026-08-11), por el mismo límite. Ejercita el camino de usuario del Proceso por defecto
+// (`POST /users/:id/general-tasks`, modo `routed`) y tiene que comprobar DE QUÉ cuelga el flujo que
+// se materializa: `task_item_id` relleno y `edicion_id` en `NULL` es *la* propiedad que
+// define el modo, y no hay respuesta HTTP que la diga. El endpoint devuelve ids y nada más.
+
+import pg from "pg";
+// La MISMA lista de esquemas que usa el pool de la aplicacion, importada y no copiada: este pool es
+// el tercero que se conecta a la base --aplicacion, inicializador y este-- y una copia mas seria
+// una copia mas que quedarse atras.
+import { ESQUEMAS } from "../../../config/postgres.js";
+
+const { Pool } = pg;
+
+let pool = null;
+
+function getPool() {
+  if (pool) return pool;
+  const missing = ["POSTGRES_HOST", "POSTGRES_PORT", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB"]
+    .filter((key) => !process.env[key]);
+  if (missing.length) {
+    throw new Error(
+      `Teardown SQL no disponible: faltan variables de entorno ${missing.join(", ")}. ` +
+        "Los characterization tests deben correr DENTRO del contenedor backend.",
+    );
+  }
+  pool = new Pool({
+    host: process.env.POSTGRES_HOST,
+    port: Number(process.env.POSTGRES_PORT),
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    database: process.env.POSTGRES_DB,
+    max: 2,
+    // ⚠️ SIN ESTO, 169 DE 338 PRUEBAS FALLAN con «relation "ediciones" does not exist».
+    // Las tablas viven en el esquema de su tema desde el 2026-10-04, y este pool es propio: no
+    // hereda nada del de la aplicacion. Medido el 2026-10-04 al repartir el esquema.
+    options: `-c search_path=${ESQUEMAS.join(",")}`,
+  });
+  return pool;
+}
+
+export async function query(text, params = []) {
+  const result = await getPool().query(text, params);
+  return result.rows;
+}
+
+export async function closeDb() {
+  if (!pool) return;
+  await pool.end();
+  pool = null;
+}
+
+// Borra TODO lo que deja un borrador de plantilla identificado por `code` (template_code /
+// catalogo_documental.code). El orden respeta las FK (ninguna cascada: todas son NO ACTION):
+//   pasos de flujo → plantillas de flujo → vínculo a configuración → artifact → deliverable.
+//
+// ⚠️ EL FLUJO CUELGA DE DOS SITIOS, Y ESTE LIMPIADOR SOLO CONOCÍA UNO. Desde el sub-paso 3 del §0.8
+// `saveTemplateArtifactDraft` escribe el flujo AUTORADO colgando de `edicion_id` —hoy el ÚNICO
+// portador autorado, desde la fase 2 del frente 24—, así que borrar solo lo que colgaba del
+// vínculo dejaba filas apuntando al
+// artifact y el `DELETE FROM ediciones` reventaba con
+// `fk_fill_flow_templates_artifact`. No se manifestaba como un golden movido sino como TRES suites
+// caídas en su `after()` —`zz_template_lifecycle`, `zzz_artifact_draft` y este mismo flow—, y de
+// rebote como restos acumulados en `plantilla_entrega`. Fue el hallazgo del experimento desechable.
+//
+// Los objetos del almacén NO se tocan a propósito: el prefijo es determinista
+// (`System/<code>/<storage_version>/`), la subida lo reescribe idéntico en cada corrida y
+// ningún golden lo observa. Borrarlo no aportaría estabilidad y no hay ruta que lo haga.
+export async function cleanupDraftArtifactByCode(code) {
+  const artifacts = await query(
+    `SELECT ta.id
+       FROM ediciones ta
+       INNER JOIN catalogo_documental d ON d.id = ta.catalogo_documental_id
+      WHERE d.code = $1`,
+    [code],
+  );
+  const artifactIds = artifacts.map((row) => row.id);
+
+  if (artifactIds.length) {
+    const links = await query(
+      "SELECT id FROM vinculos WHERE edicion_id = ANY($1::int[])",
+      [artifactIds],
+    );
+    const linkIds = links.map((row) => row.id);
+
+    if (linkIds.length) {
+      // Los vínculos se van, pero sus recorridos ya NO cuelgan de ellos: desde la fase 2 del
+      // frente 24 `vinculo_id` no existe y el único portador autorado es `edicion_id`, que limpia
+      // el bloque de abajo. Aquí había cuatro DELETE por el portador muerto.
+      await query("DELETE FROM vinculos WHERE id = ANY($1::int[])", [linkIds]);
+    }
+
+    // LA RECETA. `fk_pasos_declarados_edicion` NO es ON DELETE CASCADE --no se borra una edicion que
+    // tenga recorrido-- asi que sin esto el `DELETE FROM ediciones` de abajo revienta. Los
+    // participantes caen con su paso.
+    await query("DELETE FROM pasos_declarados WHERE edicion_id = ANY($1::int[])", [artifactIds]);
+
+    // El portador autorado: el flujo que cuelga del propio artifact (§0.8, sub-paso 3).
+    // AQUI HABIA SEIS DELETE MAS, para las cuatro tablas de receta viejas --dos cabeceras y dos de
+    // pasos, cada una con su subconsulta por el portador--. Se retiraron en el paso 4 de la fase 4
+    // del frente 24, y con ellas el rodeo: hoy el paso cuelga de la edicion directamente.
+    await query("DELETE FROM ediciones WHERE id = ANY($1::int[])", [artifactIds]);
+  }
+
+  await query("DELETE FROM catalogo_documental WHERE code = $1", [code]);
+}
+
+// --- Tareas ad-hoc del Proceso por defecto: borrar el GRAFO entero -------------------------------
+//
+// Lo usa `flows/zzzzzzzz_default_process_routed.test.mjs`, que ejercita el camino de usuario
+// `POST /users/:id/general-tasks`. Ese endpoint escribe en NUEVE tablas dentro de una sola
+// transacción (terms, tasks, task_items, las cuatro de flujo de runtime,
+// document_versions, document_fill_flows, fill_requests) y **no existe ninguna ruta HTTP que
+// deshaga nada de eso**: el CRUD de admin no expone `terms` ni `document_fill_flows`, y el borrado
+// de un `task_item` chocaría con las FK de sus versiones (todas NO ACTION salvo dos).
+//
+// Se entra por el TÍTULO del entregable en vez de por ids, para que el limpiador valga también como
+// guardia de idempotencia en el `before`: si una corrida anterior murió a medias, los restos se
+// localizan sin recordar ningún id. De los entregables se sube a sus tareas y se borra la tarea
+// COMPLETA — el modo `derived` cuelga su entregable de la tarea que creó el modo `free`, así que
+// borrar por tarea cubre los dos de una vez.
+//
+// El orden respeta las FK de abajo arriba. Las dos cascadas que sí existen
+// (`fill_flow_templates.task_item_id` y su gemela de firma) se borran igualmente a mano: dependen de
+// que el `DELETE` de `task_items` llegue a ejecutarse, y ese es justo el que revienta si algo quedó
+// colgando.
+export async function cleanupGeneralTaskGraphByItemTitlePrefix(prefix) {
+  const taskRows = await query(
+    "SELECT DISTINCT task_id AS id FROM task_items WHERE title LIKE $1",
+    [`${prefix}%`],
+  );
+  const taskIds = taskRows.map((row) => Number(row.id));
+  if (!taskIds.length) return;
+
+  const itemRows = await query("SELECT id FROM task_items WHERE task_id = ANY($1::int[])", [taskIds]);
+  const itemIds = itemRows.map((row) => Number(row.id));
+
+  // `documents` desaparecio el 2026-08-23: las versiones cuelgan del ENTREGABLE. Antes habia que
+  // dar el rodeo por ella para llegar a las versiones; ahora se leen directas.
+  const versionRows = itemIds.length
+    ? await query("SELECT id FROM document_versions WHERE task_item_id = ANY($1::int[])", [itemIds])
+    : [];
+  const versionIds = versionRows.map((row) => Number(row.id));
+
+  if (versionIds.length) {
+    // ⚠️ EL ORDEN DE ESTE BLOQUE ES UNA CADENA DE CLAVES AJENAS, y desde el paso 3b de la fase 4 del
+    // frente 24 las DOS que apuntaban a las tablas viejas apuntan a `turnos`:
+    // `document_workflow_observations` y `document_signatures` --la primera por DOS columnas hasta el
+    // 4-bis, que las colapso en `turno_id`--. Asi que lo que
+    // cuelga del turno se borra ANTES que el turno; antes el orden entre bloques daba igual porque
+    // cada mitad tenia sus propias tablas.
+    await query("DELETE FROM document_workflow_observations WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM document_signatures WHERE document_version_id = ANY($1::int[])", [versionIds]);
+
+    // LA EJECUCION, en su forma nueva: UNA tabla para los dos lados. Los turnos caen con su
+    // recorrido por ON DELETE CASCADE, pero se borran explicitos para que el teardown diga lo que
+    // hace. Las cuatro tablas viejas ya no las escribe nadie.
+    //
+    // Y NO SE FILTRA POR ACCION: eran dos bloques --uno por mitad, con tablas distintas-- y hoy es
+    // uno. Hoy este camino no llega a instanciar la firma (hace falta subir y aprobar), pero el
+    // borrado la alcanza igual, que es lo que un teardown tiene que hacer.
+    await query(
+      `DELETE FROM turnos
+        WHERE recorrido_id IN (
+          SELECT id FROM recorridos WHERE document_version_id = ANY($1::int[])
+        )`,
+      [versionIds],
+    );
+    await query("DELETE FROM recorridos WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM document_attachments WHERE document_version_id = ANY($1::int[])", [versionIds]);
+    await query("DELETE FROM document_versions WHERE id = ANY($1::int[])", [versionIds]);
+  }
+  if (itemIds.length) {
+    // LA RECETA DE RUNTIME, la que el usuario define al enviar: cuelga del ENTREGABLE. Eran seis
+    // DELETE sobre las cuatro tablas viejas y es uno, porque el paso lleva su origen y los
+    // participantes caen con el.
+    await query("DELETE FROM pasos_declarados WHERE task_item_id = ANY($1::int[])", [itemIds]);
+    await query("DELETE FROM task_item_tenures WHERE task_item_id = ANY($1::int[])", [itemIds]);
+    await query("DELETE FROM task_items WHERE id = ANY($1::int[])", [itemIds]);
+  }
+
+  const termRows = await query("SELECT DISTINCT term_id AS id FROM tasks WHERE id = ANY($1::int[])", [taskIds]);
+  const termIds = termRows.map((row) => Number(row.id)).filter(Boolean);
+
+  await query("DELETE FROM tasks WHERE id = ANY($1::int[])", [taskIds]);
+
+  // El periodo Custom lo crea la tarea libre y es suyo (`terms.name` es UNIQUE global y lleva un
+  // sufijo con el reloj). Aun así se comprueba que no lo use nadie más: si el `NOT EXISTS` sobra,
+  // no cuesta nada; si algún día no sobra, evita un teardown que borra la fixture de otro.
+  if (termIds.length) {
+    await query(
+      "DELETE FROM terms WHERE id = ANY($1::int[]) AND NOT EXISTS (SELECT 1 FROM tasks t WHERE t.term_id = terms.id)",
+      [termIds],
+    );
+  }
+}
+
+// ¿Sobrevive una fila `catalogo_documental` con este `code`? Se usa para FIJAR el defecto de
+// compensación (la creación fallida deja el deliverable huérfano), no para limpiar.
+//
+// PROYECTABA `owner_process_id` y `owner_variation_key` hasta el 2026-10-04. Esas dos columnas se
+// retiraron (frente 23, F1.2): a qué línea sirve un entregable lo dice su VÍNCULO, no una copia
+// dentro de la fila. Lo que la sustituye es `tiene_vinculo`, que contesta la misma pregunta por el
+// camino que hoy es la fuente — y en 0/1 en vez de un id, para que el golden no se ate a una
+// secuencia de la base.
+export async function findDeliverableByCode(code) {
+  const rows = await query(
+    `SELECT d.code,
+            d.template_scope,
+            (SELECT COUNT(*)
+               FROM ediciones ta
+               INNER JOIN vinculos pdt ON pdt.edicion_id = ta.id
+              WHERE ta.catalogo_documental_id = d.id) AS tiene_vinculo
+       FROM catalogo_documental d
+      WHERE d.code = $1`,
+    [code],
+  );
+  return rows[0] ?? null;
+}
+
+// --- Jobs de firma masiva: SEMBRAR la precondición, no asertar sobre ella -----------------------
+//
+// Segunda excepción a la regla HTTP-only, y por el mismo motivo que la primera: no hay otra vía.
+// `signature_batch_jobs` NO está en `config/sqlTables.js`, así que no la expone el CRUD de admin, y
+// el único camino HTTP que crea un job es `POST /sign/batch/start`, que exige un certificado PKCS#12
+// real en el almacén y arranca de inmediato un bucle que habla con el firmante por RabbitMQ. Caracterizar
+// los guards de `getSignBatchStatus`/`downloadSignBatch` (404 antes que 403, y el 400 del lote sin
+// firmados) por esa vía sería atar el golden al microservicio de firma.
+//
+// Se siembra la fila, se ejercitan los guards por HTTP y se borra en el `after`. La ASERCIÓN sigue
+// siendo el contrato HTTP; esto solo pone la precondición.
+export async function upsertSignatureBatchJob(job) {
+  await query(
+    `INSERT INTO signature_batch_jobs
+       (job_id, user_id, sign_mode, status, total, processed, success_count, failed_count, results)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9::jsonb)
+     ON CONFLICT (job_id) DO UPDATE SET
+       user_id = EXCLUDED.user_id, sign_mode = EXCLUDED.sign_mode, status = EXCLUDED.status,
+       total = EXCLUDED.total, processed = EXCLUDED.processed,
+       success_count = EXCLUDED.success_count, failed_count = EXCLUDED.failed_count,
+       results = EXCLUDED.results`,
+    [
+      job.jobId,
+      job.userId ?? null,
+      job.signMode ?? "coordinates",
+      job.status ?? "completed",
+      job.total ?? 0,
+      job.processed ?? 0,
+      job.successCount ?? 0,
+      job.failedCount ?? 0,
+      JSON.stringify(job.results ?? []),
+    ],
+  );
+}
+
+export async function deleteSignatureBatchJob(jobId) {
+  await query("DELETE FROM signature_batch_jobs WHERE job_id = $1", [jobId]);
+}
+
+export async function countSignatureBatchJobs() {
+  const rows = await query("SELECT COUNT(*)::int AS total FROM signature_batch_jobs");
+  return Number(rows[0]?.total ?? 0);
+}
+
+// --- Restauración de la solicitud de entrega usada por zzzz_sign_workflow -----------------------
+//
+// La máquina de estados de `fill_requests` NO tiene marcha atrás por HTTP: de `completado` no se sale,
+// y el CRUD de admin rechaza el `UPDATE` porque su hook re-sincroniza el progreso documental y la
+// transición inversa de `document_versions` es ilegal. Así que la vuelta al estado inicial se hace
+// por SQL, igual que la limpieza del borrador de plantilla.
+//
+// Restaura SOLO las dos filas cuyos valores leen los golden de otros flows (la solicitud y su
+// versión documental). Lo que este teardown NO deshace, y por eso el flow lleva prefijo `zzzz_` y
+// debe seguir corriendo el último: `document_observations`, `task_items.user_started_at`,
+// `document_fill_flows.status/current_step_order` y las instancias de flujo de firma que crea una
+// aprobación.
+export async function captureFillRequestFixture(turnoId) {
+  const rows = await query(
+    `SELECT tu.id, tu.persona_id AS assigned_person_id, tu.estado AS status, tu.manual AS is_manual,
+            tu.respondido AS responded_at, tu.nota_respuesta AS response_note,
+            dv.id AS document_version_id, dv.status AS dv_status, dv.working_file_path
+       FROM turnos tu
+       INNER JOIN recorridos r ON r.id = tu.recorrido_id
+       INNER JOIN document_versions dv ON dv.id = r.document_version_id
+      WHERE tu.id = $1`,
+    [turnoId],
+  );
+  return rows[0] ?? null;
+}
+
+export async function restoreFillRequestFixture(snapshot) {
+  if (!snapshot) return;
+  await query(
+    `UPDATE turnos
+        SET persona_id = $2, estado = $3, manual = $4, respondido = $5, nota_respuesta = $6
+      WHERE id = $1`,
+    [
+      snapshot.id,
+      snapshot.assigned_person_id,
+      snapshot.status,
+      snapshot.is_manual,
+      snapshot.responded_at,
+      snapshot.response_note,
+    ],
+  );
+  await query(
+    "UPDATE document_versions SET status = $2, working_file_path = $3 WHERE id = $1",
+    [snapshot.document_version_id, snapshot.dv_status, snapshot.working_file_path],
+  );
+}

@@ -1,56 +1,50 @@
 <template>
   <section class="mt-4 space-y-4">
-      <div class="profile-section-header">
-        <div>
-          <h2 class="text-start profile-section-title table-title-with-icon">
-            <span class="table-title-icon" aria-hidden="true">
-              <font-awesome-icon icon="layer-group" />
-            </span>
-            <span>Artifacts sin definicion</span>
-          </h2>
-          <p class="profile-section-subtitle mb-0">Muestra artifacts que aun no tienen ningun vinculo en plantillas de definicion.</p>
-        </div>
-        <div class="profile-section-actions">
-          <AppTag variant="neutral">{{ rows.length }}</AppTag>
-        </div>
-      </div>
-      <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
-            <div class="md:col-span-4 lg:col-span-3">
-              <AdminInputField :model-value="searchTerm" placeholder="Buscar artifacts sin definicion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
-            </div>
-            <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.is_active" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
-                <option value="">Activo</option>
-                <option value="1">Si</option>
-                <option value="0">No</option>
-              </AdminSelectField>
-            </div>
-            <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
-              <div class="inline-flex items-center gap-2">
-                <AdminButton variant="secondary" size="lg" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
-                  <font-awesome-icon icon="times" />
-                </AdminButton>
-                <AdminButton variant="secondary" size="lg" title="Actualizar" aria-label="Actualizar" @click="$emit('load')">
-                  <font-awesome-icon icon="rotate-right" />
-                </AdminButton>
+    <!-- ⚠️ MISMA BARRA QUE LAS DEMAS (2026-08-21) — gemela de `AdminVacantPositionsSection`.
+         Antes armaba su cabecera a mano y, con la barra suelta del gestor pintando «Regresar» y
+         «Agregar» arriba, **las acciones salian en DOS lineas**. -->
+    <AppTableToolbar :title="title">
+      <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
+      <template v-if="$slots.subtabs" #subtabs><slot name="subtabs" /></template>
+      <template #filtro>
+        <AdminInputField :model-value="searchTerm" input-class="deasy-control" placeholder="Buscar plantillas sin configuracion" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+      </template>
+      <template #actions>
+        <slot name="actions" />
+        <AdminButton variant="neutral-outline" icon-only title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+        <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+        <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
+      </template>
+    </AppTableToolbar>
+
+      <div>
+          <div class="deasy-filter-shell deasy-filter-shell--embedded">
+            <div class="deasy-filter-grid deasy-filter-grid--admin">
+              <div class="md:col-span-4 lg:col-span-3">
+                <AdminSelectField :model-value="filters.is_active" select-class="deasy-control" :disabled="loading" @update:model-value="updateFilter('is_active', $event)" @change="$emit('load')">
+                  <option value="">Activo</option>
+                  <option value="1">Si</option>
+                  <option value="0">No</option>
+                </AdminSelectField>
+              </div>
+              <div class="md:col-span-4 lg:col-span-2 lg:col-start-11 lg:justify-self-end">
               </div>
             </div>
           </div>
 
-          <div v-if="loading" class="text-sm text-slate-500">Cargando artifacts sin definicion...</div>
-          <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
-          <AdminDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `artifact-free-${row.id}`" empty-text="No hay artifacts sin definicion.">
+          <div v-if="loading" class="text-sm text-muted">Cargando plantillas sin configuracion...</div>
+          <div v-else-if="error" role="alert">{{ error }}</div>
+          <AppDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `artifact-free-${row.id}`" empty-text="No hay plantillas sin configuracion.">
             <template #cell="{ row, field }">
               <template v-if="field.name === 'available_formats'">
-                <div class="available-formats-cell">
+                <div>
                   <template v-if="getAvailableFormatSections(row.available_formats).length">
-                    <div v-for="section in getAvailableFormatSections(row.available_formats)" :key="section.mode" class="available-formats-group" :class="{ 'is-inline': section.mode === 'general' }">
-                      <span class="available-formats-mode">{{ section.label }}</span>
-                      <div class="available-formats-badges">
-                        <span v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" class="available-formats-badge" :style="getAvailableFormatBadgeStyle(section.mode, entry)">
+                    <div v-for="section in getAvailableFormatSections(row.available_formats)" :key="section.mode" :class="{ 'is-inline': section.mode === 'reference' }">
+                      <span>{{ section.label }}</span>
+                      <div>
+                        <AppTag v-for="entry in section.entries" :key="`${section.mode}-${entry.format}`" variant="neutral" outlined>
                           {{ entry.formatLabel }}
-                        </span>
+                        </AppTag>
                       </div>
                     </div>
                   </template>
@@ -65,28 +59,31 @@
               </template>
             </template>
             <template #actions="{ row }">
-              <div class="inline-flex items-center gap-1">
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-view" title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
+              <div class="inline-flex items-center gap-2">
+                <AdminButton variant="info-soft" icon-only title="Visualizar" aria-label="Visualizar" @click="$emit('view', row)">
                   <font-awesome-icon icon="eye" />
                 </AdminButton>
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
+                <AdminButton v-if="canLink" variant="success-soft" icon-only title="Vincular" aria-label="Vincular" @click="$emit('link', row)">
                   <font-awesome-icon icon="link" />
                 </AdminButton>
               </div>
             </template>
-          </AdminDataTable>
+          </AppDataTable>
       </div>
   </section>
 </template>
 
 <script setup>
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({
+  /* El nombre de la tabla, para la fila superior de la barra. */
+  title: { type: String, default: "" },
   searchTerm: { type: String, default: "" },
   filters: { type: Object, default: () => ({}) },
   hasFilters: { type: Boolean, default: false },
@@ -95,7 +92,7 @@ const props = defineProps({
   rows: { type: Array, default: () => [] },
   tableFields: { type: Array, default: () => [] },
   getAvailableFormatSections: { type: Function, required: true },
-  getAvailableFormatBadgeStyle: { type: Function, required: true }
+  canLink: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(["update:search-term", "update:filters", "debounced-search", "clear-filters", "load", "view", "link"]);

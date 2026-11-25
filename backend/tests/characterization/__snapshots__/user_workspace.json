@@ -1,0 +1,1076 @@
+{
+  "addable_deliverables_sin_filtro": {
+    "status": 400,
+    "body": {
+      "message": "Se requiere task_id o definition_id."
+    }
+  },
+  "addable_deliverables_usuario": {
+    "status": 200,
+    "body": {
+      "catalogo_documental": [
+        {
+          "edicion_id": "<normalized>",
+          "id": "<normalized>",
+          "item_mode": "routed",
+          "name": "Informe general",
+          "sort_order": 1
+        }
+      ],
+      "definition_id": "<normalized>",
+      "result": "ok",
+      "task_id": "<normalized>"
+    }
+  },
+  "certificado_mimetype_rechazado": {
+    "status": 400,
+    "esHtml": false,
+    "esJson": true,
+    "filtra_stack_trace": false,
+    "menciona_el_motivo": true,
+    "claves": [
+      "code",
+      "message"
+    ]
+  },
+  "escaneo_ajeno_denegado": {
+    "status": 403
+  },
+  "escaneo_por_cedula_denegado": {
+    "status": 403
+  },
+  "escaneo_propio_sin_pdf": {
+    "status": 404
+  },
+  "flow_catalog_usuario": {
+    "status": 200,
+    "body": {
+      "cargos": [
+        {
+          "id": "<normalized>",
+          "name": "Asistente"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Coordinador"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Director"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Docente"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Jefe"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Prorrector"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Responsable"
+        }
+      ],
+      "result": "ok",
+      "units": [
+        {
+          "id": "<normalized>",
+          "name": "Coordinación de Aprendizaje y Enseñanza"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Derecho Educación y Sociedad"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Dirección de Docencia y Estudiantes"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Dirección de Investigación"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Formación Técnica y Tecnológica"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Hábitat Infraestructura y Creatividad"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Negocios y Empresas"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Prorrectorado"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Raiz del sistema"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Salud y Bienestar"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Sistemas de Información"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Talento Humano"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Tecnologías de la Información"
+        },
+        {
+          "id": "<normalized>",
+          "name": "Tecnologías de la Información"
+        }
+      ]
+    }
+  },
+  "menu_usuario": {
+    "status": 200,
+    "body": {
+      "consolidated": [
+        {
+          "id": "<normalized>",
+          "name": "Docente",
+          "position_type": "real",
+          "processes": [
+            {
+              "access_source": "process",
+              "definition_version": "1.0.0",
+              "id": "<normalized>",
+              "is_routed": true,
+              "linea_id": "<normalized>",
+              "linea_nombre": "Proceso por defecto",
+              "name": "Proceso por defecto",
+              "process_definition_id": "<normalized>",
+              "slug": "default",
+              "unit_id": "<normalized>"
+            }
+          ]
+        }
+      ],
+      "unit_groups": [
+        {
+          "id": "<normalized>",
+          "label": "Coordinación de Aprendizaje y Enseñanza",
+          "name": "Coordinación de Aprendizaje y Enseñanza",
+          "units": [
+            {
+              "cargos": [
+                {
+                  "id": "<normalized>",
+                  "name": "Docente",
+                  "position_type": "real",
+                  "processes": [
+                    {
+                      "access_source": "process",
+                      "definition_version": "1.0.0",
+                      "id": "<normalized>",
+                      "is_routed": true,
+                      "linea_id": "<normalized>",
+                      "linea_nombre": "Proceso por defecto",
+                      "name": "Proceso por defecto",
+                      "process_definition_id": "<normalized>",
+                      "slug": "default",
+                      "unit_id": "<normalized>"
+                    }
+                  ]
+                }
+              ],
+              "group_id": "<normalized>",
+              "id": "<normalized>",
+              "label": "Carrera de Tecnologías de la Información",
+              "name": "Tecnologías de la Información"
+            }
+          ]
+        }
+      ],
+      "units": [
+        {
+          "cargos": [
+            {
+              "id": "<normalized>",
+              "name": "Docente",
+              "position_type": "real",
+              "processes": [
+                {
+                  "access_source": "process",
+                  "definition_version": "1.0.0",
+                  "id": "<normalized>",
+                  "is_routed": true,
+                  "linea_id": "<normalized>",
+                  "linea_nombre": "Proceso por defecto",
+                  "name": "Proceso por defecto",
+                  "process_definition_id": "<normalized>",
+                  "slug": "default",
+                  "unit_id": "<normalized>"
+                }
+              ]
+            }
+          ],
+          "group_id": "<normalized>",
+          "id": "<normalized>",
+          "label": "Carrera de Tecnologías de la Información",
+          "name": "Tecnologías de la Información"
+        }
+      ],
+      "user_id": "<normalized>"
+    }
+  },
+  "my_received_usuario": {
+    "status": 200,
+    "body": {
+      "received": [],
+      "result": "ok"
+    }
+  },
+  "my_sends_ajeno_denegado": {
+    "status": 403,
+    "body": {
+      "message": "No autorizado."
+    }
+  },
+  "my_sends_usuario": {
+    "status": 200,
+    "body": {
+      "result": "ok",
+      "sends": [
+        {
+          "created_at": "<normalized>",
+          "definition_id": "<normalized>",
+          "document_status": "Pendiente de llenado",
+          "id": "<normalized>",
+          "label": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
+          "process_id": "<normalized>",
+          "process_name": "Proceso por defecto"
+        }
+      ]
+    }
+  },
+  "panel_available_terms": {
+    "isArray": true,
+    "nonEmpty": true,
+    "itemKeys": [
+      "end_date",
+      "id",
+      "name",
+      "start_date",
+      "term_type_code",
+      "term_type_id",
+      "term_type_name"
+    ]
+  },
+  "panel_definicion_inexistente": {
+    "status": 404,
+    "body": {
+      "message": "La configuracion no esta activa o el usuario no tiene acceso operativo a ella."
+    }
+  },
+  "panel_usuario": {
+    "status": 200,
+    "body": {
+      "definition": {
+        "alcanza_a_mis_puestos": true,
+        "chat_context": {
+          "accessible_scope_unit_ids": [],
+          "process_id": "<normalized>"
+        },
+        "definition_version": "1.0.0",
+        "description": "Tareas libres y no clasificadas.",
+        "effective_from": "<normalized>",
+        "effective_to": "<normalized>",
+        "id": "<normalized>",
+        "linea_cargo_name": null,
+        "linea_donde": null,
+        "linea_id": "<normalized>",
+        "linea_nombre": "Proceso por defecto",
+        "name": "Proceso por defecto · 1.0.0",
+        "period_types_count": 1,
+        "process_id": "<normalized>",
+        "process_name": "Proceso por defecto",
+        "process_slug": "default",
+        "status": "active",
+        "templates_count": 1,
+        "unit_scope_type": "all_units"
+      },
+      "dependencies": {
+        "period_types": [
+          {
+            "id": "<normalized>",
+            "is_active": 1,
+            "term_type_code": "PERM",
+            "term_type_id": "<normalized>",
+            "term_type_name": "Permanente"
+          }
+        ],
+        "rules": [
+          {
+            "cargo_name": null,
+            "display_label": "Todas las unidades",
+            "linea_cargo_id": "<normalized>",
+            "linea_unit_id": "<normalized>",
+            "linea_unit_scope_type": "all_units",
+            "linea_unit_type_id": "<normalized>",
+            "recipient_policy": "all_matches",
+            "unit_name": null,
+            "unit_type_name": null
+          }
+        ],
+        "templates": [
+          {
+            "edicion_id": "<normalized>",
+            "id": "<normalized>",
+            "signature_flow_count": "0",
+            "sort_order": 1,
+            "template_artifact_active": 1,
+            "template_artifact_name": "Informe general"
+          }
+        ]
+      },
+      "documents": [
+        {
+          "actions": {
+            "can_download_template": true,
+            "can_manage_fill": true,
+            "can_open_process_chat": true,
+            "can_reset_workflow": true,
+            "can_review_signature_flow": true,
+            "can_sign": false,
+            "can_upload_deliverable": true,
+            "implemented": {
+              "download_template": false,
+              "manage_fill": false,
+              "process_chat": true,
+              "reset_workflow": true,
+              "review_signature_flow": false,
+              "sign": true,
+              "upload_deliverable": false
+            }
+          },
+          "attachment_count": 0,
+          "attachments": [],
+          "document_id": "<normalized>",
+          "document_status": "Pendiente de llenado",
+          "document_version": "1.0",
+          "document_version_id": "<normalized>",
+          "edicion_id": "<normalized>",
+          "end_date": "<normalized>",
+          "final_file_path": "<normalized>",
+          "item_mode": "routed",
+          "origin_unit_id": "<normalized>",
+          "pending_fill_count": 1,
+          "pending_signature_count": "0",
+          "recipient_name": null,
+          "start_date": "<normalized>",
+          "task_id": "<normalized>",
+          "task_item_id": "<normalized>",
+          "template_artifact_name": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
+          "total_fill_count": 1,
+          "total_signature_count": "0",
+          "unit_label": "Carrera de Tecnologías de la Información",
+          "user_started_at": null,
+          "workflow": {
+            "paso_actual_entrega": 1,
+            "paso_actual_firma": null,
+            "pasos_entrega": [
+              {
+                "assigned_person_id": "<normalized>",
+                "assigned_person_name": "Usuario Prueba",
+                "cargo_name": null,
+                "display_label": "Usuario Prueba",
+                "estado": "pendiente",
+                "id": "<normalized>",
+                "is_manual": false,
+                "position_title": null,
+                "requested_at": "<normalized>",
+                "resolver_type": "specific_person",
+                "responded_at": null,
+                "response_note": null,
+                "step_order": 1,
+                "turno_id": "<normalized>",
+                "unit_name": null,
+                "unit_type_name": null
+              }
+            ],
+            "pasos_firma": [
+              {
+                "code": "firma_1",
+                "id": "<normalized>",
+                "name": "Firma 1",
+                "signer_count": 1,
+                "slot": "firma_1",
+                "step_order": 1
+              }
+            ],
+            "recorrido_entrega": {
+              "estado": "pendiente",
+              "paso_actual": 1,
+              "pasos": [
+                {
+                  "assigned_person_id": "<normalized>",
+                  "assigned_person_name": "Usuario Prueba",
+                  "cargo_name": null,
+                  "display_label": "Usuario Prueba",
+                  "estado": "pendiente",
+                  "id": "<normalized>",
+                  "is_manual": false,
+                  "position_title": null,
+                  "requested_at": "<normalized>",
+                  "resolver_type": "specific_person",
+                  "responded_at": null,
+                  "response_note": null,
+                  "step_order": 1,
+                  "turno_id": "<normalized>",
+                  "unit_name": null,
+                  "unit_type_name": null
+                }
+              ]
+            },
+            "total_pasos_firma": 1,
+            "turnos_entrega": [
+              {
+                "document_id": "<normalized>",
+                "document_version": "1.0",
+                "document_version_id": "<normalized>",
+                "id": "<normalized>",
+                "requested_at": "<normalized>",
+                "responded_at": null,
+                "status": "pendiente",
+                "step_order": 1,
+                "template_artifact_name": "Informe general"
+              }
+            ],
+            "turnos_firma": []
+          },
+          "working_file_path": "<normalized>"
+        }
+      ],
+      "permissions": {
+        "can_launch_custom_term": false,
+        "can_launch_manual": true,
+        "can_use_existing_term": true,
+        "has_document": true
+      },
+      "signatures": [],
+      "summary": {
+        "documents_total": 1,
+        "signatures_pending": 0,
+        "task_items_pending": 1,
+        "tasks_pending": 1,
+        "tasks_total": 1,
+        "turnos_entrega_pendientes": 1,
+        "user_packages_total": 0
+      },
+      "tasks": [
+        {
+          "created_at": "<normalized>",
+          "description": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
+          "end_date": "<normalized>",
+          "id": "<normalized>",
+          "items": [
+            {
+              "actions": {
+                "can_download_template": true,
+                "can_manage_fill": true,
+                "can_open_process_chat": true,
+                "can_reset_workflow": true,
+                "can_review_signature_flow": true,
+                "can_sign": false,
+                "can_upload_deliverable": true,
+                "implemented": {
+                  "download_template": false,
+                  "manage_fill": false,
+                  "process_chat": true,
+                  "reset_workflow": true,
+                  "review_signature_flow": false,
+                  "sign": true,
+                  "upload_deliverable": false
+                }
+              },
+              "assigned_person_id": "<normalized>",
+              "attachment_count": 0,
+              "attachments": [],
+              "document": {
+                "actions": {
+                  "can_download_template": true,
+                  "can_manage_fill": true,
+                  "can_open_process_chat": true,
+                  "can_reset_workflow": true,
+                  "can_review_signature_flow": true,
+                  "can_sign": false,
+                  "can_upload_deliverable": true,
+                  "implemented": {
+                    "download_template": false,
+                    "manage_fill": false,
+                    "process_chat": true,
+                    "reset_workflow": true,
+                    "review_signature_flow": false,
+                    "sign": true,
+                    "upload_deliverable": false
+                  }
+                },
+                "attachment_count": 0,
+                "attachments": [],
+                "document_id": "<normalized>",
+                "document_status": "Pendiente de llenado",
+                "document_version": "1.0",
+                "document_version_id": "<normalized>",
+                "edicion_id": "<normalized>",
+                "end_date": "<normalized>",
+                "final_file_path": "<normalized>",
+                "item_mode": "routed",
+                "origin_unit_id": "<normalized>",
+                "pending_fill_count": 1,
+                "pending_signature_count": "0",
+                "recipient_name": null,
+                "start_date": "<normalized>",
+                "task_id": "<normalized>",
+                "task_item_id": "<normalized>",
+                "template_artifact_name": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
+                "total_fill_count": 1,
+                "total_signature_count": "0",
+                "unit_label": "Carrera de Tecnologías de la Información",
+                "user_started_at": null,
+                "workflow": {
+                  "paso_actual_entrega": 1,
+                  "paso_actual_firma": null,
+                  "pasos_entrega": [
+                    {
+                      "assigned_person_id": "<normalized>",
+                      "assigned_person_name": "Usuario Prueba",
+                      "cargo_name": null,
+                      "display_label": "Usuario Prueba",
+                      "estado": "pendiente",
+                      "id": "<normalized>",
+                      "is_manual": false,
+                      "position_title": null,
+                      "requested_at": "<normalized>",
+                      "resolver_type": "specific_person",
+                      "responded_at": null,
+                      "response_note": null,
+                      "step_order": 1,
+                      "turno_id": "<normalized>",
+                      "unit_name": null,
+                      "unit_type_name": null
+                    }
+                  ],
+                  "pasos_firma": [
+                    {
+                      "code": "firma_1",
+                      "id": "<normalized>",
+                      "name": "Firma 1",
+                      "signer_count": 1,
+                      "slot": "firma_1",
+                      "step_order": 1
+                    }
+                  ],
+                  "recorrido_entrega": {
+                    "estado": "pendiente",
+                    "paso_actual": 1,
+                    "pasos": [
+                      {
+                        "assigned_person_id": "<normalized>",
+                        "assigned_person_name": "Usuario Prueba",
+                        "cargo_name": null,
+                        "display_label": "Usuario Prueba",
+                        "estado": "pendiente",
+                        "id": "<normalized>",
+                        "is_manual": false,
+                        "position_title": null,
+                        "requested_at": "<normalized>",
+                        "resolver_type": "specific_person",
+                        "responded_at": null,
+                        "response_note": null,
+                        "step_order": 1,
+                        "turno_id": "<normalized>",
+                        "unit_name": null,
+                        "unit_type_name": null
+                      }
+                    ]
+                  },
+                  "total_pasos_firma": 1,
+                  "turnos_entrega": [
+                    {
+                      "document_id": "<normalized>",
+                      "document_version": "1.0",
+                      "document_version_id": "<normalized>",
+                      "id": "<normalized>",
+                      "requested_at": "<normalized>",
+                      "responded_at": null,
+                      "status": "pendiente",
+                      "step_order": 1,
+                      "template_artifact_name": "Informe general"
+                    }
+                  ],
+                  "turnos_firma": []
+                },
+                "working_file_path": "<normalized>"
+              },
+              "document_count": 1,
+              "documents": [
+                {
+                  "actions": {
+                    "can_download_template": true,
+                    "can_manage_fill": true,
+                    "can_open_process_chat": true,
+                    "can_reset_workflow": true,
+                    "can_review_signature_flow": true,
+                    "can_sign": false,
+                    "can_upload_deliverable": true,
+                    "implemented": {
+                      "download_template": false,
+                      "manage_fill": false,
+                      "process_chat": true,
+                      "reset_workflow": true,
+                      "review_signature_flow": false,
+                      "sign": true,
+                      "upload_deliverable": false
+                    }
+                  },
+                  "attachment_count": 0,
+                  "attachments": [],
+                  "document_id": "<normalized>",
+                  "document_status": "Pendiente de llenado",
+                  "document_version": "1.0",
+                  "document_version_id": "<normalized>",
+                  "edicion_id": "<normalized>",
+                  "end_date": "<normalized>",
+                  "final_file_path": "<normalized>",
+                  "item_mode": "routed",
+                  "origin_unit_id": "<normalized>",
+                  "pending_fill_count": 1,
+                  "pending_signature_count": "0",
+                  "recipient_name": null,
+                  "start_date": "<normalized>",
+                  "task_id": "<normalized>",
+                  "task_item_id": "<normalized>",
+                  "template_artifact_name": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
+                  "total_fill_count": 1,
+                  "total_signature_count": "0",
+                  "unit_label": "Carrera de Tecnologías de la Información",
+                  "user_started_at": null,
+                  "workflow": {
+                    "paso_actual_entrega": 1,
+                    "paso_actual_firma": null,
+                    "pasos_entrega": [
+                      {
+                        "assigned_person_id": "<normalized>",
+                        "assigned_person_name": "Usuario Prueba",
+                        "cargo_name": null,
+                        "display_label": "Usuario Prueba",
+                        "estado": "pendiente",
+                        "id": "<normalized>",
+                        "is_manual": false,
+                        "position_title": null,
+                        "requested_at": "<normalized>",
+                        "resolver_type": "specific_person",
+                        "responded_at": null,
+                        "response_note": null,
+                        "step_order": 1,
+                        "turno_id": "<normalized>",
+                        "unit_name": null,
+                        "unit_type_name": null
+                      }
+                    ],
+                    "pasos_firma": [
+                      {
+                        "code": "firma_1",
+                        "id": "<normalized>",
+                        "name": "Firma 1",
+                        "signer_count": 1,
+                        "slot": "firma_1",
+                        "step_order": 1
+                      }
+                    ],
+                    "recorrido_entrega": {
+                      "estado": "pendiente",
+                      "paso_actual": 1,
+                      "pasos": [
+                        {
+                          "assigned_person_id": "<normalized>",
+                          "assigned_person_name": "Usuario Prueba",
+                          "cargo_name": null,
+                          "display_label": "Usuario Prueba",
+                          "estado": "pendiente",
+                          "id": "<normalized>",
+                          "is_manual": false,
+                          "position_title": null,
+                          "requested_at": "<normalized>",
+                          "resolver_type": "specific_person",
+                          "responded_at": null,
+                          "response_note": null,
+                          "step_order": 1,
+                          "turno_id": "<normalized>",
+                          "unit_name": null,
+                          "unit_type_name": null
+                        }
+                      ]
+                    },
+                    "total_pasos_firma": 1,
+                    "turnos_entrega": [
+                      {
+                        "document_id": "<normalized>",
+                        "document_version": "1.0",
+                        "document_version_id": "<normalized>",
+                        "id": "<normalized>",
+                        "requested_at": "<normalized>",
+                        "responded_at": null,
+                        "status": "pendiente",
+                        "step_order": 1,
+                        "template_artifact_name": "Informe general"
+                      }
+                    ],
+                    "turnos_firma": []
+                  },
+                  "working_file_path": "<normalized>"
+                }
+              ],
+              "edicion_id": "<normalized>",
+              "end_date": "<normalized>",
+              "generador_id": "<normalized>",
+              "id": "<normalized>",
+              "item_mode": "routed",
+              "origin_kind": "user_added",
+              "origin_unit_id": "<normalized>",
+              "participation": {
+                "has_past_fill": false,
+                "has_past_signature": false
+              },
+              "pending_fill_count": 1,
+              "responsible_position_id": "<normalized>",
+              "responsible_position_title": "Docente",
+              "sort_order": 1,
+              "start_date": "<normalized>",
+              "target_unit_id": "<normalized>",
+              "target_unit_label": "Carrera de Tecnologías de la Información",
+              "task_id": "<normalized>",
+              "template_artifact_name": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
+              "title": "Informe de evento (characterization seed)\n\nTarea ad-hoc determinista para golden-master.",
+              "total_fill_count": 1,
+              "unit_label": "Carrera de Tecnologías de la Información",
+              "user_started_at": null,
+              "vinculo_id": "<normalized>",
+              "workflow": {
+                "paso_actual_entrega": 1,
+                "paso_actual_firma": null,
+                "pasos_entrega": [
+                  {
+                    "assigned_person_id": "<normalized>",
+                    "assigned_person_name": "Usuario Prueba",
+                    "cargo_name": null,
+                    "display_label": "Usuario Prueba",
+                    "estado": "pendiente",
+                    "id": "<normalized>",
+                    "is_manual": false,
+                    "position_title": null,
+                    "requested_at": "<normalized>",
+                    "resolver_type": "specific_person",
+                    "responded_at": null,
+                    "response_note": null,
+                    "step_order": 1,
+                    "turno_id": "<normalized>",
+                    "unit_name": null,
+                    "unit_type_name": null
+                  }
+                ],
+                "pasos_firma": [
+                  {
+                    "code": "firma_1",
+                    "id": "<normalized>",
+                    "name": "Firma 1",
+                    "signer_count": 1,
+                    "slot": "firma_1",
+                    "step_order": 1
+                  }
+                ],
+                "recorrido_entrega": {
+                  "estado": "pendiente",
+                  "paso_actual": 1,
+                  "pasos": [
+                    {
+                      "assigned_person_id": "<normalized>",
+                      "assigned_person_name": "Usuario Prueba",
+                      "cargo_name": null,
+                      "display_label": "Usuario Prueba",
+                      "estado": "pendiente",
+                      "id": "<normalized>",
+                      "is_manual": false,
+                      "position_title": null,
+                      "requested_at": "<normalized>",
+                      "resolver_type": "specific_person",
+                      "responded_at": null,
+                      "response_note": null,
+                      "step_order": 1,
+                      "turno_id": "<normalized>",
+                      "unit_name": null,
+                      "unit_type_name": null
+                    }
+                  ]
+                },
+                "total_pasos_firma": 1,
+                "turnos_entrega": [
+                  {
+                    "document_id": "<normalized>",
+                    "document_version": "1.0",
+                    "document_version_id": "<normalized>",
+                    "id": "<normalized>",
+                    "requested_at": "<normalized>",
+                    "responded_at": null,
+                    "status": "pendiente",
+                    "step_order": 1,
+                    "template_artifact_name": "Informe general"
+                  }
+                ],
+                "turnos_firma": []
+              }
+            }
+          ],
+          "pending_task_items": 1,
+          "responsible_unit_id": "<normalized>",
+          "responsible_unit_label": "Carrera de Tecnologías de la Información",
+          "scope_unit_id": "<normalized>",
+          "start_date": "<normalized>",
+          "status": "pendiente",
+          "task_item_count": 1,
+          "term_id": "<normalized>",
+          "term_name": "<normalized>",
+          "term_type_code": "CUS",
+          "term_type_name": "Custom"
+        }
+      ],
+      "turnos_entrega_pendientes": [
+        {
+          "document_id": "<normalized>",
+          "document_version": "1.0",
+          "document_version_id": "<normalized>",
+          "id": "<normalized>",
+          "requested_at": "<normalized>",
+          "responded_at": null,
+          "status": "pendiente",
+          "step_order": 1,
+          "template_artifact_name": "Informe general"
+        }
+      ],
+      "user_packages": []
+    }
+  },
+  "task_recipients_usuario": {
+    "status": 200,
+    "body": {
+      "recipients": [
+        {
+          "cedula": "1234567897",
+          "email": "admin@domain.com",
+          "first_name": "Administrador",
+          "full_name": "Administrador Principal",
+          "id": "<normalized>",
+          "last_name": "Principal"
+        },
+        {
+          "cedula": "1700000100",
+          "email": "1700000100@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente CAE",
+          "id": "<normalized>",
+          "last_name": "CAE"
+        },
+        {
+          "cedula": "1700000043",
+          "email": "1700000043@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente DDE",
+          "id": "<normalized>",
+          "last_name": "DDE"
+        },
+        {
+          "cedula": "1700000167",
+          "email": "1700000167@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente derecho-educacion-y-sociedad",
+          "id": "<normalized>",
+          "last_name": "derecho-educacion-y-sociedad"
+        },
+        {
+          "cedula": "1700000068",
+          "email": "1700000068@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente DIVI",
+          "id": "<normalized>",
+          "last_name": "DIVI"
+        },
+        {
+          "cedula": "1700000225",
+          "email": "1700000225@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente E055",
+          "id": "<normalized>",
+          "last_name": "E055"
+        },
+        {
+          "cedula": "1700000241",
+          "email": "1700000241@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente E140",
+          "id": "<normalized>",
+          "last_name": "E140"
+        },
+        {
+          "cedula": "1700000126",
+          "email": "1700000126@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente EHIC",
+          "id": "<normalized>",
+          "last_name": "EHIC"
+        },
+        {
+          "cedula": "1700000183",
+          "email": "1700000183@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente formacion-tecnica-y-tecnologica",
+          "id": "<normalized>",
+          "last_name": "formacion-tecnica-y-tecnologica"
+        },
+        {
+          "cedula": "1700000209",
+          "email": "1700000209@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente negocios-y-empresas",
+          "id": "<normalized>",
+          "last_name": "negocios-y-empresas"
+        },
+        {
+          "cedula": "1700000027",
+          "email": "1700000027@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente PREC",
+          "id": "<normalized>",
+          "last_name": "PREC"
+        },
+        {
+          "cedula": "1700000142",
+          "email": "1700000142@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente salud-y-bienestar",
+          "id": "<normalized>",
+          "last_name": "salud-y-bienestar"
+        },
+        {
+          "cedula": "1700000084",
+          "email": "1700000084@demo.deasy.local",
+          "first_name": "Asistente",
+          "full_name": "Asistente TTHH",
+          "id": "<normalized>",
+          "last_name": "TTHH"
+        },
+        {
+          "cedula": "1700000092",
+          "email": "1700000092@demo.deasy.local",
+          "first_name": "Coordinador",
+          "full_name": "Coordinador CAE",
+          "id": "<normalized>",
+          "last_name": "CAE"
+        },
+        {
+          "cedula": "1700000217",
+          "email": "1700000217@demo.deasy.local",
+          "first_name": "Coordinador",
+          "full_name": "Coordinador E055",
+          "id": "<normalized>",
+          "last_name": "E055"
+        },
+        {
+          "cedula": "1700000233",
+          "email": "1700000233@demo.deasy.local",
+          "first_name": "Coordinador",
+          "full_name": "Coordinador E140",
+          "id": "<normalized>",
+          "last_name": "E140"
+        },
+        {
+          "cedula": "1700000035",
+          "email": "1700000035@demo.deasy.local",
+          "first_name": "Director",
+          "full_name": "Director DDE",
+          "id": "<normalized>",
+          "last_name": "DDE"
+        },
+        {
+          "cedula": "1700000159",
+          "email": "1700000159@demo.deasy.local",
+          "first_name": "Director",
+          "full_name": "Director derecho-educacion-y-sociedad",
+          "id": "<normalized>",
+          "last_name": "derecho-educacion-y-sociedad"
+        },
+        {
+          "cedula": "1700000050",
+          "email": "1700000050@demo.deasy.local",
+          "first_name": "Director",
+          "full_name": "Director DIVI",
+          "id": "<normalized>",
+          "last_name": "DIVI"
+        },
+        {
+          "cedula": "1700000118",
+          "email": "1700000118@demo.deasy.local",
+          "first_name": "Director",
+          "full_name": "Director EHIC",
+          "id": "<normalized>",
+          "last_name": "EHIC"
+        },
+        {
+          "cedula": "1700000175",
+          "email": "1700000175@demo.deasy.local",
+          "first_name": "Director",
+          "full_name": "Director formacion-tecnica-y-tecnologica",
+          "id": "<normalized>",
+          "last_name": "formacion-tecnica-y-tecnologica"
+        },
+        {
+          "cedula": "1700000191",
+          "email": "1700000191@demo.deasy.local",
+          "first_name": "Director",
+          "full_name": "Director negocios-y-empresas",
+          "id": "<normalized>",
+          "last_name": "negocios-y-empresas"
+        },
+        {
+          "cedula": "1700000134",
+          "email": "1700000134@demo.deasy.local",
+          "first_name": "Director",
+          "full_name": "Director salud-y-bienestar",
+          "id": "<normalized>",
+          "last_name": "salud-y-bienestar"
+        },
+        {
+          "cedula": "1700000258",
+          "email": "1700000258@demo.deasy.local",
+          "first_name": "Docente",
+          "full_name": "Docente E055",
+          "id": "<normalized>",
+          "last_name": "E055"
+        },
+        {
+          "cedula": "1700000266",
+          "email": "1700000266@demo.deasy.local",
+          "first_name": "Docente",
+          "full_name": "Docente E055 2",
+          "id": "<normalized>",
+          "last_name": "E055 2"
+        }
+      ],
+      "result": "ok"
+    }
+  }
+}

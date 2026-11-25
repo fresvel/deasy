@@ -1,10 +1,17 @@
 <template>
-  <div :class="rootClasses">
+  <!-- ⚠️ LA RAIZ NO PONE PADDING DE PAGINA (F13.5, 2026-08-21). Aqui habia un `rootClasses`
+       computado que elegia entre `p-0` (dentro de un modal) y `p-4 sm:p-6 lg:p-8` (en pagina).
+       Ese segundo caso metia **32 px invisibles** —sin borde ni fondo— encima de los que ya pone
+       `main`, y por eso la rejilla de firmas medía **1370 px cuando el resto de páginas tiene
+       1500**: sus tarjetas salian mas estrechas que las de todas partes sin motivo visible.
+       Con el padding fuera, las dos ramas del computado eran la misma cadena, asi que el
+       computado sobra: la clase es estatica. -->
+  <div class="flex h-full w-full flex-col gap-6">
     <div v-if="!multiOnly && workspaceMode !== 'multi' && showStartHeading" class="flex flex-col gap-2">
       <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h2 class="text-2xl font-bold text-slate-800 m-0 leading-tight">Firmas electrónicas</h2>
-          <p class="text-slate-500 text-sm m-0 font-medium leading-snug">
+          <h2 class="deasy-title deasy-title--page leading-tight">Firmas electrónicas</h2>
+          <p class="text-muted text-sm m-0 font-medium leading-snug">
             Carga documentos y define las areas de estampado para la firma.
           </p>
         </div>
@@ -18,24 +25,24 @@
               :icon="IconFileUpload"
               input-id="change-pdf-input"
               @files-selected="onPdfDropFiles($event, requestMode ? 'request' : 'sign')"
-            />
+ />
           </div>
         </div>
       </div>
     </div>
 
-    <div v-if="!multiOnly && pdfReady" class="flex flex-col gap-4 mt-4 border-b border-slate-100 pb-4">
+    <div v-if="!multiOnly && pdfReady" class="flex flex-col gap-4 mt-4 border-b border-line pb-4">
       <div class="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
         <div class="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            class="inline-flex items-center justify-center p-2 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 transition"
+          <AppButton
+            variant="neutral-outline"
+            icon-only
             title="Regresar"
             aria-label="Regresar"
             @click="goBackToStart"
           >
             <IconArrowLeft class="w-5 h-5" />
-          </button>
+          </AppButton>
         </div>
 
         <div class="flex items-center justify-center gap-3 flex-wrap xl:flex-nowrap">
@@ -53,26 +60,26 @@
             @previous="prevPageBtn"
             @next="nextPageBtn"
             @submit="goToPage"
-          />
+ />
         </div>
 
         <div class="flex items-center justify-start xl:justify-end gap-3 flex-wrap">
           <AdminButton
             v-if="signMode !== 'token'"
-            variant="outlineDanger"
+            variant="danger-outline"
             @click="openDeleteModal"
           >
             Eliminar
           </AdminButton>
           <AdminButton
             v-if="!requestMode"
-            variant="outlinePrimary"
+            variant="primary-outline"
             @click="submitTokenAction"
           >
             Firmar por token
           </AdminButton>
           <AdminButton
-            variant="primary"
+            variant="primary-outline"
             @click="submitAction"
           >
             <IconSignature v-if="!requestMode" class="w-5 h-5" stroke-width="2" />
@@ -97,33 +104,26 @@
         @download-batch="downloadMultiBatch"
         @header-update="emit('multi-header-update', $event)"
         @start-batch="prepareMultiBatchStart"
-      />
+ />
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
-      <div class="flex flex-col gap-5">
+    <div v-else-if="!multiOnly && !pdfReady && isEmbeddedWorkflowMode" class="deasy-card mt-4 p-6 lg:p-8">
+      <div class="flex flex-col gap-6">
         <div class="flex flex-col gap-2">
-          <h3 class="text-xl font-bold text-slate-800 m-0">PDF del flujo de firma</h3>
-          <p class="text-sm font-medium leading-snug text-slate-500 m-0">
+          <h3 class="deasy-title deasy-title--panel">PDF del recorrido de firma</h3>
+          <p class="text-sm font-medium leading-snug text-muted m-0">
             Esta sesión pertenece al documento
-            <span class="font-semibold text-slate-700">{{ workflowSignContext?.documentTitle || 'seleccionado' }}</span>.
+            <span class="font-semibold text-body">{{ workflowSignContext?.documentTitle || 'seleccionado' }}</span>.
             Si el PDF no se precargó correctamente, puedes reintentar la carga o seleccionar el archivo de forma manual.
           </p>
         </div>
 
-        <div
-          class="rounded-2xl border px-4 py-4 text-sm font-medium"
-          :class="workflowPdfStatus.type === 'error'
-            ? 'border-rose-200 bg-rose-50 text-rose-700'
-            : workflowPdfStatus.type === 'success'
-              ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-              : 'border-sky-200 bg-sky-50 text-sky-700'"
-        >
+        <AppAlert :variant="tonoEstadoPdf" class="text-sm font-medium">
           {{ workflowPdfStatus.message || 'Preparando la sesión de firma embebida.' }}
-        </div>
+        </AppAlert>
 
         <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
-          <div class="rounded-2xl border border-slate-100 bg-slate-50/70 p-5">
+          <div class="deasy-card p-5">
             <PdfDropField
               title="Cargar PDF del entregable"
               action-text="Seleccionar documento"
@@ -132,37 +132,37 @@
               input-id="workflow-sign-pdf-input"
               @files-selected="onPdfDropFiles($event, 'sign')"
               class="h-full"
-            />
+ />
           </div>
           <div class="flex flex-col gap-3">
             <AdminButton
-              variant="outlinePrimary"
+              variant="primary-outline"
               :disabled="!workflowSignContext?.preloadPdfPath"
               @click="retryWorkflowPdfLoad"
             >
               Reintentar carga automática
             </AdminButton>
-            <AdminButton variant="secondary" @click="goBackToStart">
+            <AdminButton variant="neutral-outline" @click="goBackToStart">
               Limpiar PDF actual
             </AdminButton>
           </div>
         </div>
       </div>
-      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
+      <AppAlert class="flex items-center gap-3 mt-6" v-if="uploadError">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
-      </div>
+      </AppAlert>
     </div>
 
-    <div v-else-if="!multiOnly && !pdfReady" class="mt-4 border border-slate-100 bg-white rounded-3xl p-6 lg:p-8 shadow-sm">
+    <div v-else-if="!multiOnly && !pdfReady">
       <div
-        class="grid grid-cols-1 gap-6 lg:grid-cols-2"
-        :class="enableDashboardShortcuts ? 'xl:grid-cols-4' : 'xl:grid-cols-4'"
+        id="signature-launchers-grid"
+        class="deasy-tile-grid"
       >
 
-        <div v-if="canShowLauncher('sign')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-sign" v-if="canShowLauncher('sign')" class="deasy-tile signature-workspace-card">
           <PdfDropField
             title="Firmar documento"
             action-text="Seleccionar documento"
@@ -170,11 +170,11 @@
             :icon="CustomIconSignature"
             input-id="sign-pdf-input"
             @files-selected="onPdfDropFiles($event, 'sign')"
-            class="h-full"
-          />
+            class="h-full deasy-dropzone--workspace"
+ />
         </div>
 
-        <div v-if="canShowLauncher('request')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-request" v-if="canShowLauncher('request')" class="deasy-tile signature-workspace-card">
           <PdfDropField
             title="Solicitar firmas"
             action-text="Iniciar solicitud"
@@ -182,11 +182,11 @@
             :icon="CustomIconSend"
             input-id="request-pdf-input"
             @files-selected="onPdfDropFiles($event, 'request')"
-            class="h-full"
-          />
+            class="h-full deasy-dropzone--workspace"
+ />
         </div>
 
-        <div v-if="canShowLauncher('validate')" class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm">
+        <div id="signature-launcher-validate" v-if="canShowLauncher('validate')" class="deasy-tile signature-workspace-card">
           <PdfDropField
             title="Validar documento"
             action-text="Validar documento"
@@ -194,79 +194,83 @@
             :icon="CustomIconShieldCheck"
             input-id="validate-pdf-input"
             @files-selected="onPdfDropFiles($event, 'validate')"
-            class="h-full"
-          />
+            class="h-full deasy-dropzone--workspace"
+ />
         </div>
 
         <div
+          id="signature-launcher-multi"
           v-if="canShowLauncher('multi')"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm"
+          class="deasy-tile signature-workspace-card"
         >
           <PdfDropField
             title="Multifirmador"
-            action-text="Seleccionar documentos"
-            help-text="Arrastra y suelta o selecciona varios PDF."
+            action-text="Seleccionar PDFs"
+            help-text="Haz clic para elegir PDFs o arrastra una carpeta (solo PDFs); se conserva su estructura interna."
             :icon="CustomIconFiles"
             input-id="multi-pdf-input"
             multiple
             @files-selected="onPdfDropFiles($event, 'multi')"
-            class="h-full"
-          />
+            class="h-full deasy-dropzone--workspace"
+ />
         </div>
 
         <button
-          v-if="enableDashboardShortcuts && canShowLauncher('pending')"
+          id="signature-launcher-received"
+          v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50/30 hover:shadow-md xl:col-start-1"
-          @click="emit('open-dashboard-pending')"
+          class="deasy-tile signature-workspace-card xl:col-start-1"
+          @click="emit('open-home-pending')"
         >
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Solicitudes recibidas</h3>
-          <div class="flex flex-1 items-center justify-center rounded-3xl border border-emerald-200/80 bg-white px-6 py-8 shadow-sm">
+          <h3 class="deasy-title deasy-title--panel mb-4 text-left">Turnos recibidos</h3>
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-emerald-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconReceivedRequests />
-              <span class="mt-5 text-base font-semibold text-slate-700">Ver solicitudes</span>
-              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
-                Revisa solicitudes pendientes por atender.
+              <span class="mt-5 text-base font-semibold text-body">Ver turnos</span>
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-muted">
+                Revisa turnos pendientes por atender.
               </p>
             </div>
           </div>
         </button>
 
         <button
+          id="signature-launcher-database"
           v-if="canShowLauncher('database')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md"
-          :class="enableDashboardShortcuts ? 'xl:col-start-2' : ''"
+          class="deasy-tile signature-workspace-card"
+          :class="enableHomeShortcuts ? 'xl:col-start-2' : ''"
           @click="handleDatabaseEntry"
         >
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Buscar en BD</h3>
-          <div class="flex flex-1 items-center justify-center rounded-3xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+          <h3 class="deasy-title deasy-title--panel mb-4 text-left">Buscar en BD</h3>
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconSearch />
-              <span class="mt-5 text-base font-semibold text-slate-700">
-                {{ enableDashboardShortcuts ? 'Procesos pendientes' : 'Bandeja del dashboard' }}
+              <span class="mt-5 text-base font-semibold text-body">
+                {{ enableHomeShortcuts ? 'Procesos pendientes' : 'Bandeja de Home' }}
               </span>
-              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
-                {{ enableDashboardShortcuts
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-muted">
+                {{ enableHomeShortcuts
                   ? 'Consulta procesos con firma pendiente.'
-                  : 'Consulta solicitudes pendientes del dashboard.' }}
+                  : 'Consulta turnos pendientes de Home.' }}
               </p>
             </div>
           </div>
         </button>
 
         <button
-          v-if="enableDashboardShortcuts && canShowLauncher('pending')"
+          id="signature-launcher-pending"
+          v-if="enableHomeShortcuts && canShowLauncher('pending')"
           type="button"
-          class="signature-workspace-card flex flex-col h-full min-h-[19rem] bg-slate-50/50 rounded-2xl border border-slate-100 p-6 text-center shadow-sm transition hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-md xl:col-start-3"
-          @click="emit('open-dashboard-pending')"
+          class="deasy-tile signature-workspace-card xl:col-start-3"
+          @click="emit('open-home-pending')"
         >
-          <h3 class="text-lg font-semibold text-slate-800 mb-4 text-left">Bandeja de pendientes</h3>
-          <div class="flex flex-1 items-center justify-center rounded-3xl border border-sky-200/80 bg-white px-6 py-8 shadow-sm">
+          <h3 class="deasy-title deasy-title--panel mb-4 text-left">Bandeja de pendientes</h3>
+          <div class="flex flex-1 items-center justify-center rounded-xl border border-blue-light-200/80 bg-white px-6 py-8">
             <div class="flex flex-col items-center justify-center">
               <CustomIconPendingTray />
-              <span class="mt-5 text-base font-semibold text-slate-700">Tabla de procesos</span>
-              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-slate-500">
+              <span class="mt-5 text-base font-semibold text-body">Tabla de procesos</span>
+              <p class="mt-2 max-w-[16rem] text-center text-xs leading-relaxed text-muted">
                 Revisa y selecciona procesos pendientes.
               </p>
             </div>
@@ -274,38 +278,39 @@
         </button>
 
       </div>
-      <div v-if="uploadError" class="flex animate-fade-in items-center gap-3 bg-rose-50 border border-rose-200 text-rose-700 p-4 rounded-2xl mt-6 text-sm font-medium shadow-sm">
-        <div class="bg-white p-1 rounded-lg border border-rose-100 shadow-sm text-rose-600">
+      <AppAlert class="flex items-center gap-3 mt-6" v-if="uploadError">
+        <div class="bg-white p-1 rounded-2xl border border-rose-100 text-danger">
           <IconX class="w-5 h-5 shrink-0" />
         </div>
         {{ uploadError }}
-      </div>
+      </AppAlert>
     </div>
 
     <div v-else-if="!multiOnly" class="mt-4">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
+      <div class="deasy-card p-4 lg:p-6 w-full max-h-[80vh] overflow-y-auto overflow-x-hidden relative">
         <div class="w-full relative flex justify-center" ref="colPdf">
           <div 
-            class="relative shadow-sm border border-slate-200" 
+            class="relative border border-line" 
             ref="pdfViewer"
             @mousemove="handleMouseMove"
             @mouseleave="handleMouseLeave"
           >
-            <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-10 w-full"></canvas>
+            <canvas ref="pdfCanvas" class="block cursor-crosshair relative z-(--z-capa-base) w-full"></canvas>
             
             <SignatureBox
-              v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && previewBoxStyle.display !== 'none' && !isHoveringField"
+              v-if="isMouseOverPdf && !isDragging && signMode !== 'token' && !isHoveringField"
               :is-preview="true"
               :left="parseFloat(previewBoxStyle.left)"
               :top="parseFloat(previewBoxStyle.top)"
               :width="parseFloat(previewBoxStyle.width)"
               :height="parseFloat(previewBoxStyle.height)"
               :label="currentUser ? `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim() : 'Firma'"
-            />
+ />
 
             <SignatureBox
               v-for="field in currentPageFields"
               :key="field.id"
+              :data-field-id="field.id"
               :field="field"
               :is-active="field.id === lastFieldId"
               :pdf-scale="pdfScale"
@@ -325,7 +330,7 @@
                 <button
                   v-if="signMode !== 'token'"
                   type="button"
-                  class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-full p-1.5 shadow-md border-2 border-white transition-colors cursor-pointer ring-0 outline-none active:scale-95"
+                  class="deasy-pdf-action"
                   title="Firmar documento"
                   aria-label="Firmar documento"
                   @click.stop="submitAction"
@@ -339,16 +344,9 @@
       </div>
     </div>
     
-    <div v-if="pdfReady && visibleFields.length" class="mt-6 mb-8">
-      <div class="bg-slate-800 text-slate-300 rounded-2xl shadow-sm border border-slate-700 p-4">
-        <div class="text-xs font-semibold text-slate-400 mb-2 uppercase tracking-wide">JSON Output</div>
-        <pre class="text-xs whitespace-pre-wrap overflow-auto font-mono custom-scrollbar">{{ fieldsJson }}</pre>
-      </div>
-    </div>
-
   </div>
 
-    <AdminModalShell
+    <AppModalShell
       controlled
       :open="showSignaturesModal"
       @close="showSignaturesModal = false"
@@ -356,75 +354,65 @@
       title="Campos de firma"
       size="lg"
     >
-      <div v-if="!visibleFields.length" class="text-center py-10 px-4">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-slate-100 text-slate-400 rounded-full mb-4">
-          <IconSignature class="w-8 h-8" />
-        </div>
-        <h3 class="text-xl font-semibold text-slate-800 mb-2">No hay firmas</h3>
-        <p class="text-slate-500 max-w-sm mx-auto leading-relaxed">
-          Aún no has agregado ningún campo de firma al documento. Haz clic sobre el documento PDF para insertar una.
-        </p>
-      </div>
+      <AppEmpty v-if="!visibleFields.length" :icon="IconSignature" title="No hay firmas">Aún no has agregado ningún campo de firma al documento. Haz clic sobre el documento PDF para insertar una.</AppEmpty>
 
       <div v-else class="flex flex-col gap-3 py-2">
         <div
           v-for="field in visibleFields"
           :key="field.id"
-          class="bg-white border border-slate-200 rounded-xl p-4 hover:border-sky-300 hover:shadow-sm transition-all relative overflow-hidden group"
-          :class="{ 'ring-2 ring-sky-500 border-transparent': field.id === lastFieldId }"
+          class="deasy-card p-4 hover:border-blue-light-300 hover:transition-all relative overflow-hidden group"
+          :class="{ 'deasy-firma-fila--activa': field.id === lastFieldId }"
         >
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pr-12">
             
             <div class="flex items-start gap-4">
-              <div class="shrink-0 w-10 h-10 bg-sky-50 text-sky-600 rounded-lg flex items-center justify-center font-bold">
+              <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info">
                 <IconSignature class="w-5 h-5" />
               </div>
               <div>
-                <div v-if="field.signer" class="font-semibold text-slate-800 text-base mb-0.5">
+                <div v-if="field.signer" class="font-semibold text-strong text-base mb-0.5">
                   {{ field.signer.first_name }} {{ field.signer.last_name }}
                 </div>
-                <div v-else class="font-semibold text-slate-800 text-base mb-0.5">
+                <div v-else class="font-semibold text-strong text-base mb-0.5">
                   Firmante no asignado
                 </div>
                 
-                <div v-if="field.signer" class="text-sm text-slate-500 flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                  <span v-if="field.signer.email" class="inline-flex items-center gap-1">
-                    <span class="font-medium text-slate-400">Email:</span> {{ field.signer.email }}
+                <div v-if="field.signer" class="text-sm text-muted flex flex-wrap items-center gap-x-3 gap-y-2 mt-1">
+                  <span v-if="field.signer.email" class="inline-flex items-center gap-2">
+                    <span class="font-medium text-muted">Email:</span> {{ field.signer.email }}
                   </span>
-                  <span v-if="field.signer.cedula" class="inline-flex items-center gap-1">
-                    <span class="font-medium text-slate-400">CI:</span> {{ field.signer.cedula }}
+                  <span v-if="field.signer.cedula" class="inline-flex items-center gap-2">
+                    <span class="font-medium text-muted">CI:</span> {{ field.signer.cedula }}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-slate-100 sm:pl-5">
-              <div class="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-center">
-                <span class="block text-[10px] font-bold uppercase tracking-wider text-slate-500">Pág</span>
-                <span class="block text-lg font-bold text-slate-800 leading-none mt-0.5">{{ field.page }}</span>
+            <div class="flex flex-wrap items-center gap-4 sm:border-l sm:border-line sm:pl-5">
+              <div class="deasy-card px-3 py-1.5 text-center">
+                <span class="deasy-overline block">Pág</span>
+                <span class="block text-lg font-bold text-strong leading-none mt-0.5">{{ field.page }}</span>
               </div>
               
-              <div class="text-xs text-slate-500 grid grid-cols-2 gap-x-4 gap-y-1">
-                <div>x/y: <span class="font-medium text-slate-700">{{ formatCoord(field.x1) }}, {{ formatCoord(field.y1) }}</span></div>
-                <div>w/h: <span class="font-medium text-slate-700">{{ formatCoord(field.x2 - field.x1) }}, {{ formatCoord(field.y2 - field.y1) }}</span></div>
+              <div class="text-xs text-muted grid grid-cols-2 gap-x-4 gap-y-2">
+                <div>x/y: <span class="font-medium text-body">{{ formatCoord(field.x1) }}, {{ formatCoord(field.y1) }}</span></div>
+                <div>w/h: <span class="font-medium text-body">{{ formatCoord(field.x2 - field.x1) }}, {{ formatCoord(field.y2 - field.y1) }}</span></div>
               </div>
             </div>
             
           </div>
           
-          <button
+          <AppDeleteButton
             v-if="signMode !== 'token'"
+            class="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100 lg:opacity-100"
+            label="Eliminar campo"
             @click.stop="requestDeleteField(field.id)"
-            class="absolute top-1/2 -translate-y-1/2 right-4 p-2 text-slate-400 hover:bg-red-50 hover:text-red-500 rounded-lg transition-colors opacity-0 group-hover:opacity-100 lg:opacity-100 focus:opacity-100 outline-none"
-            title="Eliminar campo"
-          >
-            <IconTrash class="w-5 h-5" stroke-width="1.5" />
-          </button>
+ />
         </div>
       </div>
-    </AdminModalShell>
+    </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="deleteModal"
     id="deleteFieldsModal"
     labelled-by="delete-fields-modal-title"
@@ -432,11 +420,11 @@
     size="md"
     body-class="p-6 overflow-y-auto max-h-[80vh]"
   >
-    <div v-if="!fields.length" class="text-slate-500 text-center font-medium py-8 bg-slate-50 rounded-xl border border-slate-100">No hay firmas para eliminar.</div>
+    <AppEmpty v-if="!fields.length">No hay firmas para eliminar.</AppEmpty>
     <div v-else class="flex flex-col gap-4">
-      <div class="flex items-center justify-between gap-3 bg-slate-50 p-2 rounded-xl border border-slate-100">
-        <label class="font-semibold text-sm text-slate-700 ml-2">Filtrar por pagina</label>
-        <select v-model="filterPage" class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+      <div class="deasy-card flex items-center justify-between p-2">
+        <label :for="fieldId('filterpage')" class="deasy-form-label ml-2 mb-0">Filtrar por pagina</label>
+        <select :id="fieldId('filterpage')" v-model="filterPage" class="deasy-control deasy-control--select">
           <option value="all">Todas</option>
           <option v-for="page in pagesWithFields" :key="page" :value="page">
             Pagina {{ page }}
@@ -448,56 +436,45 @@
         <div
           v-for="field in filteredFields"
           :key="field.id"
-          class="flex flex-col sm:flex-row sm:items-center justify-between p-4 border border-slate-200 rounded-xl hover:border-sky-300 hover:bg-sky-50/30 transition gap-3"
-          :class="field.id === lastFieldId ? 'border-sky-500 bg-sky-50/50' : 'bg-white'"
+          class="deasy-elegible flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl gap-3"
+          :class="[field.id === lastFieldId ? 'deasy-elegible--activa' : '']"
         >
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-2">
             <div class="flex items-center gap-2">
-              <span class="text-sm font-semibold text-slate-800">{{ field.name }}</span>
-              <span class="px-2 py-0.5 bg-slate-100 text-slate-500 rounded-md text-[10px] font-bold tracking-wide">Pág {{ field.page }}</span>
+              <span class="text-sm font-semibold text-strong">{{ field.name }}</span>
+              <span class="px-2 py-0.5 bg-surface text-muted rounded-xl text-theme-xs font-bold tracking-wide">Pág {{ field.page }}</span>
             </div>
-            <span class="text-slate-500 text-xs font-medium">
+            <span class="text-muted text-xs font-medium">
               {{ field.signer ? `${field.signer.first_name} ${field.signer.last_name}` : 'Sin asignar' }}
             </span>
           </div>
           
           <div class="flex items-center gap-2 sm:self-center self-end">
-            <button 
-              type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 transition font-medium focus:outline-none focus:ring-2 focus:ring-slate-200" 
-              @click.stop="goToFieldLocation(field.id)"
-            >
+            <AppButton variant="neutral-outline" @click.stop="goToFieldLocation(field.id)">
               <IconSearch class="w-3.5 h-3.5" stroke-width="2.5" />
               Ver en documento
-            </button>
-            <button 
-              type="button" 
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300 transition font-medium focus:outline-none focus:ring-2 focus:ring-red-200" 
-              @click.stop="requestDeleteField(field.id)"
-            >
-              <IconTrash class="w-3.5 h-3.5" stroke-width="2.5" />
-              Eliminar
-            </button>
+            </AppButton>
+            <AppDeleteButton label="Eliminar" @click.stop="requestDeleteField(field.id)" />
           </div>
         </div>
       </div>
     </div>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="assignSignerModal"
     labelled-by="assign-signer-title"
     title="Asignar firmante"
     size="lg"
     dialog-class="items-center"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-2">
-          <label class="font-semibold text-sm text-slate-700 mb-0">Estado</label>
-          <select v-model="statusFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+        <div class="flex flex-col">
+          <label :for="fieldId('statusfilter')" class="deasy-form-label">Estado</label>
+          <select :id="fieldId('statusfilter')" v-model="statusFilter" class="deasy-control deasy-control--select">
             <option value="all">Todos</option>
             <option value="Activo">Activo</option>
             <option value="Inactivo">Inactivo</option>
@@ -505,36 +482,31 @@
             <option value="Reportado">Reportado</option>
           </select>
         </div>
-        <div class="flex flex-col gap-2">
-          <label class="font-semibold text-sm text-slate-700 mb-0">Buscar</label>
-          <input
-            v-model="signerInput"
-            type="text"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            placeholder="Nombre, correo o cédula"
-          />
+        <div class="flex flex-col">
+          <label :for="fieldId('signerinput')" class="deasy-form-label">Buscar</label>
+          <input :id="fieldId('signerinput')" v-model="signerInput" type="text" class="deasy-control" placeholder="Nombre, correo o cédula" />
         </div>
-        <div class="flex flex-col gap-2">
-          <label class="font-semibold text-sm text-slate-700 mb-0">Tipo de unidad</label>
-          <select v-model="signerUnitTypeFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500">
+        <div class="flex flex-col">
+          <label :for="fieldId('signerunittypefilter')" class="deasy-form-label">Tipo de unidad</label>
+          <select :id="fieldId('signerunittypefilter')" v-model="signerUnitTypeFilter" class="deasy-control deasy-control--select">
             <option value="">Todos</option>
             <option v-for="option in signerUnitTypeOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
             </option>
           </select>
         </div>
-        <div class="flex flex-col gap-2">
-          <label class="font-semibold text-sm text-slate-700 mb-0">Unidad</label>
-          <select v-model="signerUnitFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
+        <div class="flex flex-col">
+          <label :for="fieldId('signerunitfilter')" class="deasy-form-label">Unidad</label>
+          <select :id="fieldId('signerunitfilter')" v-model="signerUnitFilter" class="deasy-control deasy-control--select" :disabled="!signerUnitTypeFilter || isLoadingSignerOptions">
             <option value="">Todas</option>
             <option v-for="option in signerUnitOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
             </option>
           </select>
         </div>
-        <div class="flex flex-col gap-2">
-          <label class="font-semibold text-sm text-slate-700 mb-0">Cargo</label>
-          <select v-model="signerCargoFilter" class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500" :disabled="isLoadingSignerOptions">
+        <div class="flex flex-col">
+          <label :for="fieldId('signercargofilter')" class="deasy-form-label">Cargo</label>
+          <select :id="fieldId('signercargofilter')" v-model="signerCargoFilter" class="deasy-control deasy-control--select" :disabled="isLoadingSignerOptions">
             <option value="">Todos</option>
             <option v-for="option in signerCargoOptions" :key="option.id" :value="String(option.id)">
               {{ option.label || option.name }}
@@ -542,15 +514,15 @@
           </select>
         </div>
         <div class="flex items-end justify-end">
-          <AdminButton variant="outlinePrimary" class-name="w-full md:w-auto" @click="clearSignerFilters">
+          <AdminButton variant="primary-outline" class-name="w-full md:w-auto" @click="clearSignerFilters">
             Limpiar filtros
           </AdminButton>
         </div>
       </div>
 
-      <div class="mt-2 min-h-65 max-h-90 overflow-y-auto bg-slate-50 border border-slate-100 rounded-xl p-2 custom-scrollbar">
-        <div v-if="isSearchingUsers" class="text-slate-500 text-sm text-center py-10 font-medium">Buscando usuarios...</div>
-        <div v-else-if="userResults.length === 0" class="text-slate-500 text-sm text-center py-10 font-medium">
+      <div class="deasy-card mt-2 min-h-65 max-h-90 overflow-y-auto p-2 custom-scrollbar">
+        <div v-if="isSearchingUsers" class="text-muted text-sm text-center py-10 font-medium">Buscando usuarios...</div>
+        <div v-else-if="userResults.length === 0" class="text-muted text-sm text-center py-10 font-medium">
           No se han encontrado resultados.
         </div>
         <div v-else class="flex flex-col gap-2">
@@ -558,76 +530,76 @@
             v-for="user in userResults"
             :key="user.id || user._id"
             type="button"
-            class="flex flex-col p-3 border rounded-xl text-left transition w-full shadow-sm"
-            :class="selectedSigner?.id === user.id || selectedSigner?._id === user._id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            class="deasy-picker deasy-picker--flat flex-col items-start"
+            :class="[(selectedSigner?.id === user.id || selectedSigner?._id === user._id) ? 'deasy-elegible--activa' : '']"
             @click="selectSigner(user)"
           >
-            <div class="font-semibold text-slate-800 text-sm flex items-center justify-between w-full gap-3">
+            <div class="font-semibold text-strong text-sm flex items-center justify-between w-full gap-3">
               <span>{{ user.first_name }} {{ user.last_name }}</span>
-              <span v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" class="text-sky-600 bg-sky-100 px-2 py-0.5 rounded text-xs">Seleccionado</span>
+              <AppTag v-if="selectedSigner?.id === user.id || selectedSigner?._id === user._id" variant="info">Seleccionado</AppTag>
             </div>
-            <div class="text-xs text-slate-500 mt-1 flex flex-wrap items-center gap-2">
-              <span class="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">{{ user.cedula }}</span>
+            <div class="text-xs text-muted mt-1 flex flex-wrap items-center gap-2">
+              <span class="bg-surface px-1.5 py-0.5 rounded border border-line">{{ user.cedula }}</span>
               <span>{{ user.email }}</span>
             </div>
-            <div v-if="user.unit_type_name || user.unit_name || user.cargo_name" class="text-xs text-slate-600 mt-2 flex flex-wrap gap-2">
-              <span v-if="user.unit_type_name" class="bg-white border border-slate-200 rounded-md px-2 py-1">{{ user.unit_type_name }}</span>
-              <span v-if="user.unit_name" class="bg-white border border-slate-200 rounded-md px-2 py-1">{{ user.unit_name }}</span>
-              <span v-if="user.cargo_name" class="bg-white border border-slate-200 rounded-md px-2 py-1">{{ user.cargo_name }}</span>
+            <div v-if="user.unit_type_name || user.unit_name || user.cargo_name" class="text-xs text-icon mt-2 flex flex-wrap gap-2">
+              <span v-if="user.unit_type_name" class="deasy-card px-2 py-1">{{ user.unit_type_name }}</span>
+              <span v-if="user.unit_name" class="deasy-card px-2 py-1">{{ user.unit_name }}</span>
+              <span v-if="user.cargo_name" class="deasy-card px-2 py-1">{{ user.cargo_name }}</span>
             </div>
           </button>
         </div>
       </div>
-      <p v-if="userSearchError" class="text-red-500 text-sm font-medium mt-1 mb-0">{{ userSearchError }}</p>
+      <p v-if="userSearchError" class="text-danger text-sm font-medium mt-1 mb-0">{{ userSearchError }}</p>
     </div>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>
+      <AdminButton variant="danger-outline" data-modal-dismiss>
         Cancelar
       </AdminButton>
-      <AdminButton variant="primary" @click="confirmSigner">
+      <AdminButton variant="primary-outline" @click="confirmSigner">
         Guardar y Asignar
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="confirmDeleteModal"
     labelled-by="confirm-delete-signature-title"
     title="Eliminar firma"
     size="centered"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
     footer-class="border-0 pt-0"
   >
-    <p class="mb-0 text-sm text-slate-600">
+    <p class="mb-0 text-sm text-icon">
       ¿Deseas eliminar este campo de firma? Esta acción no se puede deshacer.
     </p>
     <template #footer>
-      <AdminButton variant="outlineDanger" @click="confirmDeleteField">
+      <AdminButton variant="danger-outline" @click="confirmDeleteField">
         Eliminar
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="signCertModal"
     labelled-by="sign-cert-modal-title"
     :title="multiBatchRequest ? 'Iniciar firma masiva' : signMode === 'token' ? 'Firmar documento por token' : 'Firmar documento'"
     size="lg"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">
-      <p class="mb-0 text-sm text-slate-600">
+      <p class="mb-0 text-sm text-icon">
         Selecciona uno de tus certificados guardados e ingresa la contraseña del `.p12`.
       </p>
 
       <div
         v-if="multiBatchRequest"
-        class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+        class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info"
       >
         <div class="font-semibold">Lote preparado</div>
-        <div class="mt-1 text-sky-800">
+        <div class="mt-1 text-info">
           Se iniciará una firma masiva para {{ multiBatchRequest.documents.length }} documento(s) en modo
           <span class="font-semibold">
             {{
@@ -643,129 +615,115 @@
 
       <div
         v-if="!multiBatchRequest && signMode === 'token'"
-        class="rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900"
+        class="rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3 text-sm text-info"
       >
         <div class="font-semibold">Firma por token</div>
-        <div v-if="currentSignatureMarker" class="mt-1 text-sky-800">
+        <div v-if="currentSignatureMarker" class="mt-1 text-info">
           Se buscarán todas las coincidencias del marcador <span class="font-mono font-semibold">{{ currentSignatureMarker }}</span> y se estampará la firma en cada una.
         </div>
-        <div v-else class="mt-1 text-red-600">
+        <div v-else class="mt-1 text-danger">
           Tu usuario no tiene un token de firma configurado.
         </div>
       </div>
 
-      <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+      <div class="deasy-card p-4">
         <div class="flex items-center justify-between gap-3 mb-3">
           <div>
-            <div class="text-sm font-bold text-slate-800">Certificados disponibles</div>
-            <div class="text-xs text-slate-500">Puedes gestionarlos aquí sin salir de la vista de firmas.</div>
+            <div class="text-sm font-bold text-strong">Certificados disponibles</div>
+            <div class="text-xs text-muted">Puedes gestionarlos aquí sin salir de la vista de firmas.</div>
           </div>
-          <AdminButton variant="outlinePrimary" size="sm" @click="openCertificatesManagerModal">
+          <AdminButton variant="primary-outline" @click="openCertificatesManagerModal">
             Gestionar certificados
           </AdminButton>
         </div>
 
-        <div v-if="isLoadingCertificates" class="text-sm text-slate-500 font-medium py-3">
+        <div v-if="isLoadingCertificates" class="text-sm text-muted font-medium py-3">
           Cargando certificados...
         </div>
-        <div v-else-if="!availableCertificates.length" class="text-sm text-slate-500 font-medium py-3">
+        <AppEmpty v-else-if="!availableCertificates.length">
           No tienes certificados cargados.
-        </div>
+        </AppEmpty>
         <div v-else class="flex flex-col gap-2 max-h-56 overflow-y-auto pr-1 custom-scrollbar">
           <button
             v-for="certificate in availableCertificates"
             :key="certificate.id"
             type="button"
-            class="w-full rounded-xl border px-3 py-3 text-left transition"
-            :class="selectedCertificateId === certificate.id ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            class="deasy-picker deasy-picker--flat"
+            :class="[selectedCertificateId === certificate.id ? 'deasy-elegible--activa' : '']"
             @click="selectedCertificateId = certificate.id"
           >
             <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-sm font-bold text-slate-800">{{ certificate.label }}</span>
+              <span class="text-sm font-bold text-strong">{{ certificate.label }}</span>
               <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
             </div>
-            <div class="text-xs text-slate-500 mt-1">{{ certificate.original_filename }}</div>
+            <div class="text-xs text-muted mt-1">{{ certificate.original_filename }}</div>
           </button>
         </div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="flex flex-col gap-2">
-          <label class="font-semibold text-sm text-slate-700">Contraseña del certificado</label>
-          <input
-            v-model="certPassword"
-            type="password"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            placeholder="Contraseña del .p12"
-            autocomplete="current-password"
-          />
+        <div class="flex flex-col">
+          <label :for="fieldId('certpassword')" class="deasy-form-label">Contraseña del certificado</label>
+          <input :id="fieldId('certpassword')" v-model="certPassword" type="password" class="deasy-control" placeholder="Contraseña del .p12" autocomplete="current-password" />
         </div>
-        <div class="flex flex-col gap-2">
-          <label class="font-semibold text-sm text-slate-700">Texto del sello</label>
-          <input
-            v-model="stampText"
-            type="text"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            placeholder="Ej: Dr. Juan Pérez"
-          />
+        <div class="flex flex-col">
+          <label :for="fieldId('stamptext')" class="deasy-form-label">Texto del sello</label>
+          <input :id="fieldId('stamptext')" v-model="stampText" type="text" class="deasy-control" placeholder="Ej: Dr. Juan Pérez" />
         </div>
       </div>
 
-      <label class="inline-flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <input
-          v-model="allowUntrustedSigner"
-          type="checkbox"
-          class="mt-1 h-4 w-4 rounded border-amber-400 text-amber-600 focus:ring-amber-300"
-        />
-        <span>
-          Permitir certificados no validados
-          <span class="block text-xs text-amber-700">
-            Solo para pruebas. Si la cadena de confianza no puede validarse, la firma continuará y se devolverá como advertencia.
+      <AppAlert variant="warning">
+        <SToggle v-model="allowUntrustedSigner" label-position="end">
+          <span class="text-sm text-warning">
+            Permitir certificados no validados
+            <span class="block text-xs text-warning">
+              Solo para pruebas. Si la cadena de confianza no puede validarse, la firma continuará y se devolverá como advertencia.
+            </span>
           </span>
-        </span>
-      </label>
+        </SToggle>
+      </AppAlert>
 
-      <p v-if="signError" class="mb-0 text-sm font-medium text-red-600">{{ signError }}</p>
+      <p v-if="signError" class="mb-0 text-sm font-medium text-danger">{{ signError }}</p>
     </div>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss :disabled="isSigning">
+      <AdminButton variant="danger-outline" data-modal-dismiss :disabled="isSigning">
         Cancelar
       </AdminButton>
-      <AdminButton variant="primary" :disabled="isSigning" @click="confirmSign">
+      <AdminButton variant="primary-outline" :disabled="isSigning" @click="confirmSign">
         {{ isSigning ? "Firmando..." : "Confirmar firma" }}
       </AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="signResultModal"
     labelled-by="sign-result-modal-title"
     :title="signSuccess ? 'Documento firmado' : 'Error al firmar'"
     size="md"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
       <div v-if="signSuccess" class="flex flex-col gap-4">
-        <p class="mb-0 text-sm text-emerald-700 font-medium">
+        <p class="mb-0 text-sm text-success font-medium">
           {{ signResultMessage || `El documento fue firmado correctamente con ${signedFieldsCount} campo(s).` }}
         </p>
-        <div v-if="signedMinioPath" class="flex flex-wrap gap-3">
-          <AdminButton variant="outlinePrimary" @click="viewSignedDocument">Visualizar documento</AdminButton>
-          <AdminButton variant="primary" @click="downloadSignedDocument">Descargar documento</AdminButton>
+        <div v-if="signedAlmacenPath" class="flex flex-wrap gap-3">
+          <AdminButton variant="primary-outline" @click="viewSignedDocument">Visualizar documento</AdminButton>
+          <AdminButton variant="primary-outline" @click="downloadSignedDocument">Descargar documento</AdminButton>
         </div>
     </div>
-    <p v-else class="mb-0 text-sm text-red-600 font-medium">{{ signResultMessage || signError || 'No se pudo completar la firma. Revisa el certificado, la contraseña o el PDF del flujo.' }}</p>
+    <p v-else class="mb-0 text-sm text-danger font-medium">{{ signResultMessage || signError || 'No se pudo completar la firma. Revisa el certificado, la contraseña o el PDF del recorrido.' }}</p>
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
+      <AdminButton variant="neutral-outline" data-modal-dismiss>Cerrar</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="certificatesManagerModal"
     labelled-by="certificates-manager-modal-title"
     title="Gestionar certificados"
     size="xl"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <UserCertificatesPanel
@@ -774,125 +732,115 @@
       :selected-id="selectedCertificateId"
       @select="handleCertificateSelected"
       @loaded="handleCertificatesLoaded"
-    />
+ />
     <template #footer>
-      <AdminButton variant="secondary" data-modal-dismiss>Cerrar</AdminButton>
+      <AdminButton variant="neutral-outline" data-modal-dismiss>Cerrar</AdminButton>
     </template>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="validationResultModal"
     labelled-by="validation-result-modal-title"
     title="Validar documento"
     size="xl"
     :show-close-button="false"
-    content-class="rounded-3xl shadow-xl border-0 overflow-hidden"
-    header-class="bg-slate-50 border-b border-slate-100"
-    body-class="p-0 bg-slate-50 relative"
+    content-class="rounded-xl border-0 overflow-hidden"
+    body-class="p-0 bg-surface relative"
   >
     <template #title>
       <div class="flex items-center pb-0">Validar documento</div>
-      <button data-modal-dismiss class="absolute right-5 top-4 inline-flex items-center justify-center gap-1.5 p-1 rounded-xl bg-slate-100/50 border border-slate-200 text-slate-600 hover:bg-slate-100 hover:text-slate-800 font-semibold text-sm transition-colors cursor-pointer z-20">
-        <IconX class="w-4 h-4" stroke-width="2.5" />
-      </button>
+      <AppCloseButton
+        data-modal-dismiss
+        class="absolute right-5 top-4 z-(--z-capa-elemento)"
+ />
     </template>
     <div class="px-6 pt-6 pb-4">
-      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
-        <div class="absolute -right-16 -top-16 w-32 h-32 bg-sky-50 rounded-full blur-2xl opacity-60"></div>
-        <div class="flex-1 flex flex-col gap-2 relative z-10 w-full">
-          <label class="font-bold text-sm text-slate-700 flex items-center justify-start gap-2">
-            <IconSearch class="w-4 h-4 text-sky-600" /> Buscar cédula en las firmas
+      <div class="deasy-card p-5 flex flex-col md:flex-row md:items-end gap-4 relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-32 h-32 bg-blue-light-50 rounded-full blur-2xl opacity-60"></div>
+        <div class="flex-1 flex flex-col relative z-(--z-capa-base) w-full">
+          <label :for="fieldId('validationcedula')" class="deasy-form-label deasy-form-label--inline gap-2">
+            <IconSearch class="w-4 h-4 text-info" /> Buscar cédula en las firmas
           </label>
           <div class="relative max-w-full md:max-w-sm">
-            <input
-              v-model="validationCedula"
-              type="text"
-              class="block w-full rounded-xl border border-slate-200 bg-slate-50 pl-4 py-2.5 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:bg-white focus:ring-4 focus:ring-sky-50"
-              placeholder="Ej. 0999999999 (Opcional)"
-            />
+            <input :id="fieldId('validationcedula')" v-model="validationCedula" type="text" class="deasy-control" placeholder="Ej. 0999999999 (Opcional)" />
           </div>
         </div>
-        <div class="relative z-10 w-full md:w-auto">
-          <button 
-            class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl border-2 border-sky-600 text-sky-700 hover:bg-sky-50 hover:border-sky-700 font-semibold text-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            :disabled="isValidatingDocument || !validationFile" 
+        <div class="relative z-(--z-capa-base) w-full md:w-auto">
+          <AppButton
+            variant="primary-outline"
+            class-name="w-full md:w-auto"
+            :disabled="isValidatingDocument || !validationFile"
             @click="validateDocument"
           >
             <IconRefresh v-if="isValidatingDocument" class="w-4 h-4 animate-spin" />
             <IconShieldCheck v-else class="w-4 h-4" />
             {{ isValidatingDocument ? 'Validando...' : 'Revalidar documento' }}
-          </button>
+          </AppButton>
         </div>
       </div>
 
-      <div v-if="validationError" class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 flex items-start gap-3 shadow-sm animate-fade-in">
-        <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
+      <AppAlert class="mt-4 flex items-start gap-3" v-if="validationError">
+        <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
         <p class="font-medium leading-relaxed m-0">{{ validationError }}</p>
-      </div>
+      </AppAlert>
 
-      <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-        <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
-          <div class="flex items-center gap-2 text-slate-500 mb-1 z-10">
-            <div class="p-1.5 bg-slate-100 rounded-lg"><IconSignature class="w-4 h-4" /></div>
-            <div class="text-xs font-bold uppercase tracking-wider">Firmas Detectadas</div>
+      <div v-if="validationResult" class="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div class="deasy-card p-4 flex flex-col items-start gap-2 relative overflow-hidden">
+          <div class="flex items-center gap-2 text-muted mb-1 z-(--z-capa-base)">
+            <div class="p-1.5 bg-surface rounded-2xl"><IconSignature class="w-4 h-4" /></div>
+            <div class="deasy-overline">Firmas Detectadas</div>
           </div>
-          <div class="text-3xl font-black text-slate-800 z-10">{{ validationResult.summary?.signatureCount || 0 }}</div>
+          <div class="text-3xl font-black text-strong z-(--z-capa-base)">{{ validationResult.summary?.signatureCount || 0 }}</div>
         </div>
 
-        <div class="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
+        <AppAlert variant="success" class="flex flex-col items-start gap-2 relative overflow-hidden">
           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-emerald-100 rounded-full blur-xl opacity-50"></div>
-          <div class="flex items-center gap-2 text-emerald-700 mb-1 z-10">
-            <div class="p-1.5 bg-emerald-100 rounded-lg"><IconCheck class="w-4 h-4" /></div>
-            <div class="text-xs font-bold uppercase tracking-wider">Firmas Válidas</div>
+          <div class="flex items-center gap-2 text-success mb-1 z-(--z-capa-base)">
+            <div class="p-1.5 bg-emerald-100 rounded-2xl"><IconCheck class="w-4 h-4" /></div>
+            <div class="deasy-overline">Firmas Válidas</div>
           </div>
-          <div class="text-3xl font-black text-emerald-900 z-10">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
+          <div class="text-3xl font-black text-success z-(--z-capa-base)">{{ validationResult.summary?.validSignatureCount || 0 }}</div>
+        </AppAlert>
+
+        <div class="rounded-2xl border border-blue-light-200 bg-blue-light-50/50 p-4 flex flex-col items-start gap-2 relative overflow-hidden">
+           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-blue-light-100 rounded-full blur-xl opacity-50"></div>
+          <div class="flex items-center gap-2 text-info mb-1 z-(--z-capa-base)">
+            <div class="p-1.5 bg-blue-light-100 rounded-2xl"><IconSearch class="w-4 h-4" /></div>
+            <div class="deasy-overline">Coincidencias</div>
+          </div>
+          <div class="text-3xl font-black text-info z-(--z-capa-base)">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
         </div>
 
-        <div class="rounded-2xl border border-cyan-200 bg-cyan-50/50 p-4 shadow-sm flex flex-col items-start gap-2 relative overflow-hidden">
-           <div class="absolute -right-4 -bottom-4 w-20 h-20 bg-cyan-100 rounded-full blur-xl opacity-50"></div>
-          <div class="flex items-center gap-2 text-cyan-700 mb-1 z-10">
-            <div class="p-1.5 bg-cyan-100 rounded-lg"><IconSearch class="w-4 h-4" /></div>
-            <div class="text-xs font-bold uppercase tracking-wider">Coincidencias</div>
+        <div class="rounded-2xl border border-brand-200 bg-brand-50/50 p-4 flex flex-col justify-center relative overflow-hidden">
+          <div class="flex items-center gap-2 text-primary mb-2 z-(--z-capa-base)">
+            <div class="p-1.5 bg-brand-100 rounded-2xl"><IconFileCheck class="w-4 h-4" /></div>
+            <div class="deasy-overline">Documento Activo</div>
           </div>
-          <div class="text-3xl font-black text-cyan-900 z-10">{{ validationResult.summary?.matchingCedulaCount || 0 }}</div>
-        </div>
-
-        <div class="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-sm flex flex-col justify-center relative overflow-hidden">
-          <div class="flex items-center gap-2 text-indigo-700 mb-2 z-10">
-            <div class="p-1.5 bg-indigo-100 rounded-lg"><IconFileCheck class="w-4 h-4" /></div>
-            <div class="text-xs font-bold uppercase tracking-wider">Documento Activo</div>
-          </div>
-          <div class="text-sm font-bold text-indigo-900 truncate w-full z-10" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
+          <div class="text-sm font-bold text-primary truncate w-full z-(--z-capa-base)" :title="validationFile?.name">{{ validationFile?.name || 'Subido manualmente' }}</div>
         </div>
       </div>
 
-      <div
-        v-if="validationResult?.summary?.timestampCount"
-        class="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800 flex items-start gap-3 shadow-sm animate-fade-in"
-      >
-        <IconAlertTriangle class="w-5 h-5 shrink-0 text-amber-600 mt-0.5" />
+      <AppAlert variant="warning" class="mt-4 flex items-start gap-3" v-if="validationResult?.summary?.timestampCount">
+        <IconAlertTriangle class="w-5 h-5 shrink-0 text-warning mt-0.5" />
         <p class="font-medium leading-relaxed m-0">El documento también contiene <strong class="font-black">{{ validationResult.summary.timestampCount }}</strong> sello(s) de tiempo, los cuales no se detallan en la tabla principal de firmantes.</p>
-      </div>
+      </AppAlert>
 
-      <div
-        v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length"
-        class="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800 flex items-start gap-3 shadow-sm animate-fade-in"
-      >
-        <IconAlertCircle class="w-5 h-5 shrink-0 text-rose-600 mt-0.5" />
-        <div class="flex flex-col gap-1">
+      <AppAlert class="mt-4 flex items-start gap-3" v-if="Array.isArray(validationResult?.warnings) && validationResult.warnings.length">
+        <IconAlertCircle class="w-5 h-5 shrink-0 text-danger mt-0.5" />
+        <div class="flex flex-col gap-2">
           <p v-for="(warning, idx) in validationResult.warnings" :key="idx" class="font-medium leading-relaxed m-0">{{ warning }}</p>
         </div>
-      </div>
+      </AppAlert>
     </div>
 
     <!-- TABLA -->
-    <div class="bg-white border-t border-slate-200 relative min-h-50">
+    <div class="bg-white border-t border-line relative min-h-50">
       <Loading 
         :visible="isValidatingDocument" 
         text="Validando firmas..." 
         subText="Por favor espere, esto puede tardar unos segundos dependiendo del tamaño de su documento." 
         :overlay="true" 
-      />
+ />
       <AppDataTable
         :fields="validationTableFields"
         :rows="validationResult?.signatures || []"
@@ -902,117 +850,123 @@
         <template #cell="{ row, field }">
           <template v-if="field.name === 'validLabel'">
             <div class="flex items-center justify-center">
-              <span v-if="row.valid" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700 text-xs font-bold border border-emerald-200">
+              <AppTag v-if="row.valid" variant="success">
                 <IconCheck class="w-3.5 h-3.5" /> Válida
-              </span>
-              <span v-else class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 text-xs font-bold border border-rose-200">
+              </AppTag>
+              <AppTag v-else variant="danger">
                 <IconX class="w-3.5 h-3.5" /> Inválida
-              </span>
+              </AppTag>
             </div>
           </template>
           <template v-else-if="field.name === 'certificateAuthority'">
             <div class="flex items-center justify-center">
-              <button
+              <AppButton
                 v-if="row.certificateAuthority && row.certificateAuthority !== 'No disponible'"
-                @click="openCertificateAuthorityModal(row)"
-                class="inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-100 text-slate-600 hover:bg-sky-100 hover:text-sky-600 transition-colors"
+                variant="info-soft"
+                icon-only
                 title="Ver entidad certificadora"
+                @click="openCertificateAuthorityModal(row)"
               >
                 <IconCertificate class="w-4 h-4" />
-              </button>
-              <span v-else class="text-slate-400 text-xs font-semibold uppercase">N/A</span>
+           </AppButton>
+              <span v-else class="deasy-overline">N/A</span>
             </div>
           </template>
           <template v-else-if="field.name === 'signerCedula'">
-            <div class="flex flex-col gap-1.5 items-start">
-              <span class="font-semibold text-slate-800">{{ row.signerCedula }}</span>
-              <span v-if="row.matchesCedula" class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-cyan-100 text-cyan-700 text-[10px] font-bold uppercase tracking-wider border border-cyan-200">
+            <div class="flex flex-col gap-2 items-start">
+              <span class="font-semibold text-strong">{{ row.signerCedula }}</span>
+              <AppTag v-if="row.matchesCedula" variant="info">
                 <IconCheck class="w-3 h-3" /> Coincide
-              </span>
+              </AppTag>
             </div>
           </template>
           <template v-else-if="field.name === 'details'">
             <details class="min-w-[16rem] group">
-              <summary class="cursor-pointer text-xs font-bold uppercase tracking-wider text-sky-600 hover:text-sky-700 transition flex items-center gap-1 list-none">
+              <summary class="deasy-overline cursor-pointer text-info hover:text-info transition flex items-center gap-2 list-none">
                 <IconInfoCircle class="w-4 h-4" />
                 <span class="group-open:hidden">Ver técnico</span>
                 <span class="hidden group-open:inline">Ocultar</span>
               </summary>
-              <pre class="mt-2 overflow-auto whitespace-pre-wrap text-[10px] text-slate-600 bg-slate-50 p-3 rounded-xl border border-slate-200 shadow-inner max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
+              <pre class="deasy-card mt-2 overflow-auto whitespace-pre-wrap text-theme-xs text-icon p-3 max-h-40 leading-relaxed custom-scrollbar">{{ JSON.stringify(row.extras || {}, null, 2) }}</pre>
             </details>
           </template>
           <template v-else>
-            <span class="text-sm text-slate-600 font-medium">{{ row[field.name] }}</span>
+            <span class="text-sm text-icon font-medium">{{ row[field.name] }}</span>
           </template>
         </template>
         <template #empty>
-          <div class="flex flex-col items-center justify-center py-12 px-4">
-            <div class="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-4">
-              <IconShieldCheck class="w-8 h-8" />
-            </div>
-            <h4 class="text-lg font-bold text-slate-700 mb-1">Sin firmas detectadas</h4>
-            <p class="text-sm text-slate-500 text-center max-w-md">No se encontraron firmas electrónicas embebidas en el documento analizado o el documento no ha sido cargado correctamente.</p>
-          </div>
+          <AppEmpty :icon="IconShieldCheck" title="Sin firmas detectadas">No se encontraron firmas electrónicas embebidas en el documento analizado o el documento no ha sido cargado correctamente.</AppEmpty>
         </template>
       </AppDataTable>
     </div>
-  </AdminModalShell>
+  </AppModalShell>
 
-  <AdminModalShell
+  <AppModalShell
     ref="certificateAuthorityModal"
     labelled-by="certificate-authority-modal-title"
     title="Entidad certificadora"
     size="lg"
-    content-class="rounded-4 shadow border-0"
+    content-class="shadow border-0"
     body-class="pt-4"
   >
     <div class="flex flex-col gap-4">
-      <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Entidad</div>
-        <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-slate-800">
+      <div class="deasy-card px-4 py-3">
+        <div class="deasy-overline">Entidad</div>
+        <div class="mt-2 whitespace-pre-wrap text-sm font-medium text-strong">
           {{ selectedCertificateAuthority?.certificateAuthority || 'No disponible' }}
         </div>
       </div>
 
       <div
         v-if="selectedCertificateAuthority?.extras?.issuer"
-        class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+        class="deasy-card px-4 py-3"
       >
-        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Issuer completo</div>
-        <div class="mt-2 whitespace-pre-wrap text-sm text-slate-700">
+        <div class="deasy-overline">Issuer completo</div>
+        <div class="mt-2 whitespace-pre-wrap text-sm text-body">
           {{ selectedCertificateAuthority.extras.issuer }}
         </div>
       </div>
 
       <div
         v-if="selectedCertificateAuthority?.extras?.issuerAttributes && Object.keys(selectedCertificateAuthority.extras.issuerAttributes).length"
-        class="rounded-2xl border border-slate-200 bg-white px-4 py-3"
+        class="deasy-card px-4 py-3"
       >
-        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Atributos detectados</div>
-        <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-slate-600">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
+        <div class="deasy-overline">Atributos detectados</div>
+        <pre class="mt-3 overflow-auto whitespace-pre-wrap text-xs text-icon">{{ JSON.stringify(selectedCertificateAuthority.extras.issuerAttributes, null, 2) }}</pre>
       </div>
     </div>
-  </AdminModalShell>
+  </AppModalShell>
 </template>
   <script setup>
-  import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h } from 'vue';
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
+  import { onMounted, onBeforeUnmount, ref, watch, nextTick, computed, defineExpose, defineProps, defineEmits, h, useId } from "vue";
   import { useRouter } from 'vue-router';
-  import axios from 'axios';
+  import axios from '@/core/services/httpClient';
   import { pdfjsLib } from '@/core/utils/pdfjsSetup';
   import { Modal } from '@/shared/utils/modalController';
-  import { IconArrowLeft, IconChevronLeft, IconChevronRight, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconTrash, IconKey, IconListCheck, IconInbox } from '@tabler/icons-vue';
+  import { IconArrowLeft, IconSignature, IconSend, IconShieldCheck, IconX, IconFileUpload, IconFiles, IconSearch, IconCertificate, IconAlertCircle, IconCheck, IconInfoCircle, IconAlertTriangle, IconFileCheck, IconRefresh, IconListCheck, IconInbox } from '@tabler/icons-vue';
   import { API_ROUTES } from '@/core/config/apiConfig';
+  import { storeUser } from '@/core/utils/accessControl.js';
   import AppTag from '@/shared/components/data/AppTag.vue';
   import AppDataTable from '@/shared/components/data/AppDataTable.vue';
   import AppCounterNavigator from '@/shared/components/widgets/AppCounterNavigator.vue';
-  import PdfDropField from '@/modules/firmas/components/PdfDropField.vue';
+  import PdfDropField from '@/shared/components/forms/PdfDropField.vue';
   import SignatureBox from '@/modules/firmas/components/SignatureBox.vue';
   import UserCertificatesPanel from '@/modules/firmas/components/UserCertificatesPanel.vue';
-  import AdminModalShell from '@/shared/components/modals/AppModalShell.vue';
+  import AppModalShell from '@/shared/components/modals/AppModalShell.vue';
   import AdminButton from '@/shared/components/buttons/AppButton.vue';
+  import SToggle from '@/shared/components/forms/SToggle.vue';
   import Loading from '@/shared/components/feedback/Loading.vue';
   import MultiSignerPanel from '@/modules/firmas/components/MultiSignerPanel.vue';
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
   const router = useRouter();
 
   const props = defineProps({
@@ -1024,7 +978,7 @@
       type: Boolean,
       default: false
     },
-    enableDashboardShortcuts: {
+    enableHomeShortcuts: {
       type: Boolean,
       default: false
     },
@@ -1041,24 +995,24 @@
       default: () => []
     }
   });
-  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'request-close', 'open-dashboard-pending', 'open-dashboard-multisigner', 'open-general-multisigner', 'open-sign-modal', 'open-request-modal', 'multi-header-update']);
+  const emit = defineEmits(['workflow-signed', 'batch-finished', 'close-multi', 'request-close', 'open-home-pending', 'open-home-multisigner', 'open-general-multisigner', 'open-sign-modal', 'open-request-modal', 'multi-header-update']);
 
   const buildWorkspaceIcon = (IconComponent, colorClasses) =>
     h(
       'div',
       {
-        class: `signature-workspace-icon shrink-0 mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border shadow-sm ${colorClasses}`
+        class: `signature-workspace-icon deasy-icon-box deasy-icon-box--xl deasy-icon-box--outlined mx-auto ${colorClasses}`
       },
       [h(IconComponent, { class: 'h-7 w-7', 'stroke-width': 1.5 })]
     );
 
-  const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'bg-sky-50 border-sky-100 text-sky-600');
-  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'bg-slate-100 border-slate-200 text-slate-400');
-  const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'bg-emerald-50 border-emerald-100 text-emerald-600');
-  const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'bg-amber-50 border-amber-100 text-amber-600');
-  const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'bg-indigo-50 border-indigo-100 text-indigo-600');
-  const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'bg-sky-50 border-sky-100 text-sky-600');
-  const CustomIconReceivedRequests = () => buildWorkspaceIcon(IconInbox, 'bg-emerald-50 border-emerald-100 text-emerald-600');
+  const CustomIconSignature = () => buildWorkspaceIcon(IconSignature, 'deasy-icon-box--info');
+  const CustomIconSearch = () => buildWorkspaceIcon(IconSearch, 'deasy-icon-box--neutral');
+  const CustomIconSend = () => buildWorkspaceIcon(IconSend, 'deasy-icon-box--success');
+  const CustomIconShieldCheck = () => buildWorkspaceIcon(IconShieldCheck, 'deasy-icon-box--warning');
+  const CustomIconFiles = () => buildWorkspaceIcon(IconFiles, 'deasy-icon-box--primary');
+  const CustomIconPendingTray = () => buildWorkspaceIcon(IconListCheck, 'deasy-icon-box--info');
+  const CustomIconReceivedRequests = () => buildWorkspaceIcon(IconInbox, 'deasy-icon-box--success');
   const normalizedLauncherMode = computed(() => String(props.launcherMode || "all").trim().toLowerCase());
   const canShowLauncher = (mode) => {
     const normalizedMode = String(mode || "").trim().toLowerCase();
@@ -1096,17 +1050,46 @@
     try {
       return JSON.parse(rawText);
     } catch {
+      // ⚠️ Un cuerpo que NO es JSON no se devuelve como mensaje si es HTML. Lo que contesta el
+      // proxy ante un 413, un 502 o un 504 es su propia pagina, y colarla en `message` pinta
+      // «<html><head><title>413 Request Entity Too Large…» dentro del aviso de la pantalla.
+      // Un texto plano sigue valiendo: eso lo manda un servicio, no un proxy.
+      if (/^\s*</.test(rawText)) {
+        return {};
+      }
       return {
         message: rawText
       };
     }
   };
 
+  // El peso de un lote, en la unidad en la que se puede decir en voz alta.
+  const formatBatchWeight = (bytes) => {
+    const mib = Number(bytes || 0) / (1024 * 1024);
+    return `${mib.toFixed(1).replace('.', ',')} MB`;
+  };
+
+  // POR QUE ESTO EXISTE: el fallo que mas cuesta no es el que falla, es el que falla sin decir de
+  // que. Un lote rechazado por tamaño lo rechaza el PROXY, que no habla el contrato de errores de
+  // la API --`{ message, code }`-- sino HTML. Sin este traductor, la pantalla contaba un problema
+  // de JSON y la persona buscaba el fallo en la firma.
+  const describeBatchStartFailure = (response, payload, batchBytes) => {
+    const delServidor = String(payload?.error || payload?.message || '').trim();
+    if (delServidor) {
+      return delServidor;
+    }
+    if (response.status === 413) {
+      return `El lote pesa ${formatBatchWeight(batchBytes)} y el servidor rechazó la petición por tamaño (HTTP 413). `
+        + 'Divide el lote en tandas más pequeñas, o pide que se suba el límite de subida del proxy.';
+    }
+    return `Error del servidor (${response.status}).`;
+  };
+
   let ctx;
   const colPdf=ref(null)
   let pdfDoc = null;
   let renderTask = null;
-  const pdfViewer=ref(null), pdfCanvas=ref(null), coordinatesDisplay=ref(null);
+  const pdfViewer=ref(null), pdfCanvas=ref(null);
   const currentPage = ref(1);
   const pageInput = ref(1);
   const totalPages = ref(0);
@@ -1179,8 +1162,6 @@
   const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   
   let isDragging = false;
-  let startX = 0;
-  let startY = 0;
   let activeBox = null;
   const pendingDeleteFieldId = ref(null);
   const availableCertificates = ref([]);
@@ -1205,7 +1186,7 @@
   const signError = ref('');
   const signSuccess = ref(false);
   const signResultMessage = ref('');
-  const signedMinioPath = ref('');
+  const signedAlmacenPath = ref('');
   const signedFieldsCount = ref(0);
   const workflowSignContext = ref(null);
   const workflowPdfStatus = ref({ type: 'info', message: '' });
@@ -1260,20 +1241,15 @@
   });
   const isEmbeddedWorkflowMode = computed(() =>
     props.embedded
-      && Boolean(workflowSignContext.value?.documentVersionId || workflowSignContext.value?.signatureRequestId)
-  );
-  const rootClasses = computed(() =>
-    props.embedded
-      ? 'w-full h-full max-w-none mx-auto p-0 flex flex-col gap-6'
-      : 'w-full h-full max-w-none mx-auto p-4 sm:p-6 lg:p-8 flex flex-col gap-6'
+      && Boolean(workflowSignContext.value?.documentVersionId || workflowSignContext.value?.turnoId)
   );
 
   const handleDatabaseEntry = () => {
-    if (props.enableDashboardShortcuts) {
-      emit('open-dashboard-multisigner');
+    if (props.enableHomeShortcuts) {
+      emit('open-home-multisigner');
       return;
     }
-    router.push({ name: 'dashboard-signatures' });
+    router.push({ name: 'home-signatures' });
   };
 
   const removeBox = () => {
@@ -1374,7 +1350,17 @@
 
   const isMouseOverPdf = ref(false);
   const isHoveringField = ref(false);
-  const previewBoxStyle = ref({ display: 'none' });
+  // ⚠️ SIN CENTINELA `display`: es el defecto 1.7, y estaba AQUI TAMBIEN.
+  //
+  // La ficha del 1.7 solo nombraba `MultiSignerPanel.vue`; este componente tenia la forma
+  // identica --el `ref` con `display:'none'`, el `v-if` preguntando por el, y la asignacion del
+  // movimiento escribiendo `left/top/width/height` sin `display`--. Un arreglo aplicado a un solo
+  // sitio habria dejado el otro igual, que es como el IDOR se quedo a medias.
+  //
+  // Se borra por el mismo motivo que alli: `isMouseOverPdf` se enciende en `handleMouseMove`, que
+  // es la misma funcion que escribe la posicion, asi que el termino no filtraba nada que el
+  // primero no filtrara ya.
+  const previewBoxStyle = ref({});
 
   const handleMouseMove = (event) => {
     if (!pdfViewer.value) return;
@@ -1733,7 +1719,7 @@
         return;
       }
       if (mode === 'multi') {
-        if (props.enableDashboardShortcuts) {
+        if (props.enableHomeShortcuts) {
           emit('open-general-multisigner', { files: pdfFiles });
           return;
         }
@@ -1746,7 +1732,7 @@
         return;
       }
       const file = pdfFiles[0];
-      if (props.enableDashboardShortcuts && !props.embedded && (mode === 'sign' || mode === 'request')) {
+      if (props.enableHomeShortcuts && !props.embedded && (mode === 'sign' || mode === 'request')) {
         emit(mode === 'sign' ? 'open-sign-modal' : 'open-request-modal', { files: [file], mode });
         return;
       }
@@ -1843,14 +1829,6 @@
       }
     };
 
-    const openMultiSigner = () => {
-      resetToStart();
-      multiSignerSeedFiles.value = [];
-      multiSignerSeedDocuments.value = [];
-      allowManualMultiSignerUpload.value = true;
-      enableMultiSignerDocumentFilters.value = false;
-      workspaceMode.value = 'multi';
-    };
 
     const closeMultiSigner = () => {
       if (props.multiOnly) {
@@ -1874,6 +1852,9 @@
         signerUnitTypeOptions.value = unitTypesResponse.data || [];
         signerCargoOptions.value = cargosResponse.data || [];
       } catch (error) {
+        // Los desplegables quedan vacíos, que se ve igual que "no hay tipos de unidad ni
+        // cargos configurados": sin traza no había forma de distinguir el fallo del vacío.
+        console.error('No se pudieron cargar los filtros de firmantes:', error);
         signerUnitTypeOptions.value = [];
         signerCargoOptions.value = [];
       } finally {
@@ -1896,6 +1877,9 @@
         });
         signerUnitOptions.value = response.data || [];
       } catch (error) {
+        // Mismo caso que loadSignerFilterOptions: la lista vacía no distingue "ese tipo de
+        // unidad no tiene unidades" de "la petición falló".
+        console.error('No se pudieron cargar las unidades del filtro de firmantes:', error);
         signerUnitOptions.value = [];
       } finally {
         isLoadingSignerOptions.value = false;
@@ -1929,7 +1913,7 @@
         }
         const data = await response.json();
         userResults.value = Array.isArray(data) ? data : [];
-      } catch (error) {
+      } catch {
         userSearchError.value = 'No se pudo cargar la lista de usuarios.';
         userResults.value = [];
       } finally {
@@ -2034,7 +2018,7 @@
 
     const submitAction = () => {
       if (requestMode.value) {
-        console.log('Enviar solicitud de firmas');
+        console.log('Enviar turnos de firma');
         return;
       }
       signMode.value = 'coordinates';
@@ -2089,14 +2073,13 @@
       nextTick(() => {
         setTimeout(() => {
           const boxEl = document.querySelector(`[data-field-id="${fieldId}"]`);
-          if (boxEl) {
-            boxEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            // optionally highlight the box temporarily by adding a temporary class
-            boxEl.classList.add('ring-4', 'ring-sky-500', 'ring-offset-2', 'transition-shadow');
-            setTimeout(() => {
-              boxEl.classList.remove('ring-4', 'ring-sky-500', 'ring-offset-2', 'transition-shadow');
-            }, 1500);
-          }
+          /* EL RESALTADO SALE DEL ESTADO, NO DEL DOM (2026-08-20, F8).
+             Antes se anadian cuatro utilidades con `classList.add` —dos de ellas de color— y se
+             quitaban a los 1500 ms. Eso es color viviendo en JavaScript en su peor forma: ni
+             `check-orphan-classes` puede verlo, porque no hay ningun atributo que leer.
+             `SignatureBox` YA tiene `isActive`, atado a `lastFieldId`, y pinta el mismo anillo. */
+          selectField(fieldId);
+          boxEl?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }, 100);
       });
     };
@@ -2186,14 +2169,14 @@
         signError.value = '';
         signResultMessage.value = '';
         signSuccess.value = false;
-        signedMinioPath.value = '';
+        signedAlmacenPath.value = '';
         signedFieldsCount.value = 0;
         resetPdfState();
         workflowPdfStatus.value = {
           type: workflowSignContext.value?.preloadPdfPath ? 'info' : 'error',
           message: workflowSignContext.value?.preloadPdfPath
             ? 'La sesión quedó lista para reintentar la carga del PDF vinculado.'
-            : 'Este flujo no tiene un PDF vinculado para precargar.'
+            : 'Este recorrido no tiene un PDF vinculado para precargar.'
         };
         return;
       }
@@ -2276,12 +2259,12 @@
         ?? workflowSignContext.value?.documentVersionId
         ?? 0
       );
-      const signatureRequestId = Number(
-        fallbackContext?.signatureRequestId
-        ?? workflowSignContext.value?.signatureRequestId
+      const turnoId = Number(
+        fallbackContext?.turnoId
+        ?? workflowSignContext.value?.turnoId
         ?? 0
       );
-      if (!documentVersionId || !signatureRequestId) {
+      if (!documentVersionId || !turnoId) {
         return null;
       }
 
@@ -2294,16 +2277,16 @@
           return null;
         }
 
-        const request = Array.isArray(snapshot?.signatureRequests)
-          ? snapshot.signatureRequests.find((item) => Number(item?.id || 0) === signatureRequestId)
+        const request = Array.isArray(snapshot?.turnos)
+          ? snapshot.turnos.find((item) => Number(item?.id || 0) === turnoId)
           : null;
 
-        const requestStatusCode = String(request?.requestStatusCode || '').trim().toLowerCase();
+        const estado = String(request?.estado || '').trim().toLowerCase();
         const completed =
-          requestStatusCode === 'completado'
-          || requestStatusCode === 'completed'
+          estado === 'completado'
+          || estado === 'completed'
           || Boolean(request?.respondedAt);
-        const currentStepOrder = Number(snapshot?.currentSignatureStepOrder || 0);
+        const currentStepOrder = Number(snapshot?.pasoActual || 0);
         const requestStepOrder = Number(request?.stepOrder || 0);
         const workflowAdvanced = Boolean(currentStepOrder && requestStepOrder && currentStepOrder > requestStepOrder);
 
@@ -2313,10 +2296,10 @@
 
         return {
           documentVersionId,
-          signatureRequestId,
+          turnoId,
           signedPath: '',
           workflow: snapshot,
-          message: 'La firma del flujo se registró correctamente.'
+          message: 'La firma se registró correctamente.'
         };
       } catch {
         return null;
@@ -2383,7 +2366,8 @@
           throw new Error(data?.message || 'No se pudo refrescar el perfil del usuario.');
         }
         currentUser.value = data.user;
-        localStorage.setItem('user', JSON.stringify(data.user));
+        // Sin `datos_personales`: `/users/me` los trae y lo sensible no se guarda en el navegador.
+        storeUser(data.user);
         if (!stampText.value && currentUser.value) {
           stampText.value = `${currentUser.value.first_name ?? ''} ${currentUser.value.last_name ?? ''}`.trim();
         }
@@ -2498,18 +2482,33 @@
           return;
         }
 
+        const esModoToken = multiBatchRequest.value.mode === 'token';
+        if (esModoToken && !currentSignatureMarker.value) {
+          signError.value = 'El usuario actual no tiene token de firma configurado.';
+          return;
+        }
+
         isSigning.value = true;
         isStartingMultiBatch.value = true;
         signError.value = '';
         try {
           const formData = new FormData();
+          let pesoDelLote = 0;
           multiBatchRequest.value.documents.forEach((doc) => {
+            pesoDelLote += Number(doc.file?.size || 0);
             formData.append('pdf', doc.file);
           });
           formData.append('certificate_id', String(selectedCertificateId.value));
           formData.append('password', certPassword.value);
           formData.append('stampText', stampText.value.trim());
-          formData.append('sign_mode', multiBatchRequest.value.mode === 'token' ? 'token' : 'coordinates');
+          formData.append('sign_mode', esModoToken ? 'token' : 'coordinates');
+          // El marcador viaja EXPLICITO, igual que en la firma de a uno. No mandarlo dejaba la
+          // firma masiva en modo token dependiendo de una reserva del servidor que leia una
+          // propiedad inexistente y contestaba «no tiene token de firma configurado» a quien si lo
+          // tiene (arreglado tambien alli, en `PdfSigningService.buildSignContext`).
+          if (esModoToken) {
+            formData.append('token', currentSignatureMarker.value);
+          }
           if (multiBatchRequest.value.mode === 'shared-coordinates' && multiBatchRequest.value.sharedFields?.length) {
             formData.append('fields', JSON.stringify(
               multiBatchRequest.value.sharedFields.map((field) => ({
@@ -2541,8 +2540,9 @@
             multiBatchRequest.value.documents.map((doc) => ({
               id: doc.id,
               name: doc.name,
+              relativePath: doc.relativePath || doc.name,
               metadata: {
-                signatureRequestId: Number(doc?.metadata?.signatureRequestId || 0) || null,
+                turnoId: Number(doc?.metadata?.turnoId || 0) || null,
                 documentVersionId: Number(doc?.metadata?.documentVersionId || 0) || null,
                 documentId: Number(doc?.metadata?.documentId || 0) || null,
                 processName: doc?.metadata?.processName || '',
@@ -2562,9 +2562,16 @@
             headers: getAuthHeaders(),
             body: formData
           });
-          const data = await response.json();
+          // ⚠️ `readResponsePayload` y no `response.json()`, y la diferencia la pago una sesion.
+          //
+          // Aqui habia un `await response.json()` ANTES de mirar `response.ok`. Cuando el que
+          // contesta es el proxy y no el backend --un 413 por tamaño, un 502, un 504-- el cuerpo es
+          // HTML, `json()` revienta con un error de sintaxis, y lo que acaba en pantalla no habla
+          // del lote: habla de JSON. El 2026-11-10 un lote de 74 documentos (36,1 MB) se rechazo
+          // asi, con el tamaño como causa real y sin que la pantalla lo nombrara ni una vez.
+          const data = await readResponsePayload(response);
           if (!response.ok) {
-            throw new Error(data?.error || data?.message || `Error del servidor (${response.status})`);
+            throw new Error(describeBatchStartFailure(response, data, pesoDelLote));
           }
           activeMultiBatchJobId.value = data.jobId || '';
           activeMultiBatchJob.value = {
@@ -2621,7 +2628,7 @@
       const embeddedWorkflowContext = {
         embedded: props.embedded && isEmbeddedWorkflowMode.value,
         documentVersionId: Number(workflowSignContext.value?.documentVersionId || 0),
-        signatureRequestId: Number(workflowSignContext.value?.signatureRequestId || 0)
+        turnoId: Number(workflowSignContext.value?.turnoId || 0)
       };
       try {
         const allFields = fields.value.map((field) => ({
@@ -2640,8 +2647,8 @@
         } else {
           formData.append('token', currentSignatureMarker.value);
         }
-        if (workflowSignContext.value?.signatureRequestId) {
-          formData.append('signature_request_id', String(workflowSignContext.value.signatureRequestId));
+        if (workflowSignContext.value?.turnoId) {
+          formData.append('turno_id', String(workflowSignContext.value.turnoId));
         }
         if (workflowSignContext.value?.documentVersionId) {
           formData.append('document_version_id', String(workflowSignContext.value.documentVersionId));
@@ -2672,12 +2679,12 @@
         signResultMessage.value = validationWarning && data?.validation?.warningAccepted
           ? `El documento fue firmado correctamente con ${signedCount} campo(s). Advertencia: ${validationWarning}`
           : `El documento fue firmado correctamente con ${signedCount} campo(s).`;
-        signedMinioPath.value = data.signedPath;
+        signedAlmacenPath.value = data.signedPath;
         signedFieldsCount.value = signedCount;
         if (props.embedded && isEmbeddedWorkflowMode.value) {
           emit('workflow-signed', {
             documentVersionId: embeddedWorkflowContext.documentVersionId || null,
-            signatureRequestId: embeddedWorkflowContext.signatureRequestId || null,
+            turnoId: embeddedWorkflowContext.turnoId || null,
             signedPath: data.signedPath || '',
             workflow: data.workflow || null,
             message: signResultMessage.value,
@@ -2708,9 +2715,9 @@
     };
 
     const viewSignedDocument = async () => {
-      if (!signedMinioPath.value) return;
+      if (!signedAlmacenPath.value) return;
       try {
-        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedMinioPath.value)}`, {
+        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedAlmacenPath.value)}`, {
           headers: getAuthHeaders()
         });
         if (!response.ok) {
@@ -2726,9 +2733,9 @@
     };
 
     const downloadSignedDocument = async () => {
-      if (!signedMinioPath.value) return;
+      if (!signedAlmacenPath.value) return;
       try {
-        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedMinioPath.value)}`, {
+        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedAlmacenPath.value)}`, {
           headers: getAuthHeaders()
         });
         if (!response.ok) {
@@ -2776,7 +2783,7 @@
       signError.value = '';
       signResultMessage.value = '';
       signSuccess.value = false;
-      signedMinioPath.value = '';
+      signedAlmacenPath.value = '';
       signedFieldsCount.value = 0;
       validationFile.value = null;
       validationCedula.value = '';
@@ -2802,7 +2809,7 @@
     const initializeWorkflowSignatureSession = (payload = {}) => {
       allowUntrustedSigner.value = true;
       workflowSignContext.value = {
-        signatureRequestId: payload.signatureRequestId ? Number(payload.signatureRequestId) : null,
+        turnoId: payload.turnoId ? Number(payload.turnoId) : null,
         documentVersionId: payload.documentVersionId ? Number(payload.documentVersionId) : null,
         taskItemId: payload.taskItemId ? Number(payload.taskItemId) : null,
         processDefinitionId: payload.processDefinitionId ? Number(payload.processDefinitionId) : null,
@@ -2819,7 +2826,7 @@
       signError.value = '';
       signResultMessage.value = '';
       signSuccess.value = false;
-      signedMinioPath.value = '';
+      signedAlmacenPath.value = '';
       uploadError.value = '';
       multiBatchRequest.value = null;
       activeMultiBatchJob.value = null;
@@ -2873,63 +2880,3 @@
     });
 
   </script>
-<style scoped>
-.dropfield-centered-title :deep(.deasy-dropzone__header) {
-  text-align: center;
-  width: 100%;
-}
-.dropfield-centered-title :deep(.deasy-dropzone__title) {
-  text-align: center;
-  width: 100%;
-}
-
-.signature-workspace-card :deep(.deasy-dropzone__surface--card) {
-  min-height: 9.75rem;
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
-}
-
-.signature-workspace-card :deep(.deasy-dropzone__title) {
-  margin-bottom: 1rem;
-  text-align: left;
-}
-
-.signature-workspace-card :deep(.deasy-dropzone__trigger) {
-  gap: 0.375rem;
-}
-
-.signature-workspace-card :deep(.signature-workspace-icon) {
-  margin-top: 0.5rem;
-  margin-bottom: 1rem;
-}
-
-.pdf-viewer {
-  position: relative;
-  max-width: 100%;
-}
-
-
-
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: var(--brand-border, #e2e8f0);
-  border-radius: 10px;
-}
-
-.page-selector-input {
-  appearance: textfield;
-  -moz-appearance: textfield;
-}
-
-.page-selector-input::-webkit-outer-spin-button,
-.page-selector-input::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
-}
-</style>

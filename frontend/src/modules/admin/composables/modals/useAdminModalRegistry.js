@@ -18,7 +18,6 @@ export function useAdminModalRegistry({
   recordViewerModal,
   personAssignmentsModal,
   fkModal,
-  fkViewerModal,
   fkFilterModal,
   fkCreateModal,
   templateSearchModal,
@@ -34,8 +33,7 @@ export function useAdminModalRegistry({
   processDefinitionActivationChecking,
   processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
-  processDefinitionActivationHasRequiredArtifacts,
-  processDefinitionActivationRequiresArtifacts,
+  processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationRules,
   processDefinitionActivationTriggers,
@@ -53,6 +51,7 @@ export function useAdminModalRegistry({
   definitionArtifactsPromptContext,
   refreshProcessDefinitionChecklist,
   openProcessDefinitionActivationModal,
+  restoreProcessWizardFromRecordViewer,
   resetDefinitionRulesForm,
   resetDefinitionTriggersForm,
   resetDefinitionArtifactsForm
@@ -68,7 +67,6 @@ export function useAdminModalRegistry({
   let recordViewerInstance = null;
   let personAssignmentsInstance = null;
   let fkInstance = null;
-  let fkViewerInstance = null;
   let fkFilterInstance = null;
   let fkCreateInstance = null;
   let templateSearchInstance = null;
@@ -112,6 +110,9 @@ export function useAdminModalRegistry({
     if (returnModal === "definitionArtifacts" && definitionArtifactsInstance) {
       definitionArtifactsInstance.show();
     }
+    if (returnModal === "fkSearch" && fkInstance) {
+      fkInstance.show();
+    }
   };
 
   const ensureEditorInstance = () => {
@@ -147,8 +148,7 @@ export function useAdminModalRegistry({
         processDefinitionActivationChecking.value = false;
         processDefinitionActivationHasActiveRules.value = true;
         processDefinitionActivationHasActiveTriggers.value = true;
-        processDefinitionActivationHasRequiredArtifacts.value = true;
-        processDefinitionActivationRequiresArtifacts.value = false;
+        processDefinitionActivationHasActiveArtifacts.value = true;
         processDefinitionActivationView.value = "definition";
         processDefinitionActivationRules.value = [];
         processDefinitionActivationTriggers.value = [];
@@ -204,6 +204,7 @@ export function useAdminModalRegistry({
       recordViewerInstance = new Modal(modalElement);
       modalElement.addEventListener("hidden.bs.modal", () => {
         restoreReturnModal();
+        restoreProcessWizardFromRecordViewer?.();
       });
     }
   };
@@ -217,6 +218,11 @@ export function useAdminModalRegistry({
 
   const ensureDefinitionArtifactsInstance = () => {
     const modalElement = resolveModalElement(definitionArtifactsModal.value);
+    // El modal se remonta por su v-if (p. ej. al abrir/cerrar el wizard): si la instancia cacheada apunta a
+    // un elemento viejo (stale/desmontado), se descarta para recrearla sobre el elemento vigente.
+    if (definitionArtifactsInstance && definitionArtifactsInstance.element !== modalElement) {
+      definitionArtifactsInstance = null;
+    }
     if (!definitionArtifactsInstance && modalElement) {
       definitionArtifactsInstance = new Modal(modalElement);
       modalElement.addEventListener("hidden.bs.modal", () => {
@@ -270,20 +276,6 @@ export function useAdminModalRegistry({
           restoreReturnModal();
         }
         fkCreateExitTarget.value = "none";
-      });
-    }
-  };
-
-  const ensureFkViewerInstance = () => {
-    const modalElement = resolveModalElement(fkViewerModal.value);
-    if (!fkViewerInstance && modalElement) {
-      fkViewerInstance = new Modal(modalElement);
-      modalElement.addEventListener("hidden.bs.modal", () => {
-        if (fkNestedExitTarget.value === "search") {
-          ensureFkInstance();
-          fkInstance?.show();
-        }
-        fkNestedExitTarget.value = "none";
       });
     }
   };
@@ -342,6 +334,14 @@ export function useAdminModalRegistry({
   };
 
   const hideParentModalsForRecordViewer = () => {
+    const fkSearchWasOpen = Boolean(resolveModalElement(fkModal.value)?.classList?.contains("show"));
+    if (fkSearchWasOpen) {
+      skipFkReturnRestore.value = true;
+      if (!hideAndRemember("fkSearch", fkInstance, fkModal.value)) {
+        skipFkReturnRestore.value = false;
+      }
+    }
+    hideAndRemember("definitionActivation", processDefinitionActivationInstance, processDefinitionActivationModal.value);
     hideAndRemember("personAssignments", personAssignmentsInstance, personAssignmentsModal.value);
     hideAndRemember("definitionRules", definitionRulesInstance, definitionRulesModal.value);
     hideAndRemember("definitionTriggers", definitionTriggersInstance, definitionTriggersModal.value);
@@ -361,7 +361,6 @@ export function useAdminModalRegistry({
     ensureDefinitionArtifactsPromptInstance,
     ensureFkInstance,
     ensureFkCreateInstance,
-    ensureFkViewerInstance,
     ensureFkFilterInstance,
     ensureProcessSearchInstance,
     ensureTemplateSearchInstance,
@@ -377,7 +376,6 @@ export function useAdminModalRegistry({
     getDefinitionArtifactsPromptInstance: () => definitionArtifactsPromptInstance,
     getRecordViewerInstance: () => recordViewerInstance,
     getFkInstance: () => fkInstance,
-    getFkViewerInstance: () => fkViewerInstance,
     getFkFilterInstance: () => fkFilterInstance,
     getFkCreateInstance: () => fkCreateInstance,
     getProcessDefinitionActivationInstance: () => processDefinitionActivationInstance,

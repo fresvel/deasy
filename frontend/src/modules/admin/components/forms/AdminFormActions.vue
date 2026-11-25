@@ -1,5 +1,5 @@
 <template>
-  <div class="person-assignment-form-actions">
+  <div>
     <AdminButton
       v-if="showPrimary"
       :variant="primaryVariant"
@@ -10,7 +10,7 @@
     </AdminButton>
     <AdminButton
       v-if="showCancel"
-      variant="cancel"
+      variant="danger-outline"
       :disabled="cancelDisabled"
       @click="$emit('cancel')"
     >

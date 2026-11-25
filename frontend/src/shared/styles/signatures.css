@@ -1,0 +1,206 @@
+/* FIRMAS — lo propio del escritorio de firma y del multifirmador. Los dos tamaños de la
+   zona de subida NO estan aqui: son variantes en `forms.css`. */
+
+/* El icono redondeado de las tarjetas del escritorio. Cuelga de la TARJETA, no de la zona
+   de subida: tres de las nueve tarjetas son lanzadores sin dropzone, y colgandolo de ahi
+   se quedaban sin margenes. */
+
+@layer components {
+    .signature-workspace-card .signature-workspace-icon {
+        margin-top: 0.5rem;
+        margin-bottom: 1rem;
+    }
+
+    /* EL BOTON DE FIRMAR SUPERPUESTO AL DOCUMENTO
+     *
+     * No sale de `AppButton` a proposito, y por el mismo motivo que los botones del lienzo del
+     * grafo: va ENCIMA de la pagina del PDF, sobre un fondo que no controlamos. De ahi el borde
+     * blanco y la sombra —son lo unico que lo separa del papel— y de ahi que no tenga la caja de
+     * 36 px del sistema.
+     *
+     * Lo que si era defecto: estaba escrito DOS veces con dos formas distintas para la MISMA
+     * accion (2026-08-15, censo estructural de G2). `FirmarPdf` lo pintaba redondo con `p-1.5` y
+     * `MultiSignerPanel` cuadrado con `h-8 w-8 rounded-xl`, uno en `bg-emerald-500` y el otro en
+     * `bg-emerald-500/88` con desenfoque. Firmar un documento y firmar el lote son la misma
+     * accion sobre el mismo objeto: ahora es el mismo boton. Se queda la forma redonda, que es
+     * la que se distingue de los campos rectangulares del formulario. */
+    .deasy-pdf-action {
+        @apply inline-flex h-8 w-8 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-white text-white shadow-md outline-none transition-colors active:scale-95 disabled:cursor-not-allowed disabled:opacity-50;
+        background: var(--color-success);
+    }
+
+    /* El oscurecido del hover va por `color-mix`, como el de `deasy-btn--primary-outline`, y NO por un
+       paso de la escala: `--color-success` YA es `success-700`, asi que un `success-600` seria
+       mas CLARO al pasar el raton — al reves de lo que se espera. Y `--color-danger` ni siquiera
+       tiene escala propia con ese nombre: es un alias de `error-700`. */
+    .deasy-pdf-action:hover {
+        background: color-mix(in srgb, var(--color-success) 86%, var(--black));
+    }
+
+    /* El gemelo rojo, que aparecio DESPUES (censo estructural de G5) y confirma que el bloque
+       hacia falta: `SignatureBox` tenia la receta entera copiada otra vez —`h-8 w-8 rounded-xl`,
+       `border-white/80`, `shadow-md`, `backdrop-blur-sm`, `active:scale-95`— cambiando solo
+       `emerald` por `rose`. El censo de G2 no lo vio porque ese boton no vive en un `v-for`; hizo
+       falta la señal de G5 —lo que el @click invoca— para que saliera. */
+    .deasy-pdf-action--danger {
+        background: var(--color-danger);
+    }
+
+    .deasy-pdf-action--danger:hover {
+        background: color-mix(in srgb, var(--color-danger) 86%, var(--black));
+    }
+
+    /* ═══ LA TARJETA DE UN PASO DE FLUJO ═══════════════════════════════════════════════════
+     *
+     * Estaba escrita en DOS funciones de `homeView.helpers.js` —`getSignatureStepCardClass` y
+     * `getSignatureStepAccentClass`— que devolvian cadenas de Tailwind, con dos consumidores
+     * cada una (`DeliverableSignatureTab` y `HomeView`). Es la forma de deuda que F3.3 persigue:
+     * color en JavaScript, invisible para los diecisiete gates.
+     *
+     * Lo que se conserva es `getSignatureStepStatusCode`, que es negocio —mira los `requests` y
+     * el paso actual—, y `getSignatureStepStatusVariant`, que YA traducia ese codigo a un nombre
+     * de tono. O sea: media pieza estaba bien hecha desde el principio y las otras dos funciones
+     * la duplicaban en forma de color.
+     *
+     * ⚠️ Aqui MUEREN LOS 9 HEX SUELTOS del estado «pendiente» (`#f8a895`, `#fa8072`, `#4BF1A1`…).
+     * Los de esa rama eran salmon literal —`#fa8072` **es** el color «salmon» de CSS— y el
+     * sistema ya tiene ese tono: `--color-pending` sobre la familia `orange`, que es como lo
+     * declara `deasy-tag--salmon`. No se inventa nada: se nombra lo que ya estaba.
+     *
+     * 🪤 Los tonos cambian de FAMILIA aunque no lo parezca: el original usaba `emerald-*` y
+     * `rose-*`, que son de Tailwind y no de la paleta adoptada. Pasan a `success-*` y `error-*`,
+     * que son el mismo verde y el mismo rojo del resto de la app pero calibrados por TailAdmin.
+     * El cambio es sutil y deliberado.
+     *
+     * 📌 SE LLAMA `flow-step` Y NO `signature-step` PORQUE SIRVE A LOS DOS FLUJOS. Nacio para el
+     * de firma, y al escribir el gate `check-state-tone` aparecio que `homeView.helpers.js` tenia
+     * **un par gemelo para el flujo de LLENADO** —`getFillStepCardClass` y `…AccentClass`— con la
+     * misma forma y los mismos degradados. No se habia visto en el censo de L6 porque el nombre
+     * no decia «signature» y la busqueda iba por ahi. Es justo lo que un gate esta para encontrar:
+     * lo que el que migro no penso en mirar.
+     *
+     * De ahi el tono `warning`, que el de firma no gasta: un paso de llenado puede estar
+     * DEVUELTO, y eso no existe firmando. */
+    .deasy-flow-step {
+        @apply relative overflow-hidden rounded-[5%] border bg-white p-4 ring-1 ring-white/70 transition;
+        box-shadow: 0 16px 32px rgba(var(--elev-ink-rgb), 0.07);
+    }
+
+    .deasy-flow-step--success { @apply border-success-200 bg-linear-to-br from-success-50/80 via-white to-success-100/40; }
+    .deasy-flow-step--info    { @apply border-blue-light-200 bg-linear-to-br from-blue-light-50/80 via-white to-blue-light-100/50; }
+    .deasy-flow-step--danger  { @apply border-error-200 bg-linear-to-br from-error-50/80 via-white to-error-100/40; }
+    .deasy-flow-step--salmon  { @apply border-orange-200 bg-linear-to-br from-orange-50/85 via-white to-orange-100/45; }
+    .deasy-flow-step--warning { @apply border-warning-200 bg-linear-to-br from-warning-50/80 via-white to-warning-100/40; }
+    .deasy-flow-step--neutral { @apply border-line bg-linear-to-br from-surface/90 via-white to-gray-100/60; }
+
+    /* La banda superior. Va como HIJO y no como `border-top` porque mide 12 px y lleva su propio
+       degradado horizontal, que un borde no puede dar. */
+    .deasy-flow-step__accent {
+        @apply absolute inset-x-0 top-0 h-3;
+    }
+
+    .deasy-flow-step--success .deasy-flow-step__accent { @apply bg-linear-to-r from-success-300 via-success-400 to-success-300; }
+    .deasy-flow-step--info    .deasy-flow-step__accent { @apply bg-linear-to-r from-blue-light-300 via-blue-light-400 to-blue-light-300; }
+    .deasy-flow-step--danger  .deasy-flow-step__accent { @apply bg-linear-to-r from-error-300 via-error-400 to-error-300; }
+    .deasy-flow-step--salmon  .deasy-flow-step__accent { @apply bg-linear-to-r from-orange-300 via-orange-400 to-orange-300; }
+    .deasy-flow-step--warning .deasy-flow-step__accent { @apply bg-linear-to-r from-warning-300 via-warning-400 to-warning-300; }
+    .deasy-flow-step--neutral .deasy-flow-step__accent { @apply bg-linear-to-r from-gray-200 via-line-strong to-gray-200; }
+}
+
+/* ══ LOS CURSORES DE ARRASTRE — capados el 2026-08-17 (F6.L7) ══════════════════════════════
+   Estaban fuera de `@layer` como PREVENCION: `SignatureBox` tenia una prop `customClass` por la
+   que una plantilla podia colar un `cursor-*` de Tailwind, y una utilidad le habria ganado a una
+   regla capada. La prop **no la pasaba ningun consumidor** —cero, medido en los cuatro— asi que
+   la prevencion protegia contra algo que no podia ocurrir. Retirada la prop, estas bajan.
+   ══════════════════════════════════════════════════════════════════════════════════════════ */
+@layer components {
+    /* ⚠️ CURSORES DE ARRASTRE (SignatureBox) — SIN CAPA POR PREVENCION, y es la unica regla
+       del proyecto que lo esta sin tener un competidor real. Hoy no hay ni un `cursor-*` de
+       Tailwind en esos nodos, pero `SignatureBox` acepta un prop `customClass` que inyecta
+       utilidades desde fuera: un `cursor-pointer` que llegue por ahi mataria el arrastre en
+       silencio. Si se retira `customClass`, estas dos bajan.
+
+       El orden de las dos importa: la segunda gana a la primera por venir despues (antes lo
+       hacia con un `!important`). */
+
+    .custom-drag-cursor {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='white' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 12.5v-7.5a1.5 1.5 0 0 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'%3E%3C/path%3E%3Cpath d='M14 5.5a1.5 1.5 0 1 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M17 7.5a1.5 1.5 0 1 1 3 0v8.5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -5.012 -2.7l-3.196 -4.8a1.996 1.996 0 0 1 2.14 -3.111l3.86 1.311'%3E%3C/path%3E%3C/svg%3E") 12 12, grab;
+    }
+    .custom-drag-cursor:active, .custom-dragging-cursor {
+      cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='lightgray' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 12.5v-7.5a1.5 1.5 0 0 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M11 5.5v-2a1.5 1.5 0 1 1 3 0v8.5'%3E%3C/path%3E%3Cpath d='M14 5.5a1.5 1.5 0 1 1 3 0v6.5'%3E%3C/path%3E%3Cpath d='M17 7.5a1.5 1.5 0 1 1 3 0v8.5a6 6 0 0 1 -6 6h-2a6 6 0 0 1 -5.012 -2.7l-3.196 -4.8a1.996 1.996 0 0 1 2.14 -3.111l3.86 1.311'%3E%3C/path%3E%3C/svg%3E") 12 12, grabbing;
+    }
+}
+
+
+@layer components {
+    /* EL BORDE DE UNA TARJETA DE PASO, POR TONO — F8, 2026-08-20.
+     *
+     * Venia de `AdminDraftArtifactModal` como la mitad `card` de un mapa que ya nombraba bien la
+     * otra: `{ card: "border-emerald-200", badge: "deasy-icon-box--success" }`. El icono pedia un
+     * NOMBRE de tono y la tarjeta escribia el COLOR, en la misma linea. El propio comentario de
+     * aquel fichero lo aparcaba aqui: «eso si es deuda, pero de F8».
+     *
+     * ⚠️ Y tres de sus cinco colores no eran de la paleta: `emerald`, `amber` y `rose` no son
+     * familias adoptadas —lo son `blue-light`, `brand`, `error`, `gray`, `orange`, `success` y
+     * `warning`—. Al pasar al token se corrigen solos.
+     *
+     * Es una PALETA CICLICA, no un estado: el color no dice si el paso esta bien, solo lo separa
+     * del siguiente. Por eso no entra en `estadoTono.js` —criterio de F3.3— y por eso vive aqui,
+     * con el resto de los pasos de flujo. */
+    .deasy-flow-step-card--primary { border-color: var(--color-brand-200); }
+    .deasy-flow-step-card--success { border-color: var(--color-success-200); }
+    .deasy-flow-step-card--warning { border-color: var(--color-warning-200); }
+    .deasy-flow-step-card--info    { border-color: var(--color-blue-light-200); }
+    .deasy-flow-step-card--danger  { border-color: var(--color-error-200); }
+}
+
+
+@layer components {
+    /* LA CAJA DE FIRMA SOBRE EL PDF — F12, 2026-08-20.
+     *
+     * El rectangulo que el usuario arrastra sobre el documento para decir «la firma va aqui».
+     * `SignatureBox` lo pintaba con una cadena de NUEVE utilidades en un ternario, con **tres
+     * alfas distintos del mismo azul** (`/20`, `/10`, `/50`) — que es lo que este repo evita,
+     * porque el color resultante depende de lo que haya debajo, y aqui debajo hay un PDF: el
+     * mismo recuadro se ve distinto sobre un parrafo que sobre un margen blanco.
+     *
+     * Los tintes pasan a `color-mix` sobre BLANCO, que da un color estable. */
+    /* ⚠️ EL ANCHO VA AQUI, Y LO PIDIO EL GATE. Al migrar deje `border-2` en la clase estatica de
+       la plantilla, y esa utilidad declara `border-style` ademas del ancho: como vive en `layer
+       utilities`, **le ganaba a este `dashed` y el recuadro habria salido continuo**. Un defecto
+       que renderiza perfectamente y que solo se ve comparando con lo que estaba antes.
+       Con el ancho aqui, la plantilla ya no necesita `border-2` y nadie disputa el estilo. */
+    .deasy-firma-caja {
+        border-width: 2px;
+        border-style: dashed;
+        border-color: var(--color-blue-light-400);
+        background-color: color-mix(in srgb, var(--color-blue-light-400) 10%, var(--color-white));
+    }
+
+    .deasy-firma-caja:hover {
+        border-color: var(--color-blue-light-500);
+        background-color: color-mix(in srgb, var(--color-blue-light-500) 20%, var(--color-white));
+    }
+
+    .deasy-firma-caja--activa,
+    .deasy-firma-caja--activa:hover {
+        border-style: solid;
+        border-color: var(--color-blue-light-500);
+        background-color: color-mix(in srgb, var(--color-blue-light-500) 20%, var(--color-white));
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-blue-light-500) 30%, transparent);
+    }
+
+    /* ARRASTRANDO. Era `ring-2` suelto en la plantilla, y como `--activa` declara su propio
+       `box-shadow` los dos se disputaban el mismo pixel al arrastrar una caja ya activa —que es
+       el caso normal, porque arrastras la que acabas de tocar—. Con nombre, gana el ultimo
+       declarado y eso es una decision, no un accidente de orden. */
+    .deasy-firma-caja--arrastrando {
+        box-shadow: 0 0 0 2px var(--color-blue-light-500);
+    }
+
+    /* LA FILA DE UN CAMPO EN LA LISTA — el mismo campo, visto en el panel lateral. */
+    .deasy-firma-fila--activa {
+        border-color: transparent;
+        box-shadow: 0 0 0 2px var(--color-blue-light-500);
+    }
+}

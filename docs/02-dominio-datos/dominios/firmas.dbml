@@ -1,0 +1,51 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Firma electrónica. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project firmas {
+  database_type: 'PostgreSQL'
+  Note: '''Firma electrónica — El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.'''
+}
+
+Table "signature_batch_jobs" {
+  "job_id" bpchar(36) [pk, not null]
+  "user_id" int4
+  "sign_mode" varchar(40)
+  "status" varchar(20) [not null, default: 'queued']
+  "total" int4 [not null, default: 0]
+  "processed" int4 [not null, default: 0]
+  "success_count" int4 [not null, default: 0]
+  "failed_count" int4 [not null, default: 0]
+  "results" jsonb
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    status [type: btree, name: "idx_signature_batch_jobs_status"]
+    user_id [type: btree, name: "idx_signature_batch_jobs_user"]
+  }
+}
+
+Table "signature_statuses" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   signature_statuses -> document_signatures   [tareas]
+//   persons -> signature_batch_jobs   [identidad]

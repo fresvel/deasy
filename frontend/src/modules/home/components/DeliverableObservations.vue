@@ -1,0 +1,109 @@
+<script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
+import { ref } from 'vue';
+import { IconInfoCircle } from '@tabler/icons-vue';
+import AppButton from '@/shared/components/buttons/AppButton.vue';
+import { tonoObservacion } from '@/shared/utils/estadoTono.js';
+
+const props = defineProps({
+  // Observaciones YA filtradas por fase (entrega o firma) desde el padre.
+  observations: { type: Array, default: () => [] },
+  loading: { type: Boolean, default: false },
+  canAdd: { type: Boolean, default: false },
+  submitting: { type: Boolean, default: false },
+  resolvingId: { type: [Number, String, null], default: null },
+  // 'review' (entrega) | 'signature' (firma): determina la fase al agregar.
+  phase: { type: String, default: 'review' },
+  title: { type: String, default: 'Observaciones' },
+  subtitle: { type: String, default: '' },
+  emptyText: { type: String, default: 'Sin observaciones registradas.' },
+});
+
+const emit = defineEmits(['add', 'resolve']);
+
+const draft = ref('');
+
+const kindLabel = (kind) => ({
+  observation: 'Observación',
+  return_reason: 'Devolución',
+  rejection_reason: 'Rechazo',
+  internal_note: 'Nota interna',
+}[kind] || 'Observación');
+
+/* El color lo pone `deasy-dot--{tono}` y el NOMBRE del tono lo pone `estadoTono.js`: antes
+   esta funcion devolvia la utilidad de fondo —color viviendo en JavaScript— y desde el
+   2026-08-20 (F9-bis) tampoco decide el tono, que era el ultimo mapa suelto del modulo. */
+const dotClass = (observation) =>
+  `deasy-dot deasy-dot--${tonoObservacion(observation.kind, Boolean(observation.resolved_at))}`;
+
+const kindTextClass = (kind) => ({
+  return_reason: 'text-warning',
+  rejection_reason: 'text-danger',
+  internal_note: 'text-muted',
+  observation: 'text-info',
+}[kind] || 'text-info');
+
+const formatObsDate = (value) => String(value || '').toString().slice(0, 16).replace('T', ' ');
+
+const onAdd = () => {
+  const message = draft.value.trim();
+  if (!message || props.submitting) return;
+  emit('add', { message, phase: props.phase });
+  draft.value = '';
+};
+</script>
+
+<template>
+  <section class="deasy-card p-4">
+    <div class="flex items-center gap-2">
+      <h3 class="deasy-title deasy-title--section">{{ title }}</h3>
+      <IconInfoCircle v-if="subtitle" class="h-4 w-4 text-muted" :title="subtitle" />
+    </div>
+
+    <div v-if="loading" class="mt-4 text-sm text-muted">Cargando observaciones...</div>
+    <template v-else>
+      <AppEmpty v-if="!observations.length" :icon="false" class="mt-4">
+        {{ emptyText }}
+      </AppEmpty>
+      <ul v-else class="relative mt-4 m-0 flex flex-col gap-4 list-none border-l border-line pl-4">
+        <li
+          v-for="observation in observations"
+          :key="`obs-${observation.id}`"
+          class="relative"
+        >
+          <span class="absolute -left-[1.42rem] top-1" :class="dotClass(observation)"></span>
+          <div class="flex flex-wrap items-center gap-x-2 gap-y-2">
+            <span class="text-xs font-bold text-body">{{ observation.author_name || 'Sistema' }}</span>
+            <span class="deasy-overline" :class="kindTextClass(observation.kind)">{{ kindLabel(observation.kind) }}</span>
+            <span class="text-theme-xs text-muted">{{ formatObsDate(observation.created_at) }}</span>
+            <span v-if="observation.resolved_at" class="text-theme-xs font-semibold text-success">· Resuelta</span>
+          </div>
+          <p class="m-0 mt-1 text-sm whitespace-pre-line" :class="observation.resolved_at ? 'text-muted' : 'text-body'">{{ observation.message }}</p>
+          <p v-if="observation.resolved_at" class="m-0 mt-0.5 text-theme-xs text-muted">Resuelta por {{ observation.resolved_by_name || '—' }}</p>
+          <button
+            v-else-if="observation.can_resolve"
+            type="button"
+            class="deasy-inline-action deasy-inline-action--primary mt-1"
+            :disabled="resolvingId === observation.id"
+            @click="emit('resolve', observation)"
+          >
+            {{ resolvingId === observation.id ? 'Resolviendo...' : 'Marcar resuelta' }}
+          </button>
+        </li>
+      </ul>
+
+      <div v-if="canAdd" class="mt-4 flex flex-col gap-2">
+        <textarea v-model="draft" rows="2" aria-label="Escribe una observación" class="deasy-control deasy-control--textarea" placeholder="Escribe una observación para el hilo..."></textarea>
+        <div class="flex justify-end">
+          <AppButton
+            variant="primary-outline"
+            :disabled="!draft.trim() || submitting"
+            @click="onAdd"
+          >
+            {{ submitting ? 'Agregando...' : 'Agregar observación' }}
+          </AppButton>
+        </div>
+      </div>
+    </template>
+  </section>
+</template>

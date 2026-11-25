@@ -2,13 +2,12 @@
   <div class="flex flex-col gap-4">
     <div v-if="title" class="flex items-center justify-between gap-3">
       <div>
-        <h3 class="text-base font-bold text-slate-800 m-0">{{ title }}</h3>
-        <p v-if="description" class="text-sm text-slate-500 m-0 mt-1">{{ description }}</p>
+        <h3 class="deasy-title deasy-title--block">{{ title }}</h3>
+        <p v-if="description" class="text-sm text-muted m-0 mt-1">{{ description }}</p>
       </div>
       <AdminButton
         v-if="refreshable"
-        variant="secondary"
-        size="sm"
+        variant="neutral-outline"
         :disabled="isLoading"
         @click="loadCertificates"
       >
@@ -17,39 +16,39 @@
     </div>
 
     <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_20rem] gap-4">
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm">
-        <div v-if="errorMessage" class="mb-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+      <div class="deasy-card p-4">
+        <AppAlert v-if="errorMessage">
           {{ errorMessage }}
-        </div>
-        <div v-if="successMessage" class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+        </AppAlert>
+        <AppAlert variant="success" class="mb-3" v-if="successMessage">
           {{ successMessage }}
-        </div>
+        </AppAlert>
 
-        <div v-if="isLoading" class="py-8 text-center text-sm text-slate-500 font-medium">
+        <div v-if="isLoading" class="py-8 text-center text-sm text-muted font-medium">
           Cargando certificados...
         </div>
 
-        <div v-else-if="!certificates.length" class="py-8 text-center text-sm text-slate-500 font-medium">
+        <AppEmpty v-else-if="!certificates.length">
           No hay certificados cargados.
-        </div>
+        </AppEmpty>
 
         <div v-else class="flex flex-col gap-3">
           <button
             v-for="certificate in certificates"
             :key="certificate.id"
             type="button"
-            class="w-full rounded-2xl border px-4 py-4 text-left transition shadow-sm"
-            :class="isSelected(certificate.id) ? 'border-sky-500 bg-sky-50' : 'border-slate-200 bg-white hover:bg-slate-50'"
+            class="deasy-picker deasy-picker--flat"
+            :class="[isSelected(certificate.id) ? 'deasy-elegible--activa' : '']"
             @click="selectCertificate(certificate)"
           >
             <div class="flex items-start justify-between gap-3">
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
-                  <span class="text-sm font-bold text-slate-800 truncate">{{ certificate.label }}</span>
+                  <span class="text-sm font-bold text-strong truncate">{{ certificate.label }}</span>
                   <AppTag v-if="certificate.is_default" variant="info">Predeterminado</AppTag>
                 </div>
-                <div class="mt-1 text-xs text-slate-500 break-all">{{ certificate.original_filename }}</div>
-                <div class="mt-1 text-xs text-slate-400">
+                <div class="mt-1 text-xs text-muted break-all">{{ certificate.original_filename }}</div>
+                <div class="mt-1 text-xs text-muted">
                   {{ formatDate(certificate.created_at) }}
                 </div>
               </div>
@@ -57,42 +56,35 @@
               <div class="flex items-center gap-2 shrink-0" @click.stop>
                 <AdminButton
                   v-if="!certificate.is_default"
-                  variant="outlinePrimary"
-                  size="sm"
+                  variant="primary-outline"
                   @click="markDefault(certificate)"
                 >
                   Usar por defecto
                 </AdminButton>
                 <AdminButton
-                  variant="secondary"
-                  size="sm"
+                  variant="neutral-outline"
                   @click="downloadCertificate(certificate)"
                 >
                   Descargar
                 </AdminButton>
-                <BtnDelete message="Eliminar" @onpress="deleteCertificate(certificate)" />
+                <AppDeleteButton label="Eliminar" @click="deleteCertificate(certificate)" />
               </div>
             </div>
           </button>
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 shadow-sm flex flex-col gap-4">
+      <div class="deasy-card p-4 flex flex-col gap-4">
         <div>
-          <h4 class="text-sm font-bold text-slate-800 m-0">Subir certificado</h4>
-          <p class="text-xs text-slate-500 m-0 mt-1">
+          <h4 class="deasy-title deasy-title--section">Subir certificado</h4>
+          <p class="text-xs text-muted m-0 mt-1">
             El archivo `.p12` ya está protegido por contraseña. Solo los endpoints autenticados pueden descargarlo.
           </p>
         </div>
 
-        <div class="flex flex-col gap-2">
-          <label class="text-sm font-semibold text-slate-700">Nombre visible</label>
-          <input
-            v-model="uploadLabel"
-            type="text"
-            class="block w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-800 shadow-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
-            placeholder="Ej: Token personal 2026"
-          />
+        <div class="flex flex-col">
+          <label :for="fieldId('uploadlabel')" class="deasy-form-label">Nombre visible</label>
+          <input :id="fieldId('uploadlabel')" v-model="uploadLabel" type="text" class="deasy-control" placeholder="Ej: Token personal 2026" />
         </div>
 
         <PdfDropField
@@ -105,15 +97,12 @@
           :selected-file="selectedFile"
           @files-selected="onFilesSelected"
           @clear="clearSelectedFile"
-        />
+ />
 
-        <label class="inline-flex items-center gap-2 text-sm text-slate-600">
-          <input v-model="uploadAsDefault" type="checkbox" class="rounded border-slate-300 text-sky-600 focus:ring-sky-500" />
-          Marcar como predeterminado
-        </label>
+        <SToggle v-model="uploadAsDefault" label="Marcar como predeterminado" label-position="end" />
 
         <AdminButton
-          variant="primary"
+          variant="primary-outline"
           :disabled="isUploading || !selectedFile"
           @click="uploadCertificate"
         >
@@ -125,14 +114,22 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref, watch } from "vue";
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
+import { computed, onMounted, ref, watch, useId } from "vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 import { IconCertificate } from "@tabler/icons-vue";
 import AppTag from "@/shared/components/data/AppTag.vue";
-import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
-import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
+import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 const props = defineProps({
   title: {
     type: String,

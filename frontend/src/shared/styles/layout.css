@@ -1,0 +1,383 @@
+@layer components {
+/* ══ QUIEN SE DESPLAZA ES EL CONTENIDO, NO LA VENTANA — F4.C·A, 2026-08-16 ═══════════════
+       Adoptado de TailAdmin: su esqueleto es `flex h-screen overflow-hidden` en el envoltorio y
+       `overflow-y-auto` en el area de contenido, de modo que la ventana NUNCA se desplaza.
+
+       ⚠️ AVISO HONESTO SOBRE LO QUE ESTO APORTA. Los tres efectos practicos de su arquitectura
+       —cabecera quieta, barra lateral quieta, menu lateral largo recorrible— **Deasy ya los tenia**,
+       conseguidos con `sticky` y con `h-[calc(100vh-60px)]` en la propia aside. Medido antes de
+       tocar nada: al bajar 900 px, la cabecera seguia en `top: 0` y la aside en `top: 60`. Lo unico
+       que cambia de verdad es DONDE SE PINTA LA BARRA DE DESPLAZAMIENTO: antes al borde de la
+       ventana, ahora dentro del area de contenido. Se adopta por decision del dueño, sabiendo eso.
+
+       🪤 Y una alarma mia que resulto FALSA, anotada porque el razonamiento vale: avise de que esto
+       romperia la colocacion de firmas sobre el PDF, porque `FirmarPdf` calcula con
+       `rect.left + window.scrollX` contra `event.pageX`. No la rompe — los dos terminos se desplazan
+       con la ventana y se cancelan, asi que con el scroll de ventana fijo en 0 la resta sigue dando
+       coordenadas relativas al elemento. La pareja `getBoundingClientRect + pageX` es robusta a esto
+       por construccion; lo que no lo seria es mezclar `clientX` con coordenadas de documento. */
+    .deasy-workspace {
+        @apply flex h-screen flex-col overflow-hidden bg-surface font-sans text-body;
+    }
+
+    /* ══ EL PAPEL ES GRIS, LAS SUPERFICIES BLANCAS — F4.C·C, 2026-08-16 ═══════════════════════
+       Adoptado de TailAdmin por decision del dueño. Hasta hoy el fondo de pagina y las tarjetas
+       eran **el mismo blanco**, asi que un panel solo se distinguia por su borde de 1 px. Ese es
+       el motivo de que su «card base» se lea sin depender del borde: el papel va en `gray-50` y
+       lo que se apoya encima, en blanco.
+
+       Comprobado antes de tocarlo, porque el cambio habria sido malo si no: las tablas SI viven
+       dentro de superficies acotadas —`deasy-table-responsive` (blanca, radio 12) dentro de
+       `admin-surface-frame` (blanca, radio 16)—, asi que el gris las DESPEGA en vez de teñirlas.
+       Si la tabla hubiera sido transparente sobre la pagina, esto la habria puesto gris entera.
+
+       ⚠️ Es visible en TODAS las pantallas a la vez, y se revierte cambiando estas dos lineas.
+       ═══════════════════════════════════════════════════════════════════════════════════════ */
+    /* `min-h-0` es obligatorio y no es adorno: un hijo flex tiene `min-height: auto` por defecto,
+       asi que se niega a encogerse por debajo de su contenido y el `overflow-y-auto` de mas abajo
+       no llegaria a activarse nunca — la fila crecería y el desplazamiento volveria a la ventana. */
+    .deasy-workspace-layout {
+        @apply mx-auto flex w-full min-h-0 max-w-[2560px] flex-1 flex-col items-stretch bg-surface xl:flex-row;
+    }
+
+    /* EL MARCO DEL CONTENIDO — F13 paso 1, 2026-08-20.
+     *
+     * Es el area a la derecha del `aside` y bajo la barra superior: donde va TODO el contenido de
+     * cualquier pagina del espacio de trabajo. `<header>`, `<aside>` y `<main>` son HERMANOS —no
+     * anidados—, que es lo correcto para los *landmarks* de HTML: meter el aside dentro de `main`
+     * romperia la navegacion por regiones de un lector de pantalla. Y el `aside` es `sticky`, no
+     * `fixed`, asi que reserva su hueco en el flujo y este marco empieza donde aquel acaba sin un
+     * solo margen escrito a mano.
+     *
+     * ⚠️ NO SE CREA NADA AQUI: EL MARCO YA EXISTIA Y YA ERA HOMOGENEO. Medido en 8 rutas antes de
+     * tocarlo, las 8 daban 20/16 px y un tope de 1536. Lo que se corrige es COMO estaba declarado:
+     * partido entre esta clase —que solo traia `min-w-0 min-h-0 flex-1 overflow-y-auto bg-surface`—
+     * y la plantilla de `SBody.vue`, que escribia `px-3 py-4 sm:px-4 lg:px-5` a mano. Los dos sitios
+     * ademas se pisaban: `min-w-0`, `flex-1` y `bg-surface` estaban declarados DOS veces.
+     *
+     * Importa porque **un padding que no declara ninguna clase no lo puede proteger
+     * `check:overrides`**, y cambiarlo obligaba a editar una plantilla en vez del CSS — lo contrario
+     * de lo que este frente lleva doce fases estableciendo. Ahora el marco se cambia en UN sitio y
+     * se ve igual en todas partes, que es el objetivo de la fase. */
+    .deasy-workspace-content {
+        @apply flex w-full min-w-0 min-h-0 flex-1 flex-col overflow-y-auto bg-surface
+               px-3 py-4 transition-all duration-300 sm:px-4 lg:px-5;
+    }
+
+    /* EL TOPE DE ANCHO — adoptado de TailAdmin el 2026-08-16 (F4.C, delta 1).
+     *
+     * Su contenedor de pagina es `mx-auto max-w-(--breakpoint-2xl) p-4 md:p-6`; aqui no habia tope,
+     * asi que el contenido se estiraba de borde a borde. En una ventana de 2560 el area util pasaba
+     * de 2000 px y las lineas de texto se volvian ilegibles de largas.
+     *
+     * ⚠️ NO SE NOTA por debajo de ~1924 px de ventana (1500 de tope + 424 de barra lateral), asi que
+     * en un portatil el cambio es CERO. Se comprueba en un monitor ancho, no a simple vista.
+     *
+     * Vivia como `mx-auto h-full w-full max-w-(--breakpoint-2xl) pb-6` en la plantilla de `SBody`;
+     * F13.1 le dio nombre para que el tope se pueda cambiar desde el CSS y no desde una plantilla.
+     *
+     * ══ F13.3 (2026-08-21): EL TOPE ES 1500 Y LA PAGINA ES LA PILA ══════════════════════════
+     * Dos cambios, y los dos vienen de medir que el marco exterior ya era homogeneo pero **el
+     * contenido no**:
+     *
+     *   (1) **UN SOLO ANCHO, 1500 px** (`max-w-page`, registrado en `tokens.css`). Convivian TRES:
+     *       1536 aqui, 1280 en `ProfileHomePanel` y **1152 en el indice de tarjetas de `/admin` y
+     *       `/procesos`** — este ultimo atado a `!selectedTable`, asi que **pulsar una tarjeta
+     *       ensanchaba el contenido 384 px** dentro de la misma vista y sin anunciarlo.
+     *
+     *   (2) **LA PAGINA ES LA PILA**: `flex flex-col gap-6`. Antes cada vista declaraba la suya
+     *       —`flex flex-col gap-4`, `flex flex-col gap-6`, `space-y-6`, o ninguna— asi que el
+     *       hueco entre secciones dependia de en que pantalla estuvieras. El 24 es el paso
+     *       SECCION de la escala de F13.2, no un numero nuevo.
+     *
+     * ⚠️ Un hijo `fixed` o `absolute` NO es item flex, asi que los modales teleportados no reciben
+     * hueco. Comprobado en `/home/documentos`, que renderiza uno. */
+    .deasy-page {
+        @apply mx-auto flex h-full w-full max-w-page flex-col gap-6 pb-6;
+    }
+
+    .deasy-workspace-header {
+        @apply flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-1 py-1 shadow-none;
+        border-color: var(--color-line);
+        background: transparent;
+    }
+
+    .deasy-workspace-header__context {
+        @apply flex min-w-0 flex-1 items-center gap-3 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden;
+    }
+
+    .deasy-workspace-header__actions {
+        @apply flex shrink-0 items-center gap-1 sm:gap-2;
+    }
+
+    /* ══ LA CELDA DE MARCA DEL HEADER — la columna de la barra, arriba ═════════════════════════
+       Mide lo que mide la `aside` (el `xl:w-…` lo pone la plantilla segun `menuOpen`) y centra el
+       logo dentro, que es exactamente el tratamiento que el avatar tiene abajo: centro 141 con la
+       barra abierta, 44 colapsada. Antes el logo iba en `absolute left-3` y su centro valia 32 en
+       LOS DOS estados —ni una cosa ni la otra—, y el boton de menu ocupaba 80..116 con el canto de
+       la barra colapsada en 88: partido por la linea. Eso es lo que el dueño vio como
+       «desordenados respecto del aside».
+
+       `shrink-0` no es adorno: sin el, el flex le roba ancho a la celda en cuanto el titulo de la
+       pagina aprieta, y la alineacion se perderia justo en las pantallas donde mas se nota.
+
+       El `pl-3` es solo para el tramo SIN barra: por debajo de `xl` la `aside` esta fuera de
+       pantalla y no hay columna que seguir, asi que la celda mide lo que mide el logo y este
+       necesita su margen contra el borde. En `xl` manda el ancho y el padding estorbaria —
+       descentraria el logo dentro de la columna, que es justo lo que se viene a arreglar. */
+    .deasy-header-marca {
+        @apply flex shrink-0 items-center justify-center pl-3 transition-all duration-300 xl:pl-0;
+    }
+
+    .deasy-context-header {
+        @apply flex min-w-0 items-center gap-3;
+    }
+
+    .deasy-context-header__copy {
+        @apply min-w-0;
+    }
+
+    .deasy-context-header__title {
+        @apply truncate text-base font-semibold leading-tight text-strong;
+    }
+
+    .deasy-context-header__subtitle {
+        @apply mt-0.5 truncate text-theme-xs leading-tight text-muted;
+    }
+
+    .deasy-secondary-nav {
+        @apply mt-4 min-h-0 flex-1 overflow-y-auto border-t border-line pt-4 pr-1 [scrollbar-width:thin];
+    }
+
+    /* ══ UNA SOLA BARRA — F4.C·B, 2026-08-16 ═══════════════════════════════════════════════════
+       Aqui vivian `deasy-sidebar__rail` (80 px), `deasy-sidebar__rail-mobile` y las cuatro clases
+       de `deasy-sidebar-rail-nav`. La barra llevaba DOS navegaciones a la vez —primaria en el rail,
+       secundaria en el panel— y sumaba 424 px fijos en escritorio frente a los 290 de la receta.
+
+       La primaria subio al header (`deasy-primary-nav`, mas abajo) y aqui queda una sola columna.
+       De 424 a 282, que es el ancho que la barra YA tenia por debajo de `xl`: el mismo numero para
+       las dos formas, en vez de uno para movil y otro para escritorio.
+
+       Con el rail se fueron tambien un avatar compacto duplicado, un logo duplicado, y el DOBLE
+       RENDERIZADO del menu primario —se pintaba en el rail y otra vez en `rail-mobile`, o sea el
+       mismo menu dos veces en el DOM con una copia tapada por `hidden`—.
+       ══════════════════════════════════════════════════════════════════════════════════════════ */
+    .deasy-sidebar {
+        @apply relative flex h-full min-h-0 w-full flex-col;
+    }
+
+    .deasy-sidebar__flyout {
+        @apply flex h-full min-h-0 w-full flex-col gap-3 p-3;
+    }
+
+    /* ⚠️ En escritorio el panel NO flota: es una COLUMNA del layout. Con `absolute` se
+       superponia a la primera columna de tarjetas y las hacia INALCANZABLES con el raton
+       —y el panel arranca abierto en escritorio, asi que no era un caso raro.
+
+       📌 Aqui habia ademas `visible`, `translate-x-0` y `opacity-100`, y la plantilla los repetia
+       en su `:class`. Eran de cuando el panel se ESCONDIA al cerrarse; desde que el cerrado es un
+       rail de iconos ya no hay nada que revelar, y el estado se lleva entero en el ancho. */
+    @media (min-width: 1280px) {
+        .deasy-sidebar__flyout {
+            @apply relative h-full w-full shrink-0 overflow-y-auto p-3 [scrollbar-width:thin];
+            background: var(--color-white);
+        }
+
+        /* ══ EL VISTAZO — el rail se abre al pasar el raton, y FLOTA ═══════════════════════════
+           La linea de arriba dice que en escritorio el panel NO flota, y sigue siendo cierta para
+           el estado ABIERTO: ahi es una columna y empuja el contenido, que es lo que arreglo B5.
+           El vistazo es lo contrario y por eso puede flotar: dura lo que dura el roce.
+
+           Y tiene que flotar, porque esto esta MEDIDO: la columna abierta deja el area de datos en
+           x=282 · 1318 px y el rail en x=88 · 1512 px. Si el vistazo cambiara el ancho de la
+           `aside`, al salir de ella el contenido daria un salto de 194 px hacia la izquierda —
+           justo debajo del puntero que iba a pulsar algo. Seria el fallo del 2026-08-16 otra vez
+           («el menu se va cuando mueves el raton hacia lo que ibas a usar»), solo que moviendo el
+           blanco en vez de quitarlo. Flotando, `deasy-workspace-content` no se entera: el rail
+           sigue ocupando sus 88 px en la fila y el panel se pinta encima.
+
+           📌 El `absolute` cuelga de `.deasy-sidebar`, que ya es `relative`. Como es un
+           descendiente POSICIONADO, se pinta por encima del fondo y del `border-r` de la `aside`,
+           asi que el filo gris de los 88 px queda tapado y no cruza el panel. La `aside` ya trae
+           `xl:overflow-visible`, de modo que el desbordamiento se ve sin tocarla, y su
+           `z-(--z-menu-lateral)` la deja por encima del area de datos.
+
+           El ancho sale del MISMO sitio que el del estado abierto (`--ancho-barra-lateral`, en
+           `tokens.css`): son el mismo panel, no dos. */
+        .deasy-sidebar--peek .deasy-sidebar__flyout {
+            @apply absolute inset-y-0 left-0 border-r border-line;
+            width: var(--ancho-barra-lateral);
+            box-shadow: var(--elev-3);
+        }
+    }
+
+    /* ══ EL ESTADO COLAPSADO — restaurado el 2026-08-16, y el error que lo mato enseña ═════════
+       Al mover la navegacion primaria al header (F4.C·B) retire el rail de 80 px tratandolo como
+       «una segunda navegacion que sobra». **Era el ESTADO COLAPSADO**, que es justo lo que la
+       receta de TailAdmin tiene: su aside se pliega de 290 a 90 px con un boton y deja los iconos
+       a la vista. Al quitarlo, el sistema se quedo sin colapso — y peor: al cerrar el panel la
+       aside seguia midiendo 282 px, oscura y VACIA, una franja muerta a la izquierda del
+       contenido. Lo vio el dueño, no yo.
+
+       Lo que se restaura NO es el rail viejo. Aquel llevaba OTRO menu (la primaria, que ahora vive
+       en el header); esto es el MISMO menu de la columna, con las etiquetas escondidas — que es
+       literalmente lo que hace su `xl:w-[90px]`. Un estado, no un segundo arbol.
+
+       ── LA REGLA NO PUEDE DEPENDER DE LA FORMA, y costo dos intentos averiguarlo ───────────────
+       El menu lateral tiene **TRES anatomias** para el mismo bloque, y su icono **dos nombres**.
+       Solo se ve mirando el DOM de las cuatro vistas que lo usan:
+
+         item        `deasy-nav-item`        > `deasy-nav-item__icon` + etiqueta + [contador]
+         grupo (A)   `deasy-nav-group-title` > `<div>`  > `deasy-nav-glyph` + etiqueta   [AdminView]
+         grupo (B)   `deasy-nav-group-title` > `<span>` > `deasy-nav-glyph` + etiqueta   [PerfilView]
+                                             > `<svg>` chevron
+
+       Y la etiqueta va en `deasy-nav-item__label` en `HomeSidebar`, `SignatureSidebar` y
+       `PerfilView`, pero en `AdminView` es un `<span>` pelado.
+
+       Por eso la regla apunta a **«los hermanos que van DESPUES del icono»** y no a la clase de la
+       etiqueta ni a la etiqueta del envoltorio: da igual como se llame lo que acompaña al icono y
+       da igual si cuelga de un `div` o de un `span`. (F11: el mismo bloque con tres anatomias y su
+       icono con dos nombres es exactamente lo que esa fase busca.)
+
+       ⚠️ Y VA EN `@layer utilities`, QUE ES LO CONTRAINTUITIVO DE TODO ESTE BLOQUE. Escrito en
+       `components` la regla **existe y no pinta**: los contadores del dossier llevan `inline-flex`
+       en el atributo, que es una utilidad, y una utilidad le gana a `components` sea cual sea la
+       especificidad — el mismo mecanismo de capas que este repo lleva todo el dia documentando,
+       pero por el otro lado. Dentro de `utilities` compiten por especificidad y `(0,2,0)` gana a
+       `.inline-flex` `(0,1,0)`. No es una utilidad nueva: es un modificador de ESTADO que tiene
+       que poder apagar lo que la plantilla escribio. */
+    @media (min-width: 1280px) {
+        /* El perfil completo no cabe en 88 px: en colapsado queda su avatar, que `UserProfile`
+           ya sabe pintar solo — es el mismo componente, no una copia. */
+        .deasy-sidebar--collapsed .deasy-nav-shell {
+            @apply px-1;
+        }
+    }
+
+    /* ── LA NAVEGACION PRIMARIA, EN EL HEADER ────────────────────────────────────────────────
+       Hereda los valores del rail que sustituye —vive sobre el mismo `navy-deep`, asi que el
+       texto al 72 % y el hover al 8 % de blanco siguen siendo los correctos—, pero cambia de eje:
+       en horizontal hay sitio para la etiqueta, y un icono suelto en una barra superior es mucho
+       menos descubrible que en una columna de tres. */
+    .deasy-primary-nav {
+        @apply hidden shrink-0 items-center gap-1 sm:flex;
+    }
+
+    .deasy-primary-nav__item {
+        @apply inline-flex h-10 items-center gap-2 rounded-xl border border-transparent px-3 text-sm font-medium text-body transition-all hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
+    }
+
+    .deasy-primary-nav__item--active {
+        @apply border border-transparent font-semibold;
+        background: var(--color-brand-50);
+        color: var(--color-brand-600);
+    }
+
+    /* La etiqueta se esconde en pantallas medias: por debajo de `lg` el header tiene que caber
+       con el titulo de la pagina y las tres acciones, y el icono con su `title` basta. */
+    .deasy-primary-nav__label {
+        @apply hidden lg:inline;
+    }
+
+    /* ── EL MENU DE PERFIL DE LA BARRA — receta §3.5 de TailAdmin, 2026-08-16 ─────────────────
+       Su panel es LA CARD BASE con sombra y `absolute right-0`, o sea el mismo objeto que el
+       `deasy-picker` y el toast; no se inventa superficie. Lo unico propio es el disparador. */
+    .deasy-user-menu {
+        @apply relative shrink-0;
+    }
+
+    .deasy-user-menu__trigger {
+        @apply flex h-10 items-center gap-2 rounded-xl border border-transparent px-2 text-sm font-medium text-body transition-all hover:bg-surface hover:text-navy focus:outline-none focus:ring-2 focus:ring-primary/15;
+    }
+
+    .deasy-user-menu__avatar {
+        @apply block h-8 w-8 shrink-0 overflow-hidden rounded-full border border-line bg-white;
+    }
+
+    /* El nombre desaparece antes que el avatar: por debajo de `md` la barra ya lleva el titulo de
+       la pagina, la navegacion primaria y dos acciones. El avatar solo sigue siendo reconocible. */
+    .deasy-user-menu__nombre {
+        @apply hidden max-w-40 truncate md:block;
+    }
+
+    .deasy-user-menu__panel {
+        @apply absolute right-0 top-full z-1090 mt-2 flex w-64 flex-col gap-1 rounded-2xl border border-line bg-white p-3 shadow-theme-lg;
+    }
+
+    /* La cabecera del panel es donde vuelve el nombre completo y el subtitulo que se fueron de la
+       barra: ahi estorbaban y aqui hay sitio, que es el reparto que hace su receta. */
+    .deasy-user-menu__cabecera {
+        @apply mb-1 border-b border-line px-3 pb-3;
+    }
+
+    .deasy-user-menu__item {
+        @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-body transition-colors hover:bg-surface hover:text-navy;
+    }
+
+    
+}
+
+/* ══ EL COLAPSO DE LA BARRA — en `utilities` a proposito ═══════════════════════════════════════
+   El resto del estado colapsado vive en `@layer components`, arriba, con su explicacion. Estas
+   tres reglas NO PUEDEN vivir alli, y el motivo esta medido: los contadores del menu del dossier
+   llevan `inline-flex` escrito en el atributo `class`. Una utilidad gana a `components` sea cual
+   sea la especificidad, asi que un `display: none` capado ahi **existe y no pinta** — el dueño lo
+   vio como «iconos con numeros» al colapsar.
+
+   Dentro de `utilities` la pelea vuelve a ser por especificidad, y `(0,2,0)` gana a `.inline-flex`.
+   No son utilidades nuevas: son el modificador de ESTADO de un bloque, y tienen que poder apagar
+   lo que la plantilla escribio.
+   ═══════════════════════════════════════════════════════════════════════════════════════════════ */
+@layer utilities {
+    @media (min-width: 1280px) {
+        .deasy-sidebar--collapsed .deasy-nav-item,
+        .deasy-sidebar--collapsed .deasy-nav-group-title,
+        .deasy-sidebar--collapsed .deasy-nav-group-title > * {
+            justify-content: center;
+            padding-inline: 0;
+        }
+
+        /* Todo lo que acompaña al icono, se llame como se llame y cuelgue de donde cuelgue. */
+        .deasy-sidebar--collapsed .deasy-nav-item__icon ~ *,
+        .deasy-sidebar--collapsed .deasy-nav-glyph ~ * {
+            display: none;
+        }
+
+        /* El chevron del titulo de grupo NO es hermano del icono: cuelga del boton, al lado del
+           envoltorio que contiene al icono. Por eso necesita su propia linea. */
+        .deasy-sidebar--collapsed .deasy-nav-group-title > svg {
+            display: none;
+        }
+    }
+}
+
+
+@layer components {
+    /* EL LOGO ENMARCADO — F8, 2026-08-20.
+     *
+     * `AppLogo` componia su caja con TRES valores arbitrarios en un `computed`:
+     *
+     *     border-[rgba(15,53,118,0.08)]
+     *     shadow-[0_10px_24px_rgba(11,31,63,0.06)]
+     *     focus:ring-[rgba(18,63,136,0.18)]
+     *
+     * Los tres eran color con alfa decidido en JavaScript, y ninguno salia de la paleta. El
+     * tercero ademas contradecia una regla escrita: `forms.css` dice que **«el anillo del proyecto
+     * es UNO y se llama `--focus-ring`»**, y aqui habia un segundo anillo, de otro azul y de otro
+     * grosor, en el logo de la pantalla de entrada.
+     *
+     * La sombra se sustituye por `--elev-2`, que es practicamente la misma —el arbitrario era
+     * `0 10px 24px / 0.06` y el token es `0 1px 2px / 0.04, 0 12px 32px / 0.06`— y ya la usan las
+     * tarjetas con las que el logo convive. */
+    .deasy-logo--framed {
+        @apply border bg-white px-3 py-2;
+        border-color: var(--color-line);
+        box-shadow: var(--elev-2);
+    }
+
+    .deasy-logo--link:focus {
+        outline: none;
+        box-shadow: var(--focus-ring);
+    }
+}

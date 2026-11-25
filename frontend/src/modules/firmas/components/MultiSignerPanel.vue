@@ -1,39 +1,41 @@
 <template>
   <div class="flex h-full w-full flex-col gap-6">
     <div class="grid h-full grid-cols-1 gap-6 xl:grid-cols-[17rem_minmax(0,1fr)_18rem] 2xl:grid-cols-[17.5rem_minmax(0,1fr)_19rem]">
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
-        <div class="flex h-full flex-col gap-5 overflow-y-auto p-5 custom-scrollbar">
-          <div v-if="allowManualUpload" class="rounded-2xl border border-slate-200 bg-slate-50/60 p-4">
+      <aside class="deasy-card flex h-full min-h-[70vh] flex-col overflow-hidden">
+        <div class="flex h-full flex-col gap-6 overflow-y-auto p-5 custom-scrollbar">
+          <div v-if="allowManualUpload" class="deasy-card flex flex-col gap-3 p-4">
             <PdfDropField
               title=""
-              action-text="Seleccionar documentos"
-              help-text="Agrega nuevos archivos"
+              action-text="Seleccionar PDFs"
+              help-text="Haz clic para elegir PDFs o arrastra una carpeta (solo PDFs); se conserva su estructura interna"
               input-id="multisigner-input-rail"
               multiple
-              class="multisigner-upload-card"
+              class="deasy-dropzone--rail"
               @files-selected="onFilesSelected"
             />
+            <p v-if="uploadError" class="rounded-2xl bg-rose-50 px-3 py-2 text-theme-xs font-semibold leading-snug text-danger">
+              {{ uploadError }}
+            </p>
           </div>
 
           <div
             v-if="showDocumentFilters"
-            class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+            class="deasy-filter-shell"
           >
             <div class="grid grid-cols-1 gap-3">
-              <label class="flex flex-col gap-1.5">
+              <label class="deasy-filter-field">
                 <span class="sr-only">
                   Buscar
                 </span>
-                <div class="flex items-center gap-2">
+                <div class="deasy-filter-search-row">
                   <input
                     v-model="filters.query"
                     type="text"
                     placeholder="Buscar por documento, proceso, unidad o periodo"
-                    class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-medium text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white"
+                    class="deasy-control"
                   />
                   <AdminButton
-                    variant="secondary"
-                    size="sm"
+                    variant="neutral-outline"
                     icon-only
                     title="Limpiar filtros"
                     aria-label="Limpiar filtros"
@@ -46,30 +48,30 @@
               </label>
 
               <div class="grid grid-cols-1 gap-3">
-                <label class="flex flex-col gap-1.5">
+                <label class="deasy-filter-field">
                   <span class="sr-only">Unidad</span>
-                  <select v-model="filters.unit" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                  <select v-model="filters.unit" class="deasy-control">
                     <option value="all">Unidad: Todas</option>
                     <option v-for="option in unitOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-1.5">
+                <label class="deasy-filter-field">
                   <span class="sr-only">Proceso</span>
-                  <select v-model="filters.process" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                  <select v-model="filters.process" class="deasy-control">
                     <option value="all">Proceso: Todos</option>
                     <option v-for="option in processOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-1.5">
+                <label class="deasy-filter-field">
                   <span class="sr-only">Año</span>
-                  <select v-model="filters.year" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                  <select v-model="filters.year" class="deasy-control">
                     <option value="all">Año: Todos</option>
                     <option v-for="option in yearOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
                 </label>
-                <label class="flex flex-col gap-1.5">
+                <label class="deasy-filter-field">
                   <span class="sr-only">Periodo</span>
-                  <select v-model="filters.period" class="block w-full rounded-xl border border-slate-300 bg-slate-50 px-3 py-2.5 text-sm font-semibold text-slate-800 shadow-sm outline-none transition-colors focus:border-sky-500 focus:bg-white">
+                  <select v-model="filters.period" class="deasy-control">
                     <option value="all">Periodo: Todos</option>
                     <option v-for="option in periodOptions" :key="option" :value="option">{{ option }}</option>
                   </select>
@@ -80,34 +82,29 @@
 
           <div class="flex flex-col gap-3">
             <div class="flex items-center justify-between">
-              <div class="text-sm font-bold text-slate-800">
+              <div class="text-sm font-bold text-strong">
                 Archivos
-                <span class="ml-1 text-xs font-semibold text-slate-500">({{ currentDocumentIndex + 1 }} de {{ Math.max(filteredDocuments.length, 1) }})</span>
+                <span class="ml-1 text-xs font-semibold text-muted">({{ currentDocumentIndex + 1 }} de {{ Math.max(filteredDocuments.length, 1) }})</span>
               </div>
-              <BtnDelete
-                v-if="documents.length"
-                message="Limpiar cola completa"
-                class-name="mx-0 self-center hope-action-delete-strong"
-                @onpress="clearQueue"
-              />
+              <AppDeleteButton v-if="documents.length" label="Limpiar cola completa" @click="clearQueue" />
             </div>
 
-            <div v-if="!documents.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-slate-400">
+            <AppEmpty class="deasy-empty--lg" v-if="!documents.length">
               <IconFiles class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Aún no hay PDFs cargados.</span>
-            </div>
+            </AppEmpty>
 
-            <div v-else-if="!filteredDocuments.length" class="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center text-slate-400">
+            <AppEmpty class="deasy-empty--lg" v-else-if="!filteredDocuments.length">
               <IconInfoCircle class="h-8 w-8 opacity-50" />
               <span class="text-sm font-medium">Ningún PDF coincide con los filtros actuales.</span>
-            </div>
+            </AppEmpty>
 
-            <div v-else class="max-h-72 space-y-2.5 overflow-y-auto pr-1 custom-scrollbar">
+            <div v-else class="max-h-72 space-y-3 overflow-y-auto pr-1 custom-scrollbar">
               <div
                 v-for="(doc, index) in filteredDocuments"
                 :key="doc.id"
-                class="group flex w-full flex-col items-start gap-1 rounded-xl border p-3 text-left transition-all"
-                :class="index === currentDocumentIndex ? 'border-sky-400 bg-sky-50 shadow-sm' : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'"
+                class="deasy-elegible group flex w-full flex-col items-start gap-2 rounded-xl p-3 text-left"
+                :class="[index === currentDocumentIndex ? 'deasy-elegible--activa' : '']"
               >
                 <div class="flex w-full items-start justify-between gap-3">
                   <button
@@ -115,33 +112,34 @@
                     class="min-w-0 flex flex-1 items-center gap-2 text-left"
                     @click="selectDocument(index)"
                   >
-                    <IconFileCheck v-if="doc.status === 'completed'" class="h-4 w-4 shrink-0 text-emerald-500" />
-                    <IconAlertCircle v-else-if="doc.status === 'failed'" class="h-4 w-4 shrink-0 text-rose-500" />
-                    <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-sky-900' : 'text-slate-800'" :title="doc.name">{{ formatDisplayFileName(doc.name) }}</div>
+                    <IconFileCheck v-if="doc.status === 'completed'" class="h-4 w-4 shrink-0 text-success" />
+                    <IconAlertCircle v-else-if="doc.status === 'failed'" class="h-4 w-4 shrink-0 text-danger" />
+                    <div class="truncate text-sm font-bold" :class="index === currentDocumentIndex ? 'text-info' : 'text-strong'" :title="doc.name">{{ formatDisplayFileName(doc.name) }}</div>
                   </button>
                   <div class="shrink-0" @click.stop>
-                    <BtnDelete message="Quitar" @onpress="removeDocument(index)" />
+                    <AppDeleteButton label="Quitar" @click="removeDocument(index)" />
                   </div>
                 </div>
-                <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-[11px] font-semibold text-rose-600">{{ doc.error }}</div>
+                <div v-if="formatRelativeDir(doc)" class="w-full truncate text-left text-theme-xs font-medium text-muted" :title="doc.relativePath">{{ formatRelativeDir(doc) }}</div>
+                <div v-if="doc.error" class="w-full truncate rounded bg-rose-50 px-2 py-1 text-left text-theme-xs font-semibold text-danger">{{ doc.error }}</div>
               </div>
             </div>
           </div>
 
           <AdminButton
-            variant="primary"
+            variant="primary-outline"
             :disabled="!canRequestStart"
             @click="requestBatchStart"
-            class-name="w-full justify-center rounded-xl py-3 font-bold shadow-md shadow-sky-500/20 transition-all hover:shadow-lg hover:shadow-sky-500/30"
+            class-name="w-full justify-center"
           >
             {{ isBatchSubmitting ? 'Preparando...' : isBatchRunning ? 'Procesando...' : 'Firmar lote masivo' }}
           </AdminButton>
         </div>
       </aside>
 
-      <section class="flex min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <section class="deasy-card flex min-h-[70vh] flex-col overflow-hidden">
         <div
-          class="relative grow overflow-hidden bg-slate-200"
+          class="relative grow overflow-hidden bg-gray-200"
           :class="(batchMode === 'shared-coordinates' || batchMode === 'per-document') ? 'cursor-crosshair' : 'cursor-default'"
         >
           <div
@@ -153,16 +151,16 @@
             <div
               v-if="currentDocument"
               ref="viewerRef"
-              class="relative mb-6 border border-slate-300 bg-white shadow-md transition-all duration-300"
+              class="relative mb-6 border border-line-strong bg-white shadow-md transition-all duration-300"
               @mousedown="handlePointerDown"
               @mousemove="handlePointerMove"
               @mouseup="handlePointerUp"
               @mouseleave="handlePointerLeave"
             >
-              <canvas ref="pdfCanvas" class="z-0 block h-auto w-full bg-white"></canvas>
+              <canvas ref="pdfCanvas" class="z-(--z-capa-fondo) block h-auto w-full bg-white"></canvas>
 
               <SignatureBox
-                v-if="selectionMode === 'preset' && previewBoxStyle.display !== 'none' && !isDragging && !isHoveringField"
+                v-if="isMouseOverPdf && selectionMode === 'preset' && !isDragging && !isHoveringField"
                 :is-preview="true"
                 :left="parseFloat(previewBoxStyle.left)"
                 :top="parseFloat(previewBoxStyle.top)"
@@ -190,7 +188,7 @@
                 <template #actions>
                   <button
                     type="button"
-                    class="inline-flex h-8 w-8 items-center justify-center rounded-xl border border-white/80 bg-emerald-500/88 text-white shadow-md backdrop-blur-sm transition-colors cursor-pointer ring-0 outline-none hover:bg-emerald-600/92 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50"
+                    class="deasy-pdf-action"
                     title="Iniciar firma masiva"
                     aria-label="Iniciar firma masiva"
                     :disabled="!canRequestStart"
@@ -201,79 +199,52 @@
                 </template>
 
                 <template #navigation>
-                  <div class="grid w-full grid-cols-2 gap-1.5">
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-lg border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
-                      <button
-                        type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Documento anterior"
-                        :disabled="!canPrevDocument"
-                        @click.stop="prevDocument"
-                      >
-                        <IconChevronLeft class="h-3 w-3" />
-                      </button>
-                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-slate-600">
-                        D {{ currentDocumentIndex + 1 }}/{{ filteredDocumentCount }}
-                      </span>
-                      <button
-                        type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Siguiente documento"
-                        :disabled="!canNextDocument"
-                        @click.stop="nextDocument"
-                      >
-                        <IconChevronRight class="h-3 w-3" />
-                      </button>
-                    </div>
+                  <div class="grid w-full grid-cols-2 gap-2">
+                    <AppCounterNavigator
+                      size="sm"
+                      tone="floating"
+                      :value-label="`D ${currentDocumentIndex + 1}/${filteredDocumentCount}`"
+                      :previous-disabled="!canPrevDocument"
+                      :next-disabled="!canNextDocument"
+                      previous-title="Documento anterior"
+                      next-title="Siguiente documento"
+                      @previous="prevDocument"
+                      @next="nextDocument"
+                    />
 
-                    <div class="flex min-w-0 items-center overflow-hidden rounded-lg border border-white/90 bg-white/95 shadow-md backdrop-blur-sm">
-                      <button
-                        type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Página anterior"
-                        :disabled="!canPrevPage"
-                        @click.stop="prevPage"
-                      >
-                        <IconChevronLeft class="h-3 w-3" />
-                      </button>
-                      <span class="min-w-0 flex-1 border-x border-slate-200 px-1 py-0.5 text-center text-[9px] font-black uppercase tracking-[0.14em] text-slate-600">
-                        P {{ currentPage }}/{{ Math.max(totalPages, 1) }}
-                      </span>
-                      <button
-                        type="button"
-                        class="flex h-6 w-6 shrink-0 items-center justify-center text-slate-500 transition hover:bg-sky-50 hover:text-sky-600 disabled:cursor-not-allowed disabled:opacity-40"
-                        title="Página siguiente"
-                        :disabled="!canNextPage"
-                        @click.stop="nextPage"
-                      >
-                        <IconChevronRight class="h-3 w-3" />
-                      </button>
-                    </div>
+                    <AppCounterNavigator
+                      size="sm"
+                      tone="floating"
+                      :value-label="`P ${currentPage}/${Math.max(totalPages, 1)}`"
+                      :previous-disabled="!canPrevPage"
+                      :next-disabled="!canNextPage"
+                      previous-title="Página anterior"
+                      next-title="Página siguiente"
+                      @previous="prevPage"
+                      @next="nextPage"
+                    />
                   </div>
                 </template>
               </SignatureBox>
 
-              <div
-                v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
-                class="pointer-events-none absolute z-20 rounded-sm border-2 border-dashed border-rose-500 bg-rose-500/20 mix-blend-multiply"
-                :style="activeSelectionBox"
-              >
-                <div class="absolute -top-6 left-0 flex items-center gap-1 rounded bg-rose-500 px-2 py-1 text-[10px] font-bold text-white shadow-sm">
+              <AppAlert class="pointer-events-none absolute z-(--z-capa-elemento) border-2 border-dashed mix-blend-multiply" v-if="activeSelectionBox && (batchMode === 'shared-coordinates' || batchMode === 'per-document')"
+                :style="activeSelectionBox">
+                <div class="absolute -top-6 left-0 flex items-center gap-2 rounded bg-rose-500 px-2 py-1 text-theme-xs font-bold text-white shadow-theme-lg">
                   <IconDragDrop class="h-3 w-3" />
                   <span>Calculando Área...</span>
                 </div>
-              </div>
+              </AppAlert>
             </div>
 
             <div
               v-if="!currentDocument"
-              class="relative z-5 mx-auto flex h-full w-full max-w-sm animate-fade-in flex-col items-center justify-center text-center opacity-70"
+              class="relative z-(--z-capa-base) mx-auto flex h-full w-full max-w-sm flex-col items-center justify-center text-center opacity-70"
             >
-              <div class="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-slate-300/50 shadow-inner ring-8 ring-white/40">
-                <IconFiles class="ml-1 h-10 w-10 text-slate-500" />
+              <div class="deasy-icon-box deasy-icon-box--xl deasy-icon-box--round deasy-icon-box--neutral mb-6 shadow-inner ring-8 ring-white/40">
+                <IconFiles class="ml-1 h-10 w-10 text-muted" />
               </div>
-              <h3 class="mb-2 text-xl font-bold text-slate-700">No hay ningún PDF para visualizar</h3>
-              <p class="text-sm font-medium text-slate-500">
+              <h3 class="deasy-title deasy-title--panel mb-2">No hay ningún PDF para visualizar</h3>
+              <p class="text-sm font-medium text-muted">
                 Añade uno o más documentos PDF a la cola desde el panel lateral izquierdo para comenzar a configurar el lote de firmas.
               </p>
             </div>
@@ -281,10 +252,10 @@
 
           <div
             v-if="currentDocument"
-            class="border-t border-slate-200/80 bg-white/90 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
+            class="border-t border-line/80 bg-white/90 px-5 py-3 backdrop-blur supports-[backdrop-filter]:bg-white/80"
           >
             <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div class="text-xs font-medium text-slate-500">
+              <div class="text-xs font-medium text-muted">
                 {{ isCoordinateMode ? 'Usa el visor para ubicar la firma en el documento actual.' : 'Revisa el PDF antes de iniciar el lote.' }}
               </div>
               <AppCounterNavigator
@@ -307,7 +278,7 @@
         </div>
       </section>
 
-      <aside class="flex h-full min-h-[70vh] flex-col overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-sm">
+      <aside class="deasy-card flex h-full min-h-[70vh] flex-col overflow-hidden">
         <MultiSignerBatchStatusPanel
           :batch-error="batchError"
           :batch-job="batchJob"
@@ -333,7 +304,7 @@
       </aside>
     </div>
 
-    <AdminModalShell
+    <AppModalShell
       :open="showBatchProgressModal"
       body-class="p-0"
       content-class="max-h-[calc(100vh-4rem)]"
@@ -345,12 +316,12 @@
     >
       <template #header>
         <div id="multi-signer-progress-modal-title" class="flex min-w-0 flex-1 items-center gap-4">
-          <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-600">
+          <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--info">
             <IconSignature class="h-5 w-5" />
           </div>
           <div class="min-w-0">
-            <div class="text-[11px] font-bold uppercase tracking-wider text-slate-600">Multifirmador</div>
-            <div class="truncate text-base font-bold text-slate-800">
+            <div class="deasy-overline">Multifirmador</div>
+            <div class="truncate text-base font-bold text-strong">
               {{ batchProgressModalTitle }}
             </div>
           </div>
@@ -374,31 +345,32 @@
         :success-count="successCount"
         @download-batch="emit('download-batch')"
       />
-    </AdminModalShell>
+    </AppModalShell>
   </div>
 </template>
 
 <script setup>
+import AppEmpty from "@/shared/components/feedback/AppEmpty.vue";
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { pdfjsLib } from "@/core/utils/pdfjsSetup";
 import SignatureBox from "@/modules/firmas/components/SignatureBox.vue";
 import {
-  IconCheck,
-  IconChevronLeft,
-  IconChevronRight,
   IconFiles,
   IconFileCheck,
   IconAlertCircle,
   IconDragDrop,
   IconSignature,
-  IconX,
-} from "@tabler/icons-vue";
+  // Se usaba en la plantilla (linea ~104) SIN importarlo: Vue no podia resolver el
+  // componente, lo avisaba por consola y no pintaba nada donde deberia ir el icono.
+  IconInfoCircle,
+  IconX } from "@tabler/icons-vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import BtnDelete from "@/shared/components/buttons/BtnDelete.vue";
-import PdfDropField from "@/modules/firmas/components/PdfDropField.vue";
+import AppDeleteButton from "@/shared/components/buttons/AppDeleteButton.vue";
+import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import AppCounterNavigator from "@/shared/components/widgets/AppCounterNavigator.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import MultiSignerBatchStatusPanel from "@/modules/firmas/components/MultiSignerBatchStatusPanel.vue";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
 const props = defineProps({
   batchJob: {
     type: Object,
@@ -445,6 +417,7 @@ const pdfCanvas = ref(null);
 const canvasHost = ref(null);
 const viewerRef = ref(null);
 const batchError = ref("");
+const uploadError = ref("");
 const displayScaleRef = ref(1);
 
 let pdfDoc = null;
@@ -546,7 +519,19 @@ const currentUserLabel = computed(() => "Firma");
 
 const isMouseOverPdf = ref(false);
 const isHoveringField = ref(false);
-const previewBoxStyle = ref({ display: 'none' });
+// ⚠️ SIN CENTINELA `display`, Y ES EL DEFECTO 1.7 CERRADO, no un descuido.
+//
+// Nacia como `{ display: 'none' }` y el `v-if` preguntaba `previewBoxStyle.display !== 'none'`
+// para decir «no dibujes el fantasma hasta saber donde». Funcionaba UNA vez: el primer
+// `pointermove` sustituye el objeto entero por uno con `left/top/width/height` y **sin `display`**,
+// asi que desde entonces la pregunta era `undefined !== 'none'` --siempre cierta-- y ese termino
+// llevaba meses sin decidir nada.
+//
+// No se arreglo poniendo `display`, se borro, porque lo que queria decir **ya lo dice
+// `isMouseOverPdf`**: la bandera se enciende en `handlePointerMove`, la MISMA funcion que escribe
+// la posicion y en la misma llamada. «El puntero esta sobre el PDF» implica «hay posicion»; no hay
+// camino que encienda una sin la otra, asi que no habia una tercera condicion que expresar.
+const previewBoxStyle = ref({});
 const filters = ref({
   query: "",
   unit: "all",
@@ -571,12 +556,6 @@ const resolveFieldPage = (field) => {
     return Math.max(1, totalPages.value - Number(field.pageOffset || 0));
   }
   return Number(field.pageValue || field.page || 1);
-};
-const describeFieldPage = (field) => {
-  if (field.pageReference === "end") {
-    return `${field.pageOffset === 0 ? "última" : `${field.pageOffset + 1} desde fin`}`;
-  }
-  return String(field.pageValue || field.page || 1);
 };
 const currentPageFields = computed(() =>
   currentModeFields.value.filter((field) => resolveFieldPage(field) === currentPage.value)
@@ -662,7 +641,7 @@ const emitHeaderState = () => {
 };
 
 const normalizeMetadata = (metadata = {}) => ({
-  signatureRequestId: metadata.signatureRequestId || null,
+  turnoId: metadata.turnoId || null,
   documentId: metadata.documentId || null,
   documentVersionId: metadata.documentVersionId || null,
   processName: metadata.processName || "",
@@ -674,15 +653,33 @@ const normalizeMetadata = (metadata = {}) => ({
   requestedAt: metadata.requestedAt || ""
 });
 
-const buildDocumentItem = (file, metadata = {}) => ({
-  id: `multi-doc-${inputSequence += 1}`,
-  file,
-  fingerprint: `${file.name}-${file.size}-${file.lastModified}`,
-  name: file.name,
-  status: "Pendiente",
-  progressLabel: "Sin procesar",
-  metadata: normalizeMetadata(metadata)
-});
+// Ruta relativa multinivel del archivo: webkitRelativePath (carpeta vía input) o relativePathOverride
+// (carpeta vía drag&drop); cae al nombre plano para archivos sueltos.
+const resolveRelativePath = (file) => {
+  const relative = String(file?.webkitRelativePath || file?.relativePathOverride || "").trim();
+  return relative || file.name;
+};
+
+const buildDocumentItem = (file, metadata = {}) => {
+  const relativePath = resolveRelativePath(file);
+  return {
+    id: `multi-doc-${inputSequence += 1}`,
+    file,
+    fingerprint: `${relativePath}-${file.size}-${file.lastModified}`,
+    name: file.name,
+    relativePath,
+    status: "Pendiente",
+    progressLabel: "Sin procesar",
+    metadata: normalizeMetadata(metadata)
+  };
+};
+
+// Devuelve solo la porcion de directorio de la ruta relativa (sin el nombre del archivo).
+const formatRelativeDir = (doc) => {
+  const relative = String(doc?.relativePath || "");
+  const lastSlash = relative.lastIndexOf("/");
+  return lastSlash > 0 ? relative.slice(0, lastSlash) : "";
+};
 
 const loadCurrentDocument = async () => {
   const selected = currentDocument.value;
@@ -755,7 +752,7 @@ const getDisplayScale = () => {
 const toPdfUnits = (cssValue) => (cssValue * getDisplayScale()) / pdfScale;
 const toCssUnits = (pdfValue) => (pdfValue * pdfScale) / getDisplayScale();
 
-const updateSharedSelection = (left, top, right, bottom, rectHeight) => {
+const updateSharedSelection = (left, top, right, bottom) => {
   lastSelection.value = {
     page: currentPage.value,
     x1: toPdfUnits(left),
@@ -798,13 +795,19 @@ const updateFieldCoordinates = (updatedField) => {
   }
 };
 
+// Secuencia monotona para los ids de campo. Sustituye a Math.random: aqui solo hace falta unicidad
+// dentro de la sesion, y un contador la garantiza sin depender del azar ni de crypto (que no existe
+// fuera de contexto seguro).
+let fieldSequence = 0;
+
 const appendField = (selection) => {
   if (!selection) return;
   const field = {
-    id: `multi-field-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `multi-field-${Date.now()}-${(fieldSequence += 1)}`,
     page: selection.page,
     pageReference: batchMode.value === "shared-coordinates" ? sharedPageReference.value : "start",
-    pageValue: batchMode.value === "shared-coordinates" ? selection.page : selection.page,
+    // Página absoluta: se guarda siempre, la lea o no `pageReference` (ver resolveFieldPage).
+    pageValue: selection.page,
     pageOffset: batchMode.value === "shared-coordinates" ? Math.max(0, totalPages.value - selection.page) : 0,
     x1: Number(selection.x1.toFixed(2)),
     y1: Number(selection.y1.toFixed(2)),
@@ -836,7 +839,7 @@ const handlePointerDown = (event) => {
     const height = toCssUnits(FIELD_HEIGHT);
     const left = Math.min(Math.max(currentX - width / 2, 0), rect.width - width);
     const top = Math.min(Math.max(currentY - height / 2, 0), rect.height - height);
-    updateSharedSelection(left, top, left + width, top + height, rect.height);
+    updateSharedSelection(left, top, left + width, top + height);
     appendField(lastSelection.value);
     activeSelectionBox.value = null;
     return;
@@ -899,7 +902,7 @@ const handlePointerMove = (event) => {
       height: `${Math.max(0, bottom - top)}px`,
       position: "absolute"
     };
-    updateSharedSelection(left, top, right, bottom, rect.height);
+    updateSharedSelection(left, top, right, bottom);
   }
 };
 
@@ -917,14 +920,12 @@ const handlePointerUp = () => {
   activeSelectionBox.value = null;
 };
 
-const onFilesSelected = async (files) => {
-  const pdfFiles = Array.from(files || []).filter(
-    (file) => file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")
-  );
-  if (!pdfFiles.length) return;
+const isPdfFile = (file) =>
+  file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
 
+const appendNewDocuments = async (candidateFiles) => {
   const existingFingerprints = new Set(documents.value.map((doc) => doc.fingerprint));
-  const newDocuments = pdfFiles
+  const newDocuments = candidateFiles
     .map((file) => buildDocumentItem(file))
     .filter((doc) => !existingFingerprints.has(doc.fingerprint));
 
@@ -935,6 +936,40 @@ const onFilesSelected = async (files) => {
     currentDocumentId.value = newDocuments[0]?.id || "";
     await loadCurrentDocument();
   }
+};
+
+// Maneja tanto PDFs sueltos (clic o arrastre) como una carpeta multinivel (arrastre). Cuando la
+// seleccion proviene de una carpeta exige que TODAS sus rutas internas sean PDFs; con archivos sueltos
+// simplemente conserva los PDFs.
+const onFilesSelected = async (files) => {
+  uploadError.value = "";
+  const allFiles = Array.from(files || []).filter((file) => {
+    // Ignora artefactos del sistema de archivos (p. ej. .DS_Store, Thumbs.db) que no son contenido real.
+    const base = file.name.toLowerCase();
+    return base !== ".ds_store" && base !== "thumbs.db";
+  });
+  if (!allFiles.length) return;
+
+  // Una carpeta arrastrada produce rutas multinivel; en ese caso validamos estrictamente solo-PDF.
+  const isFromFolder = allFiles.some((file) => resolveRelativePath(file).includes("/"));
+  if (isFromFolder) {
+    const nonPdfFiles = allFiles.filter((file) => !isPdfFile(file));
+    if (nonPdfFiles.length) {
+      const sample = nonPdfFiles
+        .slice(0, 3)
+        .map((file) => resolveRelativePath(file))
+        .join(", ");
+      const extra = nonPdfFiles.length > 3 ? ` y ${nonPdfFiles.length - 3} más` : "";
+      uploadError.value = `La carpeta contiene archivos que no son PDF (${sample}${extra}). Solo se permiten PDFs.`;
+      return;
+    }
+    await appendNewDocuments(allFiles);
+    return;
+  }
+
+  const pdfFiles = allFiles.filter(isPdfFile);
+  if (!pdfFiles.length) return;
+  await appendNewDocuments(pdfFiles);
 };
 
 const hasDocumentMetadata = (doc) => Boolean(
@@ -1135,6 +1170,7 @@ const requestBatchStart = async () => {
     documents: documents.value.map((doc) => ({
       id: doc.id,
       name: doc.name,
+      relativePath: doc.relativePath || doc.name,
       file: doc.file,
       metadata: { ...(doc.metadata || {}) }
     })),
@@ -1215,6 +1251,18 @@ watch(batchMode, () => {
   }
 });
 
+// La referencia de pagina (inicio/ultima) se captura al colocar cada sello. Si el usuario la
+// cambia DESPUES de haber ubicado sellos, propagala a los campos ya colocados: pageOffset (distancia
+// al final) y pageValue (pagina absoluta) ya quedaron calculados al colocar el sello, de modo que el
+// backend resuelve la pagina por documento contando en reversa sin necesidad de recolocar el sello.
+watch(sharedPageReference, (reference) => {
+  if (!sharedFields.value.length) return;
+  sharedFields.value = sharedFields.value.map((field) => ({
+    ...field,
+    pageReference: reference
+  }));
+});
+
 watch(currentDocumentIndex, async () => {
   if (filteredDocuments.value.length) {
     await loadCurrentDocument();
@@ -1260,59 +1308,3 @@ defineExpose({
   goToPage
 });
 </script>
-
-<style scoped>
-.multisigner-upload-card :deep(.deasy-dropzone) {
-  height: auto;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__surface) {
-  flex: none;
-  width: 100%;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__surface--card) {
-  min-height: 5.75rem;
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__trigger) {
-  gap: 0.25rem;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__action) {
-  font-size: 0.95rem;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__help) {
-  font-size: 0.75rem;
-}
-
-.multisigner-upload-card :deep(.deasy-dropzone__selected) {
-  margin-top: 0.75rem;
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
-  align-items: flex-start;
-}
-
-.multisigner-canvas {
-  cursor: crosshair;
-}
-
-
-
-.shared-box {
-  position: absolute;
-  border: 2px dashed #0ea5e9;
-  background: rgba(14, 165, 233, 0.18);
-  border-radius: 0.75rem;
-  z-index: 20;
-  pointer-events: none;
-}
-
-.shared-box--active {
-  background: rgba(56, 189, 248, 0.22);
-  border-color: #0284c7;
-}
-</style>

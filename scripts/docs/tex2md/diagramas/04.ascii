@@ -1,0 +1,8 @@
+startServer()
+ |- initializeDatabaseWithRetry()      // bucle de reintentos
+ |    |- assertPostgresConnection()    // config/postgres.js
+ |    +- ensurePostgresSchema({reset}) // database/postgres_initializer.js
+ |- http.createServer(app)
+ |- realtimeGateway.init(httpServer, { corsOrigin, credentials: true })
+ |- httpServer.listen(PORT)            // PORT || 3030
+ +- IIFE async: SqlAdminService().reconcileArtifactWorkflows({ onlyStale: true })

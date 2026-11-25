@@ -1,0 +1,301 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Dominio: Tareas, entregables instanciados y documentos. Reparto: scripts/docs/dominios.json
+// ============================================================================
+
+Project tareas {
+  database_type: 'PostgreSQL'
+  Note: '''Tareas, entregables instanciados y documentos — Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables (`task_items`) y los documentos producidos.'''
+}
+
+Table "acto_documentos" {
+  "acto_id" int4 [pk, not null]
+  "document_version_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    document_version_id [type: btree, name: "idx_acto_documentos_version"]
+  }
+}
+
+Table "document_attachments" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "kind" text [not null, check: `kind = ANY (ARRAY['annex'::text, 'evidence'::text, 'source'::text, 'other'::text])`, default: 'annex']
+  "file_path" varchar(255) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(120)
+  "size_bytes" int8
+  "description" varchar(255)
+  "uploaded_by_person_id" int4
+  "sort_order" int4 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    uploaded_by_person_id [type: btree, name: "idx_document_attachments_uploader"]
+    (document_version_id, sort_order) [type: btree, name: "idx_document_attachments_version"]
+  }
+}
+
+Table "document_signatures" {
+  "id" int4 [pk, not null, increment]
+  "turno_id" int4
+  "document_version_id" int4 [not null]
+  "signer_user_id" int4 [not null]
+  "signature_status_id" int4 [not null]
+  "note_short" varchar(255)
+  "signed_file_path" varchar(255)
+  "signed_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "document_version_uploads" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "minor" int4 [not null]
+  "file_path" varchar(255) [not null]
+  "file_name" varchar(255)
+  "mime_type" varchar(120)
+  "size_bytes" int8
+  "uploaded_by_person_id" int4
+  "note" varchar(255)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (document_version_id, minor) [type: btree, unique, name: "uq_document_version_uploads"]
+    uploaded_by_person_id [type: btree, name: "idx_document_version_uploads_person"]
+  }
+
+  Note: '''Cada SUBIDA del archivo de un entregable: la version MENOR. Guarda quien lo subio, que fichero y cuando. Antes no constaba en ninguna parte quien elaboro un documento — `working_file_path` se sobrescribe— mientras que un ANEXO si guardaba su autor. Ojo: en el almacén nunca se perdio un fichero (el nombre lleva sello de tiempo y UUID); lo que se perdia era el PUNTERO.'''
+}
+
+Table "document_versions" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null, note: '''Cuelga del ENTREGABLE. Hasta el 2026-08-23 habia una tabla `documents` en medio, en relacion 1:1 estricta y sin una sola columna propia.''']
+  "version" int4 [not null, default: 1, note: '''La RONDA: un intento completo del flujo (llenar -> firmar). Entero desde el 2026-08-23; antes era decimal y el numero mentia, porque 0.1 y 0.2 parecian correcciones del mismo documento y eran dos rondas, la primera cancelada entera. Las CORRECCIONES son el segundo digito y viven en `document_version_uploads`.''']
+  "version_minor" int4 [not null, default: 0]
+  "version_label" text [note: "columna generada (STORED)"]
+  "edicion_id" int4
+  "payload_hash" varchar(64)
+  "payload_object_path" varchar(255)
+  "working_file_path" varchar(255)
+  "final_file_path" varchar(255)
+  "format" varchar(40)
+  "render_engine" varchar(80)
+  "status" varchar(30) [not null, default: 'Borrador']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_item_id, version) [type: btree, unique, name: "uq_document_versions"]
+    edicion_id [type: btree, name: "idx_document_versions_artifact"]
+    task_item_id [type: btree, name: "idx_document_versions_item"]
+  }
+}
+
+Table "document_workflow_observations" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null]
+  "document_version_id" int4 [not null]
+  "turno_id" int4
+  "phase" text [not null, check: `phase = ANY (ARRAY['review'::text, 'signature'::text])`]
+  "kind" text [not null, check: `kind = ANY (ARRAY['observation'::text, 'return_reason'::text, 'rejection_reason'::text, 'internal_note'::text])`, default: 'observation']
+  "message" text [not null]
+  "author_person_id" int4 [not null]
+  "resolved_by_person_id" int4
+  "resolved_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    author_person_id [type: btree, name: "idx_document_workflow_observations_author"]
+    (task_item_id, created_at) [type: btree, name: "idx_document_workflow_observations_item"]
+    turno_id [type: btree, name: "idx_document_workflow_observations_turno"]
+    (document_version_id, created_at) [type: btree, name: "idx_document_workflow_observations_version"]
+  }
+}
+
+Table "process_runs" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_id" int4
+  "run_mode" text [not null, check: `run_mode = ANY (ARRAY['automatic'::text, 'manual'::text])`, default: 'manual']
+  "source_run_id" int4
+  "created_by_user_id" int4
+  "reason" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'active'::text, 'completed'::text, 'cancelled'::text])`, default: 'active']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, status) [type: btree, name: "idx_process_runs_definition"]
+    term_id [type: btree, name: "idx_process_runs_term"]
+  }
+}
+
+Table "recorridos" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
+  "paso_actual" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (id, accion) [type: btree, unique, name: "uq_recorridos_id_accion"]
+    (document_version_id, accion) [type: btree, unique, name: "uq_recorridos_version_accion"]
+  }
+
+  Note: '''LA EJECUCION: la ronda en marcha de UNA accion sobre UNA version de documento. Lleva su estado y el `paso_actual`. Sustituye a las dos tablas de instancia que habia, una por lado.'''
+}
+
+Table "task_item_tenures" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null]
+  "person_id" int4
+  "position_id" int4
+  "started_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "ended_at" timestamp
+  "opened_by" text [not null, check: `opened_by = ANY (ARRAY['original'::text, 'occupancy_start'::text, 'occupancy_end'::text, 'position_deactivated'::text, 'reconcile'::text, 'manual'::text])`, default: 'original']
+  "work_started" int2 [not null, default: 0]
+  "reason" varchar(255)
+  "performed_by_person_id" int4
+  "current_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_item_id, current_flag) [type: btree, unique, name: "uq_task_item_tenure_current"]
+    person_id [type: btree, name: "idx_task_item_tenures_person"]
+    position_id [type: btree, name: "idx_task_item_tenures_position"]
+  }
+
+  Note: '''QUIEN responde de un entregable, desde cuando y en calidad de que puesto. Una fila por TURNO: el relevo cierra la vigente y abre otra, asi que la sucesion completa queda escrita. Nacio el 2026-08-23 al medir que «quien lo lleva» vivia en TRES copias y dos se pudrian. Sustituye a `task_assignments` (una foto del reparto que ningun relevo refrescaba) y a `task_item_handovers` (los mismos hechos como eventos; periodos y eventos son isomorfos, pero con periodos «un solo responsable vigente» es un INDICE y no una convencion).'''
+}
+
+Table "task_items" {
+  "id" int4 [pk, not null, increment]
+  "task_id" int4 [not null]
+  "vinculo_id" int4 [not null]
+  "origin_kind" text [not null, check: `origin_kind = ANY (ARRAY['process_defined'::text, 'user_added'::text])`, default: 'process_defined']
+  "title" varchar(180)
+  "sort_order" int4 [not null, default: 1]
+  "created_by_person_id" int4
+  "source_task_item_id" int4
+  "target_unit_id" int4
+  "process_definition_template_key" int4 [note: "columna generada (STORED)"]
+  "responsible_position_id" int4 [not null, note: '''EL ANCLA del entregable: el PUESTO que responde de el. Obligatoria desde el 2026-08-23. Es lo durable —un puesto sobrevive a quien lo ocupa— y el punto por el que enganchan los cuatro caminos de relevo.''']
+  "responsible_position_key" int4 [note: "columna generada (STORED)"]
+  "assigned_person_id" int4 [note: '''QUIEN lo lleva ahora. Es una CACHE de la tenencia vigente, con UN SOLO escritor: el trigger `trg_task_item_tenures_sync`. De solo lectura en el editor generico.''']
+  "document_status" varchar(30) [not null, default: 'Inicial', note: '''El estado del DOCUMENTO, mudado aqui desde `documents` el 2026-08-23. Se llama asi y no `status` a proposito: `task_items.status` vivio ahi y se retiro por no tener escritores.''']
+  "origin_unit_id" int4
+  "start_date" date [not null]
+  "end_date" date
+  "user_started_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_id, process_definition_template_key, responsible_position_key) [type: btree, unique, name: "uq_task_items_defined_target"]
+    created_by_person_id [type: btree, name: "idx_task_items_created_by"]
+    (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
+    vinculo_id [type: btree, name: "idx_task_items_definition_template"]
+    origin_kind [type: btree, name: "idx_task_items_origin"]
+    source_task_item_id [type: btree, name: "idx_task_items_source"]
+    target_unit_id [type: btree, name: "idx_task_items_target_unit"]
+    (task_id, sort_order) [type: btree, name: "idx_task_items_task"]
+    user_started_at [type: btree, name: "idx_task_items_user_started"]
+  }
+}
+
+Table "tasks" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "process_run_id" int4
+  "term_id" int4 [not null]
+  "scope_unit_id" int4 [not null]
+  "normalized_scope_unit_id" int4 [note: "columna generada (STORED)"]
+  "description" text
+  "start_date" date [not null]
+  "end_date" date
+  "status" varchar(30) [not null, default: 'pendiente']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, term_id, normalized_scope_unit_id) [type: btree, unique, name: "uq_tasks_definition_term_scope"]
+    (process_definition_id, term_id) [type: btree, name: "idx_tasks_definition_term"]
+    process_run_id [type: btree, name: "idx_tasks_process_run"]
+    scope_unit_id [type: btree, name: "idx_tasks_scope_unit"]
+  }
+}
+
+Table "turnos" {
+  "id" int4 [pk, not null, increment]
+  "recorrido_id" int4 [not null]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`, note: '''DUPLICADA DEL RECORRIDO a proposito: la clave ajena es COMPUESTA `(recorrido_id, accion)`, y eso es lo que impide que un turno diga una accion distinta de la de su recorrido. Lo necesita el CHECK de `devuelto`, que solo es legal en entrega.''']
+  "participante_id" int4 [not null]
+  "persona_id" int4
+  "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
+  "manual" int2 [not null, default: 0]
+  "solicitado" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "notificado" timestamp
+  "respondido" timestamp
+  "nota_respuesta" varchar(255)
+
+  Indexes {
+    (recorrido_id, participante_id, persona_id) [type: btree, unique, name: "uq_turnos"]
+    (recorrido_id, participante_id) [type: btree, name: "idx_turnos_participante"]
+  }
+
+  Note: '''A QUIEN LE TOCO: un turno por cada persona convocada en un recorrido. Apunta al PARTICIPANTE declarado que lo produjo --no solo al paso--, asi que se sabe de que declaracion salio. Sustituye a las dos tablas de solicitud que habia, una por lado.'''
+}
+
+Ref "fk_acto_documentos_version":"document_versions"."id" <? "acto_documentos"."document_version_id"
+Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
+Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
+Ref "fk_document_signatures_turno":"turnos"."id" ?<? "document_signatures"."turno_id"
+Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_version_uploads"."document_version_id" [delete: cascade]
+Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: restrict]
+Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
+Ref "fk_document_workflow_observations_turno":"turnos"."id" ?<? "document_workflow_observations"."turno_id"
+Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
+Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
+Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"
+Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
+Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
+Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: restrict]
+Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
+Ref "fk_turnos_recorrido":"recorridos".("id", "accion") <? "turnos".("recorrido_id", "accion") [delete: cascade]
+
+// ── Relaciones con otros dominios (no se dibujan aquí) ──
+//   actos -> acto_documentos   [organizacion]
+//   persons -> document_attachments   [identidad]
+//   persons -> document_signatures   [identidad]
+//   signature_statuses -> document_signatures   [firmas]
+//   persons -> document_version_uploads   [identidad]
+//   ediciones -> document_versions   [plantillas]
+//   persons -> document_workflow_observations   [identidad]
+//   persons -> document_workflow_observations   [identidad]
+//   task_items -> pasos_declarados   [plantillas]
+//   persons -> process_runs   [identidad]
+//   process_definition_versions -> process_runs   [procesos]
+//   terms -> process_runs   [procesos]
+//   persons -> task_item_tenures   [identidad]
+//   unit_positions -> task_item_tenures   [organizacion]
+//   persons -> task_items   [identidad]
+//   persons -> task_items   [identidad]
+//   units -> task_items   [organizacion]
+//   unit_positions -> task_items   [organizacion]
+//   units -> task_items   [organizacion]
+//   vinculos -> task_items   [procesos]
+//   process_definition_versions -> tasks   [procesos]
+//   units -> tasks   [organizacion]
+//   terms -> tasks   [procesos]
+//   participantes_declarados -> turnos   [plantillas]
+//   persons -> turnos   [identidad]
+//   persons -> task_item_tenures   [identidad]

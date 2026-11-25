@@ -1,0 +1,19 @@
+processes                          "Informe de Gestion Docente"  (solo un nombre)
+   |
+   +--> process_definition_versions      LA CONFIGURACION (draft / active / retired)
+          |    ^ series_id -> process_definition_series   <- LA SERIE (el eje de variacion)
+          |
+          +--> process_target_rules              <- LA REGLA: a que unidades y cargos alcanza
+          +--> process_definition_period_types   <- en que tipos de periodo corre
+          +--> process_definition_templates      <- que documentos produce (+ item_mode)
+          |
+          +--> process_runs                      <- EL LANZAMIENTO en un periodo concreto
+                 |
+                 +--> tasks                      <- una por (definicion x periodo x unidad)
+                        |
+                        +--> task_items          <- LOS ENTREGABLES concretos
+                               |
+                               +--> documents -> document_versions
+                                      |
+                                      +--> document_fill_flows / fill_requests      (entrega)
+                                      +--> signature_flow_instances / signature_requests (firma)

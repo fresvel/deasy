@@ -1,0 +1,291 @@
+{
+  "_readme": [
+    "EL MAPA DE LAS TABLAS. Fuente unica de «¿de que trata esta tabla, y de que depende?».",
+    "",
+    "Cada tabla aparece UNA vez, dentro de su DOMINIO, y su valor es su NIVEL. Dos ejes, un sitio:",
+    "",
+    "  DOMINIO   de que trata. Son 8 y son los de siempre: identidad, organizacion, procesos,",
+    "         plantillas, tareas, firmas, chat, empleo. De aqui salen los 8 diagramas, y es",
+    "         donde deberia vivir el codigo de esa tabla.",
+    "  NIVEL  de que depende, de 0 (abajo) a 7 (arriba). De aqui sale el orden de lectura.",
+    "",
+    "LA REGLA DEL NIVEL: una clave ajena solo puede apuntar a su propio nivel o a uno INFERIOR.",
+    "Medido sobre las 182 claves ajenas del esquema: 103 bajan, 79 se quedan, 0 suben.",
+    "",
+    "POR QUE LOS DOS EJES Y NO UNO. Son independientes: de los 64 cruces posibles solo 16 tienen",
+    "tablas. Ningun dominio vive en un solo nivel y ningun nivel pertenece a un solo dominio, asi que no",
+    "se puede elegir uno y tirar el otro. El dominio sirve para saber A DONDE IR; el nivel, para saber",
+    "EN QUE ORDEN LEER y QUE SE ROMPE SI TOCAS ALGO.",
+    "",
+    "⚠️ AQUI HUBO UN TERCER EJE Y SE RETIRO el 2026-10-04: 15 «modulos» que subdividian los dominios.",
+    "Se midieron contra los dominios y perdieron en tres cosas a la vez: juntaban peor las relaciones",
+    "(37 % contra 50 %), tenian una dependencia circular, y CUATRO de los 15 no eran dueños de ni un",
+    "fichero de codigo --o sea, habrian sido carpetas vacias--. Cortaban por dentro de una funcion:",
+    "el recorrido de llenado es parte de las plantillas en el codigo y en la pantalla.",
+    "",
+    "⚠️ Y SE RETIRARON DOS DECLARACIONES mas (_recursos_rbac y _subgrupos_dibujados): escribian las",
+    "diferencias entre esta clasificacion, la de los permisos y la de los mapas dibujados, y ponian",
+    "una alarma para que siguieran sin parecerse. Documentaban el desorden y lo protegian.",
+    "",
+    "Lo vigila `scripts/docs/check-mapa-tablas.mjs`."
+  ],
+  "_niveles": {
+    "0": "Catálogos y territorio. Lo que no cambia y de lo que depende todo el mundo.",
+    "1": "Identidad. La persona y lo que ES suyo: documentos, domicilio, teléfonos, correos.",
+    "2": "Organización. El organigrama: unidades, puestos y quién los ocupa.",
+    "3": "Acceso. Roles, permisos y credenciales. VA ENCIMA de la organización, y no al revés: un rol se asigna DENTRO de una unidad (`role_assignments.unit_id`, `role_assignments.derived_from_assignment_id`). Quien toque unidades puede romper permisos; nunca lo contrario.",
+    "4": "Declaración. Lo que alguien declara que debe ocurrir: procesos, reglas, periodos y plantillas.",
+    "5": "Ejecución. Lo que ocurre: la corrida, las tareas, los entregables y sus documentos.",
+    "6": "Flujos. Entrega y firma, con su rastro.",
+    "7": "Encima. Lo que se apoya en todo lo anterior y de lo que nada depende: conversación y empleo."
+  },
+  "_escritores_transversales": {
+    "_nota": [
+      "Ficheros que escriben tablas de CUALQUIER dominio, y es su contrato. Nombrados aquí para que la",
+      "puerta de propiedad de escritura (comprobación C) no los cuente. Añadir uno es una decisión.",
+      "",
+      "⚠️ ANTES ESTO EXIMÍA CARPETAS, NO FICHEROS, y era demasiado: 'services/admin' y 'services/system'",
+      "exoneraban 31 ficheros, de los que 15 escriben, cuando sólo 3 lo merecen. Lo que tapaba era real",
+      "pero pequeño --una sola tabla, 'fill_requests'--, y se destapó al estrecharlo el 2026-10-07.",
+      "",
+      "⚠️ Y LA EXENCIÓN DEL EDITOR GENÉRICO ERA INÚTIL: 'services/admin/SqlAdminService.js' escribe",
+      "construyendo el nombre de la tabla, así que la comprobación C --que busca el nombre literal de",
+      "cada una-- NUNCA PUDO VERLO. Escribe cualquiera de las tablas expuestas en /admin y seguirá siendo",
+      "invisible para esta puerta. No es un agujero que se cierre nombrándolo: quien lo cubre es el",
+      "catálogo de 'sqlTables.js' más la comprobación A-bis, no ésta."
+    ],
+    "services/system/SystemBootstrapService.js": "El bootstrap. Siembra la instalación entera: escribe 32 tablas de los 8 dominios.",
+    "services/system/genericCatalog.js": "Los catálogos reutilizables del bootstrap. Su único usuario es SystemBootstrapService.js.",
+    "services/admin/crud/tableHooks.js": "Los enganches del editor genérico de `/admin`. Su contrato ES ser genérico, y a diferencia de SqlAdminService sí nombra tablas literalmente."
+  },
+  "_flujos": {
+    "_nota": [
+      "FICHEROS QUE CRUZAN DOMINIOS POR DISEÑO, no por descuido. Escriben tablas de dos o tres dominios",
+      "DENTRO DE UNA MISMA TRANSACCIÓN, que abre quien llama y les llega por parámetro.",
+      "",
+      "LA LISTA ES CERRADA. Cada entrada declara los dominios que escribe, y la comprobación D falla si un",
+      "flujo escribe uno que no declaró. Añadir el octavo es una decisión con motivo escrito, igual que",
+      "los transversales de arriba.",
+      "",
+      "Y no son un cajón de sastre: lo que justifica cada uno es que la operación es UNA --firmar, lanzar,",
+      "rehacer-- y partirla por dominio rompería la transacción o, en templateLifecycle, una invariante",
+      "decidida por el dueño: cambiar una versión de plantilla obliga a una definición de proceso nueva.",
+      "",
+      "VERIFICADO el 2026-10-06 en el más pequeño: extraerle las consultas al `datos/` de cada dominio",
+      "deja el flujo con CERO SQL y la orquestación legible --147 líneas, mismos guards, mismo orden--.",
+      "879 unitarios y 321 de caracterización en verde, sin mover un golden. El piloto vive en la rama",
+      "'f7-flujo-piloto' y NO se fusiona: con él solo, las escrituras de cuatro tablas quedan repartidas",
+      "entre 'dominios/' y el 'services/' viejo, y esta misma puerta lo caza.",
+      "",
+      "⚠️ TRES DE LOS CINCO YA NO CRUZAN, y la puerta lo avisa. No es deuda nueva: la fase 4 del frente 24",
+      "unifico las dos EJECUCIONES del recorrido en `recorridos`+`turnos` --de `tareas`-- y las dos RECETAS",
+      "en `pasos_declarados`+`participantes_declarados` --de `plantillas`--, asi que lo que antes eran dos",
+      "mecanismos de dos dominios es el mismo mecanismo con dos valores de `accion`.",
+      "",
+      "Se quedan declarados aqui, con un dominio, en vez de salirse: la comprobacion C los eximia, y sin la",
+      "exencion `document_versions` tendria dos escritores --el `datos/` de `tareas` y estos servicios--.",
+      "Eso no se arregla moviendo una declaracion: se arregla cuando `tareas` tenga su dominio y esas",
+      "escrituras entren por su puerta, que es F7.5. Hasta entonces el aviso dice la verdad y la lista no",
+      "miente sobre lo que cada uno escribe."
+    ],
+    "services/admin/templates/templateLifecycle.js": {
+      "dominios": [
+        "plantillas",
+        "procesos"
+      ],
+      "motivo": "Al publicar una versión de plantilla clona la definición de proceso. Es la invariante del frente 23."
+    },
+    "services/admin/generation/documents.js": {
+      "dominios": [
+        "tareas"
+      ],
+      "motivo": "Al lanzar, materializa el entregable y sus dos recorridos de una vez. Es la operacion de arranque. Declaraba `firmas` y `plantillas` y dejo de escribirlos en el paso 4 de la fase 4 del frente 24: la receta la escribe por la PUERTA de `plantillas` --no por su `datos/`-- y la ejecucion es `tareas`. Las ocho tablas viejas, que si escribia directo, ya no existen. Se queda declarado con un solo dominio por el mismo motivo que los otros dos: DONDE vive un orquestador de `tareas` lo decide F7.5."
+    },
+    "services/documents/DocumentSignatureWorkflowService.js": {
+      "dominios": [
+        "tareas"
+      ],
+      "motivo": "Firmar avanza el recorrido de firma y mueve el estado de la version documental en el mismo paso. Declaraba tambien `firmas` y dejo de escribirlo en el paso 3b de la fase 4 del frente 24: la EJECUCION de firma paso a `tareas` --`recorridos` y `turnos`--, las mismas dos tablas que la de entrega. Se queda declarado aqui, con un solo dominio, porque DONDE vive un orquestador de `tareas` es la decision de F7.5; la puerta avisa y el aviso dice la verdad."
+    },
+    "services/tasks/GeneralTaskService.js": {
+      "dominios": [
+        "procesos",
+        "tareas"
+      ],
+      "motivo": "Una tarea libre nace con su periodo: crea la tarea y el término que la enmarca."
+    },
+    "flujos/rehacerDocumento.js": {
+      "dominios": [
+        "tareas"
+      ],
+      "motivo": "Rehacer cancela los dos recorridos y abre una ronda nueva. Es el flujo del piloto de F7, y el PRIMERO que vive en `flujos/` con CERO consultas: su SQL esta en el `datos/` de cada dominio. Nacio cruzando TRES dominios y hoy cruza UNO: `plantillas` se fue en el paso 3a de la fase 4 del frente 24 y `firmas` en el 3b, porque las dos EJECUCIONES son ahora la misma pareja de tablas de `tareas` con dos valores de `accion`. Lo que antes eran dos mecanismos es uno, asi que este flujo deja de ser un flujo --y la puerta lo avisa--; donde aterriza lo decide F7.5."
+    }
+  },
+  "_deuda_escritura": {
+    "_nota": [
+      "Tablas que hoy escriben DOS sitios distintos. La puerta 'check-mapa-modulos.mjs' las deja pasar",
+      "porque ya existían cuando se puso, y FALLA con cualquiera nueva. Se cierran quitando su línea de",
+      "aquí --la puerta avisa cuando una ya sobra--, nunca añadiendo una para callarla.",
+      "",
+      "Eran SEIS el 2026-10-04. La de 'telefono_verification_keys' se cerró ese mismo día: el controller",
+      "de verificación invalidaba las llaves y la verificación por canal al cambiar el número, y los otros",
+      "dos caminos que cambian un número no lo hacían. Ahora lo hace 'TelefonoService.guardarPrincipal',",
+      "por donde pasan los tres. El antes/después está medido en 'TelefonoService.test.js'.",
+      "",
+      "Lo que está mal en cada una NO es la carpeta: es que la misma regla se aplica en dos sitios y uno",
+      "se queda atrás. El arreglo es llevar el invariante a donde no se pueda esquivar.",
+      "",
+      "CERRADA el 2026-10-07: la de 'document_versions'. Su línea decía «controllers/users/",
+      "user_controler.js:727 hace un UPDATE que corresponde a services/documents», y F7.2 lo movió a",
+      "'services/documents/DeliverableUploadService.js'. LA PUERTA AVISÓ SOLA --«ya sólo tiene un",
+      "escritor: quita su línea»--, que es como se cierran: quitando líneas, nunca añadiéndolas."
+    ],
+    "task_items": "services/tasks lo INSERTA al crear una tarea general y services/documents lo toca en el camino del documento. Son dos duenos de la misma identidad (tarea, plantilla, puesto), y se cierra cuando `tareas` se mueva a su dominio: F7.5. Hasta entonces, no anadas un tercero."
+  },
+  "identidad": {
+    "titulo": "Identidad, personas y RBAC",
+    "descripcion": "Quién es cada quien y qué puede hacer. `persons` es la identidad única del sistema; el expediente (dossier) cuelga de ella.",
+    "tablas": {
+      "actions": 0,
+      "autoidentificaciones_etnicas": 0,
+      "canales_mensajeria": 0,
+      "cargos": 0,
+      "categorias_visa": 0,
+      "estados_civiles": 0,
+      "generos": 0,
+      "parentescos": 0,
+      "resources": 0,
+      "tipos_discapacidad": 0,
+      "accesos_sensibles": 1,
+      "consentimientos": 1,
+      "direcciones": 1,
+      "documentos_identidad": 1,
+      "documentos_legales": 1,
+      "dossier_items": 1,
+      "dossiers": 1,
+      "emails": 1,
+      "person_certificates": 1,
+      "persona_autoidentificacion": 1,
+      "persons": 1,
+      "telefono_canales": 1,
+      "telefonos": 1,
+      "canales_bitacora": 3,
+      "cargo_role_map": 3,
+      "email_verification_codes": 3,
+      "intentos_limitados": 3,
+      "password_reset_codes": 3,
+      "permissions": 3,
+      "role_assignment_relation_types": 3,
+      "role_assignments": 3,
+      "role_permissions": 3,
+      "roles": 3,
+      "telefono_verification_keys": 3
+    }
+  },
+  "organizacion": {
+    "titulo": "Unidades, puestos y ocupación",
+    "descripcion": "El organigrama: unidades, cómo se relacionan entre sí, qué puestos tienen y quién los ocupa. Incluye el catálogo geográfico encadenado país → provincia → cantón → parroquia.",
+    "tablas": {
+      "cantones": 0,
+      "clases_parroquia": 0,
+      "instituciones": 0,
+      "nomenclatura_territorial": 0,
+      "paises": 0,
+      "parroquias": 0,
+      "provincias": 0,
+      "relation_unit_types": 0,
+      "unit_types": 0,
+      "position_assignments": 2,
+      "unit_positions": 2,
+      "unit_relations": 2,
+      "units": 2,
+      "tipos_de_acto": 0,
+      "actos": 2,
+      "acto_adjuntos": 2,
+      "unit_vigencias": 2,
+      "correcciones_de_estructura": 2,
+      "position_vigencias": 2,
+      "unit_equivalencias": 2,
+      "position_equivalencias": 2
+    }
+  },
+  "procesos": {
+    "titulo": "Motor de procesos",
+    "descripcion": "Serie → regla → flujo. La serie nombra, la regla reparte el alcance y el flujo reparte los pasos. El lanzamiento (`process_runs`) ya no se dibuja aquí: es ejecución y vive en el diagrama de tareas.",
+    "tablas": {
+      "term_types": 0,
+      "process_definition_period_types": 4,
+      "lineas": 4,
+      "vinculos": 4,
+      "process_definition_versions": 4,
+      "processes": 4,
+      "terms": 4,
+      "process_vigencias": 4,
+      "process_relations": 4,
+      "process_equivalencias": 4
+    }
+  },
+  "plantillas": {
+    "titulo": "Plantillas y entregables",
+    "descripcion": "El modelo 'libro y ediciones': `catalogo_documental` porta la identidad y `ediciones` las versiones, que declaran su generador. Aquí vive también la autoría del flujo de llenado.",
+    "tablas": {
+      "catalogo_documental": 4,
+      "ediciones": 4,
+      "generadores_de_documento": 4,
+      "participantes_declarados": 6,
+      "pasos_declarados": 6
+    }
+  },
+  "tareas": {
+    "titulo": "Tareas, entregables instanciados y documentos",
+    "descripcion": "Lo que se genera al lanzar un proceso: la corrida (`process_runs`), sus tareas, los entregables (`task_items`) y los documentos producidos.",
+    "tablas": {
+      "document_attachments": 5,
+      "document_signatures": 6,
+      "document_version_uploads": 5,
+      "document_versions": 5,
+      "document_workflow_observations": 6,
+      "process_runs": 5,
+      "recorridos": 6,
+      "task_item_tenures": 5,
+      "task_items": 5,
+      "tasks": 5,
+      "turnos": 6,
+      "acto_documentos": 5
+    }
+  },
+  "firmas": {
+    "titulo": "Firma electrónica",
+    "descripcion": "El flujo de firma: plantilla de flujo, instancia, pasos y peticiones. Los lotes los procesa el microservicio `signer` por RabbitMQ.",
+    "tablas": {
+      "signature_statuses": 0,
+      "signature_batch_jobs": 6
+    }
+  },
+  "chat": {
+    "titulo": "Chat y notificaciones",
+    "descripcion": "Mensajería en tiempo real sobre Socket.IO (EMQX/MQTT retirados). Conversaciones directas, de grupo y de hilo ligado a proceso.",
+    "tablas": {
+      "chat_conversation_participants": 7,
+      "chat_conversations": 7,
+      "chat_message_attachments": 7,
+      "chat_message_reads": 7,
+      "chat_messages": 7,
+      "chat_notifications": 7
+    }
+  },
+  "empleo": {
+    "titulo": "Vacantes, postulaciones y contratos",
+    "descripcion": "El ciclo de contratación: vacante, postulación, oferta y contrato, con el origen del contrato desglosado.",
+    "tablas": {
+      "aplications": 7,
+      "contract_origin_recruitment": 7,
+      "contract_origin_renewal": 7,
+      "contract_origins": 7,
+      "contracts": 7,
+      "offers": 7,
+      "vacancies": 7,
+      "vacancy_visibility": 7
+    }
+  }
+}

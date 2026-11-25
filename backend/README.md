@@ -23,16 +23,16 @@
 5. **Verifica la consola**
    - Debes ver mensajes de conexión a MongoDB.
    - Si la conexión a MariaDB está configurada, se registrará la verificación/creación de la base y la tabla.
-   - El servidor queda escuchando en `http://localhost:3000/easym/v1/` por defecto.
+   - El servidor queda escuchando en `http://localhost:3000/deasy/v1/` por defecto.
 
 6. **Accede a la documentación de la API (Swagger)**
    - Una vez que el servidor esté corriendo, puedes acceder a la documentación interactiva de Swagger en:
      ```
-     http://localhost:3000/easym/docs
+     http://localhost:3000/deasy/docs
      ```
    - También puedes obtener el JSON de la documentación en:
      ```
-     http://localhost:3000/easym/docs.json
+     http://localhost:3000/deasy/docs.json
      ```
    - La documentación incluye:
      - **Auth**: Endpoints de autenticación (registro e inicio de sesión)

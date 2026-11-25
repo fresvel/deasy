@@ -10,21 +10,21 @@
   >
     <template #title>
       <div class="flex items-center gap-3">
-        <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-100 text-amber-600">
+        <div class="deasy-icon-box deasy-icon-box--lg deasy-icon-box--round deasy-icon-box--warning">
           <IconAlertTriangle class="w-6 h-6" />
         </div>
         <span>Sesión por expirar</span>
       </div>
     </template>
 
-    <p class="mb-6 text-sm leading-relaxed text-slate-600">
+    <p class="mb-6 text-sm leading-relaxed text-icon">
       Tu sesión está a punto de expirar por inactividad. ¿Deseas mantener la sesión activa o prefieres salir ahora?
     </p>
 
     <template #footer>
       <AppButton
         type="button"
-        variant="secondary"
+        variant="neutral-outline"
         class-name="w-full sm:w-auto"
         @click="handleLogout"
         :disabled="loading"
@@ -34,12 +34,12 @@
       </AppButton>
       <AppButton
         type="button"
-        variant="primary"
+        variant="primary-outline"
         class-name="w-full sm:w-auto"
         @click="handleKeepAlive"
         :disabled="loading"
       >
-        <IconRefresh :class="['w-4 h-4', { 'animate-spin': loading }]" />
+        <IconRefresh class="w-4 h-4" :class="[{ 'animate-spin': loading }]" />
         {{ loading ? 'Renovando...' : 'Mantener activa' }}
       </AppButton>
     </template>
@@ -49,7 +49,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import axios from 'axios';
+import axios from '@/core/services/httpClient';
 import { API_ROUTES } from '@/core/config/apiConfig';
 import { clearAuthData } from '@/core/utils/tokenUtils';
 import { IconAlertTriangle, IconLogout, IconRefresh } from '@tabler/icons-vue';

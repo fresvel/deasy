@@ -1,0 +1,131 @@
+/* La capa BASE del proyecto — y las CUATRO reglas de aqui que NO pueden bajar a ella.
+   Cada una lleva su motivo; el inventario de lo que suprimen, en la bitacora (§4.4-c). */
+
+@layer base {
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+    }
+
+    /* EL ARMAZON, declarado UNA vez. Hasta el 2026-08-13 este fondo se escribia cinco veces
+       entre `tokens.css` y este fichero, y el `color` del `body` tres (`text-body`,
+       `--color-navy` y `--color-strong`), ganando el ultimo por orden de `@import`. Se
+       conservan los valores que ganaban: fondo `--color-navy-deep` y texto `--color-strong`. */
+    html,
+    body,
+    #app {
+        background: var(--color-navy-deep);
+    }
+
+    body,
+    #app {
+        color: var(--color-strong);
+    }
+
+    body {
+        @apply antialiased;
+        margin: 0;
+        font-family: var(--typeface);
+        font-size: var(--type-size);
+        line-height: var(--type-leading);
+    }
+
+    #app {
+        @apply min-h-screen;
+    }
+}
+
+/* ══ LOS ENCABEZADOS BAJAN A `@layer base` — 2026-08-13 ═════════════════════════════════
+   Estas dos reglas llevaban FUERA DE CAPA con este motivo escrito: «bajarla resucita 109
+   utilidades en 77 de los 95 encabezados del proyecto», porque un `font-weight` sin capa gana
+   a `@layer utilities` y un `font-semibold` sobre un `<h3>` renderizaba a **500**.
+
+   Eso no era una razon para dejarlas: era la descripcion del defecto. La norma no admite que
+   una declaracion se quede «presente pero suprimida» — o se borra de la plantilla, o se capa la
+   regla y se enciende. Se enciende: **un encabezado que pide `font-semibold` es que quiere
+   semibold**, y estas reglas son el SUELO tipografico, no la ultima palabra.
+
+   Y aqui era ademas la condicion que bloqueaba otra cosa: `.deasy-dialog-title` no podia bajar
+   de capa porque, capada, perdia contra este `h1..h6` suelto y 121 titulos caian de 21.6 px a
+   19.2 px. Con los encabezados en `@layer base` deja de haber conflicto: `base` va ANTES que
+   `components` en el orden de capas de Tailwind, asi que el titulo gana sin depender de la
+   especificidad.
+
+   Las clases-espejo `.h1`…`.h6` salieron de esta lista el mismo dia: no las usaba nadie. Los
+   selectores de ELEMENTO siguen vivos y son los que pintan.
+   ═══════════════════════════════════════════════════════════════════════════════════════ */
+@layer base {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      font-family: var(--typeface);
+      font-weight: 500;
+      line-height: var(--type-leading-heading);
+      letter-spacing: -0.01em;
+    }
+
+    /* La tipografia base del CONTENEDOR, no la de los encabezados. */
+    .deasy-typography {
+        font-family: var(--typeface);
+        font-size: var(--type-size);
+        line-height: var(--type-leading);
+    }
+
+    /* Hermana de la de arriba, y baja con ella: los encabezados de administracion pasan a usar
+       el peso que llevan escrito en la plantilla.
+       Aqui habia ademas los seis `.home-typography h1..h6`, y no hacian nada: esa clase no esta
+       en una sola plantilla. El razonamiento que sostenia el comentario —«los del resto de la
+       app se quedarian en 500»— hablaba de una mitad que nunca llego al DOM. */
+    .deasy-typography h1,
+    .deasy-typography h2,
+    .deasy-typography h3,
+    .deasy-typography h4,
+    .deasy-typography h5,
+    .deasy-typography h6 {
+      font-family: var(--typeface);
+      font-weight: 500;
+      line-height: var(--type-leading-heading);
+    }
+}
+
+/* ══ EL COLOR DE LOS ENLACES — capado y reanclado el 2026-08-16 (F4.C) ═══════════════════════
+   Estas dos reglas eran las ultimas SIN CAPA de este fichero, y el comentario que habia aqui ya
+   decia lo que pasaba: `a` es (0,0,1), la especificidad mas baja que existe, y aun asi ganaba a
+   todo lo capado — tapaba tres `text-*` de plantilla y `.deasy-auth-link`, que declara
+   `--color-primary` desde `@layer components`. Por eso el «¿Olvidaste tu contraseña?» del login
+   salia TEAL. Decia tambien que caparlo «lo arregla de golpe», y que se aplazaba por ser cambio
+   visual.
+
+   Lo desbloqueo el chrome claro: al pasar la barra y la cabecera a blanco, la navegacion primaria
+   y el boton de salir —que son `<router-link>`, o sea `<a>`— salieron en teal a **2.64:1**, por
+   debajo del 4.5 que pide el texto. Ya no era deuda aplazable: era un fallo a la vista.
+
+   ── DOS MITADES, Y LAS DOS HACIAN FALTA ────────────────────────────────────────────────────
+   1. EL COLOR. `--color-accent` no salio de TailAdmin: su §9 no tiene ningun enlace teal. Sus dos
+      enlaces son `gray-500` (al que llaman «Primary») y `brand-500` («Secondary») — y el propio
+      fichero avisa de que los nombres de su demo no son fiables, porque cuatro de sus ocho links
+      «Colored» se llaman «Primary link». Se adopta el de marca, que es el que se lee como enlace.
+      Decision del dueño: «usa los colores de TailAdmin, ahi veo un primary (algo azul)».
+   2. LA CAPA. Cambiar solo el color no habria arreglado el menu: la regla seguiria ganando y los
+      items de navegacion saldrian AZULES en vez de teal — igual de mal, porque un item de menu en
+      color de marca se come la distincion con el item ACTIVO, que es lo que dice donde estas.
+
+   Capada, cada enlace con clase propia pinta lo que declara (el menu en `body`, 10.46:1) y el
+   enlace pelado se queda con el color de la receta. `--color-accent` NO muere: sigue siendo el
+   turquesa de `deasy-tag--accent`. Lo que deja de ser es el color de todos los enlaces. */
+@layer base {
+  a {
+    color: var(--color-primary);
+  }
+
+  a:hover {
+    color: color-mix(in srgb, var(--color-primary) 85%, var(--black));
+  }
+}
+
+/* El segundo `@layer base` con `body, #app` se fusiono con el primero el 2026-08-13. Existia
+   solo para ganar por orden a un `color` que este fichero declaraba doce lineas mas arriba. */

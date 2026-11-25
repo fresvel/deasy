@@ -1,0 +1,314 @@
+/* ======================================================================================
+   LOS DIALOGOS: 17 reglas capadas aqui arriba, 10 SUELTAS al final del fichero.
+
+   Una regla sin capa gana SIEMPRE a una capada, da igual la especificidad. Por eso las 10
+   de abajo estan tapando lo que las plantillas escriben por `content-class`, `body-class`
+   y `footer-class`; cada una lleva su motivo. Inventario completo en la bitacora, §4.4-c.
+   ====================================================================================== */
+
+@layer components {
+    /* ⚠️ AQUI NO VA EL VELO. Lo ponia un slate-950 al 45 % con desenfoque de 2 px, y NUNCA
+       pinto: la regla 3 del final del fichero, sin capa, gana siempre a esta. Medido antes
+       de borrarlo — el computado ya era `rgba(15,23,42,0.48)` y `blur(3px)`, que es lo que
+       dice `--overlay-backdrop`, no lo que decia la utilidad.
+       (Los nombres de clase van DESCRITOS y no escritos a proposito: escritos, los cuenta
+       cualquier medicion y los reescribe cualquier script de migracion. Ya paso cuatro
+       veces con el comentario de `ProcessConfigNode.vue`.) */
+    .deasy-dialog-panel {
+        @apply rounded-xl border border-line bg-white shadow-[var(--elev-3)];
+    }
+
+    /* EL PANEL QUE NO CRECE MÁS QUE LA PANTALLA (2026-11-23). Un modal con pestañas cuyo contenido
+       puede ser largo: el panel se acota al alto de la ventana y se vuelve columna, para que quien
+       lo use deje fijas la cabecera, las pestañas y el pie y haga desplazable SOLO el contenido.
+
+       Hace falta porque el modal se centra con flex, y un panel más alto que la ventana centrado así
+       empuja su parte de arriba FUERA del área desplazable: la cabecera queda inalcanzable. Pasó en
+       el organigrama, abriendo una unidad con diez puestos.
+
+       El `4rem` son los `py-8` de `.deasy-dialog-root`, arriba y abajo. */
+    .deasy-dialog-panel--viewport {
+        @apply flex flex-col;
+        max-height: calc(100vh - 4rem);
+    }
+
+    .deasy-dialog-header {
+        @apply border-b border-line bg-white px-5 py-4 sm:px-6;
+    }
+
+    /* 📌 Y AQUI `.deasy-dialog-title` (†2026-08-19, F2). Era `text-base ... sm:text-lg`, o sea el
+       nivel `--panel` con un escalon responsive propio que ninguna otra pieza del sistema tiene.
+       Sus 3 usos pasan a `deasy-title--panel`, que es 18 px en todas las anchuras. */
+
+    .deasy-dialog-body {
+        /* El fondo. Llego de `overrides.css` el 2026-08-17 (F6.L4): vivia alli para que un
+           `body-class` de plantilla no pudiera pisarlo, y esa condicion caduco cuando aquellas
+           diez reglas se caparon. Aqui no tiene adversario. */
+        background-color: var(--color-white);
+        @apply px-5 py-5 text-strong sm:px-6;
+    }
+
+    .deasy-dialog-footer {
+        @apply border-t border-line bg-surface/70 px-5 py-4 sm:px-6;
+    }
+
+    .deasy-dialog-root .deasy-dialog-body,
+    .deasy-dialog-root .deasy-dialog-footer {
+        font-size: 0.95rem;
+        font-weight: 400;
+    }
+
+    /* ⚠️ `AppModalShell` NO declara una prop `headerClass` — tiene `dialogClass`,
+       `contentClass`, `bodyClass` y `footerClass`. Un `header-class="…"` en la plantilla
+       cae en `attrs` y acaba de atributo HTML suelto en el div del VELO, sin efecto. */
+    .deasy-dialog-root .deasy-dialog-header {
+        background: var(--color-surface);
+        border-bottom: 1px solid var(--color-line);
+        box-shadow: none;
+    }
+
+    /* 📌 Aqui reponia el color del titulo por contexto. Sobra desde que `.deasy-title` lo
+       declara en la base de la familia: el color de un titular sale del token `--color-navy`,
+       no de estar dentro de un dialogo. */
+
+    .deasy-dialog-shell {
+        padding-block: 0.5rem;
+    }
+
+    /* ⚠️ Desempate DENTRO de la capa: el `@apply` de arriba pisa las mismas propiedades con
+       otros valores (`bg-white`, `px-5 py-4`), y esta gana porque va DESPUES en el mismo
+       fichero, no por especificidad. **Si reordenas el fichero, la cabecera se vuelve
+       blanca.** */
+    .deasy-dialog-header {
+        min-height: 3.75rem;
+        background: var(--color-surface);
+        border-bottom: 1px solid var(--color-line);
+        padding: 1rem 1.25rem;
+    }
+
+    /* PANEL SIN FONDO — para lo que trae su propia superficie y no quiere la del dialogo: el visor
+       de PDF a pantalla completa y el lanzador de firma.
+
+       ⚠️ Se llamaba `profile-admin-skin` hasta el 2026-08-15, y el nombre mentia dos veces: no era
+       una «piel» —hace UNA cosa, quitar el fondo— y no tenia nada que ver con perfil ni con admin.
+       Venia de cuando `AppFormModalLayout` sí era una piel aparte; al colapsar esa piel sobre la
+       del sistema, estos dos usos se quedaron con un nombre huerfano que describia un componente
+       que ya no existe. */
+    /* (Su declaracion se movio junto a la base el 2026-08-17 — ver mas abajo. Estaba AQUI, 137
+       lineas por delante, y a igual especificidad eso significa que **no ganaba nunca**: el panel
+       de `BtnSera` salia blanco en vez de transparente. Lo encontro `check:layer-debt` en su
+       primera corrida, y no lo habia visto ningun gate ni ningun ojo.) */
+
+    /* ══ AQUI SE REPINTABA LA ✕ CUANDO VIVE EN UN PANEL — retirado el 2026-08-14 (G3) ═══════
+       Era la tercera regla que le fijaba el radio: la base daba 8 px, `--close` lo subia a 16 y
+       esta lo bajaba a 8.8 (`0.55rem`), un valor que solo existia para no ser ninguno de los
+       otros dos. Y sus tres colores —`line-field`, blanco, `icon`— eran los que de verdad
+       renderizaban casi todas las ✕ del proyecto, porque casi todas viven dentro de un panel.
+
+       Asi que no se han perdido: se han subido a `.deasy-btn--close`, que ahora los declara
+       para TODAS. Un boton, una regla, un radio. El `:hover` tambien, que era identico al que
+       ya tenia la clase base.
+
+       (Esta regla llevaba ademas un `!important` retirado en la fase 0.1, y su comentario
+       explicaba contra que peleaba. Ese adversario tampoco existe.) */
+
+    /* [2026-11-24] AQUI ESTABA EL PANEL LATERAL (`deasy-drawer`, con su velo). Su ultimo
+       consumidor era el entregable del mapa de procesos, que ahora abre un modal con pestañas
+       como los demas nodos. Si vuelve a hacer falta un panel anclado al borde, esta en el
+       historial; su altura sigue declarada (`--z-panel-lateral`). */
+
+    /* Pestañas del panel: subrayado, no pildora. El `margin-bottom:-1px` monta el borde de la
+       pestaña sobre el del contenedor para que se lean como una sola linea. */
+
+    /* [2026-08-15, G1] AQUI ESTABA `deasy-drawer__tab`, Y ERA `deasy-inline-tab` CON OTRO NOMBRE.
+     * Mismo mecanismo exacto —`border-bottom: 2px solid transparent` que se tiñe al activarse,
+     * texto de `--color-muted` a `--color-primary`— y solo se apartaba en los detalles: 0.6rem de
+     * padding en vez de 1, peso 600 en vez de 500.
+     *
+     * ⚠️ El censo de G7 NO la vio, y el motivo importa: sus cinco botones **no llevaban
+     * `role="tab"` ni `aria-selected`**, que es la señal de G7 — o sea que el fallo de estilo y el
+     * de accesibilidad eran el mismo fallo. Al colapsarla se arreglan los dos. */
+
+    /* Vista previa del dossier en PDF. Ojo al medirla: `.pdf-preview-frame` y su `iframe`
+       van tras un `v-if` que pide un PDF real, asi que hay que inyectarlos a mano. */
+
+    .pdf-preview-shell {
+        min-height: 70vh;
+        background: var(--color-surface);
+    }
+
+    .pdf-preview-frame {
+        height: 70vh;
+    }
+
+    .pdf-preview-iframe {
+        width: 100%;
+        height: 100%;
+        border: 0;
+        display: block;
+        background: var(--color-white);
+    }
+
+    /* 📌 AQUI VIVIO `.pdf-preview-empty` (†2026-08-19, F2). Era el estado vacio del visor de
+       PDF del dossier, con un solo consumidor y **letra de 0,95rem = 15,2 px, fuera de la
+       escala** —justo el tipo de valor que F5.1 barrio del resto del proyecto y que aqui
+       sobrevivio por vivir en una familia que no se llama `deasy-`—. El color y el tamaño los
+       da ahora `.deasy-empty`; lo unico suyo era el alto y el centrado, que son dos utilidades
+       en su sitio. */
+}
+
+/* ======================================================================================
+   SE QUEDAN SIN CAPA — DIEZ REGLAS. Lo que suprime cada una, en la bitacora (§4.4-c).
+
+   ⚠️ EL ORDEN DE ESTAS DIEZ NO ES DECORATIVO: al estar todas fuera de capa, entre ellas
+   desempata la especificidad y, a igualdad, el orden de aparicion. No las reordenes.
+   ====================================================================================== */
+
+/* ── 1 y 2. EL BOTON DE LA CABECERA ────────────────────────────────────────────────────
+   (0,2,1) alcanza a CUALQUIER `button` dentro de la cabecera, incluidos los que la
+   plantilla mete por el slot `#title` — de ahi que el disparador de `AppInfoTip` salga
+   permanentemente en su color de hover.
+
+   El `:hover` no se puede separar de la base: bajando solo uno, la plantilla ganaria en
+   hover y no en reposo, y la huella NO ve los `:hover`.
+
+   ⚠️ Aqui habia un aviso de que `FirmarPdf.vue` conservaba «a proposito» un `border-slate-200`
+   sin migrar, como unica excepcion de 4.4-d. **Ya no es cierto** (comprobado el 2026-08-14): esa
+   plantilla escribe `border-line` y **no queda ni un `slate-200` en el arbol**. El razonamiento
+   que sostenia la excepcion tampoco existe — dependia del `!important` que le prestaba el
+   repintado `.border-slate-200`, y esa regla se borro el 2026-08-13 con sus 54 consumidores. */
+/* ══ MEDICION 2026-08-13 · las diez bajan A LA VEZ ═══════════════════════════════════
+   Su orden relativo se conserva —bajar las diez juntas no cambia como compiten ENTRE si—,
+   asi que lo unico que cambia es su relacion con las utilidades que llegan por prop
+   (`body-class`, `content-class`, `footer-class`), que pasan a ganar.
+   ═══════════════════════════════════════════════════════════════════════════════════ */
+@layer components {
+    .deasy-dialog-root .deasy-dialog-header button {
+      background: var(--color-white);
+      color: var(--color-icon);
+      border: 1px solid var(--color-line-strong);
+    }
+
+    .deasy-dialog-root .deasy-dialog-header button:hover {
+      background: var(--color-surface);
+      color: var(--color-navy);
+    }
+
+    /* ── 3. EL VELO DE TODOS LOS MODALES ───────────────────────────────────────────────────
+       Tapa el `bg-slate-950/45 backdrop-blur-[2px]` que `AppModalShell.vue` y
+       `AppDialogOverlay.vue` escriben a mano, y el `@apply` que lo repite arriba: los tres
+       dicen lo mismo y ninguno pinta. 116 velos. Elegir cual vale es F5. */
+
+    .deasy-dialog-root {
+      background: var(--overlay-backdrop);
+      backdrop-filter: blur(3px);
+    }
+
+    /* ── 4. EL PANEL ───────────────────────────────────────────────────────────────────────
+       Por `content-class` llegan 20 `border-0`, 20 sombras y 1 `rounded-xl`, y esta regla se
+       los come: 49 bordes + 44 sombras + 5 radios. El `border-color` lo pone ESTA regla, no
+       el repintado de `overrides.css` — las dos declaran `--color-line`. */
+
+    .deasy-dialog-panel {
+      border-radius: var(--radius-2xl);
+      border: 1px solid var(--color-line);
+      background: var(--color-white);
+      box-shadow: var(--elev-3);
+    }
+
+    /* SIN PIEL — el panel que solo aporta posicion, para un modal que se pinta su propio fondo.
+       Va DETRAS de su base a proposito: las dos son (0,1,0) y en la misma capa, asi que decide el
+       orden. Estuvo 137 lineas por delante y por eso no aplicaba. */
+    .deasy-dialog-panel--plain {
+        background: transparent;
+    }
+
+    /* ── 5. EL TITULO ──────────────────────────────────────────────────────────────────────
+       ⚠️ Aqui el competidor NO es una utilidad: es el `h1…h6` de `base.css`, que tambien sigue
+       fuera de capa y declara `line-height: 1.2`. Hoy gana esta clase (0,1,0) por
+       especificidad; capada, perderia contra el elemento suelto (0,0,1) y los titulos bajarian
+       de 21.6 px a 19.2 px (121 nodos). */
+
+    /* ⚠️ Este `font-weight` llevaba un `!important` con el motivo «`.admin-typography h5` (0,1,1)
+       gana a esta clase (0,1,0) y lo dejaria en 500». **El motivo caduco el 2026-08-13**, cuando
+       los encabezados bajaron a `@layer base` (ver `base.css:39-57`): `base` va ANTES que
+       `components` en el orden de capas, asi que esta regla gana ya sin depender de la
+       especificidad — lo dice el propio comentario de aquella bajada.
+
+       Se comprobaron ademas los otros dos adversarios posibles antes de retirarlo, porque el
+       plan lo daba por vivo:
+       · `.process-dialog-content .deasy-dialog-title` (0,2,0, mas abajo en este fichero) declara
+         `font-weight: 400`, y SI le ganaria. No alcanza ningun nodo: el unico consumidor de
+         `process-dialog-content` es `AdminEditorModal`, que usa `AppModalShell` **sin
+         sobreescribir el slot `header`**, de modo que todo titulo renderiza dentro de
+         `.deasy-dialog-header`, donde manda la regla (0,3,0) que repone el 600.
+       · `@layer utilities`: ninguna de las tres plantillas con `deasy-dialog-title` escribe una
+         utilidad de peso (`AppModalShell`, `AppDialogOverlay`, `AdminRecordViewerModal`).
+       Retirado el 2026-08-14 (fase 0.1).
+
+    ⚠️ Y AL RETIRARLA SALIO ALGO PEOR, que ninguna de las dos revisiones anteriores vio:
+       **`.deasy-dialog-title` estaba declarada TRES veces en este mismo fichero**, con valores
+       distintos — esta en CSS crudo (`1rem`/`600`), otra con `@apply text-base … sm:text-lg`, y
+       una tercera contextual que solo reponia el color. Ganaba la ultima de las tres por orden,
+       asi que las otras dos eran letra muerta que se leia perfecta. El gate 22 no lo caza porque
+       vigila una BASE contra su MODIFICADOR, y esto eran tres reglas de la misma clase.
+       Las tres retiradas: el nivel es `deasy-title--panel`. (F2, 2026-08-19.) */
+
+    /* ── 6. EL CUERPO ──────────────────────────────────────────────────────────────────────
+       Lo que esta regla tapa es el `padding`: `body-class` trae 33 utilidades de padding en 24
+       usos y este `1.25rem` se las come todas (58 nodos, con saltos de 20 px a 0 y a 32).
+
+       ⚠️ NO le devuelvas un `background`. El fondo lo pone `overrides.css` desde
+       `@layer components` con el mismo blanco; teniendolo aqui, suelto, un
+       `body-class="… bg-…"` de plantilla pierde. */
+
+    .deasy-dialog-body {
+      color: var(--color-body);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      padding: 1.25rem;
+    }
+
+    /* ── 7. EL PIE ─────────────────────────────────────────────────────────────────────────
+       Tapa 4 utilidades de `footer-class` (`border-0 pt-0`, `px-6 lg:px-8`): 6 nodos. */
+
+    .deasy-dialog-footer {
+      background: var(--color-surface);
+      border-top: 1px solid var(--color-line);
+      padding: 1rem 1.25rem;
+    }
+
+    /* ── 8, 9 y 10. LOS DIALOGOS DE PROCESO ────────────────────────────────────────────────
+       ⚠️ ESTAS TRES NO PUEDEN BAJAR SOLAS. `.process-dialog-content .deasy-dialog-body` (0,2,0)
+       gana hoy a `.deasy-dialog-body` (0,1,0) porque las dos estan sueltas. Si estas bajan y
+       aquellas no, gana la MENOS especifica —estar fuera de capa vale mas que cualquier
+       especificidad— y el dialogo del editor de procesos cambia de color y de tamaño de letra
+       (12 nodos en `/admin/gestiones/procesos/mapa`).
+
+       Ojo al medirlo: capando las 27 a la vez NO se caza, porque el orden relativo se conserva.
+       Bajan cuando bajen `.deasy-dialog-title`, `-body` y `-footer`; ni antes, ni por separado. */
+
+    .process-dialog-content,
+    .process-dialog-content .deasy-dialog-header,
+    .process-dialog-content .deasy-dialog-body,
+    .process-dialog-content .deasy-dialog-footer {
+      font-family: var(--typeface);
+      font-size: var(--type-size);
+      font-weight: 400;
+      color: var(--color-strong);
+    }
+
+    .process-dialog-content .deasy-dialog-header {
+      font-weight: 600;
+      color: var(--color-strong);
+    }
+
+    .process-dialog-content .deasy-dialog-body,
+    .process-dialog-content .deasy-dialog-body p,
+    .process-dialog-content .deasy-dialog-body small,
+    .process-dialog-content .deasy-dialog-footer,
+    .process-dialog-content .deasy-dialog-footer .text-muted {
+      color: var(--color-strong);
+    }
+
+}

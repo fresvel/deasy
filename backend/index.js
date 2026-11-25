@@ -1,1126 +1,47 @@
 import "dotenv/config"
+import "./config/entornoVigente.js"; // corta el arranque si queda una variable MINIO_* sin renombrar
+import http from "node:http";
 import express from "express";
-import user_router from "./routes/user_router.js";
+import realtimeGateway from "./services/realtime/RealtimeGateway.js";
+import AvisoDeCanalCaido from "./services/canales/AvisoDeCanalCaido.js";
+import VigilanteDeCanales from "./services/canales/VigilanteDeCanales.js";
+import VencimientosDeEstructura from "./services/estructura/VencimientosDeEstructura.js";
+import { userRouter, dossierRouter } from "./dominios/identidad/index.js";
+import internalRouter from "./routes/internal_router.js";
 import admin_router from "./routes/admin_router.js"; // Eliminar al pasar todas las funciones a empresa
 import cors from "cors"
-import "./database/mongoose.js"
-import { assertMariaDBConnection } from "./config/mariadb.js";
-import { ensureMariaDBDatabase, ensureMariaDBSchema } from "./database/mariadb_initializer.js";
+import { assertPostgresConnection } from "./config/postgres.js";
+import { publishBaseSeedAssets } from "./services/system/SystemBootstrapService.js";
+import { sincronizarCatalogoRbac } from "./services/system/sincronizarCatalogoRbac.js";
+import DocumentosLegales from "./services/legal/DocumentosLegales.js";
+import { ensurePostgresSchema } from "./database/postgres_initializer.js";
 import cookieParser from "cookie-parser"
 import swaggerJsdoc from "swagger-jsdoc";
+import { swaggerDefinition } from "./config/swagger/definition.js";
 import swaggerUi from "swagger-ui-express";
-import { API_PREFIX, PATHS, ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
+import { ROUTES, DOCS_PATH, DOCS_JSON_PATH } from "./config/apiPaths.js";
 import sign_router from "./routes/sign_router.js";
 
-import program_router from "./routes/program_router.js";
-import unit_router from "./routes/unit_router.js";
-import area_router from "./routes/area_router.js";
+import {
+  programRouter as program_router,
+  systemRouter as system_router,
+  unitRouter as unit_router,
+} from "./dominios/organizacion/index.js";
 import tarea_router from "./routes/tarea_router.js"
-import whatsapp_router from "./routes/whatsapp_router.js"
-import dossier_router from "./routes/dossier_router.js"
-import chat_router from "./routes/chat_router.js";
-import notification_router from "./routes/notification_router.js";
+import { chatRouter as chat_router, notificationRouter as notification_router } from "./dominios/chat/index.js";
+import reset_password_router from "./routes/reset_password_router.js";
+import legalRouter from "./routes/legal_router.js";
+import email_router from "./routes/email_router.js";
+import { authMiddleware } from "./middlewares/auth.js";
+import { exigeVerificacionCompleta } from "./middlewares/exigeVerificacionCompleta.js";
+import { UserRepository } from "./dominios/identidad/index.js";
 
 const app = express();
 app.set("trust proxy", 1);
 
 
 const PORT = process.env.PORT || 3030
-const apiBaseUrl = process.env.SWAGGER_SERVER_URL || `http://localhost:${PORT}${API_PREFIX}`;
 
-const swaggerDefinition = {
-  openapi: "3.0.3",
-  info: {
-    title: "DEASY API",
-    version: "1.0.0",
-    description: "Documentación de los endpoints de la API DEASY, incluyendo autenticación y gestión de dossier académico."
-  },
-  servers: [
-    {
-      url: apiBaseUrl,
-      description: "Servidor actual"
-    }
-  ],
-  tags: [
-    {
-      name: "Auth",
-      description: "Operaciones relacionadas con autenticación de usuarios"
-    },
-    {
-      name: "Dossier",
-      description: "Operaciones relacionadas con la gestión del dossier académico del usuario"
-    }
-  ],
-  components: {
-    schemas: {
-      RegisterRequest: {
-        type: "object",
-        required: ["cedula", "password", "first_name", "last_name", "email"],
-        properties: {
-          cedula: {
-            type: "string",
-            description: "Número de identificación único del usuario",
-            example: "0954321876"
-          },
-          password: {
-            type: "string",
-            format: "password",
-            description: "Contraseña que será hasheada en el servidor. Debe cumplir al menos tres criterios: 8+ caracteres, mayúscula, minúscula, número.",
-            example: "Password123"
-          },
-          repassword: {
-            type: "string",
-            format: "password",
-            description: "Confirmación de la contraseña para validaciones en el cliente",
-            example: "Password123"
-          },
-          first_name: {
-            type: "string",
-            description: "Nombres del usuario",
-            example: "María Fernanda"
-          },
-          last_name: {
-            type: "string",
-            description: "Apellidos del usuario",
-            example: "García López"
-          },
-          email: {
-            type: "string",
-            format: "email",
-            description: "Correo principal para autenticación",
-            example: "maria.garcia@pucese.edu.ec"
-          },
-          correo: {
-            type: "string",
-            format: "email",
-            description: "Correo institucional (opcional)",
-            example: "maria.garcia@pucese.edu.ec"
-          },
-          direccion: {
-            type: "string",
-            description: "Dirección física del usuario",
-            example: "Esmeraldas, Ecuador"
-          },
-          whatsapp: {
-            type: "string",
-            description: "Número de WhatsApp con prefijo de país",
-            example: "+593987654321"
-          },
-          pais: {
-            type: "string",
-            description: "País de residencia",
-            example: "Ecuador"
-          },
-          pais_residencia: {
-            type: "string",
-            description: "País de residencia declarado en el formulario",
-            example: "Ecuador"
-          },
-          provincia_residencia: {
-            type: "string",
-            description: "Provincia o estado de residencia",
-            example: "Esmeraldas"
-          },
-          ciudad_residencia: {
-            type: "string",
-            description: "Ciudad de residencia",
-            example: "Esmeraldas"
-          },
-          calle_primaria: {
-            type: "string",
-            description: "Calle principal de residencia",
-            example: "Av. Libertad"
-          },
-          calle_secundaria: {
-            type: "string",
-            description: "Calle secundaria o intersección",
-            example: "Calle 9 de Octubre"
-          },
-          codigo_postal: {
-            type: "string",
-            description: "Código postal de residencia",
-            example: "080150"
-          }
-        }
-      },
-      RegisterResponse: {
-        type: "object",
-        properties: {
-          result: {
-            type: "string",
-            example: "ok"
-          }
-        }
-      },
-      LoginRequest: {
-        type: "object",
-        required: ["password"],
-        anyOf: [
-          { required: ["cedula"] },
-          { required: ["email"] }
-        ],
-        properties: {
-          cedula: {
-            type: "string",
-            description: "Cédula o identificador único del usuario. Obligatorio si no se envía email.",
-            example: "0954321876"
-          },
-          email: {
-            type: "string",
-            format: "email",
-            description: "Correo del usuario. Obligatorio si no se envía cedula.",
-            example: "maria.garcia@pucese.edu.ec"
-          },
-          password: {
-            type: "string",
-            format: "password",
-            description: "Contraseña del usuario",
-            example: "Password123"
-          }
-        }
-      },
-      UserPublic: {
-        type: "object",
-        properties: {
-          _id: { type: "string", example: "661f1b34fe5ed4e7a4a3f1c2" },
-          cedula: { type: "string", example: "0954321876" },
-          first_name: { type: "string", example: "María" },
-          last_name: { type: "string", example: "García" },
-          email: { type: "string", format: "email", example: "maria.garcia@pucese.edu.ec" },
-          whatsapp: { type: "string", example: "+593987654321" },
-          direccion: { type: "string", example: "Esmeraldas, Ecuador" },
-          pais: { type: "string", example: "Ecuador" },
-          pais_residencia: { type: "string", example: "Ecuador" },
-          provincia_residencia: { type: "string", example: "Esmeraldas" },
-          ciudad_residencia: { type: "string", example: "Esmeraldas" },
-          calle_primaria: { type: "string", example: "Av. Libertad" },
-          calle_secundaria: { type: "string", example: "Calle 9 de Octubre" },
-          codigo_postal: { type: "string", example: "080150" }
-        }
-      },
-      LoginResponse: {
-        type: "object",
-        properties: {
-          token: {
-            type: "string",
-            description: "Token JWT de acceso",
-            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
-          },
-          expiresIn: {
-            type: "integer",
-            description: "Tiempo de expiración del token en segundos",
-            example: 900
-          },
-          user: {
-            $ref: "#/components/schemas/UserPublic"
-          }
-        }
-      },
-      ErrorResponse: {
-        type: "object",
-        properties: {
-          message: { type: "string", example: "Descripción del error" },
-          code: { type: "integer", example: 400 }
-        }
-      },
-      TituloRequest: {
-        type: "object",
-        required: ["nivel", "tipo"],
-        properties: {
-          titulo: { type: "string", example: "Ingeniería en Sistemas" },
-          ies: { type: "string", example: "Universidad Técnica" },
-          nivel: {
-            type: "string",
-            enum: ["Técnico", "Tecnólogo", "Grado", "Maestría", "Maestría Tecnológica", "Diplomado", "Doctorado", "Posdoctorado"],
-            example: "Grado"
-          },
-          sreg: { type: "string", description: "Número de registro en SENESCYT", example: "1234567890" },
-          campo_amplio: { type: "string", example: "Ingeniería, Industria y Construcción" },
-          tipo: {
-            type: "string",
-            enum: ["Presencial", "Semipresencial", "Virtual", "Híbrido"],
-            example: "Presencial"
-          },
-          pais: { type: "string", default: "Ecuador", example: "Ecuador" },
-          sera: {
-            type: "string",
-            enum: ["Enviado", "Revisado", "Aprobado"],
-            default: "Enviado",
-            example: "Enviado"
-          }
-        }
-      },
-      ExperienciaRequest: {
-        type: "object",
-        properties: {
-          institucion: { type: "string", example: "Universidad Técnica" },
-          fecha_inicio: { type: "string", format: "date", example: "2020-01-15" },
-          fecha_fin: { type: "string", format: "date", example: "2023-12-31" },
-          funcion_catedra: {
-            type: "array",
-            items: { type: "string" },
-            example: ["Matemáticas", "Programación"]
-          },
-          tipo: {
-            type: "string",
-            enum: ["Docencia", "Profesional"],
-            example: "Docencia"
-          },
-          sera: {
-            type: "string",
-            enum: ["Enviado", "Revisado", "Aprobado"],
-            example: "Enviado"
-          }
-        }
-      },
-      ReferenciaRequest: {
-        type: "object",
-        properties: {
-          nombre: { type: "string", example: "Juan Pérez" },
-          cargo_parentesco: { type: "string", example: "Director Académico", description: "Cargo si es laboral, parentesco si es familiar" },
-          email: { type: "string", format: "email", example: "juan.perez@universidad.edu.ec" },
-          telefono: { type: "string", example: "+593987654321" },
-          institution: { type: "string", example: "Universidad Técnica", description: "Requerido si tipo es 'laboral'" },
-          tipo: {
-            type: "string",
-            enum: ["laboral", "personal", "familiar"],
-            example: "laboral"
-          }
-        }
-      },
-      FormacionRequest: {
-        type: "object",
-        properties: {
-          tema: { type: "string", example: "Metodologías Ágiles" },
-          institution: { type: "string", example: "Instituto de Capacitación" },
-          horas: { type: "integer", example: 40 },
-          fecha_inicio: { type: "string", format: "date", example: "2023-01-10" },
-          fecha_fin: { type: "string", format: "date", example: "2023-01-15" },
-          tipo: {
-            type: "string",
-            enum: ["Docente", "Profesional"],
-            example: "Profesional"
-          },
-          rol: {
-            type: "string",
-            enum: ["Asistencia", "Instructor", "Aprobación"],
-            example: "Asistencia"
-          },
-          pais: { type: "string", default: "Ecuador", example: "Ecuador" },
-          sera: {
-            type: "string",
-            enum: ["Enviado", "Revisado", "Aprobado"],
-            example: "Enviado"
-          }
-        }
-      },
-      CertificacionRequest: {
-        type: "object",
-        properties: {
-          titulo: { type: "string", example: "Certificado en Cloud Computing" },
-          institution: { type: "string", example: "Amazon Web Services" },
-          horas: { type: "integer", example: 80 },
-          fecha: { type: "string", format: "date", example: "2023-06-20" },
-          tipo: {
-            type: "string",
-            enum: ["Nacional", "Internacional"],
-            example: "Internacional"
-          },
-          sera: {
-            type: "string",
-            enum: ["Enviado", "Revisado", "Aprobado"],
-            example: "Enviado"
-          }
-        }
-      },
-      DossierResponse: {
-        type: "object",
-        properties: {
-          success: { type: "boolean", example: true },
-          data: {
-            type: "object",
-            properties: {
-              _id: { type: "string", example: "661f1b34fe5ed4e7a4a3f1c2" },
-              usuario: { type: "string", example: "661f1b34fe5ed4e7a4a3f1c1" },
-              cedula: { type: "string", example: "0954321876" },
-              titulos: { type: "array", items: { $ref: "#/components/schemas/TituloRequest" } },
-              experiencia: { type: "array", items: { $ref: "#/components/schemas/ExperienciaRequest" } },
-              referencias: { type: "array", items: { $ref: "#/components/schemas/ReferenciaRequest" } },
-              formacion: { type: "array", items: { $ref: "#/components/schemas/FormacionRequest" } },
-              certificaciones: { type: "array", items: { $ref: "#/components/schemas/CertificacionRequest" } }
-            }
-          }
-        }
-      },
-      SuccessResponse: {
-        type: "object",
-        properties: {
-          success: { type: "boolean", example: true },
-          message: { type: "string", example: "Operación realizada exitosamente" },
-          data: { type: "object" }
-        }
-      },
-      MyProfileResponse: {
-        type: "object",
-        properties: {
-          result: { type: "string", example: "ok" },
-          user: { $ref: "#/components/schemas/UserPublic" }
-        }
-      }
-    }
-  },
-  paths: {
-    [PATHS.users]: {
-      post: {
-        tags: ["Auth"],
-        summary: "Registrar un nuevo usuario",
-        description: "Crea un usuario en la plataforma aplicando las políticas de contraseña definidas.",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/RegisterRequest"
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Usuario creado con éxito",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/RegisterResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            description: "Error de validación o reglas de contraseña",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [PATHS.usersLogin]: {
-      post: {
-        tags: ["Auth"],
-        summary: "Iniciar sesión",
-        description: "Valida las credenciales del usuario (cédula o email + contraseña) y devuelve un token JWT junto con los datos principales del usuario.",
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/LoginRequest"
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Inicio de sesión exitoso",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/LoginResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            description: "Credenciales incorrectas",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.users}/me`]: {
-      get: {
-        tags: ["Auth"],
-        summary: "Obtener mi perfil",
-        description: "Recupera los datos del perfil del usuario autenticado usando el token presente en la cabecera de autorización.",
-        security: [
-          {
-            bearerAuth: []
-          }
-        ],
-        responses: {
-          "200": {
-            description: "Perfil obtenido exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/MyProfileResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            description: "No autorizado o token inválido",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                },
-                examples: {
-                  unauthorized: {
-                    summary: "Credenciales faltantes o token inválido",
-                    value: { message: "Token inválido", code: 401 }
-                  }
-                }
-              }
-            }
-          },
-          "404": {
-            description: "Usuario no encontrado",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                },
-                examples: {
-                  notfound: {
-                    summary: "No existe el usuario asociado al token",
-                    value: { message: "Usuario no encontrado", code: 404 }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            description: "Error interno obteniendo perfil",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                },
-                examples: {
-                  serverError: {
-                    summary: "Error en el servidor al recuperar perfil",
-                    value: { message: "Error interno obteniendo perfil", code: 500 }
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      patch: {
-        tags: ["Auth"],
-        summary: "Actualizar mi perfil",
-        description: "Modifica los campos del perfil del usuario autenticado. Solo se permiten cambios en los datos personales y de contacto.",
-        security: [
-          {
-            bearerAuth: []
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  first_name: { type: "string" },
-                  last_name: { type: "string" },
-                  whatsapp: { type: "string" },
-                  direccion: { type: "string" },
-                  pais: { type: "string" }
-                }
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Perfil actualizado exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/MyProfileResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            description: "No autorizado o token inválido",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                },
-                examples: {
-                  unauthorized: {
-                    summary: "Token ausente o inválido",
-                    value: { message: "Token inválido", code: 401 }
-                  }
-                }
-              }
-            }
-          },
-          "500": {
-            description: "Error interno actualizando perfil",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                },
-                examples: {
-                  serverError: {
-                    summary: "Excepción en el servidor al aplicar cambios",
-                    value: { message: "Error interno actualizando perfil", code: 500 }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-
-    [`${PATHS.dossier}/{cedula}`]: {
-      get: {
-        tags: ["Dossier"],
-        summary: "Obtener dossier completo del usuario",
-        description: "Obtiene el dossier académico completo del usuario por su cédula. Si no existe, lo crea automáticamente.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "Dossier obtenido exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/DossierResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            description: "Usuario no encontrado",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/titulos`]: {
-      post: {
-        tags: ["Dossier"],
-        summary: "Agregar título académico",
-        description: "Agrega un nuevo título académico al dossier del usuario.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/TituloRequest"
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Título agregado exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            description: "Error de validación",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/titulos/{tituloId}`]: {
-      put: {
-        tags: ["Dossier"],
-        summary: "Actualizar título académico",
-        description: "Actualiza un título académico existente en el dossier.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          },
-          {
-            name: "tituloId",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "ID del título a actualizar",
-            example: "661f1b34fe5ed4e7a4a3f1c3"
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/TituloRequest"
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Título actualizado exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            description: "Título no encontrado",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      },
-      delete: {
-        tags: ["Dossier"],
-        summary: "Eliminar título académico",
-        description: "Elimina un título académico del dossier.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          },
-          {
-            name: "tituloId",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "ID del título a eliminar",
-            example: "661f1b34fe5ed4e7a4a3f1c3"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "Título eliminado exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            description: "Título no encontrado",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/experiencia`]: {
-      post: {
-        tags: ["Dossier"],
-        summary: "Agregar experiencia laboral",
-        description: "Agrega una nueva experiencia laboral al dossier del usuario.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/ExperienciaRequest"
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Experiencia agregada exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            description: "Error de validación",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/referencias`]: {
-      post: {
-        tags: ["Dossier"],
-        summary: "Agregar referencia",
-        description: "Agrega una nueva referencia (laboral, personal o familiar) al dossier del usuario.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/ReferenciaRequest"
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Referencia agregada exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            description: "Error de validación",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/referencias/{referenciaId}`]: {
-      delete: {
-        tags: ["Dossier"],
-        summary: "Eliminar referencia",
-        description: "Elimina una referencia del dossier.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          },
-          {
-            name: "referenciaId",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "ID de la referencia a eliminar",
-            example: "661f1b34fe5ed4e7a4a3f1c4"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "Referencia eliminada exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            description: "Referencia no encontrada",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/formacion`]: {
-      post: {
-        tags: ["Dossier"],
-        summary: "Agregar formación/capacitación",
-        description: "Agrega un nuevo registro de formación o capacitación al dossier del usuario.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/FormacionRequest"
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Formación agregada exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            description: "Error de validación",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/formacion/{formacionId}`]: {
-      delete: {
-        tags: ["Dossier"],
-        summary: "Eliminar formación/capacitación",
-        description: "Elimina un registro de formación o capacitación del dossier.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          },
-          {
-            name: "formacionId",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "ID de la formación a eliminar",
-            example: "661f1b34fe5ed4e7a4a3f1c5"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "Formación eliminada exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            description: "Formación no encontrada",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/certificaciones`]: {
-      post: {
-        tags: ["Dossier"],
-        summary: "Agregar certificación",
-        description: "Agrega una nueva certificación o reconocimiento al dossier del usuario.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          }
-        ],
-        requestBody: {
-          required: true,
-          content: {
-            "application/json": {
-              schema: {
-                $ref: "#/components/schemas/CertificacionRequest"
-              }
-            }
-          }
-        },
-        responses: {
-          "200": {
-            description: "Certificación agregada exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            description: "Error de validación",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    [`${PATHS.dossier}/{cedula}/certificaciones/{certificacionId}`]: {
-      delete: {
-        tags: ["Dossier"],
-        summary: "Eliminar certificación",
-        description: "Elimina una certificación del dossier.",
-        parameters: [
-          {
-            name: "cedula",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "Cédula del usuario",
-            example: "0954321876"
-          },
-          {
-            name: "certificacionId",
-            in: "path",
-            required: true,
-            schema: { type: "string" },
-            description: "ID de la certificación a eliminar",
-            example: "661f1b34fe5ed4e7a4a3f1c6"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "Certificación eliminada exitosamente",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/SuccessResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            description: "Certificación no encontrada",
-            content: {
-              "application/json": {
-                schema: {
-                  $ref: "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-};
 
 const swaggerOptions = {
   definition: swaggerDefinition,
@@ -1185,25 +106,28 @@ const privateProxyPorts = new Set([
   "9443"
 ].filter(Boolean));
 
+const resolveCorsOrigin = (origin, callback) => {
+  const originUrl = parseUrl(origin);
+  const isPrivateProxyOrigin = Boolean(
+    process.env.DEASY_ENV !== "prod" &&
+    originUrl &&
+    originUrl.protocol === "https:" &&
+    privateProxyPorts.has(originUrl.port) &&
+    isPrivateOrLoopbackHost(originUrl.hostname)
+  );
+
+  if (!origin || whitelist.has(origin) || isPrivateProxyOrigin) {
+    return callback(null, true);
+  }
+
+  return callback("Error de cors: " + origin + " not authorized");
+};
+
 app.use((req, res, next) => cors({
   origin: (origin, callback) => {
     console.log(`Iniciando CORS`)
     console.log("Origin: " + origin);
-
-    const originUrl = parseUrl(origin);
-    const isPrivateProxyOrigin = Boolean(
-      process.env.DEASY_ENV !== "prod" &&
-      originUrl &&
-      originUrl.protocol === "https:" &&
-      privateProxyPorts.has(originUrl.port) &&
-      isPrivateOrLoopbackHost(originUrl.hostname)
-    );
-
-    if (!origin || whitelist.has(origin) || isPrivateProxyOrigin) {
-      return callback(null, true);
-    }
-
-    return callback("Error de cors: " + origin + " not authorized");
+    return resolveCorsOrigin(origin, callback);
   },
   credentials: true // Permite el envío de cookies y credenciales
 })(req, res, next))
@@ -1211,21 +135,20 @@ app.use((req, res, next) => cors({
 
 app.use(express.json());
 app.use(cookieParser())
-app.use("/uploads", express.static("uploads"));
 
 app.get("/health", async (req, res) => {
   try {
-    await assertMariaDBConnection();
+    await assertPostgresConnection();
     res.status(200).json({
       status: "ok",
       service: "backend",
-      mariadb: "ok",
+      database: "ok",
     });
   } catch (error) {
     res.status(503).json({
       status: "error",
       service: "backend",
-      mariadb: "error",
+      database: "error",
       message: error.message,
     });
   }
@@ -1237,24 +160,56 @@ app.get(DOCS_JSON_PATH, (req, res) => {
   res.send(swaggerSpec);
 });
 
-app.use(ROUTES.users, user_router)
+app.use(ROUTES.users, userRouter)
+// SOLO microservicios. Lleva su propia guarda; nginx ademas devuelve 404 desde fuera.
+app.use(ROUTES.internal, internalRouter)
+app.use(ROUTES.resetPassword, reset_password_router)
+// PUBLICO a proposito: los textos que hay que aceptar se leen ANTES de tener cuenta.
+app.use(ROUTES.legal, legalRouter)
+app.use(ROUTES.email, email_router)
 
-app.use(ROUTES.admin, admin_router)
+// ── LA PUERTA DEL REGISTRO EN TRES PASOS (C8) ────────────────────────────────────────────────
+//
+// ⚠️ EL GUARDIAN DEL ROUTER DE VUE NO ES UNA PUERTA. Decide que pantalla se pinta; quien tenga el
+// token llama aqui directamente y se salta el navegador entero. Este repositorio ya tropezo con eso
+// y lo dejo escrito donde dolio --`services/users/UserWorkspaceRepository.js`, en `getTaskItemsForTaskIds`--:
+//
+//     «El bloqueo era solo visual: la API los servia igual.»
+//
+// ⚠️ VA DESPUES DE `authMiddleware`, SIEMPRE. Sin `req.user` este middleware no tiene a quien mirar
+// y dejaria pasar todo: seria una puerta pintada. Por eso se monta el par, y no solo la puerta.
+//
+// DONDE SE APLICA: solo en los routers donde la autenticacion ya es obligatoria para TODAS sus
+// rutas. `program`, `units` y parte de `tarea` no piden autenticacion NINGUNA hoy
+// --hallazgo del 2026-08-31, anotado en el plan--; cerrarlas es un arreglo aparte y mas grande que
+// este, y colarlo aqui seria cambiar comportamiento dentro de otra tarea.
+//
+// `users` se queda fuera a proposito: ahi viven el alta, el acceso y LOS DOS PASOS DE VERIFICACION,
+// asi que cerrarlo dejaria a la gente sin poder completar lo que se le exige. Y `internal` tampoco,
+// que no la llama un navegador sino `channels`, con su clave compartida.
+// Al primer uso, como todo: este fichero es el punto de entrada y su cuerpo corre al final, asi
+// que aqui seria inofensivo — pero la puerta `check:instancias` no tiene excepciones, y tenerla
+// sin excepciones es justo lo que la hace fiable.
+let _userRepositorySingleton = null;
+const userRepositorySingleton = () => (_userRepositorySingleton ??= new UserRepository());
+const soloVerificados = exigeVerificacionCompleta((id) => userRepositorySingleton().findById(id));
+const exigeCuentaCompleta = [authMiddleware, soloVerificados];
+
+app.use(ROUTES.admin, ...exigeCuentaCompleta, admin_router)
 
 app.use(ROUTES.program, program_router)
 app.use(ROUTES.units, unit_router)
 
-app.use(ROUTES.area, area_router)
 
 app.use(ROUTES.tarea, tarea_router)
 
-app.use(ROUTES.whatsapp, whatsapp_router)
-app.use(ROUTES.chat, chat_router)
-app.use(ROUTES.notifications, notification_router)
+app.use(ROUTES.chat, ...exigeCuentaCompleta, chat_router)
+app.use(ROUTES.notifications, ...exigeCuentaCompleta, notification_router)
 
-app.use(ROUTES.dossier, dossier_router)
+app.use(ROUTES.dossier, ...exigeCuentaCompleta, dossierRouter)
 
-app.use(ROUTES.sign, sign_router)
+app.use(ROUTES.sign, ...exigeCuentaCompleta, sign_router)
+app.use(ROUTES.system, system_router)
 
 app.use(express.static("public"));
 
@@ -1263,25 +218,131 @@ app.use(express.static("public"));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const initializeMariaDBWithRetry = async () => {
-  const shouldResetSchema = String(process.env.MARIADB_RESET_SCHEMA_ON_START || "0") === "1";
-  const maxAttempts = Number(process.env.MARIADB_INIT_MAX_ATTEMPTS || 20);
-  const retryDelayMs = Number(process.env.MARIADB_INIT_RETRY_DELAY_MS || 3000);
+// Publica la semilla base en el almacén EN CADA ARRANQUE (defecto 1.17).
+//
+// POR QUÉ AQUÍ. `publishBaseSeedAssets` solo colgaba de `ensureDefaultProcess`, que a su vez solo
+// corre desde `POST /system/bootstrap/initialize` — y ese endpoint **se niega con 409 en cuanto la
+// instalación deja de ser virgen**. Así que en un entorno ya bootstrapeado NO HABÍA NINGÚN CAMINO
+// que llevara una semilla actualizada al almacén: ni reiniciar, ni desplegar (`apply-env.sh` solo hace
+// `pull` + `up -d`), ni el `POST /generadores_de_documento/sync`, que va en la dirección contraria (lee de
+// el almacén y escribe en Postgres, así que con el catálogo viejo solo consolida lo viejo).
+//
+// Y no era latente: crear una plantilla desde una semilla **descarga del almacén**
+// (`templateLifecycle.js:1229`), así que cada plantilla nueva heredaba la semilla obsoleta. Medido:
+// el arreglo de `49d41ce4` llevaba un día en el repo y estaba ausente de todas las pilas.
+//
+// Es SEGURO reescribir en cada arranque porque el centinela de `publishBaseSeedAssets` sigue
+// protegiendo lo que el admin edita: solo se republica el catálogo `Seeds/` —que nadie toca a mano—;
+// el artifact instanciado `System/` se respeta si ya existe. Coste medido: 48 PUT y ~92 KB, menos de
+// un segundo contra un almacén local.
+//
+// Best-effort a propósito: un almacén caído NO debe impedir que el backend sirva. La función ya captura
+// y devuelve `{ published: false, reason }` en vez de lanzar.
+const publishSeedsOnBoot = async () => {
+  const resultado = await publishBaseSeedAssets();
+  if (resultado?.published) {
+    console.log(`✅ Semilla base publicada en el almacén (artifact: ${resultado.artifact ? "sí" : "respetado"})`);
+    return;
+  }
+  console.warn(`⚠️  No se pudo publicar la semilla base en el almacén (${resultado?.reason || "desconocido"}). ` +
+    "El backend sigue en ejecución; las plantillas nuevas heredarían la semilla anterior.");
+};
+
+// EL ARCHIVO LEGAL, EN CADA ARRANQUE.
+//
+// Dos cosas, y en este orden:
+//
+//   1. `asegurarBuckets()` comprueba que el bucket de archivo TIENE bloqueo de objetos. La
+//      comprobación es pedirle su retención, no crearlo: medido contra el almacén, pedir la creación con
+//      bloqueo sobre un bucket que ya existe sin él responde «created successfully» y no bloquea
+//      nada. Si no lo tiene, esto LANZA — y hace bien: el bloqueo solo se concede al crear el
+//      bucket, así que no hay nada que reparar sobre la marcha, y archivar ahí produciría una
+//      prueba que no lo es.
+//   2. `adoptarDelArchivo()` reconstruye el índice si la tabla está vacía. La semilla del texto
+//      entra por el almacén, y una fila necesita el `object_version_id`, que NO EXISTE hasta después de
+//      subir el objeto: por eso no puede ser un `INSERT` del esquema. Con filas, no toca nada.
+//
+// Best-effort a propósito, igual que la semilla base: un almacén caído no debe impedir que el backend
+// sirva. Pero se avisa MUY alto, porque mientras esto falle no hay textos que aceptar y el alta de
+// personas se queda sin consentimiento que registrar.
+const prepararArchivoLegal = async () => {
+  try {
+    const legales = new DocumentosLegales();
+    await legales.asegurarBuckets();
+    const adoptados = await legales.adoptarDelArchivo();
+    if (adoptados.length) {
+      // Se distingue INDEXADO (fila nueva, instalación virgen) de SELLADO (fila antigua que se
+      // quedó sin puntero al salir el texto de la base): son dos situaciones muy distintas y quien
+      // lee el arranque necesita saber cuál acaba de ocurrir.
+      const detalle = adoptados.map((d) => `${d.clase} ${d.version} [${d.accion}]`).join(", ");
+      console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con el almacén (${detalle})`);
+      return;
+    }
+    console.log("✅ Archivo legal verificado (bloqueo de objetos activo)");
+  } catch (error) {
+    console.error(`⚠️  ARCHIVO LEGAL NO OPERATIVO: ${error.message}`);
+    console.error("⚠️  Mientras esto falle no hay textos legales que aceptar. El backend sigue en ejecución.");
+  }
+};
+
+// LOS PERMISOS NUEVOS DEL CODIGO, EN CADA ARRANQUE (frente 20, P8).
+//
+// Sin esto, un recurso añadido a `rbacCatalog.js` no llegaba nunca a una base ya instalada, y como una
+// tabla sin permiso queda CERRADA, sus tablas se quedaban inaccesibles para todos menos AdminSistema.
+// Que añade, que concede y por que no toca lo demas: `services/system/sincronizarCatalogoRbac.js`.
+//
+// Best-effort A PROPOSITO, y aqui no es comodidad sino que el fallo es SEGURO: si no sincroniza, lo
+// nuevo sigue cerrado -- nadie ve de mas--, y la transaccion garantiza que no queda a medias. Tumbar el
+// backend por eso dejaria sin servicio TODO (acceso, firmas, tareas) por unos permisos de menos.
+//
+// ⚠️ NUNCA LANZA, y tiene que seguir asi: se llama dentro del `try` de los reintentos, y un error que
+// escapara repetiria veinte veces la inicializacion del esquema y se saltaria la semilla y el archivo
+// legal. Va DESPUES del esquema porque necesita las tablas, y antes de lo demas porque no depende de
+// el almacén.
+const sincronizarPermisosAlArrancar = async () => {
+  try {
+    const resultado = await sincronizarCatalogoRbac();
+    if (!resultado.instalado) {
+      console.log("ℹ️  Catalogo RBAC: el sistema no esta instalado; lo siembra el bootstrap.");
+      return;
+    }
+    if (!resultado.recursos.length && !resultado.acciones.length && !resultado.permisos.length) {
+      console.log("✅ Catalogo RBAC al dia");
+      return;
+    }
+    console.log(
+      `✅ Catalogo RBAC sincronizado: ${resultado.recursos.length} recurso(s), ${resultado.acciones.length} accion(es), ` +
+      `${resultado.permisos.length} permiso(s) y ${resultado.concesiones} concesion(es) nuevos ` +
+      `(recursos: ${resultado.recursos.join(", ") || "ninguno"})`
+    );
+  } catch (error) {
+    console.error(`⚠️  CATALOGO RBAC SIN SINCRONIZAR: ${error.message}`);
+    console.error("⚠️  Los permisos nuevos del codigo no estan en la base y sus tablas siguen CERRADAS. " +
+      "No se aplico nada a medias; se reintenta en el proximo arranque. El backend sigue en ejecucion.");
+  }
+};
+
+const initializeDatabaseWithRetry = async () => {
+  const shouldResetSchema = String(process.env.DB_RESET_SCHEMA_ON_START || "0") === "1";
+  const maxAttempts = Number(process.env.DB_INIT_MAX_ATTEMPTS || 20);
+  const retryDelayMs = Number(process.env.DB_INIT_RETRY_DELAY_MS || 3000);
 
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     try {
-      await ensureMariaDBDatabase();
-      await assertMariaDBConnection();
-      await ensureMariaDBSchema({ reset: shouldResetSchema });
-      console.log("✅ MariaDB inicializada correctamente");
+      await assertPostgresConnection(); // PostgreSQL vía el adaptador
+      await ensurePostgresSchema({ reset: shouldResetSchema });
+      console.log("✅ PostgreSQL inicializada correctamente");
+      await sincronizarPermisosAlArrancar();
+      await publishSeedsOnBoot();
+      await prepararArchivoLegal();
       return;
     } catch (error) {
       const isLastAttempt = attempt === maxAttempts;
       console.error(
-        `⚠️  Falló la inicialización de MariaDB (intento ${attempt}/${maxAttempts}): ${error.message}`
+        `⚠️  Falló la inicialización de PostgreSQL (intento ${attempt}/${maxAttempts}): ${error.message}`
       );
       if (isLastAttempt) {
-        console.error("⚠️  Se agotaron los reintentos de MariaDB. El backend seguirá en ejecución.");
+        console.error("⚠️  Se agotaron los reintentos de PostgreSQL. El backend seguirá en ejecución.");
         return;
       }
       await sleep(retryDelayMs);
@@ -1290,11 +351,36 @@ const initializeMariaDBWithRetry = async () => {
 };
 
 const startServer = async () => {
-  await initializeMariaDBWithRetry();
+  await initializeDatabaseWithRetry();
 
-  app.listen(PORT, () => {
-    console.log(`Servidor iniciado en: http://localhost:${PORT}/easym/v1/`)
+  const httpServer = http.createServer(app);
+  realtimeGateway().init(httpServer, { corsOrigin: resolveCorsOrigin, credentials: true });
+
+  httpServer.listen(PORT, () => {
+    console.log(`Servidor iniciado en: http://localhost:${PORT}/deasy/v1/`)
+    console.log(`WebSocket (Socket.IO) escuchando en: ws://localhost:${PORT}/socket.io`)
   });
+
+  // ⚠️ EL VIGILANTE (C10). La pantalla de canales arregló que el estado mintiera; NO arregló que
+  // nadie mire. El 2026-08-31 el servicio estuvo TRECE HORAS parado y la información habría estado
+  // disponible todo el tiempo — para quien hubiera abierto la pantalla, y nadie la abrió.
+  //
+  // ⚠️ Se arranca DESPUÉS de escuchar, y con su propio umbral de 5 min: durante el arranque todo
+  // parece caído, y sin eso cada despliegue mandaría una alerta.
+  //
+  // ⚠️ Y VIVE EN ESTE PROCESO, que está fijado a UNA instancia (`replicas: 1`, por el tiempo real).
+  // Con dos, las dos vigilarían y cada aviso llegaría por duplicado. Escalar el backend exige
+  // resolver esto ANTES, no después.
+  new VigilanteDeCanales({
+    avisador: new AvisoDeCanalCaido({ realtime: realtimeGateway() }),
+  }).iniciar();
+
+  // ⚠️ LOS VENCIMIENTOS DE LA ESTRUCTURA (frente 27). Una supresión con fecha futura no despierta a
+  // ningún disparador el día que llega: nadie escribe nada. Esta tarea aplica sus efectos —revocar
+  // roles, cancelar vacantes— al arrancar y después cada hora. También vive en este proceso, y
+  // también cuenta con que sea UNA instancia; a diferencia del vigilante, con dos no rompería nada,
+  // porque repetirla no hace daño.
+  new VencimientosDeEstructura().iniciar();
 };
 
 startServer();

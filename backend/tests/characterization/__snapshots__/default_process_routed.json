@@ -1,0 +1,324 @@
+{
+  "derived_entregable": {
+    "document": {
+      "id": "<normalized>",
+      "task_item_id": "<normalized>"
+    },
+    "fill_flows": [
+      {
+        "current_step_order": 1,
+        "document_version_id": "<normalized>",
+        "id": "<normalized>",
+        "status": "pendiente"
+      }
+    ],
+    "fill_requests": [
+      {
+        "assigned_person_id": 1,
+        "id": "<normalized>",
+        "is_manual": 0,
+        "participante_id": "<normalized>",
+        "recorrido_id": "<normalized>",
+        "status": "pendiente",
+        "step_order": 1
+      }
+    ],
+    "task_item": {
+      "assigned_person_id": 3,
+      "created_by_person_id": 3,
+      "document_status": "Pendiente de llenado",
+      "edicion_id": "<normalized>",
+      "end_date": "<normalized>",
+      "id": "<normalized>",
+      "origin_kind": "user_added",
+      "origin_unit_id": 8,
+      "responsible_position_id": 25,
+      "sort_order": 999,
+      "source_task_item_id": "<normalized>",
+      "start_date": "<normalized>",
+      "target_unit_id": null,
+      "task_id": "<normalized>",
+      "title": "zz char routed derivado",
+      "user_started_at": null,
+      "vinculo_id": "<normalized>"
+    },
+    "versions": [
+      {
+        "edicion_id": "<normalized>",
+        "final_file_path": null,
+        "format": null,
+        "id": "<normalized>",
+        "payload_object_path": null,
+        "status": "Pendiente de llenado",
+        "task_item_id": "<normalized>",
+        "version": 1,
+        "version_label": "1.0",
+        "version_minor": 0,
+        "working_file_path": null
+      }
+    ]
+  },
+  "derived_flujo_entrega": [
+    {
+      "accion": "entrega",
+      "code": null,
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": null,
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": null,
+          "unit_id": null,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    }
+  ],
+  "derived_flujo_firma": [
+    {
+      "accion": "firma",
+      "code": "firma_1",
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": "Firma 1",
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": "firma_1",
+          "unit_id": null,
+          "unit_scope_type": "context_exact"
+        },
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 2,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": "firma_1_2",
+          "unit_id": null,
+          "unit_scope_type": "context_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "firma",
+      "code": "firma_2",
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": "Firma 2",
+      "orden": 2,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": "firma_2",
+          "unit_id": null,
+          "unit_scope_type": "context_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    }
+  ],
+  "derived_respuesta": {
+    "status": 200,
+    "body": {
+      "definition_id": 1,
+      "item_mode": "routed",
+      "mode": "derived",
+      "recipient_person_id": 1,
+      "responsible_position_id": 25,
+      "result": "ok",
+      "task_id": "<normalized>",
+      "task_item_id": "<normalized>",
+      "unit_id": 8
+    }
+  },
+  "free_entregable": {
+    "document": {
+      "id": "<normalized>",
+      "task_item_id": "<normalized>"
+    },
+    "fill_flows": [
+      {
+        "current_step_order": 1,
+        "document_version_id": "<normalized>",
+        "id": "<normalized>",
+        "status": "pendiente"
+      }
+    ],
+    "fill_requests": [
+      {
+        "assigned_person_id": 2,
+        "id": "<normalized>",
+        "is_manual": 0,
+        "participante_id": "<normalized>",
+        "recorrido_id": "<normalized>",
+        "status": "pendiente",
+        "step_order": 1
+      },
+      {
+        "assigned_person_id": 3,
+        "id": "<normalized>",
+        "is_manual": 0,
+        "participante_id": "<normalized>",
+        "recorrido_id": "<normalized>",
+        "status": "pendiente",
+        "step_order": 2
+      }
+    ],
+    "task_item": {
+      "assigned_person_id": 3,
+      "created_by_person_id": 3,
+      "document_status": "Pendiente de llenado",
+      "edicion_id": "<normalized>",
+      "end_date": "<normalized>",
+      "id": "<normalized>",
+      "origin_kind": "user_added",
+      "origin_unit_id": 8,
+      "responsible_position_id": 25,
+      "sort_order": 1,
+      "source_task_item_id": "<normalized>",
+      "start_date": "<normalized>",
+      "target_unit_id": 8,
+      "task_id": "<normalized>",
+      "title": "zz char routed libre\n\nEntregable ad-hoc con flujo definido al enviar.",
+      "user_started_at": null,
+      "vinculo_id": "<normalized>"
+    },
+    "versions": [
+      {
+        "edicion_id": "<normalized>",
+        "final_file_path": null,
+        "format": null,
+        "id": "<normalized>",
+        "payload_object_path": null,
+        "status": "Pendiente de llenado",
+        "task_item_id": "<normalized>",
+        "version": 1,
+        "version_label": "1.0",
+        "version_minor": 0,
+        "working_file_path": null
+      }
+    ]
+  },
+  "free_flujo_entrega": [
+    {
+      "accion": "entrega",
+      "code": null,
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": null,
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": null,
+          "unit_id": null,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    },
+    {
+      "accion": "entrega",
+      "code": null,
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": null,
+      "orden": 2,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": null,
+          "unit_id": null,
+          "unit_scope_type": "unit_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    }
+  ],
+  "free_flujo_firma": [
+    {
+      "accion": "firma",
+      "code": "firma_1",
+      "edicion_id": "<normalized>",
+      "id": "<normalized>",
+      "nombre": "Firma 1",
+      "orden": 1,
+      "participantes": [
+        {
+          "cargo_id": null,
+          "id": "<normalized>",
+          "orden": 1,
+          "persona_id": "<normalized>",
+          "resolver_type": "specific_person",
+          "slot": "firma_1",
+          "unit_id": null,
+          "unit_scope_type": "context_exact"
+        }
+      ],
+      "task_item_id": "<normalized>"
+    }
+  ],
+  "free_respuesta": {
+    "status": 200,
+    "body": {
+      "definition_id": 1,
+      "mode": "free",
+      "recipient_person_id": 2,
+      "responsible_position_id": 25,
+      "result": "ok",
+      "task_id": "<normalized>",
+      "task_item_id": "<normalized>",
+      "term_id": "<normalized>",
+      "unit_id": 8
+    }
+  },
+  "free_sin_flujo_rechazado": {
+    "status": 400,
+    "body": {
+      "message": "Un envío necesita su flujo: indica al menos quién elabora el entregable y quién lo firma."
+    }
+  },
+  "vinculo_routed": {
+    "status": 200,
+    "body": {
+      "catalogo_documental": [
+        {
+          "edicion_id": "<normalized>",
+          "id": "<normalized>",
+          "item_mode": "routed",
+          "name": "Informe general",
+          "sort_order": 1
+        }
+      ],
+      "definition_id": 1,
+      "result": "ok",
+      "task_id": "<normalized>"
+    }
+  }
+}

@@ -1,0 +1,78 @@
+---
+title: "Modos de emisión y plantillas"
+description: "`single`, `replicated` y `routed`, y el modelo «libro y ediciones» de las plantillas."
+sidebar:
+  order: 2
+---
+Vive en `vinculos.item_mode`, es decir, **en el vinculo plantilla-proceso**, no en la plantilla. Es un matiz importante. Define *cuando* nace el entregable y *de donde sale su flujo*:
+
+| **Modo**     | **Flujo**                                     | **Instanciación**                                                                                            | **Ejemplo**                             |
+|:-------------|:----------------------------------------------|:-------------------------------------------------------------------------------------------------------------|:----------------------------------------|
+| `single`     | Predefinido en la plantilla (entrega y firma) | Una instancia automática al lanzar, por cada responsable que resuelvan las reglas                            | Informe de Investigación Formativa      |
+| `replicated` | Predefinido                                   | **Sin fan-out automático**: el responsable crea N replicas etiquetadas que **heredan** el flujo del original | Un requerimiento por cada docente nuevo |
+| `routed`     | **Ninguno**                                   | El usuario define entrega y firma **al instanciar** (en tiempo de ejecución)                                 | Tareas ad-hoc                           |
+
+Truco de implementación para distinguirlos en la base de datos: los flujos *de plantilla* tienen `task_item_id IS NULL`; los flujos creados en tiempo de ejecución tienen `task_item_id != NULL`. Los materializa `materializeRuntimeFlowForTaskItem`.
+
+Las replicas son `task_items` con `origin_kind=’user_added’` enlazadas por `source_task_item_id` al original.
+
+El **“Proceso por defecto”** (slug `default`, sembrado por el bootstrap) es un `routed` comodin para tareas ad-hoc que no pertenecen a ningun proceso (por ejemplo, “haz el informe de este evento”). El `CLAUDE.md` insiste: **no es “memorandums”**.
+
+:::note[Resolutores de flujo autorables]
+
+Solo `task_assignee` (“Responsable del entregable”) y `cargo_in_scope` (“Por cargo”) en plantillas *official*; `specific_person` se anade en *ad_hoc*. `document_owner`, `position` y `manual_pick` están **retirados**: ya no son una deprecación blanda de la autoría web, sino que **salieron del `CHECK`** de `participantes_declarados.resolver_type`, que hoy solo admite esos tres valores.
+
+Y desde el 2026-10-09 **no hay por dónde colarlos**: sobrevivieron un año en el código porque el lado de la firma guardaba sus firmantes en un JSONB que ningún `CHECK` cubría, y al pasarlos a filas el valor retirado no se puede ni insertar.
+
+El criterio que los mató, y que conviene tener presente al añadir cualquier cosa a estas tablas: **lo que la web no autora, no existe**. Su único productor era el `meta.yaml`; retirado el YAML, se quedaron sin quien los escribiera.
+
+:::
+
+## Plantillas: el modelo “libro y ediciones”
+
+```mermaid
+%% diagrama 09 — plantillas: el generador, el libro (catalogo_documental) y sus ediciones
+flowchart TD
+    GEN["generadores_de_documento<br/>(quien produce el PDF: tipo latex / servicio,<br/>source_path o destino, preview_path)"]
+    DEL["catalogo_documental — EL LIBRO<br/>code UNIQUE, display_name, description,<br/>template_scope (official / ad_hoc), owner_person_id"]
+    ART["ediciones — LA EDICION<br/>storage_version, lifecycle_state, base_object_prefix,<br/>available_formats, generador_id, content_hash,<br/>parent_version_id (autorreferencial = linaje)"]
+
+    DEL -->|"1:N"| ART
+    GEN --> ART
+```
+
+Con UNIQUE sobre `(catalogo_documental_id, storage_version)`. El esquema lleva comentarios explícitos: la identidad, el scope y la persona propietaria viven en `catalogo_documental`; `ediciones` guarda el estado, el almacenamiento y **quién produce el PDF** de cada versión.
+
+**El proceso propietario no vive en ninguna de las dos** desde el 2026-10-04: a qué línea sirve una edición lo dice su **vínculo** en `vinculos`. `catalogo_documental` tuvo dos columnas con ese dato copiado —`owner_process_id` y `owner_variation_key`— y se retiraron junto con el guardia que las comparaba con el vínculo, que era su único lector. Lo que la base impone hoy es que el formato **no cruce de proceso** —`trg_vinculo_formato_un_proceso`, que no se puede saltar ni el clon, ni los scripts, ni un `INSERT` a mano—. La regla llegó a decir «a una sola línea» y se retiró el 2026-10-12 porque rompía la simetría de las dos identidades; está contado en [el vínculo](/modelo/vinculo/).
+
+:::note[La semilla pasó a ser un catálogo de generadores]
+
+La tabla del diagrama se llamaba `template_seeds` y colgaba de `catalogo_documental`. Significaba «el esqueleto LaTeX que se copia», y era **el** mecanismo: no había camino para definir un documento sin escribir `.tex.j2`. El frente 23 le cambió el significado —pasa a ser **el servicio que produce este documento**— y movió el puntero a la edición, que es quien lo declara. La semilla LaTeX sigue ahí: es el primer generador del catálogo, de `tipo = 'latex'`.
+
+:::
+
+:::caution[La palabra “entregable” significa dos cosas]
+
+En `sqlTables.js` la tabla `task_items` se etiqueta “Entregables” (la *instancia* a producir). En el esquema, `catalogo_documental` es “el libro”: la *identidad de la plantilla*. Es una fuente real de confusión al leer el código; siempre hay que mirar el contexto.
+
+:::
+
+### El contenido: Jinja2 sobre LaTeX
+
+Para el generador de `tipo = 'latex'`, el cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en el almacén, no en la base de datos. El bootstrap pública el paquete `backend/services/system/seeds/informe-general` — `schema.json`, `defaults.yaml`, `README.md` y el árbol `src/` con `main.tex.j2` y `make.sh` — y válida el pipeline: render Jinja2 con `StrictUndefined` → `pdflatex` → PDF.
+
+**No hay `meta.yaml`**: el flujo se autora en la base, no en un YAML, desde el §0.8. Y `data.yaml` **no es un fichero de la semilla**: es un objeto del almacén que el bootstrap escribe copiando `defaults.yaml` al prefijo de la edicion (`publishBaseSeedAssets`).
+
+La **propiedad** se expresa por el prefijo dentro del almacén, en `base_object_prefix`: `System/...` para las plantillas curadas por el administrador, `Users/{id_de_persona}/...` para las subidas por un gestor —el id y no la cédula, porque un documento de identidad puede cambiar y la ruta de los ficheros no debe—. El pipeline de maduración documentado es:
+
+`office` (Word/Excel/PDF subido por el gestor) ⟶ `jinja2` (curado por el administrador)
+
+:::note[Deuda declarada]
+
+Falta *cablear* el render Jinja2 a PDF en tiempo de ejecución: hoy el render vive en el `make.sh` de la propia semilla (utileria de línea de comandos), y el backend no lo invoca.
+
+:::
+
+### Ciclo de vida y versionado
+
+`ediciones.lifecycle_state` admite `draft`, `published` y `retired`, y **por defecto `draft`**: una edición nace sin publicar y hay que publicarla explícitamente. El versionado es **por linaje**: una fila nueva con `storage_version` nuevo y `parent_version_id` apuntando a la anterior. `templateLifecycle.js` retira la versión publicada previa del mismo código al publicar, y válida que haya al menos un paso de entrega. **Y desde el 2026-10-11 esa retirada ya no es sólo una cortesía del código**: `uq_ediciones_una_publicada` —un único sobre la columna generada `publicada_flag`, que vale `1` sólo si está publicada y `NULL` si no— hace que la base **rechace** una segunda publicada del mismo entregable. La versión lleva además un `CHECK` de semver de tres segmentos. Ese último requisito **se relaja para `routed`**, que por definición no autora flujo.

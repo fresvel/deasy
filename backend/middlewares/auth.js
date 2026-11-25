@@ -35,7 +35,11 @@ export const authMiddleware = (req, res, next) => {
     req.user = decoded;
 
     next();
-  } catch (error) {
+  } catch {
+    // Se ignora el detalle a propósito: lo único que puede lanzar dentro del `try` es
+    // `jwt.verify`, y un token caducado o manipulado es el camino ESPERADO (el frontend
+    // reacciona al 401 pidiendo refresco). Registrarlo sería ruido en cada expiración, y
+    // devolver el motivo al cliente le diría a un atacante por qué falló la verificación.
     return res.status(401).json({
       message: "Token inválido"
     });

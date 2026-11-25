@@ -1,4 +1,4 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import { RELATED_RECORD_CONFIG } from "@/modules/admin/services/AdminTableManagerConfig";
 

@@ -1,45 +1,41 @@
 <template>
   <div
     ref="rootElement"
-    class="deasy-dialog-root fixed inset-0 z-1060 overflow-y-auto bg-slate-950/45 px-4 py-8 backdrop-blur-[2px]"
+    class="deasy-dialog-root fixed inset-0 overflow-y-auto px-4 py-8 z-(--z-modal)"
     :class="controlled ? (open ? 'flex' : 'hidden') : 'hidden'"
     data-dialog-root
     tabindex="-1"
-    :aria-labelledby="labelledBy"
+    role="dialog"
+    :aria-labelledby="labelledBy || undefined"
     :aria-hidden="controlled ? (!open).toString() : 'true'"
     aria-modal="true"
     v-bind="attrs"
     @click.self="handleBackdropClick"
   >
     <div class="deasy-dialog-shell mx-auto flex min-h-full w-full justify-center" :class="shellClass">
-      <div class="deasy-dialog-panel relative w-full overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-2xl" :class="contentClass">
+      <div class="deasy-dialog-panel relative w-full overflow-hidden" :class="contentClass">
         <div
           v-if="showHeader"
-          class="deasy-dialog-header flex items-center justify-between gap-4 border-b border-slate-200 px-6 py-5"
+          class="deasy-dialog-header flex items-center justify-between gap-4"
         >
           <slot name="header">
-            <h5 class="deasy-dialog-title text-lg font-bold text-slate-900" :id="labelledBy">
+            <h5 class="deasy-title deasy-title--panel" :id="labelledBy">
               <slot name="title">{{ title }}</slot>
             </h5>
           </slot>
-          <button
+          <AppCloseButton
             v-if="showCloseButton"
-            type="button"
-            class="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 transition-colors"
-            :aria-label="closeLabel"
-            :title="closeLabel"
+            :label="closeLabel"
             v-bind="closeButtonAttrs"
             @click="handleClose"
-          >
-            <IconX class="h-4 w-4" stroke-width="2.5" />
-          </button>
+          />
         </div>
-        <div class="deasy-dialog-body px-6 py-5" :class="bodyClass">
+        <div class="deasy-dialog-body" :class="bodyClass">
           <slot />
         </div>
         <div
           v-if="$slots.footer"
-          class="deasy-dialog-footer flex flex-wrap items-center justify-end gap-3 border-t border-slate-200 px-6 py-4"
+          class="deasy-dialog-footer flex flex-wrap items-center justify-end gap-3"
           :class="footerClass"
         >
           <slot name="footer" />
@@ -50,18 +46,20 @@
 </template>
 
 <script setup>
-import { computed, ref, useAttrs } from "vue";
-import AppButton from "@/shared/components/buttons/AppButton.vue";
-import { IconX } from "@tabler/icons-vue";
+import AppCloseButton from "@/shared/components/buttons/AppCloseButton.vue";
+import { computed, nextTick, onBeforeUnmount, ref, useAttrs, watch } from "vue";
+import { elevarSobreLoVisible, liberarAltura } from "@/shared/utils/modalController";
 
 const props = defineProps({
   title: {
     type: String,
     default: ""
   },
+  /* Deja de ser obligatorio al absorber `AppDialogOverlay` (2026-08-15): aquel no lo pedia y sus
+     nueve consumidores no lo pasan. Sin el, no se emite el atributo en vez de emitirlo vacio. */
   labelledBy: {
     type: String,
-    required: true
+    default: ""
   },
   size: {
     type: String,
@@ -117,6 +115,44 @@ const emit = defineEmits(["close"]);
 
 const attrs = useAttrs();
 const rootElement = ref(null);
+
+/* LA ALTURA — sólo para los modales que gobierna Vue (`controlled`, con `:open`). Los demás pasan
+   por `Modal.show()`, que llama al mismo ayudante: una sola regla para las dos mitades.
+
+   Esta mitad era la unica que NO elevaba, y por eso era la unica que se podia romper: el asistente
+   de procesos se abria por debajo del editor que lo habia lanzado y parecia que el boton no hacia
+   nada. Se intento arreglar declarando un nivel fijo por componente y **no cabe**: ese mismo
+   asistente se abre desde siete sitios a dos profundidades distintas.
+
+   El `nextTick` no es adorno: al abrir hay que medir con las clases YA aplicadas, o el modal que
+   acaba de cerrarse en el mismo ciclo todavia cuenta como visible y el nuevo sale un escalon de
+   mas. Y liberar al cerrar es la otra mitad del mecanismo — sin ello cada apertura deja un peldaño
+   que no vuelve a bajar. */
+watch(
+  () => props.open,
+  async (abierto) => {
+    if (!props.controlled) return;
+    if (!abierto) {
+      liberarAltura(rootElement.value);
+      return;
+    }
+    await nextTick();
+    elevarSobreLoVisible(rootElement.value);
+  },
+  /* `immediate`, Y NO ES UN DETALLE. Un modal que se monta YA ABIERTO —`v-if="x"` junto a
+     `:open="x"`, que es como se escriben casi todos— no ve cambiar `open` nunca: nace en `true`.
+     Sin esto no se elevaba, y quedaba a la altura base. Si se abría desde la página, daba igual;
+     si se abría DESDE OTRO MODAL, ganaba el que fuera después en el documento. Así el diálogo de
+     «Cambiar de padre» salió por debajo del modal del proceso que lo había pedido (2026-11-24): la
+     pantalla se quedaba en «Guardando…» esperando una respuesta que no se podía dar. */
+  { immediate: true }
+);
+
+/* Y al desmontarse abierto —el mismo `v-if`— hay que soltar el peldaño: `open` tampoco cambia. */
+onBeforeUnmount(() => {
+  if (props.controlled) liberarAltura(rootElement.value);
+});
+
 
 const shellClass = computed(() => {
   const classes = ["items-center"];

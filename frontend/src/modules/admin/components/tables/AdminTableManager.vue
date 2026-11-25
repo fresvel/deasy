@@ -1,5 +1,5 @@
 <template>
-  <div class="py-4">
+  <div class="flex flex-col gap-3">
     <AdminFeedbackToast
       :visible="feedbackToast.visible"
       :kind="feedbackToast.kind"
@@ -8,26 +8,156 @@
       @close="hideFeedbackToast"
     />
 
-    <AdminTableHeader
-      :table-header-icon="tableHeaderIcon"
-      :table-header-title="tableHeaderTitle"
-      :table-header-subtitle="tableHeaderSubtitle"
-      :table="table"
-      :loading="loading"
-      :is-template-seeds-table="isTemplateSeedsTable"
-      :is-template-artifacts-table="isTemplateArtifactsTable"
+    <ProcessLaunchModal
+      ref="processLaunchModal"
+      @notify="showFeedbackToast"
+      @changed="fetchRows"
+    />
+
+    <ProcessDefinitionLaunchModal
+      ref="processDefinitionLaunchModal"
+      @notify="showFeedbackToast"
+      @changed="fetchRows"
+      @close="handleProcessGraphLaunchClose"
+    />
+
+    <AdminTemplateVersionDialog
+      :open="templateVersionDialog.open"
+      :template="templateVersionDialog.template"
+      :busy="templateVersionBusy"
+      :guided="templateVersionDialog.mode === 'guided'"
+      @confirm="handleVersionDialogConfirm"
+      @close="closeTemplateVersionDialog"
+    />
+
+    <!-- ⚠️ AQUI VIVIAN LAS PESTAÑAS DE TABLAS HERMANAS, SUELTAS Y ENCIMA DE TODO (F13.4,
+         2026-08-21). Al estar fuera de la barra, el titulo salia **debajo** de ellas en `/admin` y
+         **encima** en `/perfil`: el tercer sintoma del mismo problema de fondo —la barra se
+         comparte, pero el armazon que la rodea no—. Ahora entran por el slot `tabs`, que las pone
+         en su propia fila bajo el titulo, igual que en perfil. -->
+
+    <!-- ⚠️ LA CABECERA SE PINTA EN DOS SITIOS Y SON MUTUAMENTE EXCLUYENTES (F13.4, 2026-08-21).
+         Lo normal es que entre por el slot `actions` de `AdminMainTableSection`, para que sus
+         botones caigan en la MISMA fila que los del filtro. Pero la seccion **no siempre se
+         renderiza**: tiene un `v-if` que la cambia por otra rama en las tablas de asignacion de
+         puestos, y un `v-show` que la oculta en los modos grafo. En esos casos los botones —el de
+         «Regresar», sobre todo— tienen que seguir estando, asi que aqui queda la version suelta
+         con la condicion inversa. Sin esto, entrar al grafo de unidades dejaba la pantalla sin
+         forma de volver. -->
+    <!-- ⚠️ ESTA COPIA TAMBIEN VA DENTRO DE `AppTableToolbar`, Y OLVIDARLO FUE UN DEFECTO REAL.
+         `AdminTableHeader` paso a ser **solo sus botones** (F13.4), asi que sin barra sus hijos
+         caen sueltos en la columna flex del gestor y **cada uno ocupa el ancho entero**: en
+         `/admin/academia/unidades/organigrama` «Agregar» salia como una barra de lado a lado y
+         «Regresar» encima, en su propia linea. Lo vio el dueño. La barra es lo que los pone en
+         fila; un componente que solo emite botones necesita SIEMPRE quien los coloque. -->
+    <AppTableToolbar
+      v-if="table && !mainSectionVisible && !subviewSectionVisible && !(isProcessesTable && processGraphMode)"
+      :title="tableHeaderTitle"
+    >
+      <template v-if="table && siblingTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          :model-value="activeSiblingTab"
+          :tabs="siblingTabs"
+          aria-label="Tablas hermanas"
+          @update:model-value="$emit('select-sibling-tab', $event)"
+        />
+      </template>
+      <template v-if="subtabs" #subtabs>
+        <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
+      </template>
+      <!-- EN EL ORGANIGRAMA LA BARRA NO PINTA BOTONES (2026-11-23): se quedan el título y las
+           pestañas, que son la navegación. «Agregar» duplicaba al «+ Unidad» del propio grafo —los
+           dos abrían el mismo formulario— y «Regresar» baja a la fila del grafo, como en el mapa de
+           procesos. El organigrama no se queda sin forma de volver: la lleva él. -->
+      <template v-if="!(isUnitsTable && unitGraphMode)" #actions>
+        <AdminTableHeader
+          :table="table"
+          :loading="loading"
+          :is-generadores-table="isGeneradoresTable"
+          :is-process-definitions-table="isProcessDefinitionFilterTable"
+          :can-create="canCreateCurrentTable"
+          :can-update="canUpdateCurrentTable"
+          @go-back="handleGoBack"
+          @sync-template-seeds="syncTemplateSeedsFromSource"
+          @create="handlePrimaryCreateAction"
+        />
+      </template>
+    </AppTableToolbar>
+
+    <div v-if="table && isTemplateArtifactsTable" class="mb-3 rounded-2xl border border-blue-light-200 bg-blue-light-50 px-4 py-3">
+      <p class="m-0 flex items-start gap-2 text-sm text-info">
+        <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
+        <span>
+          <strong>Consulta y versionado.</strong>
+          Las plantillas se <strong>crean desde un proceso</strong> (pestaña “Plantillas” de la configuración).
+          Aquí puedes consultarlas, ver sus versiones y abrir su editor; el vínculo al proceso y el modo de
+          emisión se gestionan dentro de la configuración.
+        </span>
+      </p>
+    </div>
+
+    <!-- ⚠️ AQUI VIVIAN LOS DOS CONMUTADORES DE SUB-VISTA, SUELTOS Y ENCIMA DE TODO (retirados el
+         2026-08-21). Al estar fuera de la barra, el **nivel 2 salia por encima del nivel 1 y del
+         titulo**: en `/admin/usuarios/personas/position_assignments` «Ocupaciones · Puestos sin
+         ocupar» aparecia en y=78 y «Cargos · Puestos · Ocupaciones» en y=194. El dueño lo pidio al
+         reves y con razon: las principales se quedan en su sitio y las anidadas van DEBAJO.
+         Ahora entran por el slot `subtabs` de la barra, con `nested` para que se lean como lo que
+         son: un filtro de lo que ya elegiste, no otra navegacion. -->
+
+    <AppAlert variant="warning" class="mb-3" v-if="table && isCurrentTableTraceability">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <p class="m-0 flex items-start gap-2 text-sm text-warning">
+          <font-awesome-icon icon="info-circle" class="mt-0.5 shrink-0" />
+          <span>
+            <strong>Trazabilidad y soporte.</strong>
+            Registros técnicos generados por el sistema durante la ejecución; disponibles para consulta y
+            diagnóstico. Editarlos directamente puede afectar la consistencia del flujo.
+          </span>
+        </p>
+        <SToggle v-if="isAdminUser" v-model="advancedRuntimeMode" label-position="end">
+          <span class="whitespace-nowrap text-sm font-semibold text-warning">Modo avanzado (edición directa)</span>
+        </SToggle>
+      </div>
+      <p v-if="isAdminUser && advancedRuntimeMode" class="m-0 mt-2 text-xs font-bold text-danger">
+        Edición directa habilitada: puede afectar la consistencia del flujo. No reemplaza las validaciones del backend.
+      </p>
+    </AppAlert>
+
+    <UnitGraphView
+      v-if="table && isUnitsTable && unitGraphMode"
+      ref="unitGraphRef"
+      relation-type="org"
+      :editable="canUpdateCurrentTable"
+      :can-create-process="canCreateProcessConfiguration"
+      class="mb-2"
       @go-back="handleGoBack"
-      @search="handleSearchAction"
-      @sync-template-seeds="syncTemplateSeedsFromSource"
-      @sync-template-artifacts="syncTemplateArtifactsFromDist"
-      @create="handlePrimaryCreateAction"
+      @create-unit="openCreate"
+      @create-process="openProcessWizardFromScratch"
+    />
+
+    <ProcessGraphView
+      v-if="table && isProcessesTable && processGraphMode"
+      ref="processGraphRef"
+      :editable="canUpdateCurrentTable"
+      class="mb-2"
+      @open-config-wizard="openConfigWizardFromGraph"
+      @edit-config="editConfigFromGraph"
+      @launch-config="launchConfigFromGraph"
+      @version-config="versionConfigFromGraph"
+      @version-template="versionTemplateFromGraph"
+      @open-template-editor="openTemplateEditorFromGraph"
+      @guided-update-template="openGuidedTemplateUpdate"
+      @notify="showFeedbackToast"
+      @add-template="addTemplateFromGraph"
+      @clone-template="cloneTemplateFromGraph"
+      @go-back="handleGoBack"
     />
 
     <div v-if="!table" class="flex">
       <div class="w-full">
-        <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="deasy-card">
           <div class="p-5">
-            <p class="mb-0 text-sm text-slate-500">Selecciona una tabla para administrar.</p>
+            <p class="mb-0 text-sm text-muted">Selecciona una tabla para administrar.</p>
           </div>
         </div>
       </div>
@@ -35,6 +165,8 @@
 
     <AdminMainTableSection
       v-else
+      :table-header-title="tableHeaderTitle"
+      v-show="mainSectionVisible"
       ref="mainTableSection"
       :table="table"
       :loading="loading"
@@ -52,7 +184,7 @@
       :unit-position-cargo-options="unitPositionCargoOptions"
       :process-definition-inline-filters="processDefinitionInlineFilters"
       :process-definition-process-options="processDefinitionProcessOptions"
-      :process-definition-series-options="processDefinitionSeriesOptions"
+      :process-definition-linea-options="processDefinitionLineaOptions"
       :process-target-rule-inline-filters="processTargetRuleInlineFilters"
       :template-artifact-inline-filters="templateArtifactInlineFilters"
       :has-unit-position-filters="hasUnitPositionFilters"
@@ -65,7 +197,8 @@
       :format-fk-option-label="formatFkOptionLabel"
       :format-cell="formatCell"
       :get-available-format-sections="getAvailableFormatSections"
-      :get-available-format-badge-style="getAvailableFormatBadgeStyle"
+      :can-update="canUpdateCurrentTable"
+      :can-delete="canDeleteCurrentTable"
       @update:search-term="searchTerm = $event"
       @update:unit-position-filters="unitPositionFilters = $event"
       @update:process-definition-inline-filters="processDefinitionInlineFilters = $event"
@@ -80,16 +213,53 @@
       @clear-process-target-rule-inline-filters="clearProcessTargetRuleInlineFilters"
       @clear-template-artifact-inline-filters="clearTemplateArtifactInlineFilters"
       @fetch-rows="fetchRows"
-      @open-record-viewer="openRecordViewer"
+      @open-record-viewer="handleOpenRecordViewer($event, table)"
       @open-edit="openEdit"
+      @version-template="openTemplateVersionDialog"
       @open-delete="openDelete"
       @start-process-definition-versioning="startProcessDefinitionVersioning"
       @open-process-definition-activation-for-row="openProcessDefinitionActivationForRow"
+      @retire-process-definition="retireProcessDefinition"
       @open-person-assignments="openPersonAssignments"
-    />
+      @launch-term="openProcessLaunch"
+      @launch-definition="openProcessDefinitionLaunch"
+    >
+      <template v-if="table && siblingTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          :model-value="activeSiblingTab"
+          :tabs="siblingTabs"
+          aria-label="Tablas hermanas"
+          @update:model-value="$emit('select-sibling-tab', $event)"
+        />
+      </template>
+      <template v-if="subtabs" #subtabs>
+        <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
+      </template>
+      <!-- Los botones de la tabla entran en la MISMA fila que los del filtro: la barra los
+           coloca uno detras de otro en `deasy-table-toolbar__actions`.
+           ⚠️ ESTAS SEIS LINEAS DE PESTAÑAS ESTAN ESCRITAS DOS VECES en este fichero, y es
+           deliberado mientras dure: la seccion NO se renderiza en las tablas de asignacion de
+           puestos ni en los modos grafo, y en el organigrama las pestañas son justo como se llega
+           a el. Las dos copias llevan condiciones mutuamente excluyentes. **F7 las funde**, cuando
+           saque de aqui el armazon a un `AppTablePage` que ambas familias monten. -->
+      <template #actions>
+        <AdminTableHeader
+          :table="table"
+          :loading="loading"
+          :is-generadores-table="isGeneradoresTable"
+          :is-process-definitions-table="isProcessDefinitionFilterTable"
+          :can-create="canCreateCurrentTable"
+          :can-update="canUpdateCurrentTable"
+          @go-back="handleGoBack"
+          @sync-template-seeds="syncTemplateSeedsFromSource"
+          @create="handlePrimaryCreateAction"
+        />
+      </template>
+    </AdminMainTableSection>
 
     <AdminVacantPositionsSection
       v-if="isPositionAssignmentsTable"
+      v-show="positionAssignmentsView === 'vacantes'"
       :search-term="vacantSearchTerm"
       :filters="vacantPositionFilters"
       :filter-loading="vacantPositionFilterLoading"
@@ -105,6 +275,7 @@
       :format-fk-list-cell="formatFkListCell"
       :format-cell="formatCell"
       :format-position-type="formatPositionType"
+      :can-update="canUpdateCurrentTable"
       @update:search-term="vacantSearchTerm = $event"
       @update:filters="vacantPositionFilters = $event"
       @debounced-search="debouncedVacantSearch"
@@ -116,10 +287,37 @@
       @load="loadVacantPositions"
       @deactivate="deactivateVacantPosition"
       @assign="assignVacantPosition"
-    />
+      :title="tableHeaderTitle"
+    >
+      <template v-if="table && siblingTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          :model-value="activeSiblingTab"
+          :tabs="siblingTabs"
+          aria-label="Tablas hermanas"
+          @update:model-value="$emit('select-sibling-tab', $event)"
+        />
+      </template>
+      <template v-if="subtabs" #subtabs>
+        <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
+      </template>
+      <template #actions>
+        <AdminTableHeader
+          :table="table"
+          :loading="loading"
+          :is-generadores-table="isGeneradoresTable"
+          :is-process-definitions-table="isProcessDefinitionFilterTable"
+          :can-create="canCreateCurrentTable"
+          :can-update="canUpdateCurrentTable"
+          @go-back="handleGoBack"
+          @sync-template-seeds="syncTemplateSeedsFromSource"
+          @create="handlePrimaryCreateAction"
+        />
+      </template>
+    </AdminVacantPositionsSection>
 
     <AdminUnassignedArtifactsSection
       v-if="isProcessDefinitionTemplatesTable"
+      v-show="definitionTemplatesView === 'sin-vincular'"
       :search-term="unassignedTemplateArtifactSearch"
       :filters="unassignedTemplateArtifactFilters"
       :has-filters="hasUnassignedTemplateArtifactFilters"
@@ -128,15 +326,41 @@
       :rows="unassignedTemplateArtifactRows"
       :table-fields="unassignedTemplateArtifactTableFields"
       :get-available-format-sections="getAvailableFormatSections"
-      :get-available-format-badge-style="getAvailableFormatBadgeStyle"
+      :can-link="canCreateCurrentTable || canUpdateCurrentTable"
       @update:search-term="unassignedTemplateArtifactSearch = $event"
       @update:filters="unassignedTemplateArtifactFilters = $event"
       @debounced-search="debouncedUnassignedTemplateArtifactSearch"
       @clear-filters="clearUnassignedTemplateArtifactFilters"
       @load="loadUnassignedTemplateArtifacts"
-      @view="openRecordViewer($event, allTablesMap.template_artifacts)"
+      @view="openRecordViewer($event, allTablesMap.ediciones)"
       @link="startProcessDefinitionTemplateFromArtifact"
-    />
+      :title="tableHeaderTitle"
+    >
+      <template v-if="table && siblingTabs.length" #tabs>
+        <ProfileSubsectionTabs
+          :model-value="activeSiblingTab"
+          :tabs="siblingTabs"
+          aria-label="Tablas hermanas"
+          @update:model-value="$emit('select-sibling-tab', $event)"
+        />
+      </template>
+      <template v-if="subtabs" #subtabs>
+        <ProfileSubsectionTabs nested v-bind="subtabs" @update:model-value="setSubtab" />
+      </template>
+      <template #actions>
+        <AdminTableHeader
+          :table="table"
+          :loading="loading"
+          :is-generadores-table="isGeneradoresTable"
+          :is-process-definitions-table="isProcessDefinitionFilterTable"
+          :can-create="canCreateCurrentTable"
+          :can-update="canUpdateCurrentTable"
+          @go-back="handleGoBack"
+          @sync-template-seeds="syncTemplateSeedsFromSource"
+          @create="handlePrimaryCreateAction"
+        />
+      </template>
+    </AdminUnassignedArtifactsSection>
 
     <AdminPersonAssignmentsModal
       ref="personAssignmentsModal"
@@ -168,11 +392,16 @@
       :format-cell="formatCell"
       :format-person-cargo-unit="formatPersonCargoUnit"
       :to-date-input-value="toDateInputValue"
+      :cargo-position-suggest-provider="personCargoPositionSuggestProvider"
+      :role-role-suggest-provider="personRoleRoleSuggestProvider"
+      :role-unit-suggest-provider="personRoleUnitSuggestProvider"
+      :contract-position-suggest-provider="personContractPositionSuggestProvider"
       @update:person-assignment-section="personAssignmentSection = $event"
       @update:person-cargo-form="personCargoForm = $event"
       @update:person-contract-form="personContractForm = $event"
       @clear-person-cargo-position="clearPersonCargoPosition"
       @open-person-cargo-fk-search="openPersonCargoFkSearch"
+      @select-person-cargo="selectPersonCargoOption"
       @submit-person-cargo-create="submitPersonCargoCreate"
       @reset-person-cargo-form="resetPersonCargoForm"
       @view-person-cargo="openRecordViewer($event, allTablesMap.position_assignments)"
@@ -180,6 +409,7 @@
       @delete-person-cargo="deletePersonCargo"
       @clear-person-role-field="clearPersonRoleField"
       @open-person-role-fk-search="openPersonRoleFkSearch"
+      @select-person-role="selectPersonRoleOption"
       @submit-person-role-create="submitPersonRoleCreate"
       @reset-person-role-form="resetPersonRoleForm"
       @view-person-role="openRecordViewer($event, allTablesMap.role_assignments)"
@@ -187,6 +417,7 @@
       @delete-person-role="deletePersonRole"
       @clear-person-contract-position="clearPersonContractPosition"
       @open-person-contract-fk-search="openPersonContractFkSearch"
+      @select-person-contract="selectPersonContractOption"
       @submit-person-contract-create="submitPersonContractCreate"
       @reset-person-contract-form="resetPersonContractForm"
       @view-person-contract="openRecordViewer($event, allTablesMap.contracts)"
@@ -198,35 +429,38 @@
       ref="editorModal"
       :editor-mode="editorMode"
       :table="table"
-      :is-process-table="isProcessTable"
+      :is-process-table="isProcessesTable"
       :modal-error="modalError"
       :visible-form-fields="visibleFormFields"
       :fk-display="fkDisplay"
-      :inline-fk-loading="inlineFkLoading"
-      :inline-fk-suggestions="inlineFkSuggestions"
       :form-data="formData"
       :process-definition-checklist-loading="processDefinitionChecklistLoading"
       :process-definition-checklist="processDefinitionChecklist"
-      :requires-definition-artifacts="requiresDefinitionArtifacts"
+      :process-configuration-loading="processEditorConfigurationsLoading"
+      :process-configuration-error="processEditorConfigurationsError"
+      :process-configuration-rows="processEditorConfigurations"
+      :process-configuration-table-fields="processEditorConfigurationTableFields"
+      :can-create-process-configuration="canCreateProcessConfiguration"
+      :can-delete-process-configuration="canDeleteProcessConfiguration"
       :selected-row="selectedRow"
       :is-input-field="isInputField"
       :is-foreign-key-field="isForeignKeyField"
       :is-field-locked="isFieldLocked"
       :input-type="inputType"
-      :should-show-inline-fk-suggestions="shouldShowInlineFkSuggestions"
-      :format-inline-fk-option="formatInlineFkOption"
+      :build-fk-suggest-provider="buildFkSuggestProvider"
       :format-select-option-label="formatSelectOptionLabel"
+      :format-process-configuration-cell="formatProcessEditorConfigurationCell"
+      :can-delete-process-configuration-row="canDeleteProcessConfigurationRow"
       @update:form-data="formData = $event"
-      @update-inline-fk-display="updateInlineFkDisplay"
-      @open-inline-fk-suggestions="openInlineFkSuggestions"
-      @schedule-inline-fk-close="scheduleInlineFkClose"
-      @clear-inline-fk-selection="clearInlineFkSelection"
-      @open-fk-search="openFkSearch"
-      @select-inline-fk-suggestion="selectInlineFkSuggestion"
+      @select-fk-option="selectFkOption"
+      @clear-fk-selection="clearFkSelection"
+      @update-geopoint="updateGeopoint"
       @handle-select-change="handleSelectChange"
-      @open-definition-rules="openDefinitionRulesFromEditor"
+      @add-process-configuration="openProcessConfigurationFromEditor"
+      @delete-process-configuration="deleteProcessEditorConfiguration"
       @open-definition-triggers="openDefinitionTriggersFromEditor"
       @open-definition-artifacts="openDefinitionArtifactsFromEditor"
+      @submit-and-configure="submitForm({ openProcessConfigurationAfterCreate: true })"
       @submit="submitForm"
     />
 
@@ -238,44 +472,72 @@
     />
 
     <AdminProcessDefinitionActivationModal
+      v-if="!processWizardOpen"
       ref="processDefinitionActivationModal"
       :checking="processDefinitionActivationChecking"
-      :has-active-rules="processDefinitionActivationHasActiveRules"
       :has-active-triggers="processDefinitionActivationHasActiveTriggers"
-      :has-required-artifacts="processDefinitionActivationHasRequiredArtifacts"
-      :requires-artifacts="processDefinitionActivationRequiresArtifacts"
+      :has-active-artifacts="processDefinitionActivationHasActiveArtifacts"
       :view="processDefinitionActivationView"
       :selected-row="selectedRow"
-      :rules="processDefinitionActivationRules"
       :triggers="processDefinitionActivationTriggers"
       :artifacts="processDefinitionActivationArtifacts"
-      :rule-table-fields="processDefinitionActivationRuleTableFields"
       :trigger-table-fields="processDefinitionActivationTriggerTableFields"
       :artifact-table-fields="processDefinitionActivationArtifactTableFields"
       :primary-action="processDefinitionActivationPrimaryAction"
       :primary-action-label="processDefinitionActivationPrimaryActionLabel"
       :all-requirements-met="allProcessDefinitionActivationRequirementsMet"
       :format-cell="formatCell"
-      :format-definition-rule-summary="formatDefinitionRuleSummary"
       @update:view="processDefinitionActivationView = $event"
+      @view-row="handleActivationViewRow"
       @cancel="cancelProcessDefinitionActivation"
       @primary-action="handleProcessDefinitionActivationPrimaryAction"
       @confirm="confirmProcessDefinitionActivation"
     />
 
     <AdminDeleteConfirmModal ref="deleteModal" @confirm="confirmDelete" />
+    <AdminDeleteConfirmModal
+      ref="processConfigurationDeleteModal"
+      @confirm="confirmDeleteProcessEditorConfiguration"
+    />
+
+    <AppModalShell
+      ref="retireDefinitionModal"
+      labelled-by="retireDefinitionModalLabel"
+      title="Retirar configuración"
+    >
+      <p class="mb-2">
+        Vas a <strong>retirar</strong> la configuración
+        <strong>{{ retireDefinitionRow?.name || `#${retireDefinitionRow?.id}` }}</strong>.
+      </p>
+      <AppAlert variant="warning">
+        Una configuración retirada deja de aplicarse a nuevos procesos y queda en <strong>solo lectura</strong>:
+        no podrás reactivarla. Si más adelante necesitas estos ajustes, crea una nueva versión a partir de ella.
+      </AppAlert>
+      <template #footer>
+        <AdminButton variant="danger-outline" data-modal-dismiss>Cancelar</AdminButton>
+        <AdminButton variant="danger-outline" @click="confirmRetireProcessDefinition">Retirar</AdminButton>
+      </template>
+    </AppModalShell>
 
     <AdminDefinitionCreatedPromptModal
       ref="definitionArtifactsPromptModal"
       :context="definitionArtifactsPromptContext"
       @close="closeDefinitionArtifactsPrompt"
-      @open-rules="confirmDefinitionRulesPrompt"
+      @open-wizard="handleOpenWizardFromPrompt"
       @open-triggers="confirmDefinitionTriggersPrompt"
       @open-artifacts="confirmDefinitionArtifactsPrompt"
     />
 
-    <AdminDefinitionArtifactsModal
+    <AppModalShell
+      v-if="!processWizardOpen"
       ref="definitionArtifactsModal"
+      labelled-by="definitionArtifactsModalLabel"
+      title="Documentos de la configuracion"
+      size="xl"
+      close-action
+      @close="handleDefinitionArtifactsManagerClose"
+    >
+      <AdminDefinitionArtifactsPanel
       :context="definitionArtifactsContext"
       :error="definitionArtifactsError"
       :can-manage="canManageDefinitionArtifacts"
@@ -292,15 +554,27 @@
       @open-fk-search="openDefinitionArtifactFkSearch"
       @submit="submitDefinitionArtifact"
       @reset="resetDefinitionArtifactsForm"
-      @view-row="openRecordViewer($event, allTablesMap.process_definition_templates)"
-      @edit-row="startDefinitionArtifactEdit"
+      @view-row="openRecordViewer($event, allTablesMap.vinculos)"
+      @edit-row="openDefinitionArtifactTemplateEditor"
       @delete-row="deleteDefinitionArtifact"
-      @close="closeDefinitionArtifactsManager"
-      @accept="acceptDefinitionArtifactsManager"
-    />
+      @set-item-mode="setDefinitionArtifactItemMode($event.row, $event.itemMode)"
+      />
+      <template #footer>
+        <AdminButton variant="neutral-outline" @click="handleDefinitionArtifactsManagerClose">Cerrar</AdminButton>
+        <AdminButton variant="primary-outline" @click="handleDefinitionArtifactsManagerAccept">Aceptar</AdminButton>
+      </template>
+    </AppModalShell>
 
-    <AdminDefinitionTriggersModal
+    <AppModalShell
+      v-if="!processWizardOpen"
       ref="definitionTriggersModal"
+      labelled-by="definitionTriggersModalLabel"
+      title="Periodos de la configuracion"
+      size="xl"
+      close-action
+      @close="closeDefinitionTriggersManager"
+    >
+      <AdminDefinitionTriggersPanel
       :context="definitionTriggersContext"
       :error="definitionTriggersError"
       :can-manage="canManageDefinitionTriggers"
@@ -312,44 +586,180 @@
       :loading="definitionTriggersLoading"
       :rows="definitionTriggersRows"
       :table-fields="definitionTriggersTableFields"
+      :suggest-provider="definitionTriggerSuggestProvider"
       :format-cell="formatCell"
       @update:form="definitionTriggersForm = $event"
       @trigger-mode-change="handleDefinitionTriggerModeChange"
       @clear-term-type="clearDefinitionTriggerTermType"
+      @select-term-type="selectDefinitionTriggerOption"
       @open-fk-search="openDefinitionTriggerFkSearch"
       @submit="submitDefinitionTrigger"
       @reset="resetDefinitionTriggersForm"
-      @view-row="openRecordViewer($event, allTablesMap.process_definition_triggers)"
+      @view-row="openRecordViewer($event, allTablesMap.process_definition_period_types)"
       @edit-row="startDefinitionTriggerEdit"
       @delete-row="deleteDefinitionTrigger"
-      @close="closeDefinitionTriggersManager"
-      @accept="acceptDefinitionTriggersManager"
+      />
+      <template #footer>
+        <AdminButton variant="neutral-outline" @click="closeDefinitionTriggersManager">Cerrar</AdminButton>
+        <AdminButton variant="primary-outline" @click="acceptDefinitionTriggersManager">Aceptar</AdminButton>
+      </template>
+    </AppModalShell>
+
+    <AdminProcessWizardModal
+      :open="processWizardOpen"
+      :current-step="processWizardStep"
+      :steps="processWizardSteps"
+      :step-status="processWizardStepStatus"
+      :definition-context="processWizardDefinition"
+      :definition-form="processWizardDefinitionForm"
+      :duplicate-definition="processWizardDuplicateDefinition"
+      :process-options="processWizardProcessOptions"
+      :filtro-process-id="processWizardFiltroProcessId"
+      :linea-suggest-provider="processWizardLineaSuggestProvider"
+      :selected-linea-name="processWizardSelectedLineaName"
+      :definition-name-preview="processWizardDefinitionNamePreview"
+      :creating-definition="processWizardCreating"
+      :wizard-error="processWizardError"
+      :readonly="processWizardReadonly"
+      @update:definition-form="processWizardDefinitionForm = $event"
+      @update:filtro-process-id="processWizardFiltroProcessId = $event"
+      @elegir-linea="processWizardElegirLinea"
+      @abrir-proceso="processWizardAbrirProcesoModal"
+      @abrir-linea="processWizardAbrirLineaModal"
+      @go-to-step="handleProcessWizardGoToStep"
+      @create-definition="handleProcessWizardCreateDefinition"
+      @edit-existing-definition="handleProcessWizardEditExistingDefinition"
+      @close="handleProcessWizardClose"
+    >
+      <template #packages>
+        <AdminDefinitionArtifactsPanel
+          embedded
+          :context="definitionArtifactsContext"
+          :error="definitionArtifactsError"
+          :can-manage="!processWizardReadonly && canManageDefinitionArtifacts"
+          :can-submit="!processWizardReadonly && canSubmitDefinitionArtifact"
+          :labels="definitionArtifactsLabels"
+          :form="definitionArtifactsForm"
+          :edit-id="definitionArtifactsEditId"
+          :loading="definitionArtifactsLoading"
+          :rows="definitionArtifactsRows"
+          :table-fields="definitionArtifactsTableFields"
+          :format-cell="formatCell"
+          @update:form="definitionArtifactsForm = $event"
+          @clear-selection="clearDefinitionArtifactSelection"
+          @open-fk-search="openDefinitionArtifactFkSearch"
+          @submit="wizardSubmitArtifact"
+          @reset="resetDefinitionArtifactsForm"
+          @view-row="handleWizardViewRow($event, allTablesMap.vinculos)"
+          @edit-row="openDefinitionArtifactTemplateEditor"
+          @delete-row="deleteDefinitionArtifact"
+          @set-item-mode="setDefinitionArtifactItemMode($event.row, $event.itemMode)"
+        />
+      </template>
+      <template #triggers>
+        <AdminDefinitionTriggersPanel
+          embedded
+          :context="definitionTriggersContext"
+          :error="definitionTriggersError"
+          :can-manage="!processWizardReadonly && canManageDefinitionTriggers"
+          :can-submit="!processWizardReadonly && canSubmitDefinitionTrigger"
+          :requires-term-type="definitionTriggerRequiresTermType"
+          :labels="definitionTriggersLabels"
+          :form="definitionTriggersForm"
+          :edit-id="definitionTriggersEditId"
+          :loading="definitionTriggersLoading"
+          :rows="definitionTriggersRows"
+          :table-fields="definitionTriggersTableFields"
+          :suggest-provider="definitionTriggerSuggestProvider"
+          :format-cell="formatCell"
+          @update:form="definitionTriggersForm = $event"
+          @trigger-mode-change="handleDefinitionTriggerModeChange"
+          @clear-term-type="clearDefinitionTriggerTermType"
+          @select-term-type="selectDefinitionTriggerOption"
+          @open-fk-search="openDefinitionTriggerFkSearch"
+          @submit="wizardSubmitTrigger"
+          @reset="resetDefinitionTriggersForm"
+          @view-row="handleWizardViewRow($event, allTablesMap.process_definition_period_types)"
+          @edit-row="startDefinitionTriggerEdit"
+          @delete-row="deleteDefinitionTrigger"
+        />
+      </template>
+      <template #activate>
+        <ProcessActivationPanel
+          :checking="processDefinitionActivationChecking"
+          :has-active-triggers="processDefinitionActivationHasActiveTriggers"
+          :has-active-artifacts="processDefinitionActivationHasActiveArtifacts"
+          :view="processDefinitionActivationView"
+          :selected-row="processWizardDefinition"
+          :triggers="processDefinitionActivationTriggers"
+          :artifacts="processDefinitionActivationArtifacts"
+          :trigger-table-fields="processDefinitionActivationTriggerTableFields"
+          :artifact-table-fields="processDefinitionActivationArtifactTableFields"
+          :format-cell="formatCell"
+          @update:view="processDefinitionActivationView = $event"
+          @view-row="handleActivationViewRow"
+        />
+        <div class="mt-4 flex items-center justify-end gap-2 border-t border-line pt-3">
+          <span v-if="!allProcessDefinitionActivationRequirementsMet" class="mr-auto text-sm font-medium text-warning">
+            Completa los requisitos (periodos, paquetes) para activar.
+          </span>
+          <AdminButton
+            v-if="!processWizardReadonly"
+            variant="success-outline"
+            :disabled="processDefinitionActivationChecking || !allProcessDefinitionActivationRequirementsMet"
+            @click="showWizardActivateConfirm = true"
+          >Activar proceso</AdminButton>
+        </div>
+
+        <!-- Confirmación con tono de advertencia: la activación es irreversible en esta versión. -->
+        <AppModalShell
+      v-if="showWizardActivateConfirm"
+      controlled
+          :open="showWizardActivateConfirm"
+          title="Confirmar activación"
+          content-class="max-w-md"
+          @close="showWizardActivateConfirm = false"
+        >
+          <AppAlert variant="warning" class="flex items-start gap-3 leading-relaxed">
+            <font-awesome-icon icon="triangle-exclamation" class="mt-0.5 h-5 w-5 shrink-0 text-warning" />
+            <span>
+              Al activar, <strong>ya no podrás modificar</strong> periodos ni paquetes en esta versión.
+              Si ya existe una configuración activa en la misma serie, <strong>se retirará automáticamente</strong>.
+            </span>
+          </AppAlert>
+          <AdminConfigActivationDiff v-if="showWizardActivateConfirm" :definition-id="processWizardDefinition?.id" class="mt-3" />
+          <template #footer>
+            <AdminButton variant="danger-outline" @click="showWizardActivateConfirm = false">Cancelar</AdminButton>
+            <AdminButton variant="success-outline" :disabled="processDefinitionActivationChecking" @click="confirmWizardActivation">Sí, activar</AdminButton>
+          </template>
+        </AppModalShell>
+      </template>
+    </AdminProcessWizardModal>
+
+    <!-- LOS DOS PLANOS DEL ASISTENTE (frente 25, P23). Van fuera de `AdminProcessWizardModal` y no
+         dentro: se apilan solos encima de él (`AppModalShell` se coloca al abrirse), y así ninguno
+         de los dos tiene que saber nada del otro. -->
+    <AdminProcessWizardProcesoModal
+      :open="processWizardProcesoModalOpen"
+      :process-options="processWizardProcessOptions"
+      :creando="processWizardCreandoProceso"
+      :error="processWizardProcesoModalError"
+      :slug-preview-para="processWizardSlugPreviewPara"
+      @close="processWizardCerrarProcesoModal"
+      @crear="processWizardCrearProceso"
     />
 
-    <AdminDefinitionRulesModal
-      ref="definitionRulesModal"
-      :context="definitionRulesContext"
-      :error="definitionRulesError"
-      :can-manage="canManageDefinitionRules"
-      :can-submit="canSubmitDefinitionRule"
-      :labels="definitionRulesLabels"
-      :form="definitionRulesForm"
-      :edit-id="definitionRulesEditId"
-      :loading="definitionRulesLoading"
-      :rows="definitionRulesRows"
-      :table-fields="definitionRulesTableFields"
-      :format-cell="formatDefinitionRuleCell"
-      @update:form="definitionRulesForm = $event"
-      @scope-change="handleDefinitionRuleScopeChange"
-      @clear-field="clearDefinitionRuleField"
-      @open-fk-search="openDefinitionRuleFkSearch"
-      @submit="submitDefinitionRule"
-      @reset="resetDefinitionRulesForm"
-      @view-row="openRecordViewer($event, allTablesMap.process_target_rules)"
-      @edit-row="startDefinitionRuleEdit"
-      @delete-row="deleteDefinitionRule"
-      @close="closeDefinitionRulesManager"
-      @accept="acceptDefinitionRulesManager"
+    <AdminProcessWizardLineaModal
+      :open="processWizardLineaModalOpen"
+      :process-options="processWizardProcessOptions"
+      :cargo-options="processWizardCargoOptions"
+      :unit-type-options="processWizardUnitTypeOptions"
+      :unit-options="processWizardUnitOptions"
+      :process-id-por-defecto="processWizardFiltroProcessId"
+      :creando="processWizardCreandoLinea"
+      :error="processWizardLineaModalError"
+      @close="processWizardCerrarLineaModal"
+      @crear="processWizardCrearLinea"
     />
 
     <AdminFkBrowserModal
@@ -358,6 +768,8 @@
       :is-fk-units="isFkUnits"
       :is-fk-process-definitions="isFkProcessDefinitions"
       :is-fk-template-artifacts="isFkTemplateArtifacts"
+      :create-tab-enabled="isFkTemplateArtifacts"
+      :active-tab="fkActiveTab"
       :is-fk-unit-positions="isFkUnitPositions"
       :fk-search="fkSearch"
       :fk-filters="fkFilters"
@@ -369,6 +781,7 @@
       :fk-process-definition-process-options="fkProcessDefinitionProcessOptions"
       :has-fk-process-definition-filters="hasFkProcessDefinitionFilters"
       :has-fk-template-artifact-filters="hasFkTemplateArtifactFilters"
+      :process-filter-context-id="definitionArtifactsContext?.process_id || ''"
       :fk-loading="fkLoading"
       :fk-error="fkError"
       :fk-search-table-fields="fkSearchTableFields"
@@ -382,7 +795,6 @@
       :format-fk-primary-cell="formatFkPrimaryCell"
       :format-fk-list-cell="formatFkListCell"
       :get-available-format-sections="getAvailableFormatSections"
-      :get-available-format-badge-style="getAvailableFormatBadgeStyle"
       @update:fk-search="fkSearch = $event"
       @update:fk-filters="fkFilters = $event"
       @update:fk-position-filters="fkPositionFilters = $event"
@@ -399,7 +811,38 @@
       @select-fk-row="selectFkRow"
       @open-fk-filter="openFkFilterModal"
       @open-fk-create="openFkCreate"
-    />
+      @update:active-tab="fkActiveTab = $event"
+    >
+      <!-- Pestaña "Crear nueva": el wizard de plantilla embebido (sin overlay propio). -->
+      <template #create>
+        <AdminDraftArtifactModal
+          v-if="isFkTemplateArtifacts"
+          embedded
+          :draft-artifact-edit-id="draftArtifactEditId"
+          :draft-artifact-error="draftArtifactError"
+          :draft-artifact-loading="draftArtifactLoading"
+          :draft-artifact-form="draftArtifactForm"
+          :draft-artifact-seed-options="draftArtifactSeedOptions"
+          :draft-artifact-preview-url="draftArtifactPreviewUrl"
+          :draft-artifact-preview-status="draftArtifactPreviewStatus"
+          :get-draft-artifact-file-label="getDraftArtifactFileLabel"
+          :new-process-definition-id="draftNewProcessDefinitionId"
+          :preselect-process-definition-id="draftArtifactPreselectDefinitionId"
+          :guided-config-id="guidedEditorConfigId"
+          @update:form="draftArtifactForm = $event"
+          @file-change="handleDraftArtifactFileChange"
+          @drop="handleDraftArtifactDrop"
+          @close="fkActiveTab = 'select'"
+          @submit="handleDraftArtifactSubmit"
+          @change-active="handleArtifactActiveChange"
+          @publish="handleArtifactPublish"
+          @retire="handleArtifactRetire"
+          @finish-guided="finishGuidedTemplateUpdate"
+          @new-version="handleArtifactNewVersion"
+          @create-process="handleDraftCreateProcess"
+        />
+      </template>
+    </AdminFkBrowserModal>
 
     <AdminRecordViewerModal
       ref="recordViewerModal"
@@ -412,20 +855,22 @@
       :related-sections="recordViewerRelatedSections"
       :format-record-viewer-value="formatRecordViewerValue"
       :get-available-format-sections="getAvailableFormatSections"
-      :get-available-format-badge-style="getAvailableFormatBadgeStyle"
       :row-key-for-table="rowKeyForTable"
       :format-value-for-table="formatValueForTable"
+      :downloading="recordArchiveDownloading"
+      :editable="recordViewerEditable"
+      :is-admin="isAdminUser"
+      :can-create-process-configuration="canCreateProcessConfiguration"
+      :source-busy="templateSourceBusy"
+      :sync-status="recordViewerSyncStatus"
+      :sync-busy="recordViewerSyncBusy"
       @close="closeRecordViewer"
-    />
-
-    <AdminFkViewerModal
-      ref="fkViewerModal"
-      :fk-table="fkTable"
-      :fk-viewer-row="fkViewerRow"
-      :summary-table-fields="fkViewerSummaryTableFields"
-      :display-rows="fkViewerDisplayRows"
-      :format-fk-viewer-value="formatFkViewerValue"
-      @close="closeFkViewer"
+      @add-process-configuration="openProcessConfigurationFromViewer"
+      @view-related-record="handleRecordViewerRelatedRecord"
+      @download-archive="handleDownloadRecordArchive"
+      @download-source="handleDownloadTemplateSource"
+      @upload-source="handleUploadTemplateSource"
+      @resync-workflows="handleResyncTemplateWorkflows"
     />
 
     <AdminFkFilterModal
@@ -467,23 +912,26 @@
     >
             <div class="grid gap-3">
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Proceso padre</label>
+                <label :for="fieldId('process-filter-parent')" class="deasy-form-label deasy-form-label--inline">Proceso padre</label>
                 <AdminLookupField
+                  :id="fieldId('process-filter-parent')"
                   v-model="processFilterLabels.parent_id"
                   placeholder="Selecciona un proceso padre"
-                  readonly
-                  prevent-input-interaction
+                  :suggest-provider="processParentSuggestProvider"
                   :clear-disabled="!processFilters.parent_id"
                   @clear="clearProcessParentFilter"
+                  @select="selectProcessFilterOption('parent_id', $event)"
                   @search="openProcessFkSearch('parent_id')"
                 />
               </div>
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Activo</label>
-                <AdminSelectField v-model="processFilters.is_active">
+                <label :for="fieldId('process-filter-estado')" class="deasy-form-label deasy-form-label--inline">Estado</label>
+                <AdminSelectField :id="fieldId('process-filter-estado')" v-model="processFilters.estado">
                   <option value="">Todos</option>
-                  <option value="1">Si</option>
-                  <option value="0">No</option>
+                  <option value="borrador">Borrador</option>
+                  <option value="programado">Programado</option>
+                  <option value="vigente">Vigente</option>
+                  <option value="suprimido">Suprimido</option>
                 </AdminSelectField>
               </div>
             </div>
@@ -498,26 +946,27 @@
     >
             <div class="grid gap-3">
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Nombre</label>
-                <AdminInputField v-model="templateFilters.name" />
+                <label :for="fieldId('template-filter-name')" class="deasy-form-label deasy-form-label--inline">Nombre</label>
+                <AdminInputField :id="fieldId('template-filter-name')" v-model="templateFilters.name" />
               </div>
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Slug</label>
-                <AdminInputField v-model="templateFilters.slug" />
+                <label :for="fieldId('template-filter-slug')" class="deasy-form-label deasy-form-label--inline">Slug</label>
+                <AdminInputField :id="fieldId('template-filter-slug')" v-model="templateFilters.slug" />
               </div>
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Descripcion</label>
-                <AdminInputField v-model="templateFilters.description" />
+                <label :for="fieldId('template-filter-description')" class="deasy-form-label deasy-form-label--inline">Descripcion</label>
+                <AdminInputField :id="fieldId('template-filter-description')" v-model="templateFilters.description" />
               </div>
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Proceso</label>
+                <label :for="fieldId('template-filter-process')" class="deasy-form-label deasy-form-label--inline">Proceso</label>
                 <AdminLookupField
+                  :id="fieldId('template-filter-process')"
                   v-model="templateFilterLabels.process_id"
                   placeholder="Selecciona un proceso"
-                  readonly
-                  prevent-input-interaction
+                  :suggest-provider="templateProcessSuggestProvider"
                   :clear-disabled="!templateFilters.process_id"
                   @clear="clearTemplateProcessFilter"
+                  @select="selectTemplateProcessFilterOption($event)"
                   @search="openTemplateFkSearch"
                 />
               </div>
@@ -533,20 +982,21 @@
     >
             <div class="grid gap-3">
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tarea</label>
+                <label :for="fieldId('document-filter-task')" class="deasy-form-label deasy-form-label--inline">Tarea</label>
                 <AdminLookupField
+                  :id="fieldId('document-filter-task')"
                   v-model="documentFilterLabels.task_id"
                   placeholder="Selecciona una tarea"
-                  readonly
-                  prevent-input-interaction
+                  :suggest-provider="documentTaskSuggestProvider"
                   :clear-disabled="!documentFilters.task_id"
                   @clear="clearDocumentTaskFilter"
+                  @select="selectDocumentFilterOption('task_id', $event)"
                   @search="openDocumentFkSearch('task_id')"
                 />
               </div>
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Estado</label>
-                <AdminSelectField v-model="documentFilters.status">
+                <label :for="fieldId('document-filter-status')" class="deasy-form-label deasy-form-label--inline">Estado</label>
+                <AdminSelectField :id="fieldId('document-filter-status')" v-model="documentFilters.status">
                   <option value="">Todos</option>
                   <option value="Inicial">Inicial</option>
                   <option value="Pendiente de llenado">Pendiente de llenado</option>
@@ -573,8 +1023,9 @@
     >
             <div class="grid gap-3">
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Tipo de unidad</label>
+                <label :for="fieldId('unit-position-filter-unit-type')" class="deasy-form-label deasy-form-label--inline">Tipo de unidad</label>
                 <AdminSelectField
+                  :id="fieldId('unit-position-filter-unit-type')"
                   v-model="unitPositionFilters.unit_type_id"
                   :disabled="unitPositionFilterLoading"
                   @change="handleUnitPositionTypeChange"
@@ -590,8 +1041,9 @@
                 </AdminSelectField>
               </div>
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Unidad</label>
+                <label :for="fieldId('unit-position-filter-unit')" class="deasy-form-label deasy-form-label--inline">Unidad</label>
                 <AdminSelectField
+                  :id="fieldId('unit-position-filter-unit')"
                   v-model="unitPositionFilters.unit_id"
                   :disabled="!unitPositionFilters.unit_type_id || unitPositionFilterLoading"
                 >
@@ -606,8 +1058,9 @@
                 </AdminSelectField>
               </div>
               <div>
-                <label class="mb-2 inline-flex items-center gap-1 text-sm font-semibold text-slate-700">Cargo</label>
+                <label :for="fieldId('unit-position-filter-cargo')" class="deasy-form-label deasy-form-label--inline">Cargo</label>
                 <AdminSelectField
+                  :id="fieldId('unit-position-filter-cargo')"
                   v-model="unitPositionFilters.cargo_id"
                   :disabled="unitPositionFilterLoading"
                 >
@@ -632,19 +1085,30 @@
       :draft-artifact-form="draftArtifactForm"
       :draft-artifact-seed-options="draftArtifactSeedOptions"
       :draft-artifact-preview-url="draftArtifactPreviewUrl"
+      :draft-artifact-preview-status="draftArtifactPreviewStatus"
       :get-draft-artifact-file-label="getDraftArtifactFileLabel"
+      :new-process-definition-id="draftNewProcessDefinitionId"
+      :preselect-process-definition-id="draftArtifactPreselectDefinitionId"
+      :guided-config-id="guidedEditorConfigId"
       @update:form="draftArtifactForm = $event"
       @file-change="handleDraftArtifactFileChange"
       @drop="handleDraftArtifactDrop"
-      @close="closeDraftArtifactModal"
-      @submit="submitDraftArtifact"
+      @close="handleDraftArtifactClose"
+      @submit="handleDraftArtifactSubmit"
+      @change-active="handleArtifactActiveChange"
+      @publish="handleArtifactPublish"
+      @retire="handleArtifactRetire"
+      @finish-guided="finishGuidedTemplateUpdate"
+      @new-version="handleArtifactNewVersion"
+      @create-process="handleDraftCreateProcess"
     />
   </div>
 </template>
 
 <script setup>
-import { computed, defineEmits, defineProps, defineExpose, onBeforeUnmount, ref } from "vue";
+import { computed, defineAsyncComponent, defineEmits, defineProps, defineExpose, onMounted, ref, useId, watch } from "vue";
 import { useAdminFkManager } from "@/modules/admin/composables/fk/useAdminFkManager";
+import { isFieldVisible, isPairedAway } from "@/modules/admin/services/adminFieldRules";
 import { useAdminFkCrud } from "@/modules/admin/composables/fk/useAdminFkCrud";
 import { useAdminFkSearch } from "@/modules/admin/composables/fk/useAdminFkSearch";
 import { useAdminEditorFlow } from "@/modules/admin/composables/forms/useAdminEditorFlow";
@@ -659,23 +1123,31 @@ import { useAdminPresentationAdapters } from "@/modules/admin/composables/ui/use
 import { useAdminShellHelpers } from "@/modules/admin/composables/ui/useAdminShellHelpers";
 import { useAdminShellSearchActions } from "@/modules/admin/composables/data/useAdminShellSearchActions";
 import { useAdminSyncActions } from "@/modules/admin/composables/data/useAdminSyncActions";
-import { useAdminTableReset } from "@/modules/admin/composables/data/useAdminTableReset";
 import { usePersonAssignmentsManager } from "@/modules/admin/composables/processes/usePersonAssignmentsManager";
 import { useAdminRecordViewer } from "@/modules/admin/composables/data/useAdminRecordViewer";
 import { useAdminSearchFilters } from "@/modules/admin/composables/data/useAdminSearchFilters";
 import { useAdminTableDataSource } from "@/modules/admin/composables/data/useAdminTableDataSource";
 import { useProcessDefinitionActivationFlow } from "@/modules/admin/composables/processes/useProcessDefinitionActivationFlow";
 import { useProcessDefinitionManager } from "@/modules/admin/composables/processes/useProcessDefinitionManager";
+import axios from "@/core/services/httpClient";
+import { useProcessWizard } from "@/modules/admin/composables/processes/useProcessWizard";
 import { useAdminSubmitFlow } from "@/modules/admin/composables/forms/useAdminSubmitFlow";
 import { API_ROUTES } from "@/core/config/apiConfig";
+import {
+  canCreateAdminTable,
+  canDeleteAdminTable,
+  canUpdateAdminTable,
+  hasAnyRole,
+  isTraceabilityTable
+} from "@/core/utils/accessControl.js";
 import { adminSqlService } from "@/modules/admin/services/AdminSqlService";
 import { adminPresentationService } from "@/modules/admin/services/AdminPresentationService";
+import { processDefinitionAdminService } from "@/modules/admin/services/ProcessDefinitionAdminService";
 import {
   definitionArtifactsTableFields,
-  definitionRulesTableFields,
   definitionTriggersTableFields,
+  FK_LABEL_FIELDS,
   FK_TABLE_MAP,
-  fkViewerSummaryTableFields,
   formatTemplateArtifactFieldLabel,
   personAssignmentSections,
   personCargoTableFields,
@@ -684,58 +1156,97 @@ import {
   PROCESS_DEFINITION_HIDDEN_FIELDS,
   PROCESS_INLINE_HIDDEN_FIELDS,
   processDefinitionActivationArtifactTableFields,
-  processDefinitionActivationRuleTableFields,
   processDefinitionActivationTriggerTableFields,
   recordViewerSummaryTableFields,
   unassignedTemplateArtifactTableFields,
   vacantPositionTableFields
 } from "@/modules/admin/services/AdminTableManagerConfig";
 import AdminFeedbackToast from "@/modules/admin/components/ui/AdminFeedbackToast.vue";
-import AdminDefinitionArtifactsModal from "@/modules/admin/components/modals/AdminDefinitionArtifactsModal.vue";
+import SToggle from "@/shared/components/forms/SToggle.vue";
+import AdminDefinitionArtifactsPanel from "@/modules/admin/components/modals/AdminDefinitionArtifactsPanel.vue";
 import AdminDefinitionCreatedPromptModal from "@/modules/admin/components/modals/AdminDefinitionCreatedPromptModal.vue";
-import AdminDefinitionRulesModal from "@/modules/admin/components/modals/AdminDefinitionRulesModal.vue";
-import AdminDefinitionTriggersModal from "@/modules/admin/components/modals/AdminDefinitionTriggersModal.vue";
+import AdminDefinitionTriggersPanel from "@/modules/admin/components/modals/AdminDefinitionTriggersPanel.vue";
 import AdminDeleteConfirmModal from "@/modules/admin/components/modals/AdminDeleteConfirmModal.vue";
 import AdminDraftArtifactModal from "@/modules/admin/components/modals/AdminDraftArtifactModal.vue";
+import AdminTemplateVersionDialog from "@/modules/admin/components/modals/AdminTemplateVersionDialog.vue";
+import ProcessLaunchModal from "@/modules/admin/components/modals/ProcessLaunchModal.vue";
+import ProcessDefinitionLaunchModal from "@/modules/admin/components/modals/ProcessDefinitionLaunchModal.vue";
 import AdminEditorModal from "@/modules/admin/components/modals/AdminEditorModal.vue";
-import AdminFkViewerModal from "@/modules/admin/components/modals/AdminFkViewerModal.vue";
 import AdminMainTableSection from "@/modules/admin/components/tables/AdminMainTableSection.vue";
-import AdminFieldGroup from "@/modules/admin/components/forms/AdminFieldGroup.vue";
+// Lazy-load: Vue Flow + dagre solo se cargan al abrir el organigrama / mapa de procesos (fuera del bundle).
+const UnitGraphView = defineAsyncComponent(() => import("@/modules/admin/components/units/UnitGraphView.vue"));
+const ProcessGraphView = defineAsyncComponent(() => import("@/modules/admin/components/units/ProcessGraphView.vue"));
 import AdminFkBrowserModal from "@/modules/admin/components/modals/AdminFkBrowserModal.vue";
 import AdminFkCreateModal from "@/modules/admin/components/modals/AdminFkCreateModal.vue";
 import AdminFkFilterModal from "@/modules/admin/components/modals/AdminFkFilterModal.vue";
-import AdminFormActions from "@/modules/admin/components/forms/AdminFormActions.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminPersonAssignmentsModal from "@/modules/admin/components/modals/AdminPersonAssignmentsModal.vue";
 import AdminProcessDefinitionActivationModal from "@/modules/admin/components/modals/AdminProcessDefinitionActivationModal.vue";
+import AdminConfigActivationDiff from "@/modules/admin/components/modals/AdminConfigActivationDiff.vue";
 import AdminProcessDefinitionVersioningModal from "@/modules/admin/components/modals/AdminProcessDefinitionVersioningModal.vue";
+import AdminProcessWizardModal from "@/modules/admin/components/modals/AdminProcessWizardModal.vue";
+import AdminProcessWizardLineaModal from "@/modules/admin/components/modals/AdminProcessWizardLineaModal.vue";
+import AdminProcessWizardProcesoModal from "@/modules/admin/components/modals/AdminProcessWizardProcesoModal.vue";
+import ProcessActivationPanel from "@/modules/admin/components/modals/ProcessActivationPanel.vue";
 import AdminRecordViewerModal from "@/modules/admin/components/modals/AdminRecordViewerModal.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
 import AdminTableHeader from "@/modules/admin/components/tables/AdminTableHeader.vue";
 import AdminUnassignedArtifactsSection from "@/modules/admin/components/tables/AdminUnassignedArtifactsSection.vue";
 import AdminVacantPositionsSection from "@/modules/admin/components/tables/AdminVacantPositionsSection.vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminLookupField from "@/modules/admin/components/forms/AdminLookupField.vue";
-import AdminModalShell from "@/shared/components/modals/AppModalShell.vue";
+import AppModalShell from "@/shared/components/modals/AppModalShell.vue";
 import AdminSearchModal from "@/modules/admin/components/modals/AdminSearchModal.vue";
-import AdminTableActions from "@/modules/admin/components/tables/AdminTableActions.vue";
+import ProfileSubsectionTabs from "@/modules/perfil/components/ProfileSubsectionTabs.vue";
+import { Modal } from "@/shared/utils/modalController";
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   table: {
     type: Object,
     default: null
   },
+  siblingTabs: {
+    type: Array,
+    default: () => []
+  },
+  activeSiblingTab: {
+    type: String,
+    default: ""
+  },
   allTables: {
     type: Array,
     default: () => []
+  },
+  // Filtros iniciales (filter_<col>) al abrir una tabla desde un resumen de operación. Se limpian al cambiar de tabla.
+  initialFilters: {
+    type: Object,
+    default: null
+  },
+  // Lo controla la pestaña hermana "Organigrama": muestra el grafo en vez de la tabla de unidades.
+  forceGraph: {
+    type: Boolean,
+    default: false
+  },
+  // Lo controla la pestaña hermana "Mapa de procesos": muestra el grafo en vez de la tabla de procesos.
+  forceProcessGraph: {
+    type: Boolean,
+    default: false
   }
 });
-const emit = defineEmits(["go-back"]);
+const emit = defineEmits(["go-back", "select-sibling-tab"]);
 
 const rows = ref([]);
 const loading = ref(false);
 const error = ref("");
+const processLaunchModal = ref(null);
+const processDefinitionLaunchModal = ref(null);
 const feedbackToast = ref({
   visible: false,
   kind: "success",
@@ -746,37 +1257,40 @@ const searchTerm = ref("");
 const vacantSearchTerm = ref("");
 const processDefinitionInlineFilters = ref({
   process_id: "",
-  variation_key: "",
+  linea_id: "",
   status: ""
 });
 const processTargetRuleInlineFilters = ref({
   definition_status: ""
 });
 const templateArtifactInlineFilters = ref({
-  artifact_origin: "",
-  artifact_stage: ""
+  is_active: ""
 });
 const processDefinitionProcessOptions = ref([]);
-const processDefinitionSeriesOptions = ref([]);
+const processDefinitionLineaOptions = ref([]);
 const editorMode = ref("create");
 const formData = ref({});
 const selectedRow = ref(null);
 const modalError = ref("");
 const fkDisplay = ref({});
+const processEditorConfigurations = ref([]);
+const processEditorConfigurationsLoading = ref(false);
+const processEditorConfigurationsError = ref("");
+const processEditorContext = ref(null);
+const processConfigurationDeleteRow = ref(null);
 
 const editorModal = ref(null);
 const processDefinitionVersioningModal = ref(null);
 const processDefinitionActivationModal = ref(null);
-const definitionRulesModal = ref(null);
 const definitionTriggersModal = ref(null);
 const definitionArtifactsModal = ref(null);
 const definitionArtifactsPromptModal = ref(null);
 const draftArtifactModalRef = ref(null);
 const deleteModal = ref(null);
+const processConfigurationDeleteModal = ref(null);
 const recordViewerModal = ref(null);
 const personAssignmentsModal = ref(null);
 const fkModal = ref(null);
-const fkViewerModal = ref(null);
 const fkFilterModal = ref(null);
 const fkCreateModal = ref(null);
 const searchInput = ref(null);
@@ -785,20 +1299,21 @@ const fkCreateExitTarget = ref("none");
 const fkNestedExitTarget = ref("none");
 const recordViewerTable = ref(null);
 const recordViewerRow = ref(null);
+const recordViewerEditable = ref(false);
 const recordViewerLoading = ref(false);
 const recordViewerError = ref("");
 const recordViewerRelatedSections = ref([]);
+const recordArchiveDownloading = ref(false);
+const processWizardReadonly = ref(false);
+const restoreProcessWizardAfterRecordViewer = ref(false);
 const processDefinitionVersioningSource = ref(null);
 const processDefinitionCloneSourceId = ref("");
 const processDefinitionActivationConfirmed = ref(false);
 const processDefinitionActivationFromEditor = ref(false);
 const processDefinitionActivationChecking = ref(false);
-const processDefinitionActivationHasActiveRules = ref(true);
 const processDefinitionActivationHasActiveTriggers = ref(true);
-const processDefinitionActivationHasRequiredArtifacts = ref(true);
-const processDefinitionActivationRequiresArtifacts = ref(false);
+const processDefinitionActivationHasActiveArtifacts = ref(true);
 const processDefinitionActivationView = ref("definition");
-const processDefinitionActivationRules = ref([]);
 const processDefinitionActivationTriggers = ref([]);
 const processDefinitionActivationArtifacts = ref([]);
 const processDefinitionChecklistLoading = ref(false);
@@ -807,37 +1322,12 @@ const processDefinitionChecklist = ref({
   triggers: false,
   artifacts: false
 });
-const definitionRulesContext = ref(null);
-const definitionRulesRows = ref([]);
-const definitionRulesLoading = ref(false);
-const definitionRulesError = ref("");
-const definitionRulesEditId = ref("");
-const definitionRulesForm = ref({
-  unit_scope_type: "unit_exact",
-  unit_id: "",
-  unit_type_id: "",
-  include_descendants: "0",
-  cargo_id: "",
-  position_id: "",
-  recipient_policy: "all_matches",
-  priority: "1",
-  is_active: "1",
-  effective_from: "",
-  effective_to: ""
-});
-const definitionRulesLabels = ref({
-  unit_id: "",
-  unit_type_id: "",
-  cargo_id: "",
-  position_id: ""
-});
 const definitionTriggersContext = ref(null);
 const definitionTriggersRows = ref([]);
 const definitionTriggersLoading = ref(false);
 const definitionTriggersError = ref("");
 const definitionTriggersEditId = ref("");
 const definitionTriggersForm = ref({
-  trigger_mode: "automatic_by_term_type",
   term_type_id: "",
   is_active: "1"
 });
@@ -850,14 +1340,11 @@ const definitionArtifactsLoading = ref(false);
 const definitionArtifactsError = ref("");
 const definitionArtifactsEditId = ref("");
 const definitionArtifactsForm = ref({
-  template_artifact_id: "",
-  usage_role: "primary",
-  creates_task: "1",
-  is_required: "1",
-  sort_order: "1"
+  edicion_id: "",
+  sort_order: ""
 });
 const definitionArtifactsLabels = ref({
-  template_artifact_id: ""
+  edicion_id: ""
 });
 const definitionArtifactsPromptContext = ref(null);
 const draftArtifactSeedOptions = ref([]);
@@ -871,10 +1358,15 @@ const draftArtifactExistingFiles = ref({
   pptx: ""
 });
 const draftArtifactForm = ref({
-  template_seed_id: "",
+  generador_id: "",
   display_name: "",
   description: "",
-  source_version: "1.0.0"
+  storage_version: "",
+  is_active: 1,
+  process_definition_id: "",
+  schema_fields: [],
+  fill_workflow: { required: true, steps: [] },
+  signature_workflow: { required: true, steps: [] }
 });
 const draftArtifactFiles = ref({
   pdf: null,
@@ -882,6 +1374,7 @@ const draftArtifactFiles = ref({
   xlsx: null,
   pptx: null
 });
+const draftArtifactFkCreateMode = ref(false);
 
 const fkTable = ref(null);
 const fkRows = ref([]);
@@ -891,21 +1384,11 @@ const fkError = ref("");
 const unitTypeByUnitId = ref({});
 const fkField = ref("");
 const fkSetter = ref(null);
-const fkViewerRow = ref(null);
 const fkFilters = ref({});
 const fkCreateForm = ref({});
 const fkCreateError = ref("");
 const fkCreateLoading = ref(false);
 const fkProcessDefinitionProcessOptions = ref([]);
-const fkProcessDefinitionSeriesOptions = computed(() =>
-  Array.from(
-    new Set(
-      (fkRows.value || [])
-        .map((row) => (row?.variation_key ? String(row.variation_key).trim() : ""))
-        .filter(Boolean)
-    )
-  ).sort((left, right) => left.localeCompare(right, "es"))
-);
 const fkPositionFilters = ref({
   unit_type_id: "",
   unit_id: "",
@@ -918,7 +1401,7 @@ const fkPositionFilterLoading = ref(false);
 
 const processFilters = ref({
   parent_id: "",
-  is_active: ""
+  estado: ""
 });
 const processFilterLabels = ref({
   parent_id: ""
@@ -973,6 +1456,7 @@ const documentSearchModal = ref(null);
 const processSearchModal = ref(null);
 const unitPositionSearchModal = ref(null);
 const personEditorId = ref("");
+let processConfigurationDeleteInstance = null;
 const personCargoRows = ref([]);
 const positionMetaById = ref({});
 const personCargoUnitByPositionId = ref({});
@@ -1036,7 +1520,7 @@ const formFields = computed(() => {
         ...editableFields.value,
         {
           name: "password",
-          label: "Password",
+          label: "Contraseña",
           type: "password",
           required: true
         }
@@ -1047,31 +1531,56 @@ const formFields = computed(() => {
   return editableFields.value;
 });
 const visibleFormFields = computed(() => {
-  if (!isProcessTable.value) {
-    if (props.table?.table === "process_definition_versions") {
-      return formFields.value.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
-    }
-    return formFields.value;
+  // Aquí había un caso especial escrito a mano para `process_definition_series`: un `if` por nombre
+  // de tabla que enseñaba `unit_type_id` o `cargo_id` según `source_type` y además les forzaba
+  // `required`. Era el ÚNICO campo condicional del admin y por eso vivía como excepción. Desde el
+  // 2026-08-28 lo declara el backend (`showWhen` en `sqlTables.js`) y la excepción desaparece —
+  // que es justo lo que pide la regla de no injertar casos especiales en el camino genérico.
+  let campos = formFields.value;
+  if (isProcessesTable.value) {
+    campos = campos.filter((field) => !PROCESS_INLINE_HIDDEN_FIELDS.has(field.name));
+  } else if (props.table?.table === "process_definition_versions") {
+    campos = campos.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
   }
-  return formFields.value.filter((field) => !PROCESS_INLINE_HIDDEN_FIELDS.has(field.name));
+  // `pairedWith`: la longitud la pinta el mapa de la latitud, no un input suyo.
+  // `showWhen`: el campo no aplica todavía, así que no se pregunta.
+  return campos.filter((field) => !isPairedAway(field) && isFieldVisible(field, formData.value));
 });
 
 const tableListFields = computed(() => {
   if (!props.table) {
     return [];
   }
-  const fields = props.table.fields.filter((field) => !(isPersonTable.value && field.name === "password_hash"));
+  // ⚠️ Aquí hubo un `!field.virtual` durante dos commits, y ESCONDÍA COLUMNAS BUENAS.
+  //
+  // Se puso para tapar seis campos virtuales de FORMULARIO que `persons` estrenó y perdió el mismo
+  // día: no estaban en el SELECT, así que la lista los pintaba como seis columnas de guiones. Pero
+  // `virtual` no quiere decir «no viene en la fila»: quiere decir «no es una columna física». Las
+  // otras dos virtuales del modelo —`active_definition_version` y `active_definition_status` de
+  // `processes`— SÍ vienen, calculadas en el SELECT de `SqlAdminService`, y el filtro se las llevó
+  // por delante sin que nadie lo notara: la tabla de procesos perdió dos columnas en silencio.
+  //
+  // Hoy las CUATRO virtuales del modelo son calculadas y las cuatro se ven (la cuarta es el
+  // `name` de una configuración, derivado desde P23). Si algún día vuelve una
+  // virtual que sólo exista en el formulario, no basta con volver a poner este filtro: hará falta
+  // distinguirlas, porque son dos cosas distintas con el mismo nombre.
+  // ⚠️ Y `pairedWith` TAMBIÉN va aquí, no sólo en el formulario. Sin este filtro la lista pintaba
+  // DOS columnas para un solo punto, y la primera con la etiqueta del control de mapa: la cabecera
+  // decía «Ubicacion · Longitud» mientras debajo salían la latitud y la longitud. Lo vio el dueño.
+  // El formulario ya lo filtraba desde el principio (`editableFields`); la lista no.
+  const fields = props.table.fields.filter((field) =>
+    !(isPersonTable.value && field.name === "password_hash") && !isPairedAway(field)
+  );
   let normalizedFields = fields;
   if (props.table.table === "process_definition_versions") {
     normalizedFields = normalizedFields.filter((field) => !PROCESS_DEFINITION_HIDDEN_FIELDS.has(field.name));
   }
-  if (props.table.table === "template_artifacts") {
+  if (props.table.table === "ediciones") {
     const preferredOrder = [
       "id",
       "display_name",
       "available_formats",
       "template_code",
-      "source_version",
       "storage_version"
     ];
     normalizedFields = [...fields].sort((left, right) => {
@@ -1131,12 +1640,6 @@ const fkCreateFields = computed(() => {
   }
   return fkTable.value.fields.filter((field) => !field.readOnly && !field.virtual);
 });
-const fkViewerFields = computed(() => {
-  if (!fkTable.value?.fields) {
-    return [];
-  }
-  return fkTable.value.fields.filter((field) => !field.virtual);
-});
 const fkFilterFields = computed(() => {
   if (!fkTable.value?.fields) {
     return [];
@@ -1144,7 +1647,7 @@ const fkFilterFields = computed(() => {
   if (fkTable.value.table === "process_definition_versions") {
     return [];
   }
-  if (fkTable.value.table === "template_artifacts") {
+  if (fkTable.value.table === "ediciones") {
     return [];
   }
   return fkTable.value.fields.filter((field) => !field.virtual);
@@ -1156,7 +1659,7 @@ const fkPrimaryListField = computed(() => {
   if (fkTable.value.table === "process_definition_versions") {
     return fkTable.value.fields.find((field) => field.name === "process_id") || null;
   }
-  if (fkTable.value.table === "template_artifacts") {
+  if (fkTable.value.table === "ediciones") {
     return fkTable.value.fields.find((field) => field.name === "display_name") || null;
   }
   const displayFieldName = resolveDisplayField(fkTable.value);
@@ -1168,17 +1671,24 @@ const fkListExtraFields = computed(() => {
     return [];
   }
   if (fkTable.value.table === "process_definition_versions") {
+    // TRES, Y ERAN CINCO (frente 25, P23 — 2026-10-14). Sobraban `linea_nombre` y
+    // `definition_version` porque el nombre derivado ya es exactamente esas dos piezas: la fila
+    // repetía la línea y la versión tres veces.
+    //
+    // (`linea_nombre` además no era un campo de la fachada —se proyecta en el SELECT pero no se
+    // declara en `sqlTables.js`—, así que este filtro nunca lo encontraba: pedía cinco y daba
+    // cuatro.)
     return fkTable.value.fields.filter((field) =>
-      ["variation_key", "definition_version", "name", "description", "status"].includes(field.name)
+      ["name", "description", "status"].includes(field.name)
     );
   }
   if (fkTable.value.table === "units") {
     return fkTable.value.fields.filter((field) => ["unit_type_id"].includes(field.name));
   }
-  if (fkTable.value.table === "template_artifacts") {
+  if (fkTable.value.table === "ediciones") {
     return fkTable.value.fields
       .filter((field) =>
-        ["template_code", "source_version", "storage_version", "available_formats", "is_active"].includes(field.name)
+        ["template_code", "storage_version", "available_formats", "is_active"].includes(field.name)
       )
       .map((field) => formatTemplateArtifactFieldLabel(field));
   }
@@ -1214,7 +1724,9 @@ const fkSearchTableFields = computed(() => [
 ]);
 const canCreateFkReference = computed(() =>
   Boolean(fkTable.value)
-  && fkCreateFields.value.length > 0
+  && (fkTable.value.table === "ediciones"
+    ? canCreateAdminTable("ediciones")
+    : fkCreateFields.value.length > 0)
 );
 const canOpenFkFilterModal = computed(() =>
   Boolean(fkTable.value)
@@ -1223,29 +1735,69 @@ const canOpenFkFilterModal = computed(() =>
 const isFkUnitPositions = computed(() => fkTable.value?.table === "unit_positions");
 const isFkUnits = computed(() => fkTable.value?.table === "units");
 const isFkProcessDefinitions = computed(() => fkTable.value?.table === "process_definition_versions");
-const isFkTemplateArtifacts = computed(() => fkTable.value?.table === "template_artifacts");
+const isFkTemplateArtifacts = computed(() => fkTable.value?.table === "ediciones");
 const hasFkProcessDefinitionFilters = computed(() =>
   Boolean(
     fkFilters.value.process_id
-    || fkFilters.value.variation_key?.trim()
+    || fkFilters.value.linea_id?.trim()
   )
 );
 const hasFkTemplateArtifactFilters = computed(() =>
   Boolean(
-    fkFilters.value.template_code?.trim()
-    || fkFilters.value.storage_version?.trim()
+    (fkFilters.value.process_id ?? "") !== ""
     || fkFilters.value.is_active !== ""
   )
 );
 
-const isProcessTable = computed(() => props.table?.table === "processes");
 const isProcessDefinitionFilterTable = computed(() => props.table?.table === "process_definition_versions");
-const isTemplateSeedsTable = computed(() => props.table?.table === "template_seeds");
-const isTemplateArtifactsTable = computed(() => props.table?.table === "template_artifacts");
+const isGeneradoresTable = computed(() => props.table?.table === "generadores_de_documento");
+const isTemplateArtifactsTable = computed(() => props.table?.table === "ediciones");
 const isPersonTable = computed(() => props.table?.table === "persons");
+const isUnitsTable = computed(() => props.table?.table === "units");
+// El modo grafo lo activa la pestaña hermana "Organigrama" (prop forceGraph).
+const unitGraphMode = computed(() => props.forceGraph && isUnitsTable.value);
+const unitGraphRef = ref(null);
+// Mapa de procesos: pestaña hermana "Mapa de procesos" (prop forceProcessGraph) sobre la tabla processes.
+const isProcessesTable = computed(() => props.table?.table === "processes");
+const processGraphMode = computed(() => props.forceProcessGraph && isProcessesTable.value);
+const processGraphRef = ref(null);
+// Tras editar/crear una unidad (fetchRows actualiza rows), refresca el organigrama si está visible.
+watch(rows, () => {
+  if (isUnitsTable.value && unitGraphMode.value) {
+    unitGraphRef.value?.reloadGraph?.();
+  }
+  if (isProcessesTable.value && processGraphMode.value) {
+    processGraphRef.value?.reloadGraph?.();
+  }
+});
 const isUnitPositionsTable = computed(() => props.table?.table === "unit_positions");
 const isPositionAssignmentsTable = computed(() => props.table?.table === "position_assignments");
-const isProcessDefinitionTemplatesTable = computed(() => props.table?.table === "process_definition_templates");
+
+// Subpestañas de la vista de ocupaciones: una tabla por pestaña (ocupaciones / puestos sin ocupacion)
+// en lugar de apilarlas verticalmente.
+const positionAssignmentsView = ref("ocupaciones");
+const positionAssignmentsTabs = computed(() => [
+  { key: "ocupaciones", label: "Ocupaciones", count: rows.value?.length || 0 },
+  { key: "vacantes", label: "Puestos sin ocupacion", count: vacantPositionRows.value?.length || 0 }
+]);
+
+const isProcessDefinitionTemplatesTable = computed(() => props.table?.table === "vinculos");
+
+// Subpestañas de la vista de plantillas de procesos configurados (plantillas vinculadas / plantillas sin configuracion).
+const definitionTemplatesView = ref("plantillas");
+const definitionTemplatesTabs = computed(() => [
+  { key: "plantillas", label: "Plantillas", count: rows.value?.length || 0 },
+  { key: "sin-vincular", label: "Plantillas sin configuracion", count: unassignedTemplateArtifactRows.value?.length || 0 }
+]);
+
+watch(
+  () => props.table?.table,
+  () => {
+    positionAssignmentsView.value = "ocupaciones";
+    definitionTemplatesView.value = "plantillas";
+  }
+);
+
 const isPositionFilterTable = computed(() =>
   isUnitPositionsTable.value || isPositionAssignmentsTable.value
 );
@@ -1259,13 +1811,6 @@ const canManageDefinitionArtifacts = computed(() =>
     formData.value?.status
   )
 );
-const canManageDefinitionRules = computed(() =>
-  isDraftDefinitionStatus(
-    definitionRulesContext.value?.status,
-    selectedRow.value?.status,
-    formData.value?.status
-  )
-);
 const canManageDefinitionTriggers = computed(() =>
   isDraftDefinitionStatus(
     definitionTriggersContext.value?.status,
@@ -1274,39 +1819,16 @@ const canManageDefinitionTriggers = computed(() =>
   )
 );
 const canSubmitDefinitionArtifact = computed(() =>
-  canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.template_artifact_id)
+  canManageDefinitionArtifacts.value && Boolean(definitionArtifactsForm.value.edicion_id)
 );
-const canSubmitDefinitionRule = computed(() => {
-  if (!canManageDefinitionRules.value) {
-    return false;
-  }
-  const scopeType = String(definitionRulesForm.value.unit_scope_type || "");
-  if (scopeType === "unit_type") {
-    return Boolean(definitionRulesForm.value.unit_type_id);
-  }
-  if (scopeType === "unit_exact" || scopeType === "unit_subtree") {
-    return Boolean(definitionRulesForm.value.unit_id || definitionRulesForm.value.position_id);
-  }
-  if (scopeType === "all_units") {
-    return true;
-  }
-  return false;
-});
-const definitionTriggerRequiresTermType = computed(() =>
-  String(definitionTriggersForm.value.trigger_mode || "") === "automatic_by_term_type"
-);
+// El tipo de periodo siempre es obligatorio: el proceso corre en uno o varios tipos de periodo.
+const definitionTriggerRequiresTermType = computed(() => true);
 const canSubmitDefinitionTrigger = computed(() => {
   if (!canManageDefinitionTriggers.value) {
     return false;
   }
-  if (definitionTriggerRequiresTermType.value) {
-    return Boolean(definitionTriggersForm.value.term_type_id);
-  }
-  return true;
+  return Boolean(definitionTriggersForm.value.term_type_id);
 });
-const requiresDefinitionArtifacts = computed(() =>
-  Number(selectedRow.value?.has_document) === 1 || Number(formData.value?.has_document) === 1
-);
 const processDefinitionActivationPrimaryAction = computed(() => {
   if (processDefinitionActivationChecking.value) {
     return null;
@@ -1314,19 +1836,13 @@ const processDefinitionActivationPrimaryAction = computed(() => {
   if (processDefinitionActivationView.value === "definition") {
     return {
       type: "edit_definition",
-      label: "Editar definicion"
-    };
-  }
-  if (processDefinitionActivationView.value === "rules") {
-    return {
-      type: "rules",
-      label: processDefinitionActivationRules.value.length ? "Editar reglas" : "Agregar reglas"
+      label: "Editar configuracion"
     };
   }
   if (processDefinitionActivationView.value === "triggers") {
     return {
       type: "triggers",
-      label: processDefinitionActivationTriggers.value.length ? "Editar disparadores" : "Agregar disparadores"
+      label: processDefinitionActivationTriggers.value.length ? "Editar periodos" : "Agregar periodos"
     };
   }
   if (processDefinitionActivationView.value === "artifacts") {
@@ -1340,17 +1856,39 @@ const processDefinitionActivationPrimaryAction = computed(() => {
 const processDefinitionActivationPrimaryActionLabel = computed(() =>
   processDefinitionActivationPrimaryAction.value?.label || "Continuar"
 );
+
 const allProcessDefinitionActivationRequirementsMet = computed(() =>
-  processDefinitionActivationHasActiveRules.value
-  && processDefinitionActivationHasActiveTriggers.value
-  && processDefinitionActivationHasRequiredArtifacts.value
+  processDefinitionActivationHasActiveTriggers.value
+  && processDefinitionActivationHasActiveArtifacts.value
 );
-const draftArtifactPreviewUrl = computed(() => {
-  if (!draftArtifactForm.value.template_seed_id) {
-    return "";
+// El preview del seed se descarga por axios (responseType blob) para que lleve el header Bearer del
+// interceptor; un <iframe src="..."> con la URL cruda no manda el token → backend responde "Token requerido".
+const draftArtifactPreviewUrl = ref("");
+// idle = sin seed; loading = descargando; ready = PDF disponible; empty = seed sin preview PDF.
+const draftArtifactPreviewStatus = ref("idle");
+let draftArtifactPreviewObjectUrl = "";
+const loadDraftArtifactPreview = async (seedId) => {
+  if (draftArtifactPreviewObjectUrl) {
+    URL.revokeObjectURL(draftArtifactPreviewObjectUrl);
+    draftArtifactPreviewObjectUrl = "";
   }
-  return API_ROUTES.ADMIN_SQL_TEMPLATE_SEED_PREVIEW(draftArtifactForm.value.template_seed_id);
-});
+  draftArtifactPreviewUrl.value = "";
+  if (!seedId) {
+    draftArtifactPreviewStatus.value = "idle";
+    return;
+  }
+  draftArtifactPreviewStatus.value = "loading";
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_GENERADOR_PREVIEW(seedId), { responseType: "blob" });
+    draftArtifactPreviewObjectUrl = URL.createObjectURL(response.data);
+    draftArtifactPreviewUrl.value = draftArtifactPreviewObjectUrl;
+    draftArtifactPreviewStatus.value = "ready";
+  } catch {
+    draftArtifactPreviewUrl.value = "";
+    draftArtifactPreviewStatus.value = "empty";
+  }
+};
+watch(() => draftArtifactForm.value.generador_id, (generadorId) => loadDraftArtifactPreview(generadorId), { immediate: true });
 const currentLoggedUser = computed(() => {
   if (typeof window === "undefined") {
     return null;
@@ -1377,7 +1915,7 @@ const hasProcessDefinitionInlineFilters = computed(() =>
   Boolean(
     processDefinitionInlineFilters.value.process_id
     || processDefinitionInlineFilters.value.status
-    || processDefinitionInlineFilters.value.variation_key?.trim()
+    || processDefinitionInlineFilters.value.linea_id?.trim()
   )
 );
 const hasProcessTargetRuleInlineFilters = computed(() =>
@@ -1387,8 +1925,7 @@ const hasProcessTargetRuleInlineFilters = computed(() =>
 );
 const hasTemplateArtifactInlineFilters = computed(() =>
   Boolean(
-    templateArtifactInlineFilters.value.artifact_origin
-    || templateArtifactInlineFilters.value.artifact_stage
+    templateArtifactInlineFilters.value.is_active
   )
 );
 const hasVacantPositionFilters = computed(() =>
@@ -1407,16 +1944,86 @@ const hasUnassignedTemplateArtifactFilters = computed(() =>
   )
 );
 const table = computed(() => props.table);
-const tableHeaderTitle = computed(() => props.table?.label || "Administracion SQL");
-const tableHeaderSubtitle = computed(() => {
-  if (!props.table) {
-    return "Gestiona registros en la base de datos.";
+const currentTableName = computed(() => props.table?.table || "");
+// Tablas runtime (Trazabilidad y soporte): la escritura directa se restringe a AdminSistema con modo avanzado
+// activo. Estado local de UI (advancedRuntimeMode), NO es un permiso ni se persiste; el backend valida igual.
+const advancedRuntimeMode = ref(false);
+const isCurrentTableTraceability = computed(() => isTraceabilityTable(currentTableName.value));
+const runtimeWriteAllowed = computed(() =>
+  !isCurrentTableTraceability.value || (isAdminUser.value && advancedRuntimeMode.value));
+// TABLAS DE SOLO CONSULTA (`soloConsulta`, en el catálogo): la lista se ve, pero aquí no se crea, ni
+// se edita, ni se elimina. Son las vidas, las relaciones y las equivalencias de la estructura, que
+// se escriben desde el modal de cada nodo. El texto de la marca dice dónde.
+const esSoloConsulta = computed(() => Boolean(props.table?.soloConsulta));
+const canCreateCurrentTable = computed(() =>
+  canCreateAdminTable(currentTableName.value)
+  && runtimeWriteAllowed.value
+  // Las plantillas se crean SOLO desde un proceso (pestaña "Plantillas" de la configuración). La tabla
+  // global es de consulta/versionado: se oculta el botón "Crear".
+  && !isTemplateArtifactsTable.value
+  && !esSoloConsulta.value
+);
+const canCreateProcessConfiguration = computed(() => canCreateAdminTable("process_definition_versions"));
+const canDeleteProcessConfiguration = computed(() => canDeleteAdminTable("process_definition_versions"));
+const canUpdateCurrentTable = computed(() => canUpdateAdminTable(currentTableName.value) && runtimeWriteAllowed.value && !esSoloConsulta.value);
+const canDeleteCurrentTable = computed(() => canDeleteAdminTable(currentTableName.value) && runtimeWriteAllowed.value && !esSoloConsulta.value);
+const processEditorConfigurationTableFields = [
+  { name: "linea_nombre", label: "Línea" },
+  { name: "definition_version", label: "Version" },
+  { name: "name", label: "Nombre" },
+  { name: "status", label: "Estado" },
+  { name: "effective_from", label: "Vigencia desde" }
+];
+/* ⚠️ CUANDO SE VE LA SECCION PRINCIPAL — y esto vive en UN sitio a proposito.
+ *
+ * La condicion es larga y tiene cuatro terminos, y **estaba escrita dos veces**: en el `v-show` de
+ * la seccion y, negada a ojo, en el `v-if` de la barra suelta que F13.4 dejo para los casos donde
+ * la seccion no se renderiza. La negue mal: di por hecho que en `position_assignments` la seccion
+ * no salia, y **si sale** —su `v-show` solo la oculta cuando la vista interna no es «ocupaciones»—,
+ * asi que `/admin/usuarios/personas/position_assignments` mostraba **DOS barras**, una en y=76 y
+ * otra en y=306, con el mismo titulo.
+ *
+ * Con el computado, la barra suelta es literalmente «cuando la seccion NO se ve», y no puede
+ * volver a desincronizarse. El termino del modo grafo de procesos se queda aparte porque ahi no
+ * debe haber barra en absoluto, ni suelta ni de seccion. */
+/* LAS PESTAÑAS ANIDADAS, definidas UNA vez y montadas en las dos barras.
+ *
+ * Solo algunas tablas tienen segundo nivel, y las dos que lo tienen son excluyentes entre si. En
+ * vez de repetir el bloque en cada barra —que es como nacieron los cuatro defectos de F13.4—, aqui
+ * se decide QUE pestañas van y quien recibe el cambio, y cada montaje es un `v-bind`. */
+/* Cuando se ve una de las secciones de SUB-VISTA. Como ellas montan su propia barra desde el
+ * 2026-08-21, la barra suelta no debe pintarse a la vez: serian dos. Mismo motivo por el que existe
+ * `mainSectionVisible` — una condicion de visibilidad escrita dos veces se desincroniza. */
+const subviewSectionVisible = computed(() =>
+  (isPositionAssignmentsTable.value && positionAssignmentsView.value === "vacantes")
+  || (isProcessDefinitionTemplatesTable.value && definitionTemplatesView.value === "sin-vincular")
+);
+
+const subtabs = computed(() => {
+  if (isPositionAssignmentsTable.value) {
+    return { modelValue: positionAssignmentsView.value, tabs: positionAssignmentsTabs.value,
+             ariaLabel: "Vistas de ocupaciones" };
   }
-  if (isPersonTable.value) {
-    return `Gestiona registros en ${props.table.table} y sus asignaciones relacionadas.`;
+  if (isProcessDefinitionTemplatesTable.value) {
+    return { modelValue: definitionTemplatesView.value, tabs: definitionTemplatesTabs.value,
+             ariaLabel: "Vistas de plantillas" };
   }
-  return `Gestiona registros en ${props.table.table}.`;
+  return null;
 });
+
+const setSubtab = (valor) => {
+  if (isPositionAssignmentsTable.value) positionAssignmentsView.value = valor;
+  else if (isProcessDefinitionTemplatesTable.value) definitionTemplatesView.value = valor;
+};
+
+const mainSectionVisible = computed(() =>
+  !(isUnitsTable.value && unitGraphMode.value)
+  && !(isProcessesTable.value && processGraphMode.value)
+  && (!isPositionAssignmentsTable.value || positionAssignmentsView.value === "ocupaciones")
+  && (!isProcessDefinitionTemplatesTable.value || definitionTemplatesView.value === "plantillas")
+);
+
+const tableHeaderTitle = computed(() => props.table?.label || "Administracion SQL");
 const personAssignmentName = computed(() => {
   if (!personAssignmentContext.value) {
     return "";
@@ -1446,55 +2053,6 @@ const recordViewerDisplayRows = computed(() =>
     label: field.label || field.name
   }))
 );
-const fkViewerDisplayRows = computed(() =>
-  fkViewerFields.value.map((field) => ({
-    id: field.name,
-    field,
-    label: field.label || field.name
-  }))
-);
-const tableHeaderIcon = computed(() => {
-  const tableName = props.table?.table || "";
-  if (
-    [
-      "processes",
-      "process_definition_versions",
-      "process_target_rules",
-      "tasks",
-      "task_assignments",
-      "template_artifacts",
-      "process_definition_templates"
-    ].includes(tableName)
-  ) {
-    return "check-double";
-  }
-  if (["persons", "unit_positions", "position_assignments"].includes(tableName)) {
-    return "user";
-  }
-  if (["roles", "permissions", "role_permissions", "role_assignments"].includes(tableName)) {
-    return "lock";
-  }
-  if (["vacancies", "aplications", "offers", "contracts", "vacancy_visibility"].includes(tableName)) {
-    return "id-card";
-  }
-  if (
-    [
-      "documents",
-      "document_versions",
-      "document_signatures",
-      "signature_types",
-      "signature_statuses",
-      "signature_request_statuses",
-      "signature_flow_templates",
-      "signature_flow_steps",
-      "signature_flow_instances",
-      "signature_requests"
-    ].includes(tableName)
-  ) {
-    return "certificate";
-  }
-  return "info-circle";
-});
 
 const allTablesMap = computed(() =>
   Object.fromEntries(props.allTables.map((table) => [table.table, table]))
@@ -1502,20 +2060,15 @@ const allTablesMap = computed(() =>
 const fkLabelCache = ref({});
 const processIdByDefinitionId = ref({});
 const processDefinitionMetaById = ref({});
-const inlineFkSuggestions = ref({});
-const inlineFkLoading = ref({});
-const inlineFkTouched = ref({});
-const inlineFkActiveField = ref("");
 
 const formatDateOnly = (value) => adminPresentationService.formatDateOnly(value);
 const formatDateTimeHour = (value) => adminPresentationService.formatDateTimeHour(value);
 const formatPositionType = (value) => adminPresentationService.formatPositionType(value);
 const formatSelectOptionLabel = (field, value) => adminPresentationService.formatSelectOptionLabel(field, value);
-const prettifyFormatName = (value) => adminPresentationService.prettifyFormatName(value);
+const hasSelectOptionLabels = (fieldName) => adminPresentationService.hasSelectOptionLabels(fieldName);
 const getFileNameFromObjectKey = (value) => adminPresentationService.getFileNameFromObjectKey(value);
 const normalizeAvailableFormats = (value) => adminPresentationService.normalizeAvailableFormats(value);
 const getAvailableFormatSections = (value) => adminPresentationService.getAvailableFormatSections(value);
-const getAvailableFormatBadgeStyle = (mode, entry) => adminPresentationService.getAvailableFormatBadgeStyle(mode, entry);
 const formatAvailableFormatsSummary = (value) => adminPresentationService.formatAvailableFormatsSummary(value);
 const {
   getViewerFieldsForTable,
@@ -1524,7 +2077,6 @@ const {
   buildPersonAssignmentContext,
   formatValueForTable,
   formatCell,
-  formatDefinitionRuleCell,
   toDateInputValue,
   toDateTimeInputValue,
   normalizeComparableFormValue,
@@ -1544,6 +2096,7 @@ const {
   formatDateTimeHour,
   formatPositionType,
   formatSelectOptionLabel,
+  hasSelectOptionLabels,
   formatAvailableFormatsSummary
 });
 
@@ -1560,7 +2113,6 @@ const {
   ensureEditorInstance,
   ensureProcessDefinitionVersioningInstance,
   ensureProcessDefinitionActivationInstance,
-  ensureDefinitionRulesInstance,
   ensureDefinitionTriggersInstance,
   ensureDeleteInstance,
   ensureRecordViewerInstance,
@@ -1569,7 +2121,6 @@ const {
   ensureDefinitionArtifactsPromptInstance,
   ensureFkInstance,
   ensureFkCreateInstance,
-  ensureFkViewerInstance,
   ensureFkFilterInstance,
   ensureProcessSearchInstance,
   ensureDocumentSearchInstance,
@@ -1578,13 +2129,11 @@ const {
   hideParentModalsForFk,
   hideParentModalsForRecordViewer,
   getPersonAssignmentsInstance,
-  getDefinitionRulesInstance,
   getDefinitionTriggersInstance,
   getDefinitionArtifactsInstance,
   getDefinitionArtifactsPromptInstance,
   getRecordViewerInstance,
   getFkInstance,
-  getFkViewerInstance,
   getFkFilterInstance,
   getFkCreateInstance,
   getProcessDefinitionActivationInstance,
@@ -1605,7 +2154,6 @@ const {
   editorModal,
   processDefinitionVersioningModal,
   processDefinitionActivationModal,
-  definitionRulesModal,
   definitionTriggersModal,
   definitionArtifactsModal,
   definitionArtifactsPromptModal,
@@ -1613,7 +2161,6 @@ const {
   recordViewerModal,
   personAssignmentsModal,
   fkModal,
-  fkViewerModal,
   fkFilterModal,
   fkCreateModal,
   templateSearchModal,
@@ -1627,18 +2174,12 @@ const {
   processDefinitionActivationConfirmed,
   processDefinitionActivationFromEditor,
   processDefinitionActivationChecking,
-  processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
-  processDefinitionActivationHasRequiredArtifacts,
-  processDefinitionActivationRequiresArtifacts,
+  processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
-  processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
-  definitionRulesError,
-  definitionRulesContext,
-  definitionRulesRows,
   definitionTriggersError,
   definitionTriggersContext,
   definitionTriggersRows,
@@ -1649,7 +2190,7 @@ const {
   definitionArtifactsPromptContext,
   refreshProcessDefinitionChecklist: (...args) => refreshProcessDefinitionChecklist(...args),
   openProcessDefinitionActivationModal: (...args) => openProcessDefinitionActivationModal(...args),
-  resetDefinitionRulesForm: (...args) => resetDefinitionRulesForm(...args),
+  restoreProcessWizardFromRecordViewer: () => restoreProcessWizardFromRecordViewer(),
   resetDefinitionTriggersForm: (...args) => resetDefinitionTriggersForm(...args),
   resetDefinitionArtifactsForm: (...args) => resetDefinitionArtifactsForm(...args)
 });
@@ -1661,7 +2202,7 @@ const {
   loadVacantPositionUnitTypeOptions,
   loadVacantPositionCargoOptions,
   loadProcessDefinitionProcessOptions,
-  loadProcessDefinitionSeriesOptions,
+  loadProcessDefinitionLineaOptions,
   loadVacantPositionUnitOptions,
   loadFkUnitTypeOptions,
   loadFkCargoOptions,
@@ -1679,7 +2220,7 @@ const {
   vacantPositionUnitOptions,
   vacantPositionCargoOptions,
   processDefinitionProcessOptions,
-  processDefinitionSeriesOptions,
+  processDefinitionLineaOptions,
   fkPositionFilters,
   fkPositionFilterLoading,
   fkUnitTypeOptions,
@@ -1715,8 +2256,7 @@ const {
   isPersonTable,
   isForeignKeyField: (...args) => isForeignKeyField(...args),
   toDateInputValue,
-  toDateTimeInputValue,
-  resetInlineFkState: (...args) => resetInlineFkState(...args)
+  toDateTimeInputValue
 });
 
 const isForeignKeyField = (field) => FK_TABLE_MAP[field.name] !== undefined;
@@ -1727,14 +2267,14 @@ const resolveDisplayField = (tableMeta) => {
   if (!tableMeta) {
     return null;
   }
-  if (tableMeta.table === "template_artifacts") {
+  if (tableMeta.table === "ediciones") {
     return "display_name";
   }
-  if (tableMeta.table === "template_seeds") {
-    return "display_name";
-  }
-  const preferred = ["name", "title", "email", "label", "code", "slug"];
-  const match = preferred.find((field) => tableMeta.fields.some((meta) => meta.name === field));
+  // ⚠️ `nombre` ENTRA EL 2026-10-14 Y SE LLEVA UN CASO ESPECIAL. Aquí había un `if` por nombre de
+  // tabla que devolvía "nombre" para `generadores_de_documento`, que es el injerto que la regla 3
+  // de «mover código» prohíbe: la lista ya existía para esto. Y la lista se fue a
+  // `AdminTableManagerConfig`, porque había DOS divergidas — el porqué, medido, está allí.
+  const match = FK_LABEL_FIELDS.find((field) => tableMeta.fields.some((meta) => meta.name === field));
   return match || tableMeta.fields.find((meta) => meta.name !== "id")?.name || "id";
 };
 
@@ -1765,6 +2305,46 @@ const formatFkOptionLabel = (tableName, row) =>
     (fkTableName, fkValue) => getFkCachedLabel(fkTableName, fkValue)
   );
 
+const processDefinitionVersionsTableMeta = computed(() =>
+  allTablesMap.value.process_definition_versions || {
+    table: "process_definition_versions",
+    fields: processEditorConfigurationTableFields
+  }
+);
+
+const formatProcessEditorConfigurationCell = (row, field) =>
+  formatValueForTable(processDefinitionVersionsTableMeta.value, row?.[field.name], field, row);
+
+const canDeleteProcessConfigurationRow = (row) =>
+  canDeleteProcessConfiguration.value
+  && String(row?.status || "").trim().toLowerCase() === "draft";
+
+const loadProcessEditorConfigurations = async (processId = selectedRow.value?.id) => {
+  if (!processId) {
+    processEditorConfigurations.value = [];
+    processEditorConfigurationsError.value = "";
+    processEditorConfigurationsLoading.value = false;
+    return;
+  }
+  processEditorConfigurationsLoading.value = true;
+  processEditorConfigurationsError.value = "";
+  try {
+    const response = await adminSqlService.list("process_definition_versions", {
+      filter_process_id: processId,
+      orderBy: "effective_from",
+      order: "desc",
+      limit: 100
+    });
+    processEditorConfigurations.value = response.data || [];
+    await prefetchFkLabelsForRows(processEditorConfigurations.value, ["linea_id"]);
+  } catch {
+    processEditorConfigurations.value = [];
+    processEditorConfigurationsError.value = "No se pudieron cargar las configuraciones del proceso.";
+  } finally {
+    processEditorConfigurationsLoading.value = false;
+  }
+};
+
 const getFkTableField = (fieldName) => {
   if (!fkTable.value?.fields || !fieldName) {
     return null;
@@ -1774,30 +2354,28 @@ const getFkTableField = (fieldName) => {
 
 const getFkTableFieldOptions = (fieldName) => getFkTableField(fieldName)?.options || [];
 const {
-  resetInlineFkState,
-  cancelInlineFkClose,
-  scheduleInlineFkClose,
-  shouldShowInlineFkSuggestions,
-  formatInlineFkOption,
-  clearInlineFkSelection,
-  applyInlineFkSelection,
-  fetchInlineFkSuggestions,
-  openInlineFkSuggestions,
-  handleInlineFkInput,
-  updateInlineFkDisplay,
-  selectInlineFkSuggestion
+  buildFkSuggestProvider,
+  selectFkOption,
+  clearFkSelection
 } = useAdminFkManager({
   formData,
   fkDisplay,
-  inlineFkSuggestions,
-  inlineFkLoading,
-  inlineFkTouched,
-  inlineFkActiveField,
-  visibleFormFields,
-  isFieldLocked: (...args) => isFieldLocked(...args),
+  formFields,
   resolveFkTable,
   formatFkOptionLabel
 });
+
+// Un `geopoint` escribe DOS columnas de una vez. Los nombres los trae el propio campo (`pair`), no
+// se dan por supuestos: otra tabla puede llamarlas de otra forma.
+const updateGeopoint = (field, punto) => {
+  const nombreLat = field?.pair?.lat ?? "latitud";
+  const nombreLng = field?.pair?.lng ?? "longitud";
+  formData.value = {
+    ...formData.value,
+    [nombreLat]: punto?.lat ?? "",
+    [nombreLng]: punto?.lng ?? ""
+  };
+};
 
 const resetFkUnitPositionFilters = () => {
   fkPositionFilters.value = {
@@ -1845,7 +2423,7 @@ const clearFkProcessDefinitionFilters = async () => {
   fkFilters.value = {
     ...fkFilters.value,
     process_id: "",
-    variation_key: "",
+    linea_id: "",
     status: "active"
   };
   await fetchFkRows();
@@ -1858,8 +2436,7 @@ const handleFkTemplateArtifactFilterChange = async () => {
 const clearFkTemplateArtifactFilters = async () => {
   fkFilters.value = {
     ...fkFilters.value,
-    template_code: "",
-    storage_version: "",
+    process_id: "",
     is_active: ""
   };
   await fetchFkRows();
@@ -1870,7 +2447,6 @@ const {
   buildFkCreatePayload,
   buildKeys,
   handleGoBack,
-  formatFkViewerValue,
   formatRecordViewerValue,
   openDelete,
   openProcessDefinitionVersioningModal,
@@ -1895,7 +2471,6 @@ const {
   processDefinitionVersioningSource,
   ensureProcessDefinitionVersioningInstance,
   getProcessDefinitionVersioningInstance,
-  fkTable,
   recordViewerTable,
   formatValueForTable
 });
@@ -1914,8 +2489,7 @@ const {
   debouncedFkSearch,
   debouncedSearch,
   debouncedVacantSearch,
-  debouncedUnassignedTemplateArtifactSearch,
-  handleSearchAction
+  debouncedUnassignedTemplateArtifactSearch
 } = useAdminShellSearchActions({
   props,
   searchInput,
@@ -1958,8 +2532,67 @@ const {
   resolveModalElement
 });
 
+const handleArtifactActiveChange = async (nextActive) => {
+  const id = draftArtifactEditId.value;
+  if (!id) return;
+  try {
+    const { data } = await adminSqlService.setTemplateArtifactActive(id, nextActive ? 1 : 0);
+    draftArtifactForm.value = { ...draftArtifactForm.value, is_active: data?.is_active };
+    await fetchRows();
+    showFeedbackToast({
+      kind: "success",
+      title: data?.is_active ? "Plantilla activada" : "Plantilla desactivada",
+      message: data?.is_active ? "La plantilla quedó activa y disponible." : "La plantilla quedó inactiva."
+    });
+  } catch (err) {
+    showFeedbackToast({ kind: "error", title: "No se pudo cambiar el estado", message: err?.response?.data?.message || "Error al actualizar el estado." });
+  }
+};
+
+const handleArtifactPublish = async () => {
+  const id = draftArtifactEditId.value;
+  if (!id) return;
+  try {
+    const { data } = await adminSqlService.publishTemplateArtifact(id);
+    draftArtifactForm.value = {
+      ...draftArtifactForm.value,
+      lifecycle_state: data?.lifecycle_state || "published",
+      is_active: data?.is_active ?? draftArtifactForm.value.is_active
+    };
+    await fetchRows();
+    showFeedbackToast({ kind: "success", title: "Plantilla publicada", message: data?.__notice || "La plantilla quedó publicada (inmutable)." });
+  } catch (err) {
+    showFeedbackToast({ kind: "error", title: "No se pudo publicar", message: err?.response?.data?.message || "Error al publicar la plantilla." });
+  }
+};
+
+const handleArtifactRetire = async () => {
+  const id = draftArtifactEditId.value;
+  if (!id) return;
+  try {
+    const { data } = await adminSqlService.retireTemplateArtifact(id);
+    draftArtifactForm.value = { ...draftArtifactForm.value, lifecycle_state: data?.lifecycle_state || "retired", is_active: 0 };
+    await fetchRows();
+    showFeedbackToast({ kind: "success", title: "Plantilla retirada", message: "La plantilla quedó retirada (se conserva para auditoría)." });
+  } catch (err) {
+    showFeedbackToast({ kind: "error", title: "No se pudo retirar", message: err?.response?.data?.message || "Error al retirar la plantilla." });
+  }
+};
+
+const handleArtifactNewVersion = async (bumpLevel = "minor") => {
+  const id = draftArtifactEditId.value;
+  if (!id) return;
+  try {
+    const { data } = await adminSqlService.createTemplateArtifactVersion(id, bumpLevel);
+    await fetchRows();
+    closeDraftArtifactModal();
+    showFeedbackToast({ kind: "success", title: "Nueva versión creada", message: data?.__notice || "Se creó una nueva versión (inactiva)." });
+  } catch (err) {
+    showFeedbackToast({ kind: "error", title: "No se pudo crear la versión", message: err?.response?.data?.message || "Error al crear la nueva versión." });
+  }
+};
+
 const {
-  syncTemplateArtifactsFromDist,
   syncTemplateSeedsFromSource,
   applyUnitRelationDefaults
 } = useAdminSyncActions({
@@ -1970,7 +2603,7 @@ const {
   fkDisplay,
   allTablesMap,
   isTemplateArtifactsTable,
-  isTemplateSeedsTable,
+  isGeneradoresTable,
   fetchRows: (...args) => fetchRows(...args),
   loadDraftArtifactSeedOptions: (...args) => loadDraftArtifactSeedOptions(...args),
   showFeedbackToast,
@@ -1980,6 +2613,7 @@ const {
 
 const {
   fetchFkRows,
+  resolveFkSuggestions,
   openFkSearch,
   applyFkSelection,
   selectFkRow,
@@ -1995,7 +2629,6 @@ const {
   fkError,
   fkField,
   fkSetter,
-  fkViewerRow,
   fkCreateForm,
   fkCreateError,
   fkCreateExitTarget,
@@ -2005,6 +2638,7 @@ const {
   resetFkFilters,
   resetFkUnitPositionFilters,
   loadFkUnitTypeOptions,
+  loadFkUnitOptions,
   loadFkCargoOptions,
   loadFkProcessDefinitionProcessOptions,
   resolveFkTable,
@@ -2025,13 +2659,33 @@ const {
 });
 
 const {
+  openRecordViewer,
+  closeRecordViewer
+} = useAdminRecordViewer({
+  recordViewerTable,
+  recordViewerRow,
+  recordViewerEditable,
+  recordViewerLoading,
+  recordViewerError,
+  recordViewerRelatedSections,
+  allTablesMap,
+  getViewerFieldsForTable,
+  isForeignKeyField,
+  prefetchFkLabelsForRows,
+  prefetchProcessLabelsForDefinitionRows,
+  prefetchProcessDefinitionMeta,
+  ensureRecordViewerInstance,
+  getRecordViewerInstance,
+  hideParentModals: hideParentModalsForRecordViewer
+});
+
+const {
   openFkViewer,
-  closeFkViewer,
   openFkFilterModal,
   cancelFkFilter,
   clearFkFilters,
   applyFkFilters,
-  openFkCreate,
+  openFkCreate: openFkCreateBase,
   cancelFkCreate,
   submitFkCreate
 } = useAdminFkCrud({
@@ -2050,43 +2704,283 @@ const {
   buildFkCreatePayload,
   applyFkSelection,
   fetchFkRows,
+  openRecordViewer,
   ensureFkInstance,
   getFkInstance,
-  ensureFkViewerInstance,
-  getFkViewerInstance,
   ensureFkFilterInstance,
   getFkFilterInstance,
   ensureFkCreateInstance,
   getFkCreateInstance
 });
 
-const {
-  openRecordViewer,
-  closeRecordViewer
-} = useAdminRecordViewer({
-  recordViewerTable,
-  recordViewerRow,
-  recordViewerLoading,
-  recordViewerError,
-  recordViewerRelatedSections,
-  allTablesMap,
-  getViewerFieldsForTable,
-  isForeignKeyField,
-  prefetchFkLabelsForRows,
-  prefetchProcessLabelsForDefinitionRows,
-  prefetchProcessDefinitionMeta,
-  ensureRecordViewerInstance,
-  getRecordViewerInstance,
-  hideParentModals: hideParentModalsForRecordViewer
+// Pestaña activa del picker de plantillas (Crear/Seleccionar). Por defecto "Seleccionar".
+const fkActiveTab = ref("select");
+// Al abrir el picker para plantillas, prepara el form embebido del wizard (sin abrir el modal standalone) y
+// lo marca en modo "crear desde FK" (al guardar, aplica la plantilla creada como selección). Al cerrarse, limpia.
+watch(isFkTemplateArtifacts, async (isTpl) => {
+  if (isTpl) {
+    draftArtifactFkCreateMode.value = true;
+    fkActiveTab.value = "create";
+    draftArtifactPreselectDefinitionId.value = String(definitionArtifactsContext.value?.id || "");
+    await openDraftArtifactModal(null, { force: true, show: false, preselectDefinitionId: draftArtifactPreselectDefinitionId.value });
+  } else {
+    draftArtifactFkCreateMode.value = false;
+    draftArtifactPreselectDefinitionId.value = "";
+  }
 });
 
+const openFkCreate = async () => {
+  if (!canCreateFkReference.value) {
+    return;
+  }
+  if (isFkTemplateArtifacts.value) {
+    draftArtifactFkCreateMode.value = true;
+    fkCreateExitTarget.value = "none";
+    skipFkReturnRestore.value = true;
+    // Si se está creando la plantilla desde la edición de una configuración, preselecciona esa config.
+    draftArtifactPreselectDefinitionId.value = String(definitionArtifactsContext.value?.id || "");
+    getFkInstance()?.hide();
+    await openDraftArtifactModal(null, { force: true, preselectDefinitionId: draftArtifactPreselectDefinitionId.value });
+    return;
+  }
+  openFkCreateBase();
+};
+
+// Editar una plantilla vinculada desde la pestaña Paquetes: abre el editor de la plantilla (modo edición).
+// Se preserva el modal de paquetes vía el origen "definitionArtifacts" para volver a él al cerrar/guardar.
+const draftArtifactReturnToPackages = ref(false);
+const openDefinitionArtifactTemplateEditor = async (row, { fromPackages = true } = {}) => {
+  const artifactId = row?.edicion_id;
+  if (!artifactId) {
+    return;
+  }
+  let artifactRow = null;
+  try {
+    const { data } = await adminSqlService.list("ediciones", { filter_id: artifactId, limit: 1 });
+    artifactRow = Array.isArray(data) ? data[0] : (data?.rows?.[0] || data?.data?.[0] || null);
+  } catch {
+    artifactRow = null;
+  }
+  if (!artifactRow?.id) {
+    return;
+  }
+  // El contenido solo se EDITA en borrador. Si está publicada/retirada, el editor abre en SOLO LECTURA (el
+  // propio modal lo gobierna por lifecycle_state) con la acción "Nueva versión" para crear una versión editable.
+  const isDraft = String(artifactRow.lifecycle_state || "published") === "draft";
+  // Advertencia de impacto multi-config solo cuando se va a editar (borrador): afecta a todas las configuraciones.
+  if (isDraft) {
+    try {
+      const { data } = await adminSqlService.list("vinculos", {
+        filter_template_artifact_id: artifactId,
+        limit: 500
+      });
+      const rows = Array.isArray(data) ? data : (data?.rows || data?.data || []);
+      const usageCount = rows.filter((r) => String(r.edicion_id) === String(artifactId)).length;
+      if (usageCount > 1) {
+        const ok = window.confirm(
+          `Esta plantilla está vinculada a ${usageCount} configuraciones. Si editas su contenido, los cambios `
+          + "afectarán a TODAS esas configuraciones. ¿Deseas continuar?"
+        );
+        if (!ok) {
+          return;
+        }
+      }
+    } catch {
+      // Si no se pudo calcular el uso, no se bloquea la edición.
+    }
+  }
+  // Desde el grafo (fromPackages=false) NO hay modal de paquetes al que volver: se abre el editor directo.
+  if (fromPackages) {
+    draftArtifactReturnToPackages.value = true;
+    pushModalOrigin("definitionArtifacts");
+    getDefinitionArtifactsInstance()?.hide();
+  } else {
+    draftArtifactReturnToPackages.value = false;
+  }
+  // force: estamos en el contexto de process_definition_versions, no de ediciones; sin force el
+  // editor abortaría por el guard de tabla.
+  await openDraftArtifactModal(artifactRow, { force: true });
+};
+
+// Click en un nodo de entregable en el grafo → abre el editor del entregable directamente (no el wizard de config).
+const openTemplateEditorFromGraph = ({ templateArtifactId } = {}) => {
+  if (!templateArtifactId) return;
+  openDefinitionArtifactTemplateEditor({ edicion_id: templateArtifactId }, { fromPackages: false });
+};
+
+const returnToDefinitionArtifactsAfterEdit = async () => {
+  draftArtifactReturnToPackages.value = false;
+  restoreReturnModal();          // saca "definitionArtifacts" del stack y vuelve a mostrar el modal de paquetes
+  await loadDefinitionArtifacts(); // refresca nombres/estado tras editar la plantilla
+};
+
+const handleDraftArtifactClose = () => {
+  const shouldReturnToFkSearch = draftArtifactFkCreateMode.value;
+  const shouldReturnToPackages = !shouldReturnToFkSearch && draftArtifactReturnToPackages.value;
+  draftArtifactPreselectDefinitionId.value = "";
+  closeDraftArtifactModal();
+  if (shouldReturnToFkSearch) {
+    draftArtifactFkCreateMode.value = false;
+    ensureFkInstance();
+    getFkInstance()?.show();
+  } else if (shouldReturnToPackages) {
+    returnToDefinitionArtifactsAfterEdit();
+  }
+};
+
+const handleDraftArtifactSubmit = async () => {
+  const createdRow = await submitDraftArtifact();
+  // Edición desde Paquetes: al guardar correctamente, vuelve a la gestión de plantillas y refresca.
+  if (!draftArtifactFkCreateMode.value && draftArtifactReturnToPackages.value && createdRow?.id) {
+    await returnToDefinitionArtifactsAfterEdit();
+    return;
+  }
+  if (!draftArtifactFkCreateMode.value || !createdRow?.id) {
+    return;
+  }
+  draftArtifactFkCreateMode.value = false;
+  applyFkSelection(createdRow);
+  // Cierra el picker "Seleccionar plantilla" tras crear; su handler hidden.bs.modal restaura el modal de
+  // origen (gestión de plantillas del proceso). Antes quedaba abierto encima.
+  getFkInstance()?.hide();
+  // La plantilla recién creada ya quedó vinculada a la configuración (auto-link del backend). Refresca la
+  // tabla de plantillas del proceso para que aparezca de inmediato y limpia el form (ya no es "Agregar").
+  if (definitionArtifactsContext.value?.id) {
+    resetDefinitionArtifactsForm();
+    await loadDefinitionArtifacts();
+  }
+};
+
+// Descarga el ZIP de formatos del registro abierto en el visor (paquetes de plantilla o seeds).
+const handleDownloadRecordArchive = async () => {
+  const row = recordViewerRow.value;
+  const tableName = recordViewerTable.value?.table;
+  if (!row?.id || recordArchiveDownloading.value) {
+    return;
+  }
+  let url = null;
+  if (tableName === "ediciones") {
+    url = API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_DOWNLOAD(row.id);
+  } else if (tableName === "generadores_de_documento") {
+    url = API_ROUTES.ADMIN_SQL_GENERADOR_DOWNLOAD(row.id);
+  }
+  if (!url) {
+    return;
+  }
+  recordArchiveDownloading.value = true;
+  try {
+    const response = await axios.get(url, { responseType: "blob" });
+    const disposition = response.headers?.["content-disposition"] || "";
+    const match = /filename\*?=(?:UTF-8'')?"?([^";]+)"?/i.exec(disposition);
+    const fallbackName = `${row.template_code || row.code || row.display_name || row.nombre || "formatos"}.zip`.replaceAll("/", "-");
+    const fileName = match ? decodeURIComponent(match[1]) : fallbackName;
+    const blobUrl = URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    let message = error?.response?.data?.message || "No se pudo descargar el ZIP de formatos.";
+    if (error?.response?.data instanceof Blob) {
+      try {
+        message = JSON.parse(await error.response.data.text())?.message || message;
+      } catch {
+        // se conserva el mensaje por defecto
+      }
+    }
+    showFeedbackToast({ kind: "error", title: "Descarga fallida", message });
+  } finally {
+    recordArchiveDownloading.value = false;
+  }
+};
+
+// Edición de código LaTeX (solo admin): descargar el contrato y re-subir el ZIP editado.
+const isAdminUser = computed(() => hasAnyRole(["AdminSistema"]));
+const templateSourceBusy = ref(false);
+
+// Estado de sincronización del flujo (synced/stale/no_link) de la plantilla abierta en el visor.
+const recordViewerSyncStatus = ref(null);
+const recordViewerSyncBusy = ref(false);
+
+const loadRecordViewerSyncStatus = async (artifactId) => {
+  recordViewerSyncStatus.value = null;
+  if (!artifactId) return;
+  try {
+    const { data } = await axios.get(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SYNC_STATUS(artifactId));
+    recordViewerSyncStatus.value = data;
+  } catch {
+    recordViewerSyncStatus.value = null;
+  }
+};
+
+const handleResyncTemplateWorkflows = async () => {
+  const row = recordViewerRow.value;
+  if (!row?.id || recordViewerSyncBusy.value) return;
+  recordViewerSyncBusy.value = true;
+  try {
+    const { data } = await axios.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_RESYNC(row.id));
+    recordViewerSyncStatus.value = data;
+    showFeedbackToast({ kind: "success", title: "Recorrido sincronizado", message: "La proyección del recorrido en la base de datos quedó al día." });
+  } catch (error) {
+    showFeedbackToast({ kind: "error", title: "No se pudo sincronizar", message: error?.response?.data?.message || "No se pudo re-sincronizar el recorrido." });
+  } finally {
+    recordViewerSyncBusy.value = false;
+  }
+};
+
+const handleDownloadTemplateSource = async () => {
+  const row = recordViewerRow.value;
+  if (!recordViewerEditable.value || !row?.id || templateSourceBusy.value) return;
+  templateSourceBusy.value = true;
+  try {
+    const response = await axios.get(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SOURCE(row.id), { responseType: "blob" });
+    const blobUrl = URL.createObjectURL(response.data);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `${row.template_code || `plantilla-${row.id}`}-source.zip`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(blobUrl);
+  } catch (error) {
+    showFeedbackToast({ kind: "error", title: "Descarga fallida", message: error?.response?.data?.message || "No se pudo descargar el código." });
+  } finally {
+    templateSourceBusy.value = false;
+  }
+};
+
+const handleUploadTemplateSource = async (file) => {
+  const row = recordViewerRow.value;
+  if (!recordViewerEditable.value || !row?.id || !file || templateSourceBusy.value) return;
+  templateSourceBusy.value = true;
+  try {
+    const form = new FormData();
+    form.append("source", file);
+    const { data } = await axios.post(API_ROUTES.ADMIN_SQL_TEMPLATE_ARTIFACT_SOURCE(row.id), form);
+    showFeedbackToast({ kind: "success", title: "Código actualizado", message: data?.__notice || "Se creó una nueva versión con el código editado." });
+  } catch (error) {
+    showFeedbackToast({ kind: "error", title: "No se pudo actualizar el código", message: error?.response?.data?.message || "La re-subida no cumple el contrato o falló." });
+  } finally {
+    templateSourceBusy.value = false;
+  }
+};
+
+/* Las instancias de `Modal` son `let` PRIVADOS de `useAdminModalRegistry`: desde aquí sólo se
+   llega por sus captadores, ya destructurados arriba. Hasta el 2026-09-03 estas dos funciones
+   nombraban la variable del registro (`definitionArtifactsPromptInstance`,
+   `processDefinitionActivationInstance`) y lanzaban `ReferenceError` al llamarlas — el `?.` no
+   protege de un identificador no declarado, sólo `typeof` lo hace. Lo cubre
+   `AdminTableManager.test.js`. */
 const hideDefinitionArtifactsPromptModal = () => {
-  definitionArtifactsPromptInstance?.hide();
+  getDefinitionArtifactsPromptInstance()?.hide();
   definitionArtifactsPromptContext.value = null;
 };
 
 const hideProcessDefinitionActivationModal = () => {
-  processDefinitionActivationInstance?.hide();
+  getProcessDefinitionActivationInstance()?.hide();
 };
 
 const {
@@ -2097,13 +2991,18 @@ const {
   resetPersonContractForm,
   clearPersonContractPosition,
   resetPersonAssignments,
-  prefetchPersonCargoUnitLabels,
   formatPersonCargoUnit,
-  loadPersonAssignments,
   openPersonAssignments,
   openPersonCargoFkSearch,
   openPersonRoleFkSearch,
   openPersonContractFkSearch,
+  personCargoPositionSuggestProvider,
+  personRoleRoleSuggestProvider,
+  personRoleUnitSuggestProvider,
+  personContractPositionSuggestProvider,
+  selectPersonCargoOption,
+  selectPersonRoleOption,
+  selectPersonContractOption,
   startPersonCargoEdit,
   startPersonRoleEdit,
   startPersonContractEdit,
@@ -2140,6 +3039,7 @@ const {
   ensurePersonAssignmentsInstance,
   getPersonAssignmentsInstance,
   openFkSearch,
+  resolveFkSuggestions,
   resolveDisplayField,
   formatCell,
   toDateInputValue,
@@ -2150,25 +3050,10 @@ const {
 
 const {
   resetDefinitionArtifactsForm,
-  resetDefinitionRulesForm,
   resetDefinitionTriggersForm,
-  formatDefinitionRuleSummary,
-  handleDefinitionRuleScopeChange,
   refreshProcessDefinitionChecklist,
-  loadDefinitionRules,
-  openDefinitionRulesManager,
-  closeDefinitionRulesManager,
-  acceptDefinitionRulesManager,
-  confirmDefinitionRulesPrompt,
-  openDefinitionRulesFromEditor,
-  openDefinitionRulesFromActivation,
   openDefinitionArtifactsFromActivation,
-  openDefinitionRuleFkSearch,
-  clearDefinitionRuleField,
-  startDefinitionRuleEdit,
-  submitDefinitionRule,
-  deleteDefinitionRule,
-  loadDefinitionTriggers,
+
   openDefinitionTriggersManager,
   closeDefinitionTriggersManager,
   acceptDefinitionTriggersManager,
@@ -2177,6 +3062,9 @@ const {
   openDefinitionTriggersFromActivation,
   handleDefinitionTriggerModeChange,
   openDefinitionTriggerFkSearch,
+  definitionTriggerSuggestProvider,
+  selectDefinitionTriggerOption,
+
   clearDefinitionTriggerTermType,
   startDefinitionTriggerEdit,
   submitDefinitionTrigger,
@@ -2191,21 +3079,14 @@ const {
   openDefinitionArtifactsFromEditor,
   openDefinitionArtifactFkSearch,
   clearDefinitionArtifactSelection,
-  startDefinitionArtifactEdit,
   submitDefinitionArtifact,
+  setDefinitionArtifactItemMode,
   deleteDefinitionArtifact
 } = useProcessDefinitionManager({
   props,
   editorMode,
   selectedRow,
   getEditorInstance,
-  definitionRulesContext,
-  definitionRulesRows,
-  definitionRulesLoading,
-  definitionRulesError,
-  definitionRulesEditId,
-  definitionRulesForm,
-  definitionRulesLabels,
   definitionTriggersContext,
   definitionTriggersRows,
   definitionTriggersLoading,
@@ -2224,16 +3105,15 @@ const {
   processDefinitionChecklistLoading,
   processDefinitionChecklist,
   definitionTriggerRequiresTermType,
-  canManageDefinitionRules,
   canManageDefinitionTriggers,
   canManageDefinitionArtifacts,
-  canSubmitDefinitionRule,
   canSubmitDefinitionTrigger,
   clearModalOrigins,
   pushModalOrigin,
   closeProcessDefinitionActivationModal: hideProcessDefinitionActivationModal,
   closeDefinitionArtifactsPrompt: hideDefinitionArtifactsPromptModal,
   openFkSearch,
+  resolveFkSuggestions,
   resolveFkTable,
   formatFkOptionLabel,
   fetchFkLabel,
@@ -2241,18 +3121,15 @@ const {
   formatCell,
   formatDateOnly,
   prefetchFkLabelsForRows,
-  ensureDefinitionRulesInstance,
   ensureDefinitionTriggersInstance,
   ensureDefinitionArtifactsInstance,
   ensureDefinitionArtifactsPromptInstance,
-  getDefinitionRulesInstance,
   getDefinitionTriggersInstance,
   getDefinitionArtifactsInstance,
   getDefinitionArtifactsPromptInstance
 });
 
 const {
-  fetchUnitPositionsForCurrentFilters,
   loadVacantPositions,
   loadUnassignedTemplateArtifacts,
   fetchRows
@@ -2297,10 +3174,8 @@ const {
 const {
   loadProcessDefinitionActivationDetail,
   openProcessDefinitionActivationModal,
-  closeProcessDefinitionActivationModal,
   openProcessDefinitionActivationForRow,
   cancelProcessDefinitionActivation,
-  openDefinitionEditorFromActivation,
   handleProcessDefinitionActivationPrimaryAction,
   confirmProcessDefinitionActivation,
   cancelProcessDefinitionEdit,
@@ -2308,7 +3183,6 @@ const {
 } = useProcessDefinitionActivationFlow({
   props,
   formData,
-  fkDisplay,
   editorMode,
   selectedRow,
   modalError,
@@ -2321,13 +3195,10 @@ const {
   processDefinitionActivationConfirmed,
   processDefinitionActivationFromEditor,
   processDefinitionActivationChecking,
-  processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
-  processDefinitionActivationHasRequiredArtifacts,
-  processDefinitionActivationRequiresArtifacts,
+  processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
   processDefinitionActivationPrimaryAction,
-  processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
   clearModalOrigins,
@@ -2342,16 +3213,777 @@ const {
   setFkLabel,
   formatFkOptionLabel,
   openEdit: (...args) => openEdit(...args),
-  openDefinitionRulesFromActivation,
   openDefinitionTriggersFromActivation,
   openDefinitionArtifactsFromActivation,
   submitForm: async () => submitForm()
 });
 
+// ── Wizard guiado de proceso (creación → activación) ──
 const {
-  openCreate,
-  handlePrimaryCreateAction,
-  openEdit,
+  wizardOpen: processWizardOpen,
+  currentStep: processWizardStep,
+  definitionContext: processWizardDefinition,
+  definitionForm: processWizardDefinitionForm,
+  duplicateDefinition: processWizardDuplicateDefinition,
+  processOptions: processWizardProcessOptions,
+  unitTypeOptions: processWizardUnitTypeOptions,
+  cargoOptions: processWizardCargoOptions,
+  lineaOptions: processWizardLineaOptions,
+  unitOptions: processWizardUnitOptions,
+  filtroProcessId: processWizardFiltroProcessId,
+  procesoModalOpen: processWizardProcesoModalOpen,
+  lineaModalOpen: processWizardLineaModalOpen,
+  creandoProceso: processWizardCreandoProceso,
+  creandoLinea: processWizardCreandoLinea,
+  procesoModalError: processWizardProcesoModalError,
+  lineaModalError: processWizardLineaModalError,
+  lineaSuggestProvider: processWizardLineaSuggestProvider,
+  elegirLinea: processWizardElegirLinea,
+  selectedLineaName: processWizardSelectedLineaName,
+  slugPreviewPara: processWizardSlugPreviewPara,
+  abrirProcesoModal: processWizardAbrirProcesoModal,
+  cerrarProcesoModal: processWizardCerrarProcesoModal,
+  abrirLineaModal: processWizardAbrirLineaModal,
+  cerrarLineaModal: processWizardCerrarLineaModal,
+  crearProceso: processWizardCrearProceso,
+  crearLinea: processWizardCrearLinea,
+  definitionNamePreview: processWizardDefinitionNamePreview,
+  creatingDefinition: processWizardCreating,
+  wizardError: processWizardError,
+  stepStatus: processWizardStepStatus,
+  steps: processWizardSteps,
+  openWizard: openProcessWizard,
+  closeWizard: closeProcessWizard,
+  goToStep: processWizardGoToStep,
+  createDefinition: runProcessWizardCreateDefinition,
+  refreshStepStatus: refreshProcessWizardStatus
+} = useProcessWizard();
+
+const loadProcessWizardStep = async (key) => {
+  const def = processWizardDefinition.value;
+  if (!def?.id) {
+    return;
+  }
+  if (key === "packages") {
+    await openDefinitionArtifactsManager(def, { showModal: false });
+  } else if (key === "triggers") {
+    await openDefinitionTriggersManager(def, { showModal: false });
+  } else if (key === "activate") {
+    selectedRow.value = def;
+    await loadProcessWizardActivationStep(def);
+  }
+};
+
+const loadProcessWizardActivationStep = async (definitionRow) => {
+  if (!definitionRow?.id) {
+    return;
+  }
+  processDefinitionActivationChecking.value = true;
+  processDefinitionActivationView.value = "activate";
+  try {
+    const checklist = await processDefinitionAdminService.evaluateChecklist(definitionRow.id);
+    await loadProcessDefinitionActivationDetail(definitionRow.id);
+    processDefinitionActivationHasActiveTriggers.value = Boolean(checklist?.triggers);
+  } catch {
+    processDefinitionActivationHasActiveTriggers.value = true;
+    processDefinitionActivationTriggers.value = [];
+    processDefinitionActivationArtifacts.value = [];
+  } finally {
+    processDefinitionActivationChecking.value = false;
+  }
+};
+
+const handleProcessWizardGoToStep = async (key) => {
+  processWizardGoToStep(key);
+  if (processWizardStep.value === key && key !== "definition") {
+    await loadProcessWizardStep(key);
+    await refreshProcessWizardStatus();
+  }
+};
+
+// Vinculación con el modal de plantilla: cuando el wizard se abre desde "Crear proceso", al crear la
+// configuración se devuelve su id al modal para preseleccionarla.
+const wizardFromDraft = ref(false);
+const draftNewProcessDefinitionId = ref("");
+// Configuración de origen a preseleccionar cuando se crea una plantilla desde el flujo de edición.
+const draftArtifactPreselectDefinitionId = ref("");
+
+const handleProcessWizardCreateDefinition = async () => {
+  // Tras crear/confirmar la configuración se avanza a PAQUETES. Se avanzaba a «Alcance», que era el
+  // paso de las reglas de reparto: se retiró con su tabla (frente 25, P26) porque a quién alcanza lo
+  // dice la línea, y la línea se eligió en el paso anterior.
+  if (processWizardDefinition.value?.id) {
+    await handleProcessWizardGoToStep("packages");
+    return;
+  }
+  const created = await runProcessWizardCreateDefinition();
+  if (created?.id) {
+    if (wizardFromDraft.value) {
+      draftNewProcessDefinitionId.value = String(created.id);
+    }
+    await loadProcessWizardStep("packages");
+  }
+};
+
+const handleProcessWizardEditExistingDefinition = async (definitionRow) => {
+  if (!definitionRow?.id) {
+    return;
+  }
+  processWizardReadonly.value = false;
+  await openProcessDefinitionWizard(definitionRow, { step: "definition", readonly: false });
+};
+
+const handleDraftCreateProcess = async () => {
+  wizardFromDraft.value = true;
+  processWizardReadonly.value = false;
+  await openProcessWizard();
+};
+
+const handleProcessWizardClose = async () => {
+  closeProcessWizard();
+  wizardFromDraft.value = false;
+  processWizardReadonly.value = false;
+  processDefinitionCloneSourceId.value = "";
+  // Si el wizard se abrió desde el organigrama, refresca los procesos de la unidad abierta.
+  if (unitGraphMode.value) {
+    await unitGraphRef.value?.refreshProcesses?.();
+  }
+  // Si se abrió desde el mapa de procesos, recarga el grafo y reabre el drawer del proceso.
+  if (processGraphMode.value && processGraphReturnId.value) {
+    const pid = processGraphReturnId.value;
+    processGraphReturnId.value = null;
+    await processGraphRef.value?.reopenDetail(pid);
+  }
+  if (props.table?.table === "process_definition_versions") {
+    await fetchRows();
+  }
+  if (props.table?.table === "processes" && editorMode.value === "edit" && processEditorContext.value?.id) {
+    selectedRow.value = processEditorContext.value;
+    await loadProcessEditorConfigurations(processEditorContext.value.id);
+  }
+};
+
+// Tras guardar dentro de un paso embebido, refresca el estado del stepper.
+const refreshWizardAfter = async (action) => {
+  await action();
+  if (processWizardOpen.value) {
+    await refreshProcessWizardStatus();
+  }
+};
+const wizardSubmitArtifact = () => refreshWizardAfter(submitDefinitionArtifact);
+const wizardSubmitTrigger = () => refreshWizardAfter(submitDefinitionTrigger);
+const showWizardActivateConfirm = ref(false);
+const confirmWizardActivation = async () => {
+  showWizardActivateConfirm.value = false;
+  await wizardConfirmActivation();
+};
+const wizardConfirmActivation = async () => {
+  const definitionRow = processWizardDefinition.value;
+  if (!definitionRow?.id) {
+    return;
+  }
+  if (props.table?.table === "process_definition_versions") {
+    await confirmProcessDefinitionActivation();
+    closeProcessWizard();
+    await fetchRows();
+    return;
+  }
+  processDefinitionActivationChecking.value = true;
+  processWizardError.value = "";
+  try {
+    const response = await adminSqlService.update(
+      "process_definition_versions",
+      { id: Number(definitionRow.id) },
+      { status: "active" }
+    );
+    processWizardDefinition.value = {
+      ...definitionRow,
+      ...(response?.data && typeof response.data === "object" ? response.data : {}),
+      status: "active"
+    };
+    if (response?.data?.__notice) {
+      showFeedbackToast({
+        kind: "success",
+        title: "Configuracion activada",
+        message: response.data.__notice,
+        duration: 6200
+      });
+    } else {
+      showFeedbackToast({
+        kind: "success",
+        title: "Configuracion activada",
+        message: "La configuracion del proceso fue activada."
+      });
+    }
+    await handleProcessWizardClose();
+  } catch (error) {
+    processWizardError.value = error?.response?.data?.message || "No se pudo activar la configuracion.";
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo activar",
+      message: processWizardError.value
+    });
+  } finally {
+    processDefinitionActivationChecking.value = false;
+  }
+};
+
+const handleOpenWizardFromPrompt = async () => {
+  const context = definitionArtifactsPromptContext.value;
+  closeDefinitionArtifactsPrompt();
+  if (context?.id) {
+    processWizardReadonly.value = false;
+    await openProcessWizard({ definitionRow: context, step: "packages" });
+  }
+};
+
+// Punto de entrada para crear un proceso desde otros flujos (p.ej. el modal de plantilla).
+const openProcessWizardFromScratch = async () => {
+  processWizardReadonly.value = false;
+  processDefinitionCloneSourceId.value = "";
+  await openProcessWizard();
+};
+
+// --- Mapa de procesos: acciones del drawer (un modal a la vez). El grafo cierra su drawer y delega aquí;
+// al cerrarse el wizard/lanzamiento se reabre el drawer vía processGraphRef.reopenDetail(processGraphReturnId).
+const processGraphReturnId = ref(null);
+
+const openConfigWizardFromGraph = async ({ processId, processName } = {}) => {
+  processGraphReturnId.value = processId || null;
+  processWizardReadonly.value = false;
+  processDefinitionCloneSourceId.value = "";
+  await openProcessWizard({
+    processRow: processId ? { id: processId, name: processName || `Proceso ${processId}` } : null
+  });
+};
+
+const editConfigFromGraph = async ({ processId, definition, step = "definition", readonly = false } = {}) => {
+  if (!definition?.definition_id) return;
+  processGraphReturnId.value = processId || null;
+  await openProcessDefinitionWizard(
+    {
+      id: definition.definition_id,
+      name: definition.definition_name,
+      process_id: processId,
+      process_name: definition.process_name,
+      status: definition.status,
+      linea_nombre: definition.linea_nombre,
+      definition_version: definition.definition_version,
+      linea_id: definition.linea_id
+    },
+    { step, readonly }
+  );
+};
+
+const launchConfigFromGraph = async ({ processId, definition } = {}) => {
+  if (!definition?.definition_id) return;
+  processGraphReturnId.value = processId || null;
+  await processDefinitionLaunchModal.value?.openModal({
+    id: definition.definition_id,
+    name: definition.definition_name
+  });
+};
+
+// Versionar una configuración desde su nodo: abre el wizard de nueva versión (clona la definición).
+const versionConfigFromGraph = async ({ processId, definition } = {}) => {
+  if (!definition?.definition_id) return;
+  processGraphReturnId.value = processId || null;
+  await openProcessDefinitionVersionWizard({
+    id: definition.definition_id,
+    process_id: processId,
+    process_name: definition.process_name,
+    linea_id: definition.linea_id,
+    linea_nombre: definition.linea_nombre,
+    definition_version: definition.definition_version
+  });
+};
+
+// --- Versionado de plantillas con diálogo de nivel (Parche/Menor/Mayor), reutilizado por tabla y grafo ---
+// mode 'version' = versión simple de plantilla; mode 'guided' = actualización guiada plantilla+config activa (F2).
+const templateVersionDialog = ref({ open: false, template: null, mode: "version", definitionId: null });
+const templateVersionBusy = ref(false);
+// Contexto de la actualización guiada en curso (borradores creados, pendientes de publicar/activar).
+const guidedUpdateContext = ref(null);
+// configDraftId solo cuando el editor abierto ES la plantilla borrador de la actualización guiada en curso.
+const guidedEditorConfigId = computed(() => {
+  const ctx = guidedUpdateContext.value;
+  if (!ctx?.templateDraftId || !ctx?.configDraftId) return null;
+  return Number(draftArtifactEditId.value) === ctx.templateDraftId ? ctx.configDraftId : null;
+});
+
+const openTemplateVersionDialog = (template) => {
+  if (!template?.id && !template?.edicion_id) return;
+  templateVersionDialog.value = {
+    open: true,
+    mode: "version",
+    definitionId: null,
+    template: {
+      id: template.id || template.edicion_id,
+      template_code: template.template_code,
+      display_name: template.display_name,
+      storage_version: template.storage_version
+    }
+  };
+};
+const openGuidedTemplateUpdate = ({ definitionId, templateArtifactId, displayName, templateCode, storageVersion } = {}) => {
+  if (!definitionId || !templateArtifactId) return;
+  templateVersionDialog.value = {
+    open: true,
+    mode: "guided",
+    definitionId,
+    template: {
+      id: templateArtifactId,
+      template_code: templateCode,
+      display_name: displayName,
+      storage_version: storageVersion
+    }
+  };
+};
+const closeTemplateVersionDialog = () => {
+  templateVersionDialog.value = { open: false, template: null, mode: "version", definitionId: null };
+};
+const handleVersionDialogConfirm = (level) => {
+  if (templateVersionDialog.value.mode === "guided") {
+    return confirmGuidedTemplateUpdateStart(level);
+  }
+  return confirmTemplateVersion(level);
+};
+const confirmTemplateVersion = async (level) => {
+  const tpl = templateVersionDialog.value.template;
+  if (!tpl?.id || templateVersionBusy.value) return;
+  templateVersionBusy.value = true;
+  try {
+    const { data } = await adminSqlService.createTemplateArtifactVersion(tpl.id, level || "minor");
+    showFeedbackToast({
+      kind: "success",
+      title: "Nueva versión creada",
+      message: data?.__notice || "Se creó una nueva versión en borrador. Edítala y publícala cuando esté lista."
+    });
+    closeTemplateVersionDialog();
+    await fetchRows();
+    if (processGraphMode.value) {
+      await processGraphRef.value?.reloadGraph?.();
+    }
+    // Abre la nueva versión (borrador) en el editor para editarla de inmediato.
+    const newId = data?.id;
+    if (newId) {
+      try {
+        const { data: rowData } = await adminSqlService.list("ediciones", { filter_id: newId, limit: 1 });
+        const row = Array.isArray(rowData) ? rowData[0] : (rowData?.rows?.[0] || rowData?.data?.[0] || null);
+        if (row?.id) {
+          await openDraftArtifactModal(row, { force: true });
+        }
+      } catch {
+        // Si falla la apertura, la nueva versión ya quedó creada y visible en la tabla.
+      }
+    }
+  } catch (err) {
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo versionar",
+      message: err?.response?.data?.message || "Error al crear la nueva versión."
+    });
+  } finally {
+    templateVersionBusy.value = false;
+  }
+};
+
+// Versionar desde el grafo (nodo de entregable): abre el mismo diálogo de nivel.
+const versionTemplateFromGraph = ({ templateArtifactId, displayName, templateCode } = {}) => {
+  if (!templateArtifactId) return;
+  openTemplateVersionDialog({ id: templateArtifactId, display_name: displayName, template_code: templateCode });
+};
+
+// F2 paso 1: crea borradores de plantilla + config (re-apuntada) y abre la plantilla borrador en el editor.
+const confirmGuidedTemplateUpdateStart = async (level) => {
+  const tpl = templateVersionDialog.value.template;
+  const definitionId = templateVersionDialog.value.definitionId;
+  if (!tpl?.id || !definitionId || templateVersionBusy.value) return;
+  templateVersionBusy.value = true;
+  try {
+    const { data } = await adminSqlService.startGuidedTemplateUpdate(definitionId, tpl.id, level || "minor");
+    guidedUpdateContext.value = {
+      templateDraftId: Number(data?.template_draft_id),
+      configDraftId: Number(data?.config_draft_id)
+    };
+    showFeedbackToast({
+      kind: "success",
+      title: "Borradores creados",
+      message: data?.__notice || "Edita la plantilla y publica para activar la nueva configuración."
+    });
+    closeTemplateVersionDialog();
+    await fetchRows();
+    if (processGraphMode.value) {
+      await processGraphRef.value?.reloadGraph?.();
+    }
+    const newId = guidedUpdateContext.value.templateDraftId;
+    if (newId) {
+      try {
+        const { data: rowData } = await adminSqlService.list("ediciones", { filter_id: newId, limit: 1 });
+        const row = Array.isArray(rowData) ? rowData[0] : (rowData?.rows?.[0] || rowData?.data?.[0] || null);
+        if (row?.id) {
+          await openDraftArtifactModal(row, { force: true });
+        }
+      } catch {
+        // La plantilla borrador quedó creada y visible aunque no se abra el editor.
+      }
+    }
+  } catch (err) {
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo iniciar la actualización",
+      message: err?.response?.data?.message || "Error al crear los borradores."
+    });
+  } finally {
+    templateVersionBusy.value = false;
+  }
+};
+
+// F2 paso 2: publica la plantilla borrador y activa la config borrador (atómico en el backend).
+const finishGuidedTemplateUpdate = async () => {
+  const ctx = guidedUpdateContext.value;
+  if (!ctx?.templateDraftId || !ctx?.configDraftId) return;
+  try {
+    const { data } = await adminSqlService.finishGuidedTemplateUpdate(ctx.templateDraftId, ctx.configDraftId);
+    showFeedbackToast({
+      kind: "success",
+      title: "Plantilla publicada y configuración activada",
+      message: data?.__notice || "La nueva versión quedó publicada y la configuración activa."
+    });
+    guidedUpdateContext.value = null;
+    closeDraftArtifactModal();
+    await fetchRows();
+    if (processGraphMode.value) {
+      await processGraphRef.value?.reloadGraph?.();
+    }
+  } catch (err) {
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo publicar/activar",
+      message: err?.response?.data?.message || "Error al publicar la plantilla y activar la configuración."
+    });
+  }
+};
+
+// Agregar entregable desde el grafo: abre el gestor de plantillas de esa configuración (modal enfocado
+// "Plantillas del proceso", NO el wizard de proceso). Desde ahí se crea/selecciona la plantilla.
+const addTemplateFromGraph = async ({ definition } = {}) => {
+  const id = definition?.definition_id || definition?.id;
+  if (!id) return;
+  processGraphReturnId.value = definition?.process_id || null;
+  await openDefinitionArtifactsManager(
+    {
+      id,
+      status: definition?.status,
+      name: definition?.definition_name,
+      linea_nombre: definition?.linea_nombre,
+      definition_version: definition?.definition_version,
+      process_id: definition?.process_id,
+      process_name: definition?.process_name
+    },
+    { showModal: true }
+  );
+};
+
+// Al cerrar/aceptar el gestor de plantillas: si vino del grafo, recarga el grafo para reflejar el cambio.
+const reloadGraphAfterArtifacts = async () => {
+  if (processGraphMode.value && processGraphReturnId.value) {
+    processGraphReturnId.value = null;
+    await processGraphRef.value?.reloadGraph?.();
+  }
+};
+const handleDefinitionArtifactsManagerClose = async () => {
+  closeDefinitionArtifactsManager();
+  await reloadGraphAfterArtifacts();
+};
+const handleDefinitionArtifactsManagerAccept = async () => {
+  acceptDefinitionArtifactsManager();
+  await reloadGraphAfterArtifacts();
+};
+
+// Crear un entregable a partir de otro: precarga el modal en modo creación con los datos del origen
+// (nombre "(copia)", generador, campos y flujos), vinculado a la misma configuración. Útil para variar una
+// plantilla oficial sin tocar la original (su contenido se gestiona por el pipeline).
+const cloneTemplateFromGraph = async ({ templateArtifactId, definitionId } = {}) => {
+  if (!templateArtifactId) return;
+  let source = null;
+  try {
+    const { data } = await adminSqlService.list("ediciones", { filter_id: templateArtifactId, limit: 1 });
+    source = Array.isArray(data) ? data[0] : (data?.rows?.[0] || data?.data?.[0] || null);
+  } catch {
+    source = null;
+  }
+  if (!source?.id) {
+    showFeedbackToast({ kind: "error", title: "No se pudo clonar", message: "No se encontró la plantilla de origen." });
+    return;
+  }
+  await openDraftArtifactModal(null, { force: true, preselectDefinitionId: definitionId ? String(definitionId) : "", cloneFrom: source });
+};
+
+// Reabre el drawer del proceso tras cerrar el modal de lanzamiento (solo si vino del grafo).
+const handleProcessGraphLaunchClose = async () => {
+  if (!processGraphMode.value || !processGraphReturnId.value) return;
+  const pid = processGraphReturnId.value;
+  processGraphReturnId.value = null;
+  await processGraphRef.value?.reopenDetail(pid);
+};
+
+const openProcessDefinitionWizard = async (row, { step = "definition", readonly = false } = {}) => {
+  if (!row?.id) {
+    return;
+  }
+  processWizardReadonly.value = Boolean(readonly);
+  processDefinitionCloneSourceId.value = "";
+  selectedRow.value = row;
+  await openProcessWizard({ definitionRow: row, step });
+  if (step !== "definition") {
+    await loadProcessWizardStep(step);
+  }
+};
+
+const openProcessDefinitionVersionWizard = async (row) => {
+  if (!row?.id) {
+    return;
+  }
+  const processId = row.process_id ?? "";
+  processWizardReadonly.value = false;
+  processDefinitionCloneSourceId.value = row.id ? String(row.id) : "";
+  await openProcessWizard({
+    processRow: processId
+      ? {
+          id: processId,
+          name: row.process_name || row.process_label || `Proceso ${processId}`
+        }
+      : null
+  });
+  if (
+    row.linea_id
+    && !processWizardLineaOptions.value.some((option) => String(option.id) === String(row.linea_id))
+  ) {
+    processWizardLineaOptions.value.push({
+      id: row.linea_id,
+      nombre: row.linea_nombre,
+      displayName: row.linea_nombre,
+      label: row.linea_nombre
+    });
+  }
+  processWizardDefinitionForm.value = {
+    ...processWizardDefinitionForm.value,
+    process_mode: "existing",
+    process_id: processId ? String(processId) : "",
+    linea_id: row.linea_id ? String(row.linea_id) : "",
+    definition_version: getNextSemanticVersion(row.definition_version),
+    description: row.description || "",
+    source_process_definition_id: row.id ? String(row.id) : ""
+  };
+};
+
+const hideProcessWizardForRecordViewer = () => {
+  if (!processWizardOpen.value) {
+    return;
+  }
+  restoreProcessWizardAfterRecordViewer.value = true;
+  closeProcessWizard();
+};
+
+const restoreProcessWizardFromRecordViewer = () => {
+  if (!restoreProcessWizardAfterRecordViewer.value) {
+    return;
+  }
+  restoreProcessWizardAfterRecordViewer.value = false;
+  processWizardOpen.value = true;
+};
+
+const handleOpenRecordViewer = async (row, tableRef) => {
+  if (tableRef?.table === "process_definition_versions") {
+    if (isModalShown(recordViewerModal.value)) {
+      closeRecordViewer();
+    }
+    await openProcessDefinitionWizard(row, { step: "definition", readonly: true });
+    return;
+  }
+  await openRecordViewer(row, tableRef);
+  if (tableRef?.table === "ediciones") {
+    await loadRecordViewerSyncStatus(row?.id);
+  }
+};
+
+const handleWizardViewRow = async (row, tableMeta) => {
+  if (!row || !tableMeta) {
+    return;
+  }
+  hideProcessWizardForRecordViewer();
+  await handleOpenRecordViewer(row, tableMeta);
+};
+
+const handleRecordViewerRelatedRecord = async ({ row, tableMeta } = {}) => {
+  if (!row || !tableMeta) {
+    return;
+  }
+  await handleOpenRecordViewer(row, tableMeta);
+};
+
+const handleActivationViewRow = async ({ row, table } = {}) => {
+  const tableMeta = typeof table === "string" ? allTablesMap.value?.[table] : table;
+  if (!row || !tableMeta) {
+    return;
+  }
+  hideProcessWizardForRecordViewer();
+  await handleOpenRecordViewer(row, tableMeta);
+};
+
+const openProcessConfiguration = async (processRow) => {
+  if (!processRow?.id || !canCreateProcessConfiguration.value) {
+    return;
+  }
+  processWizardReadonly.value = false;
+  await openProcessWizard({ processRow });
+};
+
+// Abre el modal de lanzamiento de procesos para un periodo (term).
+const openProcessLaunch = async (termRow) => {
+  if (!termRow?.id) return;
+  await processLaunchModal.value?.openModal(termRow);
+};
+
+// Abre el modal de lanzamiento desde una configuración de proceso (elegir periodo + historial).
+const openProcessDefinitionLaunch = async (definitionRow) => {
+  if (!definitionRow?.id) return;
+  await processDefinitionLaunchModal.value?.openModal(definitionRow);
+};
+
+const openProcessConfigurationFromEditor = async () => {
+  const processRow = processEditorContext.value || selectedRow.value;
+  if (props.table?.table !== "processes" || editorMode.value !== "edit" || !processRow?.id) {
+    return;
+  }
+  await openProcessConfiguration(processRow);
+};
+
+const openProcessConfigurationFromViewer = async () => {
+  if (!recordViewerEditable.value) {
+    return;
+  }
+  const processRow = recordViewerTable.value?.table === "processes"
+    ? recordViewerRow.value
+    : null;
+  if (!processRow?.id) {
+    return;
+  }
+  closeRecordViewer();
+  await openProcessConfiguration(processRow);
+};
+
+const ensureProcessConfigurationDeleteInstance = () => {
+  const modalElement = resolveModalElement(processConfigurationDeleteModal.value);
+  if (!processConfigurationDeleteInstance && modalElement) {
+    processConfigurationDeleteInstance = new Modal(modalElement);
+    modalElement.addEventListener("hidden.bs.modal", () => {
+      processConfigurationDeleteRow.value = null;
+    });
+  }
+};
+
+const deleteProcessEditorConfiguration = (row) => {
+  if (!row?.id || !canDeleteProcessConfigurationRow(row)) {
+    return;
+  }
+  processConfigurationDeleteRow.value = row;
+  ensureProcessConfigurationDeleteInstance();
+  processConfigurationDeleteInstance?.show();
+};
+
+const confirmDeleteProcessEditorConfiguration = async () => {
+  const row = processConfigurationDeleteRow.value;
+  if (!row?.id || !canDeleteProcessConfigurationRow(row)) {
+    return;
+  }
+  processEditorConfigurationsLoading.value = true;
+  processEditorConfigurationsError.value = "";
+  try {
+    await adminSqlService.remove("process_definition_versions", { id: Number(row.id) });
+    await loadProcessEditorConfigurations(processEditorContext.value?.id || selectedRow.value?.id);
+    await fetchRows();
+    processConfigurationDeleteInstance?.hide();
+    processConfigurationDeleteRow.value = null;
+    showFeedbackToast({
+      kind: "success",
+      title: "Configuracion eliminada",
+      message: "La configuracion en borrador fue eliminada del proceso."
+    });
+  } catch (error) {
+    processEditorConfigurationsError.value = error?.response?.data?.message || "No se pudo eliminar la configuracion.";
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo eliminar",
+      message: processEditorConfigurationsError.value
+    });
+  } finally {
+    processEditorConfigurationsLoading.value = false;
+  }
+};
+
+// Retiro (desactivación) de una configuración activa. En el modelo, una configuración activa solo
+// admite retirarse (active -> retired); no puede volver a borrador ni editarse en su versión actual.
+const retireDefinitionModal = ref(null);
+const retireDefinitionRow = ref(null);
+let retireDefinitionInstance = null;
+
+const ensureRetireDefinitionInstance = () => {
+  const modalElement = resolveModalElement(retireDefinitionModal.value);
+  if (!retireDefinitionInstance && modalElement) {
+    retireDefinitionInstance = new Modal(modalElement);
+    modalElement.addEventListener("hidden.bs.modal", () => {
+      retireDefinitionRow.value = null;
+    });
+  }
+};
+
+const retireProcessDefinition = (row) => {
+  if (!row?.id || String(row.status || "").toLowerCase() !== "active") {
+    return;
+  }
+  retireDefinitionRow.value = { ...row };
+  ensureRetireDefinitionInstance();
+  retireDefinitionInstance?.show();
+};
+
+const confirmRetireProcessDefinition = async () => {
+  const row = retireDefinitionRow.value;
+  if (!row?.id) {
+    return;
+  }
+  try {
+    const payload = { status: "retired" };
+    if (!row.effective_to) {
+      payload.effective_to = new Date().toISOString().slice(0, 10);
+    }
+    await adminSqlService.update(
+      "process_definition_versions",
+      { id: Number(row.id) },
+      payload
+    );
+    retireDefinitionInstance?.hide();
+    retireDefinitionRow.value = null;
+    showFeedbackToast({
+      kind: "success",
+      title: "Configuración retirada",
+      message: "La configuración fue retirada y quedó en solo lectura."
+    });
+    await fetchRows();
+  } catch (error) {
+    showFeedbackToast({
+      kind: "error",
+      title: "No se pudo retirar",
+      message: error?.response?.data?.message || "No se pudo retirar la configuración."
+    });
+  }
+};
+
+const {
+  openCreate: openCreateBase,
+  handlePrimaryCreateAction: handlePrimaryCreateActionBase,
+  openEdit: openEditBase,
   startProcessDefinitionTemplateFromArtifact,
   startProcessDefinitionVersioning
 } = useAdminEditorFlow({
@@ -2365,14 +3997,17 @@ const {
   processDefinitionChecklistLoading,
   processDefinitionChecklist,
   isTemplateArtifactsTable,
+  isProcessDefinitionFilterTable,
   isProcessDefinitionTemplatesTable,
-  resetInlineFkState,
   closeProcessDefinitionVersioningModal: (...args) => closeProcessDefinitionVersioningModal(...args),
   resetForm,
   applyUnitRelationDefaults,
   ensureEditorInstance,
   getEditorInstance,
   openDraftArtifactModal,
+  openProcessWizardFromScratch,
+  openProcessDefinitionWizard,
+  openProcessDefinitionVersionWizard,
   showFeedbackToast,
   buildFormFromRow,
   refreshFormFkDisplayLabels,
@@ -2381,6 +4016,37 @@ const {
   formatFkOptionLabel,
   getNextSemanticVersion
 });
+
+const resetProcessEditorConfigurationState = () => {
+  processEditorContext.value = null;
+  processEditorConfigurations.value = [];
+  processEditorConfigurationsError.value = "";
+  processEditorConfigurationsLoading.value = false;
+  processConfigurationDeleteRow.value = null;
+};
+
+const openCreate = async (...args) => {
+  resetProcessEditorConfigurationState();
+  return openCreateBase(...args);
+};
+
+const handlePrimaryCreateAction = async (...args) => {
+  resetProcessEditorConfigurationState();
+  return handlePrimaryCreateActionBase(...args);
+};
+
+const openEdit = async (row) => {
+  const result = await openEditBase(row);
+  if (props.table?.table === "processes" && !result?.blocked && !result?.redirected && row?.id) {
+    processEditorContext.value = { ...row };
+    await loadProcessEditorConfigurations(row.id);
+  } else if (props.table?.table !== "processes") {
+    processEditorContext.value = null;
+    processEditorConfigurations.value = [];
+    processEditorConfigurationsError.value = "";
+  }
+  return result;
+};
 
 const {
   openProcessSearch,
@@ -2395,7 +4061,6 @@ const {
   applyDocumentFilter,
   clearDocumentFilter,
   clearDocumentTaskFilter,
-  refreshUnitPositionScope,
   handleUnitPositionTypeChange,
   handleUnitPositionUnitChange,
   handleUnitPositionCargoChange,
@@ -2412,7 +4077,13 @@ const {
   assignVacantPosition,
   openTemplateFkSearch,
   openDocumentFkSearch,
-  openProcessFkSearch
+  openProcessFkSearch,
+  processParentSuggestProvider,
+  templateProcessSuggestProvider,
+  documentTaskSuggestProvider,
+  selectProcessFilterOption,
+  selectTemplateProcessFilterOption,
+  selectDocumentFilterOption
 } = useAdminSearchFilters({
   props,
   formData,
@@ -2448,6 +4119,7 @@ const {
   loadUnitPositionUnitOptions,
   loadVacantPositionUnitOptions,
   openFkSearch,
+  resolveFkSuggestions,
   resolveDisplayField,
   fetchFkLabel,
   getFkCachedLabel,
@@ -2482,66 +4154,34 @@ const {
   resetPersonAssignments,
   openPersonAssignments,
   openDefinitionArtifactsPrompt,
+  openProcessConfiguration,
   openProcessDefinitionActivationModal,
   openProcessDefinitionVersioningModal,
+  openProcessLaunch,
   showFeedbackToast,
   getDeleteInstance
 });
 
 
-useAdminTableReset({
-  props,
-  isModalShown,
-  personAssignmentsModal,
-  unitPositionSearchModal,
-  getPersonAssignmentsInstance,
-  getUnitPositionSearchInstance,
-  resetInlineFkState,
-  resetForm,
-  resetPersonAssignments,
-  positionMetaById,
-  vacantSearchTerm,
-  vacantPositionRows,
-  vacantPositionError,
-  vacantPositionLoading,
-  processFilters,
-  processFilterLabels,
-  templateFilters,
-  templateFilterLabels,
-  documentFilters,
-  documentFilterLabels,
-  unitPositionFilters,
-  vacantPositionFilters,
-  unitPositionUnitTypeOptions,
-  unitPositionUnitOptions,
-  unitPositionCargoOptions,
-  vacantPositionUnitTypeOptions,
-  vacantPositionUnitOptions,
-  vacantPositionCargoOptions,
-  unassignedTemplateArtifactSearch,
-  unassignedTemplateArtifactFilters,
-  unassignedTemplateArtifactRows,
-  unassignedTemplateArtifactError,
-  unassignedTemplateArtifactLoading,
-  processDefinitionInlineFilters,
-  processTargetRuleInlineFilters,
-  templateArtifactInlineFilters,
-  processDefinitionProcessOptions,
-  processDefinitionSeriesOptions,
-  isPositionFilterTable,
-  isPositionAssignmentsTable,
-  isProcessDefinitionFilterTable,
-  loadUnitPositionUnitTypeOptions,
-  loadUnitPositionCargoOptions,
-  loadVacantPositionUnitTypeOptions,
-  loadVacantPositionCargoOptions,
-  loadProcessDefinitionProcessOptions,
-  loadProcessDefinitionSeriesOptions,
-  fetchRows
-});
-
-onBeforeUnmount(() => {
-  resetInlineFkState();
+// El estado por-tabla se resetea SOLO por el remontaje: App.vue monta la vista con
+// :key="route.fullPath", asi que cambiar de tabla/seccion recrea AdminTableManager con el setup
+// fresco (searchTerm="", filtros vacios, modales cerrados, opciones vacias). Antes esto lo emulaba
+// a mano useAdminTableReset (watch sobre props.table + reset de ~40 refs); con el remontaje solo
+// queda su carga inicial (opciones de filtro segun el tipo de tabla + fetch de filas).
+onMounted(async () => {
+  if (isPositionFilterTable.value) {
+    await loadUnitPositionUnitTypeOptions();
+    await loadUnitPositionCargoOptions();
+  }
+  if (isPositionAssignmentsTable.value) {
+    await loadVacantPositionUnitTypeOptions();
+    await loadVacantPositionCargoOptions();
+  }
+  if (isProcessDefinitionFilterTable.value) {
+    await loadProcessDefinitionProcessOptions();
+    await loadProcessDefinitionLineaOptions();
+  }
+  await fetchRows();
 });
 
 defineExpose({
@@ -2550,4 +4190,3 @@ defineExpose({
 });
 </script>
 
-<style scoped src="./AdminTableManager.css"></style>

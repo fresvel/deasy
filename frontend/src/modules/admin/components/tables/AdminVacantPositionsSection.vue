@@ -1,44 +1,56 @@
 <template>
   <section class="mt-4 space-y-4">
-      <div class="profile-section-header">
-        <div>
-          <h2 class="text-start profile-section-title table-title-with-icon">
-            <span class="table-title-icon" aria-hidden="true">
-              <font-awesome-icon icon="id-card" />
-            </span>
-            <span>Puestos sin ocupaciones</span>
-          </h2>
-          <p class="profile-section-subtitle mb-0">Gestiona puestos activos sin ocupacion actual.</p>
-        </div>
-        <div class="profile-section-actions">
-          <AppTag variant="neutral">{{ rows.length }}</AppTag>
-        </div>
-      </div>
-      <div class="rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div class="grid gap-3 lg:grid-cols-12 lg:items-center">
+    <!-- ⚠️ ESTA SECCION USA LA MISMA BARRA QUE LAS DEMAS (2026-08-21). Antes armaba su cabecera a
+         mano: el buscador y sus botones vivian dentro del `deasy-filter-shell` y, como la barra
+         suelta del gestor ya pintaba «Regresar» y «Agregar» arriba, **las acciones salian en DOS
+         lineas**. Lo vio el dueño. Ahora los botones de tabla entran por el slot `actions` y los
+         del filtro se ponen a continuacion, en la MISMA fila. -->
+    <AppTableToolbar :title="title">
+      <template v-if="$slots.tabs" #tabs><slot name="tabs" /></template>
+      <template v-if="$slots.subtabs" #subtabs><slot name="subtabs" /></template>
+      <template #filtro>
+        <AdminInputField :model-value="searchTerm" input-class="deasy-control" placeholder="Buscar puestos sin ocupaciones" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
+      </template>
+      <template #actions>
+        <slot name="actions" />
+                    <AdminButton variant="neutral-outline" icon-only title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')"><font-awesome-icon icon="times" /></AdminButton>
+                    <AdminButton variant="primary-outline" icon-only title="Buscar" aria-label="Buscar" @click="$emit('load')"><font-awesome-icon icon="search" /></AdminButton>
+                    <AdminButton
+                      variant="neutral-outline"
+                      icon-only
+                      :title="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                      :aria-label="showAdvancedFilters ? 'Ocultar filtros' : 'Mostrar filtros'"
+                      @click="showAdvancedFilters = !showAdvancedFilters"
+                    >
+                      <font-awesome-icon :icon="showAdvancedFilters ? 'arrow-up' : 'arrow-down'" />
+                    </AdminButton>
+                    <AdminButton variant="primary-outline" icon-only title="Actualizar" aria-label="Actualizar" @click="$emit('load')"><font-awesome-icon icon="rotate-right" /></AdminButton>
+      </template>
+    </AppTableToolbar>
+
+      <div>
+          <div class="deasy-filter-shell deasy-filter-shell--embedded">
+          <div class="deasy-filter-grid deasy-filter-grid--admin">
             <div class="md:col-span-4 lg:col-span-2">
-              <AdminInputField :model-value="searchTerm" placeholder="Buscar puestos sin ocupaciones" @update:model-value="$emit('update:search-term', $event)" @input="$emit('debounced-search')" />
-            </div>
-            <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.unit_type_id" :disabled="filterLoading" @update:model-value="updateFilter('unit_type_id', $event)" @change="$emit('handle-type-change')">
+              <AdminSelectField :model-value="filters.unit_type_id" select-class="deasy-control" :disabled="filterLoading" @update:model-value="updateFilter('unit_type_id', $event)" @change="$emit('handle-type-change')">
                 <option value="">Tipo de unidad</option>
                 <option v-for="row in unitTypeOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("unit_types", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.unit_id" :disabled="!filters.unit_type_id || filterLoading" @update:model-value="updateFilter('unit_id', $event)" @change="$emit('handle-unit-change')">
+            <div v-if="showAdvancedFilters" class="md:col-span-4 lg:col-span-2">
+              <AdminSelectField :model-value="filters.unit_id" select-class="deasy-control" :disabled="!filters.unit_type_id || filterLoading" @update:model-value="updateFilter('unit_id', $event)" @change="$emit('handle-unit-change')">
                 <option value="">Unidad</option>
                 <option v-for="row in unitOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("units", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.cargo_id" :disabled="filterLoading" @update:model-value="updateFilter('cargo_id', $event)" @change="$emit('handle-cargo-change')">
+            <div v-if="showAdvancedFilters" class="md:col-span-4 lg:col-span-2">
+              <AdminSelectField :model-value="filters.cargo_id" select-class="deasy-control" :disabled="filterLoading" @update:model-value="updateFilter('cargo_id', $event)" @change="$emit('handle-cargo-change')">
                 <option value="">Cargo</option>
                 <option v-for="row in cargoOptions" :key="row.id" :value="String(row.id)">{{ formatFkOptionLabel("cargos", row) }}</option>
               </AdminSelectField>
             </div>
-            <div class="md:col-span-4 lg:col-span-2">
-              <AdminSelectField :model-value="filters.position_type" :disabled="filterLoading" @update:model-value="updateFilter('position_type', $event)" @change="$emit('handle-position-type-filter-change')">
+            <div v-if="showAdvancedFilters" class="md:col-span-4 lg:col-span-2">
+              <AdminSelectField :model-value="filters.position_type" select-class="deasy-control" :disabled="filterLoading" @update:model-value="updateFilter('position_type', $event)" @change="$emit('handle-position-type-filter-change')">
                 <option value="">Tipo de puesto</option>
                 <option value="real">Real</option>
                 <option value="promocion">Promocion</option>
@@ -46,20 +58,13 @@
                 </AdminSelectField>
               </div>
             <div class="md:col-span-4 lg:col-span-2 lg:justify-self-end">
-              <div class="inline-flex items-center gap-2">
-                <AdminButton variant="secondary" size="lg" title="Limpiar filtros" aria-label="Limpiar filtros" :disabled="!hasFilters" @click="$emit('clear-filters')">
-                  <font-awesome-icon icon="times" />
-                </AdminButton>
-                <AdminButton variant="secondary" size="lg" title="Actualizar" aria-label="Actualizar" @click="$emit('load')">
-                  <font-awesome-icon icon="rotate-right" />
-                </AdminButton>
-              </div>
             </div>
           </div>
+          </div>
 
-          <div v-if="loading" class="text-sm text-slate-500">Cargando puestos sin ocupaciones...</div>
-          <div v-else-if="error" class="admin-inline-error" role="alert">{{ error }}</div>
-          <AdminDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `vacant-${row.id}`" empty-text="No hay puestos disponibles sin ocupaciones.">
+          <div v-if="loading" class="text-sm text-muted">Cargando puestos sin ocupaciones...</div>
+          <div v-else-if="error" role="alert">{{ error }}</div>
+          <AppDataTable v-else :fields="tableFields" :rows="rows" :row-key="(row) => `vacant-${row.id}`" empty-text="No hay puestos disponibles sin ocupaciones.">
             <template #cell="{ row, field }">
               <template v-if="field.name === '__unit_type_id'">
                 {{ formatFkListCell(row, { name: "__unit_type_id" }) }}
@@ -77,29 +82,32 @@
                 {{ row[field.name] ?? "—" }}
               </template>
             </template>
-            <template #actions="{ row }">
-              <div class="inline-flex items-center gap-1">
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-delete" title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
+            <template v-if="canUpdate" #actions="{ row }">
+              <div class="inline-flex items-center gap-2">
+                <AdminButton variant="danger-soft" icon-only title="Desactivar" aria-label="Desactivar" @click="$emit('deactivate', row)">
                   <font-awesome-icon icon="times-circle" />
                 </AdminButton>
-                <AdminButton variant="secondary" size="sm" icon-only class-name="hope-action-btn hope-action-edit" title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
+                <AdminButton variant="success-soft" icon-only title="Asignar" aria-label="Asignar" @click="$emit('assign', row)">
                   <font-awesome-icon icon="user-plus" />
                 </AdminButton>
               </div>
             </template>
-          </AdminDataTable>
+          </AppDataTable>
       </div>
   </section>
 </template>
 
 <script setup>
+import AppTableToolbar from "@/shared/components/layout/AppTableToolbar.vue";
+import { ref } from "vue";
 import AdminButton from "@/shared/components/buttons/AppButton.vue";
-import AppTag from "@/shared/components/data/AppTag.vue";
-import AdminDataTable from "@/shared/components/data/AppDataTable.vue";
+import AppDataTable from "@/shared/components/data/AppDataTable.vue";
 import AdminInputField from "@/modules/admin/components/forms/AdminInputField.vue";
 import AdminSelectField from "@/modules/admin/components/forms/AdminSelectField.vue";
 
 const props = defineProps({
+  /* El nombre de la tabla, para la fila superior de la barra. */
+  title: { type: String, default: "" },
   searchTerm: { type: String, default: "" },
   filters: { type: Object, default: () => ({}) },
   filterLoading: { type: Boolean, default: false },
@@ -114,10 +122,13 @@ const props = defineProps({
   formatFkOptionLabel: { type: Function, required: true },
   formatFkListCell: { type: Function, required: true },
   formatCell: { type: Function, required: true },
-  formatPositionType: { type: Function, required: true }
+  formatPositionType: { type: Function, required: true },
+  canUpdate: { type: Boolean, default: true }
 });
 
 const emit = defineEmits(["update:search-term", "update:filters", "debounced-search", "handle-type-change", "handle-unit-change", "handle-cargo-change", "handle-position-type-filter-change", "clear-filters", "load", "deactivate", "assign"]);
+
+const showAdvancedFilters = ref(false);
 
 const updateFilter = (field, value) => emit("update:filters", { ...props.filters, [field]: value });
 </script>

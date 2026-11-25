@@ -1,0 +1,582 @@
+@import "tailwindcss";
+
+@plugin "@tailwindcss/typography";
+
+/* LOS SCRIPTS DE `frontend/scripts/` NO SON CODIGO DE INTERFAZ, Y TAILWIND NO DEBE MIRARLOS.
+   Tailwind v4 no tiene una lista fija de utilidades: las EMITE escaneando el codigo fuente en
+   busca de candidatos, y por defecto ese barrido incluye los `.mjs` de las puertas de calidad.
+   Como esas puertas hablan precisamente DE clases, acaban creando las que nombran.
+
+   Ha pasado dos veces, las dos verificadas en el diff del CSS construido:
+     · 2026-08-13 — `check-orphan-classes.mjs` citaba tres utilidades de ejemplo en un comentario
+       en prosa, y las tres acabaron emitidas.
+     · 2026-08-14 — un gate nuevo llevaba los nombres de las propiedades que pintan en un array
+       de cadenas; dos de ellas son utilidades validas por si solas y se emitieron, con su
+       `@property` detras. Y otro citaba un escalon tipografico que **no usa nadie**, dandole un
+       consumidor falso justo cuando se iba a medir si sobraba.
+
+   La norma «documenta la clase, no la escribas» no basta: depende de acordarse, y un array de
+   configuracion no es prosa. Esta linea lo corta de raiz — a partir de aqui, lo que se escriba
+   en un script no puede inventar CSS. */
+@source not "../../../scripts";
+
+/* Y LA DOCUMENTACION, POR EL MISMO MOTIVO Y CON MAS IRONIA. Un `.md` no ejecuta nada, pero el
+   barrido de Tailwind no distingue: `frontend/CLAUDE.md` —el fichero que dice «si documentas una
+   clase, describela; no la escribas»— estaba **emitiendo cuatro utilidades `slate` al CSS de
+   produccion**, con sus primitivas detras, citandolas al explicar por que se retiraron. La
+   documentacion de un borrado impidiendo el borrado.
+
+   Medido el 2026-08-14: ningun fichero de `src/` escribia una sola de esas clases. */
+@source not "../../../**/*.md";
+
+
+/* MODO OSCURO: NO HAY, Y ESTA LINEA ES LA QUE LO GARANTIZA.
+
+   Sin ella Tailwind v4 compila `dark:` a `@media (prefers-color-scheme: dark)`, asi que
+   cualquier `dark:` que entre en el codigo se activaria SOLO en la maquina de quien tenga
+   el sistema en oscuro. No lo ve el build, ni el lint, ni los tests, ni tu si tienes el
+   sistema en claro. Con ella, `dark:` depende de una clase `.dark` que nadie pone.
+   Es un seguro, no una funcionalidad. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* LA PALETA. UN SOLO SITIO: aqui se declara el valor Y se registra la utilidad.
+
+   `--color-` no es parte del nombre: es el NAMESPACE de Tailwind, y significa «esto es un
+   color, generame sus clases». Lo que va detras es el nombre, y es literalmente el de la
+   utilidad: `--color-primary` da `bg-primary`, `text-primary`, `border-primary`.
+
+   ⚠️ UN TOKEN NUEVO SE JUSTIFICA, NO SE AÑADE POR SIMETRIA. Dos condiciones, las dos: que
+   Tailwind no traiga ya ese color, y que el concepto pueda cambiar de color en el futuro.
+   Si el concepto ES el color, usa el de Tailwind — por eso no hay `--color-white`.
+
+   Para lo primero, MIDE el ΔE contra su paleta; no compares hex. Tailwind v4 la sirve en
+   OKLCH y no vuelve a los valores de v3: `emerald-700` renderiza `#007a55`, no `#047857`.
+   Con ΔE ≤ 2 son el mismo color a ojo y el token propio no se sostiene.
+
+   ⚠️ Y comprueba que el nombre no sea un namespace suyo (`--color-*`, `--radius-*`,
+   `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`, `--breakpoint-*`). Unos `--radius-*`
+   sueltos tuvieron `rounded-lg` valiendo 16 px y la escala invertida durante meses.
+   Tampoco valen los nombres que Tailwind ya usa: `current` es suyo (`currentColor`), por
+   eso el paso actual se llama `--color-step`.
+
+   ⚠️ NO SE VERIFICA MIRANDO AQUI. Tailwind hace *tree-shaking* de `@theme`: un registro
+   que nadie usa NO SE EMITE, y eso es indistinguible de no haberlo escrito. La prueba es
+   un `grep` sobre `dist/assets/*.css`. Aqui hubo siete `--color-chart-*` y un
+   `--color-state-info` sin un solo consumidor, sostenidos por la idea de que un registro
+   sin usar «cuesta cero bytes y es un destino al que migrar». No lo era. */
+/* stylelint-disable color-no-hex -- Este es EL sitio donde un hex es correcto: aqui se
+   DEFINE el token. En cualquier otro sitio del proyecto un hex es una fuga de la paleta. */
+@theme {
+    /* ══ EL ANCHO DE UNA PAGINA ══════════════════════════════════════════════════════════════
+     * `--container-*` es el NAMESPACE de Tailwind v4 para la escala de contenedores: lo que va
+     * detras es literalmente el nombre de la utilidad, asi que esto genera `max-w-page`. Se
+     * declara aqui, y no como `max-width: 1500px` en la regla, por el mismo motivo que la paleta:
+     * **el ancho de una pagina es una decision del sistema, no de un fichero de disposicion**.
+     *
+     * 1500 px lo eligio el dueño en F13.3 (2026-08-21) al cerrar los TRES anchos que convivian:
+     * 1536 del marco (`--breakpoint-2xl`, heredado de TailAdmin), 1280 de `ProfileHomePanel`
+     * (`max-w-7xl`) y **1152 del indice de tarjetas de `/admin` y `/procesos`** (`max-w-6xl`).
+     * Ese ultimo era el peor: se aplicaba solo con `!selectedTable`, asi que **pulsar una tarjeta
+     * ensanchaba el contenido 384 px de golpe** dentro de la misma vista. Ahora hay UNO. */
+    --container-page: 1500px;
+
+/* 📌 DECISION DEL DUEÑO, 2026-08-17 — LAS PRIMITIVAS SON UN CATALOGO, NO DEUDA.
+       De los 119 registros de este bloque, **42 no los consume nadie hoy**. El plan los llevaba
+       como F1.3e, bloqueada, con la duda de si borrarlos.
+
+       Se quedan, y con dos motivos medidos:
+         · **pesan CERO bytes.** Tailwind hace tree-shaking de `@theme`: un registro sin consumidor
+           no llega al CSS construido. No es codigo muerto que se sirve, es un catalogo disponible.
+         · son **la paleta de TailAdmin adoptada entera**, de la que se derivan los 20 tokens
+           semanticos. Borrar los pasos que hoy no se gastan obligaria a re-derivarlos a mano cada
+           vez que haga falta uno.
+
+       ⚠️ Esto NO contradice la norma de «un registro sin consumidor es basura» que hay unas lineas
+       mas abajo, y conviene entender la diferencia: aquella mato siete `--color-chart-*` y un
+       `--color-state-info` que eran **conceptos inventados** sin paleta detras. Estos son pasos de
+       una escala completa y coherente. La regla fina es: **una FAMILIA se declara entera o no se
+       declara; un CONCEPTO se declara cuando tiene consumidor.** */
+
+        /* ══ CAPA 1 · PRIMITIVAS ═════════════════════════════════════════════════════════════
+       La paleta de TailAdmin, adoptada el 2026-08-13. Procedencia: el `@theme` del repo
+       HTML free, MIT (c) 2023 TailAdmin — ver `frontend/NOTICE`.
+
+       ESTO NO SE ESCRIBE EN UNA PLANTILLA. Son valores en bruto: el nombre `gray-600` dice
+       de que COLOR es, no que ES. Para eso esta la capa 2. La excepcion es el markup
+       adoptado de TailAdmin, que viene escrito en estos nombres.
+
+       Que se dejo fuera a proposito, y por que:
+       · `--font-*: initial` y `--breakpoint-*: initial` — DESTRUCTIVAS. Borran `font-sans`,
+         `font-mono` y TODOS los breakpoints. Sin ellas el bloque es aditivo.
+       · `--font-outfit` — la tipografia de Deasy es Inter y se carga desde `index.html`.
+         De TailAdmin se toma la ESCALA, no la familia.
+       · `--color-black: #101828` — su «negro» no es negro, y `black` es un nombre de
+         Tailwind: declararlo cambiaria cada `bg-black`/`text-black`. El ancla para oscurecer
+         sigue siendo `--black` en el `:root` de abajo, que si es negro.
+       · `--color-gray-dark`, `--color-theme-pink-500`, `--color-theme-purple-500` — el
+         primero es de modo oscuro (no hay) y los otros dos no tienen rol aqui. Un registro
+         sin consumidor no es una API: es basura.
+
+       ⚠️ Esta escala `gray-*` PISA la de Tailwind. Es seguro y es deliberado: hoy hay CERO
+       usos de `gray-*` en el arbol, y es el destino de los `slate-*` que quedan. */
+    --color-white: #ffffff;
+
+    --color-brand-25: #f2f7ff;
+    --color-brand-50: #ecf3ff;
+    --color-brand-100: #dde9ff;
+    --color-brand-200: #c2d6ff;
+    --color-brand-300: #9cb9ff;
+    --color-brand-400: #7592ff;
+    --color-brand-500: #465fff;
+    --color-brand-600: #3641f5;
+    --color-brand-700: #2a31d8;
+    --color-brand-800: #252dae;
+    --color-brand-900: #262e89;
+    --color-brand-950: #161950;
+
+    --color-gray-25: #fcfcfd;
+    --color-gray-50: #f9fafb;
+    --color-gray-100: #f2f4f7;
+    --color-gray-200: #e4e7ec;
+    --color-gray-300: #d0d5dd;
+    --color-gray-400: #98a2b3;
+    --color-gray-500: #667085;
+    --color-gray-600: #475467;
+    --color-gray-700: #344054;
+    --color-gray-800: #1d2939;
+    --color-gray-900: #101828;
+    --color-gray-950: #0c111d;
+
+    --color-success-25: #f6fef9;
+    --color-success-50: #ecfdf3;
+    --color-success-100: #d1fadf;
+    --color-success-200: #a6f4c5;
+    --color-success-300: #6ce9a6;
+    --color-success-400: #32d583;
+    --color-success-500: #12b76a;
+    --color-success-600: #039855;
+    --color-success-700: #027a48;
+    --color-success-800: #05603a;
+    --color-success-900: #054f31;
+    --color-success-950: #053321;
+
+    --color-error-25: #fffbfa;
+    --color-error-50: #fef3f2;
+    --color-error-100: #fee4e2;
+    --color-error-200: #fecdca;
+    --color-error-300: #fda29b;
+    --color-error-400: #f97066;
+    --color-error-500: #f04438;
+    --color-error-600: #d92d20;
+    --color-error-700: #b42318;
+    --color-error-800: #912018;
+    --color-error-900: #7a271a;
+    --color-error-950: #55160c;
+
+    --color-warning-25: #fffcf5;
+    --color-warning-50: #fffaeb;
+    --color-warning-100: #fef0c7;
+    --color-warning-200: #fedf89;
+    --color-warning-300: #fec84b;
+    --color-warning-400: #fdb022;
+    --color-warning-500: #f79009;
+    --color-warning-600: #dc6803;
+    --color-warning-700: #b54708;
+    --color-warning-800: #93370d;
+    --color-warning-900: #7a2e0e;
+    --color-warning-950: #4e1d09;
+
+    --color-orange-25: #fffaf5;
+    --color-orange-50: #fff6ed;
+    --color-orange-100: #ffead5;
+    --color-orange-200: #fddcab;
+    --color-orange-300: #feb273;
+    --color-orange-400: #fd853a;
+    --color-orange-500: #fb6514;
+    --color-orange-600: #ec4a0a;
+    --color-orange-700: #c4320a;
+    --color-orange-800: #9c2a10;
+    --color-orange-900: #7e2410;
+    --color-orange-950: #511c10;
+
+    --color-blue-light-25: #f5fbff;
+    --color-blue-light-50: #f0f9ff;
+    --color-blue-light-100: #e0f2fe;
+    --color-blue-light-200: #b9e6fe;
+    --color-blue-light-300: #7cd4fd;
+    --color-blue-light-400: #36bffa;
+    --color-blue-light-500: #0ba5ec;
+    --color-blue-light-600: #0086c9;
+    --color-blue-light-700: #026aa2;
+    --color-blue-light-800: #065986;
+    --color-blue-light-900: #0b4a6f;
+    --color-blue-light-950: #062c41;
+
+    /* LA ESCALA TIPOGRAFICA. `theme-*` es la de interfaz y tiene HUECOS a proposito: para
+       16 px se usa el `text-base` nativo. Convive con la escala de Tailwind, no la sustituye
+       — a diferencia de `--font-*` y `--breakpoint-*`, que TailAdmin si resetea y aqui no.
+       Es el destino de los `text-[…]` sueltos de las plantillas: **144** el 2026-08-14 (el
+       contador decia 189, de una medicion anterior). El techo vivo esta en
+       `scripts/check-no-arbitrary.mjs`, que es lo unico que no se desincroniza. */
+    --text-theme-xs: 12px;
+    --text-theme-xs--line-height: 18px;
+    --text-theme-sm: 14px;
+    --text-theme-sm--line-height: 20px;
+    --text-theme-xl: 20px;
+    --text-theme-xl--line-height: 30px;
+    --text-title-sm: 30px;
+    --text-title-sm--line-height: 38px;
+    --text-title-md: 36px;
+    --text-title-md--line-height: 44px;
+    --text-title-lg: 48px;
+    --text-title-lg--line-height: 60px;
+
+    /* LA ESCALA DE SOMBRA. Todas son el mismo negro del sistema con alfa —`rgba(16,24,40,α)`,
+       que es `gray-900`—, y esa coherencia es la mitad del efecto. Es el destino de las
+       **20 recetas distintas de `shadow-[…]` en 31 usos** que hay hoy (2026-08-14; el
+       contador decia 19). `--elev-*` se mantiene abajo: es la escala semantica de tres, y
+       ahora se apoya en estos valores. */
+    --shadow-theme-xs: 0 1px 2px 0 rgba(16, 24, 40, 0.05);
+    --shadow-theme-sm: 0 1px 3px 0 rgba(16, 24, 40, 0.1), 0 1px 2px 0 rgba(16, 24, 40, 0.06);
+    --shadow-theme-md: 0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
+    --shadow-theme-lg: 0 12px 16px -4px rgba(16, 24, 40, 0.08), 0 4px 6px -2px rgba(16, 24, 40, 0.03);
+    --shadow-theme-xl: 0 20px 24px -4px rgba(16, 24, 40, 0.08), 0 8px 8px -4px rgba(16, 24, 40, 0.03);
+
+    /* Aqui se registro `--shadow-elev-1/2/3` en `@theme` para que las plantillas pudieran
+       pedir `shadow-elev-1` en vez de contar con que `overrides.css` repintara `shadow-sm`.
+       Cumplio su funcion —el repintado murio— y se retira el mismo dia: al comprobar que
+       `--elev-1` es negro al 4 % y NO SE VE, sus 125 consumidores perdieron la sombra y la
+       utilidad se quedo sin nadie. Un registro sin consumidor no es una API: es basura.
+
+       La escala `--elev-*` sigue viva abajo, en el `:root`: la usan desde el CSS el panel
+       lateral y los dialogos, que son cosas que FLOTAN. Lo que flota lleva sombra; lo que se
+       apoya, borde. */
+
+    /* ══ CAPA 2 · SEMANTICOS ═════════════════════════════════════════════════════════════
+       ESTO es lo que se escribe. `border-line` dice «el borde del sistema»; `border-gray-200`
+       dice «gris claro». El dia que el borde cambie, esto es UNA linea y no 354.
+
+       Cada anclaje esta MEDIDO con `node scripts/contraste.mjs`, y el criterio de aceptacion
+       es uno solo: `contraste_despues >= contraste_antes`. El ΔE no sirve para esto —esta
+       medido aqui: su correlacion con el salto de contraste es -0.206—.
+
+       ⚠️ EL PASO `-500` NO ES TEXTO. En el sistema de TailAdmin el 500 es relleno o icono:
+       `success-500` da 2.4:1 sobre blanco. El texto vive en 600-700. La prueba de que Deasy
+       ya estaba ahi es que su `error-700` es EXACTAMENTE nuestro `--color-danger` de siempre. */
+
+    /* Marca. ⚠️ UNICA REGRESION DELIBERADA DE CONTRASTE: 5.24 -> 4.84. Sigue pasando AA
+       (4.5), y es el cambio de identidad que la adopcion trae — el primario deja de ser
+       `#5e4eff` y pasa a `#465fff`. */
+    --color-primary: var(--color-brand-500);
+
+    /* Sin equivalente en TailAdmin: conservan su hex propio. `accent` es turquesa y su
+       paleta no tiene esa familia. */
+    --color-accent: #00b2a9;       /* 2.64:1 — NO cumple 3:1, viene de antes */
+    --color-navy-deep: #071927;    /* el fondo del workspace */
+
+    /* Texto e iconos — de mas oscuro a mas claro.
+       ⚠️ `ink` y `strong` caen los DOS en `gray-800`: la escala de Deasy tenia CINCO
+       escalones de texto (17.7 / 14.7 / 11.9 / 9.9 / 6.4) y la de TailAdmin sostiene cuatro.
+       Son ahora el mismo valor, asi que uno de los dos sobra — se retira al colapsar la capa
+       de clases, no aqui. */
+    --color-navy: var(--color-gray-900);    /* 17.74 -> 17.75  titulares */
+    --color-strong: var(--color-gray-800);  /* 11.87 -> 14.70 */
+    --color-body: var(--color-gray-700);    /*  9.91 -> 10.46 */
+    /* ⚠️ ESTOS DOS TIENEN EL MISMO VALOR Y NO SON UN DUPLICADO. Se midio el 2026-08-17 buscando
+       tokens redundantes y aparecieron cuatro pares con el mismo color; dos SI lo eran y se
+       colapsaron (`ink`->`strong`, `step-ink`->`success`), y estos dos NO. El criterio es el de
+       §2.3: un token se justifica si **el concepto puede cambiar de color en el futuro**, no si
+       hoy coincide. Texto secundario e icono son roles distintos —uno se lee, el otro se mira— y
+       el dia que un icono deba aclararse sin tocar 378 textos, hara falta que sean dos.
+       Queda escrito aqui para que la proxima medicion no los cuente otra vez como deuda. */
+    --color-muted: var(--color-gray-600);   /*  6.36 ->  7.69  el SUELO. Nada mas claro para texto */
+    --color-icon: var(--color-gray-600);    /*  7.58 ->  7.69  iconos de accion secundaria */
+
+    /* Lineas y superficie. Se llaman `line-*` y no `border-*` porque el namespace ya dice
+       que son color: `--color-border` daria `border-border`.
+       ⚠️ Los tres bordes siguen POR DEBAJO de los 3:1 que pide WCAG 1.4.11, como antes.
+       Subirlos repinta 228 controles y esta decidido que es un rediseno aparte. */
+    --color-line: var(--color-gray-200);          /* 1.25 -> 1.24  separadores y marcos */
+    /* 📌 AQUI VIVIA `--color-line-field`, con el mismo valor que este. Se colapso el 2026-08-17,
+       y la asimetria con `muted`/`icon` es deliberada, no un descuido: aquel tiene 90 usos en 40
+       ficheros —separarlo despues costaria caro— y este tenia **7 en 6**. Cuando deshacer la
+       decision es barato, la decision se toma; cuando es caro, se conserva la opcion. */
+    --color-line-strong: var(--color-gray-300);   /* 1.46 -> 1.47 */
+    --color-surface: var(--color-gray-50);        /* 1.05 -> 1.05 */
+
+    /* UN color por estado, y es el OSCURO: el unico que cumple en los dos usos, icono (3:1)
+       y texto (4.5:1). `pending` va a `orange` y no a `error` a proposito: «pendiente» no es
+       «rechazado», y colapsarlo perderia una distincion que el usuario necesita. */
+    --color-success: var(--color-success-700);  /* 5.48 -> 5.41 */
+    --color-danger: var(--color-error-700);     /* 6.57 -> 6.57  valor IDENTICO al de siempre */
+    --color-warning: var(--color-warning-700);  /* 5.02 -> 5.43 */
+    --color-pending: var(--color-orange-700);   /* 5.42 -> 5.52  'pendiente', ni exito ni fallo */
+
+    /* INFORMATIVO. Token NUEVO del 2026-08-13, y no por simetria: las plantillas llevaban 66
+       usos de texto en `sky-600`/`sky-700` diciendo «esto es informativo» sin nada a lo que
+       migrar. `sky-600` RENDERIZA a 4.02:1 —falla AA para texto—, asi que ademas de nombrarlo
+       lo arregla: `blue-light-700` da 5.86. Es la familia que TailAdmin reserva justo para esto. */
+    --color-info: var(--color-blue-light-700);  /* 4.02 -> 5.86 */
+
+    /* «TE TOCA A TI» — el borde y el texto de la tarjeta de entregable cuando es tu turno.
+       El RELLENO no esta aqui: es `--step-rgb`, mas abajo. */
+
+    /* ⚠️ NO CUMPLE EN NINGUNO DE SUS USOS: icono 2.10, tooltip 2.10, chip 1.91. Y no es un
+       estado: es el color de UN componente (BtnSera). Los dos problemas van juntos. */
+    --color-gold: #d4af37;
+
+    /* ══ LOS TONOS DE ACCION, unificados el 2026-08-14 ══════════════════════════════════
+       Eran TRES tokens propios de esta familia. Quedan uno, y de la paleta adoptada:
+
+       · `--color-action-neutral` (#23384f) — BORRADO. Era el color de la caja
+         `hope-action-btn`, y esa caja murio al colapsar los 12 botones de accion sobre el
+         componente. Se quedo con cero consumidores el mismo dia.
+       · `--color-info` — BORRADO, y sus 27 consumidores pasan a `--color-info`. Era
+         `blue-light-800` y `info` es `blue-light-700`: **la misma familia en pasos contiguos,
+         con dos nombres segun el componente que lo escribiera**. El tag y la alerta
+         informativos ya usaban `info`; los botones, la zona de subida y las tarjetas de
+         entregable usaban el otro. Contraste 7.55 -> 5.86: baja, y sigue pasando AA para
+         texto (4.5) y 1.4.11 para el borde derivado (3.32).
+       · `--color-action-upload` — sobrevivio a aquella poda y murio en la siguiente
+         (2026-08-16, F4). Su unico consumidor era `.deasy-btn--soft-action-upload`, y esa
+         variante resulto ser `--soft-primary` con otro nombre: sus cuatro usos eran todos
+         `icon-only`, forma en la que la receta solo mira `--tone-soft` y `--tone-bright`, y los
+         dos los tenia **prestados de la marca**. O sea que este token no llego nunca al DOM.
+         Ya no queda ninguno de los tres.
+
+       ⚠️ El 71 % del borde no es arbitrario: es el porcentaje al que estos tonos llegan a
+       3:1 contra la fila blanca (WCAG 1.4.11). Al 35 % ninguno cumple. */
+
+    /* ── LA RUEDA DE SERIES ────────────────────────────────────────────────────────────────
+     *
+     * F8, 2026-08-20. Vivia como `EDGE_PALETTE` —siete hex— dentro de `UnitGraphView.vue`, mas
+     * un gris de reserva y tres colores fijos en `ProcessGraphView.vue`. Once colores decididos
+     * en JavaScript, invisibles a `check-color-theme` y a `contraste.mjs`.
+     *
+     * ⚠️ NO ES UNA FAMILIA SEMANTICA, Y POR ESO NO SE ANCLA A LOS TONOS DEL SISTEMA. Su trabajo
+     * es separar N series entre si: el color no dice si una arista esta bien o mal, igual que la
+     * paleta ciclica de pasos de `AdminDraftArtifactModal`. Anclarla a la paleta habria gastado
+     * el ROJO y el VERDE —que aqui significan error y exito— en decir «tipo de relacion 5», que
+     * es exactamente el fallo por el que `pdf` dejo de ser rojo este mismo dia.
+     *
+     * Se declara ENTERA aunque hoy solo se pinte la primera: **hay UN tipo de relacion activo**
+     * (`org`), y las otras seis existen para cuando un admin cree mas. Es la regla que este
+     * fichero ya tiene escrita —«una FAMILIA se declara entera; un CONCEPTO, cuando tiene
+     * consumidor»— y el motivo por el que F1.3e dejo 42 registros como catalogo: Tailwind hace
+     * *tree-shaking* de `@theme`, asi que los que no se usan **pesan cero bytes**.
+     *
+     * Decision del dueño (2026-08-20) entre cuatro opciones medidas.
+     *
+     * ⚠️ SE LLAMAN `-uno`…`-siete` Y NO `-1`…`-7`, Y NO ES ESTILO. `contraste.mjs` decide que un
+     * token es una PRIMITIVA —y por tanto no lo mide— cuando su nombre acaba en `-<numero>`, que
+     * es como se llaman `gray-200` o `brand-500`. Con `serie-1` los siete se habrian colado por
+     * ese hueco: declarados, en la paleta, y **fuera del gate de contraste por un accidente de
+     * nombre**. Con ordinales entran los once. */
+    --color-serie-uno: #6366f1;
+    --color-serie-dos: #0ea5e9;
+    --color-serie-tres: #10b981;
+    --color-serie-cuatro: #f59e0b;
+    --color-serie-cinco: #ec4899;
+    --color-serie-seis: #8b5cf6;
+    --color-serie-siete: #14b8a6;
+    /* Una arista sin tipo de relacion resuelto. */
+    --color-serie-none: #94a3b8;
+
+    /* Los tres del MAPA DE PROCESOS, que no son ciclicos sino fijos por lo que UNEN:
+       proceso->unidad, configuracion y plantilla. */
+    --color-edge-proceso: #6366f1;
+    --color-edge-config: #94a3b8;
+    --color-edge-plantilla: #a78bfa;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════════════════════
+   LA ALTURA — quien tapa a quien.  F5.3, 2026-08-16
+   ══════════════════════════════════════════════════════════════════════════════════════════════
+
+   Antes de esto habia **19 pisos y ninguno tenia nombre**, escritos en CUATRO sintaxis: utilidades
+   `z-50`, `z-index:` en CSS crudo, una clase arbitraria `z-[1075]`, y SIETE numeros metidos en
+   JavaScript (`:style="{ zIndex: 1090 }"`) que ningun lint podia ver. Se coordinaban por
+   comentario: `dialogs.css` decia «un escalon por debajo del 1075 de AppDialogOverlay.vue», y ese
+   fichero llevaba dos dias borrado.
+
+   ── HAY DOS EJES, Y LA MAGNITUD TE DICE EN CUAL ESTAS ────────────────────────────────────────
+   Un contenedor posicionado abre su PROPIO eje: dentro de un modal, del lienzo del grafo o de la
+   barra superior, los numeros empiezan de cero y NO ven a los de fuera. Por eso:
+
+       1-2 cifras  ->  eje LOCAL   compites solo con tus hermanos
+       4 cifras    ->  eje GLOBAL  compites en toda la pagina
+
+   Y como los locales nunca se cruzan entre contenedores, las MISMAS siete capas valen para todos.
+   Antes cada componente se inventaba las suyas: once numeros distintos para el mismo problema.
+
+   ⚠️ Cuando algo se despliega dentro de un contenedor y NO SE VE, casi nunca es la altura: es que
+   el contenedor RECORTA (`overflow`). Paso el 2026-08-16 con el menu de perfil, que se montaba
+   entero y era invisible por un `overflow-x-auto` heredado. Los dos problemas se parecen y no
+   tienen nada que ver; esta escala no arregla el segundo ni lo pretende.
+   ══════════════════════════════════════════════════════════════════════════════════════════════ */
+:root {
+    /* ── EJE LOCAL · siete capas, reutilizables en CUALQUIER contenedor ───────────────────── */
+    --z-capa-fondo: 0;          /* el lienzo o la imagen de atras — el canvas del PDF          */
+    --z-capa-base: 10;          /* lo que se apoya en el fondo — la capa de campos             */
+    --z-capa-elemento: 20;      /* lo que se puede coger o pulsar — el cuadro de firma, el nodo */
+    --z-capa-activo: 30;        /* ese mismo elemento mientras lo usas                          */
+    --z-capa-controles: 40;     /* sus botones y asas — la ✕ y el asa de tamaño                */
+    --z-capa-emergente: 50;     /* lo que se abre encima — menu, lista de un campo, tooltip     */
+    --z-capa-velo: 60;          /* un velo que cubre SOLO este contenedor                       */
+
+    /* ── EJE GLOBAL · bandas de 1000, decenas dentro ──────────────────────────────────────────
+       ⛔ LA BANDA 1000-1999 ESTA RESERVADA A LIBRERIAS Y NO SE OCUPA NUNCA.
+
+       Las dos que hay declaran numeros de 3 y 4 cifras —Leaflet de 200 a 1000 entre paneles,
+       marcadores, popups y controles; Vue Flow hasta 1001—, y por eso los dialogos estaban en
+       1060 y no en 60: alguien tuvo que esquivar a Leaflet y no lo escribio en ninguna parte.
+
+       Pero al medirlo resulta que **hoy ninguna de las dos compite de verdad en este eje**, y por
+       motivos muy distintos:
+         · Vue Flow se aisla SOLO: su raiz declara `position:relative; z-index:0`, asi que sus
+           numeros son locales a su lienzo y no pueden tapar nada de fuera. Eso es solido.
+         · Leaflet no se aisla: lo aisla el contenedor del mapa (`RegisterView.vue`). Y hasta hoy
+           lo hacia POR ACCIDENTE, con un `z-10` que **parecia un no-op** —un `z-index` sobre un
+           elemento `static` no hace nada— y que cualquiera habria borrado por limpieza. No lo era:
+           Leaflet fuerza `position:relative` sobre el contenedor si lo encuentra `static`
+           (`leaflet-src.js:4228`), y ahi el `z-10` abre contexto y encierra sus 1000. Se cambio a
+           `isolate`, que hace lo mismo sin depender de la altura y dice lo que hace.
+
+       La banda se reserva igual: el aislamiento del segundo cuelga de una linea de una vista, y
+       la proxima libreria que entre no tiene por que traerlo.                                  */
+
+    /* 2000 · el armazon */
+    --z-velo-menu-lateral: 2010;   /* el velo del menu lateral, en movil */
+    --z-menu-lateral: 2020;
+    --z-barra-superior: 2030;
+
+    /* 3000 · lo que flota sobre la pagina */
+    --z-boton-chat: 3010;          /* el boton redondo de abajo a la derecha */
+    --z-velo-chat: 3020;
+    --z-panel-chat: 3030;          /* el panel del chat y el velo de «cargando» a pantalla completa */
+
+    /* 4000 · los dialogos — lo que INTERRUMPE.
+       ⚠️ AQUI SOLO HAY **UN** TOKEN DE MODAL, Y ES EL SUELO, NO LA ALTURA.
+       Un modal no se coloca por lo que declara sino por lo que hay abierto cuando se abre:
+       `modalController.js` lo eleva un escalon sobre el mas alto visible y lo libera al cerrar.
+       Este token es donde caen si eso no llega a correr.
+
+       Hubo cuatro sub-niveles (`--z-modal-2`…`-5`) y se retiraron el 2026-08-17, dos dias despues
+       de nacer, porque **el dato no cabe en el componente**: `openProcessWizard()` se llama desde
+       SIETE sitios a dos profundidades distintas, asi que cualquier numero fijo esta mal en algun
+       camino. Con nivel 1 el asistente se abria por debajo del editor que lo habia lanzado.
+       La banda 4030-4090 queda libre a proposito: es el margen por el que trepa el apilado. */
+    --z-panel-lateral: 4010;       /* el panel que entra por la derecha */
+    --z-modal: 4020;               /* SUELO. La altura real la pone modalController.js */
+
+    /* 5000 · los avisos — por encima de todo, incluidos los dialogos.
+       ⚠️ Antes NO era asi y era un fallo: el aviso valia 1080 y los modales apilados 1090 y 1100,
+       asi que un «guardado» disparado desde un modal de segundo o tercer nivel quedaba DETRAS y
+       no se veia. */
+    --z-aviso: 5010;
+    --z-velo-notificaciones: 5020;
+    --z-notificaciones: 5030;
+}
+
+/* Aqui habia un `@layer base` con `html`, `body` y `#app`. Se fue a `base.css` el 2026-08-13:
+   entre los dos ficheros el fondo `--color-navy-deep` estaba declarado CINCO veces y el `color`
+   del `body` TRES, y cual ganaba dependia del orden de los `@import` de `index.css` — que es
+   justo lo que no debe sostener un valor. `tokens.css` declara la paleta; el armazon es de
+   `base.css`. */
+
+/* LO QUE NO ES UN COLOR SUELTO, y por eso no va en `@theme`: sombras, el velo, los
+   degradados y los tripletes `-rgb`. Ninguno encaja en un namespace de Tailwind.
+
+   ⚠️ Los gemelos `-rgb` no siguen ningun criterio: se crearon a demanda, para poder
+   escribir `rgba(var(--x-rgb), .08)`. `--color-danger` y `--color-line` no tienen, aunque
+   se usen mucho. Comprueba antes de escribir uno. */
+:root {
+  --white-rgb: 255, 255, 255;
+
+  /* AQUI VIVIAN `--primary-rgb`, `--surface-rgb` y `--success-rgb`. Se retiraron el 2026-08-13
+     al anclar la paleta, y el motivo es el que hace peligrosa a toda esta familia: un triplete
+     es una COPIA A MANO del token, y al mover el token la copia no se entera. Los tres se
+     quedaron con el valor viejo en el mismo commit —`--primary-rgb` seguia siendo el violeta
+     `#5e4eff` cuando `--color-primary` ya era `#465fff`— y nada lo habria dicho.
+
+     Sus siete consumidores usan ahora `color-mix(in srgb, var(--token) N%, transparent)`, que
+     produce EXACTAMENTE el mismo color y lee del token, asi que no puede desincronizarse.
+
+     Los que quedan abajo NO tienen token gemelo del que copiar, asi que no pueden derivar:
+     `--white-rgb` (el blanco no se mueve), `--step-rgb`, `--navy-menu-rgb` y `--elev-ink-rgb`. */
+
+  /* El RELLENO menta del paso actual (`#4bf1a1`). Vive aqui y no en `@theme` porque no se
+     pinta solido en ningun sitio: sus tres consumidores lo usan al 10% y al 35%. Registrarlo
+     como color daria una utilidad `bg-step` que nadie llama — y Tailwind ni la emitiria.
+     ⚠️ NO lo colapses sobre `--color-success`: significa «este paso es el actual», no «ya
+     esta hecho». Esta medido: el mejor `color-mix` con `--color-accent` toca fondo en
+     ΔE 19.75 y la curva es plana, y contra `--color-success` hay ΔE 34.96. */
+  --step-rgb: 75, 241, 161;
+  --navy-menu-rgb: 18, 63, 136;
+
+  /* Ancla para oscurecer con color-mix(). No es un color de superficie: no pintes nada
+     directamente con el. Se queda con su hex porque Tailwind NO emite `--color-black`
+     salvo que algo use la clase, y una variable sin emitir es una variable rota. */
+  --black: #000000;
+
+  /* EL ANCHO DE LA BARRA LATERAL — un solo numero para los DOS sitios que lo pintan: la `aside`
+     de `SMenu` cuando esta abierta, y el panel del vistazo de `layout.css` cuando flota sobre el
+     contenido. Son el mismo panel en dos estados, no dos anchos, y hasta ahora el 282 estaba
+     escrito a mano en cada uno — el mismo reparto que ya costo un `w-[21.5rem]` de mas en el
+     panel movil, retirado el 2026-08-16 justo por esto.
+
+     Va aqui sin registrar en `@theme`, como `--elev-*` o la escala de alturas: no es un escalon
+     de ninguna escala, es la medida de UN componente, y registrarlo generaria utilidades que
+     nadie pide. Se consume con `w-(--ancho-barra-lateral)`, que ademas NO es un valor arbitrario
+     y por eso baja el contador en vez de subirlo. */
+  --ancho-barra-lateral: 282px;
+
+  /* ELEVACION — una escala de TRES. `--elev-3-left` es el nivel 3 proyectando a la
+     izquierda: el panel lateral se ancla al borde derecho de la pantalla, asi que su unico
+     canto visible es el izquierdo. Misma opacidad, solo cambia la direccion. */
+  /* Solo el triplete: `--elev-ink: #0f172a` quedo huerfano cuando todo migro a `-rgb` y era
+     el unico sitio del proyecto que guardaba ese hex sin gastarlo. Retirado el 2026-08-13. */
+  --elev-ink-rgb: 15, 23, 42;
+  --elev-1: 0 1px 2px rgba(var(--elev-ink-rgb), 0.04);            /* tarjetas y marcos */
+  --elev-2: 0 1px 2px rgba(var(--elev-ink-rgb), 0.04), 0 12px 32px rgba(var(--elev-ink-rgb), 0.06);
+  --elev-3: 0 1px 2px rgba(var(--elev-ink-rgb), 0.04), 0 24px 64px rgba(var(--elev-ink-rgb), 0.16);
+  --elev-3-left: -8px 0 24px rgba(var(--elev-ink-rgb), 0.16);
+
+  /* El anillo de foco: la señal de «aqui esta el teclado», asi que es UNO. NO se llama
+     `--elev-*` a proposito — no es un escalon de elevacion, es un indicador de estado que
+     resulta usar la misma propiedad. */
+  --focus-ring: 0 0 0 4px color-mix(in srgb, var(--color-primary) 10%, transparent);
+
+  /* EL HUECO ENTRE UNA ETIQUETA Y SU CAMPO — F2, 2026-08-18.
+     Existe como token porque el par se escribe de DOS formas en el arbol y cada una lo pide con
+     una propiedad distinta: si la etiqueta va ENCIMA de su campo es el `margin-bottom` de ella;
+     si lo ENVUELVE (17 casos, los dos grafos) es el `margin-top` del campo. Con dos reglas y un
+     numero suelto, cambiarlo eran dos sitios y en la practica ninguno: los 17 lo llevaban escrito
+     en la plantilla. Con el token, se cambia aqui y valen los 158.
+     NO se llama `--spacing-*`: eso es un namespace de Tailwind v4 y redefinirlo mueve la escala
+     entera de la aplicacion. */
+  --label-gap: 0.375rem;
+
+  /* El velo del modal. No es una sombra aunque lo parezca: es un fondo. */
+  --overlay-backdrop: rgba(var(--elev-ink-rgb), 0.48);
+
+  --info-soft: rgba(37, 99, 235, 0.1);
+  /* `--surface-soft: rgba(247,249,252,.92)` vivia aqui con CERO consumidores, y ademas duplicaba
+     `--color-surface` con alfa. Retirado el 2026-08-13. */
+  /* Los dos degradados llevaban el primario ESCRITO A MANO (`#5e4eff` y su triplete), asi que
+     al mover la marca se habrian quedado violetas contra una app azul. Anclados el 2026-08-13.
+     El segundo tono era `#3898ff`, un azul claro sin token: se toma `--color-blue-light-500`,
+     que es el escalon equivalente de la paleta adoptada. */
+  --gradient-soft: linear-gradient(135deg,
+      color-mix(in srgb, var(--color-primary) 9%, transparent) 0%,
+      color-mix(in srgb, var(--color-blue-light-500) 7%, transparent) 100%);
+
+  /* ⚠️ `--typeface` y `--type-*` NO se llaman `--font-*` ni `--text-*` a proposito: los dos
+     son namespaces de Tailwind y este `:root` esta sin capa, asi que le ganaria. */
+  --input-height: 52px;
+  --typeface: 'Inter', sans-serif;
+  --type-size: 1rem;
+  --type-leading: 1.5;
+  --type-leading-heading: 1.2;
+}
+/* stylelint-enable color-no-hex */

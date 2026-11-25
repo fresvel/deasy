@@ -1,0 +1,1753 @@
+// ============================================================================
+// ARTEFACTO GENERADO — NO EDITAR A MANO.
+//
+// Lo produce `bash scripts/docs/gen-dbml.sh` levantando un PostgreSQL desechable,
+// aplicando `backend/database/postgres_schema.sql` e introspeccionando la base.
+// Cualquier cambio hecho aquí se pierde en la siguiente regeneración, y la puerta
+// de CI (.github/workflows/docs-dbml.yml) lo detecta.
+//
+// ¿Quieres explicar qué SIGNIFICA una tabla o una columna?
+//   -> docs/02-dominio-datos/anotaciones.json  (eso sí se escribe a mano)
+// Diagramas por dominio: docs/02-dominio-datos/dominios/
+// ============================================================================
+
+Project deasy {
+  database_type: 'PostgreSQL'
+  Note: '''Modelo de datos de Deasy. 98 tablas. El color de cabecera indica el dominio.'''
+}
+
+Table "accesos_sensibles" {
+  "id" int8 [pk, not null, increment]
+  "titular_person_id" int4 [not null]
+  "actor_person_id" int4 [not null]
+  "recurso" text [not null, check: `recurso = ANY (ARRAY['datos_sensibles'::text, 'datos_pago'::text])`]
+  "tabla" varchar(60) [not null]
+  "registro_id" int8
+  "accion" text [not null, check: `accion = ANY (ARRAY['read'::text, 'create'::text, 'update'::text, 'delete'::text])`]
+  "detalle" jsonb [note: '''En una escritura, los NOMBRES de los campos cambiados, nunca sus valores: copiar aquí el dato haría de la bitácora otra copia de lo que protege, y la lee Auditor.''']
+  "ip" varchar(60)
+  "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (actor_person_id, ocurrido_at) [type: btree, name: "idx_accesos_sensibles_actor"]
+    (titular_person_id, ocurrido_at) [type: btree, name: "idx_accesos_sensibles_titular"]
+  }
+
+  Note: '''La bitácora de accesos a datos sensibles y de pago: cada lectura ajena y cada escritura. Sólo altas (trigger contra UPDATE y DELETE; hook contra el alta desde /admin). Sin claves ajenas, como `consentimientos`: la evidencia sobrevive a la persona. NO es el «registro de actividades» del Art. 38 del Reglamento; se apoya en el Art. 41.4 de la Ley.'''
+}
+
+Table "actions" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(120) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "acto_adjuntos" {
+  "id" int4 [pk, not null, increment]
+  "acto_id" int4 [unique, not null]
+  "file_path" varchar(500) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(120) [not null]
+  "size_bytes" int8 [not null, check: `size_bytes > 0`]
+  "sha256" bpchar(64) [not null]
+  "subido_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "acto_documentos" {
+  "acto_id" int4 [pk, not null]
+  "document_version_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    document_version_id [type: btree, name: "idx_acto_documentos_version"]
+  }
+}
+
+Table "actos" {
+  "id" int4 [pk, not null, increment]
+  "tipo_de_acto_id" int4 [not null]
+  "numero" varchar(120) [not null]
+  "asunto" varchar(500) [not null]
+  "fecha_emision" date [not null]
+  "fecha_vigencia" date [not null]
+  "unidad_emisora_id" int4
+  "emisor_externo" varchar(255)
+  "suscrito_por_person_id" int4
+  "suscrito_por_nombre" varchar(255)
+  "en_calidad_de" text [check: `en_calidad_de = ANY (ARRAY['titular'::text, 'subrogante'::text, 'encargado'::text, 'delegado'::text])`]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (tipo_de_acto_id, numero, unidad_emisora_id, emisor_externo) [type: btree, unique, name: "uq_actos_referencia"]
+    unidad_emisora_id [type: btree, name: "idx_actos_unidad_emisora"]
+    fecha_vigencia [type: btree, name: "idx_actos_vigencia"]
+  }
+}
+
+Table "aplications" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "vacancy_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['aplicado'::text, 'preseleccionado'::text, 'entrevista'::text, 'rechazado'::text, 'retirado'::text, 'seleccionado'::text])`, default: 'aplicado']
+  "selected_flag" int2 [note: "columna generada (STORED)"]
+  "applied_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "note" varchar(255)
+
+  Indexes {
+    (vacancy_id, person_id) [type: btree, unique, name: "uq_application_once"]
+    (vacancy_id, selected_flag) [type: btree, unique, name: "uq_one_selected_per_vacancy"]
+    (person_id, applied_at) [type: btree, name: "idx_applications_person_time"]
+    (vacancy_id, status) [type: btree, name: "idx_applications_vacancy_status"]
+  }
+}
+
+Table "autoidentificaciones_etnicas" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(100) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_autoidentificaciones_etnicas"]
+  }
+}
+
+Table "canales_bitacora" {
+  "id" int8 [pk, not null, increment]
+  "canal" varchar(40) [not null]
+  "salud" varchar(20) [not null]
+  "evidencia" varchar(20)
+  "detalle" text
+  "desde" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "hasta" timestamp
+  "avisado_at" timestamp
+
+  Indexes {
+    (canal, desde) [type: btree, name: "idx_canales_bitacora"]
+  }
+
+  Note: '''El historial de como han estado los canales de mensajeria. UNA FILA POR CAMBIO de estado, no por comprobacion: se mira cada minuto y anotar cada vuelta serian 1 440 filas al dia por canal para decir «sigue bien». `hasta` nulo significa «sigue asi ahora mismo». El canal `servicio` es el propio microservicio: si NO CONTESTA, eso es un estado y hay que poder contarlo. Contesta la pregunta que nadie pudo responder el 2026-08-31: ¿cuanto llevaba roto?'''
+}
+
+Table "canales_mensajeria" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "cantones" {
+  "id" int4 [pk, not null, increment]
+  "provincia_id" int4 [not null]
+  "dpa_code" varchar(4)
+  "name" varchar(140) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (provincia_id, name) [type: btree, unique, name: "uq_cantones_provincia_name"]
+    provincia_id [type: btree, name: "idx_cantones_provincia"]
+  }
+}
+
+Table "cargo_role_map" {
+  "id" int4 [pk, not null, increment]
+  "role_id" int4 [not null]
+  "cargo_id" int4 [not null]
+
+  Indexes {
+    (cargo_id, role_id) [type: btree, unique, name: "uq_cargo_role_map"]
+  }
+}
+
+Table "cargos" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(120) [unique, not null]
+  "name" varchar(120) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "catalogo_documental" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(180) [unique, not null]
+  "display_name" varchar(180) [not null]
+  "description" varchar(255)
+  "template_scope" text [not null, check: `template_scope = ANY (ARRAY['official'::text, 'ad_hoc'::text])`, default: 'official']
+  "owner_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''El ENTREGABLE como identidad estable (el \'libro\'). Sus versiones son `ediciones` (las \'ediciones\'): la identidad vive aquí y sólo aquí.'''
+}
+
+Table "categorias_visa" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(60) [not null]
+  "name" varchar(120) [not null]
+  "condicion" varchar(60)
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_categorias_visa"]
+  }
+
+  Note: '''Las categorías de visa que reconoce UN país, con `pais_id`. No es un CHECK justamente por eso: un CHECK es global por definición y no puede valer una cosa en Ecuador y otra en Colombia. Las 13 filas sembradas son las de la Ley Orgánica de Movilidad Humana, agrupadas por `condicion` (visitante temporal, residente temporal, residente permanente).'''
+}
+
+Table "chat_conversation_participants" {
+  "id" int8 [pk, not null, increment]
+  "conversation_id" int8 [not null]
+  "person_id" int4 [not null]
+  "role" varchar(20) [not null, default: 'member']
+  "joined_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "left_at" timestamp
+
+  Indexes {
+    (conversation_id, person_id) [type: btree, unique, name: "uq_chat_participant"]
+    (person_id, conversation_id) [type: btree, name: "idx_chat_participant_person"]
+  }
+}
+
+Table "chat_conversations" {
+  "id" int8 [pk, not null, increment]
+  "type" text [not null, check: `type = ANY (ARRAY['direct'::text, 'group'::text, 'thread'::text, 'process_thread'::text, 'unit'::text])`]
+  "title" text
+  "process_id" int4
+  "scope_process_id" int4
+  "scope_unit_id" int4
+  "stable_key" varchar(255) [unique]
+  "scope_current_definition_id" int4
+  "scope_origin_definition_id" int4
+  "created_by" int4 [not null]
+  "last_message_id" int8
+  "last_message_at" timestamp
+  "archived_at" timestamp
+  "mobile_summary" text
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (type, process_id) [type: btree, name: "idx_chat_conversations_process"]
+  }
+}
+
+Table "chat_message_attachments" {
+  "id" int8 [pk, not null, increment]
+  "message_id" int8 [not null]
+  "sort_order" int4 [not null, default: 0]
+  "path" varchar(500) [not null]
+  "filename" varchar(255) [not null]
+  "mime" varchar(120)
+  "size" int8 [not null, default: 0]
+
+  Indexes {
+    (message_id, sort_order) [type: btree, name: "idx_chat_attachments_message"]
+  }
+}
+
+Table "chat_message_reads" {
+  "message_id" int8 [not null]
+  "person_id" int4 [not null]
+  "read_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (message_id, person_id) [pk, type: btree, name: "chat_message_reads_pkey"]
+  }
+}
+
+Table "chat_messages" {
+  "id" int8 [pk, not null, increment]
+  "conversation_id" int8 [not null]
+  "sender_person_id" int4 [not null]
+  "content" text [not null, default: '']
+  "content_type" varchar(20) [not null, check: `(content_type)::text = ANY ((ARRAY['text'::character varying, 'system'::character varying, 'attachment'::character varying])::text[])`, default: 'text']
+  "reply_to_message_id" int8
+  "edited_at" timestamp
+  "deleted_at" timestamp
+  "delivery_state" varchar(20)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (conversation_id, created_at) [type: btree, name: "idx_chat_messages_conversation"]
+    (sender_person_id, created_at) [type: btree, name: "idx_chat_messages_sender"]
+  }
+}
+
+Table "chat_notifications" {
+  "id" int8 [pk, not null, increment]
+  "recipient_person_id" int4 [not null]
+  "type" varchar(80) [not null]
+  "title" text [not null]
+  "body" text [not null]
+  "conversation_id" int8
+  "message_id" int8
+  "channel" varchar(20) [not null, default: 'in_app']
+  "read_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (recipient_person_id, created_at) [type: btree, name: "idx_chat_notif_recipient_created"]
+    (recipient_person_id, read_at) [type: btree, name: "idx_chat_notif_recipient_read"]
+  }
+}
+
+Table "clases_parroquia" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_clases_parroquia"]
+  }
+}
+
+Table "consentimientos" {
+  "id" int8 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "documento_id" int4 [not null]
+  "aceptado_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "ip" varchar(60)
+  "revocado_at" timestamp
+
+  Indexes {
+    (person_id, documento_id) [type: btree, unique, name: "uq_consentimiento"]
+    person_id [type: btree, name: "idx_consentimiento_persona"]
+  }
+
+  Note: '''La prueba de que alguien acepto: quien, a que documento, cuando y desde donde. Hasta el 2026-09-02 NO SE GUARDABA NADA -- la casilla se validaba en el navegador y moria ahi--, y el Art. 5 del Reglamento de la LOPDP exige que el consentimiento «debera ser DEMOSTRADO por el responsable que lo obtiene». UNA FILA POR FINALIDAD, porque el Art. 8 pide que sea especifico y que, con varias finalidades, CONSTE para todas ellas. Y SIN clave ajena a `persons` a proposito: el Art. 18.4 dice que la eliminacion no procede cuando los datos son necesarios «para la formulacion, el ejercicio o la defensa de reclamaciones», asi que la fila sobrevive a la persona.'''
+}
+
+Table "contract_origin_recruitment" {
+  "contract_id" int4 [pk, not null]
+  "offer_id" int4 [unique, not null]
+  "vacancy_id" int4 [unique, not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "contract_origin_renewal" {
+  "contract_id" int4 [pk, not null]
+  "renewed_from_contract_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    renewed_from_contract_id [type: btree, name: "idx_renewed_from_contract"]
+  }
+}
+
+Table "contract_origins" {
+  "contract_id" int4 [pk, not null]
+  "origin_type" text [not null, check: `origin_type = ANY (ARRAY['recruitment'::text, 'renewal'::text])`]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "contracts" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "position_id" int4 [not null]
+  "relation_type" varchar(60) [not null]
+  "dedication" varchar(30) [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "status" text [not null, check: `status = ANY (ARRAY['activo'::text, 'finalizado'::text, 'cancelado'::text])`, default: 'activo']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, status) [type: btree, name: "idx_contracts_person_status"]
+    (position_id, status) [type: btree, name: "idx_contracts_position_status"]
+  }
+}
+
+Table "correcciones_de_estructura" {
+  "id" int8 [pk, not null, increment]
+  "tabla" varchar(60) [not null, check: `(tabla)::text = ANY ((ARRAY['unit_vigencias'::character varying, 'position_vigencias'::character varying, 'process_vigencias'::character varying, 'unit_relations'::character varying, 'process_relations'::character varying, 'unit_equivalencias'::character varying, 'position_equivalencias'::character varying, 'process_equivalencias'::character varying, 'acto_adjuntos'::character varying])::text[])`]
+  "registro_id" int8
+  "actor_person_id" int4 [not null]
+  "motivo" text [not null, check: `char_length(btrim(motivo)) >= 10`]
+  "antes" jsonb
+  "despues" jsonb
+  "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (actor_person_id, ocurrido_at) [type: btree, name: "idx_correcciones_de_estructura_actor"]
+    (tabla, registro_id) [type: btree, name: "idx_correcciones_de_estructura_registro"]
+  }
+}
+
+Table "direcciones" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['residencia'::text, 'trabajo'::text])`]
+  "pais_id" int4
+  "provincia_id" int4
+  "canton_id" int4
+  "sector" varchar(180)
+  "barrio" varchar(180)
+  "calle_primaria" varchar(180)
+  "calle_secundaria" varchar(180)
+  "referencia" varchar(255)
+  "latitud" numeric(9,6)
+  "longitud" numeric(9,6)
+  "principal" int2 [not null, default: 0]
+  "principal_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, tipo, principal_flag) [type: btree, unique, name: "uq_direcciones_principal"]
+    person_id [type: btree, name: "idx_direcciones_person"]
+  }
+}
+
+Table "document_attachments" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "kind" text [not null, check: `kind = ANY (ARRAY['annex'::text, 'evidence'::text, 'source'::text, 'other'::text])`, default: 'annex']
+  "file_path" varchar(255) [not null]
+  "file_name" varchar(255) [not null]
+  "mime_type" varchar(120)
+  "size_bytes" int8
+  "description" varchar(255)
+  "uploaded_by_person_id" int4
+  "sort_order" int4 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    uploaded_by_person_id [type: btree, name: "idx_document_attachments_uploader"]
+    (document_version_id, sort_order) [type: btree, name: "idx_document_attachments_version"]
+  }
+}
+
+Table "document_signatures" {
+  "id" int4 [pk, not null, increment]
+  "turno_id" int4
+  "document_version_id" int4 [not null]
+  "signer_user_id" int4 [not null]
+  "signature_status_id" int4 [not null]
+  "note_short" varchar(255)
+  "signed_file_path" varchar(255)
+  "signed_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "document_version_uploads" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "minor" int4 [not null]
+  "file_path" varchar(255) [not null]
+  "file_name" varchar(255)
+  "mime_type" varchar(120)
+  "size_bytes" int8
+  "uploaded_by_person_id" int4
+  "note" varchar(255)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (document_version_id, minor) [type: btree, unique, name: "uq_document_version_uploads"]
+    uploaded_by_person_id [type: btree, name: "idx_document_version_uploads_person"]
+  }
+
+  Note: '''Cada SUBIDA del archivo de un entregable: la version MENOR. Guarda quien lo subio, que fichero y cuando. Antes no constaba en ninguna parte quien elaboro un documento — `working_file_path` se sobrescribe— mientras que un ANEXO si guardaba su autor. Ojo: en el almacén nunca se perdio un fichero (el nombre lleva sello de tiempo y UUID); lo que se perdia era el PUNTERO.'''
+}
+
+Table "document_versions" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null, note: '''Cuelga del ENTREGABLE. Hasta el 2026-08-23 habia una tabla `documents` en medio, en relacion 1:1 estricta y sin una sola columna propia.''']
+  "version" int4 [not null, default: 1, note: '''La RONDA: un intento completo del flujo (llenar -> firmar). Entero desde el 2026-08-23; antes era decimal y el numero mentia, porque 0.1 y 0.2 parecian correcciones del mismo documento y eran dos rondas, la primera cancelada entera. Las CORRECCIONES son el segundo digito y viven en `document_version_uploads`.''']
+  "version_minor" int4 [not null, default: 0]
+  "version_label" text [note: "columna generada (STORED)"]
+  "edicion_id" int4
+  "payload_hash" varchar(64)
+  "payload_object_path" varchar(255)
+  "working_file_path" varchar(255)
+  "final_file_path" varchar(255)
+  "format" varchar(40)
+  "render_engine" varchar(80)
+  "status" varchar(30) [not null, default: 'Borrador']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_item_id, version) [type: btree, unique, name: "uq_document_versions"]
+    edicion_id [type: btree, name: "idx_document_versions_artifact"]
+    task_item_id [type: btree, name: "idx_document_versions_item"]
+  }
+}
+
+Table "document_workflow_observations" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null]
+  "document_version_id" int4 [not null]
+  "turno_id" int4
+  "phase" text [not null, check: `phase = ANY (ARRAY['review'::text, 'signature'::text])`]
+  "kind" text [not null, check: `kind = ANY (ARRAY['observation'::text, 'return_reason'::text, 'rejection_reason'::text, 'internal_note'::text])`, default: 'observation']
+  "message" text [not null]
+  "author_person_id" int4 [not null]
+  "resolved_by_person_id" int4
+  "resolved_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    author_person_id [type: btree, name: "idx_document_workflow_observations_author"]
+    (task_item_id, created_at) [type: btree, name: "idx_document_workflow_observations_item"]
+    turno_id [type: btree, name: "idx_document_workflow_observations_turno"]
+    (document_version_id, created_at) [type: btree, name: "idx_document_workflow_observations_version"]
+  }
+}
+
+Table "documentos_identidad" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['documento_nacional'::text, 'documento_extranjero'::text, 'pasaporte'::text, 'visa'::text])`]
+  "categoria_visa_id" int4 [note: '''SOLO la lleva la visa, y `chk_documentos_categoria_visa` lo garantiza: en un pasaporte o una cédula tiene que ser NULL. Sin ella la fila no dice nada útil — «Visa (Ecuador)» no distingue a un residente permanente de un turista.''']
+  "pais_id" int4 [not null]
+  "numero" varchar(40) [not null]
+  "verificado" int2 [not null, default: 0]
+  "verificado_at" timestamp
+  "emitido_el" date
+  "expira_el" date
+  "escaneo_ref" varchar(255)
+  "escaneo_subido_at" timestamp
+  "principal" int2 [not null, default: 0, note: '''El documento POR EL QUE SE IDENTIFICA la persona, uno por persona (índice único parcial sobre `principal_flag`). ⚠️ No todo lo que vive en esta tabla puede serlo: la VISA no acredita identidad sino permanencia, y quien la tiene se identifica con su pasaporte. El servicio la rechaza como principal, porque `guardarPrincipal` reescribe esta fila en su sitio y dejarla pasar borraba el documento de identidad de la persona.''']
+  "principal_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (tipo, pais_id, numero) [type: btree, unique, name: "uq_documentos_numero"]
+    (person_id, principal_flag) [type: btree, unique, name: "uq_documentos_principal"]
+    numero [type: btree, name: "idx_documentos_numero"]
+    person_id [type: btree, name: "idx_documentos_person"]
+  }
+}
+
+Table "documentos_legales" {
+  "id" int4 [pk, not null, increment]
+  "clase" varchar(60) [unique, not null]
+  "version" varchar(40) [not null]
+  "contenido_hash" bpchar(64)
+  "bucket" varchar(120)
+  "object_key" varchar(500)
+  "object_version_id" varchar(120)
+  "estado" text [not null, check: `estado = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
+  "publicado_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (clase, version) [type: btree, unique, name: "uq_documento_legal"]
+  }
+
+  Note: '''Los textos legales que una persona acepta, VERSION A VERSION. Sigue el patron de `ediciones`: version, estado de ciclo de vida y huella del contenido. El BORRADOR vive en la columna `texto` de esta tabla y el PUBLICADO en el archivo inmutable, porque una errata publicada en un almacen con bloqueo de objetos quedaria diez años sin poder quitarse. Publicar es lo que mueve el texto de un sitio al otro, y es irreversible. `retired` NO es borrar: hay gente cuya prueba de consentimiento apunta a esa version.'''
+}
+
+Table "dossier_items" {
+  "id" int8 [pk, not null, increment]
+  "dossier_id" int8 [not null]
+  "section" varchar(20) [not null]
+  "data" jsonb [not null, default: `'{}'::jsonb`]
+  "url_documento" text [not null, default: '']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (dossier_id, section, id) [type: btree, name: "idx_dossier_items"]
+  }
+}
+
+Table "dossiers" {
+  "id" int8 [pk, not null, increment]
+  "person_id" int4 [unique, not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''El expediente de una persona. Sustituye a la colección de MongoDB retirada en la migración a PostgreSQL; enlaza por cédula.'''
+}
+
+Table "ediciones" {
+  "id" int4 [pk, not null, increment]
+  "catalogo_documental_id" int4 [not null]
+  "storage_version" varchar(20) [not null, check: `(storage_version)::text ~ '^[0-9]+\.[0-9]+\.[0-9]+$'::text`]
+  "lifecycle_state" text [not null, check: `lifecycle_state = ANY (ARRAY['draft'::text, 'published'::text, 'retired'::text])`, default: 'draft']
+  "base_object_prefix" varchar(255) [not null]
+  "available_formats" jsonb [not null]
+  "generador_id" int4 [note: '''QUIEN produce el PDF de esta edicion. Estaba en `catalogo_documental.template_seed_id` y se movio aqui, no se duplico: la fachada del admin ya lo listaba como campo de `ediciones` y lo traia por JOIN. NO sustituye a `document_versions.render_engine`, que dice con que motor se renderizo UNA ronda concreta —un hecho de la ejecucion, no una declaracion de la plantilla.''']
+  "content_hash" varchar(64)
+  "parent_version_id" int4
+  "publicada_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (catalogo_documental_id, storage_version) [type: btree, unique, name: "uq_ediciones_storage"]
+    (catalogo_documental_id, publicada_flag) [type: btree, unique, name: "uq_ediciones_una_publicada"]
+    catalogo_documental_id [type: btree, name: "idx_ediciones_catalogo"]
+    lifecycle_state [type: btree, name: "idx_ediciones_state"]
+  }
+
+  Note: '''Las EDICIONES de un entregable, versionadas. Cuelgan de `catalogo_documental`, que es quien porta la identidad.'''
+}
+
+Table "email_verification_codes" {
+  "id" int8 [pk, not null, increment]
+  "email_id" int4 [not null]
+  "code_hash" varchar(255) [not null]
+  "expires_at" timestamp [not null]
+  "created_at" timestamp [default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    email_id [type: btree, name: "idx_evc_email_id"]
+    expires_at [type: btree, name: "idx_evc_expires_at"]
+  }
+}
+
+Table "emails" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['personal'::text, 'institucional'::text])`]
+  "direccion" varchar(180) [unique, not null]
+  "verificado" int2 [not null, default: 0]
+  "verificado_at" timestamp
+  "principal" int2 [not null, default: 0]
+  "principal_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, principal_flag) [type: btree, unique, name: "uq_emails_principal"]
+    person_id [type: btree, name: "idx_emails_person"]
+  }
+}
+
+Table "estados_civiles" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_estados_civiles"]
+  }
+}
+
+Table "generadores_de_documento" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(180) [unique, not null]
+  "nombre" varchar(180) [not null]
+  "description" varchar(255)
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['latex'::text, 'servicio'::text])`, default: 'servicio']
+  "destino" varchar(255) [note: '''A quien se le pide el PDF: nombre de cola o URL de endpoint. NULL para `latex`, que no llama a nadie. Es texto libre y no dos columnas a proposito: hoy no hay ni un consumidor, y partirla antes de saber como se invoca seria inventar la forma del contrato por adelantado.''']
+  "source_path" varchar(255)
+  "preview_path" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''EL CATALOGO DE QUIEN PRODUCE EL PDF. Era `template_seeds` y significaba otra cosa: «la semilla», un proyecto LaTeX+Jinja2 en el almacén que se COPIABA entero por cada version de plantilla, y que era EL mecanismo —no habia camino para definir un documento sin escribir `.tex.j2`. Del mecanismo solo se construyo la copia (no hay renderizador, ni formulario, ni editor de campos), asi que el frente 23 lo desacoplo: el llenado web lo haran servicios programados caso a caso y la semilla LaTeX pasa a ser UNO de los generadores, el primero del catalogo. `tipo` separa las dos mitades: `latex` trae paquete (`source_path`) y no llama a nadie; `servicio` tiene `destino` (cola o endpoint) y no trae paquete.'''
+}
+
+Table "generos" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_generos"]
+  }
+}
+
+Table "instituciones" {
+  "id" int4 [pk, not null, increment]
+  "nombre" varchar(180) [not null]
+  "pais_id" int4 [not null, note: '''El país del despliegue, y el único motivo por el que esta tabla existe hoy. No lleva restricción de fila única a propósito: `InstitucionService.actual()` falla si hay cero o más de una en vez de elegir en silencio, y es la costura por la que entraría un modelo multi-inquilino.''']
+  "campo_sexo_genero" text [not null, check: `campo_sexo_genero = ANY (ARRAY['sexo'::text, 'genero'::text, 'ambos'::text])`, default: 'ambos']
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''La institución que usa esta instalación, y la primera tabla de CONFIGURACIÓN del sistema: hasta el 2026-08-28 no había ninguna. De su país salen el validador del documento nacional, el nombre local de ese documento («Cédula» en Ecuador, «DNI» en Perú) y el valor que el formulario precarga. Antes eso vivía en el código como un tipo llamado `cedula_ec`.'''
+}
+
+Table "intentos_limitados" {
+  "id" int8 [pk, not null, increment]
+  "accion" varchar(60) [not null]
+  "sujeto" varchar(160) [not null]
+  "ocurrido_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (accion, sujeto, ocurrido_at) [type: btree, name: "idx_intentos_ventana"]
+  }
+
+  Note: '''Lo que se ha intentado y CUENTA para un limite. No es una bitacora general: aqui solo entra lo que se frena, porque registrar cada peticion doblaria las escrituras del sistema para no usarlas. Vive en la base y no en memoria porque un contador en memoria dejaria de proteger en cuanto hubiera dos instancias del backend. `sujeto` es un TEXTO y no una clave ajena a proposito: lo que se cuenta cambia con la accion --una IP, un correo+ip, un person_id-- y hay acciones anonimas en las que no existe ninguna fila a la que apuntar.'''
+}
+
+Table "lineas" {
+  "id" int4 [pk, not null, increment]
+  "process_id" int4 [not null]
+  "nombre" varchar(180) [not null]
+  "cargo_id" int4
+  "recipient_policy" text [not null, check: `recipient_policy = ANY (ARRAY['all_matches'::text, 'unit_head'::text])`, default: 'all_matches']
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['all_units'::text, 'unit_type'::text, 'unit_exact'::text])`, default: 'all_units']
+  "unit_type_id" int4
+  "unit_id" int4
+  "linea_anterior_id" int4
+  "effective_from" date [not null]
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, cargo_id, unit_scope_type, unit_type_id, unit_id) [type: btree, unique, name: "uq_lineas_identidad"]
+    (process_id, nombre) [type: btree, unique, name: "uq_lineas_nombre_por_proceso"]
+    linea_anterior_id [type: btree, name: "idx_lineas_anterior"]
+    (process_id, effective_to) [type: btree, name: "idx_lineas_vigencia"]
+  }
+}
+
+Table "nomenclatura_territorial" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "nivel" int2 [not null, check: `(nivel >= 1) AND (nivel <= 3)`]
+  "singular" varchar(60) [not null]
+  "plural" varchar(60) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, nivel) [type: btree, unique, name: "uq_nomenclatura_pais_nivel"]
+  }
+}
+
+Table "offers" {
+  "id" int4 [pk, not null, increment]
+  "application_id" int4 [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['enviada'::text, 'aceptada'::text, 'rechazada'::text, 'retractada'::text, 'expirada'::text])`, default: 'enviada']
+  "active_flag" int2 [note: "columna generada (STORED)"]
+  "terms_snapshot" text
+  "sent_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "responded_at" timestamp
+  "expires_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (application_id, active_flag) [type: btree, unique, name: "uq_one_active_offer_per_application"]
+    (application_id, status) [type: btree, name: "idx_offers_application_status"]
+  }
+}
+
+Table "paises" {
+  "id" int4 [pk, not null, increment]
+  "iso_alpha2" bpchar(2) [unique, not null]
+  "name" varchar(120) [not null]
+  "name_en" varchar(120) [not null]
+  "phone_code" varchar(10)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "parentescos" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_parentescos"]
+  }
+}
+
+Table "parroquias" {
+  "id" int4 [pk, not null, increment]
+  "canton_id" int4 [not null]
+  "dpa_code" varchar(6)
+  "name" varchar(160) [not null]
+  "clase_id" int4
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (canton_id, dpa_code) [type: btree, unique, name: "uq_parroquias_canton_dpa"]
+    canton_id [type: btree, name: "idx_parroquias_canton"]
+    (canton_id, name) [type: btree, name: "idx_parroquias_canton_name"]
+    clase_id [type: btree, name: "idx_parroquias_clase"]
+  }
+}
+
+Table "participantes_declarados" {
+  "id" int4 [pk, not null, increment]
+  "paso_id" int4 [not null]
+  "orden" int4 [not null, default: 1]
+  "resolver_type" text [not null, check: `resolver_type = ANY (ARRAY['task_assignee'::text, 'specific_person'::text, 'cargo_in_scope'::text])`, default: 'task_assignee']
+  "persona_id" int4
+  "cargo_id" int4
+  "unit_scope_type" text [not null, check: `unit_scope_type = ANY (ARRAY['unit_exact'::text, 'context_exact'::text, 'all_units'::text])`, default: 'context_exact']
+  "unit_id" int4
+  "slot" varchar(80) [note: '''EL HUECO EN EL PAPEL: el nombre con el que la maqueta embebe el token de este firmante (`{{ signatures.<slot>.token }}`), que queda impreso en el PDF y que el firmador busca para estampar en sus coordenadas. Es del PARTICIPANTE y no del paso: con un hueco por paso, un paso de tres firmantes imprimia el token del primero y los otros dos no tenian marca. Nulo en entrega.''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (paso_id, orden) [type: btree, unique, name: "uq_participantes_declarados_orden"]
+  }
+
+  Note: '''QUIEN HACE EL PASO: un participante por cada persona o cargo que el paso convoca, en su `orden`. Un paso de entrega tiene UNO; uno de firma puede tener varios. Antes los firmantes vivian dentro de un JSONB sin validar que mandaba sobre las columnas del paso --el defecto 1.19--; a filas entran bajo los mismos dos CHECK que cierran su vocabulario.'''
+}
+
+Table "pasos_declarados" {
+  "id" int4 [pk, not null, increment]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`, note: '''ENTREGA o FIRMA. Es el discriminador que permite que las dos mitades del recorrido sean la misma tabla: lo que cambia entre ellas no es la estructura, es la accion que se pide.''']
+  "edicion_id" int4
+  "task_item_id" int4
+  "orden" int4 [not null]
+  "code" varchar(120)
+  "nombre" varchar(180)
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (edicion_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_edicion"]
+    (task_item_id, accion, orden) [type: btree, unique, name: "uq_pasos_declarados_entregable"]
+  }
+
+  Note: '''LA RECETA: un paso del recorrido documental, de ENTREGA o de FIRMA segun su `accion`. Sustituye a las cuatro tablas de receta que habia --dos cabeceras y dos de pasos-- y no tiene cabecera: el paso lleva su propio ORIGEN, que es o la edicion que lo autora (`edicion_id`) o el entregable que lo definio al enviar (`task_item_id`, modo `routed`), con un CHECK que exige exactamente uno.'''
+}
+
+Table "password_reset_codes" {
+  "id" int8 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "code_hash" varchar(255) [not null]
+  "expires_at" timestamp [not null]
+  "used" int2 [default: 0]
+  "created_at" timestamp [default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    expires_at [type: btree, name: "idx_prc_expires_at"]
+    person_id [type: btree, name: "idx_prc_person_id"]
+  }
+}
+
+Table "permissions" {
+  "id" int4 [pk, not null, increment]
+  "resource_id" int4 [not null]
+  "action_id" int4 [not null]
+  "code" varchar(120) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (resource_id, action_id) [type: btree, unique, name: "uq_permissions_resource_action"]
+    action_id [type: btree, name: "idx_permissions_action"]
+    resource_id [type: btree, name: "idx_permissions_resource"]
+  }
+}
+
+Table "person_certificates" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "label" varchar(180) [not null]
+  "original_filename" varchar(255) [not null]
+  "bucket" varchar(120) [not null]
+  "object_name" varchar(500) [not null]
+  "is_default" int2 [not null, default: 0]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (person_id, is_default) [type: btree, name: "idx_person_certificates_default"]
+    person_id [type: btree, name: "idx_person_certificates_person"]
+  }
+}
+
+Table "persona_autoidentificacion" {
+  "person_id" int4 [pk, not null]
+  "genero_id" int4
+  "autoidentificacion_etnica_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''El género y la autoidentificación étnica, una fila por persona. Estaban en `persons` y salieron en P8 (2026-09-10): la LOPDP (Art. 4) los nombra entre los datos sensibles, y `persons` la leen nueve roles. El permiso se da sobre una tabla, no sobre una columna; protegida por `datos_sensibles`.'''
+}
+
+Table "persons" {
+  "id" int4 [pk, not null, increment]
+  "first_name" varchar(120) [not null]
+  "last_name" varchar(120) [not null]
+  "nacionalidad_pais_id" int4
+  "fecha_nacimiento" date
+  "nacimiento_pais_id" int4
+  "nacimiento_canton_id" int4
+  "sexo" text [check: `sexo = ANY (ARRAY['hombre'::text, 'mujer'::text])`]
+  "estado_civil_id" int4
+  "password_hash" varchar(255) [not null]
+  "status" text [check: `status = ANY (ARRAY['Inactivo'::text, 'Activo'::text, 'Verificado'::text, 'Reportado'::text])`, default: 'Inactivo']
+  "photo_url" text
+  "is_active" int2 [not null, default: 1]
+  "token" varchar(10) [unique, not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    nacimiento_canton_id [type: btree, name: "idx_persons_nacimiento_canton"]
+    nacionalidad_pais_id [type: btree, name: "idx_persons_nacionalidad"]
+  }
+}
+
+Table "position_assignments" {
+  "id" int4 [pk, not null, increment]
+  "position_id" int4 [not null]
+  "person_id" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "is_current" int2 [not null, default: 1]
+  "current_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, current_flag) [type: btree, unique, name: "uq_position_current"]
+    (person_id, is_current) [type: btree, name: "idx_assignments_person_current"]
+  }
+}
+
+Table "position_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_position_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_position_id) [type: btree, unique, name: "uq_position_equivalencias_par"]
+    sucesor_position_id [type: btree, name: "idx_position_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UN PUESTO QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no el puesto--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida. El sucesor puede ser de otra unidad.'''
+}
+
+Table "position_vigencias" {
+  "id" int4 [pk, not null, increment]
+  "position_id" int4 [not null]
+  "vigente_desde" date [not null]
+  "vigente_hasta" date
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_position_vigencias_sin_solape"]
+    (position_id, vigente_desde) [type: btree, name: "idx_position_vigencias_position"]
+  }
+}
+
+Table "process_definition_period_types" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_type_id" int4 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, term_type_id) [type: btree, unique, name: "uq_process_definition_period_types"]
+    (process_definition_id, is_active) [type: btree, name: "idx_process_definition_period_types_lookup"]
+    term_type_id [type: btree, name: "idx_process_definition_period_types_term_type"]
+  }
+}
+
+Table "process_definition_versions" {
+  "id" int4 [pk, not null, increment]
+  "linea_id" int4 [not null]
+  "definition_version" varchar(20) [not null]
+  "description" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['draft'::text, 'active'::text, 'retired'::text])`, default: 'draft']
+  "active_series_flag" int2 [note: "columna generada (STORED)"]
+  "effective_from" date [not null]
+  "effective_to" date
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (linea_id, active_series_flag) [type: btree, unique, name: "uq_process_definition_one_active_linea"]
+    (linea_id, definition_version) [type: btree, unique, name: "uq_process_definition_versions_linea"]
+    linea_id [type: btree, name: "idx_process_definition_versions_linea"]
+    (linea_id, status, effective_from) [type: btree, name: "idx_process_definition_versions_status"]
+  }
+}
+
+Table "process_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_process_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_process_id) [type: btree, unique, name: "uq_process_equivalencias_par"]
+    sucesor_process_id [type: btree, name: "idx_process_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UN PROCESO QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no el proceso--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida.'''
+}
+
+Table "process_relations" {
+  "id" int4 [pk, not null, increment]
+  "parent_process_id" int4 [not null]
+  "child_process_id" int4 [unique, not null]
+  "vigente_desde" date
+  "vigente_hasta" date
+  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (child_process_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_process_relations_sin_solape"]
+    (child_process_id, vigente_desde) [type: btree, name: "idx_process_relations_child"]
+    parent_process_id [type: btree, name: "idx_process_relations_parent"]
+  }
+}
+
+Table "process_runs" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "term_id" int4
+  "run_mode" text [not null, check: `run_mode = ANY (ARRAY['automatic'::text, 'manual'::text])`, default: 'manual']
+  "source_run_id" int4
+  "created_by_user_id" int4
+  "reason" varchar(255)
+  "status" text [not null, check: `status = ANY (ARRAY['pending'::text, 'active'::text, 'completed'::text, 'cancelled'::text])`, default: 'active']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, status) [type: btree, name: "idx_process_runs_definition"]
+    term_id [type: btree, name: "idx_process_runs_term"]
+  }
+}
+
+Table "process_vigencias" {
+  "id" int4 [pk, not null, increment]
+  "process_id" int4 [not null]
+  "vigente_desde" date [not null]
+  "vigente_hasta" date
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_process_vigencias_sin_solape"]
+    (process_id, vigente_desde) [type: btree, name: "idx_process_vigencias_process"]
+  }
+}
+
+Table "processes" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "slug" varchar(180) [unique, not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Note: '''Serie → regla → flujo. La SERIE nombra el proceso, la REGLA reparte su alcance (a qué unidades/cargos llega) y el FLUJO reparte los pasos. Los tres ejes son independientes.'''
+}
+
+Table "provincias" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "dpa_code" varchar(2)
+  "name" varchar(120) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, name) [type: btree, unique, name: "uq_provincias_pais_name"]
+    pais_id [type: btree, name: "idx_provincias_pais"]
+  }
+}
+
+Table "recorridos" {
+  "id" int4 [pk, not null, increment]
+  "document_version_id" int4 [not null]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`]
+  "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'cancelado'::text])`, default: 'pendiente']
+  "paso_actual" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (id, accion) [type: btree, unique, name: "uq_recorridos_id_accion"]
+    (document_version_id, accion) [type: btree, unique, name: "uq_recorridos_version_accion"]
+  }
+
+  Note: '''LA EJECUCION: la ronda en marcha de UNA accion sobre UNA version de documento. Lleva su estado y el `paso_actual`. Sustituye a las dos tablas de instancia que habia, una por lado.'''
+}
+
+Table "relation_unit_types" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(40) [not null]
+  "description" varchar(255)
+  "is_inheritance_allowed" int2 [not null, default: 0]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "resources" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(80) [unique, not null]
+  "name" varchar(120) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "role_assignment_relation_types" {
+  "id" int4 [pk, not null, increment]
+  "relation_type_id" int4 [not null]
+  "role_assignment_id" int4 [not null]
+
+  Indexes {
+    (role_assignment_id, relation_type_id) [type: btree, name: "idx_role_assignment_relation_types"]
+  }
+}
+
+Table "role_assignments" {
+  "id" int4 [pk, not null, increment]
+  "role_id" int4 [not null]
+  "unit_id" int4 [not null]
+  "derived_from_assignment_id" int4
+  "source" text [not null, check: `source = ANY (ARRAY['manual'::text, 'derived'::text])`, default: 'manual']
+  "person_id" int4 [not null]
+  "max_depth" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date
+  "is_current" int2 [not null, default: 1]
+  "current_flag" int2 [note: "columna generada (STORED)"]
+  "assigned_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "revoked_at" timestamp
+  "revoked_reason" varchar(255)
+
+  Indexes {
+    (person_id, role_id, unit_id, source, current_flag) [type: btree, unique, name: "uq_role_assignment_current"]
+    person_id [type: btree, name: "idx_role_assignments_person"]
+    unit_id [type: btree, name: "idx_role_assignments_unit"]
+  }
+}
+
+Table "role_permissions" {
+  "id" int4 [pk, not null, increment]
+  "role_id" int4 [not null]
+  "permission_id" int4 [not null]
+
+  Indexes {
+    (role_id, permission_id) [type: btree, unique, name: "uq_role_permissions"]
+  }
+}
+
+Table "roles" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(120) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+}
+
+Table "signature_batch_jobs" {
+  "job_id" bpchar(36) [pk, not null]
+  "user_id" int4
+  "sign_mode" varchar(40)
+  "status" varchar(20) [not null, default: 'queued']
+  "total" int4 [not null, default: 0]
+  "processed" int4 [not null, default: 0]
+  "success_count" int4 [not null, default: 0]
+  "failed_count" int4 [not null, default: 0]
+  "results" jsonb
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    status [type: btree, name: "idx_signature_batch_jobs_status"]
+    user_id [type: btree, name: "idx_signature_batch_jobs_user"]
+  }
+}
+
+Table "signature_statuses" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "task_item_tenures" {
+  "id" int4 [pk, not null, increment]
+  "task_item_id" int4 [not null]
+  "person_id" int4
+  "position_id" int4
+  "started_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "ended_at" timestamp
+  "opened_by" text [not null, check: `opened_by = ANY (ARRAY['original'::text, 'occupancy_start'::text, 'occupancy_end'::text, 'position_deactivated'::text, 'reconcile'::text, 'manual'::text])`, default: 'original']
+  "work_started" int2 [not null, default: 0]
+  "reason" varchar(255)
+  "performed_by_person_id" int4
+  "current_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_item_id, current_flag) [type: btree, unique, name: "uq_task_item_tenure_current"]
+    person_id [type: btree, name: "idx_task_item_tenures_person"]
+    position_id [type: btree, name: "idx_task_item_tenures_position"]
+  }
+
+  Note: '''QUIEN responde de un entregable, desde cuando y en calidad de que puesto. Una fila por TURNO: el relevo cierra la vigente y abre otra, asi que la sucesion completa queda escrita. Nacio el 2026-08-23 al medir que «quien lo lleva» vivia en TRES copias y dos se pudrian. Sustituye a `task_assignments` (una foto del reparto que ningun relevo refrescaba) y a `task_item_handovers` (los mismos hechos como eventos; periodos y eventos son isomorfos, pero con periodos «un solo responsable vigente» es un INDICE y no una convencion).'''
+}
+
+Table "task_items" {
+  "id" int4 [pk, not null, increment]
+  "task_id" int4 [not null]
+  "vinculo_id" int4 [not null]
+  "origin_kind" text [not null, check: `origin_kind = ANY (ARRAY['process_defined'::text, 'user_added'::text])`, default: 'process_defined']
+  "title" varchar(180)
+  "sort_order" int4 [not null, default: 1]
+  "created_by_person_id" int4
+  "source_task_item_id" int4
+  "target_unit_id" int4
+  "process_definition_template_key" int4 [note: "columna generada (STORED)"]
+  "responsible_position_id" int4 [not null, note: '''EL ANCLA del entregable: el PUESTO que responde de el. Obligatoria desde el 2026-08-23. Es lo durable —un puesto sobrevive a quien lo ocupa— y el punto por el que enganchan los cuatro caminos de relevo.''']
+  "responsible_position_key" int4 [note: "columna generada (STORED)"]
+  "assigned_person_id" int4 [note: '''QUIEN lo lleva ahora. Es una CACHE de la tenencia vigente, con UN SOLO escritor: el trigger `trg_task_item_tenures_sync`. De solo lectura en el editor generico.''']
+  "document_status" varchar(30) [not null, default: 'Inicial', note: '''El estado del DOCUMENTO, mudado aqui desde `documents` el 2026-08-23. Se llama asi y no `status` a proposito: `task_items.status` vivio ahi y se retiro por no tener escritores.''']
+  "origin_unit_id" int4
+  "start_date" date [not null]
+  "end_date" date
+  "user_started_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (task_id, process_definition_template_key, responsible_position_key) [type: btree, unique, name: "uq_task_items_defined_target"]
+    created_by_person_id [type: btree, name: "idx_task_items_created_by"]
+    (start_date, end_date) [type: btree, name: "idx_task_items_dates"]
+    vinculo_id [type: btree, name: "idx_task_items_definition_template"]
+    origin_kind [type: btree, name: "idx_task_items_origin"]
+    source_task_item_id [type: btree, name: "idx_task_items_source"]
+    target_unit_id [type: btree, name: "idx_task_items_target_unit"]
+    (task_id, sort_order) [type: btree, name: "idx_task_items_task"]
+    user_started_at [type: btree, name: "idx_task_items_user_started"]
+  }
+}
+
+Table "tasks" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "process_run_id" int4
+  "term_id" int4 [not null]
+  "scope_unit_id" int4 [not null]
+  "normalized_scope_unit_id" int4 [note: "columna generada (STORED)"]
+  "description" text
+  "start_date" date [not null]
+  "end_date" date
+  "status" varchar(30) [not null, default: 'pendiente']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, term_id, normalized_scope_unit_id) [type: btree, unique, name: "uq_tasks_definition_term_scope"]
+    (process_definition_id, term_id) [type: btree, name: "idx_tasks_definition_term"]
+    process_run_id [type: btree, name: "idx_tasks_process_run"]
+    scope_unit_id [type: btree, name: "idx_tasks_scope_unit"]
+  }
+}
+
+Table "telefono_canales" {
+  "id" int4 [pk, not null, increment]
+  "telefono_id" int4 [not null]
+  "canal_id" int4 [not null]
+  "verificado" int2 [not null, default: 0]
+  "verificado_at" timestamp
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (telefono_id, canal_id) [type: btree, unique, name: "uq_telefono_canales"]
+  }
+}
+
+Table "telefono_verification_keys" {
+  "id" int8 [pk, not null, increment]
+  "telefono_id" int4 [not null]
+  "llave_hash" bpchar(64) [unique, not null]
+  "expira_at" timestamp [not null]
+  "consumida_at" timestamp [note: '''Se marca en vez de borrar la fila, para distinguir «esa llave no existe» de «esa llave ya se usó». Son dos mensajes distintos: sólo el segundo le dice al usuario que pida otra sin cambiar nada de lo que hizo.''']
+  "canal_id" int4 [note: '''Por dónde se consumió. Es clave ajena a `canales_mensajeria` y no un CHECK: verificar por Telegram demuestra que el número es suyo Y que tiene Telegram, que es el hecho que `telefono_canales` guarda. Con un vocabulario aparte habría dos listas para un solo suceso.''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    expira_at [type: btree, name: "idx_tvk_expira"]
+    telefono_id [type: btree, name: "idx_tvk_telefono"]
+  }
+
+  Note: '''La llave con la que alguien demuestra que un número de teléfono es suyo. La persona la lleva a un canal —un QR de Telegram, un enlace de WhatsApp— y el microservicio `channels` la trae de vuelta. Se cifra con SHA-256 y no con bcrypt porque hay que BUSCAR por ella: el servicio sólo tiene la llave, y encontrar de qué teléfono es *es* la operación.'''
+}
+
+Table "telefonos" {
+  "id" int4 [pk, not null, increment]
+  "person_id" int4 [not null]
+  "tipo" text [not null, check: `tipo = ANY (ARRAY['personal'::text, 'trabajo'::text])`]
+  "pais_id" int4
+  "numero" varchar(30) [not null]
+  "principal" int2 [not null, default: 0]
+  "principal_flag" int2 [note: "columna generada (STORED)"]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, numero) [type: btree, unique, name: "uq_telefonos_numero"]
+    (person_id, tipo, principal_flag) [type: btree, unique, name: "uq_telefonos_principal"]
+    person_id [type: btree, name: "idx_telefonos_person"]
+  }
+}
+
+Table "term_types" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [unique, not null]
+  "description" varchar(255)
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "terms" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(60) [unique, not null]
+  "term_type_id" int4 [not null]
+  "start_date" date [not null]
+  "end_date" date [not null]
+  "is_active" int2 [not null, default: 1]
+
+  Indexes {
+    term_type_id [type: btree, name: "idx_terms_term_type"]
+  }
+}
+
+Table "tipos_de_acto" {
+  "id" int4 [pk, not null, increment]
+  "code" varchar(40) [unique, not null]
+  "name" varchar(80) [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "tipos_discapacidad" {
+  "id" int4 [pk, not null, increment]
+  "pais_id" int4 [not null]
+  "code" varchar(40) [not null]
+  "name" varchar(80) [not null]
+  "orden" int2 [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (pais_id, code) [type: btree, unique, name: "uq_tipos_discapacidad"]
+  }
+}
+
+Table "turnos" {
+  "id" int4 [pk, not null, increment]
+  "recorrido_id" int4 [not null]
+  "accion" text [not null, check: `accion = ANY (ARRAY['entrega'::text, 'firma'::text])`, note: '''DUPLICADA DEL RECORRIDO a proposito: la clave ajena es COMPUESTA `(recorrido_id, accion)`, y eso es lo que impide que un turno diga una accion distinta de la de su recorrido. Lo necesita el CHECK de `devuelto`, que solo es legal en entrega.''']
+  "participante_id" int4 [not null]
+  "persona_id" int4
+  "estado" text [not null, check: `estado = ANY (ARRAY['pendiente'::text, 'en_progreso'::text, 'completado'::text, 'rechazado'::text, 'devuelto'::text, 'cancelado'::text])`, default: 'pendiente']
+  "manual" int2 [not null, default: 0]
+  "solicitado" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "notificado" timestamp
+  "respondido" timestamp
+  "nota_respuesta" varchar(255)
+
+  Indexes {
+    (recorrido_id, participante_id, persona_id) [type: btree, unique, name: "uq_turnos"]
+    (recorrido_id, participante_id) [type: btree, name: "idx_turnos_participante"]
+  }
+
+  Note: '''A QUIEN LE TOCO: un turno por cada persona convocada en un recorrido. Apunta al PARTICIPANTE declarado que lo produjo --no solo al paso--, asi que se sabe de que declaracion salio. Sustituye a las dos tablas de solicitud que habia, una por lado.'''
+}
+
+Table "unit_equivalencias" {
+  "id" int4 [pk, not null, increment]
+  "antecesor_vigencia_id" int4 [not null]
+  "sucesor_unit_id" int4 [not null]
+  "registrado_por_person_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (antecesor_vigencia_id, sucesor_unit_id) [type: btree, unique, name: "uq_unit_equivalencias_par"]
+    sucesor_unit_id [type: btree, name: "idx_unit_equivalencias_sucesor"]
+  }
+
+  Note: '''QUE SUCEDE A UNA UNIDAD QUE SE SUPRIME: una fila por sucesor de cada VIDA que termina --el antecesor es la vida, no la unidad--. Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No lleva fecha ni acto: son los del fin de esa vida.'''
+}
+
+Table "unit_positions" {
+  "id" int4 [pk, not null, increment]
+  "unit_id" int4 [not null]
+  "slot_no" int4 [not null]
+  "title" varchar(180)
+  "profile" jsonb
+  "position_type" text [not null, check: `position_type = ANY (ARRAY['real'::text, 'promocion'::text, 'simbolico'::text])`, default: 'real']
+  "is_unit_head" int2 [not null, default: 0]
+  "head_flag" int2 [note: "columna generada (STORED)"]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "cargo_id" int4 [not null]
+
+  Indexes {
+    (unit_id, cargo_id, slot_no) [type: btree, unique, name: "uq_unit_cargo_slot"]
+    (unit_id, head_flag) [type: btree, unique, name: "uq_unit_head"]
+    (unit_id, cargo_id) [type: btree, name: "idx_positions_unit_cargo"]
+  }
+}
+
+Table "unit_relations" {
+  "id" int4 [pk, not null, increment]
+  "relation_type_id" int4 [not null]
+  "parent_unit_id" int4 [not null]
+  "child_unit_id" int4 [not null]
+  "vigente_desde" date
+  "vigente_hasta" date
+  "inicio_origen" text [check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (child_unit_id, relation_type_id) [type: btree, unique, name: "uq_unit_relations_borrador"]
+    (child_unit_id, relation_type_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_unit_relations_sin_solape"]
+    (child_unit_id, vigente_desde) [type: btree, name: "idx_unit_relations_child"]
+    parent_unit_id [type: btree, name: "idx_unit_relations_parent"]
+  }
+}
+
+Table "unit_types" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(120) [not null]
+  "is_active" int2 [not null, default: 1]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+}
+
+Table "unit_vigencias" {
+  "id" int4 [pk, not null, increment]
+  "unit_id" int4 [not null]
+  "vigente_desde" date [not null]
+  "vigente_hasta" date
+  "inicio_origen" text [not null, check: `inicio_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "inicio_acto_id" int4
+  "fin_origen" text [check: `fin_origen = ANY (ARRAY['carga_inicial'::text, 'reorganizacion'::text, 'correccion'::text])`]
+  "fin_acto_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (unit_id, `daterange(vigente_desde`, ` vigente_hasta`, ` '[)'::text)`) [type: gist, name: "ex_unit_vigencias_sin_solape"]
+    (unit_id, vigente_desde) [type: btree, name: "idx_unit_vigencias_unit"]
+  }
+}
+
+Table "units" {
+  "id" int4 [pk, not null, increment]
+  "name" varchar(180) [not null]
+  "label" varchar(75)
+  "slug" varchar(180) [not null]
+  "unit_type_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    unit_type_id [type: btree, name: "idx_units_unit_type"]
+  }
+}
+
+Table "vacancies" {
+  "id" int4 [pk, not null, increment]
+  "title" varchar(180) [not null]
+  "category" varchar(120)
+  "dedication" varchar(30) [not null]
+  "relation_type" varchar(60) [not null]
+  "status" text [not null, check: `status = ANY (ARRAY['abierta'::text, 'cubierta'::text, 'cerrada'::text, 'cancelada'::text])`, default: 'abierta']
+  "open_flag" int2 [note: "columna generada (STORED)"]
+  "profile_ref" varchar(64)
+  "opened_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "closed_at" timestamp
+  "position_id" int4 [not null]
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+  "updated_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (position_id, open_flag) [type: btree, unique, name: "uq_one_open_vacancy_per_position"]
+    (position_id, status) [type: btree, name: "idx_vacancies_position_status"]
+  }
+}
+
+Table "vacancy_visibility" {
+  "id" int4 [pk, not null, increment]
+  "vacancy_id" int4 [not null]
+  "unit_id" int4
+  "role_id" int4
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    role_id [type: btree, name: "idx_vacancy_visibility_role"]
+    unit_id [type: btree, name: "idx_vacancy_visibility_unit"]
+    vacancy_id [type: btree, name: "idx_vacancy_visibility_vacancy"]
+  }
+}
+
+Table "vinculos" {
+  "id" int4 [pk, not null, increment]
+  "process_definition_id" int4 [not null]
+  "edicion_id" int4 [not null]
+  "sort_order" int4 [not null, default: 1]
+  "item_mode" text [not null, check: `item_mode = ANY (ARRAY['single'::text, 'replicated'::text, 'routed'::text])`, default: 'single', note: '''Los tres modos de emisión. `single`: entregable y flujo predefinidos, 1 instancia al lanzar. `replicated`: flujo predefinido, el responsable crea N réplicas etiquetadas que lo heredan. `routed`: SIN flujo predefinido — el usuario define entrega y firma al instanciar (runtime).''']
+  "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
+
+  Indexes {
+    (process_definition_id, edicion_id) [type: btree, unique, name: "uq_vinculos"]
+  }
+
+  Note: '''El vínculo entre un proceso configurado y una plantilla. Aquí vive `item_mode`, que decide cuántas instancias se crean y quién define el flujo.'''
+}
+
+Ref "fk_acto_adjuntos_acto":"actos"."id" <? "acto_adjuntos"."acto_id" [delete: cascade]
+Ref "fk_acto_adjuntos_subido_por":"persons"."id" ?<? "acto_adjuntos"."subido_por_person_id"
+Ref "fk_acto_documentos_acto":"actos"."id" <? "acto_documentos"."acto_id" [delete: cascade]
+Ref "fk_acto_documentos_version":"document_versions"."id" <? "acto_documentos"."document_version_id"
+Ref "fk_actos_registrado_por":"persons"."id" ?<? "actos"."registrado_por_person_id"
+Ref "fk_actos_suscrito_por":"persons"."id" ?<? "actos"."suscrito_por_person_id"
+Ref "fk_actos_tipo":"tipos_de_acto"."id" <? "actos"."tipo_de_acto_id"
+Ref "fk_actos_unidad_emisora":"units"."id" ?<? "actos"."unidad_emisora_id"
+Ref "fk_applications_person":"persons"."id" <? "aplications"."person_id"
+Ref "fk_applications_vacancy":"vacancies"."id" <? "aplications"."vacancy_id"
+Ref "fk_autoidentificacion_etnia":"autoidentificaciones_etnicas"."id" ?<? "persona_autoidentificacion"."autoidentificacion_etnica_id"
+Ref "fk_autoidentificacion_genero":"generos"."id" ?<? "persona_autoidentificacion"."genero_id"
+Ref "fk_autoidentificacion_person":"persons"."id" <? "persona_autoidentificacion"."person_id" [delete: cascade]
+Ref "fk_autoidentificaciones_etnicas_pais":"paises"."id" <? "autoidentificaciones_etnicas"."pais_id"
+Ref "fk_cantones_provincia":"provincias"."id" <? "cantones"."provincia_id"
+Ref "fk_cargo_role_map_cargo":"cargos"."id" <? "cargo_role_map"."cargo_id"
+Ref "fk_cargo_role_map_role":"roles"."id" <? "cargo_role_map"."role_id"
+Ref "fk_catalogo_documental_owner_person":"persons"."id" ?<? "catalogo_documental"."owner_person_id"
+Ref "fk_categorias_visa_pais":"paises"."id" <? "categorias_visa"."pais_id"
+Ref "fk_chat_attachments_message":"chat_messages"."id" <? "chat_message_attachments"."message_id" [delete: cascade]
+Ref "fk_chat_conv_created_by":"persons"."id" <? "chat_conversations"."created_by"
+Ref "fk_chat_conv_process":"processes"."id" ?<? "chat_conversations"."process_id"
+Ref "fk_chat_conv_scope_current_definition":"process_definition_versions"."id" ?<? "chat_conversations"."scope_current_definition_id"
+Ref "fk_chat_conv_scope_origin_definition":"process_definition_versions"."id" ?<? "chat_conversations"."scope_origin_definition_id"
+Ref "fk_chat_conv_scope_process":"processes"."id" ?<? "chat_conversations"."scope_process_id"
+Ref "fk_chat_conv_scope_unit":"units"."id" ?<? "chat_conversations"."scope_unit_id"
+Ref "fk_chat_messages_conversation":"chat_conversations"."id" <? "chat_messages"."conversation_id" [delete: cascade]
+Ref "fk_chat_messages_reply":"chat_messages"."id" ?<? "chat_messages"."reply_to_message_id" [delete: set null]
+Ref "fk_chat_messages_sender":"persons"."id" <? "chat_messages"."sender_person_id"
+Ref "fk_chat_notif_conversation":"chat_conversations"."id" ?<? "chat_notifications"."conversation_id" [delete: cascade]
+Ref "fk_chat_notif_message":"chat_messages"."id" ?<? "chat_notifications"."message_id" [delete: cascade]
+Ref "fk_chat_notif_recipient":"persons"."id" <? "chat_notifications"."recipient_person_id"
+Ref "fk_chat_participants_conversation":"chat_conversations"."id" <? "chat_conversation_participants"."conversation_id" [delete: cascade]
+Ref "fk_chat_participants_person":"persons"."id" <? "chat_conversation_participants"."person_id"
+Ref "fk_chat_reads_message":"chat_messages"."id" <? "chat_message_reads"."message_id" [delete: cascade]
+Ref "fk_chat_reads_person":"persons"."id" <? "chat_message_reads"."person_id"
+Ref "fk_clases_parroquia_pais":"paises"."id" <? "clases_parroquia"."pais_id"
+Ref "fk_consentimiento_documento":"documentos_legales"."id" <? "consentimientos"."documento_id"
+Ref "fk_contract_origin_recruitment_contract":"contract_origins"."contract_id" <? "contract_origin_recruitment"."contract_id" [delete: cascade]
+Ref "fk_contract_origin_recruitment_offer":"offers"."id" <? "contract_origin_recruitment"."offer_id"
+Ref "fk_contract_origin_recruitment_vacancy":"vacancies"."id" <? "contract_origin_recruitment"."vacancy_id"
+Ref "fk_contract_origin_renewal_contract":"contract_origins"."contract_id" <? "contract_origin_renewal"."contract_id" [delete: cascade]
+Ref "fk_contract_origin_renewal_from":"contracts"."id" <? "contract_origin_renewal"."renewed_from_contract_id"
+Ref "fk_contract_origins_contract":"contracts"."id" <? "contract_origins"."contract_id" [delete: cascade]
+Ref "fk_contracts_person":"persons"."id" <? "contracts"."person_id"
+Ref "fk_contracts_position":"unit_positions"."id" <? "contracts"."position_id"
+Ref "fk_direcciones_canton":"cantones"."id" ?<? "direcciones"."canton_id"
+Ref "fk_direcciones_pais":"paises"."id" ?<? "direcciones"."pais_id"
+Ref "fk_direcciones_person":"persons"."id" <? "direcciones"."person_id" [delete: cascade]
+Ref "fk_direcciones_provincia":"provincias"."id" ?<? "direcciones"."provincia_id"
+Ref "fk_document_attachments_uploader":"persons"."id" ?<? "document_attachments"."uploaded_by_person_id"
+Ref "fk_document_attachments_version":"document_versions"."id" <? "document_attachments"."document_version_id" [delete: cascade]
+Ref "fk_document_signatures_document":"document_versions"."id" <? "document_signatures"."document_version_id"
+Ref "fk_document_signatures_signer":"persons"."id" <? "document_signatures"."signer_user_id"
+Ref "fk_document_signatures_status":"signature_statuses"."id" <? "document_signatures"."signature_status_id"
+Ref "fk_document_signatures_turno":"turnos"."id" ?<? "document_signatures"."turno_id"
+Ref "fk_document_version_uploads_person":"persons"."id" ?<? "document_version_uploads"."uploaded_by_person_id"
+Ref "fk_document_version_uploads_version":"document_versions"."id" <? "document_version_uploads"."document_version_id" [delete: cascade]
+Ref "fk_document_versions_artifact":"ediciones"."id" ?<? "document_versions"."edicion_id"
+Ref "fk_document_versions_task_item":"task_items"."id" <? "document_versions"."task_item_id" [delete: restrict]
+Ref "fk_document_workflow_observations_author":"persons"."id" <? "document_workflow_observations"."author_person_id"
+Ref "fk_document_workflow_observations_item":"task_items"."id" <? "document_workflow_observations"."task_item_id"
+Ref "fk_document_workflow_observations_resolver":"persons"."id" ?<? "document_workflow_observations"."resolved_by_person_id"
+Ref "fk_document_workflow_observations_turno":"turnos"."id" ?<? "document_workflow_observations"."turno_id"
+Ref "fk_document_workflow_observations_version":"document_versions"."id" <? "document_workflow_observations"."document_version_id"
+Ref "fk_documentos_categoria_visa":"categorias_visa"."id" ?<? "documentos_identidad"."categoria_visa_id"
+Ref "fk_documentos_pais":"paises"."id" <? "documentos_identidad"."pais_id"
+Ref "fk_documentos_person":"persons"."id" <? "documentos_identidad"."person_id" [delete: cascade]
+Ref "fk_dossier_items_dossier":"dossiers"."id" <? "dossier_items"."dossier_id" [delete: cascade]
+Ref "fk_dossiers_person":"persons"."id" <? "dossiers"."person_id" [delete: cascade]
+Ref "fk_ediciones_catalogo":"catalogo_documental"."id" <? "ediciones"."catalogo_documental_id"
+Ref "fk_ediciones_generador":"generadores_de_documento"."id" ?<? "ediciones"."generador_id"
+Ref "fk_ediciones_parent":"ediciones"."id" ?<? "ediciones"."parent_version_id"
+Ref "fk_email_verification_codes_email":"emails"."id" <? "email_verification_codes"."email_id" [delete: cascade]
+Ref "fk_emails_person":"persons"."id" <? "emails"."person_id" [delete: cascade]
+Ref "fk_estados_civiles_pais":"paises"."id" <? "estados_civiles"."pais_id"
+Ref "fk_generos_pais":"paises"."id" <? "generos"."pais_id"
+Ref "fk_lineas_anterior":"lineas"."id" ?<? "lineas"."linea_anterior_id"
+Ref "fk_lineas_cargo":"cargos"."id" ?<? "lineas"."cargo_id"
+Ref "fk_lineas_process":"processes"."id" <? "lineas"."process_id" [delete: restrict]
+Ref "fk_lineas_unit_type":"unit_types"."id" ?<? "lineas"."unit_type_id"
+Ref "fk_lineas_unit":"units"."id" ?<? "lineas"."unit_id"
+Ref "fk_nomenclatura_pais":"paises"."id" <? "nomenclatura_territorial"."pais_id"
+Ref "fk_offers_application":"aplications"."id" <? "offers"."application_id"
+Ref "fk_parentescos_pais":"paises"."id" <? "parentescos"."pais_id"
+Ref "fk_parroquias_canton":"cantones"."id" <? "parroquias"."canton_id"
+Ref "fk_parroquias_clase":"clases_parroquia"."id" ?<? "parroquias"."clase_id"
+Ref "fk_participantes_declarados_cargo":"cargos"."id" ?<? "participantes_declarados"."cargo_id"
+Ref "fk_participantes_declarados_paso":"pasos_declarados"."id" <? "participantes_declarados"."paso_id" [delete: cascade]
+Ref "fk_participantes_declarados_persona":"persons"."id" ?<? "participantes_declarados"."persona_id"
+Ref "fk_participantes_declarados_unidad":"units"."id" ?<? "participantes_declarados"."unit_id"
+Ref "fk_pasos_declarados_edicion":"ediciones"."id" ?<? "pasos_declarados"."edicion_id"
+Ref "fk_pasos_declarados_entregable":"task_items"."id" ?<? "pasos_declarados"."task_item_id" [delete: cascade]
+Ref "fk_password_reset_person":"persons"."id" <? "password_reset_codes"."person_id" [delete: cascade]
+Ref "fk_permissions_action":"actions"."id" <? "permissions"."action_id"
+Ref "fk_permissions_resource":"resources"."id" <? "permissions"."resource_id"
+Ref "fk_person_certificates_person":"persons"."id" <? "person_certificates"."person_id" [delete: cascade]
+Ref "fk_persons_estado_civil":"estados_civiles"."id" ?<? "persons"."estado_civil_id"
+Ref "fk_persons_nacimiento_canton":"cantones"."id" ?<? "persons"."nacimiento_canton_id"
+Ref "fk_persons_nacimiento_pais":"paises"."id" ?<? "persons"."nacimiento_pais_id"
+Ref "fk_persons_nacionalidad":"paises"."id" ?<? "persons"."nacionalidad_pais_id"
+Ref "fk_position_assignments_person":"persons"."id" <? "position_assignments"."person_id"
+Ref "fk_position_assignments_position":"unit_positions"."id" <? "position_assignments"."position_id"
+Ref "fk_position_equivalencias_antecesor":"position_vigencias"."id" <? "position_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_position_equivalencias_registrado_por":"persons"."id" ?<? "position_equivalencias"."registrado_por_person_id"
+Ref "fk_position_equivalencias_sucesor":"unit_positions"."id" <? "position_equivalencias"."sucesor_position_id"
+Ref "fk_position_vigencias_fin_acto":"actos"."id" ?<? "position_vigencias"."fin_acto_id"
+Ref "fk_position_vigencias_inicio_acto":"actos"."id" ?<? "position_vigencias"."inicio_acto_id"
+Ref "fk_position_vigencias_position":"unit_positions"."id" <? "position_vigencias"."position_id"
+Ref "fk_process_definition_period_types_definition":"process_definition_versions"."id" <? "process_definition_period_types"."process_definition_id" [delete: cascade]
+Ref "fk_process_definition_period_types_term_type":"term_types"."id" <? "process_definition_period_types"."term_type_id"
+Ref "fk_process_definition_versions_linea":"lineas"."id" <? "process_definition_versions"."linea_id" [delete: cascade]
+Ref "fk_process_equivalencias_antecesor":"process_vigencias"."id" <? "process_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_process_equivalencias_registrado_por":"persons"."id" ?<? "process_equivalencias"."registrado_por_person_id"
+Ref "fk_process_equivalencias_sucesor":"processes"."id" <? "process_equivalencias"."sucesor_process_id"
+Ref "fk_process_relations_child":"processes"."id" <? "process_relations"."child_process_id"
+Ref "fk_process_relations_fin_acto":"actos"."id" ?<? "process_relations"."fin_acto_id"
+Ref "fk_process_relations_inicio_acto":"actos"."id" ?<? "process_relations"."inicio_acto_id"
+Ref "fk_process_relations_parent":"processes"."id" <? "process_relations"."parent_process_id"
+Ref "fk_process_runs_creator":"persons"."id" ?<? "process_runs"."created_by_user_id"
+Ref "fk_process_runs_definition":"process_definition_versions"."id" <? "process_runs"."process_definition_id"
+Ref "fk_process_runs_source":"process_runs"."id" ?<? "process_runs"."source_run_id"
+Ref "fk_process_runs_term":"terms"."id" ?<? "process_runs"."term_id"
+Ref "fk_process_vigencias_fin_acto":"actos"."id" ?<? "process_vigencias"."fin_acto_id"
+Ref "fk_process_vigencias_inicio_acto":"actos"."id" ?<? "process_vigencias"."inicio_acto_id"
+Ref "fk_process_vigencias_process":"processes"."id" <? "process_vigencias"."process_id"
+Ref "fk_provincias_pais":"paises"."id" <? "provincias"."pais_id"
+Ref "fk_recorridos_version":"document_versions"."id" <? "recorridos"."document_version_id"
+Ref "fk_role_assignment_relation_types_relation_type":"relation_unit_types"."id" <? "role_assignment_relation_types"."relation_type_id"
+Ref "fk_role_assignment_relation_types_role_assignment":"role_assignments"."id" <? "role_assignment_relation_types"."role_assignment_id"
+Ref "fk_role_assignments_person":"persons"."id" <? "role_assignments"."person_id"
+Ref "fk_role_assignments_position_assignment":"position_assignments"."id" ?<? "role_assignments"."derived_from_assignment_id"
+Ref "fk_role_assignments_role":"roles"."id" <? "role_assignments"."role_id"
+Ref "fk_role_assignments_unit":"units"."id" <? "role_assignments"."unit_id"
+Ref "fk_role_permissions_permission":"permissions"."id" <? "role_permissions"."permission_id"
+Ref "fk_role_permissions_role":"roles"."id" <? "role_permissions"."role_id"
+Ref "fk_task_item_tenures_item":"task_items"."id" <? "task_item_tenures"."task_item_id" [delete: cascade]
+Ref "fk_task_item_tenures_person":"persons"."id" ?<? "task_item_tenures"."person_id"
+Ref "fk_task_item_tenures_position":"unit_positions"."id" ?<? "task_item_tenures"."position_id"
+Ref "fk_task_items_assigned_person":"persons"."id" ?<? "task_items"."assigned_person_id"
+Ref "fk_task_items_created_by":"persons"."id" ?<? "task_items"."created_by_person_id"
+Ref "fk_task_items_origin_unit":"units"."id" ?<? "task_items"."origin_unit_id"
+Ref "fk_task_items_responsible_position":"unit_positions"."id" <? "task_items"."responsible_position_id"
+Ref "fk_task_items_source":"task_items"."id" ?<? "task_items"."source_task_item_id"
+Ref "fk_task_items_target_unit":"units"."id" ?<? "task_items"."target_unit_id"
+Ref "fk_task_items_task":"tasks"."id" <? "task_items"."task_id" [delete: restrict]
+Ref "fk_task_items_vinculo":"vinculos"."id" <? "task_items"."vinculo_id"
+Ref "fk_tasks_process_definition":"process_definition_versions"."id" <? "tasks"."process_definition_id"
+Ref "fk_tasks_process_run":"process_runs"."id" ?<? "tasks"."process_run_id"
+Ref "fk_tasks_scope_unit":"units"."id" <? "tasks"."scope_unit_id"
+Ref "fk_tasks_term":"terms"."id" <? "tasks"."term_id"
+Ref "fk_telefono_canales_canal":"canales_mensajeria"."id" <? "telefono_canales"."canal_id"
+Ref "fk_telefono_canales_telefono":"telefonos"."id" <? "telefono_canales"."telefono_id" [delete: cascade]
+Ref "fk_telefonos_pais":"paises"."id" ?<? "telefonos"."pais_id"
+Ref "fk_telefonos_person":"persons"."id" <? "telefonos"."person_id" [delete: cascade]
+Ref "fk_terms_term_type":"term_types"."id" <? "terms"."term_type_id"
+Ref "fk_tipos_discapacidad_pais":"paises"."id" <? "tipos_discapacidad"."pais_id"
+Ref "fk_turnos_participante":"participantes_declarados"."id" <? "turnos"."participante_id"
+Ref "fk_turnos_persona":"persons"."id" ?<? "turnos"."persona_id"
+Ref "fk_turnos_recorrido":"recorridos".("id", "accion") <? "turnos".("recorrido_id", "accion") [delete: cascade]
+Ref "fk_tvk_canal":"canales_mensajeria"."id" ?<? "telefono_verification_keys"."canal_id"
+Ref "fk_tvk_telefono":"telefonos"."id" <? "telefono_verification_keys"."telefono_id" [delete: cascade]
+Ref "fk_unit_equivalencias_antecesor":"unit_vigencias"."id" <? "unit_equivalencias"."antecesor_vigencia_id" [delete: cascade]
+Ref "fk_unit_equivalencias_registrado_por":"persons"."id" ?<? "unit_equivalencias"."registrado_por_person_id"
+Ref "fk_unit_equivalencias_sucesor":"units"."id" <? "unit_equivalencias"."sucesor_unit_id"
+Ref "fk_unit_positions_cargo":"cargos"."id" <? "unit_positions"."cargo_id"
+Ref "fk_unit_positions_unit":"units"."id" <? "unit_positions"."unit_id"
+Ref "fk_unit_relations_child":"units"."id" <? "unit_relations"."child_unit_id"
+Ref "fk_unit_relations_fin_acto":"actos"."id" ?<? "unit_relations"."fin_acto_id"
+Ref "fk_unit_relations_inicio_acto":"actos"."id" ?<? "unit_relations"."inicio_acto_id"
+Ref "fk_unit_relations_parent":"units"."id" <? "unit_relations"."parent_unit_id"
+Ref "fk_unit_relations_relation_type":"relation_unit_types"."id" <? "unit_relations"."relation_type_id"
+Ref "fk_unit_vigencias_fin_acto":"actos"."id" ?<? "unit_vigencias"."fin_acto_id"
+Ref "fk_unit_vigencias_inicio_acto":"actos"."id" ?<? "unit_vigencias"."inicio_acto_id"
+Ref "fk_unit_vigencias_unit":"units"."id" <? "unit_vigencias"."unit_id"
+Ref "fk_units_unit_type":"unit_types"."id" <? "units"."unit_type_id"
+Ref "fk_vacancies_position":"unit_positions"."id" <? "vacancies"."position_id"
+Ref "fk_vacancy_visibility_role":"roles"."id" ?<? "vacancy_visibility"."role_id"
+Ref "fk_vacancy_visibility_unit":"units"."id" ?<? "vacancy_visibility"."unit_id"
+Ref "fk_vacancy_visibility_vacancy":"vacancies"."id" <? "vacancy_visibility"."vacancy_id"
+Ref "fk_vinculos_definicion":"process_definition_versions"."id" <? "vinculos"."process_definition_id" [delete: cascade]
+Ref "fk_vinculos_edicion":"ediciones"."id" <? "vinculos"."edicion_id"
+Ref "instituciones_pais_id_fkey":"paises"."id" <? "instituciones"."pais_id"
+Ref "signature_batch_jobs_user_id_fkey":"persons"."id" ?<? "signature_batch_jobs"."user_id"
+Ref "task_item_tenures_performed_by_person_id_fkey":"persons"."id" ?<? "task_item_tenures"."performed_by_person_id"

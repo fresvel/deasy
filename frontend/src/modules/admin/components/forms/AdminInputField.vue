@@ -3,11 +3,13 @@
     :is="tagName"
     :value="modelValue"
     :type="tagName === 'input' ? type : undefined"
-    class="admin-input-field w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-700 shadow-sm transition-colors duration-150 placeholder:text-slate-400 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-    :class="inputClass"
+    class="deasy-control"
+    :class="[sizeClass, inputClass]"
     :placeholder="placeholder"
     :disabled="disabled"
     :readonly="readonly"
+    :autocomplete="resolvedAutocomplete"
+    :form="form || undefined"
     :rows="tagName === 'textarea' ? rows : undefined"
     :min="min"
     :max="max"
@@ -30,6 +32,16 @@ const props = defineProps({
   type: {
     type: String,
     default: "text"
+  },
+  autocomplete: {
+    type: String,
+    default: ""
+  },
+  // Reasocia el control a OTRO formulario, esté donde esté en el DOM. Es HTML estándar y aquí no
+  // es cosmética: ver `AdminEditorModal`.
+  form: {
+    type: String,
+    default: ""
   },
   as: {
     type: String,
@@ -72,6 +84,33 @@ const props = defineProps({
 const emit = defineEmits(["update:modelValue", "input", "change", "focus", "blur"]);
 
 const tagName = computed(() => (props.as === "textarea" ? "textarea" : "input"));
+
+// Una contraseña en el ADMIN nunca es un inicio de sesión: se está creando o cambiando la de otra
+// persona. Decirlo importa porque el gestor de contraseñas de Chrome **ignora `autocomplete="off"`
+// a propósito** desde 2018, y ofrece las credenciales guardadas en el campo de texto que precede a
+// uno de contraseña —lo toma por el usuario—. Por eso el combobox de nacionalidad sugería el correo
+// del administrador y el mismo combobox en «Direcciones», que no tiene contraseña al lado, no lo
+// hacía. `new-password` sí lo respeta, y además es lo que el campo ES.
+const resolvedAutocomplete = computed(() => {
+  if (props.autocomplete) {
+    return props.autocomplete;
+  }
+  return props.type === "password" ? "new-password" : undefined;
+});
+/* ⚠️ AQUI HABIA UN `h-10 py-2` QUE PISABA LA RECETA, con un comentario que decia «altura uniforme
+   para que inputs, selects y lookups queden alineados en los grids». Conseguia lo contrario:
+   `AdminSelectField` NO lo llevaba, asi que en el mismo formulario el input media **40 px y el
+   select 44**. Medido en el modal de personas el 2026-08-15, con celdas de 68 y 72 px en la misma
+   rejilla.
+
+   Y ademas deshacia una decision ya tomada: `deasy-control` es la receta de TailAdmin adoptada el
+   2026-08-13, que sube la altura de 40 a 44 «mejor objetivo tactil» — su propio bloque en
+   `forms.css` avisa de que **el `h-11` solo gana si la plantilla no escribe `h-10`**. Esta era la
+   plantilla que lo escribia.
+
+   El `textarea` si conserva padding en vez de altura fija: una caja de varias lineas no tiene
+   altura de control. */
+const sizeClass = computed(() => (tagName.value === "textarea" ? "py-2.5" : ""));
 
 const handleInput = (event) => {
   emit("update:modelValue", event.target.value);

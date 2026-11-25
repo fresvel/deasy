@@ -8,9 +8,10 @@
     @submit="onSubmit" 
     @cancel="onCancel"
   >
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Título</label>
+    <div class="w-full">
+      <label :for="fieldId('titulo')" class="deasy-form-label">Título</label>
       <s-select
+        :id="fieldId('titulo')"
         :options="carreras"
         v-model="form.titulo"
         class="w-full mb-2"
@@ -18,15 +19,17 @@
       <input
         v-if="form.titulo === 'Otro'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
+        aria-label="Especifique el título"
         placeholder="Especifique el título"
         v-model="form.tituloPersonalizado"
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Institución</label>
+    <div class="w-full">
+      <label :for="fieldId('ies')" class="deasy-form-label">Institución</label>
       <s-select
+        :id="fieldId('ies')"
         :options="universidades"
         v-model="form.ies"
         class="w-full mb-2"
@@ -34,16 +37,17 @@
       <input
         v-if="form.ies === 'Otra'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
+        aria-label="Especifique la institución"
         placeholder="Especifique la institución"
         v-model="form.iesPersonalizada"
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label for="pais" class="profile-field-label">País de emisión</label>
+    <div class="w-full">
+      <label :for="fieldId('pais')" class="deasy-form-label">País de emisión</label>
       <s-select
-        id="pais"
+        :id="fieldId('pais')"
         :options="escountries"
         v-model="form.pais"
         class="w-full"
@@ -55,9 +59,9 @@
     </div>
 
     <div class="w-full">
-      <label for="tipo" class="profile-field-label">Modalidad</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Modalidad</label>
       <s-select
-        id="tipo"
+        :id="fieldId('tipo')"
         :options="modalidades"
         v-model="form.tipo"
         class="w-full"
@@ -65,21 +69,21 @@
     </div>
 
     <div class="w-full">
-      <label for="nivel" class="profile-field-label">Nivel</label>
+      <label :for="fieldId('nivel')" class="deasy-form-label">Nivel</label>
       <s-select
-        id="nivel"
+        :id="fieldId('nivel')"
         :options="niveles"
         v-model="form.nivel"
         class="w-full"
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label for="campo" class="profile-field-label">Campo de conocimiento</label>
+    <div class="w-full">
+      <label :for="fieldId('campo-amplio')" class="deasy-form-label">Campo de conocimiento</label>
       <textarea
-        id="campo"
+        :id="fieldId('campo-amplio')"
         v-model="form.campo_amplio"
-        class="profile-textarea"
+        class="deasy-control deasy-control--textarea"
         rows="2"
         placeholder="Ej. Ingeniería, Ciencias Sociales, Educación..."
       ></textarea>
@@ -109,13 +113,18 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
-import { Modal } from "@/shared/utils/modalController";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
+
 import DossierService from "@/modules/dossier/services/DossierService";
 import SInput from "@/shared/components/forms/SInput.vue";
 import SSelect from "@/shared/components/forms/SSelect.vue";
 import { escountries } from "@/core/constants/countries";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 
 const props = defineProps({
   editingItem: {
@@ -124,7 +133,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["title-added", "title-updated"]);
+const emit = defineEmits(["title-added", "title-updated", "close"]);
 
 const isEditing = computed(() => !!props.editingItem);
 const hasExistingDocument = computed(() => !!props.editingItem?.url_documento);
@@ -148,7 +157,7 @@ const carreras = [
 ];
 
 const universidades = [
-  "Pontificia Universidad Católica del Ecuador", "Escuela Politécnica Nacional", "Universidad de Guayaquil",
+  "Escuela Politécnica Nacional", "Universidad de Guayaquil",
   "Universidad Central del Ecuador", "Escuela Superior Politécnica del Litoral", "Universidad San Francisco de Quito",
   "Universidad Técnica Particular de Loja", "Universidad de las Américas", "Universidad de Cuenca", "Otra"
 ];
@@ -177,12 +186,10 @@ const resetForm = () => {
   selectedFile.value = null;
 };
 
-const closeModal = () => {
-  const modalElement = document.getElementById("tituloModal");
-  if (!modalElement) return;
-  const modalInstance = Modal.getInstance(modalElement);
-  modalInstance?.hide();
-};
+// El cierre se pide al padre, que es quien monta el modal. Antes se hacia
+// document.getElementById("<x>Modal") contra un id que declara el padre: acoplamiento invisible
+// para el compilador --renombrar ese id dejaba el modal imposible de cerrar y nadie se enteraba--.
+const closeModal = () => emit("close");
 
 watch(() => props.editingItem, (newVal) => {
   if (newVal) {
@@ -274,8 +281,7 @@ const onSubmit = async () => {
       emit("title-updated", response.data);
     } else {
       const response = await DossierService.createTitulo(payload);
-      const list = response.data?.titulos || [];
-      recordId = list[list.length - 1]?._id;
+      recordId = response.createdId ?? null;
       emit("title-added", response.data);
     }
 

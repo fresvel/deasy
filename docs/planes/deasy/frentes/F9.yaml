@@ -1,0 +1,8 @@
+id: F9
+titulo: La capa de datos
+ciclo: incremental
+abierto: '2026-10-26'
+fases:
+  P1:
+    titulo: Lo migrado del plan heredado
+    etapa: cambio

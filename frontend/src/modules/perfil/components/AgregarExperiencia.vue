@@ -9,16 +9,18 @@
     @cancel="onCancel"
   >
     <div class="w-full">
-      <label class="profile-field-label">Tipo</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Tipo</label>
       <SSelect
+        :id="fieldId('tipo')"
         :options="['Docencia', 'Profesional']"
         v-model="form.tipo"
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Institución</label>
+    <div class="w-full">
+      <label :for="fieldId('institucion')" class="deasy-form-label">Institución</label>
       <SSelect
+        :id="fieldId('institucion')"
         :options="instituciones"
         v-model="form.institucion"
         class="w-full mb-2"
@@ -26,15 +28,17 @@
       <input
         v-if="form.institucion === 'Otra'"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
+        aria-label="Especifica la institución"
         placeholder="Especifica la institución"
         v-model="form.institucionPersonalizada"
       />
     </div>
 
     <div class="w-full">
-      <label class="profile-field-label">Modalidad</label>
+      <label :for="fieldId('modalidad')" class="deasy-form-label">Modalidad</label>
       <SSelect
+        :id="fieldId('modalidad')"
         :options="['Presencial', 'Semipresencial', 'Virtual', 'Híbrido']"
         v-model="form.modalidad"
       />
@@ -48,10 +52,10 @@
       <SDate label="Fecha de fin" placeholder="Selecciona la fecha" v-model="form.fecha_fin" />
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Funciones, cátedras o actividades</label>
-      <textarea
-        class="profile-textarea"
+    <div class="w-full">
+      <label :for="fieldId('actividades')" class="deasy-form-label">Funciones, cátedras o actividades</label>
+      <textarea :id="fieldId('actividades')"
+        class="deasy-control deasy-control--textarea"
         rows="3"
         v-model="form.actividades"
         placeholder="Describe las funciones o cátedras separadas por comas"
@@ -83,13 +87,18 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
-import { Modal } from "@/shared/utils/modalController";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
+
 import DossierService from "@/modules/dossier/services/DossierService";
 import SSelect from "@/shared/components/forms/SSelect.vue";
 import SDate from "@/shared/components/forms/SDate.vue";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 const props = defineProps({
   editingItem: {
     type: Object,
@@ -97,7 +106,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["experiencia-added", "experiencia-updated"]);
+const emit = defineEmits(["experiencia-added", "experiencia-updated", "close"]);
 
 const isEditing = computed(() => !!props.editingItem);
 const hasExistingDocument = computed(() => !!props.editingItem?.url_documento);
@@ -117,7 +126,6 @@ const errorMessage = ref("");
 const selectedFile = ref(null);
 
 const instituciones = [
-  "Pontificia Universidad Católica del Ecuador",
   "Ministerio de Educación",
   "Escuela Politécnica Nacional",
   "Universidad de las Américas",
@@ -137,12 +145,10 @@ const resetForm = () => {
   selectedFile.value = null;
 };
 
-const closeModal = () => {
-  const modalElement = document.getElementById("experienciaModal");
-  if (!modalElement) return;
-  const modalInstance = Modal.getInstance(modalElement);
-  modalInstance?.hide();
-};
+// El cierre se pide al padre, que es quien monta el modal. Antes se hacia
+// document.getElementById("<x>Modal") contra un id que declara el padre: acoplamiento invisible
+// para el compilador --renombrar ese id dejaba el modal imposible de cerrar y nadie se enteraba--.
+const closeModal = () => emit("close");
 
 // Cargar datos si estamos editando
 watch(() => props.editingItem, (newVal) => {
@@ -248,10 +254,7 @@ const onSubmit = async () => {
       emit("experiencia-updated", response.data);
     } else {
       const response = await DossierService.createExperiencia(payload);
-      // Extraer el ID del nuevo registro (último en el array experiencia)
-      const list = response.data?.experiencia || [];
-      const newRecord = list[list.length - 1];
-      recordId = newRecord?._id;
+      recordId = response.createdId ?? null;
       emit("experiencia-added", response.data);
     }
 

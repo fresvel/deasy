@@ -1,9 +1,8 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 
 export function useAdminFkCrud({
   fkTable,
-  fkFilters,
   fkCreateFields,
   fkCreateForm,
   fkCreateError,
@@ -17,28 +16,18 @@ export function useAdminFkCrud({
   buildFkCreatePayload,
   applyFkSelection,
   fetchFkRows,
-  ensureFkInstance,
+  openRecordViewer,
   getFkInstance,
-  ensureFkViewerInstance,
-  getFkViewerInstance,
   ensureFkFilterInstance,
   getFkFilterInstance,
   ensureFkCreateInstance,
   getFkCreateInstance
 }) {
-  const openFkViewer = (row) => {
-    if (!row) {
+  const openFkViewer = async (row) => {
+    if (!row || !fkTable.value) {
       return;
     }
-    fkNestedExitTarget.value = "search";
-    skipFkReturnRestore.value = true;
-    getFkInstance()?.hide();
-    ensureFkViewerInstance();
-    getFkViewerInstance()?.show();
-  };
-
-  const closeFkViewer = () => {
-    getFkViewerInstance()?.hide();
+    await openRecordViewer(row, fkTable.value);
   };
 
   const openFkFilterModal = () => {
@@ -130,7 +119,6 @@ export function useAdminFkCrud({
 
   return {
     openFkViewer,
-    closeFkViewer,
     openFkFilterModal,
     cancelFkFilter,
     clearFkFilters,

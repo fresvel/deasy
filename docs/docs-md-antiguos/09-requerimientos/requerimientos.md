@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Requerimientos
 
 ## Estado actual del nucleo de procesos
@@ -9,7 +14,7 @@ El nucleo funcional ya quedo rediseñado sobre:
 - `process_definition_versions`
 - `process_target_rules`
 - `process_definition_triggers`
-- `process_definition_templates`
+- `vinculos`
 - `tasks`
 - `task_items`
 - `documents`
@@ -26,9 +31,9 @@ Reglas ya implementadas:
   - y, si `has_document = 1`, al menos un paquete vinculado.
 - Reglas, disparadores y paquetes solo se editan en `draft`.
 - `tasks` representa la instancia del proceso en un periodo.
-- `task_items` representa los entregables derivados de `process_definition_templates`.
+- `task_items` representa los entregables derivados de `vinculos`.
 - `documents` cuelga de `task_items`.
-- `signature_flow_templates` cuelga de `process_definition_templates`.
+- `signature_flow_templates` cuelga de `vinculos`.
 
 ## Estado actual del modulo de templates
 
@@ -39,7 +44,7 @@ Ya quedo implementado:
 - `package`
 - `publish`
 - `publish-seeds`
-- sincronizacion de `template_artifacts` desde `dist`
+- sincronizacion de `ediciones` desde `dist`
 - sincronizacion de `template_seeds` desde MinIO
 - paquetes de usuario (`artifact_origin = user`) creados desde el admin
 - upload directo a MinIO para paquetes de usuario
@@ -50,9 +55,9 @@ Storage actual:
 - `deasy-templates/Seeds`
 - `deasy-templates/Users/<cedula>`
 
-## Estado actual del dashboard operativo
+## Estado actual del home operativo
 
-Ya existe un primer panel operativo en el dashboard cuando el usuario hace click en un proceso de su menu.
+Ya existe un primer panel operativo en el home cuando el usuario hace click en un proceso de su menu.
 
 Ese panel ya muestra:
 
@@ -78,7 +83,7 @@ No cubre todavia:
 
 ## Pendientes inmediatos
 
-1) Refinar UX/UI del panel operativo del dashboard.
+1) Refinar UX/UI del panel operativo del home.
 2) Agregar una segunda vista de seguimiento para tareas derivadas, asignadas a subordinados o a la unidad.
 3) Definir el flujo funcional exacto para:
    - generar documentos desde `task_items`
@@ -91,7 +96,7 @@ No cubre todavia:
    - `user/published`
    - y si existira una promocion administrativa hacia `system`.
 5) Decidir si `artifact_stage` se mostrara y editara en la UI de negocio o si quedara solo como estado de repositorio.
-6) Implementar el flujo de firma operativo por documento en el dashboard del usuario:
+6) Implementar el flujo de firma operativo por documento en el home del usuario:
    - ver pasos
    - ver pendientes
    - firmar cuando corresponda.
@@ -125,5 +130,5 @@ No cubre todavia:
 ## Documentacion pendiente
 
 1) Mantener alineados los diagramas visuales con el modelo vigente.
-2) Completar ejemplos de uso por endpoint para el flujo operativo del dashboard.
+2) Completar ejemplos de uso por endpoint para el flujo operativo del home.
 3) Documentar el flujo de vida de `task_items -> documents -> signatures`.

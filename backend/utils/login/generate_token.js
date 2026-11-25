@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 
 const isNonProduction = () => (process.env.NODE_ENV || "development") !== "production";
 
-const getAccessTokenSecret = () => {
+export const getAccessTokenSecret = () => {
     const envSecret = process.env.JWT_SECRET || process.env.JWT_REFRESH;
     if (envSecret) {
         return envSecret;

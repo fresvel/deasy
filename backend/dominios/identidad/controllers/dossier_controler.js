@@ -1,0 +1,349 @@
+// Dossier / expediente personal sobre el núcleo relacional (Fase 6, ex-MongoDB).
+// Los datos van por dossierStore (2 tablas: dossiers + dossier_items JSONB);
+// el almacén sigue guardando los PDFs. Engine-transparente vía el adaptador.
+import { clienteAlmacen } from "../../../services/storage/clienteAlmacen.js";
+import fs from "node:fs";
+import * as store from "../datos/dossier.js";
+
+// --- el almacén: cliente, constantes y helpers (sin cambios respecto a la versión Mongo) ---
+const almacenClient = () => clienteAlmacen();
+
+const ALMACEN_DOSSIER_BUCKET = process.env.ALMACEN_DOSSIER_BUCKET || "deasy-dossier";
+const ALMACEN_DOSSIER_PREFIX = process.env.ALMACEN_DOSSIER_PREFIX || "Dosier";
+const ALMACEN_PUBLIC_ENDPOINT = process.env.ALMACEN_PUBLIC_ENDPOINT || "http://localhost:9000";
+
+const VALID_DOCUMENT_TYPES = [
+  "titulo", "experiencia", "referencia", "formacion",
+  "certificacion", "articulo", "libro", "ponencia", "tesis", "proyecto",
+];
+
+// tipoDocumento (singular) -> sección (nombre de tabla lógica en dossier_items)
+const TIPO_TO_SECTION = {
+  titulo: "titulos", experiencia: "experiencia", referencia: "referencias",
+  formacion: "formacion", certificacion: "certificaciones", articulo: "articulos",
+  libro: "libros", ponencia: "ponencias", tesis: "tesis", proyecto: "proyectos",
+};
+// sección -> tipoDocumento (para la convención de nombre de objeto el almacén)
+const SECTION_TO_TIPO = Object.fromEntries(Object.entries(TIPO_TO_SECTION).map(([t, s]) => [s, t]));
+
+const removeAlmacenObject = (bucket, objectName) =>
+  new Promise((resolve, reject) => almacenClient().removeObject(bucket, objectName, (e) => (e ? reject(e) : resolve(true))));
+const statAlmacenObject = (bucket, objectName) =>
+  new Promise((resolve, reject) => almacenClient().statObject(bucket, objectName, (e, stat) => (e ? reject(e) : resolve(stat))));
+const uploadFileToAlmacen = (bucket, objectName, filePath, metadata = {}) =>
+  new Promise((resolve, reject) => almacenClient().fPutObject(bucket, objectName, filePath, metadata, (e, etag) => (e ? reject(e) : resolve(etag))));
+const ensureBucketExists = (bucket) =>
+  new Promise((resolve, reject) =>
+    almacenClient().bucketExists(bucket, (e, exists) => {
+      if (e) return reject(e);
+      if (exists) return resolve(true);
+      almacenClient().makeBucket(bucket, "", (me) => (me ? reject(me) : resolve(true)));
+    })
+  );
+
+// LA RUTA CUELGA DEL ID DE LA PERSONA, NO DE SU CEDULA. Cambiado el 2026-08-27 al abrir el modelo a
+// pasaportes: un documento de identidad puede cambiar y usarlo de direccion le pierde los ficheros a
+// la persona. Ojo: la URL de la API SIGUE llevando la cedula (`/:cedula/...`) — eso es como se
+// DIRECCIONA el expediente, no donde se GUARDA, y cambiarlo es otra decision.
+//
+// Los ficheros escritos antes bajo la cedula se siguen encontrando para borrarlos, porque
+// `removeDossierDocument` cae en `resolveDossierObjectNameFromUrl` cuando no se le da la terna.
+const buildDossierObjectName = (personId, tipoDocumento, registroId) =>
+  `${ALMACEN_DOSSIER_PREFIX}/users/${personId}/${tipoDocumento}/${registroId}.pdf`;
+const buildDossierFileUrl = (objectName) => `${ALMACEN_PUBLIC_ENDPOINT}/${ALMACEN_DOSSIER_BUCKET}/${objectName}`;
+
+function resolveDossierObjectNameFromUrl(fileUrl) {
+  if (!fileUrl) return null;
+  const fromPath = (rawPath) => {
+    const normalized = String(rawPath || "").replace(/^\/+/, "");
+    const bucketPrefix = `${ALMACEN_DOSSIER_BUCKET}/`;
+    return normalized.startsWith(bucketPrefix) ? normalized.slice(bucketPrefix.length) : normalized || null;
+  };
+  try { return fromPath(new URL(fileUrl).pathname); } catch { return fromPath(fileUrl); }
+}
+
+const NOT_FOUND_CODES = ["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"];
+
+async function removeDossierDocument({ personId, tipoDocumento, registroId, fileUrl }) {
+  const objectName = personId && tipoDocumento && registroId
+    ? buildDossierObjectName(personId, tipoDocumento, registroId)
+    : resolveDossierObjectNameFromUrl(fileUrl);
+  if (!objectName) return false;
+  try {
+    await removeAlmacenObject(ALMACEN_DOSSIER_BUCKET, objectName);
+    return true;
+  } catch (error) {
+    if (NOT_FOUND_CODES.includes(error?.code)) {
+      const fallback = resolveDossierObjectNameFromUrl(fileUrl);
+      if (fallback && fallback !== objectName) {
+        try { await removeAlmacenObject(ALMACEN_DOSSIER_BUCKET, fallback); return true; } catch { return false; }
+      }
+      return false;
+    }
+    throw error;
+  }
+}
+
+async function objectExists(bucket, objectName) {
+  try { await statAlmacenObject(bucket, objectName); return true; }
+  catch (error) { if (NOT_FOUND_CODES.includes(error?.code)) return false; throw error; }
+}
+
+// Rehidrata url_documento faltantes consultando el almacén por convención de nombre
+// ({personId}/{tipoDoc}/{id}.pdf) y persiste la url encontrada. Opera sobre el árbol.
+async function hydrateTree(tree, dossier) {
+  const groups = [
+    ["titulos", tree.titulos], ["experiencia", tree.experiencia], ["referencias", tree.referencias],
+    ["formacion", tree.formacion], ["certificaciones", tree.certificaciones],
+    ["articulos", tree.investigacion.articulos], ["libros", tree.investigacion.libros],
+    ["ponencias", tree.investigacion.ponencias], ["tesis", tree.investigacion.tesis],
+    ["proyectos", tree.investigacion.proyectos],
+  ];
+  for (const [section, items] of groups) {
+    const tipo = SECTION_TO_TIPO[section];
+    for (const item of items) {
+      if (item.url_documento) continue;
+      const objectName = buildDossierObjectName(tree.person_id, tipo, item._id);
+      if (await objectExists(ALMACEN_DOSSIER_BUCKET, objectName)) {
+        const url = buildDossierFileUrl(objectName);
+        item.url_documento = url;
+        await store.setItemUrl(item._id, dossier.id, section, url);
+      }
+    }
+  }
+}
+
+async function loadTreeHydrated(dossier) {
+  const tree = await store.loadTree(dossier);
+  await hydrateTree(tree, dossier);
+  return tree;
+}
+
+const fail = (res, status, message, error) => res.status(status).json({ success: false, message, ...(error ? { error } : {}) });
+
+// --- GET raíz ---
+export const getDossierByUser = async (req, res) => {
+  try {
+    const dossier = await store.getOrCreateDossier(req.params.cedula);
+    if (!dossier) return fail(res, 404, "Usuario no encontrado");
+    res.json({ success: true, data: await loadTreeHydrated(dossier) });
+  } catch (error) {
+    console.error("Error al obtener dossier:", error);
+    fail(res, 500, "Error al obtener dossier", error.message);
+  }
+};
+
+// --- Fábrica de add/update/delete por sección ---
+const makeAdd = (section, okMsg, errMsg, validate = null) => async (req, res) => {
+  try {
+    const dossier = await store.getOrCreateDossier(req.params.cedula);
+    if (!dossier) return fail(res, 404, "Usuario no encontrado");
+    if (validate) { const v = validate(req.body); if (v) return fail(res, 400, v); }
+    // createdId evita que el cliente tenga que adivinar cuál es el registro nuevo: hacerlo cogiendo el último
+    // del árbol solo funciona mientras loadTree ordene por id ASC, y ese acoplamiento no debe salir de aquí.
+    const createdId = await store.addItem(dossier.id, section, req.body);
+    res.json({
+      success: true,
+      message: okMsg,
+      createdId: createdId == null ? null : String(createdId),
+      data: await loadTreeHydrated(dossier)
+    });
+  } catch (error) {
+    console.error(errMsg, error);
+    fail(res, 500, errMsg, error.message);
+  }
+};
+
+const makeUpdate = (section, idParam, okMsg, notFoundMsg, errMsg) => async (req, res) => {
+  try {
+    const dossier = await store.getOrCreateDossier(req.params.cedula);
+    if (!dossier) return fail(res, 404, "Usuario no encontrado");
+    const ok = await store.updateItem(req.params[idParam], dossier.id, section, req.body);
+    if (!ok) return fail(res, 404, notFoundMsg);
+    res.json({ success: true, message: okMsg, data: await loadTreeHydrated(dossier) });
+  } catch (error) {
+    console.error(errMsg, error);
+    fail(res, 500, errMsg, error.message);
+  }
+};
+
+const makeDelete = (section, idParam, okMsg, notFoundMsg, errMsg) => async (req, res) => {
+  try {
+    const dossier = await store.getOrCreateDossier(req.params.cedula);
+    if (!dossier) return fail(res, 404, "Usuario no encontrado");
+    const item = await store.findItem(req.params[idParam], dossier.id, section);
+    if (!item) return fail(res, 404, notFoundMsg);
+    if (item.url_documento) {
+      await removeDossierDocument({ personId: dossier.person_id, tipoDocumento: SECTION_TO_TIPO[section], registroId: item.id, fileUrl: item.url_documento });
+    }
+    await store.deleteItem(req.params[idParam], dossier.id, section);
+    res.json({ success: true, message: okMsg, data: await loadTreeHydrated(dossier) });
+  } catch (error) {
+    console.error(errMsg, error);
+    fail(res, 500, errMsg, error.message);
+  }
+};
+
+// Títulos
+export const addTitulo = makeAdd("titulos", "Título agregado correctamente", "Error al agregar título");
+export const updateTitulo = makeUpdate("titulos", "tituloId", "Título actualizado correctamente", "Título no encontrado", "Error al actualizar título");
+export const deleteTitulo = makeDelete("titulos", "tituloId", "Título eliminado correctamente", "Título no encontrado", "Error al eliminar título");
+// Experiencia
+export const addExperiencia = makeAdd("experiencia", "Experiencia agregada correctamente", "Error al agregar experiencia");
+export const updateExperiencia = makeUpdate("experiencia", "experienciaId", "Experiencia actualizada", "Experiencia no encontrada", "Error al actualizar experiencia");
+export const deleteExperiencia = makeDelete("experiencia", "experienciaId", "Experiencia eliminada", "Experiencia no encontrada", "Error al eliminar experiencia");
+// Referencias (valida tipo enum al agregar)
+const validateReferencia = (body) => {
+  const tipos = ["laboral", "personal", "familiar"];
+  if (body?.tipo && !tipos.includes(body.tipo)) return `Tipo de referencia inválido: "${body.tipo}". Debe ser uno de: ${tipos.join(", ")}`;
+  return null;
+};
+export const addReferencia = makeAdd("referencias", "Referencia agregada correctamente", "Error al agregar referencia", validateReferencia);
+export const updateReferencia = makeUpdate("referencias", "referenciaId", "Referencia actualizada", "Referencia no encontrada", "Error al actualizar referencia");
+export const deleteReferencia = makeDelete("referencias", "referenciaId", "Referencia eliminada", "Referencia no encontrada", "Error al eliminar referencia");
+// Formación
+export const addFormacion = makeAdd("formacion", "Formación agregada correctamente", "Error al agregar formación");
+export const updateFormacion = makeUpdate("formacion", "formacionId", "Formación actualizada", "Formación no encontrada", "Error al actualizar formación");
+export const deleteFormacion = makeDelete("formacion", "formacionId", "Formación eliminada", "Formación no encontrada", "Error al eliminar formación");
+// Certificaciones
+export const addCertificacion = makeAdd("certificaciones", "Certificación agregada correctamente", "Error al agregar certificación");
+export const updateCertificacion = makeUpdate("certificaciones", "certificacionId", "Certificación actualizada", "Certificación no encontrada", "Error al actualizar certificación");
+export const deleteCertificacion = makeDelete("certificaciones", "certificacionId", "Certificación eliminada", "Certificación no encontrada", "Error al eliminar certificación");
+
+// --- Investigación (:tipo ∈ articulos/libros/ponencias/tesis/proyectos) ---
+const validInvestigacionTipo = (tipo) => store.INVESTIGACION_SECTIONS.includes(tipo);
+
+export const addInvestigacionItem = async (req, res) => {
+  try {
+    const { tipo } = req.params;
+    if (!validInvestigacionTipo(tipo)) return fail(res, 400, `Tipo de investigación inválido: "${tipo}"`);
+    const dossier = await store.getOrCreateDossier(req.params.cedula);
+    if (!dossier) return fail(res, 404, "Usuario no encontrado");
+    const createdId = await store.addItem(dossier.id, tipo, req.body);
+    res.json({
+      success: true,
+      message: "Item de investigación agregado correctamente",
+      createdId: createdId == null ? null : String(createdId),
+      data: await loadTreeHydrated(dossier)
+    });
+  } catch (error) {
+    console.error("Error al agregar item de investigación:", error);
+    fail(res, 500, "Error al agregar item de investigación", error.message);
+  }
+};
+
+export const updateInvestigacionItem = async (req, res) => {
+  try {
+    const { tipo, itemId } = req.params;
+    if (!validInvestigacionTipo(tipo)) return fail(res, 400, `Tipo de investigación inválido: "${tipo}"`);
+    const dossier = await store.getOrCreateDossier(req.params.cedula);
+    if (!dossier) return fail(res, 404, "Usuario no encontrado");
+    const ok = await store.updateItem(itemId, dossier.id, tipo, req.body);
+    if (!ok) return fail(res, 404, "Item de investigación no encontrado");
+    res.json({ success: true, message: "Item de investigación actualizado", data: await loadTreeHydrated(dossier) });
+  } catch (error) {
+    console.error("Error al actualizar item de investigación:", error);
+    fail(res, 500, "Error al actualizar item de investigación", error.message);
+  }
+};
+
+export const deleteInvestigacionItem = async (req, res) => {
+  try {
+    const { tipo, itemId } = req.params;
+    if (!validInvestigacionTipo(tipo)) return fail(res, 400, `Tipo de investigación inválido: "${tipo}"`);
+    const dossier = await store.getOrCreateDossier(req.params.cedula);
+    if (!dossier) return fail(res, 404, "Usuario no encontrado");
+    const item = await store.findItem(itemId, dossier.id, tipo);
+    if (!item) return fail(res, 404, "Item de investigación no encontrado");
+    if (item.url_documento) {
+      await removeDossierDocument({ personId: dossier.person_id, tipoDocumento: SECTION_TO_TIPO[tipo], registroId: item.id, fileUrl: item.url_documento });
+    }
+    await store.deleteItem(itemId, dossier.id, tipo);
+    res.json({ success: true, message: "Item de investigación eliminado", data: await loadTreeHydrated(dossier) });
+  } catch (error) {
+    console.error("Error al eliminar item de investigación:", error);
+    fail(res, 500, "Error al eliminar item de investigación", error.message);
+  }
+};
+
+// --- Documentos (el almacén) ---
+export const uploadDossierDocument = async (req, res) => {
+  try {
+    const { cedula, tipoDocumento, registroId } = req.params;
+    if (!cedula || !tipoDocumento || !registroId) return fail(res, 400, "Faltan parámetros requeridos: cedula, tipoDocumento, registroId");
+    if (!VALID_DOCUMENT_TYPES.includes(tipoDocumento)) return fail(res, 400, `Tipo de documento inválido. Tipos válidos: ${VALID_DOCUMENT_TYPES.join(", ")}`);
+    if (!req.file) return fail(res, 400, "No se ha proporcionado ningún archivo");
+    if (req.file.mimetype !== "application/pdf") return fail(res, 400, "Solo se permiten archivos PDF");
+
+    const section = TIPO_TO_SECTION[tipoDocumento];
+    const dossier = await store.findDossierByCedula(cedula);
+    if (!dossier) { fs.unlink(req.file.path, () => {}); return fail(res, 404, "Dossier no encontrado para esta cédula"); }
+    const item = await store.findItem(registroId, dossier.id, section);
+    if (!item) { fs.unlink(req.file.path, () => {}); return fail(res, 404, `Registro con ID ${registroId} no encontrado en ${tipoDocumento}`); }
+
+    const objectName = buildDossierObjectName(dossier.person_id, tipoDocumento, registroId);
+    await ensureBucketExists(ALMACEN_DOSSIER_BUCKET);
+    await uploadFileToAlmacen(ALMACEN_DOSSIER_BUCKET, objectName, req.file.path);
+    const fileUrl = buildDossierFileUrl(objectName);
+    fs.unlink(req.file.path, () => {});
+
+    await store.setItemUrl(registroId, dossier.id, section, fileUrl);
+    res.json({ success: true, message: "Documento subido correctamente", url: fileUrl });
+  } catch (error) {
+    console.error("Error al subir documento:", error);
+    if (req.file?.path) fs.unlink(req.file.path, () => {});
+    fail(res, 500, "Error al subir documento", error.message);
+  }
+};
+
+export const getDossierDocumentUrl = async (req, res) => {
+  try {
+    const { cedula, tipoDocumento, registroId } = req.params;
+    if (!cedula || !tipoDocumento || !registroId) return fail(res, 400, "Faltan parámetros requeridos: cedula, tipoDocumento, registroId");
+    if (!VALID_DOCUMENT_TYPES.includes(tipoDocumento)) return fail(res, 400, `Tipo de documento inválido. Tipos válidos: ${VALID_DOCUMENT_TYPES.join(", ")}`);
+    // Hay que resolver el expediente para tener el id de la persona: la ruta cuelga de él, no de la
+    // cédula, aunque la cédula siga siendo lo que direcciona la URL.
+    const dossier = await store.findDossierByCedula(cedula);
+    if (!dossier) return fail(res, 404, "Dossier no encontrado para esta cédula");
+    const objectName = buildDossierObjectName(dossier.person_id, tipoDocumento, registroId);
+    try {
+      await new Promise((resolve, reject) => {
+        almacenClient().getObject(ALMACEN_DOSSIER_BUCKET, objectName, (err, dataStream) => {
+          if (err) return reject(err);
+          res.setHeader("Content-Type", "application/pdf");
+          res.setHeader("Content-Disposition", `inline; filename="${registroId}.pdf"`);
+          dataStream.pipe(res);
+          dataStream.on("end", resolve);
+          dataStream.on("error", reject);
+        });
+      });
+    } catch (error) {
+      console.error("Error al obtener archivo:", error.message);
+      return fail(res, 404, "Error al leer documento: " + error.message);
+    }
+  } catch (error) {
+    console.error("Error al obtener URL del documento:", error);
+    fail(res, 500, "Error al obtener URL del documento", error.message);
+  }
+};
+
+export const deleteDossierDocumentOnly = async (req, res) => {
+  try {
+    const { cedula, tipoDocumento, registroId } = req.params;
+    if (!cedula || !tipoDocumento || !registroId) return fail(res, 400, "Faltan parámetros requeridos: cedula, tipoDocumento, registroId");
+    if (!VALID_DOCUMENT_TYPES.includes(tipoDocumento)) return fail(res, 400, `Tipo de documento inválido. Tipos válidos: ${VALID_DOCUMENT_TYPES.join(", ")}`);
+    const section = TIPO_TO_SECTION[tipoDocumento];
+    const dossier = await store.findDossierByCedula(cedula);
+    if (!dossier) return fail(res, 404, "Dossier no encontrado");
+    const item = await store.findItem(registroId, dossier.id, section);
+    if (!item) return fail(res, 404, "Registro no encontrado");
+    if (item.url_documento) {
+      await removeDossierDocument({ cedula, tipoDocumento, registroId, fileUrl: item.url_documento });
+      await store.setItemUrl(registroId, dossier.id, section, "");
+    }
+    res.json({ success: true, message: "Documento eliminado correctamente" });
+  } catch (error) {
+    console.error("Error al eliminar documento:", error);
+    fail(res, 500, "Error al eliminar documento", error.message);
+  }
+};

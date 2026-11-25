@@ -3,7 +3,290 @@ import {
   DOCUMENT_VERSION_STATUSES,
 } from "../services/documents/DocumentStateService.js";
 
+// ⚠️ `category` ES LA TAXONOMÍA DEL MODELO, y desde el 2026-08-28 MANDA SOBRE EL MENÚ DE /admin.
+//
+// Hasta esa fecha el frontend la recibía y la tiraba: `AdminView.vue` mantenía DOS listas de nombres
+// de tabla escritas a mano —`GROUP_DEFS` y cinco `*_INDEX_ITEMS`— y agrupaba con ellas. El resultado
+// medido: 11 tablas nuevas cayeron en un cajón «Otros», 19 no eran alcanzables navegando, y una
+// entrada apuntaba a `documents`, borrada meses antes. Una lista a mano se pudre en las dos
+// direcciones: olvida lo nuevo y conserva lo muerto.
+//
+// Ahora una tabla aparece en su sitio SÓLO por declarar aquí su categoría. El frontend ya no nombra
+// tablas: sólo decide en qué grupo del aside cae cada categoría, con qué icono y en qué orden.
+//
+// Las doce son homogéneas a propósito —territorio, organigrama, calendario, persona…— y se
+// corresponden con los dominios de `scripts/docs/dominios.json`, que es de donde sale la
+// documentación del modelo. Antes eran once con arrugas: una categoría de UNA tabla («Usuarios»),
+// un cajón que mezclaba tres cosas, y `cargos` clasificado como dato personal.
+//
+// ── El formulario también se declara aquí ──────────────────────────────────────────────────────
+//
+// Tres claves opcionales por campo. Las lee el editor genérico del admin; **ninguna de ellas
+// necesita código en el frontend**, que es justo el punto: una pantalla nueva no se escribe, se
+// declara. Igual que `category`, la fuente de verdad es ésta.
+//
+//   filterBy: { <parámetro>: <campo del formulario> }
+//     Acota el catálogo de una columna ajena por el valor de OTRA columna del mismo formulario. Se
+//     traduce a `filter_<parámetro>` en la consulta, que el CRUD ya entendía. Y cuando el campo
+//     padre cambia, el editor VACÍA al hijo: sin eso se queda un cantón que ya no pertenece a la
+//     provincia elegida, y nadie lo ve hasta que revienta la clave ajena.
+//
+//   showWhen: { field: <campo>, isSet | equals | anyOf | not }
+//     El campo no se pinta hasta que se cumple. `isSet: true` es «cuando el otro tenga valor».
+//     No es cosmética: un campo que no aplica y aun así se pregunta es una invitación a rellenarlo
+//     mal. Un campo oculto NO se envía.
+//
+//   signal: "danger" | "warning" | "success"
+//     La celda se pinta como etiqueta de ese tono cuando trae valor, y no se pinta cuando está
+//     vacía. Es para columnas CALCULADAS que avisan de algo —qué le falta a una cuenta— y no para
+//     datos: un dato se lee, un aviso se ve. El tono es presentación, pero el back es quien sabe
+//     si una columna avisa o informa.
+//
+//   type: "geopoint" con pair: { lat, lng }
+//     UN control —un mapa— para DOS columnas. Se declara en el primero de los dos y el segundo se
+//     omite de la lista de campos.
 export const SQL_TABLES = [
+  // ── La instalacion ─────────────────────────────────────────────────────────────────────────────
+  // La primera tabla de configuracion del sistema. Se edita aqui, no en un fichero: cambiar el pais
+  // cambia el validador del documento nacional, su nombre local y lo que el formulario precarga.
+  {
+    table: "instituciones",
+    label: "Institucion",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "nombre", label: "Nombre", type: "text", required: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      // QUE PIDE ESTA INSTITUCION: el sexo, el genero, o los dos. Surte efecto en P2, cuando
+      // `persons` gane esas columnas. Ver el comentario de la columna en el esquema.
+      { name: "campo_sexo_genero", label: "Pide sexo/genero", type: "select", options: ["sexo", "genero", "ambos"], defaultValue: "ambos" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["nombre"]
+  },
+
+  // ── Geografia ──────────────────────────────────────────────────────────────────────────────────
+  // Los siembra el bootstrap (seedGeographyCatalog) desde config/geografiaCatalog.js, que a su vez
+  // es GENERADO. Se exponen aqui para consultarlos y para corregir un caso puntual, no para
+  // mantenerlos a mano: una regeneracion vuelve a poner los valores de la fuente oficial.
+  {
+    table: "paises",
+    label: "Paises",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "iso_alpha2", label: "ISO", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "name_en", label: "Nombre (ingles)", type: "text", required: true },
+      { name: "phone_code", label: "Prefijo telefonico", type: "text" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["iso_alpha2", "name", "name_en"]
+  },
+  {
+    table: "provincias",
+    label: "Provincias",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "dpa_code", label: "Codigo DPA", type: "text" },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name", "dpa_code"]
+  },
+  {
+    table: "cantones",
+    label: "Cantones",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "provincia_id", label: "Provincia", type: "number", required: true },
+      { name: "dpa_code", label: "Codigo DPA", type: "text" },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name", "dpa_code"]
+  },
+  {
+    table: "parroquias",
+    label: "Parroquias",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      // `filterBy` acota el desplegable al cantón elegido: son 1 314 y ofrecerlas todas no sirve.
+      // Es el mismo mecanismo que `canton_id` usa sobre la provincia.
+      { name: "canton_id", label: "Cantón", type: "number", required: true },
+      { name: "dpa_code", label: "Codigo DPA", type: "text" },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "clase_id", label: "Clase", type: "number" },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["name", "dpa_code"]
+  },
+  // Las categorias de visa de UN pais. Tiene `pais_id` por la misma regla que sus hermanas de abajo:
+  // lo que define una autoridad NACIONAL va a catalogo, porque un CHECK es global por definicion y
+  // no puede valer una cosa en Ecuador y otra en Colombia. Lo que anade sobre ellas es `condicion`,
+  // que agrupa las 13 de la Ley Organica de Movilidad Humana en visitante temporal, residente
+  // temporal y residente permanente.
+  //
+  // ⚠️ Sin esta entrada la tabla NO EXISTE para /admin, y el sintoma no es que falte una pestaña:
+  // es que el desplegable de `documentos_identidad.categoria_visa_id` contesta 400 "Tabla no
+  // soportada". El mapa de claves ajenas del frontend no basta -- apunta a una tabla que el backend
+  // tiene que servir.
+  {
+    table: "categorias_visa",
+    label: "Categorias de visa",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "condicion", label: "Condicion", type: "text" },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name", "condicion"]
+  },
+  {
+    table: "generos",
+    label: "Generos",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "estados_civiles",
+    label: "Estados civiles",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "autoidentificaciones_etnicas",
+    label: "Autoidentificacion etnica",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "tipos_discapacidad",
+    label: "Tipos de discapacidad",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "parentescos",
+    label: "Parentescos",
+    category: "VocabularioPersona",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "Pais", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "clases_parroquia",
+    label: "Clases de parroquia",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "País", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "nomenclatura_territorial",
+    label: "Nomenclatura territorial",
+    category: "Geografia",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "pais_id", label: "País", type: "number", required: true },
+      { name: "nivel", label: "Nivel", type: "number", required: true },
+      { name: "singular", label: "Singular", type: "text", required: true },
+      { name: "plural", label: "Plural", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["singular", "plural"]
+  },
   {
     table: "unit_types",
     label: "Tipos de unidad",
@@ -13,7 +296,8 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name"]
   },
@@ -29,7 +313,8 @@ export const SQL_TABLES = [
       { name: "description", label: "Descripcion", type: "textarea" },
       { name: "is_inheritance_allowed", label: "Herencia", type: "boolean", defaultValue: 0 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["code", "name"]
   },
@@ -44,22 +329,197 @@ export const SQL_TABLES = [
       { name: "label", label: "Etiqueta", type: "text" },
       { name: "slug", label: "Slug", type: "text", required: true },
       { name: "unit_type_id", label: "Tipo de unidad", type: "number", required: true },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      // EL ESTADO, en vez de `is_active` (frente 27, D-03). DERIVADO, no columna: sale de las vidas
+      // de la unidad (`unit_vigencias`, la tabla de abajo) y depende del dia en que se pregunta.
+      { name: "estado", label: "Estado", type: "select", options: ["borrador", "programado", "vigente", "suprimido"], readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
   },
+  // LAS VIDAS DE UNA UNIDAD (frente 27, D-03): una fila por cada vez que ha regido. Poner una unidad
+  // en vigor, suprimirla y reactivarla es crear o cerrar una fila de aqui.
+  {
+    table: "unit_vigencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: abre la unidad y ve a «Vigencia».",
+    label: "Vigencia de unidades",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "unit_id", label: "Unidad", type: "number", required: true },
+      { name: "vigente_desde", label: "Rige desde", type: "date", required: true },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"], required: true },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // QUE SUCEDE A UNA UNIDAD SUPRIMIDA (frente 27, D-05): una fila por sucesor de cada vida que termina.
+  // Varias filas con la misma vida son una division; varias con el mismo sucesor, una fusion. No se
+  // modifican: se quitan y se registran otras, y la base lo impone.
+  {
+    table: "unit_equivalencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: abre la unidad que termina y ve a «Sucesores», en «Vigencia».",
+    label: "Equivalencias de unidades",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "antecesor_vigencia_id", label: "Vida que termina", type: "number", required: true },
+      { name: "sucesor_unit_id", label: "Unidad que la sucede", type: "number", required: true },
+      { name: "registrado_por_person_id", label: "Registrado por", type: "number", readOnly: true, sello: "actor" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
   {
     table: "unit_relations",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: mueve la unidad de padre, o une dos nodos.",
     label: "Relaciones de unidades",
     category: "Estructura",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "relation_type_id", label: "Tipo de relacion", type: "number", required: true },
+      { name: "relation_type_id", label: "Tipo de relación", type: "number", required: true },
       { name: "parent_unit_id", label: "Unidad padre", type: "number", required: true },
       { name: "child_unit_id", label: "Unidad hija", type: "number", required: true },
+      // LA ARISTA LLEVA FECHAS (frente 27, D-04). Sin «Rige desde» es un borrador.
+      { name: "vigente_desde", label: "Rige desde", type: "date" },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // LA BITACORA DE CORRECCIONES (frente 27, D-05): todo de solo lectura, y el gancho de
+  // tableHooks.js rechaza el alta. Aqui solo se CONSULTA quien corrigio que, por que, y que decia.
+  {
+    table: "correcciones_de_estructura",
+    // SOLO CONSULTA: es una bitácora. El editor ofrecía «Agregar», «Editar» y «Eliminar» sobre ella
+    // —la base los habría rechazado, pero no hay por qué ofrecerlos—.
+    soloConsulta: "La escribe el sistema cada vez que se registra una corrección.",
+    label: "Correcciones de la estructura",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "ocurrido_at", label: "Cuándo", type: "datetime", readOnly: true },
+      { name: "actor_person_id", label: "Quién corrigió", type: "number", readOnly: true },
+      { name: "tabla", label: "Tabla", type: "text", readOnly: true },
+      { name: "registro_id", label: "Registro", type: "number", readOnly: true },
+      { name: "motivo", label: "Motivo", type: "textarea", readOnly: true },
+      { name: "antes", label: "Antes", type: "textarea", readOnly: true },
+      { name: "despues", label: "Después", type: "textarea", readOnly: true }
+    ],
+    searchFields: ["tabla", "motivo"]
+  },
+  // EL ACTO que ordena un cambio de estructura (frente 27, D-05). Tres tablas: el catalogo de tipos,
+  // el acto, y el enlace a su documento cuando se firmo aqui. El emisor es una unidad O un texto,
+  // exactamente uno de los dos: lo impone la base (`ck_actos_un_solo_emisor`), no este formulario.
+  {
+    table: "tipos_de_acto",
+    label: "Tipos de acto",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Código", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "actos",
+    label: "Actos",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "tipo_de_acto_id", label: "Tipo de acto", type: "number", required: true },
+      { name: "numero", label: "Número", type: "text", required: true },
+      { name: "asunto", label: "Asunto", type: "textarea", required: true },
+      { name: "fecha_emision", label: "Fecha de emisión", type: "date", required: true, ayuda: "Cuándo se firmó." },
+      { name: "fecha_vigencia", label: "Rige desde", type: "date", required: true, ayuda: "Desde cuándo rige lo que ordena. Puede no ser el día en que se firmó." },
+      // QUIEN LO EMITE ES UNA UNIDAD O UN TEXTO, EXACTAMENTE UNO (`ck_actos_un_solo_emisor`).
+      // `exclusivoCon` se lo dice al formulario: en cuanto uno tiene valor, el otro se bloquea. La
+      // base lo impone igual; esto es para no enterarse al guardar.
+      {
+        name: "unidad_emisora_id",
+        label: "Unidad emisora",
+        type: "number",
+        exclusivoCon: "emisor_externo",
+        ayuda: "Si el órgano está en el sistema. Si no, déjalo vacío y escribe el emisor externo."
+      },
+      {
+        name: "emisor_externo",
+        label: "Emisor externo",
+        type: "text",
+        exclusivoCon: "unidad_emisora_id",
+        ayuda: "Sólo si quien lo emite no es una unidad del sistema: la sede matriz, una autoridad externa."
+      },
+      // Y QUIEN LO SUSCRIBE, COMO MUCHO UNO DE LOS DOS (`ck_actos_un_solo_suscriptor`). Casi siempre
+      // se deja vacío: se deduce de la firma o de quién ocupaba la jefatura.
+      {
+        name: "suscrito_por_person_id",
+        label: "Suscrito por (persona)",
+        type: "number",
+        exclusivoCon: "suscrito_por_nombre",
+        ayuda: "Sólo si no lo firmó el titular: un subrogante, un encargado o un delegado que está en el sistema."
+      },
+      {
+        name: "suscrito_por_nombre",
+        label: "Suscrito por (nombre)",
+        type: "text",
+        exclusivoCon: "suscrito_por_person_id",
+        ayuda: "Lo mismo, cuando esa persona no está en el sistema."
+      },
+      {
+        name: "en_calidad_de",
+        label: "En calidad de",
+        type: "select",
+        options: ["titular", "subrogante", "encargado", "delegado"]
+      },
+      // QUIEN LO REGISTRO: `sello: "actor"` hace que el editor lo escriba solo al crear, con quien
+      // esta haciendo la peticion. De solo lectura: no se teclea ni se cambia.
+      { name: "registrado_por_person_id", label: "Registrado por", type: "number", readOnly: true, sello: "actor" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["numero", "asunto", "emisor_externo"]
+  },
+  {
+    table: "acto_documentos",
+    // SOLO CONSULTA desde el 2026-11-24 (F27.P4.T24): el formulario pedía una «versión de documento»
+    // suelta. Se enlaza desde «Documentos», en la pantalla de actos, eligiendo por entregable.
+    soloConsulta: "Se enlaza desde «Documentos», en la pantalla de actos, o desde la pestaña «Actos» del nodo.",
+    label: "Documento del acto",
+    category: "Estructura",
+    primaryKeys: ["acto_id"],
+    fields: [
+      { name: "acto_id", label: "Acto", type: "number", required: true },
+      { name: "document_version_id", label: "Versión de documento", type: "number", required: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: []
@@ -73,28 +533,177 @@ export const SQL_TABLES = [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "name", label: "Nombre", type: "text", required: true },
       { name: "slug", label: "Slug", type: "text", required: true },
-      { name: "parent_id", label: "Proceso padre", type: "number" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "active_definition_version", label: "Definicion activa", type: "text", readOnly: true, virtual: true },
-      { name: "active_definition_status", label: "Estado definicion", type: "text", readOnly: true, virtual: true },
+      // EL ESTADO, en vez de `is_active` (frente 27, D-03). DERIVADO, no columna: sale de las vidas
+      // del proceso (`process_vigencias`, la tabla de abajo) y depende del dia en que se pregunta.
+      // Se puede filtrar por el.
+      { name: "estado", label: "Estado", type: "select", options: ["borrador", "programado", "vigente", "suprimido"], readOnly: true, virtual: true },
+      { name: "active_definition_version", label: "Configuracion activa", type: "text", readOnly: true, virtual: true },
+      { name: "active_definition_status", label: "Estado configuracion", type: "text", readOnly: true, virtual: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["name", "slug"]
   },
+  // LAS VIDAS DE UN PROCESO (frente 27, D-03): una fila por cada vez que ha regido. Poner un proceso
+  // en vigor, suprimirlo y reactivarlo es crear o cerrar una fila de aqui. Las reglas --el fin lleva
+  // origen, una reorganizacion exige acto, dos vidas no se solapan-- las impone la base.
   {
-    table: "process_definition_versions",
-    label: "Definicion de procesos",
+    table: "process_vigencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el mapa de procesos: abre el proceso y ve a «Vigencia».",
+    label: "Vigencia de procesos",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "process_id", label: "Proceso", type: "number", required: true },
-      { name: "series_id", label: "Serie", type: "number", required: true },
-      { name: "variation_key", label: "Codigo de serie", type: "text", readOnly: true, defaultValue: "general" },
+      { name: "vigente_desde", label: "Rige desde", type: "date", required: true },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"], required: true },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // QUE SUCEDE A UN PROCESO SUPRIMIDO (frente 27, D-05): la misma forma que la de las unidades.
+  {
+    table: "process_equivalencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el mapa de procesos: abre el proceso que termina y ve a «Sucesores», en «Vigencia».",
+    label: "Equivalencias de procesos",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "antecesor_vigencia_id", label: "Vida que termina", type: "number", required: true },
+      { name: "sucesor_process_id", label: "Proceso que lo sucede", type: "number", required: true },
+      { name: "registrado_por_person_id", label: "Registrado por", type: "number", readOnly: true, sello: "actor" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // DE QUE PROCESO CUELGA CADA PROCESO (frente 27, D-04): sustituye a `processes.parent_id`. Una
+  // fila por arista, con fechas; cambiar de padre es cerrar una y abrir otra.
+  {
+    table: "process_relations",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el mapa de procesos: cambia el padre en «Datos», o une dos nodos.",
+    label: "Relaciones de procesos",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "parent_process_id", label: "Proceso padre", type: "number", required: true },
+      { name: "child_process_id", label: "Proceso hijo", type: "number", required: true },
+      { name: "vigente_desde", label: "Rige desde", type: "date" },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // EL ORDEN DE ESTE GRUPO ES LA CADENA DEL MODELO, NO EL ALFABETO NI LA ANTIGUEDAD.
+  //
+  // Las pestañas de `/admin` salen en el orden en que estan aqui (`AdminView.vue` solo agrupa por
+  // `category`), asi que esta lista ES la lectura que hace la persona. Y la cadena es:
+  //
+  //     processes -> lineas -> process_definition_versions -> periodos
+  //      que se hace   quien lo debe,    como se hace,          el reparto EXTRA     cuando toca
+  //                      y donde        en esta version
+  //
+  // Hasta el 2026-10-14 `process_definition_versions` iba ANTES que `lineas`, que es el orden en que
+  // se escribieron: la configuracion existe desde el principio y la linea nacio en el frente 25.
+  // Pero desde P22 la configuracion CUELGA de la linea (`linea_id` NOT NULL, con la cascada ahi), asi
+  // que la pestaña presentaba el hijo antes que el padre. Lo vio el dueño.
+  {
+    table: "lineas",
+    label: "Lineas de proceso",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "process_id", label: "Proceso", type: "number", required: true },
+      // EL NOMBRE LO ESCRIBE LA PERSONA, y es el cambio que trae la linea. El `code` de la serie se
+      // DERIVABA con `slugify(cargo.name)`, asi que renombrar un cargo disparaba dos cascadas y la
+      // etiqueta nunca decia lo que la obligacion es: «Informe de IF · Coordinadores de Carrera».
+      { name: "nombre", label: "Nombre de la linea", type: "text", required: true },
+      // LOS DOS EJES, JUNTOS. La serie admitia uno O el otro --su CHECK lo imponia-- y como los
+      // cargos son genericos (`Coordinador`, no «Coordinador de Carrera»), el eje que no cabia habia
+      // que ponerlo en la regla de reparto: la variacion estaba PARTIDA EN DOS TABLAS.
+      { name: "cargo_id", label: "Cargo (vacio = cualquiera)", type: "number" },
+      // EL TERCER ESTADO DEL «QUIEN» (frente 25, P26). Vivia en `process_target_rules`, que se
+      // retiro: el cargo sabe decir «este cargo» y «cualquiera», y no sabe decir «el que manda
+      // aqui», porque el cargo de la jefatura varia por tipo de unidad. Con `unit_head` la base
+      // exige `cargo_id` vacio (`ck_lineas_jefatura_sin_cargo`): saber el cargo y pedir la jefatura
+      // resuelve a la interseccion, que es casi siempre nadie.
+      // ⚠️ SIN `required: true`, y es la misma leccion que `unit_type_id` lleva escrita tres lineas
+      // mas abajo: el backend exige todo campo `required`, y esta columna tiene DEFAULT en la base.
+      // Marcarla obligo a mandarla en cada alta --«Datos incompletos: Destinatario»-- y rompio el
+      // alta de una linea que no la nombra. Lo cazo `test:char:run`.
+      {
+        name: "recipient_policy",
+        label: "Destinatario",
+        type: "select",
+        options: ["all_matches", "unit_head"],
+        defaultValue: "all_matches"
+      },
+      {
+        name: "unit_scope_type",
+        label: "Alcance",
+        type: "select",
+        options: ["all_units", "unit_type", "unit_exact"],
+        defaultValue: "all_units",
+        required: true
+      },
+      // ⚠️ SIN `required: true`, Y NO ES UN OLVIDO. `showWhen` es una pista del FRONTEND: el
+      // backend exige todo campo `required` llegue o no su condición (`SqlAdminService`, «Datos
+      // incompletos»). La serie tenía esta misma forma y pasaba sólo porque su hook rellenaba los
+      // dos a `null` antes de la comprobación; al quitarle el hook, la misma declaración rechazaba
+      // una línea legítima. La obligatoriedad CONDICIONAL vive donde puede ser condicional:
+      // `lineaScopeConsistent` en `validation.js`, que además da el mensaje que explica cuál falta.
+      { name: "unit_type_id", label: "Tipo de unidad", type: "number", showWhen: { field: "unit_scope_type", equals: "unit_type" } },
+      { name: "unit_id", label: "Unidad", type: "number", showWhen: { field: "unit_scope_type", equals: "unit_exact" } },
+      // EL LINAJE: si la obligacion cambia de manos es OTRA linea, y esta columna lo declara.
+      // Suceder a una linea OBLIGA a haberla retirado antes, y lo impone un disparador.
+      { name: "linea_anterior_id", label: "Sucede a la linea", type: "number" },
+      { name: "effective_from", label: "Vigencia desde", type: "date", required: true },
+      { name: "effective_to", label: "Vigencia hasta", type: "date" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["nombre", "unit_scope_type"]
+  },
+  {
+    table: "process_definition_versions",
+    label: "Configuración de procesos",
+    category: "Procesos",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      // SIN `process_id` (frente 25, P22): era una copia de `lineas.process_id`, y la fachada la
+      // declaraba `required`, asi que la pantalla OBLIGABA a escribir un dato derivable — y nada
+      // comprobaba que coincidiera con el de la linea elegida.
+      { name: "linea_id", label: "Linea", type: "number", required: true },
       { name: "definition_version", label: "Version", type: "text", required: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
+      // DERIVADO, NO COLUMNA (frente 25, P23 — 2026-10-14): `nombre_configuracion(linea, version)`.
+      // Era una copia de `lineas.nombre` que se quedaba atras al renombrar la linea --y que no
+      // distinguia dos versiones de la misma linea--. Se llamaba «Nombre generado» porque habia una
+      // rutina que lo generaba; ya no hay rutina, hay una derivacion.
+      { name: "name", label: "Nombre", type: "text", readOnly: true, virtual: true },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "has_document", label: "Tiene documento", type: "boolean", defaultValue: 1 },
       {
         name: "status",
         label: "Estado",
@@ -106,70 +715,17 @@ export const SQL_TABLES = [
       { name: "effective_to", label: "Vigencia hasta", type: "date" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["variation_key", "definition_version", "name", "status"]
+    searchFields: ["definition_version", "name", "status"]
   },
-  {
-    table: "process_definition_series",
-    label: "Variantes de procesos definidos",
-    category: "Procesos",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      {
-        name: "source_type",
-        label: "Origen de serie",
-        type: "select",
-        options: ["unit_type", "cargo"],
-        defaultValue: "",
-        required: true
-      },
-      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
-      { name: "cargo_id", label: "Cargo", type: "number" },
-      { name: "code", label: "Codigo", type: "text", readOnly: true },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["code", "source_type"]
-  },
-  {
-    table: "process_target_rules",
-    label: "Reglas de alcance",
-    category: "Procesos",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
-      {
-        name: "unit_scope_type",
-        label: "Alcance",
-        type: "select",
-        options: ["unit_exact", "unit_subtree", "unit_type", "all_units"],
-        defaultValue: "unit_exact"
-      },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
-      { name: "include_descendants", label: "Incluye descendientes", type: "boolean", defaultValue: 0 },
-      { name: "cargo_id", label: "Cargo", type: "number" },
-      { name: "position_id", label: "Puesto exacto", type: "number" },
-      {
-        name: "recipient_policy",
-        label: "Entrega",
-        type: "select",
-        options: ["all_matches", "one_per_unit", "one_match_only", "exact_position"],
-        defaultValue: "all_matches"
-      },
-      { name: "priority", label: "Prioridad", type: "number", defaultValue: 1 },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "effective_from", label: "Vigencia desde", type: "date" },
-      { name: "effective_to", label: "Vigencia hasta", type: "date" },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["unit_scope_type", "recipient_policy"]
-  },
+  // AQUI ESTABA `process_target_rules`, y la tabla se retiro entera (frente 25, P26 — 2026-10-15):
+  // lo ultimo que le quedaba era UNA columna con DOS valores, y los dos decian «quien», que es lo
+  // que la LINEA ya declara. Hoy el afinado es `lineas.recipient_policy` y se edita donde se edita
+  // la obligacion. Con la tabla se fue su pestaña «Reglas de alcance» de `/admin`.
+
   {
     table: "term_types",
     label: "Tipos de periodo",
-    category: "Academico",
+    category: "Calendario",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -185,7 +741,7 @@ export const SQL_TABLES = [
   {
     table: "terms",
     label: "Periodos",
-    category: "Academico",
+    category: "Calendario",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -198,40 +754,33 @@ export const SQL_TABLES = [
     searchFields: ["name"]
   },
   {
-    table: "process_definition_triggers",
-    label: "Disparadores de definiciones",
+    table: "process_definition_period_types",
+    label: "Periodos del proceso",
     category: "Procesos",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
-      {
-        name: "trigger_mode",
-        label: "Modo de disparo",
-        type: "select",
-        options: ["automatic_by_term_type", "manual_only", "manual_custom_term"],
-        required: true
-      },
-      { name: "term_type_id", label: "Tipo de periodo", type: "number" },
+      { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
+      { name: "term_type_id", label: "Tipo de periodo", type: "number", required: true },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["trigger_mode"]
+    searchFields: []
   },
   {
     table: "process_runs",
     label: "Corridas de proceso",
-    category: "Procesos",
+    category: "Tareas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion de proceso", type: "number", required: true },
+      { name: "process_definition_id", label: "Configuracion de proceso", type: "number", required: true },
       { name: "term_id", label: "Periodo", type: "number" },
       {
         name: "run_mode",
-        label: "Modo de corrida",
+        label: "Origen de corrida",
         type: "select",
-        options: ["automatic_term", "manual", "reinstanced", "repair"],
+        options: ["automatic", "manual"],
         defaultValue: "manual"
       },
       { name: "source_run_id", label: "Corrida origen", type: "number" },
@@ -252,30 +801,20 @@ export const SQL_TABLES = [
   {
     table: "tasks",
     label: "Tareas",
-    category: "Procesos",
+    category: "Tareas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       {
         name: "process_definition_id",
-        label: "Definicion de proceso",
+        label: "Configuracion de proceso",
         type: "number",
         required: true
       },
       { name: "process_run_id", label: "Corrida de proceso", type: "number" },
       { name: "term_id", label: "Periodo", type: "number", required: true },
-      {
-        name: "launch_mode",
-        label: "Modo de lanzamiento",
-        type: "select",
-        options: ["automatic", "manual"],
-        defaultValue: "manual"
-      },
-      { name: "created_by_user_id", label: "Creada por", type: "number" },
-      { name: "parent_task_id", label: "Tarea padre (manual)", type: "number" },
-      { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
+      { name: "scope_unit_id", label: "Unidad de alcance", type: "number" },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
       { name: "start_date", label: "Inicio", type: "date", required: true },
       { name: "end_date", label: "Fin", type: "date" },
       {
@@ -291,169 +830,200 @@ export const SQL_TABLES = [
   },
   {
     table: "task_items",
-    label: "Items de tareas",
-    category: "Procesos",
+    label: "Entregables",
+    category: "Tareas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
       { name: "task_id", label: "Tarea", type: "number", required: true },
       {
-        name: "process_definition_template_id",
-        label: "Plantilla de proceso definido",
+        name: "vinculo_id",
+        label: "Entregable definido por proceso",
         type: "number",
+        // OBLIGATORIO desde el 2026-10-04 (frente 23, F2.1): la columna es NOT NULL y es la UNICA
+        // fuente de «que version de plantilla». `edicion_id` estaba aqui al lado, era una
+        // copia de este vinculo, y se retiro.
         required: true
       },
-      { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
       {
-        name: "template_usage_role",
-        label: "Rol",
+        name: "origin_kind",
+        label: "Origen",
         type: "select",
-        options: ["primary", "attachment", "support"],
-        defaultValue: "primary"
+        options: ["process_defined", "user_added"],
+        defaultValue: "process_defined"
       },
+      { name: "title", label: "Titulo", type: "text" },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
-      { name: "responsible_position_id", label: "Puesto responsable", type: "number" },
-      { name: "assigned_person_id", label: "Responsable", type: "number" },
+      { name: "created_by_person_id", label: "Creado por", type: "number" },
+      { name: "source_task_item_id", label: "Entregable origen", type: "number" },
+      { name: "target_unit_id", label: "Unidad destino", type: "number" },
+      // Obligatorio: es el ancla del entregable. Sin puesto no hay quien responda.
+      { name: "responsible_position_id", label: "Puesto responsable", type: "number", required: true },
+      // SOLO LECTURA desde el 2026-08-23: es una CACHE de la tenencia vigente, y su unico escritor
+      // es el trigger `trg_task_item_tenures_sync`. Escribirla desde aqui producia un estado que el
+      // modelo dice que no existe —la cache diciendo una cosa y `task_item_tenures` otra— sin que
+      // nada lo detectara. Para mover el responsable esta el traspaso:
+      // `POST /admin/sql/task-items/:id/handover`.
+      { name: "assigned_person_id", label: "Responsable (cache de la tenencia)", type: "number", readOnly: true },
+      {
+        name: "document_status",
+        label: "Estado del documento",
+        type: "select",
+        options: [...DOCUMENT_STATUSES],
+        defaultValue: "Inicial"
+      },
+      { name: "origin_unit_id", label: "Unidad origen", type: "number" },
       { name: "start_date", label: "Inicio entregable", type: "date", required: true },
       { name: "end_date", label: "Vencimiento entregable", type: "date" },
       { name: "user_started_at", label: "Inicio usuario", type: "datetime", readOnly: true },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: ["pendiente", "en_proceso", "completada", "cancelada"],
-        defaultValue: "pendiente"
-      },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["template_usage_role", "status"]
+    searchFields: ["title"]
   },
   {
-    table: "task_assignments",
-    label: "Asignaciones de tareas",
-    category: "Procesos",
+    // La TENENCIA de un entregable. Toda de solo lectura salvo el motivo: es una bitacora, y una
+    // bitacora que se puede editar a mano deja de ser evidencia (misma leccion del defecto 1.10,
+    // donde la causa del traspaso venia del cuerpo de la peticion). Se abre y se cierra por los
+    // triggers y por el traspaso, nunca a mano.
+    table: "task_item_tenures",
+    label: "Tenencias de entregables",
+    category: "Tareas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "task_id", label: "Tarea", type: "number", required: true },
-      { name: "position_id", label: "Puesto", type: "number", required: true },
-      { name: "assigned_person_id", label: "Responsable (snapshot)", type: "number" },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: ["pendiente", "en_proceso", "completada", "cancelada"],
-        defaultValue: "pendiente"
-      },
-      { name: "assigned_at", label: "Asignado", type: "datetime", readOnly: true },
-      { name: "unassigned_at", label: "Desasignado", type: "datetime" }
+      { name: "task_item_id", label: "Entregable", type: "number", readOnly: true },
+      { name: "person_id", label: "Responsable (vacio = abandonado)", type: "number", readOnly: true },
+      { name: "position_id", label: "En calidad de", type: "number", readOnly: true },
+      { name: "started_at", label: "Desde", type: "datetime", readOnly: true },
+      { name: "ended_at", label: "Hasta (vacio = vigente)", type: "datetime", readOnly: true },
+      { name: "opened_by", label: "Causa", type: "text", readOnly: true },
+      { name: "reason", label: "Motivo", type: "text" },
+      { name: "performed_by_person_id", label: "Ejecutado por", type: "number", readOnly: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["status"]
+    searchFields: ["reason"]
   },
   {
-    table: "template_seeds",
-    label: "Seeds de plantilla",
+    table: "generadores_de_documento",
+    label: "Generadores de documento",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "seed_code", label: "Codigo", type: "text", required: true },
-      { name: "display_name", label: "Nombre", type: "text", required: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "nombre", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "seed_type", label: "Tipo", type: "text", required: true },
-      { name: "source_path", label: "Ruta fuente", type: "text", required: true },
+      {
+        name: "tipo",
+        label: "Tipo",
+        type: "select",
+        options: ["latex", "servicio"],
+        defaultValue: "servicio"
+      },
+      // Las dos mitades excluyentes del catalogo: `source_path` es del paquete latex, `destino` del
+      // servicio. Ninguna es `required`, porque exigirla rompe la otra mitad; lo que si se exige, y
+      // por tipo, lo comprueba `generadorIdentityAndSource` (`crud/validation.js`).
+      { name: "destino", label: "Destino (cola o endpoint)", type: "text" },
+      { name: "source_path", label: "Ruta fuente", type: "text" },
       { name: "preview_path", label: "Ruta preview", type: "text" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["seed_code", "display_name", "seed_type"]
+    searchFields: ["code", "nombre", "tipo", "destino"]
   },
   {
-    table: "template_artifacts",
-    label: "Paquetes de plantilla",
+    table: "ediciones",
+    label: "Plantillas documentales",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "template_seed_id", label: "Seed", type: "number", readOnly: true },
+      // Columna FISICA de `ediciones` desde el frente 23 (F3.2). Antes se listaba aqui igual
+      // pero el dato vivia en `catalogo_documental` y `SqlAdminService` lo traia por JOIN: la fachada ya
+      // decia que este era su sitio.
+      { name: "generador_id", label: "Generador", type: "number", readOnly: true },
       { name: "owner_person_id", label: "Persona propietaria", type: "number", readOnly: true },
       { name: "template_code", label: "Codigo", type: "text", required: true },
       { name: "display_name", label: "Nombre", type: "text", required: true },
       { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "owner_ref", label: "Propietario", type: "text" },
-      { name: "source_version", label: "Version fuente", type: "text", required: true },
-      { name: "storage_version", label: "Version storage", type: "text", required: true },
+      { name: "storage_version", label: "Version", type: "text", readOnly: true },
       {
-        name: "artifact_origin",
-        label: "Catalogo",
+        name: "template_scope",
+        label: "Tipo de plantilla",
         type: "select",
-        options: ["process", "general"],
-        defaultValue: "process"
+        options: ["official", "ad_hoc"],
+        defaultValue: "official"
       },
       {
-        name: "artifact_stage",
-        label: "Etapa",
+        name: "lifecycle_state",
+        label: "Estado",
         type: "select",
-        options: ["draft", "review", "approved", "published", "archived"],
-        defaultValue: "published"
+        options: ["draft", "published", "retired"],
+        defaultValue: "published",
+        readOnly: true
       },
-      { name: "bucket", label: "Bucket", type: "text", required: true },
       { name: "base_object_prefix", label: "Prefijo base", type: "text", required: true },
       { name: "available_formats", label: "Formatos disponibles (JSON)", type: "textarea", required: true },
-      { name: "schema_object_key", label: "Ruta schema", type: "text", required: true },
-      { name: "meta_object_key", label: "Ruta meta", type: "text", required: true },
       { name: "content_hash", label: "Hash", type: "text" },
-      { name: "seed_display_name", label: "Nombre del seed", type: "text", readOnly: true, virtual: true },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "parent_version_id", label: "Versión origen", type: "number", readOnly: true },
+      { name: "is_active", label: "Almacenamiento listo", type: "boolean", defaultValue: 1, readOnly: true },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["template_code", "display_name", "storage_version", "owner_ref", "artifact_origin", "artifact_stage"]
+    searchFields: ["template_code", "display_name", "storage_version"]
   },
   {
-    table: "process_definition_templates",
-    label: "Plantillas de procesos definidos",
+    table: "vinculos",
+    label: "Entregables del proceso",
     category: "Plantillas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "process_definition_id", label: "Definicion", type: "number", required: true },
-      { name: "template_artifact_id", label: "Paquete", type: "number", required: true },
-      {
-        name: "usage_role",
-        label: "Rol",
-        type: "select",
-        options: ["primary", "attachment", "support"],
-        defaultValue: "primary"
-      },
-      {
-        name: "instance_mode",
-        label: "Modo de instancia",
-        type: "select",
-        options: ["single_document", "owner_many_documents"],
-        defaultValue: "single_document"
-      },
-      { name: "creates_task", label: "Genera tarea", type: "boolean", defaultValue: 1 },
-      { name: "is_required", label: "Requerido", type: "boolean", defaultValue: 1 },
+      { name: "process_definition_id", label: "Configuracion", type: "number", required: true },
+      { name: "edicion_id", label: "Plantilla documental", type: "number", required: true },
       { name: "sort_order", label: "Orden", type: "number", defaultValue: 1 },
+      {
+        name: "item_mode",
+        label: "Modo de emision",
+        type: "select",
+        options: ["single", "replicated", "routed"],
+        defaultValue: "single"
+      },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["usage_role"]
+    searchFields: ["item_mode"]
   },
   {
     table: "persons",
     label: "Usuarios",
-    category: "Usuarios",
+    category: "Personas",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "cedula", label: "Cedula", type: "text" },
       { name: "first_name", label: "Nombre", type: "text", required: true },
       { name: "last_name", label: "Apellido", type: "text", required: true },
-      { name: "email", label: "Email", type: "email" },
-      { name: "whatsapp", label: "Whatsapp", type: "text" },
-      { name: "direccion", label: "Direccion", type: "text" },
-      { name: "pais", label: "Pais", type: "text" },
-      { name: "password_hash", label: "Password Hash", type: "text", required: true },
+      { name: "nacionalidad_pais_id", label: "Nacionalidad", type: "number" },
+      // Los datos personales del frente 20 (P2). `nacimiento_canton_id` se acota por
+      // `nacimiento_pais_id`: el editor vacia el hijo cuando cambia el padre.
+      { name: "fecha_nacimiento", label: "Fecha de nacimiento", type: "date" },
+      { name: "nacimiento_pais_id", label: "Pais de nacimiento", type: "number" },
+      { name: "nacimiento_canton_id", label: "Canton de nacimiento", type: "number", filterBy: { pais_id: "nacimiento_pais_id" }, showWhen: { field: "nacimiento_pais_id" } },
+      { name: "sexo", label: "Sexo", type: "select", options: ["hombre", "mujer"] },
+      { name: "estado_civil_id", label: "Estado civil", type: "number" },
+
+
+      // ⚠️ AQUÍ HUBO SEIS CAMPOS VIRTUALES —documento, correo y teléfono— y se retiraron el
+      // 2026-08-28, el mismo día que se pusieron.
+      //
+      // Rompían la premisa del editor genérico: UNA TABLA, UN FORMULARIO, SUS COLUMNAS. Y no había
+      // dónde parar: si caben el correo y el teléfono, ¿por qué no las direcciones?
+      //
+      // Pero lo que los mató fue un defecto concreto: `beforeCreate` los desviaba a su tabla y
+      // `beforeUpdate` NO. Al EDITAR una persona el formulario los mostraba y los DESCARTABA EN
+      // SILENCIO — el mismo fallo que este repositorio lleva cinco veces persiguiendo.
+      //
+      // Los satélites se gestionan en sus propias pestañas de Usuarios, que existen desde que el
+      // menú se deriva de `category`.
+      { name: "password_hash", label: "Contraseña", type: "text", required: true },
       {
         name: "status",
         label: "Estado",
@@ -461,14 +1031,207 @@ export const SQL_TABLES = [
         options: ["Inactivo", "Activo", "Verificado", "Reportado"],
         defaultValue: "Inactivo"
       },
-      { name: "verify_email", label: "Email verificado", type: "boolean", defaultValue: 0 },
-      { name: "verify_whatsapp", label: "Whatsapp verificado", type: "boolean", defaultValue: 0 },
-      { name: "photo_url", label: "Foto", type: "text" },
+      // De SÓLO LECTURA: guarda una referencia `s3://<bucket>/<objeto>`, no una ruta ni una URL.
+      // Como caja de texto editable, un admin podía escribir cualquier cosa y dejar la foto rota.
+      // Se sube por `PUT /users/:cedula/photo`, que la almacena y compone la referencia.
+      { name: "photo_url", label: "Foto", type: "text", readOnly: true },
+      // Columna CALCULADA (no existe en la tabla). Dice qué le falta a la cuenta para poder usarse:
+      // sin documento no hay con qué iniciar sesión, y sin correo no hay a dónde escribirle. Se
+      // resuelve en el SELECT de `SqlAdminService`, igual que `active_definition_version` en
+      // `processes`. Va como `virtual` para que el formulario no la ofrezca: no se edita, se
+      // arregla dando de alta el documento o el correo en su pestaña.
+      { name: "datos_faltantes", label: "Faltan", type: "text", readOnly: true, virtual: true, signal: "danger" },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["cedula", "first_name", "last_name", "email"]
+    searchFields: ["first_name", "last_name"]
+  },
+  {
+    table: "direcciones",
+    label: "Direcciones",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "tipo", label: "Tipo", type: "select", options: ["residencia", "trabajo"], defaultValue: "residencia" },
+      { name: "pais_id", label: "Pais", type: "number" },
+      // La cadena territorial. `filterBy` acota el catálogo al nivel de arriba y `showWhen` no
+      // enseña el de abajo hasta que hay por dónde empezar: sin esto «Portoviejo» aparecía al
+      // teclear «port» aunque el país fuera España, y también «Portovelo», que es de El Oro.
+      { name: "provincia_id", label: "Provincia", type: "number", filterBy: { pais_id: "pais_id" }, showWhen: { field: "pais_id", isSet: true } },
+      { name: "canton_id", label: "Cantón", type: "number", filterBy: { provincia_id: "provincia_id" }, showWhen: { field: "provincia_id", isSet: true } },
+      { name: "sector", label: "Sector", type: "text" },
+      { name: "barrio", label: "Barrio", type: "text" },
+      { name: "calle_primaria", label: "Calle primaria", type: "text" },
+      { name: "calle_secundaria", label: "Calle secundaria", type: "text" },
+      { name: "referencia", label: "Referencia", type: "text" },
+      // Un punto no son dos números: se marca en el mapa. `geopoint` declara UN control para DOS
+      // columnas. Las dos siguen declaradas —`buildPayload` recorre los campos, así que quitar
+      // `longitud` de aquí dejaría la columna sin escribirse nunca—; la segunda sólo se marca como
+      // `pairedWith` para que el formulario no la pinte por su cuenta.
+      { name: "latitud", label: "Ubicacion", type: "geopoint", pair: { lat: "latitud", lng: "longitud" } },
+      { name: "longitud", label: "Longitud", type: "number", pairedWith: "latitud" },
+      { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["calle_primaria", "referencia", "sector", "barrio"]
+  },
+  {
+    table: "telefonos",
+    label: "Telefonos",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "tipo", label: "Tipo", type: "select", options: ["personal", "trabajo"], defaultValue: "personal" },
+      { name: "pais_id", label: "Pais", type: "number" },
+      { name: "numero", label: "Numero", type: "text", required: true },
+      { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["numero"]
+  },
+  {
+    table: "canales_mensajeria",
+    label: "Canales de mensajeria",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "code", label: "Codigo", type: "text", required: true },
+      { name: "name", label: "Nombre", type: "text", required: true },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["code", "name"]
+  },
+  {
+    table: "telefono_canales",
+    label: "Canales por telefono",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "telefono_id", label: "Telefono", type: "number", required: true },
+      { name: "canal_id", label: "Canal", type: "number", required: true },
+      { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },
+      { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  {
+    table: "emails",
+    label: "Correos",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "tipo", label: "Tipo", type: "select", options: ["personal", "institucional"], defaultValue: "institucional" },
+      { name: "direccion", label: "Direccion", type: "email", required: true },
+      { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },
+      { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },
+      { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["direccion"]
+  },
+  {
+    table: "documentos_identidad",
+    label: "Documentos de identidad",
+    category: "Personas",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      // Las cuatro clases, como en `emails`/`telefonos`/`direcciones`: un `select` cerrado y no una
+      // clave ajena a un catalogo de cuatro filas. La VISA no es un documento de identidad -- no dice
+      // quien eres, dice que se te permite estar-- pero necesita lo mismo que las otras tres, y como
+      // FILA PROPIA: un pasaporte caduca en 2030 y su visa en 2027.
+      {
+        name: "tipo",
+        label: "Tipo",
+        type: "select",
+        options: ["documento_nacional", "documento_extranjero", "pasaporte", "visa"],
+        defaultValue: "documento_nacional",
+        required: true
+      },
+      // Solo para las visas, y el CHECK del esquema lo garantiza.
+      { name: "categoria_visa_id", label: "Categoria de visa", type: "number", showWhen: { field: "tipo", equals: "visa" } },
+      // El país emisor se pregunta para todo MENOS el nacional, que lo hereda de la institución.
+      // Preguntarlo ahí invitaría a poner otro y a romper la unicidad (tipo, país, número).
+      // ⚠️ NO lleva `required`, aunque en la base sea NOT NULL, y no es un descuido.
+      //
+      // La validación de `required` del CRUD no mira el `showWhen`: exigiria un campo que el
+      // formulario NO ENSEÑA para el documento nacional, y ese es justo el caso en el que lo pone
+      // el trigger `trg_documentos_pais_nacional`. Marcarlo obligatorio hacia imposible dar de alta
+      // un documento nacional desde /admin.
+      //
+      // Quien lo exige es la base, que es quien sabe cuando falta de verdad — despues de que los
+      // triggers hayan puesto lo suyo. El mensaje lo traduce `errors/sqlErrors.js`.
+      { name: "pais_id", label: "Pais emisor", type: "number", showWhen: { field: "tipo", not: "documento_nacional" } },
+      { name: "numero", label: "Numero", type: "text", required: true },
+      { name: "verificado", label: "Verificado", type: "boolean", defaultValue: 0 },
+      { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },
+      { name: "emitido_el", label: "Emitido el", type: "date" },
+      { name: "expira_el", label: "Expira el", type: "date" },
+      { name: "escaneo_ref", label: "Escaneo (referencia el almacén)", type: "text", readOnly: true },
+      { name: "escaneo_subido_at", label: "Escaneo subido el", type: "datetime", readOnly: true },
+      { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
+      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: ["numero"]
+  },
+  // El genero y la etnia, fuera de `persons` desde P8: la LOPDP (Art. 4) los cuenta entre los datos
+  // sensibles, y `persons` la leen nueve roles. Una fila por persona, con `person_id` de clave.
+  {
+    table: "persona_autoidentificacion",
+    label: "Autoidentificacion",
+    category: "Personas",
+    primaryKeys: ["person_id"],
+    fields: [
+      { name: "person_id", label: "Persona", type: "number", required: true },
+      { name: "genero_id", label: "Genero", type: "number" },
+      { name: "autoidentificacion_etnica_id", label: "Autoidentificacion etnica", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
+      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // La bitacora de accesos sensibles. TODO de solo lectura, y el hook de tableHooks.js rechaza el alta:
+  // aqui solo se CONSULTA quien leyo o cambio lo de quien.
+  {
+    table: "accesos_sensibles",
+    label: "Bitacora de accesos",
+    category: "Seguridad",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "ocurrido_at", label: "Cuando", type: "datetime", readOnly: true },
+      { name: "titular_person_id", label: "Titular", type: "number", readOnly: true },
+      { name: "actor_person_id", label: "Quien accedio", type: "number", readOnly: true },
+      { name: "recurso", label: "Recurso", type: "text", readOnly: true },
+      { name: "tabla", label: "Tabla", type: "text", readOnly: true },
+      { name: "registro_id", label: "Registro", type: "number", readOnly: true },
+      { name: "accion", label: "Accion", type: "text", readOnly: true },
+      { name: "detalle", label: "Detalle", type: "textarea", readOnly: true },
+      { name: "ip", label: "IP", type: "text", readOnly: true }
+    ],
+    searchFields: ["tabla", "recurso", "accion"]
   },
   {
     table: "roles",
@@ -563,7 +1326,7 @@ export const SQL_TABLES = [
   {
     table: "cargos",
     label: "Cargos",
-    category: "Personas",
+    category: "Estructura",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
@@ -585,7 +1348,7 @@ export const SQL_TABLES = [
       { name: "cargo_id", label: "Cargo", type: "number", required: true },
       { name: "slot_no", label: "Plaza", type: "number", required: true },
       { name: "title", label: "Titulo", type: "text" },
-      { name: "profile_ref", label: "Perfil (Mongo)", type: "text" },
+      { name: "profile", label: "Perfil (JSON)", type: "textarea", json: true },
       {
         name: "position_type",
         label: "Tipo de puesto",
@@ -593,12 +1356,58 @@ export const SQL_TABLES = [
         options: ["real", "promocion", "simbolico"],
         defaultValue: "real"
       },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "deactivated_at", label: "Desactivado", type: "datetime" },
+      // EL ESTADO, en vez de `is_active` (frente 27, D-03). DERIVADO, no columna: sale de las vidas
+      // del puesto (`position_vigencias`, la tabla de abajo) y depende del dia en que se pregunta.
+      { name: "estado", label: "Estado", type: "select", options: ["borrador", "programado", "vigente", "suprimido"], readOnly: true, virtual: true },
+      { name: "is_unit_head", label: "Jefe de la unidad", type: "boolean", defaultValue: 0 },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
     searchFields: ["title"]
+  },
+  // LAS VIDAS DE UN PUESTO (frente 27, D-03): una fila por cada vez que ha regido.
+  {
+    table: "position_vigencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: abre la unidad, edita el puesto y ve a «Vigencia».",
+    label: "Vigencia de puestos",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "position_id", label: "Puesto", type: "number", required: true },
+      { name: "vigente_desde", label: "Rige desde", type: "date", required: true },
+      { name: "inicio_origen", label: "Origen del inicio", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"], required: true },
+      { name: "inicio_acto_id", label: "Acto del inicio", type: "number" },
+      { name: "vigente_hasta", label: "Rige hasta", type: "date" },
+      { name: "fin_origen", label: "Origen del fin", type: "select", options: ["carga_inicial", "reorganizacion", "correccion"] },
+      { name: "fin_acto_id", label: "Acto del fin", type: "number" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
+  },
+  // QUE SUCEDE A UN PUESTO SUPRIMIDO (frente 27, D-05): la misma forma que la de las unidades.
+  {
+    table: "position_equivalencias",
+    // SOLO CONSULTA en el editor de /admin (2026-11-24): la lista sirve para ver todas las filas de
+    // una vez, pero se escribe desde el modal del nodo, que avisa de lo que se cierra y pide
+    // confirmar. Lo lee el FRONTEND para no ofrecer «Agregar», editar ni eliminar; el backend sigue
+    // aceptando la escritura, porque ese modal guarda por este mismo editor.
+    soloConsulta: "Se edita desde el organigrama: edita el puesto que termina y ve a «Sucesores», en «Vigencia».",
+    label: "Equivalencias de puestos",
+    category: "Estructura",
+    primaryKeys: ["id"],
+    fields: [
+      { name: "id", label: "ID", type: "number", readOnly: true },
+      { name: "antecesor_vigencia_id", label: "Vida que termina", type: "number", required: true },
+      { name: "sucesor_position_id", label: "Puesto que lo sucede", type: "number", required: true },
+      { name: "registrado_por_person_id", label: "Registrado por", type: "number", readOnly: true, sello: "actor" },
+      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
+    ],
+    searchFields: []
   },
   {
     table: "position_assignments",
@@ -618,35 +1427,30 @@ export const SQL_TABLES = [
     ],
     searchFields: []
   },
+  // `documents` VIVIO AQUI hasta el 2026-08-23. Era una cascara 1:1 sobre `task_items` sin ni una
+  // columna propia: `status` y `origin_unit_id` se mudaron al entregable, y `owner_person_id`,
+  // `title` y `comments_thread_ref` se retiraron por ser copia, letra muerta y fosil. Las versiones
+  // cuelgan ahora del entregable.
   {
-    table: "documents",
-    label: "Documentos",
+    // La BITACORA de subidas: una fila por correccion del archivo. Toda de solo lectura salvo la
+    // nota — es evidencia de quien elaboro que, y una evidencia editable a mano deja de serlo.
+    table: "document_version_uploads",
+    label: "Subidas del entregable",
     category: "Documentos",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "task_item_id", label: "Item de tarea", type: "number" },
-      { name: "owner_person_id", label: "Propietario", type: "number" },
-      {
-        name: "origin_type",
-        label: "Origen",
-        type: "select",
-        options: ["task_item", "standalone", "imported", "generated"],
-        defaultValue: "task_item"
-      },
-      { name: "title", label: "Titulo", type: "text" },
-      {
-        name: "status",
-        label: "Estado",
-        type: "select",
-        options: [...DOCUMENT_STATUSES],
-        defaultValue: "Inicial"
-      },
-      { name: "comments_thread_ref", label: "Comentarios (Mongo)", type: "text" },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
-      { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
+      { name: "document_version_id", label: "Version (ronda)", type: "number", readOnly: true },
+      { name: "minor", label: "Correccion", type: "number", readOnly: true },
+      { name: "file_name", label: "Archivo", type: "text", readOnly: true },
+      { name: "file_path", label: "Ruta", type: "text", readOnly: true },
+      { name: "mime_type", label: "Tipo", type: "text", readOnly: true },
+      { name: "size_bytes", label: "Tamano", type: "number", readOnly: true },
+      { name: "uploaded_by_person_id", label: "Subido por", type: "number", readOnly: true },
+      { name: "note", label: "Nota", type: "text" },
+      { name: "created_at", label: "Subido", type: "datetime", readOnly: true }
     ],
-    searchFields: ["origin_type", "title", "status"]
+    searchFields: ["file_name"]
   },
   {
     table: "document_versions",
@@ -655,16 +1459,18 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "document_id", label: "Documento", type: "number", required: true },
-      { name: "version", label: "Version", type: "number", defaultValue: "0.1", required: true },
-      { name: "template_artifact_id", label: "Artifact", type: "number" },
-      { name: "payload_mongo_id", label: "Payload legacy", type: "text" },
-      { name: "payload_hash", label: "Hash payload", type: "text" },
-      { name: "payload_object_path", label: "Ruta payload", type: "text" },
+      { name: "task_item_id", label: "Entregable", type: "number", required: true },
+      // La RONDA. Las correcciones no se editan aqui: son filas de `document_version_uploads`.
+      { name: "version", label: "Version (ronda)", type: "number", defaultValue: "1", required: true },
+      { name: "version_minor", label: "Correccion vigente", type: "number", readOnly: true },
+      { name: "version_label", label: "Version", type: "text", readOnly: true },
+      { name: "edicion_id", label: "Artifact", type: "number" },
+      { name: "payload_hash", label: "Hash payload", type: "text", readOnly: true },
+      { name: "payload_object_path", label: "Ruta payload", type: "text", readOnly: true },
       { name: "working_file_path", label: "Ruta working", type: "text" },
       { name: "final_file_path", label: "Ruta final", type: "text" },
-      { name: "format", label: "Formato", type: "text" },
-      { name: "render_engine", label: "Motor de render", type: "text" },
+      { name: "format", label: "Formato", type: "text", readOnly: true },
+      { name: "render_engine", label: "Motor de render", type: "text", readOnly: true },
       {
         name: "status",
         label: "Estado",
@@ -674,7 +1480,7 @@ export const SQL_TABLES = [
       },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["payload_mongo_id", "payload_hash", "payload_object_path", "format", "render_engine", "status"]
+    searchFields: ["payload_hash", "payload_object_path", "format", "render_engine", "status"]
   },
   {
     table: "document_signatures",
@@ -683,139 +1489,115 @@ export const SQL_TABLES = [
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "signature_request_id", label: "Solicitud", type: "number" },
+      { name: "turno_id", label: "Turno", type: "number" },
       { name: "document_version_id", label: "Version documento", type: "number", required: true },
       { name: "signer_user_id", label: "Firmante", type: "number", required: true },
-      { name: "signature_type_id", label: "Tipo firma", type: "number", required: true },
       { name: "signature_status_id", label: "Estado firma", type: "number", required: true },
       { name: "note_short", label: "Nota", type: "textarea" },
       { name: "signed_file_path", label: "Ruta firmada", type: "text" },
       { name: "signed_at", label: "Firmado", type: "datetime" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["signature_type_id", "signature_status_id"]
+    searchFields: ["signature_status_id"]
   },
+  // ── EL RECORRIDO UNIFICADO (frente 24, fase 4) ────────────────────────────────────────────────
+  // Las cuatro que sustituyen a las ocho. Se exponen en el editor generico por el mismo motivo que
+  // las viejas: son registros tecnicos que hay que poder consultar y, en soporte, corregir.
   {
-    table: "fill_flow_templates",
-    label: "Plantillas de llenado",
-    category: "Llenado",
+    table: "pasos_declarados",
+    label: "Pasos declarados",
+    category: "Recorrido",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      {
-        name: "process_definition_template_id",
-        label: "Plantilla de proceso definido",
-        type: "number",
-        required: true
-      },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
+      { name: "accion", label: "Accion", type: "select", options: ["entrega", "firma"], required: true },
+      { name: "edicion_id", label: "Edicion", type: "number" },
+      { name: "task_item_id", label: "Entregable", type: "number" },
+      { name: "orden", label: "Orden", type: "number", required: true },
+      { name: "code", label: "Codigo", type: "text" },
+      { name: "nombre", label: "Nombre", type: "text" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["name"]
+    searchFields: ["code", "nombre"]
   },
   {
-    table: "fill_flow_steps",
-    label: "Pasos de llenado",
-    category: "Llenado",
+    table: "participantes_declarados",
+    label: "Participantes declarados",
+    category: "Recorrido",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "fill_flow_template_id", label: "Plantilla de llenado", type: "number", required: true },
-      { name: "step_order", label: "Orden", type: "number", required: true },
+      { name: "paso_id", label: "Paso", type: "number", required: true },
+      { name: "orden", label: "Orden", type: "number", required: true, defaultValue: 1 },
       {
         name: "resolver_type",
-        label: "Resolver",
+        label: "Resolucion",
         type: "select",
-        options: ["task_assignee", "document_owner", "specific_person", "position", "cargo_in_scope", "manual_pick"],
+        options: ["task_assignee", "specific_person", "cargo_in_scope"],
         defaultValue: "task_assignee"
       },
-      { name: "assigned_person_id", label: "Persona fija", type: "number" },
+      { name: "persona_id", label: "Persona", type: "number" },
+      { name: "cargo_id", label: "Cargo", type: "number" },
       {
         name: "unit_scope_type",
         label: "Alcance de unidad",
         type: "select",
-        options: ["unit_exact", "unit_subtree", "unit_type", "all_units"],
-        defaultValue: "unit_exact"
+        options: ["unit_exact", "context_exact", "all_units"],
+        defaultValue: "context_exact"
       },
       { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
-      { name: "cargo_id", label: "Cargo", type: "number" },
-      { name: "position_id", label: "Puesto", type: "number" },
-      {
-        name: "selection_mode",
-        label: "Seleccion",
-        type: "select",
-        options: ["auto_one", "auto_all", "manual"],
-        defaultValue: "auto_one"
-      },
-      { name: "is_required", label: "Obligatorio", type: "boolean", defaultValue: 1 },
-      { name: "can_reject", label: "Puede rechazar", type: "boolean", defaultValue: 1 },
+      { name: "slot", label: "Hueco de firma", type: "text" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["resolver_type", "selection_mode"]
+    searchFields: ["slot"]
   },
   {
-    table: "document_fill_flows",
-    label: "Instancias de llenado",
-    category: "Llenado",
+    table: "recorridos",
+    label: "Recorridos",
+    category: "Recorrido",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "fill_flow_template_id", label: "Plantilla de llenado", type: "number", required: true },
       { name: "document_version_id", label: "Version documento", type: "number", required: true },
+      { name: "accion", label: "Accion", type: "select", options: ["entrega", "firma"], required: true },
       {
-        name: "status",
+        name: "estado",
         label: "Estado",
         type: "select",
-        options: ["pending", "in_progress", "approved", "rejected", "cancelled"],
-        defaultValue: "pending"
+        options: ["pendiente", "en_progreso", "completado", "rechazado", "cancelado"],
+        defaultValue: "pendiente"
       },
-      { name: "current_step_order", label: "Paso actual", type: "number" },
+      { name: "paso_actual", label: "Paso actual", type: "number" },
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true },
       { name: "updated_at", label: "Actualizado", type: "datetime", readOnly: true }
     ],
-    searchFields: ["status"]
+    searchFields: ["estado"]
   },
   {
-    table: "fill_requests",
-    label: "Solicitudes de llenado",
-    category: "Llenado",
+    table: "turnos",
+    label: "Turnos",
+    category: "Recorrido",
     primaryKeys: ["id"],
     fields: [
       { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "document_fill_flow_id", label: "Instancia", type: "number", required: true },
-      { name: "fill_flow_step_id", label: "Paso", type: "number", required: true },
-      { name: "assigned_person_id", label: "Persona", type: "number" },
+      { name: "recorrido_id", label: "Recorrido", type: "number", required: true },
+      { name: "accion", label: "Accion", type: "select", options: ["entrega", "firma"], required: true },
+      { name: "participante_id", label: "Participante", type: "number", required: true },
+      { name: "persona_id", label: "Persona", type: "number" },
       {
-        name: "status",
+        name: "estado",
         label: "Estado",
         type: "select",
-        options: ["pending", "in_progress", "approved", "rejected", "returned", "cancelled"],
-        defaultValue: "pending"
+        options: ["pendiente", "en_progreso", "completado", "rechazado", "devuelto", "cancelado"],
+        defaultValue: "pendiente"
       },
-      { name: "is_manual", label: "Manual", type: "boolean", defaultValue: 0 },
-      { name: "requested_at", label: "Solicitado", type: "datetime", readOnly: true },
-      { name: "responded_at", label: "Respondido", type: "datetime" },
-      { name: "response_note", label: "Respuesta", type: "textarea" }
+      { name: "manual", label: "Manual", type: "boolean", defaultValue: 0 },
+      { name: "solicitado", label: "Solicitado", type: "datetime", readOnly: true },
+      { name: "notificado", label: "Notificado", type: "datetime" },
+      { name: "respondido", label: "Respondido", type: "datetime" },
+      { name: "nota_respuesta", label: "Respuesta", type: "textarea" }
     ],
-    searchFields: ["status"]
-  },
-  {
-    table: "signature_types",
-    label: "Tipos de firma",
-    category: "Firmas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "code", label: "Codigo", type: "text", required: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["code", "name"]
+    searchFields: ["estado"]
   },
   {
     table: "signature_statuses",
@@ -831,132 +1613,6 @@ export const SQL_TABLES = [
       { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
     ],
     searchFields: ["code", "name"]
-  },
-  {
-    table: "signature_request_statuses",
-    label: "Estados de solicitud",
-    category: "Firmas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "code", label: "Codigo", type: "text", required: true },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["code", "name"]
-  },
-  {
-    table: "signature_flow_templates",
-    label: "Plantillas de flujo",
-    category: "Firmas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      {
-        name: "process_definition_template_id",
-        label: "Plantilla de proceso definido",
-        type: "number",
-        required: true
-      },
-      { name: "name", label: "Nombre", type: "text", required: true },
-      { name: "description", label: "Descripcion", type: "textarea" },
-      { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: ["name"]
-  },
-  {
-    table: "signature_flow_steps",
-    label: "Pasos de firma",
-    category: "Firmas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "template_id", label: "Plantilla", type: "number", required: true },
-      { name: "step_order", label: "Orden", type: "number", required: true },
-      { name: "code", label: "Código", type: "text" },
-      { name: "name", label: "Nombre", type: "text" },
-      { name: "slot", label: "Slot", type: "text" },
-      { name: "step_type_id", label: "Tipo", type: "number", required: true },
-      {
-        name: "resolver_type",
-        label: "Resolver",
-        type: "select",
-        options: ["task_assignee", "document_owner", "specific_person", "position", "cargo_in_scope", "manual_pick"],
-        defaultValue: "cargo_in_scope"
-      },
-      { name: "assigned_person_id", label: "Persona asignada", type: "number" },
-      {
-        name: "unit_scope_type",
-        label: "Alcance unidad",
-        type: "select",
-        options: ["unit_exact", "unit_subtree", "unit_type", "all_units", "context_exact", "context_subtree", "context_ancestor_type"],
-        defaultValue: "context_exact"
-      },
-      { name: "unit_id", label: "Unidad", type: "number" },
-      { name: "unit_type_id", label: "Tipo de unidad", type: "number" },
-      { name: "position_id", label: "Puesto", type: "number" },
-      { name: "required_cargo_id", label: "Cargo", type: "number" },
-      {
-        name: "selection_mode",
-        label: "Seleccion",
-        type: "select",
-        options: ["auto_one", "auto_all", "manual"],
-        defaultValue: "auto_all"
-      },
-      {
-        name: "approval_mode",
-        label: "Resolucion",
-        type: "select",
-        options: ["and", "or", "at_least"],
-        defaultValue: "and"
-      },
-      { name: "required_signers_min", label: "Min firmantes", type: "number" },
-      { name: "required_signers_max", label: "Max firmantes", type: "number" },
-      { name: "is_required", label: "Obligatorio", type: "boolean", defaultValue: 1 },
-      {
-        name: "anchor_refs",
-        label: "Anchor refs",
-        type: "textarea",
-        description: "JSON array de códigos de anchor enlazados al paso"
-      },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: []
-  },
-  {
-    table: "signature_flow_instances",
-    label: "Instancias de flujo",
-    category: "Firmas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "template_id", label: "Plantilla", type: "number", required: true },
-      { name: "document_version_id", label: "Version documento", type: "number", required: true },
-      { name: "status_id", label: "Estado", type: "number", required: true },
-      { name: "created_at", label: "Creado", type: "datetime", readOnly: true }
-    ],
-    searchFields: []
-  },
-  {
-    table: "signature_requests",
-    label: "Solicitudes de firma",
-    category: "Firmas",
-    primaryKeys: ["id"],
-    fields: [
-      { name: "id", label: "ID", type: "number", readOnly: true },
-      { name: "instance_id", label: "Instancia", type: "number", required: true },
-      { name: "step_id", label: "Paso", type: "number", required: true },
-      { name: "assigned_person_id", label: "Persona", type: "number" },
-      { name: "status_id", label: "Estado", type: "number", required: true },
-      { name: "is_manual", label: "Manual", type: "boolean", defaultValue: 0 },
-      { name: "requested_at", label: "Solicitado", type: "datetime", readOnly: true },
-      { name: "notified_at", label: "Notificado", type: "datetime" },
-      { name: "responded_at", label: "Respondido", type: "datetime" }
-    ],
-    searchFields: []
   },
   {
     table: "vacancies",

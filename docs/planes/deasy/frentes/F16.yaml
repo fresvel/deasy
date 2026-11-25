@@ -1,0 +1,20 @@
+id: F16
+titulo: El versionado de objetos en MinIO
+ciclo: exploratorio
+abierto: '2026-10-26'
+fases:
+  P1:
+    titulo: Lo que hay que medir antes de tocar un bucket
+    etapa: medicion
+  P2:
+    titulo: La pregunta que ordena el resto
+    etapa: pregunta
+  P3:
+    titulo: Qué protege cada capa, y hasta cuándo
+    etapa: decision
+  P4:
+    titulo: El versionado activo
+    etapa: cambio
+  P5:
+    titulo: Que la sobrescritura deje de destruir
+    etapa: verificacion

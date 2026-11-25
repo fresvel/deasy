@@ -1,0 +1,222 @@
+<template>
+<AppModalShell
+  ref="shellRef"
+  labelled-by="general-task-modal-title"
+  :title="generalTaskModalTitle"
+  size="lg"
+  content-class="shadow border-0"
+  body-class="pt-4"
+>
+  <div class="flex flex-col gap-6">
+    <p class="m-0 text-sm font-medium text-muted">
+      {{ generalTaskForm.itemMode === 'routed'
+        ? 'Crea un envío de este entregable y elige a la persona que lo recibe y firma.'
+        : (generalTaskForm.itemMode === 'replicated'
+          ? 'Crea una réplica de este entregable. Hereda su recorrido de entrega y de firma; solo cambia la etiqueta.'
+          : (generalTaskForm.mode === 'derived'
+            ? 'Agrega un entregable adicional dentro de la tarea seleccionada. Heredará su unidad de contexto.'
+            : 'Crea un documento ad-hoc y endósalo a una persona (que puede ser tú). Define quién lo elabora y quién lo firma.')) }}
+    </p>
+
+    <div v-if="generalTaskForm.templateName" class="flex flex-wrap items-center gap-2">
+      <AppTag :variant="generalTaskForm.itemMode === 'routed' ? 'info' : 'success'">{{ generalTaskForm.templateName }}</AppTag>
+      <AppTag variant="neutral">{{ generalTaskForm.itemMode === 'routed' ? 'Envío con destinatario' : 'Réplica' }}</AppTag>
+    </div>
+
+    <AppAlert v-if="generalTaskError">{{ generalTaskError }}</AppAlert>
+
+    <!-- Documento -->
+    <section class="deasy-card flex flex-col gap-3 p-4">
+      <div class="flex items-center gap-2">
+        <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconFileDescription class="h-4 w-4" /></span>
+        <h6 class="deasy-title deasy-title--section">Documento</h6>
+      </div>
+      <label class="flex flex-col gap-2">
+        <span class="deasy-form-label">{{ generalTaskForm.itemMode ? 'Etiqueta *' : 'Título *' }}</span>
+        <input v-model="generalTaskForm.title" type="text" maxlength="180" :placeholder="generalTaskForm.itemMode ? 'Ej. Requerimiento docente — Prof. Pérez' : 'Ej. Memorando interno, solicitud de equipo…'" class="deasy-control" />
+      </label>
+      <label v-if="!generalTaskForm.itemMode" class="flex flex-col gap-2">
+        <span class="deasy-form-label">Descripción</span>
+        <textarea v-model="generalTaskForm.description" rows="3" maxlength="2000" placeholder="Detalle del documento…" class="deasy-control deasy-control--textarea"></textarea>
+      </label>
+    </section>
+
+    <!-- Flujo del envío -->
+    <section v-if="isSendFlowModal" class="deasy-card flex flex-col gap-3 p-4">
+      <div class="flex items-center gap-2">
+        <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconSend class="h-4 w-4" /></span>
+        <h6 class="deasy-title deasy-title--section">Recorrido del envío</h6>
+      </div>
+      <p class="m-0 -mt-1 text-xs font-medium text-muted">Quién elabora el documento y quién lo firma (en orden).</p>
+
+      <div class="deasy-card p-3">
+        <div class="flex items-center justify-between">
+          <span class="deasy-overline">Elabora (entrega) *</span>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('entrega')">+ Agregar</button>
+        </div>
+        <ul class="mt-2 flex flex-wrap gap-2 list-none m-0 p-0">
+          <li v-for="(p, i) in flowEntrega" :key="`e-${i}`" class="inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-sm font-medium text-body">
+            <span class="text-theme-xs font-bold text-muted">{{ i + 1 }}</span>{{ p.label }}
+            <button type="button" class="deasy-chip-remove" @click="removeFromEntrega(i)">×</button>
+          </li>
+          <li v-if="!flowEntrega.length" class="text-xs text-muted">Nadie asignado.</li>
+        </ul>
+      </div>
+
+      <div class="deasy-card p-3">
+        <div class="flex items-center justify-between">
+          <span class="deasy-overline">Firma (pasos en orden)</span>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary" @click="openFlowPicker('firma:new')">+ Agregar paso</button>
+        </div>
+        <div v-for="(step, si) in flowFirma" :key="`fs-${si}`" class="mt-2 deasy-card p-2">
+          <div class="flex items-center justify-between gap-2">
+            <span class="deasy-overline">Paso {{ si + 1 }}</span>
+            <!-- Aquí salían, sólo cuando el paso tenía más de un firmante, un selector de aprobación
+                 («Firman todas» / «Cualquiera» / «Mínimo») y su número. El cupo se retiró el 2026-10-09
+                 (§10 del plan): «Cualquiera» cerraba el paso con una firma y dejaba los turnos hermanos
+                 ABIERTOS e inoperables. Firman todos los del paso. -->
+            <div class="flex items-center gap-2">
+              <button type="button" class="deasy-inline-action deasy-inline-action--danger" @click="removeFirmaStep(si)">Quitar</button>
+            </div>
+          </div>
+          <ul class="mt-1.5 flex flex-wrap gap-2 list-none m-0 p-0">
+            <li v-for="(sg, gi) in step.signers" :key="`sg-${si}-${gi}`" class="inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-sm font-medium text-body">
+              {{ sg.label }}
+              <button type="button" class="deasy-chip-remove" @click="removeSignerFromStep(si, gi)">×</button>
+            </li>
+          </ul>
+          <button type="button" class="deasy-inline-action deasy-inline-action--primary mt-1.5" @click="openFlowPicker(`firma:${si}`)">+ Añadir firmante a este paso</button>
+        </div>
+        <p v-if="!flowFirma.length" class="m-0 mt-2 text-xs text-muted">Sin firma. Usa “+ Agregar paso” si el documento debe firmarse.</p>
+      </div>
+
+      <div v-if="flowPickerTarget" class="flex flex-col gap-2 rounded-xl border border-brand-200 bg-brand-50/40 p-3">
+        <p class="m-0 text-theme-xs font-semibold text-primary">
+          {{ flowPickerTarget === 'entrega' ? 'Quién elabora' : (flowPickerTarget === 'firma:new' ? 'Nuevo paso de firma' : 'Añadir firmante al paso') }}
+        </p>
+        <div class="deasy-section-nav-group self-start">
+          <button type="button" class="deasy-section-nav" :class="{ 'deasy-section-nav--active': flowPickerMode === 'person' }" @click="flowPickerMode = 'person'">Persona</button>
+          <button type="button" class="deasy-section-nav" :class="{ 'deasy-section-nav--active': flowPickerMode === 'cargo' }" @click="flowPickerMode = 'cargo'">Por cargo</button>
+        </div>
+
+        <div v-if="flowPickerMode === 'person'" class="relative flex flex-col gap-2">
+          <input v-model="recipientQuery" type="text" aria-label="Buscar persona por nombre, cédula o correo" placeholder="Busca por nombre, cédula o correo…" class="deasy-control" @input="searchRecipients" />
+          <ul v-if="recipientResults.length" class="absolute top-full left-0 right-0 z-(--z-capa-base) mt-1 max-h-56 overflow-auto deasy-card shadow-lg list-none m-0 p-1">
+            <li v-for="person in recipientResults" :key="`fp-${person.id}`">
+              <button type="button" class="deasy-option" @click="addFlowPerson(person)">
+                {{ person.full_name }}
+                <span class="text-xs text-muted">· {{ person.cedula || person.email || '' }}</span>
+              </button>
+            </li>
+          </ul>
+          <p v-else-if="recipientSearching" class="m-0 text-xs text-muted">Buscando…</p>
+        </div>
+
+        <div v-else class="flex flex-col gap-2">
+          <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+            <select v-model="flowCargoForm.cargoId" aria-label="Cargo" class="deasy-control deasy-control--select">
+              <option :value="null" disabled>Cargo…</option>
+              <option v-for="c in flowCatalog.cargos" :key="`c-${c.id}`" :value="c.id">{{ c.name }}</option>
+            </select>
+            <select v-model="flowCargoForm.unitId" aria-label="Unidad" class="deasy-control deasy-control--select">
+              <option :value="null">Todas las unidades</option>
+              <option v-for="u in flowCatalog.units" :key="`u-${u.id}`" :value="u.id">{{ u.name }}</option>
+            </select>
+          </div>
+          <AppButton variant="primary-outline" class-name="self-start" :disabled="!flowCargoForm.cargoId" @click="addFlowCargo">Agregar</AppButton>
+        </div>
+      </div>
+    </section>
+
+    <!-- Destino y plazo -->
+    <section v-if="generalTaskForm.mode === 'free'" class="deasy-card flex flex-col gap-3 p-4">
+      <div class="flex items-center gap-2">
+        <span class="deasy-icon-box deasy-icon-box--sm deasy-icon-box--primary"><IconBuildingMonument class="h-4 w-4" /></span>
+        <h6 class="deasy-title deasy-title--section">Destino y plazo</h6>
+      </div>
+      <div class="grid grid-cols-1 gap-3" :class="showSenderUnitSelect ? 'sm:grid-cols-2' : ''">
+        <!-- Unidad emisora: solo se elige cuando el usuario pertenece a más de una. -->
+        <label v-if="showSenderUnitSelect" class="flex flex-col gap-2">
+          <span class="deasy-form-label">Unidad emisora *</span>
+          <select v-model="generalTaskForm.unitId" class="deasy-control deasy-control--select">
+            <option :value="null" disabled>Selecciona una unidad</option>
+            <option v-for="unit in senderUnits" :key="unit.id" :value="unit.id">{{ unit.name }}</option>
+          </select>
+        </label>
+        <label class="flex flex-col gap-2">
+          <span class="deasy-form-label">Fecha de vencimiento <span class="font-medium normal-case tracking-normal text-gray-300">(opcional)</span></span>
+          <input v-model="generalTaskForm.endDate" type="date" class="deasy-control" />
+        </label>
+      </div>
+      <p class="m-0 text-theme-xs font-medium text-muted">
+        Se emite<template v-if="senderUnitName"> desde <strong class="font-semibold text-muted">{{ senderUnitName }}</strong></template> con fecha de hoy. Indica un vencimiento solo si debe atenderse antes de una fecha.
+      </p>
+    </section>
+  </div>
+  <template #footer>
+    <AppButton variant="danger-outline" data-modal-dismiss>Cancelar</AppButton>
+    <AppButton variant="primary-outline" :disabled="generalTaskSubmitting || !generalTaskForm.title.trim()" @click="$emit('submit')">
+      {{ generalTaskSubmitting
+        ? 'Creando…'
+        : (generalTaskForm.itemMode === 'routed'
+          ? 'Enviar'
+          : (generalTaskForm.itemMode === 'replicated'
+            ? 'Agregar réplica'
+            : (generalTaskForm.mode === 'derived' ? 'Crear entregable' : 'Crear tarea'))) }}
+    </AppButton>
+  </template>
+</AppModalShell>
+</template>
+
+<script setup>
+// Modal "Nueva tarea / Enviar entregable": formulario + flow-builder routed + buscador de
+// destinatarios. Extraido de HomeView.vue en la Fase C (paso 2). La LOGICA vive en el composable
+// useGeneralTask (paso 1); este componente es PRESENTACIONAL.
+//
+// El AppModalShell se queda AQUI y su ref (que controla el show/hide via Bootstrap) se recibe
+// como prop `modalRef` y se enlaza con :ref, para que useGeneralTask (en HomeView) siga abriendo
+// y cerrando el modal sin cambios. Los objetos reactivos (generalTaskForm, flowCargoForm, pasos
+// de flowFirma) se pasan como props y sus campos se v-modelan por mutacion anidada (reactivo en
+// Vue). Los dos v-model de PRIMITIVOS (recipientQuery, flowPickerMode) usan defineModel.
+import AppModalShell from '@/shared/components/modals/AppModalShell.vue';
+import AppButton from '@/shared/components/buttons/AppButton.vue';
+import AppTag from '@/shared/components/data/AppTag.vue';
+import { ref } from 'vue';
+import { IconFileDescription, IconBuildingMonument, IconSend } from '@tabler/icons-vue';
+import AppAlert from "@/shared/components/feedback/AppAlert.vue";
+
+const recipientQuery = defineModel('recipientQuery', { type: String, default: '' });
+const flowPickerMode = defineModel('flowPickerMode', { type: String, default: 'person' });
+const generalTaskForm = defineModel('generalTaskForm', { type: Object, required: true });
+const flowCargoForm = defineModel('flowCargoForm', { type: Object, required: true });
+
+defineProps({
+  generalTaskModalTitle: { type: String, default: '' },
+  generalTaskError: { type: String, default: '' },
+  generalTaskSubmitting: { type: Boolean, default: false },
+  flowEntrega: { type: Array, default: () => [] },
+  flowFirma: { type: Array, default: () => [] },
+  flowPickerTarget: { type: [String, null], default: null },
+  flowCatalog: { type: Object, default: () => ({ units: [], cargos: [] }) },
+  recipientResults: { type: Array, default: () => [] },
+  recipientSearching: { type: Boolean, default: false },
+  senderUnits: { type: Array, default: () => [] },
+  showSenderUnitSelect: { type: Boolean, default: false },
+  senderUnitName: { type: String, default: '' },
+  isSendFlowModal: { type: Boolean, default: false },
+  openFlowPicker: { type: Function, required: true },
+  addFlowPerson: { type: Function, required: true },
+  addFlowCargo: { type: Function, required: true },
+  removeFromEntrega: { type: Function, required: true },
+  removeFirmaStep: { type: Function, required: true },
+  removeSignerFromStep: { type: Function, required: true },
+  searchRecipients: { type: Function, required: true },
+});
+
+defineEmits(['submit']);
+
+// El show/hide del modal lo gobierna useGeneralTask (en HomeView) via el `.el` del
+// AppModalShell. Se expone aqui para que el padre, con ref en <GeneralTaskModal>, lo alcance.
+const shellRef = ref(null);
+defineExpose({ get el() { return shellRef.value?.el ?? null; } });
+</script>

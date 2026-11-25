@@ -1,0 +1,1243 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Reglas de Testing 
+Para realizar las pruebas debes considerar que todo el sistema está dockerizado.  En la ruta scripts está docker-env.sh que te permite levantar entornos y ejecutar comandos de manera rápida. 
+
+Los usuarios de referencia los **crea el bootstrap** (`/setup` → "usar datos de
+ejemplo"); no hay ningún seed SQL alternativo. Ojo: la contraseña del gestor NO es `Demo1234!`.
+
+    admin   -> admin@domain.com    /  Demo1234!
+    gestor  -> gestor@domain.com   /  Gestor1234!   (de momento tiene rol de usuario también)
+    usuario -> usuario@domain.com  /  Demo1234!
+
+⚠️ **SE ENTRA POR CORREO, no por cédula, desde el 2026-08-29.** El login aceptaba el número de
+documento y resolvía `d.numero = ?` **a secas**, cuando la unicidad de un documento es
+`(tipo, país, número)`: podía emparejar a la persona equivocada. Se quitó en vez de acotarse, y no
+por la unicidad sino por la **estabilidad** — un pasaporte se renueva **con número nuevo**, así que
+quien entrara con él perdería su acceso al renovarlo. El correo lo controla la persona y no caduca.
+
+Las contraseñas **no cambiaron**. Y la cédula sigue existiendo como dato de la persona: lo que dejó
+de ser es una llave.
+
+    admin  1234567897 · gestor 0927654327 · usuario 1122334459     ← su documento, para consultas SQL
+
+    admin !-FIRMAdemo1-! · gestor !-FIRMAdemo2-! · usuario !-FIRMAdemo3-!   ← su MARCADOR de firma
+
+⚠️ **Esos tres marcadores son FIJOS desde el 2026-11-10, y antes cambiaban en cada reseteo.**
+`identidad.persons.token` son 10 caracteres y se gastan como `!-<token>-!`: es el hueco que dejan
+las plantillas LaTeX y lo que el firmador busca **como texto** en el PDF
+(`find_marker_coordinates`). Lo sorteaba el bootstrap, así que cualquier plantilla, golden o nota
+que lo citara dejaba de casar al siguiente reseteo.
+
+**No se arregló sembrando el azar**, que es lo primero que uno piensa y no se puede: `randomBytes`
+es un CSPRNG y no admite semilla, y cambiarlo por un generador sembrado haría calculable el token
+del administrador **real** de cada despliegue. Lo que se abrió es una **entrada**: el payload del
+bootstrap acepta `signature_token` y **sortea sólo cuando no se pide**, así que una instalación de
+verdad no cambió. Los tres valores de prueba están **en los dos sitios que instalan**, y van juntos:
+`SystemBootstrapView.vue` (los «datos de ejemplo» de `/setup`) y
+`tests/characterization/setup/bootstrap_system.mjs` (el harness). Si cambias uno, cambia el otro.
+
+Es legítimo porque **el token no es un secreto**: sólo dice DÓNDE estampar. Quien autoriza es el
+certificado con su contraseña, el permiso RBAC y el turno — y el marcador se imprime dentro del PDF,
+así que quien escribe la plantilla tiene que conocerlo.
+
+⚠️ **Y la misma columna la escriben TRES sitios con tres políticas**, que es la deuda de fondo y
+sigue abierta: `utils/tokenGenerator.js` (`generateUniqueToken`, el canónico, para quien se
+registra), una **copia del mismo algoritmo** dentro de `SystemBootstrapService.js` —existe porque
+necesita la conexión de la transacción, no el pool— y `genericCatalog.js`, que a las personas de
+ejemplo les pone **su propia cédula**. La copia es la que conviene colapsar primero.
+
+(El JWT del navegador es otra cosa y cambia en **cada login**: lleva `iat` y `exp`, y caduca a las
+2 h.)
+
+⚠️ **Esos tres números cambiaron el 2026-08-27** y no es capricho: desde que el modelo admite
+pasaportes se comprueba el **dígito verificador** de la cédula ecuatoriana, y los tres de antes
+(`1234567890`, `0987654321`, `1122334455`) eran secuencias inventadas que no lo cumplían — con el
+validador activo **no se pueden ni insertar**.
+
+El documento ya **no es una columna de `persons`**: vive en `documentos_identidad`, con su clase
+(`documento_nacional` · `pasaporte` · `documento_extranjero`) y su país emisor. **Y ya no dice
+«cédula ecuatoriana» en ninguna parte**: cuál es el nacional lo decide `instituciones.pais_id`, que
+se edita en `/admin`.
+
+El router bloquea el espacio de usuario para el admin con `meta: { blockedForAdmin: true }` (el
+guard lo redirige a `/admin`): `/home`, `/home/documentos`, `/home/firmas` y `/perfil` con todas
+sus hijas, porque vue-router hereda el `meta`. Así que para probar el dossier o las firmas hay que
+entrar como gestor o usuario.
+
+### Dónde va cada test (y cómo se llama)
+
+Hay **dos niveles** y no se mezclan. La ubicación no es estética: `sonar-project.properties` los
+distingue por patrón, y un fichero mal colocado o mal nombrado se analiza **como código de producción**
+(así es como las contraseñas de fixture acabaron contando como vulnerabilidades del sistema).
+
+| Nivel | Dónde | Nombre | Qué prueba |
+|---|---|---|---|
+| **Unitario** | **junto al módulo** que prueba | `<modulo>.test.js` (`.test.mjs` si el módulo es ESM `.mjs`) | Una unidad, sin red ni base de datos |
+| **Caracterización** | `backend/tests/characterization/flows/` | `<flujo>.test.mjs` | Contrato HTTP extremo a extremo contra goldens |
+
+Reglas:
+
+- **`*.test.js` / `*.test.mjs` son los únicos sufijos válidos. No uses `*.spec.js`** — no hay ni uno
+  en el repo y añadirlo obliga a mantener un patrón muerto en la config de Sonar y en los globs de
+  `test:unit`.
+- Un test unitario nuevo tiene que **caer dentro de los globs de `backend/package.json → test:unit`**
+  (`config/`, `database/**`, `services/**`, `utils/**`, `middlewares/**`, `controllers/**`,
+  `errors/**`, y desde el piloto de F7 también `dominios/**` y `flujos/**`). Si lo pones
+  fuera, no lo ejecuta nadie y no te vas a enterar. Si el módulo vive en otra carpeta, **amplía el glob
+  en el mismo commit — y en los DOS sitios**: `test:unit` y `test:unit:coverage` llevan la misma lista
+  duplicada (el segundo con prefijo `backend/`, porque corre desde la raíz del repo para que las rutas
+  del lcov le valgan a Sonar). Si solo tocas uno, el test corre pero no cuenta para la cobertura.
+- No metas tests unitarios en `backend/tests/`: esa carpeta es del harness de caracterización
+  (`config.mjs`, `lib/`, `setup/`, `__snapshots__/`).
+- Los tests del frontend van junto al componente/composable (`vitest` los descubre solo).
+- **Un refactor no cambia un golden.** Si un snapshot se mueve durante un refactor puro, o rompiste
+  algo o el test estaba mal. En un *fix*, el diff del golden **es** la prueba del arreglo.
+- **Una suite que no arranca cuenta como fallo, no como "0 tests".** Vitest marca *Failed Suite* con
+  0 casos cuando el error ocurre al importar (un `vi.mock` incompleto de un módulo que ahora tira de
+  otro, típicamente). Mira la línea `Test Files`, no solo la de `Tests`.
+
+## Monorepo layout
+
+Each module has its own toolchain and package manager — do not mix them.
+
+- `frontend/` — Vue 3 + Vite + TailwindCSS web app. Uses **pnpm**. `@` aliases `frontend/src`.
+- `backend/` — Express 5 (ESM) API served under `/deasy/v1`. Uses **npm**. No build step; runs `node index.js`.
+- `docs/` — Astro Starlight documentation site. Uses **pnpm**.
+- `signer/` — Python (`pyhanko`) PDF signing microservice with a Node helper in `sigmaker/`; talks to the backend over RabbitMQ + the object store (`almacen`, Versity Gateway, S3 API).
+- `docker/` — multi-environment Compose stacks (`compose.base.yml` + overlays per env).
+- `scripts/` — operational wrappers for startup, deploy, reset and migrations.
+
+## Common commands
+
+### Run the full stack (preferred — Docker)
+```bash
+bash scripts/docker-env.sh dev up -d --build      # dev environment
+bash scripts/docker-env.sh dev logs -f backend    # tail a service
+bash scripts/docker-env.sh dev ps
+bash scripts/docker-env.sh dev down
+```
+`qa`/`prod`/`ingress` pull published GHCR images; local work happens in `dev`.
+
+**Builds/tests must run inside the containers via `scripts/docker-env.sh`, not with npm/npx on the host.**
+
+### ⛔ Regla de entrada: si vas a cambiar código, primero tu worktree
+
+**Una sesión nueva que vaya a modificar el repositorio NO trabaja en el worktree principal**
+(`~/Documentos/Pucese/deasy`, que está en `develop`). Lo primero que hace, **antes de tocar un
+fichero**, es crearse el suyo con rama propia salida de `develop`:
+
+```bash
+git worktree list                                            # ¿qué hay ya, y en qué rama?
+git worktree add -b <rama> ../deasy-<algo> develop           # el tuyo, desde develop
+cd ../deasy-<algo> && bash scripts/stack.sh <letra> up -d    # y su pila, desde ESE worktree
+```
+
+Al terminar: commit en la rama → `merge --ff-only` en `develop` → `stack.sh <letra> down` →
+`git worktree remove` + `git branch -d`. **El push lo hace el usuario.**
+
+**Por qué es obligatorio y no una costumbre:** aquí trabajan varias sesiones a la vez. Dos que editen
+el mismo árbol se pisan los ficheros sin conflicto de git —simplemente la última escritura gana— y,
+peor, **comparten la pila**: un `test:char:run` **resetea la base que la otra está usando**. Ya se
+midieron pruebas contra código ajeno tres veces. La rama separada además hace que el trabajo se pueda
+descartar entero si sale mal, que es lo que permite el experimento desechable de la regla 14 del
+método.
+
+**Lo único que puede quedarse en el principal** es lo que no cambia el árbol: leer, medir, consultar
+la base, y responder preguntas. **En cuanto vayas a escribir —código o documentación—, worktree.**
+Y si el usuario te asigna uno («trabaja en `deasy-defectos`»), ése, y no toques los demás.
+
+### ⛔ Regla de salida: cómo se ENTREGA lo que acabas de hacer
+
+Está aquí, y no solo en el `CLAUDE.md` de su carpeta, por un motivo **medido**: los `CLAUDE.md` de
+carpeta se inyectan **una sola vez, al primer acceso**, y **una compactación se los lleva sin volver
+a inyectarlos**. En la sesión del 14 al 17 de agosto de 2026 hubo **2 inyecciones, ambas en la línea
+248 de 13 712**; después, tres compactaciones. **199 de los 332 accesos a `frontend/` ocurrieron sin
+`frontend/CLAUDE.md` en contexto**, y `docs/planes/CLAUDE.md` **no se inyectó ni una vez**. Las dos
+reglas de abajo se incumplieron varias veces por eso, no por criterio.
+
+Y no basta con un puntero: la del avance **ya estuvo aquí entera**, se mudó a su carpeta dejando un
+enlace, y **con ese enlace presente en todo momento se incumplió cuatro veces seguidas**. Un enlace
+dice *que hay una norma*; no dice *qué hacer*. Por eso lo que sigue es el disparador accionable —el
+porqué, los precedentes y los ejemplos siguen siendo normativos y viven en su carpeta.
+
+**1 · Cerraste una tarea de un plan → enseña el avance EN ESE TURNO.** No al cerrar la fase, no
+cuando lo pidan. Son **dos tablas**: el mapa completo (una fila por fase, con sus tareas en la
+segunda columna y el estado pegado a cada nombre) y el detalle de la fase en curso (una fila por
+tarea, con qué entrega). Di siempre **de qué nivel hablas** —frente, fase o tarea—, **recuenta el
+denominador** antes de enseñarlo, y no colapses varias tareas en una fila.
+→ Formato exacto y por qué es fijo: **§6 de [`docs/planes/CLAUDE.md`](docs/planes/CLAUDE.md)**.
+
+⚠️ **Y desde el 2026-10-23 el avance de un frente convertido NO SE CUENTA A MANO**: lo imprime
+`plan estado <frente>` (skill `plan-trabajo`), y su puerta es
+`PLAN_RAIZ=docs/planes python3 docs/planes/herramienta/plan verificar`, que corre en CI. Va por
+frentes: el **26** está convertido, los demás siguen con su tabla. Cuál es cuál lo dice
+[`docs/planes/INDICE.md`](docs/planes/INDICE.md), que es **generado**. El §0 de la norma de esa
+carpeta explica por qué la herramienta viaja dentro del repositorio.
+
+**2 · Entregaste un cambio visual → van CUATRO cosas, aunque parezca trivial.**
+**(a)** la auditoría que lo motivó, **con cifras** —cuántos hay, cuántos no conformaban, cuántos
+quedan—; **(b)** el antes/después **MEDIDO y no descrito**: valores computados, diff del CSS
+construido o `scripts/css-huella.mjs`; **(c)** **la ruta exacta**: la URL **más profunda a la que el
+router llegue solo**, con protocolo y puerto de tu pila, **con qué usuario y contraseña**, y **solo**
+los clics que la URL no puede sustituir (abrir un modal, elegir una fila); **(d)** **lo que no
+pudiste verificar, y por qué**.
+
+⚠️ «Mira los campos», «revisa el admin» y **«la raíz más cuatro clics»** no son rutas: las pestañas
+de admin son segmentos de ruta, no estado interno. Si el cambio toca varias pantallas, se dan las
+rutas de **todas**.
+→ Ejemplos de lo que sí vale y trampas del instrumental: **§4 de [`frontend/CLAUDE.md`](frontend/CLAUDE.md)**.
+
+**3 · Cambiaste el comportamiento o el modelo → la DOCUMENTACIÓN PUBLICADA va en el MISMO commit.**
+No sólo el plan: **el sitio**, `docs/src/content/docs/`.
+
+Esta regla nace de un incumplimiento medido el **2026-08-29**. Un frente entero —nueve tareas: el
+login pasó a sólo correo, un catálogo murió, una tabla nació, cuatro rutas cambiaron de parámetro—
+se entregó con **los planes al día, `CLAUDE.md` al día y el modelo generado al día**, y **cuatro
+páginas del sitio describiendo el sistema anterior**. Se descubrió porque el dueño preguntó «¿dónde
+puedo verificarlo?».
+
+**Ya hay puerta**, y corre en CI (`docs-links.yml`), pero **no te fíes de que baste**:
+
+```bash
+node scripts/docs/check-doc-modelo.mjs            # comprueba
+node scripts/docs/check-doc-modelo.mjs --update   # re-graba las huellas, DESPUÉS de revisar
+```
+
+Vigila tres cosas, y cada una caza una distinta:
+
+| | Qué caza | Ejemplo real |
+|---|---|---|
+| **A** | Una página **nombra algo que ya no existe** | `tipos_documento`, `tipo_id` |
+| **B** | Una tabla **que ninguna página cuenta** | `instituciones`, documentada a medias |
+| **C** | Una tabla **cambió** y su página no se revisó | te dice **qué páginas** mirar |
+
+**El C es el que responde a «¿y los cambios?»**, y su trato es el de un golden: **no dice que la
+página esté bien, dice que alguien la miró**. Se apaga leyéndola, corrigiéndola si hace falta, y
+re-grabando la huella — nunca al revés.
+
+⚠️ **Lo que el gate NO puede cazar, y por eso el hábito sigue haciendo falta:** una frase falsa que
+no nombre nada muerto. *«Se entra por cualquiera de ellos»* era **falsa** y no contiene un solo
+identificador retirado. Esto reduce el hueco; no lo cierra.
+
+⚠️ **La lista de excepciones (`doc-modelo-excepciones.json`) lleva el motivo de cada una, y está
+atada a las páginas donde vale.** Perdonar `tipos_documento` en la página que cuenta por qué murió es
+correcto; que aparezca en una página nueva, no — y el gate lo dice. **No añadas una excepción para
+callar el gate**: si no puedes escribir el motivo, la página está mal.
+
+⚠️ **Un diagrama mermaid también es documentación, y TIENE SU PROPIA PUERTA — que no es ninguna de
+las tres de arriba.** Los `erDiagram` y los `flowchart` del sitio nombran tablas y columnas: si
+borras una, el diagrama queda mintiendo igual que el texto.
+
+```bash
+node scripts/docs/check-diagramas-coherentes.mjs   # que la MISMA tabla no se dibuje de dos formas
+```
+
+**Córrela con las otras.** Corre en CI (`docs-links.yml`) y **dejó `develop` en rojo durante dos
+días** sin que nadie lo viera: al cerrar la fase 4 del frente 24 se reescribió
+`modelo/flujo-de-firma.md` dibujando `turnos` con 5 de sus 11 columnas, se pasaron
+`check-doc-modelo` y `check-enlaces-internos` —que son las dos que este fichero nombraba— y **ésta
+no se ejecutó**. La frase «un diagrama es documentación» ya estaba escrita aquí; lo que faltaba era
+el comando al lado.
+
+**Dibujar sólo unas columnas es legítimo** —una página puede querer enseñar nada más lo suyo— y se
+declara poniendo **`%% parcial`** dentro del bloque, con el motivo y un enlace a donde esté la tabla
+completa. Lo que la puerta no acepta es la contradicción silenciosa.
+
+⚠️ **No confundas el modelo generado con la prosa.** `docs/02-dominio-datos/` y
+`docs/public/diagramas/` los regenera `gen-dbml.sh` y tienen su gate; las páginas de
+`docs/src/content/docs/` **se escriben a mano** y no lo tienen.
+
+### Pilas paralelas: A, B, C y D — `scripts/stack.sh`
+
+**Si hay varias sesiones trabajando a la vez, cada una necesita su pila.** Los montajes de código son
+**relativos** (`../backend:/app/backend`), así que levantar `dev` desde otro worktree **no crea una
+pila nueva: recrea los mismos contenedores apuntando al código nuevo**. Pasó tres veces, y las dos
+primeras se midieron pruebas contra código ajeno sin que nadie se enterara.
+
+```bash
+bash scripts/stack.sh status                              # qué pila hay y qué worktree monta cada una
+bash scripts/stack.sh b up -d --build                     # levanta la pila B con ESTE worktree
+bash scripts/stack.sh b exec -T backend npm run test:unit
+bash scripts/stack.sh b stop                              # te vas por hoy y el worktree sigue
+bash scripts/stack.sh b down                              # SOLO al retirar el worktree que monta
+```
+
+| Pila | Proyecto | proxy | https | postgres | almacen | signer | rabbit | docs | azimutt |
+|---|---|---|---|---|---|---|---|---|---|
+| **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 | 4321 | 4700 |
+| **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 | 4421 | 4800 |
+| **C** | `deasy-c` | 8288 | 8643 | 5632 | 9200 | 4200 | 5872 | 4521 | 4900 |
+| **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 | 4621 | 5000 |
+
+- **La pila A ES la `dev` de siempre.** Mismo proyecto, mismos volúmenes, mismos puertos:
+  `docker-env.sh dev` y `stack.sh a` son la misma. **No hay una quinta pila.**
+- Cada pila tiene **base, almacén, RabbitMQ, `node_modules` y red propios**. Compartirlos era el fallo:
+  con el mismo volumen de postgres, un `test:char:run` **resetea la base de la otra sesión**.
+- **Regla: la pila vive con su WORKTREE, no con la sesión.** No se baja al terminar una tanda de
+  trabajo: **se baja el día que se retira el worktree que monta** (`stack.sh <letra> down`, y entonces
+  sí, obligatorio — si no, la letra queda ocupada por código que ya no existe).
+  Antes la regla era «quien la levanta la baja al terminar», y se cambió el **2026-08-14** porque
+  costaba más de lo que ahorraba: el primer `up --build` de cada pila es un `npm install` completo, y
+  bajarla al acabar el día obligaba a pagarlo otra vez a la mañana siguiente. **Lo que la regla vieja
+  protegía —medir contra código ajeno— ya lo impide el guard**, que se niega si la pila monta otro
+  worktree.
+  Si te vas y tu worktree sigue vivo: **`stack.sh <letra> stop`**. Libera la RAM y conserva volúmenes,
+  base y `node_modules`; `start` la devuelve en segundos. Cuatro pilas son 32 contenedores, así que
+  dejar corriendo la que no estás usando sigue sin tener sentido — pero **`stop` no es `down`**.
+- El primer `up --build` de cada pila cuesta un `npm install` completo, porque el volumen de
+  `node_modules` es suyo. A partir de ahí es rápido — y ése es justo el motivo de la regla anterior.
+- **`stack.sh` comprueba solo** que la pila que vas a usar monta el worktree desde el que la llamas, y
+  **se niega si no coincide**, salvo en `down`/`status`/`ps`/`config`. Para saltárselo a sabiendas,
+  `DEASY_STACK_FORCE=1`.
+- Cómo funciona por dentro: `docker/compose.dev.yml` parametriza puertos y nombres de volumen con
+  `${…:-dev}`, así que **sin variables se comporta exactamente igual que siempre**.
+
+**Al encargar trabajo a un subagente, dile qué pila usar** («usa la pila B») y que anteponga
+`bash scripts/stack.sh b` a todo. Si no se lo dices, usará la A y chocará con quien la tenga.
+
+### Frontend
+```bash
+bash scripts/docker-env.sh dev exec -T frontend pnpm run lint       # eslint .
+bash scripts/docker-env.sh dev exec -T frontend pnpm run lint:css   # stylelint src/**/*.css
+bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit  # vitest run
+bash scripts/docker-env.sh dev exec -T frontend pnpm run test:unit:coverage  # lcov para SonarQube
+bash scripts/docker-env.sh dev exec -T frontend pnpm run build
+```
+Para cambios de FE: **lint + `test:unit`**, y además verificar aspecto/comportamiento en el navegador.
+Lint solo no es la puerta de validación: hay vitest + `@vue/test-utils` y hay que usarlos.
+
+Al **añadir dependencias** al frontend hay que instalar **dentro del contenedor** — el volumen de
+`node_modules` sombrea el de la imagen y un `pnpm install` en el host no se ve dentro.
+
+### Estilos — dónde va cada cosa
+
+Los estilos viven en `frontend/src/shared/styles/` (no en `frontend/src/styles/`, que no existe) y
+son **18 módulos por familia**. `main.js` importa **sólo `index.css`**, que los encadena.
+
+| Módulo | Qué va aquí |
+|---|---|
+| `tokens.css` | La **paleta** (`--color-*` en `@theme`, que es lo que genera las utilidades) y las escalas sin registrar (`--elev-*`, `--focus-ring`, `--typeface`) |
+| `base.css` | Reset, tipografía, `html`/`body`/`#app` |
+| `layout.css` · `nav.css` · `surfaces.css` | Armazón, navegación, tarjetas |
+| `buttons.css` · `forms.css` · `tables.css` · `dialogs.css` · `tags.css` · `auth.css` · `admin.css` · `graph.css` · `deliverables.css` · `signatures.css` | Un fichero por familia de componente |
+| `titles.css` | Los encabezados de página y de sección |
+| `misc.css` | Lo que aún no tiene familia. **Si crece, es que falta un módulo** |
+
+⚠️ **Aquí ponía `overrides.css`, y ese fichero NO EXISTE** (comprobado el 2026-08-26: son estos 18,
+ni uno más). Sigue habiendo un `frontend/scripts/check-overrides.mjs`, que es lo que despistaba: ese
+gate vigila que no se repinten utilidades de Tailwind, no un módulo que se llame así. Si vas a
+«mover el import de `overrides.css`», no hay nada que mover.
+
+⚠️ **El orden de los `@import` de `index.css` es parte del diseño, no es alfabético.** En CSS dos
+reglas de la misma especificidad se resuelven por orden de aparición. Está explicado en el propio
+fichero; si mueves un import, verifícalo en el navegador.
+
+**Un solo juego de tokens.** `--deasy-*` se colapsó sobre `--brand-*` el 2026-08-09, y `--brand-*`
+sobre `--color-*` el 2026-08-12 — **`--color-` no es prefijo, es el NAMESPACE de Tailwind**, y lo que
+va detrás es literalmente el nombre de la utilidad (`--color-line` → `border-line`). **Y no queda ni
+un color suelto en el CSS**: si necesitas uno, usa el token; si no existe, decláralo en `tokens.css`
+**con su familia**, no en el sitio donde lo gastas.
+
+Siete cosas que cuestan caro y no son evidentes (decía «cuatro» y ya listaba cinco; luego seis):
+
+1. **`pnpm run lint:css` está en CERO errores y ahí se queda.** Si tu cambio lo sube, has metido un
+   color suelto. Ojo: la regla `color-no-hex` **no ve** los hex dentro de `@apply` ni los
+   `rgb()/rgba()` con triplete numérico — el contador en verde no significa que no haya deuda.
+2. **Antes de declarar un token, comprueba que su nombre no sea un namespace de Tailwind v4**
+   (`--color-*`, `--radius-*`, `--font-*`, `--spacing-*`, `--shadow-*`, `--text-*`, `--breakpoint-*`).
+   `--radius-lg` hizo durante meses que `rounded-lg` valiera 16px en toda la app, con la escala
+   invertida. El fallo es **silencioso y global**.
+3. **La tipografía se carga desde `index.html`, no desde el CSS.** Un `@import` remoto anidado
+   dentro de un módulo lo descarta Vite en silencio y la app entera se queda con la fuente de
+   reserva. Ya pasó.
+4. **Ni el build, ni el lint, ni los tests ven que rompiste un estilo.** Está demostrado cuatro
+   veces: borrar dos clases dejó los 304 tests en verde y la barra lateral sin color. Para un cambio
+   de CSS la verificación es el navegador — y si es amplio, una **huella de `getComputedStyle` +
+   `getBoundingClientRect` de cada nodo**, comparada antes/después. Espera a `document.fonts.ready`
+   antes de medir o los anchos mienten.
+
+5. **No hay modo oscuro y `dark:` está prohibido.** Deasy es una app en claro; sus zonas oscuras
+   son color explícito, no un tema. Importa porque las recetas de TailAdmin traen 1024 clases
+   `dark:` y sin protección se activarían solas en un sistema en oscuro. Hay tres capas:
+   `@custom-variant` en `tokens.css`, `vue/no-restricted-class` y `pnpm run check:no-dark`.
+
+6. **Quién tapa a quién tiene escala, y un modal NO lleva altura.** `z-index` se escribe siempre con
+   nombre (`z-(--z-…)`, nunca un número) y hay dos ejes: 1-2 cifras es dentro de un contenedor, 4
+   cifras es toda la página, con la banda 1000-1999 reservada a librerías. **Un modal no declara
+   nada**: `AppModalShell` se coloca solo al abrirse y se libera al cerrarse. Hubo cinco niveles
+   declarados y duraron dos días — `openProcessWizard()` se llama desde siete sitios a dos
+   profundidades, así que cualquier número fijo está mal en algún camino.
+   **Y sí hay gate que lo vigila**: `frontend/scripts/check-z-index.mjs`, que corre dentro de
+   `pnpm run lint` — el eslabón **27 de los 31** que encadena (decía «25 de 27», y la cifra se
+   queda caducada cada vez que entra una puerta: cuéntala, no la copies — `node -e` sobre
+   `scripts.lint` la da en una línea). Lo único que no tiene es alias propio en
+   `package.json`, así que `pnpm run check:z-index` no existe: se ejecuta con `pnpm run lint` o con
+   `node scripts/check-z-index.mjs`.
+   ⚠️ La auditoría del 2026-08-24 dijo que «se documentó tres veces y nunca existió». **Se
+   equivocaba**, y de la peor manera: por buscar el alias de npm en vez del fichero. Comprobado el
+   2026-08-26. Detalle en `frontend/CLAUDE.md` §5.5.
+
+7. **La pantalla tiene que decir lo que dice el modelo, y hay puerta.** Cuando el frente 24 renombró
+   el modelo, la aplicación siguió diciendo «flujo», «solicitudes», «artifacts» y «templates»: **66
+   cadenas visibles con «flujo» en 15 ficheros**, medidas el 2026-10-09 porque el dueño lo leyó en el
+   navegador y preguntó. No lo veía nadie, y no por descuido: **el build compila, eslint no opina del
+   castellano, y los tests afirman sobre comportamiento, no sobre rótulos.** El sitio de `docs/` ya
+   tenía esto tapado —la comprobación A de `check-doc-modelo.mjs`—; la aplicación no.
+   Lo vigila **`frontend/scripts/check-vocabulario-pantalla.mjs`**, dentro de `pnpm run lint` y con
+   alias propio (`pnpm run check:vocabulario-pantalla`). Mira **sólo lo que se lee**: nodos de texto,
+   los atributos que llevan texto —enlazados o no—, los literales dentro de un `{{ … }}`, y las
+   cadenas del `<script>` que salen por una clave de texto o por `showFeedbackToast`/`new Error`.
+
+   ⚠️ **Lo correcto en castellano NO es un fósil, y por eso hay excepciones con motivo**
+   (`frontend/scripts/vocabulario-pantalla-excepciones.json`, atadas a sus ficheros): «Solicitar
+   firmas» es lo que la persona **hace**; `solicitudes` era el nombre de dos tablas. Y la puerta
+   **también falla si una excepción deja de usarse**, para que la lista no sea un cementerio.
+
+   ⚠️ **Tres trampas del extractor, las tres encontradas provocándolo:** `/<[^>]*>/` **no** quita una
+   etiqueta cuyo atributo lleve una función flecha (el `>` de `=>` la cierra antes) — hace falta un
+   escáner que sepa de comillas; `/\{\{[^}]*\}\}/` **no** quita una interpolación con un `${…}`
+   dentro; y un rótulo escondido en un `{{ ternario }}` se iba con la expresión. Las dos primeras
+   dejaban pasar nombres de clase CSS como si fueran prosa, y una puerta con falsos positivos **se
+   desactiva sola**.
+
+   ⚠️ **Y lo que NO caza:** una frase falsa que no use ninguna palabra retirada. Reduce el hueco; no
+   lo cierra.
+
+**Las reglas completas están en `frontend/CLAUDE.md`**, que se carga solo al trabajar ahí. El plan,
+la bitácora y la auditoría, en **`docs/planes/sistema-diseno-componentes/`**. La primera vuelta
+(el CSS) está cerrada y archivada en `docs/docs-md-antiguos/planes-cerrados-2026-08/sistema-diseno/`.
+
+### Documentación — el sitio Astro Starlight
+
+```bash
+bash scripts/docker-env.sh dev up -d docs                        # levanta el sitio -> http://localhost:4321
+bash scripts/docker-env.sh dev exec -T docs pnpm run build       # 55 paginas de contenido (el build dice 56: suma el 404)
+bash scripts/docker-env.sh dev exec docs pnpm add <paquete>      # dependencias: DENTRO del contenedor
+```
+
+**La carpeta es la URL.** `docs/src/content/docs/guias/entorno-dev.md` se publica en
+`/guias/entorno-dev`; no hay que registrar la página en ningún sitio. El menú lateral se llena solo:
+los grupos de `astro.config.mjs` usan `autogenerate` por carpeta, y el orden dentro de un grupo se
+controla con `sidebar: { order: N }` en el frontmatter. `title` en el frontmatter es **obligatorio**.
+
+El bucle es el mismo que el del código: editas el `.md` en el host con tu editor, guardas, y el
+navegador se recarga solo — el contenedor monta `../docs`, no hay que reconstruir nada. Como en el
+frontend, el volumen de `node_modules` **sombrea** el de la imagen: una dependencia nueva se instala
+dentro del contenedor o no se ve.
+
+Cuatro cosas que ya costaron un arranque fallido:
+
+1. **`lang` no es clave de primer nivel de Starlight.** Va dentro de `locales`; suelto, el contenedor
+   arranca y muere con `Invalid config passed to starlight integration`.
+2. **Un grupo de `sidebar` cuyo directorio no existe rompe el build.** Los grupos se añaden según se
+   crean las carpetas, no antes. Hoy existen `guias/` y `referencia/`; el cuarto cajón de Diátaxis
+   (`empezar/`) todavía no.
+   La **explicación no es una carpeta**: sus once capítulos cuelgan de la raíz (`/backend/auth/`,
+   `/modelo/vinculo/`, `/panorama/`…). Se quitó el segmento `explicacion/` el **2026-08-26** porque
+   metía un nivel de menú y un segmento de ruta que el índice del `.tex` no tiene — el original va
+   `\chapter` → `\section` y ya está. Diátaxis clasifica el contenido; no obliga a que la
+   clasificación sea una carpeta.
+3. **`site` está sin poner a propósito** — fija canónicas y sitemap, y el dominio de publicación aún
+   no está decidido. El aviso del build es esperado.
+4. **Los enlaces internos del sitio no los valida el build.** Astro solo comprueba los `slug` del
+   `sidebar`; un `[x](/no/existe/)` dentro de un `.md` construye **en verde** y da 404 al hacer clic.
+   Y lychee excluye `docs/src/**` a propósito (sus enlaces son rutas de página, no ficheros). Lo
+   cubre **`node scripts/docs/check-enlaces-internos.mjs`**, que corre en `docs-links.yml`.
+   ⚠️ **Y los enlaces entre ficheros `.md` de FUERA del sitio —planes, arquitecturas— los mira
+   lychee, que sólo corre en CI.** Ese trabajo estuvo en rojo de octubre a noviembre de 2026 sin
+   que nadie lo viera, y costó dos subidas arreglarlo. Desde el 2026-11-24 se puede ver antes de
+   subir con **`node scripts/docs/check-enlaces-relativos.mjs`**: fichero que no existe, ancla
+   que no existe (las anclas llevan TILDE) y enlaces de raíz. No apuntes un ancla a un título que
+   lleve cifras de avance: cambia con cada cierre.
+
+El servicio vive **solo en `compose.dev.yml`**: qa y prod todavía no despliegan documentación.
+Existía desde marzo en el `docker-compose.yml` monolítico y se perdió al partirlo en base+overlays;
+el `Dockerfile` y `DOCS_PORT` sobrevivieron en los cuatro `.env`.
+
+### Modelo de datos — GENERADO, no se escribe
+
+```bash
+bash scripts/docs/gen-dbml.sh            # regenera DBML + los 8 diagramas
+bash scripts/docs/gen-dbml.sh --check    # y falla si hay deriva (lo que corre en CI)
+```
+
+⚠️ **`docs/02-dominio-datos/consolidado.dbml`, `dominios/*.dbml` y `docs/public/diagramas/*.svg`
+son ARTEFACTOS.** Editarlos a mano no sirve de nada: la siguiente regeneración los pisa y
+`.github/workflows/docs-dbml.yml` lo detecta. Antes decían "generado por introspección" y **no
+había generador**: se generó una vez en julio y se mantuvo a mano hasta que derivó.
+
+⚠️ **Y una CUARTA página es artefacto, con su puerta propia desde el 2026-10-04**:
+`referencia/campos-proceso-documento.md`, que escribe `backend/scripts/docs/gen-campos-md.mjs` desde
+el catálogo de PostgreSQL. Se regenera con `bash scripts/docs/gen-campos.sh <pila>` y la vigila el
+trabajo **`campos-al-dia`** de `docs-dbml.yml`, que le aplica el esquema a un PostgreSQL vacío — la
+página se deriva del esquema y no necesita ni una fila sembrada.
+
+⚠️ **Y LEE LA BASE VIVA, no el fichero del esquema: corre DESPUÉS de aplicarlo, no después de
+editarlo.** Costó una página caducada el 2026-10-09: se regeneró justo tras cambiar
+`postgres_schema.sql`, cuando la pila todavía tenía las columnas viejas, y la página salió con
+**311 columnas y 78 referencias** donde eran 310 y 77 — citando dos columnas que ya no existían. No
+falló nada; lo cazó la comprobación **A** de `check-doc-modelo.mjs` tres pasos después. El orden es
+`reset` (o `test:char:run`) **y luego** `gen-campos.sh`.
+
+Era **el único generador de página sin puerta**, y se rompió en silencio el mismo 2026-10-04: al
+repartir las tablas en esquemas por dominio, su consulta filtraba `information_schema.columns` por
+`table_schema = 'public'` y **dejó de encontrar nada**. Sus otras dos consultas resuelven por
+`regclass` —o sea por `search_path`— y seguían funcionando, así que el generador **no fallaba**:
+emitía la página con sus 101 vínculos y **cero columnas**. La página commiteada seguía bien sólo
+porque nadie la había regenerado. Se descubrió tres commits después y por casualidad.
+
+⚠️ **Tres páginas del sitio también son artefacto** desde el 2026-09-10: `complemento/mapa-con-campos.md`
+y `modelo/mapa-con-campos.md` (los dos mapas con todas sus columnas y claves ajenas) y las cifras entre
+marcas `<!-- gen:… -->` de `referencia/modelo-datos.md`. Las escribe `scripts/docs/gen-mapa-campos.mjs`
+dentro de `gen-dbml.sh`, y su `--check` las compara. **La agrupación sale de los dos mapas escritos a
+mano** (`complemento/mapa-completo.md` y `modelo/mapa-completo.md`): si añades una tabla al esquema,
+dibújala en uno de los dos, dentro de su subgrupo, o el generador falla a propósito.
+
+**Si cambias `postgres_schema.sql`, regenera en el mismo commit.**
+
+### El mapa de las tablas — `scripts/docs/dominios.json` es la FUENTE ÚNICA
+
+⚠️ **TRES PALABRAS, TRES SIGNIFICADOS, Y NO SE MEZCLAN** (fijado por el dueño el 2026-10-07):
+
+| | |
+|---|---|
+| **dominio** | de qué trata una tabla. Son **8**, y de ahí salen los 8 diagramas y los 8 esquemas |
+| **nivel** | de qué depende. **0 a 7**. De aquí sale el orden de lectura y la regla de las claves ajenas |
+| **capa** | `routes` / `controllers` / `services` / `datos`, **dentro del código** de un dominio. Nada más |
+
+**No es estilo, es que YA SE MEZCLÓ:** «dominio» y «capa» fueron los nombres de los **dos ejes** en la
+primera versión del mapa (`tabla → módulo → {dominio, capa}`). Así que un texto heredado que diga
+«capa 3» habla de un **nivel**, y uno nuevo que diga «capa» habla de `services/`. Por eso se renombró
+todo a `nivel`, y por eso **la puerta falla si `dominios.json` vuelve a decir «tema» o «capa»**
+(comprobación **0**).
+
+Cada tabla aparece **una vez**, dentro de su **dominio**, y su valor es su **nivel**. Dos ejes, un sitio:
+
+| | | |
+|---|---|---|
+| **dominio** | de qué trata | 8, los de siempre. De aquí salen los 8 diagramas, y es **donde debería vivir su código** |
+| **nivel** | de qué depende | 0 (abajo) a 7 (arriba). De aquí sale el **orden de lectura** |
+
+**La regla del nivel: una clave ajena solo apunta a su nivel o a uno INFERIOR.** Hoy: **86 bajan,
+71 se quedan, 0 suben** de 157. Y **la de propiedad: una tabla la escribe un sitio**, con dos escritores
+transversales declarados por nombre (el bootstrap y el editor genérico de `/admin`).
+
+```bash
+node scripts/docs/check-mapa-tablas.mjs    # cinco comprobaciones
+```
+
+| | Qué caza |
+|---|---|
+| **0** | `dominios.json` vuelve a decir «tema» o «capa» (ver el glosario de arriba) |
+| **A** | una tabla del esquema sin dominio, o en dos |
+| **A-bis** | una tabla creada en el esquema de PostgreSQL equivocado |
+| **B** | una clave ajena que **sube** de nivel |
+| **C** | una tabla que escriben **dos** sitios, siendo nueva |
+| **D** | un **flujo** que escribe un dominio **que no declaró** |
+
+⚠️ **La D cuenta los dominios de un flujo por DOS vías, y la segunda hizo falta añadirla:** las tablas
+que escribe él mismo **y** los dominios cuyo **`datos/`** importa. Medía sólo la primera, o sea daba por
+supuesto que un flujo lleva su SQL — y el piloto de F7 demuestra lo contrario (`flujos/rehacerDocumento.js`
+tiene **cero** consultas). Con la medida vieja emitía cuatro avisos diciendo que ese flujo ya no cruzaba.
+**Sólo `datos/`, no la puerta**: dos flujos importan `dominios/identidad/index.js` para LEER, y contarlo
+como escritura daba dos fallos falsos.
+
+**La exención de la C es POR FICHERO, no por carpeta** (desde el 2026-10-07). Antes eximía
+`services/admin` y `services/system` enteras —31 ficheros, 15 de ellos escritores— y sólo **3** lo
+merecen. Al estrecharla apareció **una** tabla que estaba tapada, `fill_requests`.
+
+⚠️ **Y hay un punto ciego que no se cierra nombrándolo:** `services/admin/SqlAdminService.js`, el
+editor genérico, escribe **construyendo el nombre de la tabla**, así que la C —que busca el nombre
+literal— **nunca pudo verlo**. Lo que lo cubre es el catálogo de `sqlTables.js` y la A-bis, no ésta.
+
+**`_flujos` son los 7 ficheros que cruzan dominios por diseño**, cada uno con los dominios que
+escribe y su motivo. Escriben tablas de dos o tres dominios **en una misma transacción**, que abre
+quien llama. La lista es **cerrada**: la D falla si un flujo escribe un dominio que no declaró, y
+avisa si declara uno que ya no escribe o si se quedó con uno solo —entonces deja de ser un flujo y se
+mueve a su dominio—.
+
+Corre en CI en **dos** sitios y no por duplicar: `docs-dbml.yml` caza los cambios de esquema y de
+mapa, y `backend-checks` de `cd-multienv.yml` caza los de **código** — un segundo escritor aparece
+al tocar el backend, no al tocar el esquema.
+
+⚠️ **Aquí hubo un TERCER EJE —15 «módulos»— y se retiró el 2026-10-04, el mismo día.** Perdió en
+tres mediciones a la vez: juntaba peor las relaciones (**37 % contra 50 %** de los dominios), tenía una
+dependencia circular, y **cuatro de los quince no eran dueños de ni un fichero de código** —habrían
+sido carpetas vacías—. Cortaba por dentro de una función: el recorrido de llenado es parte de las
+plantillas tanto en el código como en la pantalla. **No lo vuelvas a introducir.**
+
+⚠️ **Y había dos declaraciones más que también se fueron** (`_recursos_rbac`, `_subgrupos_dibujados`,
+con sus comprobaciones D y E): escribían las **diferencias** entre este mapa, el reparto de permisos
+y los subgrupos de los mapas dibujados, y fallaban si cambiaban. **Documentaban el desorden y lo
+protegían.** Están en el historial de git si alguna vez hacen falta.
+
+Tres cosas que cuestan si se ignoran:
+
+1. **Si añades una tabla, ponla en un dominio con su nivel**: `"<dominio>": { "tablas": { "<tabla>": <nivel> } }`.
+   El generador y la puerta fallan a propósito si está en ninguno o en dos.
+2. **El nivel no es decorativo.** Si la tabla nueva obliga a una clave ajena que sube, **no está en el
+   nivel que crees** o la relación va al revés. Las dos cosas son hallazgos: así se descubrió que
+   **el acceso va ENCIMA de la organización** (un rol se asigna dentro de una unidad) y que tres
+   tablas con nombre de catálogo —`role_assignment_relation_types`,
+   `process_definition_period_types`, `contract_origins`— son tablas de relación de su dueño.
+3. **`_deuda_escritura` lleva el motivo de cada tabla con dos escritores, y se cierra quitando
+   líneas.** Añadir una para callar la puerta es exactamente lo que no hay que hacer. Hoy son **2**
+   —`task_items` y `fill_requests`—, y cada línea dice **qué la cierra**: la primera con F7.5, cuando
+   `tareas` se mueva a su dominio; la segunda con la decisión 1 de F7.0, porque son dos operaciones
+   distintas sobre la misma tabla y no la misma regla dos veces. **Ninguna se cierra con una línea de
+   código.**
+
+   Las otras tres —`persons`, `emails`, `chat_notifications`— se cerraron el **2026-10-07** y las tres
+   tenían la misma forma: **un escritor dentro del dominio dueño y otro fuera, en los mecanismos**
+   (`services/mail`, `services/canales`). Se cierran haciendo que el de fuera **pida por la puerta del
+   dueño** en vez de escribir — y eso **no depende** de dónde acaben viviendo esos mecanismos, que es
+   una cuestión de colocación y sigue abierta.
+
+   ⚠️ **Que una escritura del `datos/` salga por la puerta NO es una grieta en la regla: es la regla.**
+   «Una tabla la escribe sólo el `datos/` de su dominio dueño» no dice que nadie más pueda PEDIRLO —
+   dice que nadie más escriba—. El escritor vuelve a ser uno; lo demás son llamadores.
+
+   ⚠️ **Y antes de inventar un módulo nuevo, mira si el dueño ya lo tiene.** La línea de
+   `chat_notifications` proponía «un módulo de avisos»; `chat` ya tenía un creador genérico que recibe
+   las columnas, y un aviso de canal caído es una notificación como las demás —lo que cambia es el
+   `type`—. **La respuesta estaba escrita antes que la pregunta.**
+
+   ⚠️ **Y ojo con las RUTAS de esa lista: se vencen.** Las cinco líneas nombraban ficheros
+   (`services/auth/UserRepository.js`…) que F7.4 había movido, y la puerta no se queja porque usa la
+   lista **por nombre de tabla**. Si mueves código, repasa la prosa de `_deuda_escritura`.
+
+**El dominio NO es el esqueleto, y hay que saber por qué:** 27 de las 91 tablas se relacionan con 3
+dominios o más (`units` con los ocho, `persons` con siete). Por eso el dominio **no da un orden de
+lectura** —cuatro parejas de dominios se apuntan mutuamente— y por eso existe el nivel. Y por eso
+**el dominio `identidad` ocupa tres niveles** (catálogos, la persona, el acceso): sus 34 tablas no son
+un dominio, son tres cosas apiladas.
+
+Si añades una tabla, el generador falla a propósito si no tiene módulo, para que no se quede fuera de
+los diagramas en silencio.
+
+Lo único que se escribe a mano es **`docs/02-dominio-datos/anotaciones.json`**: qué *significa*
+una tabla o una columna. Se inyecta como nota en el DBML, y el generador falla si nombras algo que
+no existe.
+
+### Las tablas viven en OCHO esquemas de PostgreSQL, uno por dominio
+
+Desde el **2026-10-04** no hay nada en `public` salvo las 12 funciones de los disparadores. Una tabla
+vive en el esquema de su dominio: `identidad.persons`, `firmas.signature_requests`,
+`plantillas.ediciones`. El dominio dejó de ser una afirmación en un fichero y pasó a ser
+**dónde está la tabla**.
+
+**Y las consultas NO cambiaron: son las mismas 555.** El `search_path` hace que PostgreSQL resuelva
+`signature_requests` sin cualificar, igual que antes. Lo que cambia es que **ahora se puede**
+cualificar, y que `pg_dump -n firmas` saca un dominio entero.
+
+| | |
+|---|---|
+| Si **añades una tabla** | cualifícala con su dominio: `CREATE TABLE IF NOT EXISTS firmas.lo_que_sea (`. Sin el prefijo se crearía en `identidad`, que es el primero del `search_path`. Lo caza `check-mapa-tablas.mjs` (comprobación **A-bis**) |
+| Si **añades un dominio** | va en **tres** sitios: el `SET search_path` del esquema, `ESQUEMAS` en `config/postgres.js`, y el mapa. Los compara `config/postgres.searchPath.test.js` |
+
+⚠️ **La lista de esquemas está en TRES pools distintos** y no hay forma de que uno lea del otro: el
+de la aplicación (`config/postgres.js`), el del inicializador (que importa `ESQUEMAS`) y **el del
+harness de caracterización** (`tests/characterization/lib/db.mjs`, que también lo importa). Al
+repartir el esquema, olvidar el tercero costó **169 de 338 pruebas en rojo** con
+`relation "ediciones" does not exist`.
+
+⚠️ **`postgres_schema.sql` NO reubica una base anterior**, y es el contrato `TD7-s`: describe la
+forma y nada más. Una base de antes de los esquemas **se resetea** (`scripts/reset-system.sh dev`) o
+se reubica a mano con **`scripts/migrar-a-esquemas.sql`** *antes* de arrancar. Si no se hace ninguna
+de las dos, `CREATE TABLE IF NOT EXISTS firmas.x` **no ve** la `public.x` que ya existe: crea una
+tabla nueva y **vacía** en `firmas` y deja la vieja, con todos los datos, en `public`. En silencio, y
+el sistema arranca como si la instalación fuera nueva.
+
+⚠️ **Cuatro programas normalizan el nombre al leer el esquema**, y conviene saberlo antes de
+«arreglarlo»: `postprocess-dbml.mjs` (quita el esquema para que el modelo publicado salga idéntico),
+`check-doc-modelo.mjs`, `postgres_schema.test.js` y los otros dos tests que leen el fichero. Van
+sobre la **forma** de la tabla, no sobre dónde vive; dónde vive lo comprueba la puerta.
+
+**Por qué el esquema se puede partir por nivel y no por dominio.** Cuatro parejas de dominios se necesitan
+mutuamente (identidad↔organización, plantillas↔procesos, plantillas↔tareas, firmas↔tareas), así que
+**no hay ningún orden en el que aplicar un dominio tras otro**: para crear una tabla con clave ajena, la
+tabla a la que apunta tiene que existir ya. Por nivel sí, porque ninguna relación sube.
+
+### Azimutt — el explorador interactivo (perfil `explorer`)
+
+**Aquí van las credenciales de conexión a propósito: `CLAUDE.md` NO se publica.** El sitio de
+`docs/` sí va a ser público, así que ahí solo se nombran las variables, nunca sus valores.
+(Estas son las de dev, que ya viven en `docker/.env.dev`; no valen para nada más.)
+
+```bash
+bash scripts/stack.sh c --profile explorer up -d azimutt   # la app -> http://localhost:4900
+npx -y azimutt@latest gateway                              # la PASARELA, en el host -> :4177
+```
+
+Luego, en Azimutt: **«From database connection»** y pegar la cadena de la pila que uses:
+
+| Pila | Azimutt | Cadena de conexión |
+|---|---|---|
+| **A** | `:4700` | `postgresql://deasy:deasy@localhost:5432/deasy` |
+| **B** | `:4800` | `postgresql://deasy:deasy@localhost:5532/deasy` |
+| **C** | `:4900` | `postgresql://deasy:deasy@localhost:5632/deasy` |
+| **D** | `:5000` | `postgresql://deasy:deasy@localhost:5732/deasy` |
+
+Cinco cosas que costaron una tarde averiguar:
+
+1. **Sin la pasarela no hay conexión viva.** El navegador no puede hablar con una base; Azimutt
+   extrae por una pasarela. Si no levantas la tuya **usa la ALOJADA de ellos**, y entonces tu
+   cadena de conexión sale de tu máquina. La local lo evita.
+2. **La pasarela va en el host, no en contenedor.** No hay imagen publicada y el proceso **se ata
+   a `127.0.0.1`**, así que el `-p` de Docker no la alcanza (comprobado: 200 desde dentro, 000
+   desde fuera). Es un ayudante de cliente, no parte de la pila. Se apaga con Ctrl-C.
+3. **`localhost:<puerto publicado>`, no `postgres:5432`.** Quien conecta es la pasarela, que corre
+   en el host. El nombre de servicio de compose no le resuelve.
+4. **Importar el `.sql` NO sirve para esto.** Da una foto que hay que reimportar a mano, y además
+   su parser se traga los `CREATE INDEX` y los triggers (164 avisos). La conexión viva no.
+5. **El plan `free` no puede guardar proyectos.** Por eso el compose fija
+   `ORGANIZATION_DEFAULT_PLAN`. Si creas una organización nueva y no guarda, es esto.
+
+Son **dos** contenedores (la app y **su propia base**, separada de la del proyecto porque
+`test:char:run` resetea la de dev y se llevaría los diagramas). Por eso va tras un perfil y no
+arranca por defecto.
+
+⚠️ **Azimutt NO garantiza estar al día**: lee en vivo cuando refrescas la fuente, que es un clic.
+Un layout guardado tampoco incorpora tablas nuevas solo. **La garantía la da la puerta del DBML**,
+no esto: si cambias el esquema y no regeneras, CI se pone rojo. Azimutt es para explorar; los
+diagramas generados son la documentación.
+
+El generador levanta **su propio PostgreSQL desechable** (no toca ninguna pila, no publica
+puertos). Efecto secundario que vale tanto como los diagramas: **aplica el esquema con
+`ON_ERROR_STOP=1`, así que por fin algo valida `postgres_schema.sql`** — antes nadie lo hacía.
+
+### Backend
+```bash
+bash scripts/docker-env.sh dev exec -T backend npm run test:unit          # unitarios, junto a su módulo
+bash scripts/docker-env.sh dev exec -T backend npm run test:char:run      # contrato HTTP contra goldens
+bash scripts/docker-env.sh dev exec -T backend npm run check:imports      # OBLIGATORIO tras mover código
+bash scripts/docker-env.sh dev exec -T backend npm run check:sql-comments # OBLIGATORIO tras tocar SQL
+bash scripts/docker-env.sh dev exec -T backend npm run check:sql-aliases  # OBLIGATORIO tras tocar SQL
+bash scripts/docker-env.sh dev exec -T backend npm run check:instancias   # OBLIGATORIO: nada `new` al cargar un modulo
+bash scripts/docker-env.sh dev exec -T backend npm run check:rutas        # OBLIGATORIO tras mover código: que las rutas resuelvan
+bash scripts/docker-env.sh dev exec -T backend npm run test:unit:coverage # lcov para SonarQube
+```
+El backend **no tiene lint**, pero **sí tiene tests** — ejecútalos, no valides "a mano".
+
+**Los `check:` marcados OBLIGATORIO corren en CI** (los tres de SQL e imports desde el 2026-08-26; `check:instancias` y `check:rutas`, desde el 2026-10-07), en el job
+`backend-checks` de `cd-multienv.yml`, y en `pull_request` además de en `push`: si te los saltas en
+local, te para el PR. Antes solo corría `check:imports`, y las otras dos dependían de que alguien se
+acordara. `check:params` **no** está en CI: es una decisión pendiente, no un olvido.
+
+⚠️ **Nunca escribas un backtick dentro de un comentario `--` de SQL**: el SQL vive en plantillas de
+JavaScript y el backtick las **cierra**. Citar la columna que estás documentando es lo natural y por
+eso muerde — seis veces en una sola tanda. Con suerte lo caza `node --check`, apuntando a la primera
+línea de la plantilla en vez de a la del backtick; sin suerte el fichero compila y el SQL sale
+truncado en ejecución. Lo vigila **`npm run check:sql-comments`**, a techo cero.
+
+⚠️ **Y nunca dejes un alias de SQL sin su tabla.** Es el mismo tipo de fallo por el otro lado: un
+`ti.id` cuyo `JOIN` ya no está es sintaxis perfecta para todo el mundo menos para PostgreSQL, que
+responde `missing FROM-clause entry for table "ti"` **en tiempo de llamada**. No lo ve `node
+--check`, no lo ve `check:imports`, y el backend arranca igual. Muerde sobre todo al reemplazar en
+bloque: retirando la tabla `documents` (2026-08-23) un reemplazo global de una línea de `JOIN` se
+llevó **tres joins legítimos** a `task_items` en consultas que no tenían nada que ver, y el diff era
+de 91 sitios — leerlo no servía. Lo vigila **`npm run check:sql-aliases`**, a techo cero (**600
+consultas en 285 ficheros**, medido el 2026-10-07; decía 442 en 200).
+
+⚠️ **Y hasta el 2026-10-07 esa puerta y la de los backticks estaban CIEGAS a
+`services/admin/templates/`** —`templateLifecycle.js` (45 consultas, el fichero más grande del
+repositorio), `flowRows.js` (16), `templateArtifact.js` (10)—. Su lista de exclusión comparaba el
+**nombre** de la carpeta a cualquier profundidad y contiene `templates`, pensado para
+`backend/templates/`, el de Jinja. Dos puertas obligatorias, las dos a techo cero, sin mirar **52
+consultas**. Arreglado: se excluye sólo en la **raíz** de `backend/`. `check:imports` no lo tenía.
+**Si añades una exclusión a un recorrido de directorios, hazla por RUTA, no por nombre.** Sólo mira sentencias completas y, en las que se componen con `${…}`, sólo los usos
+anteriores al primer hueco: lo de después puede apoyarse en tablas que trae el fragmento.
+`npm run start` (`node index.js`) sirve la API en `/deasy/v1`, Swagger en `/deasy/docs`.
+
+⚠️ **`test:char:run` RESETEA la base de dev** (reset + bootstrap + seed). Es lo normal para char, pero
+no lo lances si tienes datos que quieras conservar. Para actualizar los goldens: `test:char:capture`.
+
+⚠️ **El archivo legal lo siembra el harness, y hasta el 2026-10-07 NO lo sembraba nadie.** Los textos
+legales viven **sólo en el almacén** (`deasy-legal`, con retención COMPLIANCE) y **ningún paso automático
+los creaba**: en las pilas A, B y C estaban porque alguien los publicó a mano meses atrás. En una pila
+**recién creada** el archivo arranca vacío, el bootstrap adopta **cero** y `test:char:run` daba
+**319 de 321** — con dos fallos de `/legal/documentos` que parecían un fallo de código. Se comprobó
+que no lo eran: con el backend de `develop` **en la misma pila** fallaban los mismos dos.
+
+Ahora los siembra **`npm run test:char:legal`**, que corre dentro de `test:char:fixture` **después del
+bootstrap y antes del seed**, conduce el sistema por su propia API —no escribe en el almacén a mano— y es
+**idempotente**: si el archivo ya los tiene, el bootstrap los adopta y el paso se salta. Los textos
+viven en `backend/services/legal/textos/`, **exportados byte a byte de una pila que los
+tenía** para que el golden siga valiendo (`terminos_de_uso` son 2025 caracteres, que es exactamente lo
+que el golden afirma).
+
+⚠️ **Y desde el 2026-11-25 el bootstrap los deja PRECARGADOS COMO BORRADOR** (`precargarBorradores`,
+con `textosIniciales()`): uno por cada clase que no tenga **ninguna** fila. **No publica** —lo
+publicado no se corrige, y qué texto acepta la gente lo decide quien administra—, así que el
+harness sigue haciendo falta: `test:char:legal` ya no crea el borrador, **publica el precargado**.
+Va **después** de `adoptarDelArchivo` y no antes: ésta sólo indexa el archivo con la tabla vacía, y
+un borrador creado primero le taparía un texto ya publicado. Se vio en qa, donde el servidor no
+podía descargar `mc` y los textos hubo que escribirlos a mano. (`mc` y su servicio
+`almacen-bootstrap` se retiraron ese mismo día: los buckets los crea el backend.)
+
+Y el caso que estaba en silencio ya avisa: si el archivo está vacío, el arranque dice
+**«⚠️ Archivo legal VACÍO: … el alta no registrará consentimiento alguno»** en vez de no decir nada.
+
+⚠️ **Y si acabas de EDITAR un módulo —aunque lo hayas restaurado—, reinicia el backend antes de
+lanzar char.** El proceso de node se queda con el módulo **viejo en memoria**: el fichero puede estar
+correcto en disco **y dentro del contenedor**, y la corrida seguir ejecutando lo anterior. Costó **11
+fallos fantasma** el 2026-10-07 tras provocar una puerta a propósito: los goldens se quejaban de
+`Clave de fuente de acceso inválida: flujo_firma_RENOMBRADO`, un nombre que ya no existía en ninguna
+parte. `stack.sh <letra> restart backend` y los 321 volvieron a verde.
+
+## Architecture
+
+### Capas del backend — regla no negociable
+
+**Los controllers son transporte, no lógica.** Un controller valida la entrada, llama a **un** servicio
+y traduce el resultado a HTTP. La lógica de negocio, las transacciones de varios pasos, las máquinas de
+estados y cualquier bucle de trabajo viven en `backend/services/`.
+
+`backend/services/documents/DeliverableUploadService.js` es el estilo objetivo: **una sola
+responsabilidad** —registrar la subida de un entregable—, 66 líneas, y se lee de una sentada.
+
+⚠️ **Aquí ponía `DocumentWorkflowResetService.js`, y ese fichero YA NO EXISTE**: lo sustituyó
+`backend/flujos/rehacerDocumento.js` al integrar el piloto de F7 el 2026-10-07. Y ése es el estilo
+objetivo de **un flujo**, que es otra cosa: cruza tres dominios a propósito y tiene **cero
+consultas** —cada una vive en el `datos/` de su dominio— porque un flujo decide el ORDEN, no el SQL. Los infractores conocidos están listados en `docs/planes/referencia/calidad-y-medicion.md` §5-D; no añadas
+más — si un controller tuyo pasa de ~40 líneas o abre una transacción, extrae un servicio.
+
+### El código por dominios — la forma, probada en `chat`, `organizacion` e `identidad`
+
+Desde el **2026-10-07** hay **tres** dominios movidos a `backend/dominios/` —`chat` y `organizacion`
+con sus cuatro capas y su subcapa de lecturas, e `identidad` con las cuatro capas y la subcapa
+pendiente—, y su forma es el contrato para los que faltan (`empleo` tiene la carpeta reservada y
+vacía):
+
+```
+dominios/<dominio>/
+    index.js            la PUERTA: lo único que se importa de fuera
+    routes/             la superficie HTTP
+    controllers/        sólo traduce HTTP: sin pool, sin SQL, sin reglas
+    services/           reglas y transacciones; sin req/res
+    datos/              el SQL del dominio — SÓLO sus tablas
+    datos/consulta/     el SQL que CRUZA a otros dominios
+```
+
+**Dos reglas, y las dos tienen puerta:**
+
+| | Regla | Quién la comprueba |
+|---|---|---|
+| **escribir** | una tabla la escribe **sólo** el `datos/` de su dominio dueño | comprobación **C** |
+| **leer** | libre hacia otros dominios, **pero separado** en `datos/consulta/` | comprobación **E** |
+
+⚠️ **C, D y E IGNORAN LOS COMENTARIOS, y eso fue un arreglo que hizo falta DOS VECES el mismo día.**
+La **E** marcó como infracción la frase «lo que mira `paises` está en `datos/consulta/`» —correcta, y
+señalando precisamente dónde va lo que cruza—. Y la **C** contó como escritores de `persons` y `emails`
+dos ficheros cuyo único `UPDATE persons` estaba **dentro de un comentario que explica que ya no lo
+hacen**. Ahora hay **una sola** `sinProsa()` en `check-mapa-tablas.mjs` que usan las tres, y no quita
+el `//` detrás de dos puntos para no cortar una `s3://`.
+
+**Es la misma lección que `lib/mapa.mjs` lleva escrita sobre el esquema**, y vale decirla entera: una
+comprobación que mire la prosa **castiga al que explica**, que es el peor incentivo posible aquí. Si
+escribes una puerta que busca nombres en el código, quítale los comentarios **antes** de buscar.
+
+⚠️ **Punto ciego abierto y medido: `check:instancias` no ve los CAMPOS DE CLASE.** Un
+`documentosLegales = new DocumentosLegales();` como campo se ejecuta en el constructor igual que si
+estuviera dentro — y `UserRepository` tiene uno. Hoy es **latente y no un fallo**, porque nadie
+instancia esa clase a nivel de módulo; si algún día alguien lo hace, este campo corre al importar.
+
+⚠️ **Y SEGUNDO punto ciego, encontrado el 2026-10-09 al mover `firmas`: tampoco ve un
+`const pool = getPostgresPool();` en la columna cero.** La puerta busca `new` y esto es una
+**llamada de función**, así que es la misma forma del fallo una llamada más allá de su alcance — y el
+efecto es peor que el del `new`, porque no revienta: `getPostgresPool()` devuelve el valor del
+momento del import, así que si el módulo entra antes de que exista la conexión queda `undefined`
+**para siempre** y los endpoints que la usan contestan *«La conexión a PostgreSQL no está
+disponible»*, mandándote a buscar un problema de base de datos que no existe.
+
+Había **tres** (`PdfSigningService`, `BatchSigningService`, `sign_controller`), funcionando sólo por
+orden de carga, y **meter el dominio tras una puerta es exactamente lo que cambia ese orden**. Se
+arreglaron con él. Se escribe así, y vale para cualquier recurso que se resuelva al cargar:
+
+```js
+const pool = () => {
+  const p = getPostgresPool();
+  if (!p) throw new Error("La conexión a PostgreSQL no está disponible.");
+  return p;
+};
+// ...y cada uso pasa de `pool.` a `pool().`
+```
+
+⚠️ **Un parámetro por defecto NO es este fallo**: `({ connection = getPostgresPool() })` se evalúa
+**al llamar**, no al cargar. Es la forma correcta de que un servicio resuelva su propia conexión — y
+es lo que permite que un controlador no tenga pool.
+
+**Por qué la asimetría, medido:** el **3 %** de las escrituras del backend cruza dominios; el **29 %**
+de las lecturas. Prohibir que una lectura cruce sería absurdo —`units` se relaciona con los ocho
+dominios—, y dejarla mezclada con el `datos/` propio hace que **nada distinga una lectura legítima de
+un error**. Separarla da las dos cosas.
+
+⚠️ **NO INSTANCIES NADA A NIVEL DE MÓDULO. Es el fallo que mordió CUATRO veces el 2026-10-07**, uno
+por cada dominio que se movió: `ChatRealtimePublisherService` (la pasarela como parámetro por
+defecto), `SqlAdminService` (6 subservicios en el constructor), `program_controler` y
+`bootstrap_controller` (`const x = new Servicio()` al cargar).
+
+**ESM tolera los ciclos; lo que no tolera es USAR una referencia antes de que se inicialice.** La
+puerta de un dominio sólo cambia **quién entra primero**, así que cada dominio que se mueve destapa
+otra. Y **hacer perezoso un campo sólo mueve qué orden rompe**: hubo un caso en que el backend
+arrancaba y el test que importaba el servicio directo reventaba. **Prueba los DOS órdenes de carga —
+el arranque y el test— porque uno solo miente.**
+
+Se arreglan resolviendo al **primer uso**:
+
+```js
+let _servicio = null;
+const servicio = () => (_servicio ??= new Servicio());
+// ...y cada uso pasa de `servicio.` a `servicio().`
+```
+
+**Hoy son CERO, y hay puerta a techo cero**: `npm run check:instancias`
+(`backend/scripts/check_module_instances.mjs`), en el job `backend-checks` de CI. Mira **todo el
+backend** en la **columna cero** —con sangría ya está dentro de un bloque y se ejecuta cuando toca— y
+sólo marca **nuestras** clases: las reconoce porque entran por una ruta **relativa**, así que un
+`new Minio.Client({…})` o un `new Router()` no cuentan (no pueden participar en un ciclo de nuestros
+módulos, que es el fallo que esto persigue). Cuando falla **dice qué escribir**, con el nombre de la
+variable ya puesto.
+
+⚠️ **Su primer alcance estaba MAL RECORTADO, y el primer dominio que se movió lo demostró.** Miraba
+sólo `controllers/`, `routes/` y `dominios/` «porque el problema vive en los controladores», y al
+mover `identidad` falló por `services/realtime/RealtimeGateway.js` — que la puerta **no miraba**.
+Había **nueve** sitios fuera del alcance, tres construyendo justo lo que pasa por la puerta de un
+dominio. **Es el mismo fallo que `check:sql-aliases` y `check:sql-comments` al excluir una carpeta por
+nombre**: 73 ficheros vistos contra **203** reales. Un recorte a ojo es donde esto muerde.
+
+⚠️ **Y se probó mirar también el cuerpo de los CONSTRUCTORES —y se retiró midiendo.** `RealtimeGateway`
+construía tres servicios de dos dominios en el suyo, igual que `SqlAdminService` con sus seis. Pero la
+comprobación marcaba **13 sitios y 11 eran inofensivos**: un constructor sólo corre al cargar **si
+alguien instancia esa clase a nivel de módulo**, así que con el nivel de módulo a cero no puede
+encontrar nada. Es redundante **por construcción**, no por optimismo — y eso exige que la puerta **no
+tenga excepciones**. Las dos que parecían razonables (`index.js`, cuyo cuerpo corre al final, y los
+`scripts/*.mjs`, que son puntos de entrada) **se arreglaron en vez de eximirse**, y costaron cuatro
+líneas. Si alguien añade una excepción, la redundancia deja de ser cierta y vuelve el fallo por el
+constructor.
+
+Eran **30 en 16 ficheros** y se cerraron el 2026-10-07 en una tanda: 26 por script y 4 a mano
+—`sql_admin_controller`, donde `editor` envuelve a `service` y las dos tenían que volverse perezosas
+en orden; `dossier_controler`, cuyo cliente del almacén ocupa varias líneas **y lee el entorno al
+construirse**; y una que resultó estar **muerta**—. Y mover `identidad`, ese mismo día, destapó
+**once más** donde la puerta no miraba: siete en `services/`, uno en `middlewares/` y tres en
+`scripts/`, más el **singleton de `RealtimeGateway`** y el de `index.js`. Total real: **41**.
+
+⚠️ **`SqlAdminService` estaba importada e instanciada en `user_controler.js` con CERO usos.** El
+servicio más grande del backend, construido al cargar el controlador más grande, para nada. No lo veía
+nadie: el backend no tiene lint, y una instancia sin usar es sintaxis perfecta.
+
+⚠️ **Al convertir los usos por regex, cuidado con la PROSA.** `ident.` también aparece en los
+comentarios: un «Ver el porqué del diseño en el servicio.» se volvió «en el servicio().». Revisa las
+líneas de comentario del diff, que es donde no lo ve ningún test.
+
+⚠️ **Antes de dar por propia una consulta, PREGUNTA AL MAPA de quién es cada tabla.** No se adivina
+por el nombre: **`cargos` es de `identidad`**, no de `organizacion`, y por eso tres consultas del
+organigrama que parecían propias cruzan. Un dominio a ojo es un `datos/` mal puesto:
+
+```bash
+node -e 'const m=require("./scripts/docs/dominios.json");const t=process.argv[1];
+for(const[d,v]of Object.entries(m)){if(!d.startsWith("_")&&v.tablas&&t in v.tablas)console.log(d,v.tablas[t]);}' cargos
+```
+
+⚠️ **Y una puerta a techo cero NO es un censo.** `check:sql-aliases` cuenta plantillas de JavaScript:
+**no ve** una consulta con comillas dobles ni una con el nombre de tabla interpolado. En
+`organizacion` eso convirtió «15 consultas por mover» en **24** — un tercio más de trabajo del
+estimado. Para contar, cuenta; la puerta sólo dice que no hay alias roto.
+
+**Y en `identidad` se midió el otro lado del mismo agujero: 35 consultas del dominio estaban escritas
+con comillas dobles, así que NI `check:sql-aliases` NI `check:sql-comments` las miraban.** Pasarlas a
+plantilla —que es como están las demás— subió lo vigilado de **486 a 521 sentencias reales**, sin
+añadir ni una consulta. **Al escribir una consulta en `datos/`, usa plantilla aunque quepa en una
+línea**: con comillas dobles es invisible para las dos puertas.
+
+⚠️ **Y el contador de la puerta incluye PROSA**: un `` `UPDATE` `` citado dentro de un comentario le
+parece una sentencia. Por eso dice 638 donde las reales son 521. Si comparas dos medidas, quita los
+comentarios antes.
+
+⚠️ **ESTE BLOQUE SE PERDIÓ UNA VEZ, y conviene saber cómo.** Lo borró un reemplazo **por rango** —
+`s[:i] + nuevo + s[j:]`— que buscaba dos anclas y reescribía todo lo que había en medio, sin mirar qué
+era. Tres lecciones desaparecieron de `CLAUDE.md` en el commit `cab28655` y nadie se enteró: no hay
+puerta que vigile la prosa de este fichero. **Si editas por script con dos anclas, comprueba qué vas a
+borrar** (`assert` sobre el trozo intermedio, o reemplazo exacto en vez de rango).
+
+⚠️ **Y al mover un dominio, recalcula los imports POR SCRIPT**, resolviendo cada ruta desde la
+posición vieja y reescribiéndola desde la nueva. En `chat` fueron **29 imports en 14 ficheros** y en
+`identidad` **102**: a mano es donde se cuela el que nadie prueba.
+
+Tres cosas del reescritor que **ya costaron una corrida cada una** el 2026-10-07:
+
+1. ⚠️ **Si el DESTINO también se movió, resolver desde la posición vieja no basta.** La primera
+   pasada de `identidad` dejó **63 rutas apuntando a las carpetas viejas**: el script resolvía bien y
+   reescribía bien, pero hacia donde el fichero *estaba*. Hace falta el mapa **viejo→nuevo** y
+   consultarlo antes de volver a escribir la ruta.
+2. ⚠️ **ACEPTA LAS DOS COMILLAS.** Un import con comillas **simples** sobrevivió a cuatro barridos
+   seguidos y dejó el backend sin arrancar (`routes/dossier_router.js`). El repositorio usa dobles
+   casi siempre, así que la excepción es invisible justo cuando más duele.
+3. ⚠️ **Hay rutas relativas que NO son imports.** `new URL("../../database/postgres_schema.sql",
+   import.meta.url)` se rompe igual y ningún reescritor de imports la toca. Costó dos tests.
+4. ⚠️ **Y una ruta que pierde el `./` deja de ser una ruta.** `from "datos/certificados.js"` es un
+   **paquete** para ESM, y el error —`Cannot find package 'datos'`— no se parece al problema: dejó
+   **14 suites en rojo**. Lo escribe solo un `os.path.relpath`, que devuelve `datos/x.js` sin prefijo.
+   Si compones rutas por script, **añade el `./` tú**.
+
+⚠️ **Y un hueco que NINGUNA puerta cubre: que el módulo EXPORTE lo que le importan.** `check:rutas`
+comprueba que el fichero exista; `check:imports`, que un símbolo usado esté importado. Que
+`import { x } from "./y.js"` falle porque `y.js` ya no exporta `x` sólo lo ve **node al cargar** — seis
+suites en rojo al integrar el piloto de F7, por un símbolo que había cambiado de módulo.
+
+**Ya hay puerta para las cuatro: `npm run check:rutas`** (`backend/scripts/check_relative_paths.mjs`),
+en CI. Resuelve toda ruta relativa del backend —imports con cualquier comilla, `import()` dinámico y
+`new URL(…, import.meta.url)`— y falla si alguna no existe. **Era el hueco que este fichero nombraba
+y nadie tapaba**: ni `node --check` ni `check:imports` la ven, y antes sólo la veía el backend al
+arrancar, que es un mal detector porque para entonces ya perdiste la corrida.
+
+### `identidad` son CINCO asuntos, no uno — y por eso se mueve a tandas
+
+Su dominio tiene **34 tablas** y este fichero decía «son tres cosas apiladas». Medido el 2026-10-07,
+son **cinco**, y la lectura por niveles no sirve para separarlas: el RBAC ocupa el nivel 0 **y** el 3.
+
+| Asunto | Tablas | Dónde vive su código |
+|---|---|---|
+| **La persona** | 10 — `persons`, `documentos_identidad`, `emails`, `telefonos`, `direcciones`, `dossiers`… | ✅ **`dominios/identidad/`**, con su subcapa |
+| **Catálogos** (n0) | 10 — `generos`, `estados_civiles`, `cargos`, `parentescos`… | `services/system/genericCatalog.js` (transversal declarado) |
+| **El acceso / RBAC** (n0 y n3) | 8 — `roles`, `permissions`, `role_assignments`, `actions`, `resources`… | `services/auth/RbacService.js` + `middlewares/rbac.js` |
+| **Los mecanismos** (n3) | 5 — códigos de verificación, `intentos_limitados`, `canales_bitacora` | `services/mail/`, `services/limites/`, `services/canales/` |
+| **Lo legal** (n1) | 2 — `consentimientos`, `documentos_legales` | `services/legal/` |
+
+**La primera tanda movió la persona** —50 ficheros: 1 puerta, 2 routers, 18 controllers y 31
+servicios— y la segunda cerró su subcapa: `routes/`, `controllers/` y `services/` con **cero
+consultas**, y las **103** repartidas en 9 ficheros de `datos/` (82 propias) y 8 de `datos/consulta/`
+(21 que cruzan). `UserRepository` bajó de **866 a 708 líneas**, y las **cuatro transacciones a mano**
+pasaron a `conTransaccion`.
+
+⚠️ **Dos ficheros no se extrajeron: se RECONOCIERON.** `UserCertificateRepository` y `dossierStore` ya
+*eran* módulos de datos —el segundo lo dice en su cabecera, y tiene **cero** `throw`—, así que se
+movieron a `datos/` **sin tocar su API**. Reescribir la interfaz de un módulo que ya estaba en su sitio
+no es mover código. Antes de extraer un servicio, mira si no es ya esto. Los otros cuatro asuntos **siguen fuera a
+propósito**, y el `index.js` del dominio lleva escrito el por qué de cada uno. El que más importa:
+
+⚠️ **El RBAC NO entra tras la puerta de `identidad`.** Lo usa **todo router** de la aplicación, así
+que meterlo dentro obligaría a **todos** los dominios a importar `identidad` para resolver un
+permiso. Dónde va es una de las decisiones de F7.0.
+
+⚠️ **Y `identidad` ⇄ `organizacion` es un CICLO ENTRE PUERTAS, a sabiendas.**
+`DocumentoIdentidadService` necesita `InstitucionService` —de qué país es la institución decide cuál
+es el documento nacional— y `organizacion/controllers/institucion_controller.js` necesita
+`nombreLocal` de `identidad`. Es una de las cuatro parejas que el mapa ya declara mutuamente
+dependientes, así que no es un error que haya que deshacer. **Lo que lo hace inofensivo es que nadie
+instancie al cargar**: el ciclo existía ya en los dos dominios anteriores, y la primera vez que
+mordió de verdad fue aquí, con nueve suites en rojo.
+
+⚠️ **No vuelvas a contar «62 ficheros».** Esa cifra contaba cualquier mención del nombre de una tabla,
+**comentarios incluidos**. Apretado a referencias dentro del SQL son **36 ficheros y 379 consultas**,
+y de esos 36 sólo **19 son del dominio**: los otros 15 leen `identidad` pero escriben en otro, así que
+se van con el suyo cuando les toque.
+
+### La transacción se abre con `conTransaccion`, y NO en un controller
+
+`config/postgres.js` exporta **`conTransaccion(trabajo)`**: abre la conexión, `beginTransaction`, llama
+a tu función, `commit`; y ante cualquier error hace `rollback` y **propaga el error original**, con
+`release` siempre. Existe desde el **2026-10-07**, y antes ese patrón estaba **copiado a mano en 19
+ficheros**, cuatro de ellos **controllers**.
+
+- La usan **`services/`** y los flujos. **Un controller no**: si necesita atomicidad, llama a un
+  servicio. Medido al cerrar F7.2: en `controllers/` y `routes/` hay **cero** `.query(`, **cero**
+  `beginTransaction` y **cero** `getConnection()`.
+- ⚠️ **`getConnection()` NO es una transacción.** Pedir una conexión dedicada sin `beginTransaction`
+  no protege nada y se puede quedar sin soltar por cualquier camino que no pase por el `finally`.
+  Había **siete** así; ya no hay ninguna.
+- ⚠️ **No metas en la transacción lo que la base no puede deshacer.** Subir un objeto al almacén va
+  **fuera**: una transacción de PostgreSQL no borra un fichero ya escrito, y abarcarla promete una
+  atomicidad que no existe.
+
+### Reglas al mover código
+
+1. **Refactor = mover código, NO reescribir comportamiento.** Si cambias qué hace algo, no es un refactor.
+2. **`node --check` valida SINTAXIS, no imports.** Un símbolo movido sin su `import` es sintaxis válida,
+   el módulo **carga**, y revienta en tiempo de LLAMADA. Así estuvieron rotos tres semanas cuatro
+   `ReferenceError`. Por eso **`npm run check:imports` es obligatorio tras mover código**, y comprobar
+   que el backend arranca **no** sustituye a ejecutarlo.
+3. **No injertes casos especiales en el camino genérico.** Es el olor que hizo God a `AdminTableManager`.
+4. **Extrae por script, no a mano**, y verifica `count == 1` antes de borrar cada bloque.
+5. **El SQL no lo valida NADIE hasta que se ejecuta esa rama.** `node --check` no lo mira,
+   `check:imports` tampoco, y el backend arranca igual: es una cadena de texto. Así sobrevivieron
+   meses **cuatro** `UPDATE ... INNER JOIN ... SET` (sintaxis multi-tabla de MySQL que PostgreSQL
+   rechaza) y dejaron `POST /sign/fill-requests/:id/return` **roto para todo el mundo**.
+   PostgreSQL quiere `UPDATE tabla alias SET col = ... FROM otra WHERE union AND filtros`, con las
+   columnas del `SET` **sin cualificar**. Al escribir SQL nuevo: pruébalo con `PREPARE` en psql, y
+   recuerda que **`grep "UPDATE.*JOIN"` no encuentra nada** porque el SQL ocupa varias líneas.
+
+### Plan de calidad
+
+`docs/planes/referencia/calidad-y-medicion.md` es el **documento maestro** de deuda técnica y complejidad: **mapa de
+fases con su estado (§5.0)**, línea base de SonarQube, ranking de ficheros/funciones y la lista de
+**lo que NO hay que tocar** (§7 — `sqlTables.js` y los falsos positivos de Sonar entran ahí). Léelo
+antes de proponer un refactor. Aviso: las fases se llaman A…I por **el orden en que se descubrieron**,
+no por prioridad ni por tema.
+
+Dos documentos satélite, cada uno con su problema:
+
+- `docs/planes/referencia/cobertura.md` — **la cobertura**. Y lo primero que dice: el gate **no pide 80 %
+  global** (eso sería trabajo de años), pide 80 % de lo nuevo.
+- `docs/planes/referencia/patrones-diseno.md` — **cuándo usar un patrón de diseño y cuándo no**. En este repo la
+  complejidad se cura con tablas y extracción, no con jerarquías; hay tres sitios donde un patrón GoF
+  sí se gana el sueldo y una lista de dónde sería sobreingeniería. Léelo antes de proponer uno.
+
+### SonarQube — cómo está montado
+
+**Aquí va solo lo que no cambia.** Las cifras (complejidad, incidencias, cobertura, ranking) viven en
+`docs/planes/referencia/calidad-y-medicion.md` y **cambian con cada escaneo**: no las repliques en este fichero.
+
+| Pieza | Dónde |
+|---|---|
+| Stack | `scripts/sonar/compose.yml` — SonarQube **community** + PostgreSQL 16, proyecto compose `deasy-sonar`, puerto **9002 → 9000** |
+| Lanzador | `scripts/sonar/scan.sh` — `sonar-scanner-cli` dockerizado |
+| Config | `sonar-project.properties` — `projectKey=deasy`; `sources=backend,frontend/src,signer,scripts`, con los tests **declarados aparte** |
+| CI | `.github/workflows/sonar.yml` — `workflow_dispatch` |
+
+```bash
+docker compose -f scripts/sonar/compose.yml up -d           # levanta el servidor en :9002
+SONAR_TOKEN=<token> bash scripts/sonar/scan.sh              # escanea (~1,5 min)
+```
+
+**Credenciales:** usuario `admin`, contraseña `Demo1234!Demo`.
+
+**Pero la API NO acepta esa contraseña por basic auth** — desde que dejó de ser la de por defecto,
+`-u admin:<pass>` devuelve 401 contra `/api/measures/*` y `/api/authentication/validate` responde
+`{"valid":false}` incluso siendo correcta. **Todo va por token.** Para emitir uno sin abrir la UI:
+
+```bash
+curl -s -c cj.txt -X POST "http://localhost:9002/api/authentication/login" \
+     -d "login=admin" --data-urlencode "password=Demo1234!Demo"
+XSRF=$(awk '/XSRF-TOKEN/{print $7}' cj.txt)
+curl -s -b cj.txt -H "X-XSRF-TOKEN: $XSRF" -X POST \
+     "http://localhost:9002/api/user_tokens/generate" -d "name=deasy-scan-$(git rev-parse --short HEAD)"
+```
+El `X-XSRF-TOKEN` no es opcional: sin él el `POST` da 401 aunque la cookie sea válida.
+
+**Cuatro cosas que se olvidan y cuestan una medición entera:**
+
+1. **Regenera los DOS informes de cobertura ANTES de escanear** (`test:unit:coverage` en backend y
+   frontend). Si no, Sonar lee los de la corrida anterior **sin quejarse**. Y si las rutas `SF:` del
+   lcov no son relativas a la raíz del repo, los descarta **en silencio** y la cobertura vuelve a 0.
+2. **Al consultar la API, filtra con `resolved=false`.** Por defecto `/api/issues/search` incluye las
+   cerradas y las *won't fix*, y los conteos salen inflados.
+3. **El escaneo se PROCESA después de subirse.** Consultar métricas justo al terminar devuelve las
+   viejas: espera a que `/api/ce/task?id=<id>` diga `SUCCESS`.
+4. **No toques `sonar.projectVersion`.** Mueve el New Code period y tira la serie histórica, que es el
+   único termómetro fiable que hay.
+
+**El servidor es solo local.** No es alcanzable desde un runner de GitHub, así que Sonar en CI está
+pendiente de una decisión de infraestructura (publicarlo con TLS o migrar a SonarCloud), no de código.
+El workflow ya está escrito y hace *skip* en verde mientras falten los secrets `SONAR_HOST_URL` y
+`SONAR_TOKEN`.
+
+**Lo pendiente se marca `FIXME`, NO `TODO`.** Y no es gusto: `TODO` **no se puede usar aquí** porque
+en castellano es una palabra corriente —349 líneas la llevan— y la regla que la busca (`S1135`) no
+tiene forma de distinguirla. Medido el 2026-10-09: **123 incidencias y ni una era un marcador**,
+32 de ellas en mayúsculas porque este repositorio grita palabras para enfatizar («reescribe TODO el
+SQL», «TODO MENOS LO SENSIBLE»). Así que la regla está **excluida en `sonar-project.properties`**
+—ahí, y no en el perfil del servidor, para que el motivo viaje con el código y sobreviva a un
+`docker volume rm`— y el trabajo pendiente se marca con **`FIXME`**, que es `S1134` y pesa **MAJOR**
+en vez de INFO. No se pierde la señal: pasa a valer más.
+
+**Marcar no es arreglar.** Los falsos positivos se marcan en Sonar con justificación; hay varios que
+**no** hay que "corregir" (§7 del plan). Sonar rastrea la incidencia por el **hash de la línea**: un
+rename puro conserva la marca, reescribir la línea la pierde.
+
+### Process engine (core domain)
+Processes are modeled as `processes` + `process_definition_versions` + `process_target_rules` in PostgreSQL. The series → rule → flow model governs assignment: a series names the process, a rule distributes the process scope, and the flow distributes the steps. Templates (Jinja2) linked to a process determine whether it is document-producing.
+
+### Modos de emisión de entregables (single / replicated / routed) — LEER `docs/arquitecturas/modelo-emision-entregables.md`
+Cada plantilla ligada declara su modo en `vinculos.item_mode`:
+- **single**: entregable + flujo (entrega/firma) **predefinidos en la plantilla**; 1 instancia al lanzar.
+- **replicated**: flujo **predefinido**; el responsable crea N réplicas etiquetadas que **heredan** ese flujo.
+- **routed**: **sin flujo predefinido** — el usuario **define entrega + firma AL INSTANCIAR** (runtime).
+
+El **"Proceso por defecto"** es un routed para **tareas ad‑hoc que no pertenecen a ningún proceso** (cualquier usuario, en cualquier momento; p. ej. "haz el informe de este evento"). **NO es "memorandums".**
+
+Autoría de flujo (plantilla *official*): solo **`task_assignee`** ("Responsable del entregable") y **`cargo_in_scope`** ("Por cargo") — *ad_hoc* añade `specific_person`. **RETIRADOS (la base los rechaza):** `document_owner`/"Responsable del documento", `position`, `manual_pick`. Ya no es deprecación blanda: el `CHECK` de `fill_flow_steps.resolver_type` y `signature_flow_steps.resolver_type` admite **solo esos tres valores** (`task_assignee`, `specific_person`, `cargo_in_scope`). Lo mismo con los ámbitos `context_subtree` y `context_ancestor_type`, retirados de `unit_scope_type`, que hoy admite cinco: `unit_exact`, `unit_subtree`, `unit_type`, `all_units` y `context_exact`.
+
+⚠️ **Aquí ponía «y el `ALTER` valida las filas existentes, así que un arranque contra una base con un valor retirado falla». Ya no es verdad**: desde TD7-s (2026-08-24) **no queda ni un `ALTER TABLE` en `postgres_schema.sql`** — comprobado el 2026-08-26, son cero. Todo es `CREATE TABLE IF NOT EXISTS` con los `CHECK` en línea, así que sobre una base que ya existe **el `CHECK` nuevo ni se aplica ni falla**: la fila con el valor retirado sigue ahí, en silencio. Un esquema recreado desde cero sí lo rechaza; uno vivo, no. **routed no autora flujo** (es de runtime). **Estado: los tres modos están hechos** — el editor de flujo en runtime existe (`useFlowBuilder.js` + `GeneralTaskModal.vue`, materializado por `materializeRuntimeFlowForTaskItem`).
+
+⚠️ **Lo que sí queda vivo del `document_owner`: sus `case` en el camino de ejecución.** No los des
+por retirados al leer el código. Y ojo, porque **NO son ramas muertas del todo**: el `CHECK` cubre la
+columna `resolver_type`, pero el JSONB `signature_flow_steps.signers` **no lo valida nadie** y manda
+sobre ella, así que un paso legado puede traer ese valor por ahí. Borrar los `case` dejaría el paso
+resolviéndose por el `default` sin cargo: **no firmaría nadie, y en silencio**. Está registrado como
+**defecto 1.19** con su plan de cierre —filtrar Y migrar, en ese orden—. El criterio que los mató
+sigue vigente: **lo que la web no autora, no existe**.
+
+## El entregable: qué se debe, quién lo debe, qué se produjo
+
+**Reordenado el 2026-08-23** (frente 9, fase D7). Si vas a tocar entregables, tareas o documentos,
+esto es lo que hay — y lo que ya **no** hay:
+
+| Pregunta | Dónde vive |
+|---|---|
+| **Qué se debe** | `task_items`. Su identidad es *(tarea, plantilla, **puesto que lo produce**)* |
+| **Quién lo debe** | `task_item_tenures` — una fila por turno, con quién, en calidad de qué puesto, desde y hasta cuándo |
+| **Qué se produjo** | `document_versions` (la **ronda**: llenar → firmar) + `document_version_uploads` (cada **corrección** del archivo, con su autor) |
+
+**Tres tablas murieron y no vuelven:** `task_assignments` (una foto del reparto que ningún relevo
+refrescaba), `task_item_handovers` (los mismos hechos como eventos; ahora son periodos) y `documents`
+(una cáscara 1:1 sobre `task_items` **sin ni una columna propia**).
+
+Cinco cosas que no son evidentes y que cuestan si se ignoran:
+
+1. **`task_items.assigned_person_id` es una CACHÉ**, no el dato. Su único escritor es el trigger
+   `trg_task_item_tenures_sync`, y en el editor genérico es de solo lectura. Para mover el
+   responsable está el traspaso, no un `UPDATE`.
+2. **`responsible_position_id` es obligatorio.** Es el ancla —el puesto, no la persona— y el punto
+   por el que enganchan los cuatro caminos de relevo. Si el lanzamiento no encuentra a nadie, **no
+   crea el entregable**: antes lo creaba huérfano y avisaba en la misma respuesta de que no había
+   nadie.
+3. **El relevo automático llega hasta ANTES de la fase de firma**, y esa lista de estados está
+   **duplicada** en JavaScript (`DOCUMENT_RELAYABLE_STATUSES`) y en el SQL de los triggers. La
+   vigila `DocumentStateService.test.js`, que **lee el fichero del esquema** y compara.
+4. **Las solicitudes pendientes siguen al responsable**, pero sólo las resueltas por `task_assignee`.
+   La regla es *alinear al vigente*, no *mover de X a Y*: un relevo pasa por un estado intermedio sin
+   persona, y con la segunda formulación la solicitud se quedaba huérfana.
+5. **El «Para:» no existe.** El destinatario se deriva del flujo de firma. Un envío sin flujo se
+   rechaza, así que el dato siempre está.
+
+El diseño y las decisiones del dueño, con sus mediciones, en
+[`docs/planes/plan_data/asignacion-y-relevo.md`](docs/planes/plan_data/asignacion-y-relevo.md).
+
+## Environments & ports
+`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/almacén/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.
+
+Env config: `docker/.env` + per-env `docker/.env.<env>`; reference model is `docker/.env_model`. Frontend uses `VITE_API_BASE_URL` (`/api` behind the Nginx proxy in Docker).
+
+⚠️ **El proxy tiene un tope de cuerpo, y si una pantalla puede mandar más que él, el fallo no se
+parece a un tope.** `client_max_body_size` de `location /api/` vale **200m** en
+`nginx/app-conf.d/` y en `nginx/ingress-conf.d/` (los dos bloques), y tiene que ir **emparejado**
+con `MAX_DOCUMENTOS_POR_LOTE` de `backend/dominios/firmas/routes/index.js` (**200**): aquél acota
+los **bytes** y éste los **documentos**, y un lote legítimo pasa los dos. Si subes uno, sube el otro
+o la pared se queda donde estaba con otro código de error.
+
+Eran 20m y 30 documentos, y el **2026-11-10** los dos fallaron con un lote de **74 documentos
+(36,1 MB)** —lo que produce «firmar todos los pendientes», que no acota nada—. Lo que lo hace
+caro de diagnosticar es que **ninguno de los tres síntomas nombraba el tamaño**: nginx corta **tras
+leer la cabecera** (413 en 1 ms, 130 KB subidos de 36 MB) y contesta **HTML**, el frontend hacía
+`response.json()` sobre ese HTML y pintaba un error de JSON, y debajo esperaba una segunda pared
+que decía `LIMIT_UNEXPECTED_FILE` —«un archivo en un campo que no se esperaba»— cuando el problema
+era la **cuenta**. Los tres arreglados; la historia y lo medido, en
+[`docs/src/content/docs/complemento/firma-en-lote.md`](docs/src/content/docs/complemento/firma-en-lote.md).
+
+⚠️ **Y lo que subir un tope empeora: multer deja los PDF en `os.tmpdir()` y los suelta el
+`finally` de `processSinglePdfSigning`**, así que **todo camino que conteste antes de llegar ahí los
+deja en disco para siempre**. Medido el mismo día: tres PDF con un `certificate_id` inexistente
+dejaban `/tmp` en 235 → **238**; con el lote a 200 documentos de hasta 30 MB, un rechazo tardío
+podían ser 6 GB. Lo cierra `liberarTemporales` en `dominios/firmas/controllers/firma_controller.js`
+— y ahí **el `finally` de `batch/start` no puede ser incondicional**: ese lote se firma en segundo
+plano y cuando el controlador contesta 202 los ficheros todavía hacen falta.
+
+## CI/CD
+`.github/workflows/cd-multienv.yml`: push to `develop` publishes `dev`-tagged images (no deploy); `qa` and `main` publish `qa`/`prod` images and deploy when `DEPLOY_DELIVERY_MODE=gh-actions`. Published images: `deasy-backend`, `deasy-frontend`, `deasy-signer`, `deasy-analytics`.
+
+Branching: work happens on `develop`; `main` is the production branch.

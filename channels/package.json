@@ -1,0 +1,17 @@
+{
+  "name": "channels",
+  "version": "0.1.0",
+  "description": "Pasarela de canales de mensajeria de Deasy. Sostiene conexiones; NO decide.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node --test 'src/**/*.test.js'",
+    "_comentario_test": "EL PATRON VA ENTRECOMILLADO para que lo expanda NODE y no el shell. Sin comillas, bash lo expande sin `globstar` y `**` mira UN SOLO nivel: `src/config.test.js` quedaba sin ejecutar y sin avisar de nada. Y pasarle la carpeta a secas tampoco vale: node corre `index.js`, que arranca el servicio de verdad y se muere por falta de entorno."
+  },
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.34.6"
+  },
+  "devDependencies": {}
+}

@@ -13,14 +13,12 @@ export function useAdminShellHelpers({
   isForeignKeyField,
   fetchFkLabel,
   getFkCachedLabel,
-  fetchRows,
   selectedRow,
   ensureDeleteInstance,
   getDeleteInstance,
   processDefinitionVersioningSource,
   ensureProcessDefinitionVersioningInstance,
   getProcessDefinitionVersioningInstance,
-  fkTable,
   recordViewerTable,
   formatValueForTable
 }) {
@@ -75,13 +73,6 @@ export function useAdminShellHelpers({
     emit("go-back");
   };
 
-  const formatFkViewerValue = (field, row) => {
-    if (!row || !field) {
-      return "—";
-    }
-    return formatValueForTable(fkTable.value, row[field.name], field, row);
-  };
-
   const formatRecordViewerValue = (field, row) => {
     if (!row || !field) {
       return "—";
@@ -122,7 +113,7 @@ export function useAdminShellHelpers({
     fkFiltersRef.value = {
       ...fkFiltersRef.value,
       process_id: "",
-      variation_key: "",
+      linea_id: "",
       status: "active"
     };
     await fetchFkRowsRef();
@@ -144,7 +135,6 @@ export function useAdminShellHelpers({
     buildFkCreatePayload,
     buildKeys,
     handleGoBack,
-    formatFkViewerValue,
     formatRecordViewerValue,
     openDelete,
     openProcessDefinitionVersioningModal,

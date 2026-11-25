@@ -1,0 +1,27 @@
+                        Navegador
+                            | HTTPS
+                            v
+                  +--------------------+
+                  |   nginx (proxy)    |  <- el portero: TLS + reparto de trafico
+                  +----------+---------+
+                     /                \
+              "/"   /                  \  "/api/..."
+                   v                    v
+          +--------------+     +------------------+
+          |   frontend   |     |     backend      |  Node 25 + Express 5
+          |    Vue 3     |     |    (API REST)    |  + Socket.IO (tiempo real)
+          +--------------+     +--+------+------+-+
+                                  |      |      |
+             +--------------------+      |      +--------------------+
+             v                           v                           v
+    +-----------------+       +-------------------+       +-----------------+
+    |  PostgreSQL 17  |       |       MinIO       |       |    RabbitMQ     |
+    |  (los datos)    |       |  (los ficheros)   |       |   (la cola)     |
+    +-----------------+       +---------+---------+       +--------+--------+
+                                        |                          |
+                                        +------------+-------------+
+                                                     v
+                                          +----------------------+
+                                          |        signer        |  Python + pyHanko
+                                          |     (firma PDFs)     |  + helper Node "sigmaker"
+                                          +----------------------+

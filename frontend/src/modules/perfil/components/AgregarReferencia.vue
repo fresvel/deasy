@@ -9,58 +9,59 @@
     @cancel="onCancel"
   >
     <div class="w-full">
-      <label class="profile-field-label">Tipo de referencia</label>
+      <label :for="fieldId('tipo')" class="deasy-form-label">Tipo de referencia</label>
       <SSelect
+        :id="fieldId('tipo')"
         :options="['laboral', 'personal', 'familiar']"
         v-model="form.tipo"
       />
     </div>
 
-    <div class="w-full space-y-2" v-if="form.tipo === 'laboral'">
-      <label class="profile-field-label">Institución</label>
-      <input
+    <div class="w-full" v-if="form.tipo === 'laboral'">
+      <label :for="fieldId('institution')" class="deasy-form-label">Institución</label>
+      <input :id="fieldId('institution')"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         placeholder="Nombre de la institución o empresa"
         v-model="form.institution"
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Nombres</label>
-      <input
+    <div class="w-full">
+      <label :for="fieldId('nombre')" class="deasy-form-label">Nombres</label>
+      <input :id="fieldId('nombre')"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         placeholder="Nombres completos"
         v-model="form.nombre"
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
-      <input
+    <div class="w-full">
+      <label :for="fieldId('cargo-parentesco')" class="deasy-form-label">{{ form.tipo === 'laboral' ? 'Cargo' : form.tipo === 'familiar' ? 'Parentesco' : 'Cargo/Parentesco' }}</label>
+      <input :id="fieldId('cargo-parentesco')"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         :placeholder="form.tipo === 'laboral' ? 'Cargo en la institución' : form.tipo === 'familiar' ? 'Ej: Padre, Madre, Hermano' : 'Cargo o parentesco'"
         v-model="form.cargo_parentesco"
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Correo electrónico</label>
-      <input
+    <div class="w-full">
+      <label :for="fieldId('email')" class="deasy-form-label">Correo electrónico</label>
+      <input :id="fieldId('email')"
         type="email"
-        class="profile-text-input"
+        class="deasy-control"
         placeholder="usuario@dominio.com"
         v-model="form.email"
       />
     </div>
 
-    <div class="w-full space-y-2">
-      <label class="profile-field-label">Teléfono</label>
-      <input
+    <div class="w-full">
+      <label :for="fieldId('telefono')" class="deasy-form-label">Teléfono</label>
+      <input :id="fieldId('telefono')"
         type="text"
-        class="profile-text-input"
+        class="deasy-control"
         placeholder="+593987654321"
         v-model="form.telefono"
       />
@@ -90,12 +91,17 @@
 
 <script setup>
 import ProfileModalLayout from "@/shared/components/forms/AppFormModalLayout.vue";
-import { reactive, ref, onMounted, defineEmits, watch, computed } from "vue";
-import { Modal } from "@/shared/utils/modalController";
+import { reactive, ref, defineEmits, watch, computed, useId } from "vue";
+
 import DossierService from "@/modules/dossier/services/DossierService";
 import PdfDropField from "@/shared/components/forms/PdfDropField.vue";
 import SSelect from "@/shared/components/forms/SSelect.vue";
 
+
+// Enlaza cada <label for> con su control. useId() da un prefijo distinto por
+// instancia, para que dos montajes simultaneos no compartan el mismo id.
+const uid = useId();
+const fieldId = (name) => `${uid}-${name}`;
 const props = defineProps({
   editingItem: {
     type: Object,
@@ -103,7 +109,7 @@ const props = defineProps({
   }
 });
 
-const emit = defineEmits(["referencia-added", "referencia-updated"]);
+const emit = defineEmits(["referencia-added", "referencia-updated", "close"]);
 
 const isEditing = computed(() => !!props.editingItem);
 const hasExistingDocument = computed(() => !!props.editingItem?.url_documento);
@@ -132,12 +138,10 @@ const resetForm = () => {
   selectedFile.value = null;
 };
 
-const closeModal = () => {
-  const modalElement = document.getElementById("referenciaModal");
-  if (!modalElement) return;
-  const modalInstance = Modal.getInstance(modalElement);
-  modalInstance?.hide();
-};
+// El cierre se pide al padre, que es quien monta el modal. Antes se hacia
+// document.getElementById("<x>Modal") contra un id que declara el padre: acoplamiento invisible
+// para el compilador --renombrar ese id dejaba el modal imposible de cerrar y nadie se enteraba--.
+const closeModal = () => emit("close");
 
 // Cargar datos si estamos editando
 watch(() => props.editingItem, (newVal) => {
@@ -191,7 +195,8 @@ const buildPayload = () => {
 const validate = () => {
   if (!form.nombre?.trim()) return "Debe indicar el nombre de la referencia.";
   if (!form.email?.trim()) return "Debe indicar el correo electrónico.";
-  if (!/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(form.email)) return "El correo electrónico no es válido.";
+  // Sin cuantificadores anidados: el patrón anterior sufría backtracking exponencial (ReDoS).
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(form.email)) return "El correo electrónico no es válido.";
   if (form.tipo !== 'personal' && !form.cargo_parentesco?.trim()) return `Debe indicar ${form.tipo === 'laboral' ? 'el cargo' : 'el parentesco'}.`;
   if (form.tipo === 'laboral' && !form.institution?.trim()) return "Debe indicar la institución para referencias laborales.";
   return "";
@@ -216,8 +221,7 @@ const onSubmit = async () => {
       emit("referencia-updated", response.data);
     } else {
       const response = await DossierService.createReferencia(payload);
-      const list = response.data?.referencias || [];
-      recordId = list[list.length - 1]?._id;
+      recordId = response.createdId ?? null;
       emit("referencia-added", response.data);
     }
 

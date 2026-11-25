@@ -1,0 +1,392 @@
+@layer components {
+.deasy-tag {
+        /* LA FORMA VIENE DE TAILADMIN —adoptada el 2026-08-13— CON UNA DESVIACION DECIDIDA.
+           Su badge es una PILDORA sin borde con relleno tintado:
+             inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-0.5
+             text-sm font-medium  +  bg-{fam}-50  +  text-{fam}-500
+
+           ⚠️ EL RADIO YA NO ES `rounded-full`, ES `rounded-lg` (8 px), por decision del dueño el
+           2026-08-20. El motivo no es estetico: `rounded-full` **no es un radio, es la mitad de la
+           altura**, asi que la forma cambiaba sola con el tamaño y no se podia gobernar. Con un
+           paso fijo, alto y radio son dos decisiones separadas. 8 px no es un valor nuevo en el
+           sistema: es lo que usaba el contador de los nodos del grafo, que hoy lleva dentro esta misma pastilla.
+
+           Antes esto era la forma propia de Deasy (`rounded-xl`, `py-1.5`, `text-xs`,
+           `font-semibold` y BORDE), y ademas habia ~40 pastillas escritas a mano con formas
+           distintas. Consolidar hacia una forma y luego cambiarla es una sola linea aqui;
+           por eso el componente existe — y esta linea es la prueba. */
+        @apply inline-flex w-fit shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-lg px-2.5 py-0.5 text-sm font-medium;
+    }
+
+    /* ⚠️ `whitespace-nowrap` NO ES UN AJUSTE: ES LA DEFINICION DE UNA PASTILLA.
+     *
+     * Una pastilla es un objeto de UNA LINEA, y `rounded-full` es lo que lo obliga: ese radio no
+     * es un valor fijo, es **la mitad de la altura**. Mientras la caja mide 20 px el radio es 10
+     * y el texto cabe; en cuanto el texto se parte en dos lineas la caja pasa a 40 px, el radio a
+     * 20, y la curva **entra en la zona del texto** — el padding horizontal de `--sm` son 6 px y
+     * no da para tanto. Deja de ser una pastilla y pasa a ser un ovalo con las palabras saliendose
+     * por los lados.
+     *
+     * Medido el 2026-08-20 en `/admin/gestiones/firmas/signature_flow_steps`, que es donde el
+     * dueño lo vio:
+     *
+     *     «Todas»               46,8 x 20    1 linea   correcto
+     *     «Por cargo»           62,7 x 40    2 lineas  el ovalo se come el texto
+     *     «Persona concreta»    62,7 x 40    2 lineas
+     *     «Unidad exacta»       62,3 x 40    2 lineas
+     *     «Unidad del contexto» 62,3 x 60    3 lineas
+     *
+     * Y explica lo de «demasiado cortos»: la base es `w-fit`, o sea `fit-content`, que en una
+     * celda estrecha **se queda en el ancho DISPONIBLE** (62 px de los 94 de la celda) en vez de
+     * en el ancho de su texto. Sin envolver, `fit-content` vuelve a ser el ancho del contenido,
+     * que es lo que se queria.
+     *
+     * No aparecio con la pastilla de ESTADO —sus etiquetas son de una palabra: «Activa»,
+     * «Retirada»— sino con la de CLASIFICACION, cuyo vocabulario son frases: «Responsable del
+     * entregable», «Todos los puestos coincidentes». Al llegar palabras largas, la deuda que la
+     * base ya tenia se hizo visible.
+     *
+     * Es seguro en una tabla porque `.deasy-table-responsive` es `overflow-x: auto` y la tabla ya
+     * desborda de por si (1929 px sobre un contenedor de 1502): la columna crece y el contenedor
+     * desplaza, que es lo que esa tabla ya hacia. Donde el contenedor NO puede crecer —los nodos
+     * del grafo, de ancho fijo— la pastilla debe pedir `--truncate`, que existe justo para eso. */
+
+    .deasy-tag__icon {
+        @apply h-4 w-4 shrink-0;
+    }
+
+    /* ── LOS TONOS: dos tokens por variante ─────────────────────────────────────────────
+       `--tone` es el TEXTO y `--tone-soft` el RELLENO.
+
+       ⚠️ EL TEXTO VA EN EL PASO 600-700, NO EN EL 500 QUE USA TAILADMIN. Su receta pone
+       `text-{fam}-500` sobre `bg-{fam}-50`, y ese paso NO cumple AA: `success-500` da 2.4:1
+       sobre blanco. Nuestros tokens semanticos YA son los pasos 600-700 —`--color-danger`
+       es `error-700`—, asi que basta con usarlos. Su geometria, nuestro contraste.
+
+       El relleno es el paso `-50` de la misma familia, que es lo que hace su badge. Donde
+       no hay familia equivalente (accent) se deriva con `color-mix`. */
+    .deasy-tag--danger {
+        --tone: var(--color-danger);
+        --tone-soft: var(--color-error-50);
+        --tone-line: var(--color-error-200);
+        --tone-edge: var(--color-error-500);
+    }
+    .deasy-tag--success {
+        --tone: var(--color-success);
+        --tone-soft: var(--color-success-50);
+        --tone-line: var(--color-success-200);
+        --tone-edge: var(--color-success-500);
+    }
+    .deasy-tag--warning {
+        --tone: var(--color-warning);
+        --tone-soft: var(--color-warning-50);
+        --tone-line: var(--color-warning-200);
+        --tone-edge: var(--color-warning-500);
+    }
+    .deasy-tag--info {
+        --tone: var(--color-info);
+        --tone-soft: var(--color-blue-light-50);
+        --tone-line: var(--color-blue-light-200);
+        --tone-edge: var(--color-blue-light-500);
+    }
+    /* Salmon: pendiente de firma. NO es el rojo de «rechazado». */
+    .deasy-tag--salmon {
+        --tone: var(--color-pending);
+        --tone-soft: var(--color-orange-50);
+        --tone-line: var(--color-orange-200);
+        --tone-edge: var(--color-orange-500);
+    }
+    /* Sin familia en la paleta adoptada: el relleno se deriva al 6 %, el mismo porcentaje
+       al que un tinte `-50` se sitúa sobre blanco. */
+    .deasy-tag--accent {
+        --tone: var(--color-accent);
+        --tone-soft: color-mix(in srgb, var(--color-accent) 6%, var(--color-white));
+        --tone-line: color-mix(in srgb, var(--color-accent) 45%, var(--color-white));
+        --tone-edge: var(--color-accent);
+    }
+    /* El estado apagado: gris CON fondo, para que se lea como pastilla y no como texto
+       suelto. `--muted` (fondo blanco) desaparecia sobre una fila blanca. */
+    .deasy-tag--neutral {
+        --tone: var(--color-icon);
+        --tone-soft: var(--color-gray-100);
+        --tone-line: var(--color-line);
+        --tone-edge: var(--color-muted);
+    }
+
+    /* EL TONO DE MARCA — no existia, y F3.3 lo necesita: el chip de «origen de la regla» y el
+       del codigo de plantilla son de marca, no de estado.
+
+       ⚠️ NO puede anclarse a `--color-primary` copiando lo que hace el resto del sistema.
+       `--color-primary` mide **4.84 sobre BLANCO**, que es lo unico que ve `contraste.mjs`, pero
+       aqui va sobre `brand-50` y ahi cae a **4.31** — por debajo de AA. Sobre `brand-100`, a 4.0.
+       Se ancla al paso `-600`, que sobre `brand-50` da 5.6. Es un caso que el gate de contraste
+       NO puede detectar hoy, y por eso se deja escrito aqui. (2026-08-15, F3.3.) */
+    .deasy-tag--primary {
+        --tone: var(--color-brand-600);
+        --tone-soft: var(--color-brand-50);
+        --tone-line: var(--color-brand-200);
+        --tone-edge: var(--color-brand-500);
+    }
+
+    /* LA RECETA, escrita una vez para las ocho variantes. */
+    .deasy-tag--danger,
+    .deasy-tag--success,
+    .deasy-tag--warning,
+    .deasy-tag--info,
+    .deasy-tag--salmon,
+    .deasy-tag--accent,
+    .deasy-tag--primary,
+    .deasy-tag--neutral {
+        background-color: var(--tone-soft);
+        color: var(--tone);
+    }
+
+    /* ── TRES EJES MAS, que F3.3 necesita y la pastilla no tenia ─────────────────────────── */
+
+    /* CON BORDE. Sobre blanco es decoracion; sobre el lienzo del grafo —que es `bg-surface`, o
+       sea `gray-50`— un relleno `-50` es practicamente invisible y **el borde es lo unico que
+       dibuja la pastilla**. Por eso es modificador y no base: los 54 usos actuales van sobre
+       blanco y no lo quieren.
+
+       Va por `box-shadow: inset`, NO por `ring-*`: F1.3b midio que los `--tw-ring-color` propios
+       no llegan al DOM porque el anillo lo pone `overrides.css` desde fuera de capa. Es la misma
+       tecnica que ya usaba el contador de los nodos del grafo. */
+    .deasy-tag--outlined {
+        box-shadow: inset 0 0 0 1px var(--tone-line);
+    }
+
+    /* [2026-08-20] AQUI ESTABA `--sm`, Y MURIO POR EL MISMO ARGUMENTO QUE MATO AL `sm` DEL
+       BOTON EN F5.4: no era una variante, era **el contexto cambiando el objeto**.
+     *
+     * Nacio para los nodos del grafo, de ancho fijo (170-190 px), y cambiaba TRES cosas a la vez
+     * —letra 14→12, padding-x 10→6, padding-y 2→0, o sea alto 24→20—. Pero al censar el
+     * 2026-08-20 salio que su papel ya no era ese: **3 declaraciones en `AdminMainTableSection`
+     * producian 189 de las 190 pastillas renderizadas en admin** (172 solo en `persons`), o sea
+     * que de hecho era «la pastilla de las tablas», donde la celda SI puede crecer.
+     *
+     * Decision del dueño: **una sola talla, 24 px, en todo el sistema**. Lo que `--sm` aportaba de
+     * verdad era `shrink-0`, que no tiene nada que ver con el tamaño y ha subido a la base; y el
+     * limite de ancho para un contenedor estrecho, que es `--truncate` y sigue existiendo. */
+
+    /* RECORTABLE — la excepcion, y por eso es un modificador aparte y no parte de `--sm`.
+     *
+     * Una pastilla NO cede: su contenido es el dato («Activa» a medias no dice nada), y por eso
+     * `--sm` lleva `shrink-0`. La unica que si puede cortarse es aquella cuyo contenido es un
+     * IDENTIFICADOR LARGO que el `title` ya repite entero — el codigo de plantilla,
+     * `tpl_informe_gestion_docente` en 170 px. Ahi recortar es lo correcto y no se pierde nada.
+     *
+     * `min-w-0` no es adorno: sin el, un hijo flex nunca baja de su ancho de contenido y el
+     * `truncate` no llega a activarse. Y `justify-start` TAMPOCO: la base centra el contenido
+     * —correcto para una pastilla corta—, pero centrado + `overflow:hidden` recorta por LOS DOS
+     * lados y se come el principio del identificador, que es justo la parte que lo distingue
+     * (`tpl_informe_general` salia como «nforme_gen», sin elipsis). Alineado al inicio, el corte
+     * cae al final y la elipsis aparece donde debe. */
+    .deasy-tag--truncate {
+        @apply min-w-0 shrink justify-start truncate;
+    }
+
+    /* EL PUNTO. Hermano de `__icon`: el mismo papel —el simbolo que precede a la etiqueta— pero
+       sin icono, solo color. Estaba escrito tres veces con `bg-{fam}-500` a mano. */
+    .deasy-tag__dot {
+        @apply h-1.5 w-1.5 shrink-0 rounded-full;
+        background-color: var(--tone-edge);
+    }
+
+    /* EL PUNTO SUELTO — hermano de `__dot`, pero fuera de una pastilla.
+     *
+     * Lo pide la linea de tiempo de observaciones, donde el punto marca la clase de cada entrada
+     * (devuelta, rechazada, nota interna, resuelta) sin que haya pastilla ninguna. No puede reusar
+     * `__dot` porque aquel lee `--tone-edge`, y esa variable la declara `.deasy-tag--{tono}`: sin
+     * pastilla alrededor no hay quien la ponga. De ahi que este declare su color directamente.
+     *
+     * Es mas grande que el de la pastilla —10 px frente a 6— porque alli es un adorno junto al
+     * texto y aqui es el unico marcador de la fila. */
+    .deasy-dot {
+        @apply h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white;
+    }
+
+    .deasy-dot--success { background-color: var(--color-success-400); }
+    .deasy-dot--warning { background-color: var(--color-warning-400); }
+    .deasy-dot--danger  { background-color: var(--color-error-400); }
+    .deasy-dot--info    { background-color: var(--color-blue-light-400); }
+    .deasy-dot--neutral { background-color: var(--color-gray-300); }
+
+    /* [2026-08-15, F3.3] AQUI ESTABA `--muted`, Y ERA `--neutral` CON OTRO NOMBRE.
+       Declaraban el mismo cuerpo byte a byte y convivian con 9 y 7 usos respectivamente, para el
+       mismo aspecto. Los nueve `variant="muted"` pasan a `neutral` en este commit y el render es
+       identico. Ya paso antes en este fichero con `--contrast` y `--hero`, borradas el 08-13 por
+       lo mismo: `AppTag` compone la clase en runtime, asi que una variante duplicada no molesta a
+       nadie hasta que alguien se pregunta cual de las dos usar. */
+}
+
+@layer components {
+    /* LA ALERTA — geometria de TailAdmin, adoptada el 2026-08-13.
+       Su receta: `rounded-xl border border-{fam}-500 bg-{fam}-50 p-4`, y **el texto NEUTRO**:
+       en sus cuatro variantes solo el borde, el relleno y el icono tinen; el titulo va en
+       `gray-800` y el cuerpo en `gray-500`. Eso es lo contrario de lo que hacia Deasy, que
+       pintaba el texto del color del estado.
+
+       El cambio mejora el contraste: `--color-strong` sobre un tinte `-50` da mas de 13:1,
+       mientras que el texto tenido daba entre 4.6 y 5.5. Y el color no se pierde — lo llevan
+       el borde y el fondo, que es lo que de verdad identifica un aviso de un vistazo.
+
+       ⚠️ AQUI SU BORDE SI VALE, al reves que en el badge. Su alerta usa el paso `-500`
+       COMPLETO —no un tinte `-200`—, y ese paso llega a 3:1 sobre blanco: `error-500` da
+       3.4. Cumple WCAG 1.4.11 sin necesidad de derivarlo al 71 %.
+
+       Sustituye a 15 copias a mano del trio `bg-X-50 + border-X-200 + text-X-700`, que
+       ademas derivaban entre si en padding, radio y peso. */
+    .deasy-alert {
+        @apply rounded-xl border p-4 text-sm;
+        border-color: var(--tone-edge);
+        background-color: var(--tone-soft);
+        color: var(--color-strong);
+    }
+
+    .deasy-alert--danger {
+        --tone-edge: var(--color-error-500);
+        --tone-soft: var(--color-error-50);
+    }
+
+    .deasy-alert--warning {
+        --tone-edge: var(--color-warning-500);
+        --tone-soft: var(--color-warning-50);
+    }
+
+    .deasy-alert--success {
+        --tone-edge: var(--color-success-500);
+        --tone-soft: var(--color-success-50);
+    }
+
+    .deasy-alert--info {
+        --tone-edge: var(--color-blue-light-500);
+        --tone-soft: var(--color-blue-light-50);
+    }
+
+    /* FILA — la alerta en formato lista, para cuando hay varias seguidas y cada una es un punto
+       de una comprobacion, no un mensaje. Nace de los tres «Requisitos para activar» del panel de
+       activacion, que estaban escritos con `bg-{fam}-50 + ring-{fam}-200`.
+       ⚠️ Y ese cambio ARREGLA algo, no solo renombra: el propio encabezado de este bloque explica
+       que los tintes `-200` como borde miden 1.21-1.49:1 y no cumplen WCAG 1.4.11. Al pasar por
+       `deasy-alert` el borde se deriva al 71 %, que es donde llega a 3:1. */
+    .deasy-alert--row {
+        @apply flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold transition-colors;
+    }
+
+    /* LA ✕ DE UNA PASTILLA — quitar ese elemento de una seleccion.
+     *
+     * No es `AppCloseButton` y no puede serlo: aquella mide 36 px porque cierra un dialogo, y
+     * esta vive DENTRO de un chip de 24 px de alto. Tampoco es `AppDeleteButton`, que trae caja
+     * y color de fondo. Es un tercer objeto, y sale de aqui —no de `buttons.css`— porque su
+     * tamano y su color los manda la pastilla que la contiene, no el sistema de botones.
+     *
+     * Estaba escrita tres veces (2026-08-15, censo estructural de G2): dos en `GeneralTaskModal`
+     * (quitar un destinatario, quitar un firmante de un paso) y una en `WorkspaceChatLauncher`
+     * (quitar un adjunto pendiente). Y las tres discrepaban en el hover — dos a `text-danger` y
+     * una a `text-icon`—, o sea que quitar un adjunto no avisaba de que era destructivo. */
+    .deasy-chip-remove {
+        @apply inline-flex shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 leading-none text-muted transition-colors hover:text-danger focus:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    /* ── EL ARO DE CARGA ─────────────────────────────────────────────────────────────
+     * Vive aqui, con la pastilla y la alerta, porque es el tercer atomo de FEEDBACK del
+     * sistema. No es de `buttons.css` —aparece dentro de un boton pero tambien suelto en
+     * una pagina— ni de `misc.css`, que es para lo que aun no tiene familia.
+     *
+     * ── DE DONDE SALE (F4, 2026-08-16) ──────────────────────────────────────────────
+     * El plan contaba «13 spinners escritos a mano». Medidos, son DOS OBJETOS distintos:
+     *
+     *   · 9 son un ICONO QUE GIRA — `IconRefresh`/`IconLoader2` con `animate-spin` puesto
+     *     condicionalmente. Eso no es un componente: es un ESTADO sobre un icono que ya
+     *     existe, y `animate-spin` es exactamente la utilidad que le corresponde. No
+     *     necesitan clase y no la tienen: quedan como estan.
+     *   · 4 son ESTE aro, construido a mano con `border-2 … border-t-transparent
+     *     rounded-full`. Y las cuatro copias discrepaban en TODO lo que se puede
+     *     discrepar: tres tamanos (16/20/24) y tres parejas de color.
+     *
+     * ⚠️ Y DOS DE LAS CUATRO ESTABAN ROTAS EN ESE MISMO MOMENTO. Escribian
+     * `border-white/40 border-t-white` porque vivian dentro de un boton SOLIDO azul; al
+     * pasar el sistema a contorno en reposo (F4, ese mismo dia) el fondo de ese boton
+     * quedo BLANCO y el aro se volvio invisible — blanco sobre blanco, 1.0:1. No lo vio
+     * ningun gate, y no podia: un aro hecho con utilidades sueltas no tiene nombre que
+     * vigilar. Es el argumento entero de este frente en un solo objeto.
+     *
+     * ⚠️ Y las otras dos tampoco cumplian, pero de antes: `blue-light-400` da **2.10:1**
+     * sobre blanco y WCAG 1.4.11 pide 3:1 para un grafico. Pasan a `--color-info` (5.86).
+     *
+     * ── POR QUE `currentColor` Y NO UN TONO ─────────────────────────────────────────
+     * El aro hereda el color del texto de quien lo contiene, y eso resuelve el problema
+     * de raiz en vez de parchearlo: dentro de un `--primary-outline` sale azul sobre
+     * blanco, y al pasar el raton —cuando el boton se rellena y el texto pasa a blanco—
+     * sale blanco sobre azul. Se corrige solo. Y el contraste viene dado: el color del
+     * texto ya cumple 4.5:1, que es mas de los 3:1 que pide un grafico.
+     *
+     * ── POR QUE NO SE ADOPTA EL DE TAILADMIN ────────────────────────────────────────
+     * El suyo es un SVG, y de sus tres variantes **dos llevan el color en un `fill`
+     * hardcodeado** (`#465FFF`) que no se retematiza con clases; la unica theme-able usa
+     * `stroke="currentStroke"`, que no es una propiedad CSS real sino un truco de su SVG.
+     * Aqui el aro es CSS puro: sin activo que mantener, sin hex, y retintable por
+     * herencia. Se adopta su IDEA —pista y arco de distinto color— y se descarta su
+     * implementacion, igual que se hizo con el dropzone. */
+    .deasy-spinner {
+        @apply inline-block shrink-0 animate-spin rounded-full border-2 border-current;
+        /* El hueco que gira. Va DESPUES del `@apply` a proposito: `border-current` es el
+           atajo de los cuatro lados y esta linea le quita el de arriba. */
+        border-top-color: transparent;
+    }
+
+    .deasy-spinner--sm { @apply h-4 w-4; }
+    .deasy-spinner--md { @apply h-5 w-5; }
+    .deasy-spinner--lg { @apply h-6 w-6; }
+
+    /* ── LA BARRA DE PROGRESO ────────────────────────────────────────────────────────
+     * Cuarto atomo de feedback, y el hermano del aro de arriba: los dos dicen «esto va
+     * avanzando», uno sin saber cuanto y el otro sabiendolo.
+     *
+     * ── DE DONDE SALE (F4, 2026-08-16) ──────────────────────────────────────────────
+     * Otra receta que el plan daba por «sin equivalente en Deasy». Habia TRES, sin una
+     * sola clase compartida, y discrepaban en todo lo discrepable:
+     *
+     *     pista       `bg-surface`   ·  `bg-gray-200/70`  ·  `bg-surface`
+     *     alto        6 px           ·  8 px              ·  6 px
+     *     transicion  300 ms         ·  500 ms ease-out   ·  300 ms
+     *     radio barra —              ·  `rounded-full`    ·  `rounded-full`
+     *
+     * (fuerza de contraseña en el registro · lote de firma multiple · tarjeta de
+     * entregable). La del medio ademas pintaba la pista con ALFA —`gray-200/70`—, que es
+     * justo lo que este repo evita: el color resultante depende del fondo de debajo, asi
+     * que la misma barra da dos grises segun donde caiga.
+     *
+     * EL RELLENO NO SE DECLARA AQUI a proposito: las tres lo tienen distinto y por buenas
+     * razones —una lo deriva del estado de la contraseña, otra de la tarjeta de entregable
+     * (`--tarjeta-acento`) y la tercera es fija—. Aqui va la GEOMETRIA, que es lo que no
+     * tenia por que variar. */
+    .deasy-progress {
+        @apply h-1.5 w-full overflow-hidden rounded-full bg-surface;
+    }
+
+    /* 8 px — el lote de firma multiple, que es una barra de panel y no de tarjeta. */
+    .deasy-progress--lg {
+        @apply h-2;
+    }
+
+    .deasy-progress__bar {
+        @apply h-full rounded-full transition-all duration-300;
+    }
+
+    /* EL RELLENO POR TONO — F8, 2026-08-20.
+     *
+     * El bloque de arriba dice que el relleno «no se declara aqui a proposito» porque las tres
+     * barras lo tienen distinto. Sigue siendo cierto para dos de ellas: el lote de firma y la
+     * tarjeta de entregable lo derivan de su propio acento. La TERCERA —la fuerza de la
+     * contraseña— no: derivaba de un mapa de SEIS COLORES escrito en JavaScript, dos de ellos
+     * (`lime`, `amber`) de familias que ni existen en la paleta adoptada.
+     *
+     * Ahora el nombre del tono sale de `tonoFuerza` y el color de aqui, que es el contrato de
+     * todo el sistema. Se usa el paso `-500`: una barra es un GRAFICO y WCAG 1.4.11 le pide 3:1,
+     * no los 4.5 de un texto. */
+    .deasy-progress__bar--neutral { background-color: var(--color-gray-300); }
+    .deasy-progress__bar--danger  { background-color: var(--color-error-500); }
+    .deasy-progress__bar--warning { background-color: var(--color-warning-500); }
+    .deasy-progress__bar--success { background-color: var(--color-success-500); }
+}

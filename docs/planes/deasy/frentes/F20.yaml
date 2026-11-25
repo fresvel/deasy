@@ -1,0 +1,8 @@
+id: F20
+titulo: Lo que falta saber de una persona
+ciclo: incremental
+abierto: '2026-10-26'
+fases:
+  P1:
+    titulo: Lo migrado del plan heredado
+    etapa: cambio

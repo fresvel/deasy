@@ -1,0 +1,16 @@
+{
+  "documentos_publicados": [
+    {
+      "clase": "terminos_de_uso",
+      "version": "v1",
+      "contenidoHash": "5e9e846eedc570c944f3e8d56067eb27f3979a58774983238439e520730d594a",
+      "caracteres": 2025
+    },
+    {
+      "clase": "tratamiento_de_datos",
+      "version": "v1",
+      "contenidoHash": "9a6773a5ef1ece6316ef3405aa02ea46bfca28bd6bd6486e11eef8ed55492cb9",
+      "caracteres": 8035
+    }
+  ]
+}

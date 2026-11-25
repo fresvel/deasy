@@ -1,3 +1,7 @@
+import { actualizarEstado } from "../../dominios/tareas/index.js";
+// ⚠️ ÚNICO import de este fichero, y es el del `datos/` de `tareas`: la máquina de estados
+// DECIDE la transición, pero no la escribe. Lo escribía con su propio `UPDATE`, y eso dejaba
+// `document_versions` con dos escritores — lo destapó la comprobación C al integrar el piloto.
 export const DOCUMENT_STATUSES = Object.freeze([
   "Inicial",
   "Pendiente de llenado",
@@ -33,13 +37,83 @@ const DOCUMENT_STATUS_TRANSITIONS = Object.freeze({
   "En proceso": ["Pendiente de llenado", "Observado", "Listo para firma", "Cancelado", "Archivado"],
   Observado: ["En proceso", "Pendiente de llenado", "Cancelado", "Archivado"],
   "Listo para firma": ["Pendiente de firma", "Cancelado", "Archivado"],
-  "Pendiente de firma": ["Firmado parcial", "Firmado completo", "Cancelado", "Archivado"],
+  // ⚠️ «Pendiente de firma» -> «Observado» ES LA SALIDA DE UN RECHAZO, y hasta el 2026-10-08 no
+  // existia. Al rechazar una firma, la INSTANCIA pasaba a `rechazado` y el DOCUMENTO no se movia:
+  // el bloque que lo transiciona solo tenia tres ramas --«Firmado completo», «Firmado parcial» y
+  // «Pendiente de firma»--, ninguna para el rechazo. Y como `resolveCurrentSignatureStep` devuelve
+  // el primer paso no aprobado, el paso rechazado se quedaba de ACTUAL PARA SIEMPRE. La unica
+  // salida era `rehacerDocumento`, que cancela la ronda entera.
+  //
+  // SOLO DESDE «Pendiente de firma», y el motivo es criptografico: ahi todavia no hay ninguna firma
+  // estampada, asi que el documento se puede corregir sin invalidar nada. En cuanto hay una
+  // --«Firmado parcial»-- volver atras significaria que esa firma firmo OTRO documento, y lo que
+  // corresponde entonces es una RONDA NUEVA. Por eso «Firmado parcial» NO gana esta salida.
+  "Pendiente de firma": ["Firmado parcial", "Firmado completo", "Observado", "Cancelado", "Archivado"],
   "Firmado parcial": ["Pendiente de firma", "Firmado completo", "Cancelado", "Archivado"],
   "Firmado completo": ["Final", "Archivado"],
   Final: ["Archivado"],
   Archivado: [],
   Cancelado: [],
 });
+
+// Estados en los que ya NO queda trabajo por hacer.
+//
+// ⚠️ NO se deriva de la matriz de transiciones, y se intentó: «estado del que no sale ninguna
+// transición» da `Archivado` y `Cancelado` pero deja fuera `Final`, que sí tiene salida hacia
+// `Archivado` aunque el documento esté terminado. Con esa derivación, TODO documento acabado
+// habría seguido contando como pendiente.
+//
+// «Sin salidas» es una propiedad del grafo; «ya no hay trabajo» es una propiedad del negocio, y
+// no coinciden. Así que la lista es explícita — y el `assert` de abajo impide que un nombre mal
+// escrito se quede callado.
+//
+// Nace el 2026-08-23 al retirar `task_items.status`, que tenía CERO escritores y se quedaba en
+// 'pendiente' para siempre. Lo pendiente pasa a leerse del documento, que es quien de verdad avanza.
+export const DOCUMENT_TERMINAL_STATUSES = Object.freeze(["Final", "Archivado", "Cancelado"]);
+
+for (const estado of DOCUMENT_TERMINAL_STATUSES) {
+  if (!DOCUMENT_STATUSES.includes(estado)) {
+    throw new Error(`Estado terminal desconocido en el catálogo de documentos: ${estado}`);
+  }
+}
+
+// Estados en los que un entregable TODAVÍA SE PUEDE RELEVAR SOLO.
+//
+// Decisión del dueño (2026-08-23, D1). El corte está **al entrar en la fase de firma**, no al
+// estamparse la primera firma: a partir de «Pendiente de firma» hay gente convocada con solicitudes
+// abiertas a su nombre, y cambiarles el responsable del documento por debajo es confuso. «Listo para
+// firma» todavía entra: significa que el llenado terminó, no que se haya convocado a nadie.
+//
+// ⚠️ ES UNA LISTA EXPLÍCITA, Y NO SE DERIVA. Se podría escribir como «ni en fase de firma ni
+// terminal», pero eso son dos propiedades del grafo y esto es una regla de NEGOCIO: el día que
+// alguien añada un estado nuevo, tiene que decidir a mano de qué lado cae. El `assert` de abajo
+// impide que un nombre mal escrito se quede callado — misma lección que `DOCUMENT_TERMINAL_STATUSES`,
+// donde derivar de la matriz dejó fuera a `Final` y habría contado todo lo acabado como pendiente.
+//
+// ⚠️ Y ESTÁ DUPLICADA EN `postgres_schema.sql`, dentro de los triggers de relevo, porque el SQL no
+// puede leer esta constante. La duplicación NO se vigila sola: la vigila `DocumentStateService.test.js`,
+// que lee el fichero del esquema y compara las dos listas.
+export const DOCUMENT_RELAYABLE_STATUSES = Object.freeze([
+  "Inicial",
+  "Pendiente de llenado",
+  "En proceso",
+  "Observado",
+  "Listo para firma",
+]);
+
+for (const estado of DOCUMENT_RELAYABLE_STATUSES) {
+  if (!DOCUMENT_STATUSES.includes(estado)) {
+    throw new Error(`Estado relevable desconocido en el catálogo de documentos: ${estado}`);
+  }
+}
+
+/** ¿Se puede relevar solo este entregable? Sin estado todavía, sí: aún no ha empezado nada. */
+export const isDocumentRelayable = (status) =>
+  DOCUMENT_RELAYABLE_STATUSES.includes(String(status || "Inicial").trim());
+
+/** ¿Este documento sigue pendiente? Sin documento todavía, también: aún hay trabajo por hacer. */
+export const isDocumentPending = (status) =>
+  !DOCUMENT_TERMINAL_STATUSES.includes(String(status || "").trim());
 
 const DOCUMENT_VERSION_STATUS_TRANSITIONS = Object.freeze({
   Borrador: ["Pendiente de llenado", "Listo para firma", "Cancelado", "Archivado"],
@@ -48,7 +122,8 @@ const DOCUMENT_VERSION_STATUS_TRANSITIONS = Object.freeze({
   "En revisión de llenado": ["Pendiente de llenado", "En llenado", "Observado", "Listo para firma", "Cancelado", "Archivado"],
   Observado: ["En llenado", "Pendiente de llenado", "Cancelado", "Archivado"],
   "Listo para firma": ["Pendiente de firma", "Cancelado", "Archivado"],
-  "Pendiente de firma": ["Firmado parcial", "Firmado completo", "Cancelado", "Archivado"],
+  // La misma salida de rechazo que arriba, en la matriz de la RONDA, que es quien de verdad avanza.
+  "Pendiente de firma": ["Firmado parcial", "Firmado completo", "Observado", "Cancelado", "Archivado"],
   "Firmado parcial": ["Pendiente de firma", "Firmado completo", "Cancelado", "Archivado"],
   "Firmado completo": ["Final", "Archivado"],
   Final: ["Archivado"],
@@ -140,7 +215,7 @@ export const deriveDocumentStatusFromVersionStatus = (versionStatus) => {
 export const transitionDocumentVersionState = async (connection, documentVersionId, nextStatus) => {
   const targetStatus = assertDocumentVersionStatusValue(nextStatus);
   const [rows] = await connection.query(
-    `SELECT id, document_id, status
+    `SELECT id, task_item_id, status
      FROM document_versions
      WHERE id = ?
      LIMIT 1`,
@@ -155,21 +230,16 @@ export const transitionDocumentVersionState = async (connection, documentVersion
     throw new Error(`Transición inválida de versión documental: ${currentStatus} -> ${targetStatus}`);
   }
 
-  await connection.query(
-    `UPDATE document_versions
-     SET status = ?
-     WHERE id = ?`,
-    [targetStatus, documentVersionId]
-  );
+  await actualizarEstado(connection, documentVersionId, targetStatus);
 
   const documentStatus = deriveDocumentStatusFromVersionStatus(targetStatus);
-  await transitionDocumentState(connection, Number(current.document_id), documentStatus, { allowDirect: true });
+  await transitionDocumentState(connection, Number(current.task_item_id), documentStatus, { allowDirect: true });
 
   return {
     documentVersionId: Number(documentVersionId),
     previousStatus: currentStatus,
     nextStatus: targetStatus,
-    documentId: Number(current.document_id),
+    documentId: Number(current.task_item_id),
     documentStatus,
   };
 };
@@ -181,10 +251,13 @@ export const transitionDocumentState = async (
   { allowDirect = false } = {},
 ) => {
   const targetStatus = assertDocumentStatusValue(nextStatus);
+  // ⚠️ `documentId` ES EL ID DEL ENTREGABLE desde el 2026-08-23. La tabla `documents` se retiro —era
+  // una cascara 1:1 sin ni una columna propia— y el nombre del parametro se conserva porque lo
+  // usan cinco llamadores; lo que identifica a un documento es su entregable.
   const [rows] = await connection.query(
-    `SELECT id, status
-     FROM documents
-     WHERE id = ?
+    `SELECT ti.id, ti.document_status AS status
+     FROM task_items ti
+     WHERE ti.id = ?
      LIMIT 1`,
     [documentId]
   );
@@ -198,8 +271,8 @@ export const transitionDocumentState = async (
   }
 
   await connection.query(
-    `UPDATE documents
-     SET status = ?
+    `UPDATE task_items
+     SET document_status = ?
      WHERE id = ?`,
     [targetStatus, documentId]
   );

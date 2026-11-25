@@ -1,0 +1,8 @@
+id: F25
+titulo: Qué pareja (configuración, plantilla) es legal
+ciclo: exploratorio
+abierto: '2026-10-26'
+fases:
+  P1:
+    titulo: Lo migrado del plan heredado
+    etapa: cambio

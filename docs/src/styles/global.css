@@ -15,3 +15,252 @@
 Add additional Tailwind styles to this file:
 https://tailwindcss.com/docs/adding-custom-styles#using-custom-css
 */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ANCHOS DE LA MAQUETA
+   ─────────────────────────────────────────────────────────────────────────────
+   Starlight reparte la fila en tres columnas y las dos decisiones que trae de
+   fabrica no le sientan bien a una documentacion con diagramas:
+
+     1. `--sl-content-width: 45rem` (720 px). Un Mermaid con 946 px de `viewBox`
+        se dibuja a 688 px, o sea al 73 % de su tamaño natural. Medido el
+        2026-08-26 en /explicacion/modelo/entregable-y-ediciones/.
+
+     2. El TOC de la derecha NO tiene ancho propio: `TwoColumnContent.astro:24`
+        lo calcula como `--sl-sidebar-width + (100% - content - sidebar) / 2`,
+        es decir hereda el ancho del NAV IZQUIERDO (18,75rem). A 1600 px eso son
+        440 px para diez enlaces de una linea.
+
+   La correccion separa dos cosas que Starlight junta: el ancho de LECTURA
+   (parrafos, listas, avisos) y el ancho de la COLUMNA (diagramas y tablas).
+   El texto se queda donde se lee comodo; lo ancho usa todo el hueco.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+:root {
+	/* La COLUMNA. `100%` = todo el hueco que deja el nav izquierdo y el TOC; el
+	   `min()` es el unico techo, y esta alto a proposito para que los diagramas
+	   grandes salgan a tamaño natural en una pantalla ancha.
+	   Ojo: `--sl-content-width` NO puede ser `100%` a secas, porque
+	   `TwoColumnContent.astro` la mete en un `calc()` junto a `--sl-sidebar-width`
+	   para repartir la fila, y un porcentaje ahi da un ancho negativo. Por eso el
+	   reparto se hace abajo con flex y esta variable solo gobierna el `max-width`
+	   de `ContentPanel`. */
+	--sl-content-width: min(100%, 92rem);
+	--deasy-lectura: 56rem; /* el TEXTO: ~100 caracteres */
+}
+
+/* Lo que se lee seguido se queda estrecho aunque la columna sea ancha. */
+.sl-markdown-content :is(p, ul, ol, dl, blockquote, .starlight-aside) {
+	max-width: var(--deasy-lectura);
+}
+
+/* Los diagramas, en cambio, ocupan la columna entera y se centran.
+   ⚠️ `width: 100%` en el SVG NO es opcional. Mermaid le pone en linea un
+   `max-width` igual a su tamaño natural, pero NO un `width`; dentro de un
+   contenedor `flex` un SVG sin `width` colapsa a su `min-content` — medido:
+   un diagrama de 11 nodos se quedo en 272 px. Con `width: 100%` el ancho
+   efectivo es `min(hueco disponible, tamaño natural)`, que es lo que se quiere:
+   nunca mas grande de lo que da de si, nunca mas pequeño de lo que cabe. */
+.sl-markdown-content :is(.mermaid, pre.mermaid) {
+	display: flex;
+	justify-content: center;
+	width: 100%;
+	overflow-x: auto;
+}
+.sl-markdown-content :is(.mermaid, pre.mermaid) svg {
+	width: 100%;
+	height: auto;
+}
+
+/* ── El visor de diagramas ────────────────────────────────────────────────────
+   El ancho de columna solo llega hasta donde llega. Medido el 2026-08-26: de los
+   14 Mermaid de `/modelo/`, SIETE se pintaban encogidos y cinco por debajo de
+   12 px de letra efectiva, con el mapa completo al 36 % (5,8 px). Ningun ancho
+   de columna arregla un diagrama de 3538 px, y el zoom del navegador tampoco:
+   estrecha la columna en la misma proporcion en que amplia, asi que el tamaño
+   FISICO del diagrama no se mueve.
+
+   Lo que falta es un visor, y lo pone `public/visor-diagramas.js`. Aqui va solo
+   su aspecto. El estado de reposo es EXACTAMENTE el de antes —ajuste a la
+   columna—, asi que los siete diagramas que ya se veian bien no cambian.
+   ───────────────────────────────────────────────────────────────────────────── */
+.deasy-visor {
+	position: relative;
+	margin: 1.5rem 0;
+}
+
+/* `overflow: hidden` solo cuando el visor esta enganchado. Sin JavaScript manda
+   la regla de arriba (`overflow-x: auto`), que sigue siendo la red de seguridad:
+   sin visor, al menos hay barra de desplazamiento. */
+.deasy-visor[data-listo] > :is(.mermaid, pre.mermaid) {
+	overflow: hidden;
+	padding: 0;
+	touch-action: pan-y;
+}
+.deasy-visor[data-listo] > :is(.mermaid, pre.mermaid):focus-visible {
+	outline: 2px solid var(--sl-color-accent);
+	outline-offset: 2px;
+}
+.deasy-visor-movible > :is(.mermaid, pre.mermaid) {
+	cursor: grab;
+}
+.deasy-visor-arrastrando > :is(.mermaid, pre.mermaid) {
+	cursor: grabbing;
+}
+
+/* La barra va DEBAJO del diagrama, no flotando encima.
+   Flotando en la esquina se comia nodos: en el mapa completo tapaba
+   `template_seeds`, y el sitio donde no estorba depende de cada diagrama, asi que
+   no hay esquina buena. Debajo no tapa nunca, se ve siempre —y eso importa,
+   porque un control que solo aparece al pasar el raton no lo descubre quien no
+   sabe que existe— y de paso hay hueco para decir los atajos.
+   En pantalla completa si flota: alli el diagrama ocupa todo. */
+.deasy-visor-barra {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.125rem;
+	margin-block-start: 0.25rem;
+}
+.deasy-visor-ayuda {
+	margin-inline-end: auto;
+	color: var(--sl-color-gray-3);
+	font-size: var(--sl-text-xs);
+}
+.deasy-visor:fullscreen .deasy-visor-barra {
+	position: absolute;
+	inset-block-start: 0.75rem;
+	inset-inline-end: 0.75rem;
+	margin: 0;
+	padding: 0.125rem;
+	border: 1px solid var(--sl-color-gray-5);
+	border-radius: 0.5rem;
+	background: var(--sl-color-black);
+}
+.deasy-visor:fullscreen .deasy-visor-ayuda {
+	display: none;
+}
+
+.deasy-visor-boton {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	inline-size: 1.75rem;
+	block-size: 1.75rem;
+	border: 0;
+	border-radius: 0.375rem;
+	background: transparent;
+	color: var(--sl-color-gray-1);
+	font-size: var(--sl-text-base);
+	line-height: 1;
+	cursor: pointer;
+}
+.deasy-visor-boton:hover:not(:disabled) {
+	background: var(--sl-color-gray-6);
+	color: var(--sl-color-white);
+}
+.deasy-visor-boton:disabled {
+	opacity: 0.35;
+	cursor: default;
+}
+
+.deasy-visor-nivel {
+	min-inline-size: 3.25rem;
+	padding-inline: 0.25rem;
+	color: var(--sl-color-gray-2);
+	font-size: var(--sl-text-xs);
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+}
+
+/* En pantalla completa el diagrama se queda con toda la ventana. El fondo va
+   explicito: el `::backdrop` por omision es negro, y sobre el un diagrama en
+   tema claro se lee mal. */
+.deasy-visor:fullscreen {
+	margin: 0;
+	display: flex;
+	background: var(--sl-color-bg);
+}
+.deasy-visor:fullscreen > :is(.mermaid, pre.mermaid) {
+	inline-size: 100%;
+	block-size: 100%;
+	margin: 0;
+	align-items: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.deasy-visor-barra {
+		transition: none;
+	}
+}
+
+/* ── La cadena del dominio ────────────────────────────────────────────────────
+   Se escribe, NO se dibuja, y es a proposito. Como diagrama Mermaid son once
+   nodos en fila: 1722 px de ancho natural, o sea el 38 % en una columna normal
+   —ilegible—. Y partirlo en subgraphs con `direction LR` no vale: Mermaid
+   IGNORA la direccion de un subgraph cuando hay aristas que cruzan su frontera,
+   asi que apila los once en vertical (medido: 272 × 1284 px).
+   Escrito, en cambio, se relaja a cualquier ancho y siempre se lee. Es ademas
+   como lo presenta el documento original.
+   Azul = lo declarado; violeta = lo ocurrido. Los mismos dos colores que usan
+   los diagramas del resto de la seccion. */
+.cadena {
+	margin: 1.5rem 0;
+	border-inline-start: 3px solid var(--sl-color-gray-5);
+	padding-inline-start: 1rem;
+}
+.cadena-mitad {
+	max-width: none; /* gana al tope de lectura: es un esquema, no un parrafo */
+	margin: 0.35rem 0;
+	line-height: 2;
+}
+.cadena-eti {
+	display: block;
+	font-size: var(--sl-text-xs);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: var(--sl-color-gray-3);
+}
+.cadena-mitad code {
+	border: 1px solid;
+	border-radius: 0.35rem;
+	padding: 0.1rem 0.45rem;
+}
+.cadena-declara code {
+	background: color-mix(in srgb, var(--sl-color-accent-low) 70%, transparent);
+	border-color: var(--sl-color-accent);
+}
+.cadena-ocurre code {
+	background: color-mix(in srgb, var(--sl-color-purple-low, var(--sl-color-accent-low)) 70%, transparent);
+	border-color: var(--sl-color-purple, var(--sl-color-accent-high));
+}
+.cadena-frontera {
+	margin: 0.35rem 0;
+	font-size: var(--sl-text-sm);
+	color: var(--sl-color-gray-3);
+	font-style: italic;
+}
+
+/* Las tablas anchas tampoco tienen por que caber en el ancho de lectura. */
+.sl-markdown-content table {
+	display: block;
+	width: fit-content;
+	max-width: 100%;
+	overflow-x: auto;
+}
+
+@media (min-width: 72rem) {
+	/* El TOC deja de heredar el ancho del nav izquierdo y pide solo lo suyo. */
+	.right-sidebar-container {
+		width: 15rem;
+	}
+	/* Y el panel principal se queda con lo que sobra, en vez de con una formula
+	   que ya no cuadra al haber cambiado el ancho del TOC.
+	   Ojo: NADA de `:global(...)` aqui. Eso es sintaxis de los `<style>` de Astro;
+	   en un `.css` plano es un selector invalido y, por ir en lista separada por
+	   comas, tumbaria la regla ENTERA sin decir nada. */
+	[data-has-sidebar][data-has-toc] .main-pane {
+		width: auto;
+		flex: 1;
+	}
+}

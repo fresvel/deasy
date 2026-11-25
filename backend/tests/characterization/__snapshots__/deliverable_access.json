@@ -1,0 +1,10 @@
+{
+  "observaciones_propias": {
+    "status": 200,
+    "body": {
+      "can_add": true,
+      "observations": [],
+      "task_item_id": "<normalized>"
+    }
+  }
+}

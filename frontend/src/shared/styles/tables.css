@@ -1,0 +1,182 @@
+@layer components {
+    /* ══ LA BARRA DE UNA PAGINA CON TABLA — F13.4, 2026-08-21 ═════════════════════════════════
+     * Nace de una observacion del dueño: «el boton agregar y atras podrian estar al costado de los
+     * de buscar y refrescar». Medido antes de tocar nada, habia **CUATRO bloques en TRES ordenes
+     * distintos** y ningun par de paginas coincidia:
+     *
+     *     bloque              /admin/…            /perfil/…           /home/documentos
+     *     barra de accion     Regresar+Agregar    SOLO Agregar        —
+     *     pestañas            —                   si, y=120           —
+     *     filtro              si, y=149           —                   si, y=101
+     *     tabla               y=210               y=197               y=277
+     *
+     * En perfil el «Agregar» flotaba SOBRE las pestañas y no habia buscador; en admin habia
+     * buscador pero no pestañas.
+     *
+     * ⚠️ Y habia un desajuste de 17 px que se veia y no se explicaba: la barra de accion media
+     * **1500 px y el filtro 1466**, porque el filtro vivia dentro de un `deasy-card p-4` y la barra
+     * no. Asi que «Agregar» caia 17 px mas a la derecha que «Buscar».
+     *
+     * ══ LA FORMA, elegida por el dueño ══════════════════════════════════════════════════════
+     * DOS filas, y **la primera existe siempre**:
+     *
+     *     ┌─────────────────────────────────────────────────┐
+     *     │ [Cuarto Nivel][Grado][Tecnicos]   ← o el NOMBRE  │  __head
+     *     ├─────────────────────────────────────────────────┤
+     *     │ ⌕ buscar…                    ↺ ← + Agregar      │  __bar
+     *     └─────────────────────────────────────────────────┘
+     *
+     * La regla de la primera fila no es «reservar una franja» sino **decir siempre DONDE estas**:
+     * pestañas cuando la pagina tiene variantes, y el nombre de la tabla cuando no. Asi todas las
+     * paginas con tabla arrancan a la misma altura —no hay salto al ir de perfil a admin— y no
+     * queda ninguna banda en blanco, que era la pega de reservarla.
+     *
+     * 🪤 Y el nombre salio GRATIS: `AdminTableHeader` ya recibia `tableHeaderTitle`, `-Icon` y
+     * `-Subtitle`, y **su plantilla no leia ninguna de las tres**. Tres props declaradas que nadie
+     * usaba, el mismo hallazgo que F13.1b hizo con `SBody` y F1.3c con los `AdminDefinition*`.
+     *
+     * ⚠️ Los huecos son de la escala de F13.2: 12 entre filas (FILA) y 8 entre botones (JUNTO). */
+    .deasy-table-toolbar {
+        @apply flex flex-col gap-3;
+    }
+
+    /* ⚠️ AQUI VIVIA `.deasy-table-toolbar__head`, LA FILA DEL TITULO. Retirada el 2026-08-22 por
+       idea del dueño, y verificada antes de aplicarla: medido en 7 rutas, **el titulo repetia lo que
+       la cabecera de la aplicacion ya dice en las 7**, y en una repetia ademas la pestaña activa.
+       Era la tercera vez que la pantalla decia lo mismo, contando el menu lateral.
+       Su retirada resuelve ademas el ultimo salto de F13: la fila de pestañas pasa a existir
+       SIEMPRE —con una sola pestaña con foco cuando la pagina no tiene mas— y todas las paginas con
+       tabla arrancan a la misma altura. */
+
+    /* ⚠️ `justify-end` Y NO `justify-between`, y esto costo una regresion. Con `between`, una
+       pagina SIN buscador —el organigrama, todo `/perfil`— deja las acciones pegadas a la
+       IZQUIERDA, porque pasan a ser el unico hijo. Con `end` van siempre a la derecha, y cuando
+       hay buscador es el `flex-1` de `__search` el que las empuja, no el reparto. */
+    /* LA FILA DE PESTAÑAS. No lleva alto minimo: lo pone la pestaña, que mide 44 como todo
+       control del sistema. Y no lleva margen: el hueco entre filas lo reparte `.deasy-table-toolbar`
+       con su `gap-3`, que es el paso FILA de la escala. */
+    .deasy-table-toolbar__tabs {
+        @apply flex min-w-0;
+    }
+
+    /* La fila del segundo nivel. Misma disposicion que la del primero: el aspecto lo pone la
+       variante `--anidadas` de la tira, no esta clase. */
+    .deasy-table-toolbar__subtabs {
+        @apply flex min-w-0;
+    }
+
+    .deasy-table-toolbar__bar {
+        @apply flex flex-wrap items-center justify-end gap-3;
+    }
+
+    /* LO QUE FILTRA: el buscador en admin, las pestañas en perfil. Crece; las acciones no.
+       `min-w-0` porque sin el un hijo con texto largo se niega a encoger y rompe la fila — el mismo
+       motivo por el que lo lleva `deasy-workspace-content`.
+       ⚠️ Se llamaba `__search` y el nombre mentia: lo que va aqui no siempre busca, elige. */
+    .deasy-table-toolbar__filtro {
+        @apply min-w-0 flex-1;
+    }
+
+    .deasy-table-toolbar__actions {
+        @apply flex shrink-0 flex-wrap items-center gap-2;
+    }
+
+    /* EL MARCO — `rounded-xl` (12 px) y no `rounded-2xl` (16), medido en su demo de `data-tables`
+       el 2026-08-15. La medicion anterior dio 16 porque cogio el ancestro equivocado: la caja de
+       la tabla es la que lleva `border`, no la seccion que la envuelve. */
+    .deasy-table-responsive {
+        @apply overflow-x-auto rounded-xl border bg-white;
+        border-color: var(--color-line);
+    }
+
+    .deasy-table {
+        @apply min-w-[600px] w-full border-collapse text-left text-sm;
+    }
+
+    .deasy-table thead tr {
+        @apply border-b;
+        border-color: var(--color-line);
+    }
+
+    /* LA CABECERA, ALINEADA CON TAILADMIN (2026-08-15, a peticion del dueño).
+     *
+     * Medido en su demo de `data-tables`, no copiado de oido: su `<th>` es
+     * `text-theme-xs font-medium text-gray-700` dentro de una celda `px-4 py-3`. En numeros:
+     * 12 px, peso 500, `#344054`, **sin mayusculas y sin `letter-spacing`**.
+     *
+     * Deasy tenia las cuatro cosas distintas: 600, `uppercase`, `tracking-[0.04em]` y `--color-navy`
+     * (gray-900). Todo lo demas de la tabla —el padding de celda, el radio de la caja, el borde
+     * `gray-200`, el fondo blanco— YA coincidia, asi que el cambio se reduce a esta regla.
+     *
+     * ⚠️ ES EL CAMBIO MAS VISIBLE de toda la vuelta: las cabeceras dejan de ir en MAYUSCULAS. Se
+     * gana legibilidad —una palabra larga en versalitas se lee peor— y se pierde el contraste de
+     * forma que separaba cabecera de dato; lo compensa que el peso y el color siguen distinguiendola.
+     *
+     * `--color-body` NO es una aproximacion: es un alias de `--color-gray-700`, el mismo `#344054`
+     * que usa su demo. Y `text-theme-xs` sustituye a `text-theme-xs`, que era un valor arbitrario
+     * escrito a mano para el mismo 12 px que la escala ya define. */
+    .deasy-table th {
+        @apply px-4 py-3 text-theme-xs font-medium;
+        color: var(--color-body);
+    }
+
+    .deasy-table td {
+        @apply px-4 py-3 text-sm leading-5;
+        color: var(--color-strong);
+    }
+
+    /* ⚠️ EL DIVISOR DE FILA VA UN ESCALON MAS CLARO QUE EL MARCO, y no es un matiz: es lo que
+       hace que la tabla se lea como un bloque con lineas dentro en vez de como una rejilla. En su
+       demo estan medidos los dos —marco `gray-200` (#e4e7ec), divisor `gray-100` (#f2f4f7)— y
+       Deasy usaba `--color-line` (gray-200) para ambos.
+
+       Va con el gris primitivo y no con un token semantico porque **no hay ninguno para esto**:
+       `--color-line` ya esta ocupado por el limite de un componente, que es otra cosa y tiene otro
+       minimo (WCAG 1.4.11 pide 3:1 para un limite; una linea decorativa dentro de una caja no). */
+    .deasy-table tbody tr {
+        @apply border-b transition-colors;
+        border-color: var(--color-gray-100);
+    }
+
+    .deasy-table tbody tr:last-child {
+        border-bottom: 0;
+    }
+
+    .deasy-table tbody td:first-child {
+        @apply font-semibold;
+        color: var(--color-strong);
+    }
+}
+
+@layer components {
+    /* LA CABECERA Y EL SEÑALADO DE FILA. Llegaron de `overrides.css` el 2026-08-17 (F6.L4).
+       Estaban alli sin motivo propio: no repintaban ninguna utilidad ni peleaban con nadie —
+       simplemente se escribieron en el fichero equivocado. */
+        /* LA CABECERA VA UN ESCALON POR ENCIMA DEL SEÑALADO DE FILA, y hasta hoy iban en el MISMO
+           gris: las dos en `--color-surface`. Al pasar el raton, la fila se volvia indistinguible de
+           la cabecera.
+
+           🪤 El primer intento de arreglarlo no arreglo nada: cambie el hover de `--color-surface` a
+           `--color-gray-50` **y son el mismo color** —`--color-surface` es un alias de `gray-50`—.
+           Solo se vio al medir los dos computados y encontrarlos identicos. Cambiar un alias por su
+           valor no es un cambio.
+
+           La jerarquia que queda: cabecera `gray-100`, señalado de fila `gray-50`, divisor `gray-100`.
+           El divisor comparte tono con la cabecera a proposito: uno es una linea y la otra un fondo,
+           y no compiten. */
+        .deasy-table thead tr {
+            background: var(--color-gray-100);
+        }
+
+        /* 📌 EL HOVER DE FILA SE QUEDA, aunque TailAdmin no lo tenga (comprobado: ni una regla ni una
+           clase `hover:` en las filas de su demo). No es un descuido suyo ni una deuda nuestra: en una
+           tabla ancha, seguir la fila con la vista es lo que evita leer el dato de la fila de al lado,
+           y aqui las tablas de admin tienen once columnas.
+
+           ⚠️ Lo que SI era defecto: el `thead` usaba ESTE MISMO gris, asi que la fila señalada se veia
+           igual que la cabecera. Lo que se movio fue la cabecera —a `gray-100`—, no el hover: el
+           señalado tiene que ser sutil, y `gray-50` sobre blanco ya se nota sin gritar. */
+        .deasy-table tbody tr:hover {
+            background-color: var(--color-gray-50);
+        }
+}

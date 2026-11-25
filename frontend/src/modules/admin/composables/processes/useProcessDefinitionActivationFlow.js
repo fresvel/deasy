@@ -1,15 +1,16 @@
-import axios from "axios";
+import axios from "@/core/services/httpClient";
 import { API_ROUTES } from "@/core/config/apiConfig";
 import { processDefinitionAdminService } from "@/modules/admin/services/ProcessDefinitionAdminService";
 
 export function useProcessDefinitionActivationFlow({
   props,
   formData,
-  fkDisplay,
+  // `fkDisplay` SALIO DE LA FIRMA con `P22` (frente 25): su unico uso era rellenar la etiqueta del
+  // selector de proceso al versionar, y la configuracion ya no tiene `process_id` — lo dice su
+  // linea, cuya etiqueta la pone `linea_id`. Un parametro que nadie usa es una dependencia falsa.
   editorMode,
   selectedRow,
   modalError,
-  editorModal,
   getEditorInstance,
   processDefinitionVersioningSource,
   processDefinitionCloneSourceId,
@@ -18,17 +19,12 @@ export function useProcessDefinitionActivationFlow({
   processDefinitionActivationConfirmed,
   processDefinitionActivationFromEditor,
   processDefinitionActivationChecking,
-  processDefinitionActivationHasActiveRules,
   processDefinitionActivationHasActiveTriggers,
-  processDefinitionActivationHasRequiredArtifacts,
-  processDefinitionActivationRequiresArtifacts,
+  processDefinitionActivationHasActiveArtifacts,
   processDefinitionActivationView,
-  processDefinitionActivationPrimaryAction,
-  processDefinitionActivationRules,
   processDefinitionActivationTriggers,
   processDefinitionActivationArtifacts,
   clearModalOrigins,
-  isModalShown,
   ensureProcessDefinitionActivationInstance,
   getProcessDefinitionActivationInstance,
   buildFormFromRow,
@@ -36,10 +32,7 @@ export function useProcessDefinitionActivationFlow({
   prefetchFkLabelsForRows,
   normalizeComparableFormValue,
   getNextSemanticVersion,
-  setFkLabel,
-  formatFkOptionLabel,
   openEdit,
-  openDefinitionRulesFromActivation,
   openDefinitionTriggersFromActivation,
   openDefinitionArtifactsFromActivation,
   submitForm
@@ -56,22 +49,15 @@ export function useProcessDefinitionActivationFlow({
   };
 
   const loadProcessDefinitionActivationDetail = async (definitionId) => {
-    processDefinitionActivationRules.value = [];
     processDefinitionActivationTriggers.value = [];
     processDefinitionActivationArtifacts.value = [];
     if (!definitionId) {
       return;
     }
-    const [rulesResponse, triggersResponse, artifactsResponse] = await Promise.all([
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_target_rules"), {
-        params: {
-          filter_process_definition_id: definitionId,
-          orderBy: "priority",
-          order: "asc",
-          limit: 100
-        }
-      }),
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_triggers"), {
+    // DOS LISTAS, Y ERAN TRES (frente 25, P26): la de reglas pedia una tabla retirada --y la pedia
+    // ordenada por `priority`, una columna que se habia ido en `P10`--.
+    const [triggersResponse, artifactsResponse] = await Promise.all([
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_period_types"), {
         params: {
           filter_process_definition_id: definitionId,
           orderBy: "created_at",
@@ -79,7 +65,7 @@ export function useProcessDefinitionActivationFlow({
           limit: 100
         }
       }),
-      axios.get(API_ROUTES.ADMIN_SQL_TABLE("process_definition_templates"), {
+      axios.get(API_ROUTES.ADMIN_SQL_TABLE("vinculos"), {
         params: {
           filter_process_definition_id: definitionId,
           orderBy: "sort_order",
@@ -88,42 +74,28 @@ export function useProcessDefinitionActivationFlow({
         }
       })
     ]);
-    processDefinitionActivationRules.value = rulesResponse.data || [];
     processDefinitionActivationTriggers.value = triggersResponse.data || [];
     processDefinitionActivationArtifacts.value = artifactsResponse.data || [];
-    await prefetchFkLabelsForRows(processDefinitionActivationRules.value, ["unit_id", "unit_type_id", "cargo_id", "position_id"]);
     await prefetchFkLabelsForRows(processDefinitionActivationTriggers.value, ["term_type_id"]);
-    await prefetchFkLabelsForRows(processDefinitionActivationArtifacts.value, ["template_artifact_id"]);
+    await prefetchFkLabelsForRows(processDefinitionActivationArtifacts.value, ["edicion_id"]);
   };
 
   const openProcessDefinitionActivationModal = async () => {
     processDefinitionActivationChecking.value = true;
-    processDefinitionActivationHasActiveRules.value = true;
     processDefinitionActivationHasActiveTriggers.value = true;
-    processDefinitionActivationHasRequiredArtifacts.value = true;
+    processDefinitionActivationHasActiveArtifacts.value = true;
     processDefinitionActivationView.value = "definition";
-    processDefinitionActivationRequiresArtifacts.value = Boolean(
-      resolveEditorInstance()
-      && isModalShown(editorModal.value)
-      && props.table?.table === "process_definition_versions"
-        ? Number(formData.value?.has_document) === 1
-        : Number(selectedRow.value?.has_document) === 1
-    );
     ensureProcessDefinitionActivationInstance();
     getProcessDefinitionActivationInstance()?.show();
     try {
       const definitionId = selectedRow.value?.id;
-      const requiresArtifacts = processDefinitionActivationRequiresArtifacts.value;
       const checklist = await processDefinitionAdminService.evaluateChecklist(definitionId);
       await loadProcessDefinitionActivationDetail(definitionId);
-      processDefinitionActivationHasActiveRules.value = checklist.rules;
       processDefinitionActivationHasActiveTriggers.value = checklist.triggers;
-      processDefinitionActivationHasRequiredArtifacts.value = requiresArtifacts ? checklist.artifacts : true;
+      processDefinitionActivationHasActiveArtifacts.value = checklist.artifacts;
     } catch {
-      processDefinitionActivationHasActiveRules.value = false;
       processDefinitionActivationHasActiveTriggers.value = true;
-      processDefinitionActivationHasRequiredArtifacts.value = true;
-      processDefinitionActivationRules.value = [];
+      processDefinitionActivationHasActiveArtifacts.value = true;
       processDefinitionActivationTriggers.value = [];
       processDefinitionActivationArtifacts.value = [];
     } finally {
@@ -182,10 +154,6 @@ export function useProcessDefinitionActivationFlow({
       openDefinitionEditorFromActivation();
       return;
     }
-    if (actionType === "rules") {
-      await openDefinitionRulesFromActivation();
-      return;
-    }
     if (actionType === "triggers") {
       await openDefinitionTriggersFromActivation();
       return;
@@ -235,16 +203,13 @@ export function useProcessDefinitionActivationFlow({
       ? String(formData.value.definition_version).trim()
       : getNextSemanticVersion(sourceRow.definition_version);
 
+    // SIN `process_id` (frente 25, P22): la configuración ya no lo lleva — lo dice su línea. Al
+    // versionar, lo único que hay que arrastrar es `linea_id`, que es su identidad.
     formData.value = {
       ...formData.value,
-      process_id: sourceRow.process_id ?? formData.value.process_id ?? "",
-      series_id: sourceRow.series_id ?? formData.value.series_id ?? "",
+      linea_id: sourceRow.linea_id ?? formData.value.linea_id ?? "",
       definition_version: nextVersion,
       status: "draft"
-    };
-    fkDisplay.value = {
-      ...fkDisplay.value,
-      process_id: fkDisplay.value.process_id || (sourceRow.process_id ? String(sourceRow.process_id) : "")
     };
     processDefinitionCloneSourceId.value = sourceRow.id ? String(sourceRow.id) : "";
     editorMode.value = "create";

@@ -1,0 +1,20 @@
+{
+  "reconcile_first_pass": {
+    "status": 200,
+    "body": {
+      "reconciled": 2
+    }
+  },
+  "reconcile_second_pass": {
+    "status": 200,
+    "body": {
+      "reconciled": 0
+    }
+  },
+  "reconcile_skips_started_item": {
+    "status": 200,
+    "body": {
+      "reconciled": 0
+    }
+  }
+}

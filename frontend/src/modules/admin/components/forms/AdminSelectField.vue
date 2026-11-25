@@ -1,19 +1,34 @@
 <template>
-  <select
-    :value="modelValue"
-    class="admin-select-field w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 pr-10 text-sm text-slate-700 shadow-sm transition-colors duration-150 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-    :class="selectClass"
-    :disabled="disabled"
-    @change="handleChange"
-    @focus="$emit('focus', $event)"
-    @blur="$emit('blur', $event)"
-  >
-    <slot />
-  </select>
+  <span class="relative block w-full" :class="wrapperClass">
+    <select
+      v-bind="selectAttrs"
+      :value="modelValue"
+      class="deasy-control deasy-control--select block"
+      :class="selectClass"
+      :disabled="disabled"
+      @change="handleChange"
+      @focus="$emit('focus', $event)"
+      @blur="$emit('blur', $event)"
+    >
+      <slot />
+    </select>
+    <span
+      class="pointer-events-none absolute inset-y-px right-px flex w-10 items-center justify-center rounded-r-lg border-l border-line-strong bg-surface text-[#7a869a] transition-colors"
+      aria-hidden="true"
+    >
+      <svg class="h-4 w-4" viewBox="0 0 20 20" fill="none">
+        <path d="M6 8l4 4 4-4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+      </svg>
+    </span>
+  </span>
 </template>
 
 <script setup>
-const props = defineProps({
+import { computed, useAttrs } from "vue";
+
+defineOptions({ inheritAttrs: false });
+
+defineProps({
   modelValue: {
     type: [String, Number],
     default: ""
@@ -29,6 +44,12 @@ const props = defineProps({
 });
 
 const emit = defineEmits(["update:modelValue", "change", "focus", "blur"]);
+const attrs = useAttrs();
+
+const wrapperClass = computed(() => attrs.class);
+const selectAttrs = computed(() =>
+  Object.fromEntries(Object.entries(attrs).filter(([key]) => key !== "class"))
+);
 
 const handleChange = (event) => {
   emit("update:modelValue", event.target.value);

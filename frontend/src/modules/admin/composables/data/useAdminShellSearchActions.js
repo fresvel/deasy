@@ -23,7 +23,7 @@ export function useAdminShellSearchActions({
   const clearProcessDefinitionInlineFilters = async () => {
     processDefinitionInlineFilters.value = {
       process_id: "",
-      variation_key: "",
+      linea_id: "",
       status: ""
     };
     await fetchRows();
@@ -38,8 +38,7 @@ export function useAdminShellSearchActions({
 
   const clearTemplateArtifactInlineFilters = async () => {
     templateArtifactInlineFilters.value = {
-      artifact_origin: "",
-      artifact_stage: ""
+      is_active: ""
     };
     await fetchRows();
   };

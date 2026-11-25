@@ -1,4 +1,18 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Broker y notificaciones - EMQX
+
+> ⚠️ **OBSOLETO.** EMQX fue retirado. El chat y las notificaciones en tiempo real
+> ahora usan **WebSockets (Socket.IO)** integrados en el backend, reutilizando el
+> JWT de la aplicación. Los topics MQTT se mapean a rooms de Socket.IO
+> (`users/{id}` → `user:{id}`, `conversations/{id}` → `conversation:{id}`,
+> `processes/{id}` → `process:{id}`). Ver `backend/services/realtime/RealtimeGateway.js`,
+> `backend/services/chat/ChatRealtimePublisherService.js` y
+> `frontend/src/core/services/realtimeClient.js`. Este documento se conserva solo
+> como referencia histórica.
 
 ## Rol del broker (alto nivel)
 

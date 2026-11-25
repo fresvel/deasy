@@ -7,19 +7,32 @@ const API_PORT = import.meta.env.VITE_API_PORT || "3030";
 const RAW_API_BASE_URL = String(import.meta.env.VITE_API_BASE_URL || "").trim();
 const API_BASE_URL = RAW_API_BASE_URL || `${DEFAULT_PROTOCOL}//${DEFAULT_HOST}:${API_PORT}`;
 const NORMALIZED_API_BASE_URL = API_BASE_URL.replace(/\/$/, "");
-export const API_PREFIX = `${NORMALIZED_API_BASE_URL}/easym/v1`;
+export const API_PREFIX = `${NORMALIZED_API_BASE_URL}/deasy/v1`;
 
 export const API_ROUTES = {
   BASE: NORMALIZED_API_BASE_URL,
   PREFIX: API_PREFIX,
   UNITS: `${API_PREFIX}/units`,
-  PROGRAMS: `${API_PREFIX}/units`,
-  AREAS: `${API_PREFIX}/area`,
-  TAREAS_PENDIENTES: (usuario) => `${API_PREFIX}/tarea/pendiente?usuario=${usuario}`,
+  TAREA_SUPERVISED_STUCK: `${API_PREFIX}/tarea/supervised-stuck`,
+  // Las dos acciones del jefe sobre un entregable atascado de su unidad (D1.b y D2). No piden rol de
+  // admin: la legitimidad la da encabezar la unidad, y la comprueba el backend antes que nada.
+  TAREA_SUPERVISED_HANDOVER: (taskItemId) => `${API_PREFIX}/tarea/supervised-stuck/${taskItemId}/handover`,
+  TAREA_SUPERVISED_RESET: (taskItemId) => `${API_PREFIX}/tarea/supervised-stuck/${taskItemId}/reset`,
   USERS: `${API_PREFIX}/users`,
   VERIFY_EMAIL: `${API_PREFIX}/email/verify`,
   USERS_RECOVER_PASSWORD: `${API_PREFIX}/reset-password/request`,
+  USERS_VERIFY_RESET_CODE: `${API_PREFIX}/reset-password/verify`,
+  USERS_RESET_PASSWORD: `${API_PREFIX}/reset-password/reset`,
   USERS_LOGIN: `${API_PREFIX}/users/login`,
+  USERS_RECUPERAR_CORREO: `${API_PREFIX}/users/recuperar-correo`,
+  // El registro en tres pasos (C8). Todo sobre `me`: la ruta anterior aceptaba un `user_id` del
+  // cuerpo SIN sesion, asi que cualquiera podia probar codigos contra la cuenta de cualquiera.
+  USERS_ME: `${API_PREFIX}/users/me`,
+  USERS_ME_VERIFICAR_CORREO: `${API_PREFIX}/users/me/verificacion/correo`,
+  USERS_ME_REENVIAR_CODIGO: `${API_PREFIX}/users/me/verificacion/correo/reenviar`,
+  // Corregir el dato que se esta verificando (mismo camino, verbo PUT).
+  USERS_ME_VERIFICAR_TELEFONO_DATO: `${API_PREFIX}/users/me/verificacion/telefono`,
+  USERS_ME_VERIFICAR_TELEFONO: (telefonoId) => `${API_PREFIX}/users/me/telefonos/${telefonoId}/verificacion`,
   USERS_LOGOUT: `${API_PREFIX}/users/logout`,
   USERS_REFRESH_TOKEN: `${API_PREFIX}/users/refresh-token`,
   USERS_ME: `${API_PREFIX}/users/me`,
@@ -31,8 +44,12 @@ export const API_ROUTES = {
   USERS_SIGNATURE_CENTER: (userId) => `${API_PREFIX}/users/${userId}/signature-center`,
   USERS_PROCESS_DEFINITION_PANEL: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/panel`,
   USERS_PROCESS_DEFINITION_TASKS: (userId, definitionId) => `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/tasks`,
-  USERS_PROCESS_DEFINITION_TASK_ITEM_DOCUMENTS: (userId, definitionId, taskItemId) =>
-    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/documents`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_OBSERVATIONS: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/observations`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_OBSERVATION_RESOLVE: (userId, definitionId, taskItemId, observationId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/observations/${observationId}/resolve`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_HANDOVERS: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/handovers`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_UPLOAD_FILE: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/upload-file`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_TEMPLATE_DOWNLOAD: (userId, definitionId, taskItemId) =>
@@ -41,7 +58,22 @@ export const API_ROUTES = {
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/file`,
   USERS_PROCESS_DEFINITION_TASK_ITEM_RESET_WORKFLOW: (userId, definitionId, taskItemId) =>
     `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/reset-workflow`,
+  USERS_GENERAL_TASKS: (userId) => `${API_PREFIX}/users/${userId}/general-tasks`,
+  USERS_ADDABLE_DELIVERABLES: (userId) => `${API_PREFIX}/users/${userId}/addable-catalogo_documental`,
+  USERS_TASK_RECIPIENTS: (userId) => `${API_PREFIX}/users/${userId}/task-recipients`,
+  USERS_FLOW_CATALOG: (userId) => `${API_PREFIX}/users/${userId}/flow-catalog`,
+  USERS_MY_SENDS: (userId) => `${API_PREFIX}/users/${userId}/my-sends`,
+  USERS_MY_RECEIVED: (userId) => `${API_PREFIX}/users/${userId}/my-received`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENTS: (userId, definitionId, taskItemId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT: (userId, definitionId, taskItemId, attachmentId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments/${attachmentId}`,
+  USERS_PROCESS_DEFINITION_TASK_ITEM_ATTACHMENT_DOWNLOAD: (userId, definitionId, taskItemId, attachmentId) =>
+    `${API_PREFIX}/users/${userId}/process-definitions/${definitionId}/task-items/${taskItemId}/attachments/${attachmentId}/download`,
   CHAT_PROCESS_THREAD: (processId) => `${API_PREFIX}/chat/processes/${processId}/thread`,
+  CHAT_UNITS: `${API_PREFIX}/chat/units`,
+  CHAT_UNIT_THREAD: (unitId) => `${API_PREFIX}/chat/units/${unitId}/thread`,
+  CHAT_CONVERSATION: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}`,
   CHAT_CONVERSATION_MESSAGES: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/messages`,
   CHAT_CONVERSATION_READ: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/read`,
   CHAT_CONVERSATION_ATTACHMENTS: (conversationId) => `${API_PREFIX}/chat/conversations/${conversationId}/attachments`,
@@ -50,16 +82,80 @@ export const API_ROUTES = {
   USERS_VALIDATE_CEDULA: (cedula) => `${API_PREFIX}/users/validate/cedula/${cedula}`,
   USERS_VALIDATE_WHATSAPP: (phone) => `${API_PREFIX}/users/validate/whatsapp/${phone}`,
   ADMIN_SQL_META: `${API_PREFIX}/admin/sql/meta`,
-  ADMIN_SQL_TEMPLATE_ARTIFACTS_SYNC: `${API_PREFIX}/admin/sql/template_artifacts/sync`,
-  ADMIN_SQL_TEMPLATE_SEEDS_SYNC: `${API_PREFIX}/admin/sql/template_seeds/sync`,
-  ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT: `${API_PREFIX}/admin/sql/template_artifacts/draft`,
-  ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT_UPDATE: (artifactId) => `${API_PREFIX}/admin/sql/template_artifacts/draft/${artifactId}`,
-  ADMIN_SQL_TEMPLATE_SEED_PREVIEW: (seedId) => `${API_PREFIX}/admin/sql/template_seeds/${seedId}/preview`,
+  // C7 · el estado de los canales, y el codigo de vinculacion POR SU PROPIA RUTA: quien escanea el
+  // QR decide que cuenta de WhatsApp es el canal, asi que no viaja dentro del estado.
+  ADMIN_CANALES: `${API_PREFIX}/admin/canales`,
+  // Los textos legales vigentes. PUBLICO: se leen antes de tener cuenta, porque aceptarlos es
+  // requisito para tenerla (LOPDP, Art. 12: la informacion va «en el momento mismo de la recogida»).
+  LEGAL_DOCUMENTOS: `${API_PREFIX}/legal/documentos`,
+  ADMIN_CANALES_QR: `${API_PREFIX}/admin/canales/whatsapp/qr`,
+  // ── LOS TEXTOS LEGALES, LADO ADMINISTRACION ────────────────────────────────────────────────
+  // Cuelgan de `/admin` —la misma convencion que los canales— y NO de `/legal`, que es publico a
+  // proposito. Son la misma tabla vista por dos audiencias: el visitante lee lo VIGENTE sin cuenta,
+  // y aqui se redacta, se publica y se retira con sesion y permiso (`legal_documents.*`).
+  ADMIN_LEGAL_DOCUMENTOS: `${API_PREFIX}/admin/legal/documentos`,
+  ADMIN_LEGAL_DOCUMENTO: (documentoId) => `${API_PREFIX}/admin/legal/documentos/${documentoId}`,
+  ADMIN_LEGAL_DOCUMENTO_PUBLICAR: (documentoId) => `${API_PREFIX}/admin/legal/documentos/${documentoId}/publicar`,
+  ADMIN_LEGAL_DOCUMENTO_RETIRAR: (documentoId) => `${API_PREFIX}/admin/legal/documentos/${documentoId}/retirar`,
+  // El historial de VERSIONES DE OBJETO del borrador (cada guardado), no el de estados.
+  ADMIN_LEGAL_DOCUMENTO_HISTORIAL: (documentoId) => `${API_PREFIX}/admin/legal/documentos/${documentoId}/historial`,
+  // ⚠️ SOLO LECTURA, y no hay hermana que escriba: la retencion se configura en la infraestructura.
+  // La pantalla existe para VERIFICARLA. Una ruta de escritura aqui convertiria una garantia en un
+  // ajuste, y con ella se iria el sentido del bucket WORM.
+  ADMIN_LEGAL_ARCHIVO_ESTADO: `${API_PREFIX}/admin/legal/archivo/estado`,
+  ADMIN_SQL_OPERATION_STATS: `${API_PREFIX}/admin/sql/stats/operation`,
+  ADMIN_SQL_UNITS_GRAPH: (relationType = "org") => `${API_PREFIX}/admin/sql/units/graph?relation_type=${encodeURIComponent(relationType)}`,
+  ADMIN_SQL_UNITS_WITH_PARENT: `${API_PREFIX}/admin/sql/units/with-parent`,
+  ADMIN_SQL_ESTRUCTURA_EFECTOS: (clase, id) => `${API_PREFIX}/admin/sql/estructura/efectos-de-suprimir/${clase}/${id}`,
+  ADMIN_SQL_ESTRUCTURA_PUESTOS_CANDIDATOS: `${API_PREFIX}/admin/sql/estructura/puestos-candidatos-a-suceder`,
+  ADMIN_SQL_ESTRUCTURA_CORRECCIONES: `${API_PREFIX}/admin/sql/estructura/correcciones`,
+  ADMIN_SQL_ESTRUCTURA_VIDAS: (clase) => `${API_PREFIX}/admin/sql/estructura/vidas/${clase}`,
+  ADMIN_SQL_ACTOS_DOCUMENTOS: `${API_PREFIX}/admin/sql/estructura/actos/documentos`,
+  ADMIN_SQL_ACTOS_DOCUMENTOS_FIRMADOS: `${API_PREFIX}/admin/sql/estructura/actos/documentos-firmados`,
+  ADMIN_SQL_ACTO_DOCUMENTO: (actoId) => `${API_PREFIX}/admin/sql/estructura/actos/${actoId}/documento`,
+  ADMIN_SQL_ACTO_ADJUNTO: (actoId) => `${API_PREFIX}/admin/sql/estructura/actos/${actoId}/adjunto`,
+  ADMIN_SQL_UNIT_PARENT: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/parent`,
+  ADMIN_SQL_UNIT_DETAIL: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/detail`,
+  ADMIN_SQL_PROCESSES_GRAPH: `${API_PREFIX}/admin/sql/processes/graph`,
+  ADMIN_SQL_PROCESSES_WITH_PARENT: `${API_PREFIX}/admin/sql/processes/with-parent`,
+  ADMIN_SQL_PROCESS_DETAIL: (processId) => `${API_PREFIX}/admin/sql/processes/${processId}/detail`,
+  ADMIN_SQL_PROCESS_PARENT: (processId) => `${API_PREFIX}/admin/sql/processes/${processId}/parent`,
+  ADMIN_SQL_UNIT_PROCESSES: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/processes`,
+  ADMIN_SQL_UNIT_ATTACHABLE_PROCESSES: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/attachable-processes`,
+  ADMIN_SQL_UNIT_POSITIONS_SUPRIMIR: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/positions/suprimir`,
+  ADMIN_SQL_UNIT_POSITIONS: (unitId) => `${API_PREFIX}/admin/sql/units/${unitId}/positions`,
+  ADMIN_SQL_UNIT_POSITION: (positionId) => `${API_PREFIX}/admin/sql/units/positions/${positionId}`,
+  ADMIN_SQL_UNIT_POSITION_ASSIGN: (positionId) => `${API_PREFIX}/admin/sql/units/positions/${positionId}/assign`,
+  ADMIN_SQL_UNIT_POSITION_UNASSIGN: (positionId) => `${API_PREFIX}/admin/sql/units/positions/${positionId}/unassign`,
+  ADMIN_SQL_GENERADORES_SYNC: `${API_PREFIX}/admin/sql/generadores_de_documento/sync`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT: `${API_PREFIX}/admin/sql/ediciones/draft`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_DRAFT_UPDATE: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/draft/${artifactId}`,
+  ADMIN_SQL_GENERADOR_PREVIEW: (generadorId) => `${API_PREFIX}/admin/sql/generadores_de_documento/${generadorId}/preview`,
+  ADMIN_SQL_GENERADOR_DOWNLOAD: (generadorId) => `${API_PREFIX}/admin/sql/generadores_de_documento/${generadorId}/download`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_DOWNLOAD: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/download`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_SOURCE: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/source`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_SCHEMA: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/schema`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_ACTIVE: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/active`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_VERSION: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/version`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_PUBLISH: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/publish`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_RETIRE: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/retire`,
+  ADMIN_SQL_TEMPLATE_VERSIONS: (code) => `${API_PREFIX}/admin/sql/ediciones/versions?code=${encodeURIComponent(code)}`,
+  ADMIN_SQL_TEMPLATE_USE_IN_CONFIG: () => `${API_PREFIX}/admin/sql/ediciones/use-in-config`,
+  ADMIN_SQL_CONFIG_ACTIVATION_DIFF: (definitionId) => `${API_PREFIX}/admin/sql/process_definitions/${definitionId}/activation-diff`,
+  ADMIN_SQL_TEMPLATE_GUIDED_UPDATE_START: () => `${API_PREFIX}/admin/sql/ediciones/guided-update`,
+  ADMIN_SQL_TEMPLATE_GUIDED_UPDATE_FINISH: () => `${API_PREFIX}/admin/sql/ediciones/guided-update/finish`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_SYNC_STATUS: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/sync-status`,
+  ADMIN_SQL_TEMPLATE_ARTIFACT_RESYNC: (artifactId) => `${API_PREFIX}/admin/sql/ediciones/${artifactId}/resync`,
+  ADMIN_SQL_PROCESS_TARGET_SCOPE: (definitionId) => `${API_PREFIX}/admin/sql/process_definitions/${definitionId}/target-scope`,
+  ADMIN_SQL_PROCESS_RESOLVABLE_CARGOS: (definitionId) => `${API_PREFIX}/admin/sql/process_definitions/${definitionId}/resolvable-cargos`,
+  ADMIN_SQL_PROCESS_LINEA_SCOPE: (definitionId) => `${API_PREFIX}/admin/sql/process_definitions/${definitionId}/linea-scope`,
   ADMIN_SQL_TABLE: (table) => `${API_PREFIX}/admin/sql/${table}`,
   ADMIN_GENERATE_TERM_TASKS: (termId) => `${API_PREFIX}/admin/terms/${termId}/generate-tasks`,
+  ADMIN_TERM_LAUNCH_STATUS: (termId) => `${API_PREFIX}/admin/terms/${termId}/launch-status`,
+  ADMIN_LAUNCH_PROCESS_DEFINITION: (definitionId) => `${API_PREFIX}/admin/process-definitions/${definitionId}/launch`,
+  ADMIN_PROCESS_DEFINITION_LAUNCH_INFO: (definitionId) => `${API_PREFIX}/admin/process-definitions/${definitionId}/launch-info`,
   SIGN: `${API_PREFIX}/sign`,
   SIGN_VALIDATE: `${API_PREFIX}/sign/validate`,
-  SIGN_BATCH: `${API_PREFIX}/sign/batch`,
   SIGN_BATCH_START: `${API_PREFIX}/sign/batch/start`,
   SIGN_BATCH_STATUS: (jobId) => `${API_PREFIX}/sign/batch/${jobId}`,
   SIGN_BATCH_DOWNLOAD: (jobId) => `${API_PREFIX}/sign/batch/${jobId}/download`,
@@ -68,5 +164,20 @@ export const API_ROUTES = {
   SIGN_FILL_REQUEST_APPROVE: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/approve`,
   SIGN_FILL_REQUEST_RETURN: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/return`,
   SIGN_FILL_REQUEST_REJECT: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/reject`,
-  SIGN_FILL_REQUEST_CANCEL: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/cancel`
+  SIGN_FILL_REQUEST_CANCEL: (requestId) => `${API_PREFIX}/sign/fill-requests/${requestId}/cancel`,
+  SYSTEM_BOOTSTRAP_STATUS: `${API_PREFIX}/system/bootstrap/status`,
+  SYSTEM_BOOTSTRAP_INITIALIZE: `${API_PREFIX}/system/bootstrap/initialize`,
+  // El catálogo geográfico es PÚBLICO: lo consume el formulario de registro, que por definición
+  // usa quien todavía no tiene cuenta. Sustituye a `core/constants/countries.js`, que era una copia
+  // en el frontend y no tenía ni provincias ni cantones.
+  // La institución de este despliegue: su país y cómo llama ese país al documento de identidad.
+  // Público, como la geografía: lo consume el registro.
+  SYSTEM_INSTITUCION: `${API_PREFIX}/system/institucion`,
+  SYSTEM_GEO_PAISES: `${API_PREFIX}/system/geografia/paises`,
+  // ⚠️ AQUI ESTABAN `SYSTEM_GEO_PROVINCIAS` y `SYSTEM_GEO_CIUDADES`. Se retiraron el 2026-08-31 al
+  // sacar la direccion del registro (F6): eran sus dos unicos consumidores. El admin NO las usa
+  // --pide `provincias`, `cantones` y `parroquias` por el editor generico de tablas.
+  //
+  // Las rutas del backend (`/system/geografia/…`) SE QUEDAN: `/perfil/datos` (F5) va a gestionar
+  // direcciones y las necesita. Lo que sobraba era el atajo del frontend, no el endpoint.
 };

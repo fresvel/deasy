@@ -1,0 +1,109 @@
+---
+title: "Firmas, dossier y el resto del esquema"
+description: "La cadena de firma, el dossier heredado de MongoDB y los dominios de tablas que faltaban."
+sidebar:
+  order: 3
+---
+```mermaid
+%% diagrama 10 — la cadena de firma, de la plantilla de flujo a la firma persistida
+flowchart LR
+    TPL["pasos_declarados<br/>(accion = firma)"] --> STEPS["participantes_declarados"]
+    STEPS --> INST["recorridos (accion = firma)"]
+    INST --> REQ["turnos"]
+    REQ --> SIGS["document_signatures"]
+```
+
+Un paso de firma soporta **múltiples firmantes**, y desde el **2026-10-08** los soporta en filas: una por firmante, en `participantes_declarados`, con su resolutor, su ámbito y su hueco. Antes era una lista libre en el JSONB `signers`, que **no validaba nadie** y que mandaba sobre las columnas que sí tenían `CHECK` — el defecto **1.19**, cerrado aquí.
+
+**Un paso está aprobado cuando firman todos los suyos.** El quorum configurable que había (`approval_mode`: `and` · `or` · `at_least`, con `required_signers_min` y `required_signers_max`) se retiró entero: el máximo no decidía nada, `or` dejaba las solicitudes hermanas abiertas e inoperables, y el cupo sólo existía porque el conjunto de firmantes era indeterminado — que es justo lo que se quitó. El detalle, con sus medidas, en [la firma](/modelo/flujo-de-firma/).
+
+Quien decide **dónde se dibuja la firma** es el `slot`, que el cuerpo Jinja2 embebe como `{{ signatures.<slot>.token }}` y que desde el 2026-10-08 es **de cada firmante** y no del paso: con N firmantes y un solo hueco, los N−1 restantes no tenían marca en el papel.
+
+El paso llevaba además un JSONB `anchor_refs` que **era un fósil**: el escritor lo serializaba siempre como `[]` y el lector lo devolvía tal cual; ningún formulario le ponía un valor y ningún render lo miraba. Se fue con la tabla el 2026-10-09. Su gemelo del lado de entrega, `field_refs`, nunca llegó a tener columna y **sigue en el contrato HTTP del editor** como literal `[]`: lo que lo mataría es retirarlo del formulario.
+
+El catalogo de estado se siembra en el propio esquema: `signature_statuses` (`firmado`, `fallido`, `invalido`, `cancelado`), que es el resultado del **hecho** de firmar. El estado de **a quién le toca** era un segundo catalogo, `signature_request_statuses`, y dejo de serlo el 2026-10-08: hoy es `turnos.estado`, con el mismo `CHECK` y el mismo vocabulario que el lado de entrega ([los vocabularios de estado](/modelo/vocabularios-de-estado/)). Los dos ejes no son redundantes: el turno dice si alguien respondio, el catalogo dice si la firma **vale**, y un turno completado con una firma invalida cuenta como rechazo.
+
+### La firma en lote
+
+| **Endpoint**                      | **Función**                                               |
+|:----------------------------------|:----------------------------------------------------------|
+| `POST /sign/`                     | Firma individual                                          |
+| `POST /sign/validate`             | Validación de un PDF ya firmado                           |
+| `POST /sign/batch`                | **Retirado** — devuelve error y redirige a `/batch/start` |
+| `POST /sign/batch/start`          | Arranca el trabajo asincrono (hasta 30 PDFs)              |
+| `GET /sign/batch/:jobId`          | Estado del trabajo                                        |
+| `GET /sign/batch/:jobId/download` | Descarga el ZIP con los resultados                        |
+
+El estado se persiste en `signature_batch_jobs` (clave `job_id`, mas `status`, `total`, `processed`, `success_count`, `failed_count` y `results` JSONB), con un comentario revelador en el esquema: *“persistido para sobrevivir reinicios del backend (antes vivia en un Map en memoria)”*.
+
+Separación de responsabilidades: `BatchSigningService.js` gestiona el ciclo del trabajo y el bucle en segundo plano, pero **no** decide donde se guarda el PDF ni habla con el firmante — eso es de `PdfSigningService.js`, que llama documento a documento. El ZIP se empaqueta con `/usr/bin/zip` (ruta absoluta a propósito).
+
+Además del PDF, cada documento del lote lleva metadatos de contexto (`turnoId`, `documentVersionId`, `processName`, `unitLabel`, `termName`, `stepName`), que es lo que permite persistir la evidencia del flujo de trabajo y no limitarse a firmar ficheros sueltos.
+
+## El dossier (ex-MongoDB)
+
+El dossier es el CV o expediente personal: titulos, experiencia, publicaciones. Antes vivia en MongoDB; ahora son **dos tablas**:
+
+- `dossiers`: la raíz, UNIQUE por `person_id`. **Ya no guarda copia de la cédula**: se escribía una vez y no se refrescaba nunca, así que un cambio la dejaba mintiendo.
+
+- `dossier_items`: `dossier_id` (con borrado en cascada) + `section` + **`data` JSONB** + `url_documento`.
+
+Se conservo la flexibilidad de documento usando JSONB. La justificación esta en el comentario del esquema: *“documento heterogeneo (CV con secciones) accedido siempre como árbol completo por cédula”*.
+
+Las antiguas “colecciones” de Mongo son ahora valores de `section`: `titulos`, `experiencia`, `referencias`, `formacion`, `certificaciones`, `articulos`, `libros`, `ponencias`, `tesis`, `proyectos`.
+
+:::caution[Sus 22 rutas entran por `:cedula`, y eso tiene un límite]
+
+Un número de documento **no identifica a nadie por sí solo**: la unicidad es `(tipo, país, número)`, y
+dos pasaportes de países distintos con el mismo número son legales en el modelo.
+
+Hasta el **2026-08-29** la consulta hacía `WHERE numero = ? LIMIT 1` y ante dos coincidencias
+**elegía una en silencio**: devolvía el expediente de otra persona. Ahora lo corta un `router.param`
+—una vez, para las veintidós rutas— que responde **409** si el número corresponde a más de una
+persona. Sólo se pronuncia sobre la ambigüedad; que el documento no exista lo siguen resolviendo los
+controladores.
+
+El arreglo de fondo es que estas rutas entren por el **id de la persona**, como ya hacen la foto y el
+escaneo del documento. Está pendiente.
+
+:::
+
+Por compatibilidad, los `_id` se exponen como **String** para preservar el contrato que tenía Mongo, y los valores por defecto de cada sección replican exactamente los del antiguo esquema de Mongoose.
+
+## Los demas dominios de tablas
+
+### Identidad y personas
+
+`persons` (con `token` único —la marca de firma—, `password_hash` y `status`) y sus **satélites de identidad**: `documentos_identidad`, `emails` y `telefonos`, cada uno con su propio principal y su propia verificación. Más `person_certificates` (los `.p12` en el almacén, con `is_default`), `email_verification_codes` —que desde el 2026-08-27 cuelga del **correo**, no de la persona— y `password_reset_codes`.
+
+### Organización, unidades y puestos
+
+`unit_types`, `units`, `relation_unit_types`, `unit_relations`, `cargos`, `unit_positions`, `position_assignments`. Dos garantias elegantes por columna generada:
+
+- `unit_positions.head_flag` garantiza **un solo jefe por unidad**.
+
+- `position_assignments.current_flag` garantiza **un solo ocupante actual por puesto**.
+
+Y una vista, `unit_org_levels`, que con una CTE recursiva sobre `unit_arbol_vigente` —las relaciones de `unit_relations` que rigen hoy— calcula el nivel organizativo, la unidad raiz y las unidades de nivel 2 y 3 de cada unidad.
+
+Como subdominio propio esta la **contratación** —`vacancies`, `aplications`, `offers`, `contracts`, `contract_origins` (con herencia por tabla) y `vacancy_visibility`—, del que hay que saber que **cinco de sus ocho tablas no las toca ninguna línea de código**. Se cuenta entero en [Empleo y contratación](/complemento/empleo/).
+
+### Entregables, tareas y documentos
+
+`tasks`, `task_items`, `task_item_tenures` (quien responde de cada entregable, desde cuando y en calidad de que puesto: una fila por turno), `document_versions` (que cuelgan del entregable y llevan la RONDA como entero), `document_version_uploads` (cada subida del archivo: la version menor, con su autor), `document_attachments` y `document_workflow_observations` (observaciones, devoluciones y rechazos).
+
+### Chat y notificaciones
+
+`chat_conversations` (con tipos `direct`, `group`, `thread`, `process_thread`, `unit`), `chat_conversation_participants`, `chat_messages`, `chat_message_attachments`, `chat_message_reads` y `chat_notifications`.
+
+:::note[Decisión de diseno explícita]
+
+**`chat_conversations.last_message_id` no lleva clave foránea**, y es a propósito: `chat_conversations` → `chat_messages` → `chat_conversations` sería un ciclo a nivel de tabla, y el esquema no tiene ninguno. Es una caché para ordenar la lista de conversaciones sin tocar los mensajes.
+
+⚠️ **Aquí ponía que `person_id`, `process_id` y `unit_id` del chat eran «claves foráneas lógicas sin constraint, para no acoplar». Dejó de ser cierto en `TD7-c3` (2026-08-24)**: hoy el catálogo devuelve **once claves foráneas reales** de `chat_*` y `dossiers` hacia `persons`, `units`, `processes` y `process_definition_versions`. Y la premisa que las justificaba era falsa desde antes: `ChatAuthorizationService` ya resolvía los permisos con `INNER JOIN` contra esas mismas tablas.
+
+:::
+
+### Auditoria
+
+**No existe una tabla de auditoria general** (nada de `audit_log` o `bitacora`). La trazabilidad es **especifica por dominio**: `task_item_tenures` para los traspasos (una fila por turno: cerrar una y abrir otra ES el asiento), `document_workflow_observations` para devoluciones, `role_assignments.revoked_at` y `revoked_reason` para revocaciones, `signature_batch_jobs.results` para el resultado por fichero, y `created_at` / `updated_at` con trigger `set_updated_at()` en la mayoria de tablas.

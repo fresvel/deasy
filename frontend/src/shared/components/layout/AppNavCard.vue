@@ -7,41 +7,32 @@
     :class-name="rootClasses"
     @click="$emit('click', $event)"
   >
-    <template v-if="layout === 'inline'">
-      <span :class="iconWrapperClasses">
-        <component :is="icon" :class="iconClasses" />
-      </span>
-      <span class="flex flex-col flex-1 min-w-0 pt-0.5">
-        <strong :class="titleClasses">{{ title }}</strong>
-        <span v-if="meta" class="text-slate-500 text-sm font-medium mt-1 inline-flex items-center gap-1.5 opacity-80">
-          <span v-if="showMetaDot" class="w-1.5 h-1.5 rounded-full bg-slate-300 group-hover:bg-sky-400 transition-colors"></span>
-          {{ meta }}
-        </span>
-        <span v-if="description" class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ description }}</span>
-      </span>
-    </template>
-
-    <template v-else>
-      <div class="flex flex-col h-full w-full">
-        <div class="flex items-start justify-between mb-4">
-          <div :class="iconWrapperClasses">
-            <component :is="icon" :class="iconClasses" />
-          </div>
-          <div v-if="showArrow" :class="arrowWrapperClasses">
-            <IconChevronRight class="w-6 h-6" />
-          </div>
-        </div>
-        <div class="flex flex-col flex-1">
-          <h3 :class="titleClasses">{{ title }}</h3>
-          <span v-if="meta" class="text-sm font-medium text-slate-400">{{ meta }}</span>
-          <span v-if="description" class="text-sm font-medium text-slate-500 leading-snug line-clamp-2 mt-1">{{ description }}</span>
+    <!-- ⚠️ AQUI HABIA UN `<template>` SIN DIRECTIVA, y no renderizaba NADA. Venia de partir en
+         dos el `v-if="layout === 'inline'"` / `v-else`: al morir la rama inline, el `v-else` se
+         quedo sin su `v-if` y lo deje como `<template>` a secas. Un `<template>` sin `v-if`,
+         `v-for` ni `#slot` dentro de un componente **no es contenido de slot: es un nodo que Vue
+         descarta en silencio**, asi que las 16 tarjetas de `/admin` y `/perfil` salieron con su
+         caja dibujada y **completamente vacias**. Ni el build ni los 403 tests ni los 26 gates lo
+         vieron: lo vio la pantalla. El contenido va directo, sin envoltorio. -->
+    <div class="flex h-full w-full flex-col gap-4">
+      <div class="flex items-start justify-between gap-3">
+        <h3 :class="titleClasses">{{ title }}</h3>
+        <div v-if="showArrow" :class="arrowWrapperClasses">
+          <IconChevronRight class="w-6 h-6" />
         </div>
       </div>
-      <AppTag v-if="badge" :variant="badgeVariant" class-name="mt-4 self-start">
-        {{ badge }}
-      </AppTag>
-    </template>
-  </AppButton>
+      <div class="deasy-tile__slot">
+        <span :class="iconWrapperClasses">
+          <component :is="icon" :class="iconClasses" />
+        </span>
+        <span v-if="meta" class="text-sm font-semibold text-body">{{ meta }}</span>
+        <span v-if="description" class="text-xs font-medium leading-relaxed text-muted line-clamp-3">{{ description }}</span>
+      </div>
+    </div>
+    <AppTag v-if="badge" :variant="badgeVariant" class-name="mt-4 self-start">
+      {{ badge }}
+    </AppTag>
+    </AppButton>
 </template>
 
 <script setup>
@@ -66,10 +57,6 @@ const props = defineProps({
   meta: {
     type: String,
     default: ""
-  },
-  layout: {
-    type: String,
-    default: "stacked"
   },
   showArrow: {
     type: Boolean,
@@ -111,30 +98,32 @@ const props = defineProps({
 
 defineEmits(["click"]);
 
-const rootClasses = computed(() => [
-  props.layout === "inline"
-    ? "group bg-white rounded-xl border border-slate-200 p-5 text-left flex items-start gap-4 transition-all hover:border-sky-200 hover:shadow-md hover:shadow-sky-100/50 focus:outline-none focus:ring-2 focus:ring-sky-500/20 hover:-translate-y-1"
-    : "group bg-white border border-slate-200 rounded-2xl p-5 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-100 transition-all text-left flex flex-col justify-between",
-  props.className
-]);
+/* Las cuatro cadenas murieron en F8 (2026-08-20): eran identicas salvo el TAMAÑO, y llevaban
+   color dentro. La receta vive en `nav.css` y aqui solo queda el nombre del modificador. */
+/* ⚠️ AQUI HABIA DOS DISPOSICIONES, `inline` y `stacked`, Y LA PRIMERA ESTABA MUERTA.
+   Censado en F13.6 (2026-08-21): **`layout="inline"` tiene CERO usos y `layout="stacked"` los 12**.
+   La rama inline —una FILA con el icono a la izquierda— arrastraba media plantilla, una prop
+   publica y cuatro recetas de `nav.css`. Retirada entera.
+
+   Y las dos nunca debieron compartir receta: una fila y una baldosa de rejilla no son el mismo
+   objeto. Por compartir `deasy-nav-card`, la baldosa heredaba **radio 12 y padding 20** cuando el
+   resto del sistema la dibujaba a 16 y 24 — que es lo que hacia que `/admin` y `/perfil` no se
+   parecieran a `/home`. Ahora es `deasy-tile`, la receta que `/home` y `/home/firmas` ya usaban. */
+const rootClasses = computed(() => ["group deasy-tile", props.className]);
 
 const iconWrapperClasses = computed(() => [
-  props.layout === "inline"
-    ? "w-12 h-12 flex-shrink-0 rounded-xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-colors"
-    : "w-14 h-14 rounded-2xl bg-slate-50 text-slate-500 flex items-center justify-center border border-slate-100 group-hover:bg-sky-50 group-hover:text-sky-600 transition-all shadow-sm",
+  "deasy-tile__icon",
   props.iconWrapperClass
 ]);
 
 const iconClasses = computed(() => props.iconClass);
 
 const titleClasses = computed(() => [
-  props.layout === "inline"
-    ? "text-slate-800 font-bold text-base block truncate group-hover:text-sky-700 transition-colors"
-    : "font-bold text-slate-800 text-lg leading-tight group-hover:text-sky-700 transition-colors",
+  "text-lg font-semibold leading-tight text-navy transition-colors",
   props.titleClass
 ]);
 
 const arrowWrapperClasses = computed(() => [
-  "w-8 h-8 rounded-full flex items-center justify-center text-slate-300 group-hover:text-sky-500 group-hover:bg-sky-100 transition-all opacity-0 group-hover:opacity-100 translate-x-2 group-hover:translate-x-0"
+  "flex h-8 w-8 translate-x-2 items-center justify-center rounded-full text-gray-300 opacity-0 transition-all group-hover:translate-x-0 group-hover:bg-white group-hover:text-body group-hover:opacity-100"
 ]);
 </script>

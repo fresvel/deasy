@@ -9,14 +9,17 @@ export function useAdminEditorFlow({
   processDefinitionChecklistLoading,
   processDefinitionChecklist,
   isTemplateArtifactsTable,
+  isProcessDefinitionFilterTable,
   isProcessDefinitionTemplatesTable,
-  resetInlineFkState,
   closeProcessDefinitionVersioningModal,
   resetForm,
   applyUnitRelationDefaults,
   ensureEditorInstance,
   getEditorInstance,
   openDraftArtifactModal,
+  openProcessWizardFromScratch,
+  openProcessDefinitionWizard,
+  openProcessDefinitionVersionWizard,
   showFeedbackToast,
   buildFormFromRow,
   refreshFormFkDisplayLabels,
@@ -29,7 +32,6 @@ export function useAdminEditorFlow({
     if (!props.table) {
       return;
     }
-    resetInlineFkState();
     closeProcessDefinitionVersioningModal();
     processDefinitionCloneSourceId.value = "";
     editorMode.value = "create";
@@ -41,6 +43,10 @@ export function useAdminEditorFlow({
       artifacts: false
     };
     modalError.value = "";
+    if (props.table?.table === "process_definition_versions" && typeof openProcessWizardFromScratch === "function") {
+      await openProcessWizardFromScratch();
+      return { redirected: true };
+    }
     resetForm();
     fkDisplay.value = {};
     await applyUnitRelationDefaults();
@@ -53,26 +59,41 @@ export function useAdminEditorFlow({
       await openDraftArtifactModal();
       return;
     }
+    if (isProcessDefinitionFilterTable.value && typeof openProcessWizardFromScratch === "function") {
+      await openProcessWizardFromScratch();
+      return;
+    }
     await openCreate();
   };
 
   const openEdit = async (row) => {
     if (
-      props.table?.table === "template_artifacts"
-      && String(row?.artifact_origin || "") === "process"
+      props.table?.table === "ediciones"
+      && String(row?.lifecycle_state || "published") !== "draft"
     ) {
       showFeedbackToast({
-        kind: "error",
-        title: "Edicion bloqueada",
-        message: "Los artifacts de proceso se sincronizan desde MinIO y no se editan manualmente."
+        kind: "info",
+        title: "Plantilla publicada",
+        message: "Esta versión está publicada (inmutable). Usa “Versionar” para crear una versión editable."
       });
       return { blocked: true };
     }
-    if (props.table?.table === "template_artifacts") {
+    if (props.table?.table === "ediciones") {
       await openDraftArtifactModal(row);
       return { redirected: true };
     }
-    resetInlineFkState();
+    if (props.table?.table === "process_definition_versions" && typeof openProcessDefinitionWizard === "function") {
+      closeProcessDefinitionVersioningModal();
+      processDefinitionCloneSourceId.value = "";
+      editorMode.value = "edit";
+      selectedRow.value = row;
+      modalError.value = "";
+      buildFormFromRow(row);
+      await refreshFormFkDisplayLabels();
+      await refreshProcessDefinitionChecklist(row);
+      await openProcessDefinitionWizard(row, { step: "definition", readonly: false });
+      return { redirected: true };
+    }
     closeProcessDefinitionVersioningModal();
     processDefinitionCloneSourceId.value = "";
     editorMode.value = "edit";
@@ -92,7 +113,6 @@ export function useAdminEditorFlow({
     if (!row || !isProcessDefinitionTemplatesTable.value) {
       return;
     }
-    resetInlineFkState();
     closeProcessDefinitionVersioningModal();
     processDefinitionCloneSourceId.value = "";
     editorMode.value = "create";
@@ -108,10 +128,10 @@ export function useAdminEditorFlow({
     fkDisplay.value = {};
     formData.value = {
       ...formData.value,
-      template_artifact_id: row.id ? String(row.id) : ""
+      edicion_id: row.id ? String(row.id) : ""
     };
     if (row.id !== null && row.id !== undefined && row.id !== "") {
-      setFkLabel("template_artifacts", row.id, formatFkOptionLabel("template_artifacts", row));
+      setFkLabel("ediciones", row.id, formatFkOptionLabel("ediciones", row));
     }
     await refreshFormFkDisplayLabels();
     ensureEditorInstance();
@@ -122,7 +142,12 @@ export function useAdminEditorFlow({
     if (!row) {
       return;
     }
-    resetInlineFkState();
+    if (props.table?.table === "process_definition_versions" && typeof openProcessDefinitionVersionWizard === "function") {
+      closeProcessDefinitionVersioningModal();
+      modalError.value = "";
+      await openProcessDefinitionVersionWizard(row);
+      return { redirected: true };
+    }
     closeProcessDefinitionVersioningModal();
     processDefinitionCloneSourceId.value = row.id ? String(row.id) : "";
     editorMode.value = "create";
@@ -132,7 +157,7 @@ export function useAdminEditorFlow({
     formData.value = {
       ...formData.value,
       process_id: row.process_id ?? formData.value.process_id ?? "",
-      series_id: row.series_id ?? formData.value.series_id ?? "",
+      linea_id: row.linea_id ?? formData.value.linea_id ?? "",
       definition_version: getNextSemanticVersion(row.definition_version),
       status: "draft"
     };

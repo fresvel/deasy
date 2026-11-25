@@ -1,3 +1,8 @@
+> ⚠️ **ARCHIVADO — no es fuente de verdad.**
+> Este documento describe el sistema tal como era antes de la reorganizacion de `docs/`.
+> Puede citar MariaDB, MongoDB, EMQX/MQTT o rutas que ya no existen. Se conserva por su
+> valor historico. Para el estado actual, ver el `README.md` de la raiz.
+
 # Frontend - Setup (tecnico)
 
 ## Requisitos
@@ -24,7 +29,7 @@ Variables soportadas:
 Por defecto usa el host actual y puerto 3030:
 
 - `API_BASE_URL = http://hostname:3030`
-- API_PREFIX = /easym/v1
+- API_PREFIX = /deasy/v1
 
 ## Arranque
 

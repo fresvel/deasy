@@ -1,12 +1,10 @@
-import { useRouter } from 'vue-router';
-import { isTokenExpired, clearAuthData } from '@/core/utils/tokenUtils';
+import { isTokenExpired } from '@/core/utils/tokenUtils';
 
 /**
  * Composable para monitorear la sesión del usuario
  * Detecta cuando el token está por expirar y muestra un modal
  */
 export function useSessionMonitor(sessionModalRef) {
-  const router = useRouter();
   let checkInterval = null;
   let warningShown = false;
 
@@ -16,7 +14,7 @@ export function useSessionMonitor(sessionModalRef) {
   const decodeToken = (token) => {
     try {
       const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const base64 = base64Url.replaceAll("-", '+').replaceAll("_", '/');
       const jsonPayload = decodeURIComponent(
         atob(base64)
           .split('')
@@ -45,9 +43,14 @@ export function useSessionMonitor(sessionModalRef) {
     const token = localStorage.getItem('token');
     
     if (!token) {
-      // No hay token, limpiar y redirigir
-      clearAuthData();
-      router.push('/');
+        // ⚠️ SIN TOKEN NO SE REDIRIGE A NADIE: SE DEJA DE VIGILAR.
+        //
+        // «No hay sesion» NO es «la sesion caduco». Este monitor existe para AVISAR antes de que
+        // un token expire; decidir quien puede estar en una ruta es del guard del router, y del
+        // backend. Al hacerlo tambien aqui, cualquiera que se quedara en una pantalla sin sesion
+        // --el registro, por ejemplo-- salia disparado al acceso al minuto, perdiendo todo lo que
+        // hubiera escrito. Reportado por el dueno el 2026-08-31 rellenando el formulario.
+        stopMonitoring();
       return;
     }
 
@@ -79,6 +82,14 @@ export function useSessionMonitor(sessionModalRef) {
   };
 
   const startMonitoring = () => {
+    // ⚠️ SE PARA ANTES DE ARRANCAR. Sin esto, cada llamada dejaba el intervalo ANTERIOR corriendo
+    // --`setInterval` devuelve un asa nueva y la vieja se perdia sin limpiar--, asi que navegar
+    // entre dos rutas con sesion acumulaba vigilantes huerfanos. Despues `stopMonitoring()` solo
+    // apagaba el ultimo, y los demas seguian disparando en pantallas donde no pintaban nada.
+    //
+    // Es la mitad del fallo que sacaba a la gente del registro al minuto: un vigilante zombi de
+    // una navegacion anterior.
+    stopMonitoring();
     // Verificar cada minuto
     checkInterval = setInterval(checkSession, 60 * 1000);
     
