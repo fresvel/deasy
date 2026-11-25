@@ -50,7 +50,7 @@ Consecuencia concreta: `qa` y `prod` **no cargan** `compose.proxy.yml`, así que
 | Proxy              | `nginx-proxy` en el propio stack                | un stack `ingress` separado                                                 |
 | Puertos del proxy  | 8088 / 8443                                     | el ingress pública 80 / 443                                                 |
 | PostgreSQL         | 5432                                            | 15432 (qa) / 25432 (prod), **sólo en `127.0.0.1`**                          |
-| Almacén (API S3)   | 9000                                            | 9100 / 9101 y 9200 / 9201, **sólo en `127.0.0.1`**                          |
+| Almacén (API S3)   | 9000                                            | 9100 (qa) / 9200 (prod), **sólo en `127.0.0.1`**                            |
 | Buckets            | `deasy-*`                                       | `deasy-qa-*` y `deasy-prod-*`                                               |
 | PAdES-LTA          | desactivado                                     | **activado en prod**                                                        |
 | Endurecimiento     | —                                               | `no-new-privileges`, `read_only` en frontend, `tmpfs`, healthchecks propios |
@@ -59,8 +59,8 @@ Consecuencia concreta: `qa` y `prod` **no cargan** `compose.proxy.yml`, así que
 Sus puertos se atan a `127.0.0.1` del servidor. Hasta noviembre de 2026 se publicaban en todas las
 interfaces, o sea hacia internet si el cortafuegos no los cerraba, y ninguno tiene por qué recibir
 tráfico de fuera: el backend les habla por la red de contenedores y lo público entra por el proxy.
-Siguen alcanzables desde el propio servidor; para abrir la consola del almacén desde otra máquina
-se usa un túnel de SSH. Importa más desde que MinIO comunitario dejó de recibir parches.
+Siguen alcanzables desde el propio servidor; para hablarle al almacén desde otra máquina con un
+cliente S3 se usa un túnel de SSH.
 :::
 
 :::caution[RabbitMQ solo se pública en dev, y atado a 127.0.0.1]
@@ -96,7 +96,8 @@ Tres cosas son distintas y conviene saberlas:
   no los conserve (`cp -r`, un `tar` sin `--xattrs`) los pierde **sin avisar**: los ficheros
   llegan enteros y el archivo deja de estar bloqueado. `cp -a` sí los conserva.
 - **No lee un volumen de MinIO.** El almacén usa un volumen propio y arranca vacío; el anterior
-  queda en disco sin montar.
+  queda en disco sin montar. Vale también para qa y prod: su volumen se llama ahora
+  `deasy_<entorno>_versity_data`.
 - **No hay consola web** en el puerto 9001. El almacén se inspecciona con un cliente S3.
 
 La imagen va fijada por su huella, y la variable `ALMACEN_IMAGE` permite apuntar a otra sin tocar
