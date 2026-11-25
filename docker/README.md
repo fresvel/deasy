@@ -466,6 +466,17 @@ El script:
 - apaga `ingress-bootstrap`
 - levanta `ingress` final en `80/443`
 
+Eso **emite** el certificado. Dura 90 dias y **hay que renovarlo**: lo hace
+`scripts/renew-ingress-cert.sh`, que no apaga nada (el reto lo sirve el ingress que ya corre),
+copia el certificado nuevo a `nginx/certs/public` y recarga nginx solo si cambio. Se programa en
+el servidor, una vez por semana:
+
+```bash
+( crontab -l 2>/dev/null; echo "17 4 * * 1 cd /srv/deasy-ingress && bash scripts/renew-ingress-cert.sh >> \$HOME/renew-ingress-cert.log 2>&1" ) | crontab -
+```
+
+Para ensayarlo sin cambiar nada: `bash scripts/renew-ingress-cert.sh --dry-run`.
+
 La validación base sigue siendo:
 
 ```bash

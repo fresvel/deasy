@@ -52,7 +52,13 @@ El upgrade a WebSocket funciona gracias a las cabeceras `Upgrade` y `Connection`
 
 - `nginx/certs/public/`: **no versionado**; ahi deja `scripts/bootstrap-ingress-cert.sh` el certificado de Let’s Encrypt.
 
+- **El certificado público dura 90 días y hay que renovarlo.** Lo hace `scripts/renew-ingress-cert.sh`, que pide la renovación a Let’s Encrypt, copia el resultado a `nginx/certs/public/` y recarga el ingress sólo si el certificado cambió. No apaga nada: el reto lo sirve el ingress que ya está corriendo. Certbot renueva cuando faltan menos de 30 días, así que el script se programa en el servidor para correr cada semana (`crontab`), y correrlo de más no hace daño.
+
 - `nginx/acme/`: el *webroot* del desafio HTTP-01; montado de solo lectura en proxy e ingress, y de **lectura-escritura** en el bootstrap, para que certbot pueda escribir el fichero de reto.
+
+:::caution[Emitir no es renovar]
+Hasta noviembre de 2026 sólo existía el script que **emite** el certificado, y nada lo renovaba. El emitido en abril caducó en julio y estuvo cuatro meses caducado sin que nadie lo notara, porque las comprobaciones del despliegue ignoraban el certificado. Si se monta un servidor nuevo, la tarea programada de renovación es parte de la instalación, no un extra.
+:::
 
 :::tip[Por que existe un “ingress-bootstrap”]
 
