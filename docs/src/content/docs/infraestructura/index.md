@@ -76,7 +76,6 @@ El comentario del compose explica el motivo: la interfaz de gestion de RabbitMQ 
 | `postgres`        | `postgres:17`           | healthcheck `pg_isready`; único motor de datos                             |
 | `rabbitmq`        | `rabbitmq:3-management` | healthcheck `rabbitmq-diagnostics ping`                                    |
 | `almacen`         | Versity Gateway         | pasarela S3 sobre un directorio. Ver la nota de abajo                      |
-| `almacen-bootstrap` | copia propia de `mc`  | perfil `storage-init`; crea los buckets y hace `mc mirror` de las semillas |
 | `backend`         | sin imagen en base      | la define cada overlay                                                     |
 | `frontend`        | sin imagen en base      | idem                                                                       |
 | `signer`          | sin imagen en base      | `SIGNER_PORT=4000`, `SIGMAKER_DIR=/opt/sigmaker`                           |
@@ -104,8 +103,8 @@ Tres cosas son distintas y conviene saberlas:
 - **No hay consola web** en el puerto 9001. El almacén se inspecciona con un cliente S3.
 
 La imagen va fijada por su huella, y la variable `ALMACEN_IMAGE` permite apuntar a otra sin tocar
-los ficheros de compose. El cliente que crea los buckets sigue siendo `mc`, desde una copia
-congelada publicada junto a las imágenes del proyecto (`ALMACEN_MC_IMAGE`).
+los ficheros de compose. Los buckets los crea el backend al arrancar —el legal, con su bloqueo—:
+no hay un servicio aparte que lanzar. Lo hubo, con el cliente `mc`, y se retiró en noviembre de 2026.
 
 La aplicación habla con el almacén con la librería cliente `minio` —un cliente S3 genérico, con
 licencia Apache 2.0, que conserva el nombre de su autor—. El backend la construye en **un solo

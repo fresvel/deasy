@@ -775,7 +775,8 @@ publicado no se corrige, y qué texto acepta la gente lo decide quien administra
 harness sigue haciendo falta: `test:char:legal` ya no crea el borrador, **publica el precargado**.
 Va **después** de `adoptarDelArchivo` y no antes: ésta sólo indexa el archivo con la tabla vacía, y
 un borrador creado primero le taparía un texto ya publicado. Se vio en qa, donde el servidor no
-podía descargar `mc` y los textos hubo que escribirlos a mano.
+podía descargar `mc` y los textos hubo que escribirlos a mano. (`mc` y su servicio
+`almacen-bootstrap` se retiraron ese mismo día: los buckets los crea el backend.)
 
 Y el caso que estaba en silencio ya avisa: si el archivo está vacío, el arranque dice
 **«⚠️ Archivo legal VACÍO: … el alta no registrará consentimiento alguno»** en vez de no decir nada.

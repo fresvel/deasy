@@ -29,9 +29,6 @@ services:
     ports:
       - "127.0.0.1:${ALMACEN_API_PORT}:9000"
 
-  almacen-bootstrap:
-    env_file: *qa_runtime_env_file
-
   backend:
     image: ${IMAGE_REGISTRY}/${BACKEND_IMAGE_REPOSITORY}:${BACKEND_IMAGE_TAG}
     pull_policy: always

@@ -71,51 +71,11 @@ services:
     volumes:
       - versity_data:/data
 
-  # Se lanza A MANO, y el perfil es lo que lo hace posible sin que arranque en cada `up`. El
-  # comando esta documentado en `docs/07-despliegue/COMANDOS_PROYECTO.md`:
-  #
-  #   bash scripts/docker-env.sh dev --profile storage-init run --rm almacen-bootstrap
-  #   bash scripts/stack.sh c --profile storage-init run --rm almacen-bootstrap
-  #
-  # ⚠️ Y por eso mismo NO es la barrera del bucket legal. Como no corre solo, el bucket de
-  # archivo puede acabar creandolo el backend por el camino perezoso (`makeBucket(bucket, "")`,
-  # SIN bloqueo) -- y el bloqueo solo se puede pedir al CREAR el bucket, asi que eso seria
-  # irreversible. Esto lo crea BIEN y se niega si ya existe mal; impedir el camino perezoso es
-  # cosa del arranque del backend.
-  # El cliente sigue siendo `mc`, y su imagen SÍ es la copia congelada del registro del proyecto
-  # (`minio/mc` desapareció de Docker Hub con el servidor). Es un cliente S3 de un solo uso: no
-  # escucha en ningún puerto. Cambiarlo por otro es F29.P3.T7.
-  almacen-bootstrap:
-    image: ${ALMACEN_MC_IMAGE:-ghcr.io/fresvel/deasy-minio-mc:RELEASE.2025-02-21T16-00-46Z}
-    profiles:
-      - storage-init
-    restart: "no"
-    environment:
-      ALMACEN_ROOT_USER: ${ALMACEN_ROOT_USER}
-      ALMACEN_ROOT_PASSWORD: ${ALMACEN_ROOT_PASSWORD}
-      ALMACEN_TEMPLATES_BUCKET: ${ALMACEN_TEMPLATES_BUCKET}
-      ALMACEN_TEMPLATES_PREFIX: ${ALMACEN_TEMPLATES_PREFIX}
-      ALMACEN_TEMPLATES_SEEDS_PREFIX: ${ALMACEN_TEMPLATES_SEEDS_PREFIX}
-      ALMACEN_DOCUMENTS_BUCKET: ${ALMACEN_DOCUMENTS_BUCKET}
-      ALMACEN_DOCUMENTS_PREFIX: ${ALMACEN_DOCUMENTS_PREFIX}
-      ALMACEN_CHAT_BUCKET: ${ALMACEN_CHAT_BUCKET}
-      ALMACEN_CHAT_PREFIX: ${ALMACEN_CHAT_PREFIX}
-      ALMACEN_SPOOL_BUCKET: ${ALMACEN_SPOOL_BUCKET}
-      ALMACEN_SIGNATURES_PREFIX: ${ALMACEN_SIGNATURES_PREFIX}
-      ALMACEN_USERS_BUCKET: ${ALMACEN_USERS_BUCKET}
-      ALMACEN_USERS_PREFIX: ${ALMACEN_USERS_PREFIX}
-      ALMACEN_DOSSIER_BUCKET: ${ALMACEN_DOSSIER_BUCKET}
-      ALMACEN_DOSSIER_PREFIX: ${ALMACEN_DOSSIER_PREFIX}
-      ALMACEN_LEGAL_BUCKET: ${ALMACEN_LEGAL_BUCKET}
-      ALMACEN_LEGAL_DRAFTS_BUCKET: ${ALMACEN_LEGAL_DRAFTS_BUCKET}
-      ALMACEN_LEGAL_RETENTION_MODE: ${ALMACEN_LEGAL_RETENTION_MODE}
-      ALMACEN_LEGAL_RETENTION_DAYS: ${ALMACEN_LEGAL_RETENTION_DAYS}
-    entrypoint: ["/bin/sh", "/bootstrap.sh"]
-    volumes:
-      - ./almacen/bootstrap.sh:/bootstrap.sh:ro
-      - ./almacen/import:/import:ro
-    depends_on:
-      - almacen
+  # AQUÍ HUBO UN SERVICIO `almacen-bootstrap` (perfil `storage-init`), que con el cliente `mc`
+  # creaba los buckets y subía carpetas de importación. Se retiró el 2026-11-25 (F29.P3.T7): los
+  # buckets —el legal, con su bloqueo— los crea el backend al arrancar, los textos legales los
+  # precarga la instalación como borrador, y su imagen era una copia privada sin mantenimiento que
+  # el servidor de qa no podía descargar.
 
   backend:
     restart: unless-stopped

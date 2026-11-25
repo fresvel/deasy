@@ -280,66 +280,39 @@ linea de comandos queda en el historial del shell y en la tabla de procesos.
 La operacion es idempotente: si la persona ya existe se reactiva y se le resetea la contrasena
 conservando su token; ademas resiembra el catalogo RBAC base y reasigna el rol `AdminSistema`.
 
-## Seeds de storage en el almacén
+## Buckets y contenido inicial del almacén
 
-Estos comandos son los que publican archivos de plantillas en el almacén; no tocan
-datos de PostgreSQL.
+**No hay ningún comando que lanzar.** Lo hace el backend:
 
-Inicializar buckets y estructura del almacén en `dev`:
-
-```bash
-bash scripts/docker-env.sh dev --profile storage-init run --rm almacen-bootstrap
-```
-
-En una pila paralela (A, B, C o D), lo mismo pero por `stack.sh`, para que caiga en el almacén de
-esa pila y no en el de otra:
-
-```bash
-bash scripts/stack.sh c --profile storage-init run --rm almacen-bootstrap
-```
+| Qué | Quién lo crea, y cuándo |
+|---|---|
+| Los buckets de la aplicación | el backend, al arrancar o al primer uso |
+| La semilla de plantillas | el backend, **en cada arranque**, en `ALMACEN_TEMPLATES_BUCKET` |
+| Los dos buckets legales | el backend, al arrancar |
+| Los textos legales | la instalación (`/setup`), **como borrador**; publicarlos es de quien administra, en `/admin` |
 
 ### Los dos buckets legales (LOPDP), que no son como los demas
-
-Desde el frente 17 este mismo comando crea tambien los buckets de los textos legales, y **uno de
-ellos se crea de una forma que no se puede deshacer**:
 
 | Bucket | Como se crea | Que guarda |
 |---|---|---|
 | `ALMACEN_LEGAL_DRAFTS_BUCKET` | versionado, **sin** bloqueo | los borradores, que se corrigen |
 | `ALMACEN_LEGAL_BUCKET` | versionado + **Object Lock**, con retencion `ALMACEN_LEGAL_RETENTION_MODE` por defecto de `ALMACEN_LEGAL_RETENTION_DAYS` dias | lo publicado y lo retirado, que ya no se toca |
 
-Y ademas siembra la version 1 de cada texto desde `docker/almacen/import/Legal/<clase>/v1.md`,
-**sin sobrescribir**: lo que ya existe no se vuelve a escribir nunca.
-
-Este paso ya no es la unica forma de tener los textos: desde el 2026-11-25 la instalacion (`/setup`)
-deja los dos **precargados como borrador**, desde `backend/services/legal/textos/`, y quien
-administra los publica en `/admin`. La diferencia es que este paso los deja **publicados**, y la
-instalacion no. Los ficheros de `docker/almacen/import/Legal/` son una copia de los del backend.
-
 ⚠️ **El bloqueo solo se puede pedir AL CREAR el bucket, y es irreversible.** A uno creado sin
-`--with-lock` no se le puede anadir despues, ni activando antes el versionado. Por eso el script
-**falla en vez de continuar** si el bucket de archivo ya existe y no admite bloqueo: continuar
-aparentaria funcionar durante anos. El mensaje de error dice como recrearlo.
+bloqueo no se le puede anadir despues, ni activando antes el versionado. Por eso el backend
+**se niega a usarlo** si el bucket de archivo ya existe y no admite bloqueo: continuar aparentaria
+funcionar durante anos. El mensaje de error dice como recrearlo.
 
-⚠️ **Y ojo con la carrera:** este comando se lanza **a mano**, mientras que el backend crea
-buckets al vuelo con `makeBucket(bucket, "")`, **sin** bloqueo. Si en un entorno nuevo el backend
-llega antes al bucket legal, el dano ya no tiene arreglo. En un despliegue nuevo, **corre esto
-antes de levantar el backend**.
-
-⚠️ **La retencion no se configura desde la aplicacion, y `ALMACEN_LEGAL_RETENTION_DAYS` no tiene
-valor por defecto**: si falta, el script se para. En `dev` y `qa` es **1 dia** porque
+⚠️ **La retencion no se configura desde la aplicacion.** En `dev` y `qa` es **1 dia** porque
 `test:char:run` resetea la base pero **no** el almacén --con los 3650 de produccion, cada corrida
 dejaria documentos indelebles acumulandose para siempre--; en `prod` son **3650** (10 anos).
 Un bloqueo `COMPLIANCE` **no se puede acortar** despues.
 
-⚠️ **AQUI HABIA DOS COMANDOS QUE NO EXISTEN**, y estuvieron documentados meses:
-`minio-publish-seeds` (perfil `storage-publish-seeds`) y `minio-publish` (perfil
-`storage-publish`). Comprobado el 2026-09-03: **ni los servicios, ni los perfiles, ni las carpetas
-que decian leer** (`tools/templates/seeds/` y `tools/templates/dist/Plantillas`) estan en el
-repositorio. Quien los copiara se llevaba un error desconcertante.
-
-Los seeds de plantillas entran hoy por el **mismo camino que todo lo demas**: se ponen en
-`docker/almacen/import/Seeds/` y los sube `bootstrap.sh` con el perfil `storage-init` de arriba.
+⚠️ **AQUI HUBO UN SERVICIO `almacen-bootstrap`** (perfil `storage-init`), que con el cliente `mc`
+creaba los buckets y subia carpetas desde `docker/almacen/import/`. Se retiro el 2026-11-25: todo
+lo que hacia lo hace ya el backend, y su imagen era una copia privada que el servidor de qa no
+podia descargar. Antes aun hubo otros dos, `minio-publish-seeds` y `minio-publish`, que estuvieron
+documentados meses sin existir.
 
 ## Comandos por ambiente
 
