@@ -149,3 +149,30 @@ test("solo letras y digitos sin acentos", () => {
     );
   }
 });
+
+test("la semilla va al bucket de plantillas que se le indica, en las tres operaciones", async () => {
+  // El defecto: el nombre estaba escrito a mano y en qa la aplicación lee de otro bucket.
+  const vistos = new Set();
+  await publishBaseSeedAssets({
+    bucket: "deasy-qa-templates",
+    ensure: async (bucket) => { vistos.add(bucket); },
+    stat: async (bucket) => { vistos.add(bucket); throw new Error("NotFound"); },
+    put: async (bucket) => { vistos.add(bucket); },
+    existeSeedDir: () => true,
+    listar: () => FICHEROS,
+  });
+  assert.deepEqual([...vistos], ["deasy-qa-templates"]);
+});
+
+test("sin indicarlo, el bucket es el de ALMACEN_TEMPLATES_BUCKET: el mismo del que leen las plantillas", async () => {
+  const { ALMACEN_TEMPLATES_BUCKET } = await import("../admin/kernel/constants.js");
+  let visto = null;
+  await publishBaseSeedAssets({
+    ensure: async (bucket) => { visto = bucket; },
+    stat: async () => ({ size: 1 }),
+    put: async () => {},
+    existeSeedDir: () => true,
+    listar: () => FICHEROS,
+  });
+  assert.equal(visto, ALMACEN_TEMPLATES_BUCKET);
+});

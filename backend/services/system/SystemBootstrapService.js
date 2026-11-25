@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getPostgresPool } from "../../config/postgres.js";
 import { almacenClient, ensureBucketExists, statAlmacenObject } from "../storage/almacen_service.js";
+import { ALMACEN_TEMPLATES_BUCKET } from "../admin/kernel/constants.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
 import { PAISES, PROVINCIAS_EC, CANTONES_EC, PARROQUIAS_EC } from "../../dominios/organizacion/index.js";
 import { TelefonoService, EmailService, DocumentoIdentidadService } from "../../dominios/identidad/index.js";
@@ -631,7 +632,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BASE_SEED_DIR = path.join(__dirname, "seeds", BASE_SEED_NAME);
 
 const DEFAULT_TEMPLATE_CODE = "tpl_informe_general";
-const DEFAULT_TEMPLATE_BUCKET = "deasy-templates";
 const DEFAULT_TEMPLATE_PREFIX = `System/${DEFAULT_TEMPLATE_CODE}/1.0.0/`;
 const DEFAULT_TEMPLATE_SRC_PREFIX = `${DEFAULT_TEMPLATE_PREFIX}template/jinja2/`;
 const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
@@ -735,8 +735,12 @@ export const publishBaseSeedAssets = async ({
   put = putSeedFileObject,
   existeSeedDir = () => fs.existsSync(BASE_SEED_DIR),
   listar = () => walkSeedFiles(BASE_SEED_DIR),
+  // EL BUCKET ES EL MISMO DEL QUE LEEN LAS PLANTILLAS, no un nombre escrito aquí. Hasta el
+  // 2026-11-25 era el literal "deasy-templates": en desarrollo coincide con la variable y no se
+  // notaba, pero en qa y prod el bucket se llama de otra forma, así que la semilla se publicaba
+  // donde nadie la leía y el arranque decía «publicada» igualmente. Se vio en qa.
+  bucket = ALMACEN_TEMPLATES_BUCKET,
 } = {}) => {
-  const bucket = DEFAULT_TEMPLATE_BUCKET;
   const mainKey = `${DEFAULT_TEMPLATE_SRC_PREFIX}main.tex.j2`;
   try {
     await ensure(bucket);
