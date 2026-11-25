@@ -67,12 +67,21 @@ El comentario del compose explica el motivo: la interfaz de gestion de RabbitMQ 
 |:------------------|:------------------------|:---------------------------------------------------------------------------|
 | `postgres`        | `postgres:17`           | healthcheck `pg_isready`; único motor de datos                             |
 | `rabbitmq`        | `rabbitmq:3-management` | healthcheck `rabbitmq-diagnostics ping`                                    |
-| `minio`           | `minio/minio:...`       | `server /data --console-address ":9001"`                                   |
-| `minio-bootstrap` | `minio/mc:...`          | perfil `storage-init`; crea los buckets y hace `mc mirror` de las semillas |
+| `minio`           | copia propia de MinIO   | `server /data --console-address ":9001"`. Ver la nota de abajo             |
+| `minio-bootstrap` | copia propia de `mc`    | perfil `storage-init`; crea los buckets y hace `mc mirror` de las semillas |
 | `backend`         | sin imagen en base      | la define cada overlay                                                     |
 | `frontend`        | sin imagen en base      | idem                                                                       |
 | `signer`          | sin imagen en base      | `SIGNER_PORT=4000`, `SIGMAKER_DIR=/opt/sigmaker`                           |
 | `analytics`       | sin imagen en base      | perfil `workers`; hoy es un marcador de posición                           |
+
+:::caution[Las imágenes de MinIO salen del registro del proyecto]
+Los repositorios `minio/minio` y `minio/mc` desaparecieron de Docker Hub, y en noviembre de 2026 un
+despliegue falló por eso: una máquina sin la imagen en caché ya no podía instalar el sistema. Desde
+entonces compose usa una **copia** de las dos imágenes, sin modificar y con su misma etiqueta,
+publicada junto a las del proyecto (`deasy-minio` y `deasy-minio-mc`). Es una copia congelada de
+febrero de 2025: no recibe parches. Las variables `MINIO_IMAGE` y `MINIO_MC_IMAGE` permiten
+apuntar a otra imagen sin tocar los ficheros de compose.
+:::
 
 ## `scripts/docker-env.sh`: la interfaz comun
 
