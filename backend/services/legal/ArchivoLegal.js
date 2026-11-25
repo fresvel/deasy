@@ -82,7 +82,7 @@ const clienteDeEntorno = () => {
     secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD || "",
   });
   // ⚠️ ESTA LÍNEA NO ES UN AJUSTE: SIN ELLA NO SE ARCHIVA NADA. Versity, como S3 y al revés que
-  // el almacén, RECHAZA un PUT a un bucket con retención por defecto si no trae Content-MD5 o
+  // MinIO, RECHAZA un PUT a un bucket con retención por defecto si no trae Content-MD5 o
   // x-amz-checksum-* («Content-MD5 OR x-amz-checksum- HTTP header is required for Put Object
   // requests with Object Lock parameters»). minio-js 8.0.7 sólo manda Content-MD5 cuando NO firma
   // el cuerpo con SHA-256, que es lo que hace por sí solo bajo TLS; por HTTP plano hay que

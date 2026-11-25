@@ -58,7 +58,7 @@ bash scripts/stack.sh c down                              # al RETIRAR el worktr
 | **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 | 15972 | 4621 | 5000 |
 
 Una pila publica **ocho** puertos. Hasta noviembre de 2026 eran nueve: el noveno era la consola web
-del almacén, que se fue con él (el almacén es ahora Versity Gateway, sin consola). **Azimutt es aparte y
+de MinIO, que se fue con él (el almacén es ahora Versity Gateway, sin consola). **Azimutt es aparte y
 no arranca por defecto**: vive tras el perfil
 `explorer` (`bash scripts/stack.sh c --profile explorer up -d azimutt`).
 
