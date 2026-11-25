@@ -39,7 +39,7 @@ sola transacción**: si algo falla, no queda medio sembrado.
 5. **Crea el entregable y su primera edición publicada** (`catalogo_documental` + `ediciones` con
    `lifecycle_state = 'published'`). Aquí aparece la distinción que gobierna todo lo documental: el
    entregable es el *título del libro*, la edición es *una impresión concreta* de ese libro. A
-   continuación publica los objetos del seed en MinIO, en dos destinos: el catálogo `Seeds/` y el
+   continuación publica los objetos del seed en el almacén, en dos destinos: el catálogo `Seeds/` y el
    artefacto instanciado en `System/`.
 6. **Vincula la configuración con esa edición** (`vinculos`) en modo
    **`routed`**: quien lo use define sobre la marcha quién entrega y quién firma. Por eso este paso
@@ -51,9 +51,9 @@ sola transacción**: si algo falla, no queda medio sembrado.
 
 Si esos siete pasos te resultan claros, el resto de estas páginas es el detalle de cada uno.
 
-:::caution[La publicación en MinIO puede abortar el arranque entero]
+:::caution[La publicación en el almacén puede abortar el arranque entero]
 
-El paso 5 propaga el error si MinIO no está o el seed no viene empaquetado, y con la transacción
+El paso 5 propaga el error si el almacén no está o el seed no viene empaquetado, y con la transacción
 abierta eso deshace todo lo anterior. Es deliberado: lo contrario dejaría filas de
 `ediciones` apuntando a objetos que no existen. Todos los pasos son idempotentes, así que
 repetir el arranque sobre lo ya sembrado no duplica nada.

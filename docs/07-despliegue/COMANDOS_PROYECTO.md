@@ -14,8 +14,8 @@ El repositorio esta organizado como un monorepo con capas separadas:
 - `frontend/`: aplicacion web en Vue 3, Vite y TailwindCSS. Usa `pnpm`.
 - `backend/`: API Express en ESM. Usa `npm` y expone la API bajo `/deasy/v1`.
 - `docs/`: sitio de documentacion en Astro Starlight. Usa `pnpm`.
-- `signer/`: servicio de firma digital con Python, `pyhanko`, MinIO y un helper Node en `sigmaker/`.
-- `docker/`: composicion de servicios para PostgreSQL, RabbitMQ, MinIO, Nginx, backend, frontend, signer y analytics. El chat en tiempo real usa WebSockets (Socket.IO) dentro del backend, sin broker externo.
+- `signer/`: servicio de firma digital con Python, `pyhanko`, el almacén y un helper Node en `sigmaker/`.
+- `docker/`: composicion de servicios para PostgreSQL, RabbitMQ, el almacén, Nginx, backend, frontend, signer y analytics. El chat en tiempo real usa WebSockets (Socket.IO) dentro del backend, sin broker externo.
 - `scripts/`: wrappers operativos para arranque, despliegue, seeds, reset y migraciones.
 - `tools/`: herramientas auxiliares, incluyendo plantillas.
 
@@ -146,7 +146,7 @@ Variables clave:
 - `ALMACEN_SECRET_KEY`
 - `RABBITMQ_HTTP_API`
 
-El backend necesita que PostgreSQL, RabbitMQ y MinIO esten
+El backend necesita que PostgreSQL, RabbitMQ y el almacén esten
 disponibles si se usan los flujos completos del sistema. El chat en tiempo real
 se sirve por WebSockets (Socket.IO) desde el propio backend.
 
@@ -222,7 +222,7 @@ bash scripts/reset-db.sh dev
 
 ### Reset total del sistema
 
-Dropea todas las tablas de PostgreSQL, vacia los buckets gestionados de MinIO y
+Dropea todas las tablas de PostgreSQL, vacia los buckets gestionados del almacén y
 recicla los servicios de app (`backend` y `signer`) para que reconecten en limpio;
 el backend vuelve a modo bootstrap:
 
@@ -233,7 +233,7 @@ bash scripts/reset-system.sh dev
 Flags soportados:
 
 - `--keep-db`: conserva PostgreSQL.
-- `--keep-almacen`: conserva los buckets de MinIO.
+- `--keep-almacen`: conserva los buckets del almacén.
 - `--rebuild`: reconstruye las imagenes y recrea los servicios en vez de solo reiniciarlos (para `qa`/`prod` o cuando cambien dependencias).
 - `--no-restart`: no toca los servicios; habra que reiniciar el backend a mano.
 
@@ -280,18 +280,18 @@ linea de comandos queda en el historial del shell y en la tabla de procesos.
 La operacion es idempotente: si la persona ya existe se reactiva y se le resetea la contrasena
 conservando su token; ademas resiembra el catalogo RBAC base y reasigna el rol `AdminSistema`.
 
-## Seeds de storage en MinIO
+## Seeds de storage en el almacén
 
-Estos comandos son los que publican archivos de plantillas en MinIO; no tocan
+Estos comandos son los que publican archivos de plantillas en el almacén; no tocan
 datos de PostgreSQL.
 
-Inicializar buckets y estructura de MinIO en `dev`:
+Inicializar buckets y estructura del almacén en `dev`:
 
 ```bash
 bash scripts/docker-env.sh dev --profile storage-init run --rm almacen-bootstrap
 ```
 
-En una pila paralela (A, B, C o D), lo mismo pero por `stack.sh`, para que caiga en el MinIO de
+En una pila paralela (A, B, C o D), lo mismo pero por `stack.sh`, para que caiga en el almacén de
 esa pila y no en el de otra:
 
 ```bash
@@ -323,7 +323,7 @@ antes de levantar el backend**.
 
 ⚠️ **La retencion no se configura desde la aplicacion, y `ALMACEN_LEGAL_RETENTION_DAYS` no tiene
 valor por defecto**: si falta, el script se para. En `dev` y `qa` es **1 dia** porque
-`test:char:run` resetea la base pero **no** MinIO --con los 3650 de produccion, cada corrida
+`test:char:run` resetea la base pero **no** el almacén --con los 3650 de produccion, cada corrida
 dejaria documentos indelebles acumulandose para siempre--; en `prod` son **3650** (10 anos).
 Un bloqueo `COMPLIANCE` **no se puede acortar** despues.
 
@@ -434,16 +434,14 @@ QA:
 
 - PostgreSQL: `15432`
 - RabbitMQ: **no se publica** (ver el aviso de abajo)
-- MinIO API: `9100`
-- MinIO Console: `9101`
+- Almacén (API S3): `9100`
 - Signer: `14000`
 
 Prod:
 
 - PostgreSQL: `25432`
 - RabbitMQ: **no se publica** (ver el aviso de abajo)
-- MinIO API: `9200`
-- MinIO Console: `9201`
+- Almacén (API S3): `9200`
 - Signer: `24000`
 
 > ### RabbitMQ ya NO se publica al host (2026-08-08)

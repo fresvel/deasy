@@ -152,7 +152,7 @@ test("sin pasos el gate dice que no, y sin id ni consulta a la base", async () =
 
 test("un error de la base SUBE: no se traduce en 'no define flujo'", async () => {
   // EL CASO QUE JUSTIFICA ESTE FICHERO. Los cuatro gates de publicacion leian el `meta.yaml` de
-  // MinIO envueltos en un `catch {}` mudo que convertia CUALQUIER fallo --MinIO caido, objeto
+  // el almacén envueltos en un `catch {}` mudo que convertia CUALQUIER fallo --el almacén caido, objeto
   // ausente, YAML ilegible-- en «esta plantilla no define flujo de entrega», y bloqueaba la
   // publicacion por una razon falsa. Aqui no hay catch, y este test es lo que lo mantiene.
   const cx = { query: async () => { throw new Error("se cayo la base"); } };

@@ -183,7 +183,7 @@
   "graft_template_artifacts_create_prohibido": {
     "status": 400,
     "body": {
-      "message": "Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de plantilla de documento."
+      "message": "Los artifacts se registran por sincronizacion desde el almacén o mediante el flujo de plantilla de documento."
     }
   },
   "graft_unit_positions_create": {

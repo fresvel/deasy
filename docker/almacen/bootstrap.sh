@@ -31,7 +31,7 @@ LEGAL_DRAFTS_BUCKET="${ALMACEN_LEGAL_DRAFTS_BUCKET:-deasy-legal-borradores}"
 LEGAL_RETENTION_MODE="${ALMACEN_LEGAL_RETENTION_MODE:-COMPLIANCE}"
 LEGAL_RETENTION_DAYS="${ALMACEN_LEGAL_RETENTION_DAYS:-}"
 
-echo "Esperando MinIO en ${ALMACEN_URL}..."
+echo "Esperando al almacen en ${ALMACEN_URL}..."
 until mc alias set "$ALMACEN_ALIAS" "$ALMACEN_URL" "$ALMACEN_ROOT_USER" "$ALMACEN_ROOT_PASSWORD" >/dev/null 2>&1; do
   sleep 2
 done
@@ -56,7 +56,7 @@ sync_path() {
 # -- El bucket de archivo legal --------------------------------------------------------------
 #
 # EL BLOQUEO DE OBJETOS SOLO SE PUEDE PEDIR AL CREAR EL BUCKET, Y ES IRREVERSIBLE. A uno creado
-# sin `--with-lock` no se le puede anadir despues -- ni activando antes el versionado: MinIO
+# sin `--with-lock` no se le puede anadir despues -- ni activando antes el versionado: el almacen
 # responde «does not support locking» y no hay forma de arreglarlo.
 #
 # Y OJO, porque la comprobacion evidente NO SIRVE: `mc mb --with-lock --ignore-existing` sobre
@@ -81,7 +81,7 @@ ensure_legal_archive_bucket() {
         desarrollo y qa   ALMACEN_LEGAL_RETENTION_DAYS=1
         produccion        ALMACEN_LEGAL_RETENTION_DAYS=3650    (10 anos)
 
-      En dev es 1 dia porque `test:char:run` resetea la base pero NO MinIO: con 3650, cada
+      En dev es 1 dia porque `test:char:run` resetea la base pero NO el almacen: con 3650, cada
       corrida dejaria documentos que no se pueden borrar acumulandose para siempre.
 
 EOF
@@ -102,7 +102,7 @@ EOF
 
   [X] El bucket de archivo legal '${LEGAL_BUCKET}' NO ADMITE BLOQUEO DE OBJETOS.
 
-      MinIO dijo:  ${retention_error}
+      El almacen dijo:  ${retention_error}
 
       Existe, pero se creo sin \`--with-lock\`, y eso NO SE PUEDE ARREGLAR: el bloqueo es una
       propiedad de la CREACION del bucket. Activar el versionado despues tampoco vale.
@@ -122,7 +122,7 @@ EOF
              mc rb --force <alias>/${LEGAL_BUCKET}
         3. Vuelve a levantar la pila. Este script lo creara ya con bloqueo.
 
-      En una pila de desarrollo tambien vale tirar el volumen de MinIO entero.
+      En una pila de desarrollo tambien vale tirar el volumen del almacen entero.
 
 EOF
     exit 1

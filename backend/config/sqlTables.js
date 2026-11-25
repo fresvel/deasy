@@ -1031,7 +1031,7 @@ export const SQL_TABLES = [
         options: ["Inactivo", "Activo", "Verificado", "Reportado"],
         defaultValue: "Inactivo"
       },
-      // De SÓLO LECTURA: guarda una referencia `minio://<bucket>/<objeto>`, no una ruta ni una URL.
+      // De SÓLO LECTURA: guarda una referencia `s3://<bucket>/<objeto>`, no una ruta ni una URL.
       // Como caja de texto editable, un admin podía escribir cualquier cosa y dejar la foto rota.
       // Se sube por `PUT /users/:cedula/photo`, que la almacena y compone la referencia.
       { name: "photo_url", label: "Foto", type: "text", readOnly: true },
@@ -1187,7 +1187,7 @@ export const SQL_TABLES = [
       { name: "verificado_at", label: "Verificado el", type: "datetime", readOnly: true },
       { name: "emitido_el", label: "Emitido el", type: "date" },
       { name: "expira_el", label: "Expira el", type: "date" },
-      { name: "escaneo_ref", label: "Escaneo (referencia MinIO)", type: "text", readOnly: true },
+      { name: "escaneo_ref", label: "Escaneo (referencia el almacén)", type: "text", readOnly: true },
       { name: "escaneo_subido_at", label: "Escaneo subido el", type: "datetime", readOnly: true },
       { name: "principal", label: "Principal", type: "boolean", defaultValue: 0 },
       { name: "is_active", label: "Activo", type: "boolean", defaultValue: 1 },

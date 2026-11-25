@@ -24,7 +24,7 @@ No hay `ALTER TABLE` evolutivo, y es deliberado desde el 2026-08-24. Antes los h
 | **Corrida (run)**    | El acto de *lanzar* la configuración en un periodo. Genera las tareas.                                                                                    | `process_runs`                             |
 | **Tarea**            | La instancia del proceso para un ámbito concreto (una unidad, un periodo). Es el contenedor.                                                              | `tasks`                                    |
 | **Entregable**       | Cada documento concreto a producir dentro de la tarea, con responsable, vencimiento y estado.                                                             | `task_items`                               |
-| **Plantilla**        | El *molde* del documento: su `schema.json` de campos + cuerpo (Jinja2/LaTeX u ofimatico) + formatos, versionado y almacenado en MinIO. **Son tres tablas, no una**: ver abajo. | `catalogo_documental` + `ediciones` + `vinculos` |
+| **Plantilla**        | El *molde* del documento: su `schema.json` de campos + cuerpo (Jinja2/LaTeX u ofimatico) + formatos, versionado y almacenado en el almacén. **Son tres tablas, no una**: ver abajo. | `catalogo_documental` + `ediciones` + `vinculos` |
 | **Recorrido**        | Cadena de pasos “quien llena, quien aprueba y quien firma”, con su ejecucion. **Uno para los dos lados**, con una columna `accion`.                        | `pasos_declarados` + `participantes_declarados` + `recorridos` + `turnos` |
 | **Firma**            | Firma electronica PAdES sobre el PDF, con certificado `.p12` del firmante.                                                                                | `document_signatures` + `signature_statuses` |
 | **Dossier**          | El **expediente o CV personal** (titulos, experiencia, publicaciones). *No* es el expediente de un proceso.                                               | `dossiers` + `dossier_items`               |
@@ -39,7 +39,7 @@ fecha lo usa.
 | **Tabla** | **Que es** | **Se llamaba** |
 |:---|:---|:---|
 | `catalogo_documental` | El entregable como **tipo**: su identidad institucional y su codigo. *No es un archivo*, y desde el 2026-10-04 tampoco lleva escrito a que linea de proceso sirve: eso lo dice su vinculo. | `deliverables` |
-| `ediciones` | Una **edicion** de ese tipo, con sus ficheros en MinIO y su ciclo de vida (`draft` / `published` / `retired`). | `template_artifacts`, que el codigo abreviaba `artifact` |
+| `ediciones` | Una **edicion** de ese tipo, con sus ficheros en el almacén y su ciclo de vida (`draft` / `published` / `retired`). | `template_artifacts`, que el codigo abreviaba `artifact` |
 | `vinculos` | El **vinculo** entre una configuracion de proceso y una edicion. **Aqui vive `item_mode`**: por eso la misma edicion puede emitirse de tres maneras segun a que proceso este enlazada. | `process_definition_templates` |
 | `task_items` | La **instancia con dueno**: lo que una persona concreta tiene que entregar. Es la tarjeta que el usuario ve en su Home. | — |
 

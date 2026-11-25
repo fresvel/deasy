@@ -1,7 +1,7 @@
 // Characterization: los textos legales que se aceptan al registrarse.
 //
 // ⚠️ ESTE FLUJO NACIO DE UN AGUJERO MEDIDO EL 2026-09-02, y el agujero era INVISIBLE para las otras
-// 327 pruebas. Al mudar el texto legal de una columna `TEXT` a MinIO, la fila que indexa el objeto
+// 327 pruebas. Al mudar el texto legal de una columna `TEXT` al almacén, la fila que indexa el objeto
 // pasó a crearla la ADOPCION, que corre al arrancar el backend. Pero `test:char:fixture` vacía la
 // base SIN reiniciar el backend: medido, `GET /legal/documentos` devolvía `{"documentos":[]}`.
 //

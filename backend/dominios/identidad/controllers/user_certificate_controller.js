@@ -4,11 +4,11 @@ import UserRepository from "../services/UserRepository.js";
 import UserCertificateRepository from "../datos/certificados.js";
 import {
   ensureBucketExists,
-  getMinioObjectStream,
-  removeMinioObject,
-  statMinioObject,
-  uploadFileToMinio
-} from "../../../services/storage/minio_service.js";
+  getAlmacenObjectStream,
+  removeAlmacenObject,
+  statAlmacenObject,
+  uploadFileToAlmacen
+} from "../../../services/storage/almacen_service.js";
 
 let _certificateRepository = null;
 const certificateRepository = () => (_certificateRepository ??= new UserCertificateRepository());
@@ -39,11 +39,11 @@ const filterExistingCertificates = async (rows) => {
   const settled = await Promise.all(
     (rows || []).map(async (row) => {
       try {
-        await statMinioObject(row.bucket, row.object_name);
+        await statAlmacenObject(row.bucket, row.object_name);
         return row;
       } catch (error) {
         console.warn(
-          "Certificado omitido por objeto faltante en MinIO:",
+          "Certificado omitido por objeto faltante en el almacén:",
           row?.id,
           row?.object_name,
           error?.code || error?.message || error
@@ -83,7 +83,7 @@ export const uploadMyCertificate = async (req, res) => {
     const objectName = `users/${user.cedula}/certificates/${Date.now()}-${safeFileName}`;
 
     await ensureBucketExists(ALMACEN_CERTIFICATES_BUCKET);
-    await uploadFileToMinio(ALMACEN_CERTIFICATES_BUCKET, objectName, req.file.path, {
+    await uploadFileToAlmacen(ALMACEN_CERTIFICATES_BUCKET, objectName, req.file.path, {
       "Content-Type": req.file.mimetype || "application/x-pkcs12"
     });
 
@@ -126,9 +126,9 @@ export const deleteMyCertificate = async (req, res) => {
 
     await certificateRepository().delete(certificate.id, user.id);
     try {
-      await removeMinioObject(certificate.bucket, certificate.object_name);
-    } catch (minioError) {
-      console.warn("No se pudo eliminar el certificado en MinIO:", minioError?.message || minioError);
+      await removeAlmacenObject(certificate.bucket, certificate.object_name);
+    } catch (almacenError) {
+      console.warn("No se pudo eliminar el certificado en el almacén:", almacenError?.message || almacenError);
     }
 
     res.json({ result: "ok" });
@@ -165,7 +165,7 @@ export const downloadMyCertificate = async (req, res) => {
       return res.status(404).json({ message: "Certificado no encontrado." });
     }
 
-    const stream = await getMinioObjectStream(certificate.bucket, certificate.object_name);
+    const stream = await getAlmacenObjectStream(certificate.bucket, certificate.object_name);
     res.setHeader("Content-Type", "application/x-pkcs12");
     res.setHeader(
       "Content-Disposition",

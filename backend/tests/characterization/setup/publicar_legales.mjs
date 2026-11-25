@@ -4,7 +4,7 @@
 // RECIÉN CREADA, y los dos fallos eran `/legal/documentos` y su golden. Se comprobó que no era de
 // ningún cambio de código: con el backend de `develop` en la MISMA pila fallaban los mismos dos.
 //
-// La causa: los textos legales viven SÓLO en MinIO (`deasy-legal`, con retención COMPLIANCE), y
+// La causa: los textos legales viven SÓLO en el almacén (`deasy-legal`, con retención COMPLIANCE), y
 // **ningún paso automático los creaba**. En las pilas A, B y C estaban porque alguien los publicó a
 // mano meses atrás; una pila nueva arranca con el archivo vacío, el bootstrap adopta cero y el alta
 // registraría CERO consentimientos sin que nada se queje. Una suite golden-master que depende de
@@ -15,7 +15,7 @@
 // afirma. No son textos inventados.
 //
 // Va DESPUÉS del bootstrap y ANTES del seed, y conduce el sistema por su propia API —como el resto
-// del harness— en vez de escribir en MinIO a mano: así el object key, la huella y la retención salen
+// del harness— en vez de escribir en el almacén a mano: así el object key, la huella y la retención salen
 // por el mismo camino que en producción.
 //
 // Es IDEMPOTENTE: en una pila donde el archivo ya los tiene, el bootstrap los adopta y aquí se
@@ -29,7 +29,7 @@ import { tokenFor } from "../lib/auth.mjs";
 
 const CARPETA = join(dirname(fileURLToPath(import.meta.url)), "legal");
 
-// `<clase>__<version>.md`, que es la misma forma que el archivo usa en MinIO (`<clase>/<version>.md`).
+// `<clase>__<version>.md`, que es la misma forma que el archivo usa en el almacén (`<clase>/<version>.md`).
 const PATRON = /^([a-z_]+)__(.+)\.md$/;
 
 // Un `ENOENT` de `scandir` no explica nada a quien lo lea dentro de media hora: el mismo mensaje

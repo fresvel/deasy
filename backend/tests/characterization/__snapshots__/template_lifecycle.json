@@ -57,7 +57,7 @@
   "seed_preview": {
     "status": 404,
     "body": {
-      "message": "El seed seleccionado no tiene preview PDF publicado en MinIO."
+      "message": "El seed seleccionado no tiene preview PDF publicado en el almacén."
     }
   },
   "seed_sync": {

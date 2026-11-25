@@ -234,7 +234,7 @@ services:
 
 # Los nombres llevan el ESPACIO DE NOMBRES de la pila (`DEASY_STACK`), que por defecto es `dev`.
 # Sin esa variable todo se comporta exactamente igual que siempre: `docker-env.sh dev` no se entera.
-# Con ella, `scripts/stack.sh <a|b|c|d>` levanta pilas paralelas que NO comparten ni base, ni MinIO,
+# Con ella, `scripts/stack.sh <a|b|c|d>` levanta pilas paralelas que NO comparten ni base, ni almacén,
 # ni node_modules, ni red. Compartirlos era el fallo: aunque cambies el nombre del proyecto, dos
 # pilas con el MISMO volumen de postgres se pisan, y `test:char:run` resetea la base de la otra.
 volumes:

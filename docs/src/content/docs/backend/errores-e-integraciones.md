@@ -1,6 +1,6 @@
 ---
 title: "Errores e integraciones externas"
-description: "El contrato de errores de la API, y las cinco integraciones: RabbitMQ, MinIO, Socket.IO, correo y WhatsApp."
+description: "El contrato de errores de la API, y las cinco integraciones: RabbitMQ, el almacén, Socket.IO, correo y WhatsApp."
 sidebar:
   order: 5
 ---
@@ -46,7 +46,7 @@ flowchart TD
 
 Las tres colas: `deasy.sign.request`, `deasy.sign.validate.request` y el prefijo `deasy.sign.response`. No hay consumidores persistentes en el backend: el consumidor real es el microservicio signer.
 
-### MinIO: siete buckets
+### El almacén: siete buckets
 
 | **Bucket**           | **Variable de entorno**     | **Contenido**             |
 |:---------------------|:----------------------------|:--------------------------|

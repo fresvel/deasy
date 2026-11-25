@@ -7,8 +7,8 @@
 // la regla queda fuera del sitio por donde pasan los demás caminos».
 //
 // Lo que NO está aquí, a propósito: resolver el entregable accesible, construir la ruta del objeto y
-// subirlo a MinIO. Eso pasa ANTES y FUERA de la transacción, porque una transacción de base de datos
-// no puede deshacer un objeto ya escrito en MinIO: abarcarla sería prometer una atomicidad que no
+// subirlo al almacén. Eso pasa ANTES y FUERA de la transacción, porque una transacción de base de datos
+// no puede deshacer un objeto ya escrito en el almacén: abarcarla sería prometer una atomicidad que no
 // existe.
 import { conTransaccion } from "../../config/postgres.js";
 import { transitionDocumentVersionState } from "./DocumentStateService.js";

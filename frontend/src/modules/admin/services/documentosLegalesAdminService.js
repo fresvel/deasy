@@ -11,7 +11,7 @@ import axios from "@/core/services/httpClient";
  * al de registro a arrastrar rutas que un visitante no puede llamar.
  *
  * ⚠️ **Y el texto no viaja en la lista.** El listado da el metadato de cada versión; el cuerpo se
- * pide por su id. No es una optimización: son objetos de MinIO, y traer todos los textos para
+ * pide por su id. No es una optimización: son objetos del almacén, y traer todos los textos para
  * pintar una tabla de estados sería descargar el archivo entero en cada refresco.
  */
 

@@ -153,7 +153,7 @@
                         show-arrow
                         @click="abrirCanales()"
                       />
-                      <!-- Los textos legales tampoco son una tabla: viven en MinIO, no en una
+                      <!-- Los textos legales tampoco son una tabla: viven en el almacén, no en una
                            columna. Y la tarjeta se esconde sin permiso de lectura, porque quien
                            administra unidades no tiene por que ver el borrador de un texto legal. -->
                       <AppNavCard
@@ -215,7 +215,7 @@
           </div>
 
           <!-- Misma rama propia, y por el mismo motivo: los textos legales no son una tabla. Su
-               contenido vive en MinIO y su ciclo de vida no lo gobierna ningun CRUD generico. -->
+               contenido vive en el almacén y su ciclo de vida no lo gobierna ningun CRUD generico. -->
           <div v-else-if="legalesTabActive" class="w-full flex-1 overflow-hidden relative flex flex-col min-h-0">
             <div class="deasy-typography w-full h-full relative overflow-y-auto p-6">
               <DocumentosLegalesPanel @volver="volverDeLegales()" />
@@ -304,7 +304,7 @@ const PROCESS_GRAPH_TAB_KEY = "__process_graph__";
 // además no tiene nada que ver con ninguna tabla es exactamente lo que el CLAUDE.md pide no hacer.
 const CANALES_SLUG = "canales";
 // Documentos legales: la CUARTA que no es una tabla, y por el mismo motivo que los canales — su
-// contenido no esta en una columna, esta en dos buckets de MinIO, y publicar no es un UPDATE sino
+// contenido no esta en una columna, esta en dos buckets del almacén, y publicar no es un UPDATE sino
 // un traslado a un archivo que ya no admite escritura.
 const LEGALES_SLUG = "documentos-legales";
 // selectedTable / selectedSection / los cinco item / los dos grafos NO son refs: se DERIVAN de la

@@ -3,7 +3,7 @@
 // Por qué existe: es la función más compleja del backend (541 L, CC 158 según Sonar) y no
 // tenía NINGÚN golden. El cut #8 la movió literalmente de fichero; el siguiente paso es
 // partirla, y partir a ciegas 541 líneas que escriben en cinco sitios (catalogo_documental,
-// ediciones, el vínculo a configuración, los flujos sincronizados y MinIO) es
+// ediciones, el vínculo a configuración, los flujos sincronizados y el almacén) es
 // exactamente lo que esta red de seguridad impide.
 //
 // ⚠️ EL PREFIJO "zzz_" ES DELIBERADO. Los flows corren en orden alfabético con
@@ -22,9 +22,9 @@
 //
 // Sobre el enmascarado: sólo se enmascara `id`. Medido contra dev, `storage_version`,
 // `base_object_prefix` y `content_hash` son DETERMINISTAS — `content_hash` sale idéntico entre
-// corridas con la base reseteada y MinIO en distinto estado, y la versión se calcula de la BASE
+// corridas con la base reseteada y el almacén en distinto estado, y la versión se calcula de la BASE
 // (`getNextStorageVersionForTemplateCode` une ediciones→catalogo_documental por `code`), no de
-// MinIO. Con el round-trip autolimpiante vuelve a 1.0.0 en cada corrida. Fijarlos literalmente
+// el almacén. Con el round-trip autolimpiante vuelve a 1.0.0 en cada corrida. Fijarlos literalmente
 // convierte el golden en una huella byte a byte del meta.yaml, el schema.json, el contrato de la
 // semilla y el fichero subido.
 

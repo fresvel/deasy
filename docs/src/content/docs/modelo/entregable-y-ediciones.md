@@ -123,8 +123,7 @@ concreta. La lista vive en `WEB_FILL_RESOLVER_TYPES_BY_SCOPE`
 
 ## Los campos: qué le van a pedir a quien lo rellene
 
-Los campos de una edición viven en **un fichero**, no en una tabla: el `schema.json` del paquete de
-MinIO, dentro de `base_object_prefix`. Lo escribe el editor de `/admin` y lo relee el mismo editor.
+Los campos de una edición viven en **un fichero**, no en una tabla: el `schema.json` del paquete del almacén, dentro de `base_object_prefix`. Lo escribe el editor de `/admin` y lo relee el mismo editor.
 
 :::caution[Aquí había una tabla, y se retiró]
 
@@ -151,7 +150,7 @@ El catálogo `generadores_de_documento` dice **quién produce** cada tipo de doc
 declara el suyo en `generador_id`. Su `tipo` tiene `CHECK` con dos valores y parte el catálogo en dos
 mitades excluyentes:
 
-- **`latex`** — trae un paquete de partida en MinIO (`source_path`): un proyecto LaTeX+Jinja2
+- **`latex`** — trae un paquete de partida en el almacén (`source_path`): un proyecto LaTeX+Jinja2
   completo que se copia entero al crear una plantilla, con su maqueta y su `schema.json`. No llama a
   nadie, así que su `destino` es nulo. Es lo que antes se llamaba «la semilla».
 - **`servicio`** — un servicio programado que devuelve el PDF, al que se llama por su `destino`

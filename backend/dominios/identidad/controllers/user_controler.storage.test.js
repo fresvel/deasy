@@ -2,13 +2,13 @@
 //
 // Solo se prueba `resolveStoredDocumentObject`: es la única con lógica de ramas real
 // (normalizar la ruta y decidir si ya viene prefijada o hay que prefijarla). El resto
-// —listMinioObjects, writeMinioObjectToFile, createZipArchive— son envoltorios de IO
-// (stream de MinIO, spawn de `zip`) sin ramas que merezcan un doble; se ejercen de
+// —listAlmacenObjects, writeAlmacenObjectToFile, createZipArchive— son envoltorios de IO
+// (stream del almacén, spawn de `zip`) sin ramas que merezcan un doble; se ejercen de
 // extremo a extremo en los characterization tests de descarga de entregables.
 //
 // Deuda anotada: `collectDeliverableTemplateResources` SÍ tiene lógica de filtrado
 // (formatos excluidos, ficheros ocultos, nombres relativos) pero llama a
-// listMinioObjects internamente; testearla exige mockear el módulo minio_service.
+// listAlmacenObjects internamente; testearla exige mockear el módulo almacen_service.
 //
 // Ojo: el prefijo/bucket se leen de env AL IMPORTAR el módulo, así que estos tests
 // asumen los valores por defecto (deasy-documents / Unidades).

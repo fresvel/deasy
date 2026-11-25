@@ -47,11 +47,11 @@ import {
 } from "../services/BatchSigningService.js";
 import {
   ensureBucketExists,
-  getMinioObjectStream,
-  removeMinioObject,
-  statMinioObject,
-  uploadFileToMinio
-} from "../../../services/storage/minio_service.js";
+  getAlmacenObjectStream,
+  removeAlmacenObject,
+  statAlmacenObject,
+  uploadFileToAlmacen
+} from "../../../services/storage/almacen_service.js";
 
 // SUELTA LOS TEMPORALES DE MULTER, y existe porque se midieron 238 huerfanos en /tmp.
 //
@@ -110,7 +110,7 @@ export const requestSign = async (req, res) => {
 };
 
 export const validateSignedDocument = async (req, res) => {
-  let minioPdfPath = null;
+  let almacenPdfPath = null;
   try {
     const file = req.files?.pdf?.[0];
     if (!file) {
@@ -119,16 +119,16 @@ export const validateSignedDocument = async (req, res) => {
 
     const user = await resolveSigningUser(req.user?.uid);
     const sessionId = randomUUID();
-    minioPdfPath = buildValidationSpoolPath(user, sessionId, file.originalname);
+    almacenPdfPath = buildValidationSpoolPath(user, sessionId, file.originalname);
 
     await ensureBucketExists(ALMACEN_SPOOL_BUCKET);
-    await uploadFileToMinio(ALMACEN_SPOOL_BUCKET, minioPdfPath, file.path, {
+    await uploadFileToAlmacen(ALMACEN_SPOOL_BUCKET, almacenPdfPath, file.path, {
       "Content-Type": "application/pdf"
     });
 
     const result = await requestSignerValidationJob({
-      minioBucket: ALMACEN_SPOOL_BUCKET,
-      minioPdfPath,
+      almacenBucket: ALMACEN_SPOOL_BUCKET,
+      almacenPdfPath,
       cedula: String(req.body?.cedula || "").trim() || undefined,
     });
 
@@ -138,8 +138,8 @@ export const validateSignedDocument = async (req, res) => {
     return res.status(error.statusCode ?? 500).json({ error: error.message || "No se pudo validar el documento." });
   } finally {
     liberarTemporales(req);
-    if (minioPdfPath) {
-      await removeMinioObject(ALMACEN_SPOOL_BUCKET, minioPdfPath).catch(() => {});
+    if (almacenPdfPath) {
+      await removeAlmacenObject(ALMACEN_SPOOL_BUCKET, almacenPdfPath).catch(() => {});
     }
   }
 };
@@ -269,7 +269,7 @@ export const downloadSigned = async (req, res) => {
     let objectPath = null;
 
     // El prefijo `users/<cédula>/` es un ATAJO: es el espacio personal de quien pide, así que se
-    // salta la consulta de propiedad y va derecho a MinIO. Por eso una ruta propia inexistente
+    // salta la consulta de propiedad y va derecho al almacén. Por eso una ruta propia inexistente
     // acaba en 404 y una ajena inexistente en 403.
     if (requestedPath.startsWith(`users/${user.cedula}/`)) {
       bucket = ALMACEN_USERS_BUCKET;
@@ -290,8 +290,8 @@ export const downloadSigned = async (req, res) => {
       objectPath = resolvedObject.objectName;
     }
 
-    const stat = await statMinioObject(bucket, objectPath);
-    const stream = await getMinioObjectStream(bucket, objectPath);
+    const stat = await statAlmacenObject(bucket, objectPath);
+    const stream = await getAlmacenObjectStream(bucket, objectPath);
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", 'inline; filename="documento_firmado.pdf"');
     if (stat?.size) {

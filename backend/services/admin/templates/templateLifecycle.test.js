@@ -36,7 +36,7 @@ const COLADO_ID = 99;
 // Construye el servicio con un doble de pool/conexión que REGISTRA lo que ocurre, en orden.
 // `draftRows` son los borradores que quedan enlazados a la config (sin contar la que se versiona).
 // `fallaElConteo` simula que la base revienta al contar los pasos: es el modo de fallo que el
-// sub-paso 4 del §0.8 vino a arreglar. Con la lectura vieja (MinIO + `catch {}`) esto se traducía en
+// sub-paso 4 del §0.8 vino a arreglar. Con la lectura vieja (el almacén + `catch {}`) esto se traducía en
 // "0 pasos" y bloqueaba la publicación por una razón falsa; contra la base tiene que PROPAGARSE.
 // `true` revienta siempre; un id revienta solo al contar ESE artifact.
 const buildService = ({ draftRows = [], fillSteps = 1, fallaElConteo = false } = {}) => {
@@ -125,7 +125,7 @@ test("sin mas borradores en la config, finish publica la plantilla y activa la c
   assert.equal(result.config_status, "active");
   assert.deepEqual(events, [
     // El readiness se cuenta sobre la base y FUERA de la transacción, igual que cuando lo leía de
-    // MinIO: rechazar no debe costar un BEGIN/ROLLBACK.
+    // el almacén: rechazar no debe costar un BEGIN/ROLLBACK.
     `cuenta-pasos:${TPL_ID}`,
     "begin",
     // SIN `gate:reglas` (frente 25, P26): exigia una fila en `process_target_rules` y la tabla se
@@ -186,8 +186,8 @@ test("un borrador colado en modo routed se publica sin exigirle flujo de entrega
 
 // --- El modo de fallo que motiva el sub-paso 4 del §0.8 -----------------------------------------
 //
-// Los cuatro gates contaban los pasos leyendo el `meta.yaml` de MinIO dentro de un `catch {}` mudo,
-// así que MinIO caído u objeto ausente valían "0 pasos" y bloqueaban la publicación con un mensaje
+// Los cuatro gates contaban los pasos leyendo el `meta.yaml` del almacén dentro de un `catch {}` mudo,
+// así que el almacén caído u objeto ausente valían "0 pasos" y bloqueaban la publicación con un mensaje
 // que mentía sobre la causa. Contra la base ese modo de fallo no puede volver: el error SUBE.
 
 test("si la base falla al contar los pasos, el error SUBE en vez de valer cero (finish)", async () => {
@@ -231,7 +231,7 @@ test("un borrador colado sin paso de entrega aborta la activacion y hace rollbac
 // verdad alrededor de los tres efectos de base. Estos tests fijan lo único que importa de ella: que
 // un fallo a mitad NO deja nada escrito, y que la escritura del flujo va DENTRO.
 //
-// El resto de `saveTemplateArtifactDraft` (MinIO, staging en disco, formatos) queda fuera a
+// El resto de `saveTemplateArtifactDraft` (el almacén, staging en disco, formatos) queda fuera a
 // propósito: es lo que el characterization ya recorre extremo a extremo.
 
 const DRAFT_ARTIFACT_ID = 77;
@@ -356,7 +356,7 @@ test("sin flujo autorado la transaccion sigue siendo la misma, sin escribir fluj
 // --- El payload de datos del paquete (S1) --------------------------------------------------------
 //
 // `buildPackageDataFileTargets` existe como costura verificable porque el defecto que arregla es
-// INVISIBLE desde el backend: el paquete quedaba bien en MinIO y el error solo aparecia al
+// INVISIBLE desde el backend: el paquete quedaba bien en el almacén y el error solo aparecia al
 // renderizar el ZIP en la maquina del usuario.
 //
 // Medido en la pila A antes del arreglo, con una plantilla creada por la web:
@@ -402,7 +402,7 @@ test("las dos copias son rutas distintas (si colapsaran, el ZIP volveria a salir
 // --- Los CAMPOS del formulario: la lista y el fichero (sub-paso S6 del §0.4) ----------------------
 //
 // `normalizeSchemaFieldList` + `buildSchemaJsonFromFieldList` son las dos mitades en que se partió
-// `buildSchemaJsonFromFields`. El corte se hizo para alimentar A LA VEZ el `schema.json` de MinIO y
+// `buildSchemaJsonFromFields`. El corte se hizo para alimentar A LA VEZ el `schema.json` del almacén y
 // las filas de `template_artifact_fields`; retirada esa tabla (frente 23, F4.1) le queda un solo
 // consumidor, y estas pruebas pasan a ser la red de la validación de slugs y componentes.
 //

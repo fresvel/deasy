@@ -118,11 +118,11 @@ const archivoFalso = ({ falla = null, bytes = Buffer.from("TEXTO PUBLICABLE") } 
   llamadas: [],
   async guardarBorrador(clase, version, texto) {
     this.llamadas.push({ metodo: "guardarBorrador", clase, version, texto });
-    if (falla === "guardarBorrador") throw new Error("MinIO no acepta el borrador");
+    if (falla === "guardarBorrador") throw new Error("el almacén no acepta el borrador");
     return { bucket: "legal-borradores", objectKey: `${clase}/${version}.md` };
   },
   async bytesDelBorrador() {
-    if (falla === "bytesDelBorrador") throw new Error("el borrador no existe en MinIO");
+    if (falla === "bytesDelBorrador") throw new Error("el borrador no existe en el almacén");
     return bytes;
   },
   async leerBorrador() {
@@ -195,7 +195,7 @@ describe("DocumentosLegales · publicar", () => {
     assert.deepEqual(base.escrituras, [], "no se escribio NADA en la base");
   });
 
-  it("tampoco escribe si el borrador no esta en MinIO", async () => {
+  it("tampoco escribe si el borrador no esta en el almacén", async () => {
     const base = baseFalsa([borrador()]);
     await assert.rejects(servicio(base, archivoFalso({ falla: "bytesDelBorrador" })).publicar(1), /no existe/);
     assert.deepEqual(base.escrituras, []);
@@ -236,7 +236,7 @@ describe("DocumentosLegales · publicar", () => {
 });
 
 describe("DocumentosLegales · borradores", () => {
-  it("guardar escribe en MinIO y deja la huella de lo escrito", async () => {
+  it("guardar escribe en el almacén y deja la huella de lo escrito", async () => {
     const base = baseFalsa([borrador()]);
     const archivo = archivoFalso();
     const doc = await servicio(base, archivo).guardarBorrador(1, "# Hola");
@@ -299,7 +299,7 @@ describe("DocumentosLegales · leer lo publicado", () => {
     assert.equal(lectura.hash, publicado().contenido_hash, "y verificando la huella registrada");
   });
 
-  it("validar un alta NO baja el texto de MinIO", async () => {
+  it("validar un alta NO baja el texto del almacén", async () => {
     // Se pide en cada registro y no mira el texto: bajarlo seria una descarga por alta para nada.
     const base = baseFalsa([publicado()]);
     const archivo = archivoFalso();

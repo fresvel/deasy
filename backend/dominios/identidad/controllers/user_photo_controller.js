@@ -15,7 +15,7 @@ import {
 let _userRepository = null;
 const userRepository = () => (_userRepository ??= new UserRepository());
 
-// Sube la foto a MinIO y deja en persons.photo_url la referencia minio://.
+// Sube la foto al almacén y deja en persons.photo_url la referencia s3://.
 // La foto anterior se borra a posteriori y sin bloquear: perder el objeto viejo es
 // menos grave que dejar al usuario sin la foto nueva.
 export const updateUserPhoto = async (req, res) => {

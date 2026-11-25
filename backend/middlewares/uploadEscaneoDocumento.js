@@ -1,5 +1,5 @@
 // Recepcion del PDF del documento de identidad escaneado. Aterriza en un temporal del sistema y de
-// ahi sube a MinIO (`documentoEscaneoStorage`): no queda estado en el disco del backend. Mismo
+// ahi sube al almacén (`documentoEscaneoStorage`): no queda estado en el disco del backend. Mismo
 // patron que la foto de perfil, los certificados P12 y los PDF del expediente.
 //
 // El filtro por mimetype solo descarta lo evidente —lo declara el cliente—; `storeEscaneo` vuelve a

@@ -12,7 +12,7 @@
 // SqlAdminService.validateTableRules y los datos quedan válidos para el esquema de hoy.
 // El entregable se obtiene "forkeando" el que ya sembró el bootstrap (tpl_informe_general):
 // un entregable pertenece a UNA línea y no se puede prestar a otra, así que el fork crea uno
-// propio y copia sus objetos en MinIO. No hace falta subir nada a mano.
+// propio y copia sus objetos en el almacén. No hace falta subir nada a mano.
 //
 // RESULTADO
 // La persona 3 ("usuario", cédula 1122334459) pasa a ver DOS procesos en /home:
@@ -37,7 +37,7 @@ const UNIT_TYPE_CARRERA = 7;  // el tipo de las unidades 8 y 9 — y las dos UNI
 const CARGO_COORDINADOR = 1;  // quien firma
 const TERM_TYPE_PERM = 5;     // Permanente
 const TERM_PERM = 1;
-// Objetos que el bootstrap ya publicó en MinIO: los reutilizamos apuntando a ellos.
+// Objetos que el bootstrap ya publicó en el almacén: los reutilizamos apuntando a ellos.
 const SEED_ARTIFACT_ID = 1;   // tpl_informe_general, ya publicado por el bootstrap
 
 const rowsOf = (res) => (Array.isArray(res.body) ? res.body : res.body?.data ?? res.body?.rows ?? []);
@@ -194,14 +194,14 @@ const main = async () => {
   //    saltaba** porque no pasa por el hook de alta del CRUD.
   //
   //    forkDeliverableForConfig es justo la operación que la UI llama "Crear a partir de
-  //    este": crea el entregable de la línea destino, COPIA los objetos de MinIO a un
+  //    este": crea el entregable de la línea destino, COPIA los objetos del almacén a un
   //    prefijo propio y publica el artefacto. Hoy no está expuesta como endpoint, así que se
   //    invoca directamente sobre el servicio (este script corre dentro del backend).
   //
   //    Se llama ANTES de crear el vínculo: el fork solo hace UPDATE del enlace existente
   //    (que aún no hay, así que no afecta a nada) y nos devuelve el artefacto nuevo, que no tiene
   //    vínculo todavía y por tanto SÍ se puede vincular.
-  console.log("Forkeando el entregable a la nueva línea (copia objetos en MinIO)...");
+  console.log("Forkeando el entregable a la nueva línea (copia objetos en el almacén)...");
   const fork = await sqlAdmin().forkDeliverableForConfig({
     sourceArtifactId: SEED_ARTIFACT_ID,
     definitionId,

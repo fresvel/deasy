@@ -1,14 +1,14 @@
 // Tests de las funciones puras del almacenamiento de fotos de perfil:
 // parsePhotoReference (lee la referencia de persons.photo_url), detectImageFormat
 // (decide el formato por la firma del fichero) y buildProfilePhotoObjectName.
-// storeProfilePhoto/openProfilePhoto/removeStoredPhoto son IO sobre MinIO y se
+// storeProfilePhoto/openProfilePhoto/removeStoredPhoto son IO sobre el almacén y se
 // ejercen de extremo a extremo.
 
 import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
-  buildMinioReference,
+  buildAlmacenReference,
   buildProfilePhotoObjectName,
   contentTypeForExtension,
   detectImageFormat,
@@ -30,24 +30,24 @@ test("parsePhotoReference devuelve null cuando no hay foto", () => {
   assert.equal(parsePhotoReference(undefined), null);
 });
 
-test("parsePhotoReference lee una referencia de MinIO", () => {
-  assert.deepEqual(parsePhotoReference("minio://deasy-users/users/123/profile/1.png"), {
+test("parsePhotoReference lee una referencia del almacén", () => {
+  assert.deepEqual(parsePhotoReference("s3://deasy-users/users/123/profile/1.png"), {
     bucket: "deasy-users",
     objectName: "users/123/profile/1.png"
   });
 });
 
 test("parsePhotoReference descarta lo que no sea una referencia válida", () => {
-  assert.equal(parsePhotoReference("minio://deasy-users"), null, "sin objeto");
-  assert.equal(parsePhotoReference("minio:///users/123/a.png"), null, "sin bucket");
+  assert.equal(parsePhotoReference("s3://deasy-users"), null, "sin objeto");
+  assert.equal(parsePhotoReference("s3:///users/123/a.png"), null, "sin bucket");
   assert.equal(parsePhotoReference("uploads/profile_photos/1.jpg"), null, "ruta de disco");
   assert.equal(parsePhotoReference("data:image/png;base64,AAAA"), null, "data URI");
   assert.equal(parsePhotoReference("https://cdn.example.org/a.png"), null, "URL externa");
 });
 
-test("buildMinioReference y parsePhotoReference son simétricos", () => {
-  const reference = buildMinioReference("deasy-users", "/users/0987654321/profile/17.webp");
-  assert.equal(reference, "minio://deasy-users/users/0987654321/profile/17.webp");
+test("buildAlmacenReference y parsePhotoReference son simétricos", () => {
+  const reference = buildAlmacenReference("deasy-users", "/users/0987654321/profile/17.webp");
+  assert.equal(reference, "s3://deasy-users/users/0987654321/profile/17.webp");
   assert.deepEqual(parsePhotoReference(reference), {
     bucket: "deasy-users",
     objectName: "users/0987654321/profile/17.webp"

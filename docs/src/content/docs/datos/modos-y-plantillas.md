@@ -59,11 +59,11 @@ En `sqlTables.js` la tabla `task_items` se etiqueta “Entregables” (la *insta
 
 ### El contenido: Jinja2 sobre LaTeX
 
-Para el generador de `tipo = 'latex'`, el cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en MinIO, no en la base de datos. El bootstrap pública el paquete `backend/services/system/seeds/informe-general` — `schema.json`, `defaults.yaml`, `README.md` y el árbol `src/` con `main.tex.j2` y `make.sh` — y válida el pipeline: render Jinja2 con `StrictUndefined` → `pdflatex` → PDF.
+Para el generador de `tipo = 'latex'`, el cuerpo del documento es un **contrato Jinja2 + LaTeX** empaquetado en el almacén, no en la base de datos. El bootstrap pública el paquete `backend/services/system/seeds/informe-general` — `schema.json`, `defaults.yaml`, `README.md` y el árbol `src/` con `main.tex.j2` y `make.sh` — y válida el pipeline: render Jinja2 con `StrictUndefined` → `pdflatex` → PDF.
 
-**No hay `meta.yaml`**: el flujo se autora en la base, no en un YAML, desde el §0.8. Y `data.yaml` **no es un fichero de la semilla**: es un objeto de MinIO que el bootstrap escribe copiando `defaults.yaml` al prefijo de la edicion (`publishBaseSeedAssets`).
+**No hay `meta.yaml`**: el flujo se autora en la base, no en un YAML, desde el §0.8. Y `data.yaml` **no es un fichero de la semilla**: es un objeto del almacén que el bootstrap escribe copiando `defaults.yaml` al prefijo de la edicion (`publishBaseSeedAssets`).
 
-La **propiedad** se expresa por el prefijo dentro de MinIO, en `base_object_prefix`: `System/...` para las plantillas curadas por el administrador, `Users/{id_de_persona}/...` para las subidas por un gestor —el id y no la cédula, porque un documento de identidad puede cambiar y la ruta de los ficheros no debe—. El pipeline de maduración documentado es:
+La **propiedad** se expresa por el prefijo dentro del almacén, en `base_object_prefix`: `System/...` para las plantillas curadas por el administrador, `Users/{id_de_persona}/...` para las subidas por un gestor —el id y no la cédula, porque un documento de identidad puede cambiar y la ruta de los ficheros no debe—. El pipeline de maduración documentado es:
 
 `office` (Word/Excel/PDF subido por el gestor) ⟶ `jinja2` (curado por el administrador)
 

@@ -11,7 +11,7 @@
 //      plantillas borrador, los tres guards de activación y el retiro de la versión anterior.
 //      Si el Extract Class rompe cualquiera de esos eslabones, este golden lo ve.
 //   2. El diff de activación sobre el borrador recién creado.
-//   3. El sync de semillas contra MinIO.
+//   3. El sync de semillas contra el almacén.
 //   4. Los contratos de error de preview y de use-in-config.
 //
 // ⚠️ EL PREFIJO "zz_" ES DELIBERADO (misma razón que `zz_task_generation`): los flows corren en
@@ -74,7 +74,7 @@ after(async () => {
 // Estado compartido entre los pasos del update guiado (son un flujo, no casos sueltos).
 const guided = {};
 
-test("POST /admin/sql/generadores_de_documento/sync -> descubre los paquetes publicados en MinIO", async () => {
+test("POST /admin/sql/generadores_de_documento/sync -> descubre los paquetes publicados en el almacén", async () => {
   const token = await tokenFor("admin");
   const res = await post("/admin/sql/generadores_de_documento/sync", { token, body: {} });
   matchSnapshot(SUITE, "seed_sync", { status: res.status, body: normalize(res.body, { maskIdKeys: true }) });

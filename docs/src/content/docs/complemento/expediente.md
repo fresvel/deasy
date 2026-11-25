@@ -63,7 +63,7 @@ erDiagram
     bigint person_id FK
     text section "CHECK · 10"
     text estado_revision "CHECK · 4"
-    varchar documento_ref "minio://, ya no una URL"
+    varchar documento_ref "s3://, ya no una URL"
     timestamp documento_subido_at
     timestamp created_at
     timestamp updated_at "NUEVA: corregir deja de ser borrar"
@@ -470,7 +470,7 @@ erDiagram
     bigint id PK
     bigint person_id FK
     text section "CHECK · 10"
-    varchar documento_ref "minio:// · el respaldo escaneado"
+    varchar documento_ref "s3:// · el respaldo escaneado"
     timestamp documento_subido_at
     text estado_revision "CHECK · 4"
     timestamp created_at
@@ -1038,7 +1038,7 @@ se puede indexar ni exigir con un `NOT NULL`. Lo variable va al JSON; lo invaria
 completa** construida con `ALMACEN_PUBLIC_ENDPOINT`, así que el endpoint del entorno queda **dentro del
 dato**: mover la pila o cambiar de dominio invalida todas las filas. Es el mismo antipatrón que el
 frente 14 ya corrigió en `documentos_identidad`, y el modelo nuevo lo unifica en `documento_ref` con
-la convención `minio://<bucket>/<objeto>`.
+la convención `s3://<bucket>/<objeto>`.
 
 ### Aquí había MongoDB, y se nota
 

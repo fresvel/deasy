@@ -15,7 +15,7 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { pipeline } from "node:stream/promises";
 import { guardarLote, leerLoteCrudo } from "../datos/lotes.js";
-import { getMinioObjectStream } from "../../../services/storage/minio_service.js";
+import { getAlmacenObjectStream } from "../../../services/storage/almacen_service.js";
 import { badRequest } from "../../../errors/HttpError.js";
 import {
   assertSignContextBeforeSigning,
@@ -156,8 +156,8 @@ export const selectOwnedBatchJob = (job, userId) => {
 
 export const getOwnedBatchJob = async (jobId, userId) => selectOwnedBatchJob(await getBatchJob(jobId), userId);
 
-const streamMinioObjectToFile = async (bucket, objectName, destinationPath) => {
-  const stream = await getMinioObjectStream(bucket, objectName);
+const streamAlmacenObjectToFile = async (bucket, objectName, destinationPath) => {
+  const stream = await getAlmacenObjectStream(bucket, objectName);
   await pipeline(stream, fs.createWriteStream(destinationPath));
 };
 
@@ -317,7 +317,7 @@ export const buildSignedBatchArchive = async (jobId, signedResults) => {
 
     const destinationPath = path.join(workspace, entryPath);
     fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
-    await streamMinioObjectToFile(result.signedBucket || ALMACEN_USERS_BUCKET, result.signedPath, destinationPath);
+    await streamAlmacenObjectToFile(result.signedBucket || ALMACEN_USERS_BUCKET, result.signedPath, destinationPath);
   }
 
   await createStructuredZipArchive(workspace, zipPath);

@@ -163,7 +163,7 @@
 <!-- document_version_uploads -->
 <g id="document_version_uploads" class="node">
 <title>document_version_uploads</title>
-<g id="a_document_version_uploads"><a xlink:title="document_version_uploads&#10;Cada SUBIDA del archivo de un entregable: la version MENOR. Guarda quien lo subio, que fichero y cuando. Antes no constaba en ninguna parte quien elaboro un documento — `working_file_path` se sobrescribe— mientras que un ANEXO si guardaba su autor. Ojo: en MinIO nunca se perdio un fichero (el nombre lleva sello de tiempo y UUID); lo que se perdia era el PUNTERO.">
+<g id="a_document_version_uploads"><a xlink:title="document_version_uploads&#10;Cada SUBIDA del archivo de un entregable: la version MENOR. Guarda quien lo subio, que fichero y cuando. Antes no constaba en ninguna parte quien elaboro un documento — `working_file_path` se sobrescribe— mientras que un ANEXO si guardaba su autor. Ojo: en el almacén nunca se perdio un fichero (el nombre lleva sello de tiempo y UUID); lo que se perdia era el PUNTERO.">
 <ellipse fill="none" stroke="black" stroke-width="0" cx="3775.1" cy="-1559.88" rx="382.59" ry="469.54"/>
 <polygon fill="#1d71b8" stroke="transparent" points="3507.1,-1829.88 3507.1,-1889.88 4044.1,-1889.88 4044.1,-1829.88 3507.1,-1829.88"/>
 <polygon fill="none" stroke="#29235c" points="3507.1,-1829.88 3507.1,-1889.88 4044.1,-1889.88 4044.1,-1829.88 3507.1,-1829.88"/>

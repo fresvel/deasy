@@ -9,7 +9,7 @@ import crypto from "node:crypto";
  * porque un salto de línea de más lo añade cualquier editor.
  *
  * ⚠️ **Vive en su propio módulo desde que el texto se fue al archivo.** Lo necesitan los DOS lados
- * —`DocumentosLegales` para sellar la fila y `ArchivoLegal` para verificar lo que releyó de MinIO— y
+ * —`DocumentosLegales` para sellar la fila y `ArchivoLegal` para verificar lo que releyó del almacén— y
  * tenerlo en uno de ellos obligaba al otro a importarlo, cerrando un ciclo. Una segunda copia de
  * esta normalización sería peor: dos huellas distintas del mismo texto es exactamente el fallo que
  * la huella viene a delatar.

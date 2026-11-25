@@ -50,7 +50,7 @@ tests/characterization/
 de copiarlo: el §0.8 del plan maestro va a mover el flujo del `meta.yaml` a la base, y **ninguna ruta
 expone el resultado**. La que lo parece —`GET /ediciones/:id/schema`— lee el flujo del
 propio `meta.yaml`, o sea justo lo que se va a eliminar; y lo que hoy se fija por HTTP es el
-`content_hash` del paquete de MinIO, que **incluye ese fichero** y por tanto cambiará por
+`content_hash` del paquete del almacén, que **incluye ese fichero** y por tanto cambiará por
 construcción sin decir nada del flujo. Cuando lo que hay que caracterizar es el estado que un cambio
 va a reescribir y ninguna ruta lo enseña, el oráculo es la base. Separa los **dos productores** en
 claves distintas (`plantilla_*`, que la inversión cambia, y `runtime_*`, que es el grupo de control),
@@ -95,7 +95,7 @@ sembrando:
 Resultado: datos reales en `tasks, task_items, documents, document_versions`,
 las 4 tablas de fill-flow y `signature_flow_templates/steps`. (Las
 `signature_flow_instances/requests` requieren upload de PDF + aprobación del
-flujo de entrega — MinIO —; quedan como ampliación futura.)
+flujo de entrega — el almacén —; quedan como ampliación futura.)
 
 Los ids de la fixture viven en un único sitio: `FIXTURE`, en `config.mjs`.
 
@@ -177,6 +177,6 @@ Del **dominio de firma** (Fase D del plan de calidad) queda fuera todo lo que ex
 microservicio Python: el camino feliz de `requestSign` y de `POST /sign/batch/start`, y
 `validateSignedDocument` más allá de su 400. El bootstrap **no siembra certificados**
 (`person_certificates` vacía), así que `buildSignContext` siempre corta en «Certificado no
-encontrado» y los guards posteriores (el `statMinioObject` del certificado y «Modo de firma
+encontrado» y los guards posteriores (el `statAlmacenObject` del certificado y «Modo de firma
 inválido») no tienen golden. Tampoco lo tiene `reactivatePreviousFillStepIfNeeded`: los
 flujos de entrega de la fixture tienen **un solo paso**.

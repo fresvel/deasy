@@ -9,10 +9,10 @@ import os from "node:os";
 import path from "node:path";
 import crypto from "node:crypto";
 import {
-  copyMinioObjectBinary,
-  listMinioObjects,
-  putMinioObjectFromText,
-  readMinioObjectAsText,
+  copyAlmacenObjectBinary,
+  listAlmacenObjects,
+  putAlmacenObjectFromText,
+  readAlmacenObjectAsText,
   unzipToDirectory,
   walkFiles,
 } from "../kernel/storage.js";
@@ -35,10 +35,10 @@ import {
 
 export default class TemplateArtifactService {
   // `readObjectAsText` se inyecta con el mismo patrón que `getByKeys` (que ya estaba) y por el mismo
-  // motivo: sin punto de inyección, la lectura de MinIO no tiene red unitaria — y el defecto que
+  // motivo: sin punto de inyección, la lectura del almacén no tiene red unitaria — y el defecto que
   // cierra el §0.4 S2 vive justo ahí. Por defecto es la función real, así que el único llamador de
   // producción (`SqlAdminService.js:164`) no cambia.
-  constructor(pool, { getByKeys, readObjectAsText = readMinioObjectAsText } = {}) {
+  constructor(pool, { getByKeys, readObjectAsText = readAlmacenObjectAsText } = {}) {
     this.pool = pool;
     this._getByKeys = getByKeys;
     this._readObjectAsText = readObjectAsText;
@@ -90,7 +90,7 @@ export default class TemplateArtifactService {
   }
 
 
-  // Lee el schema.json de un artifact desde MinIO y lo devuelve como lista de campos
+  // Lee el schema.json de un artifact desde el almacén y lo devuelve como lista de campos
   // editables en la web (formato inverso de buildSchemaJsonFromFields).
   async getTemplateArtifactSchema(artifactId) {
     this.ensurePool();
@@ -99,9 +99,9 @@ export default class TemplateArtifactService {
       throw new Error("El artifact seleccionado no existe.");
     }
     const bucket = ALMACEN_TEMPLATES_BUCKET;
-    // Los campos del formulario se leen de `schema.json` en MinIO, y un fallo SUBE.
+    // Los campos del formulario se leen de `schema.json` en el almacén, y un fallo SUBE.
     //
-    // Aquí vivía un `catch {}` que devolvía `{}` ante cualquier fallo de MinIO. Es el MISMO borrado
+    // Aquí vivía un `catch {}` que devolvía `{}` ante cualquier fallo del almacén. Es el MISMO borrado
     // silencioso que el sub-paso 5 del §0.8 quitó del lector de flujo, unas líneas más abajo y en
     // este mismo fichero: un «vacío» inventado no es un aviso cosmético, es lo que el editor carga
     // **y lo que el siguiente guardado escribe** — o sea, `schema.json` reducido a `"{}\n"` y todos
@@ -141,7 +141,7 @@ export default class TemplateArtifactService {
 
     // Lee los workflows (fill/signatures) DE LA BASE en formato editable por la web.
     //
-    // Sub-paso 5 del §0.8: antes se reconstruían desde el `meta.yaml` de MinIO, envueltos en un
+    // Sub-paso 5 del §0.8: antes se reconstruían desde el `meta.yaml` del almacén, envueltos en un
     // `catch {}` mudo que devolvía «esta plantilla no define flujo» ante cualquier fallo. Ese catch
     // NO vuelve: aquí un flujo vacío inventado no es un aviso cosmético, es lo que el editor carga y
     // lo que el siguiente guardado escribe — o sea, el borrado del flujo. Un error de base sube.
@@ -238,7 +238,7 @@ export default class TemplateArtifactService {
   // Activa/desactiva una plantilla. is_active es el único estado del ciclo de vida (Activo/Inactivo).
   // Al activar se exige que la plantilla tenga al menos un paso de flujo de entrega EN LA BASE
   // (regla: una plantilla de proceso no se usa sin flujo de entrega). La firma puede ser ad-hoc.
-  // Sub-paso 4 del §0.8: antes se contaba sobre el `meta.yaml` de MinIO — ver `hasFillStepsForArtifact`.
+  // Sub-paso 4 del §0.8: antes se contaba sobre el `meta.yaml` del almacén — ver `hasFillStepsForArtifact`.
   async setTemplateArtifactActive(artifactId, active) {
     this.ensurePool();
     const nextActive = active ? 1 : 0;
@@ -352,7 +352,7 @@ export default class TemplateArtifactService {
   // (is_active=0): el gestor la activa cuando esté lista. El nivel de cambio (patch/minor/major) lo elige
   // quien crea la versión.
   //
-  // CLONAR ES COPIAR BYTES **Y FILAS** (sub-paso 6 del §0.8). Los objetos de MinIO se copian en
+  // CLONAR ES COPIAR BYTES **Y FILAS** (sub-paso 6 del §0.8). Los objetos del almacén se copian en
   // binario; el FLUJO ya no vive ahí, vive en la base, así que hay que copiarlo aparte o la versión
   // nace sin flujo. Medido antes del cambio: publicarla respondía 400 «la plantilla debe definir al
   // menos un paso de flujo de entrega». Ver `copyAuthoredFlowToArtifact` para qué cabecera se copia
@@ -383,17 +383,17 @@ export default class TemplateArtifactService {
       throw new Error("No se pudo derivar la ruta de la nueva versión.");
     }
 
-    // Copia los objetos de la versión actual a la nueva ruta en MinIO.
-    const objectNames = await listMinioObjects(bucket, oldPrefix, true);
+    // Copia los objetos de la versión actual a la nueva ruta en el almacén.
+    const objectNames = await listAlmacenObjects(bucket, oldPrefix, true);
     if (!objectNames.length) {
-      throw new Error("La versión actual no tiene objetos en MinIO para clonar.");
+      throw new Error("La versión actual no tiene objetos en el almacén para clonar.");
     }
     for (const objectName of objectNames) {
       if (!objectName.startsWith(oldPrefix)) continue;
       const relative = objectName.slice(oldPrefix.length);
       if (!relative) continue;
       // Copia binaria (preserva bytes y content-type); NO leer/escribir como texto (corrompe binarios).
-      await copyMinioObjectBinary(bucket, objectName, `${newPrefix}${relative}`);
+      await copyAlmacenObjectBinary(bucket, objectName, `${newPrefix}${relative}`);
     }
 
     // Re-mapea los entry_object_key de available_formats del prefijo viejo al nuevo (antes quedaban
@@ -409,7 +409,7 @@ export default class TemplateArtifactService {
     // LA VERSIÓN Y SU FLUJO, EN UNA TRANSACCIÓN, por el mismo motivo que `_persistDraftToDatabase`
     // (sub-paso 3): el flujo cuelga del artifact por FK, así que sin ella un fallo al copiarlo
     // dejaría una versión ya insertada y SIN FLUJO — que es exactamente el estado inpublicable que
-    // este sub-paso viene a cerrar, y que nadie vería hasta intentar publicarla. La copia de MinIO
+    // este sub-paso viene a cerrar, y que nadie vería hasta intentar publicarla. La copia del almacén
     // se queda FUERA a propósito: ocurre antes y ningún `ROLLBACK` la revierte.
     const connection = await this.pool.getConnection();
     let newArtifactId;
@@ -441,7 +441,7 @@ export default class TemplateArtifactService {
       // AQUI SE COPIABAN LOS CAMPOS a la version hija (`copySchemaFieldsToArtifact`). Era el UNICO
       // lector de `template_artifact_fields` en todo el sistema —la tabla existia para copiarse a si
       // misma—, y con ella se va (frente 23, F4.1). El `schema.json` de la hija sigue llegando por la
-      // copia binaria de MinIO de mas arriba, que es de donde el editor lo lee.
+      // copia binaria del almacén de mas arriba, que es de donde el editor lo lee.
       await connection.commit();
     } catch (error) {
       await connection.rollback().catch(() => {});
@@ -495,7 +495,7 @@ export default class TemplateArtifactService {
 
     let manifest;
     try {
-      manifest = JSON.parse(await readMinioObjectAsText(bucket, `${basePrefix}manifest.json`));
+      manifest = JSON.parse(await readAlmacenObjectAsText(bucket, `${basePrefix}manifest.json`));
     } catch {
       throw new Error("La plantilla no tiene manifest.json de integridad. Vuelve a generarla con el flujo actual.");
     }
@@ -569,7 +569,7 @@ export default class TemplateArtifactService {
 
       const version = await this.createTemplateArtifactVersion(artifactId, "patch");
       for (const entry of editedContent) {
-        await putMinioObjectFromText(
+        await putAlmacenObjectFromText(
           bucket,
           `${version.base_object_prefix}${srcRelPrefix}${entry.rel}`,
           fs.readFileSync(entry.abs, "utf8"),

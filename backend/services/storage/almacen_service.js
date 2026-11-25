@@ -1,13 +1,13 @@
 import * as Minio from "minio";
 
-const minioUrl = new URL(process.env.ALMACEN_ENDPOINT || "http://almacen:9000");
+const almacenUrl = new URL(process.env.ALMACEN_ENDPOINT || "http://almacen:9000");
 const useSSL =
   String(process.env.ALMACEN_USE_SSL || "").trim() === "1" ||
-  minioUrl.protocol === "https:";
+  almacenUrl.protocol === "https:";
 
-export const minioClient = new Minio.Client({
-  endPoint: minioUrl.hostname,
-  port: Number(minioUrl.port || (useSSL ? 443 : 80)),
+export const almacenClient = new Minio.Client({
+  endPoint: almacenUrl.hostname,
+  port: Number(almacenUrl.port || (useSSL ? 443 : 80)),
   useSSL,
   accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER || "",
   secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD || ""
@@ -15,7 +15,7 @@ export const minioClient = new Minio.Client({
 
 export const ensureBucketExists = (bucket) =>
   new Promise((resolve, reject) => {
-    minioClient.bucketExists(bucket, (error, exists) => {
+    almacenClient.bucketExists(bucket, (error, exists) => {
       if (error) {
         reject(error);
         return;
@@ -24,7 +24,7 @@ export const ensureBucketExists = (bucket) =>
         resolve(true);
         return;
       }
-      minioClient.makeBucket(bucket, "", (makeError) => {
+      almacenClient.makeBucket(bucket, "", (makeError) => {
         if (makeError) {
           reject(makeError);
           return;
@@ -34,9 +34,9 @@ export const ensureBucketExists = (bucket) =>
     });
   });
 
-export const uploadFileToMinio = (bucket, objectName, filePath, meta = {}) =>
+export const uploadFileToAlmacen = (bucket, objectName, filePath, meta = {}) =>
   new Promise((resolve, reject) => {
-    minioClient.fPutObject(bucket, objectName, filePath, meta, (error, etag) => {
+    almacenClient.fPutObject(bucket, objectName, filePath, meta, (error, etag) => {
       if (error) {
         reject(error);
         return;
@@ -45,9 +45,9 @@ export const uploadFileToMinio = (bucket, objectName, filePath, meta = {}) =>
     });
   });
 
-export const removeMinioObject = (bucket, objectName) =>
+export const removeAlmacenObject = (bucket, objectName) =>
   new Promise((resolve, reject) => {
-    minioClient.removeObject(bucket, objectName, (error) => {
+    almacenClient.removeObject(bucket, objectName, (error) => {
       if (error) {
         reject(error);
         return;
@@ -56,9 +56,9 @@ export const removeMinioObject = (bucket, objectName) =>
     });
   });
 
-export const statMinioObject = (bucket, objectName) =>
+export const statAlmacenObject = (bucket, objectName) =>
   new Promise((resolve, reject) => {
-    minioClient.statObject(bucket, objectName, (error, stat) => {
+    almacenClient.statObject(bucket, objectName, (error, stat) => {
       if (error) {
         reject(error);
         return;
@@ -67,9 +67,9 @@ export const statMinioObject = (bucket, objectName) =>
     });
   });
 
-export const getMinioObjectStream = (bucket, objectName) =>
+export const getAlmacenObjectStream = (bucket, objectName) =>
   new Promise((resolve, reject) => {
-    minioClient.getObject(bucket, objectName, (error, stream) => {
+    almacenClient.getObject(bucket, objectName, (error, stream) => {
       if (error) {
         reject(error);
         return;

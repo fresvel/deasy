@@ -218,33 +218,33 @@ app.use(express.static("public"));
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Publica la semilla base en MinIO EN CADA ARRANQUE (defecto 1.17).
+// Publica la semilla base en el almacén EN CADA ARRANQUE (defecto 1.17).
 //
 // POR QUÉ AQUÍ. `publishBaseSeedAssets` solo colgaba de `ensureDefaultProcess`, que a su vez solo
 // corre desde `POST /system/bootstrap/initialize` — y ese endpoint **se niega con 409 en cuanto la
 // instalación deja de ser virgen**. Así que en un entorno ya bootstrapeado NO HABÍA NINGÚN CAMINO
-// que llevara una semilla actualizada a MinIO: ni reiniciar, ni desplegar (`apply-env.sh` solo hace
+// que llevara una semilla actualizada al almacén: ni reiniciar, ni desplegar (`apply-env.sh` solo hace
 // `pull` + `up -d`), ni el `POST /generadores_de_documento/sync`, que va en la dirección contraria (lee de
-// MinIO y escribe en Postgres, así que con el catálogo viejo solo consolida lo viejo).
+// el almacén y escribe en Postgres, así que con el catálogo viejo solo consolida lo viejo).
 //
-// Y no era latente: crear una plantilla desde una semilla **descarga de MinIO**
+// Y no era latente: crear una plantilla desde una semilla **descarga del almacén**
 // (`templateLifecycle.js:1229`), así que cada plantilla nueva heredaba la semilla obsoleta. Medido:
 // el arreglo de `49d41ce4` llevaba un día en el repo y estaba ausente de todas las pilas.
 //
 // Es SEGURO reescribir en cada arranque porque el centinela de `publishBaseSeedAssets` sigue
 // protegiendo lo que el admin edita: solo se republica el catálogo `Seeds/` —que nadie toca a mano—;
 // el artifact instanciado `System/` se respeta si ya existe. Coste medido: 48 PUT y ~92 KB, menos de
-// un segundo contra un MinIO local.
+// un segundo contra un almacén local.
 //
-// Best-effort a propósito: un MinIO caído NO debe impedir que el backend sirva. La función ya captura
+// Best-effort a propósito: un almacén caído NO debe impedir que el backend sirva. La función ya captura
 // y devuelve `{ published: false, reason }` en vez de lanzar.
 const publishSeedsOnBoot = async () => {
   const resultado = await publishBaseSeedAssets();
   if (resultado?.published) {
-    console.log(`✅ Semilla base publicada en MinIO (artifact: ${resultado.artifact ? "sí" : "respetado"})`);
+    console.log(`✅ Semilla base publicada en el almacén (artifact: ${resultado.artifact ? "sí" : "respetado"})`);
     return;
   }
-  console.warn(`⚠️  No se pudo publicar la semilla base en MinIO (${resultado?.reason || "desconocido"}). ` +
+  console.warn(`⚠️  No se pudo publicar la semilla base en el almacén (${resultado?.reason || "desconocido"}). ` +
     "El backend sigue en ejecución; las plantillas nuevas heredarían la semilla anterior.");
 };
 
@@ -253,16 +253,16 @@ const publishSeedsOnBoot = async () => {
 // Dos cosas, y en este orden:
 //
 //   1. `asegurarBuckets()` comprueba que el bucket de archivo TIENE bloqueo de objetos. La
-//      comprobación es pedirle su retención, no crearlo: medido contra MinIO, pedir la creación con
+//      comprobación es pedirle su retención, no crearlo: medido contra el almacén, pedir la creación con
 //      bloqueo sobre un bucket que ya existe sin él responde «created successfully» y no bloquea
 //      nada. Si no lo tiene, esto LANZA — y hace bien: el bloqueo solo se concede al crear el
 //      bucket, así que no hay nada que reparar sobre la marcha, y archivar ahí produciría una
 //      prueba que no lo es.
 //   2. `adoptarDelArchivo()` reconstruye el índice si la tabla está vacía. La semilla del texto
-//      entra por MinIO, y una fila necesita el `object_version_id`, que NO EXISTE hasta después de
+//      entra por el almacén, y una fila necesita el `object_version_id`, que NO EXISTE hasta después de
 //      subir el objeto: por eso no puede ser un `INSERT` del esquema. Con filas, no toca nada.
 //
-// Best-effort a propósito, igual que la semilla base: un MinIO caído no debe impedir que el backend
+// Best-effort a propósito, igual que la semilla base: un almacén caído no debe impedir que el backend
 // sirva. Pero se avisa MUY alto, porque mientras esto falle no hay textos que aceptar y el alta de
 // personas se queda sin consentimiento que registrar.
 const prepararArchivoLegal = async () => {
@@ -275,7 +275,7 @@ const prepararArchivoLegal = async () => {
       // quedó sin puntero al salir el texto de la base): son dos situaciones muy distintas y quien
       // lee el arranque necesita saber cuál acaba de ocurrir.
       const detalle = adoptados.map((d) => `${d.clase} ${d.version} [${d.accion}]`).join(", ");
-      console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con MinIO (${detalle})`);
+      console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con el almacén (${detalle})`);
       return;
     }
     console.log("✅ Archivo legal verificado (bloqueo de objetos activo)");
@@ -298,7 +298,7 @@ const prepararArchivoLegal = async () => {
 // ⚠️ NUNCA LANZA, y tiene que seguir asi: se llama dentro del `try` de los reintentos, y un error que
 // escapara repetiria veinte veces la inicializacion del esquema y se saltaria la semilla y el archivo
 // legal. Va DESPUES del esquema porque necesita las tablas, y antes de lo demas porque no depende de
-// MinIO.
+// el almacén.
 const sincronizarPermisosAlArrancar = async () => {
   try {
     const resultado = await sincronizarCatalogoRbac();

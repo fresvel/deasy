@@ -252,7 +252,7 @@ export default class DocumentoIdentidadService {
   }
 
   // Deja registrada la referencia del escaneo. Devuelve la anterior para que quien llama borre el
-  // objeto viejo: aqui no se toca MinIO, esto es la capa de datos.
+  // objeto viejo: aqui no se toca el almacén, esto es la capa de datos.
   async registrarEscaneo(documentoId, referencia, connection = this.pool) {
     const anterior = await referenciaDeEscaneo(connection, documentoId);
     await guardarReferenciaDeEscaneo(connection, documentoId, referencia);

@@ -707,7 +707,7 @@
         <p class="mb-0 text-sm text-success font-medium">
           {{ signResultMessage || `El documento fue firmado correctamente con ${signedFieldsCount} campo(s).` }}
         </p>
-        <div v-if="signedMinioPath" class="flex flex-wrap gap-3">
+        <div v-if="signedAlmacenPath" class="flex flex-wrap gap-3">
           <AdminButton variant="primary-outline" @click="viewSignedDocument">Visualizar documento</AdminButton>
           <AdminButton variant="primary-outline" @click="downloadSignedDocument">Descargar documento</AdminButton>
         </div>
@@ -1186,7 +1186,7 @@ const fieldId = (name) => `${uid}-${name}`;
   const signError = ref('');
   const signSuccess = ref(false);
   const signResultMessage = ref('');
-  const signedMinioPath = ref('');
+  const signedAlmacenPath = ref('');
   const signedFieldsCount = ref(0);
   const workflowSignContext = ref(null);
   const workflowPdfStatus = ref({ type: 'info', message: '' });
@@ -2169,7 +2169,7 @@ const fieldId = (name) => `${uid}-${name}`;
         signError.value = '';
         signResultMessage.value = '';
         signSuccess.value = false;
-        signedMinioPath.value = '';
+        signedAlmacenPath.value = '';
         signedFieldsCount.value = 0;
         resetPdfState();
         workflowPdfStatus.value = {
@@ -2679,7 +2679,7 @@ const fieldId = (name) => `${uid}-${name}`;
         signResultMessage.value = validationWarning && data?.validation?.warningAccepted
           ? `El documento fue firmado correctamente con ${signedCount} campo(s). Advertencia: ${validationWarning}`
           : `El documento fue firmado correctamente con ${signedCount} campo(s).`;
-        signedMinioPath.value = data.signedPath;
+        signedAlmacenPath.value = data.signedPath;
         signedFieldsCount.value = signedCount;
         if (props.embedded && isEmbeddedWorkflowMode.value) {
           emit('workflow-signed', {
@@ -2715,9 +2715,9 @@ const fieldId = (name) => `${uid}-${name}`;
     };
 
     const viewSignedDocument = async () => {
-      if (!signedMinioPath.value) return;
+      if (!signedAlmacenPath.value) return;
       try {
-        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedMinioPath.value)}`, {
+        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedAlmacenPath.value)}`, {
           headers: getAuthHeaders()
         });
         if (!response.ok) {
@@ -2733,9 +2733,9 @@ const fieldId = (name) => `${uid}-${name}`;
     };
 
     const downloadSignedDocument = async () => {
-      if (!signedMinioPath.value) return;
+      if (!signedAlmacenPath.value) return;
       try {
-        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedMinioPath.value)}`, {
+        const response = await fetch(`${API_ROUTES.SIGN}/download?path=${encodeURIComponent(signedAlmacenPath.value)}`, {
           headers: getAuthHeaders()
         });
         if (!response.ok) {
@@ -2783,7 +2783,7 @@ const fieldId = (name) => `${uid}-${name}`;
       signError.value = '';
       signResultMessage.value = '';
       signSuccess.value = false;
-      signedMinioPath.value = '';
+      signedAlmacenPath.value = '';
       signedFieldsCount.value = 0;
       validationFile.value = null;
       validationCedula.value = '';
@@ -2826,7 +2826,7 @@ const fieldId = (name) => `${uid}-${name}`;
       signError.value = '';
       signResultMessage.value = '';
       signSuccess.value = false;
-      signedMinioPath.value = '';
+      signedAlmacenPath.value = '';
       uploadError.value = '';
       multiBatchRequest.value = null;
       activeMultiBatchJob.value = null;

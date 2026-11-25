@@ -1,4 +1,4 @@
-"""Fontanería: MinIO, material de confianza, Ghostscript y temporales.
+"""Fontanería: el almacén, material de confianza, Ghostscript y temporales.
 
 Nada de esto es lógica de firma, pero decide qué PDF entra al firmador y con
 qué anclas de confianza se valida el resultado. Es la capa que la auditoría
@@ -13,34 +13,34 @@ from unittest import mock
 import app
 
 
-class ConstruccionDelClienteMinio(unittest.TestCase):
+class ConstruccionDelClienteAlmacen(unittest.TestCase):
     def test_quita_el_esquema_http_y_desactiva_tls(self):
         with mock.patch.object(app, "ALMACEN_ENDPOINT", "http://almacen:9000"), \
              mock.patch.object(app, "Minio") as constructor:
-            app.create_minio_client()
+            app.create_almacen_client()
         constructor.assert_called_once()
         argumentos, opciones = constructor.call_args
         self.assertEqual(argumentos[0], "almacen:9000")
         self.assertFalse(opciones["secure"])
 
     def test_https_activa_tls(self):
-        with mock.patch.object(app, "ALMACEN_ENDPOINT", "https://minio.example:9000"), \
+        with mock.patch.object(app, "ALMACEN_ENDPOINT", "https://almacen.example:9000"), \
              mock.patch.object(app, "Minio") as constructor:
-            app.create_minio_client()
+            app.create_almacen_client()
         argumentos, opciones = constructor.call_args
-        self.assertEqual(argumentos[0], "minio.example:9000")
+        self.assertEqual(argumentos[0], "almacen.example:9000")
         self.assertTrue(opciones["secure"])
 
     def test_endpoint_sin_esquema_se_toma_tal_cual_y_sin_tls(self):
         with mock.patch.object(app, "ALMACEN_ENDPOINT", "almacen:9000"), \
              mock.patch.object(app, "Minio") as constructor:
-            app.create_minio_client()
+            app.create_almacen_client()
         argumentos, opciones = constructor.call_args
         self.assertEqual(argumentos[0], "almacen:9000")
         self.assertFalse(opciones["secure"])
 
 
-class TransferenciasConMinio(unittest.TestCase):
+class TransferenciasConAlmacen(unittest.TestCase):
     def setUp(self):
         self.cliente = mock.Mock()
         parche = mock.patch.object(app, "ALMACEN_CLIENT", self.cliente)
@@ -53,7 +53,7 @@ class TransferenciasConMinio(unittest.TestCase):
     def test_descarga_con_bucket_explicito(self):
         with tempfile.TemporaryDirectory() as carpeta:
             destino = Path(carpeta) / "sub" / "a.pdf"
-            app.download_from_minio("otro-bucket", "ruta/a.pdf", destino)
+            app.download_from_almacen("otro-bucket", "ruta/a.pdf", destino)
             # `ensure_parent` crea la carpeta intermedia antes de descargar.
             self.assertTrue(destino.parent.is_dir())
         self.cliente.fget_object.assert_called_once_with("otro-bucket", "ruta/a.pdf", str(destino))
@@ -61,11 +61,11 @@ class TransferenciasConMinio(unittest.TestCase):
     def test_descarga_sin_bucket_usa_el_spool(self):
         with tempfile.TemporaryDirectory() as carpeta:
             destino = Path(carpeta) / "a.pdf"
-            app.download_from_minio(None, "ruta/a.pdf", destino)
+            app.download_from_almacen(None, "ruta/a.pdf", destino)
         self.assertEqual(self.cliente.fget_object.call_args[0][0], "deasy-spool")
 
     def test_la_subida_siempre_declara_content_type_pdf(self):
-        app.upload_to_minio(None, "ruta/a.pdf", Path("/tmp/a.pdf"))
+        app.upload_to_almacen(None, "ruta/a.pdf", Path("/tmp/a.pdf"))
         self.cliente.fput_object.assert_called_once_with(
             "deasy-spool", "ruta/a.pdf", "/tmp/a.pdf", content_type="application/pdf",
         )

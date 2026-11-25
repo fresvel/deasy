@@ -50,7 +50,7 @@ bash scripts/stack.sh c stop                              # te vas por hoy, el w
 bash scripts/stack.sh c down                              # al RETIRAR el worktree que monta
 ```
 
-| Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit | rabbit-ui | docs | azimutt |
+| Pila | Proyecto | proxy | https | postgres | almacen | signer | rabbit | rabbit-ui | docs | azimutt |
 |---|---|---|---|---|---|---|---|---|---|---|
 | **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 | 15672 | 4321 | 4700 |
 | **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 | 15772 | 4421 | 4800 |
@@ -58,7 +58,7 @@ bash scripts/stack.sh c down                              # al RETIRAR el worktr
 | **D** | `deasy-d` | 8388 | 8743 | 5732 | 9300 | 4300 | 5972 | 15972 | 4621 | 5000 |
 
 Una pila publica **ocho** puertos. Hasta noviembre de 2026 eran nueve: el noveno era la consola web
-de MinIO, que se fue con él (el almacén es ahora Versity Gateway, sin consola). **Azimutt es aparte y
+del almacén, que se fue con él (el almacén es ahora Versity Gateway, sin consola). **Azimutt es aparte y
 no arranca por defecto**: vive tras el perfil
 `explorer` (`bash scripts/stack.sh c --profile explorer up -d azimutt`).
 
@@ -66,7 +66,7 @@ Detalles que cuestan tiempo si no se saben:
 
 - **La pila A ES la `dev` de siempre.** `docker-env.sh dev` y `stack.sh a` son la misma
   pila; no hay una quinta.
-- Cada pila tiene **base, MinIO, RabbitMQ, `node_modules` y red propios**. Compartirlos era
+- Cada pila tiene **base, el almacén, RabbitMQ, `node_modules` y red propios**. Compartirlos era
   el fallo: con el mismo volumen de Postgres, un `test:char:run` **resetea la base de la
   otra sesión**.
 - **La pila vive con su worktree, no con la sesión.** Se baja (`down`) el día que se retira

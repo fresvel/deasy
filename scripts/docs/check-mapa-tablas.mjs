@@ -129,7 +129,7 @@ const rutaDe = (p) => relative(join(RAIZ, "backend"), p).split(sep).join("/");
  * algo es lo natural, así que una comprobación que mire la prosa muerde justo cuando alguien
  * documenta bien — y castiga al que explica, que es el peor incentivo posible.
  *
- * El `//` no se quita si va detrás de dos puntos, para no cortar una URL (`minio://…`, `https://…`)
+ * El `//` no se quita si va detrás de dos puntos, para no cortar una URL (`s3://…`, `https://…`)
  * y perder con ella lo que venga después en esa línea.
  */
 const sinProsa = (src) =>

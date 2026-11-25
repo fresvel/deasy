@@ -61,8 +61,8 @@ if _RETIRADAS:
         + ", ".join(_RETIRADAS)
     )
 ALMACEN_ENDPOINT = os.getenv("ALMACEN_ENDPOINT", "http://almacen:9000")
-ALMACEN_ACCESS_KEY = os.getenv("ALMACEN_ACCESS_KEY", "deasy_minio")
-ALMACEN_SECRET_KEY = os.getenv("ALMACEN_SECRET_KEY", "deasy_minio_secret")
+ALMACEN_ACCESS_KEY = os.getenv("ALMACEN_ACCESS_KEY", "deasy_almacen")
+ALMACEN_SECRET_KEY = os.getenv("ALMACEN_SECRET_KEY", "deasy_almacen_secret")
 ALMACEN_SPOOL_BUCKET = os.getenv("ALMACEN_SPOOL_BUCKET", "deasy-spool")
 # Directorio de trabajo del firmante: aqui aterrizan el PDF de entrada, el limpio, el firmado y el
 # PKCS#12 desempaquetado. NO puede vivir bajo `/tmp`: es un directorio de escritura publica y la raiz
@@ -134,7 +134,7 @@ PERSON_ATTRIBUTE_OID_MAPS = (
 )
 
 
-def create_minio_client() -> Minio:
+def create_almacen_client() -> Minio:
     endpoint = ALMACEN_ENDPOINT.replace("http://", "").replace("https://", "")
     return Minio(
         endpoint,
@@ -144,7 +144,7 @@ def create_minio_client() -> Minio:
     )
 
 
-ALMACEN_CLIENT = create_minio_client()
+ALMACEN_CLIENT = create_almacen_client()
 
 
 @dataclass
@@ -156,7 +156,7 @@ class JobPaths:
 
 
 def validate_payload(data: dict[str, Any]) -> str | None:
-    required = ["signType", "minioPdfPath", "stampText", "finalPath", "minioCertPath", "certPassword"]
+    required = ["signType", "almacenPdfPath", "stampText", "finalPath", "almacenCertPath", "certPassword"]
     for field_name in required:
         value = data.get(field_name)
         if value is None or value == "":
@@ -178,11 +178,11 @@ def validate_payload(data: dict[str, Any]) -> str | None:
 
 
 def validate_validation_payload(data: dict[str, Any]) -> str | None:
-    minio_pdf_path = str(data.get("minioPdfPath") or "").strip()
-    if not minio_pdf_path:
-        return "Missing required field: minioPdfPath"
-    if not minio_pdf_path.lower().endswith(".pdf"):
-        return "minioPdfPath must reference a PDF file"
+    almacen_pdf_path = str(data.get("almacenPdfPath") or "").strip()
+    if not almacen_pdf_path:
+        return "Missing required field: almacenPdfPath"
+    if not almacen_pdf_path.lower().endswith(".pdf"):
+        return "almacenPdfPath must reference a PDF file"
     return None
 
 
@@ -218,13 +218,13 @@ def ensure_parent(path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
 
 
-def download_from_minio(bucket: str | None, object_name: str, target_path: Path):
+def download_from_almacen(bucket: str | None, object_name: str, target_path: Path):
     resolved_bucket = bucket or ALMACEN_SPOOL_BUCKET
     ensure_parent(target_path)
     ALMACEN_CLIENT.fget_object(resolved_bucket, object_name, str(target_path))
 
 
-def upload_to_minio(bucket: str | None, object_name: str, source_path: Path):
+def upload_to_almacen(bucket: str | None, object_name: str, source_path: Path):
     resolved_bucket = bucket or ALMACEN_SPOOL_BUCKET
     ALMACEN_CLIENT.fput_object(resolved_bucket, object_name, str(source_path), content_type="application/pdf")
 
@@ -945,7 +945,7 @@ def generate_stamp_image(data: dict[str, Any], output_path: Path):
         str(SIGMAKER_DIR / "cli.mjs"),
         str(output_path),
         data["stampText"].strip(),
-        data.get("finalPath") or data["minioPdfPath"],
+        data.get("finalPath") or data["almacenPdfPath"],
         str(SIGMAKER_DIR / "puce_logo.png"),
     ]
     subprocess.run(command, check=True, capture_output=True, text=True)
@@ -1317,8 +1317,8 @@ def process_validation_job(data: dict[str, Any]) -> dict[str, Any]:
         source_pdf = temp_dir / "input.pdf"
 
         try:
-            logger.info("[%s] Descargando PDF para validacion %s", job_id, data["minioPdfPath"])
-            download_from_minio(data.get("minioBucket"), data["minioPdfPath"], source_pdf)
+            logger.info("[%s] Descargando PDF para validacion %s", job_id, data["almacenPdfPath"])
+            download_from_almacen(data.get("almacenBucket"), data["almacenPdfPath"], source_pdf)
 
             with source_pdf.open("rb") as input_stream:
                 reader = PdfFileReader(input_stream, strict=False)
@@ -1344,7 +1344,7 @@ def process_validation_job(data: dict[str, Any]) -> dict[str, Any]:
                 "message": "Documento validado correctamente.",
                 "jobId": job_id,
                 "document": {
-                    "sourcePath": data["minioPdfPath"],
+                    "sourcePath": data["almacenPdfPath"],
                     "hasSignatures": summary["hasSignatures"],
                 },
                 "summary": summary,
@@ -1396,11 +1396,11 @@ def process_job(data: dict[str, Any]) -> dict[str, Any]:
         )
 
         try:
-            logger.info("[%s] Descargando PDF %s", job_id, data["minioPdfPath"])
-            download_from_minio(data.get("minioBucket"), data["minioPdfPath"], paths.source_pdf)
+            logger.info("[%s] Descargando PDF %s", job_id, data["almacenPdfPath"])
+            download_from_almacen(data.get("almacenBucket"), data["almacenPdfPath"], paths.source_pdf)
 
-            logger.info("[%s] Descargando certificado %s", job_id, data["minioCertPath"])
-            download_from_minio(data.get("minioCertBucket"), data["minioCertPath"], paths.cert_file)
+            logger.info("[%s] Descargando certificado %s", job_id, data["almacenCertPath"])
+            download_from_almacen(data.get("almacenCertBucket"), data["almacenCertPath"], paths.cert_file)
             certificate_info = load_certificate_info(paths.cert_file, data["certPassword"])
 
             logger.info("[%s] Normalizando PDF", job_id)
@@ -1409,17 +1409,17 @@ def process_job(data: dict[str, Any]) -> dict[str, Any]:
             signing_info = sign_pdf_document(data, paths, certificate_info)
             validation_info = validate_signed_pdf_with_policy(paths.signed_pdf, data)
 
-            upload_to_minio(data.get("minioBucket"), data["minioPdfPath"], paths.signed_pdf)
-            final_path = data.get("finalPath") or data["minioPdfPath"]
-            if final_path != data["minioPdfPath"]:
-                upload_to_minio(data.get("minioBucket"), final_path, paths.signed_pdf)
+            upload_to_almacen(data.get("almacenBucket"), data["almacenPdfPath"], paths.signed_pdf)
+            final_path = data.get("finalPath") or data["almacenPdfPath"]
+            if final_path != data["almacenPdfPath"]:
+                upload_to_almacen(data.get("almacenBucket"), final_path, paths.signed_pdf)
 
             return {
                 "status": "success",
                 "message": "Documento firmado correctamente.",
                 "jobId": job_id,
                 "signedPath": final_path,
-                "workingPath": data["minioPdfPath"],
+                "workingPath": data["almacenPdfPath"],
                 "finalPath": final_path,
                 "certificate": certificate_info,
                 "signature": signing_info,

@@ -1,5 +1,5 @@
 // Recepcion de la foto de perfil. El fichero aterriza en un temporal del sistema y
-// de ahi sube a MinIO (profilePhotoStorage): no queda estado en el disco del backend.
+// de ahi sube al almacén (profilePhotoStorage): no queda estado en el disco del backend.
 // Mismo patron que los certificados P12 y los PDF del dossier.
 //
 // El filtro por mimetype solo descarta lo evidente; el formato real se decide luego

@@ -8,7 +8,7 @@
   "crear_ok": {
     "status": 200,
     "body": {
-      "__notice": "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.",
+      "__notice": "La plantilla de documento fue cargada correctamente en el almacén y registrada en el sistema.",
       "available_formats": {
         "jinja2": {
           "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/jinja2/"
@@ -40,7 +40,7 @@
   "editar_ok": {
     "status": 200,
     "body": {
-      "__notice": "La plantilla de documento fue actualizada y cargada correctamente en MinIO.",
+      "__notice": "La plantilla de documento fue actualizada y cargada correctamente en el almacén.",
       "available_formats": {
         "jinja2": {
           "entry_object_key": "System/draft_zzz-char-draft/1.0.0/template/jinja2/"
@@ -115,7 +115,7 @@
   "routed_sin_flujo_ok": {
     "status": 200,
     "body": {
-      "__notice": "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema.",
+      "__notice": "La plantilla de documento fue cargada correctamente en el almacén y registrada en el sistema.",
       "available_formats": {
         "jinja2": {
           "entry_object_key": "System/draft_zzz-char-routed/1.0.0/template/jinja2/"

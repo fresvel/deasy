@@ -17,12 +17,12 @@
 // escribe la borra en el `after` — pero su hermano NO lo es, así que no los intercales.
 //
 // LO QUE NO SE CUBRE, y por qué (para que el siguiente sepa dónde va a ciegas):
-//   · La firma REAL (camino feliz de `requestSign` / `batch/start`) exige un PKCS#12 en MinIO y el
+//   · La firma REAL (camino feliz de `requestSign` / `batch/start`) exige un PKCS#12 en el almacén y el
 //     microservicio Python por RabbitMQ. El bootstrap NO siembra certificados (`person_certificates`
 //     está vacía), así que `buildSignContext` siempre corta en "Certificado no encontrado".
-//     Consecuencia: los guards POSTERIORES a la búsqueda del certificado —`statMinioObject` sobre el
+//     Consecuencia: los guards POSTERIORES a la búsqueda del certificado —`statAlmacenObject` sobre el
 //     certificado y "Modo de firma inválido"— NO tienen golden.
-//   · `validateSignedDocument` más allá del 400: subiría al spool de MinIO y llamaría al firmante.
+//   · `validateSignedDocument` más allá del 400: subiría al spool del almacén y llamaría al firmante.
 //   · El ZIP de `downloadSignBatch` con documentos reales.
 //
 // ✅ DEFECTOS 1 y 2, ARREGLADOS EL 2026-08-09 junto con el corte de la fase D. Se deja escrito
@@ -32,7 +32,7 @@
 //      errores de negocio llevan `statusCode` (`errors/HttpError.js`) y el controller los honra:
 //      400 para lo que falta, 404 para un certificado que no es tuyo (no se distingue de uno
 //      inexistente, a propósito). El diff de `sign_sin_*` y `sign_certificado_inexistente`
-//      (500 -> 400/404) ES la prueba del arreglo. Lo que NO lleva `statusCode` —MinIO o PostgreSQL
+//      (500 -> 400/404) ES la prueba del arreglo. Lo que NO lleva `statusCode` —el almacén o PostgreSQL
 //      caídos— sigue saliendo 500, que es lo que es.
 //   2. El `fileFilter` de multer rechazaba con un `Error` pelado que nadie capturaba: Express
 //      contestaba con su página HTML por defecto **y el stack trace completo**, revelando rutas del
@@ -353,7 +353,7 @@ test("GET /sign/download de una ruta documental ajena -> 403", async () => {
 });
 
 // Contrato sutil y fácil de romper al extraer `PdfSigningService`: el prefijo `users/<cédula>/` es
-// un ATAJO que se salta por completo la consulta de propiedad y va derecho a MinIO. Por eso una
+// un ATAJO que se salta por completo la consulta de propiedad y va derecho al almacén. Por eso una
 // ruta propia inexistente da 404 y una ajena inexistente da 403.
 test("GET /sign/download de una ruta propia inexistente -> 404 (el prefijo users/<cédula>/ salta el guard)", async () => {
   const token = await tokenFor("usuario");

@@ -1,7 +1,7 @@
 // Tests de `informe-general/src/make.sh` — en concreto de la BUSQUEDA del fichero de datos.
 //
 // ⚠️ ESTE FICHERO VIVE FUERA DE `informe-general/` A PROPOSITO, y no es estetica.
-// `publishBaseSeedAssets` sube a MinIO el arbol COMPLETO de `BASE_SEED_DIR` (dos veces: al catalogo
+// `publishBaseSeedAssets` sube al almacén el arbol COMPLETO de `BASE_SEED_DIR` (dos veces: al catalogo
 // `Seeds/` y, para todo lo que cuelga de `src/`, al artifact instanciado). Un `*.test.js` dentro de
 // la semilla acabaria publicado en el bucket y, si cayera bajo `src/`, dentro del ZIP de TODAS las
 // plantillas que descargue el usuario. `seeds/` no lo enumera nadie: `BASE_SEED_DIR` apunta a la

@@ -3,7 +3,7 @@
 // Por qué existe (sub-paso 5 de `docs/planes/plan-maestro-2026-08.md` §0.8). El endpoint
 // `GET /admin/sql/ediciones/:id/schema` es lo único que rellena el editor cuando se reabre
 // una plantilla (`useAdminDraftArtifactFlow.js:119`, y `:143` para «crear a partir de»). Reconstruía
-// `fill_workflow`/`signature_workflow` desde el `meta.yaml` de MinIO; desde este sub-paso los
+// `fill_workflow`/`signature_workflow` desde el `meta.yaml` del almacén; desde este sub-paso los
 // reconstruye desde las filas de la base. **El contrato de salida no cambia**: el frontend está
 // fuera del alcance de esta tanda.
 //
@@ -230,7 +230,7 @@ test("relectura · el flujo de FIRMA vuelve equivalente a lo autorado", async ()
   assert.deepEqual(res.body?.signature_workflow, esperado, "el flujo de firma releído debe ser el autorado");
 });
 
-// Y además se congela la respuesta entera (sin `fields`, que es el schema.json de MinIO y no es
+// Y además se congela la respuesta entera (sin `fields`, que es el schema.json del almacén y no es
 // asunto de este sub-paso): el día que alguien añada o quite una clave del contrato del editor, el
 // diff del golden lo dice aunque la equivalencia de arriba siga cumpliéndose.
 test("relectura · huella del contrato que consume el editor", async () => {
@@ -243,7 +243,7 @@ test("relectura · huella del contrato que consume el editor", async () => {
 });
 
 // La versión hereda el flujo del padre. Lo escribió el sub-paso 5 apoyándose en el tercer escalón
-// del lector (subir por `parent_version_id`), porque `createTemplateArtifactVersion` copiaba MinIO
+// del lector (subir por `parent_version_id`), porque `createTemplateArtifactVersion` copiaba el almacén
 // en binario sin crear una sola fila; desde el sub-paso 6 el versionado COPIA LAS FILAS y la hija
 // entra por su propio portador. **La aserción no cambia, y ese es el punto**: lo que se exige es la
 // propiedad —la versión enseña el flujo del padre—, no por qué escalón llega. Que siga verde con el

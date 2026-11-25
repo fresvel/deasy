@@ -88,11 +88,11 @@ class RutasHttp(unittest.TestCase):
         self.assertEqual(manejador.respuestas, [500])
 
     def test_validate_delega_en_process_validation_job(self):
-        manejador = ManejadorFalso("/validate", b'{"minioPdfPath":"a.pdf"}')
+        manejador = ManejadorFalso("/validate", b'{"almacenPdfPath":"a.pdf"}')
         with mock.patch.object(app, "process_validation_job",
                                return_value={"status": "success"}) as validar:
             manejador.do_POST()
-        validar.assert_called_once_with({"minioPdfPath": "a.pdf"})
+        validar.assert_called_once_with({"almacenPdfPath": "a.pdf"})
         self.assertEqual(manejador.respuestas, [200])
 
 
@@ -102,7 +102,7 @@ class InvocacionDeSigmaker(unittest.TestCase):
 
     def test_orden_de_los_argumentos(self):
         datos = {"stampText": "  Firmado por ANA  ", "finalPath": "final/a.pdf",
-                 "minioPdfPath": "spool/a.pdf"}
+                 "almacenPdfPath": "spool/a.pdf"}
         with mock.patch.object(app.subprocess, "run") as ejecutar:
             app.generate_stamp_image(datos, "/tmp/stamp.png")
         orden = ejecutar.call_args[0][0]
@@ -115,7 +115,7 @@ class InvocacionDeSigmaker(unittest.TestCase):
         self.assertTrue(ejecutar.call_args[1]["check"])
 
     def test_sin_finalpath_el_qr_apunta_al_pdf_de_trabajo(self):
-        datos = {"stampText": "X", "minioPdfPath": "spool/a.pdf"}
+        datos = {"stampText": "X", "almacenPdfPath": "spool/a.pdf"}
         with mock.patch.object(app.subprocess, "run") as ejecutar:
             app.generate_stamp_image(datos, "/tmp/stamp.png")
         self.assertEqual(ejecutar.call_args[0][0][4], "spool/a.pdf")
@@ -181,7 +181,7 @@ class EnrutadoDeMensajesDeRabbit(unittest.TestCase):
         self.canal.basic_ack.assert_called_once_with(delivery_tag=7)
 
     def test_sin_response_queue_no_se_hace_el_trabajo(self):
-        cuerpo = json.dumps({"minioPdfPath": "a.pdf"}).encode()
+        cuerpo = json.dumps({"almacenPdfPath": "a.pdf"}).encode()
         app.on_message(self.canal, self._entrega(app.SIGN_REQUEST_QUEUE), None, cuerpo)
         self.firmar.assert_not_called()
         self.publicar.assert_not_called()

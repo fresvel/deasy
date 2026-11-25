@@ -95,7 +95,7 @@ const main = async () => {
 
     if (targets.has("storage")) {
       console.log("→ Purgando buckets del almacén...");
-      await lib.resetMinio();
+      await lib.resetAlmacen();
     }
 
     console.log("");

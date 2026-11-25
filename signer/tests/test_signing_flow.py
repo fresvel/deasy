@@ -59,7 +59,7 @@ class ColocacionDelSelloYPoliticaPades(unittest.TestCase):
             "signType": "coordinates",
             "certPassword": "secreto",
             "stampText": "Firmado por ANA",
-            "minioPdfPath": "spool/a.pdf",
+            "almacenPdfPath": "spool/a.pdf",
             "coordinates": {"page": 1, "x": 100, "y": 300},
         }
         base.update(extra)
@@ -249,8 +249,8 @@ class ContratoDeRespuestaDelJobDeFirma(unittest.TestCase):
     """Las claves que lee `backend/controllers/sign/sign_controller.js`."""
 
     def setUp(self):
-        self.descargar = mock.patch.object(app, "download_from_minio").start()
-        self.subir = mock.patch.object(app, "upload_to_minio").start()
+        self.descargar = mock.patch.object(app, "download_from_almacen").start()
+        self.subir = mock.patch.object(app, "upload_to_almacen").start()
         mock.patch.object(app, "clean_pdf_if_needed").start()
         mock.patch.object(app, "load_certificate_info",
                           return_value={"common_name": "ANA PEREZ"}).start()
@@ -266,10 +266,10 @@ class ContratoDeRespuestaDelJobDeFirma(unittest.TestCase):
 
         self.payload = {
             "signType": "coordinates",
-            "minioPdfPath": "spool/a.pdf",
+            "almacenPdfPath": "spool/a.pdf",
             "stampText": "Firmado",
             "finalPath": "spool/a.pdf",
-            "minioCertPath": "certs/a.p12",
+            "almacenCertPath": "certs/a.p12",
             "certPassword": "secreto",
             "coordinates": {"page": 1, "x": 1, "y": 1},
         }
@@ -291,7 +291,7 @@ class ContratoDeRespuestaDelJobDeFirma(unittest.TestCase):
     def test_un_payload_invalido_no_llega_a_descargar_nada(self):
         resultado = app.process_job({"signType": "coordinates"})
         self.assertEqual(resultado["status"], "error")
-        self.assertEqual(resultado["message"], "Missing required field: minioPdfPath")
+        self.assertEqual(resultado["message"], "Missing required field: almacenPdfPath")
         self.assertNotIn("jobId", resultado)
         self.descargar.assert_not_called()
 
@@ -329,7 +329,7 @@ class ContratoDeRespuestaDelJobDeValidacion(unittest.TestCase):
         def descargar(_bucket, _objeto, destino):
             destino.write_bytes(b"%PDF-1.4 falso")
 
-        mock.patch.object(app, "download_from_minio", side_effect=descargar).start()
+        mock.patch.object(app, "download_from_almacen", side_effect=descargar).start()
         mock.patch.object(app, "build_validation_context", return_value=None).start()
         self.lector = mock.patch.object(app, "PdfFileReader").start()
         self.addCleanup(mock.patch.stopall)
@@ -343,7 +343,7 @@ class ContratoDeRespuestaDelJobDeValidacion(unittest.TestCase):
                    "valid": True, "signerName": "ANA PEREZ", "signerCedula": "1234567890"}
         with self._con_entradas([entrada]):
             resultado = app.process_validation_job(
-                {"minioPdfPath": "spool/a.pdf", "cedula": "1234567890"})
+                {"almacenPdfPath": "spool/a.pdf", "cedula": "1234567890"})
         self.assertEqual(resultado["status"], "success")
         self.assertEqual(resultado["message"], "Documento validado correctamente.")
         self.assertTrue(resultado["document"]["hasSignatures"])
@@ -357,7 +357,7 @@ class ContratoDeRespuestaDelJobDeValidacion(unittest.TestCase):
 
     def test_documento_sin_firmas_avisa_pero_no_falla(self):
         self.lector.return_value.embedded_signatures = []
-        resultado = app.process_validation_job({"minioPdfPath": "spool/a.pdf"})
+        resultado = app.process_validation_job({"almacenPdfPath": "spool/a.pdf"})
         self.assertEqual(resultado["status"], "success")
         self.assertFalse(resultado["document"]["hasSignatures"])
         self.assertEqual(resultado["warnings"], ["El documento no contiene firmas embebidas."])
@@ -366,7 +366,7 @@ class ContratoDeRespuestaDelJobDeValidacion(unittest.TestCase):
         entrada = {"index": 1, "entryType": "signature", "signerCedula": "0000000000"}
         with self._con_entradas([entrada]):
             resultado = app.process_validation_job(
-                {"minioPdfPath": "spool/a.pdf", "cedula": "1234567890"})
+                {"almacenPdfPath": "spool/a.pdf", "cedula": "1234567890"})
         self.assertFalse(resultado["matchByCedula"]["found"])
         self.assertIn("No se encontraron firmas que coincidan con la cédula consultada.",
                       resultado["warnings"])
@@ -377,27 +377,27 @@ class ContratoDeRespuestaDelJobDeValidacion(unittest.TestCase):
             {"index": 2, "entryType": "timestamp", "fieldName": "ts_1"},
         ]
         with self._con_entradas(entradas):
-            resultado = app.process_validation_job({"minioPdfPath": "spool/a.pdf"})
+            resultado = app.process_validation_job({"almacenPdfPath": "spool/a.pdf"})
         self.assertEqual(len(resultado["signatures"]), 1)
         self.assertEqual(len(resultado["timestamps"]), 1)
         self.assertEqual(resultado["signatures"][0]["timestampFieldName"], "ts_1")
         self.assertEqual(resultado["summary"]["timestampCount"], 1)
 
     def test_payload_invalido(self):
-        resultado = app.process_validation_job({"minioPdfPath": "spool/a.docx"})
+        resultado = app.process_validation_job({"almacenPdfPath": "spool/a.docx"})
         self.assertEqual(resultado, {"status": "error",
-                                     "message": "minioPdfPath must reference a PDF file"})
+                                     "message": "almacenPdfPath must reference a PDF file"})
 
     def test_un_fallo_de_descarga_se_devuelve_como_error_con_jobid(self):
-        with mock.patch.object(app, "download_from_minio", side_effect=RuntimeError("no está")):
-            resultado = app.process_validation_job({"minioPdfPath": "spool/a.pdf"})
+        with mock.patch.object(app, "download_from_almacen", side_effect=RuntimeError("no está")):
+            resultado = app.process_validation_job({"almacenPdfPath": "spool/a.pdf"})
         self.assertEqual(resultado["status"], "error")
         self.assertEqual(resultado["message"], "no está")
         self.assertIn("jobId", resultado)
 
     def test_la_cedula_vacia_se_normaliza_a_ausente(self):
         self.lector.return_value.embedded_signatures = []
-        resultado = app.process_validation_job({"minioPdfPath": "spool/a.pdf", "cedula": "   "})
+        resultado = app.process_validation_job({"almacenPdfPath": "spool/a.pdf", "cedula": "   "})
         self.assertIsNone(resultado["matchByCedula"]["requestedCedula"])
 
 

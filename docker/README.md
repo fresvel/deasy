@@ -56,7 +56,7 @@ Mapa actual:
 - `prod` -> proyecto `deasy-prod`
 - `ingress` -> proyecto `deasy-ingress`
 
-Con esto, PostgreSQL, RabbitMQ, MinIO, uploads y storage quedan
+Con esto, PostgreSQL, RabbitMQ, el almacén, uploads y storage quedan
 aislados por stack aunque los ambientes convivan en el mismo host.
 
 ## Matriz de puertos y redes
@@ -72,13 +72,13 @@ adicional administrada por `ingress` para la entrada pública:
 Puertos de referencia:
 
 - `dev`: proxy HTTP `8088`, proxy HTTPS `8443`, PostgreSQL `5432`, RabbitMQ AMQP
-  `5672`, RabbitMQ UI `15672`, MinIO API `9000`, MinIO Console `9001`, signer
+  `5672`, RabbitMQ UI `15672`, almacén (API S3) `9000`, signer
   `4000`. El chat en tiempo real usa WebSockets (Socket.IO) sobre el mismo puerto
   HTTP del backend, sin puerto adicional.
-- `qa`: PostgreSQL `15432`, RabbitMQ AMQP `15672`, RabbitMQ UI `15673`, MinIO API
-  `9100`, MinIO Console `9101`, signer `14000`
-- `prod`: PostgreSQL `25432`, RabbitMQ AMQP `25672`, RabbitMQ UI `25673`, MinIO
-  API `9200`, MinIO Console `9201`, signer `24000`
+- `qa`: PostgreSQL `15432`, RabbitMQ AMQP `15672`, RabbitMQ UI `15673`, almacén
+  (API S3) `9100`, signer `14000`
+- `prod`: PostgreSQL `25432`, RabbitMQ AMQP `25672`, RabbitMQ UI `25673`, almacén
+  (API S3) `9200`, signer `24000`
 - `ingress`: HTTP `80`, HTTPS `443`
 
 ## Uso previsto por ambiente
@@ -294,7 +294,7 @@ Wrappers actuales:
 - `scripts/reset-db.sh`: ejecuta el script de reset (resetea el esquema
   PostgreSQL) dentro del contenedor `backend` por ambiente.
 - `scripts/reset-system.sh`: regresa el sistema al estado base (vacia esquema
-  PostgreSQL + buckets MinIO) para arrancar el bootstrap; recicla los servicios
+  PostgreSQL + buckets del almacén) para arrancar el bootstrap; recicla los servicios
   de app. Flags `--keep-db`, `--keep-almacen`, `--rebuild`, `--no-restart`.
 
 El mecanismo de migraciones incrementales fue retirado con la
@@ -370,7 +370,7 @@ Notas operativas:
 
 - `RUNTIME_ENV_FILE` debe contener el archivo completo del ambiente, fuera del
   repositorio, incluyendo como minimo `ORIGIN1`, `ORIGIN2`, `JWT_SECRET`,
-  `JWT_REFRESH`, usuarios reales y passwords reales de PostgreSQL y MinIO.
+  `JWT_REFRESH`, usuarios reales y passwords reales de PostgreSQL y del almacén.
 - `DEPLOY_PATH` debe ser distinto por environment en GitHub:
   - `qa` -> `/srv/deasy-qa`
   - `prod` -> `/srv/deasy-prod`

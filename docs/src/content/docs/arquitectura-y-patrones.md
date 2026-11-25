@@ -54,7 +54,7 @@ independientes** — `frontend/` con pnpm, `backend/` con npm, `docs/` con pnpm 
 
 **Monolito: no del todo.** El sistema se despliega como **siete contenedores**, y uno de ellos —el
 firmante— es un servicio de verdad: proceso propio, *runtime* propio (Python frente a Node) y
-comunicación **asíncrona por RabbitMQ y MinIO**, no por llamada a función.
+comunicación **asíncrona por RabbitMQ y el almacén**, no por llamada a función.
 
 :::tip[La etiqueta precisa]
 Deasy es un **monorepo** que contiene un **monolito modular** (el backend Express, un despliegue con
@@ -79,7 +79,7 @@ Un sistema real nunca «es» una arquitectura: aplica estilos distintos en plano
 | **En capas** *(layered)* | `routes` → `controllers` → `services` → `config/postgres` | Cero violaciones medidas: 0 saltos de capa, 0 `req`/`res` filtrados a servicios |
 | **Monolito modular** | `services/` en 15 subdominios | 67 ficheros · 20 787 líneas |
 | **Cliente–servidor** | Vue 3 contra `/deasy/v1` tras Nginx | 163 endpoints |
-| **Dirigida por eventos** | Firma (RabbitMQ + MinIO), tiempo real (Socket.IO) | `rabbitmq_http.js`, `RealtimeGateway.js` |
+| **Dirigida por eventos** | Firma (RabbitMQ + el almacén), tiempo real (Socket.IO) | `rabbitmq_http.js`, `RealtimeGateway.js` |
 | **Rebanada vertical** *(feature-based)* | `modules/<dominio>/` en el frontend | 7 módulos · 148 ficheros · 46 062 líneas |
 | **Dirigida por metadatos** | El CRUD de administración | `sqlTables.js` (1 022 L) + un motor único |
 

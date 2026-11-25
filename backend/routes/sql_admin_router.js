@@ -75,7 +75,7 @@ const router = new Router();
 // 30 MB por fichero es el mismo tope que usa `uploadDeliverable` en user_router.
 //
 // Y `fileFilter`, que ANTES NO EXISTÍA (§0.4 S3). Sin él la extensión que escribe el cliente
-// decidía el nombre del objeto en MinIO: medido, un `payload.sh` por el campo `pdf_file` daba 200 y
+// decidía el nombre del objeto en el almacén: medido, un `payload.sh` por el campo `pdf_file` daba 200 y
 // acababa en `template/pdf/payload.sh` — y el ZIP de descarga le pone modo 0755. La política vive en
 // `services/admin/templates/artifacts.js` porque es del dominio de plantillas y así tiene test
 // unitario; aquí sólo queda el enganche, que es transporte.

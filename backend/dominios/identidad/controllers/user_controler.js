@@ -45,11 +45,11 @@ import { sendEmailVerification } from "../../../services/mail/sendEmailVerificat
 import { generateUniqueToken } from "../../../utils/tokenGenerator.js";
 import {
   ensureBucketExists,
-  uploadFileToMinio,
-  statMinioObject,
-  getMinioObjectStream,
-  removeMinioObject
-} from "../../../services/storage/minio_service.js";
+  uploadFileToAlmacen,
+  statAlmacenObject,
+  getAlmacenObjectStream,
+  removeAlmacenObject
+} from "../../../services/storage/almacen_service.js";
 import { transitionDocumentVersionState } from "../../../services/documents/DocumentStateService.js";
 import { parseAvailableFormats } from "../../../services/admin/templates/artifacts.js";
 import {
@@ -68,7 +68,7 @@ import {
   ALMACEN_TEMPLATES_BUCKET,
   resolveStoredDocumentObject,
   collectDeliverableTemplateResources,
-  writeMinioObjectToFile,
+  writeAlmacenObjectToFile,
   createZipArchive
 } from "./user_controler.storage.js";
 import {
@@ -700,12 +700,12 @@ export const uploadDeliverablePdf = async (req, res) => {
       extension,
       minor
     });
-    const minioObjectName = `${ALMACEN_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
+    const almacenObjectName = `${ALMACEN_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
 
     // Fuera de la transacción a propósito: una transacción de base de datos no deshace un objeto ya
-    // escrito en MinIO, así que abarcarla sería prometer una atomicidad que no existe.
+    // escrito en el almacén, así que abarcarla sería prometer una atomicidad que no existe.
     await ensureBucketExists(ALMACEN_DOCUMENTS_BUCKET);
-    await uploadFileToMinio(ALMACEN_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
+    await uploadFileToAlmacen(ALMACEN_DOCUMENTS_BUCKET, almacenObjectName, uploadedFile.path, {
       "Content-Type": uploadedFile.mimetype || "application/octet-stream",
       "Original-Name": originalName
     });
@@ -772,7 +772,7 @@ export const downloadDeliverableTemplate = async (req, res) => {
 
     if (!resources.length) {
       return res.status(404).json({
-        message: "El entregable no tiene recursos descargables publicados en MinIO para esta plantilla."
+        message: "El entregable no tiene recursos descargables publicados en el almacén para esta plantilla."
       });
     }
 
@@ -786,7 +786,7 @@ export const downloadDeliverableTemplate = async (req, res) => {
     try {
       for (const resource of resources) {
         const destinationPath = path.join(workspace, resource.archiveName);
-        await writeMinioObjectToFile(ALMACEN_TEMPLATES_BUCKET, resource.objectName, destinationPath);
+        await writeAlmacenObjectToFile(ALMACEN_TEMPLATES_BUCKET, resource.objectName, destinationPath);
       }
       await createZipArchive(workspace, zipPath);
       res.setHeader("Content-Type", "application/zip");
@@ -861,7 +861,7 @@ export const downloadDeliverableFile = async (req, res) => {
         continue;
       }
       try {
-        const stat = await statMinioObject(resolvedObject.bucket, resolvedObject.objectName);
+        const stat = await statAlmacenObject(resolvedObject.bucket, resolvedObject.objectName);
         selectedObject = resolvedObject;
         selectedStat = stat;
         break;
@@ -876,7 +876,7 @@ export const downloadDeliverableFile = async (req, res) => {
       return res.status(404).json({ message });
     }
 
-    const stream = await getMinioObjectStream(selectedObject.bucket, selectedObject.objectName);
+    const stream = await getAlmacenObjectStream(selectedObject.bucket, selectedObject.objectName);
     const fileName = path.basename(selectedObject.objectName);
     const contentType =
       selectedStat?.metaData?.["content-type"]
@@ -1160,10 +1160,10 @@ export const uploadDeliverableAttachment = async (req, res) => {
       originalName,
       extension
     });
-    const minioObjectName = `${ALMACEN_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
+    const almacenObjectName = `${ALMACEN_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
 
     await ensureBucketExists(ALMACEN_DOCUMENTS_BUCKET);
-    await uploadFileToMinio(ALMACEN_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
+    await uploadFileToAlmacen(ALMACEN_DOCUMENTS_BUCKET, almacenObjectName, uploadedFile.path, {
       "Content-Type": uploadedFile.mimetype || "application/octet-stream",
       "Original-Name": originalName
     });
@@ -1237,8 +1237,8 @@ export const deleteDeliverableAttachment = async (req, res) => {
 
     const resolved = resolveStoredDocumentObject(attachment.file_path);
     if (resolved) {
-      await removeMinioObject(resolved.bucket, resolved.objectName).catch((err) => {
-        console.warn("No se pudo eliminar el objeto del anexo en MinIO:", err?.message);
+      await removeAlmacenObject(resolved.bucket, resolved.objectName).catch((err) => {
+        console.warn("No se pudo eliminar el objeto del anexo en el almacén:", err?.message);
       });
     }
 
@@ -1281,12 +1281,12 @@ export const downloadDeliverableAttachment = async (req, res) => {
     if (!resolved) {
       return res.status(404).json({ message: "No se pudo resolver la ruta del anexo." });
     }
-    const stat = await statMinioObject(resolved.bucket, resolved.objectName).catch(() => null);
+    const stat = await statAlmacenObject(resolved.bucket, resolved.objectName).catch(() => null);
     if (!stat) {
       return res.status(404).json({ message: "El archivo del anexo no se encontró en almacenamiento." });
     }
 
-    const stream = await getMinioObjectStream(resolved.bucket, resolved.objectName);
+    const stream = await getAlmacenObjectStream(resolved.bucket, resolved.objectName);
     const fileName = attachment.file_name || path.basename(resolved.objectName);
     const contentType = attachment.mime_type
       || stat?.metaData?.["content-type"]

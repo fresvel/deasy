@@ -370,7 +370,7 @@ Existen definiciones antiguas sin importadores runtime o sin rutas montadas:
 - empresa: `tareas_model`, `programa_model`, `materias`;
 - informes: `proceso_model`, `webtemplate_model`, `informe_model`, `templates`.
 
-Los conceptos principales ya estan cubiertos por MariaDB, MinIO y los servicios documentales actuales. Estos archivos deben eliminarse despues de retirar el middleware/controlador legacy que aun importa `Template` o `Informe`.
+Los conceptos principales ya estan cubiertos por MariaDB, el almacén y los servicios documentales actuales. Estos archivos deben eliminarse despues de retirar el middleware/controlador legacy que aun importa `Template` o `Informe`.
 
 ## Campos tecnicos que no deben eliminarse
 

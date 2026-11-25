@@ -2,10 +2,10 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import {
   ensureBucketExists,
-  getMinioObjectStream,
-  statMinioObject,
-  uploadFileToMinio,
-} from "../../../services/storage/minio_service.js";
+  getAlmacenObjectStream,
+  statAlmacenObject,
+  uploadFileToAlmacen,
+} from "../../../services/storage/almacen_service.js";
 import * as store from "../datos/chatStore.js";
 import { logChatInfo } from "./chat_logging.js";
 
@@ -64,7 +64,7 @@ export default class ChatAttachmentService {
         originalName: file.originalname,
       });
 
-      await uploadFileToMinio(ALMACEN_CHAT_BUCKET, objectName, file.path, {
+      await uploadFileToAlmacen(ALMACEN_CHAT_BUCKET, objectName, file.path, {
         "Content-Type": file.mimetype || "application/octet-stream",
         "Original-Name": String(file.originalname || path.basename(objectName)),
       });
@@ -111,8 +111,8 @@ export default class ChatAttachmentService {
     }
 
     const attachment = messageAttachments[safeIndex];
-    const stat = await statMinioObject(ALMACEN_CHAT_BUCKET, attachment.path);
-    const stream = await getMinioObjectStream(ALMACEN_CHAT_BUCKET, attachment.path);
+    const stat = await statAlmacenObject(ALMACEN_CHAT_BUCKET, attachment.path);
+    const stream = await getAlmacenObjectStream(ALMACEN_CHAT_BUCKET, attachment.path);
 
     return {
       attachment,
