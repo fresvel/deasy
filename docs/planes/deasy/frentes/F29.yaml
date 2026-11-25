@@ -9,3 +9,6 @@ fases:
   P2:
     titulo: Qué decide el dueño
     etapa: pregunta
+  P3:
+    titulo: Versity pasa a ser el almacén
+    etapa: cambio
