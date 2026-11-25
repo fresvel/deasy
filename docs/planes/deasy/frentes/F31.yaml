@@ -1,0 +1,8 @@
+id: F31
+titulo: El certificado público se renueva solo
+ciclo: correctivo
+abierto: '2026-11-25'
+fases:
+  P1:
+    titulo: Renovación del certificado del ingress
+    etapa: cambio

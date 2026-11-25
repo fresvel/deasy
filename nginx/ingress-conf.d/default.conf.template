@@ -21,7 +21,8 @@ server {
 }
 
 server {
-  listen 443 ssl http2 default_server;
+  listen 443 ssl default_server;
+  http2 on;
   server_name _;
 
   resolver 127.0.0.11 ipv6=off valid=10s;
@@ -48,7 +49,8 @@ server {
 }
 
 server {
-  listen 443 ssl http2;
+  listen 443 ssl;
+  http2 on;
   server_name ${PROD_SERVER_NAMES};
 
   resolver 127.0.0.11 ipv6=off valid=10s;
@@ -101,7 +103,8 @@ server {
 }
 
 server {
-  listen 443 ssl http2;
+  listen 443 ssl;
+  http2 on;
   server_name ${QA_SERVER_NAME};
 
   resolver 127.0.0.11 ipv6=off valid=10s;
