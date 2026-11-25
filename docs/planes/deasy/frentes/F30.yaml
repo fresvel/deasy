@@ -1,0 +1,8 @@
+id: F30
+titulo: Los textos legales vienen precargados como borrador
+ciclo: incremental
+abierto: '2026-11-25'
+fases:
+  P1:
+    titulo: La instalación deja un borrador de cada texto
+    etapa: cambio

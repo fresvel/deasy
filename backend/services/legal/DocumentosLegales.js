@@ -218,6 +218,36 @@ export default class DocumentosLegales {
   }
 
   /**
+   * PRECARGA: un borrador por cada clase que todavía no tiene NINGUNA fila.
+   *
+   * Es lo que deja la instalación para que quien administra no parta de una página en blanco. La
+   * regla es «ninguna fila», no «ninguna publicada»: si la clase ya tiene un borrador, uno
+   * publicado o uno retirado, alguien ya decidió algo sobre ella y esto no opina. Por eso se puede
+   * llamar las veces que haga falta.
+   *
+   * ⚠️ Va DESPUÉS de `adoptarDelArchivo`, nunca antes: aquella sólo indexa el archivo cuando la
+   * tabla está vacía, así que un borrador creado primero le impediría ver un texto ya publicado.
+   *
+   * No publica. Publicar es un acto de quien administra.
+   */
+  async precargarBorradores(textos) {
+    const [filas] = await this.#pool().query(
+      `SELECT id, clase, version, contenido_hash, object_version_id, estado FROM documentos_legales`
+    );
+    const conFila = new Set((filas ?? []).map((fila) => fila.clase));
+    const hechos = [];
+    for (const { clase, version, texto } of textos) {
+      if (conFila.has(clase)) {
+        continue;
+      }
+      const borrador = await this.crearBorrador(clase, version);
+      await this.guardarBorrador(borrador.id, texto);
+      hechos.push({ clase, version });
+    }
+    return hechos;
+  }
+
+  /**
    * Guarda el texto del borrador. Cada llamada deja una versión de objeto en el almacén: **ese es el
    * historial de edición**, y por eso aquí no hay ninguna tabla de revisiones.
    */

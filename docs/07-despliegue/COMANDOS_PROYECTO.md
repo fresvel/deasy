@@ -311,6 +311,11 @@ ellos se crea de una forma que no se puede deshacer**:
 Y ademas siembra la version 1 de cada texto desde `docker/almacen/import/Legal/<clase>/v1.md`,
 **sin sobrescribir**: lo que ya existe no se vuelve a escribir nunca.
 
+Este paso ya no es la unica forma de tener los textos: desde el 2026-11-25 la instalacion (`/setup`)
+deja los dos **precargados como borrador**, desde `backend/services/legal/textos/`, y quien
+administra los publica en `/admin`. La diferencia es que este paso los deja **publicados**, y la
+instalacion no. Los ficheros de `docker/almacen/import/Legal/` son una copia de los del backend.
+
 ⚠️ **El bloqueo solo se puede pedir AL CREAR el bucket, y es irreversible.** A uno creado sin
 `--with-lock` no se le puede anadir despues, ni activando antes el versionado. Por eso el script
 **falla en vez de continuar** si el bucket de archivo ya existe y no admite bloqueo: continuar

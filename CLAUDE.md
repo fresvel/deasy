@@ -765,9 +765,17 @@ que no lo eran: con el backend de `develop` **en la misma pila** fallaban los mi
 Ahora los siembra **`npm run test:char:legal`**, que corre dentro de `test:char:fixture` **después del
 bootstrap y antes del seed**, conduce el sistema por su propia API —no escribe en el almacén a mano— y es
 **idempotente**: si el archivo ya los tiene, el bootstrap los adopta y el paso se salta. Los textos
-viven en `backend/tests/characterization/setup/legal/`, **exportados byte a byte de una pila que los
+viven en `backend/services/legal/textos/`, **exportados byte a byte de una pila que los
 tenía** para que el golden siga valiendo (`terminos_de_uso` son 2025 caracteres, que es exactamente lo
 que el golden afirma).
+
+⚠️ **Y desde el 2026-11-25 el bootstrap los deja PRECARGADOS COMO BORRADOR** (`precargarBorradores`,
+con `textosIniciales()`): uno por cada clase que no tenga **ninguna** fila. **No publica** —lo
+publicado no se corrige, y qué texto acepta la gente lo decide quien administra—, así que el
+harness sigue haciendo falta: `test:char:legal` ya no crea el borrador, **publica el precargado**.
+Va **después** de `adoptarDelArchivo` y no antes: ésta sólo indexa el archivo con la tabla vacía, y
+un borrador creado primero le taparía un texto ya publicado. Se vio en qa, donde el servidor no
+podía descargar `mc` y los textos hubo que escribirlos a mano.
 
 Y el caso que estaba en silencio ya avisa: si el archivo está vacío, el arranque dice
 **«⚠️ Archivo legal VACÍO: … el alta no registrará consentimiento alguno»** en vez de no decir nada.
