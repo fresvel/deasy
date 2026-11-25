@@ -19,7 +19,7 @@ import { getMinioObjectStream } from "../../../services/storage/minio_service.js
 import { badRequest } from "../../../errors/HttpError.js";
 import {
   assertSignContextBeforeSigning,
-  MINIO_USERS_BUCKET,
+  ALMACEN_USERS_BUCKET,
   persistSignatureWorkflowResult,
   processSinglePdfSigning,
 } from "./PdfSigningService.js";
@@ -317,7 +317,7 @@ export const buildSignedBatchArchive = async (jobId, signedResults) => {
 
     const destinationPath = path.join(workspace, entryPath);
     fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
-    await streamMinioObjectToFile(result.signedBucket || MINIO_USERS_BUCKET, result.signedPath, destinationPath);
+    await streamMinioObjectToFile(result.signedBucket || ALMACEN_USERS_BUCKET, result.signedPath, destinationPath);
   }
 
   await createStructuredZipArchive(workspace, zipPath);

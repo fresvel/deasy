@@ -27,13 +27,13 @@ services:
     # nadie: solo exponia la UI de gestion, que permite leer el cuerpo de los mensajes, y ahi viaja
     # la contrasena del PKCS#12 (`certPassword`).
 
-  minio:
+  almacen:
     env_file: *prod_runtime_env_file
     restart: always
     ports:
-      - "127.0.0.1:${MINIO_API_PORT}:9000"
+      - "127.0.0.1:${ALMACEN_API_PORT}:9000"
 
-  minio-bootstrap:
+  almacen-bootstrap:
     env_file: *prod_runtime_env_file
 
   backend:

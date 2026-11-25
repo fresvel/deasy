@@ -72,14 +72,14 @@ const juntarStream = (stream) => new Promise((resolve, reject) => {
 });
 
 const clienteDeEntorno = () => {
-  const url = new URL(process.env.MINIO_ENDPOINT || "http://minio:9000");
-  const useSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || url.protocol === "https:";
+  const url = new URL(process.env.ALMACEN_ENDPOINT || "http://almacen:9000");
+  const useSSL = String(process.env.ALMACEN_USE_SSL || "").trim() === "1" || url.protocol === "https:";
   const cliente = new Minio.Client({
     endPoint: url.hostname,
     port: Number(url.port || (useSSL ? 443 : 80)),
     useSSL,
-    accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || "",
-    secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || "",
+    accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER || "",
+    secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD || "",
   });
   // ⚠️ ESTA LÍNEA NO ES UN AJUSTE: SIN ELLA NO SE ARCHIVA NADA. Versity, como S3 y al revés que
   // MinIO, RECHAZA un PUT a un bucket con retención por defecto si no trae Content-MD5 o
@@ -99,11 +99,11 @@ export default class ArchivoLegal {
    */
   constructor({ cliente = null, bucket = null, bucketBorradores = null, dias = null, modo = null } = {}) {
     this.cliente = cliente;
-    this.bucket = bucket || process.env.MINIO_LEGAL_BUCKET || BUCKET_ARCHIVO_POR_DEFECTO;
+    this.bucket = bucket || process.env.ALMACEN_LEGAL_BUCKET || BUCKET_ARCHIVO_POR_DEFECTO;
     this.bucketBorradores =
-      bucketBorradores || process.env.MINIO_LEGAL_DRAFTS_BUCKET || BUCKET_BORRADORES_POR_DEFECTO;
-    this.dias = Number(dias ?? process.env.MINIO_LEGAL_RETENTION_DAYS ?? DIAS_POR_DEFECTO);
-    this.modo = String(modo || process.env.MINIO_LEGAL_RETENTION_MODE || MODO_POR_DEFECTO).toUpperCase();
+      bucketBorradores || process.env.ALMACEN_LEGAL_DRAFTS_BUCKET || BUCKET_BORRADORES_POR_DEFECTO;
+    this.dias = Number(dias ?? process.env.ALMACEN_LEGAL_RETENTION_DAYS ?? DIAS_POR_DEFECTO);
+    this.modo = String(modo || process.env.ALMACEN_LEGAL_RETENTION_MODE || MODO_POR_DEFECTO).toUpperCase();
   }
 
   #minio() {
@@ -173,7 +173,7 @@ export default class ArchivoLegal {
     }
 
     // La retención POR DEFECTO es lo que hace que cada `put` salga bloqueado sin pedirlo. Se
-    // reafirma en cada arranque para que un cambio de `MINIO_LEGAL_RETENTION_DAYS` surta efecto.
+    // reafirma en cada arranque para que un cambio de `ALMACEN_LEGAL_RETENTION_DAYS` surta efecto.
     await minio.setObjectLockConfig(this.bucket, { mode: this.modo, unit: "Days", validity: this.dias });
 
     return { bucket: this.bucket, bucketBorradores: this.bucketBorradores };

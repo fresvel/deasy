@@ -19,9 +19,9 @@ services:
       - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
       - "127.0.0.1:${RABBITMQ_MGMT_PORT:-15672}:15672"
 
-  minio:
+  almacen:
     ports:
-      - "${MINIO_API_PORT}:9000"
+      - "${ALMACEN_API_PORT}:9000"
 
   backend:
     build:

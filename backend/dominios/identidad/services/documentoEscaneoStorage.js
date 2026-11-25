@@ -20,9 +20,9 @@ import {
 } from "../../../services/storage/minio_service.js";
 import { buildMinioReference, parseMinioReference } from "../../../services/storage/minioReference.js";
 
-export const MINIO_USERS_BUCKET = process.env.MINIO_USERS_BUCKET || "deasy-users";
+export const ALMACEN_USERS_BUCKET = process.env.ALMACEN_USERS_BUCKET || "deasy-users";
 
-const MINIO_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
+const ALMACEN_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
 
 // `users/<person_id>/documentos/<documento_id>.pdf`. Cuelga de los IDS y no del numero del
 // documento: un pasaporte se renueva con numero nuevo y el fichero no tiene por que mudarse.
@@ -45,11 +45,11 @@ export const storeEscaneo = async ({ personId, documentoId, filePath, mimetype }
     throw error;
   }
   const objectName = buildEscaneoObjectName(personId, documentoId);
-  await ensureBucketExists(MINIO_USERS_BUCKET);
-  await uploadFileToMinio(MINIO_USERS_BUCKET, objectName, filePath, {
+  await ensureBucketExists(ALMACEN_USERS_BUCKET);
+  await uploadFileToMinio(ALMACEN_USERS_BUCKET, objectName, filePath, {
     "Content-Type": "application/pdf"
   });
-  return { objectName, reference: buildMinioReference(MINIO_USERS_BUCKET, objectName) };
+  return { objectName, reference: buildMinioReference(ALMACEN_USERS_BUCKET, objectName) };
 };
 
 // Abre el escaneo para hacerle stream. Devuelve null cuando la referencia esta vacia o el objeto ya
@@ -61,7 +61,7 @@ export const openEscaneo = async (rawValue) => {
   try {
     await statMinioObject(reference.bucket, reference.objectName);
   } catch (error) {
-    if (MINIO_NOT_FOUND_CODES.has(error?.code)) return null;
+    if (ALMACEN_NOT_FOUND_CODES.has(error?.code)) return null;
     throw error;
   }
 
@@ -80,7 +80,7 @@ export const removeEscaneo = async (rawValue) => {
   try {
     await removeMinioObject(reference.bucket, reference.objectName);
   } catch (error) {
-    if (!MINIO_NOT_FOUND_CODES.has(error?.code)) {
+    if (!ALMACEN_NOT_FOUND_CODES.has(error?.code)) {
       console.error("No se pudo borrar el escaneo anterior:", error.message);
     }
   }

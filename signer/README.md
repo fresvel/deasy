@@ -139,10 +139,10 @@ Content-Type: application/json
 | Variable | Default | Descripción |
 |---|---|---|
 | `SIGNER_PORT` | `4000` | Puerto del servicio HTTP |
-| `MINIO_ENDPOINT` | `http://minio:9000` | Endpoint de MinIO |
-| `MINIO_ACCESS_KEY` | `deasy_minio` | Access key de MinIO |
-| `MINIO_SECRET_KEY` | `deasy_minio_secret` | Secret key de MinIO |
-| `MINIO_SPOOL_BUCKET` | `deasy-spool` | Bucket de spool en MinIO |
+| `ALMACEN_ENDPOINT` | `http://almacen:9000` | Endpoint de MinIO |
+| `ALMACEN_ACCESS_KEY` | `deasy_minio` | Access key de MinIO |
+| `ALMACEN_SECRET_KEY` | `deasy_minio_secret` | Secret key de MinIO |
+| `ALMACEN_SPOOL_BUCKET` | `deasy-spool` | Bucket de spool en MinIO |
 | `SIGNER_WORKSPACE_DIR` | `/var/lib/deasy-signer/workspace` | Raíz del área de trabajo por job. **Nunca bajo `/tmp`**: aquí se desempaqueta el PKCS#12. La imagen la crea con dueño `appuser` y modo `0700` |
 | `SIGN_VALIDATE_REQUEST_QUEUE` | `deasy.sign.validate.request` | Cola RabbitMQ para validación documental |
 

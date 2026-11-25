@@ -25,7 +25,7 @@ import {
 import { copyAuthoredFlowToArtifact, hasFillStepsForArtifact, readAuthoredFlowForArtifact } from "./flowRows.js";
 import { bumpSemanticVersion } from "../kernel/versioning.js";
 import {
-  MINIO_TEMPLATES_BUCKET,
+  ALMACEN_TEMPLATES_BUCKET,
   CONTRACT_FORMAT,
   EDITABLE_CONTENT_SUBPATH,
 } from "../kernel/constants.js";
@@ -98,7 +98,7 @@ export default class TemplateArtifactService {
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
-    const bucket = MINIO_TEMPLATES_BUCKET;
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
     // Los campos del formulario se leen de `schema.json` en MinIO, y un fallo SUBE.
     //
     // Aquí vivía un `catch {}` que devolvía `{}` ante cualquier fallo de MinIO. Es el MISMO borrado
@@ -363,7 +363,7 @@ export default class TemplateArtifactService {
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
-    const bucket = MINIO_TEMPLATES_BUCKET;
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
     const templateCode = String(artifact.template_code);
     const nextStorageVersion = await this.getNextStorageVersionForTemplateCode(templateCode, bumpLevel);
     // El entregable se identifica por código (siempre existe tras backfill/creación). Robusto aunque getByKeys
@@ -479,7 +479,7 @@ export default class TemplateArtifactService {
     if (!artifact) {
       throw new Error("El artifact seleccionado no existe.");
     }
-    const bucket = MINIO_TEMPLATES_BUCKET;
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
     const basePrefix = String(artifact.base_object_prefix || "").replace(/\/?$/, "/");
     const formats = parseAvailableFormats(artifact.available_formats);
     const jinjaEntry = formats?.[CONTRACT_FORMAT]?.entry_object_key;

@@ -52,10 +52,18 @@ def redact_amqp_url(url: str) -> str:
     return re.sub(r"://([^:/@]+):.*@", r"://\1:***@", url or "")
 SIGN_REQUEST_QUEUE = os.getenv("SIGN_REQUEST_QUEUE", "deasy.sign.request")
 VALIDATE_REQUEST_QUEUE = os.getenv("SIGN_VALIDATE_REQUEST_QUEUE", "deasy.sign.validate.request")
-MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "http://minio:9000")
-MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "deasy_minio")
-MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "deasy_minio_secret")
-MINIO_SPOOL_BUCKET = os.getenv("MINIO_SPOOL_BUCKET", "deasy-spool")
+# Hasta el 2026-11-25 estas variables se llamaban MINIO_*. Una que se quede sin renombrar no la
+# lee nadie y el firmador caeria a los valores por defecto SIN AVISAR: se corta el arranque.
+_RETIRADAS = sorted(nombre for nombre in os.environ if nombre.startswith("MINIO_"))
+if _RETIRADAS:
+    raise SystemExit(
+        "El entorno trae variables con el prefijo retirado MINIO_ (ahora ALMACEN_): "
+        + ", ".join(_RETIRADAS)
+    )
+ALMACEN_ENDPOINT = os.getenv("ALMACEN_ENDPOINT", "http://almacen:9000")
+ALMACEN_ACCESS_KEY = os.getenv("ALMACEN_ACCESS_KEY", "deasy_minio")
+ALMACEN_SECRET_KEY = os.getenv("ALMACEN_SECRET_KEY", "deasy_minio_secret")
+ALMACEN_SPOOL_BUCKET = os.getenv("ALMACEN_SPOOL_BUCKET", "deasy-spool")
 # Directorio de trabajo del firmante: aqui aterrizan el PDF de entrada, el limpio, el firmado y el
 # PKCS#12 desempaquetado. NO puede vivir bajo `/tmp`: es un directorio de escritura publica y la raiz
 # del workspace se creaba con el umask por defecto, asi que en un host compartido era una carrera de
@@ -127,16 +135,16 @@ PERSON_ATTRIBUTE_OID_MAPS = (
 
 
 def create_minio_client() -> Minio:
-    endpoint = MINIO_ENDPOINT.replace("http://", "").replace("https://", "")
+    endpoint = ALMACEN_ENDPOINT.replace("http://", "").replace("https://", "")
     return Minio(
         endpoint,
-        access_key=MINIO_ACCESS_KEY,
-        secret_key=MINIO_SECRET_KEY,
-        secure=MINIO_ENDPOINT.startswith("https://"),
+        access_key=ALMACEN_ACCESS_KEY,
+        secret_key=ALMACEN_SECRET_KEY,
+        secure=ALMACEN_ENDPOINT.startswith("https://"),
     )
 
 
-MINIO_CLIENT = create_minio_client()
+ALMACEN_CLIENT = create_minio_client()
 
 
 @dataclass
@@ -211,14 +219,14 @@ def ensure_parent(path: Path):
 
 
 def download_from_minio(bucket: str | None, object_name: str, target_path: Path):
-    resolved_bucket = bucket or MINIO_SPOOL_BUCKET
+    resolved_bucket = bucket or ALMACEN_SPOOL_BUCKET
     ensure_parent(target_path)
-    MINIO_CLIENT.fget_object(resolved_bucket, object_name, str(target_path))
+    ALMACEN_CLIENT.fget_object(resolved_bucket, object_name, str(target_path))
 
 
 def upload_to_minio(bucket: str | None, object_name: str, source_path: Path):
-    resolved_bucket = bucket or MINIO_SPOOL_BUCKET
-    MINIO_CLIENT.fput_object(resolved_bucket, object_name, str(source_path), content_type="application/pdf")
+    resolved_bucket = bucket or ALMACEN_SPOOL_BUCKET
+    ALMACEN_CLIENT.fput_object(resolved_bucket, object_name, str(source_path), content_type="application/pdf")
 
 
 def pdf_has_embedded_signatures(source_pdf: Path) -> bool:

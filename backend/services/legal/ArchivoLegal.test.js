@@ -360,7 +360,7 @@ describe("ArchivoLegal · estadoDelArchivo", () => {
   });
 
   it("no revienta si MinIO no contesta: lo cuenta", async () => {
-    const roto = { async bucketExists() { throw new Error("connect ECONNREFUSED minio:9000"); } };
+    const roto = { async bucketExists() { throw new Error("connect ECONNREFUSED almacen:9000"); } };
     const estado = await archivoDePrueba(roto).estadoDelArchivo();
     assert.equal(estado.bloqueado, false);
     assert.match(estado.motivo, /ECONNREFUSED/);

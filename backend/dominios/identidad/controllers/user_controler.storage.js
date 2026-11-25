@@ -11,9 +11,9 @@ import { spawn } from "node:child_process";
 import { pipeline } from "node:stream/promises";
 import { minioClient, getMinioObjectStream } from "../../../services/storage/minio_service.js";
 
-export const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
-export const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
-export const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
+export const ALMACEN_DOCUMENTS_BUCKET = process.env.ALMACEN_DOCUMENTS_BUCKET || "deasy-documents";
+export const ALMACEN_DOCUMENTS_PREFIX = String(process.env.ALMACEN_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
+export const ALMACEN_TEMPLATES_BUCKET = process.env.ALMACEN_TEMPLATES_BUCKET || "deasy-templates";
 
 // latex/jinja2 son las fuentes de la plantilla: no se entregan al usuario final.
 const TEMPLATE_DOWNLOAD_EXCLUDED_FORMATS = new Set(["latex", "jinja2"]);
@@ -23,16 +23,16 @@ export const resolveStoredDocumentObject = (storedPath) => {
   if (!normalizedPath) {
     return null;
   }
-  if (normalizedPath.startsWith(`${MINIO_DOCUMENTS_PREFIX}/`)) {
+  if (normalizedPath.startsWith(`${ALMACEN_DOCUMENTS_PREFIX}/`)) {
     return {
-      bucket: MINIO_DOCUMENTS_BUCKET,
+      bucket: ALMACEN_DOCUMENTS_BUCKET,
       objectName: normalizedPath,
-      relativePath: normalizedPath.slice(MINIO_DOCUMENTS_PREFIX.length + 1)
+      relativePath: normalizedPath.slice(ALMACEN_DOCUMENTS_PREFIX.length + 1)
     };
   }
   return {
-    bucket: MINIO_DOCUMENTS_BUCKET,
-    objectName: `${MINIO_DOCUMENTS_PREFIX}/${normalizedPath}`,
+    bucket: ALMACEN_DOCUMENTS_BUCKET,
+    objectName: `${ALMACEN_DOCUMENTS_PREFIX}/${normalizedPath}`,
     relativePath: normalizedPath
   };
 };
@@ -65,7 +65,7 @@ export const collectDeliverableTemplateResources = async (availableFormats) => {
     if (!entryPrefix) {
       continue;
     }
-    const objectNames = await listMinioObjects(MINIO_TEMPLATES_BUCKET, entryPrefix, true);
+    const objectNames = await listMinioObjects(ALMACEN_TEMPLATES_BUCKET, entryPrefix, true);
     for (const objectName of objectNames) {
       const cleanObjectName = String(objectName || "").trim();
       if (!cleanObjectName || cleanObjectName.endsWith("/")) {

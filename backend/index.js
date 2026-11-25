@@ -1,4 +1,5 @@
 import "dotenv/config"
+import "./config/entornoVigente.js"; // corta el arranque si queda una variable MINIO_* sin renombrar
 import http from "node:http";
 import express from "express";
 import realtimeGateway from "./services/realtime/RealtimeGateway.js";

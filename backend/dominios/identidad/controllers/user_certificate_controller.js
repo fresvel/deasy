@@ -15,7 +15,7 @@ const certificateRepository = () => (_certificateRepository ??= new UserCertific
 let _userRepository = null;
 const userRepository = () => (_userRepository ??= new UserRepository());
 
-const MINIO_CERTIFICATES_BUCKET = process.env.MINIO_CERTIFICATES_BUCKET || "deasy-certificates";
+const ALMACEN_CERTIFICATES_BUCKET = process.env.ALMACEN_CERTIFICATES_BUCKET || "deasy-certificates";
 
 const sanitizeFileName = (value) =>
   String(value || "certificate.p12")
@@ -82,8 +82,8 @@ export const uploadMyCertificate = async (req, res) => {
     const safeFileName = sanitizeFileName(req.file.originalname);
     const objectName = `users/${user.cedula}/certificates/${Date.now()}-${safeFileName}`;
 
-    await ensureBucketExists(MINIO_CERTIFICATES_BUCKET);
-    await uploadFileToMinio(MINIO_CERTIFICATES_BUCKET, objectName, req.file.path, {
+    await ensureBucketExists(ALMACEN_CERTIFICATES_BUCKET);
+    await uploadFileToMinio(ALMACEN_CERTIFICATES_BUCKET, objectName, req.file.path, {
       "Content-Type": req.file.mimetype || "application/x-pkcs12"
     });
 
@@ -96,7 +96,7 @@ export const uploadMyCertificate = async (req, res) => {
       person_id: user.id,
       label,
       original_filename: req.file.originalname,
-      bucket: MINIO_CERTIFICATES_BUCKET,
+      bucket: ALMACEN_CERTIFICATES_BUCKET,
       object_name: objectName,
       is_default: isDefault ? 1 : 0
     });

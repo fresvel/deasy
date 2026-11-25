@@ -20,7 +20,7 @@ almacenamiento local ni ninguna URL publica que sirva la imagen.
   `invalidateUserPhoto(cedula)` para cuando el usuario sube una foto nueva.
 
 El patrón es el mismo de los certificados P12 (`user_certificate_controller.js`). No se usa
-`buildDossierFileUrl` (`dossier_controler.js`), que arma URLs contra `MINIO_PUBLIC_ENDPOINT`:
+`buildDossierFileUrl` (`dossier_controler.js`), que arma URLs contra `ALMACEN_PUBLIC_ENDPOINT`:
 esa URL no es accesible desde el ingress en producción.
 
 ## De dónde viene esto

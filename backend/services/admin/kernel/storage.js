@@ -9,8 +9,8 @@ import crypto from "node:crypto";
 import { spawn } from "node:child_process";
 import * as Minio from "minio";
 
-const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");
-const minioUseSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
+const minioUrl = new URL(process.env.ALMACEN_ENDPOINT || "http://localhost:9000");
+const minioUseSSL = String(process.env.ALMACEN_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
 let minioClientInstance = null;
 
 const walkFiles = (dirPath, collected = []) => {
@@ -94,8 +94,8 @@ const getMinioClient = () => {
       endPoint: minioUrl.hostname,
       port: Number(minioUrl.port || (minioUseSSL ? 443 : 80)),
       useSSL: minioUseSSL,
-      accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || "",
-      secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || ""
+      accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER || "",
+      secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD || ""
     });
   }
   return minioClientInstance;

@@ -75,19 +75,22 @@ El comentario del compose explica el motivo: la interfaz de gestion de RabbitMQ 
 |:------------------|:------------------------|:---------------------------------------------------------------------------|
 | `postgres`        | `postgres:17`           | healthcheck `pg_isready`; único motor de datos                             |
 | `rabbitmq`        | `rabbitmq:3-management` | healthcheck `rabbitmq-diagnostics ping`                                    |
-| `minio`           | Versity Gateway         | pasarela S3 sobre un directorio; conserva el nombre. Ver la nota de abajo  |
-| `minio-bootstrap` | copia propia de `mc`    | perfil `storage-init`; crea los buckets y hace `mc mirror` de las semillas |
+| `almacen`         | Versity Gateway         | pasarela S3 sobre un directorio. Ver la nota de abajo                      |
+| `almacen-bootstrap` | copia propia de `mc`  | perfil `storage-init`; crea los buckets y hace `mc mirror` de las semillas |
 | `backend`         | sin imagen en base      | la define cada overlay                                                     |
 | `frontend`        | sin imagen en base      | idem                                                                       |
 | `signer`          | sin imagen en base      | `SIGNER_PORT=4000`, `SIGMAKER_DIR=/opt/sigmaker`                           |
 | `analytics`       | sin imagen en base      | perfil `workers`; hoy es un marcador de posición                           |
 
-:::caution[El almacén es Versity Gateway, y el servicio se sigue llamando `minio`]
+:::caution[El almacén es Versity Gateway]
 Hasta noviembre de 2026 el almacén de objetos era MinIO. Su edición comunitaria dejó de publicarse
 —los repositorios desaparecieron de Docker Hub y un despliegue falló por eso—, así que se cambió
-por **Versity Gateway**, que tiene licencia Apache 2.0 y habla el mismo protocolo, S3. El servicio
-de compose y las variables `MINIO_*` conservan su nombre: el backend y el firmador no notan el
-cambio.
+por **Versity Gateway**, que tiene licencia Apache 2.0 y habla el mismo protocolo, S3.
+
+El servicio de compose se llamaba `minio` y sus variables `MINIO_*`; ahora son `almacen` y
+`ALMACEN_*`. Un entorno que conserve una variable con el prefijo viejo **no arranca**: el backend
+y el firmador se detienen y dicen cuál renombrar. Es a propósito, porque una variable que nadie
+lee no da error: el sistema cae a su valor por defecto y falla después, en otro sitio.
 
 Tres cosas son distintas y conviene saberlas:
 
@@ -102,7 +105,7 @@ Tres cosas son distintas y conviene saberlas:
 
 La imagen va fijada por su huella, y la variable `ALMACEN_IMAGE` permite apuntar a otra sin tocar
 los ficheros de compose. El cliente que crea los buckets sigue siendo `mc`, desde una copia
-congelada publicada junto a las imágenes del proyecto (`MINIO_MC_IMAGE`).
+congelada publicada junto a las imágenes del proyecto (`ALMACEN_MC_IMAGE`).
 :::
 
 ## `scripts/docker-env.sh`: la interfaz comun

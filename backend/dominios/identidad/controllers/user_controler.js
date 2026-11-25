@@ -63,9 +63,9 @@ import {
   isAuthorizedUserScope
 } from "./user_controler.primitives.js";
 import {
-  MINIO_DOCUMENTS_BUCKET,
-  MINIO_DOCUMENTS_PREFIX,
-  MINIO_TEMPLATES_BUCKET,
+  ALMACEN_DOCUMENTS_BUCKET,
+  ALMACEN_DOCUMENTS_PREFIX,
+  ALMACEN_TEMPLATES_BUCKET,
   resolveStoredDocumentObject,
   collectDeliverableTemplateResources,
   writeMinioObjectToFile,
@@ -700,12 +700,12 @@ export const uploadDeliverablePdf = async (req, res) => {
       extension,
       minor
     });
-    const minioObjectName = `${MINIO_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
+    const minioObjectName = `${ALMACEN_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
 
     // Fuera de la transacción a propósito: una transacción de base de datos no deshace un objeto ya
     // escrito en MinIO, así que abarcarla sería prometer una atomicidad que no existe.
-    await ensureBucketExists(MINIO_DOCUMENTS_BUCKET);
-    await uploadFileToMinio(MINIO_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
+    await ensureBucketExists(ALMACEN_DOCUMENTS_BUCKET);
+    await uploadFileToMinio(ALMACEN_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
       "Content-Type": uploadedFile.mimetype || "application/octet-stream",
       "Original-Name": originalName
     });
@@ -786,7 +786,7 @@ export const downloadDeliverableTemplate = async (req, res) => {
     try {
       for (const resource of resources) {
         const destinationPath = path.join(workspace, resource.archiveName);
-        await writeMinioObjectToFile(MINIO_TEMPLATES_BUCKET, resource.objectName, destinationPath);
+        await writeMinioObjectToFile(ALMACEN_TEMPLATES_BUCKET, resource.objectName, destinationPath);
       }
       await createZipArchive(workspace, zipPath);
       res.setHeader("Content-Type", "application/zip");
@@ -1160,10 +1160,10 @@ export const uploadDeliverableAttachment = async (req, res) => {
       originalName,
       extension
     });
-    const minioObjectName = `${MINIO_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
+    const minioObjectName = `${ALMACEN_DOCUMENTS_PREFIX}/${relativeObjectPath}`;
 
-    await ensureBucketExists(MINIO_DOCUMENTS_BUCKET);
-    await uploadFileToMinio(MINIO_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
+    await ensureBucketExists(ALMACEN_DOCUMENTS_BUCKET);
+    await uploadFileToMinio(ALMACEN_DOCUMENTS_BUCKET, minioObjectName, uploadedFile.path, {
       "Content-Type": uploadedFile.mimetype || "application/octet-stream",
       "Original-Name": originalName
     });

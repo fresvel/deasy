@@ -6,7 +6,7 @@ import { spawn } from "node:child_process";
 import { pipeline } from "node:stream/promises";
 import { minioClient, getMinioObjectStream } from "../services/storage/minio_service.js";
 
-export const TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
+export const TEMPLATES_BUCKET = process.env.ALMACEN_TEMPLATES_BUCKET || "deasy-templates";
 
 // Normaliza un segmento para usarlo en nombres de archivo/objeto (sin acentos ni separadores).
 export const sanitizeStorageSegment = (value, fallback = "na") => {

@@ -1,16 +1,16 @@
 import * as Minio from "minio";
 
-const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://minio:9000");
+const minioUrl = new URL(process.env.ALMACEN_ENDPOINT || "http://almacen:9000");
 const useSSL =
-  String(process.env.MINIO_USE_SSL || "").trim() === "1" ||
+  String(process.env.ALMACEN_USE_SSL || "").trim() === "1" ||
   minioUrl.protocol === "https:";
 
 export const minioClient = new Minio.Client({
   endPoint: minioUrl.hostname,
   port: Number(minioUrl.port || (useSSL ? 443 : 80)),
   useSSL,
-  accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || "",
-  secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || ""
+  accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER || "",
+  secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD || ""
 });
 
 export const ensureBucketExists = (bucket) =>

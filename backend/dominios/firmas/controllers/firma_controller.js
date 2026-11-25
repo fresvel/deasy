@@ -27,8 +27,8 @@ import {
   assertSignContextBeforeSigning,
   buildSignContext,
   buildValidationSpoolPath,
-  MINIO_SPOOL_BUCKET,
-  MINIO_USERS_BUCKET,
+  ALMACEN_SPOOL_BUCKET,
+  ALMACEN_USERS_BUCKET,
   persistSignatureWorkflowResult,
   processSinglePdfSigning,
   resolveSigningUser,
@@ -121,13 +121,13 @@ export const validateSignedDocument = async (req, res) => {
     const sessionId = randomUUID();
     minioPdfPath = buildValidationSpoolPath(user, sessionId, file.originalname);
 
-    await ensureBucketExists(MINIO_SPOOL_BUCKET);
-    await uploadFileToMinio(MINIO_SPOOL_BUCKET, minioPdfPath, file.path, {
+    await ensureBucketExists(ALMACEN_SPOOL_BUCKET);
+    await uploadFileToMinio(ALMACEN_SPOOL_BUCKET, minioPdfPath, file.path, {
       "Content-Type": "application/pdf"
     });
 
     const result = await requestSignerValidationJob({
-      minioBucket: MINIO_SPOOL_BUCKET,
+      minioBucket: ALMACEN_SPOOL_BUCKET,
       minioPdfPath,
       cedula: String(req.body?.cedula || "").trim() || undefined,
     });
@@ -139,7 +139,7 @@ export const validateSignedDocument = async (req, res) => {
   } finally {
     liberarTemporales(req);
     if (minioPdfPath) {
-      await removeMinioObject(MINIO_SPOOL_BUCKET, minioPdfPath).catch(() => {});
+      await removeMinioObject(ALMACEN_SPOOL_BUCKET, minioPdfPath).catch(() => {});
     }
   }
 };
@@ -272,7 +272,7 @@ export const downloadSigned = async (req, res) => {
     // salta la consulta de propiedad y va derecho a MinIO. Por eso una ruta propia inexistente
     // acaba en 404 y una ajena inexistente en 403.
     if (requestedPath.startsWith(`users/${user.cedula}/`)) {
-      bucket = MINIO_USERS_BUCKET;
+      bucket = ALMACEN_USERS_BUCKET;
       objectPath = requestedPath;
     } else {
       // Aqui habia un `if (!pool)` que vigilaba el pool DEL CONTROLADOR para proteger una funcion

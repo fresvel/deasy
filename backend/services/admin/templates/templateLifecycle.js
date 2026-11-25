@@ -63,7 +63,7 @@ import {
 import { replaceAuthoredFlowForArtifact, copyAuthoredFlowToArtifact, hasFillStepsForArtifact } from "./flowRows.js";
 import { parseAvailableFormats, findPreferredPdfObject } from "./artifacts.js";
 import {
-  MINIO_TEMPLATES_BUCKET,
+  ALMACEN_TEMPLATES_BUCKET,
   CONTRACT_FORMAT,
   EDITABLE_CONTENT_SUBPATH,
 } from "../kernel/constants.js";
@@ -72,17 +72,17 @@ import {
 // misma peticion. Va al temporal del sistema, como el resto de subidas (certificados,
 // dossier, fotos), asi no deja estado en el contenedor ni ensucia el repo en dev.
 const TEMPLATE_DRAFT_STAGING_ROOT = path.join(os.tmpdir(), "deasy", "template-drafts");
-const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
+const ALMACEN_TEMPLATES_PREFIX = (process.env.ALMACEN_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
 // Generador por defecto cuando se crea una plantilla sin elegir uno. Coincide con el del bootstrap.
 // Es la semilla LaTeX: el PRIMER generador del catalogo, no el unico posible (frente 23, F3.1).
 const DEFAULT_GENERADOR_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
 // Formatos de documento de referencia (al menos uno es obligatorio al crear una plantilla).
 const REFERENCE_DOC_FORMATS = ["pdf", "docx", "xlsx", "pptx"];
 
-const MINIO_TEMPLATES_SEEDS_PREFIX = (process.env.MINIO_TEMPLATES_SEEDS_PREFIX || "Seeds").replace(/^\/+|\/+$/g, "");
+const ALMACEN_TEMPLATES_SEEDS_PREFIX = (process.env.ALMACEN_TEMPLATES_SEEDS_PREFIX || "Seeds").replace(/^\/+|\/+$/g, "");
 const TEMPLATE_USERS_PREFIX = (
-  process.env.MINIO_TEMPLATES_USERS_PREFIX
-  || process.env.MINIO_TEMPLATES_DRAFT_PREFIX
+  process.env.ALMACEN_TEMPLATES_USERS_PREFIX
+  || process.env.ALMACEN_TEMPLATES_DRAFT_PREFIX
   || "Users"
 ).replace(/^\/+|\/+$/g, "");
 // Componentes UI permitidos para los campos del schema editados desde la web.
@@ -604,7 +604,7 @@ export default class TemplateLifecycleService {
     const newDeliverableId = Number(delivIns.insertId);
 
     // Copiar contenido MinIO a un prefijo propio (System/<code>/1.0.0/).
-    const bucket = MINIO_TEMPLATES_BUCKET;
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
     const oldPrefix = String(src.base_object_prefix || "").replace(/\/?$/, "/");
     const oldCode = String(src.template_code);
     const oldVersion = String(src.storage_version || "");
@@ -689,7 +689,7 @@ export default class TemplateLifecycleService {
       throw new Error("El generador seleccionado no existe.");
     }
     if (!row.preview_path) {
-      const seedObjects = await listMinioObjects(MINIO_TEMPLATES_BUCKET, row.source_path, true);
+      const seedObjects = await listMinioObjects(ALMACEN_TEMPLATES_BUCKET, row.source_path, true);
       const fallbackPreviewPath = findPreferredPdfObject(seedObjects);
       if (!fallbackPreviewPath) {
         throw new Error("El seed seleccionado no tiene preview PDF publicado en MinIO.");
@@ -702,13 +702,13 @@ export default class TemplateLifecycleService {
     }
     let objectStream;
     try {
-      objectStream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, row.preview_path);
+      objectStream = await getMinioObjectStream(ALMACEN_TEMPLATES_BUCKET, row.preview_path);
     } catch (error) {
       const message = String(error?.message || "");
       if (!/does not exist|NoSuchKey/i.test(message)) {
         throw error;
       }
-      const seedObjects = await listMinioObjects(MINIO_TEMPLATES_BUCKET, row.source_path, true);
+      const seedObjects = await listMinioObjects(ALMACEN_TEMPLATES_BUCKET, row.source_path, true);
       const fallbackPreviewPath = findPreferredPdfObject(seedObjects);
       if (!fallbackPreviewPath) {
         throw new Error("El seed seleccionado no tiene preview PDF publicado en MinIO.");
@@ -718,7 +718,7 @@ export default class TemplateLifecycleService {
         "UPDATE generadores_de_documento SET preview_path = ? WHERE id = ?",
         [fallbackPreviewPath, row.id]
       );
-      objectStream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, row.preview_path);
+      objectStream = await getMinioObjectStream(ALMACEN_TEMPLATES_BUCKET, row.preview_path);
     }
     return {
       stream: objectStream,
@@ -728,8 +728,8 @@ export default class TemplateLifecycleService {
 
   async syncTemplateSeedsFromSource() {
     this.ensurePool();
-    const bucket = MINIO_TEMPLATES_BUCKET;
-    const prefixRoot = `${MINIO_TEMPLATES_SEEDS_PREFIX}/`;
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
+    const prefixRoot = `${ALMACEN_TEMPLATES_SEEDS_PREFIX}/`;
     const objectNames = await listMinioObjects(bucket, prefixRoot, true);
     if (!objectNames.length) {
       throw new Error(`No existen seeds publicados en MinIO bajo ${prefixRoot}`);
@@ -836,7 +836,7 @@ export default class TemplateLifecycleService {
       }
     }
 
-    return { discovered, inserted, updated, bucket, prefix: MINIO_TEMPLATES_SEEDS_PREFIX };
+    return { discovered, inserted, updated, bucket, prefix: ALMACEN_TEMPLATES_SEEDS_PREFIX };
   }
 
   // === FASE 2: actualización guiada de la plantilla de una configuración ACTIVA ===
@@ -1220,7 +1220,7 @@ export default class TemplateLifecycleService {
         throw new Error("El generador seleccionado no existe.");
       }
       await downloadMinioPrefixToDirectory(
-        MINIO_TEMPLATES_BUCKET,
+        ALMACEN_TEMPLATES_BUCKET,
         `${seedRow.source_path}src/`,
         buildArtifactFormatDir(draftDir, CONTRACT_FORMAT)
       );
@@ -1237,7 +1237,7 @@ export default class TemplateLifecycleService {
       const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
       try {
         for (const target of buildPackageDataFileTargets(draftDir)) {
-          await copyMinioObjectToFile(MINIO_TEMPLATES_BUCKET, defaultsObjectKey, target);
+          await copyMinioObjectToFile(ALMACEN_TEMPLATES_BUCKET, defaultsObjectKey, target);
         }
       } catch {
         // Optional for non-latex seeds.
@@ -1247,7 +1247,7 @@ export default class TemplateLifecycleService {
       if (String(seedRow.tipo || "").toLowerCase() === "latex") {
         try {
           await downloadMinioPrefixToDirectory(
-            MINIO_TEMPLATES_BUCKET,
+            ALMACEN_TEMPLATES_BUCKET,
             `${seedRow.source_path}render/`,
             buildArtifactFormatDir(draftDir, "latex")
           );
@@ -1766,14 +1766,14 @@ export default class TemplateLifecycleService {
     const baseSlug = slugify(displayName) || "artifact";
     const templateCode = String(existingArtifact?.template_code || `draft_${baseSlug}`).slice(0, 180);
     const storageVersion = existingArtifact?.storage_version || await this._getNextStorageVersionForTemplateCode(templateCode);
-    const bucket = MINIO_TEMPLATES_BUCKET;
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
     const requestedTemplateScope = String(data.template_scope || existingArtifact?.template_scope || "official").trim();
     const templateScope = requestedTemplateScope === "ad_hoc" ? "ad_hoc" : "official";
     const adHocToken = sanitizeStorageSegment(data.task_item_id || data.draft_token || randomUUID(), "draft");
     // 'official' (de proceso) vive en un repo distinto del de usuarios; 'ad_hoc' (de usuario) bajo Users/.
     const defaultBaseObjectPrefix = templateScope === "ad_hoc"
       ? `${TEMPLATE_USERS_PREFIX}/${ownerRef}/AdHoc/${adHocToken}/${templateCode}/${storageVersion}/`
-      : `${MINIO_TEMPLATES_PREFIX}/${templateCode}/${storageVersion}/`;
+      : `${ALMACEN_TEMPLATES_PREFIX}/${templateCode}/${storageVersion}/`;
     const baseObjectPrefix = String(existingArtifact?.base_object_prefix || defaultBaseObjectPrefix);
     const draftDir = path.join(
       TEMPLATE_DRAFT_STAGING_ROOT,

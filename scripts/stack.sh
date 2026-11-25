@@ -56,7 +56,7 @@ Uso:
   bash scripts/stack.sh <a|b|c|d> <argumentos de docker compose...>
   bash scripts/stack.sh status
 
-La pila A es la `dev` de siempre. B, C y D son paralelas: base, MinIO, RabbitMQ,
+La pila A es la `dev` de siempre. B, C y D son paralelas: base, almacén, RabbitMQ,
 node_modules, red y puertos propios. Cada una monta el codigo del worktree DESDE EL
 QUE la levantas.
 
@@ -70,7 +70,7 @@ La pila vive con su worktree, no con la sesion: no se baja al terminar una tanda
 `stop` libera la RAM y conserva base, volumenes y node_modules; `start` la devuelve.
 
 Puertos (A no desplaza; B, C y D suman 100, 200 y 300):
-        proxy  https  postgres  minio  signer  rabbit  rabbit-ui  docs  azimutt
+        proxy  https  postgres  almacen signer  rabbit  rabbit-ui  docs  azimutt
   A      8088   8443      5432   9000    4000    5672      15672   4321   4700
   B      8188   8543      5532   9100    4100    5772      15772   4421   4800
   C      8288   8643      5632   9200    4200    5872      15872   4521   4900
@@ -161,8 +161,7 @@ export PROXY_HTTP_PORT=$((8088 + OFFSET))
 export PROXY_HTTPS_PORT="$HTTPS_PORT"
 export HTTPS_REDIRECT_PORT=":${HTTPS_PORT}"
 export POSTGRES_PORT=$((5432 + OFFSET))
-export MINIO_API_PORT=$((9000 + OFFSET))
-export MINIO_CONSOLE_PORT=$((9001 + OFFSET))
+export ALMACEN_API_PORT=$((9000 + OFFSET))
 export SIGNER_PORT=$((4000 + OFFSET))
 export DOCS_PORT=$((4321 + OFFSET))
 export AZIMUTT_PORT=$((4700 + OFFSET))

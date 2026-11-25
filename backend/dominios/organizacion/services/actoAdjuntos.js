@@ -26,7 +26,7 @@ import { CLASES_CON_VIDAS, listarVidasConNombre } from "../datos/consulta/vidasC
 import { registrarCorreccion } from "./correccionesDeEstructura.js";
 import { buscarDocumentosFirmados, desenlazarDocumentoDelActo, enlazarDocumentoAlActo } from "../../tareas/index.js";
 
-const BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
+const BUCKET = process.env.ALMACEN_DOCUMENTS_BUCKET || "deasy-documents";
 const PDF = "application/pdf";
 const FIRMA_DE_PDF = "%PDF-";
 

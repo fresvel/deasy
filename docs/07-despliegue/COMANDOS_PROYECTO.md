@@ -141,9 +141,9 @@ Variables clave:
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
 - `POSTGRES_DB`
-- `MINIO_ENDPOINT`
-- `MINIO_ACCESS_KEY`
-- `MINIO_SECRET_KEY`
+- `ALMACEN_ENDPOINT`
+- `ALMACEN_ACCESS_KEY`
+- `ALMACEN_SECRET_KEY`
 - `RABBITMQ_HTTP_API`
 
 El backend necesita que PostgreSQL, RabbitMQ y MinIO esten
@@ -187,10 +187,10 @@ python app.py
 Variables importantes del signer:
 
 - `SIGNER_PORT=4000`
-- `MINIO_ENDPOINT`
-- `MINIO_ACCESS_KEY`
-- `MINIO_SECRET_KEY`
-- `MINIO_SPOOL_BUCKET`
+- `ALMACEN_ENDPOINT`
+- `ALMACEN_ACCESS_KEY`
+- `ALMACEN_SECRET_KEY`
+- `ALMACEN_SPOOL_BUCKET`
 - `RABBITMQ_URL`
 - `SIGN_REQUEST_QUEUE`
 - `SIGN_VALIDATE_REQUEST_QUEUE`
@@ -233,7 +233,7 @@ bash scripts/reset-system.sh dev
 Flags soportados:
 
 - `--keep-db`: conserva PostgreSQL.
-- `--keep-minio`: conserva los buckets de MinIO.
+- `--keep-almacen`: conserva los buckets de MinIO.
 - `--rebuild`: reconstruye las imagenes y recrea los servicios en vez de solo reiniciarlos (para `qa`/`prod` o cuando cambien dependencias).
 - `--no-restart`: no toca los servicios; habra que reiniciar el backend a mano.
 
@@ -288,14 +288,14 @@ datos de PostgreSQL.
 Inicializar buckets y estructura de MinIO en `dev`:
 
 ```bash
-bash scripts/docker-env.sh dev --profile storage-init run --rm minio-bootstrap
+bash scripts/docker-env.sh dev --profile storage-init run --rm almacen-bootstrap
 ```
 
 En una pila paralela (A, B, C o D), lo mismo pero por `stack.sh`, para que caiga en el MinIO de
 esa pila y no en el de otra:
 
 ```bash
-bash scripts/stack.sh c --profile storage-init run --rm minio-bootstrap
+bash scripts/stack.sh c --profile storage-init run --rm almacen-bootstrap
 ```
 
 ### Los dos buckets legales (LOPDP), que no son como los demas
@@ -305,10 +305,10 @@ ellos se crea de una forma que no se puede deshacer**:
 
 | Bucket | Como se crea | Que guarda |
 |---|---|---|
-| `MINIO_LEGAL_DRAFTS_BUCKET` | versionado, **sin** bloqueo | los borradores, que se corrigen |
-| `MINIO_LEGAL_BUCKET` | versionado + **Object Lock**, con retencion `MINIO_LEGAL_RETENTION_MODE` por defecto de `MINIO_LEGAL_RETENTION_DAYS` dias | lo publicado y lo retirado, que ya no se toca |
+| `ALMACEN_LEGAL_DRAFTS_BUCKET` | versionado, **sin** bloqueo | los borradores, que se corrigen |
+| `ALMACEN_LEGAL_BUCKET` | versionado + **Object Lock**, con retencion `ALMACEN_LEGAL_RETENTION_MODE` por defecto de `ALMACEN_LEGAL_RETENTION_DAYS` dias | lo publicado y lo retirado, que ya no se toca |
 
-Y ademas siembra la version 1 de cada texto desde `docker/minio/import/Legal/<clase>/v1.md`,
+Y ademas siembra la version 1 de cada texto desde `docker/almacen/import/Legal/<clase>/v1.md`,
 **sin sobrescribir**: lo que ya existe no se vuelve a escribir nunca.
 
 ⚠️ **El bloqueo solo se puede pedir AL CREAR el bucket, y es irreversible.** A uno creado sin
@@ -321,7 +321,7 @@ buckets al vuelo con `makeBucket(bucket, "")`, **sin** bloqueo. Si en un entorno
 llega antes al bucket legal, el dano ya no tiene arreglo. En un despliegue nuevo, **corre esto
 antes de levantar el backend**.
 
-⚠️ **La retencion no se configura desde la aplicacion, y `MINIO_LEGAL_RETENTION_DAYS` no tiene
+⚠️ **La retencion no se configura desde la aplicacion, y `ALMACEN_LEGAL_RETENTION_DAYS` no tiene
 valor por defecto**: si falta, el script se para. En `dev` y `qa` es **1 dia** porque
 `test:char:run` resetea la base pero **no** MinIO --con los 3650 de produccion, cada corrida
 dejaria documentos indelebles acumulandose para siempre--; en `prod` son **3650** (10 anos).
@@ -334,7 +334,7 @@ que decian leer** (`tools/templates/seeds/` y `tools/templates/dist/Plantillas`)
 repositorio. Quien los copiara se llevaba un error desconcertante.
 
 Los seeds de plantillas entran hoy por el **mismo camino que todo lo demas**: se ponen en
-`docker/minio/import/Seeds/` y los sube `bootstrap.sh` con el perfil `storage-init` de arriba.
+`docker/almacen/import/Seeds/` y los sube `bootstrap.sh` con el perfil `storage-init` de arriba.
 
 ## Comandos por ambiente
 

@@ -49,10 +49,10 @@ const userRepository = () => (_userRepository ??= new UserRepository());
 let _certificateRepository = null;
 const certificateRepository = () => (_certificateRepository ??= new UserCertificateRepository());
 
-export const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
-const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
-export const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
-export const MINIO_USERS_BUCKET = process.env.MINIO_USERS_BUCKET || "deasy-users";
+export const ALMACEN_DOCUMENTS_BUCKET = process.env.ALMACEN_DOCUMENTS_BUCKET || "deasy-documents";
+const ALMACEN_DOCUMENTS_PREFIX = String(process.env.ALMACEN_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
+export const ALMACEN_SPOOL_BUCKET = process.env.ALMACEN_SPOOL_BUCKET || "deasy-spool";
+export const ALMACEN_USERS_BUCKET = process.env.ALMACEN_USERS_BUCKET || "deasy-users";
 
 const sanitizeStorageSegment = (value, fallback = "na") =>
   String(value ?? fallback)
@@ -66,16 +66,16 @@ export const resolveStoredDocumentObject = (storedPath) => {
   if (!normalizedPath) {
     return null;
   }
-  if (normalizedPath.startsWith(`${MINIO_DOCUMENTS_PREFIX}/`)) {
+  if (normalizedPath.startsWith(`${ALMACEN_DOCUMENTS_PREFIX}/`)) {
     return {
-      bucket: MINIO_DOCUMENTS_BUCKET,
+      bucket: ALMACEN_DOCUMENTS_BUCKET,
       objectName: normalizedPath,
-      relativePath: normalizedPath.slice(MINIO_DOCUMENTS_PREFIX.length + 1)
+      relativePath: normalizedPath.slice(ALMACEN_DOCUMENTS_PREFIX.length + 1)
     };
   }
   return {
-    bucket: MINIO_DOCUMENTS_BUCKET,
-    objectName: `${MINIO_DOCUMENTS_PREFIX}/${normalizedPath}`,
+    bucket: ALMACEN_DOCUMENTS_BUCKET,
+    objectName: `${ALMACEN_DOCUMENTS_PREFIX}/${normalizedPath}`,
     relativePath: normalizedPath
   };
 };
@@ -254,7 +254,7 @@ export const resolveSigningStoragePlan = async ({ context, file }) => {
   const storedPath = buildStandaloneUserSignedPath(context.user, sessionId, file?.originalname);
   return {
     mode: "standalone",
-    bucket: MINIO_USERS_BUCKET,
+    bucket: ALMACEN_USERS_BUCKET,
     objectPath: storedPath,
     storedPath,
     downloadPath: storedPath,

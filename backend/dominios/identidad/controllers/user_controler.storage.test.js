@@ -18,8 +18,8 @@ import assert from "node:assert/strict";
 
 import {
   resolveStoredDocumentObject,
-  MINIO_DOCUMENTS_BUCKET,
-  MINIO_DOCUMENTS_PREFIX
+  ALMACEN_DOCUMENTS_BUCKET,
+  ALMACEN_DOCUMENTS_PREFIX
 } from "./user_controler.storage.js";
 
 test("resolveStoredDocumentObject devuelve null ante una ruta vacía", () => {
@@ -30,9 +30,9 @@ test("resolveStoredDocumentObject devuelve null ante una ruta vacía", () => {
 });
 
 test("resolveStoredDocumentObject respeta una ruta que ya viene con el prefijo", () => {
-  const stored = `${MINIO_DOCUMENTS_PREFIX}/5/PROCESOS/9/doc.pdf`;
+  const stored = `${ALMACEN_DOCUMENTS_PREFIX}/5/PROCESOS/9/doc.pdf`;
   assert.deepEqual(resolveStoredDocumentObject(stored), {
-    bucket: MINIO_DOCUMENTS_BUCKET,
+    bucket: ALMACEN_DOCUMENTS_BUCKET,
     objectName: stored,
     relativePath: "5/PROCESOS/9/doc.pdf"
   });
@@ -40,14 +40,14 @@ test("resolveStoredDocumentObject respeta una ruta que ya viene con el prefijo",
 
 test("resolveStoredDocumentObject añade el prefijo a una ruta relativa", () => {
   assert.deepEqual(resolveStoredDocumentObject("5/PROCESOS/9/doc.pdf"), {
-    bucket: MINIO_DOCUMENTS_BUCKET,
-    objectName: `${MINIO_DOCUMENTS_PREFIX}/5/PROCESOS/9/doc.pdf`,
+    bucket: ALMACEN_DOCUMENTS_BUCKET,
+    objectName: `${ALMACEN_DOCUMENTS_PREFIX}/5/PROCESOS/9/doc.pdf`,
     relativePath: "5/PROCESOS/9/doc.pdf"
   });
 });
 
 test("resolveStoredDocumentObject normaliza barras iniciales y espacios", () => {
   const resolved = resolveStoredDocumentObject("  /5/doc.pdf  ");
-  assert.equal(resolved.objectName, `${MINIO_DOCUMENTS_PREFIX}/5/doc.pdf`);
+  assert.equal(resolved.objectName, `${ALMACEN_DOCUMENTS_PREFIX}/5/doc.pdf`);
   assert.equal(resolved.relativePath, "5/doc.pdf");
 });

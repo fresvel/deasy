@@ -50,13 +50,13 @@ Las tres colas: `deasy.sign.request`, `deasy.sign.validate.request` y el prefijo
 
 | **Bucket**           | **Variable de entorno**     | **Contenido**             |
 |:---------------------|:----------------------------|:--------------------------|
-| `deasy-templates`    | `MINIO_TEMPLATES_BUCKET`    | plantillas y semillas     |
-| `deasy-documents`    | `MINIO_DOCUMENTS_BUCKET`    | documentos generados      |
-| `deasy-dossier`      | `MINIO_DOSSIER_BUCKET`      | respaldos del CV personal |
-| `deasy-spool`        | `MINIO_SPOOL_BUCKET`        | area temporal de firma    |
-| `deasy-chat`         | `MINIO_CHAT_BUCKET`         | adjuntos del chat         |
-| `deasy-users`        | `MINIO_USERS_BUCKET`        | fotos de perfil           |
-| `deasy-certificates` | `MINIO_CERTIFICATES_BUCKET` | certificados `.p12`       |
+| `deasy-templates`    | `ALMACEN_TEMPLATES_BUCKET`    | plantillas y semillas     |
+| `deasy-documents`    | `ALMACEN_DOCUMENTS_BUCKET`    | documentos generados      |
+| `deasy-dossier`      | `ALMACEN_DOSSIER_BUCKET`      | respaldos del CV personal |
+| `deasy-spool`        | `ALMACEN_SPOOL_BUCKET`        | area temporal de firma    |
+| `deasy-chat`         | `ALMACEN_CHAT_BUCKET`         | adjuntos del chat         |
+| `deasy-users`        | `ALMACEN_USERS_BUCKET`        | fotos de perfil           |
+| `deasy-certificates` | `ALMACEN_CERTIFICATES_BUCKET` | certificados `.p12`       |
 
 La lista canonica esta en `backend/scripts/lib/reset_targets.mjs`.
 

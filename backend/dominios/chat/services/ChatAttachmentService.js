@@ -9,8 +9,8 @@ import {
 import * as store from "../datos/chatStore.js";
 import { logChatInfo } from "./chat_logging.js";
 
-const MINIO_CHAT_BUCKET = process.env.MINIO_CHAT_BUCKET || "deasy-chat";
-const MINIO_CHAT_PREFIX = String(process.env.MINIO_CHAT_PREFIX || "Chat").replace(/^\/+|\/+$/g, "");
+const ALMACEN_CHAT_BUCKET = process.env.ALMACEN_CHAT_BUCKET || "deasy-chat";
+const ALMACEN_CHAT_PREFIX = String(process.env.ALMACEN_CHAT_PREFIX || "Chat").replace(/^\/+|\/+$/g, "");
 
 const sanitizeFileName = (value = "adjunto") =>
   String(value || "adjunto")
@@ -26,7 +26,7 @@ const buildAttachmentObjectName = ({ conversationId, personId, originalName }) =
   const now = new Date();
   const monthKey = `${now.getUTCFullYear()}-${String(now.getUTCMonth() + 1).padStart(2, "0")}`;
   const uniqueSuffix = `${Date.now()}-${randomUUID()}`;
-  return `${MINIO_CHAT_PREFIX}/conversations/${conversationId}/${monthKey}/${personId}-${uniqueSuffix}-${sanitizedName}`;
+  return `${ALMACEN_CHAT_PREFIX}/conversations/${conversationId}/${monthKey}/${personId}-${uniqueSuffix}-${sanitizedName}`;
 };
 
 export default class ChatAttachmentService {
@@ -54,7 +54,7 @@ export default class ChatAttachmentService {
       throw error;
     }
 
-    await ensureBucketExists(MINIO_CHAT_BUCKET);
+    await ensureBucketExists(ALMACEN_CHAT_BUCKET);
 
     const attachments = [];
     for (const file of normalizedFiles) {
@@ -64,7 +64,7 @@ export default class ChatAttachmentService {
         originalName: file.originalname,
       });
 
-      await uploadFileToMinio(MINIO_CHAT_BUCKET, objectName, file.path, {
+      await uploadFileToMinio(ALMACEN_CHAT_BUCKET, objectName, file.path, {
         "Content-Type": file.mimetype || "application/octet-stream",
         "Original-Name": String(file.originalname || path.basename(objectName)),
       });
@@ -111,8 +111,8 @@ export default class ChatAttachmentService {
     }
 
     const attachment = messageAttachments[safeIndex];
-    const stat = await statMinioObject(MINIO_CHAT_BUCKET, attachment.path);
-    const stream = await getMinioObjectStream(MINIO_CHAT_BUCKET, attachment.path);
+    const stat = await statMinioObject(ALMACEN_CHAT_BUCKET, attachment.path);
+    const stream = await getMinioObjectStream(ALMACEN_CHAT_BUCKET, attachment.path);
 
     return {
       attachment,

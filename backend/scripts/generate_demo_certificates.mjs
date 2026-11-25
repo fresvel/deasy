@@ -22,7 +22,7 @@ import { ensureBucketExists, uploadFileToMinio } from "../services/storage/minio
 
 const execFileAsync = promisify(execFile);
 
-const MINIO_CERTIFICATES_BUCKET = process.env.MINIO_CERTIFICATES_BUCKET || "deasy-certificates";
+const ALMACEN_CERTIFICATES_BUCKET = process.env.ALMACEN_CERTIFICATES_BUCKET || "deasy-certificates";
 const CERT_PASSWORD = "Demo1234!";
 const CERT_LABEL = "Demo Autofirmado";
 const CERT_VALID_DAYS = 3650;
@@ -142,8 +142,8 @@ const registerCertificate = async (person, p12Path) => {
   const originalFilename = sanitizeFileName(`demo_autofirmado_${person.cedula || person.id}.p12`);
   const objectName = `users/${person.cedula}/certificates/${Date.now()}-${originalFilename}`;
 
-  await ensureBucketExists(MINIO_CERTIFICATES_BUCKET);
-  await uploadFileToMinio(MINIO_CERTIFICATES_BUCKET, objectName, p12Path, {
+  await ensureBucketExists(ALMACEN_CERTIFICATES_BUCKET);
+  await uploadFileToMinio(ALMACEN_CERTIFICATES_BUCKET, objectName, p12Path, {
     "Content-Type": "application/x-pkcs12"
   });
 
@@ -151,7 +151,7 @@ const registerCertificate = async (person, p12Path) => {
     person_id: person.id,
     label: CERT_LABEL,
     original_filename: originalFilename,
-    bucket: MINIO_CERTIFICATES_BUCKET,
+    bucket: ALMACEN_CERTIFICATES_BUCKET,
     object_name: objectName,
     is_default: 1
   });

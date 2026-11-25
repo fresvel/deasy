@@ -17,7 +17,7 @@ import {
 } from "../../../services/storage/minio_service.js";
 import { buildMinioReference, parseMinioReference } from "../../../services/storage/minioReference.js";
 
-export const MINIO_USERS_BUCKET = process.env.MINIO_USERS_BUCKET || "deasy-users";
+export const ALMACEN_USERS_BUCKET = process.env.ALMACEN_USERS_BUCKET || "deasy-users";
 
 const CONTENT_TYPE_BY_EXTENSION = {
   ".png": "image/png",
@@ -35,7 +35,7 @@ export const contentTypeForExtension = (extension) =>
 export { buildMinioReference };
 export const parsePhotoReference = parseMinioReference;
 
-const MINIO_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
+const ALMACEN_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
 
 // Abre la foto para hacerle stream. Devuelve null cuando la referencia esta vacia o el
 // objeto ya no existe, para que el handler responda 404 en vez de reventar.
@@ -49,7 +49,7 @@ export const openProfilePhoto = async (rawValue) => {
   try {
     stat = await statMinioObject(reference.bucket, reference.objectName);
   } catch (error) {
-    if (MINIO_NOT_FOUND_CODES.has(error?.code)) {
+    if (ALMACEN_NOT_FOUND_CODES.has(error?.code)) {
       return null;
     }
     throw error;
@@ -136,14 +136,14 @@ export const storeProfilePhoto = async ({ personId, filePath, timestamp = Date.n
   }
 
   const objectName = buildProfilePhotoObjectName(personId, format.extension, timestamp);
-  await ensureBucketExists(MINIO_USERS_BUCKET);
-  await uploadFileToMinio(MINIO_USERS_BUCKET, objectName, filePath, {
+  await ensureBucketExists(ALMACEN_USERS_BUCKET);
+  await uploadFileToMinio(ALMACEN_USERS_BUCKET, objectName, filePath, {
     "Content-Type": format.contentType
   });
 
   return {
-    reference: buildMinioReference(MINIO_USERS_BUCKET, objectName),
-    bucket: MINIO_USERS_BUCKET,
+    reference: buildMinioReference(ALMACEN_USERS_BUCKET, objectName),
+    bucket: ALMACEN_USERS_BUCKET,
     objectName,
     contentType: format.contentType
   };

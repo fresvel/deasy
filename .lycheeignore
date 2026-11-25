@@ -7,7 +7,7 @@
 ^https?://localhost
 ^https?://127\.0\.0\.1
 ^https?://0\.0\.0\.0
-# Nombres de servicio de la red de compose (backend:3030, minio:9000, rabbitmq:15672...)
+# Nombres de servicio de la red de compose (backend:3030, almacen:9000, rabbitmq:15672...)
 ^https?://(backend|frontend|postgres|minio|rabbitmq|signer|analytics|docs|nginx-proxy):
 
 # --- Dominios del despliegue: pueden no resolver o estar tras VPN ---

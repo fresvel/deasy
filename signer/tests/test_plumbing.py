@@ -15,16 +15,16 @@ import app
 
 class ConstruccionDelClienteMinio(unittest.TestCase):
     def test_quita_el_esquema_http_y_desactiva_tls(self):
-        with mock.patch.object(app, "MINIO_ENDPOINT", "http://minio:9000"), \
+        with mock.patch.object(app, "ALMACEN_ENDPOINT", "http://almacen:9000"), \
              mock.patch.object(app, "Minio") as constructor:
             app.create_minio_client()
         constructor.assert_called_once()
         argumentos, opciones = constructor.call_args
-        self.assertEqual(argumentos[0], "minio:9000")
+        self.assertEqual(argumentos[0], "almacen:9000")
         self.assertFalse(opciones["secure"])
 
     def test_https_activa_tls(self):
-        with mock.patch.object(app, "MINIO_ENDPOINT", "https://minio.example:9000"), \
+        with mock.patch.object(app, "ALMACEN_ENDPOINT", "https://minio.example:9000"), \
              mock.patch.object(app, "Minio") as constructor:
             app.create_minio_client()
         argumentos, opciones = constructor.call_args
@@ -32,21 +32,21 @@ class ConstruccionDelClienteMinio(unittest.TestCase):
         self.assertTrue(opciones["secure"])
 
     def test_endpoint_sin_esquema_se_toma_tal_cual_y_sin_tls(self):
-        with mock.patch.object(app, "MINIO_ENDPOINT", "minio:9000"), \
+        with mock.patch.object(app, "ALMACEN_ENDPOINT", "almacen:9000"), \
              mock.patch.object(app, "Minio") as constructor:
             app.create_minio_client()
         argumentos, opciones = constructor.call_args
-        self.assertEqual(argumentos[0], "minio:9000")
+        self.assertEqual(argumentos[0], "almacen:9000")
         self.assertFalse(opciones["secure"])
 
 
 class TransferenciasConMinio(unittest.TestCase):
     def setUp(self):
         self.cliente = mock.Mock()
-        parche = mock.patch.object(app, "MINIO_CLIENT", self.cliente)
+        parche = mock.patch.object(app, "ALMACEN_CLIENT", self.cliente)
         parche.start()
         self.addCleanup(parche.stop)
-        parche_bucket = mock.patch.object(app, "MINIO_SPOOL_BUCKET", "deasy-spool")
+        parche_bucket = mock.patch.object(app, "ALMACEN_SPOOL_BUCKET", "deasy-spool")
         parche_bucket.start()
         self.addCleanup(parche_bucket.stop)
 

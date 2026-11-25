@@ -47,13 +47,13 @@ const countDatabaseContents = async () => {
 
 // Buckets gestionados por la aplicación (mismos defaults que el código que los usa).
 const resolveBuckets = () => [
-  process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates",
-  process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents",
-  process.env.MINIO_DOSSIER_BUCKET || "deasy-dossier",
-  process.env.MINIO_SPOOL_BUCKET || "deasy-spool",
-  process.env.MINIO_CHAT_BUCKET || "deasy-chat",
-  process.env.MINIO_USERS_BUCKET || "deasy-users",
-  process.env.MINIO_CERTIFICATES_BUCKET || "deasy-certificates"
+  process.env.ALMACEN_TEMPLATES_BUCKET || "deasy-templates",
+  process.env.ALMACEN_DOCUMENTS_BUCKET || "deasy-documents",
+  process.env.ALMACEN_DOSSIER_BUCKET || "deasy-dossier",
+  process.env.ALMACEN_SPOOL_BUCKET || "deasy-spool",
+  process.env.ALMACEN_CHAT_BUCKET || "deasy-chat",
+  process.env.ALMACEN_USERS_BUCKET || "deasy-users",
+  process.env.ALMACEN_CERTIFICATES_BUCKET || "deasy-certificates"
 ];
 
 // Tamaño de página deliberadamente pequeño: el cliente MinIO 8 parsea las respuestas con
@@ -134,7 +134,7 @@ export const resetMinio = async () => {
   for (const bucket of buckets) {
     total += await emptyMinioBucket(minioClient, bucket);
   }
-  console.log(`✅ MinIO purgado: ${total} objeto(s) en ${buckets.length} bucket(s).`);
+  console.log(`✅ Almacén purgado: ${total} objeto(s) en ${buckets.length} bucket(s).`);
 };
 
 // Para la confirmación basta saber SI hay contenido, no cuánto: se pide una sola clave por

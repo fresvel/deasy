@@ -35,9 +35,10 @@ services:
       retries: 20
       start_period: 10s
 
-  # EL ALMACÉN ES VERSITY GATEWAY DESDE EL 2026-11-25 (frente 29), y el servicio se sigue llamando
-  # `minio` a propósito: es el nombre que llevan el backend y el firmador en `MINIO_ENDPOINT`, y lo
-  # que hablan con él es S3. Lo que corre es una pasarela S3 (Apache 2.0) sobre un directorio:
+  # EL ALMACÉN ES VERSITY GATEWAY DESDE EL 2026-11-25 (frente 29). El servicio se llamaba `minio`
+  # y sus variables `MINIO_*`; se renombraron ese día a `almacen` y `ALMACEN_*`, y el backend y el
+  # firmador CORTAN EL ARRANQUE si el entorno trae una con el prefijo viejo. Lo que la aplicación
+  # habla con él es S3. Lo que corre es una pasarela S3 (Apache 2.0) sobre un directorio:
   #   /data/s3          los objetos, como ficheros corrientes (metadatos en xattrs `user.*`)
   #   /data/versioning  las versiones NO vigentes (sin esto no hay versionado ni Object Lock)
   # Los dos van en UN volumen a propósito: pasar una versión de un árbol a otro es un rename.
@@ -54,12 +55,12 @@ services:
   # ensayos que llevaron aquí están en `docs/planes/deasy/tareas/F29.P1.T*.md`.
   #
   # La imagen va fijada por digest. `ALMACEN_IMAGE` permite apuntar a otra sin tocar este fichero.
-  minio:
+  almacen:
     image: ${ALMACEN_IMAGE:-ghcr.io/versity/versitygw:v1.11.0@sha256:8319a530d08d537426e2f855bae5280709795dc73a3f0c347973ef915d6343c5}
     restart: unless-stopped
     environment:
-      ROOT_ACCESS_KEY: ${MINIO_ROOT_USER}
-      ROOT_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
+      ROOT_ACCESS_KEY: ${ALMACEN_ROOT_USER:?falta ALMACEN_ROOT_USER (hasta el 2026-11-25 se llamaba MINIO_ROOT_USER)}
+      ROOT_SECRET_KEY: ${ALMACEN_ROOT_PASSWORD:?falta ALMACEN_ROOT_PASSWORD (hasta el 2026-11-25 se llamaba MINIO_ROOT_PASSWORD)}
       VGW_PORT: ":9000"
       VGW_HEALTH: /_health
       VGW_BACKEND: posix
@@ -73,8 +74,8 @@ services:
   # Se lanza A MANO, y el perfil es lo que lo hace posible sin que arranque en cada `up`. El
   # comando esta documentado en `docs/07-despliegue/COMANDOS_PROYECTO.md`:
   #
-  #   bash scripts/docker-env.sh dev --profile storage-init run --rm minio-bootstrap
-  #   bash scripts/stack.sh c --profile storage-init run --rm minio-bootstrap
+  #   bash scripts/docker-env.sh dev --profile storage-init run --rm almacen-bootstrap
+  #   bash scripts/stack.sh c --profile storage-init run --rm almacen-bootstrap
   #
   # ⚠️ Y por eso mismo NO es la barrera del bucket legal. Como no corre solo, el bucket de
   # archivo puede acabar creandolo el backend por el camino perezoso (`makeBucket(bucket, "")`,
@@ -84,37 +85,37 @@ services:
   # El cliente sigue siendo `mc`, y su imagen SÍ es la copia congelada del registro del proyecto
   # (`minio/mc` desapareció de Docker Hub con el servidor). Es un cliente S3 de un solo uso: no
   # escucha en ningún puerto. Cambiarlo por otro es F29.P3.T7.
-  minio-bootstrap:
-    image: ${MINIO_MC_IMAGE:-ghcr.io/fresvel/deasy-minio-mc:RELEASE.2025-02-21T16-00-46Z}
+  almacen-bootstrap:
+    image: ${ALMACEN_MC_IMAGE:-ghcr.io/fresvel/deasy-minio-mc:RELEASE.2025-02-21T16-00-46Z}
     profiles:
       - storage-init
     restart: "no"
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
-      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
-      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
-      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
-      MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
-      MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
-      MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
-      MINIO_CHAT_PREFIX: ${MINIO_CHAT_PREFIX}
-      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
-      MINIO_SIGNATURES_PREFIX: ${MINIO_SIGNATURES_PREFIX}
-      MINIO_USERS_BUCKET: ${MINIO_USERS_BUCKET}
-      MINIO_USERS_PREFIX: ${MINIO_USERS_PREFIX}
-      MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
-      MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
-      MINIO_LEGAL_BUCKET: ${MINIO_LEGAL_BUCKET}
-      MINIO_LEGAL_DRAFTS_BUCKET: ${MINIO_LEGAL_DRAFTS_BUCKET}
-      MINIO_LEGAL_RETENTION_MODE: ${MINIO_LEGAL_RETENTION_MODE}
-      MINIO_LEGAL_RETENTION_DAYS: ${MINIO_LEGAL_RETENTION_DAYS}
+      ALMACEN_ROOT_USER: ${ALMACEN_ROOT_USER}
+      ALMACEN_ROOT_PASSWORD: ${ALMACEN_ROOT_PASSWORD}
+      ALMACEN_TEMPLATES_BUCKET: ${ALMACEN_TEMPLATES_BUCKET}
+      ALMACEN_TEMPLATES_PREFIX: ${ALMACEN_TEMPLATES_PREFIX}
+      ALMACEN_TEMPLATES_SEEDS_PREFIX: ${ALMACEN_TEMPLATES_SEEDS_PREFIX}
+      ALMACEN_DOCUMENTS_BUCKET: ${ALMACEN_DOCUMENTS_BUCKET}
+      ALMACEN_DOCUMENTS_PREFIX: ${ALMACEN_DOCUMENTS_PREFIX}
+      ALMACEN_CHAT_BUCKET: ${ALMACEN_CHAT_BUCKET}
+      ALMACEN_CHAT_PREFIX: ${ALMACEN_CHAT_PREFIX}
+      ALMACEN_SPOOL_BUCKET: ${ALMACEN_SPOOL_BUCKET}
+      ALMACEN_SIGNATURES_PREFIX: ${ALMACEN_SIGNATURES_PREFIX}
+      ALMACEN_USERS_BUCKET: ${ALMACEN_USERS_BUCKET}
+      ALMACEN_USERS_PREFIX: ${ALMACEN_USERS_PREFIX}
+      ALMACEN_DOSSIER_BUCKET: ${ALMACEN_DOSSIER_BUCKET}
+      ALMACEN_DOSSIER_PREFIX: ${ALMACEN_DOSSIER_PREFIX}
+      ALMACEN_LEGAL_BUCKET: ${ALMACEN_LEGAL_BUCKET}
+      ALMACEN_LEGAL_DRAFTS_BUCKET: ${ALMACEN_LEGAL_DRAFTS_BUCKET}
+      ALMACEN_LEGAL_RETENTION_MODE: ${ALMACEN_LEGAL_RETENTION_MODE}
+      ALMACEN_LEGAL_RETENTION_DAYS: ${ALMACEN_LEGAL_RETENTION_DAYS}
     entrypoint: ["/bin/sh", "/bootstrap.sh"]
     volumes:
-      - ./minio/bootstrap.sh:/bootstrap.sh:ro
-      - ./minio/import:/import:ro
+      - ./almacen/bootstrap.sh:/bootstrap.sh:ro
+      - ./almacen/import:/import:ro
     depends_on:
-      - minio
+      - almacen
 
   backend:
     restart: unless-stopped
@@ -127,29 +128,29 @@ services:
       PORT: ${BACKEND_PORT}
       ORIGIN1: ${ORIGIN1}
       ORIGIN2: ${ORIGIN2}
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_PUBLIC_ENDPOINT: http://localhost:${MINIO_API_PORT}
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_USE_SSL: 0
-      MINIO_TEMPLATES_BUCKET: ${MINIO_TEMPLATES_BUCKET}
-      MINIO_TEMPLATES_PREFIX: ${MINIO_TEMPLATES_PREFIX}
-      MINIO_TEMPLATES_SEEDS_PREFIX: ${MINIO_TEMPLATES_SEEDS_PREFIX}
-      MINIO_TEMPLATES_USERS_PREFIX: ${MINIO_TEMPLATES_USERS_PREFIX}
-      MINIO_DOCUMENTS_BUCKET: ${MINIO_DOCUMENTS_BUCKET}
-      MINIO_DOCUMENTS_PREFIX: ${MINIO_DOCUMENTS_PREFIX}
-      MINIO_CHAT_BUCKET: ${MINIO_CHAT_BUCKET}
-      MINIO_CHAT_PREFIX: ${MINIO_CHAT_PREFIX}
-      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
-      MINIO_SIGNATURES_PREFIX: ${MINIO_SIGNATURES_PREFIX}
-      MINIO_USERS_BUCKET: ${MINIO_USERS_BUCKET}
-      MINIO_USERS_PREFIX: ${MINIO_USERS_PREFIX}
-      MINIO_DOSSIER_BUCKET: ${MINIO_DOSSIER_BUCKET}
-      MINIO_DOSSIER_PREFIX: ${MINIO_DOSSIER_PREFIX}
-      MINIO_LEGAL_BUCKET: ${MINIO_LEGAL_BUCKET}
-      MINIO_LEGAL_DRAFTS_BUCKET: ${MINIO_LEGAL_DRAFTS_BUCKET}
-      MINIO_LEGAL_RETENTION_MODE: ${MINIO_LEGAL_RETENTION_MODE}
-      MINIO_LEGAL_RETENTION_DAYS: ${MINIO_LEGAL_RETENTION_DAYS}
+      ALMACEN_ENDPOINT: http://almacen:9000
+      ALMACEN_PUBLIC_ENDPOINT: http://localhost:${ALMACEN_API_PORT}
+      ALMACEN_ACCESS_KEY: ${ALMACEN_ROOT_USER}
+      ALMACEN_SECRET_KEY: ${ALMACEN_ROOT_PASSWORD}
+      ALMACEN_USE_SSL: 0
+      ALMACEN_TEMPLATES_BUCKET: ${ALMACEN_TEMPLATES_BUCKET}
+      ALMACEN_TEMPLATES_PREFIX: ${ALMACEN_TEMPLATES_PREFIX}
+      ALMACEN_TEMPLATES_SEEDS_PREFIX: ${ALMACEN_TEMPLATES_SEEDS_PREFIX}
+      ALMACEN_TEMPLATES_USERS_PREFIX: ${ALMACEN_TEMPLATES_USERS_PREFIX}
+      ALMACEN_DOCUMENTS_BUCKET: ${ALMACEN_DOCUMENTS_BUCKET}
+      ALMACEN_DOCUMENTS_PREFIX: ${ALMACEN_DOCUMENTS_PREFIX}
+      ALMACEN_CHAT_BUCKET: ${ALMACEN_CHAT_BUCKET}
+      ALMACEN_CHAT_PREFIX: ${ALMACEN_CHAT_PREFIX}
+      ALMACEN_SPOOL_BUCKET: ${ALMACEN_SPOOL_BUCKET}
+      ALMACEN_SIGNATURES_PREFIX: ${ALMACEN_SIGNATURES_PREFIX}
+      ALMACEN_USERS_BUCKET: ${ALMACEN_USERS_BUCKET}
+      ALMACEN_USERS_PREFIX: ${ALMACEN_USERS_PREFIX}
+      ALMACEN_DOSSIER_BUCKET: ${ALMACEN_DOSSIER_BUCKET}
+      ALMACEN_DOSSIER_PREFIX: ${ALMACEN_DOSSIER_PREFIX}
+      ALMACEN_LEGAL_BUCKET: ${ALMACEN_LEGAL_BUCKET}
+      ALMACEN_LEGAL_DRAFTS_BUCKET: ${ALMACEN_LEGAL_DRAFTS_BUCKET}
+      ALMACEN_LEGAL_RETENTION_MODE: ${ALMACEN_LEGAL_RETENTION_MODE}
+      ALMACEN_LEGAL_RETENTION_DAYS: ${ALMACEN_LEGAL_RETENTION_DAYS}
       RABBITMQ_HTTP_API: ${RABBITMQ_HTTP_API}
       RABBITMQ_HTTP_USER: ${RABBITMQ_HTTP_USER}
       RABBITMQ_HTTP_PASSWORD: ${RABBITMQ_HTTP_PASSWORD}
@@ -171,10 +172,10 @@ services:
   signer:
     restart: unless-stopped
     environment:
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: ${MINIO_ROOT_USER}
-      MINIO_SECRET_KEY: ${MINIO_ROOT_PASSWORD}
-      MINIO_SPOOL_BUCKET: ${MINIO_SPOOL_BUCKET}
+      ALMACEN_ENDPOINT: http://almacen:9000
+      ALMACEN_ACCESS_KEY: ${ALMACEN_ROOT_USER}
+      ALMACEN_SECRET_KEY: ${ALMACEN_ROOT_PASSWORD}
+      ALMACEN_SPOOL_BUCKET: ${ALMACEN_SPOOL_BUCKET}
       SIGNER_PORT: "4000"
       SIGMAKER_DIR: /opt/sigmaker
       # Ruta propia del servicio (la crea la imagen con dueno appuser y modo 0700). Explicita a
@@ -189,7 +190,7 @@ services:
       SIGNER_USE_PADES_LTA: ${SIGNER_USE_PADES_LTA:-0}
       SIGNER_USE_GHOSTSCRIPT: ${SIGNER_USE_GHOSTSCRIPT:-1}
     depends_on:
-      - minio
+      - almacen
       - rabbitmq
 
   analytics:
