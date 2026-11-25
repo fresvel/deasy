@@ -466,6 +466,25 @@ El script:
 - apaga `ingress-bootstrap`
 - levanta `ingress` final en `80/443`
 
+Eso **emite** el certificado. Dura 90 dias y **se renueva solo**: la pila `ingress` trae un
+servicio `certbot` (contenedor `deasy-public-certbot`) que cada 12 horas pregunta a Let's Encrypt
+si toca, y renueva cuando faltan menos de 30 dias. No hay nada que instalar en el servidor.
+
+- El servicio **solo escribe el certificado** en `nginx/certs/public`. No tiene el socket de
+  Docker ni ve los procesos de nginx.
+- **nginx se recarga solo** cuando su certificado cambia en disco: lo vigila cada 5 minutos
+  (`nginx/scripts/40-recargar-si-cambia-el-certificado.sh`) y antes comprueba la configuracion.
+
+| Para | Comando |
+|---|---|
+| ver si esta sano | `docker ps --filter name=deasy-public` — `certbot` pasa a **unhealthy** cuando al certificado le quedan menos de 15 dias |
+| leer que hizo | `docker logs deasy-public-certbot` |
+| ensayar sin cambiar nada | `docker exec deasy-public-certbot certbot renew --dry-run` |
+| forzar una pasada ahora | `docker restart deasy-public-certbot` |
+| renovar a mano, si el servicio no esta | `bash scripts/renew-ingress-cert.sh` |
+
+**No avisa a nadie**: deja el estado a la vista, y hay que mirarlo.
+
 La validación base sigue siendo:
 
 ```bash
