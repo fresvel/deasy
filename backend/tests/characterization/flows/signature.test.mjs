@@ -12,7 +12,7 @@ import { waitForReady } from "../lib/readiness.mjs";
 import { USERS } from "../config.mjs";
 
 const SUITE = "signature";
-// Las URLs de artefactos en MinIO suelen venir prefirmadas (volátiles).
+// Las URLs de artefactos en el almacén suelen venir prefirmadas (volátiles).
 const URL_MASK = ["url", "signedUrl", "downloadUrl", "photoUrl", "path"];
 
 before(async () => {

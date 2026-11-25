@@ -6,7 +6,7 @@
 // delataba: `document_attachments` —el material de APOYO— sí guarda `uploaded_by_person_id`. De un
 // anexo sabías quién lo subió; del entregable, no.
 //
-// ⚠️ MATIZ QUE ES FÁCIL CONFUNDIR: en MinIO nunca se perdió un fichero. El nombre del objeto lleva
+// ⚠️ MATIZ QUE ES FÁCIL CONFUNDIR: en el almacén nunca se perdió un fichero. El nombre del objeto lleva
 // sello de tiempo y UUID, así que cada subida escribe un objeto NUEVO. Lo que se perdía era el
 // PUNTERO — los objetos anteriores quedaban huérfanos, no borrados.
 //
@@ -82,7 +82,7 @@ test("cada subida deja fila en la bitácora, con su autor y su número de correc
       "🔴 no consta quién subió el archivo: es justo el dato que faltaba",
     );
   }
-  assert.notEqual(subidas[0].file_path, subidas[1].file_path, "cada subida es un objeto distinto en MinIO");
+  assert.notEqual(subidas[0].file_path, subidas[1].file_path, "cada subida es un objeto distinto en el almacén");
 
   // La ruta se explica sola: ronda y corrección van en carpetas.
   assert.match(subidas[0].file_path, /\/v\d{4}\/m0001\/working\//, "la primera vive en m0001");

@@ -243,7 +243,7 @@ export const buildWorkflowsDocument = ({ fillWorkflow, signatureWorkflow } = {})
       // formulario no tiene control que lo escriba.
       // Lo que lo devolvería a la vida: darle columna y que `normalizeFillSteps` la escriba — y eso
       // es modelar los campos del formulario, que el §0.8 dejó fuera de alcance a propósito
-      // (decisión 3: no tienen tabla, viven en el `schema.json` de MinIO).
+      // (decisión 3: no tienen tabla, viven en el `schema.json` del almacén).
       out.required = step?.required !== false;
       // La capacidad de devolver se deriva del orden: solo a partir del 2º paso hay un paso previo
       // al que regresar. El 1º (entrega del dueño) nunca puede devolver.

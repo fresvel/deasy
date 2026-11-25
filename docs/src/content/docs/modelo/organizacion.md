@@ -476,7 +476,7 @@ erDiagram
     varchar numero "mayusculas, sin separadores"
     smallint verificado
     smallint principal_flag "generada, uno solo por persona. La visa NO puede serlo"
-    varchar escaneo_ref "minio del PDF escaneado"
+    varchar escaneo_ref "referencia s3 del PDF escaneado"
     timestamp escaneo_subido_at
   }
   categorias_visa {
@@ -648,7 +648,7 @@ Y hay una razón que se ve mejor en el reverso: **los términos son un contrato*
 7.5) y **el tratamiento de datos es consentimiento** (Art. 8). El segundo **se puede revocar**; el
 primero no funciona así. Con una casilla única, revocar una revocaría la otra.
 
-### `documentos_legales` — el índice; el texto vive en MinIO
+### `documentos_legales` — el índice; el texto vive en el almacén
 
 ```
 clase              'terminos_de_uso' · 'tratamiento_de_datos'
@@ -660,7 +660,7 @@ object_key         terminos_de_uso/v1.md
 object_version_id  la VERSIÓN DE OBJETO ← se lee por aquí, nunca por la clave
 ```
 
-⚠️ **La tabla no guarda el texto: lo indexa.** Desde el 2026-09-02 el contenido vive en MinIO, en
+⚠️ **La tabla no guarda el texto: lo indexa.** Desde el 2026-09-02 el contenido vive en el almacén, en
 **dos buckets** con propósitos opuestos:
 
 | Bucket | | Qué guarda |
@@ -681,7 +681,7 @@ Por eso el sistema lee **siempre por `object_version_id`**. Sin esa columna, la 
 archivo no serviría de nada: la prueba seguiría ahí, pero nadie la estaría leyendo.
 :::
 
-⚠️ **Y hay dos ejes de versión que no se confunden**: la versión de **objeto** (MinIO) cuenta *cómo
+⚠️ **Y hay dos ejes de versión que no se confunden**: la versión de **objeto** (el almacén) cuenta *cómo
 evolucionó el borrador* —cuarenta guardados, cuarenta versiones—; la versión de **negocio** (`v1`,
 `v2`) cuenta *qué aceptó esta persona* — cuarenta guardados, **una** fila.
 
@@ -962,7 +962,7 @@ por eso la identidad de una parroquia es su **código DPA**.
 
 :::note[Por qué el escaneo guarda una referencia y no una URL]
 
-`documentos_identidad.escaneo_ref` guarda `minio://<bucket>/<objeto>`, no una dirección web. Una URL
+`documentos_identidad.escaneo_ref` guarda `s3://<bucket>/<objeto>`, no una dirección web. Una URL
 pública lleva dentro el endpoint del entorno, así que mover la pila o cambiar de dominio invalidaría
 todas las filas. La ruta del objeto sí es derivable —cuelga del id de la persona y del documento—,
 pero **su existencia no**: una referencia vacía significa «sin escaneo», y saberlo sin preguntarle al

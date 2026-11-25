@@ -1,6 +1,6 @@
 # Signer — Servicio de Firma Digital
 
-Servicio que firma documentos PDF usando pyhanko, MinIO y canvas para el estampado.
+Servicio que firma documentos PDF usando pyhanko, el almacén y canvas para el estampado.
 
 > **El camino real en producción es RabbitMQ, no HTTP.** El backend habla con este servicio por las
 > colas `deasy.sign.request` y `deasy.sign.validate.request` y espera la respuesta en la cola que
@@ -19,7 +19,7 @@ bash scripts/docker-env.sh dev exec -T signer sh -lc 'cd /app && python -m unitt
 ```
 
 224 casos con `unittest` de la biblioteca estándar (la imagen no trae `pytest`). Ninguno abre red
-ni toca MinIO o RabbitMQ reales.
+ni toca el almacén o RabbitMQ reales.
 
 ## Endpoints
 
@@ -39,10 +39,10 @@ Content-Type: application/json
 {
   "signType": "coordinates",
   "coordinates": { "page": 1, "x": 100, "y": 200 },
-  "minioPdfPath": "Firmas/documento.pdf",
+  "almacenPdfPath": "Firmas/documento.pdf",
   "stampText": "Docente Demo Principal",
   "finalPath": "https://storage.pucese.edu.ec/docs/documento-firmado.pdf",
-  "minioCertPath": "Firmas/certificados/mi_cert.p12",
+  "almacenCertPath": "Firmas/certificados/mi_cert.p12",
   "certPassword": "mi_contraseña"
 }
 ```
@@ -54,10 +54,10 @@ Content-Type: application/json
 | `signType` | `"coordinates"` \| `"token"` | Tipo de ejecución de firma |
 | `coordinates` | `{ page, x, y }` | Requerido si `signType = "coordinates"` |
 | `token` | `string` | Requerido si `signType = "token"`. Formato: `!-XXXXXXXXXX-!` |
-| `minioPdfPath` | `string` | Ruta del PDF en el bucket de spool de MinIO |
+| `almacenPdfPath` | `string` | Ruta del PDF en el bucket de spool del almacén |
 | `stampText` | `string` | Nombre completo del firmante para el estampado |
 | `finalPath` | `string` | URL pública del documento firmado (se codifica en el QR) |
-| `minioCertPath` | `string` | Ruta del certificado `.p12` en MinIO |
+| `almacenCertPath` | `string` | Ruta del certificado `.p12` en el almacén |
 | `certPassword` | `string` | Contraseña del certificado |
 
 ## Respuesta exitosa
@@ -86,7 +86,7 @@ Content-Type: application/json
 
 ```json
 {
-  "minioPdfPath": "users/0105998181/validation/abc/documento.pdf",
+  "almacenPdfPath": "users/0105998181/validation/abc/documento.pdf",
   "cedula": "0105998181"
 }
 ```
@@ -139,10 +139,10 @@ Content-Type: application/json
 | Variable | Default | Descripción |
 |---|---|---|
 | `SIGNER_PORT` | `4000` | Puerto del servicio HTTP |
-| `MINIO_ENDPOINT` | `http://minio:9000` | Endpoint de MinIO |
-| `MINIO_ACCESS_KEY` | `deasy_minio` | Access key de MinIO |
-| `MINIO_SECRET_KEY` | `deasy_minio_secret` | Secret key de MinIO |
-| `MINIO_SPOOL_BUCKET` | `deasy-spool` | Bucket de spool en MinIO |
+| `ALMACEN_ENDPOINT` | `http://almacen:9000` | Endpoint del almacén |
+| `ALMACEN_ACCESS_KEY` | `deasy_almacen` | Access key del almacén |
+| `ALMACEN_SECRET_KEY` | `deasy_almacen_secret` | Secret key del almacén |
+| `ALMACEN_SPOOL_BUCKET` | `deasy-spool` | Bucket de spool en el almacén |
 | `SIGNER_WORKSPACE_DIR` | `/var/lib/deasy-signer/workspace` | Raíz del área de trabajo por job. **Nunca bajo `/tmp`**: aquí se desempaqueta el PKCS#12. La imagen la crea con dueño `appuser` y modo `0700` |
 | `SIGN_VALIDATE_REQUEST_QUEUE` | `deasy.sign.validate.request` | Cola RabbitMQ para validación documental |
 
@@ -150,7 +150,7 @@ Content-Type: application/json
 
 1. Valida el payload JSON
 2. Crea un directorio temporal propio del job dentro de `SIGNER_WORKSPACE_DIR`
-3. Descarga el PDF y el certificado `.p12` desde MinIO a ese directorio
+3. Descarga el PDF y el certificado `.p12` desde el almacén a ese directorio
 4. Carga el `.p12` y **rechaza el job si el certificado está expirado o aún no es válido**
 5. Normaliza el PDF con Ghostscript, **salvo que ya contenga firmas embebidas** (aplanarlo las
    destruiría)
@@ -159,6 +159,6 @@ Content-Type: application/json
 8. Inserta el campo de firma y firma con pyhanko (una vez por cada marca encontrada)
 9. Valida la firma resultante; si la cadena no es de confianza, aborta salvo que el payload lo
    tolere (`allow_untrusted_signer`)
-10. Sube el documento firmado a MinIO **reemplazando el original**, y además a `finalPath` si es
+10. Sube el documento firmado al almacén **reemplazando el original**, y además a `finalPath` si es
     distinto
 11. El directorio temporal se borra solo al salir del `with`

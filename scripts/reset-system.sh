@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # shellcheck source=./_backend_db_exec.sh
 . "$ROOT_DIR/scripts/_backend_db_exec.sh"
 
-# Servicios de aplicacion que mantienen conexiones/estado contra PostgreSQL/MinIO/RabbitMQ y
+# Servicios de aplicacion que mantienen conexiones/estado contra PostgreSQL/el almacén/RabbitMQ y
 # que deben reciclarse tras el wipe para reconectar limpio (el backend ademas re-corre la
 # inicializacion de esquema y queda en modo bootstrap). Solo se tocan los que existan en el entorno.
 APP_SERVICES=("backend" "signer")
@@ -23,7 +23,7 @@ Uso:
 
 Regresa el sistema al estado base (instalación virgen) para arrancar el bootstrap:
   - PostgreSQL: dropea todas las tablas y recrea el schema vacío (incluye dossier, chat, etc.)
-  - MinIO:   vacía todos los buckets gestionados por la app
+  - Almacén: vacía todos los buckets gestionados por la app
 
 Tras el wipe RECREA los servicios de app (backend, signer) para que reconecten en limpio y
 relean su entorno; el backend detecta la instalación virgen y la UI pide crear el primer
@@ -31,7 +31,7 @@ administrador.
 
 Flags de wipe (se traducen a los objetivos de reset.mjs):
   --keep-db        conserva PostgreSQL
-  --keep-minio     conserva los buckets de MinIO
+  --keep-almacen   conserva los buckets del almacén
 
 Flags de servicios:
   --rebuild        reconstruye TAMBIÉN las imágenes; úsalo cuando cambien dependencias o el
@@ -41,7 +41,7 @@ Flags de servicios:
 
 Ejemplos:
   bash scripts/reset-system.sh dev
-  bash scripts/reset-system.sh dev --keep-minio
+  bash scripts/reset-system.sh dev --keep-almacen
   bash scripts/reset-system.sh qa --rebuild
   bash scripts/reset-system.sh dev --no-restart
 
@@ -75,7 +75,7 @@ while [ "$#" -gt 0 ]; do
     --keep-db)
       RESET_DB=0
       ;;
-    --keep-minio)
+    --keep-almacen)
       RESET_STORAGE=0
       ;;
     --help|-h)
@@ -160,7 +160,7 @@ if [ "$RESET_STORAGE" -eq 1 ]; then
 fi
 
 if [ "${#TARGETS[@]}" -eq 0 ]; then
-  echo "• Nada que borrar: --keep-db y --keep-minio a la vez."
+  echo "• Nada que borrar: --keep-db y --keep-almacen a la vez."
 else
   run_in_backend "$ENVIRONMENT" node /app/backend/scripts/reset.mjs "${TARGETS[@]}" --yes
 fi

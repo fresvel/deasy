@@ -4,9 +4,9 @@ import fs from "fs-extra";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { pipeline } from "node:stream/promises";
-import { minioClient, getMinioObjectStream } from "../services/storage/minio_service.js";
+import { almacenClient, getAlmacenObjectStream } from "../services/storage/almacen_service.js";
 
-export const TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
+export const TEMPLATES_BUCKET = process.env.ALMACEN_TEMPLATES_BUCKET || "deasy-templates";
 
 // Normaliza un segmento para usarlo en nombres de archivo/objeto (sin acentos ni separadores).
 export const sanitizeStorageSegment = (value, fallback = "na") => {
@@ -19,11 +19,11 @@ export const sanitizeStorageSegment = (value, fallback = "na") => {
   return normalized || fallback;
 };
 
-// Lista recursiva de nombres de objeto bajo un prefijo en MinIO.
-export const listMinioObjects = (bucket, prefix, recursive = true) =>
+// Lista recursiva de nombres de objeto bajo un prefijo en el almacén.
+export const listAlmacenObjects = (bucket, prefix, recursive = true) =>
   new Promise((resolve, reject) => {
     const entries = [];
-    const stream = minioClient.listObjectsV2(bucket, String(prefix || "").replace(/^\/+/, ""), recursive);
+    const stream = almacenClient.listObjectsV2(bucket, String(prefix || "").replace(/^\/+/, ""), recursive);
     stream.on("data", (item) => {
       if (item?.name) {
         entries.push(item.name);
@@ -51,7 +51,7 @@ export const collectFormatResources = async (availableFormats, { bucket = TEMPLA
     if (!entryPrefix) {
       continue;
     }
-    const objectNames = await listMinioObjects(bucket, entryPrefix, true);
+    const objectNames = await listAlmacenObjects(bucket, entryPrefix, true);
     for (const objectName of objectNames) {
       const cleanObjectName = String(objectName || "").trim();
       if (!cleanObjectName || cleanObjectName.endsWith("/")) {
@@ -82,7 +82,7 @@ export const collectPrefixResources = async (prefixes, { bucket = TEMPLATES_BUCK
     if (!prefix) {
       continue;
     }
-    const objectNames = await listMinioObjects(bucket, prefix, true);
+    const objectNames = await listAlmacenObjects(bucket, prefix, true);
     for (const objectName of objectNames) {
       const cleanObjectName = String(objectName || "").trim();
       if (!cleanObjectName || cleanObjectName.endsWith("/")) {
@@ -100,8 +100,8 @@ export const collectPrefixResources = async (prefixes, { bucket = TEMPLATES_BUCK
   return resources;
 };
 
-export const writeMinioObjectToFile = async (bucket, objectName, destinationPath) => {
-  const stream = await getMinioObjectStream(bucket, objectName);
+export const writeAlmacenObjectToFile = async (bucket, objectName, destinationPath) => {
+  const stream = await getAlmacenObjectStream(bucket, objectName);
   await fs.ensureDir(path.dirname(destinationPath));
   await pipeline(stream, fs.createWriteStream(destinationPath));
 };
@@ -138,7 +138,7 @@ export const sendResourcesAsZip = async (res, { bucket = TEMPLATES_BUCKET, resou
   try {
     for (const resource of resources) {
       const destinationPath = path.join(workspace, resource.archiveName);
-      await writeMinioObjectToFile(bucket, resource.objectName, destinationPath);
+      await writeAlmacenObjectToFile(bucket, resource.objectName, destinationPath);
       // Los scripts .sh deben quedar ejecutables en el ZIP (zip preserva el modo unix).
       if (destinationPath.endsWith(".sh")) {
         await fs.chmod(destinationPath, 0o755).catch(() => {});

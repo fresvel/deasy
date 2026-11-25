@@ -3,7 +3,7 @@ import * as Minio from "minio";
 import { huellaDe } from "./huella.js";
 
 /**
- * DÓNDE VIVE EL TEXTO LEGAL: dos buckets de MinIO, y no la base de datos.
+ * DÓNDE VIVE EL TEXTO LEGAL: dos buckets del almacén, y no la base de datos.
  *
  * ── POR QUÉ SALE DE LA BASE ─────────────────────────────────────────────────────────────────────
  *
@@ -37,7 +37,7 @@ import { huellaDe } from "./huella.js";
  *    Por eso aquí **se lee SIEMPRE por `objectVersionId` y JAMÁS por clave** — leer por clave sería
  *    tener el archivo inmutable y no usarlo.
  * 4. ⚠️ **El bloqueo es de CREACIÓN e IRREVERSIBLE.** A un bucket creado sin `--with-lock` no se le
- *    puede añadir después (MinIO responde `does not support locking`). De ahí que `asegurarBuckets`
+ *    puede añadir después (el almacén responde `does not support locking`). De ahí que `asegurarBuckets`
  *    LANCE en vez de seguir: usar un bucket sin bloqueo «mientras tanto» produciría un archivo que
  *    parece prueba y no lo es.
  */
@@ -72,32 +72,41 @@ const juntarStream = (stream) => new Promise((resolve, reject) => {
 });
 
 const clienteDeEntorno = () => {
-  const url = new URL(process.env.MINIO_ENDPOINT || "http://minio:9000");
-  const useSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || url.protocol === "https:";
-  return new Minio.Client({
+  const url = new URL(process.env.ALMACEN_ENDPOINT || "http://almacen:9000");
+  const useSSL = String(process.env.ALMACEN_USE_SSL || "").trim() === "1" || url.protocol === "https:";
+  const cliente = new Minio.Client({
     endPoint: url.hostname,
     port: Number(url.port || (useSSL ? 443 : 80)),
     useSSL,
-    accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER || "",
-    secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD || "",
+    accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER || "",
+    secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD || "",
   });
+  // ⚠️ ESTA LÍNEA NO ES UN AJUSTE: SIN ELLA NO SE ARCHIVA NADA. Versity, como S3 y al revés que
+  // el almacén, RECHAZA un PUT a un bucket con retención por defecto si no trae Content-MD5 o
+  // x-amz-checksum-* («Content-MD5 OR x-amz-checksum- HTTP header is required for Put Object
+  // requests with Object Lock parameters»). minio-js 8.0.7 sólo manda Content-MD5 cuando NO firma
+  // el cuerpo con SHA-256, que es lo que hace por sí solo bajo TLS; por HTTP plano hay que
+  // pedírselo, y putObject no deja pasar esa cabecera por sus metadatos (la prefija con
+  // x-amz-meta-). Medido en F29.P1.T2: sin esto, el sembrado del archivo legal muere.
+  cliente.enableSHA256 = false;
+  return cliente;
 };
 
 export default class ArchivoLegal {
   /**
-   * El cliente se inyecta para poder probar las garantías sin levantar un MinIO. Todo lo demás sale
+   * El cliente se inyecta para poder probar las garantías sin levantar un almacén. Todo lo demás sale
    * del entorno, con los mismos valores por defecto que documenta `.env_model`.
    */
   constructor({ cliente = null, bucket = null, bucketBorradores = null, dias = null, modo = null } = {}) {
     this.cliente = cliente;
-    this.bucket = bucket || process.env.MINIO_LEGAL_BUCKET || BUCKET_ARCHIVO_POR_DEFECTO;
+    this.bucket = bucket || process.env.ALMACEN_LEGAL_BUCKET || BUCKET_ARCHIVO_POR_DEFECTO;
     this.bucketBorradores =
-      bucketBorradores || process.env.MINIO_LEGAL_DRAFTS_BUCKET || BUCKET_BORRADORES_POR_DEFECTO;
-    this.dias = Number(dias ?? process.env.MINIO_LEGAL_RETENTION_DAYS ?? DIAS_POR_DEFECTO);
-    this.modo = String(modo || process.env.MINIO_LEGAL_RETENTION_MODE || MODO_POR_DEFECTO).toUpperCase();
+      bucketBorradores || process.env.ALMACEN_LEGAL_DRAFTS_BUCKET || BUCKET_BORRADORES_POR_DEFECTO;
+    this.dias = Number(dias ?? process.env.ALMACEN_LEGAL_RETENTION_DAYS ?? DIAS_POR_DEFECTO);
+    this.modo = String(modo || process.env.ALMACEN_LEGAL_RETENTION_MODE || MODO_POR_DEFECTO).toUpperCase();
   }
 
-  #minio() {
+  #almacen() {
     if (!this.cliente) {
       this.cliente = clienteDeEntorno();
     }
@@ -107,11 +116,11 @@ export default class ArchivoLegal {
   /**
    * La configuración de bloqueo de un bucket, o `null` si NO lo tiene.
    *
-   * MinIO responde con error a `getObjectLockConfig` cuando el bucket se creó sin bloqueo, así que
+   * el almacén responde con error a `getObjectLockConfig` cuando el bucket se creó sin bloqueo, así que
    * «no hay configuración» llega como excepción y no como respuesta vacía. Se traduce a `null` aquí
    * para que quien pregunta no tenga que distinguir.
    *
-   * ⚠️ **ESTA, Y NO CREAR EL BUCKET, ES LA COMPROBACIÓN.** Medido contra MinIO: pedir la creación
+   * ⚠️ **ESTA, Y NO CREAR EL BUCKET, ES LA COMPROBACIÓN.** Medido contra el almacén: pedir la creación
    * con bloqueo sobre un bucket **que ya existe sin él** responde «Bucket created successfully» y
    * sale con código 0 (`mc mb --with-lock --ignore-existing`), sin bloquear nada. Quien deduzca «no
    * lanzó, luego está bloqueado» **no detecta nada** y deja un archivo legal sin bloqueo, en
@@ -119,7 +128,7 @@ export default class ArchivoLegal {
    */
   async #bloqueoDe(bucket) {
     try {
-      const conf = await this.#minio().getObjectLockConfig(bucket);
+      const conf = await this.#almacen().getObjectLockConfig(bucket);
       if (String(conf?.objectLockEnabled ?? "").toLowerCase() !== "enabled") {
         return null;
       }
@@ -137,26 +146,26 @@ export default class ArchivoLegal {
    * produciría un archivo que parece prueba sin serlo, que es peor que no tener archivo.
    */
   async asegurarBuckets() {
-    const minio = this.#minio();
+    const almacen = this.#almacen();
 
     // El de borradores es un bucket corriente. Lo único que se le exige es versionado: sin él,
     // guardar dos veces pierde lo anterior y el historial de edición no existe.
-    if (!(await minio.bucketExists(this.bucketBorradores))) {
-      await minio.makeBucket(this.bucketBorradores, "");
+    if (!(await almacen.bucketExists(this.bucketBorradores))) {
+      await almacen.makeBucket(this.bucketBorradores, "");
     }
-    await minio.setBucketVersioning(this.bucketBorradores, { Status: "Enabled" });
+    await almacen.setBucketVersioning(this.bucketBorradores, { Status: "Enabled" });
 
-    const existiaArchivo = await minio.bucketExists(this.bucket);
+    const existiaArchivo = await almacen.bucketExists(this.bucket);
     if (!existiaArchivo) {
       // `ObjectLocking: true` solo se admite AQUÍ, al crear. Es la única oportunidad.
-      await minio.makeBucket(this.bucket, "", { ObjectLocking: true });
+      await almacen.makeBucket(this.bucket, "", { ObjectLocking: true });
     }
 
     const bloqueo = await this.#bloqueoDe(this.bucket);
     if (!bloqueo) {
       throw new Error(
         `El bucket '${this.bucket}' existe SIN bloqueo de objetos y eso NO se puede añadir despues: ` +
-        "el Object Lock solo se concede al crear el bucket (MinIO responde 'does not support locking' " +
+        "el Object Lock solo se concede al crear el bucket (el almacén responde 'does not support locking' " +
         "a cualquier intento posterior). Hay que RECREARLO: renombra o vacia y elimina el bucket " +
         "actual y deja que el arranque lo cree de nuevo, o crealo a mano con 'mc mb --with-lock'. " +
         "No se sigue adelante a proposito: un archivo sin bloqueo parece prueba y no lo es."
@@ -164,8 +173,8 @@ export default class ArchivoLegal {
     }
 
     // La retención POR DEFECTO es lo que hace que cada `put` salga bloqueado sin pedirlo. Se
-    // reafirma en cada arranque para que un cambio de `MINIO_LEGAL_RETENTION_DAYS` surta efecto.
-    await minio.setObjectLockConfig(this.bucket, { mode: this.modo, unit: "Days", validity: this.dias });
+    // reafirma en cada arranque para que un cambio de `ALMACEN_LEGAL_RETENTION_DAYS` surta efecto.
+    await almacen.setObjectLockConfig(this.bucket, { mode: this.modo, unit: "Days", validity: this.dias });
 
     return { bucket: this.bucket, bucketBorradores: this.bucketBorradores };
   }
@@ -174,7 +183,7 @@ export default class ArchivoLegal {
   async estadoDelArchivo() {
     const bucket = this.bucket;
     try {
-      if (!(await this.#minio().bucketExists(bucket))) {
+      if (!(await this.#almacen().bucketExists(bucket))) {
         return { bucket, bloqueado: false, modo: null, dias: null, motivo: "el bucket todavia no existe" };
       }
       const bloqueo = await this.#bloqueoDe(bucket);
@@ -203,14 +212,14 @@ export default class ArchivoLegal {
   async guardarBorrador(clase, version, texto) {
     const objectKey = claveDe(clase, version);
     const bytes = aBuffer(texto);
-    await this.#minio().putObject(this.bucketBorradores, objectKey, bytes, bytes.length, {
+    await this.#almacen().putObject(this.bucketBorradores, objectKey, bytes, bytes.length, {
       "Content-Type": TIPO_MARKDOWN,
     });
     return { bucket: this.bucketBorradores, objectKey };
   }
 
   /**
-   * Los BYTES del borrador, tal cual están en MinIO.
+   * Los BYTES del borrador, tal cual están en el almacén.
    *
    * Existe además de `leerBorrador` porque publicar copia bytes: convertirlos a texto y volver a
    * serializarlos es una vuelta de más en la que se pierden cosas (un BOM, un final de línea) sin
@@ -218,7 +227,7 @@ export default class ArchivoLegal {
    */
   async bytesDelBorrador(clase, version) {
     const objectKey = claveDe(clase, version);
-    return juntarStream(await this.#minio().getObject(this.bucketBorradores, objectKey));
+    return juntarStream(await this.#almacen().getObject(this.bucketBorradores, objectKey));
   }
 
   async leerBorrador(clase, version) {
@@ -236,7 +245,7 @@ export default class ArchivoLegal {
     const objectKey = claveDe(clase, version);
     const entradas = await new Promise((resolve, reject) => {
       const encontradas = [];
-      const flujo = this.#minio().listObjects(this.bucketBorradores, objectKey, false, { IncludeVersion: true });
+      const flujo = this.#almacen().listObjects(this.bucketBorradores, objectKey, false, { IncludeVersion: true });
       flujo.on("data", (item) => {
         // El prefijo puede casar con claves más largas (`v1.md` no, pero `v1` sí casaría con
         // `v10.md` si algún día se lista por prefijo corto). Se filtra por igualdad exacta.
@@ -277,13 +286,13 @@ export default class ArchivoLegal {
     const bytes = aBuffer(texto);
     const hashEsperado = huellaDe(bytes.toString("utf8"));
 
-    const subida = await this.#minio().putObject(this.bucket, objectKey, bytes, bytes.length, {
+    const subida = await this.#almacen().putObject(this.bucket, objectKey, bytes, bytes.length, {
       "Content-Type": TIPO_MARKDOWN,
     });
     const objectVersionId = subida?.versionId ?? null;
     if (!objectVersionId) {
       throw new Error(
-        `MinIO no devolvio un identificador de version al escribir '${objectKey}' en '${this.bucket}'. ` +
+        `el almacén no devolvio un identificador de version al escribir '${objectKey}' en '${this.bucket}'. ` +
         "Sin el, el objeto solo se puede leer por clave, y leer por clave NO es leer lo archivado: " +
         "una escritura posterior sobre la misma clave devolveria otro contenido. Revisa que el bucket " +
         "tenga versionado (se activa solo al crearlo con bloqueo de objetos)."
@@ -306,13 +315,13 @@ export default class ArchivoLegal {
    * Qué hay en el archivo: la ÚLTIMA versión de cada clave.
    *
    * Sirve para reconstruir el índice cuando la base está vacía y los objetos ya están subidos —el
-   * caso de una instalación nueva, donde la semilla entra por MinIO y no por un `INSERT`, porque
+   * caso de una instalación nueva, donde la semilla entra por el almacén y no por un `INSERT`, porque
    * `object_version_id` no existe hasta DESPUÉS de subir.
    */
   async inventarioDelArchivo() {
     const entradas = await new Promise((resolve, reject) => {
       const encontradas = [];
-      const flujo = this.#minio().listObjects(this.bucket, "", true, { IncludeVersion: true });
+      const flujo = this.#almacen().listObjects(this.bucket, "", true, { IncludeVersion: true });
       flujo.on("data", (item) => encontradas.push(item));
       flujo.on("error", reject);
       flujo.on("end", () => resolve(encontradas));
@@ -322,7 +331,7 @@ export default class ArchivoLegal {
       // ⚠️ `isDeleteMarker` NO es opcional aquí. Un borrado corriente sobre un objeto bloqueado se
       // acepta y deja una marca que el listado por versiones devuelve como entrada `isLatest` de
       // tamaño 0. Sin este filtro, esa marca se tomaría por un documento y leerla responde «method
-      // not allowed» — comprobado contra el MinIO de la pila C.
+      // not allowed» — comprobado contra el almacén de la pila C.
       .filter((item) => item?.name && item.isLatest && item.versionId && !item.isDeleteMarker)
       .map((item) => ({
         bucket: this.bucket,
@@ -359,7 +368,7 @@ export default class ArchivoLegal {
     }
 
     const desde = bucket || this.bucket;
-    const flujo = await this.#minio().getObject(desde, objectKey, { versionId: objectVersionId });
+    const flujo = await this.#almacen().getObject(desde, objectKey, { versionId: objectVersionId });
     const texto = (await juntarStream(flujo)).toString("utf8");
 
     if (hash) {

@@ -3,13 +3,13 @@ import "dotenv/config";
 // CLI de reset. Los objetivos son POSITIVOS y explícitos: sin argumentos no borra nada.
 //
 // POR QUÉ ES ASÍ. Antes esto eran tres ficheros (reset_postgres / reset_storage / reset_system)
-// y el orquestador arrasaba PostgreSQL Y MinIO por defecto; para NO perder algo había que
-// acordarse de --keep-db o --keep-minio. Un default destructivo con opt-out está al revés:
+// y el orquestador arrasaba PostgreSQL Y el almacén por defecto; para NO perder algo había que
+// acordarse de --keep-db o --keep-almacen. Un default destructivo con opt-out está al revés:
 // ahora hay que nombrar lo que se borra, así que cada call site declara su alcance a la vista.
 //
 //   node scripts/reset.mjs                 imprime el uso y sale 1, sin tocar nada
 //   node scripts/reset.mjs db              solo PostgreSQL (drop + recreación del schema)
-//   node scripts/reset.mjs storage         solo los buckets de MinIO
+//   node scripts/reset.mjs storage         solo los buckets del almacén
 //   node scripts/reset.mjs db storage      ambos (el antiguo reset_system.mjs sin flags)
 //
 // --yes salta la confirmación. Los wrappers de scripts/ ya la pasan, porque tienen sus propios
@@ -23,7 +23,7 @@ const usage = () => {
   console.error("Uso: node scripts/reset.mjs <db|storage> [db|storage] [--yes]");
   console.error("");
   console.error("  db        dropea las tablas de PostgreSQL y recrea el schema vacío");
-  console.error("  storage   vacía los buckets de MinIO gestionados por la app");
+  console.error("  storage   vacía los buckets del almacén gestionados por la app");
   console.error("  --yes     no pide confirmación aunque haya datos");
   console.error("");
   console.error("No hay objetivo por defecto: hay que nombrar lo que se borra.");
@@ -94,8 +94,8 @@ const main = async () => {
     }
 
     if (targets.has("storage")) {
-      console.log("→ Purgando buckets de MinIO...");
-      await lib.resetMinio();
+      console.log("→ Purgando buckets del almacén...");
+      await lib.resetAlmacen();
     }
 
     console.log("");

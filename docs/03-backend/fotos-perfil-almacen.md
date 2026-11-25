@@ -1,6 +1,6 @@
 # Fotos de perfil
 
-Las fotos de perfil viven en MinIO, como el resto de adjuntos del sistema. No hay
+Las fotos de perfil viven en el almacén, como el resto de adjuntos del sistema. No hay
 almacenamiento local ni ninguna URL publica que sirva la imagen.
 
 ## Cómo funciona
@@ -10,7 +10,7 @@ almacenamiento local ni ninguna URL publica que sirva la imagen.
   `users/{cedula}/profile/{timestamp}.{ext}` y borra el temporal. El formato se decide por
   la **firma del fichero**, no por el mimetype que declara el cliente, así que un SVG
   renombrado a `.png` se rechaza con 400. La foto anterior se borra best-effort.
-- **Referencia** — `persons.photo_url` guarda `minio://<bucket>/<objeto>`. No es una URL:
+- **Referencia** — `persons.photo_url` guarda `s3://<bucket>/<objeto>`. No es una URL:
   solo el backend sabe resolverla.
 - **Lectura** — `GET /users/:cedula/photo` hace stream del objeto tras validar la sesión.
   Basta con estar autenticado y activo: los avatares se ven entre compañeros (listados de
@@ -20,14 +20,14 @@ almacenamiento local ni ninguna URL publica que sirva la imagen.
   `invalidateUserPhoto(cedula)` para cuando el usuario sube una foto nueva.
 
 El patrón es el mismo de los certificados P12 (`user_certificate_controller.js`). No se usa
-`buildDossierFileUrl` (`dossier_controler.js`), que arma URLs contra `MINIO_PUBLIC_ENDPOINT`:
+`buildDossierFileUrl` (`dossier_controler.js`), que arma URLs contra `ALMACEN_PUBLIC_ENDPOINT`:
 esa URL no es accesible desde el ingress en producción.
 
 ## De dónde viene esto
 
 Hasta agosto de 2026 las fotos se escribían en `backend/uploads/profile_photos/` y se
 servían con `app.use("/uploads", express.static("uploads"))`. Eso daba tres problemas, y los
-tres desaparecen al guardarlas en MinIO:
+tres desaparecen al guardarlas en el almacén:
 
 1. **Se perdían en cada despliegue.** El volumen `uploads_data` estaba declarado en los
    overlays de qa y prod pero no montado en el servicio `backend`, así que el fichero

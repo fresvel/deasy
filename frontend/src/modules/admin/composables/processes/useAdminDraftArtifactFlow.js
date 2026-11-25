@@ -114,7 +114,7 @@ export function useAdminDraftArtifactFlow({
         xlsx: getFileNameFromObjectKey(availableFormats?.xlsx?.entry_object_key),
         pptx: getFileNameFromObjectKey(availableFormats?.pptx?.entry_object_key)
       };
-      // Carga los campos y flujos actuales (desde MinIO) para edición.
+      // Carga los campos y flujos actuales (desde el almacén) para edición.
       try {
         const { data: schemaData } = await adminSqlService.getTemplateArtifactSchema(row.id);
         draftArtifactForm.value = {
@@ -128,7 +128,7 @@ export function useAdminDraftArtifactFlow({
       }
     } else if (cloneFrom) {
       // Crear A PARTIR DE otra plantilla: modo creación (editId vacío) con datos del origen precargados.
-      // No copia los documentos de referencia (binarios en MinIO): el autor los vuelve a adjuntar.
+      // No copia los documentos de referencia (binarios en el almacén): el autor los vuelve a adjuntar.
       draftArtifactForm.value = {
         generador_id: cloneFrom.generador_id ? String(cloneFrom.generador_id) : "",
         display_name: cloneFrom.display_name ? `${cloneFrom.display_name} (copia)` : "",

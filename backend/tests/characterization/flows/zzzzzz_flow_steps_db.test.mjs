@@ -1,12 +1,12 @@
 // Characterization: LOS PASOS DE FLUJO TAL COMO QUEDAN EN LA BASE.
 //
 // Por qué existe (sub-paso 0 de `docs/planes/plan-maestro-2026-08.md` §0.8). Se va a INVERTIR la
-// dirección del flujo: hoy el formulario web escribe el `meta.yaml`, lo sube a MinIO y
+// dirección del flujo: hoy el formulario web escribe el `meta.yaml`, lo sube al almacén y
 // `workflowSync` lo proyecta a `fill_flow_steps` / `signature_flow_steps` con DELETE+INSERT;
 // después, el formulario escribirá directo en la base y el `meta.yaml` desaparecerá.
 //
 // La red que había NO sirve para eso. `zzz_artifact_draft` fija `content_hash`, que es el hash del
-// directorio del paquete de MinIO — y ese directorio INCLUYE el `meta.yaml`. En cuanto dejemos de
+// directorio del paquete del almacén — y ese directorio INCLUYE el `meta.yaml`. En cuanto dejemos de
 // escribir el flujo en ese fichero el hash cambia POR CONSTRUCCIÓN, sin decir nada sobre si el flujo
 // sigue siendo el mismo. Es pesar la caja en vez de mirar lo que hay dentro.
 //
@@ -30,7 +30,7 @@
 //     antes movería las huellas `list_*` de admin_crud y los ids de los flows que escriben.
 //   · LEE EL ESTADO ACUMULADO: el golden de plantilla incluye lo que dejan `zz_template_lifecycle`
 //     (la configuración clonada y su artifact v1.1.0) y `zzz_artifact_draft` (que limpia lo suyo).
-//     Eso NO es contaminación: la v1.1.0 heredó su flujo por la copia BINARIA de MinIO, sin que nadie
+//     Eso NO es contaminación: la v1.1.0 heredó su flujo por la copia BINARIA del almacén, sin que nadie
 //     lo autorara, y es exactamente el caso que el sub-paso 5 («el versionado copia FILAS, no bytes»)
 //     tiene que arreglar. Congelarlo aquí es lo que le da un antes y un después.
 //
@@ -327,7 +327,7 @@ test("origen RUNTIME · flujos de FIRMA en la base (control)", async () => {
 // hoy nadie ejercita — `cargo_id`/`required_cargo_id` con su unidad, `can_reject` derivado del
 // orden, `approval_mode`/`required_signers_min` y el JSONB `signers` multi-firmante.
 //
-// Es exactamente el camino del sub-paso 3: formulario web -> meta.yaml -> MinIO -> workflowSync ->
+// Es exactamente el camino del sub-paso 3: formulario web -> meta.yaml -> El almacén -> workflowSync ->
 // filas. Después de la inversión será formulario web -> filas, en una transacción. **Las filas
 // tienen que salir iguales**, y esta clave es la que lo dice.
 
@@ -456,7 +456,7 @@ test("autoría · flujo de FIRMA autorado, tal como quedó en la base", async ()
 
 // --- 4) EL VERSIONADO COPIA FILAS (sub-paso 6 del §0.8) ------------------------------------------
 //
-// `createTemplateArtifactVersion` copia los objetos de MinIO EN BINARIO. Mientras el flujo vivía
+// `createTemplateArtifactVersion` copia los objetos del almacén EN BINARIO. Mientras el flujo vivía
 // dentro del `meta.yaml`, la versión nueva lo heredaba con los bytes y nadie notó que no se copiaba
 // ninguna FILA. Con el flujo en la base eso dejaba a la versión sin flujo, con dos consecuencias
 // medidas contra dev: publicarla respondía 400 «la plantilla debe definir al menos un paso de flujo
@@ -587,7 +587,7 @@ test("versionado · publicar la versión recién creada YA NO falla por «sin fl
 // El 8 tenía la obligación de cerrarla, no de heredarla. Estos tres casos son su prueba, y miden las
 // DOS mitades del cierre:
 //   · el ROUTER — los tres endpoints del sync ya no existen, así que el que reventaba no se puede ni
-//     invocar. Un 404 aquí es lo que antes era un 400 con un error de MinIO dentro;
+//     invocar. Un 404 aquí es lo que antes era un 400 con un error del almacén dentro;
 //   · el ESQUEMA — la columna que apuntaba a la nada ya no está, así que no queda puntero que nadie
 //     pueda dereferenciar más adelante. Sin esta segunda mitad el 404 sería solo una ruta escondida.
 //
@@ -599,7 +599,7 @@ const ARTIFACT_BASE_ID = 1;
 test("ventana 7 · POST :id/resync — el endpoint que reventaba ya no existe", async () => {
   const token = await tokenFor("admin");
   const res = await post(`/admin/sql/ediciones/${ARTIFACT_BASE_ID}/resync`, { token, body: {} });
-  assert.equal(res.status, 404, `resync debe ser 404, no el 400 de MinIO: ${JSON.stringify(res.body)}`);
+  assert.equal(res.status, 404, `resync debe ser 404, no el 400 del almacén: ${JSON.stringify(res.body)}`);
 });
 
 test("ventana 7 · sync-status y workflows/reconcile tampoco existen", async () => {
@@ -620,7 +620,7 @@ test("ventana 7 · `meta_object_key` ya no existe como columna, así que no hay 
   assert.deepEqual(columnas, [], "la columna del sub-paso 7 debe estar borrada");
 
   // Y la plantilla base sigue siendo perfectamente usable sin ella: su editor abre (lee de la base)
-  // y responde con el flujo vacío, que es la verdad. Antes esto dependía de un fichero de MinIO.
+  // y responde con el flujo vacío, que es la verdad. Antes esto dependía de un fichero del almacén.
   const token = await tokenFor("admin");
   const schema = await get(`/admin/sql/ediciones/${ARTIFACT_BASE_ID}/schema`, { token });
   assert.equal(schema.status, 200, `el editor de la plantilla base debe abrir: ${JSON.stringify(schema.body)}`);

@@ -7,7 +7,7 @@ export const listarConPaisYVisa = async (ejecutor, personId) => {
     `SELECT d.id, d.tipo, d.numero, d.principal,
             d.pais_id, pa.iso_alpha2 AS pais_iso, pa.name AS pais,
             d.verificado, d.verificado_at, d.emitido_el, d.expira_el,
-            -- La referencia minio:// NO sale al cliente: es interna y no le sirve a nadie fuera
+            -- La referencia s3:// NO sale al cliente: es interna y no le sirve a nadie fuera
             -- del backend. Lo que necesita quien pinta la pantalla es si HAY escaneo.
             (d.escaneo_ref IS NOT NULL) AS tiene_escaneo, d.escaneo_subido_at,
             -- La categoria SOLO la lleva la visa, y sin ella la visa no dice nada: "Visa

@@ -225,7 +225,7 @@ Entonces el archivo seria:
 Variables reales del ambiente, por ejemplo:
 
 - passwords reales de base de datos
-- credenciales de MinIO
+- credenciales del almacén
 - endpoints reales
 - URLs internas o externas
 - cualquier override sensible

@@ -14,13 +14,13 @@
       <span class="inline-flex items-center gap-2">
         {{ draftArtifactEditId ? 'Editar plantilla de documento' : 'Crear plantilla de documento' }}
         <AppInfoTip placement="bottom">
-          Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} la plantilla de documento y la sube directamente a MinIO. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
+          Este flujo {{ draftArtifactEditId ? "actualiza" : "crea" }} la plantilla de documento y la sube directamente al almacén. Solo cuando la carga termine correctamente se guarda el registro en el sistema.
         </AppInfoTip>
       </span>
     </template>
     <AppAlert v-if="draftArtifactError">{{ draftArtifactError }}</AppAlert>
     <AppAlert variant="warning" v-if="draftArtifactLoading">
-      Subiendo archivos a <strong>MinIO</strong>. Espera a que termine la carga para continuar.
+      Subiendo archivos al <strong>almacén</strong>. Espera a que termine la carga para continuar.
     </AppAlert>
 
     <!-- Gobierno del ciclo de vida: estado (draft/published/retired) + publicar/retirar/versionar (solo al editar) -->
@@ -544,7 +544,7 @@
         :title="submitBlockReason"
         @click="$emit('submit')"
       >
-        {{ draftArtifactLoading ? "Subiendo a MinIO..." : (draftArtifactEditId ? "Guardar cambios" : "Crear plantilla") }}
+        {{ draftArtifactLoading ? "Subiendo al almacén..." : (draftArtifactEditId ? "Guardar cambios" : "Crear plantilla") }}
       </AdminButton>
     </template>
   </component>

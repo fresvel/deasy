@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { getPostgresPool } from "../../config/postgres.js";
-import { minioClient, ensureBucketExists, statMinioObject } from "../storage/minio_service.js";
+import { almacenClient, ensureBucketExists, statAlmacenObject } from "../storage/almacen_service.js";
 import { getGenericCatalogOptions, seedGenericCatalog } from "./genericCatalog.js";
 import { PAISES, PROVINCIAS_EC, CANTONES_EC, PARROQUIAS_EC } from "../../dominios/organizacion/index.js";
 import { TelefonoService, EmailService, DocumentoIdentidadService } from "../../dominios/identidad/index.js";
@@ -200,9 +200,9 @@ const upsertPermission = async (connection, { resourceId, actionId, code, descri
 // reset.
 //
 // El sitio correcto es el bootstrap y no un `INSERT` del esquema: la fila necesita el
-// `object_version_id`, que NO EXISTE hasta despues de subir el objeto a MinIO.
+// `object_version_id`, que NO EXISTE hasta despues de subir el objeto al almacén.
 //
-// Best-effort A PROPOSITO: va DESPUES del commit y no tumba un arranque que ya funciono. Un MinIO
+// Best-effort A PROPOSITO: va DESPUES del commit y no tumba un arranque que ya funciono. Un almacén
 // caido deja el sistema sin textos que aceptar --que se avisa muy alto-- pero no sin instalacion.
 const conectarArchivoLegal = async () => {
   try {
@@ -211,10 +211,10 @@ const conectarArchivoLegal = async () => {
     const adoptados = await legales.adoptarDelArchivo();
     if (adoptados.length) {
       const detalle = adoptados.map((d) => `${d.clase} ${d.version} [${d.accion}]`).join(", ");
-      console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con MinIO (${detalle})`);
+      console.log(`✅ Archivo legal: ${adoptados.length} documento(s) conectados con el almacén (${detalle})`);
     } else {
       // ⚠️ ESTE CASO ESTABA EN SILENCIO Y COSTO UNA TARDE (2026-10-07). El archivo legal vive SOLO en
-      // MinIO, asi que en una instalacion nueva esta VACIO y aqui no hay nada que adoptar. No era un
+      // el almacén, asi que en una instalacion nueva esta VACIO y aqui no hay nada que adoptar. No era un
       // error —no lanza— pero dejaba el sistema sin un solo texto que aceptar, y el alta registraba
       // CERO consentimientos sin que nada se quejara. Dos pruebas de caracterizacion fallaban y
       // parecian un fallo de codigo.
@@ -603,7 +603,7 @@ const ensureBootstrapUnit = async (connection) => {
 
 // Proceso por defecto 'default': paraguas de tareas libres / no clasificadas.
 // Su plantilla base NACE DE UN SEED real (contrato latex/jinja2 + schema), empaquetado dentro del backend
-// en services/system/seeds/informe-general. El bootstrap lo publica a MinIO (catálogo Seeds/ + artifact
+// en services/system/seeds/informe-general. El bootstrap lo publica al almacén (catálogo Seeds/ + artifact
 // instanciado System/) y registra la fila generadores_de_documento + ediciones. El flujo de entrega queda
 // simple (1 paso: el dueño llena) y la firma ad-hoc, para ser robusto en instalación virgen.
 const DEFAULT_PROCESS_SLUG = "default";
@@ -639,11 +639,11 @@ const SEEDS_CATALOG_PREFIX = `Seeds/${BASE_SEED_CODE}/`;
 // El artifact base YA NO LLEVA meta.yaml (sub-paso 7 del §0.8; ver plan-maestro-2026-08.md).
 //
 // Aquí vivía `BASE_META_YAML`: un meta.yaml escrito a mano como literal de código que se subía a
-// MinIO junto al seed y que `WorkflowSyncService` proyectaba a `fill_flow_templates`. Era el ÚNICO
+// el almacén junto al seed y que `WorkflowSyncService` proyectaba a `fill_flow_templates`. Era el ÚNICO
 // productor vivo del resolver `document_owner` —nadie lo autoró nunca desde la web— y sembraba un
 // paso de entrega sobre el vínculo del Proceso por defecto, que es `routed` y cuyo bootstrap declara
 // justo lo contrario (ver el punto 6 de `ensureDefaultProcess`). Además se auto-replicaba:
-// `createTemplateArtifactVersion` copia el prefijo de MinIO en binario, así que cada versión nueva
+// `createTemplateArtifactVersion` copia el prefijo del almacén en binario, así que cada versión nueva
 // heredaba el paso sin pasar por el formulario.
 //
 // ✅ LA VENTANA QUE ESTO DEJÓ ABIERTA ESTÁ CERRADA (sub-paso 8). Entre el 7 y el 8, la columna
@@ -682,7 +682,7 @@ const walkSeedFiles = (dir, base = dir) => {
 
 const putBufferObject = (bucket, objectName, buffer, contentType = "application/octet-stream") =>
   new Promise((resolve, reject) => {
-    minioClient.putObject(bucket, objectName, buffer, buffer.length, { "Content-Type": contentType }, (error, etag) => {
+    almacenClient.putObject(bucket, objectName, buffer, buffer.length, { "Content-Type": contentType }, (error, etag) => {
       if (error) {
         reject(error);
         return;
@@ -696,10 +696,10 @@ const putSeedFileObject = async (bucket, objectName, absPath) => {
   return putBufferObject(bucket, objectName, buffer, guessSeedContentType(absPath));
 };
 
-// Publica en MinIO el seed base: (1) el árbol completo al catálogo Seeds/ y (2) el artifact instanciado en
+// Publica en el almacén el seed base: (1) el árbol completo al catálogo Seeds/ y (2) el artifact instanciado en
 // System/ (src jinja2 + schema.json + data.yaml desde defaults.yaml). SIN meta.yaml desde el sub-paso 7
 // del §0.8: el flujo se autora en la base, no en un YAML (ver el bloque de arriba). Best-effort: un fallo
-// de MinIO no debe abortar el bootstrap (las filas SQL ya quedan registradas y se puede re-publicar).
+// del almacén no debe abortar el bootstrap (las filas SQL ya quedan registradas y se puede re-publicar).
 //
 // EL CENTINELA `ya_existe` VALE PARA UN DESTINO Y NO PARA EL OTRO, y confundirlos fue el defecto 1.15:
 //
@@ -712,7 +712,7 @@ const putSeedFileObject = async (bucket, objectName, absPath) => {
 // que **ningún cambio en `services/system/seeds/**` alcanzaba jamás a un entorno ya arrancado, producción
 // incluida**. Medido el 2026-08-14: el arreglo de `49d41ce4` (2026-08-13, «el ZIP de una plantilla creada
 // por la web ya se puede renderizar») llevaba un día en el repo y estaba ausente de todas las pilas —
-// MinIO servía un `make.sh` sin `data.json`. Lo destapó el `content_hash` de `zzz_artifact_draft`, que
+// el almacén servía un `make.sh` sin `data.json`. Lo destapó el `content_hash` de `zzz_artifact_draft`, que
 // es el único sensor que hay sobre el paquete publicado: el golden era correcto y el entorno el que
 // mentía. Agravante: `test:char:fixture` resetea solo `db`, así que los buckets sobreviven a cada
 // corrida (defecto 1.17, cerrado el 2026-08-14).
@@ -725,13 +725,13 @@ const putSeedFileObject = async (bucket, objectName, absPath) => {
 // desplegar. Si algún día se quita esa llamada, este comentario vuelve a describir una intención en
 // vez de un hecho.
 //
-// Los tres ayudantes de MinIO entran por parámetro CON SU VALOR POR DEFECTO: es la única costura que
+// Los tres ayudantes del almacén entran por parámetro CON SU VALOR POR DEFECTO: es la única costura que
 // permite probar el reparto catálogo/artifact sin `mock.module` (que en este Node pide un flag
 // experimental, y cambiar el `test:unit` global por un test sería peor negocio). Ningún llamador pasa
 // nada, así que el comportamiento en producción es idéntico.
 export const publishBaseSeedAssets = async ({
   ensure = ensureBucketExists,
-  stat = statMinioObject,
+  stat = statAlmacenObject,
   put = putSeedFileObject,
   existeSeedDir = () => fs.existsSync(BASE_SEED_DIR),
   listar = () => walkSeedFiles(BASE_SEED_DIR),
@@ -854,7 +854,7 @@ export const ensureDefaultProcess = async (connection) => {
   // 4. EL PRIMER GENERADOR DEL CATALOGO (frente 23, F3.1). Esta fila era «la semilla» —el paquete
   //    latex/jinja2 que se copia— y sigue siendo exactamente eso; lo que cambio es que ahora es UNO
   //    de los generadores posibles y no EL mecanismo. `tipo = 'latex'` y `source_path` apuntando al
-  //    catalogo de MinIO; `destino` queda NULL porque un generador latex no llama a nadie.
+  //    catalogo del almacén; `destino` queda NULL porque un generador latex no llama a nadie.
   let seedRow = await fetchOne(
     connection,
     "SELECT id FROM generadores_de_documento WHERE code = ? LIMIT 1",
@@ -872,7 +872,7 @@ export const ensureDefaultProcess = async (connection) => {
   const generadorId = Number(seedRow.id);
 
   // 5. entregable base (deliverable) + su versión publicada. Modelo libro/ediciones: la identidad y el
-  //    scope viven en `catalogo_documental`; la versión guarda el storage MinIO y QUIÉN la produce
+  //    scope viven en `catalogo_documental`; la versión guarda el storage el almacén y QUIÉN la produce
   //    (`generador_id`). A QUE LINEA SIRVE no se guarda en ninguna de las dos desde el 2026-10-04
   //    (frente 23): lo dice su vínculo en `vinculos`, y lo impone el disparador
   //    `trg_vinculo_formato_un_proceso`.
@@ -925,15 +925,15 @@ export const ensureDefaultProcess = async (connection) => {
   //       siempre estuvieron de verdad —el `schema.json` que `publishBaseSeedAssets` sube unas lineas
   //       mas abajo—, y de ahi los lee el editor de `/admin`.
 
-  // 5bis. publica en MinIO el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado.
-  //       Idempotente; si la publicación falla (MinIO caído, seed no empaquetado) se PROPAGA el error para
-  //       abortar/rollback el bootstrap: así no quedan filas SQL apuntando a objetos MinIO inexistentes.
+  // 5bis. publica en el almacén el seed base (catálogo Seeds/ + artifact System/) desde el seed empaquetado.
+  //       Idempotente; si la publicación falla (el almacén caído, seed no empaquetado) se PROPAGA el error para
+  //       abortar/rollback el bootstrap: así no quedan filas SQL apuntando a objetos el almacén inexistentes.
   //       Una re-ejecución es éxito: el catálogo `Seeds/` se republica siempre y el artifact se
   //       respeta si ya está (`artifact_ya_existe`), pero las dos devuelven `published: true`.
   const publishResult = await publishBaseSeedAssets();
   if (!publishResult?.published && publishResult?.reason !== "ya_existe") {
     throw new Error(
-      `No se pudieron publicar los objetos del seed base en MinIO (${publishResult?.reason || "desconocido"}). ` +
+      `No se pudieron publicar los objetos del seed base en el almacén (${publishResult?.reason || "desconocido"}). ` +
       "Se aborta el bootstrap para no dejar plantillas apuntando a objetos inexistentes."
     );
   }

@@ -6,8 +6,8 @@
 // copia, el servicio y el motor apuntan a sitios distintos y el fallo aparece lejos de la causa.
 // Un valor con dos dueños no es una constante, es un bug esperando.
 
-/** Bucket de MinIO donde viven las plantillas. */
-export const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
+/** Bucket del almacén donde viven las plantillas. */
+export const ALMACEN_TEMPLATES_BUCKET = process.env.ALMACEN_TEMPLATES_BUCKET || "deasy-templates";
 
 /** Formato del contrato ejecutable (el único editable por el admin). */
 export const CONTRACT_FORMAT = "jinja2";

@@ -1,4 +1,4 @@
-// Red unitaria de `publishBaseSeedAssets` — en concreto del REPARTO entre los dos destinos de MinIO.
+// Red unitaria de `publishBaseSeedAssets` — en concreto del REPARTO entre los dos destinos del almacén.
 //
 // POR QUÉ EXISTE. Un solo centinela gobernaba los dos destinos y solo uno lo justificaba (defecto
 // 1.15). El efecto no era "no reescribir": era que **ningún cambio en `services/system/seeds/**`
@@ -10,7 +10,7 @@
 // catálogo SÍ se republica. Desde HTTP solo se observa el `content_hash` resultante; el reparto de
 // claves, no.
 //
-// Cómo se prueba sin MinIO: `publishBaseSeedAssets` acepta sus ayudantes por parámetro con valor por
+// Cómo se prueba sin el almacén: `publishBaseSeedAssets` acepta sus ayudantes por parámetro con valor por
 // defecto. No es una API para nadie —ningún llamador pasa nada— sino la costura mínima que permite
 // observar QUÉ claves se suben, ya que `mock.module` en este Node exige un flag experimental y
 // cambiar el `test:unit` global por un test sería peor negocio.
@@ -93,16 +93,16 @@ test("sin el seed empaquetado en disco no se sube nada y se dice por qué", asyn
   assert.equal(resultado.reason, "seed_no_empaquetado");
 });
 
-test("un fallo de MinIO NO aborta el bootstrap: es best-effort y lo reporta", async () => {
+test("un fallo del almacén NO aborta el bootstrap: es best-effort y lo reporta", async () => {
   const resultado = await publishBaseSeedAssets({
-    ensure: async () => { throw new Error("minio caido"); },
+    ensure: async () => { throw new Error("almacen caido"); },
     stat: async () => { throw new Error("NotFound"); },
     put: async () => {},
     existeSeedDir: () => true,
     listar: () => FICHEROS,
   });
   assert.equal(resultado.published, false);
-  assert.equal(resultado.reason, "minio caido");
+  assert.equal(resultado.reason, "almacen caido");
 });
 
 // --- El token de firma que se PIDE al bootstrap ---------------------------------------------------

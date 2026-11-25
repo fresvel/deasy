@@ -126,10 +126,10 @@ export const requiresSignaturePdfForFinalFillApproval = async (connection, conte
     return false;
   }
 
-  // MIRA LA EXTENSIÓN A PROPÓSITO, NO QUE EL OBJETO EXISTA EN MinIO. Se evaluó añadir un
-  // `statMinioObject` aquí (fila 1.2 del plan maestro) y se descartó, por este orden:
+  // MIRA LA EXTENSIÓN A PROPÓSITO, NO QUE EL OBJETO EXISTA EN el almacén. Se evaluó añadir un
+  // `statAlmacenObject` aquí (fila 1.2 del plan maestro) y se descartó, por este orden:
   //   1. La comprobación que GARANTIZA algo ya existe, en el punto de uso: `PdfSigningService.js`
-  //      hace `statMinioObject` justo antes de mandar el PDF a firmar. Repetirla aquí no cierra
+  //      hace `statAlmacenObject` justo antes de mandar el PDF a firmar. Repetirla aquí no cierra
   //      nada — entre aprobar y firmar el objeto puede desaparecer igual (TOCTOU), así que este
   //      `stat` sería orientativo, nunca una garantía.
   //   2. Invertiría las capas. Este servicio no sabe en qué bucket vive la ruta; para saberlo
@@ -137,14 +137,14 @@ export const requiresSignaturePdfForFinalFillApproval = async (connection, conte
   //      `controllers/users/user_controler.storage.js`. Un servicio importando de un controller
   //      rompe la regla de capas; copiar aquí el mapeo ruta→bucket lo duplica.
   //   3. Iría DENTRO de la transacción abierta por `updateFillRequestStatus`. Medido contra el
-  //      MinIO de dev: 24 ms en frío, 3 ms en caliente — barato, sí, pero es una llamada a un
-  //      servicio externo sosteniendo una conexión de PostgreSQL, y `minio_service.js` no fija
-  //      ningún timeout: si MinIO se degrada, la transacción se queda abierta lo que él tarde.
+  //      el almacén de dev: 24 ms en frío, 3 ms en caliente — barato, sí, pero es una llamada a un
+  //      servicio externo sosteniendo una conexión de PostgreSQL, y `almacen_service.js` no fija
+  //      ningún timeout: si el almacén se degrada, la transacción se queda abierta lo que él tarde.
   //   4. El error no mejoraría. Para el usuario, "la ruta no es un PDF" y "la ruta es .pdf pero el
   //      objeto no está" tienen el MISMO remedio (volver a subir el archivo) y hoy ya salen los dos
   //      con un 409 accionable.
   //   5. El camino normal no produce ese estado: la única escritura de `working_file_path` desde el
-  //      usuario (`user_controler.js`) sube el objeto a MinIO ANTES de tocar la base, y la escritura
+  //      usuario (`user_controler.js`) sube el objeto al almacén ANTES de tocar la base, y la escritura
   //      es transaccional. Una ruta viva con el objeto ausente exige editar `document_versions` por
   //      el CRUD de admin o borrar el objeto a mano.
   const workingPath = String(context.working_file_path || "").trim().toLowerCase();

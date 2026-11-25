@@ -8,7 +8,7 @@
 // ninguna clase, así que la mudanza del `meta.yaml` a la base se habría hecho a ciegas.
 //
 // Lo que fijan es lo que el sub-paso 4 cambia y lo que NO cambia:
-//   · el readiness se cuenta sobre la BASE (no sobre MinIO);
+//   · el readiness se cuenta sobre la BASE (no sobre el almacén);
 //   · un error al contar SUBE, en vez de valer "0 pasos" — el defecto que motiva el sub-paso;
 //   · la excepción `routed` sigue siendo la de estos dos gates: `isArtifactRoutedOnly`, es decir
 //     "TODOS los vínculos son routed", que NO es la misma que la de los otros dos (ver el informe).
@@ -124,8 +124,8 @@ test("desactivar no pasa por el readiness", async () => {
 });
 
 test("si la base falla al contar, activar propaga el error en vez de rechazar por 'sin flujo'", async () => {
-  // ESTE es el motivo del sub-paso 4 del §0.8: antes se leía el `meta.yaml` de MinIO dentro de un
-  // `catch {}` mudo, así que un MinIO caído se traducía en "esta plantilla no define flujo de
+  // ESTE es el motivo del sub-paso 4 del §0.8: antes se leía el `meta.yaml` del almacén dentro de un
+  // `catch {}` mudo, así que un almacén caído se traducía en "esta plantilla no define flujo de
   // entrega" y bloqueaba la publicación con un mensaje que mentía sobre la causa.
   const { service, events } = buildService({ fallaElConteo: true });
 
@@ -222,7 +222,7 @@ const buildSchemaService = ({ readObjectAsText }) => new TemplateArtifactService
   },
 );
 
-test("los campos del editor salen del schema.json de MinIO", async () => {
+test("los campos del editor salen del schema.json del almacén", async () => {
   const service = buildSchemaService({ readObjectAsText: async () => SCHEMA_JSON });
   const resultado = await service.getTemplateArtifactSchema(ART_ID);
 
@@ -236,16 +236,16 @@ test("los campos del editor salen del schema.json de MinIO", async () => {
   }]);
 });
 
-test("si MinIO falla al leer el schema, el error SUBE en vez de devolver cero campos", async () => {
+test("si el almacén falla al leer el schema, el error SUBE en vez de devolver cero campos", async () => {
   // Este es el defecto: `{}` no es «esta plantilla no tiene campos», es lo que el editor carga y lo
   // que el siguiente guardado escribe.
   const service = buildSchemaService({
-    readObjectAsText: async () => { throw new Error("MinIO no responde: connect ECONNREFUSED"); },
+    readObjectAsText: async () => { throw new Error("el almacén no responde: connect ECONNREFUSED"); },
   });
 
   await assert.rejects(
     () => service.getTemplateArtifactSchema(ART_ID),
-    /MinIO no responde/,
+    /el almacén no responde/,
   );
 });
 

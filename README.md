@@ -19,8 +19,8 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 - Backend integra:
   - Base de datos (PostgreSQL).
   - Motor de procesos basado en `processes` + `process_definition_versions` + `process_target_rules`.
-  - Storage de artifacts de plantillas via MinIO.
-  - Authoring de plantillas desde el editor web, con los artifacts en MinIO
+  - Storage de artifacts de plantillas via el almacén.
+  - Authoring de plantillas desde el editor web, con los artifacts en el almacén
     (la carpeta `tools/` se elimino en `3ac3db7`).
   - Servicios de reportes/latex.
   - Servicio de firmas (signer).
@@ -37,7 +37,7 @@ Este README es el punto de entrada a la documentacion y el uso basico del proyec
 Operaciones DB con Docker por ambiente:
 
 - `bash scripts/reset-db.sh qa`: resetea el esquema PostgreSQL del ambiente.
-- `bash scripts/reset-system.sh dev`: vacia PostgreSQL + MinIO y deja el backend en modo bootstrap.
+- `bash scripts/reset-system.sh dev`: vacia PostgreSQL + el almacén y deja el backend en modo bootstrap.
 
 ## Documentacion
 

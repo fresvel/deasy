@@ -64,7 +64,7 @@ Table "generadores_de_documento" {
   "is_active" int2 [not null, default: 1]
   "created_at" timestamp [not null, default: `CURRENT_TIMESTAMP`]
 
-  Note: '''EL CATALOGO DE QUIEN PRODUCE EL PDF. Era `template_seeds` y significaba otra cosa: «la semilla», un proyecto LaTeX+Jinja2 en MinIO que se COPIABA entero por cada version de plantilla, y que era EL mecanismo —no habia camino para definir un documento sin escribir `.tex.j2`. Del mecanismo solo se construyo la copia (no hay renderizador, ni formulario, ni editor de campos), asi que el frente 23 lo desacoplo: el llenado web lo haran servicios programados caso a caso y la semilla LaTeX pasa a ser UNO de los generadores, el primero del catalogo. `tipo` separa las dos mitades: `latex` trae paquete (`source_path`) y no llama a nadie; `servicio` tiene `destino` (cola o endpoint) y no trae paquete.'''
+  Note: '''EL CATALOGO DE QUIEN PRODUCE EL PDF. Era `template_seeds` y significaba otra cosa: «la semilla», un proyecto LaTeX+Jinja2 en el almacén que se COPIABA entero por cada version de plantilla, y que era EL mecanismo —no habia camino para definir un documento sin escribir `.tex.j2`. Del mecanismo solo se construyo la copia (no hay renderizador, ni formulario, ni editor de campos), asi que el frente 23 lo desacoplo: el llenado web lo haran servicios programados caso a caso y la semilla LaTeX pasa a ser UNO de los generadores, el primero del catalogo. `tipo` separa las dos mitades: `latex` trae paquete (`source_path`) y no llama a nadie; `servicio` tiene `destino` (cola o endpoint) y no trae paquete.'''
 }
 
 Table "participantes_declarados" {

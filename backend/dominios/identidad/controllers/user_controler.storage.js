@@ -1,4 +1,4 @@
-// Acceso a almacenamiento de user_controler.js: resolución de objetos en MinIO,
+// Acceso a almacenamiento de user_controler.js: resolución de objetos en el almacén,
 // recolección de recursos de plantilla y empaquetado ZIP.
 // Extraído en la Fase 3 (God Object #2). Ver docs/docs-md-antiguos/refactor-2026-07/auditoria-refactor-user-controler-2026-07.md
 //
@@ -9,11 +9,11 @@ import path from "node:path";
 import fs from "fs-extra";
 import { spawn } from "node:child_process";
 import { pipeline } from "node:stream/promises";
-import { minioClient, getMinioObjectStream } from "../../../services/storage/minio_service.js";
+import { almacenClient, getAlmacenObjectStream } from "../../../services/storage/almacen_service.js";
 
-export const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
-export const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
-export const MINIO_TEMPLATES_BUCKET = process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates";
+export const ALMACEN_DOCUMENTS_BUCKET = process.env.ALMACEN_DOCUMENTS_BUCKET || "deasy-documents";
+export const ALMACEN_DOCUMENTS_PREFIX = String(process.env.ALMACEN_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
+export const ALMACEN_TEMPLATES_BUCKET = process.env.ALMACEN_TEMPLATES_BUCKET || "deasy-templates";
 
 // latex/jinja2 son las fuentes de la plantilla: no se entregan al usuario final.
 const TEMPLATE_DOWNLOAD_EXCLUDED_FORMATS = new Set(["latex", "jinja2"]);
@@ -23,24 +23,24 @@ export const resolveStoredDocumentObject = (storedPath) => {
   if (!normalizedPath) {
     return null;
   }
-  if (normalizedPath.startsWith(`${MINIO_DOCUMENTS_PREFIX}/`)) {
+  if (normalizedPath.startsWith(`${ALMACEN_DOCUMENTS_PREFIX}/`)) {
     return {
-      bucket: MINIO_DOCUMENTS_BUCKET,
+      bucket: ALMACEN_DOCUMENTS_BUCKET,
       objectName: normalizedPath,
-      relativePath: normalizedPath.slice(MINIO_DOCUMENTS_PREFIX.length + 1)
+      relativePath: normalizedPath.slice(ALMACEN_DOCUMENTS_PREFIX.length + 1)
     };
   }
   return {
-    bucket: MINIO_DOCUMENTS_BUCKET,
-    objectName: `${MINIO_DOCUMENTS_PREFIX}/${normalizedPath}`,
+    bucket: ALMACEN_DOCUMENTS_BUCKET,
+    objectName: `${ALMACEN_DOCUMENTS_PREFIX}/${normalizedPath}`,
     relativePath: normalizedPath
   };
 };
 
-export const listMinioObjects = (bucket, prefix, recursive = true) =>
+export const listAlmacenObjects = (bucket, prefix, recursive = true) =>
   new Promise((resolve, reject) => {
     const entries = [];
-    const stream = minioClient.listObjectsV2(bucket, String(prefix || "").replace(/^\/+/, ""), recursive);
+    const stream = almacenClient.listObjectsV2(bucket, String(prefix || "").replace(/^\/+/, ""), recursive);
     stream.on("data", (item) => {
       if (item?.name) {
         entries.push(item.name);
@@ -65,7 +65,7 @@ export const collectDeliverableTemplateResources = async (availableFormats) => {
     if (!entryPrefix) {
       continue;
     }
-    const objectNames = await listMinioObjects(MINIO_TEMPLATES_BUCKET, entryPrefix, true);
+    const objectNames = await listAlmacenObjects(ALMACEN_TEMPLATES_BUCKET, entryPrefix, true);
     for (const objectName of objectNames) {
       const cleanObjectName = String(objectName || "").trim();
       if (!cleanObjectName || cleanObjectName.endsWith("/")) {
@@ -87,8 +87,8 @@ export const collectDeliverableTemplateResources = async (availableFormats) => {
   return resources;
 };
 
-export const writeMinioObjectToFile = async (bucket, objectName, destinationPath) => {
-  const stream = await getMinioObjectStream(bucket, objectName);
+export const writeAlmacenObjectToFile = async (bucket, objectName, destinationPath) => {
+  const stream = await getAlmacenObjectStream(bucket, objectName);
   await fs.ensureDir(path.dirname(destinationPath));
   await pipeline(stream, fs.createWriteStream(destinationPath));
 };

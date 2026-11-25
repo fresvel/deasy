@@ -57,10 +57,10 @@
 //   no admite la operación es el estado del recurso. El diff del golden (500 -> 409, y la clave
 //   renombrada de `defecto_approve_sin_pdf` a `approve_sin_pdf`) ES la prueba.
 //   El SEGUNDO matiz de esa fila —"el guard mira solo la extensión, no que el objeto exista en
-//   MinIO"— se evaluó y se DESCARTÓ a propósito; el porqué, con las cinco razones y la medición de
+//   el almacén"— se evaluó y se DESCARTÓ a propósito; el porqué, con las cinco razones y la medición de
 //   latencia, está escrito encima de la propia consulta en `FillRequestWorkflowService.js`. La
 //   consecuencia visible aquí es que el caso feliz de la §5 aprueba con una ruta `.pdf` FABRICADA,
-//   sin objeto detrás: si algún día se añade el `stat`, ese golden se cae y hay que sembrar MinIO.
+//   sin objeto detrás: si algún día se añade el `stat`, ese golden se cae y hay que sembrar el almacén.
 //
 // DEFECTOS CONGELADOS A PROPÓSITO (patrón §3.1.b: el diff del golden será la prueba del arreglo):
 //   4. Con `is_manual = 1` y sin responsable, CUALQUIER usuario con `fill_flows.update` se apropia
@@ -341,7 +341,7 @@ test("con PDF en working, el responsable aprueba -> 200 completado (flowStatus=c
     response_note: null,
   });
   // El guard de `approve` mira la EXTENSIÓN de `working_file_path`, no que el objeto exista en
-  // MinIO: basta con que termine en .pdf. Ese es el contrato, y es DELIBERADO (razones medidas en
+  // el almacén: basta con que termine en .pdf. Ese es el contrato, y es DELIBERADO (razones medidas en
   // `FillRequestWorkflowService.requiresSignaturePdfForFinalFillApproval`). Por eso esta ruta puede
   // ser inventada: no hay ningún objeto detrás y aun así el caso feliz aprueba.
   const dv = await put("/admin/sql/document_versions", {

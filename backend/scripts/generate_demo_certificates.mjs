@@ -9,7 +9,7 @@
 // POR QUÉ EXISTE --force. `reset.mjs storage` vacía el bucket `deasy-certificates` pero NO
 // borra las filas de `person_certificates`. Sin --force, el filtro por defecto
 // (HAVING COUNT = 0) da por "atendidas" a esas personas y no regenera nada: se quedan con un
-// certificado que la UI oculta porque su objeto ya no está en MinIO, y sin forma de recuperarlo.
+// certificado que la UI oculta porque su objeto ya no está en el almacén, y sin forma de recuperarlo.
 import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -18,11 +18,11 @@ import { promisify } from "node:util";
 
 import { closePostgresPool, getPostgresPool } from "../config/postgres.js";
 import { UserCertificateRepository } from "../dominios/identidad/index.js";
-import { ensureBucketExists, uploadFileToMinio } from "../services/storage/minio_service.js";
+import { ensureBucketExists, uploadFileToAlmacen } from "../services/storage/almacen_service.js";
 
 const execFileAsync = promisify(execFile);
 
-const MINIO_CERTIFICATES_BUCKET = process.env.MINIO_CERTIFICATES_BUCKET || "deasy-certificates";
+const ALMACEN_CERTIFICATES_BUCKET = process.env.ALMACEN_CERTIFICATES_BUCKET || "deasy-certificates";
 const CERT_PASSWORD = "Demo1234!";
 const CERT_LABEL = "Demo Autofirmado";
 const CERT_VALID_DAYS = 3650;
@@ -142,8 +142,8 @@ const registerCertificate = async (person, p12Path) => {
   const originalFilename = sanitizeFileName(`demo_autofirmado_${person.cedula || person.id}.p12`);
   const objectName = `users/${person.cedula}/certificates/${Date.now()}-${originalFilename}`;
 
-  await ensureBucketExists(MINIO_CERTIFICATES_BUCKET);
-  await uploadFileToMinio(MINIO_CERTIFICATES_BUCKET, objectName, p12Path, {
+  await ensureBucketExists(ALMACEN_CERTIFICATES_BUCKET);
+  await uploadFileToAlmacen(ALMACEN_CERTIFICATES_BUCKET, objectName, p12Path, {
     "Content-Type": "application/x-pkcs12"
   });
 
@@ -151,7 +151,7 @@ const registerCertificate = async (person, p12Path) => {
     person_id: person.id,
     label: CERT_LABEL,
     original_filename: originalFilename,
-    bucket: MINIO_CERTIFICATES_BUCKET,
+    bucket: ALMACEN_CERTIFICATES_BUCKET,
     object_name: objectName,
     is_default: 1
   });
@@ -184,10 +184,10 @@ const main = async () => {
   const failures = [];
   for (const person of people) {
     const fullName = `${person.first_name || ""} ${person.last_name || ""}`.trim();
-    // Un fallo aislado (openssl, MinIO) no debe abortar el lote: se anota y se sigue.
+    // Un fallo aislado (openssl, el almacén) no debe abortar el lote: se anota y se sigue.
     try {
       // Reemisión: el certificado anterior deja de ser el default, pero NO se borra — su
-      // objeto en MinIO puede seguir referenciado por firmas ya hechas.
+      // objeto en el almacén puede seguir referenciado por firmas ya hechas.
       if (Number(person.certificate_count) > 0) {
         await certificateRepository().clearDefaultForPerson(person.id);
       }

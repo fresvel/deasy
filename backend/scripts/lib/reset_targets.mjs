@@ -43,20 +43,20 @@ const countDatabaseContents = async () => {
   return found;
 };
 
-// --- MinIO --------------------------------------------------------------------------------
+// --- el almacén --------------------------------------------------------------------------------
 
 // Buckets gestionados por la aplicación (mismos defaults que el código que los usa).
 const resolveBuckets = () => [
-  process.env.MINIO_TEMPLATES_BUCKET || "deasy-templates",
-  process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents",
-  process.env.MINIO_DOSSIER_BUCKET || "deasy-dossier",
-  process.env.MINIO_SPOOL_BUCKET || "deasy-spool",
-  process.env.MINIO_CHAT_BUCKET || "deasy-chat",
-  process.env.MINIO_USERS_BUCKET || "deasy-users",
-  process.env.MINIO_CERTIFICATES_BUCKET || "deasy-certificates"
+  process.env.ALMACEN_TEMPLATES_BUCKET || "deasy-templates",
+  process.env.ALMACEN_DOCUMENTS_BUCKET || "deasy-documents",
+  process.env.ALMACEN_DOSSIER_BUCKET || "deasy-dossier",
+  process.env.ALMACEN_SPOOL_BUCKET || "deasy-spool",
+  process.env.ALMACEN_CHAT_BUCKET || "deasy-chat",
+  process.env.ALMACEN_USERS_BUCKET || "deasy-users",
+  process.env.ALMACEN_CERTIFICATES_BUCKET || "deasy-certificates"
 ];
 
-// Tamaño de página deliberadamente pequeño: el cliente MinIO 8 parsea las respuestas con
+// Tamaño de página deliberadamente pequeño: el cliente el almacén 8 parsea las respuestas con
 // fast-xml-parser, que aborta a 1000 "entidades" por documento. Cada objeto aporta ~2 entidades,
 // así que páginas grandes (el default de 1000) revientan con "Entity expansion limit exceeded".
 // 200 objetos ≈ 400 entidades, muy por debajo del límite, y pagina con el continuation token.
@@ -71,9 +71,9 @@ const chunk = (array, size) => {
   return out;
 };
 
-const bucketExists = (minioClient, bucket) =>
+const bucketExists = (almacenClient, bucket) =>
   new Promise((resolve, reject) => {
-    minioClient.bucketExists(bucket, (error, value) => {
+    almacenClient.bucketExists(bucket, (error, value) => {
       if (error) {
         // Algunos backends devuelven NoSuchBucket como error en vez de false.
         if (error?.code === "NoSuchBucket") {
@@ -87,17 +87,17 @@ const bucketExists = (minioClient, bucket) =>
     });
   });
 
-const listObjectPage = async (minioClient, bucket, continuationToken, pageSize) => {
-  const result = await minioClient.listObjectsV2Query(bucket, "", continuationToken, "", pageSize, "");
+const listObjectPage = async (almacenClient, bucket, continuationToken, pageSize) => {
+  const result = await almacenClient.listObjectsV2Query(bucket, "", continuationToken, "", pageSize, "");
   const names = (result?.objects || []).map((object) => object?.name).filter(Boolean);
   return { names, next: result?.isTruncated ? result?.nextContinuationToken : "" };
 };
 
-const listAllObjects = async (minioClient, bucket) => {
+const listAllObjects = async (almacenClient, bucket) => {
   const names = [];
   let continuationToken = "";
   do {
-    const page = await listObjectPage(minioClient, bucket, continuationToken, LIST_PAGE_SIZE);
+    const page = await listObjectPage(almacenClient, bucket, continuationToken, LIST_PAGE_SIZE);
     names.push(...page.names);
     continuationToken = page.next;
   } while (continuationToken);
@@ -106,13 +106,13 @@ const listAllObjects = async (minioClient, bucket) => {
 
 // Vacía un bucket (sin eliminarlo): la app vuelve a publicar lo que necesite en el bootstrap.
 // Idempotente y tolerante: si el bucket no existe, no es un error.
-const emptyMinioBucket = async (minioClient, bucket) => {
-  if (!(await bucketExists(minioClient, bucket))) {
+const emptyAlmacenBucket = async (almacenClient, bucket) => {
+  if (!(await bucketExists(almacenClient, bucket))) {
     console.log(`• Bucket '${bucket}' no existe, se omite.`);
     return 0;
   }
 
-  const names = await listAllObjects(minioClient, bucket);
+  const names = await listAllObjects(almacenClient, bucket);
   if (names.length === 0) {
     console.log(`• Bucket '${bucket}' ya está vacío.`);
     return 0;
@@ -121,30 +121,30 @@ const emptyMinioBucket = async (minioClient, bucket) => {
   // Borrado por lotes: además de respetar el tope de S3 (1000 claves por multi-delete), mantiene
   // el cuerpo XML pequeño y predecible.
   for (const batch of chunk(names, REMOVE_BATCH_SIZE)) {
-    await minioClient.removeObjects(bucket, batch);
+    await almacenClient.removeObjects(bucket, batch);
   }
   console.log(`• Bucket '${bucket}': ${names.length} objeto(s) eliminado(s).`);
   return names.length;
 };
 
-export const resetMinio = async () => {
-  const { minioClient } = await import("../../services/storage/minio_service.js");
+export const resetAlmacen = async () => {
+  const { almacenClient } = await import("../../services/storage/almacen_service.js");
   const buckets = resolveBuckets();
   let total = 0;
   for (const bucket of buckets) {
-    total += await emptyMinioBucket(minioClient, bucket);
+    total += await emptyAlmacenBucket(almacenClient, bucket);
   }
-  console.log(`✅ MinIO purgado: ${total} objeto(s) en ${buckets.length} bucket(s).`);
+  console.log(`✅ Almacén purgado: ${total} objeto(s) en ${buckets.length} bucket(s).`);
 };
 
 // Para la confirmación basta saber SI hay contenido, no cuánto: se pide una sola clave por
 // bucket en vez de paginar el inventario entero.
 const countStorageContents = async () => {
-  const { minioClient } = await import("../../services/storage/minio_service.js");
+  const { almacenClient } = await import("../../services/storage/almacen_service.js");
   const found = [];
   for (const bucket of resolveBuckets()) {
-    if (!(await bucketExists(minioClient, bucket))) continue;
-    const page = await listObjectPage(minioClient, bucket, "", 1);
+    if (!(await bucketExists(almacenClient, bucket))) continue;
+    const page = await listObjectPage(almacenClient, bucket, "", 1);
     if (page.names.length) found.push({ name: bucket });
   }
   return found;

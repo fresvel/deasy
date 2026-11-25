@@ -42,7 +42,7 @@ export const sanitizeLatexSource = (relpath, text) => {
 // --- Política de tipos de los adjuntos de plantilla (§0.4 S3) -----------------------------------
 //
 // QUÉ DECIDE, Y POR QUÉ LA EXTENSIÓN ES EL CONTROL. `_materializeDraftFormats`
-// (`templateLifecycle.js`) construye el nombre del objeto de MinIO con
+// (`templateLifecycle.js`) construye el nombre del objeto del almacén con
 // `path.extname(file.originalname)`, **sin comprobarlo**. Es decir: la extensión que escribe el
 // cliente decide el nombre del fichero que acaba publicado. Medido antes de escribir esto
 // (experimento desechable): un `payload.sh` enviado por el campo `pdf_file` da **200** y acaba en

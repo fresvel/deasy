@@ -21,7 +21,7 @@
 // sub-paso 5 sigue sin servir aunque ya lea de la base: devuelve el flujo APLANADO en forma de
 // formulario, colapsa los dos portadores en una sola vista y no dice de cuál leyó, así que no puede
 // observar la escritura doble ni el `can_reject` derivado. Y lo que se fija por HTTP del paquete es
-// el `content_hash` de MinIO, que INCLUYE el `meta.yaml` y cambiará por construcción sin decir nada
+// el `content_hash` del almacén, que INCLUYE el `meta.yaml` y cambiará por construcción sin decir nada
 // del flujo. Cuando lo que hay que caracterizar es el estado que un cambio va a reescribir, y
 // ninguna ruta lo expone, el oráculo es la base. Fuera de ese flow, sigue valiendo la regla.
 //
@@ -90,7 +90,7 @@ export async function closeDb() {
 // caídas en su `after()` —`zz_template_lifecycle`, `zzz_artifact_draft` y este mismo flow—, y de
 // rebote como restos acumulados en `plantilla_entrega`. Fue el hallazgo del experimento desechable.
 //
-// Los objetos de MinIO NO se tocan a propósito: el prefijo es determinista
+// Los objetos del almacén NO se tocan a propósito: el prefijo es determinista
 // (`System/<code>/<storage_version>/`), la subida lo reescribe idéntico en cada corrida y
 // ningún golden lo observa. Borrarlo no aportaría estabilidad y no hay ruta que lo haga.
 export async function cleanupDraftArtifactByCode(code) {
@@ -250,7 +250,7 @@ export async function findDeliverableByCode(code) {
 // Segunda excepción a la regla HTTP-only, y por el mismo motivo que la primera: no hay otra vía.
 // `signature_batch_jobs` NO está en `config/sqlTables.js`, así que no la expone el CRUD de admin, y
 // el único camino HTTP que crea un job es `POST /sign/batch/start`, que exige un certificado PKCS#12
-// real en MinIO y arranca de inmediato un bucle que habla con el firmante por RabbitMQ. Caracterizar
+// real en el almacén y arranca de inmediato un bucle que habla con el firmante por RabbitMQ. Caracterizar
 // los guards de `getSignBatchStatus`/`downloadSignBatch` (404 antes que 403, y el 400 del lote sin
 // firmados) por esa vía sería atar el golden al microservicio de firma.
 //

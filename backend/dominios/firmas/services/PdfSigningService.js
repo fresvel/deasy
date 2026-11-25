@@ -11,7 +11,7 @@
 // controller lo devuelva como 4xx. Antes TODO salía como 500 y la validación de entrada se
 // presentaba como error de servidor; el diff de los goldens `sign_sin_*` de
 // `tests/characterization/flows/zzzz_sign_batch.test.mjs` es la prueba del arreglo.
-// Lo que NO lleva `statusCode` —MinIO caído, PostgreSQL caído, el firmante sin responder— sigue
+// Lo que NO lleva `statusCode` —el almacén caído, PostgreSQL caído, el firmante sin responder— sigue
 // siendo 500, que es lo que es.
 
 import fs from "node:fs";
@@ -40,19 +40,19 @@ import {
 } from "../../../services/documents/DocumentSignatureWorkflowService.js";
 import {
   ensureBucketExists,
-  statMinioObject,
-  uploadFileToMinio
-} from "../../../services/storage/minio_service.js";
+  statAlmacenObject,
+  uploadFileToAlmacen
+} from "../../../services/storage/almacen_service.js";
 
 let _userRepository = null;
 const userRepository = () => (_userRepository ??= new UserRepository());
 let _certificateRepository = null;
 const certificateRepository = () => (_certificateRepository ??= new UserCertificateRepository());
 
-export const MINIO_DOCUMENTS_BUCKET = process.env.MINIO_DOCUMENTS_BUCKET || "deasy-documents";
-const MINIO_DOCUMENTS_PREFIX = String(process.env.MINIO_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
-export const MINIO_SPOOL_BUCKET = process.env.MINIO_SPOOL_BUCKET || "deasy-spool";
-export const MINIO_USERS_BUCKET = process.env.MINIO_USERS_BUCKET || "deasy-users";
+export const ALMACEN_DOCUMENTS_BUCKET = process.env.ALMACEN_DOCUMENTS_BUCKET || "deasy-documents";
+const ALMACEN_DOCUMENTS_PREFIX = String(process.env.ALMACEN_DOCUMENTS_PREFIX || "Unidades").replace(/^\/+|\/+$/g, "");
+export const ALMACEN_SPOOL_BUCKET = process.env.ALMACEN_SPOOL_BUCKET || "deasy-spool";
+export const ALMACEN_USERS_BUCKET = process.env.ALMACEN_USERS_BUCKET || "deasy-users";
 
 const sanitizeStorageSegment = (value, fallback = "na") =>
   String(value ?? fallback)
@@ -66,16 +66,16 @@ export const resolveStoredDocumentObject = (storedPath) => {
   if (!normalizedPath) {
     return null;
   }
-  if (normalizedPath.startsWith(`${MINIO_DOCUMENTS_PREFIX}/`)) {
+  if (normalizedPath.startsWith(`${ALMACEN_DOCUMENTS_PREFIX}/`)) {
     return {
-      bucket: MINIO_DOCUMENTS_BUCKET,
+      bucket: ALMACEN_DOCUMENTS_BUCKET,
       objectName: normalizedPath,
-      relativePath: normalizedPath.slice(MINIO_DOCUMENTS_PREFIX.length + 1)
+      relativePath: normalizedPath.slice(ALMACEN_DOCUMENTS_PREFIX.length + 1)
     };
   }
   return {
-    bucket: MINIO_DOCUMENTS_BUCKET,
-    objectName: `${MINIO_DOCUMENTS_PREFIX}/${normalizedPath}`,
+    bucket: ALMACEN_DOCUMENTS_BUCKET,
+    objectName: `${ALMACEN_DOCUMENTS_PREFIX}/${normalizedPath}`,
     relativePath: normalizedPath
   };
 };
@@ -112,7 +112,7 @@ export const buildSignContext = async (
   {
     resolveUser = resolveSigningUser,
     findOwnedCertificate = (ownerId, certificateId) => certificateRepository().findOwnedById(ownerId, certificateId),
-    statObject = statMinioObject,
+    statObject = statAlmacenObject,
   } = {},
 ) => {
   const {
@@ -148,7 +148,7 @@ export const buildSignContext = async (
   try {
     await statObject(certificate.bucket, certificate.object_name);
   } catch (error) {
-    // El mensaje al usuario es accionable y se conserva, pero antes se TRAGABA la causa: con MinIO
+    // El mensaje al usuario es accionable y se conserva, pero antes se TRAGABA la causa: con el almacén
     // caído se le decía "vuelve a cargar tus certificados", que es mentira. La causa real va al log
     // y viaja como `cause` (el controller la expone en `details`). Sigue siendo 500: es infra.
     console.error("[PdfSigningService] No se pudo leer el certificado en el almacenamiento", {
@@ -254,7 +254,7 @@ export const resolveSigningStoragePlan = async ({ context, file }) => {
   const storedPath = buildStandaloneUserSignedPath(context.user, sessionId, file?.originalname);
   return {
     mode: "standalone",
-    bucket: MINIO_USERS_BUCKET,
+    bucket: ALMACEN_USERS_BUCKET,
     objectPath: storedPath,
     storedPath,
     downloadPath: storedPath,
@@ -268,11 +268,11 @@ export const processSinglePdfSigning = async ({ file, context }) => {
 
     await ensureBucketExists(storagePlan.bucket);
     if (storagePlan.mode === "standalone") {
-      await uploadFileToMinio(storagePlan.bucket, storagePlan.objectPath, file.path, {
+      await uploadFileToAlmacen(storagePlan.bucket, storagePlan.objectPath, file.path, {
         "Content-Type": "application/pdf"
       });
     } else {
-      await statMinioObject(storagePlan.bucket, storagePlan.objectPath);
+      await statAlmacenObject(storagePlan.bucket, storagePlan.objectPath);
     }
 
     console.info("[PdfSigningService] processSinglePdfSigning storage plan", {
@@ -287,10 +287,10 @@ export const processSinglePdfSigning = async ({ file, context }) => {
     if (context.signMode === "token") {
       lastResult = await requestSignerJob({
         signType: "token",
-        minioBucket: storagePlan.bucket,
-        minioPdfPath: storagePlan.objectPath,
-        minioCertBucket: context.certificate.bucket,
-        minioCertPath: context.certificate.object_name,
+        almacenBucket: storagePlan.bucket,
+        almacenPdfPath: storagePlan.objectPath,
+        almacenCertBucket: context.certificate.bucket,
+        almacenCertPath: context.certificate.object_name,
         certPassword: context.password,
         stampText: context.stampText,
         finalPath: storagePlan.objectPath,
@@ -304,10 +304,10 @@ export const processSinglePdfSigning = async ({ file, context }) => {
       for (const field of resolvedFields) {
         lastResult = await requestSignerJob({
           signType: "coordinates",
-          minioBucket: storagePlan.bucket,
-          minioPdfPath: storagePlan.objectPath,
-          minioCertBucket: context.certificate.bucket,
-          minioCertPath: context.certificate.object_name,
+          almacenBucket: storagePlan.bucket,
+          almacenPdfPath: storagePlan.objectPath,
+          almacenCertBucket: context.certificate.bucket,
+          almacenCertPath: context.certificate.object_name,
           certPassword: context.password,
           stampText: context.stampText,
           finalPath: storagePlan.objectPath,

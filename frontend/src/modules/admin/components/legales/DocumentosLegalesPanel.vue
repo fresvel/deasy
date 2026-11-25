@@ -34,7 +34,7 @@
       <p class="mt-3 text-sm text-body">{{ explicacionDelArchivo(archivo) }}</p>
 
       <!-- El backend manda el MOTIVO cuando no hay retención («el bucket se creo sin bloqueo»,
-           «no tiene retencion por defecto», o el error de MinIO). Es la mitad accionable del
+           «no tiene retencion por defecto», o el error del almacén). Es la mitad accionable del
            bloque: sin él, «sin retención» no le dice a nadie qué arreglar. -->
       <p v-if="archivo?.motivo" class="mt-2 font-mono text-xs text-body break-all">
         {{ archivo.motivo }}

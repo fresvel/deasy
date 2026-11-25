@@ -50,7 +50,7 @@ Consecuencia concreta: `qa` y `prod` **no cargan** `compose.proxy.yml`, así que
 | Proxy              | `nginx-proxy` en el propio stack                | un stack `ingress` separado                                                 |
 | Puertos del proxy  | 8088 / 8443                                     | el ingress pública 80 / 443                                                 |
 | PostgreSQL         | 5432                                            | 15432 (qa) / 25432 (prod), **sólo en `127.0.0.1`**                          |
-| MinIO              | 9000 / 9001                                     | 9100 / 9101 y 9200 / 9201, **sólo en `127.0.0.1`**                          |
+| Almacén (API S3)   | 9000                                            | 9100 (qa) / 9200 (prod), **sólo en `127.0.0.1`**                            |
 | Buckets            | `deasy-*`                                       | `deasy-qa-*` y `deasy-prod-*`                                               |
 | PAdES-LTA          | desactivado                                     | **activado en prod**                                                        |
 | Endurecimiento     | —                                               | `no-new-privileges`, `read_only` en frontend, `tmpfs`, healthchecks propios |
@@ -59,8 +59,8 @@ Consecuencia concreta: `qa` y `prod` **no cargan** `compose.proxy.yml`, así que
 Sus puertos se atan a `127.0.0.1` del servidor. Hasta noviembre de 2026 se publicaban en todas las
 interfaces, o sea hacia internet si el cortafuegos no los cerraba, y ninguno tiene por qué recibir
 tráfico de fuera: el backend les habla por la red de contenedores y lo público entra por el proxy.
-Siguen alcanzables desde el propio servidor; para abrir la consola del almacén desde otra máquina
-se usa un túnel de SSH. Importa más desde que MinIO comunitario dejó de recibir parches.
+Siguen alcanzables desde el propio servidor; para hablarle al almacén desde otra máquina con un
+cliente S3 se usa un túnel de SSH.
 :::
 
 :::caution[RabbitMQ solo se pública en dev, y atado a 127.0.0.1]
@@ -75,20 +75,37 @@ El comentario del compose explica el motivo: la interfaz de gestion de RabbitMQ 
 |:------------------|:------------------------|:---------------------------------------------------------------------------|
 | `postgres`        | `postgres:17`           | healthcheck `pg_isready`; único motor de datos                             |
 | `rabbitmq`        | `rabbitmq:3-management` | healthcheck `rabbitmq-diagnostics ping`                                    |
-| `minio`           | copia propia de MinIO   | `server /data --console-address ":9001"`. Ver la nota de abajo             |
-| `minio-bootstrap` | copia propia de `mc`    | perfil `storage-init`; crea los buckets y hace `mc mirror` de las semillas |
+| `almacen`         | Versity Gateway         | pasarela S3 sobre un directorio. Ver la nota de abajo                      |
+| `almacen-bootstrap` | copia propia de `mc`  | perfil `storage-init`; crea los buckets y hace `mc mirror` de las semillas |
 | `backend`         | sin imagen en base      | la define cada overlay                                                     |
 | `frontend`        | sin imagen en base      | idem                                                                       |
 | `signer`          | sin imagen en base      | `SIGNER_PORT=4000`, `SIGMAKER_DIR=/opt/sigmaker`                           |
 | `analytics`       | sin imagen en base      | perfil `workers`; hoy es un marcador de posición                           |
 
-:::caution[Las imágenes de MinIO salen del registro del proyecto]
-Los repositorios `minio/minio` y `minio/mc` desaparecieron de Docker Hub, y en noviembre de 2026 un
-despliegue falló por eso: una máquina sin la imagen en caché ya no podía instalar el sistema. Desde
-entonces compose usa una **copia** de las dos imágenes, sin modificar y con su misma etiqueta,
-publicada junto a las del proyecto (`deasy-minio` y `deasy-minio-mc`). Es una copia congelada de
-febrero de 2025: no recibe parches. Las variables `MINIO_IMAGE` y `MINIO_MC_IMAGE` permiten
-apuntar a otra imagen sin tocar los ficheros de compose.
+:::caution[El almacén es Versity Gateway]
+Hasta noviembre de 2026 el almacén de objetos era MinIO. Su edición comunitaria dejó de publicarse
+—los repositorios desaparecieron de Docker Hub y un despliegue falló por eso—, así que se cambió
+por **Versity Gateway**, que tiene licencia Apache 2.0 y habla el mismo protocolo, S3.
+
+El servicio de compose se llamaba `minio` y sus variables `MINIO_*`; ahora son `almacen` y
+`ALMACEN_*`. Un entorno que conserve una variable con el prefijo viejo **no arranca**: el backend
+y el firmador se detienen y dicen cuál renombrar. Es a propósito, porque una variable que nadie
+lee no da error: el sistema cae a su valor por defecto y falla después, en otro sitio.
+
+Tres cosas son distintas y conviene saberlas:
+
+- **Los objetos son ficheros corrientes** dentro del volumen, y el bloqueo del archivo legal y las
+  versiones se guardan en los **atributos extendidos** de esos ficheros. Una copia del volumen que
+  no los conserve (`cp -r`, un `tar` sin `--xattrs`) los pierde **sin avisar**: los ficheros
+  llegan enteros y el archivo deja de estar bloqueado. `cp -a` sí los conserva.
+- **No lee un volumen de MinIO.** El almacén usa un volumen propio y arranca vacío; el anterior
+  queda en disco sin montar. Vale también para qa y prod: su volumen se llama ahora
+  `deasy_<entorno>_versity_data`.
+- **No hay consola web** en el puerto 9001. El almacén se inspecciona con un cliente S3.
+
+La imagen va fijada por su huella, y la variable `ALMACEN_IMAGE` permite apuntar a otra sin tocar
+los ficheros de compose. El cliente que crea los buckets sigue siendo `mc`, desde una copia
+congelada publicada junto a las imágenes del proyecto (`ALMACEN_MC_IMAGE`).
 :::
 
 ## `scripts/docker-env.sh`: la interfaz comun
@@ -108,7 +125,7 @@ Aquí ponía que `docker-env.sh` es «la única forma correcta» de tocar el sta
 
 El motivo es que los montajes de código son **relativos** (`../backend:/app/backend`), así que levantar `dev` desde otro worktree **no crea una pila nueva: recrea los mismos contenedores apuntando a otro código**. Pasó tres veces, y dos de ellas se midieron pruebas contra código ajeno sin que nadie se enterara.
 
-**La pila A ES la `dev` de siempre** —`docker-env.sh dev` y `stack.sh a` son la misma—; B, C y D desplazan los puertos +100, +200 y +300 y tienen base, MinIO, RabbitMQ y `node_modules` propios. `stack.sh` **se niega** si la pila que vas a usar monta otro worktree.
+**La pila A ES la `dev` de siempre** —`docker-env.sh dev` y `stack.sh a` son la misma—; B, C y D desplazan los puertos +100, +200 y +300 y tienen base, almacén, RabbitMQ y `node_modules` propios. `stack.sh` **se niega** si la pila que vas a usar monta otro worktree.
 :::
 
 Resuelve el fichero `.env` correcto (con `DEASY_ENV_FILE` como gancho para apuntar al `.runtime` en despliegues), válida que existan todos los ficheros antes de invocar nada, exporta `DEASY_CONTAINER_ENV_FILE` y hasta convierte rutas si detecta `cygpath` en Windows.

@@ -74,7 +74,7 @@ Por compatibilidad, los `_id` se exponen como **String** para preservar el contr
 
 ### Identidad y personas
 
-`persons` (con `token` único —la marca de firma—, `password_hash` y `status`) y sus **satélites de identidad**: `documentos_identidad`, `emails` y `telefonos`, cada uno con su propio principal y su propia verificación. Más `person_certificates` (los `.p12` en MinIO, con `is_default`), `email_verification_codes` —que desde el 2026-08-27 cuelga del **correo**, no de la persona— y `password_reset_codes`.
+`persons` (con `token` único —la marca de firma—, `password_hash` y `status`) y sus **satélites de identidad**: `documentos_identidad`, `emails` y `telefonos`, cada uno con su propio principal y su propia verificación. Más `person_certificates` (los `.p12` en el almacén, con `is_default`), `email_verification_codes` —que desde el 2026-08-27 cuelga del **correo**, no de la persona— y `password_reset_codes`.
 
 ### Organización, unidades y puestos
 

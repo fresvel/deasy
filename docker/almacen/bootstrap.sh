@@ -1,21 +1,21 @@
 #!/bin/sh
 set -eu
 
-MINIO_ALIAS="local"
-MINIO_URL="http://minio:9000"
-TEMPLATES_BUCKET="${MINIO_TEMPLATES_BUCKET:-deasy-templates}"
-TEMPLATES_PREFIX="${MINIO_TEMPLATES_PREFIX:-System}"
-TEMPLATE_SEEDS_PREFIX="${MINIO_TEMPLATES_SEEDS_PREFIX:-Seeds}"
-DOCUMENTS_BUCKET="${MINIO_DOCUMENTS_BUCKET:-deasy-documents}"
-DOCUMENTS_PREFIX="${MINIO_DOCUMENTS_PREFIX:-Unidades}"
-CHAT_BUCKET="${MINIO_CHAT_BUCKET:-deasy-chat}"
-CHAT_PREFIX="${MINIO_CHAT_PREFIX:-Chat}"
-SPOOL_BUCKET="${MINIO_SPOOL_BUCKET:-deasy-spool}"
-SPOOL_PREFIX="${MINIO_SIGNATURES_PREFIX:-Firmas}"
-USERS_BUCKET="${MINIO_USERS_BUCKET:-deasy-users}"
-USERS_PREFIX="${MINIO_USERS_PREFIX:-Users}"
-DOSSIER_BUCKET="${MINIO_DOSSIER_BUCKET:-deasy-dossier}"
-DOSSIER_PREFIX="${MINIO_DOSSIER_PREFIX:-Dosier}"
+ALMACEN_ALIAS="local"
+ALMACEN_URL="http://almacen:9000"
+TEMPLATES_BUCKET="${ALMACEN_TEMPLATES_BUCKET:-deasy-templates}"
+TEMPLATES_PREFIX="${ALMACEN_TEMPLATES_PREFIX:-System}"
+TEMPLATE_SEEDS_PREFIX="${ALMACEN_TEMPLATES_SEEDS_PREFIX:-Seeds}"
+DOCUMENTS_BUCKET="${ALMACEN_DOCUMENTS_BUCKET:-deasy-documents}"
+DOCUMENTS_PREFIX="${ALMACEN_DOCUMENTS_PREFIX:-Unidades}"
+CHAT_BUCKET="${ALMACEN_CHAT_BUCKET:-deasy-chat}"
+CHAT_PREFIX="${ALMACEN_CHAT_PREFIX:-Chat}"
+SPOOL_BUCKET="${ALMACEN_SPOOL_BUCKET:-deasy-spool}"
+SPOOL_PREFIX="${ALMACEN_SIGNATURES_PREFIX:-Firmas}"
+USERS_BUCKET="${ALMACEN_USERS_BUCKET:-deasy-users}"
+USERS_PREFIX="${ALMACEN_USERS_PREFIX:-Users}"
+DOSSIER_BUCKET="${ALMACEN_DOSSIER_BUCKET:-deasy-dossier}"
+DOSSIER_PREFIX="${ALMACEN_DOSSIER_PREFIX:-Dosier}"
 
 # -- Los textos legales (LOPDP) --------------------------------------------------------------
 # Dos buckets, y NO son intercambiables:
@@ -26,20 +26,20 @@ DOSSIER_PREFIX="${MINIO_DOSSIER_PREFIX:-Dosier}"
 # es IRREVERSIBLE, y adivinarla se equivoca en las dos direcciones: quedarse corto deja sin
 # proteger lo que la ley obliga a poder demostrar, y pasarse deja documentos indelebles
 # acumulandose en una pila de desarrollo que se resetea a diario. Si falta, esto se para.
-LEGAL_BUCKET="${MINIO_LEGAL_BUCKET:-deasy-legal}"
-LEGAL_DRAFTS_BUCKET="${MINIO_LEGAL_DRAFTS_BUCKET:-deasy-legal-borradores}"
-LEGAL_RETENTION_MODE="${MINIO_LEGAL_RETENTION_MODE:-COMPLIANCE}"
-LEGAL_RETENTION_DAYS="${MINIO_LEGAL_RETENTION_DAYS:-}"
+LEGAL_BUCKET="${ALMACEN_LEGAL_BUCKET:-deasy-legal}"
+LEGAL_DRAFTS_BUCKET="${ALMACEN_LEGAL_DRAFTS_BUCKET:-deasy-legal-borradores}"
+LEGAL_RETENTION_MODE="${ALMACEN_LEGAL_RETENTION_MODE:-COMPLIANCE}"
+LEGAL_RETENTION_DAYS="${ALMACEN_LEGAL_RETENTION_DAYS:-}"
 
-echo "Esperando MinIO en ${MINIO_URL}..."
-until mc alias set "$MINIO_ALIAS" "$MINIO_URL" "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" >/dev/null 2>&1; do
+echo "Esperando al almacen en ${ALMACEN_URL}..."
+until mc alias set "$ALMACEN_ALIAS" "$ALMACEN_URL" "$ALMACEN_ROOT_USER" "$ALMACEN_ROOT_PASSWORD" >/dev/null 2>&1; do
   sleep 2
 done
 
 ensure_bucket() {
   bucket_name="$1"
   echo "Validando bucket ${bucket_name}..."
-  mc mb --ignore-existing "${MINIO_ALIAS}/${bucket_name}" >/dev/null
+  mc mb --ignore-existing "${ALMACEN_ALIAS}/${bucket_name}" >/dev/null
 }
 
 sync_path() {
@@ -47,8 +47,8 @@ sync_path() {
   bucket_name="$2"
   target_prefix="$3"
   if [ -d "$local_path" ]; then
-    echo "Sincronizando ${local_path} hacia ${MINIO_ALIAS}/${bucket_name}/${target_prefix}..."
-    mc mirror --overwrite --exclude '.*' "$local_path" "${MINIO_ALIAS}/${bucket_name}/${target_prefix}"
+    echo "Sincronizando ${local_path} hacia ${ALMACEN_ALIAS}/${bucket_name}/${target_prefix}..."
+    mc mirror --overwrite --exclude '.*' "$local_path" "${ALMACEN_ALIAS}/${bucket_name}/${target_prefix}"
     SYNC_COUNT=$((SYNC_COUNT + 1))
   fi
 }
@@ -56,7 +56,7 @@ sync_path() {
 # -- El bucket de archivo legal --------------------------------------------------------------
 #
 # EL BLOQUEO DE OBJETOS SOLO SE PUEDE PEDIR AL CREAR EL BUCKET, Y ES IRREVERSIBLE. A uno creado
-# sin `--with-lock` no se le puede anadir despues -- ni activando antes el versionado: MinIO
+# sin `--with-lock` no se le puede anadir despues -- ni activando antes el versionado: el almacen
 # responde «does not support locking» y no hay forma de arreglarlo.
 #
 # Y OJO, porque la comprobacion evidente NO SIRVE: `mc mb --with-lock --ignore-existing` sobre
@@ -73,15 +73,15 @@ ensure_legal_archive_bucket() {
   if [ -z "$LEGAL_RETENTION_DAYS" ]; then
     cat >&2 <<'EOF'
 
-  [X] Falta MINIO_LEGAL_RETENTION_DAYS, y no tiene valor por defecto a proposito.
+  [X] Falta ALMACEN_LEGAL_RETENTION_DAYS, y no tiene valor por defecto a proposito.
 
       Es la retencion del archivo legal, y es IRREVERSIBLE: en modo COMPLIANCE no se puede
       acortar despues. Ponla en docker/.env.<entorno>:
 
-        desarrollo y qa   MINIO_LEGAL_RETENTION_DAYS=1
-        produccion        MINIO_LEGAL_RETENTION_DAYS=3650    (10 anos)
+        desarrollo y qa   ALMACEN_LEGAL_RETENTION_DAYS=1
+        produccion        ALMACEN_LEGAL_RETENTION_DAYS=3650    (10 anos)
 
-      En dev es 1 dia porque `test:char:run` resetea la base pero NO MinIO: con 3650, cada
+      En dev es 1 dia porque `test:char:run` resetea la base pero NO el almacen: con 3650, cada
       corrida dejaria documentos que no se pueden borrar acumulandose para siempre.
 
 EOF
@@ -89,20 +89,20 @@ EOF
   fi
 
   case "$LEGAL_RETENTION_DAYS" in
-    *[!0-9]*) echo "[X] MINIO_LEGAL_RETENTION_DAYS='${LEGAL_RETENTION_DAYS}' no es un numero de dias." >&2; exit 1 ;;
-    0)        echo "[X] MINIO_LEGAL_RETENTION_DAYS=0: un archivo sin retencion no es un archivo." >&2; exit 1 ;;
+    *[!0-9]*) echo "[X] ALMACEN_LEGAL_RETENTION_DAYS='${LEGAL_RETENTION_DAYS}' no es un numero de dias." >&2; exit 1 ;;
+    0)        echo "[X] ALMACEN_LEGAL_RETENTION_DAYS=0: un archivo sin retencion no es un archivo." >&2; exit 1 ;;
   esac
 
   echo "Validando bucket ${LEGAL_BUCKET} (bloqueo de objetos, ${LEGAL_RETENTION_MODE} ${LEGAL_RETENTION_DAYS}d)..."
-  mc mb --with-lock --ignore-existing "${MINIO_ALIAS}/${LEGAL_BUCKET}" >/dev/null
+  mc mb --with-lock --ignore-existing "${ALMACEN_ALIAS}/${LEGAL_BUCKET}" >/dev/null
 
   if ! retention_error="$(mc retention set --default "$LEGAL_RETENTION_MODE" "${LEGAL_RETENTION_DAYS}d" \
-                            "${MINIO_ALIAS}/${LEGAL_BUCKET}" 2>&1)"; then
+                            "${ALMACEN_ALIAS}/${LEGAL_BUCKET}" 2>&1)"; then
     cat >&2 <<EOF
 
   [X] El bucket de archivo legal '${LEGAL_BUCKET}' NO ADMITE BLOQUEO DE OBJETOS.
 
-      MinIO dijo:  ${retention_error}
+      El almacen dijo:  ${retention_error}
 
       Existe, pero se creo sin \`--with-lock\`, y eso NO SE PUEDE ARREGLAR: el bloqueo es una
       propiedad de la CREACION del bucket. Activar el versionado despues tampoco vale.
@@ -122,7 +122,7 @@ EOF
              mc rb --force <alias>/${LEGAL_BUCKET}
         3. Vuelve a levantar la pila. Este script lo creara ya con bloqueo.
 
-      En una pila de desarrollo tambien vale tirar el volumen de MinIO entero.
+      En una pila de desarrollo tambien vale tirar el volumen del almacen entero.
 
 EOF
     exit 1
@@ -132,7 +132,7 @@ EOF
   # SIN bloqueo, porque un borrador se corrige y se tira. Meterlo en un almacen inmutable seria
   # guardar para siempre diez versiones basura de un texto que todavia no rige nada.
   ensure_bucket "$LEGAL_DRAFTS_BUCKET"
-  mc version enable "${MINIO_ALIAS}/${LEGAL_DRAFTS_BUCKET}" >/dev/null
+  mc version enable "${ALMACEN_ALIAS}/${LEGAL_DRAFTS_BUCKET}" >/dev/null
 }
 
 # La semilla del archivo legal va SIN `--overwrite`, al reves que todo lo demas de este fichero,
@@ -146,8 +146,13 @@ EOF
 sync_legal_seed() {
   local_path="/import/Legal"
   if [ -d "$local_path" ]; then
-    echo "Sembrando textos legales publicados en ${MINIO_ALIAS}/${LEGAL_BUCKET} (sin sobrescribir)..."
-    mc mirror --exclude '.*' "$local_path" "${MINIO_ALIAS}/${LEGAL_BUCKET}"
+    echo "Sembrando textos legales publicados en ${ALMACEN_ALIAS}/${LEGAL_BUCKET} (sin sobrescribir)..."
+    # `--md5` NO es opcional. Versity, como S3, rechaza un PUT a un bucket con retención por
+    # defecto si no trae Content-MD5 («Content-MD5 OR x-amz-checksum- HTTP header is required for
+    # Put Object requests with Object Lock parameters»), y `mc mirror` a secas no lo manda. Medido:
+    # `--checksum SHA256` NO vale («The SHA256 you specified did not match the calculated
+    # checksum»); `--md5` sí, y sigue omitiendo lo que ya existe.
+    mc mirror --md5 --exclude '.*' "$local_path" "${ALMACEN_ALIAS}/${LEGAL_BUCKET}"
     SYNC_COUNT=$((SYNC_COUNT + 1))
   fi
 }

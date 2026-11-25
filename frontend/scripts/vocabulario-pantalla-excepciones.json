@@ -32,7 +32,7 @@
       ]
     },
     "Este flujo": {
-      "motivo": "Espaniol corriente: «este flujo crea la plantilla y la sube a MinIO» habla del ASISTENTE, no del recorrido de un documento.",
+      "motivo": "Espaniol corriente: «este flujo crea la plantilla y la sube al almacén» habla del ASISTENTE, no del recorrido de un documento.",
       "ficheros": [
         "src/modules/admin/components/modals/AdminDraftArtifactModal.vue"
       ]

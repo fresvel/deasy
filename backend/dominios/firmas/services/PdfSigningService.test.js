@@ -170,7 +170,7 @@ test("un certificado que no es tuyo es 404, indistinguible de uno inexistente", 
 });
 
 test("si el almacenamiento no responde NO se acusa al cliente: sin statusCode (500) y con la causa real", async () => {
-  const fallo = new Error("connect ECONNREFUSED minio:9000");
+  const fallo = new Error("connect ECONNREFUSED almacen:9000");
   await assert.rejects(
     () => buildSignContext({ body: cuerpoValido(), userId: 7 }, deps({ statObject: async () => { throw fallo; } })),
     (error) => error.statusCode === undefined

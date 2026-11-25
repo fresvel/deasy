@@ -5,11 +5,13 @@ x-runtime-env-file: &qa_runtime_env_file
 
 # ⚠️ LOS PUERTOS DE LA BASE, DEL ALMACÉN Y DEL FIRMADOR SE PUBLICAN SÓLO EN `127.0.0.1` (2026-11-24).
 # Se publicaban en todas las interfaces, o sea hacia internet si el cortafuegos del servidor no los
-# cerraba: PostgreSQL, la API y la consola de MinIO, y el firmador. Ninguno tiene por qué recibir
+# cerraba: PostgreSQL, la API del almacén y el firmador. Ninguno tiene por qué recibir
 # tráfico de fuera —el backend les habla por la red de contenedores, y lo público entra por el
 # proxy—. Siguen alcanzables DESDE el servidor, que es para lo que sirven: `psql` local, o un túnel
-# de SSH para abrir la consola del almacén (`ssh -L 9101:127.0.0.1:9101 …`).
-# Importa más desde que MinIO comunitario dejó de recibir parches de seguridad.
+# de SSH para hablarle al almacén con un cliente S3 (`ssh -L 9100:127.0.0.1:9100 …`).
+#
+# El almacén es Versity Gateway desde el 2026-11-25 (ver `compose.base.yml`). No publica consola
+# web: la de MinIO, en el 9001, se fue con él.
 services:
   postgres:
     env_file: *qa_runtime_env_file
@@ -22,13 +24,12 @@ services:
     # `rabbitmq:5672` y `http://rabbitmq:15672/api`, asi que publicarlo al host no daba servicio a
     # nadie: solo exponia la UI de gestion, que permite leer el cuerpo de los mensajes.
 
-  minio:
+  almacen:
     env_file: *qa_runtime_env_file
     ports:
-      - "127.0.0.1:${MINIO_API_PORT}:9000"
-      - "127.0.0.1:${MINIO_CONSOLE_PORT}:9001"
+      - "127.0.0.1:${ALMACEN_API_PORT}:9000"
 
-  minio-bootstrap:
+  almacen-bootstrap:
     env_file: *qa_runtime_env_file
 
   backend:
@@ -68,8 +69,10 @@ volumes:
     name: deasy_qa_postgres_data
   rabbitmq_data:
     name: deasy_qa_rabbitmq_data
-  minio_data:
-    name: deasy_qa_minio_data
+  # El almacén es Versity Gateway y NO lee un volumen de MinIO: usa el suyo. Si en el servidor
+  # queda un `deasy_qa_minio_data` de antes, ya no lo monta nadie.
+  versity_data:
+    name: deasy_qa_versity_data
   backend_node_modules_v2:
     name: deasy_qa_backend_node_modules
   frontend_node_modules:

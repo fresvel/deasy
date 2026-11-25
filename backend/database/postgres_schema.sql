@@ -667,7 +667,7 @@ CREATE TABLE IF NOT EXISTS identidad.documentos_identidad (
   verificado_at TIMESTAMP NULL,
   emitido_el DATE NULL,
   expira_el DATE NULL,
-  -- El PDF del documento escaneado, como referencia `minio://<bucket>/<objeto>` y NUNCA como URL:
+  -- El PDF del documento escaneado, como referencia `s3://<bucket>/<objeto>` y NUNCA como URL:
   -- una URL publica lleva dentro el endpoint del entorno, asi que mover la pila o cambiar de
   -- dominio invalidaria todas las filas. La URL, si hace falta, se compone al leer. El expediente
   -- si guarda URL completa (`dossier_items.url_documento`) y es justo el ejemplo a no repetir.
@@ -675,7 +675,7 @@ CREATE TABLE IF NOT EXISTS identidad.documentos_identidad (
   -- El objeto cuelga del ID de la persona y del documento —`users/<person_id>/documentos/<id>.pdf`—,
   -- por lo mismo que las demas rutas desde el paso D: un numero de documento puede cambiar.
   --
-  -- NULA significa "sin escaneo subido". Es el dato: saberlo sin preguntarle a MinIO es la razon de
+  -- NULA significa "sin escaneo subido". Es el dato: saberlo sin preguntarle al almacén es la razon de
   -- guardar la referencia en vez de derivarla, porque la ruta si es derivable pero su EXISTENCIA no.
   escaneo_ref VARCHAR(255) NULL,
   escaneo_subido_at TIMESTAMP NULL,
@@ -966,7 +966,7 @@ CREATE INDEX IF NOT EXISTS idx_canales_bitacora ON canales_bitacora (canal, desd
 -- porque es el mismo problema y no hace falta un mecanismo nuevo.
 --
 -- ⚠️ AQUI NO HAY NI UNA LETRA DEL TEXTO. Esta tabla dice DONDE esta (bucket, clave y version de
--- objeto) y QUE DECIA (la huella); el texto vive en MinIO. Una columna TEXT no demuestra nada: quien
+-- objeto) y QUE DECIA (la huella); el texto vive en el almacén. Una columna TEXT no demuestra nada: quien
 -- puede escribir en la base puede reescribir el texto y recalcular su huella en la misma sentencia,
 -- y no queda rastro. El archivo con bloqueo de objetos si: una vez escrito no lo borra nadie.
 --
@@ -1091,11 +1091,11 @@ $$ LANGUAGE plpgsql;
 CREATE OR REPLACE TRIGGER trg_accesos_sensibles_solo_altas BEFORE UPDATE OR DELETE ON accesos_sensibles FOR EACH ROW EXECUTE FUNCTION rechazar_modificacion_de_bitacora();
 
 -- ⚠️ LA VERSION 1 DE CADA TEXTO YA NO SE SIEMBRA AQUI, Y NO ES UNA PREFERENCIA DE ESTILO: DESDE QUE
--- EL TEXTO VIVE EN MinIO, UN `INSERT` NO PUEDE SEMBRARLO. SQL no sabe escribir en un bucket, y una
+-- EL TEXTO VIVE EN el almacén, UN `INSERT` NO PUEDE SEMBRARLO. SQL no sabe escribir en un bucket, y una
 -- fila publicada sin objeto detras seria un documento sin texto: la pantalla de registro no tendria
 -- nada que enseñar y la huella no apuntaria a nada verificable.
 --
--- El texto inicial entra por el bucket de borradores (la importacion de MinIO), y la fila la sella
+-- El texto inicial entra por el bucket de borradores (la importacion del almacén), y la fila la sella
 -- `DocumentosLegales.publicar()`, que es el unico camino que copia los bytes al archivo, los relee
 -- por su version de objeto y comprueba la huella. Cualquier otro atajo produciria una fila que dice
 -- apuntar a una prueba sin apuntar a ninguna.
@@ -3002,7 +3002,7 @@ $$;
 -- EL CATALOGO DE GENERADORES: QUIEN PRODUCE EL PDF (frente 23, F3.1 — 2026-10-04).
 --
 -- ESTA TABLA SE LLAMABA `template_seeds` Y SIGNIFICABA OTRA COSA. Era «la SEMILLA»: un paquete de
--- partida —un proyecto LaTeX+Jinja2 completo en MinIO— que se COPIABA entero por cada version de
+-- partida —un proyecto LaTeX+Jinja2 completo en el almacén— que se COPIABA entero por cada version de
 -- plantilla. Era UNA fila (`latex/informe-general`) y era EL mecanismo: no habia ningun camino para
 -- definir un documento que no pasara por escribir `.tex.j2`.
 --
@@ -3017,7 +3017,7 @@ $$;
 -- `ediciones.generador_id`.
 --
 -- QUE SE CONSERVO DE LA SEMILLA, Y POR QUE:
---   · `source_path` — es el prefijo de MinIO del proyecto LaTeX, y `_materializeDraftFormats`
+--   · `source_path` — es el prefijo del almacén del proyecto LaTeX, y `_materializeDraftFormats`
 --     (`templateLifecycle.js`) lo necesita para copiar `src/`, `defaults.yaml` y `render/` al crear
 --     una plantilla. Sin el no se puede crear ninguna. Pasa a NULL porque un generador de tipo
 --     `servicio` no copia ningun paquete: no tiene prefijo que ofrecer.
@@ -3045,7 +3045,7 @@ CREATE TABLE IF NOT EXISTS plantillas.generadores_de_documento (
   tipo TEXT CONSTRAINT chk_generadores_de_documento_tipo CHECK (tipo IN ('latex', 'servicio')) NOT NULL DEFAULT 'servicio',
   -- A quien se le pide el PDF: nombre de cola o URL de endpoint. NULL para `latex`, que no llama a nadie.
   destino VARCHAR(255) NULL,
-  -- El prefijo de MinIO del paquete que se copia. NULL para `servicio`, que no copia nada.
+  -- El prefijo del almacén del paquete que se copia. NULL para `servicio`, que no copia nada.
   source_path VARCHAR(255) NULL,
   preview_path VARCHAR(255) NULL,
   is_active SMALLINT NOT NULL DEFAULT 1,
@@ -3112,7 +3112,7 @@ CREATE TABLE IF NOT EXISTS plantillas.ediciones (
   catalogo_documental_id INT NOT NULL,
   -- LA VERSION DE ESTA EDICION, y es un SEMVER de tres segmentos: el codigo la parsea asi para
   -- calcular la siguiente (`bumpSemanticVersion`, probada: "1.2.3" + major -> "2.0.0"). Da nombre
-  -- tambien a su carpeta en MinIO, que es de donde le viene el prefijo `storage_` del nombre viejo.
+  -- tambien a su carpeta en el almacén, que es de donde le viene el prefijo `storage_` del nombre viejo.
   --
   -- ⚠️ EL `CHECK` ES DE HOY (frente 25, P7) y tapa un hueco que no reventaba: hasta el 2026-10-11 la
   -- base aceptaba `"1.0"` o `"v2"`, y `getNextStorageVersionForTemplateCode` **se salta en silencio**
@@ -3173,7 +3173,7 @@ CREATE INDEX IF NOT EXISTS idx_ediciones_state ON ediciones (lifecycle_state);
 CREATE INDEX IF NOT EXISTS idx_ediciones_catalogo ON ediciones (catalogo_documental_id);
 
 -- SIN `meta_object_key` (sub-paso 8 del §0.8 del plan maestro). Apuntaba al `meta.yaml` del paquete
--- de MinIO, que ya no se emite: el flujo —su unica seccion que no era copia literal de una columna
+-- del almacén, que ya no se emite: el flujo —su unica seccion que no era copia literal de una columna
 -- de esta misma tabla— vive en `fill_flow_*` / `signature_flow_*` desde el sub-paso 3, y no queda
 -- ningun lector que abra ese fichero.
 
@@ -3200,7 +3200,7 @@ CREATE INDEX IF NOT EXISTS idx_ediciones_catalogo ON ediciones (catalogo_documen
 -- que es exactamente lo que no pagaba nada aqui). Quien lo necesite, lo disena entonces, con un
 -- consumidor delante: un esquema declarado por un servicio sin nadie que lo pinte vuelve a ser esto.
 --
--- EL `schema.json` DE MINIO NO SE HA IDO. Sigue siendo el fichero que el editor de `/admin` lee y
+-- EL `schema.json` DEL ALMACÉN NO SE HA IDO. Sigue siendo el fichero que el editor de `/admin` lee y
 -- escribe (`getTemplateArtifactSchema` / `buildSchemaJsonFromFields`). Lo que se fue es su REFLEJO en
 -- la base, y el puntero `ediciones.schema_object_key` (F4.2), que era
 -- `base_object_prefix` + `schema.json` — una copia derivable, y por tanto una tercera forma de decir
@@ -3627,7 +3627,7 @@ CREATE INDEX IF NOT EXISTS idx_document_versions_item ON document_versions (task
 --
 -- POR QUE NACE (2026-08-23). `working_file_path` guarda el archivo VIGENTE y se sobrescribe en cada
 -- subida, asi que hasta hoy no constaba en ninguna parte QUIEN elaboro un documento ni que hubo
--- antes. Ojo con el matiz: en MinIO no se perdia nada —el nombre del objeto lleva sello de tiempo y
+-- antes. Ojo con el matiz: en el almacén no se perdia nada —el nombre del objeto lleva sello de tiempo y
 -- UUID, asi que cada subida escribe un objeto nuevo— lo que se perdia era el PUNTERO. Los ficheros
 -- anteriores quedaban huerfanos, no borrados.
 --

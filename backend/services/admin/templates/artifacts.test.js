@@ -88,7 +88,7 @@ test("un .sh por el campo pdf_file se rechaza, y el motivo dice cual es el campo
 
 test("mentir en el mimetype NO salva al .sh: manda la EXTENSION", () => {
   // Es la razón de que el gate sea la extensión: el mimetype lo declara el cliente y no influye en
-  // el nombre del objeto de MinIO, que sale de `path.extname(originalname)`.
+  // el nombre del objeto del almacén, que sale de `path.extname(originalname)`.
   assert.ok(describeRejectedDraftArtifactFile({
     fieldname: "pdf_file",
     originalname: "payload.sh",

@@ -47,7 +47,7 @@ como admin.
 bash scripts/reset-system.sh dev
 ```
 
-Deja PostgreSQL y los buckets de MinIO vacios, recicla `backend` y `signer`, y el backend vuelve
+Deja PostgreSQL y los buckets del almacén vacios, recicla `backend` y `signer`, y el backend vuelve
 a modo bootstrap. No toca RabbitMQ.
 Despues, en el navegador: `/setup` → **"Usar datos de ejemplo"** en los tres bloques → enviar.
 

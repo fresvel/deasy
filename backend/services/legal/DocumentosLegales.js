@@ -20,12 +20,12 @@ import { huellaDe } from "./huella.js";
  * ── EL TEXTO YA NO ESTÁ AQUÍ ────────────────────────────────────────────────────────────────────
  *
  * Esta tabla **no guarda el texto**: guarda **dónde está** (`bucket`, `object_key`,
- * `object_version_id`) y **qué decía** (`contenido_hash`). El texto vive en MinIO — el borrador en
+ * `object_version_id`) y **qué decía** (`contenido_hash`). El texto vive en el almacén — el borrador en
  * un bucket corriente y lo publicado en uno con bloqueo de objetos. La razón está en
  * `ArchivoLegal.js`, y se resume en que una columna `TEXT` no demuestra nada: quien puede escribir
  * en la base puede reescribir texto y huella en la misma sentencia.
  *
- * ⚠️ **DOS EJES DE VERSIÓN, Y NO SE CONFUNDEN.** La versión de **objeto** (la de MinIO) cuenta cómo
+ * ⚠️ **DOS EJES DE VERSIÓN, Y NO SE CONFUNDEN.** La versión de **objeto** (la del almacén) cuenta cómo
  * evolucionó el borrador: cuarenta guardados son cuarenta versiones de objeto y **una sola fila**
  * aquí. La versión de **negocio** (`v1`, `v2`, la columna `version`) es lo que una persona aceptó.
  */
@@ -42,7 +42,7 @@ const ESTADOS = Object.freeze({ BORRADOR: "draft", PUBLICADO: "published", RETIR
  * CACHÉ DE TEXTOS ARCHIVADOS.
  *
  * El formulario de registro pide los textos vigentes **en cada carga de la página**, y sin caché eso
- * es una descarga de MinIO por visita para un contenido que, por definición, no puede cambiar.
+ * es una descarga del almacén por visita para un contenido que, por definición, no puede cambiar.
  *
  * ⚠️ **La clave incluye el `objectVersionId`**, así que una entrada de la caché es inmutable por
  * construcción: no existe «caché sucia», solo entradas que ya nadie pide. Se vacía igualmente al
@@ -102,7 +102,7 @@ export default class DocumentosLegales {
    * Las filas publicadas, SIN texto.
    *
    * Existe aparte de `publicados()` porque validar un alta solo necesita saber qué ids y qué clases
-   * están vigentes. Mezclarlo obligaría a bajar de MinIO dos documentos en cada registro para no
+   * están vigentes. Mezclarlo obligaría a bajar del almacén dos documentos en cada registro para no
    * mirarlos.
    */
   async #filasPublicadas() {
@@ -205,7 +205,7 @@ export default class DocumentosLegales {
       throw conflict(`Ya existe la version '${version}' de '${clase}'.`);
     }
 
-    // El objeto se crea vacío ANTES de la fila: si MinIO falla, no queda una fila apuntando a un
+    // El objeto se crea vacío ANTES de la fila: si el almacén falla, no queda una fila apuntando a un
     // objeto inexistente.
     const { bucket, objectKey } = await this.archivo.guardarBorrador(clase, version, "");
 
@@ -218,7 +218,7 @@ export default class DocumentosLegales {
   }
 
   /**
-   * Guarda el texto del borrador. Cada llamada deja una versión de objeto en MinIO: **ese es el
+   * Guarda el texto del borrador. Cada llamada deja una versión de objeto en el almacén: **ese es el
    * historial de edición**, y por eso aquí no hay ninguna tabla de revisiones.
    */
   async guardarBorrador(id, texto) {
@@ -271,7 +271,7 @@ export default class DocumentosLegales {
    * PUBLICAR: copiar los bytes del borrador al archivo inmutable, releerlos por su versión, y solo
    * entonces sellar la fila.
    *
-   * ⚠️ **El orden es la garantía.** La fila se escribe LA ÚLTIMA: si la copia falla, si MinIO no
+   * ⚠️ **El orden es la garantía.** La fila se escribe LA ÚLTIMA: si la copia falla, si el almacén no
    * devuelve versión, o si lo releído no cuadra con lo escrito, esto lanza y la base **no se toca**.
    * Un puntero que dice apuntar a una prueba y apunta a otra cosa es peor que no tener puntero.
    *
@@ -350,7 +350,7 @@ export default class DocumentosLegales {
    * quedaron sin puntero.
    *
    * ⚠️ **Por qué hace falta, y por qué no puede ser un `INSERT` del esquema.** La semilla del texto
-   * entra por MinIO —la importación del bucket—, y una fila necesita el `object_version_id`, que
+   * entra por el almacén —la importación del bucket—, y una fila necesita el `object_version_id`, que
    * **no existe hasta después de subir el objeto**. SQL no puede conocerlo. Sin esto, los objetos
    * estarían subidos y ninguna fila los indexaría: quien se registra no vería ningún documento.
    *

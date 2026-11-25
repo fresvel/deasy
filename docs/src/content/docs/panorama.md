@@ -31,7 +31,7 @@ flowchart TD
     FE["frontend<br/>Vue 3"]
     BE["backend<br/>(API REST)<br/>Node 25 + Express 5<br/>+ Socket.IO (tiempo real)"]
     PG["PostgreSQL 17<br/>(los datos)"]
-    MINIO["MinIO<br/>(los ficheros)"]
+    ALMACEN["Almacén<br/>(los ficheros)"]
     RABBIT["RabbitMQ<br/>(la cola)"]
     SIGNER["signer<br/>(firma PDFs)<br/>Python + pyHanko<br/>+ helper Node #quot;sigmaker#quot;"]
 
@@ -39,9 +39,9 @@ flowchart TD
     NGINX -->|"/"| FE
     NGINX -->|"/api/..."| BE
     BE --> PG
-    BE --> MINIO
+    BE --> ALMACEN
     BE --> RABBIT
-    MINIO --> SIGNER
+    ALMACEN --> SIGNER
     RABBIT --> SIGNER
 ```
 
@@ -51,11 +51,11 @@ Traducción de cada pieza para alguien que empieza:
 
 - **frontend**: la aplicación web (Vue 3). En producción es HTML, JS y CSS estático servido por un nginx pequenito dentro de su propia imagen.
 
-- **backend**: la API. Recibe peticiones HTTP, decide que se puede hacer, guarda en PostgreSQL, sube ficheros a MinIO y encola trabajos de firma en RabbitMQ.
+- **backend**: la API. Recibe peticiones HTTP, decide que se puede hacer, guarda en PostgreSQL, sube ficheros al almacén y encola trabajos de firma en RabbitMQ.
 
 - **PostgreSQL**: la base de datos relacional. **Es el único motor de datos**: MariaDB y MongoDB fueron retirados. Veras comentarios “ex-MongoDB” en el código; son cicatrices de esa migración.
 
-- **MinIO**: almacenamiento de objetos compatible con S3. Los PDFs, plantillas, fotos de perfil y certificados **no** se guardan en la base de datos ni en el disco del backend: van aquí, en *buckets* (contenedores de primer nivel).
+- **Almacén**: almacenamiento de objetos compatible con S3. Los PDFs, plantillas, fotos de perfil y certificados **no** se guardan en la base de datos ni en el disco del backend: van aquí, en *buckets* (contenedores de primer nivel).
 
 - **RabbitMQ**: una cola de mensajes. Sirve para que el backend le pida al signer “firma este PDF” **sin quedarse bloqueado** esperando.
 

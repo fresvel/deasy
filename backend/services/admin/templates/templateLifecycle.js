@@ -2,7 +2,7 @@
 // SqlAdminService.js (God #1) por Extract Class, cut #8.
 //
 // QUE ES ESTE CLUSTER. Es el punto de INTEGRACION del dominio de plantillas: guardar un borrador
-// (con sus ficheros en MinIO, su schema, su meta y sus flujos autorados), el update guiado
+// (con sus ficheros en el almacén, su schema, su meta y sus flujos autorados), el update guiado
 // (crear borradores de plantilla + configuracion, y publicarlos juntos), el fork de un entregable
 // para otra configuracion, el sync de semillas y el diff de activacion.
 //
@@ -18,12 +18,12 @@
 // _persistDraftEdit y _persistDraftCreation.
 //
 // COMO SE RESOLVIO LA COMPENSACION. Historia en tres actos, porque explica por que hoy es tan corta.
-// Al principio habia cuatro variables (createdId, uploadedToMinio, insertedDeliverableId,
+// Al principio habia cuatro variables (createdId, uploadedToAlmacen, insertedDeliverableId,
 // insertedLinkId) compartidas entre el `try` y el `catch`, y el `catch` tenia que acordarse de
 // mirarlas en el orden correcto. Despues cada paso registraba su propio deshacer en una pila y el
 // `catch` solo desapilaba. Y desde el sub-paso 3 del §0.8 hay UNA TRANSACCION de verdad alrededor de
 // todo lo que toca la base —artifact/deliverable, vinculo y flujo autorado—, asi que el `ROLLBACK`
-// sustituye a los tres deshacer de base y **solo queda uno**: el prefijo de MinIO, que se sube ANTES
+// sustituye a los tres deshacer de base y **solo queda uno**: el prefijo del almacén, que se sube ANTES
 // y que ninguna transaccion de PostgreSQL puede deshacer.
 //
 // Efecto lateral bueno de la transaccion, y no era el objetivo: la pila NO apilaba en EDICION, asi
@@ -39,14 +39,14 @@ import {
   hasVisibleFiles,
   hashDirectory,
   buildProtectedManifest,
-  listMinioObjects,
-  getMinioObjectStream,
+  listAlmacenObjects,
+  getAlmacenObjectStream,
   streamToBuffer,
-  copyMinioObjectToFile,
-  downloadMinioPrefixToDirectory,
-  copyMinioObjectBinary,
-  removeMinioPrefix,
-  uploadDirectoryToMinio,
+  copyAlmacenObjectToFile,
+  downloadAlmacenPrefixToDirectory,
+  copyAlmacenObjectBinary,
+  removeAlmacenPrefix,
+  uploadDirectoryToAlmacen,
 } from "../kernel/storage.js";
 import { sanitizeStorageSegment } from "../../../utils/templateArchive.js";
 import { normalizeItemMode } from "../kernel/versioning.js";
@@ -63,26 +63,26 @@ import {
 import { replaceAuthoredFlowForArtifact, copyAuthoredFlowToArtifact, hasFillStepsForArtifact } from "./flowRows.js";
 import { parseAvailableFormats, findPreferredPdfObject } from "./artifacts.js";
 import {
-  MINIO_TEMPLATES_BUCKET,
+  ALMACEN_TEMPLATES_BUCKET,
   CONTRACT_FORMAT,
   EDITABLE_CONTENT_SUBPATH,
 } from "../kernel/constants.js";
 
-// Staging efimero de los borradores: se arma, se sube a MinIO y se borra dentro de la
+// Staging efimero de los borradores: se arma, se sube al almacén y se borra dentro de la
 // misma peticion. Va al temporal del sistema, como el resto de subidas (certificados,
 // dossier, fotos), asi no deja estado en el contenedor ni ensucia el repo en dev.
 const TEMPLATE_DRAFT_STAGING_ROOT = path.join(os.tmpdir(), "deasy", "template-drafts");
-const MINIO_TEMPLATES_PREFIX = (process.env.MINIO_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
+const ALMACEN_TEMPLATES_PREFIX = (process.env.ALMACEN_TEMPLATES_PREFIX || "System").replace(/^\/+|\/+$/g, "");
 // Generador por defecto cuando se crea una plantilla sin elegir uno. Coincide con el del bootstrap.
 // Es la semilla LaTeX: el PRIMER generador del catalogo, no el unico posible (frente 23, F3.1).
 const DEFAULT_GENERADOR_CODE = process.env.DEFAULT_TEMPLATE_SEED_CODE || "latex/informe-general";
 // Formatos de documento de referencia (al menos uno es obligatorio al crear una plantilla).
 const REFERENCE_DOC_FORMATS = ["pdf", "docx", "xlsx", "pptx"];
 
-const MINIO_TEMPLATES_SEEDS_PREFIX = (process.env.MINIO_TEMPLATES_SEEDS_PREFIX || "Seeds").replace(/^\/+|\/+$/g, "");
+const ALMACEN_TEMPLATES_SEEDS_PREFIX = (process.env.ALMACEN_TEMPLATES_SEEDS_PREFIX || "Seeds").replace(/^\/+|\/+$/g, "");
 const TEMPLATE_USERS_PREFIX = (
-  process.env.MINIO_TEMPLATES_USERS_PREFIX
-  || process.env.MINIO_TEMPLATES_DRAFT_PREFIX
+  process.env.ALMACEN_TEMPLATES_USERS_PREFIX
+  || process.env.ALMACEN_TEMPLATES_DRAFT_PREFIX
   || "Users"
 ).replace(/^\/+|\/+$/g, "");
 // Componentes UI permitidos para los campos del schema editados desde la web.
@@ -109,7 +109,7 @@ const jsonTypeForComponent = (component) => (
 
 // PASO 1 — la lista NORMALIZADA de campos, EN EL ORDEN QUE MANDO EL FORMULARIO.
 //
-// Nacio para alimentar A LA VEZ el `schema.json` de MinIO y las filas de
+// Nacio para alimentar A LA VEZ el `schema.json` del almacén y las filas de
 // `template_artifact_fields`; con la tabla retirada (frente 23, F4.1) le queda UN solo consumidor,
 // el paso 2, y sigue haciendo falta porque es quien valida los slugs y el catalogo de componentes.
 //
@@ -275,7 +275,7 @@ export default class TemplateLifecycleService {
   // Al activar una configuración, publica sus plantillas en BORRADOR (las creadas nacen draft y se publican de
   // forma controlada al activar la config: "activa la config + publica la plantilla"). Para cada borrador: exige
   // readiness (≥1 paso de entrega), retira la publicada previa del mismo template_code y la marca published.
-  // No toca is_active (storage-ready): si la subida a MinIO no terminó, el chequeo de artefactos activos avisará.
+  // No toca is_active (storage-ready): si la subida al almacén no terminó, el chequeo de artefactos activos avisará.
   async publishDraftTemplatesForDefinition(definitionId, connection = this.pool) {
     const normalizedDefinitionId = Number(definitionId);
     if (!normalizedDefinitionId) return 0;
@@ -603,20 +603,20 @@ export default class TemplateLifecycleService {
     );
     const newDeliverableId = Number(delivIns.insertId);
 
-    // Copiar contenido MinIO a un prefijo propio (System/<code>/1.0.0/).
-    const bucket = MINIO_TEMPLATES_BUCKET;
+    // Copiar contenido el almacén a un prefijo propio (System/<code>/1.0.0/).
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
     const oldPrefix = String(src.base_object_prefix || "").replace(/\/?$/, "/");
     const oldCode = String(src.template_code);
     const oldVersion = String(src.storage_version || "");
     const suffix = `${oldCode}/${oldVersion}/`;
     const root = oldPrefix.endsWith(suffix) ? oldPrefix.slice(0, oldPrefix.length - suffix.length) : oldPrefix.replace(/[^/]+\/[^/]+\/$/, "");
     const newPrefix = `${root}${code}/1.0.0/`;
-    const objectNames = await listMinioObjects(bucket, oldPrefix, true);
+    const objectNames = await listAlmacenObjects(bucket, oldPrefix, true);
     for (const objectName of objectNames) {
       if (!objectName.startsWith(oldPrefix)) continue;
       const relative = objectName.slice(oldPrefix.length);
       if (!relative) continue;
-      await copyMinioObjectBinary(bucket, objectName, `${newPrefix}${relative}`);
+      await copyAlmacenObjectBinary(bucket, objectName, `${newPrefix}${relative}`);
     }
     const remappedFormats = parseAvailableFormats(src.available_formats);
     for (const entry of Object.values(remappedFormats || {})) {
@@ -626,7 +626,7 @@ export default class TemplateLifecycleService {
     }
 
     // Insertar la versión publicada del fork Y COPIAR SU FLUJO, en una transacción (sub-paso 6 del
-    // §0.8). El fork copia MinIO en binario igual que el versionado, y le pasaba lo mismo: el flujo
+    // §0.8). El fork copia el almacén en binario igual que el versionado, y le pasaba lo mismo: el flujo
     // ya no viaja dentro del paquete, así que el entregable bifurcado nacía sin ninguna fila y —al
     // nacer ya `published`— con el gate de publicación esquivado por la puerta de atrás.
     //
@@ -656,7 +656,7 @@ export default class TemplateLifecycleService {
         targetArtifactId: newArtifactId,
       });
       // AQUI SE COPIABAN LOS CAMPOS a la bifurcacion (`copySchemaFieldsToArtifact`). Se va con
-      // `template_artifact_fields` (frente 23, F4.1): la copia binaria de MinIO ya trae el
+      // `template_artifact_fields` (frente 23, F4.1): la copia binaria del almacén ya trae el
       // `schema.json`, que es lo que el editor lee.
       await connection.commit();
     } catch (error) {
@@ -689,10 +689,10 @@ export default class TemplateLifecycleService {
       throw new Error("El generador seleccionado no existe.");
     }
     if (!row.preview_path) {
-      const seedObjects = await listMinioObjects(MINIO_TEMPLATES_BUCKET, row.source_path, true);
+      const seedObjects = await listAlmacenObjects(ALMACEN_TEMPLATES_BUCKET, row.source_path, true);
       const fallbackPreviewPath = findPreferredPdfObject(seedObjects);
       if (!fallbackPreviewPath) {
-        throw new Error("El seed seleccionado no tiene preview PDF publicado en MinIO.");
+        throw new Error("El seed seleccionado no tiene preview PDF publicado en el almacén.");
       }
       row.preview_path = fallbackPreviewPath;
       await this.pool.query(
@@ -702,23 +702,23 @@ export default class TemplateLifecycleService {
     }
     let objectStream;
     try {
-      objectStream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, row.preview_path);
+      objectStream = await getAlmacenObjectStream(ALMACEN_TEMPLATES_BUCKET, row.preview_path);
     } catch (error) {
       const message = String(error?.message || "");
       if (!/does not exist|NoSuchKey/i.test(message)) {
         throw error;
       }
-      const seedObjects = await listMinioObjects(MINIO_TEMPLATES_BUCKET, row.source_path, true);
+      const seedObjects = await listAlmacenObjects(ALMACEN_TEMPLATES_BUCKET, row.source_path, true);
       const fallbackPreviewPath = findPreferredPdfObject(seedObjects);
       if (!fallbackPreviewPath) {
-        throw new Error("El seed seleccionado no tiene preview PDF publicado en MinIO.");
+        throw new Error("El seed seleccionado no tiene preview PDF publicado en el almacén.");
       }
       row.preview_path = fallbackPreviewPath;
       await this.pool.query(
         "UPDATE generadores_de_documento SET preview_path = ? WHERE id = ?",
         [fallbackPreviewPath, row.id]
       );
-      objectStream = await getMinioObjectStream(MINIO_TEMPLATES_BUCKET, row.preview_path);
+      objectStream = await getAlmacenObjectStream(ALMACEN_TEMPLATES_BUCKET, row.preview_path);
     }
     return {
       stream: objectStream,
@@ -728,11 +728,11 @@ export default class TemplateLifecycleService {
 
   async syncTemplateSeedsFromSource() {
     this.ensurePool();
-    const bucket = MINIO_TEMPLATES_BUCKET;
-    const prefixRoot = `${MINIO_TEMPLATES_SEEDS_PREFIX}/`;
-    const objectNames = await listMinioObjects(bucket, prefixRoot, true);
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
+    const prefixRoot = `${ALMACEN_TEMPLATES_SEEDS_PREFIX}/`;
+    const objectNames = await listAlmacenObjects(bucket, prefixRoot, true);
     if (!objectNames.length) {
-      throw new Error(`No existen seeds publicados en MinIO bajo ${prefixRoot}`);
+      throw new Error(`No existen seeds publicados en el almacén bajo ${prefixRoot}`);
     }
 
     let discovered = 0;
@@ -780,7 +780,7 @@ export default class TemplateLifecycleService {
       let description = `Seed ${group.displayName}`;
       if (group.readmeObjectKey) {
         try {
-          const readmeStream = await getMinioObjectStream(bucket, group.readmeObjectKey);
+          const readmeStream = await getAlmacenObjectStream(bucket, group.readmeObjectKey);
           const readmeContent = (await streamToBuffer(readmeStream)).toString("utf8");
           const firstBodyLine = readmeContent
             .split(/\r?\n/)
@@ -803,7 +803,7 @@ export default class TemplateLifecycleService {
       );
 
       // EL TIPO ES SIEMPRE `latex`, Y NO ES UNA SIMPLIFICACION. Lo que este descubrimiento encuentra
-      // es un PAQUETE publicado en MinIO, y un paquete lo compila la tuberia LaTeX: un generador de
+      // es un PAQUETE publicado en el almacén, y un paquete lo compila la tuberia LaTeX: un generador de
       // tipo `servicio` no tiene paquete que descubrir, se registra a mano con su `destino`. El
       // segmento de carpeta no se pierde: viaja dentro de `code` (`latex/informe-general`).
       if (existingRows?.length) {
@@ -836,7 +836,7 @@ export default class TemplateLifecycleService {
       }
     }
 
-    return { discovered, inserted, updated, bucket, prefix: MINIO_TEMPLATES_SEEDS_PREFIX };
+    return { discovered, inserted, updated, bucket, prefix: ALMACEN_TEMPLATES_SEEDS_PREFIX };
   }
 
   // === FASE 2: actualización guiada de la plantilla de una configuración ACTIVA ===
@@ -889,8 +889,8 @@ export default class TemplateLifecycleService {
       throw new Error("Solo se puede actualizar desde una versión publicada de la plantilla.");
     }
 
-    // 1) Clonar la plantilla → nueva versión en borrador (MinIO + DB). Fuera de la transacción de la config
-    //    porque copia objetos en MinIO (efecto colateral no transaccional).
+    // 1) Clonar la plantilla → nueva versión en borrador (el almacén + DB). Fuera de la transacción de la config
+    //    porque copia objetos en el almacén (efecto colateral no transaccional).
     const tplVersion = await this._createTemplateArtifactVersion(tplId, bumpLevel);
     const newTemplateId = Number(tplVersion.id);
 
@@ -987,7 +987,7 @@ export default class TemplateLifecycleService {
     }
 
     // Readiness de publicación de la plantilla (≥1 paso de entrega) — se cuenta sobre la BASE, y antes de
-    // abrir la transacción, igual que cuando la cuenta venía de MinIO (sub-paso 4 del §0.8).
+    // abrir la transacción, igual que cuando la cuenta venía del almacén (sub-paso 4 del §0.8).
     // routed NO autora flujo (se define al enviar): se omite el readiness de entrega.
     if (String(linkRows[0].item_mode) !== "routed") {
       if (!(await hasFillStepsForArtifact(this.pool, tplId))) {
@@ -1022,7 +1022,7 @@ export default class TemplateLifecycleService {
       // primero para que pase el check de artefactos ACTIVOS) queda intacta —
       // `publishDraftTemplatesForDefinition` no toca `is_active`.
       //
-      // Lee MinIO dentro de la transacción abierta (readiness del meta.yaml). Es lo mismo que ya hace
+      // Lee el almacén dentro de la transacción abierta (readiness del meta.yaml). Es lo mismo que ya hace
       // el camino del CRUD desde `beforeUpdateTx`, y es el precio de que publicar y activar sean
       // atómicos: si un borrador no está listo, esto lanza y NO queda nada a medias.
       await this.publishDraftTemplatesForDefinition(cfgId, connection);
@@ -1205,9 +1205,9 @@ export default class TemplateLifecycleService {
       const existingObjectKey = String(existingEntry.entry_object_key);
       if (esClaveDeFichero(existingObjectKey)) {
         const fileName = path.basename(existingObjectKey);
-        await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
+        await copyAlmacenObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
       } else {
-        await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
+        await downloadAlmacenPrefixToDirectory(bucket, existingObjectKey, targetDir);
       }
       setAvailableFormatEntry(availableFormats, format, baseObjectPrefix);
       return true;
@@ -1219,8 +1219,8 @@ export default class TemplateLifecycleService {
       if (!seedRow) {
         throw new Error("El generador seleccionado no existe.");
       }
-      await downloadMinioPrefixToDirectory(
-        MINIO_TEMPLATES_BUCKET,
+      await downloadAlmacenPrefixToDirectory(
+        ALMACEN_TEMPLATES_BUCKET,
         `${seedRow.source_path}src/`,
         buildArtifactFormatDir(draftDir, CONTRACT_FORMAT)
       );
@@ -1232,12 +1232,12 @@ export default class TemplateLifecycleService {
       // puede tocar ninguna de esas claves desde la aplicación.
       // La decisión es NO cablearlo aquí: sus claves son campos de formulario, y modelar los campos
       // del formulario es justo lo que el §0.8 dejó fuera de alcance a propósito (decisión 3 — no
-      // tienen tabla, viven en el `schema.json` de MinIO). Cablear estas y no las demás sería inventar
+      // tienen tabla, viven en el `schema.json` del almacén). Cablear estas y no las demás sería inventar
       // un segundo sitio donde vive un campo. Su dueño natural es el generador del §0.4.
       const defaultsObjectKey = `${seedRow.source_path}defaults.yaml`;
       try {
         for (const target of buildPackageDataFileTargets(draftDir)) {
-          await copyMinioObjectToFile(MINIO_TEMPLATES_BUCKET, defaultsObjectKey, target);
+          await copyAlmacenObjectToFile(ALMACEN_TEMPLATES_BUCKET, defaultsObjectKey, target);
         }
       } catch {
         // Optional for non-latex seeds.
@@ -1246,8 +1246,8 @@ export default class TemplateLifecycleService {
       // base se empaqueta sin render/), se omite sin abortar. El contrato real es jinja2.
       if (String(seedRow.tipo || "").toLowerCase() === "latex") {
         try {
-          await downloadMinioPrefixToDirectory(
-            MINIO_TEMPLATES_BUCKET,
+          await downloadAlmacenPrefixToDirectory(
+            ALMACEN_TEMPLATES_BUCKET,
             `${seedRow.source_path}render/`,
             buildArtifactFormatDir(draftDir, "latex")
           );
@@ -1267,7 +1267,7 @@ export default class TemplateLifecycleService {
       // las dos desde el original repara de paso lo ya publicado.
       //
       // Sin esto, editar un borrador sin cambiar de semilla dejaba `data.yaml` fuera del `draftDir`
-      // — y como el manifiesto se recalcula SOBRE el `draftDir`, el objeto sobrevivia en MinIO pero
+      // — y como el manifiesto se recalcula SOBRE el `draftDir`, el objeto sobrevivia en el almacén pero
       // desaparecia de `manifest.json`. Manifiesto y bucket derivaban en la PRIMERA edicion (medido:
       // la clave `data.yaml` desaparecia de `protected`).
       //
@@ -1277,7 +1277,7 @@ export default class TemplateLifecycleService {
       if (hasContract) {
         try {
           for (const target of buildPackageDataFileTargets(draftDir)) {
-            await copyMinioObjectToFile(bucket, `${baseObjectPrefix}${PACKAGE_DATA_FILE_NAME}`, target);
+            await copyAlmacenObjectToFile(bucket, `${baseObjectPrefix}${PACKAGE_DATA_FILE_NAME}`, target);
           }
         } catch {
           // Un paquete de semilla no-latex puede no tener `data.yaml`: no es un error.
@@ -1316,9 +1316,9 @@ export default class TemplateLifecycleService {
         const existingObjectKey = String(existingEntry.entry_object_key);
         if (esClaveDeFichero(existingObjectKey)) {
           const fileName = path.basename(existingObjectKey);
-          await copyMinioObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
+          await copyAlmacenObjectToFile(bucket, existingObjectKey, path.join(targetDir, fileName));
         } else {
-          await downloadMinioPrefixToDirectory(bucket, existingObjectKey, targetDir);
+          await downloadAlmacenPrefixToDirectory(bucket, existingObjectKey, targetDir);
         }
         setAvailableFormatEntry(availableFormats, fileFieldMap[format], baseObjectPrefix);
       }
@@ -1380,7 +1380,7 @@ export default class TemplateLifecycleService {
     return null;
   }
 
-  // Persistencia de una EDICIÓN. Los objetos de MinIO ya existían antes de esta llamada y se
+  // Persistencia de una EDICIÓN. Los objetos del almacén ya existían antes de esta llamada y se
   // conservan pase lo que pase; los dos UPDATE los deshace el `ROLLBACK` de la transacción que abre
   // `saveTemplateArtifactDraft`. Devuelve el id, que no cambia.
   async _persistDraftEdit({ connection = this.pool, existingArtifact, almacenamiento, identidad }) {
@@ -1490,7 +1490,7 @@ export default class TemplateLifecycleService {
   // una edición que fallaba al vincular dejaba aplicado el `UPDATE` de `ediciones`. Ahora
   // también se deshace.
   //
-  // Lo que queda FUERA a propósito: la subida a MinIO (ocurre antes y ninguna transacción de
+  // Lo que queda FUERA a propósito: la subida al almacén (ocurre antes y ninguna transacción de
   // PostgreSQL la revierte; la compensa quien llama) y el sync de flujos (necesita ver el vínculo ya
   // COMMITEADO, porque va por el pool y atrapa sus propios errores).
   async _persistDraftToDatabase({
@@ -1573,7 +1573,7 @@ export default class TemplateLifecycleService {
   }
 
   // Normaliza la entrada y aplica TODAS las guardas de admision, en bloque y antes de tocar disco o
-  // MinIO. Es fail-fast a proposito: cuando esto devuelve, el borrador es admisible y el resto de
+  // el almacén. Es fail-fast a proposito: cuando esto devuelve, el borrador es admisible y el resto de
   // `saveTemplateArtifactDraft` ya no vuelve a validar entrada.
   //
   // EL ORDEN DE LAS GUARDAS ES CONTRATO, no estilo: esta caracterizado en zzz_artifact_draft y hay
@@ -1610,7 +1610,7 @@ export default class TemplateLifecycleService {
       }
     }
 
-    // Fail-fast (antes de subir nada a MinIO): TODA plantilla debe pertenecer a un proceso. Aplica a todos
+    // Fail-fast (antes de subir nada al almacén): TODA plantilla debe pertenecer a un proceso. Aplica a todos
     // los roles (admin/gestor de procesos incluidos), no solo al ejecutor.
     if (!isEdit && !(data.process_definition_id ? Number(data.process_definition_id) : null)) {
       throw new Error("Debes seleccionar el proceso (o 'default') al que pertenece esta plantilla.");
@@ -1668,7 +1668,7 @@ export default class TemplateLifecycleService {
   }
 
   // Escribe en `draftDir` los DOS ficheros que acompanan al contenido —schema.json y manifest.json—,
-  // valida el paquete y calcula su hash. Todo en disco: NO toca base de datos ni MinIO, asi que si
+  // valida el paquete y calcula su hash. Todo en disco: NO toca base de datos ni el almacén, asi que si
   // lanza no hay nada que compensar. (Eran tres hasta el sub-paso 8 del §0.8: el `meta.yaml` ya no
   // se emite.)
   //
@@ -1687,7 +1687,7 @@ export default class TemplateLifecycleService {
     // la normalizacion de un solo normalizador deja de ser una precaucion contra la divergencia para
     // ser simplemente lo que valida la entrada del formulario.
     //
-    // El `schema.json` se SIGUE EMITIENDO: es lo que viaja dentro del paquete de MinIO, entra en el
+    // El `schema.json` se SIGUE EMITIENDO: es lo que viaja dentro del paquete del almacén, entra en el
     // `content_hash`, lo exige `validatePackagedArtifactDraft` y es lo unico que relee
     // `getTemplateArtifactSchema` para el editor de `/admin`.
     const schemaFieldList = normalizeSchemaFieldList(schemaFields);
@@ -1766,14 +1766,14 @@ export default class TemplateLifecycleService {
     const baseSlug = slugify(displayName) || "artifact";
     const templateCode = String(existingArtifact?.template_code || `draft_${baseSlug}`).slice(0, 180);
     const storageVersion = existingArtifact?.storage_version || await this._getNextStorageVersionForTemplateCode(templateCode);
-    const bucket = MINIO_TEMPLATES_BUCKET;
+    const bucket = ALMACEN_TEMPLATES_BUCKET;
     const requestedTemplateScope = String(data.template_scope || existingArtifact?.template_scope || "official").trim();
     const templateScope = requestedTemplateScope === "ad_hoc" ? "ad_hoc" : "official";
     const adHocToken = sanitizeStorageSegment(data.task_item_id || data.draft_token || randomUUID(), "draft");
     // 'official' (de proceso) vive en un repo distinto del de usuarios; 'ad_hoc' (de usuario) bajo Users/.
     const defaultBaseObjectPrefix = templateScope === "ad_hoc"
       ? `${TEMPLATE_USERS_PREFIX}/${ownerRef}/AdHoc/${adHocToken}/${templateCode}/${storageVersion}/`
-      : `${MINIO_TEMPLATES_PREFIX}/${templateCode}/${storageVersion}/`;
+      : `${ALMACEN_TEMPLATES_PREFIX}/${templateCode}/${storageVersion}/`;
     const baseObjectPrefix = String(existingArtifact?.base_object_prefix || defaultBaseObjectPrefix);
     const draftDir = path.join(
       TEMPLATE_DRAFT_STAGING_ROOT,
@@ -1809,14 +1809,14 @@ export default class TemplateLifecycleService {
     let createdId = isEdit ? Number(existingArtifact.id) : null;
 
     // La ÚNICA compensación que queda. Todo lo que toca la base va en una transacción (más abajo) y
-    // lo deshace el `ROLLBACK`; la subida a MinIO ocurre ANTES y ninguna transacción de PostgreSQL
+    // lo deshace el `ROLLBACK`; la subida al almacén ocurre ANTES y ninguna transacción de PostgreSQL
     // puede revertirla, así que se deshace a mano. Solo en CREACIÓN: en edición los objetos
     // pertenecen a un artifact que se conserva y borrar su prefijo sería destruir la versión previa.
-    let prefijoSubidoAMinio = null;
+    let prefijoSubidoAAlmacen = null;
 
     try {
-      await uploadDirectoryToMinio(bucket, baseObjectPrefix, draftDir);
-      if (!isEdit) prefijoSubidoAMinio = baseObjectPrefix;
+      await uploadDirectoryToAlmacen(bucket, baseObjectPrefix, draftDir);
+      if (!isEdit) prefijoSubidoAAlmacen = baseObjectPrefix;
 
       // El corte en dos objetos NO es cosmético: es el modelo. El ALMACENAMIENTO vive en
       // `ediciones` (una fila por edición) y la IDENTIDAD en `catalogo_documental` (una por
@@ -1863,16 +1863,16 @@ export default class TemplateLifecycleService {
         is_active: 1,
         __warning: combinedWarning || undefined,
         __notice: isEdit
-          ? "La plantilla de documento fue actualizada y cargada correctamente en MinIO."
-          : "La plantilla de documento fue cargada correctamente en MinIO y registrada en el sistema."
+          ? "La plantilla de documento fue actualizada y cargada correctamente en el almacén."
+          : "La plantilla de documento fue cargada correctamente en el almacén y registrada en el sistema."
       };
     } catch (error) {
-      // Lo de la base ya lo deshizo el `ROLLBACK`. Aquí solo queda el prefijo de MinIO, que se subió
+      // Lo de la base ya lo deshizo el `ROLLBACK`. Aquí solo queda el prefijo del almacén, que se subió
       // antes de abrir la transacción. Best-effort a propósito: si borrarlo falla, el error que se
       // relanza tiene que seguir siendo el ORIGINAL, no el de la limpieza.
-      if (prefijoSubidoAMinio) {
+      if (prefijoSubidoAAlmacen) {
         try {
-          await removeMinioPrefix(bucket, prefijoSubidoAMinio);
+          await removeAlmacenPrefix(bucket, prefijoSubidoAAlmacen);
         } catch {
           // Deliberado: se pierde el fallo al compensar, no el original.
         }

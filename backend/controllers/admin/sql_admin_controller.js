@@ -116,7 +116,7 @@ export const downloadTemplateArtifactArchive = async (req, res) => {
     const availableFormats = parseAvailableFormats(artifact.available_formats);
     const resources = await collectFormatResources(availableFormats, { bucket: TEMPLATES_BUCKET });
     if (!resources.length) {
-      return res.status(404).json({ message: "El paquete no tiene archivos publicados en MinIO para descargar." });
+      return res.status(404).json({ message: "El paquete no tiene archivos publicados en el almacén para descargar." });
     }
     return await sendResourcesAsZip(res, {
       bucket: TEMPLATES_BUCKET,
@@ -132,7 +132,7 @@ export const downloadTemplateArtifactArchive = async (req, res) => {
   }
 };
 
-// Descarga un ZIP con todos los archivos de un seed (bajo su source_path en MinIO).
+// Descarga un ZIP con todos los archivos de un seed (bajo su source_path en el almacén).
 export const downloadTemplateSeedArchive = async (req, res) => {
   const id = Number(req.params?.id);
   if (!id || Number.isNaN(id)) {
@@ -152,7 +152,7 @@ export const downloadTemplateSeedArchive = async (req, res) => {
     }
     const resources = await collectPrefixResources(seed.source_path, { bucket: TEMPLATES_BUCKET });
     if (!resources.length) {
-      return res.status(404).json({ message: "El seed no tiene archivos publicados en MinIO para descargar." });
+      return res.status(404).json({ message: "El seed no tiene archivos publicados en el almacén para descargar." });
     }
     return await sendResourcesAsZip(res, {
       bucket: TEMPLATES_BUCKET,
@@ -190,7 +190,7 @@ export const downloadTemplateArtifactSource = async (req, res) => {
     }
     const resources = await collectPrefixResources(jinjaEntry, { bucket: TEMPLATES_BUCKET });
     if (!resources.length) {
-      return res.status(404).json({ message: "El contrato no tiene archivos publicados en MinIO." });
+      return res.status(404).json({ message: "El contrato no tiene archivos publicados en el almacén." });
     }
     return await sendResourcesAsZip(res, {
       bucket: TEMPLATES_BUCKET,

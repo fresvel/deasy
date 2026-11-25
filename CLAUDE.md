@@ -106,7 +106,7 @@ Each module has its own toolchain and package manager — do not mix them.
 - `frontend/` — Vue 3 + Vite + TailwindCSS web app. Uses **pnpm**. `@` aliases `frontend/src`.
 - `backend/` — Express 5 (ESM) API served under `/deasy/v1`. Uses **npm**. No build step; runs `node index.js`.
 - `docs/` — Astro Starlight documentation site. Uses **pnpm**.
-- `signer/` — Python (`pyhanko`) PDF signing microservice with a Node helper in `sigmaker/`; talks to the backend over RabbitMQ + MinIO.
+- `signer/` — Python (`pyhanko`) PDF signing microservice with a Node helper in `sigmaker/`; talks to the backend over RabbitMQ + the object store (`almacen`, Versity Gateway, S3 API).
 - `docker/` — multi-environment Compose stacks (`compose.base.yml` + overlays per env).
 - `scripts/` — operational wrappers for startup, deploy, reset and migrations.
 
@@ -265,7 +265,7 @@ bash scripts/stack.sh b stop                              # te vas por hoy y el 
 bash scripts/stack.sh b down                              # SOLO al retirar el worktree que monta
 ```
 
-| Pila | Proyecto | proxy | https | postgres | minio | signer | rabbit | docs | azimutt |
+| Pila | Proyecto | proxy | https | postgres | almacen | signer | rabbit | docs | azimutt |
 |---|---|---|---|---|---|---|---|---|---|
 | **A** | `deasy-dev` | 8088 | 8443 | 5432 | 9000 | 4000 | 5672 | 4321 | 4700 |
 | **B** | `deasy-b` | 8188 | 8543 | 5532 | 9100 | 4100 | 5772 | 4421 | 4800 |
@@ -274,7 +274,7 @@ bash scripts/stack.sh b down                              # SOLO al retirar el w
 
 - **La pila A ES la `dev` de siempre.** Mismo proyecto, mismos volúmenes, mismos puertos:
   `docker-env.sh dev` y `stack.sh a` son la misma. **No hay una quinta pila.**
-- Cada pila tiene **base, MinIO, RabbitMQ, `node_modules` y red propios**. Compartirlos era el fallo:
+- Cada pila tiene **base, almacén, RabbitMQ, `node_modules` y red propios**. Compartirlos era el fallo:
   con el mismo volumen de postgres, un `test:char:run` **resetea la base de la otra sesión**.
 - **Regla: la pila vive con su WORKTREE, no con la sesión.** No se baja al terminar una tanda de
   trabajo: **se baja el día que se retira el worktree que monta** (`stack.sh <letra> down`, y entonces
@@ -756,14 +756,14 @@ anteriores al primer hueco: lo de después puede apoyarse en tablas que trae el 
 no lo lances si tienes datos que quieras conservar. Para actualizar los goldens: `test:char:capture`.
 
 ⚠️ **El archivo legal lo siembra el harness, y hasta el 2026-10-07 NO lo sembraba nadie.** Los textos
-legales viven **sólo en MinIO** (`deasy-legal`, con retención COMPLIANCE) y **ningún paso automático
+legales viven **sólo en el almacén** (`deasy-legal`, con retención COMPLIANCE) y **ningún paso automático
 los creaba**: en las pilas A, B y C estaban porque alguien los publicó a mano meses atrás. En una pila
 **recién creada** el archivo arranca vacío, el bootstrap adopta **cero** y `test:char:run` daba
 **319 de 321** — con dos fallos de `/legal/documentos` que parecían un fallo de código. Se comprobó
 que no lo eran: con el backend de `develop` **en la misma pila** fallaban los mismos dos.
 
 Ahora los siembra **`npm run test:char:legal`**, que corre dentro de `test:char:fixture` **después del
-bootstrap y antes del seed**, conduce el sistema por su propia API —no escribe en MinIO a mano— y es
+bootstrap y antes del seed**, conduce el sistema por su propia API —no escribe en el almacén a mano— y es
 **idempotente**: si el archivo ya los tiene, el bootstrap los adopta y el paso se salta. Los textos
 viven en `backend/tests/characterization/setup/legal/`, **exportados byte a byte de una pila que los
 tenía** para que el golden siga valiendo (`terminos_de_uso` son 2025 caracteres, que es exactamente lo
@@ -825,7 +825,7 @@ La **E** marcó como infracción la frase «lo que mira `paises` está en `datos
 señalando precisamente dónde va lo que cruza—. Y la **C** contó como escritores de `persons` y `emails`
 dos ficheros cuyo único `UPDATE persons` estaba **dentro de un comentario que explica que ya no lo
 hacen**. Ahora hay **una sola** `sinProsa()` en `check-mapa-tablas.mjs` que usan las tres, y no quita
-el `//` detrás de dos puntos para no cortar una `minio://`.
+el `//` detrás de dos puntos para no cortar una `s3://`.
 
 **Es la misma lección que `lib/mapa.mjs` lleva escrita sobre el esquema**, y vale decirla entera: una
 comprobación que mire la prosa **castiga al que explica**, que es el peor incentivo posible aquí. Si
@@ -912,7 +912,7 @@ constructor.
 
 Eran **30 en 16 ficheros** y se cerraron el 2026-10-07 en una tanda: 26 por script y 4 a mano
 —`sql_admin_controller`, donde `editor` envuelve a `service` y las dos tenían que volverse perezosas
-en orden; `dossier_controler`, cuyo cliente de MinIO ocupa varias líneas **y lee el entorno al
+en orden; `dossier_controler`, cuyo cliente del almacén ocupa varias líneas **y lee el entorno al
 construirse**; y una que resultó estar **muerta**—. Y mover `identidad`, ese mismo día, destapó
 **once más** donde la puerta no miraba: siete en `services/`, uno en `middlewares/` y tres en
 `scripts/`, más el **singleton de `RealtimeGateway`** y el de `index.js`. Total real: **41**.
@@ -1041,7 +1041,7 @@ ficheros**, cuatro de ellos **controllers**.
 - ⚠️ **`getConnection()` NO es una transacción.** Pedir una conexión dedicada sin `beginTransaction`
   no protege nada y se puede quedar sin soltar por cualquier camino que no pase por el `finally`.
   Había **siete** así; ya no hay ninguna.
-- ⚠️ **No metas en la transacción lo que la base no puede deshacer.** Subir un objeto a MinIO va
+- ⚠️ **No metas en la transacción lo que la base no puede deshacer.** Subir un objeto al almacén va
   **fuera**: una transacción de PostgreSQL no borra un fichero ya escrito, y abarcarla promete una
   atomicidad que no existe.
 
@@ -1200,7 +1200,7 @@ El diseño y las decisiones del dueño, con sus mediciones, en
 [`docs/planes/plan_data/asignacion-y-relevo.md`](docs/planes/plan_data/asignacion-y-relevo.md).
 
 ## Environments & ports
-`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/MinIO/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.
+`dev` proxy: HTTP `8088` / HTTPS `8443` (API under `/api/deasy/v1`). Direct backend dev port is `3030`. Per-env infra ports (PostgreSQL/RabbitMQ/almacén/Signer) are listed in `docs/07-despliegue/COMANDOS_PROYECTO.md`.
 
 Env config: `docker/.env` + per-env `docker/.env.<env>`; reference model is `docker/.env_model`. Frontend uses `VITE_API_BASE_URL` (`/api` behind the Nginx proxy in Docker).
 

@@ -1,28 +1,28 @@
 // El PDF del documento de identidad escaneado.
 //
 // Mismo patron que la foto de perfil y que los certificados P12: temporal del sistema -> objeto en
-// MinIO -> borrado del temporal. Nada de estado local en el contenedor del backend.
+// el almacén -> borrado del temporal. Nada de estado local en el contenedor del backend.
 //
-// Y la MISMA convencion de referencia (`minio://<bucket>/<objeto>`), por el mismo motivo: guardar
+// Y la MISMA convencion de referencia (`s3://<bucket>/<objeto>`), por el mismo motivo: guardar
 // una URL publica meteria el endpoint del entorno dentro del dato.
 //
 // LA RUTA ES DERIVABLE; SU EXISTENCIA NO. Por eso la columna guarda la referencia en vez de
 // calcularla al vuelo: `escaneo_ref` nula significa "no hay escaneo", y saberlo sin preguntarle a
-// MinIO es lo que hace util el campo.
+// el almacén es lo que hace util el campo.
 
 import fs from "fs-extra";
 import {
   ensureBucketExists,
-  getMinioObjectStream,
-  removeMinioObject,
-  statMinioObject,
-  uploadFileToMinio
-} from "../../../services/storage/minio_service.js";
-import { buildMinioReference, parseMinioReference } from "../../../services/storage/minioReference.js";
+  getAlmacenObjectStream,
+  removeAlmacenObject,
+  statAlmacenObject,
+  uploadFileToAlmacen
+} from "../../../services/storage/almacen_service.js";
+import { buildAlmacenReference, parseAlmacenReference } from "../../../services/storage/almacenReference.js";
 
-export const MINIO_USERS_BUCKET = process.env.MINIO_USERS_BUCKET || "deasy-users";
+export const ALMACEN_USERS_BUCKET = process.env.ALMACEN_USERS_BUCKET || "deasy-users";
 
-const MINIO_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
+const ALMACEN_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
 
 // `users/<person_id>/documentos/<documento_id>.pdf`. Cuelga de los IDS y no del numero del
 // documento: un pasaporte se renueva con numero nuevo y el fichero no tiene por que mudarse.
@@ -45,28 +45,28 @@ export const storeEscaneo = async ({ personId, documentoId, filePath, mimetype }
     throw error;
   }
   const objectName = buildEscaneoObjectName(personId, documentoId);
-  await ensureBucketExists(MINIO_USERS_BUCKET);
-  await uploadFileToMinio(MINIO_USERS_BUCKET, objectName, filePath, {
+  await ensureBucketExists(ALMACEN_USERS_BUCKET);
+  await uploadFileToAlmacen(ALMACEN_USERS_BUCKET, objectName, filePath, {
     "Content-Type": "application/pdf"
   });
-  return { objectName, reference: buildMinioReference(MINIO_USERS_BUCKET, objectName) };
+  return { objectName, reference: buildAlmacenReference(ALMACEN_USERS_BUCKET, objectName) };
 };
 
 // Abre el escaneo para hacerle stream. Devuelve null cuando la referencia esta vacia o el objeto ya
 // no existe, para que el handler responda 404 en vez de reventar.
 export const openEscaneo = async (rawValue) => {
-  const reference = parseMinioReference(rawValue);
+  const reference = parseAlmacenReference(rawValue);
   if (!reference) return null;
 
   try {
-    await statMinioObject(reference.bucket, reference.objectName);
+    await statAlmacenObject(reference.bucket, reference.objectName);
   } catch (error) {
-    if (MINIO_NOT_FOUND_CODES.has(error?.code)) return null;
+    if (ALMACEN_NOT_FOUND_CODES.has(error?.code)) return null;
     throw error;
   }
 
   return {
-    stream: await getMinioObjectStream(reference.bucket, reference.objectName),
+    stream: await getAlmacenObjectStream(reference.bucket, reference.objectName),
     contentType: "application/pdf",
     objectName: reference.objectName
   };
@@ -75,12 +75,12 @@ export const openEscaneo = async (rawValue) => {
 // Borra el objeto anterior. No bloquea ni propaga: perder el escaneo viejo es menos grave que
 // dejar a la persona sin el nuevo.
 export const removeEscaneo = async (rawValue) => {
-  const reference = parseMinioReference(rawValue);
+  const reference = parseAlmacenReference(rawValue);
   if (!reference) return;
   try {
-    await removeMinioObject(reference.bucket, reference.objectName);
+    await removeAlmacenObject(reference.bucket, reference.objectName);
   } catch (error) {
-    if (!MINIO_NOT_FOUND_CODES.has(error?.code)) {
+    if (!ALMACEN_NOT_FOUND_CODES.has(error?.code)) {
       console.error("No se pudo borrar el escaneo anterior:", error.message);
     }
   }

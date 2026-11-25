@@ -26,11 +26,11 @@ Un detalle de higiene: la URL de conexion pasa por `redact_amqp_url()` antes de 
 
 2.  El backend genera un `correlationId`, crea la cola de respuesta `deasy.sign.response.<uuid>`, pública el trabajo y entra en polling.
 
-3.  El signer recibe el mensaje y **válida el payload**: exige `signType`, `minioPdfPath`, `stampText`, `finalPath`, `minioCertPath` y `certPassword`; `signType` debe ser `coordinates` o `token`.
+3.  El signer recibe el mensaje y **válida el payload**: exige `signType`, `almacenPdfPath`, `stampText`, `finalPath`, `almacenCertPath` y `certPassword`; `signType` debe ser `coordinates` o `token`.
 
 4.  Crea un directorio temporal con permisos `0700` **fuera de `/tmp`** — porque ahi se desempaqueta el certificado `.p12` descifrado.
 
-5.  Descarga de MinIO el PDF y el certificado.
+5.  Descarga del almacén el PDF y el certificado.
 
 6.  Abre el `.p12` y **rechaza el trabajo si el certificado esta expirado o aun no es válido**, con mensajes explícitos en espanol.
 
@@ -44,7 +44,7 @@ Un detalle de higiene: la URL de conexion pasa por `redact_amqp_url()` antes de 
 
 11. Válida la firma resultante contra el contexto de confianza construido desde `signer/trust/`, y aborta salvo tolerancia explícita en el payload.
 
-12. Sube el PDF firmado a MinIO, reemplazando `minioPdfPath`, y también a `finalPath` si es distinto.
+12. Sube el PDF firmado al almacén, reemplazando `almacenPdfPath`, y también a `finalPath` si es distinto.
 
 13. Pública el resultado en la cola de respuesta; el backend, que estaba haciendo polling, lo recoge.
 
@@ -112,7 +112,7 @@ Todas en `signer/tests/`, con `unittest` de la biblioteca estandar (no hay pytes
 | `test_pdf_metadata.py`           | 33        | Lectura del diccionario `/Sig`, fechas                    |
 | `test_transport.py`              | 24        | Servidor HTTP y publicación por RabbitMQ                  |
 | `test_validation_report.py`      | 21        | Forma exacta del informe que consume el frontend          |
-| `test_plumbing.py`               | 20        | MinIO, material de confianza, Ghostscript, temporales     |
+| `test_plumbing.py`               | 20        | El almacén, material de confianza, Ghostscript, temporales     |
 | `test_certificate_extensions.py` | 17        | Las dos fuentes de extensiones, con certificados reales   |
 | `test_certificate_loading.py`    | 9         | Carga del PKCS#12 y guards de vigencia                    |
 

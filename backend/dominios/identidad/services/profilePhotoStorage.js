@@ -1,23 +1,23 @@
 // Almacenamiento de las fotos de perfil.
 //
-// persons.photo_url guarda una referencia "minio://<bucket>/<objeto>", nunca una URL
+// persons.photo_url guarda una referencia "s3://<bucket>/<objeto>", nunca una URL
 // publica ni una ruta de disco: el backend es el unico que sabe resolverla y la lectura
 // pasa siempre por un handler autenticado (user_photo_controller.js).
 //
-// Mismo patron que los certificados P12: temporal del sistema -> objeto en MinIO ->
+// Mismo patron que los certificados P12: temporal del sistema -> objeto en el almacén ->
 // borrado del temporal. Nada de estado local en el contenedor del backend.
 import fs from "fs-extra";
 import path from "node:path";
 import {
   ensureBucketExists,
-  getMinioObjectStream,
-  removeMinioObject,
-  statMinioObject,
-  uploadFileToMinio
-} from "../../../services/storage/minio_service.js";
-import { buildMinioReference, parseMinioReference } from "../../../services/storage/minioReference.js";
+  getAlmacenObjectStream,
+  removeAlmacenObject,
+  statAlmacenObject,
+  uploadFileToAlmacen
+} from "../../../services/storage/almacen_service.js";
+import { buildAlmacenReference, parseAlmacenReference } from "../../../services/storage/almacenReference.js";
 
-export const MINIO_USERS_BUCKET = process.env.MINIO_USERS_BUCKET || "deasy-users";
+export const ALMACEN_USERS_BUCKET = process.env.ALMACEN_USERS_BUCKET || "deasy-users";
 
 const CONTENT_TYPE_BY_EXTENSION = {
   ".png": "image/png",
@@ -29,13 +29,13 @@ const CONTENT_TYPE_BY_EXTENSION = {
 export const contentTypeForExtension = (extension) =>
   CONTENT_TYPE_BY_EXTENSION[String(extension || "").toLowerCase()] || "application/octet-stream";
 
-// La convencion `minio://<bucket>/<objeto>` se movio a `storage/minioReference.js` cuando el
+// La convencion `s3://<bucket>/<objeto>` se movio a `storage/almacenReference.js` cuando el
 // escaneo del documento de identidad necesito la misma. Se reexporta `parsePhotoReference` como
 // alias para no tocar a sus llamadores.
-export { buildMinioReference };
-export const parsePhotoReference = parseMinioReference;
+export { buildAlmacenReference };
+export const parsePhotoReference = parseAlmacenReference;
 
-const MINIO_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
+const ALMACEN_NOT_FOUND_CODES = new Set(["NoSuchBucket", "NoSuchKey", "NotFound", "NoSuchObject"]);
 
 // Abre la foto para hacerle stream. Devuelve null cuando la referencia esta vacia o el
 // objeto ya no existe, para que el handler responda 404 en vez de reventar.
@@ -47,16 +47,16 @@ export const openProfilePhoto = async (rawValue) => {
 
   let stat;
   try {
-    stat = await statMinioObject(reference.bucket, reference.objectName);
+    stat = await statAlmacenObject(reference.bucket, reference.objectName);
   } catch (error) {
-    if (MINIO_NOT_FOUND_CODES.has(error?.code)) {
+    if (ALMACEN_NOT_FOUND_CODES.has(error?.code)) {
       return null;
     }
     throw error;
   }
 
   return {
-    stream: await getMinioObjectStream(reference.bucket, reference.objectName),
+    stream: await getAlmacenObjectStream(reference.bucket, reference.objectName),
     contentType:
       stat?.metaData?.["content-type"] || contentTypeForExtension(path.extname(reference.objectName)),
     size: stat?.size ?? null,
@@ -127,7 +127,7 @@ const readSignature = async (filePath) => {
   }
 };
 
-// Sube el temporal de multer a MinIO y devuelve la referencia que va en photo_url.
+// Sube el temporal de multer al almacén y devuelve la referencia que va en photo_url.
 // El borrado del temporal es responsabilidad de quien llama (bloque finally).
 export const storeProfilePhoto = async ({ personId, filePath, timestamp = Date.now() }) => {
   const format = detectImageFormat(await readSignature(filePath));
@@ -136,14 +136,14 @@ export const storeProfilePhoto = async ({ personId, filePath, timestamp = Date.n
   }
 
   const objectName = buildProfilePhotoObjectName(personId, format.extension, timestamp);
-  await ensureBucketExists(MINIO_USERS_BUCKET);
-  await uploadFileToMinio(MINIO_USERS_BUCKET, objectName, filePath, {
+  await ensureBucketExists(ALMACEN_USERS_BUCKET);
+  await uploadFileToAlmacen(ALMACEN_USERS_BUCKET, objectName, filePath, {
     "Content-Type": format.contentType
   });
 
   return {
-    reference: buildMinioReference(MINIO_USERS_BUCKET, objectName),
-    bucket: MINIO_USERS_BUCKET,
+    reference: buildAlmacenReference(ALMACEN_USERS_BUCKET, objectName),
+    bucket: ALMACEN_USERS_BUCKET,
     objectName,
     contentType: format.contentType
   };
@@ -157,7 +157,7 @@ export const removeStoredPhoto = async (rawValue) => {
     return false;
   }
   try {
-    await removeMinioObject(reference.bucket, reference.objectName);
+    await removeAlmacenObject(reference.bucket, reference.objectName);
     return true;
   } catch (error) {
     console.warn("No se pudo eliminar la foto de perfil anterior:", error?.message || error);

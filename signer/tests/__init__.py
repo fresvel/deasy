@@ -8,7 +8,7 @@ No hay pytest en la imagen (ver `signer/requirements.txt`): la red usa solo
 `unittest` de la biblioteca estándar, para no añadir dependencias a un servicio
 que firma documentos legales.
 
-Ninguna prueba abre red ni toca MinIO/RabbitMQ reales: todo lo que sale del
+Ninguna prueba abre red ni toca almacén/RabbitMQ reales: todo lo que sale del
 proceso está sustituido por dobles.
 """
 

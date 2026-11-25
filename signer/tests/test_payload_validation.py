@@ -15,20 +15,20 @@ import app
 
 PAYLOAD_COORDENADAS = {
     "signType": "coordinates",
-    "minioPdfPath": "spool/doc.pdf",
+    "almacenPdfPath": "spool/doc.pdf",
     "stampText": "Firmado por X",
     "finalPath": "final/doc.pdf",
-    "minioCertPath": "certs/x.p12",
+    "almacenCertPath": "certs/x.p12",
     "certPassword": "secreto",
     "coordinates": {"page": 1, "x": 100, "y": 200},
 }
 
 PAYLOAD_TOKEN = {
     "signType": "token",
-    "minioPdfPath": "spool/doc.pdf",
+    "almacenPdfPath": "spool/doc.pdf",
     "stampText": "Firmado por X",
     "finalPath": "final/doc.pdf",
-    "minioCertPath": "certs/x.p12",
+    "almacenCertPath": "certs/x.p12",
     "certPassword": "secreto",
     "token": "{{firma_1}}",
 }
@@ -42,8 +42,8 @@ class ValidarPayloadDeFirma(unittest.TestCase):
         self.assertIsNone(app.validate_payload(dict(PAYLOAD_TOKEN)))
 
     def test_falta_un_campo_obligatorio(self):
-        for campo in ("signType", "minioPdfPath", "stampText", "finalPath",
-                      "minioCertPath", "certPassword"):
+        for campo in ("signType", "almacenPdfPath", "stampText", "finalPath",
+                      "almacenCertPath", "certPassword"):
             with self.subTest(campo=campo):
                 payload = dict(PAYLOAD_COORDENADAS)
                 del payload[campo]
@@ -59,9 +59,9 @@ class ValidarPayloadDeFirma(unittest.TestCase):
     def test_el_orden_de_los_campos_obligatorios_fija_que_error_sale_primero(self):
         # Faltan dos: gana el que aparece antes en la lista `required`.
         payload = dict(PAYLOAD_COORDENADAS)
-        del payload["minioPdfPath"]
+        del payload["almacenPdfPath"]
         del payload["certPassword"]
-        self.assertEqual(app.validate_payload(payload), "Missing required field: minioPdfPath")
+        self.assertEqual(app.validate_payload(payload), "Missing required field: almacenPdfPath")
 
     def test_sign_type_desconocido(self):
         payload = dict(PAYLOAD_COORDENADAS, signType="qr")
@@ -109,23 +109,23 @@ class ValidarPayloadDeFirma(unittest.TestCase):
 
 class ValidarPayloadDeValidacion(unittest.TestCase):
     def test_ruta_valida(self):
-        self.assertIsNone(app.validate_validation_payload({"minioPdfPath": "spool/a.pdf"}))
+        self.assertIsNone(app.validate_validation_payload({"almacenPdfPath": "spool/a.pdf"}))
 
     def test_extension_en_mayusculas_se_acepta(self):
-        self.assertIsNone(app.validate_validation_payload({"minioPdfPath": "spool/a.PDF"}))
+        self.assertIsNone(app.validate_validation_payload({"almacenPdfPath": "spool/a.PDF"}))
 
     def test_ruta_ausente(self):
-        for payload in ({}, {"minioPdfPath": None}, {"minioPdfPath": "   "}):
+        for payload in ({}, {"almacenPdfPath": None}, {"almacenPdfPath": "   "}):
             with self.subTest(payload=payload):
                 self.assertEqual(
                     app.validate_validation_payload(payload),
-                    "Missing required field: minioPdfPath",
+                    "Missing required field: almacenPdfPath",
                 )
 
     def test_ruta_que_no_es_pdf(self):
         self.assertEqual(
-            app.validate_validation_payload({"minioPdfPath": "spool/a.docx"}),
-            "minioPdfPath must reference a PDF file",
+            app.validate_validation_payload({"almacenPdfPath": "spool/a.docx"}),
+            "almacenPdfPath must reference a PDF file",
         )
 
 

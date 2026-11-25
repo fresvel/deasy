@@ -1,28 +1,28 @@
 // Dossier / expediente personal sobre el núcleo relacional (Fase 6, ex-MongoDB).
 // Los datos van por dossierStore (2 tablas: dossiers + dossier_items JSONB);
-// MinIO sigue guardando los PDFs. Engine-transparente vía el adaptador.
+// el almacén sigue guardando los PDFs. Engine-transparente vía el adaptador.
 import * as Minio from "minio";
 import fs from "node:fs";
 import * as store from "../datos/dossier.js";
 
-// --- MinIO: cliente, constantes y helpers (sin cambios respecto a la versión Mongo) ---
-const minioUrl = new URL(process.env.MINIO_ENDPOINT || "http://localhost:9000");
-const minioUseSSL = String(process.env.MINIO_USE_SSL || "").trim() === "1" || minioUrl.protocol === "https:";
+// --- el almacén: cliente, constantes y helpers (sin cambios respecto a la versión Mongo) ---
+const almacenUrl = new URL(process.env.ALMACEN_ENDPOINT || "http://localhost:9000");
+const almacenUseSSL = String(process.env.ALMACEN_USE_SSL || "").trim() === "1" || almacenUrl.protocol === "https:";
 // Al primer uso, como el resto: aqui no es por el orden de carga de ESM —Minio es un paquete de
 // fuera y no participa en ningun ciclo— sino porque LEE EL ENTORNO al construirse. Importar este
 // controlador en un test fijaba el cliente con las variables que hubiera en ese instante.
-let _minioClient = null;
-const minioClient = () => (_minioClient ??= new Minio.Client({
-  endPoint: minioUrl.hostname,
-  port: Number(minioUrl.port || (minioUseSSL ? 443 : 80)),
-  useSSL: minioUseSSL,
-  accessKey: process.env.MINIO_ACCESS_KEY || process.env.MINIO_ROOT_USER,
-  secretKey: process.env.MINIO_SECRET_KEY || process.env.MINIO_ROOT_PASSWORD,
+let _almacenClient = null;
+const almacenClient = () => (_almacenClient ??= new Minio.Client({
+  endPoint: almacenUrl.hostname,
+  port: Number(almacenUrl.port || (almacenUseSSL ? 443 : 80)),
+  useSSL: almacenUseSSL,
+  accessKey: process.env.ALMACEN_ACCESS_KEY || process.env.ALMACEN_ROOT_USER,
+  secretKey: process.env.ALMACEN_SECRET_KEY || process.env.ALMACEN_ROOT_PASSWORD,
 }));
 
-const MINIO_DOSSIER_BUCKET = process.env.MINIO_DOSSIER_BUCKET || "deasy-dossier";
-const MINIO_DOSSIER_PREFIX = process.env.MINIO_DOSSIER_PREFIX || "Dosier";
-const MINIO_PUBLIC_ENDPOINT = process.env.MINIO_PUBLIC_ENDPOINT || "http://localhost:9000";
+const ALMACEN_DOSSIER_BUCKET = process.env.ALMACEN_DOSSIER_BUCKET || "deasy-dossier";
+const ALMACEN_DOSSIER_PREFIX = process.env.ALMACEN_DOSSIER_PREFIX || "Dosier";
+const ALMACEN_PUBLIC_ENDPOINT = process.env.ALMACEN_PUBLIC_ENDPOINT || "http://localhost:9000";
 
 const VALID_DOCUMENT_TYPES = [
   "titulo", "experiencia", "referencia", "formacion",
@@ -35,21 +35,21 @@ const TIPO_TO_SECTION = {
   formacion: "formacion", certificacion: "certificaciones", articulo: "articulos",
   libro: "libros", ponencia: "ponencias", tesis: "tesis", proyecto: "proyectos",
 };
-// sección -> tipoDocumento (para la convención de nombre de objeto MinIO)
+// sección -> tipoDocumento (para la convención de nombre de objeto el almacén)
 const SECTION_TO_TIPO = Object.fromEntries(Object.entries(TIPO_TO_SECTION).map(([t, s]) => [s, t]));
 
-const removeMinioObject = (bucket, objectName) =>
-  new Promise((resolve, reject) => minioClient().removeObject(bucket, objectName, (e) => (e ? reject(e) : resolve(true))));
-const statMinioObject = (bucket, objectName) =>
-  new Promise((resolve, reject) => minioClient().statObject(bucket, objectName, (e, stat) => (e ? reject(e) : resolve(stat))));
-const uploadFileToMinIO = (bucket, objectName, filePath, metadata = {}) =>
-  new Promise((resolve, reject) => minioClient().fPutObject(bucket, objectName, filePath, metadata, (e, etag) => (e ? reject(e) : resolve(etag))));
+const removeAlmacenObject = (bucket, objectName) =>
+  new Promise((resolve, reject) => almacenClient().removeObject(bucket, objectName, (e) => (e ? reject(e) : resolve(true))));
+const statAlmacenObject = (bucket, objectName) =>
+  new Promise((resolve, reject) => almacenClient().statObject(bucket, objectName, (e, stat) => (e ? reject(e) : resolve(stat))));
+const uploadFileToAlmacen = (bucket, objectName, filePath, metadata = {}) =>
+  new Promise((resolve, reject) => almacenClient().fPutObject(bucket, objectName, filePath, metadata, (e, etag) => (e ? reject(e) : resolve(etag))));
 const ensureBucketExists = (bucket) =>
   new Promise((resolve, reject) =>
-    minioClient().bucketExists(bucket, (e, exists) => {
+    almacenClient().bucketExists(bucket, (e, exists) => {
       if (e) return reject(e);
       if (exists) return resolve(true);
-      minioClient().makeBucket(bucket, "", (me) => (me ? reject(me) : resolve(true)));
+      almacenClient().makeBucket(bucket, "", (me) => (me ? reject(me) : resolve(true)));
     })
   );
 
@@ -61,14 +61,14 @@ const ensureBucketExists = (bucket) =>
 // Los ficheros escritos antes bajo la cedula se siguen encontrando para borrarlos, porque
 // `removeDossierDocument` cae en `resolveDossierObjectNameFromUrl` cuando no se le da la terna.
 const buildDossierObjectName = (personId, tipoDocumento, registroId) =>
-  `${MINIO_DOSSIER_PREFIX}/users/${personId}/${tipoDocumento}/${registroId}.pdf`;
-const buildDossierFileUrl = (objectName) => `${MINIO_PUBLIC_ENDPOINT}/${MINIO_DOSSIER_BUCKET}/${objectName}`;
+  `${ALMACEN_DOSSIER_PREFIX}/users/${personId}/${tipoDocumento}/${registroId}.pdf`;
+const buildDossierFileUrl = (objectName) => `${ALMACEN_PUBLIC_ENDPOINT}/${ALMACEN_DOSSIER_BUCKET}/${objectName}`;
 
 function resolveDossierObjectNameFromUrl(fileUrl) {
   if (!fileUrl) return null;
   const fromPath = (rawPath) => {
     const normalized = String(rawPath || "").replace(/^\/+/, "");
-    const bucketPrefix = `${MINIO_DOSSIER_BUCKET}/`;
+    const bucketPrefix = `${ALMACEN_DOSSIER_BUCKET}/`;
     return normalized.startsWith(bucketPrefix) ? normalized.slice(bucketPrefix.length) : normalized || null;
   };
   try { return fromPath(new URL(fileUrl).pathname); } catch { return fromPath(fileUrl); }
@@ -82,13 +82,13 @@ async function removeDossierDocument({ personId, tipoDocumento, registroId, file
     : resolveDossierObjectNameFromUrl(fileUrl);
   if (!objectName) return false;
   try {
-    await removeMinioObject(MINIO_DOSSIER_BUCKET, objectName);
+    await removeAlmacenObject(ALMACEN_DOSSIER_BUCKET, objectName);
     return true;
   } catch (error) {
     if (NOT_FOUND_CODES.includes(error?.code)) {
       const fallback = resolveDossierObjectNameFromUrl(fileUrl);
       if (fallback && fallback !== objectName) {
-        try { await removeMinioObject(MINIO_DOSSIER_BUCKET, fallback); return true; } catch { return false; }
+        try { await removeAlmacenObject(ALMACEN_DOSSIER_BUCKET, fallback); return true; } catch { return false; }
       }
       return false;
     }
@@ -97,11 +97,11 @@ async function removeDossierDocument({ personId, tipoDocumento, registroId, file
 }
 
 async function objectExists(bucket, objectName) {
-  try { await statMinioObject(bucket, objectName); return true; }
+  try { await statAlmacenObject(bucket, objectName); return true; }
   catch (error) { if (NOT_FOUND_CODES.includes(error?.code)) return false; throw error; }
 }
 
-// Rehidrata url_documento faltantes consultando MinIO por convención de nombre
+// Rehidrata url_documento faltantes consultando el almacén por convención de nombre
 // ({personId}/{tipoDoc}/{id}.pdf) y persiste la url encontrada. Opera sobre el árbol.
 async function hydrateTree(tree, dossier) {
   const groups = [
@@ -116,7 +116,7 @@ async function hydrateTree(tree, dossier) {
     for (const item of items) {
       if (item.url_documento) continue;
       const objectName = buildDossierObjectName(tree.person_id, tipo, item._id);
-      if (await objectExists(MINIO_DOSSIER_BUCKET, objectName)) {
+      if (await objectExists(ALMACEN_DOSSIER_BUCKET, objectName)) {
         const url = buildDossierFileUrl(objectName);
         item.url_documento = url;
         await store.setItemUrl(item._id, dossier.id, section, url);
@@ -278,7 +278,7 @@ export const deleteInvestigacionItem = async (req, res) => {
   }
 };
 
-// --- Documentos (MinIO) ---
+// --- Documentos (el almacén) ---
 export const uploadDossierDocument = async (req, res) => {
   try {
     const { cedula, tipoDocumento, registroId } = req.params;
@@ -294,8 +294,8 @@ export const uploadDossierDocument = async (req, res) => {
     if (!item) { fs.unlink(req.file.path, () => {}); return fail(res, 404, `Registro con ID ${registroId} no encontrado en ${tipoDocumento}`); }
 
     const objectName = buildDossierObjectName(dossier.person_id, tipoDocumento, registroId);
-    await ensureBucketExists(MINIO_DOSSIER_BUCKET);
-    await uploadFileToMinIO(MINIO_DOSSIER_BUCKET, objectName, req.file.path);
+    await ensureBucketExists(ALMACEN_DOSSIER_BUCKET);
+    await uploadFileToAlmacen(ALMACEN_DOSSIER_BUCKET, objectName, req.file.path);
     const fileUrl = buildDossierFileUrl(objectName);
     fs.unlink(req.file.path, () => {});
 
@@ -320,7 +320,7 @@ export const getDossierDocumentUrl = async (req, res) => {
     const objectName = buildDossierObjectName(dossier.person_id, tipoDocumento, registroId);
     try {
       await new Promise((resolve, reject) => {
-        minioClient().getObject(MINIO_DOSSIER_BUCKET, objectName, (err, dataStream) => {
+        almacenClient().getObject(ALMACEN_DOSSIER_BUCKET, objectName, (err, dataStream) => {
           if (err) return reject(err);
           res.setHeader("Content-Type", "application/pdf");
           res.setHeader("Content-Disposition", `inline; filename="${registroId}.pdf"`);

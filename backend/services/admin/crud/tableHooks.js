@@ -793,10 +793,10 @@ export const TABLE_HOOKS = {
   },
 
   ediciones: {
-    // Los artifacts no se crean por CRUD admin: entran por sincronización desde MinIO o por el
+    // Los artifacts no se crean por CRUD admin: entran por sincronización desde el almacén o por el
     // flujo de plantilla de documento.
     beforeCreate() {
-      throw new Error("Los artifacts se registran por sincronizacion desde MinIO o mediante el flujo de plantilla de documento.");
+      throw new Error("Los artifacts se registran por sincronizacion desde el almacén o mediante el flujo de plantilla de documento.");
     },
 
     beforeUpdate(ctx) {

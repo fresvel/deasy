@@ -19,7 +19,7 @@ contraseña** (`password_reset_codes`).
 
 `person_certificates` guarda los `.p12` de cada persona — el fichero que el
 [microservicio de firma](/signer/) usa para estampar. Y guarda **la referencia, no el fichero**: el
-binario vive en MinIO, y la tabla lleva su `bucket` y su `object_name`.
+binario vive en el almacén, y la tabla lleva su `bucket` y su `object_name`.
 
 Que sea una tabla y no una columna de `persons` responde a un caso concreto: **un certificado
 caduca**. El día que se renueva conviven el viejo —que firmó documentos que siguen siendo válidos, y
@@ -100,8 +100,8 @@ erDiagram
     int person_id FK
     varchar label "el nombre que le pone su dueño"
     varchar original_filename "con que nombre lo subio"
-    varchar bucket "MinIO: el cubo"
-    varchar object_name "MinIO: la ruta. El binario NO esta aqui"
+    varchar bucket "el almacén: el cubo"
+    varchar object_name "el almacén: la ruta. El binario NO esta aqui"
     smallint is_default "cual se usa por defecto. SIN indice que lo garantice"
     timestamp created_at
     timestamp updated_at

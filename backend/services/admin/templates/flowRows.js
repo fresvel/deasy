@@ -71,8 +71,8 @@ export const replaceAuthoredFlowForArtifact = async (
 //
 // La usan los CUATRO gates de publicación (`templateArtifact.setTemplateArtifactActive` y
 // `.publishTemplateArtifact`; `templateLifecycle.publishDraftTemplatesForDefinition` y
-// `.finishTemplateUpdate`). Hasta el sub-paso 4 del §0.8 los cuatro leían el `meta.yaml` de MinIO
-// envueltos en un `catch {}` mudo que traducía CUALQUIER fallo —MinIO caído, objeto ausente, YAML
+// `.finishTemplateUpdate`). Hasta el sub-paso 4 del §0.8 los cuatro leían el `meta.yaml` del almacén
+// envueltos en un `catch {}` mudo que traducía CUALQUIER fallo —el almacén caído, objeto ausente, YAML
 // ilegible— a «esta plantilla no define flujo de entrega», y bloqueaba la publicación por una razón
 // falsa. Aquí no hay `catch`: un error de base se PROPAGA. Es el motivo real de la mudanza.
 //
@@ -179,7 +179,7 @@ export const readAuthoredFlowForArtifact = async (connection, artifactId) => {
 // --- Copia: la receta del PADRE pasa a colgar de la HIJA -----------------------------------------
 //
 // La llaman `createTemplateArtifactVersion` (`templateArtifact.js`) y el fork de
-// `templateLifecycle.js`. Las dos copian MinIO en binario, y la receta NO viaja dentro del paquete:
+// `templateLifecycle.js`. Las dos copian el almacén en binario, y la receta NO viaja dentro del paquete:
 // vive en la base. Sin esto la versión nace sin receta y publicarla responde 400 «la plantilla debe
 // definir al menos un paso de flujo de entrega» —medido antes de que existiera—.
 //

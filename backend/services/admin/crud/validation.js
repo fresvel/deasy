@@ -187,7 +187,7 @@ const documentVersionNumberAndStatus = (candidate) => {
 };
 
 // EL CATALOGO DE GENERADORES (frente 23, F3.1). Era `seedCodeAndSourcePath`, y exigia `seed_code` +
-// `source_path` porque TODO generador era una semilla con su paquete en MinIO.
+// `source_path` porque TODO generador era una semilla con su paquete en el almacén.
 //
 // Ya no: un generador de tipo `servicio` no tiene paquete, tiene `destino` (cola o endpoint). Asi que
 // lo obligatorio pasa a ser el par IDENTIDAD —`code` + `nombre`— y la ruta fuente se exige SOLO al

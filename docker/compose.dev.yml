@@ -19,10 +19,9 @@ services:
       - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
       - "127.0.0.1:${RABBITMQ_MGMT_PORT:-15672}:15672"
 
-  minio:
+  almacen:
     ports:
-      - "${MINIO_API_PORT}:9000"
-      - "${MINIO_CONSOLE_PORT}:9001"
+      - "${ALMACEN_API_PORT}:9000"
 
   backend:
     build:
@@ -235,7 +234,7 @@ services:
 
 # Los nombres llevan el ESPACIO DE NOMBRES de la pila (`DEASY_STACK`), que por defecto es `dev`.
 # Sin esa variable todo se comporta exactamente igual que siempre: `docker-env.sh dev` no se entera.
-# Con ella, `scripts/stack.sh <a|b|c|d>` levanta pilas paralelas que NO comparten ni base, ni MinIO,
+# Con ella, `scripts/stack.sh <a|b|c|d>` levanta pilas paralelas que NO comparten ni base, ni almacén,
 # ni node_modules, ni red. Compartirlos era el fallo: aunque cambies el nombre del proyecto, dos
 # pilas con el MISMO volumen de postgres se pisan, y `test:char:run` resetea la base de la otra.
 volumes:
@@ -243,8 +242,8 @@ volumes:
     name: deasy_${DEASY_STACK:-dev}_postgres_data
   rabbitmq_data:
     name: deasy_${DEASY_STACK:-dev}_rabbitmq_data
-  minio_data:
-    name: deasy_${DEASY_STACK:-dev}_minio_data
+  versity_data:
+    name: deasy_${DEASY_STACK:-dev}_versity_data
   backend_node_modules_v2:
     name: deasy_${DEASY_STACK:-dev}_backend_node_modules
   channels_node_modules:

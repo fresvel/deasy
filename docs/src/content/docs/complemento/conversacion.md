@@ -69,7 +69,7 @@ misma tabla. Es una de las cinco autorreferencias del esquema.
 una de las columnas de estado sin `CHECK` que la auditoría del esquema dejó anotadas.
 
 `chat_message_attachments` cuelga del mensaje con `sort_order`, así que los adjuntos tienen orden. Y
-guarda `path`, no el fichero: el binario está en MinIO.
+guarda `path`, no el fichero: el binario está en el almacén.
 
 `chat_message_reads` es **la única tabla de todo el esquema con clave primaria compuesta**
 —`(message_id, person_id)`— y no lleva `id` sintético. Todas las demás tablas-join de Deasy sí lo
@@ -184,7 +184,7 @@ erDiagram
     bigint id PK
     bigint message_id FK
     int sort_order "los adjuntos tienen orden"
-    varchar path "ruta en MinIO, no el binario"
+    varchar path "ruta en el almacén, no el binario"
     varchar filename
     varchar mime
     bigint size

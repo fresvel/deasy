@@ -254,7 +254,7 @@ describe("el escaneo deja rastro", () => {
   it("subirlo: el cambio y su entrada van en UNA transaccion", async () => {
     const { pool, consultas } = poolCon();
     await new DocumentoIdentidadService(pool).registrarEscaneoConRastro({
-      documento: DOCUMENTO, referencia: "minio://documentos/9/5.pdf", actorId: 1
+      documento: DOCUMENTO, referencia: "s3://documentos/9/5.pdf", actorId: 1
     });
     const orden = consultas
       .map((c) => c.sql.match(/^(BEGIN|COMMIT|ROLLBACK)$|(UPDATE documentos_identidad SET escaneo_ref)|(INSERT INTO accesos_sensibles)/))
@@ -267,7 +267,7 @@ describe("el escaneo deja rastro", () => {
     const { pool, consultas } = poolCon({ fallaSi: /INSERT INTO accesos_sensibles/ });
     await assert.rejects(
       () => new DocumentoIdentidadService(pool).registrarEscaneoConRastro({
-        documento: DOCUMENTO, referencia: "minio://documentos/9/5.pdf", actorId: 1
+        documento: DOCUMENTO, referencia: "s3://documentos/9/5.pdf", actorId: 1
       }),
       /bitacora caida/
     );

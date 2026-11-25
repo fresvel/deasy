@@ -63,7 +63,7 @@ erDiagram
     bigint person_id FK
     text section "CHECK · 10"
     text estado_revision "CHECK · 4"
-    varchar documento_ref "minio://, ya no una URL"
+    varchar documento_ref "s3://, ya no una URL"
     timestamp documento_subido_at
     timestamp created_at
     timestamp updated_at "NUEVA: corregir deja de ser borrar"
@@ -83,7 +83,7 @@ erDiagram
 Tres cosas que ese diagrama decide y no se ven a simple vista. **`section` pasa a ser un `CHECK`**:
 hoy los diez valores viven en la constante `SECTIONS` de `dossierStore.js`, así que un
 `section = 'titulso'` entra sin protesta y deja el asiento huérfano. **`documento_ref` sustituye a
-`url_documento`**, que guardaba una URL completa con `MINIO_PUBLIC_ENDPOINT` dentro: mover la pila
+`url_documento`**, que guardaba una URL completa con `ALMACEN_PUBLIC_ENDPOINT` dentro: mover la pila
 invalidaba todas las filas. Es el mismo antipatrón que el frente 14 ya corrigió en
 `documentos_identidad.escaneo_ref` — y el comentario de aquella columna cita precisamente a ésta como
 el ejemplo a no repetir. Y **`updated_at` cambia la naturaleza de la tabla**: deja de ser de sólo
@@ -470,7 +470,7 @@ erDiagram
     bigint id PK
     bigint person_id FK
     text section "CHECK · 10"
-    varchar documento_ref "minio:// · el respaldo escaneado"
+    varchar documento_ref "s3:// · el respaldo escaneado"
     timestamp documento_subido_at
     text estado_revision "CHECK · 4"
     timestamp created_at
@@ -1035,10 +1035,10 @@ las filas y se lee en el 100 % de las consultas no se esconde dentro de un blob,
 se puede indexar ni exigir con un `NOT NULL`. Lo variable va al JSON; lo invariable, a la columna.
 
 ⚠️ **El principio es correcto; lo que guarda la columna, no.** `url_documento` almacena una **URL
-completa** construida con `MINIO_PUBLIC_ENDPOINT`, así que el endpoint del entorno queda **dentro del
+completa** construida con `ALMACEN_PUBLIC_ENDPOINT`, así que el endpoint del entorno queda **dentro del
 dato**: mover la pila o cambiar de dominio invalida todas las filas. Es el mismo antipatrón que el
 frente 14 ya corrigió en `documentos_identidad`, y el modelo nuevo lo unifica en `documento_ref` con
-la convención `minio://<bucket>/<objeto>`.
+la convención `s3://<bucket>/<objeto>`.
 
 ### Aquí había MongoDB, y se nota
 

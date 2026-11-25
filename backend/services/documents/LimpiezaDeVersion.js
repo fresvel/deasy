@@ -15,7 +15,7 @@
 import { getPostgresPool } from "../../config/postgres.js";
 import { listarFicherosDeLaVersion, rutasQueSiguenEnUso } from "../../dominios/tareas/index.js";
 import { resolveStoredDocumentObject } from "../../dominios/identidad/controllers/user_controler.storage.js";
-import { removeMinioObject } from "../storage/minio_service.js";
+import { removeAlmacenObject } from "../storage/almacen_service.js";
 
 export const ficherosDeLaVersion = (documentVersionId, { connection = getPostgresPool() } = {}) =>
   listarFicherosDeLaVersion(connection, documentVersionId);
@@ -23,7 +23,7 @@ export const ficherosDeLaVersion = (documentVersionId, { connection = getPostgre
 // `borrar` y `resolver` se pueden sustituir para probar sin almacén.
 export const borrarFicherosSinDueno = async (
   rutas,
-  { connection = getPostgresPool(), borrar = removeMinioObject, resolver = resolveStoredDocumentObject } = {}
+  { connection = getPostgresPool(), borrar = removeAlmacenObject, resolver = resolveStoredDocumentObject } = {}
 ) => {
   const candidatas = [...new Set((rutas || []).filter(Boolean))];
   if (!candidatas.length) return { borrados: 0, conservados: 0, fallidos: 0 };

@@ -6,9 +6,9 @@ import ArchivoLegal, { claveDe } from "./ArchivoLegal.js";
 import { huellaDe } from "./huella.js";
 
 /**
- * UN MinIO DE MENTIRA, pero con las reglas que de verdad importan.
+ * UN el almacén DE MENTIRA, pero con las reglas que de verdad importan.
  *
- * No pretende imitar MinIO: imita **las cuatro cosas medidas** que el diseño da por ciertas, porque
+ * No pretende imitar el almacén: imita **las cuatro cosas medidas** que el diseño da por ciertas, porque
  * son las que las garantías de `ArchivoLegal` presuponen.
  *
  *   1. Un bucket sin bloqueo responde con ERROR a `getObjectLockConfig` (no con una respuesta
@@ -19,7 +19,7 @@ import { huellaDe } from "./huella.js";
  *      lo que hace que un test falle si alguien lee por clave.
  *   4. El bloqueo solo se puede pedir al crear el bucket.
  */
-const minioFalso = () => {
+const almacenFalso = () => {
   const buckets = new Map();
   let contador = 0;
 
@@ -94,7 +94,7 @@ const minioFalso = () => {
       b.conMarcaDeBorrado.add(clave);
       contador += 1;
       // ⚠️ Y el listado por versiones la devuelve como UNA ENTRADA MAS: `isLatest`, tamaño 0 y sin
-      // contenido. Comprobado contra el MinIO real de la pila C.
+      // contenido. Comprobado contra el almacén real de la pila C.
       (b.objetos.get(clave) ?? []).push({
         versionId: `ver-${contador}`, bytes: Buffer.alloc(0), fecha: new Date(2026, 8, 2, 1, 0, contador),
         esMarcaDeBorrado: true,
@@ -159,10 +159,10 @@ describe("ArchivoLegal · las claves de objeto", () => {
 
 describe("ArchivoLegal · asegurarBuckets", () => {
   it("crea el archivo CON bloqueo y le pone la retencion por defecto", async () => {
-    const minio = minioFalso();
-    await archivoDePrueba(minio).asegurarBuckets();
+    const almacen = almacenFalso();
+    await archivoDePrueba(almacen).asegurarBuckets();
 
-    const archivo = minio.buckets.get("legal");
+    const archivo = almacen.buckets.get("legal");
     assert.ok(archivo.bloqueo, "el bucket de archivo tiene que nacer con bloqueo de objetos");
     assert.equal(archivo.bloqueo.mode, "COMPLIANCE");
     assert.equal(archivo.bloqueo.validity, 3650);
@@ -170,10 +170,10 @@ describe("ArchivoLegal · asegurarBuckets", () => {
   });
 
   it("el de borradores NO lleva bloqueo, pero si versionado", async () => {
-    const minio = minioFalso();
-    await archivoDePrueba(minio).asegurarBuckets();
+    const almacen = almacenFalso();
+    await archivoDePrueba(almacen).asegurarBuckets();
 
-    const borradores = minio.buckets.get("legal-borradores");
+    const borradores = almacen.buckets.get("legal-borradores");
     assert.equal(borradores.bloqueo, null, "un borrador bloqueado no se podria corregir");
     assert.equal(borradores.versionado, true, "sin versionado no hay historial de edicion");
   });
@@ -182,19 +182,19 @@ describe("ArchivoLegal · asegurarBuckets", () => {
     // Es la garantia principal, y es fail-closed a proposito: el bloqueo solo se concede al crear
     // el bucket, asi que aqui no hay nada que reparar sobre la marcha. Seguir adelante produciria
     // un archivo que parece prueba y no lo es.
-    const minio = minioFalso();
-    await minio.makeBucket("legal", "");
+    const almacen = almacenFalso();
+    await almacen.makeBucket("legal", "");
 
     await assert.rejects(
-      archivoDePrueba(minio).asegurarBuckets(),
+      archivoDePrueba(almacen).asegurarBuckets(),
       /SIN bloqueo de objetos.*NO se puede añadir despues/s
     );
   });
 
   it("y el mensaje dice como se arregla, porque no es obvio", async () => {
-    const minio = minioFalso();
-    await minio.makeBucket("legal", "");
-    await assert.rejects(archivoDePrueba(minio).asegurarBuckets(), (error) => {
+    const almacen = almacenFalso();
+    await almacen.makeBucket("legal", "");
+    await assert.rejects(archivoDePrueba(almacen).asegurarBuckets(), (error) => {
       assert.match(error.message, /RECREARLO/);
       return true;
     });
@@ -203,8 +203,8 @@ describe("ArchivoLegal · asegurarBuckets", () => {
 
 describe("ArchivoLegal · archivar", () => {
   it("devuelve la version de objeto y la huella de lo escrito", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
 
     const sellado = await archivo.archivar("terminos_de_uso", "v1", "# Terminos\n");
@@ -216,10 +216,10 @@ describe("ArchivoLegal · archivar", () => {
   });
 
   it("LANZA si lo releido no coincide con lo que se quiso archivar", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
-    minio.corromperLectura = true;
+    almacen.corromperLectura = true;
 
     await assert.rejects(
       archivo.archivar("terminos_de_uso", "v1", "# Terminos\n"),
@@ -230,12 +230,12 @@ describe("ArchivoLegal · archivar", () => {
   it("LANZA si el bucket no devuelve version de objeto", async () => {
     // Pasa de verdad: un bucket sin versionado acepta el `put` tan campante y devuelve `versionId`
     // nulo. Sin esa comprobacion se sellaria una fila que solo se puede leer por clave.
-    const minio = minioFalso();
-    await minio.makeBucket("legal", "", { ObjectLocking: true });
-    minio.buckets.get("legal").versionado = false;
+    const almacen = almacenFalso();
+    await almacen.makeBucket("legal", "", { ObjectLocking: true });
+    almacen.buckets.get("legal").versionado = false;
 
     await assert.rejects(
-      archivoDePrueba(minio).archivar("terminos_de_uso", "v1", "texto"),
+      archivoDePrueba(almacen).archivar("terminos_de_uso", "v1", "texto"),
       /no devolvio un identificador de version/
     );
   });
@@ -243,8 +243,8 @@ describe("ArchivoLegal · archivar", () => {
   it("una sobrescritura NO se lleva por delante lo ya archivado", async () => {
     // El WORM protege la VERSION, no la clave: escribir encima esta permitido. Lo que no puede
     // pasar es que quien tenga la version vieja reciba lo nuevo.
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
 
     const primero = await archivo.archivar("terminos_de_uso", "v1", "TEXTO ORIGINAL");
@@ -257,8 +257,8 @@ describe("ArchivoLegal · archivar", () => {
 
 describe("ArchivoLegal · leerArchivado", () => {
   it("EXIGE la version de objeto", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
     const sellado = await archivo.archivar("terminos_de_uso", "v1", "TEXTO");
 
@@ -269,7 +269,7 @@ describe("ArchivoLegal · leerArchivado", () => {
   });
 
   it("y la exige aunque le den la huella: una huella no desambigua, solo delata", async () => {
-    const archivo = archivoDePrueba(minioFalso());
+    const archivo = archivoDePrueba(almacenFalso());
     await assert.rejects(
       archivo.leerArchivado({ objectKey: "terminos_de_uso/v1.md", hash: huellaDe("TEXTO") }),
       /hace falta el identificador de version/
@@ -277,8 +277,8 @@ describe("ArchivoLegal · leerArchivado", () => {
   });
 
   it("verifica la huella cuando se la dan, y lanza si no cuadra", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
     const sellado = await archivo.archivar("terminos_de_uso", "v1", "TEXTO");
 
@@ -289,15 +289,15 @@ describe("ArchivoLegal · leerArchivado", () => {
   });
 
   it("sin clave tampoco lee", async () => {
-    const archivo = archivoDePrueba(minioFalso());
+    const archivo = archivoDePrueba(almacenFalso());
     await assert.rejects(archivo.leerArchivado({ objectVersionId: "ver-1" }), /hace falta la clave/);
   });
 });
 
 describe("ArchivoLegal · borradores", () => {
   it("cada guardado deja una entrada en el historial, y la fila sigue siendo una", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
 
     await archivo.guardarBorrador("terminos_de_uso", "v2", "primera");
@@ -312,8 +312,8 @@ describe("ArchivoLegal · borradores", () => {
   });
 
   it("los bytes del borrador se entregan sin pasar por texto", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
     await archivo.guardarBorrador("terminos_de_uso", "v2", "áéí ⟦corchetes⟧");
 
@@ -325,12 +325,12 @@ describe("ArchivoLegal · borradores", () => {
 
 describe("ArchivoLegal · estadoDelArchivo", () => {
   it("lo lee DEL BUCKET, no de la configuracion que se le paso", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
     // Alguien cambia la retencion por fuera: el estado tiene que contar lo que hay, no lo que se
     // pidio en su dia.
-    minio.buckets.get("legal").bloqueo = { objectLockEnabled: "Enabled", mode: "COMPLIANCE", unit: "Years", validity: 10 };
+    almacen.buckets.get("legal").bloqueo = { objectLockEnabled: "Enabled", mode: "COMPLIANCE", unit: "Years", validity: 10 };
 
     const estado = await archivo.estadoDelArchivo();
     assert.deepEqual(
@@ -340,10 +340,10 @@ describe("ArchivoLegal · estadoDelArchivo", () => {
   });
 
   it("un bucket sin bloqueo se enseña como NO bloqueado, con su motivo", async () => {
-    const minio = minioFalso();
-    await minio.makeBucket("legal", "");
+    const almacen = almacenFalso();
+    await almacen.makeBucket("legal", "");
 
-    const estado = await archivoDePrueba(minio).estadoDelArchivo();
+    const estado = await archivoDePrueba(almacen).estadoDelArchivo();
     assert.equal(estado.bloqueado, false);
     assert.match(estado.motivo, /sin bloqueo/);
   });
@@ -351,16 +351,16 @@ describe("ArchivoLegal · estadoDelArchivo", () => {
   it("un bucket que PUEDE bloquear pero no tiene retencion tampoco esta protegido de hecho", async () => {
     // Medido: un bucket con Object Lock admite objetos SIN bloquear si no hay retencion por
     // defecto. Enseñarlo como «bloqueado: si» a secas seria mentir.
-    const minio = minioFalso();
-    await minio.makeBucket("legal", "", { ObjectLocking: true });
+    const almacen = almacenFalso();
+    await almacen.makeBucket("legal", "", { ObjectLocking: true });
 
-    const estado = await archivoDePrueba(minio).estadoDelArchivo();
+    const estado = await archivoDePrueba(almacen).estadoDelArchivo();
     assert.equal(estado.modo, null);
     assert.match(estado.motivo, /NO tiene retencion por defecto/);
   });
 
-  it("no revienta si MinIO no contesta: lo cuenta", async () => {
-    const roto = { async bucketExists() { throw new Error("connect ECONNREFUSED minio:9000"); } };
+  it("no revienta si el almacén no contesta: lo cuenta", async () => {
+    const roto = { async bucketExists() { throw new Error("connect ECONNREFUSED almacen:9000"); } };
     const estado = await archivoDePrueba(roto).estadoDelArchivo();
     assert.equal(estado.bloqueado, false);
     assert.match(estado.motivo, /ECONNREFUSED/);
@@ -373,40 +373,40 @@ describe("ArchivoLegal · la comprobacion del bloqueo", () => {
     // bucket que ya existe SIN bloqueo responde «Bucket created successfully» y sale con 0. Quien
     // implemente el fail-closed como «intento crearlo con bloqueo y, si no lanza, esta bloqueado»
     // no detecta NADA -- y el archivo legal se queda sin proteger, en silencio y para siempre.
-    const minio = minioFalso();
-    await minio.makeBucket("legal", "");
+    const almacen = almacenFalso();
+    await almacen.makeBucket("legal", "");
 
     // La creacion "con bloqueo" sobre el existente no lanza y NO lo bloquea. Es el escenario exacto.
-    await minio.makeBucket("legal", "", { ObjectLocking: true });
-    assert.equal(minio.buckets.get("legal").bloqueo, null, "sigue sin bloqueo pese a haberlo pedido");
+    await almacen.makeBucket("legal", "", { ObjectLocking: true });
+    assert.equal(almacen.buckets.get("legal").bloqueo, null, "sigue sin bloqueo pese a haberlo pedido");
 
     // Y aun asi, asegurarBuckets se entera. Porque pregunta.
-    await assert.rejects(archivoDePrueba(minio).asegurarBuckets(), /SIN bloqueo de objetos/);
+    await assert.rejects(archivoDePrueba(almacen).asegurarBuckets(), /SIN bloqueo de objetos/);
   });
 
   it("un delete marker esconde la clave, pero la version archivada sigue leyendose", async () => {
     // Medido: un borrado corriente sobre un objeto bloqueado se acepta, no destruye nada y hace que
     // el objeto desaparezca del listado. Leer por clave responderia «no existe»; por version, no.
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
     const sellado = await archivo.archivar("terminos_de_uso", "v1", "LA PRUEBA");
 
-    await minio.removeObject("legal", sellado.objectKey);
+    await almacen.removeObject("legal", sellado.objectKey);
 
     assert.deepEqual(
       await archivo.inventarioDelArchivo(), [],
       "la marca de borrado NO se toma por un documento: leerla responderia 'method not allowed'"
     );
-    await assert.rejects(minio.getObject("legal", sellado.objectKey), /NoSuchKey/, "por clave, no existe");
+    await assert.rejects(almacen.getObject("legal", sellado.objectKey), /NoSuchKey/, "por clave, no existe");
     assert.equal(await archivo.leerArchivado({ ...sellado }), "LA PRUEBA", "por version, sigue intacta");
   });
 });
 
 describe("ArchivoLegal · inventarioDelArchivo", () => {
   it("devuelve la ULTIMA version de cada clave, con su identificador", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
     await archivo.archivar("terminos_de_uso", "v1", "primero");
     const ultimo = await archivo.archivar("terminos_de_uso", "v1", "segundo");
@@ -423,11 +423,11 @@ describe("ArchivoLegal · inventarioDelArchivo", () => {
 
 describe("ArchivoLegal · las marcas de borrado", () => {
   it("no cuentan como un guardado en el historial del borrador", async () => {
-    const minio = minioFalso();
-    const archivo = archivoDePrueba(minio);
+    const almacen = almacenFalso();
+    const archivo = archivoDePrueba(almacen);
     await archivo.asegurarBuckets();
     await archivo.guardarBorrador("terminos_de_uso", "v2", "unico guardado");
-    await minio.removeObject("legal-borradores", "terminos_de_uso/v2.md");
+    await almacen.removeObject("legal-borradores", "terminos_de_uso/v2.md");
 
     const historial = await archivo.historialBorrador("terminos_de_uso", "v2");
     assert.equal(historial.length, 1, "un borrado no es una edicion");
