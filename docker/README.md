@@ -468,14 +468,27 @@ El script:
 
 Eso **emite** el certificado. Dura 90 dias y **hay que renovarlo**: lo hace
 `scripts/renew-ingress-cert.sh`, que no apaga nada (el reto lo sirve el ingress que ya corre),
-copia el certificado nuevo a `nginx/certs/public` y recarga nginx solo si cambio. Se programa en
-el servidor, una vez por semana:
+copia el certificado nuevo a `nginx/certs/public` y recarga nginx solo si cambio.
+
+Lo corre cada semana un temporizador de systemd, que se instala **una vez por servidor**:
 
 ```bash
-( crontab -l 2>/dev/null; echo "17 4 * * 1 cd /srv/deasy-ingress && bash scripts/renew-ingress-cert.sh >> \$HOME/renew-ingress-cert.log 2>&1" ) | crontab -
+cd /srv/deasy-ingress
+bash scripts/renew-ingress-cert.sh --dry-run     # ensayo: no cambia ningun certificado
+sudo bash scripts/install-renew-timer.sh         # instala y activa el temporizador
 ```
 
-Para ensayarlo sin cambiar nada: `bash scripts/renew-ingress-cert.sh --dry-run`.
+| Para | Comando |
+|---|---|
+| ver cuando corre la proxima vez | `systemctl list-timers deasy-renew-cert.timer` |
+| ver si la ultima vez fallo | `systemctl status deasy-renew-cert.service` |
+| leer su registro | `journalctl -u deasy-renew-cert.service` |
+| correrlo ahora | `sudo systemctl start deasy-renew-cert.service` |
+| quitarlo | `sudo bash scripts/install-renew-timer.sh --remove` |
+
+Es systemd y no cron por dos motivos: recupera al encender la ejecucion que el servidor se perdio
+por estar apagado (`Persistent=true`), y una renovacion fallida queda marcada como fallo en vez de
+enterrada en un fichero. **No avisa a nadie**: deja el fallo registrado, y hay que mirarlo.
 
 La validación base sigue siendo:
 

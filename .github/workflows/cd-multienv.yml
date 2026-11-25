@@ -309,7 +309,7 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts' '$DEPLOY_PATH/nginx/app-conf.d' '$DEPLOY_PATH/nginx/ingress-conf.d' '$DEPLOY_PATH/nginx/scripts' '$DEPLOY_PATH/nginx/acme' '$DEPLOY_PATH/nginx/certs/$DEPLOY_ENV' '$DEPLOY_PATH/nginx/certs/public'"
           rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
           rsync -az --delete --exclude 'certs/' nginx/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/nginx/"
-          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh scripts/install-renew-timer.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
       - name: Upload runtime environment file
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -332,7 +332,7 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -euo pipefail
             cd '$DEPLOY_PATH'
-            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh
+            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh scripts/install-renew-timer.sh
             printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin
             bash scripts/deploy-env.sh '$DEPLOY_ENV' '$DEPLOY_IMAGE_TAG'
           "
@@ -369,7 +369,7 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts' '$DEPLOY_PATH/nginx/app-conf.d' '$DEPLOY_PATH/nginx/ingress-conf.d' '$DEPLOY_PATH/nginx/scripts' '$DEPLOY_PATH/nginx/acme' '$DEPLOY_PATH/nginx/certs/$DEPLOY_ENV' '$DEPLOY_PATH/nginx/certs/public'"
           rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
           rsync -az --delete --exclude 'certs/' nginx/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/nginx/"
-          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh scripts/install-renew-timer.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
       - name: Upload runtime environment file
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -392,7 +392,7 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -euo pipefail
             cd '$DEPLOY_PATH'
-            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh
+            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh scripts/install-renew-timer.sh
             printf '%s' '$GHCR_TOKEN' | docker login ghcr.io -u '$GHCR_USERNAME' --password-stdin
             bash scripts/deploy-env.sh '$DEPLOY_ENV' '$DEPLOY_IMAGE_TAG'
           "
@@ -428,7 +428,7 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "mkdir -p '$DEPLOY_PATH/docker' '$DEPLOY_PATH/scripts' '$DEPLOY_PATH/nginx/app-conf.d' '$DEPLOY_PATH/nginx/ingress-conf.d' '$DEPLOY_PATH/nginx/scripts' '$DEPLOY_PATH/nginx/acme' '$DEPLOY_PATH/nginx/certs/public'"
           rsync -az --delete docker/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/docker/"
           rsync -az --delete --exclude 'certs/' nginx/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/nginx/"
-          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
+          rsync -az scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh scripts/install-renew-timer.sh "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/scripts/"
       - name: Deploy ingress
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
@@ -438,6 +438,6 @@ jobs:
           ssh "$DEPLOY_USER@$DEPLOY_HOST" "
             set -euo pipefail
             cd '$DEPLOY_PATH'
-            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh
+            chmod +x scripts/docker-env.sh scripts/deploy-env.sh scripts/apply-env.sh scripts/bootstrap-ingress-cert.sh scripts/renew-ingress-cert.sh scripts/install-renew-timer.sh
             bash scripts/deploy-env.sh ingress
           "
