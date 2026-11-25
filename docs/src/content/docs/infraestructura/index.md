@@ -49,11 +49,19 @@ Consecuencia concreta: `qa` y `prod` **no cargan** `compose.proxy.yml`, así que
 | Código             | **bind mount** (editas y se recarga)            | dentro de la imagen                                                         |
 | Proxy              | `nginx-proxy` en el propio stack                | un stack `ingress` separado                                                 |
 | Puertos del proxy  | 8088 / 8443                                     | el ingress pública 80 / 443                                                 |
-| PostgreSQL         | 5432                                            | 15432 (qa) / 25432 (prod)                                                   |
-| MinIO              | 9000 / 9001                                     | 9100 / 9101 y 9200 / 9201                                                   |
+| PostgreSQL         | 5432                                            | 15432 (qa) / 25432 (prod), **sólo en `127.0.0.1`**                          |
+| MinIO              | 9000 / 9001                                     | 9100 / 9101 y 9200 / 9201, **sólo en `127.0.0.1`**                          |
 | Buckets            | `deasy-*`                                       | `deasy-qa-*` y `deasy-prod-*`                                               |
 | PAdES-LTA          | desactivado                                     | **activado en prod**                                                        |
 | Endurecimiento     | —                                               | `no-new-privileges`, `read_only` en frontend, `tmpfs`, healthchecks propios |
+
+:::caution[En qa y prod, la base, el almacén y el firmador no se publican hacia fuera]
+Sus puertos se atan a `127.0.0.1` del servidor. Hasta noviembre de 2026 se publicaban en todas las
+interfaces, o sea hacia internet si el cortafuegos no los cerraba, y ninguno tiene por qué recibir
+tráfico de fuera: el backend les habla por la red de contenedores y lo público entra por el proxy.
+Siguen alcanzables desde el propio servidor; para abrir la consola del almacén desde otra máquina
+se usa un túnel de SSH. Importa más desde que MinIO comunitario dejó de recibir parches.
+:::
 
 :::caution[RabbitMQ solo se pública en dev, y atado a 127.0.0.1]
 
