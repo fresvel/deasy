@@ -153,6 +153,5 @@ Resuelve el fichero `.env` correcto (con `DEASY_ENV_FILE` como gancho para apunt
 | `reset-system.sh`            | Reset completo a instalación virgen: base + almacenamiento, recicla backend y signer, y **recarga nginx** (porque el proxy de dev cachea la IP del backend).                                   |
 | `rabbitmq-migrar-usuario.sh` | Crea el usuario real de RabbitMQ y **después borra `guest`**. Idempotente.                                                                                                                     |
 | `bootstrap-ingress-cert.sh`  | Emite el certificado público con certbot (ver mas abajo).                                                                                                                                      |
-| `renew-ingress-cert.sh`      | **Renueva** el certificado público y recarga el ingress sólo si cambió. El certificado dura 90 días. |
-| `install-renew-timer.sh`     | Instala, una vez por servidor y con `sudo`, el temporizador de systemd que lanza la renovación cada semana. |
+| `renew-ingress-cert.sh`      | Renueva **a mano** el certificado público. Es el respaldo: quien lo renueva es el servicio `certbot` de la pila de ingress. |
 | `signer-coverage.sh`         | Genera el informe de cobertura de Python para Sonar, reescribiendo las rutas para que las resuelva.                                                                                            |

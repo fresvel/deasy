@@ -466,29 +466,24 @@ El script:
 - apaga `ingress-bootstrap`
 - levanta `ingress` final en `80/443`
 
-Eso **emite** el certificado. Dura 90 dias y **hay que renovarlo**: lo hace
-`scripts/renew-ingress-cert.sh`, que no apaga nada (el reto lo sirve el ingress que ya corre),
-copia el certificado nuevo a `nginx/certs/public` y recarga nginx solo si cambio.
+Eso **emite** el certificado. Dura 90 dias y **se renueva solo**: la pila `ingress` trae un
+servicio `certbot` (contenedor `deasy-public-certbot`) que cada 12 horas pregunta a Let's Encrypt
+si toca, y renueva cuando faltan menos de 30 dias. No hay nada que instalar en el servidor.
 
-Lo corre cada semana un temporizador de systemd, que se instala **una vez por servidor**:
-
-```bash
-cd /srv/deasy-ingress
-bash scripts/renew-ingress-cert.sh --dry-run     # ensayo: no cambia ningun certificado
-sudo bash scripts/install-renew-timer.sh         # instala y activa el temporizador
-```
+- El servicio **solo escribe el certificado** en `nginx/certs/public`. No tiene el socket de
+  Docker ni ve los procesos de nginx.
+- **nginx se recarga solo** cuando su certificado cambia en disco: lo vigila cada 5 minutos
+  (`nginx/scripts/40-recargar-si-cambia-el-certificado.sh`) y antes comprueba la configuracion.
 
 | Para | Comando |
 |---|---|
-| ver cuando corre la proxima vez | `systemctl list-timers deasy-renew-cert.timer` |
-| ver si la ultima vez fallo | `systemctl status deasy-renew-cert.service` |
-| leer su registro | `journalctl -u deasy-renew-cert.service` |
-| correrlo ahora | `sudo systemctl start deasy-renew-cert.service` |
-| quitarlo | `sudo bash scripts/install-renew-timer.sh --remove` |
+| ver si esta sano | `docker ps --filter name=deasy-public` — `certbot` pasa a **unhealthy** cuando al certificado le quedan menos de 15 dias |
+| leer que hizo | `docker logs deasy-public-certbot` |
+| ensayar sin cambiar nada | `docker exec deasy-public-certbot certbot renew --dry-run` |
+| forzar una pasada ahora | `docker restart deasy-public-certbot` |
+| renovar a mano, si el servicio no esta | `bash scripts/renew-ingress-cert.sh` |
 
-Es systemd y no cron por dos motivos: recupera al encender la ejecucion que el servidor se perdio
-por estar apagado (`Persistent=true`), y una renovacion fallida queda marcada como fallo en vez de
-enterrada en un fichero. **No avisa a nadie**: deja el fallo registrado, y hay que mirarlo.
+**No avisa a nadie**: deja el estado a la vista, y hay que mirarlo.
 
 La validación base sigue siendo:
 

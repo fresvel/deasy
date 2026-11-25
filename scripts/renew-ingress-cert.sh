@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# RENUEVA EL CERTIFICADO PÚBLICO (Let's Encrypt) Y RECARGA EL INGRESS. Pensado para una tarea
-# programada: se puede correr las veces que haga falta.
+# RENUEVA A MANO EL CERTIFICADO PÚBLICO (Let's Encrypt) Y RECARGA EL INGRESS.
+#
+# ⚠️ ESTO ES EL RESPALDO, NO EL MECANISMO. Quien renueva es el servicio `certbot` de la pila de
+# ingress (`docker/compose.ingress.yml`), que corre solo. Este script sirve cuando ese servicio no
+# está —un ingress desplegado antes de que existiera— o para forzar una pasada ahora. Si el
+# servicio está corriendo y coincide con él, certbot se niega por su cerrojo y no pasa nada.
 #
 # POR QUÉ EXISTE. `bootstrap-ingress-cert.sh` EMITE el certificado y nada lo renovaba. Dura 90
 # días: el emitido el 2026-04-28 caducó el 2026-07-27 y estuvo cuatro meses caducado sin que nadie
@@ -26,7 +30,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INGRESS_CONTAINER="${DEASY_INGRESS_CONTAINER:-deasy-public-ingress}"
-CERTBOT_IMAGE="${CERTBOT_IMAGE:-certbot/certbot}"
+CERTBOT_IMAGE="${CERTBOT_IMAGE:-certbot/certbot:v5.10.0@sha256:c5698da859429ccee0fcc299a8000368198222d1f9e789ab6e388b491e8ce06d}"
 
 ahora() { date -u +"%Y-%m-%dT%H:%M:%SZ"; }
 

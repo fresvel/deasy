@@ -52,12 +52,16 @@ El upgrade a WebSocket funciona gracias a las cabeceras `Upgrade` y `Connection`
 
 - `nginx/certs/public/`: **no versionado**; ahi deja `scripts/bootstrap-ingress-cert.sh` el certificado de Let’s Encrypt.
 
-- **El certificado público dura 90 días y hay que renovarlo.** Lo hace `scripts/renew-ingress-cert.sh`, que pide la renovación a Let’s Encrypt, copia el resultado a `nginx/certs/public/` y recarga el ingress sólo si el certificado cambió. No apaga nada: el reto lo sirve el ingress que ya está corriendo. Certbot renueva cuando faltan menos de 30 días, así que correrlo de más no hace daño. Lo lanza cada semana un temporizador de systemd que se instala una vez por servidor con `sudo bash scripts/install-renew-timer.sh`; se eligió systemd y no cron porque recupera la ejecución perdida si el servidor estaba apagado y deja marcada como fallo una renovación que no salió. No avisa a nadie: hay que mirarlo con `systemctl status deasy-renew-cert.service`.
+- **El certificado público dura 90 días y se renueva solo.** La pila `ingress` trae un servicio `certbot` que cada 12 horas pregunta a Let’s Encrypt si toca; renueva cuando faltan menos de 30 días y deja el resultado en `nginx/certs/public/`. No apaga nada —el reto lo sirve el ingress que ya está corriendo— y no hay nada que instalar en el servidor.
 
-- `nginx/acme/`: el *webroot* del desafio HTTP-01; montado de solo lectura en proxy e ingress, y de **lectura-escritura** en el bootstrap, para que certbot pueda escribir el fichero de reto.
+- **Ese servicio sólo escribe el certificado.** No recarga nginx, no tiene el socket de Docker y no ve los procesos de nadie. Quien recarga es el propio nginx: vigila su certificado cada cinco minutos y, si cambió, comprueba la configuración y se recarga. Si el par nuevo no es válido, no recarga y sigue sirviendo el anterior.
+
+- **Cómo se ve que va bien:** `docker ps` marca el contenedor `deasy-public-certbot` como *unhealthy* cuando al certificado le quedan menos de 15 días, que es cuando ya debería haberse renovado. No avisa a nadie: hay que mirarlo.
+
+- `nginx/acme/`: el *webroot* del desafio HTTP-01; montado de solo lectura en proxy e ingress, y de **lectura-escritura** en el bootstrap y en el servicio `certbot`, para que certbot pueda escribir el fichero de reto.
 
 :::caution[Emitir no es renovar]
-Hasta noviembre de 2026 sólo existía el script que **emite** el certificado, y nada lo renovaba. El emitido en abril caducó en julio y estuvo cuatro meses caducado sin que nadie lo notara, porque las comprobaciones del despliegue ignoraban el certificado. Si se monta un servidor nuevo, instalar el temporizador de renovación es parte de la instalación, no un extra.
+Hasta noviembre de 2026 sólo existía el script que **emite** el certificado, y nada lo renovaba. El emitido en abril caducó en julio y estuvo cuatro meses caducado sin que nadie lo notara, porque las comprobaciones del despliegue ignoraban el certificado. Por eso la renovación viaja ahora dentro de la pila de ingress: en un servidor nuevo no hay nada que acordarse de montar.
 :::
 
 :::tip[Por que existe un “ingress-bootstrap”]
