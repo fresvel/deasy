@@ -1,0 +1,11 @@
+id: F29
+titulo: 'El almacén después de MinIO: tres ensayos antes de decidir'
+ciclo: exploratorio
+abierto: '2026-11-24'
+fases:
+  P1:
+    titulo: Los tres ensayos, cada uno en su pila
+    etapa: medicion
+  P2:
+    titulo: Qué decide el dueño
+    etapa: pregunta
